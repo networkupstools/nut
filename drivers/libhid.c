@@ -1,18 +1,18 @@
 /*!
  * @file libhid.c
- * @brief HID Library - User API (Generic HID Access using MGE HIDParser)
+ * @brief NUT HID Library - User API (Generic HID Access using MGE HIDParser)
  *
  * @author Copyright (C) 2003 - 2007
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	John Stamp <kinsayder@hotmail.com>
  *      Peter Selinger <selinger@users.sourceforge.net>
  *      Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	
+ *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -30,21 +30,29 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
-#include <string.h>
-/* #include <math.h> */
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+/* #include "nut_float.h" */
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#include "nut_stdint.h"
 
 /* Communication layers and drivers (USB and MGE SHUT) */
-#ifdef SHUT_MODE
-	#include "libshut.h"
+#if (defined SHUT_MODE) && SHUT_MODE
+#	include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
-#else
-	#include "libusb.h"
+#else	/* !SHUT_MODE => USB */
+#	include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /* support functions */
 static double logical_to_physical(HIDData_t *Data, long logical);
@@ -57,11 +65,14 @@ static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
 /* Tweak flag for APC Back-UPS */
-int max_report_size = 0;
+size_t max_report_size = 0;
 
 /* Tweaks for Powercom, at least */
 int interrupt_only = 0;
-int unsigned interrupt_size = 0;
+size_t interrupt_size = 0;
+
+#define SMIN(a, b) ( ((intmax_t)(a) < (intmax_t)(b)) ? (a) : (b) )
+#define UMIN(a, b) ( ((uintmax_t)(a) < (uintmax_t)(b)) ? (a) : (b) )
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
@@ -90,24 +101,25 @@ void free_report_buffer(reportbuf_t *rbuf)
 /* allocate a new report buffer. Return pointer on success, else NULL
    with errno set. The returned data structure must later be freed
    with free_report_buffer(). */
-reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
+reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
-	int		i, id;
+	int		id;
+	size_t	i;
 
-	if (!pDesc)
+	if (!arg_pDesc)
 		return NULL;
 
-	rbuf = calloc(1, sizeof(*rbuf));
+	rbuf = (reportbuf_t *)calloc(1, sizeof(*rbuf));
 	if (!rbuf) {
 		return NULL;
 	}
 
 	/* now go through all items that are part of this report */
-	for (i=0; i<pDesc->nitems; i++) {
+	for (i=0; i<arg_pDesc->nitems; i++) {
 
-		pData = &pDesc->item[i];
+		pData = &arg_pDesc->item[i];
 
 		id = pData->ReportID;
 
@@ -116,14 +128,14 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 			continue;
 
 		/* first byte holds id */
-		rbuf->len[id] = pDesc->replen[id] + 1;
+		rbuf->len[id] = arg_pDesc->replen[id] + 1;
 
 		/* skip zero length reports */
 		if (rbuf->len[id] < 1) {
 			continue;
 		}
 
-		rbuf->data[id] = calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
+		rbuf->data[id] = (unsigned char *)calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
 		if (rbuf->data[id])
 			continue;
 
@@ -147,10 +159,11 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 /* because buggy firmwares from APC return wrong report size, we either
    ask the report with the found report size or with the whole buffer size
    depending on the max_report_size flag */
-static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
+static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, time_t age)
 {
-	int	id = pData->ReportID;
-	int	r;
+	usb_ctrl_repindex	id = pData->ReportID;
+	int	ret;
+	size_t	r;
 
 	if (interrupt_only || rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -158,18 +171,85 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id],
-		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
+	r = max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id];
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
+			"report will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
 
-	if (r <= 0) {
+		/* Avoid overflowing known buffer size, to be sure: */
+		r = UMIN(r, sizeof(rbuf->data[id]));
+		if (!max_report_size) {
+			r = UMIN(r, rbuf->len[id]);
+		}
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	upsdebugx(5, "%s: investigating path: %s",
+		__func__, HIDGetDataItem(pData, NULL));
+	ret = comm_driver->get_report(udev, id,
+		(usb_ctrl_charbuf)rbuf->data[id],
+		(usb_ctrl_charbufsize)r);
+
+	if (ret <= 0) {
+		errno = -ret;
 		return -1;
 	}
+	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
-		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
+		/* e.g. if max_report_size flag was set */
+		upsdebugx(2,
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
+			__func__, rbuf->len[id], r);
+		upsdebug_hex(3, "Report[err]",
+			(usb_ctrl_charbuf)rbuf->data[id], r);
 	} else {
-		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
+		upsdebug_hex(3, "Report[get]",
+			(usb_ctrl_charbuf)rbuf->data[id], rbuf->len[id]);
 	}
 
 	/* have (valid) report */
@@ -182,7 +262,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 0 and
    store the answer in *value. On failure, return -1 and set errno. */
-static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, int age)
+static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, time_t age)
 {
 	int id = pData->ReportID;
 	int r;
@@ -202,17 +282,70 @@ static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
    -1 and set errno. The updated value is sent to the device. */
 static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long Value)
 {
-	int id = pData->ReportID;
-	int r;
+	usb_ctrl_repindex id = pData->ReportID;
+	int ret;
+	size_t	r = rbuf->len[id];
 
 	SetValue(pData, rbuf->data[id], Value);
 
-	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
-	if (r <= 0) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
+			"item setting will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	ret = comm_driver->set_report(udev, id,
+		(usb_ctrl_charbuf)rbuf->data[id],
+		(usb_ctrl_charbufsize)r);
+	if (ret <= 0) {
 		return -1;
 	}
 
-	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
+	upsdebug_hex(3, "Report[set]", rbuf->data[id], r);
 
 	/* expire report */
 	rbuf->ts[id] = 0;
@@ -224,7 +357,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
    report has been obtained without having been explicitly requested,
    e.g., it arrived through an interrupt transfer. Returns 0 on
    success, -1 on error with errno set. */
-static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
+static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t buflen)
 {
 	int id = buf[0];
 
@@ -232,7 +365,9 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	memcpy(rbuf->data[id], buf, (buflen < rbuf->len[id]) ? buflen : rbuf->len[id]);
 
 	if (rbuf->len[id] != buflen) {
-		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
+		upsdebugx(2,
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
+			__func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 	} else {
 		upsdebug_hex(3, "Report[int]", rbuf->data[id], rbuf->len[id]);
@@ -270,13 +405,16 @@ static struct {
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/gen-usbhid-subdriver.sh
  */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 {
-	int	i;
-#ifndef SHUT_MODE
+	size_t	i;
+#if (defined SHUT_MODE) && SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+#else	/* !SHUT_MODE => USB */
 	/* extract the VendorId for further testing */
-	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
-#endif
+	int vendorID = hd->VendorID;
+	int productID = hd->ProductID;
+#endif	/* SHUT_MODE / USB */
 
 	/* Do not go further if we already know nothing will be displayed.
 	 * Some reports take a while before they timeout, so if these are
@@ -287,7 +425,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
-	upsdebugx(1, "%i HID objects found", pDesc->nitems);
+	upsdebugx(1, "%" PRIuSIZE " HID objects found", pDesc->nitems);
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
@@ -295,17 +433,24 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		HIDData_t	*pData = &pDesc->item[i];
 
 		/* skip reports 254/255 for Eaton / MGE / Dell due to special handling needs */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 		if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 			continue;
 		}
-#else
+#else	/* !SHUT_MODE => USB */
 		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 				continue;
 			}
 		}
-#endif
+
+		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
+		if ((vendorID == 0x09ae) && (productID == 0x1330)) {
+			if (pData->ReportID == 0x54) {
+				continue;
+			}
+		}
+#endif	/* SHUT_MODE / USB */
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
@@ -344,15 +489,22 @@ const char *HIDDataType(const HIDData_t *hiddata)
 HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab)
 {
 	int	r;
-	HIDPath_t Path;
+	HIDPath_t	Path;
+	HIDData_t	*p;
 
 	r = string_to_path(hidpath, &Path, utab);
 	if (r <= 0) {
+		upsdebugx(4, "%s: string_to_path() failed to decipher '%s'", __func__, hidpath);
 		return NULL;
 	}
 
 	/* Get info on object (reportID, offset and size) */
-	return FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+	p = FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+
+	if (!p)
+		upsdebugx(4, "%s: FindObject_with_Path() failed to locate '%s'", __func__, hidpath);
+
+	return p;
 }
 
 char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
@@ -368,7 +520,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 /* Return the physical value associated with the given HIDData path.
  * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
  */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age)
+int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, time_t age)
 {
 	int	r;
 	long	hValue;
@@ -384,10 +536,10 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 	}
 
 	*Value = hValue;
-	
+
 	/* Convert Logical Min, Max and Value into Physical */
 	*Value = logical_to_physical(hiddata, hValue);
-	
+
 	/* Process exponents and units */
 	*Value *= exponent(10, get_unit_expo(hiddata));
 
@@ -406,8 +558,84 @@ int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, u
  */
 char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_t buflen)
 {
-	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
+	usb_ctrl_strindex	idx;
+	int	ret;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if ((uintmax_t)Index > (uintmax_t)USB_CTRL_STRINDEX_MAX
+	||  (intmax_t)Index < (intmax_t)USB_CTRL_STRINDEX_MIN
+	) {
+		upsdebugx(2,
+			"%s: requested index number is out of range, "
+			"expected %" PRIdMAX " < %i < %" PRIuMAX,
+			__func__,
+			(intmax_t)USB_CTRL_STRINDEX_MIN,
+			Index,
+			(uintmax_t)USB_CTRL_STRINDEX_MAX);
+		return NULL;
+	}
+	idx = (usb_ctrl_strindex)Index;
+
+	if ((uintmax_t)buflen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		upsdebugx(2,
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
+			"index string will be constrained",
+			__func__, buflen,
+			(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			buflen = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			buflen = (size_t)UINT8_MAX - 1;
+		}
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	ret = comm_driver->get_string(udev, idx, buf, (usb_ctrl_charbufsize)buflen);
+	upsdebugx(6, "%s: get_string() at index %d returned %d %s",
+		__func__, Index, ret,
+		ret < 0 ? "error code" : "useful bytes");
+	if (ret < 1)
 		buf[0] = '\0';
+	else
+		upsdebug_hex(6, "...into data buffer", buf,
+			((size_t)ret < buflen ? (size_t)ret : buflen));
 
 	return str_rtrim(buf, '\n');
 }
@@ -447,7 +675,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	/* Process exponents and units */
 	Value /= exponent(10, get_unit_expo(hiddata));
-	
+
 	/* Convert Physical Min, Max and Value into Logical */
 	hValue = physical_to_logical(hiddata, Value);
 
@@ -459,7 +687,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	/* flush the report buffer (data may have changed) */
 	memset(reportbuf->ts, 0, sizeof(reportbuf->ts));
-	
+
 	upsdebugx(4, "Set report succeeded");
 	return 1;
 }
@@ -479,17 +707,80 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
-	int		buflen, r, i;
+	int		buflen, ret;
+	size_t	i, r;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size:sizeof(buf), 250);
+	r = (interrupt_size > 0 && interrupt_size < sizeof(buf))
+		? interrupt_size : sizeof(buf);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		/* FIXME: Should we try here, or plain abort? */
+		upsdebugx(2,
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
+			"report will be constrained",
+			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+
+		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
+		&&  USB_CTRL_CHARBUFSIZE_MAX > 0) {
+			r = (size_t)USB_CTRL_CHARBUFSIZE_MAX - 1;
+		} else {
+			/* SIZE_MAX is obviously too much here; least common
+			 * denominator across libs can be UINT8 or UINT16.
+			 * We should never hit this codepath unless definition
+			 * above is bonkers, anyway.
+			 */
+			r = (size_t)UINT8_MAX - 1;
+		}
+
+		/* Avoid overflowing known buffer size, to be sure: */
+		r = UMIN(r, sizeof(buf));
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+	buflen = comm_driver->get_interrupt(
+		udev, (usb_ctrl_charbuf)buf,
+		(usb_ctrl_charbufsize)r,
+		750);
+
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
-	r = file_report_buffer(reportbuf, buf, buflen);
-	if (r < 0) {
+	ret = file_report_buffer(reportbuf, buf, (size_t)buflen);
+	if (ret < 0) {
 		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
 		return -errno;
 	}
@@ -548,9 +839,10 @@ static double logical_to_physical(HIDData_t *Data, long logical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning logical value as is");
 		return (double)logical;
 	}
-	
+
 	Factor = (double)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
 	/* Convert Value */
 	physical = (double)((logical - Data->LogMin) * Factor) + Data->PhyMin;
@@ -586,9 +878,10 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning physical value as is");
 		return (long)physical;
 	}
-	
+
 	Factor = (double)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
 	/* Convert Value */
 	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
@@ -639,78 +932,110 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	int	i = 0;
 	long	usage;
 	char	buf[SMALLBUF];
-	char	*token, *last; 
-	
+	char	*token, *last;
+
 	snprintf(buf, sizeof(buf), "%s", string);
 
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{
 		/* lookup tables first (to override defaults) */
+		/* Note/FIXME?: we happen to process "usage" as a "signed long"
+		 * while the HIDNode_t behind it is (currently) uint32_t.
+		 * The method below returns `-1` for entries not found; however
+		 * half of our permissible range may seem negative and be valid.
+		 */
 		if ((usage = hid_lookup_usage(token, utab)) != -1)
 		{
-			path->Node[i++] = usage;
+			path->Node[i++] = (HIDNode_t)usage;
 			continue;
+		} else {
+			/* hid_lookup_usage() logs for itself: ... -> not found in lookup table */
+			upsdebugx(5, "string_to_path: hid_lookup_usage failed, "
+				"checking if token %s is a raw value", token);
 		}
 
 		/* translate unnamed path components such as "ff860024" */
 		if (strlen(token) == strspn(token, "1234567890abcdefABCDEF"))
 		{
-			path->Node[i++] = strtol(token, NULL, 16);
+			long l = strtol(token, NULL, 16);
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				upsdebugx(5, "string_to_path: badvalue (pathcomp): "
+					"%ld negative or %" PRIuMAX " too large",
+					l, (uintmax_t)l);
+				goto badvalue;
+			}
+			path->Node[i++] = (HIDNode_t)l;
 			continue;
 		}
 
 		/* indexed collection */
 		if (strlen(token) == strspn(token, "[1234567890]"))
 		{
-			path->Node[i++] = 0x00ff0000 + atoi(token+1);
+			int l = atoi(token + 1); /* +1: skip the bracket */
+			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
+				upsdebugx(5, "string_to_path: badvalue(indexed): "
+					"%d negative or %" PRIuMAX " too large",
+					l, (uintmax_t)l);
+				goto badvalue;
+			}
+			path->Node[i++] = 0x00ff0000 + (HIDNode_t)l;
 			continue;
 		}
 
+badvalue:
 		/* Uh oh, typo in usage table? */
 		upsdebugx(1, "string_to_path: couldn't parse %s from %s", token, string);
 	}
 
-	path->Size = i;
+	if (i < 0 || i > (int)UINT8_MAX) {
+		fatalx(EXIT_FAILURE, "Error: string_to_path(): length exceeded");
+	}
+	path->Size = (uint8_t)i; /* by construct, i>=0; but anyway checked above to be sure */
 
 	upsdebugx(4, "string_to_path: depth = %d", path->Size);
 	return i;
 }
 
-/* translate HID numeric path to string path and return path depth */
+/* translate HID numeric path to string path and return path depth
+ * can pass utab=NULL to leave it a chain of HEX strings
+ */
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab)
 {
 	int	i;
 	const char	*p;
 
 	snprintf(string, size, "%s", "");
-	
+
 	for (i = 0; i < path->Size; i++)
 	{
 		if (i > 0)
 			snprintfcat(string, size, ".");
 
 		/* lookup tables first (to override defaults) */
-		if ((p = hid_lookup_path(path->Node[i], utab)) != NULL)
+		if (utab != NULL && ((p = hid_lookup_path(path->Node[i], utab)) != NULL))
 		{
 			snprintfcat(string, size, "%s", p);
 			continue;
 		}
 
 		/* indexed collection */
-		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)	
+		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
-			snprintfcat(string, size, "[%i]", path->Node[i] & 0x0000ffff);
+			snprintfcat(string, size, "[%u]", path->Node[i] & 0x0000ffff);
 			continue;
 		}
 
 		/* unnamed path components such as "ff860024" */
-		snprintfcat(string, size, "%08x", path->Node[i]); 
+		snprintfcat(string, size, "%08x", path->Node[i]);
 	}
 
 	return i;
 }
 
-/* usage conversion string -> numeric */
+/* usage conversion string -> numeric
+ * Returns -1 for error, or a (HIDNode_t) ranged code value
+ */
 static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 {
 	int i, j;
@@ -722,8 +1047,9 @@ static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 			if (strcasecmp(utab[i][j].usage_name, name))
 				continue;
 
-			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (unsigned int)utab[i][j].usage_code);
-			return utab[i][j].usage_code;
+			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
+			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (uint32_t)utab[i][j].usage_code);
+			return (long)(utab[i][j].usage_code);
 		}
 	}
 
@@ -813,7 +1139,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "SwitchOffControl",			0x00840051 },
 	{  "ToggleControl",			0x00840052 },
 	{  "LowVoltageTransfer",		0x00840053 },
-	{  "HighVoltageTransfer",		0x00840054 },	
+	{  "HighVoltageTransfer",		0x00840054 },
 	{  "DelayBeforeReboot",			0x00840055 },
 	{  "DelayBeforeStartup",		0x00840056 },
 	{  "DelayBeforeShutdown",		0x00840057 },
@@ -826,7 +1152,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "InternalFailure",			0x00840062 },
 	{  "VoltageOutOfRange",			0x00840063 },
 	{  "FrequencyOutOfRange",		0x00840064 },
-	{  "Overload",				0x00840065 }, 
+	{  "Overload",				0x00840065 },
 	/* Note: the correct spelling is "Overload", not "OverLoad",
 	 * according to the official specification, "Universal Serial
 	 * Bus Usage Tables for HID Power Devices", Release 1.0,

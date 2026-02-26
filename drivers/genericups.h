@@ -17,13 +17,18 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-struct {
+#ifndef NUT_GENERICUPS_H_SEEN
+#define NUT_GENERICUPS_H_SEEN 1
+
+static struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
 	const	char	*desc;			/* used in -h listing	*/
 	int	line_norm;
 	int	line_ol, val_ol;
 	int	line_bl, val_bl;
+	int	line_rb, val_rb;
+	int	line_bypass, val_bypass;
 	int	line_sd;
 }	upstab[] =
 {
@@ -34,6 +39,8 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
@@ -44,6 +51,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_RNG, 0,			/* online: RNG off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS 			/* shutdown: RTS		*/
 	},
 
@@ -54,9 +63,11 @@ struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR|TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
-	
+
 	/* Type 3 */
 	{ "PowerTech",
 	  "Comp1000",
@@ -64,6 +75,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -74,6 +87,8 @@ struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  0				/* shutdown: none		*/
 	},
 
@@ -84,6 +99,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -94,16 +111,20 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
 	/* Type 7 */
 	{ "CyberPower",
 	  "Power99",
-	  "CyberPower Power99", 
+	  "CyberPower Power99",
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: set DTR		*/
 	},
 
@@ -114,6 +135,8 @@ struct {
           TIOCM_DTR,			/* cable power: DTR		*/
           TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
           TIOCM_CD, 0,			/* low battery: CD off		*/
+          0, 0,				/* replace battery: none	*/
+          0, 0,				/* battery bypass: none		*/
           -1				/* shutdown: unknown		*/
         },
 
@@ -124,6 +147,8 @@ struct {
 	  0,				/* cable power: none		*/
 	  TIOCM_CD, 0,			/* online: CD off		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* low battery: CTS on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
@@ -134,6 +159,8 @@ struct {
 	  TIOCM_RTS,                    /* cable power: RTS             */
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on               */
 	  TIOCM_CD, 0,                  /* low battery: CD off          */
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR                     /* shutdown: DTR                */
 	},
 
@@ -144,6 +171,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST			*/
 	},
 
@@ -154,9 +183,11 @@ struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: raise DTR		*/
 	},
-	
+
 	/* Type 13 */
 	{ "RPT",
           "Repoteck",
@@ -164,6 +195,8 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CD, TIOCM_CD,		/* On-line : DCD on		*/
 	  TIOCM_CTS, 0,			/* Battery low: CTS off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: TX BREA		*/
 	},
 
@@ -174,6 +207,8 @@ struct {
 	   TIOCM_DTR,			/* cable power: DTR		*/
 	   TIOCM_CD, TIOCM_CD,		/* online: CD on		*/
 	   TIOCM_CTS, 0,		/* low battery: CTS off		*/
+	   0, 0,				/* replace battery: none	*/
+	   0, 0,				/* battery bypass: none		*/
 	   TIOCM_RTS			/* shutdown: raise RTS		*/
 	},
 
@@ -184,6 +219,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
@@ -194,6 +231,8 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: unknown		*/
 	},
 
@@ -204,6 +243,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: unknown		*/
 	},
 
@@ -214,6 +255,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CAR on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  -1				/* shutdown: none		*/
 	},
 
@@ -224,6 +267,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: DCD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
@@ -235,6 +280,8 @@ struct {
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
@@ -246,9 +293,11 @@ struct {
 	  TIOCM_RTS,                    /* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on		*/
 	  TIOCM_CD, 0,                  /* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
-	
+
 	/* Type 22 (duplicate from 7)*/
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",
@@ -256,7 +305,21 @@ struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  0, 0,				/* replace battery: none	*/
+	  0, 0,				/* battery bypass: none		*/
 	  TIOCM_DTR			/* shutdown: DTR		*/
+	},
+
+	/* Type 23 */
+	{ "Generic",
+	  "Generic FTTx Battery Backup",
+	  "FTTx (Fiber to the x) battery backup with 4-wire telemetry interface",
+	  TIOCM_RTS,			/* cable power: RTS		*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  TIOCM_RI, 0,			/* replace battery: RI off	*/
+	  TIOCM_DSR, 0,			/* battery bypass: DSR off	*/
+	  0				/* shutdown: none		*/
 	},
 
 	/* add any new entries directly above this line */
@@ -267,6 +330,10 @@ struct {
 	  0,
 	  0, 0,
 	  0, 0,
+	  0, 0,
+	  0, 0,
 	  0
 	}
 };
+
+#endif	/* NUT_GENERICUPS_H_SEEN */

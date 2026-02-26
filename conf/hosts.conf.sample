@@ -3,11 +3,27 @@
 # This file is used to control the CGI programs.  If you have not
 # installed them, you may safely ignore or delete this file.
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # -----------------------------------------------------------------------
 #
 # upsstats will use the list of MONITOR entries when displaying the
-# default template (upsstats.html).  The "FOREACHUPS" directive in the
-# template will use this file to find systems running upsd.
+# list template (default upsstats.html).  The "FOREACHUPS" directive
+# in the template will use this file to find systems running upsd.
+#
+# upsstats allows to use custom HTML template files for some of its
+# outputs (JSON and "treemode" mark-ups are currently hard-coded in
+# the binary), which you can specify in the query string part of the
+# URI (in your `index.html` and/or added cells of `header.html`) as e.g.
+#   .../cgi-bin/upsstats.cgi?template_single=upsstats-custom-single.html&template_list=upsstats-custom-list.html
+# Specific file names must be permitted below with `CUSTOM_TEMPLATE_LIST`
+# or `CUSTOM_TEMPLATE_SINGLE` directive, as applicable; they must contain
+# the `.htm` substring, and be located directly in the NUT configuration
+# directory (same as default templates). If custom templates are used
+# in the original request URI, they will be automatically suffixed to
+# generated links (primarily HOSTLINK, but also just in case added to
+# TREELINK and TREELINK_JSON).
 #
 # upsstats and upsimage also use this file to determine if a host may be
 # monitored.  This keeps evil people from using your system to annoy
@@ -22,8 +38,24 @@
 #
 # MONITOR <system> "<host description>"
 #
-# Examples: 
+# Examples:
 #
 # MONITOR myups@localhost "Local UPS"
 # MONITOR su2200@10.64.1.1 "Finance department"
 # MONITOR matrix@shs-server.example.edu "Sierra High School data room #1"
+
+# -----------------------------------------------------------------------
+#
+# Allowed custom template file (adapted copy of upsstats.html) for listing
+# your devices, which must be located in the same configuration directory
+# and contain `.htm` in the file name.
+#
+# CUSTOM_TEMPLATE_LIST <filename>
+
+# -----------------------------------------------------------------------
+#
+# Allowed custom template file (adapted copy of upsstats-single.html) for
+# listing details about a single device, which must be located in the same
+# configuration directory and contain `.htm` in the file name.
+#
+# CUSTOM_TEMPLATE_SINGLE <filename>

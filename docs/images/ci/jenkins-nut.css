@@ -1,0 +1,84 @@
+/* CSS originally based on ideas from
+ * https://medium.com/@elhayefrat/replace-jenkins-logo-and-text-to-your-choice-in-jenkinsui-f7d35daed25b
+ *
+ * Customized Jenkins+NUT logo derived from NUT resources and
+ * https://www.jenkins.io/images/logos/hyderabad/hyderabad256.png
+ * as published at https://www.jenkins.io/artwork/ collection
+ * under https://creativecommons.org/licenses/by-sa/3.0/ license
+ *
+ * DigitalOcean logo derived (resized to readable height in banner line)
+ * from https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.png
+ */
+
+/* Custom style for Jenkins */
+.logo img {
+content:url("/userContent/layout/jenkins-nut-transparent-bg.png");
+/*
+height: 40px;
+width: auto;
+*/
+object-fit: contain;
+}
+
+#jenkins-head-icon {
+display: none;
+width: 0px;
+}
+
+#jenkins-name-icon {
+display: none;
+width: 0px;
+}
+
+#jenkins-home-link {
+padding: 1px;
+background: url("/userContent/layout/jenkins-nut-transparent-bg-40px.png") no-repeat;
+height: 40px;
+width: 54px;
+object-fit: contain;
+}
+
+.logo:after {
+content: "NUT CI farm";
+font-weight: bold;
+font-size: 24px;
+/* font-family: "Brush Script MT", cursive; */
+margin-left: 20px;
+margin-right: 200px;
+color: Gold;
+line-height: 24px;
+}
+
+/* For Customizable Theme plugin: */
+.logo {
+background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
+  background-repeat: no-repeat;
+/*  background-attachment: fixed; */
+  background-position: right;
+  background-origin: content-box;
+  padding-right: 14px;
+  /* Glue to the search box, to hide DO logo plank color gap with background on the right side */
+}
+
+/* For Customizable Header plugin: */
+/* before Jul 2025 : .custom-header__title { */
+.jenkins-header__navigation {
+  background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
+  background-repeat: no-repeat;
+/*  background-attachment: fixed; */
+  background-position: right;
+  background-origin: content-box;
+/*  padding-right: 14px; */
+  /* Glue to the search box, to hide FH logo plank color gap with background on the right side */
+}
+
+/* Match/contrast color of DigitalOcean logo */
+.page-header {
+  background-color: #2a2a2a;
+}
+
+/*
+.page-footer__footer-id-placeholder {
+background: url("/userContent/layout/fosshost_org_Host_Dark_56px.png") no-repeat;
+}
+*/

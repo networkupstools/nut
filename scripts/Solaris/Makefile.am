@@ -1,17 +1,140 @@
-EXTRA_DIST = makelocal.sh 
+# Network UPS Tools: scripts/Solaris
 
-package: makelocal.sh pkginfo
-	$ cd @prefix@; $ find . -print | pkgproto > prototype1
-	$ cp makelocal.sh precheck.py pkginfo nut preinstall postinstall preremove postremove preproto.pl @prefix@ 
-	$ cd @prefix@; perl preproto.pl
-	$ cd @prefix@; python precheck.py	
-	$ cd @prefix@; rm -f prototype1	
-	$ cd @prefix@; ./makelocal.sh
-	$ cp @prefix@/*.gz $(srcdir)
-	if test `uname -p` = "i386"; then \
-		mv NUT_solaris_package.local.gz NUT_solaris_i386_package@PACKAGE_VERSION@.local.gz; \
-	else \
-		if test `uname -p` = "sparc"; then \
-			mv NUT_solaris_package.local.gz NUT_solaris_sparc_package@PACKAGE_VERSION@.local.gz; \
-		fi; \
-	fi;
+EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
+PROTOTYPE_DIR = $(DESTDIR)@prefix@
+SOLARIS_CHECK_TARGETS =
+PYTHON_DEFAULT = @PYTHON_DEFAULT@
+
+SOLARIS_SMF_MANIFESTS = \
+	nut.xml \
+	nut-server.xml \
+	nut-logger.xml \
+	nut-monitor.xml \
+	nut-driver.xml \
+	nut-driver-enumerator.xml
+
+SOLARIS_SMF_METHODSCRIPTS = \
+	svc-nut-server \
+	svc-nut-logger \
+	svc-nut-monitor
+
+if WITH_SOLARIS_SMF
+# OS equivalent of /lib/svc/method and /var/svc/manifest/application
+# but we can just use then from this location
+solarissmfmethoddir = @datadir@/solaris-smf/method
+solarissmfmanifestdir = @datadir@/solaris-smf/manifest
+solarissmfmethod_SCRIPTS = $(SOLARIS_SMF_METHODSCRIPTS)
+solarissmfmanifest_DATA = $(SOLARIS_SMF_MANIFESTS)
+
+libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
+
+sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
+
+SOLARIS_CHECK_TARGETS += check-local-solaris-smf
+endif
+
+if WITH_SOLARIS_INIT
+solarisinitscriptdir = @datadir@/solaris-init
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+endif
+
+EXTRA_DIST += reset-ups-usb-solaris.sh.sample
+
+SOLARIS_PACKAGE_TARGETS =
+
+if WITH_SOLARIS_PKG_IPS
+SOLARIS_PACKAGE_TARGETS += package-solaris-ips
+endif
+
+if WITH_SOLARIS_PKG_SVR4
+SOLARIS_PACKAGE_TARGETS += package-solaris-svr4
+endif
+
+package: $(SOLARIS_PACKAGE_TARGETS)
+
+# TODO: Reduce build dependencies (implicit!) on python and perl
+#       by shelling the scripts used below
+# NOTE: This assumes the rest of the product has already been built
+#       and installed under PROTOTYPE_DIR, but declares no explicit
+#       dependency on that
+SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS = makelocal.sh precheck.py preproto.pl
+SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove
+SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
+package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
+	ISANAME=''; case x"$(target_cpu)" in \
+		xi386|xsparc|xsparcv7|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
+		xx86_64)	ISANAME='amd64' ;; \
+		xi686)	ISANAME='i386' ;; \
+		x) UNAME_P="`uname -p`" && ISANAME="$${UNAME_P}" ;; \
+	esac ; \
+	ISABITS=32; case x"$${ISANAME}" in \
+		xi386|xsparcv7)	ISABITS=32 ;; \
+		xsparcv9|xamd64)	ISABITS=64 ;; \
+		xsparc) case "`(file server/upsd || file server/.libs/upsd) 2>/dev/null`" in \
+			*32-bit*)	ISABITS=32 ;; \
+			*64-bit*)	ISABITS=64 ;; \
+			esac ;; \
+		x*) echo "WARNING: Unexpected ISANAME='$${ISANAME}'" >&2 ;; \
+	esac; \
+	case x"$${ISABITS}" in \
+		x32)	ISA_PKGNAME="NUT" ;; \
+		x64)	ISA_PKGNAME="NUTx" ;; \
+	esac; \
+	sed -e 's/^PKG="[^"][^"]*"$$/PKG="'"$${ISA_PKGNAME}"'"/' -i $(builddir)/pkginfo || exit ; \
+	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
+		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
+		( cd "$(DESTDIR)@auglensdir@" && \
+		  ( cp -prf ./ "$(DESTDIR)@datadir@/augeas-lenses/" || cp -rf ./ "$(DESTDIR)@datadir@/augeas-lenses/" ) ) || exit ; \
+	fi ; \
+	( cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1 ) || exit ; \
+	cp $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA) $(PROTOTYPE_DIR) || exit ; \
+	( cd $(PROTOTYPE_DIR) && chmod +x $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) ) || exit ; \
+	( cd $(PROTOTYPE_DIR) && perl preproto.pl ) || exit ; \
+	if test -n '$(PYTHON_DEFAULT)' ; then \
+		( cd $(PROTOTYPE_DIR) && $(PYTHON_DEFAULT) precheck.py ) || exit ; \
+	fi ; \
+	( cd $(PROTOTYPE_DIR) && rm -f prototype1 ) || exit ; \
+	( cd $(PROTOTYPE_DIR) && ./makelocal.sh ) || exit ; \
+	cp $(PROTOTYPE_DIR)/*.gz $(builddir) || exit ; \
+	if [ -n "$${ISANAME}" ] ; then \
+		mv -f NUT*_solaris_package.local.gz "$(abs_top_builddir)/$${ISA_PKGNAME}_solaris_$${ISANAME}_package-@PACKAGE_VERSION@.local.gz" || exit ; \
+	fi
+
+# TODO: Define support for IPS packaging (provide p5m files and make rules)
+package-solaris-ips:
+	@echo "  SKIP	$@ : Target is not implemented yet"
+
+check-local: $(SOLARIS_CHECK_TARGETS)
+
+check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
+	@[ -x /usr/sbin/svccfg ] || { echo "WARNING : Target $@ skipped due to absent /usr/sbin/svccfg" >&2; return 0; } ; \
+	 RES=0 ; for F in $? ; do \
+	    echo "  SVCCFG-VALIDATE	$$F"; \
+	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
+	 done; exit $$RES
+
+SPELLCHECK_SRC = README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
+# We also have to export some variables that may be tainted by relative
+# paths when parsing the other makefile (e.g. MKDIR_P that may be defined
+# via expanded $(top_builddir)/install-sh):
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
+#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked: @dotMAKE@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked: @dotMAKE@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
+	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

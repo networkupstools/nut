@@ -20,7 +20,7 @@
  * NOTE:
  * This subdriver implements the same protocol as the one used by the 'megatec' subdriver minus the vendor (I) and ratings (F) queries.
  * In the claim function:
- * - it doesn't even try to get 'vendor' informations (I)
+ * - it doesn't even try to get 'vendor' information (I)
  * - it checks only status (Q1), through 'input.voltage' variable
  * Therefore it should be able to work even if the UPS doesn't support vendor/ratings *and* the user doesn't use the 'novendor'/'norating' flags, as long as:
  * - the UPS replies a Q1-compliant answer (i.e. not necessary filled with all of the Q1-required data, but at least of the right length and with not available data filled with some replacement character)
@@ -35,7 +35,7 @@
 
 #include "nutdrv_qx_q1.h"
 
-#define Q1_VERSION "Q1 0.07"
+#define Q1_VERSION "Q1 0.08"
 
 /* qx2nut lookup table */
 static item_t	q1_qx2nut[] = {
@@ -52,7 +52,7 @@ static item_t	q1_qx2nut[] = {
 	{ "output.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Utility Fail (Immediate) */

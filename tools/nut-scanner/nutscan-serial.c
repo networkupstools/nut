@@ -22,21 +22,27 @@
     \author Arnaud Quette <arnaud.quette@free.fr>
 */
 
+#include "config.h"	/* must be the first header */
+
 #include "nutscan-serial.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "nut_platform.h"
+#include "common.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
 #define SERIAL_PORT_PREFIX "COM"
-#else
+#else	/* !WIN32 */
 /* Unix: all serial port names start with "/dev/tty" */
 #define SERIAL_PORT_PREFIX "/dev/tty"
-#endif
+#endif	/* !WIN32 */
 
-#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)\n"
+#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)"
 
 typedef struct {
 	char * name;
@@ -44,7 +50,7 @@ typedef struct {
 	char auto_stop_port;
 } device_portname_t;
 
-device_portname_t device_portname[] = {
+static device_portname_t device_portname[] = {
 #ifdef NUT_PLATFORM_HPUX
 	/* the first number seems to be a card instance, the second number seems
 	to be a port number */
@@ -55,6 +61,8 @@ device_portname_t device_portname[] = {
 #endif
 #ifdef NUT_PLATFORM_SOLARIS
 	{ "/dev/tty%c", 'a', 'z' },
+	{ "/dev/cua/%c", 'a', 'z' },
+	{ "/dev/cua%c", '0', '9' },
 #endif
 #ifdef NUT_PLATFORM_AIX
 	{ "/dev/tty%c", '0', '9' },
@@ -62,6 +70,13 @@ device_portname_t device_portname[] = {
 #ifdef NUT_PLATFORM_LINUX
 	{ "/dev/ttyS%c", '0', '9' },
 	{ "/dev/ttyUSB%c", '0', '9' },
+	{ "/dev/cua%c", '0', '9' },
+#endif
+#ifdef NUT_PLATFORM_OPENBSD
+	{ "/dev/cua0%c", '0', '9' },
+	{ "/dev/cua0%c", 'a', 'f' },
+	{ "/dev/cuac%c", '0', '7' },
+	{ "/dev/cuaU%c", '0', '3' },
 #endif
 #ifdef NUT_PLATFORM_MS_WINDOWS
 	{ "COM%c",  '1', '9'},
@@ -70,7 +85,7 @@ device_portname_t device_portname[] = {
 	/*      { "/dev/ttyd%i", "=" }, */
 	/*      { "/dev/ttyf%i", "=" }, */
 	/* FIXME: Mac OS X has no serial port, but maybe ttyUSB? */
-	{ NULL, 0 }
+	{ NULL, 0, 0 }
 };
 
 /* Return 1 if port_name is a full path name to a serial port,
@@ -87,25 +102,26 @@ static int is_serial_port_path(const char * port_name)
 static char ** add_port(char ** list, char * port)
 {
 	char ** res;
-	int count = 0;
+	size_t count = 0;
 
-	if(list == NULL) {
+	if (list == NULL) {
 		count = 0;
 	}
 	else {
-		while(list[count] != NULL) {
+		while (list[count] != NULL) {
 			count++;
 		}
 	}
 
 	/*+1 to get the number of port from the index nb_ports*/
 	/*+1 for the terminal NULL */
-	res = realloc(list,(count+1+1)*sizeof(char*));
-	if( res == NULL ) {
-		return NULL;
+	res = (char**)realloc(list, sizeof(char*) * (count + 1 + 1));
+	if (res == NULL) {
+		upsdebugx(0, "%s: Failed to realloc port list", __func__);
+		return list;
 	}
 	res[count] = strdup(port);
-	res[count+1] = NULL;
+	res[count + 1] = NULL;
 
 	return res;
 }
@@ -135,19 +151,19 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		/* we have a list:
 		 * - single element: X (digit) or port name (COM1, /dev/ttyS0, ...)
 		 * - range list: X-Y
-		 * - multiple elements (coma separated): /dev/ttyS0,/dev/ttyUSB0 */
-		if ( (list_sep_ptr = strchr(range, '-')) != NULL ) {
-			tok = strtok_r(range,"-",&saveptr);
-			if( tok[1] != 0 ) {
-				fprintf(stderr,ERR_OUT_OF_BOUND);
+		 * - multiple elements (comma separated): /dev/ttyS0,/dev/ttyUSB0 */
+		if ((list_sep_ptr = strchr(range, '-')) != NULL) {
+			tok = strtok_r(range, "-", &saveptr);
+			if (tok[1] != 0) {
+				upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 				free(range);
 				return NULL;
 			}
 			start_port = tok[0];
-			tok = strtok_r(NULL,"-",&saveptr);
-			if( tok != NULL ) {
-				if( tok[1] != 0 ) {
-					fprintf(stderr,ERR_OUT_OF_BOUND);
+			tok = strtok_r(NULL, "-", &saveptr);
+			if (tok != NULL) {
+				if (tok[1] != 0) {
+					upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 					free(range);
 					return NULL;
 				}
@@ -157,19 +173,20 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 				stop_port = start_port;
 			}
 		}
-		else if ( ((list_sep_ptr = strchr(ports_range, ',')) != NULL )
-				&& (is_serial_port_path(ports_range)) ) {
-			tok = strtok_r(range,",",&saveptr);
-			while( tok != NULL ) {
-				ports_list = add_port(ports_list,tok);
-				tok = strtok_r(NULL,",",&saveptr);
+		else if (((list_sep_ptr = strchr(ports_range, ',')) != NULL)
+				&& (is_serial_port_path(ports_range))
+		) {
+			tok = strtok_r(range, ",", &saveptr);
+			while (tok != NULL) {
+				ports_list = add_port(ports_list, tok);
+				tok = strtok_r(NULL, ",", &saveptr);
 			}
 		}
 		else {
 			/* we have been provided a single port name */
 			/* it's a full device name */
-			if( ports_range[1] != 0 ) {
-				ports_list = add_port(ports_list,range);
+			if (ports_range[1] != 0) {
+				ports_list = add_port(ports_list, range);
 			}
 			/* it's device number */
 			else {
@@ -179,23 +196,24 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		free(range);
 	}
 
-
-	if( start_port == 0 && !flag_auto) {
+	if (start_port == 0 && !flag_auto) {
 		return ports_list;
 	}
 
-	for (cur_device=device_portname;cur_device->name!= NULL;cur_device++) {
-		if( flag_auto ) {
+	for (cur_device = device_portname; cur_device->name != NULL; cur_device++) {
+		if (flag_auto) {
 			start_port = cur_device->auto_start_port;
 			stop_port = cur_device->auto_stop_port;
 		}
-		for( current_port=start_port; current_port <= stop_port;
-				current_port++){
-			snprintf(str_tmp, sizeof(str_tmp),cur_device->name,
-					current_port);
-			ports_list = add_port(ports_list,str_tmp);
+		for (current_port = start_port; current_port <= stop_port;
+				current_port++) {
+			/* We actually have a format string in the name,
+			 * see the device_portname[] definition above */
+			snprintf_dynamic(str_tmp, sizeof(str_tmp), cur_device->name,
+					"%c", current_port);
+
+			ports_list = add_port(ports_list, str_tmp);
 		}
 	}
 	return ports_list;
 }
-

@@ -1,0 +1,200 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+# You may wish to alter this file to override the set of languages analyzed,
+# or to provide custom queries or build logic.
+#
+# ******** NOTE ********
+# We have attempted to detect the languages in your repository. Please check
+# the `language` matrix defined below to confirm you have the correct set of
+# supported CodeQL languages.
+#
+name: "GHA-05: CodeQL"
+
+on:
+  push:
+    branches: [ "master", "FTY", "fightwarn" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "master", "FTY", "fightwarn" ]
+  schedule:
+    - cron: '32 12 * * 0'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ${{ matrix.os }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
+        language: [ 'cpp' ]
+          # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+          # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
+        os: [ 'ubuntu-latest' ]
+          # TOTHINK: windows-latest, macos-latest?
+        build-mode: [ 'manual' ]
+          # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+          # Abusing "manual" here to try building with ccache (and
+          # have codeql not intercept that build but parse C/C++
+          # files on its own), and "manual" to custom-build without;
+          # the "autobuild" mode is handled by codeql itself but
+          # would probably ignore our CC/CXX setting
+          # NOTE: We do not add ccache to PATH when actually compiling NUT code
+          # (we only speed up "configure" stages), so compilation always happens
+          # and is parsed by current CodeQL detectors of the day as they evolve!
+        compiler: [ 'CC=gcc CXX=g++', 'CC=clang CXX=clang++' ]
+        NUT_SSL_VARIANTS: [ 'no', 'nss', 'openssl' ]
+        NUT_USB_VARIANTS: [ 'no', 'libusb-1.0', 'libusb-0.1' ]
+        include:
+          # Add complete new cell(s) to the matrix, separately
+          # from the combinatorics dynamically made above
+          - language: 'python'
+            os: 'ubuntu-latest'
+            compiler: 'PYTHON=python3'
+            build-mode: 'none'
+            NUT_SSL_VARIANTS: 'no'
+            NUT_USB_VARIANTS: 'no'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+
+        # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+        config-file: ./.github/codeql/codeql-config.yml
+
+    # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
+    - if: matrix.language == 'cpp' && matrix.os == 'ubuntu-latest'
+      name: NUT CI Prerequisite packages (Ubuntu)
+      run: |
+        echo "set man-db/auto-update false" | sudo debconf-communicate
+        sudo dpkg-reconfigure man-db
+        sudo apt update
+        case x"${{matrix.compiler}}" in x*clang*) sudo apt install clang ;; x*) sudo apt install gcc g++ ;; esac
+        sudo apt install libltdl-dev libtool libtool-bin cppcheck ccache libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev libglib2.0-dev libneon27-dev libi2c-dev i2c-tools lm-sensors ccache
+        date > .timestamp-init
+
+    - name: Prepare ccache
+      # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
+      id: cache-ccache
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.timestamp-init') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: CCache stats before build
+      run: |
+        ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+        rm -f .timestamp-init
+
+    # Make build identification more useful (no fallbacks)
+    #- name: Try to get more Git metadata
+    #  run: |
+    #    git remote -v || true
+    #    git branch -a || true
+    #    for R in `git remote` ; do git fetch $R master ; done || true
+    #    git fetch --tags
+
+    #- name: Debug gitlog2version processing
+    #  run: bash -x ./tools/gitlog2version.sh || true
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the (whole) list here with "+" to use these queries and those in the config file.
+        # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        queries: +security-extended,security-and-quality
+        config-file: ./.github/codeql/codeql-config.yml
+
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
+    # If this step fails, then you should remove it and run the build manually (see below)
+    # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+    - if: matrix.build-mode == 'autobuild'
+      name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+    #  name: NUT CI Build (default-all-errors matrix)
+    #  run: |
+    #    BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
+
+    #- if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+    #  name: NUT CI Build (fightwarn-all)
+    #  run: |
+    #    BUILD_TYPE=fightwarn-all ./ci_build.sh
+
+    # TOTHINK: Can we prepare the working area once (apt, autogen => containers?)
+    # and then spread it out for builds and analyses?
+    # Can ccache be used across builds?
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+      name: NUT CI Build Configuration
+      run: |
+        case x"${{matrix.build-mode}}" in
+        xmanual)
+            PATH="/usr/lib/ccache:$PATH" ; export PATH
+            CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+            ccache --version || true
+            ;;
+        xnone|*)
+            echo "NOTE: NOT USING CCACHE for the CI-tested code base configuration" >&2
+            ;;
+        esac
+        ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        ./autogen.sh && \
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
+
+    # NOTE: We do not add ccache to PATH here, so compilation always happens
+    # and is parsed by current CodeQL detectors of the day as they evolve:
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+      name: NUT CI Build Compilation
+      run: |
+        echo "NOTE: NOT USING CCACHE for the CI-tested code base compilation" >&2
+        ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 || exit
+
+    # NOTE: Assuming GNU make here, not limiting "-j NUM" runners
+    - if: matrix.build-mode != 'autobuild' && matrix.language == 'cpp'
+      name: NUT CI Build to verify parallel build recipes in subdirs
+      run: make -s -j check-parallel-builds || exit
+
+    - name: CCache stats after build
+      run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"

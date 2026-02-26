@@ -2,7 +2,7 @@ Desc: Repotec 800A (800VA) & 162A (1600VA) cable
 File: repotec.txt
 Date: 11 April 2001
 Auth: Theodor Milkov <zimage@delbg.com>
-                                                                                
+
 
 PC                      UPS
 
@@ -11,9 +11,9 @@ PC                      UPS
              R 5.6k
              |
 7 (RTS) >----+
-  
+
 3 (Tx)  >--------------- 6
-       
+
 4 (DTR) <----+---------- 5
              |
              R 5.6k
@@ -23,4 +23,3 @@ PC                      UPS
 5 (GND) -------------+-- 4
                      |
                      +-- 7
-

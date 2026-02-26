@@ -6,15 +6,20 @@ NAME
 
 isbmex - Driver for ISBMEX UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*isbmex* -h
+
+*isbmex* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 isbmex driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports SOLA/BASIC Mexico ISBMEX protocol UPS equipment.
 
 EXTRA ARGUMENTS
@@ -25,6 +30,7 @@ linkman:ups.conf[5].
 
 AUTHOR
 ------
+
 Edscott Wilson Garcia <edscott@imp.mx>
 
 SEE ALSO
@@ -32,8 +38,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

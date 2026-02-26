@@ -65,13 +65,17 @@
  * :C     -- fetches result of a self-test
  * :K1    -- turns on power receptacles
  * :K0    -- turns off power receptacles
+ * :K3    -- turns on bank 1 receptacle(s)
+ * :K2    -- turns off bank 1 receptacle(s)
+ * :K5    -- turns on bank 2 receptacle(s)
+ * :K4    -- turns off bank 2 receptacle(s)
  * :G     -- unconfirmed: shuts down UPS until power returns
  * :Q1    -- enable "Remote Reboot"
  * :Q0    -- disable "Remote Reboot"
  * :W     -- returns 'W' data
  * :L     -- returns 'L' data
  * :V     -- returns 'V' data (firmware revision)
- * :X     -- returns 'X' data (firmware revision)
+ * :X     -- returns 'X' data (firmware checksum)
  * :D     -- returns general status data
  * :B     -- returns battery voltage (hexadecimal decivolts)
  * :I     -- returns minimum input voltage (hexadecimal hertz)
@@ -108,11 +112,12 @@
 #include "main.h"
 #include "serial.h"
 #include "tripplite.h"
-#include <math.h>
+#include "nut_stdint.h"
+#include "nut_float.h"
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.91"
+#define DRIVER_VERSION	"0.99"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -130,7 +135,7 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
-static int hex2d(char *start, unsigned int len)
+static long hex2d(char *start, unsigned int len)
 {
 	char buf[32];
 
@@ -146,16 +151,16 @@ static int hex2d(char *start, unsigned int len)
  * very clean.
  *
  * return: # of chars in buf, excluding terminating \0 */
-static int send_cmd(const char *str, char *buf, size_t len)
+static ssize_t send_cmd(const char *str, char *buf, size_t len)
 {
-	unsigned char c;
-	int ret = 0;
-	size_t i = 0;
+	char c;
+	ssize_t ret = 0;
+	ssize_t i = 0;
 
 	ser_flush_io(upsfd);
 	ser_send(upsfd, "%s", str);
 
-	if (!len || !buf)
+	if (!len || !buf || len > SSIZE_MAX)
 		return -1;
 
 	for (;;) {
@@ -173,14 +178,15 @@ static int send_cmd(const char *str, char *buf, size_t len)
 		if (c == IGNCHAR || c == ENDCHAR)
 			continue;
 		buf[i++] = c;
-	} while (c != ENDCHAR && i < len);
+	} while (c != ENDCHAR && i < (int)len);
 	buf[i] = '\0';
 	return i;
 }
 
 static void get_letter_cmd(const char *str, char *buf, size_t len)
 {
-	int tries, ret;
+	int tries;
+	ssize_t ret;
 
 	for (tries = 0; tries < MAXTRIES; ++tries) {
 		ret = send_cmd(str, buf, len);
@@ -190,7 +196,7 @@ static void get_letter_cmd(const char *str, char *buf, size_t len)
 	fatalx(EXIT_FAILURE, "\nFailed to find UPS - giving up...");
 }
 
-static int do_reboot_now(void)
+static ssize_t do_reboot_now(void)
 {
 	char buf[256], cmd[16];
 
@@ -207,7 +213,7 @@ static void do_reboot(void)
 	do_reboot_now();
 }
 
-static int soft_shutdown(void)
+static ssize_t soft_shutdown(void)
 {
 	char buf[256], cmd[16];
 
@@ -216,7 +222,7 @@ static int soft_shutdown(void)
 	return send_cmd(":G\r", buf, sizeof buf);
 }
 
-static int hard_shutdown(void)
+static ssize_t hard_shutdown(void)
 {
 	char buf[256], cmd[16];
 
@@ -229,56 +235,97 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	char buf[256];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":A\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K0\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
+	if (!strcasecmp(cmdname, "outlet.1.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		send_cmd(":K2\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.1.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		send_cmd(":K3\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.2.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		send_cmd(":K4\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
+	if (!strcasecmp(cmdname, "outlet.2.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		send_cmd(":K5\r", buf, sizeof buf);
+		return STAT_INSTCMD_HANDLED;
+	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
-		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			offdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.start")) {
-		startdelay = atoi(val);
-		dstate_setinfo("ups.delay.start", "%d", startdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			startdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.start", "%u", startdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.reboot")) {
-		bootdelay = atoi(val);
-		dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			bootdelay = (unsigned int)ipv;
+		dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 		return STAT_SET_HANDLED;
 	}
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -286,8 +333,8 @@ void upsdrv_initinfo(void)
 {
 	const char *model;
 	char w_value[16], l_value[16], v_value[16], x_value[16];
-	int  va;
-	long w, l;
+	int  gen, plugs;
+	long w, l, va;
 
 	get_letter_cmd(":W\r", w_value, sizeof w_value);
 	get_letter_cmd(":L\r", l_value, sizeof l_value);
@@ -299,25 +346,28 @@ void upsdrv_initinfo(void)
 	w = hex2d(w_value, 2);
 	l = hex2d(l_value, 2);
 
-	model = "Smart %d";
+	model = "Smart";
 	if (w & 0x40)
-		model = "Unison %d";
+		model = "Unison";
 
 	va = ((w & 0x3f) * 32 + (l >> 3)) * 5;  /* New formula */
 	if (!(w & 0x80))
 		va = l / 2;   /* Old formula */
 
-	dstate_setinfo("ups.model", model, va);
-	dstate_setinfo("ups.firmware", "%c%c",
-			'A'+v_value[0]-'0', 'A'+v_value[1]-'0');
+	gen = 1 + (!(x_value[0] & 0x07) * !(x_value[1] & 0x07));
+	plugs = x_value[0] - !!(x_value[1] >> 3) * 8;
 
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.model", "%s %ld", model, va);
+	dstate_setinfo("ups.firmware", "%c%c (Gen %d)",
+			'A'+v_value[0]-'0', 'A'+v_value[1]-'0', gen);
+
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
-	dstate_setinfo("ups.delay.start", "%d", startdelay);
+	dstate_setinfo("ups.delay.start", "%u", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
-	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 
@@ -329,6 +379,15 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 
+	if (plugs > 1) {
+		dstate_addcmd("outlet.1.load.off");
+		dstate_addcmd("outlet.1.load.on");
+		if (plugs > 2) {
+			dstate_addcmd("outlet.2.load.off");
+			dstate_addcmd("outlet.2.load.on");
+		}
+	}
+
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
@@ -338,14 +397,21 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_updateinfo(void)
 {
 	static int numfails;
 	char buf[256];
-	int bp, volt, temp, load, vmax, vmin, stest, len;
+	int bp, temp;
+	ssize_t len;
+	long volt, load, vmax, vmin, stest;
 	int bcond, lstate, tstate, mode;
 	float bv, freq;
 
@@ -353,7 +419,7 @@ void upsdrv_updateinfo(void)
 	if (len != 21) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Data command failed: [%d] bytes != 21 bytes.", len);
+			ser_comm_fail("Data command failed: [%" PRIiSIZE "] bytes != 21 bytes.", len);
 			dstate_datastale();
 		}
 		return;
@@ -373,7 +439,7 @@ void upsdrv_updateinfo(void)
 			freq > FREQ_MAX || freq < FREQ_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Data out of bounds: [%0d,%3d,%3d,%02.2f]",
+			ser_comm_fail("Data out of bounds: [%0ld,%3d,%3ld,%02.2f]",
 					volt, temp, load, freq);
 			dstate_datastale();
 		}
@@ -381,7 +447,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	send_cmd(":B\r", buf, sizeof buf);
-	bv = (float)hex2d(buf, 2) / 10.0;
+	bv = (float)(hex2d(buf, 2)) / 10.0;
 	if (bv > 50.0 || bv < 0.0) {
 		++numfails;
 		if (numfails > MAXTRIES) {
@@ -396,7 +462,7 @@ void upsdrv_updateinfo(void)
 	if (vmax > INVOLT_MAX || vmax < INVOLT_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("InVoltMax out of bounds: [%d]", vmax);
+			ser_comm_fail("InVoltMax out of bounds: [%ld]", vmax);
 			dstate_datastale();
 		}
 		return;
@@ -407,7 +473,7 @@ void upsdrv_updateinfo(void)
 	if (vmin > INVOLT_MAX || vmin < INVOLT_MIN) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("InVoltMin out of bounds: [%d]", vmin);
+			ser_comm_fail("InVoltMin out of bounds: [%ld]", vmin);
 			dstate_datastale();
 		}
 		return;
@@ -419,7 +485,7 @@ void upsdrv_updateinfo(void)
 	if (errno == ERANGE) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Self test is out of range: [%d]", stest);
+			ser_comm_fail("Self test is out of range: [%ld]", stest);
 			dstate_datastale();
 		}
 		return;
@@ -435,7 +501,7 @@ void upsdrv_updateinfo(void)
 	if (stest > 3 || stest < 0) {
 		++numfails;
 		if (numfails > MAXTRIES) {
-			ser_comm_fail("Self test out of bounds: [%d]", stest);
+			ser_comm_fail("Self test out of bounds: [%ld]", stest);
 			dstate_datastale();
 		}
 		return;
@@ -444,9 +510,9 @@ void upsdrv_updateinfo(void)
 	/* We've successfully gathered all the data for an update. */
 	numfails = 0;
 
-	dstate_setinfo("input.voltage", "%0d", volt);
+	dstate_setinfo("input.voltage", "%0ld", volt);
 	dstate_setinfo("ups.temperature", "%3d", temp);
-	dstate_setinfo("ups.load", "%3d", load);
+	dstate_setinfo("ups.load", "%3ld", load);
 	dstate_setinfo("input.frequency", "%02.2f", freq);
 
 	status_init();
@@ -524,8 +590,8 @@ void upsdrv_updateinfo(void)
 
 	dstate_setinfo("battery.voltage", "%.1f", bv);
 	dstate_setinfo("battery.charge",  "%3d", bp);
-	dstate_setinfo("input.voltage.maximum", "%d", vmax);
-	dstate_setinfo("input.voltage.minimum", "%d", vmin);
+	dstate_setinfo("input.voltage.maximum", "%ld", vmax);
+	dstate_setinfo("input.voltage.minimum", "%ld", vmin);
 
 	switch (stest) {
 		case 0:
@@ -553,6 +619,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 	char msg[256];
@@ -570,15 +641,26 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char	*val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
-	if (getval("offdelay"))
-		offdelay = atoi(getval("offdelay"));
-	if (getval("startdelay"))
-		startdelay = atoi(getval("startdelay"));
-	if (getval("rebootdelay"))
-		bootdelay = atoi(getval("rebootdelay"));
+	if ((val = getval("offdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			offdelay = (unsigned int)ipv;
+	}
+	if ((val = getval("startdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			startdelay = (unsigned int)ipv;
+	}
+	if ((val = getval("rebootdelay"))) {
+		int ipv = atoi(val);
+		if (ipv >= 0)
+			bootdelay = (unsigned int)ipv;
+	}
 }
 
 void upsdrv_cleanup(void)

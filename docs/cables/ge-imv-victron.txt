@@ -25,7 +25,7 @@ Data cable 2 for UPS:
 
 
 Driver: victronups (newvictronups)
-                                
+
 UPS         PC  9 pin  connector
 2 --------- 3
 3 --------- 2
@@ -39,13 +39,13 @@ UPS         PC  9 pin  connector
 Crack cable: for UPS
 
   Victron Lite (no IMV Victron Match Lite)
-   
+
 
 Driver: genericsups
 
 UPS          PC 9 pin connector
 1 ---------- 4 DTR
-7 ---------- 1 DCD ----------+ 
+7 ---------- 1 DCD ----------+
 9 ---------- 8 CTS -----+    |
 5 ---------- 5 GND      |    |
                         |    |
@@ -56,4 +56,4 @@ UPS          PC 9 pin connector
 ----------------------------------------------
 GE is General Electric Company.
 
-On July 31, 2001, the General Electric Company,  acquisited  IMV (Victron) company.
+On July 31, 2001, the General Electric Company, acquired IMV (Victron) company.

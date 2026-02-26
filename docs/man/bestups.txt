@@ -6,24 +6,43 @@ NAME
 
 bestups - Driver for Best Power / SOLA (Phoenixtec protocol) UPS equipment
 
+SYNOPSIS
+--------
+
+*bestups* -h
+
+*bestups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+bestups driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
 NOTE
 ----
 
-This man page only documents the hardware-specific features of the
-bestups driver.  For information about the core driver, see  
-linkman:nutupsdrv[8].
+Please note that this driver is deprecated and will not receive
+new development. If it works for managing your devices -- fine,
+but if you are running it to try setting up a new device, please
+consider the newer linkman:nutdrv_qx[8] instead, which should
+handle all 'Q*' protocol variants for NUT.
+
+If your device works with this driver, but does not work with
+linkman:nutdrv_qx[8], please report this via the mailing list or issue
+tracker.
 
 SUPPORTED HARDWARE
 ------------------
+
 *bestups* was designed to monitor Best Power UPS hardware like the Fortress,
 Fortress Telecom, Axxium Rackmount and Patriot Pro.  It also recognizes
-and supports SOLA units such as the 325, 520 and 620.  In addition, the 
+and supports SOLA units such as the 325, 520 and 620.  In addition, the
 Best 610 is supported using the `ID' option.
 
 Other UPS hardware using the Phoenixtec protocol should also work, but
 they will generate a warning since their battery information is not known.
 
-This driver does not support some older Best/SOLA units.
+This driver does not support some older Best/SOLA units.  (For older
+Fortress units, see linkman:bestfortress[8].)
 
 EXTRA ARGUMENTS
 ---------------
@@ -49,36 +68,36 @@ report only a fraction of the total battery voltage.
 +
 For example, the SOLA 610 700VA UPS (with a 24V battery) reports the
 single cell voltage (about 2.27V when fully charged). In this particular
-case you can set `battvoltmult = 12` in linkman:ups.conf[8] to fix this.
+case you can set `battvoltmult = 12` in linkman:ups.conf[5] to fix this.
 
 *ID=*'string'::
 
 Set the Identification response string.  This should only be used
-with hardware that supports the Phoenixtec protocol status inquiry 
-commands, but not the "ID" command, such as the Best/SOLA 610.  Format 
+with hardware that supports the Phoenixtec protocol status inquiry
+commands, but not the "ID" command, such as the Best/SOLA 610.  Format
 of the ID string is: AAA,BBBB,CCC,DDD,EE.E,FF.F
 +
 AAA is the three-character identification for the UPS model.
 +
-BBBB is the output power in VA (volt amperes). B is an integer number 
+BBBB is the output power in VA (volt amperes). B is an integer number
 ranging from 0 to 9.
 +
-CCC is the Nominal Input Voltage. C is an integer number ranging from 0 
+CCC is the Nominal Input Voltage. C is an integer number ranging from 0
 to 9. The unit is Volts AC.
 +
-DDD is the Nominal Output Voltage. D is an integer number ranging from 0 
+DDD is the Nominal Output Voltage. D is an integer number ranging from 0
 to 9. The unit is Volts AC.
 +
-EE.E is the Battery Voltage that will cause the UPS to shut itself off. 
-E is an integer number ranging from 0 to 9. Then unit is Volts DC and a 
+EE.E is the Battery Voltage that will cause the UPS to shut itself off.
+E is an integer number ranging from 0 to 9. Then unit is Volts DC and a
 decimal point is present.
 +
-FF.F or FFF.F is the Battery Voltage at full charge. F is an integer 
-number ranging from 0 to 9. Then unit is Volts DC. Typically, for 700VA, 
-1KVA and 1.5KVA units, the format is FF.F. For 2KVA and 3KVA units, the 
+FF.F or FFF.F is the Battery Voltage at full charge. F is an integer
+number ranging from 0 to 9. Then unit is Volts DC. Typically, for 700VA,
+1KVA and 1.5KVA units, the format is FF.F. For 2KVA and 3KVA units, the
 format is FFF.F.
 +
-Example: a Best 610 1.5KVA unit would use the string 
+Example: a Best 610 1.5KVA unit would use the string
 "610,1500,120,120,10.0,48.0".
 
 BUGS
@@ -89,29 +108,33 @@ the voltage data that the UPS returns, since the UPS doesn't return that
 value directly.  On some hardware, the charge will remain at 100% for a
 long time and then drops quickly shortly before the battery runs out.
 You can confirm from the `battery.voltage` readings that this is a problem
-with the UPS and not this driver. 
+with the UPS and not this driver.
 
 Similarly, the float from the charger in some models forces the battery
-charge percentage back up to 100% immedately after the UPS goes back
+charge percentage back up to 100% immediately after the UPS goes back
 on-line, so you can't tell when it is really recharged.
 
 Finally, some models give one value for the battery's nominal voltage and
 yet actually have a nominal voltage slightly below that.  This leads to
 things such as the perpetual 98.7% charge on the author's Fortress 750,
-even when it's been charging for weeks.  You can use `nombattvolt=` in 
-linkman:ups.conf[8] to fix this.
+even when it's been charging for weeks.  You can use `nombattvolt=` in
+linkman:ups.conf[5] to fix this.
 
-AUTHOR
-------
-Russell Kroll, Jason White
+AUTHORS
+-------
+
+* Russell Kroll
+* Jason White
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

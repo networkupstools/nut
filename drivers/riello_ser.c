@@ -2,10 +2,11 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf"
- * and "http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
+ * Copyright (C) 2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,20 +25,34 @@
  * Reference of the derivative work: blazer driver
  */
 
-#include <string.h>
-#include <stdint.h>
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
 
-#include "config.h"
+#include <string.h>
+
+#ifdef WIN32
+# include "wincompat.h"
+#endif	/* WIN32 */
+
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+
+/*
+ * // The serial driver has no need for HID structures/code currently
+ * // (maybe there is/was a plan for sharing something between siblings).
+ * // Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
-#include "common.h" /* for upsdebugx() etc */
+ */
+
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.17"
+
+#define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -48,42 +63,51 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
-uint8_t typeRielloProtocol;
+static uint8_t gpser_error_control;
+static uint8_t typeRielloProtocol;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 
-TRielloData DevData;
+static TRielloData DevData;
+
+/* Flag for estimation of battery.runtime and battery.charge */
+static int localcalculation = 0;
+static int localcalculation_logged = 0;
+/* NOTE: Do not change these default, they refer to battery.voltage.nominal=12.0
+ * and used in related maths later */
+static double batt_volt_nom = 12.0;
+static double batt_volt_low = 10.4;
+static double batt_volt_high = 13.0;
 
 /**********************************************************************
- * char_read (char *bytes, int size, int read_timeout)
+ * char_read (char *bytes, size_t size, int read_timeout)
  *
  * reads size bytes from the serial port
  *
- * bytes	  			- buffer to store the data
+ * bytes			- buffer to store the data
  * size				- size of the data to get
  * read_timeout 	- serial timeout (in milliseconds)
  *
  * return -1 on error, -2 on timeout, nb_bytes_readen on success
  *
+ * See also select_read() in common.c (TODO: standardize codebase)
+ *
  *********************************************************************/
-static int char_read (char *bytes, int size, int read_timeout)
+static ssize_t char_read (char *bytes, size_t size, int read_timeout)
 {
+	ssize_t readen = 0;
+
+#ifndef WIN32
+	int rc = 0;
 	struct timeval serial_timeout;
 	fd_set readfs;
-	int readen = 0;
-	int rc = 0;
 
 	FD_ZERO (&readfs);
 	FD_SET (upsfd, &readfs);
@@ -96,19 +120,43 @@ static int char_read (char *bytes, int size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		int now = read (upsfd, bytes, size - readen);
+#else	/* WIN32 */
+		DWORD timeout;
+		COMMTIMEOUTS TOut;
+
+		timeout = read_timeout;	/* recast */
+
+		GetCommTimeouts(upsfd, &TOut);
+		TOut.ReadIntervalTimeout = MAXDWORD;
+		TOut.ReadTotalTimeoutMultiplier = 0;
+		TOut.ReadTotalTimeoutConstant = timeout;
+		SetCommTimeouts(upsfd, &TOut);
+#endif	/* WIN32 */
+
+		ssize_t now;
+#ifndef WIN32
+		now = read (upsfd, bytes, size - (size_t)readen);
+#else	/* WIN32 */
+		/* FIXME? for some reason this compiles, but the first
+		 * arg to the method should be serial_handler_t* - not
+		 * a HANDLE as upsfd is (in main.c)... then again, many
+		 * other drivers seem to use it just fine...
+		 */
+		now = w32_serial_read(upsfd, bytes, size - (size_t)readen, timeout);
+#endif	/* WIN32 */
 
 		if (now < 0) {
 			return -1;
 		}
 		else {
-			bytes += now;
 			readen += now;
 		}
+#ifndef WIN32
 	}
 	else {
 		return -1;
 	}
+#endif	/* !WIN32 */
 	return readen;
 }
 
@@ -122,12 +170,12 @@ static int char_read (char *bytes, int size, int read_timeout)
  * returns 0 on success, -1 on error, -2 on timeout
  *
  **********************************************************************/
-int serial_read (int read_timeout, u_char *readbuf)
+static ssize_t serial_read (int read_timeout, unsigned char *readbuf)
 {
-	static u_char cache[512];
-	static u_char *cachep = cache;
-	static u_char *cachee = cache;
-	int recv;
+	static unsigned char cache[512];
+	static unsigned char *cachep = cache;
+	static unsigned char *cachee = cache;
+	ssize_t recv;
 	*readbuf = '\0';
 
 	/* if still data in cache, get it */
@@ -154,7 +202,7 @@ int serial_read (int read_timeout, u_char *readbuf)
 	return -1;
 }
 
-void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
+static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 {
 	time_t realt, nowt;
 	uint8_t commb = 0;
@@ -164,14 +212,14 @@ void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
 		serial_read(1000, &commb);
 		nowt = time(NULL);
 		commbyte = commb;
-		riello_parse_serialport(typedev, bufIn, gpser_error_control);
+		riello_parse_serialport(typedev, arg_bufIn, gpser_error_control);
 
 		if ((nowt - realt) > 4)
 			break;
 	}
 }
 
-int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 	uint8_t length;
 
@@ -204,7 +252,7 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 
@@ -244,7 +292,64 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended()
+static int parse_ups_status(int doQuery) {
+	if (doQuery) {
+		int	stat = get_ups_status();
+
+		upsdebugx(1, "get_ups_status() %d",stat );
+
+		if (stat < 0) {
+			return -1;
+		}
+	}
+
+	status_init();
+
+	/* AC Fail */
+	if (riello_test_bit(&DevData.StatusCode[0], 1))
+		status_set("OB");
+	else
+		status_set("OL");
+
+	/* LowBatt */
+	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
+		(riello_test_bit(&DevData.StatusCode[0], 0)))
+		status_set("LB");
+
+	/* Standby */
+	if (!riello_test_bit(&DevData.StatusCode[0], 3))
+		status_set("OFF");
+
+	/* On Bypass */
+	if (riello_test_bit(&DevData.StatusCode[1], 3))
+		status_set("BYPASS");
+
+	/* Overload */
+	if (riello_test_bit(&DevData.StatusCode[4], 2))
+		status_set("OVER");
+
+	/* Buck */
+	if (riello_test_bit(&DevData.StatusCode[1], 0))
+		status_set("TRIM");
+
+	/* Boost */
+	if (riello_test_bit(&DevData.StatusCode[1], 1))
+		status_set("BOOST");
+
+	/* Replace battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 0))
+		status_set("RB");
+
+	/* Charging battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 2))
+		status_set("CHRG");
+
+	status_commit();
+
+	return 0;
+}
+
+static int get_ups_extended(void)
 {
 	uint8_t length;
 
@@ -277,7 +382,8 @@ int get_ups_extended()
 	return 0;
 }
 
-int get_ups_statuscode()
+/* Not static, exposed via header. Not used though, currently... */
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 
@@ -310,7 +416,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-int get_ups_sentr()
+static int get_ups_sentr(void)
 {
 	uint8_t length;
 
@@ -353,14 +459,38 @@ int get_ups_sentr()
 	return 0;
 }
 
-int riello_instcmd(const char *cmdname, const char *extra)
+static int riello_instcmd(const char *cmdname, const char *extra)
 {
 	uint8_t length;
 	uint16_t delay;
 	const char	*delay_char;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strncasecmp(cmdname, "load.", 5) || !strncasecmp(cmdname, "shutdown.", 9)) {
+		if (DevData.StatusCode[0] == 0 && handling_upsdrv_shutdown > 0) {
+			/* With a quick init, we may have skipped the
+			 * long device data walk. At least query current
+			 * state to check that we can contact it. */
+			if (parse_ups_status(1) < 0)
+				upsdebugx(1, "%s: failed to query and parse ups.status", __func__);
+		}
+
+		upslogx(LOG_INFO, "Processing command '%s' while ups.status is '%s'",
+			cmdname, NUT_STRARG(dstate_getinfo("ups.status")));
+	}
+
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
+	/* NOTE: Historically, this code allowed either "load.*" commands
+	 *  when we are "OL" or "shutdown.return" when we are "OB", but
+	 *  we found no requirement for that in the protocol docs. */
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
+#endif
 		if (!strcasecmp(cmdname, "load.off")) {
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -390,8 +520,14 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
+			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -420,6 +556,8 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on")) {
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay = 0;
 			riello_init_serial();
 
@@ -427,7 +565,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			else {
 				length = riello_prepare_setrebsentr(bufOut, delay);
-				
+
 				if (ser_send_buf(upsfd, bufOut, length) == 0) {
 					upsdebugx (3, "Command load.on communication error");
 					return STAT_INSTCMD_FAILED;
@@ -468,8 +606,15 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
+			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.reboot");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -515,11 +660,20 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command load.on delay Ok");
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
 	else {
+#endif
 		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ipv;
+
+			upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
 			delay_char = dstate_getinfo("ups.delay.shutdown");
-			delay = atoi(delay_char);
+			ipv = atoi(delay_char);
+			if (ipv < 0 || (intmax_t)ipv > (intmax_t)UINT16_MAX) return STAT_INSTCMD_FAILED;
+			delay = (uint16_t)ipv;
+
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER)
@@ -546,12 +700,16 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			upsdebugx (3, "Command shutdown.return Ok");
 			return STAT_INSTCMD_HANDLED;
 		}
+#ifdef RIELLO_SHUTDOWN_DEPENDS_ON_POWERSTATE
 	}
+#endif
 
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 
-		if (typeRielloProtocol == DEV_RIELLOGPSER) 
+		if (typeRielloProtocol == DEV_RIELLOGPSER)
 			length = riello_prepare_cd(bufOut, gpser_error_control);
 		else
 			length = riello_prepare_cancelsentr(bufOut);
@@ -601,6 +759,8 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+
 		riello_init_serial();
 		if (typeRielloProtocol == DEV_RIELLOGPSER)
 			length = riello_prepare_tb(bufOut, gpser_error_control);
@@ -627,11 +787,11 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint8_t length;
 
@@ -672,289 +832,16 @@ int start_ups_comm()
 	}
 
 	upsdebugx (3, "Get identif Ok: received byte %u", buf_ptr_length);
+
 	return 0;
-
 }
-
-void upsdrv_initinfo(void)
-{
-	int ret;
-	
-	ret = start_ups_comm();
-
-	if (ret < 0)
-		fatalx(EXIT_FAILURE, "No communication with UPS");
-	else if (ret > 0)
-		fatalx(EXIT_FAILURE, "Bad checksum or NACK");
-	else
-		upsdebugx(2, "Communication with UPS established");
-
-	if (typeRielloProtocol == DEV_RIELLOGPSER)
-		riello_parse_gi(&bufIn[0], &DevData);
-	else
-		riello_parse_sentr(&bufIn[0], &DevData);
-
-	gpser_error_control = DevData.Identif_bytes[4]-0x30;
-	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '2'))
-		input_monophase = 1;
-	else {
-		input_monophase = 0;
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.phases", "%u", 3);
-		dstate_setinfo("input.bypass.phases", "%u", 3);
-	}
-	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '3'))
-		output_monophase = 1;
-	else {
-		output_monophase = 0;
-		dstate_setinfo("output.phases", "%u", 3);
-	}
-
-	dstate_setinfo("device.mfr", "RPS S.p.a.");
-	dstate_setinfo("device.model", "%s", (unsigned char*) DevData.ModelStr);
-	dstate_setinfo("device.serial", "%s", (unsigned char*) DevData.Identification);
-	dstate_setinfo("device.type", "ups");
-
-	dstate_setinfo("ups.mfr", "RPS S.p.a.");
-	dstate_setinfo("ups.model", "%s", (unsigned char*) DevData.ModelStr);
-	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification);
-	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version);
-
-	if (typeRielloProtocol == DEV_RIELLOGPSER) {
-		if (get_ups_nominal() == 0) {
-			dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
-			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
-			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
-			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
-			dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
-			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
-		}
-	}
-	else {
-		if (get_ups_sentr() == 0) {
-			dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
-			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
-			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
-			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
-			dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
-			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
-		}
-	}
-
-
-	/* commands ----------------------------------------------- */
-	dstate_addcmd("load.off");
-	dstate_addcmd("load.on");
-	dstate_addcmd("load.off.delay");
-	dstate_addcmd("load.on.delay");
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.stop");
-	dstate_addcmd("test.battery.start");
-
-	if (typeRielloProtocol == DEV_RIELLOGPSER)
-		dstate_addcmd("test.panel.start");
-
-	/* install handlers */
-/*	upsh.setvar = hid_set_value; setvar; */
-	upsh.instcmd = riello_instcmd;
-}
-
-void upsdrv_updateinfo(void)
-{
-	uint8_t getextendedOK;
-	static int countlost = 0;
-	int stat;
-
-	upsdebugx(1, "countlost %d",countlost);
-
-	if (countlost > 0){
-		upsdebugx(1, "Communication with UPS is lost: status read failed!");
-
-		if (countlost == COUNTLOST) {
-			dstate_datastale();
-			upslogx(LOG_WARNING, "Communication with UPS is lost: status read failed!");
-		}
-	}
-
-	if (typeRielloProtocol == DEV_RIELLOGPSER) 
-		stat = get_ups_status();
-	else
-		stat = get_ups_sentr();
-
-	if (stat < 0) {
-		if (countlost < COUNTLOST)
-			countlost++;
-		return;
-	}
-
-	if (typeRielloProtocol == DEV_RIELLOGPSER) {
-		if (get_ups_extended() == 0)
-			getextendedOK = 1;
-		else
-			getextendedOK = 0;
-	}
-	else
-		getextendedOK = 1;
-
-	if (countlost == COUNTLOST)
-		upslogx(LOG_NOTICE, "Communication with UPS is re-established!");
-
-	dstate_setinfo("input.frequency", "%.2f", DevData.Finp/10.0);
-	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
-	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
-	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
-	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
-	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
-	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
-
-	if (input_monophase) {
-		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
-		dstate_setinfo("input.bypass.voltage", "%u", DevData.Ubypass1);
-	}
-	else {
-		dstate_setinfo("input.L1-N.voltage", "%u", DevData.Uinp1);
-		dstate_setinfo("input.L2-N.voltage", "%u", DevData.Uinp2);
-		dstate_setinfo("input.L3-N.voltage", "%u", DevData.Uinp3);
-		dstate_setinfo("input.bypass.L1-N.voltage", "%u", DevData.Ubypass1);
-		dstate_setinfo("input.bypass.L2-N.voltage", "%u", DevData.Ubypass2);
-		dstate_setinfo("input.bypass.L3-N.voltage", "%u", DevData.Ubypass3);
-	}
-
-	if (output_monophase) {
-		dstate_setinfo("output.voltage", "%u", DevData.Uout1);
-		dstate_setinfo("output.power.percent", "%u", DevData.Pout1);
-		dstate_setinfo("ups.load", "%u", DevData.Pout1);
-	}
-	else {
-		dstate_setinfo("output.L1-N.voltage", "%u", DevData.Uout1);
-		dstate_setinfo("output.L2-N.voltage", "%u", DevData.Uout2);
-		dstate_setinfo("output.L3-N.voltage", "%u", DevData.Uout3);
-		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
-		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
-		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
-		dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
-	}
-
-	status_init();
-	
-	/* AC Fail */
-	if (riello_test_bit(&DevData.StatusCode[0], 1))
-		status_set("OB");
-	else
-		status_set("OL");
-
-	/* LowBatt */
-	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
-		(riello_test_bit(&DevData.StatusCode[0], 0)))
-		status_set("LB");
-
-	/* Standby */
-	if (!riello_test_bit(&DevData.StatusCode[0], 3))
-		status_set("OFF");
-
-	/* On Bypass */
-	if (riello_test_bit(&DevData.StatusCode[1], 3))
-		status_set("BYPASS");
-
-	/* Overload */
-	if (riello_test_bit(&DevData.StatusCode[4], 2))
-		status_set("OVER");
-
-	/* Buck */
-	if (riello_test_bit(&DevData.StatusCode[1], 0))
-		status_set("TRIM");
-
-	/* Boost */
-	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");
-
-	/* Replace battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");
-
-	/* Charging battery */
-	if (riello_test_bit(&DevData.StatusCode[2], 2))
-		status_set("CHRG");
-
-	status_commit();
-
-	dstate_dataok();
-
-	if (getextendedOK) {
-		dstate_setinfo("output.L1.power", "%u", DevData.Pout1VA);
-		dstate_setinfo("output.L2.power", "%u", DevData.Pout2VA);
-		dstate_setinfo("output.L3.power", "%u", DevData.Pout3VA);
-		dstate_setinfo("output.L1.realpower", "%u", DevData.Pout1W);
-		dstate_setinfo("output.L2.realpower", "%u", DevData.Pout2W);
-		dstate_setinfo("output.L3.realpower", "%u", DevData.Pout3W);
-		dstate_setinfo("output.L1.current", "%u", DevData.Iout1);
-		dstate_setinfo("output.L2.current", "%u", DevData.Iout2);
-		dstate_setinfo("output.L3.current", "%u", DevData.Iout3);
-	}
-
-	poll_interval = 2;
-
-	countlost = 0;
-/*	if (get_ups_statuscode() != 0)
-		upsdebugx(2, "Communication is lost");
-	else {
-	}*/
-
-	/*
-	 * poll_interval = 2;
-	 */
-}
-
-void upsdrv_shutdown(void)
-{
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	int	retry;
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-		it doesn't respond at first if possible */
-
-	/* replace with a proper shutdown function */
-
-
-	/* you may have to check the line status since the commands
-		for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
-	upsdebugx(2, "upsdrv Shutdown execute");
-
-	for (retry = 1; retry <= MAXTRIES; retry++) {
-
-		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
-			continue;
-		}
-
-		fatalx(EXIT_SUCCESS, "Shutting down");
-	}
-
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
-}
-
-
-/*
-static int setvar(const char *varname, const char *val)
-{
-	if (!strcasecmp(varname, "ups.test.interval")) {
-		ser_send_buf(upsfd, ...);
-		return STAT_SET_HANDLED;
-	}
-
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
-	return STAT_SET_UNKNOWN;
-}
-*/
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -966,6 +853,8 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
+
+	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
 }
 
 void upsdrv_initups(void)
@@ -1008,6 +897,451 @@ void upsdrv_initups(void)
 
 	/* initialise communication */
 }
+
+void upsdrv_initinfo(void)
+{
+	int ret;
+	const char *valN = NULL, *valL = NULL, *valH = NULL;
+
+	ret = start_ups_comm();
+
+	if (ret < 0)
+		fatalx(EXIT_FAILURE, "No communication with UPS");
+	else if (ret > 0)
+		fatalx(EXIT_FAILURE, "Bad checksum or NACK");
+	else
+		upsdebugx(2, "Communication with UPS established");
+
+	if (testvar("localcalculation")) {
+		localcalculation = 1;
+		upsdebugx(1, "Will guesstimate battery charge and runtime "
+			"instead of trusting device readings (if any); "
+			"consider also setting default.battery.voltage.low "
+			"and default.battery.voltage.high for this device");
+	}
+	dstate_setinfo("driver.parameter.localcalculation", "%d", localcalculation);
+
+	if (typeRielloProtocol == DEV_RIELLOGPSER)
+		riello_parse_gi(&bufIn[0], &DevData);
+	else
+		riello_parse_sentr(&bufIn[0], &DevData);
+
+	gpser_error_control = DevData.Identif_bytes[4]-0x30;
+	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '2'))
+		input_monophase = 1;
+	else {
+		input_monophase = 0;
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.phases", "%d", 3);
+		dstate_setinfo("input.bypass.phases", "%d", 3);
+	}
+	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '3'))
+		output_monophase = 1;
+	else {
+		output_monophase = 0;
+		dstate_setinfo("output.phases", "%d", 3);
+	}
+
+	dstate_setinfo("device.mfr", "RPS S.p.a.");
+	dstate_setinfo("device.model", "%s", (unsigned char*) DevData.ModelStr);
+	dstate_setinfo("device.serial", "%s", (unsigned char*) DevData.Identification);
+	dstate_setinfo("device.type", "ups");
+
+	dstate_setinfo("ups.mfr", "RPS S.p.a.");
+	dstate_setinfo("ups.model", "%s", (unsigned char*) DevData.ModelStr);
+	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification);
+	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version);
+
+	/* Is it set by user default/override configuration?
+	 * NOTE: "valN" is also used for a check just below.
+	 */
+	valN = dstate_getinfo("battery.voltage.nominal");
+	if (valN) {
+		batt_volt_nom = strtod(valN, NULL);
+		upsdebugx(1, "Using battery.voltage.nominal=%.1f "
+			"likely coming from user configuration",
+			batt_volt_nom);
+	}
+
+	if (typeRielloProtocol == DEV_RIELLOGPSER) {
+		if (get_ups_nominal() == 0) {
+			dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
+			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
+			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
+			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
+
+			/* Is it set by user default/override configuration (see just above)? */
+			if (valN) {
+				upsdebugx(1, "...instead of battery.voltage.nominal=%u "
+					"reported by the device", DevData.NomUbat);
+			} else {
+				dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+				batt_volt_nom = (double)DevData.NomUbat;
+			}
+
+			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
+		}
+	}
+	else {
+		if (get_ups_sentr() == 0) {
+			dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
+			dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
+			dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
+			dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
+
+			/* Is it set by user default/override configuration (see just above)? */
+			if (valN) {
+				upsdebugx(1, "...instead of battery.voltage.nominal=%u "
+					"reported by the device", DevData.NomUbat);
+			} else {
+				dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+				batt_volt_nom = (double)DevData.NomUbat;
+			}
+
+			dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
+		} else {
+			/* TOTHINK: Check the momentary reading of battery.voltage
+			 * or would it be too confusing (especially if it is above
+			 * 12V and might correspond to a discharged UPS when the
+			 * driver starts up after an outage?)
+			 * NOTE: DevData.Ubat would be scaled by 10!
+			 */
+			if (!valN) {
+				/* The nominal was not already set by user configuration... */
+				upsdebugx(1, "Using built-in default battery.voltage.nominal=%.1f",
+					batt_volt_nom);
+				dstate_setinfo("battery.voltage.nominal", "%.1f", batt_volt_nom);
+			}
+		}
+	}
+
+	/* We have a nominal voltage by now - either from user configuration
+	 * or from the device itself (or initial defaults for 12V). Do we have
+	 * any low/high range from HW/FW or defaults from ups.conf? */
+	valL = dstate_getinfo("battery.voltage.low");
+	valH = dstate_getinfo("battery.voltage.high");
+
+	{	/* scoping */
+		/* Pick a suitable low/high range (or keep built-in default).
+		 * The factor may be a count of battery packs in the UPS.
+		 */
+		int times12 = batt_volt_nom / 12;
+		if (times12 > 1) {
+			/* Scale up the range for 24V (X=2) etc. */
+			upsdebugx(3, "%s: Using %i times the voltage range of 12V PbAc battery",
+				__func__, times12);
+			batt_volt_low  *= times12;
+			batt_volt_high *= times12;
+		}
+	}
+
+	if (!valL && !valH) {
+		/* Both not set (NULL) => pick by nominal (X times 12V above). */
+		upsdebugx(3, "Neither battery.voltage.low=%.1f "
+			"nor battery.voltage.high=%.1f is set via "
+			"driver configuration or by device; keeping "
+			"at built-in default value (aligned "
+			"with battery.voltage.nominal=%.1f)",
+			batt_volt_low, batt_volt_high, batt_volt_nom);
+	} else {
+		if (valL) {
+			batt_volt_low = strtod(valL, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.low=%.1f from device or settings",
+				__func__, batt_volt_low);
+		}
+
+		if (valH) {
+			batt_volt_high = strtod(valH, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.high=%.1f from device or settings",
+				__func__, batt_volt_high);
+		}
+
+		/* If just one of those is set, then what? */
+		if (valL || valH) {
+			upsdebugx(1, "WARNING: Only one of battery.voltage.low=%.1f "
+				"or battery.voltage.high=%.1f is set via "
+				"driver configuration; keeping the other "
+				"at built-in default value (aligned "
+				"with battery.voltage.nominal=%.1f)",
+				batt_volt_low, batt_volt_high, batt_volt_nom);
+		} else {
+			upsdebugx(1, "Both of battery.voltage.low=%.1f "
+				"or battery.voltage.high=%.1f are set via "
+				"driver configuration; not aligning "
+				"with battery.voltage.nominal=%.1f",
+				batt_volt_low, batt_volt_high, batt_volt_nom);
+		}
+	}
+
+	/* Whatever the origin, make the values known via dstate */
+	dstate_setinfo("battery.voltage.low",  "%.1f", batt_volt_low);
+	dstate_setinfo("battery.voltage.high", "%.1f", batt_volt_high);
+
+	/* commands ----------------------------------------------- */
+	dstate_addcmd("load.off");
+	dstate_addcmd("load.on");
+	dstate_addcmd("load.off.delay");
+	dstate_addcmd("load.on.delay");
+	dstate_addcmd("shutdown.return");
+	dstate_addcmd("shutdown.stop");
+	dstate_addcmd("test.battery.start");
+
+	dstate_setinfo("ups.delay.shutdown", "%u", offdelay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", 3);
+	dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
+	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.reboot", 3);
+
+
+	if (typeRielloProtocol == DEV_RIELLOGPSER)
+		dstate_addcmd("test.panel.start");
+
+	/* install handlers */
+/*	upsh.setvar = hid_set_value; setvar; */
+	upsh.instcmd = riello_instcmd;
+}
+
+void upsdrv_shutdown(void)
+{
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
+	int	retry;
+
+	/* maybe try to detect the UPS here, but try a shutdown even if
+		it doesn't respond at first if possible */
+
+	/* replace with a proper shutdown function */
+
+
+	/* you may have to check the line status since the commands
+		for toggling power are frequently different for OL vs. OB */
+
+	/* OL: this must power cycle the load if possible */
+
+	/* OB: the load must remain off until the power returns */
+	upsdebugx(2, "upsdrv Shutdown execute");
+
+	for (retry = 1; retry <= MAXTRIES; retry++) {
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
+		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		if (riello_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		upslogx(LOG_ERR, "Shutting down");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
+	}
+
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
+}
+
+void upsdrv_updateinfo(void)
+{
+	uint8_t getextendedOK;
+	static int countlost = 0;
+	int stat;
+	unsigned int battcharge;
+	float battruntime;
+	float upsloadfactor;
+#ifdef RIELLO_DYNAMIC_BATTVOLT_INFO
+	const char *val = NULL;
+#endif
+
+	upsdebugx(1, "countlost %d",countlost);
+
+	if (countlost > 0){
+		upsdebugx(1, "Communication with UPS is lost: status read failed!");
+
+		if (countlost == COUNTLOST) {
+			dstate_datastale();
+			upslogx(LOG_WARNING, "Communication with UPS is lost: status read failed!");
+		}
+	}
+
+	if (typeRielloProtocol == DEV_RIELLOGPSER) {
+		stat = get_ups_status();
+		upsdebugx(1, "get_ups_status() %d", stat );
+	} else {
+		stat = get_ups_sentr();
+		upsdebugx(1, "get_ups_sentr() %d", stat );
+	}
+
+	if (stat < 0) {
+		if (countlost < COUNTLOST)
+			countlost++;
+		return;
+	}
+
+	if (typeRielloProtocol == DEV_RIELLOGPSER) {
+		if (get_ups_extended() == 0)
+			getextendedOK = 1;
+		else
+			getextendedOK = 0;
+	}
+	else
+		getextendedOK = 1;
+
+	if (countlost == COUNTLOST)
+		upslogx(LOG_NOTICE, "Communication with UPS is re-established!");
+
+	dstate_setinfo("input.frequency", "%.2f", DevData.Finp/10.0);
+	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
+	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
+	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
+
+#ifdef RIELLO_DYNAMIC_BATTVOLT_INFO
+	/* Can be set via default.* or override.* driver options
+	 * if not served by the device HW/FW */
+	val = dstate_getinfo("battery.voltage.low");
+	if (val) {
+		batt_volt_low = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.high");
+	if (val) {
+		batt_volt_high = strtod(val, NULL);
+	}
+#endif
+
+	if (localcalculation) {
+		/* NOTE: at this time "localcalculation" is a configuration toggle.
+		 * Maybe later it can be replaced by a common "runtimecal" setting. */
+		/* Considered "Ubat" physical range here (e.g. 10.7V to 12.9V) is
+		 * seen as "107" or "129" integers in the DevData properties: */
+		uint16_t	Ubat_low  = batt_volt_low  * 10;	/* e.g. 107 */
+		uint16_t	Ubat_high = batt_volt_high * 10;	/* e.g. 129 */
+		static int batt_volt_logged = 0;
+
+		if (!batt_volt_logged) {
+			upsdebugx(0, "\nUsing battery.voltage.low=%.1f and "
+				"battery.voltage.high=%.1f for \"localcalculation\" "
+				"guesstimates of battery.charge and battery.runtime",
+				batt_volt_low, batt_volt_high);
+			batt_volt_logged = 1;
+		}
+
+		battcharge = ((DevData.Ubat <= Ubat_high) && (DevData.Ubat >= Ubat_low))
+			? (((DevData.Ubat - Ubat_low)*100) / (Ubat_high - Ubat_low))
+			: ((DevData.Ubat < Ubat_low) ? 0 : 100);
+		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
+		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
+
+		dstate_setinfo("battery.charge", "%u", battcharge);
+		dstate_setinfo("battery.runtime", "%.0f", battruntime/upsloadfactor);
+	}
+	else {
+		if (!localcalculation_logged) {
+			upsdebugx(0, "\nIf you don't see values for battery.charge and "
+				"battery.runtime or values are incorrect,"
+				"try setting \"localcalculation\" flag in \"ups.conf\" "
+				"options section for this driver!\n");
+			localcalculation_logged = 1;
+		}
+		if ((DevData.BatCap < 0xFFFF) && (DevData.BatTime < 0xFFFF)) {
+			/* Use values reported by the driver unless they are marked
+			 * invalid/unknown by HW/FW (all bits in the word are set).
+			 */
+			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+			dstate_setinfo("battery.runtime", "%u", (unsigned int)DevData.BatTime*60);
+		}
+	}
+
+	if (DevData.Tsystem == 255) {
+		/* Use values reported by the driver unless they are marked
+		 * invalid/unknown by HW/FW (all bits in the word are set).
+		 */
+		/*dstate_setinfo("ups.temperature", "%u", 0);*/
+		upsdebugx(4, "Reported temperature value is 0xFF, "
+			"probably meaning \"-1\" for error or "
+			"missing sensor - ignored");
+	}
+	else if (DevData.Tsystem < 0xFF) {
+		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+	}
+
+	if (input_monophase) {
+		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
+		dstate_setinfo("input.bypass.voltage", "%u", DevData.Ubypass1);
+	}
+	else {
+		dstate_setinfo("input.L1-N.voltage", "%u", DevData.Uinp1);
+		dstate_setinfo("input.L2-N.voltage", "%u", DevData.Uinp2);
+		dstate_setinfo("input.L3-N.voltage", "%u", DevData.Uinp3);
+		dstate_setinfo("input.bypass.L1-N.voltage", "%u", DevData.Ubypass1);
+		dstate_setinfo("input.bypass.L2-N.voltage", "%u", DevData.Ubypass2);
+		dstate_setinfo("input.bypass.L3-N.voltage", "%u", DevData.Ubypass3);
+	}
+
+	if (output_monophase) {
+		dstate_setinfo("output.voltage", "%u", DevData.Uout1);
+		dstate_setinfo("output.power.percent", "%u", DevData.Pout1);
+		dstate_setinfo("ups.load", "%u", DevData.Pout1);
+	}
+	else {
+		dstate_setinfo("output.L1-N.voltage", "%u", DevData.Uout1);
+		dstate_setinfo("output.L2-N.voltage", "%u", DevData.Uout2);
+		dstate_setinfo("output.L3-N.voltage", "%u", DevData.Uout3);
+		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
+		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
+		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
+		dstate_setinfo("ups.load", "%u", (unsigned int)(DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
+	}
+
+	parse_ups_status(0);
+
+	dstate_dataok();
+
+	if (getextendedOK) {
+		dstate_setinfo("output.L1.power", "%u", DevData.Pout1VA);
+		dstate_setinfo("output.L2.power", "%u", DevData.Pout2VA);
+		dstate_setinfo("output.L3.power", "%u", DevData.Pout3VA);
+		dstate_setinfo("output.L1.realpower", "%u", DevData.Pout1W);
+		dstate_setinfo("output.L2.realpower", "%u", DevData.Pout2W);
+		dstate_setinfo("output.L3.realpower", "%u", DevData.Pout3W);
+		dstate_setinfo("output.L1.current", "%u", DevData.Iout1);
+		dstate_setinfo("output.L2.current", "%u", DevData.Iout2);
+		dstate_setinfo("output.L3.current", "%u", DevData.Iout3);
+	}
+
+	poll_interval = 2;
+
+	countlost = 0;
+
+/*	if (get_ups_statuscode() != 0)
+		upsdebugx(2, "Communication is lost");
+	else {
+	}*/
+
+	/*
+	 * poll_interval = 2;
+	 */
+}
+
+/*
+static int setvar(const char *varname, const char *val)
+{
+	upsdebug_SET_STARTING(varname, val);
+
+	if (!strcasecmp(varname, "ups.test.interval")) {
+		ser_send_buf(upsfd, ...);
+		return STAT_SET_HANDLED;
+	}
+
+	upslog_SET_UNKNOWN(varname, val);
+	return STAT_SET_UNKNOWN;
+}
+*/
 
 void upsdrv_cleanup(void)
 {

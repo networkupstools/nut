@@ -18,10 +18,13 @@ give it input resembling a POST request.
 DESCRIPTION
 -----------
 
-*upsset.cgi*
+*upsset.cgi* is a read-write NUT client which
 lets you access many administrative functions within the UPS software
 from your web browser.  You can change settings and invoke instant
 commands where available.
+
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
 
 CHANGING SETTINGS
 -----------------
@@ -34,10 +37,10 @@ You should see a list of items with the descriptions on the left side
 and the possible options or input spaces on the right.  After changing
 something, be sure to "Save changes" to update the values in your UPS.
 
-If your UPS doesn't support any read/write variables, there will be 
+If your UPS doesn't support any read/write variables, there will be
 nothing to do on this page.
 
-Setting values in read/write variables can also be done from the command 
+Setting values in read/write variables can also be done from the command
 line with linkman:upsrw[8].
 
 INSTANT COMMANDS
@@ -52,12 +55,13 @@ If your UPS supports any instant commands, they will be listed in a
 chooser widget.  Pick the one you like and "Issue command" to make it
 happen.
 
-NOTE: some dangerous commands like "Turn off load" may not happen right
+NOTE: Some dangerous commands like "Turn off load" may not happen right
 away.  This is a feature, not a bug.
 
-The apcsmart driver and some others require that you send this command twice
-within a short window in order to make it happen.  This is to keep you from
-accidentally killing your systems by picking the wrong one.
+The linkman:apcsmart[8] driver and some others require that you send this
+command twice within a short window in order to make it happen.
+This is to keep you from accidentally killing your systems by picking the
+wrong one.
 
 To actually turn off the load, you have to send the command once, then
 send it again after 3 seconds elapse but before 15 seconds pass.  If
@@ -70,8 +74,12 @@ linkman:upscmd[8].
 ACCESS CONTROL
 --------------
 
+It sends commands and settings via the server linkman:upsd[8] to your driver,
+which manages the hardware for you.  You must use credentials defined in
+linkman:upsd.users[5] file on that data server with appropriate permissions.
+
 upsset will only talk to linkman:upsd[8] servers that have been defined
-in your linkman:hosts.conf[8].  If it complains about "Access to that host
+in your linkman:hosts.conf[5].  If it complains about "Access to that host
 is not authorized", check your hosts.conf first.
 
 SECURITY
@@ -94,4 +102,5 @@ SEE ALSO
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -24,12 +24,13 @@
  */
 
 #include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_blazer-common.h"
-
 #include "nutdrv_qx_bestups.h"
 
-#define BESTUPS_VERSION "BestUPS 0.06"
+#define BESTUPS_VERSION "BestUPS 0.08"
 
 /* Support functions */
 static int	bestups_claim(void);
@@ -59,7 +60,7 @@ static int	inverted_bbb_bit = 0;
 /* == Ranges/enums == */
 
 /* Range for ups.delay.start */
-info_rw_t	bestups_r_ondelay[] = {
+static info_rw_t	bestups_r_ondelay[] = {
 	{ "60", 0 },
 	{ "599940", 0 },
 	{ "", 0 }
@@ -102,7 +103,7 @@ static item_t	bestups_qx2nut[] = {
 	{ "output.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },		/* Utility Fail (Immediate) */
@@ -157,7 +158,7 @@ static item_t	bestups_qx2nut[] = {
 
 	{ "battery.packs",	0,		bestups_r_batt_packs,	"BP%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,		NULL,	NULL,	bestups_process_setvar },
 
-	/* Query UPS for shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059)
+	/* Query UPS for shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059)
 	 * > [SS?\r]
 	 * < [0\r]
 	 *    01
@@ -166,7 +167,7 @@ static item_t	bestups_qx2nut[] = {
 
 	{ "pins_shutdown_mode",	ST_FLAG_RW,	bestups_r_pins_shutdown_mode,	"SS?\r",	"",	2,	0,	"",	0,	0,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,			NULL,	NULL,	bestups_get_pins_shutdown_mode },
 
-	/* Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)
+	/* Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) to n (integer, 0-6)
 	 * > [SSn\r]
 	 * < []
 	 */
@@ -287,7 +288,7 @@ static void	bestups_initups(void)
 /* Subdriver-specific flags/vars */
 static void	bestups_makevartable(void)
 {
-	addvar(VAR_VALUE, "pins_shutdown_mode", "Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)");
+	addvar(VAR_VALUE, "pins_shutdown_mode", "Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) to n (integer, 0-6)");
 
 	blazer_makevartable_light();
 }
@@ -356,23 +357,25 @@ static int	bestups_preprocess_id_answer(item_t *item, const int len)
 /* *SETVAR(/NONUT)* Preprocess setvars */
 static int	bestups_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
+	double	val;
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
 	}
 
-	double	val = strtod(value, NULL);
+	val = strtod(value, NULL);
 
 	if (!strcasecmp(item->info_type, "pins_shutdown_mode")) {
 
-		if (val == pins_shutdown_mode) {
+		if (d_equal(val, pins_shutdown_mode)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	}
 
-	snprintf(value, valuelen, item->command, val);
+	snprintf_dynamic(value, valuelen, item->command, "%f", val);
 
 	return 0;
 }
@@ -381,7 +384,7 @@ static int	bestups_process_setvar(item_t *item, char *value, const size_t valuel
 static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_t valuelen)
 {
 	/* Bypass/Boost/Buck bit is not reliable when a battery test, shutdown or on battery condition occurs: always ignore it in these cases */
-	if (!(qx_status() & STATUS(OL)) || (qx_status() & (STATUS(CAL) | STATUS(FSD)))) {
+	if (!((unsigned int)(qx_status()) & STATUS(OL)) || ((unsigned int)(qx_status()) & (STATUS(CALIB) | STATUS(FSD)))) {
 
 		if (item->value[0] == '1')
 			item->value[0] = '0';
@@ -415,7 +418,7 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 		!strcmp(item->value, "PR2") ||
 		!strcmp(item->value, "PRO")
 	) {
-		snprintf(value, valuelen, item->dfl, "Best Power");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Best Power");
 		return 0;
 	}
 
@@ -425,12 +428,13 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 		!strcmp(item->value, "520") ||
 		!strcmp(item->value, "620")
 	) {
-		snprintf(value, valuelen, item->dfl, "Sola Australia");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Sola Australia");
 		return 0;
 	}
 
 	/* Unknown devices */
-	snprintf(value, valuelen, item->dfl, "Unknown");
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", "Unknown");
+
 	return 0;
 }
 
@@ -443,24 +447,24 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 
 	if (!strcmp(item->value, "AX1")) {
 
-		snprintf(value, valuelen, item->dfl, "Axxium Rackmount");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Axxium Rackmount");
 
 	} else if (!strcmp(item->value, "FOR")) {
 
-		snprintf(value, valuelen, item->dfl, "Fortress");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Fortress");
 
 	} else if (!strcmp(item->value, "FTC")) {
 
-		snprintf(value, valuelen, item->dfl, "Fortress Telecom");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Fortress Telecom");
 
 	} else if (!strcmp(item->value, "PR2")) {
 
-		snprintf(value, valuelen, item->dfl, "Patriot Pro II");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Patriot Pro II");
 		inverted_bbb_bit = 1;
 
 	} else if (!strcmp(item->value, "PRO")) {
 
-		snprintf(value, valuelen, item->dfl, "Patriot Pro");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "Patriot Pro");
 		inverted_bbb_bit = 1;
 
 	/* Sola Australia devices */
@@ -477,7 +481,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	/* Unknown devices */
 	} else {
 
-		snprintf(value, valuelen, item->dfl, "Unknown (%s)", item->value);
+		snprintf(value, valuelen, "Unknown (%s)", item->value);
 		upslogx(LOG_INFO, "Unknown model detected - please report this ID: '%s'", item->value);
 
 	}
@@ -526,7 +530,7 @@ static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen
 	/* Battery runtime is reported by the UPS in minutes, NUT expects seconds */
 	runtime = strtod(item->value, NULL) * 60;
 
-	snprintf(value, valuelen, item->dfl, runtime);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", runtime);
 
 	return 0;
 }
@@ -535,13 +539,20 @@ static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen
 static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+	long	l;
 
 	if (strspn(item->value, "0123456789 ") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, strtol(item->value, NULL, 10));
+	l = strtol(item->value, NULL, 10);
+	if (l < 0 || l > INT_MAX) {
+		upsdebugx(2, "%s: value out of range [%s: %s]", __func__, item->info_type, item->value);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)l);
 
 	/* Unskip battery.packs setvar */
 	unskip = find_nut_info("battery.packs", QX_FLAG_SETVAR, 0);
@@ -555,19 +566,31 @@ static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 	return 0;
 }
 
-/* *NONUT* Get shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) as set in the UPS */
+/* *NONUT* Get shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) as set in the UPS */
 static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+	long	l;
 
 	if (strspn(item->value, "0123456789") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
-	pins_shutdown_mode = strtol(item->value, NULL, 10);
+	l = strtol(item->value, NULL, 10);
+	if (l > INT_MAX) {
+		upsdebugx(2, "%s: pins_shutdown_mode out of range [%s: %s]",
+			__func__, item->info_type, item->value);
+		return -1;
+	}
+	pins_shutdown_mode = (int)l;
 
-	snprintf(value, valuelen, item->dfl, pins_shutdown_mode);
+	/* NOTE: Mapping table has "%.0f" for R/W of this concept's value,
+	 * meaning zero digits after the decimal point (could as well be
+	 * an int right away?)
+	 * TODO: Someone with the device should check replacement by "%d".
+	 */
+	snprintf_dynamic(value, valuelen, item->dfl, "%.0f", (double)pins_shutdown_mode);
 
 	/* We were not asked by the user to change the value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
@@ -588,7 +611,8 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_
 /* Voltage settings */
 static int	bestups_voltage_settings(item_t *item, char *value, const size_t valuelen)
 {
-	int		index, val;
+	long		index;
+	int		val;
 	const char	*nominal_voltage;
 	const struct {
 		const int	low;		/* Low voltage		->	input.transfer.low / input.transfer.boost.low */
@@ -638,7 +662,7 @@ static int	bestups_voltage_settings(item_t *item, char *value, const size_t valu
 	index = strtol(item->value, NULL, 10);
 
 	if (index < 0 || index > 9) {
-		upsdebugx(2, "%s: value '%d' out of range [0..9]", __func__, index);
+		upsdebugx(2, "%s: value '%ld' out of range [0..9]", __func__, index);
 		return -1;
 	}
 
@@ -683,7 +707,7 @@ static int	bestups_voltage_settings(item_t *item, char *value, const size_t valu
 
 	}
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", val);
 
 	return 0;
 }

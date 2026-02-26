@@ -23,63 +23,63 @@
 
 /* APC_MULTI variables *must* be listed in order of preference */
 apc_vartab_t apc_vartab[] = {
+/* name cmd flags   regex   nlen0   cnt */
+	{ "ups.temperature",		'C',	APC_POLL|APC_F_CELSIUS, NULL, 0, 0 },
+	{ "ups.load",			'P',	APC_POLL|APC_F_PERCENT, NULL, 0, 0 },
+	{ "ups.test.interval",		'E',	APC_F_HOURS, NULL, 0, 0 },
+	{ "ups.test.result",		'X',	APC_POLL, NULL, 0, 0 },
+	{ "ups.delay.start",		'r',	APC_F_SECONDS, NULL, 0, 0 },
+	{ "ups.delay.shutdown",		'p',	APC_F_SECONDS, NULL, 0, 0 },
+	{ "ups.id",			'c',	APC_STRING, NULL, 0, 0 },
+	{ "ups.contacts",		'i',	APC_POLL|APC_F_HEX, NULL, 0, 0 },
+	{ "ups.display.language",	'\014', 0, NULL, 0, 0 },
+	{ "input.voltage",		'L',	APC_POLL|APC_F_VOLT, NULL, 0, 0 },
+	{ "input.frequency",		'F',	APC_POLL|APC_F_DEC, NULL, 0, 0 },
+	{ "input.sensitivity",		's',	0, NULL, 0, 0 },
+	{ "input.quality",		'9',	APC_POLL|APC_F_HEX, NULL, 0, 0 },
+	{ "input.transfer.low",		'l',	APC_F_VOLT, NULL, 0, 0 },
+	{ "input.transfer.high",	'u',	APC_F_VOLT, NULL, 0, 0 },
+	{ "input.transfer.reason",	'G',	APC_POLL|APC_F_REASON, NULL, 0, 0 },
+	{ "input.voltage.maximum",	'M',	APC_POLL|APC_F_VOLT, NULL, 0, 0 },
+	{ "input.voltage.minimum",	'N',	APC_POLL|APC_F_VOLT, NULL, 0, 0 },
+	{ "output.current",		'/',	APC_POLL|APC_F_AMP, NULL, 0, 0 },
+	{ "output.voltage",		'O',	APC_POLL|APC_F_VOLT, NULL, 0, 0 },
+	{ "output.voltage.nominal",	'o',	APC_F_VOLT, NULL, 0, 0 },
+	{ "ambient.humidity",		'h',	APC_POLL|APC_F_PERCENT, NULL, 0, 0 },
+	{ "ambient.0.humidity",		'H',	APC_POLL|APC_PACK|APC_F_PERCENT, NULL, 0, 0 },
+	{ "ambient.0.humidity.high",	'{',	APC_POLL|APC_PACK|APC_F_PERCENT, NULL, 0, 0 },
+	{ "ambient.0.humidity.low",	'}',	APC_POLL|APC_PACK|APC_F_PERCENT, NULL, 0, 0 },
+	{ "ambient.temperature",	't',	APC_POLL|APC_F_CELSIUS, NULL, 0, 0 },
+	{ "ambient.0.temperature",	'T',	APC_MULTI|APC_POLL|APC_PACK|APC_F_CELSIUS, "^[0-9]{2}\\.[0-9]{2}$", 0, 0 },
+	{ "ambient.0.temperature.high",	'[',	APC_POLL|APC_PACK|APC_F_CELSIUS, NULL, 0, 0 },
+	{ "ambient.0.temperature.low",	']',	APC_POLL|APC_PACK|APC_F_CELSIUS, NULL, 0, 0 },
+	{ "battery.date",		'x',	APC_STRING, NULL, 0, 0 },
+	{ "battery.charge",		'f',	APC_POLL|APC_F_PERCENT, NULL, 0, 0 },
+	{ "battery.charge.restart",	'e',	APC_F_PERCENT, NULL, 0, 0 },
+	{ "battery.voltage",		'B',	APC_POLL|APC_F_VOLT, NULL, 0, 0 },
+	{ "battery.voltage.nominal",	'g',	0, NULL, 0, 0 },
+	{ "battery.runtime",		'j',	APC_POLL|APC_F_MINUTES, NULL, 0, 0 },
+	{ "battery.runtime.low",	'q',	APC_F_MINUTES, NULL, 0, 0 },
+	{ "battery.packs",		'>',	APC_F_DEC, NULL, 0, 0 },
+	{ "battery.packs.bad",		'<',	APC_F_DEC, NULL, 0, 0 },
+	{ "battery.alarm.threshold",	'k', 0, NULL, 0, 0 },
+	{ "device.uptime",		'T',	APC_MULTI|APC_POLL|APC_F_HOURS, "^[0-9]{3}\\.[0-9]{1}$", 0, 0 },
+	{ "ups.serial",			'n', 0, NULL, 0, 0 },
+	{ "ups.mfr.date",		'm', 0, NULL, 0, 0 },
+	{ "ups.model",			'\001', 0, NULL, 0, 0 },
+	{ "ups.firmware.aux",		'v', 0, NULL, 0, 0 },
+	{ "ups.firmware",		'b',	APC_MULTI, "^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$", 0, 0 },
+	{ "ups.firmware",		'V',	APC_MULTI, NULL, 0, 0 },
 
-	{ "ups.temperature",		'C',	APC_POLL|APC_F_CELSIUS },
-	{ "ups.load",			'P',	APC_POLL|APC_F_PERCENT },
-	{ "ups.test.interval",		'E',	APC_F_HOURS },
-	{ "ups.test.result",		'X',	APC_POLL },
-	{ "ups.delay.start",		'r',	APC_F_SECONDS },
-	{ "ups.delay.shutdown",		'p',	APC_F_SECONDS },
-	{ "ups.id",			'c',	APC_STRING },
-	{ "ups.contacts",		'i',	APC_POLL|APC_F_HEX },
-	{ "ups.display.language",	'\014' },
-	{ "input.voltage",		'L',	APC_POLL|APC_F_VOLT },
-	{ "input.frequency",		'F',	APC_POLL|APC_F_DEC },
-	{ "input.sensitivity",		's', },
-	{ "input.quality",		'9',	APC_POLL|APC_F_HEX },
-	{ "input.transfer.low",		'l',	APC_F_VOLT },
-	{ "input.transfer.high",	'u',	APC_F_VOLT },
-	{ "input.transfer.reason",	'G',	APC_POLL|APC_F_REASON },
-	{ "input.voltage.maximum",	'M',	APC_POLL|APC_F_VOLT },
-	{ "input.voltage.minimum",	'N',	APC_POLL|APC_F_VOLT },
-	{ "output.current",		'/',	APC_POLL|APC_F_AMP },
-	{ "output.voltage",		'O',	APC_POLL|APC_F_VOLT },
-	{ "output.voltage.nominal",	'o',	APC_F_VOLT },
-	{ "ambient.humidity",		'h',	APC_POLL|APC_F_PERCENT },
-	{ "ambient.0.humidity",		'H',	APC_POLL|APC_PACK|APC_F_PERCENT },
-	{ "ambient.0.humidity.high",	'{',	APC_POLL|APC_PACK|APC_F_PERCENT },
-	{ "ambient.0.humidity.low",	'}',	APC_POLL|APC_PACK|APC_F_PERCENT },
-	{ "ambient.temperature",	't',	APC_POLL|APC_F_CELSIUS },
-	{ "ambient.0.temperature",	'T',	APC_MULTI|APC_POLL|APC_PACK|APC_F_CELSIUS, "^[0-9]{2}\\.[0-9]{2}$" },
-	{ "ambient.0.temperature.high",	'[',	APC_POLL|APC_PACK|APC_F_CELSIUS },
-	{ "ambient.0.temperature.low",	']',	APC_POLL|APC_PACK|APC_F_CELSIUS },
-	{ "battery.date",		'x',	APC_STRING },
-	{ "battery.charge",		'f',	APC_POLL|APC_F_PERCENT },
-	{ "battery.charge.restart",	'e',	APC_F_PERCENT },
-	{ "battery.voltage",		'B',	APC_POLL|APC_F_VOLT },
-	{ "battery.voltage.nominal",	'g', },
-	{ "battery.runtime",		'j',	APC_POLL|APC_F_MINUTES },
-	{ "battery.runtime.low",	'q',	APC_F_MINUTES },
-	{ "battery.packs",		'>',	APC_F_DEC },
-	{ "battery.packs.bad",		'<',	APC_F_DEC },
-	{ "battery.alarm.threshold",	'k', },
-	{ "device.uptime",		'T',	APC_MULTI|APC_POLL|APC_F_HOURS, "^[0-9]{3}\\.[0-9]{1}$" },
-	{ "ups.serial",			'n', },
-	{ "ups.mfr.date",		'm', },
-	{ "ups.model",			'\001' },
-	{ "ups.firmware.aux",		'v', },
-	{ "ups.firmware",		'b',	APC_MULTI, "^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$" },
-	{ "ups.firmware",		'V',	APC_MULTI },
-
-	{ NULL }
+	{ NULL, 0, 0, NULL, 0, 0 }
 	/* todo:
-
-	   I = alarm enable (hex field) - split into alarm.n.enable
-	   J = alarm status (hex field) - split into alarm.n.status
-
-	0x15 = output voltage selection (APC_F_VOLT)
-	0x5C = load power (APC_POLL|APC_F_PERCENT)
-
+	 *
+	 * I = alarm enable (hex field) - split into alarm.n.enable
+	 * J = alarm status (hex field) - split into alarm.n.status
+	 *
+	 * 0x15 = output voltage selection (APC_F_VOLT)
+	 * 0x5C = load power (APC_POLL|APC_F_PERCENT)
+	 *
 	 */
 };
 
@@ -94,19 +94,19 @@ apc_cmdtab_t apc_cmdtab[] = {
 					APC_CMD_GRACEDOWN,	APC_NASTY },
 	{ "shutdown.return",	"^([Cc][Ss]|)$",
 					APC_CMD_SOFTDOWN,	APC_NASTY },
-	{ "shutdown.stayoff",	0,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
-	{ "load.off",		0,	APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
-	{ "load.on",		0,	APC_CMD_ON,		APC_REPEAT },
-	{ "calibrate.start",	0,	APC_CMD_CALTOGGLE,	0 },
-	{ "calibrate.stop",	0,	APC_CMD_CALTOGGLE,	0 },
-	{ "test.panel.start",	0,	APC_CMD_FPTEST,		0 },
-	{ "test.failure.start",	0,	APC_CMD_SIMPWF,		0 },
-	{ "test.battery.start",	0,	APC_CMD_BTESTTOGGLE,	0 },
-	{ "test.battery.stop",	0,	APC_CMD_BTESTTOGGLE,	0 },
-	{ "bypass.start",	0,	APC_CMD_BYPTOGGLE,	0 },
-	{ "bypass.stop",	0,	APC_CMD_BYPTOGGLE,	0 },
+	{ "shutdown.stayoff",	NULL,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
+	{ "load.off",		NULL,	APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
+	{ "load.on",		NULL,	APC_CMD_ON,		APC_REPEAT },
+	{ "calibrate.start",	NULL,	APC_CMD_CALTOGGLE,	0 },
+	{ "calibrate.stop",	NULL,	APC_CMD_CALTOGGLE,	0 },
+	{ "test.panel.start",	NULL,	APC_CMD_FPTEST,		0 },
+	{ "test.failure.start",	NULL,	APC_CMD_SIMPWF,		0 },
+	{ "test.battery.start",	NULL,	APC_CMD_BTESTTOGGLE,	0 },
+	{ "test.battery.stop",	NULL,	APC_CMD_BTESTTOGGLE,	0 },
+	{ "bypass.start",	NULL,	APC_CMD_BYPTOGGLE,	0 },
+	{ "bypass.stop",	NULL,	APC_CMD_BYPTOGGLE,	0 },
 
-	{ NULL }
+	{ NULL, NULL, 0, 0 }
 };
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
@@ -151,11 +151,16 @@ apc_compattab_t apc_compattab[] = {
 	 */
 	{  "set\1",	"@789ABCFGKLMNOPQRSUVWXYZ", 0 },
 
-	{ NULL }
+	{ NULL, NULL, 0 }
 };
 
 upsdrv_info_t apc_tab_info = {
 	"APC command table",
-	APC_TABLE_VERSION
+	APC_TABLE_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n" \
+	"Michal Soltys <soltys@ziu.info>",
+	DRV_STABLE,
+	{ NULL }
 };
 

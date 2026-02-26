@@ -1,9 +1,11 @@
 /*  belkin-hid.c - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
  *  Copyright (C)
- *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
- *  2011, 2014  Charles Lepple <clepple+nut@gmail>
+ *  2011, 2014  Charles Lepple <clepple+nut@gmail.com>
+ *  2024        James R. Parks <jrjparks@zathera.com>
+ *  2024        Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -24,12 +26,13 @@
  *
  */
 
-#include "main.h"     /* for getval() */
+#include "main.h"	/* for getval() */
 #include "usbhid-ups.h"
 #include "belkin-hid.h"
 #include "usb-common.h"
+#include "nut_float.h"	/* For fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.17"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.22"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -65,15 +68,19 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	/* F6C1100-UNV, F6C1200-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
 
+	/* Liebert GXT4 UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0000), NULL },
 	/* Liebert PowerSure PSA UPS */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
+	/* Liebert PowerSure PST UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0002), NULL },
 	/* Liebert PowerSure PSI 1440 */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
 	/* Liebert GXT3 */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0008), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 static const char *liebert_online_fun(double value);
@@ -82,48 +89,49 @@ static const char *liebert_charging_fun(double value);
 static const char *liebert_lowbatt_fun(double value);
 static const char *liebert_replacebatt_fun(double value);
 static const char *liebert_shutdownimm_fun(double value);
+
+/* These lookup functions also cover the 1e-7 factor which seems to
+ * be due to a broken report descriptor in certain Liebert units.
+ * Exposed for unit testing - not "static" */
 static const char *liebert_config_voltage_fun(double value);
 static const char *liebert_line_voltage_fun(double value);
-
-static info_lkp_t liebert_online_info[] = {
-	{ 0, NULL, liebert_online_fun }
-};
-
-static info_lkp_t liebert_discharging_info[] = {
-        { 0, NULL, liebert_discharging_fun }
-};
-
-static info_lkp_t liebert_charging_info[] = {
-        { 0, NULL, liebert_charging_fun }
-};
-
-static info_lkp_t liebert_lowbatt_info[] = {
-        { 0, NULL, liebert_lowbatt_fun }
-};
-
-static info_lkp_t liebert_replacebatt_info[] = {
-        { 0, NULL, liebert_replacebatt_fun }
-};
-
-static info_lkp_t liebert_shutdownimm_info[] = {
-        { 0, NULL, liebert_shutdownimm_fun }
-};
-
-static info_lkp_t liebert_config_voltage_info[] = {
-	{ 0, NULL, liebert_config_voltage_fun },
-};
-
-static info_lkp_t liebert_line_voltage_info[] = {
-	{ 0, NULL, liebert_line_voltage_fun },
-};
 
 static double liebert_config_voltage_mult = 1.0;
 static double liebert_line_voltage_mult = 1.0;
 static char liebert_conversion_buf[10];
 
-/* These lookup functions also cover the 1e-7 factor which seems to be due to a
- * broken report descriptor in certain Liebert units.
- */
+static info_lkp_t liebert_online_info[] = {
+	{ 0, NULL, liebert_online_fun, NULL }
+};
+
+static info_lkp_t liebert_discharging_info[] = {
+	{ 0, NULL, liebert_discharging_fun, NULL }
+};
+
+static info_lkp_t liebert_charging_info[] = {
+	{ 0, NULL, liebert_charging_fun, NULL }
+};
+
+static info_lkp_t liebert_lowbatt_info[] = {
+	{ 0, NULL, liebert_lowbatt_fun, NULL }
+};
+
+static info_lkp_t liebert_replacebatt_info[] = {
+	{ 0, NULL, liebert_replacebatt_fun, NULL }
+};
+
+static info_lkp_t liebert_shutdownimm_info[] = {
+	{ 0, NULL, liebert_shutdownimm_fun, NULL }
+};
+
+static info_lkp_t liebert_config_voltage_info[] = {
+	{ 0, NULL, liebert_config_voltage_fun, NULL },
+};
+
+static info_lkp_t liebert_line_voltage_info[] = {
+	{ 0, NULL, liebert_line_voltage_fun, NULL },
+};
+
 static const char *liebert_online_fun(double value)
 {
 	return value ? "online" : "!online";
@@ -160,8 +168,13 @@ static const char *liebert_shutdownimm_fun(double value)
  */
 static const char *liebert_config_voltage_fun(double value)
 {
-	if( value < 1 ) {
-		if( abs(value - 1e-7) < 1e-9 ) {
+	/* Does not fire with devices seen diring investigation for
+	 *   https://github.com/networkupstools/nut/issues/2370
+	 * as the ones seen serve nominal "config" values as integers
+	 * (e.g. "230" for line and "24" for battery).
+	 */
+	if (value < 1) {
+		if (fabs(value - 1e-7) < 1e-9) {
 			liebert_config_voltage_mult = 1e8;
 			liebert_line_voltage_mult = 1e7; /* stomp this in case input voltage was low */
 			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g",
@@ -178,9 +191,33 @@ static const char *liebert_config_voltage_fun(double value)
 
 static const char *liebert_line_voltage_fun(double value)
 {
-	if( value < 1 ) {
-		if( abs(value - 1e-7) < 1e-9 ) {
+	/* Keep large readings like "230" or "24" as is */
+	if (value < 1) {
+		int picked_scale = 0;
+		/* NOTE: Start with tiniest scale first */
+
+		/* Practical use-case for mult=1e7:
+		 *   1.39e-06  =>  13.9
+		 *   2.201e-05 => 220.1
+		 * NOTE: The clause below is in fact broken for this use-case,
+		 * but was present in sources for ages (worked wrongly with an
+		 * integer-oriented abs() so collapsed into "if (0 < 1e-9) {")!
+		 *   if (fabs(value - 1e-7) < 1e-9) {
+		 */
+		if (fabs(value - 1e-5) < 4*1e-5) {
 			liebert_line_voltage_mult = 1e7;
+			picked_scale = 1;
+		} else
+		/* Practical use-case for mult=1e5:
+		 *   0.000273 =>  27.3
+		 *   0.001212 => 121.2
+		 */
+		if (fabs(value - 1e-3) < 4*1e-3) {
+			liebert_line_voltage_mult = 1e5;
+			picked_scale = 1;
+		}
+
+		if (picked_scale) {
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
 		} else {
@@ -207,7 +244,7 @@ static const char *belkin_firmware_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_firmware_conversion[] = {
-	{ 0, NULL, belkin_firmware_conversion_fun }
+	{ 0, NULL, belkin_firmware_conversion_fun, NULL }
 };
 
 static const char *belkin_upstype_conversion_fun(double value)
@@ -230,7 +267,7 @@ static const char *belkin_upstype_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_upstype_conversion[] = {
-	{ 0, NULL, belkin_upstype_conversion_fun }
+	{ 0, NULL, belkin_upstype_conversion_fun, NULL }
 };
 
 static const char *belkin_sensitivity_conversion_fun(double value)
@@ -247,17 +284,17 @@ static const char *belkin_sensitivity_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_sensitivity_conversion[] = {
-	{ 0, NULL, belkin_sensitivity_conversion_fun }
+	{ 0, NULL, belkin_sensitivity_conversion_fun, NULL }
 };
 
 static info_lkp_t belkin_test_info[] = {
-	{ 0, "No test initiated", NULL },
-	{ 1, "Done and passed", NULL },
-	{ 2, "Done and warning", NULL },
-	{ 3, "Done and error", NULL },
-	{ 4, "Aborted", NULL },
-	{ 5, "In progress", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "No test initiated", NULL, NULL },
+	{ 1, "Done and passed", NULL, NULL },
+	{ 2, "Done and warning", NULL, NULL },
+	{ 3, "Done and error", NULL, NULL },
+	{ 4, "Aborted", NULL, NULL },
+	{ 5, "In progress", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *belkin_overload_conversion_fun(double value)
@@ -270,7 +307,7 @@ static const char *belkin_overload_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_overload_conversion[] = {
-	{ 0, NULL, belkin_overload_conversion_fun }
+	{ 0, NULL, belkin_overload_conversion_fun, NULL }
 };
 
 static const char *belkin_overheat_conversion_fun(double value)
@@ -283,7 +320,7 @@ static const char *belkin_overheat_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_overheat_conversion[] = {
-	{ 0, NULL, belkin_overheat_conversion_fun }
+	{ 0, NULL, belkin_overheat_conversion_fun, NULL }
 };
 
 static const char *belkin_commfault_conversion_fun(double value)
@@ -296,7 +333,7 @@ static const char *belkin_commfault_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_commfault_conversion[] = {
-	{ 0, NULL, belkin_commfault_conversion_fun }
+	{ 0, NULL, belkin_commfault_conversion_fun, NULL }
 };
 
 static const char *belkin_awaitingpower_conversion_fun(double value)
@@ -309,7 +346,7 @@ static const char *belkin_awaitingpower_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_awaitingpower_conversion[] = {
-	{ 0, NULL, belkin_awaitingpower_conversion_fun }
+	{ 0, NULL, belkin_awaitingpower_conversion_fun, NULL }
 };
 
 static const char *belkin_online_conversion_fun(double value)
@@ -322,7 +359,7 @@ static const char *belkin_online_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_online_conversion[] = {
-	{ 0, NULL, belkin_online_conversion_fun }
+	{ 0, NULL, belkin_online_conversion_fun, NULL }
 };
 
 static const char *belkin_lowbatt_conversion_fun(double value)
@@ -335,7 +372,7 @@ static const char *belkin_lowbatt_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_lowbatt_conversion[] = {
-	{ 0, NULL, belkin_lowbatt_conversion_fun }
+	{ 0, NULL, belkin_lowbatt_conversion_fun, NULL }
 };
 
 static const char *belkin_depleted_conversion_fun(double value)
@@ -348,7 +385,7 @@ static const char *belkin_depleted_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_depleted_conversion[] = {
-	{ 0, NULL, belkin_depleted_conversion_fun }
+	{ 0, NULL, belkin_depleted_conversion_fun, NULL }
 };
 
 static const char *belkin_replacebatt_conversion_fun(double value)
@@ -361,7 +398,7 @@ static const char *belkin_replacebatt_conversion_fun(double value)
 }
 
 static info_lkp_t belkin_replacebatt_conversion[] = {
-	{ 0, NULL, belkin_replacebatt_conversion_fun }
+	{ 0, NULL, belkin_replacebatt_conversion_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -476,6 +513,17 @@ static hid_info_t belkin_hid2nut[] = {
   { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
+  /* Liebert PSI5 */
+  { "input.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%s", 0, divide_by_100_conversion },
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  { "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%s", 0, divide_by_100_conversion },
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  { "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
+  { "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
+  { "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "battery.capacity", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", 0, NULL },
   /* status */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info }, /* might not need to be liebert_* version */
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },
@@ -525,7 +573,7 @@ static hid_info_t belkin_hid2nut[] = {
      yet implemented) workaround, see the belkinunv(8) man page.
      -PS 2005/08/28 */
 
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
   /* added for debugging Liebert GXT3 : */
   { "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", 0, NULL },
@@ -539,7 +587,7 @@ static hid_info_t belkin_hid2nut[] = {
   { "unmapped.ups.powersummary.capacitygranularity1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.capacitygranularity2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%.0f", 0, NULL },
-#endif
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
@@ -617,6 +665,9 @@ static int belkin_claim(HIDDevice_t *hd)
 			}
 			possibly_supported("Liebert", hd);
 			return 0;
+
+		default:
+			break;
 		}
 		return 0;
 
@@ -637,4 +688,5 @@ subdriver_t belkin_subdriver = {
 	belkin_format_model,
 	belkin_format_mfr,
 	belkin_format_serial,
+	fix_report_desc,
 };

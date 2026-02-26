@@ -17,9 +17,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <ctype.h>
-
 #include "common.h"
+
+#include <ctype.h>
+#include <stdio.h>
+
 #include "cgilib.h"
 #include "parseconf.h"
 
@@ -29,7 +31,10 @@ static char *unescape(char *buf)
 	char	ch, *newbuf, hex[8];
 
 	buflen = strlen(buf) + 2;
-	newbuf = xmalloc(buflen);
+	newbuf = (char *)xmalloc(buflen);
+	if (newbuf == NULL) {
+		return NULL;
+	}
 	*newbuf = '\0';
 
 	fflush(stdout);
@@ -40,15 +45,19 @@ static char *unescape(char *buf)
 			ch = ' ';
 
 		if (ch == '%') {
+			long l;
 			if (i + 2 > buflen)
 				fatalx(EXIT_FAILURE, "string too short for escaped char");
 			hex[0] = buf[++i];
 			hex[1] = buf[++i];
 			hex[2] = '\0';
 			if (!isxdigit((unsigned char) hex[0])
-				|| !isxdigit((unsigned char) hex[0]))
+				|| !isxdigit((unsigned char) hex[1]))
 				fatalx(EXIT_FAILURE, "bad escape char");
-			ch = strtol(hex, NULL, 16);
+			l = strtol(hex, NULL, 16);
+			assert(l>=0);
+			assert(l<=255);
+			ch = (char)l;	/* FIXME: Loophole about non-ASCII symbols in top 128 values, or negatives for signed char... */
 
 			if ((ch == 10) || (ch == 13))
 				ch = ' ';
@@ -78,8 +87,15 @@ void extractcgiargs(void)
 	while (ptr) {
 		varname = ptr;
 		eq = strchr(varname, '=');
-		if (!eq) {
-			ptr = strchr(varname, '&');
+		amp = strchr(varname, '&');
+		if (!eq
+		 || (eq && amp && amp < eq)
+		) {
+			/* Last token is a flag (without assignment in sight),
+			 * OR we've got a flag token in the middle of a query
+			 * string, followed by another key=value pair later on.
+			 */
+			ptr = amp;
 			if (ptr)
 				*ptr++ = '\0';
 
@@ -89,7 +105,9 @@ void extractcgiargs(void)
 
 			continue;
 		}
-		
+
+		/* The nearest point of interest is a key=value pair,
+		 * maybe followed by another amp and flag or assignment... */
 		*eq = '\0';
 		value = eq + 1;
 		amp = strchr(value, '&');
@@ -101,7 +119,9 @@ void extractcgiargs(void)
 			ptr = NULL;
 
 		cleanvar = unescape(varname);
-		cleanval = unescape(value);	
+		cleanval = unescape(value);
+		upsdebugx(3, "%s: parsearg('%s', '%s')<br/>",
+			__func__, NUT_STRARG(cleanvar), NUT_STRARG(cleanval));
 		parsearg(cleanvar, cleanval);
 		free(cleanvar);
 		free(cleanval);
@@ -110,42 +130,120 @@ void extractcgiargs(void)
 
 void extractpostargs(void)
 {
-	char	buf[SMALLBUF], *ptr, *cleanval;
-	int	ch;
+	char	buf[SMALLBUF], *ptr, *cleanval, *server_software = NULL;
+	int	ch, content_length = -1, bytes_seen = 0;
+	size_t	buflen;
 
-	ch = fgetc(stdin);
+	/* First, see if there's anything waiting...
+	 * the server may not close STDIN properly
+	 * or somehow delay opening/populating it. */
+#ifndef WIN32
+	int	selret;
+	fd_set	fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(STDIN_FILENO, &fds);
+	tv.tv_sec = 0;
+	tv.tv_usec = 250000; /* wait for up to 250ms for a POST query to come */
+
+	selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+	if (selret <= 0) {
+#else
+	HANDLE	hSTDIN = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD	selret = WaitForSingleObject(hSTDIN, 250);
+	if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
+#endif	/* WIN32 */
+		upsdebug_with_errno(1, "%s: no stdin is waiting (%" PRIiMAX ")<br/>", __func__, (intmax_t)selret);
+		return;
+	}
+
 	buf[0] = '\0';
 
-	while (ch != EOF) {
-		if (ch == '&') {
+	/* Does the web server tell us how much it sent
+	 * (and might keep the channel open... indefinitely)? */
+	ptr = getenv("CONTENT_LENGTH");
+	if (ptr) {
+		content_length = atoi(ptr);
+	}
+
+	ptr = getenv("SERVER_SOFTWARE");
+	if (ptr) {
+		server_software = ptr;
+	} else {
+		server_software = "";
+	}
+
+	if (content_length > 0 && strstr(server_software, "IIS")) {
+		/* Our POSTs end with a newline, and that one never arrives
+		 * (reads hang), possibly buffered output from IIS?
+		 * Our own setmode() in e.g. upsset.c does not help.
+		 * So upsset.c ends each FORM with do_hidden_sentinel()
+		 * to sacrifice a few bytes we would not use.
+		 */
+		upsdebugx(3, "%s: truncating expected content length on IIS<br/>", __func__);
+		content_length--;
+	}
+	upsdebugx(3, "%s: starting to read %d POSTed bytes on server '%s'<br/>", __func__, content_length, server_software);
+
+	ch = fgetc(stdin);
+	upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
+
+	if (ch == EOF) {
+		bytes_seen++;
+		upsdebugx(3, "%s: got immediate EOF in stdin<br/>", __func__);
+	} else while(1) {
+		bytes_seen++;
+		if (ch == '&' || ch == EOF || (content_length >= 0 && bytes_seen >= content_length)) {
+			buflen = strlen(buf);
+			upsdebugx(1, "%s: collected a chunk of %" PRIuSIZE " bytes on stdin: %s<br/>",
+				__func__, buflen, buf);
 			ptr = strchr(buf, '=');
-			if (!ptr)
+			if (!ptr) {
+				upsdebugx(3, "%s: parsearg('%s', '')<br/>", __func__, buf);
 				parsearg(buf, "");
-			else {
+			} else {
 				*ptr++ = '\0';
 				cleanval = unescape(ptr);
+				upsdebugx(3, "%s: parsearg('%s', '%s')<br/>", __func__, buf, cleanval);
 				parsearg(buf, cleanval);
 				free(cleanval);
 			}
 			buf[0] = '\0';
+
+			if (ch == EOF || (content_length >= 0 && bytes_seen >= content_length))
+				break;	/* end the loop */
 		}
 		else
 			snprintfcat(buf, sizeof(buf), "%c", ch);
 
-		ch = fgetc(stdin);
-	}
+#ifndef WIN32
+		/* Must re-init every time when looping (array is changed by select method) */
+		FD_ZERO(&fds);
+		FD_SET(STDIN_FILENO, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
 
-	if (strlen(buf) != 0) {
-		ptr = strchr(buf, '=');
-		if (!ptr)
-			parsearg(buf, "");
-		else {
-			*ptr++ = '\0';
-			cleanval = unescape(ptr);
-			parsearg(buf, cleanval);
-			free(cleanval);
+		selret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+		if (selret <= 0) {
+#else
+		selret = WaitForSingleObject(hSTDIN, 250);
+		if (selret != WAIT_OBJECT_0) { /* or == WAIT_TIMEOUT ? */
+#endif
+			/* We do not always get EOF, so assume the input stream stopped */
+			upsdebug_with_errno(1, "%s: timed out waiting for an stdin byte (%" PRIiMAX ")<br/>", __func__, (intmax_t)selret);
+			break;
 		}
-	}
+
+		fflush(stderr);
+		ch = fgetc(stdin);
+		upsdebugx(6, "%s: got char: '%c' (%d, 0x%02X)<br/>", __func__, ch, ch, (unsigned int)ch);
+		if (ch == EOF)
+			upsdebugx(3, "%s: got proper stdin EOF<br/>", __func__);
+		upsdebugx(6, "%s: processed %d bytes with %d expected incoming content length on server '%s'<br/>", __func__, bytes_seen, content_length, server_software);
+	}	/* end of infinite loop */
+
+	upsdebugx(3, "%s: processed %d bytes with %d incoming content length<br/>", __func__, bytes_seen, content_length);
 }
 
 /* called for fatal errors in parseconf like malloc failures */
@@ -156,7 +254,7 @@ static void cgilib_err(const char *errmsg)
 
 int checkhost(const char *host, char **desc)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	if (!host)
@@ -199,4 +297,4 @@ int checkhost(const char *host, char **desc)
 	pconf_finish(&ctx);
 
 	return 0;	/* not found: access denied */
-}	
+}

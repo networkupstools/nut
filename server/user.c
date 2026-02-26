@@ -17,10 +17,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif	/* !WIN32 */
 
 #include "common.h"
 #include "parseconf.h"
@@ -28,9 +32,9 @@
 #include "user.h"
 #include "user-data.h"
 
-	ulist_t	*users = NULL;
+static ulist_t	*users = NULL;
 
-	static	ulist_t	*curr_user;
+static	ulist_t	*curr_user;
 
 /* create a new user entry */
 static void user_add(const char *un)
@@ -41,7 +45,7 @@ static void user_add(const char *un)
 		return;
 	}
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		last = tmp;
 
@@ -51,13 +55,13 @@ static void user_add(const char *un)
 		}
 	}
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (ulist_t*)xcalloc(1, sizeof(*tmp));
 	tmp->username = xstrdup(un);
 
 	if (last) {
 		last->next = tmp;
 	} else {
-		users = tmp;	
+		users = tmp;
 	}
 
 	/* remember who we're working on */
@@ -78,7 +82,7 @@ static void user_password(const char *pw)
 	}
 
 	if (curr_user->password) {
-		fprintf(stderr, "Ignoring duplicate password for %s\n", 
+		fprintf(stderr, "Ignoring duplicate password for %s\n",
 			curr_user->username);
 		return;
 	}
@@ -101,7 +105,7 @@ static void user_add_instcmd(const char *cmd)
 		return;
 	}
 
-	for (tmp = curr_user->firstcmd; tmp != NULL; tmp = tmp->next) {
+	for (tmp = curr_user->firstcmd; tmp != NULL; tmp = (instcmdlist_t*)tmp->next) {
 
 		last = tmp;
 
@@ -114,7 +118,7 @@ static void user_add_instcmd(const char *cmd)
 	upsdebugx(2, "user_add_instcmd: adding '%s' for %s",
 				cmd, curr_user->username);
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (instcmdlist_t*)xcalloc(1, sizeof(*tmp));
 
 	tmp->cmd = xstrdup(cmd);
 
@@ -133,12 +137,12 @@ static actionlist_t *addaction(actionlist_t *base, const char *action)
 		return base;
 	}
 
-	for (tmp = base; tmp != NULL; tmp = tmp->next) {
+	for (tmp = base; tmp != NULL; tmp = (actionlist_t*)tmp->next) {
 
 		last = tmp;
 	}
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (actionlist_t*)xcalloc(1, sizeof(*tmp));
 	tmp->action = xstrdup(action);
 
 	if (last) {
@@ -170,7 +174,7 @@ static void flushcmd(instcmdlist_t *ptr)
 		return;
 	}
 
-	flushcmd(ptr->next);
+	flushcmd((instcmdlist_t*)ptr->next);
 
 	free(ptr->cmd);
 	free(ptr);
@@ -182,7 +186,7 @@ static void flushaction(actionlist_t *ptr)
 		return;
 	}
 
-	flushaction(ptr->next);
+	flushaction((actionlist_t*)ptr->next);
 
 	free(ptr->action);
 	free(ptr);
@@ -194,7 +198,7 @@ static void flushuser(ulist_t *ptr)
 		return;
 	}
 
-	flushuser(ptr->next);
+	flushuser((ulist_t*)ptr->next);
 	flushcmd(ptr->firstcmd);
 	flushaction(ptr->firstaction);
 
@@ -214,7 +218,7 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 {
 	instcmdlist_t	*tmp;
 
-	for (tmp = user->firstcmd; tmp != NULL; tmp = tmp->next) {
+	for (tmp = user->firstcmd; tmp != NULL; tmp = (instcmdlist_t*)tmp->next) {
 
 		if (!strcasecmp(tmp->cmd, cmd)) {
 			return 1;	/* good */
@@ -236,7 +240,7 @@ int user_checkinstcmd(const char *un, const char *pw, const char *cmd)
 		return 0;	/* failed */
 	}
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		/* let's be paranoid before we call strcmp */
 
@@ -270,7 +274,7 @@ static int user_matchaction(ulist_t *user, const char *action)
 {
 	actionlist_t	*tmp;
 
-	for (tmp = user->firstaction; tmp != NULL; tmp = tmp->next) {
+	for (tmp = user->firstaction; tmp != NULL; tmp = (actionlist_t*)tmp->next) {
 
 		if (!strcasecmp(tmp->action, action)) {
 			return 1;	/* good */
@@ -287,7 +291,7 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	if ((!un) || (!pw) || (!action))
 		return 0;	/* failed */
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		/* let's be paranoid before we call strcmp */
 
@@ -317,19 +321,20 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	return 0;	/* fail */
 }
 
-/* handle "upsmon master" and "upsmon slave" for nicer configurations */
+/* handle "upsmon primary" and "upsmon secondary" for nicer configurations */
+/* FIXME: Protocol update needed to handle master/primary alias (in action and in protocol) */
 static void set_upsmon_type(char *type)
 {
-	/* master: login, master, fsd */
-	if (!strcasecmp(type, "master")) {
+	/* primary: login, master, fsd */
+	if (!strcasecmp(type, "master") || !strcasecmp(type, "primary")) {
 		user_add_action("login");
-		user_add_action("master");
+		user_add_action("master"); /* Note: this is linked to "MASTER" API command permission */
 		user_add_action("fsd");
 		return;
 	}
 
-	/* slave: just login */
-	if (!strcasecmp(type, "slave")) {
+	/* secondary: just login */
+	if (!strcasecmp(type, "slave") || !strcasecmp(type, "secondary")) {
 		user_add_action("login");
 		return;
 	}
@@ -370,9 +375,9 @@ static void parse_var(char *var, char *val)
 }
 
 /* parse first var+val pair, then flip through remaining vals */
-static void parse_rest(char *var, char *fval, char **arg, int next, int left)
+static void parse_rest(char *var, char *fval, char **arg, size_t next, size_t left)
 {
-	int	i;
+	size_t	i;
 
 	/* no globals supported yet, so there's no sense in continuing */
 	if (!curr_user) {
@@ -390,7 +395,7 @@ static void parse_rest(char *var, char *fval, char **arg, int next, int left)
 	}
 }
 
-static void user_parse_arg(int numargs, char **arg)
+static void user_parse_arg(size_t numargs, char **arg)
 {
 	char	*ep;
 
@@ -414,7 +419,7 @@ static void user_parse_arg(int numargs, char **arg)
 		/*      0       1       2  ... */
 		/* foo=bar <rest1> <rest2> ... */
 
-		parse_rest(arg[0], ep+1, arg, 1, numargs - 1);
+		parse_rest(arg[0], ep+1, arg, 1, (numargs < 2) ? 0 : (numargs - 1));
 		return;
 	}
 
@@ -447,8 +452,8 @@ static void user_parse_arg(int numargs, char **arg)
 		/* foo = bar <rest1> <rest2> ... */
 
 		/* parse first var/val, plus subsequent values (if any) */
-		
-		parse_rest(arg[0], arg[2], arg, 3, numargs - 3);
+
+		parse_rest(arg[0], arg[2], arg, 3, (numargs < 4) ? 0 : (numargs - 3));
 		return;
 	}
 
@@ -463,7 +468,7 @@ static void upsd_user_err(const char *errmsg)
 
 void user_load(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	curr_user = NULL;

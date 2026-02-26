@@ -1,8 +1,0 @@
-This directory contains the NUT support files for systemd, the System and
-Service Manager.
-
-These files are automatically installed, upon detection (at configure time)
-of a systemd enabled system.
-
-Contributed by Michal Hlavinka <mhlavink@redhat.com>
-

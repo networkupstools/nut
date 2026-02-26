@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <string.h>
 
 #include "common.h"
@@ -74,7 +76,7 @@ static void desc_add(dlist_t **list, const char *name, const char *desc)
 	}
 
 	if (temp == NULL) {
-		temp = xcalloc(1, sizeof(*temp));
+		temp = (dlist_t*)xcalloc(1, sizeof(*temp));
 		temp->name = xstrdup(name);
 		temp->next = *list;
 		*list = temp;
@@ -93,7 +95,7 @@ static void desc_file_err(const char *errmsg)
 
 void desc_load(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/cmdvartab", datapath);

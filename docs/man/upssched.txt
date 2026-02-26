@@ -8,10 +8,17 @@ upssched - Timer helper for scheduling events from upsmon
 
 SYNOPSIS
 --------
-*upssched*
+
+*upssched* [OPTIONS] [NOTIFYMSG]
 
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
 You should never run it directly during normal operations.
+
+*upssched* -l
+
+List currently tracked timer events, if any. Report as a TAB-separated
+table of: 'NAME', 'TIMEOUT_ABS', 'TIMEOUT_REL', 'NOTIFYTYPE', 'UPSNAME',
+`NOTIFYMSG`.
 
 DESCRIPTION
 -----------
@@ -20,6 +27,36 @@ DESCRIPTION
 relative to events being monitored by linkman:upsmon[8].  The original
 purpose was to allow for a shutdown to occur after some fixed period
 on battery, but there are other uses that are possible.
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-D*::
+Raise the debugging level. Use this option multiple times for more details.
+
+OPTIONS
+-------
+
+By default `upssched` processes its configuration file and executes or queues
+calls to its `CMDSCRIPT`, or cancels some previously queued item(s), based on
+configuration and the `NOTIFYTYPE` it receives.  One exception to this is the
+queue listing mode `-l`.
+
+*-l*::
+List pending timers (if any) and exit.
+
+*NOTIFYMSG*::
+Optionally pass a text message (typically originates from linkman:upsmon[8]
+call to `upssched` as its `NOTIFYCMD`) as an environment variable named
+`NOTIFYMSG` to the `CMDSCRIPT` launched by `upssched` immediately or after
+a timer expires.
 
 INTEGRATION
 -----------
@@ -44,6 +81,14 @@ If you also want to continue writing to the syslog, just add it in:
 
 For a full list of notify flags, see the linkman:upsmon[8] documentation.
 
+Please note that command execution is synchronous (with the called `upssched`
+tool process in case of `EXECUTE` directive, or with the timer process).
+Consider using your system shell abilities like `&` to send long-duration
+handling to the background and let `upssched` timer daemon continue.
+This should not impact `upsmon` daemon, which handles each notification
+in a separate sub-process (and so not a problem for immediate `EXECUTE`
+events).
+
 CONFIGURATION
 -------------
 
@@ -59,6 +104,24 @@ to shut down the slaves in a controlled manner.
 
 Be sure you cancel the timer if power returns (ONLINE).
 
+EARLY PREPARATION FOR A SHUTDOWN ON UPSMON PRIMARY INSTANCE
+-----------------------------------------------------------
+
+The linkman:upsmon[8] primary instance is responsible for telling the UPS(es)
+to power off at the end of emergency shutdown.  As such, if there are several
+clients, the primary instance raises an "FSD" (Forced Shut Down) flag on the
+data server for each UPS it manages, and waits for secondary instances to log
+off (or for a timeout to expire).  If there are activities that should happen
+on the primary upsmon's computer during shutdown which take a long time, you
+can use the `FSD` notification to begin those operations while the primary
+`upsmon` instance waits for the secondaries to complete their shutdowns.
+
+If you have several UPSes, you may want to combine several notifications with
+the `START-TIMER-SHARED` directive (with a short timeout), so you only react
+once.  Alternately, if the needed activity varies by the UPS (e.g. custom
+remote-device shutdown scripts), you may actually want to use `EXECUTE` rules
+right away (and dispatch further work in your `CMDSCRIPT`).
+
 DEBOUNCING EVENTS
 -----------------
 
@@ -66,7 +129,7 @@ If your UPS goes on and off battery frequently, you can use this program
 to reduce the number of pager messages that are sent out.  Rather than
 sending pages directly from linkman:upsmon[8], use a short timer here.
 If the timer triggers with the UPS still on battery, then send the page.
-If the power returns before then, the timer can be cancelled and no page 
+If the power returns before then, the timer can be cancelled and no page
 is necessary.
 
 BACKGROUND
@@ -92,13 +155,32 @@ no timers are present in the queue, the background process exits.
 This means that you will only see upssched running when one of two things
 is happening:
 
- - There's a timer of some sort currently running 
+ - There's a timer of some sort currently running
  - upsmon just called it, and you managed to catch the brief instance
 
 The final optimization handles the possibility of trying to cancel a timer
 when there are none running.  If the timer daemon isn't running, there
 are no timers to cancel, and furthermore there is no need to start
 a clock-watcher.  So, it skips that step and exits sooner.
+
+ENVIRONMENT VARIABLES
+---------------------
+
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
+NOTE: Unlike some other NUT daemons, `upssched` with enabled debug
+does not stop reporting on `stderr`! It forks a background process
+with the first call as an event handler, which exits soon after all
+tracked timers have elapsed and were handled (if needed).
+
+*UPSNAME* and *NOTIFYTYPE* are required, as detailed above. They are
+set by `upsmon` when it calls `upssched` as its choice of `NOTIFYCMD`.
+
+*NUT_CONFPATH* is the path name of the directory that contains
+`upssched.conf` and other configuration files.  If this variable is not set,
+*upssched* uses a built-in default, which is often `/usr/local/ups/etc`.
 
 FILES
 -----
@@ -112,4 +194,5 @@ linkman:upsmon[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

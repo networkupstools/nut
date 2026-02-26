@@ -1,8 +1,82 @@
-#!bin/sh
+#!/bin/sh
+
+# Preremove script for Network UPS Tools package
 
 # Stop all nut services
 
 NUT_DIR="@prefix@"
+prefix="@prefix@" # expanded as part of some autoconf macros below
 
-#$NUT_DIR/sbin/upsdrvctl stop
+# Operations with upsdrvctl below should not warn about running
+# directly on an SMF-capable system (note it currently acts as
+# set/unset, e.g. there is no meaningful "false" value handling):
+NUT_QUIET_INIT_NDE_WARNING=true
+export NUT_QUIET_INIT_NDE_WARNING
 
+# Possibly tweak the defaults here (or in a calling session) to
+# troubleshoot package installation:
+[ -n "${NUT_DEBUG_LEVEL-}" ] || NUT_DEBUG_LEVEL=0
+export NUT_DEBUG_LEVEL
+
+# TODO/FIXME : Should "/var/run" be a configure variable?
+# Note that "/var/run" is transient tmpfs, so upgrade has to be done during same uptime.
+ACTIVE_ENUMERATOR_FMRI_FILE="/var/run/nut-driver-enumerator-fmri.prev"
+
+if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+	# Unconfigure SMF services
+	# First detect the first active (online, maintenance, etc.)
+	# instance of nut-driver-enumerator so we can pass it to the
+	# next lifetime in case of re-install of NUT and keep the
+	# user's previously declared preference.
+	ACTIVE_ENUMERATOR="`/usr/bin/svcs -H -o state,fmri '*/nut-driver-enumerator:*' | while read S F ; do [ \"$S\" != \"disabled\" ] && [ \"$S\" != \"offline\" ] && echo \"$F\" && break ; done`"
+	if [ -n "$ACTIVE_ENUMERATOR" ]; then
+		rm -f "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		touch "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		chmod 600 "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		chown 0:0 "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		echo "${ACTIVE_ENUMERATOR}" > "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+	fi
+	# First tell the automagic to stop, so it does not interfere; diligently clean it out below
+	/usr/sbin/svcadm disable nut-driver-enumerator:default || true
+	/usr/sbin/svcadm disable nut-driver-enumerator:daemon || true
+	for S in nut nut-monitor nut-server ; do
+		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S" 2>/dev/null
+		/usr/sbin/svcadm disable -s "$S"
+		echo "Removing NUT service: $S..."
+		/usr/sbin/svccfg delete "$S" || \
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+	done
+	echo "Stopping NUT drivers, if any..."
+	@SBINDIR@/upsdrvsvcctl stop
+	@SBINDIR@/upsdrvctl stop
+	sleep 5
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*'` ; do
+		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S" 2>/dev/null
+		/usr/sbin/svcadm disable -s "$S"
+	done
+	sleep 5
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*' | grep -wv default` ; do
+		echo "Removing NUT service: $S..."
+		# Note: S here is a full FMRI URL
+		SB="`echo \"$S\" | sed 's,:[^:]*$,,'`"
+		SI="`echo \"$S\" | sed 's,^.*:\([^:]*\)$,\1,'`"
+		/usr/sbin/svcadm disable -s "$S"
+		/usr/sbin/svccfg -s "$SB" delete -f "$SI" || \
+		/usr/sbin/svccfg delete "$S"
+	done
+	for S in nut-driver-enumerator nut-driver ; do
+		echo "Removing NUT service: $S..." && \
+		/usr/sbin/svccfg delete "$S" || \
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+	done
+else
+	[ -x /etc/init.d/nut ] && /etc/init.d/nut stop
+fi
+
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datarootdir@/augeas-lenses" ] ; then
+	( cd "@datarootdir@/augeas-lenses" && find . -type f -exec rm -f "@auglensdir@"/'{}' \; )
+fi

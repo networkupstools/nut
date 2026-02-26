@@ -1,5 +1,21 @@
 # Network UPS Tools - upssched.conf sample file
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
+
+# ============================================================================
+# DEBUG_MIN <num>
+#
+# Optionally specify a minimum debug level for `upssched` daemon or client,
+# e.g. for troubleshooting a deployment without a need to edit consumer
+# configuration.
+# Note that command-line option `-D` can only increase this verbosity level.
+# Also note that the configuration file is processed line by line, so you
+# may want to set this option early on.
+#
+# DEBUG_MIN 6
+
 # ============================================================================
 #
 # CMDSCRIPT <scriptname>
@@ -25,7 +41,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # normal users can't create the file, due to the possibility of symlinking
 # and other evil.
 #
-# Note: if you are running Solaris or similar, the permissions that 
+# Note: if you are running Solaris or similar, the permissions that
 # upssched sets on this file *are not enough* to keep you safe.  If
 # your OS ignores the permissions on a FIFO, then you MUST put this in
 # a protected directory!
@@ -67,9 +83,9 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # <upsname> can be the special value * to apply this handler to every
 # possible value of <upsname>.
 #
-# Run the command <command> via your CMDSCRIPT when it happens. 
+# Run the command <command> via your CMDSCRIPT when it happens.
 #
-# Note that any AT that matches both the <notifytype> and the <upsname> 
+# Note that any AT that matches both the <notifytype> and the <upsname>
 # for the current event will be used.
 
 # ============================================================================
@@ -80,10 +96,40 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #
 #   Start a timer called <timername> that will trigger after <interval>
 #   seconds, calling your CMDSCRIPT with <timername> as the first
-#   argument.
+#   argument. Each invocation starts an independent timer, even if the
+#   <timername> was already registered and started (note this can mess
+#   up subsequent CANCEL-TIMER operations).
 #
 #   Example:
-#   Start a timer that'll execute when any UPS (*) has been gone 10 seconds
+#   1) Start a timer that will execute when communication with any UPS (*) has
+#   been gone for 10 seconds
+#
+#   AT COMMBAD * START-TIMER upsgone 10
+#
+#   2) Start a timer that will execute when any UPS (*) has been running
+#   on battery for 30 seconds
+#
+#   AT ONBATT * START-TIMER onbattwarn 30
+
+#   -----------------------------------------------------------------------
+#
+# - START-TIMER-SHARED <timername> <interval>
+#
+#   Start a timer called <timername> that will trigger after <interval>
+#   seconds, calling your CMDSCRIPT with <timername> as the first
+#   argument. Each invocation checks if the <timername> was already
+#   started, and if so -- appends the current event's `UPSNAME`,
+#   `NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it would
+#   report via environment variables (as a comma-separated string) when
+#   the timer does execute.
+#
+#   NOTE: Currently this updates the first seen instance with the
+#   <timername> (in case you managed to start many).
+#
+#   Example:
+#   1) Start or update a timer that will execute when communication
+#   with any UPS (*) has been gone for 10 seconds (since the first
+#   started and not yet elapsed timer named <upsgone>):
 #
 #   AT COMMBAD * START-TIMER upsgone 10
 
@@ -95,10 +141,28 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   has passed then pass the optional argument <cmd> to CMDSCRIPT.
 #
 #   Example:
-#   If a specific UPS (myups@localhost) comes back online, then stop the 
-#   timer before it triggers
-# 
+#   1) If a specific UPS (myups@localhost) communication is restored, then stop
+#   the timer before it triggers
+#
 #   AT COMMOK myups@localhost CANCEL-TIMER upsgone
+#
+#   2) If any UPS (*) reverts to utility power, then stop the timer before it
+#   triggers
+#
+#   AT ONLINE * CANCEL-TIMER onbattwarn
+
+#   -----------------------------------------------------------------------
+#
+# - CANCEL-TIMER-MATCHED <timername> [cmd]
+#
+#   Similar to the above, but tries to only cancel the <timername> if it
+#   refers to the `UPSNAME` and `NOTIFYTYPE` values passed by caller (the
+#   `NOTIFYMSG` is ignored in this context).
+#
+#   1) If any UPS (*) reverts to utility power, then stop the timer before it
+#   triggers ONLY if that UPS is associated with the already scheduled timer:
+#
+#   AT ONLINE * CANCEL-TIMER-MATCHED onbattwarn
 
 #   -----------------------------------------------------------------------
 #

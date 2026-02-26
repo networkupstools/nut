@@ -4,29 +4,51 @@ UPSSTATS.HTML(5)
 NAME
 ----
 
-upsstats.html - HTML template for Network UPS Tools upsstats
+upsstats.html - HTML template for web-based Network UPS Tools upsstats
 
 DESCRIPTION
 -----------
 
-This file is used by linkman:upsstats.cgi[8] to generate status pages.
-Certain commands are recognized, and will be replaced with various
+This file, and a similarly structured `upsstats-single.html` for certain
+use-cases, are used by linkman:upsstats.cgi[8] to generate NUT CGI status
+pages. Certain commands are recognized, and will be replaced with various
 status elements on the fly.
+
+As a bit of a safety check, the file must start with `@NUT_UPSSTATS_TEMPLATE@`
+command.
+
+For details about configuring some popular web servers to run NUT CGI
+programs, please see the linkman:upsset.conf[5] page.
+
+NOTE: This template file should be placed in the NUT configuration location.
+If you use a dedicated copy of that directory or one not discovered by
+the binaries relocated into your web server's `cgi-bin` locations (such
+as with NUT for Windows builds, defaulting to seek in locations relative
+to each binary), consider exporting the `NUT_CONFPATH` environment variable
+from the web server.
+
+NOTE: On platforms with required program file name extensions, like Windows,
+you may have to use e.g. a `*.cgi.exe` extension for the programs in HTML
+template files (`UPSSTATSPATH`, `UPSIMAGEPATH`).
 
 FORMATTING
 ----------
 
 Commands can be placed anywhere on a line, but must start and end with `@`.
+
 Any extra characters before or after the commands will be passed through
-unchanged.  It is allowed to use more than one command on a single line,
-as long as each command has its own start and end character.  If you need
-to use the `@` sign, use &#64; to prevent it from being treated as a start
-character.
+unchanged.
+
+It is allowed to use more than one command on a single line, as long as
+each command has its own start and end character.
+
+If you need to use the `@` sign, use HTML entity ++\&#64;++ to prevent it
+from being treated as a start character.
 
 BLOCK CONTROL
 -------------
 
-Some commands begin blocks - sections of the template that will be
+Some commands begin blocks -- sections of the template that will be
 included, excluded, or repeated depending on certain parameters.
 
 BLOCK CONTROL - ITERATION
@@ -86,12 +108,37 @@ example (more examples are available in upsstats.html).
 OTHER COMMANDS
 --------------
 
+*@NUT_UPSSTATS_TEMPLATE [args]@*::
+The template file MUST start exactly with `@NUT_UPSSTATS_TEMPLATE@` or
+`@NUT_UPSSTATS_TEMPLATE Some text@` so that linkman:upsstats.cgi[8] is
+not coerced into showing arbitrary files.
++
+Currently the command and its arguments are otherwise ignored; templates
+shipped with NUT use the argument values "default" and "single" effectively
+as a comment for debugging/troubleshooting.
+
+*@UPSSTATSPATH filename@*::
+URI to the linkman:upsstats.cgi[8] program placed into HTML references.
+Default is the program's name, making it a link relative to the currently
+displayed page in the browser.
++
+May have to include the platform-specific program file name extension,
+like `@UPSSTATSPATH upsstats.cgi.exe@`
+
+*@UPSIMAGEPATH filename@*::
+URI to the linkman:upsimage.cgi[8] program placed into HTML references.
+Default is the program's name, making it a link relative to the currently
+displayed page in the browser.
++
+May have to include the platform-specific program file name extension,
+like `@UPSIMAGEPATH upsimage.cgi.exe@`
+
 *@AMBTEMP@*::
 Insert the ambient temperature in the current temperature scale.
 
 *@DATE* 'format'*@*::
-Insert the current date and time.  The format string is passed to strftime,
-so almost anything is possible.  See *strftime*(3) for possible values.
+Insert the current date and time.  The format string is passed to `strftime`,
+so almost anything is possible.  See linkmanext:strftime[3] for possible values.
 
 *@DEGREES@*::
 Insert the entity for degrees (&deg;) and either C or F depending on
@@ -101,17 +148,31 @@ the current temperature scale.
 Insert the designation of the host being monitored, like `myups@localhost`.
 
 *@HOSTDESC@*::
-Insert the hout's description from linkman:hosts.conf[5].
+Insert the host's description from linkman:hosts.conf[5].
 
 *@HOSTLINK@*::
-Insert a link to upsstats.cgi with the "host" variable set to the
-current UPS.  This is only useful within a FOREACHUPS block.
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS.  This is only useful within a FOREACHUPS block.
+
+*@TREELINK [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as an HTML page.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "All data".
+
+*@TREELINK_JSON [Link text]@*::
+Insert a HTML link to linkman:upsstats.cgi[8] with the "host" variable
+set to the current UPS and "treemode" enabled to show all data points
+as a JSON document.  This is primarily useful within a FOREACHUPS block,
+but also as an `upsstats-single.html` footer. If some "Link text" is not
+provided, it defaults to "JSON".
 
 *@IMG* 'varname' ['extra']*@*::
 Insert an IMG SRC to linkman:upsimage.cgi[8] for one of these
 status variables:
 
-	battery.charge;; Battery charge - a percentage
+	battery.charge;; Battery charge -- a percentage
 
 	battery.voltage;; The charge on the battery in volts
 
@@ -141,13 +202,13 @@ status variables:
 
 	output.L3.power.percent;; UPS load, L3 (3phase)
 
-	ups.load;; UPS load - percentage
+	ups.load;; UPS load -- percentage
 
-	ups.temperature;; UPS temperature 
+	ups.temperature;; UPS temperature
 
 'extra' is where you can put additional definitions.  Right now
 the valid definitions are colors for various parts of the bars drawn
-by upsimage.cgi.  Possible color names are:
+by linkman:upsimage.cgi[8].  Possible color names are:
 
 	back_col;; background color
 
@@ -169,8 +230,8 @@ by upsimage.cgi.  Possible color names are:
 
 	bar_col;; the color of the bar in the middle
 
-All colors are hex triplets - 0xff0000 is red, 0x00ff00 is green, and
-0x0000ff is blue.
+All colors are hex triplets -- e.g. `0xff0000` is red, `0x00ff00` is green,
+and `0x0000ff` is blue.
 
 Examples:
 
@@ -183,9 +244,14 @@ Insert the META header magic for refreshing the page if that variable
 has been set by the browser.  This needs to be in the HEAD section of
 the page.
 
+*@STATUS separator@*::
 *@STATUS@*::
-Expand the abbreviations in the ups.status variable - OL becomes
-"On line", OB becomes "On battery", and so on.
+Expand the abbreviations in the ups.status variable -- OL becomes
+"On line", OB becomes "On battery", and so on.  Reported values are
+separated by the specified optional separator (`<br/>` if not specified),
+which starts at the next character after the "STATUS<space>" (e.g.
+a `@STATUS @` directive might be used to avoid any separation, or
+`@STATUS  @` to separate by spaces.
 
 *@STATUSCOLOR@*::
 Insert red, green, or yellow color triplets depending on the severity of
@@ -194,7 +260,7 @@ voltage trim/boost or "off" are yellow, and other events like being on
 battery or having a low battery are red.
 
 *@VAR* 'varname'*@*::
-Insert the current value of the status variable varname on the host being 
+Insert the current value of the status variable varname on the host being
 monitored, or "Not supported".
 
 *@RUNTIME@*::
@@ -222,8 +288,8 @@ OTHER TEMPLATES
 ---------------
 
 linkman:upsstats.cgi[8] will also open a file called `upsstats-single.html`
-if you call it with "host=" set in the URL.  That file uses the same
-rules and techniques documented here.
+if you call it with `host=` set in the query URL.  That file uses the same
+rules and techniques as documented here.
 
 SEE ALSO
 --------
@@ -232,4 +298,5 @@ linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

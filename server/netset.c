@@ -28,13 +28,14 @@
 #include "netset.h"
 
 static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
-	const char *newval)
+	const char *newval, const char *tracking_id)
 {
 	upstype_t	*ups;
 	const	char	*val;
 	const	enum_t  *etmp;
 	const	range_t  *rtmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
+	int	have_tracking_id = 0;
 
 	ups = get_ups_ptr(upsname);
 
@@ -55,12 +56,19 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	val = sstate_getinfo(ups, var);
 
 	if (!val) {
+		/* Technically, this includes state tree entries
+		 * with a defined name but null value so far.
+		 * FIXME? Use sstate_getnode() to differentiate
+		 *  the cases? Any practical use for this?
+		 */
 		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
 		return;
 	}
 
 	/* make sure this variable is writable (RW) */
 	if ((sstate_getflags(ups, var) & ST_FLAG_RW) == 0) {
+		upsdebugx(3, "%s: UPS [%s]: value of %s is read-only",
+			__func__, ups->name, var);
 		send_err(client, NUT_ERR_READONLY);
 		return;
 	}
@@ -68,7 +76,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	/* see if the new value is allowed for this variable */
 
 	if (sstate_getflags(ups, var) & ST_FLAG_STRING) {
-		int	aux;
+		long	aux;
 
 		aux = sstate_getaux(ups, var);
 
@@ -81,7 +89,13 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 			return;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int) strlen(newval)) {
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in STRING:%ld %s: %s",
+				__func__, ups->name, aux, var, newval);
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
 		}
@@ -104,6 +118,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not a value known in the pre-defined enumeration */
+			upsdebugx(3, "%s: UPS [%s]: Not a value known in ENUM %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
@@ -127,6 +144,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not in range */
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in RANGE %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
@@ -134,11 +154,23 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* must be OK now */
 
-	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s",
-		client->username, client->addr, var, ups->name, newval);
-
-	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
+	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"",
 		var, pconf_encode(newval, esc, sizeof(esc)));
+
+	/* see if the user want execution tracking for this command */
+	if (tracking_id && *tracking_id) {
+		snprintfcat(cmd, sizeof(cmd), " TRACKING %s", tracking_id);
+		/* Add an entry in the tracking structure */
+		tracking_add(tracking_id);
+		have_tracking_id = 1;
+	}
+
+	/* add EOL */
+	snprintfcat(cmd, sizeof(cmd), "\n");
+
+	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
+		client->username, client->addr, var, ups->name, newval,
+		(have_tracking_id) ? tracking_id : "disabled");
 
 	if (!sstate_sendline(ups, cmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -146,19 +178,68 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		return;
 	}
 
-	sendback(client, "OK\n");
+	/* return the result, possibly including tracking_id */
+	if (have_tracking_id)
+		sendback(client, "OK TRACKING %s\n", tracking_id);
+	else
+		sendback(client, "OK\n");
 }
 
-void net_set(nut_ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 {
-	if (numarg < 4) {
+	char	tracking_id[UUID4_LEN] = "";
+
+	/* Base verification, to ensure that we have at least the SET parameter */
+	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
 	}
 
 	/* SET VAR UPS VARNAME VALUE */
 	if (!strcasecmp(arg[0], "VAR")) {
-		set_var(client, arg[1], arg[2], arg[3]);
+		if (numarg < 4) {
+			send_err(client, NUT_ERR_INVALID_ARGUMENT);
+			return;
+		}
+
+		if (client->tracking) {
+			/* Generate a tracking ID, if client requested status tracking */
+			nut_uuid_v4(tracking_id);
+		}
+
+		set_var(client, arg[1], arg[2], arg[3], tracking_id);
+
+		return;
+	}
+
+	/* SET TRACKING VALUE */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		if (!strcasecmp(arg[1], "ON")) {
+			/* general enablement along with for this client */
+			client->tracking = tracking_enable();
+		}
+		else if (!strcasecmp(arg[1], "OFF")) {
+			/* disable status tracking for this client first */
+			client->tracking = 0;
+			/* then only disable the general one if no other clients use it!
+			 * Note: don't call tracking_free() since we want info to
+			 * persist, and tracking_cleanup() takes care of cleaning */
+			if (tracking_disable()) {
+				upsdebugx(2, "%s: TRACKING disabled for one client, more remain.", __func__);
+			} else {
+				upsdebugx(2, "%s: TRACKING disabled for last client.", __func__);
+			}
+		}
+		else {
+			send_err(client, NUT_ERR_INVALID_ARGUMENT);
+			return;
+		}
+		upsdebugx(1, "%s: TRACKING general %s, client %s.", __func__,
+			tracking_is_enabled() ? "enabled" : "disabled",
+			client->tracking ? "enabled" : "disabled");
+
+		sendback(client, "OK\n");
+
 		return;
 	}
 

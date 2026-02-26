@@ -17,13 +17,19 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_STATUS_H_SEEN
+#define NUT_STATUS_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+/* This is only used in upsstats.c, but might it also have external consumers?..
+ * To move or not to move?..
+ */
+static struct {
 	char	*name;
 	char	*desc;
 	int	severity;
@@ -39,6 +45,10 @@ struct {
 	{ "BOOST",	"VOLTAGE BOOST",	1	},
 	{ "CAL",	"CALIBRATION",		1	},
 	{ "BYPASS",	"BYPASS",		2	},
+	/* NOTE: "ECO" should not be happening as a status
+	 * or alarm anymore... in NUT core code base */
+	{ "ECO",	"ECO",			1	},
+	{ "ALARM",	"ALARM",		2	},
 	{ NULL,		NULL,			0	}
 };
 
@@ -48,3 +58,4 @@ struct {
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_STATUS_H_SEEN */

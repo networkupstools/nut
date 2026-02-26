@@ -4,6 +4,8 @@
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011	Arnaud Quette <arnaud.quette@free.fr>
+	2013	Emilien Kia <kiae.dev@gmail.com>
+	2020	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,26 +27,35 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss.h>
-	#include <ssl.h>
+#	include <nss.h>
+#	include <ssl.h>
 #endif
 
 /* OpenSSL */
 #ifdef WITH_OPENSSL
-	#include <openssl/err.h>
-	#include <openssl/ssl.h>
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #endif
 
 #include "parseconf.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* client structure */
 typedef struct nut_ctype_s {
 	char	*addr;
-	int	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 	time_t	last_heard;
 	char	*loginups;
 	char	*password;
 	char	*username;
+	/* per client status info for commands and settings
+	 * (disabled by default) */
+	int	tracking;
 
 #ifdef	WITH_OPENSSL
 	SSL	*ssl;
@@ -60,6 +71,15 @@ typedef struct nut_ctype_s {
 	/* doubly linked list */
 	struct nut_ctype_s	*prev;
 	struct nut_ctype_s	*next;
+#ifdef WIN32
+	HANDLE Event;
+#endif	/* WIN32 */
 } nut_ctype_t;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* NUT_CTYPE_H_SEEN */

@@ -26,12 +26,13 @@
 #include "main.h"
 #include "serial.h"
 #include "belkin.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.30"
 
-static int init_communication(void);
-static int get_belkin_reply(char *buf);
+static ssize_t init_communication(void);
+static ssize_t get_belkin_reply(char *buf);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -51,9 +52,10 @@ static void send_belkin_command(char cmd, const char *subcmd, const char *data)
 	upsdebugx(3, "Send Command: %s, %s", subcmd, data);
 }
 
-static int init_communication(void)
+static ssize_t init_communication(void)
 {
-	int	i, res;
+	int	i;
+	ssize_t	res;
 	char	temp[SMALLBUF];
 
 	for (i = 0; i < 10; i++) {
@@ -107,9 +109,9 @@ static char *get_belkin_field(const char *in, char *out, size_t outlen, size_t n
 	return NULL;
 }
 
-static int get_belkin_reply(char *buf)
+static ssize_t get_belkin_reply(char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 	long	cnt;
 	char	tmp[8];
 
@@ -119,10 +121,11 @@ static int get_belkin_reply(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %d bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIiSIZE " bytes", ret);
 		return -1;
 	}
 
+	/* cnt is <=999 so long is overkill; ok to cast into useconds_t though */
 	tmp[7] = 0;
 	cnt = strtol(tmp + 4, NULL, 10);
 	upsdebugx(3, "Received: %s", tmp);
@@ -137,15 +140,15 @@ static int get_belkin_reply(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %d bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIiSIZE " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -154,9 +157,9 @@ static int get_belkin_reply(char *buf)
 	return ret;
 }
 
-static int do_broken_rat(char *buf)
+static ssize_t do_broken_rat(char *buf)
 {
-	int	ret;
+	ssize_t	ret;
 	long	cnt;
 	char	tmp[8];
 
@@ -166,10 +169,11 @@ static int do_broken_rat(char *buf)
 	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 2, 0);
 
 	if (ret != 7) {
-		ser_comm_fail("Initial read returned %d bytes", ret);
+		ser_comm_fail("Initial read returned %" PRIiSIZE " bytes", ret);
 		return -1;
 	}
 
+	/* cnt is <=999 so long is overkill; ok to cast into useconds_t though */
 	tmp[7] = 0;
 	cnt = strtol(tmp + 4, NULL, 10);
 	upsdebugx(3, "Received: %s", tmp);
@@ -184,20 +188,20 @@ static int do_broken_rat(char *buf)
 	}
 
 	/* give it time to respond to us */
-	usleep(5000 * cnt);
+	usleep(5000 * (useconds_t)cnt);
 
 	/* firmware 001 only sends 50 bytes instead of the proper 53 */
 	if (cnt == 53) {
 		cnt = 50;
 	}
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 2, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, (size_t)cnt, 2, 0);
 
 	buf[cnt] = 0;
 	upsdebugx(3, "Received: %s", buf);
 
 	if (ret != cnt) {
-		ser_comm_fail("Second read returned %d bytes, expected %ld", ret, cnt);
+		ser_comm_fail("Second read returned %" PRIiSIZE " bytes, expected %ld", ret, cnt);
 		return -1;
 	}
 
@@ -210,7 +214,7 @@ static int do_broken_rat(char *buf)
 void upsdrv_updateinfo(void)
 {
 	static int retry = 0;
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF], st[SMALLBUF];
 
 	send_belkin_command(STATUS, STAT_STATUS, "");
@@ -262,14 +266,14 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 10);
 		res = atoi(st);
 		get_belkin_field(temp, st, sizeof(st), 2);
-		
+
 		if (*st == '1' || res < LOW_BAT) {
 			status_set("LB");	/* low battery */
 		}
 
 		get_belkin_field(temp, st, sizeof(st), 10);
 		dstate_setinfo("battery.charge", "%.0f", strtod(st, NULL));
-		
+
 		get_belkin_field(temp, st, sizeof(st), 9);
 		dstate_setinfo("battery.temperature", "%.0f", strtod(st, NULL));
 
@@ -302,7 +306,7 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 7);
 		dstate_setinfo("ups.load", "%.0f", strtod(st, NULL));
 	}
-	
+
 	send_belkin_command(STATUS, TEST_RESULT, "");
 	res = get_belkin_reply(temp);
 	if (res > 0) {
@@ -348,30 +352,17 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	int	res;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	res = init_communication();
-	if (res < 0) {
-		printf("Detection failed.  Trying a shutdown command anyway.\n");
-	}
-
-	/* tested on a F6C525-SER: this works when OL and OB */
-
-	/* shutdown type 2 (UPS system) */
-	send_belkin_command(CONTROL, "SDT", "2");
-
-	/* SDR means "do SDT and SDA, then reboot after n minutes" */
-	send_belkin_command(CONTROL, "SDR", "1");
-
-	printf("UPS should power off load in 5 seconds\n");
-
-	/* shutdown in 5 seconds */
-	send_belkin_command(CONTROL, "SDA", "5");
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* handle "beeper.disable" */
 static void do_beeper_off(void) {
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF];
 	const char	*arg;
 
@@ -418,6 +409,10 @@ static void do_off(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "beeper.disable")) {
 		do_beeper_off();
 		return STAT_INSTCMD_HANDLED;
@@ -428,36 +423,71 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		ssize_t	res;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		res = init_communication();
+		if (res < 0) {
+			printf("Detection failed.  Trying a shutdown command anyway.\n");
+		}
+
+		/* tested on a F6C525-SER: this works when OL and OB */
+
+		/* shutdown type 2 (UPS system) */
+		send_belkin_command(CONTROL, "SDT", "2");
+
+		/* SDR means "do SDT and SDA, then reboot after n minutes" */
+		send_belkin_command(CONTROL, "SDR", "1");
+
+		printf("UPS should power off load in 5 seconds\n");
+
+		/* shutdown in 5 seconds */
+		send_belkin_command(CONTROL, "SDA", "5");
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_off();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,POWER_ON,"1;1");
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_10SEC);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_DEEP);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_belkin_command(CONTROL,TEST,TEST_CANCEL);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -482,12 +512,12 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	int	res;
+	ssize_t	res;
 	char	temp[SMALLBUF], st[SMALLBUF];
 
 	res = init_communication();
 	if (res < 0) {
-		fatalx(EXIT_FAILURE, 
+		fatalx(EXIT_FAILURE,
 			"Unable to detect an Belkin Smart protocol UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 			);
@@ -526,6 +556,7 @@ void upsdrv_initinfo(void)
 
 	dstate_addcmd("beeper.disable");
 	dstate_addcmd("beeper.enable");
+	dstate_addcmd("shutdown.return");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
 	dstate_addcmd("test.battery.start.quick");

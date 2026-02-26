@@ -17,14 +17,21 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be first */
+
+#ifndef WIN32
 #include <sys/ioctl.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
 #include "main.h"
 #include "serial.h"
 #include "genericups.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.36"
+#define DRIVER_VERSION	"1.42"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -80,6 +87,11 @@ static void parse_output_signals(const char *value, int *line)
 
 	if (strstr(value, "DSR")) {
 		fatalx(EXIT_FAILURE, "Can't override output with DSR (not an output)");
+	}
+
+	if (strstr(value, "NULL") || strstr(value, "none")) {
+		upsdebugx(3, "%s: disable", __func__);
+		*line = 0;
 	}
 
 	if(*line == old_line) {
@@ -155,6 +167,12 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
 	}
 
+	if (strstr(value, "NULL") || strstr(value, "none")) {
+		*line = 0;
+		*val = 0;
+		upsdebugx(3, "%s: disable", __func__);
+	}
+
 	if((*line == old_line) && (*val == old_val)) {
 		upslogx(LOG_NOTICE, "%s: input overrides specified, but no effective difference - check for typos?", __func__);
 	}
@@ -176,7 +194,7 @@ void upsdrv_initinfo(void)
 	}
 
 	/*
-	 User wants to override the input signal definitions. See also upsdrv_initups().
+	 * User wants to override the input signal definitions. See also upsdrv_initups().
 	 */
 	if ((v = getval("OL")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_ol, &upstab[upstype].val_ol);
@@ -187,14 +205,28 @@ void upsdrv_initinfo(void)
 		parse_input_signals(v, &upstab[upstype].line_bl, &upstab[upstype].val_bl);
 		upsdebugx(2, "parse_input_signals: LB overridden with %s\n", v);
 	}
+
+	if ((v = getval("RB")) != NULL) {
+		parse_input_signals(v, &upstab[upstype].line_rb, &upstab[upstype].val_rb);
+		upsdebugx(2, "parse_input_signals: RB overridden with %s\n", v);
+	}
+
+	if ((v = getval("BYPASS")) != NULL) {
+		parse_input_signals(v, &upstab[upstype].line_bypass, &upstab[upstype].val_bypass);
+		upsdebugx(2, "parse_input_signals: BYPASS overridden with %s\n", v);
+	}
 }
 
 /* normal idle loop - keep up with the current state of the UPS */
 void upsdrv_updateinfo(void)
 {
-	int	flags, ol, bl, ret;
+	int	flags, ol, bl, rb, bypass, ret;
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMGET, &flags);
+#else	/* WIN32 */
+	ret = w32_getcomm( upsfd, &flags );
+#endif	/* WIN32 */
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
@@ -203,8 +235,13 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	/* Always online when OL is disabled */
 	ol = ((flags & upstab[upstype].line_ol) == upstab[upstype].val_ol);
-	bl = ((flags & upstab[upstype].line_bl) == upstab[upstype].val_bl);
+
+	/* Always have the flags cleared when other status flags are disabled */
+	bl = upstab[upstype].line_bl != 0 && ((flags & upstab[upstype].line_bl) == upstab[upstype].val_bl);
+	rb = upstab[upstype].line_rb != 0 && ((flags & upstab[upstype].line_rb) == upstab[upstype].val_rb);
+	bypass = upstab[upstype].line_bypass != 0 && ((flags & upstab[upstype].line_bypass) == upstab[upstype].val_bypass);
 
 	status_init();
 
@@ -218,9 +255,17 @@ void upsdrv_updateinfo(void)
 		status_set("OB");	/* on battery */
 	}
 
+	if (rb) {
+		status_set("RB");	/* replace battery */
+	}
+
+	if (bypass) {
+		status_set("BYPASS");	/* battery bypass */
+	}
+
 	status_commit();
 
-	upsdebugx(5, "ups.status: %s %s\n", ol ? "OL" : "OB", bl ? "BL" : "");
+	upsdebugx(5, "ups.status: %s %s %s %s\n", ol ? "OL" : "OB", bl ? "BL" : "", rb ? "RB" : "", bypass ? "BYPASS" : "");
 
 	ser_comm_good();
 	dstate_dataok();
@@ -265,54 +310,107 @@ static void set_ups_type(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	flags, ret;
 
 	if (upstype == -1) {
-		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
+		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+		return;
 	}
 
 	flags = upstab[upstype].line_sd;
 
 	if (flags == -1) {
-		fatalx(EXIT_FAILURE, "No shutdown command defined for this model!");
+		upslogx(LOG_ERR, "No shutdown command defined for this model!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+		return;
 	}
 
 	if (flags == TIOCM_ST) {
 
-#ifndef HAVE_TCSENDBREAK
-		fatalx(EXIT_FAILURE, "Need to send a BREAK, but don't have tcsendbreak!");
-#endif
+#ifndef WIN32
+# ifndef HAVE_TCSENDBREAK
+		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+		return;
+# endif
+#else	/* WIN32 */
+		NUT_WIN32_INCOMPLETE_DETAILED("Need to send a BREAK at this point, but not addressed for WIN32 yet");
+#endif	/* WIN32 */
 
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0) {
-			fatal_with_errno(EXIT_FAILURE, "tcsendbreak");
+			upslog_with_errno(LOG_ERR, "tcsendbreak");
+			if (handling_upsdrv_shutdown > 0)
+				set_exit_flag(EF_EXIT_FAILURE);
 		}
 
 		return;
 	}
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMSET, &flags);
+#else	/* WIN32 */
+	ret = w32_setcomm(upsfd,&flags);
+#endif	/* WIN32 */
 
 	if (ret != 0) {
-		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
+		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+		return;
 	}
 
 	if (getval("sdtime")) {
-		int	sdtime;
+		long	sdtime;
 
 		sdtime = strtol(getval("sdtime"), (char **) NULL, 10);
 
-		upslogx(LOG_INFO, "Holding shutdown signal for %d seconds...\n",
+		upslogx(LOG_INFO, "Holding shutdown signal for %ld seconds...\n",
 			sdtime);
 
-		sleep(sdtime);
+		if (sdtime > 0) {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+			/* Different platforms, different sizes, none fits all... */
+			if (sizeof(long) > sizeof(unsigned int) && sdtime < (long)UINT_MAX) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+				sleep((unsigned int)sdtime);
+			} else {
+				sleep(UINT_MAX);
+			}
+		}
 	}
 }
 
 void upsdrv_help(void)
 {
 	listtypes();
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 void upsdrv_makevartable(void)
@@ -324,6 +422,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "CP", "Override cable power setting");
 	addvar(VAR_VALUE, "OL", "Override on line signal");
 	addvar(VAR_VALUE, "LB", "Override low battery signal");
+	addvar(VAR_VALUE, "RB", "Override replace battery signal");
+	addvar(VAR_VALUE, "BYPASS", "Override battery bypass signal");
 	addvar(VAR_VALUE, "SD", "Override shutdown setting");
 	addvar(VAR_VALUE, "sdtime", "Hold time for shutdown value (seconds)");
 }
@@ -342,17 +442,17 @@ void upsdrv_initups(void)
 	}
 
 	/* don't hang up on last close */
-	tio.c_cflag &= ~HUPCL;
+	tio.c_cflag &= ~((tcflag_t)HUPCL);
 
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions
-	 this must be done here, since we might go to upsdrv_shutdown()
-	 immediately. Input signal definition override is handled in
-	 upsdrv_initinfo()
+	 * See if the user wants to override the output signal definitions?
+	 * This must be done here, since we might go to upsdrv_shutdown()
+	 * immediately. Input signal definition override is handled in
+	 * upsdrv_initinfo()
 	 */
 	if ((v = getval("CP")) != NULL) {
 		parse_output_signals(v, &upstab[upstype].line_norm);
@@ -364,7 +464,11 @@ void upsdrv_initups(void)
 		upsdebugx(2, "parse_output_signals: SD overridden with %s\n", v);
 	}
 
+#ifndef WIN32
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
+#else	/* WIN32 */
+	if (w32_setcomm(upsfd,&upstab[upstype].line_norm)) {
+#endif	/* WIN32 */
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
 }
@@ -373,4 +477,3 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
-

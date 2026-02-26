@@ -1,9 +1,9 @@
-/* 
+/*
  * bcmxcp.h -- header for BCM/XCP module
- */ 
+ */
 
-#ifndef _POWERWARE_H
-#define _POWERWARE_H
+#ifndef NUT_BCMXCP_H_SEEN
+#define NUT_BCMXCP_H_SEEN 1
 
 #include "timehead.h"
 
@@ -16,12 +16,13 @@
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
 #define PW_LAST_SEQ           (unsigned char)0x80 /* bit flag to indicate final sequence */
 #define PW_SEQ_MASK           (unsigned char)0x7F /* bit mask to extract just the sequence # */
+#define PW_HEADER_LENGTH			4 /* Size of response header */
 
 #define PW_ANSWER_MAX_SIZE 256
 
-/* No Autorisation required */ 
+/* No Autorisation required */
 #define PW_ID_BLOCK_REQ                 (unsigned char)0x31 /* Model name, ... length 1 */
-#define PW_EVENT_HISTORY_LOG_REQ        (unsigned char)0x32 /* List alarms that have occured. length 1 */
+#define PW_EVENT_HISTORY_LOG_REQ        (unsigned char)0x32 /* List alarms that have occurred. length 1 */
 #define PW_STATUS_REQ                   (unsigned char)0x33 /* On Line, On Bypass, ...  length 1-2 */
 #define PW_METER_BLOCK_REQ              (unsigned char)0x34 /* Current UPS status (Load, utility,...) length 1 */
 #define PW_CUR_ALARM_REQ                (unsigned char)0x35 /* Current alarm and event request. length 1 */
@@ -354,7 +355,8 @@
 #define BCMXCP_ALARM_HEATSINK_TEMP_SENSOR_FAIL             74
 #define BCMXCP_ALARM_RECTIFIER_CURRENT_OVER_125            75
 #define BCMXCP_ALARM_RECTIFIER_FAULT_INTERRUPT_FAIL        76
-#define BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL        77
+#define BCMXCP_ALARM_RECTIFIER_POWER_CAPACITOR_FAIL        77
+#define BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL        77	/* Legacy - typo */
 #define BCMXCP_ALARM_INVERTER_PROGRAM_STACK_ERROR          78
 #define BCMXCP_ALARM_INVERTER_BOARD_SELFTEST_FAIL          79
 #define BCMXCP_ALARM_INVERTER_AD_SELFTEST_FAIL             80
@@ -410,7 +412,7 @@
 #define BCMXCP_ALARM_LARGE_CHARGER_INPUT_CURRENT          130
 #define BCMXCP_ALARM_INV_VOLT_TOO_LOW_FOR_RAMP_LEVEL      131
 #define BCMXCP_ALARM_LOSS_OF_REDUNDANCY                   132
-#define BCMXCP_ALARM_LOSS_OF_SYNC_BUS                     133 
+#define BCMXCP_ALARM_LOSS_OF_SYNC_BUS                     133
 #define BCMXCP_ALARM_RECTIFIER_BREAKER_SHUNT_TRIP         134
 #define BCMXCP_ALARM_LOSS_OF_CHARGER_SYNC                 135
 #define BCMXCP_ALARM_INVERTER_LOW_LEVEL_TEST_TIMEOUT      136
@@ -620,5 +622,4 @@ typedef enum ebool { FALSE, TRUE } bool_t;
 typedef int bool_t;
 #endif
 
-#endif /*_POWERWARE_H */
-
+#endif	/* NUT_BCMXCP_H_SEEN */

@@ -1,0 +1,690 @@
+#!/bin/sh
+
+# Copyright (C)
+#   2018       Eaton
+#   2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#! \file    nut-driver-enumerator-test.sh
+#  \author  Jim Klimov <EvgenyKlimov@eaton.com>
+#  \brief   Self-test for nut-driver-enumerator.sh utility
+#  \details Automated sanity test for nut-driver-enumerator.sh(.in)
+#           using different shells (per $SHELL_PROGS) and CLI requests
+#           for regression and compatibility tests as well as for TDD
+#           fueled by pre-decided expected outcomes.
+#           Since that time it was used for multi-shell tests of our
+#           other helper scripts (which must work in the same manner
+#           as part of buid recipes on numerous platforms, or be known
+#           broken so we consciously fix something or mark unsupported).
+
+### Use a standard locale setup so sorting in expected results is not confused
+LANG=C
+LC_ALL=C
+TZ=UTC
+export LANG LC_ALL TZ
+
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
+
+### Note: These are relative to where the selftest script lives,
+### not the NUT top_srcdir etc. They can be exported by a Makefile.
+[ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname \"$0\"`"
+[ -n "${SRCDIR-}" ] || SRCDIR="`dirname \"$0\"`"
+[ -n "${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh"
+case "${DEBUG-}" in
+    [Yy]|[Yy][Ee][Ss]) DEBUG=yes ;;
+    [Tt][Rr][Aa][Cc][Ee]) DEBUG=trace ;;
+    *) DEBUG="" ;;
+esac
+case "${FAILFAST-}" in
+    [Yy]|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]) FAILFAST=true ;;
+    [Nn]|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]) FAILFAST=false ;;
+    *) FAILFAST=false ;;
+esac
+
+SYSTEMD_CONFPATH="${BUILDDIR}/selftest-rw/systemd-units"
+export SYSTEMD_CONFPATH
+
+NUT_CONFPATH="${BUILDDIR}/selftest-rw/nut"
+export NUT_CONFPATH
+
+[ -n "${UPSCONF-}" ] || UPSCONF="${SRCDIR}/nut-driver-enumerator-test--ups.conf"
+[ ! -s "${UPSCONF-}" ] && echo "FATAL : testing ups.conf not found as '$UPSCONF'" >&2 && exit 1
+export UPSCONF
+
+if [ ! -n "${NDE-}" ] ; then
+    for NDE in \
+        "${BUILDDIR}/../scripts/upsdrvsvcctl/nut-driver-enumerator.sh" \
+        "${SRCDIR}/../scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in" \
+    ; do [ -s "$NDE" ] && break ; done
+fi
+[ ! -s "${NDE-}" ] && echo "FATAL : testing nut-driver-enumerator.sh implementation not found as '$NDE'" >&2 && exit 1
+
+# TODO : Add tests that generate configuration files for units
+#mkdir -p "${NUT_CONFPATH}" "${SYSTEMD_CONFPATH}" || exit
+
+FAIL_COUNT=0
+GOOD_COUNT=0
+callSHELL() {
+    # Calls shell as-is, pass the script name (or stdin) to execute some logic
+    case "$DEBUG" in
+        yes)   time $USE_SHELL "$@" ;;
+        trace) time $USE_SHELL -x "$@" ;;
+        *)     $USE_SHELL "$@" 2>/dev/null ;;
+    esac
+}
+
+callNDE() {
+    callSHELL $NDE "$@"
+}
+
+callG2V() (
+    # Test case runner may want to pass NUT_VERSION_QUERY, NUT_VERSION_FORCED etc.
+    # Collect debug output line into stdout too
+
+    # Exports due to older ksh where `VAR=VAL cmd` just sets `VAR=VAL` in parent
+    # shell (for later calls too) and does not export it into children:
+    export NUT_VERSION_QUERY
+    export NUT_VERSION_FORCED
+    export NUT_VERSION_EXTRA_WIDTH
+    export NUT_VERSION_STRIP_LEADING_ZEROES
+    export BASE
+    export TRUNK
+
+    $USE_SHELL "${SRCDIR}/../tools/gitlog2version.sh" 2>&1
+)
+
+callSEMVERCMP() {
+    # All options to that helper can be passed via command line
+    # so no hassle with exports
+    callSHELL "${SRCDIR}/../tools/semver-compare.sh" "$@"
+}
+
+run_testcase_generic() {
+    # First 4 args are required as defined below; the rest are
+    # CLI arg(s) to nut-driver-enumerator.sh
+    CASE_CMD="$1"
+    CASE_DESCR="$2"
+    EXPECT_CODE="$3"	# Can be '*' to ignore errors
+    EXPECT_TEXT="$4"
+    shift 4
+
+    printf "Testing : SHELL='%s'\tCASE='%s'\t" "$USE_SHELL" "$CASE_DESCR"
+    OUT="`$CASE_CMD \"$@\"`" ; RESCODE=$?
+    printf "Got : RESCODE='%s'\t" "$RESCODE"
+
+    RES=0
+    if [ "$RESCODE" = "$EXPECT_CODE" ] || [ x'*' = x"$EXPECT_CODE" ]; then
+        printf "STATUS_CODE='MATCHED'\t"
+        GOOD_COUNT="`expr $GOOD_COUNT + 1`"
+    else
+        printf "STATUS_CODE='MISMATCH' expect_code=%s received_code=%s\t" "$EXPECT_CODE" "$RESCODE" >&2
+        FAIL_COUNT="`expr $FAIL_COUNT + 1`"
+        RES="`expr $RES + 1`"
+    fi
+
+    if [ "$OUT" = "$EXPECT_TEXT" ]; then
+        printf "STATUS_TEXT='MATCHED'\n"
+        GOOD_COUNT="`expr $GOOD_COUNT + 1`"
+    else
+        printf "STATUS_TEXT='MISMATCH'\n"
+        printf '\t--- expected ---\n%s\n\t--- received ---\n%s\n\t--- MISMATCH ABOVE\n\n' "$EXPECT_TEXT" "$OUT" >&2
+        # Give a nice output to help track the problem:
+        ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
+            && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
+            && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
+            && { OUTD="`diff -u \"/tmp/.nde.text.expected.$$\" \"/tmp/.nde.text.actual.$$\" 2>/dev/null`"
+                if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
+                    echo "$OUTD"
+                else
+                    diff "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
+                fi
+            } ; ) 2>/dev/null || true
+        rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
+        if [ x'*' = x"$EXPECT_CODE" ] ; then
+            echo 'MISMATCH IGNORED because EXPECT_CODE=*' >&2
+        else
+            FAIL_COUNT="`expr $FAIL_COUNT + 1`"
+            RES="`expr $RES + 2`"
+        fi
+    fi
+    if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
+    if [ "$RES" != 0 ] && $FAILFAST ; then
+        echo "FAILFAST: abort after test case failure" >&2
+        exit $RES
+    fi
+    return $RES
+}
+
+run_testcase() {
+    # Main call for NDE test suites:
+    run_testcase_generic callNDE "$@"
+}
+
+##################################################################
+# Note: expectations in test cases below are tightly connected   #
+# to both the current code in the script and content of the test #
+# configuration file.                                            #
+##################################################################
+
+testcase_bogus_args() {
+    run_testcase "Reject unknown args" 1 "" \
+        --some-bogus-arg
+}
+
+testcase_list_all_devices() {
+    # We expect a list of unbracketed names from the device sections
+    # Note: unlike other outputs, this list is alphabetically sorted
+    run_testcase "List all device names from sections" 0 \
+"dummy-proxy
+dummy-proxy-localhost
+dummy1
+epdu-2
+epdu-2-snmp
+qx-serial
+qx-usb1
+qx-usb2
+sectionWithComment
+sectionWithCommentWhitespace
+serial.4
+usb_3
+valueHasEquals
+valueHasHashtag
+valueHasQuotedHashtag" \
+        --list-devices
+}
+
+testcase_show_all_configs() {
+    # We expect whitespace trimmed, comment-only lines removed
+    run_testcase "Show all configs" 0 \
+'maxstartdelay=180
+globalflag
+[dummy1]
+driver=dummy-ups
+port=file1.dev
+desc="This is ups-1"
+[epdu-2]
+driver=netxml-ups
+port=http://172.16.1.2
+synchronous=yes
+[epdu-2-snmp]
+driver=snmp-ups
+port=172.16.1.2
+synchronous=no
+[usb_3]
+driver=usbhid-ups
+port=auto
+[serial.4]
+driver=serial-ups
+driverflag
+port=/dev/ttyS1 # some path
+[dummy-proxy]
+driver="dummy-ups  "
+port=remoteUPS@RemoteHost.local
+[dummy-proxy-localhost]
+driver='"'dummy-ups  '"'
+port=localUPS@127.0.0.1
+[valueHasEquals]
+driver=dummy=ups
+port=file1.dev # key = val, right?
+[valueHasHashtag]
+driver=dummy-ups
+port=file#1.dev
+[valueHasQuotedHashtag]
+driver=dummy-ups
+port=file#1.dev
+[qx-serial]
+driver=nutdrv_qx
+port=/dev/ttyb
+[qx-usb1]
+driver=nutdrv_qx
+port=auto
+[qx-usb2]
+driver=nutdrv_qx
+port=/dev/usb/8
+[sectionWithComment]
+driver=nutdrv_qx#comment
+port=/dev/usb/8
+desc="value with [brackets]"
+[brackets with spaces are not sections] # but rather an invalid mess as binary parser may think
+[sectionWithCommentWhitespace]
+driver=nutdrv_qx	# comment
+port=/dev/usb/8 #	comment
+commentedDriverFlag # This flag gotta mean something' \
+        --show-all-configs
+}
+
+testcase_upslist_debug() {
+    # We expect a list of names, ports and decided MEDIA type (for dependencies)
+    run_testcase "List decided MEDIA and config checksums for all devices" 0 \
+"INST: 68b329da9893e34099c7d8ad5cb9c940~[]: DRV='' PORT='' MEDIA='' SECTIONMD5='9a1f372a850f1ee3ab1fc08b185783e0'
+INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups  ' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='aff543fc07d7fbf83e81001b181c8b97'
+INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV='dummy-ups  ' PORT='localUPS@127.0.0.1' MEDIA='network-localhost,drivers=localUPS' SECTIONMD5='73e6b7e3e3b73558dc15253d8cca51b2'
+INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
+INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
+INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
+INST: 16adbdafb22d9fdff1d09038520eb32e~[qx-serial]: DRV='nutdrv_qx' PORT='/dev/ttyb' MEDIA='serial' SECTIONMD5='e3e6e586fbe5b3c0a89432f4b993f4ad'
+INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='a6139c5da35bef89dc5b96e2296f5369'
+INST: 0066605e07c66043a17eccecbeea1ac5~[qx-usb2]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='5722dd9c21d07a1f5bcb516dbc458deb'
+INST: 1280a731e03116f77290e51dd2a2f37e~[sectionWithComment]: DRV='nutdrv_qx#comment' PORT='/dev/usb/8' MEDIA='' SECTIONMD5='be30e15e17d0579c85eecaf176b4a064'
+INST: 770abd5659061a29ed3ae4f7c0b00915~[sectionWithCommentWhitespace]: DRV='nutdrv_qx	# comment' PORT='/dev/usb/8 #	comment' MEDIA='' SECTIONMD5='c757822a331521cdc97310d0241eba28'
+INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
+INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
+INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
+INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
+INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='af59c3c0caaa68dcd796d7145ae403ee'" \
+        upslist_debug
+
+    # FIXME : in [valueHasEquals] and [serial.4] the PORT value is quite bogus
+    # with its embedded comments. Check vs. binary config parser, whether in
+    # unquoted case only first token is the valid value, and how comments are
+    # handled in general?
+    # FIXME : in [valueHasHashtag] the line after "#" should likely be dropped
+    # (check in binary config parser first) while in [valueHasQuotedHashtag]
+    # it should stay.
+}
+
+testcase_getValue() {
+    run_testcase "Query a configuration key (SDP)" 0 \
+        "file1.dev" \
+        --show-device-config-value dummy1 port
+
+    run_testcase "Query a configuration key (other)" 0 \
+        "yes" \
+        --show-device-config-value epdu-2 synchronous
+
+    run_testcase "Query a configuration key (originally quoted)" 0 \
+        'This is ups-1' \
+        --show-device-config-value dummy1 desc
+
+    run_testcase "Query a configuration flag (driver)" 0 \
+        "driverflag" \
+        --show-config-value 'serial.4' driverflag
+
+    run_testcase "Query a missing configuration flag (driver)" 1 \
+        "" \
+        --show-config-value 'valueHasQuotedHashtag' nosuchflag
+
+    run_testcase "Query multiple configuration keys (originally quoted)" 0 \
+        'This is ups-1
+file1.dev' \
+        --show-device-config-value dummy1 desc port
+
+    run_testcase "Query multiple configuration keys with some missing (originally quoted)" 1 \
+        'This is ups-1
+
+file1.dev' \
+        --show-device-config-value dummy1 desc unknownkey port
+}
+
+testcase_globalSection() {
+    run_testcase "Display global config" 0 \
+        "maxstartdelay=180
+globalflag" \
+        --show-config ''
+
+    run_testcase "Query a configuration key (global)" 0 \
+        "180" \
+        --show-config-value '' maxstartdelay
+
+    run_testcase "Query a configuration flag (global)" 0 \
+        "globalflag" \
+        --show-config-value '' globalflag
+
+    run_testcase "Query a missing configuration flag (global)" 1 \
+        "" \
+        --show-config-value '' nosuchflag
+}
+
+# This one is not about NDE as such, but piggy-backs on our ability to test
+# multiple shells at once, with a test relevant for how we write scripts
+# (with backticks to remain compatible with older Bourne-like shells).
+# In particular, we have a problem with KSH on Solaris, treating double
+# quotes inside backticked text which is wrapped in more double quotes
+# (so some command execution would be a single token) as an end of a
+# double-quoted token and so abortion of a command mid-way; other shells
+# were not seen to work this way:
+testcase_backticks_cmd_natural() {
+    #DEBUG=yes \
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    FOUND_PYTHONS="`( echo "${nut_with_python}|${PYTHON}"; echo "${nut_with_python2}|${PYTHON2}"; echo "${nut_with_python3}|${PYTHON3}" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks_cmd_escaped() {
+    callSHELL << 'EOF'
+    nut_with_python=yes; nut_with_python2=no; nut_with_python3=auto-prio=3; PYTHON=python; PYTHON2=auto-py; PYTHON3=python3
+    RES=0
+    # Escape the quotes, following examples at
+    # https://stackoverflow.com/a/33301370/4715872
+    FOUND_PYTHONS="`( echo \"${nut_with_python}|${PYTHON}\"; echo \"${nut_with_python2}|${PYTHON2}\"; echo \"${nut_with_python3}|${PYTHON3}\" ) | ${EGREP} -v '\|\(no\)*$' | ${EGREP} -v '^no\|'`" || RES=$?
+    echo "${FOUND_PYTHONS}"
+    exit $RES
+EOF
+}
+
+testcase_backticks() {
+    run_testcase_generic testcase_backticks_cmd_natural \
+        "Backticks wrapped in doublequotes, with doublequoted text inside (can fail on some interpreters)" '*' \
+"yes|python
+auto-prio=3|python3"
+
+    run_testcase_generic testcase_backticks_cmd_escaped \
+        "Backticks wrapped in doublequotes, with escaped-doublequoted text inside" 0 \
+"yes|python
+auto-prio=3|python3"
+}
+
+# Make sure our weird version parsing works with different shell interpreters
+# (and related toolkits like sed, printf, grep, awk, tr, etc.)
+testcase_gitlog2version() {
+    # A couple of version tests below are almost directly taken
+    # from what the script returns in a git workspace, to compare
+    # that it parses the same values in (legacy) mode for fixed
+    # strings, such as dist tarball or for version comparisons.
+    # Note that TRUNK and BASE are normally unknown when running
+    # as a script for legacy version mode (and currently ignored
+    # even if passed by caller like below). Also note that for
+    # an RC, the SEMVER is "+1 from last tag" (by design), and
+    # that the "vX.Y.Z+rcN" tail of the SUFFIX and extra numbers
+    # (that are not in preceding-release tag) are not parts of
+    # the `git describe`-aligned DESC value (the RC tag is added
+    # to SUFFIX by script, when running in the git workspace)
+
+    # Taken from `git checkout v2.8.4-rc3` (emptied TRUNK and BASE):
+    NUT_VERSION_FORCED=2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3 \
+    TRUNK='origin/master' BASE='adfdbe3aba19e157010075c42fba7c3174e9baa7' \
+    run_testcase_generic callG2V \
+        "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release candidate" 0 \
+"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.3-786+gadfdbe3ab' => TAG='v2.8.3' + SUFFIX='-786+gadfdbe3ab+v2.8.4+rc3' => VER5='2.8.3.786.0' => DESC5='2.8.3.786.0-786+gadfdbe3ab+v2.8.4+rc3' => VER50='2.8.3.786' => DESC50='2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3'
+2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3"
+
+    # Taken from `git checkout v2.8.4` (emptied TRUNK and BASE):
+    NUT_VERSION_FORCED=2.8.4 \
+    TRUNK='origin/master' BASE='541c2ecf0b2ec33dadb9f40b16acbe39042bd103' \
+    run_testcase_generic callG2V \
+        "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release (tag)" 0 \
+"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
+2.8.4"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, with extra fields" 0 \
+"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+000003.000014.000159.002653.000059-2712+gdeadbeef+v3.14.160+rc1"
+
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1 \
+    NUT_VERSION_EXTRA_WIDTH=9 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, just the numeric part" 0 \
+"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+000000003.000000014.000000159.000002653.000000059"
+
+    # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
+    NUT_VERSION_EXTRA_WIDTH='' \
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, with extra fields" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+000003.000014.000159.002653.000059-2712+gdeadbeef"
+
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+    NUT_VERSION_EXTRA_WIDTH=8 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, just the numeric part, wider numbers" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+00000003.00000014.00000159.00002653.00000059"
+
+    # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
+    NUT_VERSION_EXTRA_WIDTH='' \
+    NUT_VERSION_QUERY=VER5X \
+    NUT_VERSION_FORCED=3.14.159.2653 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (requiring at least 5 numeric components)" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+000003.000014.000159.002653.000000"
+
+    NUT_VERSION_QUERY=VER50X \
+    NUT_VERSION_FORCED=3.14.159.2653 \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (dropping trailing zero numeric components)" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+000003.000014.000159.002653"
+
+    # Note that DESC must be either a tag as is,
+    # or suffixed with commit count and git hash
+    # Reset NUT_VERSION_QUERY for ksh out there
+    NUT_VERSION_QUERY='' \
+    NUT_VERSION_FORCED=3.14.159+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-0+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-0+gdeadbeef' => VER5='3.14.159.0.0' => DESC5='3.14.159.0.0-0+gdeadbeef' => VER50='3.14.159' => DESC50='3.14.159-0+gdeadbeef'
+3.14.159-0+gdeadbeef"
+
+    # ...auto-account the offset since tag correctly:
+    NUT_VERSION_FORCED=3.14.159.2653+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2653+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2653+gdeadbeef' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0-2653+gdeadbeef' => VER50='3.14.159.2653' => DESC50='3.14.159.2653-2653+gdeadbeef'
+3.14.159.2653-2653+gdeadbeef"
+
+    # ...auto-account the offset since tag correctly
+    # (note two steps to add):
+    NUT_VERSION_FORCED=3.14.159.2653.5+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+3.14.159.2653.5-2658+gdeadbeef"
+
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05+gdeadbeef \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
+"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+000003.000014.000159.002653.000005-2658+gdeadbeef"
+
+    # Note here SEMVER is taken from the future version that the RC is for
+    NUT_VERSION_QUERY=DESC5X \
+    NUT_VERSION_FORCED=3.014.00159.02653.05-002658+gdeadbeef+v04.005.0006+rc001 \
+    NUT_VERSION_STRIP_LEADING_ZEROES=true \
+    run_testcase_generic callG2V \
+        "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also in the commit count and RC suffix" 0 \
+"SEMVER=4.5.6; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
+000003.000014.000159.002653.000005-002658+gdeadbeef+v04.005.0006+rc001"
+}
+
+testcase_semver_compare() {
+    # Note: first 4 args of run_testcase_generic are fixed, the rest are passed into called command
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet into pentuplet (by default)" 0 \
+        "000001.000003.000002.000000.000000" \
+        --expand 1.3.2
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet into quadruplet with specified width and component count" 0 \
+        "00000001.00000003.00000002.00000000" \
+        --width 8 --min-components 4 --expand 1.3.2
+
+    # Note: forced min width is 6, smaller args ignored:
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: expand triplet without adding component count" 0 \
+        "000001.000003.000002" \
+        --width 3 --min-components 0 --expand 1.3.2
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: sorting (results are printed in original form, even if with leading zeroes)" 0 \
+"001.1.038
+01.02.03
+1.002.0003
+1.002.0006
+1.002.00030
+4.5.6" \
+        sort 01.02.03 1.002.00030 1.002.0003 4.5.6 1.002.0006 001.1.038
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: sorting of realistic iteration IDs" 0 \
+"2.8.4.326.80-406+g285c532d9
+2.8.4.753-753+gc1c3d7f4d
+2.8.4.754
+2.8.4.903.3-906+g62b0e39b2
+2.8.4.3829
+2.8.4.3829.0
+2.8.4.3829.9
+2.8.4.3829.10
+2.8.4.3829.22" \
+        sort 2.8.4.754 2.8.4.3829 2.8.4.903.3-906+g62b0e39b2 2.8.4.326.80-406+g285c532d9 2.8.4.753-753+gc1c3d7f4d 2.8.4.3829.0 2.8.4.3829.22 2.8.4.3829.10 2.8.4.3829.9
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: reverse sorting of realistic iteration IDs" 0 \
+"2.8.4.3829.22
+2.8.4.3829.10
+2.8.4.3829.9
+2.8.4.3829.0
+2.8.4.3829
+2.8.4.903.3-906+g62b0e39b2
+2.8.4.754
+2.8.4.753-753+gc1c3d7f4d
+2.8.4.326.80-406+g285c532d9" \
+        sort -r 2.8.4.754 2.8.4.3829 2.8.4.903.3-906+g62b0e39b2 2.8.4.326.80-406+g285c532d9 2.8.4.753-753+gc1c3d7f4d 2.8.4.3829.0 2.8.4.3829.22 2.8.4.3829.10 2.8.4.3829.9
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -gt" 1 "" \
+        test 01.02.03 -gt 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: >" 1 "" \
+        [ 01.02.03 '>' 4.5.6 ]
+
+    # Note: here a trailing ] is not required for [ test alias
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: >=" 1 "" \
+        [ 01.02.03 '>=' 4.5.6
+
+    # Note: here a trailing ]] is not required for [[ test alias
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -ge" 1 "" \
+        [[ 01.02.03 -ge 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -eq" 1 "" \
+        test 01.02.03 -eq 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -lt" 0 "" \
+        test 01.02.03 -lt 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: <" 0 "" \
+        [[ 01.02.03 '<' 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: <=" 0 "" \
+        test 01.02.03.0 '<=' 4.5.6
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: -le" 0 "" \
+        test 01.02.03 -le 4.5.6.0.0
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: equality with added trailing zeroed components (and different leading zero pads)" 0 "" \
+        test 01.02.03 = 1.002.0003.0
+
+    # Note: escaping the double-equals token to keep shell checkers quiet
+    # about what they can think of as unportable bashism
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: (non-)equality with added trailing zero value e.g. 3 vs 30" 1 "" \
+        test 01.02.03 \=\= 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: non-equality with added trailing zeroed components (and different leading zero pads)" 1 "" \
+        test 01.02.03 != 1.002.0003.0
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: non-equality with added trailing zero value e.g. 3 vs 30" 0 "" \
+        test 01.02.03 -ne 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: shell-style maths: unknown operation" 2 "" \
+        test 01.02.03 foo 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: unknown action" 2 "" \
+        bogustest 01.02.03 foo 1.002.00030
+
+    run_testcase_generic callSEMVERCMP \
+        "SEMVER comparison helper: unknown option" 2 "" \
+        --with-foo bar --expand 01.02.03
+}
+
+# Combine the cases above into a stack
+testsuite() {
+    testcase_bogus_args
+    testcase_list_all_devices
+    testcase_show_all_configs
+    testcase_getValue
+    testcase_globalSection
+    # This one can take a while, put it last
+    testcase_upslist_debug
+    # Something very different
+    testcase_backticks
+    testcase_gitlog2version
+    testcase_semver_compare
+}
+
+# If no args...
+for USE_SHELL in $SHELL_PROGS ; do
+    case "$USE_SHELL" in
+        busybox|busybox_sh) USE_SHELL="busybox sh" ;;
+    esac
+    testsuite
+done
+# End of loop over shells
+
+echo "Test suite for nut-driver-enumerator has completed with $FAIL_COUNT failed cases and $GOOD_COUNT good cases" >&2
+
+[ "$FAIL_COUNT" = 0 ] || {
+    echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'"
+    for USE_SHELL in $SHELL_PROGS ; do
+        case "$USE_SHELL" in
+            */*) test -x "`echo $USE_SHELL | awk '{print $1}'`" ;;
+            busybox|busybox_sh|"busybox sh") command -v busybox ;;
+            *) command -v $USE_SHELL ;;
+        esac || echo "WARNING: Could not resolve shell interpreter '$USE_SHELL' in PATH='$PATH'"
+
+        case "$USE_SHELL" in
+            */sh|sh)
+                echo "WARNING: This test was executed with a system default shell interpreter '$USE_SHELL'; depends on implementation whether it supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+            */ksh*|ksh*|*/ast-ksh*|ast-ksh*|*/oksh*|oksh*)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for, but beware double-quotes inside and outside backticks" ;;
+            busybox|busybox_sh|"busybox sh"|*/busybox|*/bash|bash|*/dash|dash)
+                echo "INFO: We have reports that shell interpreter '$USE_SHELL' should support the (legacy) POSIX syntax our scripts are written for" ;;
+            */zsh|zsh|*/csh|*/tcsh)
+                echo "WARNING: Sadly, we have reports that shell interpreter '$USE_SHELL' does not support the (legacy) POSIX syntax our scripts are written for" ;;
+            *)  echo "WARNING: We do not have confirmation whether shell interpreter '$USE_SHELL' supports the (legacy) POSIX syntax our scripts are written for or not" ;;
+        esac
+    done
+    exit 1
+} >&2

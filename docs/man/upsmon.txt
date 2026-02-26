@@ -11,48 +11,57 @@ SYNOPSIS
 
 *upsmon* -h
 
-*upsmon* -c 'command'
+*upsmon* -c 'command' [-P 'pid']
 
-*upsmon* [-D] [-K] [-p] [-u 'user']
+*upsmon* [-D] [-F | -B] [-K] [-p] [-u 'user']
 
 DESCRIPTION
 -----------
 
 *upsmon* is the client process that is responsible for the most important part
-of UPS monitoring--shutting down the system when the power goes out.  It
+of UPS monitoring -- shutting down the system when the power goes out.  It
 can call out to other helper programs for notification purposes during
 power events.
 
 upsmon can monitor multiple systems using a single process.  Every UPS
 that is defined in the linkman:upsmon.conf[5] configuration file is assigned
-a power value and a type (*slave* or *master*).
+a power value and a type (*primary* or *secondary*).
 
 OPTIONS
 -------
-
-*-h*::
-Display the help message.
 
 *-c* 'command'::
 Send the command 'command' to the existing upsmon process.  Valid
 commands are:
 
-*fsd*;; shutdown all master UPSes (use with caution)
+*fsd*;; shutdown all primary-mode UPSes (use with caution)
 
 *stop*;; stop monitoring and exit
 
 *reload*;; reread linkman:upsmon.conf[5] configuration file.  See
 "reloading nuances" below if this doesn't work.
 
+*-P* 'pid'::
+Send the command signal above using specified PID number, rather than
+consulting the PID file.  This can help define service units which
+start main `upsmon` as a foreground process so it does not have to
+rely on a PID file.
+
 *-D*::
-Raise the debugging level.  upsmon will run in the foreground and prints
-information on stdout about the monitoring process.  Use this multiple
-times for more details.
+Raise the debugging level.  upsmon will run in the foreground by default,
+and will print information on stdout about the monitoring process.
+Use this option multiple times for more details.
+
+*-F*::
+upsmon will run in the foreground, regardless of debugging settings.
+
+*-B*::
+upsmon will run in the background, regardless of debugging settings.
 
 *-K*::
 Test for the shutdown flag.  If it exists and contains the magic string
 from upsmon, then upsmon will exit with `EXIT_SUCCESS`.  Any other condition
-will make upsmon exit with `EXIT_FAILURE`.  
+will make upsmon exit with `EXIT_FAILURE`.
 +
 You can test for a successful exit from `upsmon -K` in your shutdown
 scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
@@ -60,61 +69,79 @@ scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
 *-p*::
 Run privileged all the time.  Normally upsmon will split into two
 processes.  The majority of the code runs as an unprivileged user, and
-only a tiny stub runs as root.  This switch will disable that mode, and
-run the old "all root all the time" system.
+only a tiny stub runs as `root` to eventually call `SHUTDOWNCMD` if needed.
+This switch will disable that mode, and run the old "all root all the time"
+system.
 +
 This is not the recommended mode, and you should not use this unless you
 have a very good reason.
 
 *-u* 'user'::
 Set the user for the unprivileged monitoring process.  This has no effect
-when using -p.
+when using '-p'.
 +
-The default user is set at configure time with 'configure
---with-user=...'.  Typically this is 'nobody', but other distributions
-will probably have a specific 'nut' user for this task.  If your
-notification scripts need to run as a specific user, set it here.
+The default 'user' is set at build configuration time with
+`configure --with-user=...`.  Typically this is 'nobody' (if not
+otherwise configured), which is far from ideal, so most packaged
+distributions will probably have a specific 'nut' user for this task.
+If your notification scripts need to run as a specific user, set it here.
 +
 You can also set this in the linkman:upsmon.conf[5] file with the
-RUN_AS_USER directive.
+`RUN_AS_USER` directive.
+
+COMMON OPTIONS
+--------------
+
+*-h*::
+Show the command-line help message.
+
+*-V*::
+Show NUT version banner.  More details may be available if you also
+`export NUT_DEBUG_LEVEL=1` or greater verbosity level.
+
+*-W* 'secs'::
+Set the timeout for initial network connections (by default they are
+indefinitely non-blocking, or until the system interrupts the attempt).
+Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 
 UPS DEFINITIONS
 ---------------
 
 In the linkman:upsmon.conf[5], you must specify at least one UPS that will
-be monitored.  Use the MONITOR directive.
+be monitored.  Use the MONITOR directive like this:
 
 	MONITOR 'system' 'powervalue' 'username' 'password' 'type'
 
 The 'system' refers to a linkman:upsd[8] server, in the form
-+upsname[@hostname[:port]]+.  The default hostname is "localhost".  Some
-examples follow:
++upsname[@hostname[:port]]+.  The default 'hostname' is "localhost",
+and default 'port' is '3493'.  Some examples follow:
 
  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
 
- - "fenton@bigbox:5678" is a UPS called "fenton" on a system called 
+ - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
 "bigbox" which runs linkman:upsd[8] on port "5678".
 
-The 'powervalue' refers to how many power supplies on this system are
-being driven this UPS.  This is typically set to 1, but see the section
+The 'powervalue' refers to how many power supplies on this client system are
+being driven this UPS.  This is typically set to '1', but see the section
 on power values below.
 
 The 'username' is a section in your linkman:upsd.users[5] file.
 Whatever password you set in that section must match the 'password'
-set in this file.  
+set in this file for the corresponding data server instance.
 
-The type set in that section must also match the 'type' here--
-*master* or *slave*.  In general, a master process is one
-running on the system with the UPS actually plugged into a serial
-port, and a slave is drawing power from the UPS but can't talk to it
-directly.  See the section on UPS types for more.
+The type set in that section of the data server configuration must also match
+the 'type' here -- *primary* or *secondary* (consider it an "upsmon role").
+In general, a "primary" client process is one running on the system with the
+UPS actually plugged into a serial or USB port, and a "secondary" is drawing
+power from the UPS but can't talk to it directly.
+See the section on UPS types for more.
 
 NOTIFY EVENTS
 -------------
 
 *upsmon* senses several events as it monitors each UPS.  They are called
-notify events as they can be used to tell the users and admins about the
+"notify events", as they can be used to tell the users and admins about the
 change in status.  See the additional NOTIFY-related sections below for
 information on customizing the delivery of these messages.
 
@@ -145,34 +172,111 @@ The UPS needs to have its battery replaced.
 *NOCOMM*::
 The UPS can't be contacted for monitoring.
 
+*NOPARENT*::
+`upsmon` parent process died - shutdown impossible.
+
+*CAL*::
+UPS calibration in progress.
+
+*NOTCAL*::
+UPS calibration finished.
+
+*OFF*::
+UPS administratively OFF or asleep.
+
+*NOTOFF*::
+UPS no longer administratively OFF or asleep.
+
+*BYPASS*::
+UPS on bypass (powered, not protecting).
+
+*NOTBYPASS*::
+UPS no longer on bypass.
+
+*ECO*::
+UPS in ECO or similar mode (as defined and named by vendor); other
+names include High Efficiency mode and Energy Saver System.
++
+For example, Eaton docs define High Efficiency mode as a sort of
+hardware-monitored bypass with switch-over under 10ms into Online
+mode in case of troubles (so what was known as Line-Interactive
+in the older days), which can be *chosen* instead of always running
+in a dual-conversion mode (safer, but more wasteful and with a toll
+on battery life). Older devices only implemented one or the other.
+
+*NOTECO*::
+UPS no longer in ECO mode (see above).
+
+*ALARM*::
+UPS has one or more active alarms (look at `ups.alarm` for details).
+
+*NOTALARM*::
+UPS is no longer in an alarm state (no active alarms).
+
+*OVER*::
+UPS is overloaded.
+
+*NOTOVER*::
+UPS is no longer overloaded.
+
+*TRIM*::
+UPS is trimming incoming voltage.
+
+*NOTTRIM*::
+UPS is no longer trimming incoming voltage.
+
+*BOOST*::
+UPS is boosting incoming voltage.
+
+*NOTBOOST*::
+UPS is no longer boosting incoming voltage.
+
+*OTHER*::
+UPS has at least one unclassified status token.
+
+*NOTOTHER*::
+UPS has no unclassified status tokens anymore.
+
+*SUSPEND_STARTING*::
+OS is entering sleep/suspend/hibernate mode.
+
+*SUSPEND_FINISHED*::
+OS just finished sleep/suspend/hibernate mode, de-activating
+obsolete UPS readings to avoid an unfortunate shutdown.
+
+
 NOTIFY COMMAND
 --------------
 
 In linkman:upsmon.conf[5], you can configure a program called the NOTIFYCMD
-that will handle events that occur.  
+that will handle events that occur.
 
-+NOTIFYCMD+ "'path to program'"
+The syntax is: +NOTIFYCMD+ "'path to program'"
 
-+NOTIFYCMD "/usr/local/bin/notifyme"+
+Example:
 
-Remember to wrap the path in "quotes" if it contains any spaces.
+ - `NOTIFYCMD "/usr/local/bin/notifyme"`
+
+Remember to wrap the path in "double quotes" if it contains any spaces.
+It should probably not rely on receiving any command-line arguments.
 
 The program you run as your NOTIFYCMD can use the environment variables
 NOTIFYTYPE and UPSNAME to know what has happened and on which UPS.  It
 also receives the notification message (see below) as the first (and
-only) argument, so you can deliver a preformatted message too.
+only) argument, so you can deliver a pre-formatted message too.
 
 Note that the NOTIFYCMD will only be called for a given event when you set
-the EXEC flag by using the notify flags, below:
+the EXEC flag by using the notify flags, as detailed below.
 
 NOTIFY FLAGS
 ------------
 
 By default, all notify events (see above) generate a global message
-(wall) to all users, plus they are logged via the syslog.  You can change
-this with the NOTIFYFLAG directive in the configuration file:
+(wall) to all users, plus they are logged via the syslog.
+Except for Windows where upsmon only writes to the syslog by default.
+You can change this with the NOTIFYFLAG directive in the configuration file:
 
-+NOTIFYFLAG+ 'notifytype' 'flags'
+The syntax is: +NOTIFYFLAG+ 'notifytype' 'flags'
 
 Examples:
 
@@ -188,7 +292,7 @@ The flags that can be set on a given notify event are:
 Write this message to the syslog.
 
 *WALL*::
-Send this message to all users on the system via *wall*(1).
+Send this message to all users on the system via linkmanext:wall[1].
 
 *EXEC*::
 Execute the NOTIFYCMD.
@@ -196,8 +300,8 @@ Execute the NOTIFYCMD.
 *IGNORE*::
 Don't do anything.  If you use this, don't use any of the other flags.
 
-You can mix these flags.  "SYSLOG+WALL+EXEC" does all three for a given
-event.
+You can mix these flags; for example,  `SYSLOG+WALL+EXEC` does all three
+for a given event.
 
 NOTIFY MESSAGES
 ---------------
@@ -205,17 +309,21 @@ NOTIFY MESSAGES
 upsmon comes with default messages for each of the NOTIFY events.  These
 can be changed with the NOTIFYMSG directive.
 
-+NOTIFYMSG+ 'type' "'message'"
+The syntax is: +NOTIFYMSG+ 'type' "'message'"
 
 Examples:
 
  - `NOTIFYMSG ONLINE "UPS %s is getting line power"`
 
- - ` NOTIFYMSG ONBATT "Someone pulled the plug on %s"`
+ - `NOTIFYMSG ONBATT "Someone pulled the plug on %s"`
 
-The first instance of %s is replaced with the identifier of the UPS that
+The first instance of `%s` is replaced with the identifier of the UPS that
 generated the event.  These messages are used when sending walls to the
 users directly from upsmon, and are also passed to the NOTIFYCMD.
+
+NOTE: Certain notifications, such as `NOTIFY_ALARM` and `NOTIFY_OTHER`,
+can accept a second instance of `%s` that would be replaced with the
+alarm text or the unrecognized token, respectively.
 
 POWER VALUES
 ------------
@@ -226,81 +334,100 @@ UPS that is either on line or just on battery contributes to this
 number.  If a UPS is critical (on battery and low battery) or has been
 put into "forced shutdown" mode, it no longer contributes.
 
+The syntax is: +MONITOR+ 'upsname' 'powervalue' 'username' 'password' 'type'
+
 A "power value" on a MONITOR line in the config file is the number of
-power supplies that the UPS runs on the current system.  
+power supplies that the UPS runs on the current system.
 
-+MONITOR+ 'upsname' 'powervalue' 'username' 'password' 'type'
+* Normally, you only have one power supply, so it will be set to '1'.
++
+Example:
 
-Normally, you only have one power supply, so it will be set to 1.  
+ - `MONITOR myups@myhost 1 username mypassword primary`
 
-+MONITOR myups@myhost 1 username mypassword master+
-
-On a large server with redundant power supplies, the power value for a UPS
+* On a large server with redundant power supplies, the power value for a UPS
 may be greater than 1.  You may also have more than one of them defined.
++
+Examples for a server with four power supply modules and two UPSes (each
+feeding two power supplies of that server):
 
-+MONITOR ups-alpha@myhost 2 username mypassword master+
+ - `MONITOR ups-alpha@myhost 2 username mypassword primary`
 
-+MONITOR ups-beta@myhost 2 username mypassword master+
+ - `MONITOR ups-beta@myhost 2 username mypassword primary`
 
-You can also set the power value for a UPS to 0 if it does not supply any
+* You can also set the power value for a UPS to '0' if it does not supply any
 power to that system.  This is generally used when you want to use the
 upsmon notification features for a UPS even though it's not actually
-running the system that hosts upsmon.  Don't set this to "master" unless
-you really want to power this UPS off when this instance of upsmon needs
-to shut down for its own reasons.
+powering the system that hosts this instance of the upsmon client.
++
+Don't set this to "primary" unless you really want to power this UPS off
+when this instance of upsmon needs to shut down for its own reasons.
++
+Example:
 
-+MONITOR faraway@anotherbox 0 username mypassword slave+
+ - `MONITOR faraway@anotherbox 0 username mypassword secondary`
 
 The "minimum power value" is the number of power supplies that must be
-receiving power in order to keep the computer running.  
+receiving power in order to keep this `upsmon` client's computer running.
 
-+MINSUPPLIES+ 'value'
+The syntax is: +MINSUPPLIES+ 'value'
 
-Typical PCs only have 1, so most users will leave this at the default. 
+* Typical PCs only have 1, so most users will leave this at the default.
++
+Example:
 
-+MINSUPPLIES 1+
+ - `MINSUPPLIES 1`
 
-If you have a server or similar system with redundant power, then this
+* If you have a server or similar system with redundant power, then this
 value will usually be set higher.  One that requires three power supplies
-to be running at all times would simply set it to 3.
+out of 4 to be running at all times would simply set it to 3.
++
+--
+Example:
 
-+MINSUPPLIES 3+
+ - `MINSUPPLIES 3`
+--
++
+When the current overall healthy UPS-protected external power value drops
+below the minimum required power value, `upsmon` starts the shutdown sequence.
+This design allows you to lose some of your power supplies in a redundant
+power environment without bringing down the entire system, while still
+working properly for smaller systems.
 
-When the current overall power value drops below the minimum power value,
-upsmon starts the shutdown sequence.  This design allows you to lose some
-of your power supplies in a redundant power environment without bringing
-down the entire system while still working properly for smaller systems.
-
-UPS TYPES
----------
+UPS CONNECTION TYPES AND UPSMON ROLES
+-------------------------------------
 
 *upsmon* and linkman:upsd[8] don't always run on the same system.  When they
-do, any UPSes that are directly attached to the upsmon host should be
-monitored in "master" mode.  This makes upsmon take charge of that
-equipment, and it will wait for slaves to disconnect before shutting
-down the local system.  This allows the distant systems (monitoring over
-the network) to shut down cleanly before `upsdrvctl shutdown` runs
-and turns them all off.
+do, any UPSes that are directly attached to that upsmon host should be
+monitored in "primary" mode, which makes that upsmon instance take charge
+of that equipment, and it will wait for the "secondary" systems to disconnect
+before shutting down the local system.  This allows the distant systems (just
+monitoring over the network) to shut down cleanly before `upsdrvctl shutdown`
+runs locally on the primary system and turns them all off.
 
-When upsmon runs as a slave, it is relying on the distant system to tell
+When upsmon runs as a secondary, it is relying on the distant system to tell
 it about the state of the UPS.  When that UPS goes critical (on battery
 and low battery), it immediately invokes the local shutdown command.  This
-needs to happen quickly.  Once it disconnects from the distant
-linkman:upsd[8] server, the master upsmon will start its own shutdown
-process.  Your slaves must all shut down before the master turns off the
-power or filesystem damage may result.
+needs to happen quickly.  Once all secondaries disconnect from the distant
+linkman:upsd[8] server, its primary-mode upsmon will start its own shutdown
+process.  Your secondary systems must all quiesce and shut down before the
+primary turns off the shared power source, or filesystem damage may result.
 
-upsmon deals with slaves that get wedged, hang, or otherwise fail to 
-disconnect from linkman:upsd[8] in a timely manner with the HOSTSYNC
-timer.  During a shutdown situation, the master upsmon will give up after
-this interval and it will shut down anyway.  This keeps the master from
-sitting there forever (which would endanger that host) if a slave should
-break somehow.  This defaults to 15 seconds.
+upsmon deals with secondaries that get wedged, hang, or otherwise fail to
+gracefully disconnect from linkman:upsd[8] in a timely manner with the
+HOSTSYNC timer.  During a shutdown situation, the primary upsmon will give
+up after this interval and it will shut down anyway.  This keeps the primary
+from sitting there forever (which would endanger that host) if a secondary
+should break somehow.  This defaults to 15 seconds.
 
-If your master system is shutting down too quickly, set the FINALDELAY
+If your primary system is shutting down too quickly, set the FINALDELAY
 interval to something greater than the default 15 seconds.  Don't set
 this too high, or your UPS battery may run out of power before the
-master upsmon process shuts down that system.
+primary upsmon process shuts down that system. If you do need more time,
+consider starting the shutdown after a short time on battery, for details
+see the Timed Shutdowns section.
+
+For a more technical take, please see the Shutdown Activity Workflow section.
 
 TIMED SHUTDOWNS
 ---------------
@@ -353,9 +480,10 @@ MIXED OPERATIONS
 
 Besides being able to monitor multiple UPSes, upsmon can also monitor them
 as different roles.  If you have a system with multiple power supplies
-serviced by separate UPS batteries, it's possible to be a master on one
-and a slave on the other.  This usually happens when you run out of serial
-ports and need to do the monitoring through another system nearby.
+serviced by separate UPS batteries, it's possible to be a primary on one
+UPS and a secondary on the other.  This usually happens when you run
+out of serial or USB ports and need to do the monitoring through another
+system nearby.
 
 This is also complicated, especially when it comes time to power down a
 UPS that has gone critical but doesn't supply the local system.  You can
@@ -366,15 +494,119 @@ FORCED SHUTDOWNS
 ----------------
 
 When upsmon is forced to bring down the local system, it sets the
-"FSD" (forced shutdown) flag on any UPSes that it is running in master
-mode.  This is used to synchronize slaves in the event that a master UPS
-that is otherwise OK needs to be brought down due to some pressing event
-on the master.
+"FSD" (forced shutdown) flag on any UPSes that it is running in primary
+mode.  This is used to synchronize secondary systems in the event that
+a primary which is otherwise OK needs to be brought down due to some
+pressing event on the UPS manager system.
 
-You can manually invoke this mode on the master upsmon by starting another
-copy with `-c fsd`.  This is useful when you want to initiate a shutdown
-before the critical stage through some external means, such as
-linkman:upssched[8].
+You can manually invoke this mode on the system with primary-mode upsmon
+by starting another copy of the program with `-c fsd` command line argument.
+This is useful when you want to initiate a shutdown before the critical
+stage through some external means, such as linkman:upssched[8].
+
+For a more technical take, please see the Shutdown Activity Workflow section.
+
+WARNING: Please note that by design, since we require power-cycling the
+load and don't want some systems to be powered off while others remain
+running if the "wall power" returns at the wrong moment as usual, the "FSD"
+flag can not be removed from the data server unless its daemon is restarted.
+If we do take the first step in critical mode, then we normally intend to go
+all the way -- shut down all the servers gracefully, and power down the UPS.
+
+Keep in mind that some UPS devices and corresponding drivers would also latch
+or otherwise resurface the "FSD" state again even if "wall power" is available,
+but the remaining battery charge is below a threshold configured as "safe" in
+the device (usually if you manually power on the UPS after a long power outage).
+This is by design of respective UPS vendors, since in such situation they
+can not guarantee that if a new power outage happens, their UPS would safely
+shut down your systems again. So it is deemed better and safer to stay dark
+until batteries become sufficiently charged.
+
+When it is time to shut down, upsmon creates POWERDOWNFLAG to
+communicate to the operating system that the UPS should be commanded
+off late in the shutdown sequence.  This file is removed if present
+when upsmon starts, so that the next normal shutdown does not cause
+the UPS to be turned off.  (The file can't in general be removed
+during shutdown because the filesystem might be read only.  If the
+file is in a RAM-backed filesystem, the it won't be present and the
+check to remove it won't fire.)
+
+SIMULATING POWER FAILURES
+-------------------------
+
+To test a synchronized shutdown without pulling the plug on your UPS(es),
+you need only set the forced shutdown (FSD) flag on them.  You can do this
+by calling upsmon again to set the flag, i.e.:
+
+	:; upsmon -c fsd
+
+After that, the primary and the secondary will do their usual shutdown
+sequence as if the battery had gone critical, while you can time how long
+it takes for them.  This is much easier on your UPS equipment, and it beats
+crawling under a desk to find the plug.
+
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the
+systems would shut down at this point, without actually disrupting their work.
+
+For inspiration, you can see the setup done by the NUT Integration Tests suite
+under the `tests/NIT` directory in NUT sources, including references to the
+shutdown and notification scripts which only log the activity (you may have
+to configure at least a trivial NUT build and run `make check-NIT-sandbox` to
+generate some of the configuration files -- or inspect the `nit.sh` script
+which pieces them together). Notably, see `scripts/misc/notifyme-debug` as
+not only a logger, but optionally a wrapper for `upssched` (in test runs),
+and `clients/upssched-cmd` as a sample implementation of an linkman:upssched[8]
+`CMDSCRIPT` which also focuses on logging.
+
+WARNING: After such "dummy" experiments you may have to restart the NUT data
+server `upsd` to clear its "FSD" flag for the devices and clients involved,
+and make sure no files named by `POWERDOWNFLAG` option (e.g. `/etc/killpower`)
+remain on the `upsmon primary` systems under test.
+
+SHUTDOWN ACTIVITY WORKFLOW
+--------------------------
+
+Looking into `clients/upsmon.c` sources as the ultimate authority, you
+can find that the chain of events during a forced shutdown is. This can
+help make sense of the timing variables involved, and notifications sent
+(which you may want to handle, perhaps with linkman:upssched[8]):
+
+* The path to shutdown activity of a host starts when its locally running
+  `upsmon` client (in any role) decides the power situation is critical,
+  e.g. by having too few "healthy" power supplies in a real outage, and/or
+  by seeing `FSD` among `ups.status` tokens -- possibly still "latched" in
+  the `upsd` data server while you start a new `upsmon` instance, or when
+  you call `upsmon -c fsd` on that system to simulate the outage;
+* Such `upsmon` instance ends up in `forceshutdown()` method;
+* There it loops over all UPSes it `MONITOR`s as a `primary`, and calls the
+  `setfsd()` method for each (causing a local `FSD` notification, if one was
+  not sent earlier);
+* If there were no such UPSes -- we are a secondary, and go into `doshutdown()`
+  method immediately
+* Otherwise we are a primary, and only go into `doshutdown()` method after
+  first completing the `sync_secondaries()` method, which:
+  * runs an infinite loop until either there are no other persistent clients
+    logged on to the data server (`upsd`) for each UPS we are a primary for,
+    or until `HOSTSYNC` timeout elapses;
+  * it should issue a `SHUTDOWN_HOSTSYNC` notification if it is going to wait
+    at all (if there were other clients seen on first loop cycle).
+* Finally, in the `doshutdown()` method, it:
+  * issues a `SHUTDOWN` notification;
+  * waits for `FINALDELAY`;
+  * starts the timer for `SHUTDOWNEXIT` (which may be used to force `upsmon`
+    process to linger after calling `SHUTDOWNCMD` -- e.g. can be used by a
+    secondary to block the primary from cutting power too early for some use
+    cases, like safely parking some external machinery);
+  * calls the `SHUTDOWNCMD` (either directly in mono-process mode, or by
+    telling the `root`-privileged part to do so in the common case);
+  * optionally linger, if `SHUTDOWNEXIT` is so configured;
+  * ultimately exit the daemon (also causes the `root`-privileged part to exit,
+    by breaking the communications pipe between them).
+
+Note that if your `upsmon` does split into privileged and unprivileged parts,
+all notifications run in the unprivileged context (your handling scripts may
+have to `sudo` explicitly if/when/where you want to do something to the system).
+Only `SHUTDOWNCMD` is called in privileged context.
 
 DEAD UPSES
 ----------
@@ -389,39 +621,81 @@ upsmon will alert you to a UPS that can't be contacted for monitoring
 with a "NOCOMM" notifier by default every 300 seconds.  This can be
 changed with the NOCOMMWARNTIME setting.
 
+Also upsmon normally reports polling failures for each device that are in place
+for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+system log as configured.  If your devices are expected to be AWOL for an
+extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the
+stress on syslog traffic and storage, by posting these messages only once
+in every several loop cycles, and when the error condition has changed or
+cleared.  A negative value means standard behavior (log on every loop,
+effectively same as when `max=1`), and a zero value means to never repeat
+the message (log only on start and end/change of the failure state).
+
+Note that this throttle only applies to one latest-active error state per
+monitored device.
+
+UPS ALARMS
+----------
+
+UPS manufacturers and UPS drivers may implement device-specific alarms to
+notify the user about potentially severe conditions of the UPS. The status
+"ALARM" will be set on such UPS as a common denominator for the different
+implementations throughout the various UPS drivers and generally anytime
+that a "ups.alarm" variable is seen reported by the specific UPS driver.
+
+Alarms can be acted upon by the user using the "ALARM" and "NOTALARM" notifiers,
+which are reported by the `upsmon` when the "ALARM" status occurs or disappears.
+
+As alarms raised by the UPS are usually severe in nature, the `upsmon` watches
+a UPS in such a state more closely, bumping up the polling frequency as needed.
+
+When connection loss occurs in such an alarm state, the `upsmon` will by default
+consider the volatile UPS as critical/dead and this may lead to false shutdowns
+if the actual alarm was in fact mundane in nature (e.g. caused by a HE/ECO mode).
+This can be changed by utilizing the `ALARMCRITICAL` setting within `upsmon.conf`.
+
 RELOADING NUANCES
 -----------------
 
 upsmon usually gives up root powers for the process that does most of
 the work, including handling signals like SIGHUP to reload the configuration
-file.  This means your linkman:upsmon.conf[8] file must be readable by
+file.  This means your linkman:upsmon.conf[5] file must be readable by
 the non-root account that upsmon switches to.
 
 If you want reloads to work, upsmon must run as some user that has
-permissions to read the configuration file.  I recommend making a new
+permissions to read the configuration file.  We recommend making a new
 user just for this purpose, as making the file readable by "nobody"
-(the default user) would be a bad idea.
+(the default user) would be a bad idea; packages typically ship with
+a `nut` or `ups` user to run NUT daemon services.
 
-See the RUN_AS_USER section in linkman:upsmon.conf[8] for more on this topic.
+See the `RUN_AS_USER` section in linkman:upsmon.conf[5] for more on this topic.
 
-Additionally, you can't change the SHUTDOWNCMD or POWERDOWNFLAG
+Additionally, you can't change the `SHUTDOWNCMD` or `POWERDOWNFLAG`
 definitions with a reload due to the split-process model.  If you change
 those values, you *must* stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those
 values during a reload.
 
-SIMULATING POWER FAILURES
--------------------------
+ENVIRONMENT VARIABLES
+---------------------
 
-To test a synchronized shutdown without pulling the plug on your UPS(es),
-you need only set the forced shutdown (FSD) flag on them.  You can do this
-by calling upsmon again to set the flag, i.e.:
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
 
-+upsmon -c fsd+
+*NUT_CONFPATH* is the path name of the directory that contains
+`upsmon.conf` and other configuration files.  If this variable is not set,
+*upsmon* uses a built-in default, which is often `/usr/local/ups/etc`.
 
-After that, the master and the slaves will do their usual shutdown sequence
-as if the battery had gone critical.  This is much easier on your UPS
-equipment, and it beats crawling under a desk to find the plug.
+*NUT_QUIET_INIT_UPSNOTIFY=true* can be used to prevent daemons which can
+notify service management frameworks (such as systemd) about passing
+their lifecycle milestones from emitting such notifications (including
+those about lack of system support for such modern features, once per run).
+
+*NUT_QUIET_INIT_BANNER=true* can be used to suppress NUT tool name and
+version banner. NOT recommended for services due to adverse troubleshooting
+impact, but may be helpful in shell profiles or scripts which process NUT
+tool outputs.
 
 FILES
 -----
@@ -433,17 +707,21 @@ SEE ALSO
 
 Server:
 ~~~~~~~
+
 linkman:upsd[8]
 
 Clients:
 ~~~~~~~~
+
 linkman:upsc[8], linkman:upscmd[8],
 linkman:upsrw[8], linkman:upsmon[8]
 
 CGI programs:
 ~~~~~~~~~~~~~
+
 linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

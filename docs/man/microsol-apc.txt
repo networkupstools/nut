@@ -1,0 +1,86 @@
+MICROSOL-APC(8)
+===============
+
+NAME
+----
+
+microsol-apc - Driver for APC Back-UPS BR UPS equipment
+
+SYNOPSIS
+--------
+
+*microsol-apc* -h
+
+*microsol-apc* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+microsol-apc driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports the following UPS models:
+
+ * APC Back-UPS BZ1500-BR
+ * APC Back-UPS BZ2200I-BR
+ * APC Back-UPS BZ2200BI-BR
+
+In 2009, Schneider Electric acquired Microsol Technologies, and by 2012, the
+entire Microsol line was being sold under the APC brand. This driver supports
+these newer, APC-branded models. Older equipment should use linkman:solis[8].
+
+EXTRA ARGUMENTS
+---------------
+
+This driver support the following extra optional settings in the
+linkman:ups.conf[5].
+
+*battext=*'n'::
+Default = 0, no extra battery, where `n` = Ampere*hour.
+
+*prgshut=*'n'::
+Default = 0, no programmable shutdown; `1` to enable one.
+
+COMMANDS
+--------
+
+*shutdown.return*::
+Shut down in .3 minutes and restart in .3 minutes after that.
+
+*shutdown.stayoff*::
+Shut down in .3 minutes and do not return.
+
+ISSUES
+------
+
+For other APC-Microsol models, the reported voltages, currents and power will
+be incorrect, as the communication protocol reports unprocessed data instead of
+real values, needing model-specific post-processing by the driver. Monitoring
+of UPS state (on-battery/on-line, critical battery) should work for other
+models, but is untested.
+
+AUTHORS
+-------
+
+* Ygor A. S. Regados <ygorre@tutanota.com>
+* Roberto P. Velloso <rvelloso@gmail.com>
+* Silvino B. Magalhães <sbm2yk@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Driver for older devices under same brand:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+linkman:solis[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

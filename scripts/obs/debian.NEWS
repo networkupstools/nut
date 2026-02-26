@@ -1,0 +1,6 @@
+nut (2.6.5-1) experimental; urgency=low
+
+  mge-shut driver has been replaced by a new implementation (newmge-shut).
+  In case of issue with this new version, users can revert to oldmge-shut.
+
+ -- Laurent Bigonville <bigon@debian.org>  Mon, 13 Aug 2012 00:32:18 +0200

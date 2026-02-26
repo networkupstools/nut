@@ -1,4 +1,4 @@
-/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER handlers for upsd
+/* netuser.c - LOGIN/LOGOUT/USERNAME/PASSWORD/MASTER[PRIMARY] handlers for upsd
 
    Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
 
@@ -28,7 +28,7 @@
 #include "netuser.h"
 
 /* LOGIN <ups> */
-void net_login(nut_ctype_t *client, int numarg, const char **arg)
+void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 
@@ -53,6 +53,8 @@ void net_login(nut_ctype_t *client, int numarg, const char **arg)
 
 	/* make sure this is a valid user */
 	if (!user_checkaction(client->username, client->password, "LOGIN")) {
+		upsdebugx(3, "%s: not a valid user: %s",
+			__func__, client->username);
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}
@@ -65,8 +67,9 @@ void net_login(nut_ctype_t *client, int numarg, const char **arg)
 	sendback(client, "OK\n");
 }
 
-void net_logout(nut_ctype_t *client, int numarg, const char **arg)
+void net_logout(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -82,35 +85,64 @@ void net_logout(nut_ctype_t *client, int numarg, const char **arg)
 	client->last_heard = 0;
 }
 
-/* MASTER <upsname> */
-void net_master(nut_ctype_t *client, int numarg, const char **arg)
+/* NOTE: Protocol updated since NUT 2.8.0 to handle master/primary
+ * and API bumped, to rename/alias the routine.
+ */
+static int do_net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	upstype_t	*ups;
 
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
-		return;
+		return -1;
 	}
 
 	ups = get_ups_ptr(arg[0]);
 
 	if (!ups) {
 		send_err(client, NUT_ERR_UNKNOWN_UPS);
-		return;
+		return -1;
 	}
 
-	/* make sure this user is allowed to do MASTER */
-	if (!user_checkaction(client->username, client->password, "MASTER")) {
+	/* make sure this user is allowed to do PRIMARY or MASTER */
+	if (!user_checkaction(client->username, client->password, "PRIMARY")
+	&&  !user_checkaction(client->username, client->password, "MASTER")
+	) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
-		return;
+		return -1;
 	}
 
 	/* this is just an access level check */
-	sendback(client, "OK MASTER-GRANTED\n");
+	/* sendback() will be worded by caller below */
+	return 0;
+}
+
+/* MASTER <upsname> (deprecated) */
+void net_master(nut_ctype_t *client, size_t numarg, const char **arg) {
+	/* Allow existing binaries linked against this file to still work */
+	upsdebugx(1,
+		"WARNING: Client %s@%s "
+		"requested MASTER level for device %s - "
+		"which is deprecated in favor of PRIMARY "
+		"since NUT 2.8.0",
+		client->username, client->addr,
+		(numarg > 0) ? arg[0] : "<null>");
+
+	if (0 == do_net_primary(client, numarg, arg)) {
+		sendback(client, "OK MASTER-GRANTED\n");
+	}
+}
+
+/* PRIMARY <upsname> (since NUT 2.8.0) */
+void net_primary(nut_ctype_t *client, size_t numarg, const char **arg)
+{
+	if (0 == do_net_primary(client, numarg, arg)) {
+		sendback(client, "OK PRIMARY-GRANTED\n");
+	}
 }
 
 /* USERNAME <username> */
-void net_username(nut_ctype_t *client, int numarg, const char **arg)
+void net_username(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -130,7 +162,7 @@ void net_username(nut_ctype_t *client, int numarg, const char **arg)
 }
 
 /* PASSWORD <password> */
-void net_password(nut_ctype_t *client, int numarg, const char **arg)
+void net_password(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

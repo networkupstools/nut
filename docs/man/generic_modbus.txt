@@ -1,0 +1,254 @@
+GENERIC_MODBUS(8)
+=================
+
+NAME
+----
+
+generic_modbus - Driver for contact (direct) signal UPS devices connected
+via modbus remote I/O gateways
+
+SYNOPSIS
+--------
+
+*generic_modbus* -h
+
+*generic_modbus* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
+*generic_modbus* driver. For information about the core driver,
+see linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This is a generic modbus driver expected to work with contact (direct) signal
+UPS devices, connected via modbus RIO (remote I/O) either serial or TCP/IP.
+
+The driver has been tested against PULS UPS (model UB40.241)
+via MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP).
+
+More information about this UPS can be found here: ::
+https://products.pulspower.com/ca/ubc10-241-n1.html
+
+More information about Moxa ioLogik R1212, E1212 can be found here: ::
+https://www.moxa.com/en/products/industrial-edge-connectivity/controllers-and-ios
+
+The PULS UPS UB40.241 supports the following signals:
+----
+Ready contact      (DO) <--> HB
+Buffering contact  (DO) <--> OL | OB
+Battery-low        (DO) <--> LB
+Replace Battery    (DO) <--> RB
+Inhibit            (DI) <--> FSD
+----
+
+Digital port direction (DI/DO) assumes the device perspective
+
+The driver's concept is to map the UPS states (as defined in NUT) onto
+UPS contacts' states. The driver has an extended configuration interface
+implemented using variables defined in ups.conf.
+
+HARDWARE INTERCONNECTION
+------------------------
+
+The commission of modbus remote I/O server as well as UPS device is carried
+out following the corresponding instruction manuals. The following figure
+depicts the anticipated communication path and hardware interconnection:
+----
++------+       +----------------+       +------------+       +------------+
+| UPSD | <---> | GENERIC_MODBUS | <---> | MODBUS RIO | <---> | UPS DEVICE |
++------+  (1)  +----------------+  (2)  +------------+  (3)  +------------+
+   |                   |
+   +-------------------+
+      HOST CONTROLLER
+
+(1) Unix IPC
+(2) RS232 | TCP/IP
+(3) contacts
+----
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+Generic:
+~~~~~~~~
+
+*device_mfr*='value'::
+A string specifying the manufacturer of the UPS device (default UNKNOWN).
+
+*device_model*='value'::
+A string specifying the model of the UPS device (default UNKNOWN).
+
+Serial:
+~~~~~~~
+
+*ser_baud_rate*='value'::
+A integer specifying the serial port baud rate (default 9600).
+
+*ser_data_bit*='value'::
+A integer specifying the serial port data bit (default 8).
+
+*ser_parity*='value'::
+A character specifying the serial port parity (default N).
+
+*ser_stop_bit*='value'::
+An integer specifying the serial port stop bit (default 1).
+
+Modbus:
+~~~~~~~
+
+*rio_slave_id*='value'::
+An integer specifying the RIO modbus slave ID (default 1).
+
+States (X = OL, OB, LB, HB, RB, CHRG, DISCHRG, FSD)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*<X>_addr*='value'::
+A number specifying the modbus address for the X state.
+
+*<X>_regtype*='value'::
+A number specifying the modbus register type for the X state
+Default values: ::
++
+----
+1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
+0 for X = FSD
+----
+Valid values: ::
++
+----
+0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
+----
+
+*<X>_noro*='value'::
+A number specifying the contact configuration for the X state (default 1).
+Valid values: ::
++
+----
+0:NC, 1:NO
+----
++
+NOTE: NO stands for normally open and NC for normally closed contact
+
+Shutdown
+~~~~~~~~
+
+*FSD_pulse_duration*='value'::
+A number specifying the duration in ms for the inhibit pulse.
+If it's not defined, signal has only one transition depending
+on FSD_noro configuration.
++
+Examples for FSD signal configuration:
+----
+FSD_noro = 1
+FSD_pulse_duration = 150
+
+                     +-----+
+                     |     |
+inhibit pulse  >-----+     +------------------>
+                      <--->
+                      150ms
+
+
+FSD_noro = 0
+
+inhibit pulse  >-----+
+                     |
+                     +------------------------>
+
+----
+
+CONFIGURATION
+-------------
+
+Here is an example of generic_modbus driver configuration in *ups.conf* file:
+----
+[generic_modbus]
+  driver = generic_modbus
+  port = /dev/ttyUSB0
+  desc = "generic ups driver"
+  # device info
+  device_mfr = "PULS"
+  device_model = "UB40.241"
+  # serial settings
+  ser_baud_rate = 9600
+  ser_parity = N
+  ser_data_bit = 8
+  ser_stop_bit = 1
+  # modbus slave id
+  rio_slave_id = 5
+  # UPS signal state attributes
+  OB_addr = 0x0
+  OB_regtype = 1
+  OB_noro = 0
+  LB_addr = 0x1
+  LB_regtype = 1
+  HB_addr = 0x2
+  HB_regtype = 1
+  RB_addr = 0x3
+  RB_regtype = 1
+  FSD_addr = 0x0
+  FSD_regtype = 0
+  FSD_pulse_duration = 150
+----
+
+INSTANT COMMANDS
+----------------
+
+This driver support the following instant commands:
+
+load.off::
+executes "instant poweroff"
+
+INSTALLATION
+------------
+
+This driver may be not built by default. You can build it by installing
+libmodbus and running `configure --with-modbus=yes`.
+
+You also need to give proper permissions on the local serial device
+file (`/dev/ttyUSB0` for example) to allow the run-time NUT driver user
+account to access it.
+
+OTHER NOTES
+-----------
+
+The `generic_modbus` driver intends to support generic UPS devices with
+contact signals through modbus TCP/RTU gateways (also known as RIO --
+remote I/Os). The data and signal path looks like this:
+
+----
+[UPSD] <--- IPC ---> [GENERIC_UPS] <--- modbus TCP/RTU ---> MODBUS-RIO <--- contacts ---> [UPS DEVICE]
+----
+
+On the other hand, you can setup any kind of modbus server, and configure
+the `generic_modbus` driver to connect and read or write specific registers.
+Your application / modbus server could then drive NUT statuses (e.g. OL, OB,
+HB etc) by writing over those registers.
+
+KNOWN ISSUES
+------------
+
+include::networked_hostnames.txt[]
+
+AUTHOR
+------
+
+Dimitris Economou <dimitris.s.economou@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8], linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org

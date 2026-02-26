@@ -1,4 +1,4 @@
-/* everups.c - support for Ever UPS models
+/* everups.c - support for Ever UPS models (serial)
 
    Copyright (C) 2001  Bartek Szady <bszx@bszxdomain.edu.eu.org>
 
@@ -20,8 +20,8 @@
 #include "main.h"
 #include "serial.h"
 
-#define DRIVER_NAME	"Ever UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_NAME	"Ever UPS driver (serial)"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -33,6 +33,9 @@ upsdrv_info_t upsdrv_info = {
 };
 
 static	unsigned char	upstype = 0;
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static void init_serial(void)
 {
@@ -64,9 +67,9 @@ static int InitUpsType(void)
 
 static const char *GetTypeUpsName(void)
 {
-        switch(upstype)
-        {
-	        case 67: return "NET 500-DPC";
+	switch(upstype)
+	{
+		case 67: return "NET 500-DPC";
 		case 68: return "NET 700-DPC";
 		case 69: return "NET 1000-DPC";
 		case 70: return "NET 1400-DPC";
@@ -84,8 +87,19 @@ static const char *GetTypeUpsName(void)
 
 void upsdrv_initinfo(void)
 {
+	InitUpsType();
+
 	dstate_setinfo("ups.mfr", "Ever");
 	dstate_setinfo("ups.model", "%s", GetTypeUpsName());
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("load.off");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -95,7 +109,7 @@ void upsdrv_updateinfo(void)
 	unsigned long acuV;
 	unsigned long lineV;
 	double	fVal;
-	
+
 	if (!Code(2)) {
 		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
@@ -106,7 +120,7 @@ void upsdrv_updateinfo(void)
 	ser_get_char(upsfd, recBuf, 3, 0);
 	if ((recBuf[0] & 1) !=0)
 		standby=1;
-	else 
+	else
 		battery=(recBuf[0] &4) !=0;
 	if (Code(1)) {  /*Accumulator voltage value*/
 		ser_send_char(upsfd, 189);
@@ -143,14 +157,14 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	dstate_setinfo("input.voltage", "%03ld", lineV);
+	dstate_setinfo("input.voltage", "%03lu", lineV);
 	dstate_setinfo("battery.voltage", "%03.2f", (double)acuV /10.0);
 
 	fVal=((double)acuV-95.0)*100.0;
 	if (standby)
-	  fVal/=(135.5-95.0);
+		fVal/=(135.5-95.0);
 	else
-	  fVal/=(124.5-95.0);
+		fVal/=(124.5-95.0);
 	if (fVal>100)
 		fVal=100;
 	else if (fVal<0)
@@ -161,23 +175,57 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "load.off"))
+	{
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		if (!Code(2)) {
+			upslog_with_errno(LOG_INSTCMD_UNKNOWN, "Code failed");
+			return STAT_INSTCMD_UNKNOWN;
+		}
+		ser_send_char(upsfd, 28);
+		ser_send_char(upsfd, 1);  /* 1.28 sec */
+		if (!Code(1)) {
+			upslog_with_errno(LOG_INSTCMD_UNKNOWN, "Code failed");
+			return STAT_INSTCMD_UNKNOWN;
+		}
+		ser_send_char(upsfd, 13);
+		ser_send_char(upsfd, 8);
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	if (!Code(2)) {
-		upslog_with_errno(LOG_INFO, "Code failed");
-		return;
-	}
-	ser_send_char(upsfd, 28);
-	ser_send_char(upsfd, 1);  /* 1.28 sec */
-	if (!Code(1)) {
-		upslog_with_errno(LOG_INFO, "Code failed");
-		return;
-	}
-	ser_send_char(upsfd, 13);
-	ser_send_char(upsfd, 8);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("load.off", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -192,7 +240,6 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B300);
 
 	init_serial();
-	InitUpsType();
 }
 
 void upsdrv_cleanup(void)

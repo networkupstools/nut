@@ -1,0 +1,1364 @@
+# Travis CI script
+################################################################################
+# This file is based on a template used by zproject, but isn't auto-generated. #
+################################################################################
+
+language:
+- c
+
+cache:
+- ccache
+
+os:
+- linux
+
+sudo: false
+
+# Tests for cppunit require C++11 which requires gcc-4.8 or newer.
+# This is available in either "trusty" or newer distros (e.g. "xenial"
+# which we also reference explicitly for additional repositories below),
+# or in "docker" envs.
+dist: xenial
+
+services:
+- docker
+
+# Common required packages for all common scenarios
+# Note that YAML lists may be named with & and referenced with * characters;
+# but without such links, every list is complete and unique (meaning that
+# matrix special cases define their own settings, not append to common ones).
+# See https://github.com/travis-ci/travis-ci/issues/3505
+addons:
+  apt:
+    packages: &deps_driverlibs
+    - git
+    - ccache
+    - libcppunit-dev
+    - libcppunit-subunit-dev
+    - libneon27
+    - libneon27-dev
+    - libltdl7
+    - libltdl-dev
+    - libi2c-dev
+    - lua5.1
+    - liblua5.1-0-dev
+    - libsnmp-dev
+    - libfreeipmi-dev
+    - libipmimonitoring-dev
+    - libusb-dev
+    - linux-libc-dev
+    - libpowerman0-dev
+    - libavahi-common-dev
+    - libavahi-core-dev
+    - libavahi-client-dev
+    - libgd2-xpm-dev
+    - libpng-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libxpm-dev
+    - libxml2-utils
+    - libmodbus-dev
+    - libnss3-dev
+    - libssl-dev
+# NOTE: Keep the list above in sync with replicas like deps_driverlibs_cross_i386 below
+
+# Common settings for jobs in the matrix built below
+env:
+  global:
+    - CI_TIME=true
+    - CI_TRACE=false
+    - CI_DEFAULT_HOMEBREW_NO_AUTO_UPDATE=1
+      # By default, avoid updating (including cleaning) osx worker beside what
+      # we require to install, compared to what Travis provides. Technically
+      # we can call master branch builds sometimes to update the workers cache
+      # of packages by manual or timer-driven runs with explicit setting like
+      # HOMEBREW_NO_AUTO_UPDATE=0
+
+# Builds with customized setups
+# Note that doc-related builds take the longest, and Travis CI cloud
+# runs only a few sub-jobs in parallel, so we want the withdoc and
+# perhaps spellcheck jobs to start first, and while they are still in
+# progress, others are spawned and finished - reducing overall job TTL.
+# Note that the nut-driver-enumerator tests should be tried in at least
+# the shell interpreters reasonable for default setups of Solaris/illumos
+# (ksh) and Linux (bash, dash, etc.) common distros.
+
+# First pass is a few default compilations that normally happen
+# early in Travis CI build chain
+_matrix_required_linux_pass1_quick:
+  include: &_matrix_required_linux_pass1_quick
+  - env: BUILD_TYPE=default-nodoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
+
+  - env: BUILD_TYPE=default
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: BUILD_TYPE=default-tgt:distcheck-light
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# Second pass is a number of shell script syntax checks in standard env:
+_matrix_required_linux_pass2_shell:
+  include: &_matrix_required_linux_pass2_shell
+  - env: BUILD_TYPE=default-shellcheck
+    os: linux
+    addons:
+      apt:
+        packages:
+        - coreutils
+        - file
+        #TBD# - shellcheck
+
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=bash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - bash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ksh
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ksh
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=dash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - dash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ash
+
+# Third pass is a number of larger builds that confirm non-core code is clean:
+_matrix_required_linux_pass3_large:
+  include: &_matrix_required_linux_pass3_large
+  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - valgrind
+
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages: &deps_gendocs
+        - asciidoc
+        - xsltproc
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - source-highlight
+        - libxml2-utils
+
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env:
+    - BUILD_TYPE=default-tgt:distcheck-light
+    - NO_PKG_CONFIG=true
+    os: linux
+    sudo: true
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# Re-run the build of all binaries we can make, with
+# varied compiler and C/C++ standard implementations
+# and different lenience against warnings. Many of
+# these blocks look similar and all should have unique
+# "env" field to use some with allowed_failure below.
+# For a list of standards supported, see:
+#   https://gcc.gnu.org/onlinedocs/gcc/Standards.html
+#   https://gcc.gnu.org/projects/cxx-status.html
+#   https://clang.llvm.org/cxx_status.html
+# Note that while there is C++14 there is no C14:
+#   https://en.wikipedia.org/wiki/C_(programming_language)#History
+#
+# The leading NUT_MATRIX_TAG allows humans to understand
+# what a test case is about in Travis CI dashboard table
+# of jobs, but otherwise it is not used by script code.
+#
+# Note that passing multi-token C*FLAGS may be problematic
+# for sub-makes like distcheck; verify thoroughly before
+# trying to enable those if that would make sense anytime.
+#
+# Ordered by variants expected to succeed to run first,
+# although with current Travis CI implementation, the env
+# blocks listed in allowed_failures only run after all
+# those not listed. Jobs which currently fail until code
+# gets fixed are conditional with "if: branch =~ fightwarn"
+# so users (and NUT upstream) can define a branch with a
+# name containing this keyword to work on bug fixes, but by
+# default the main development would not bother Travis CI
+# to waste resources in vain.
+#
+
+_matrix_linux_gnustd_nowarn:
+  include: &_matrix_linux_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-9
+        - gcc-9
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang-5.0 CXX=clang++-5.0
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+
+# Note: some of the warnings that are hidden in this case seem to be serious
+# issues that may impact viability of binaries built by C89 mode compilers!
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# Make sure we don't assume "long int" is a "int64_t" and so on
+# Seems we'd have to use tricks like 32-bit docker in 64-bit VM per
+#   https://stackoverflow.com/questions/29361465/request-for-32bit-travis-build-machine
+#   https://github.com/travis-ci/travis-ci/issues/5770#issuecomment-197771661
+#     services: docker
+#     script: "docker run -i -v \"${PWD}:/MyProgram\" toopher/centos-i386:centos6 /bin/bash -c \"linux32 --32bit i386 /MyProgram/build.sh\""
+_matrix_linux_gnustd_nowarn_x86_32bit:
+  include: &_matrix_linux_gnustd_nowarn_x86_32bit
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32" LDFLAGS="-m32"
+    os: linux
+    arch: i386
+    sudo: true
+        # Perl is packaged poorly for multiarch, across several distro releases:
+        # https://bugs.launchpad.net/ubuntu/+source/pkgbinarymangler/+bug/1574351
+        # NOTE: According to https://docs.travis-ci.com/user/job-lifecycle/ the
+        # before_install phase happens AFTER addons/apt processing! So we install
+        # that big list first (except pkg's that pull perl) and add them later.
+#    before_install:
+#        - sudo dpkg --add-architecture i386 && sudo apt-get update ; yes | sudo apt-get install -y --force-yes libperl5.22:i386 || true ; sudo rm -f /usr/share/doc/libperl5.22/changelog.Debian.gz ; yes | sudo apt-get install -y --force-yes libperl5.22
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages: &deps_driverlibs_cross_i386
+        - git
+        - ccache
+        - gcc-multilib
+        - g++-multilib
+        - libcppunit-dev:i386
+        - libcppunit-subunit-dev:i386
+        - libneon27:i386
+        - libneon27-dev:i386
+        - libltdl7:i386
+        - libltdl-dev:i386
+        #MISSING:i386? hdr only?# - libi2c-dev:i386
+        - libi2c-dev
+        - lua5.1:i386
+        - liblua5.1-0-dev:i386
+        #PULLSPERL# - libsnmp-dev:i386
+        - libfreeipmi-dev:i386
+        - libipmimonitoring-dev:i386
+        - libusb-dev:i386
+        - linux-libc-dev:i386
+        - libpowerman0-dev:i386
+        - libavahi-common-dev:i386
+        - libavahi-core-dev:i386
+        - libavahi-client-dev:i386
+        - libgd2-xpm-dev:i386
+        - libpng-dev:i386
+        - libjpeg-dev:i386
+        - libfreetype6-dev:i386
+        - libxpm-dev:i386
+        - libxml2-utils:i386
+        - libmodbus-dev:i386
+        - libnss3-dev:i386
+        - libssl-dev:i386
+    # See comments above about perl
+    before_install: &before_install_x86_32bit
+        - sudo dpkg --add-architecture i386 && sudo apt-get update
+        - yes | sudo apt-get install -y --force-yes libperl5.22 || true
+        - sudo rm -f /usr/share/doc/libperl5.22/changelog.Debian.gz
+        - yes | sudo apt-get install -f
+        - yes | sudo apt-get install -y --force-yes libperl5.22:i386
+        - yes | sudo apt-get install -y --force-yes libsnmp-dev:i386
+        - yes | sudo apt-get remove -y --force-yes libfreetype6:amd64 || true
+        - yes | sudo apt-get remove -y --force-yes libltdl7:amd64 || true
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: x86
+    dist: xenial
+    sudo: true
+    before_install:
+        - *before_install_x86_32bit
+#        - sudo dpkg --add-architecture i386 && sudo apt-get update
+#        - yes | sudo apt-get install -y --force-yes libperl5.22 || true
+#        - sudo rm -f /usr/share/doc/libperl5.22/changelog.Debian.gz
+#        - sudo apt-get install -f
+#        - yes | apt-get install -y --force-yes libperl5.22:i386
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs_cross_i386
+
+# Try s390x builds to check for issues with endianness
+# (it is one current Travis offer with BigEndian CPUs)
+_matrix_linux_gnustd_nowarn_s390x_64bit_viable:
+  include: &_matrix_linux_gnustd_nowarn_s390x_64bit_viable
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+    os: linux
+    arch: s390x
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - time
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+    os: linux
+    arch: s390x
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-9
+        - gcc-9
+        - *deps_driverlibs
+        - time
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: s390x
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+        - time
+
+_matrix_linux_gnustd_nowarn_s390x_64bit_fatal:
+  include: &_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: s390x
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+        - time
+
+# Try ARM builds to check for issues with non-x86 CPUs
+_matrix_linux_gnustd_nowarn_arm_64bit_viable:
+  include: &_matrix_linux_gnustd_nowarn_arm_64bit_viable
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+    os: linux
+    arch: arm64
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+    os: linux
+    arch: arm64
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-9
+        - gcc-9
+        - *deps_driverlibs
+
+_matrix_linux_gnustd_nowarn_arm_64bit_fatal:
+  include: &_matrix_linux_gnustd_nowarn_arm_64bit_fatal
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: arm64
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+
+# At this time, anything with strict C standard fails on Linux, even "nowarn" cases:
+_matrix_linux_cstd_nowarn:
+  include: &_matrix_linux_cstd_nowarn
+  - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-3.5
+        packages:
+        - clang-3.5
+        - clang-format-3.5
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+
+# Stuff with warnings made fatal... and codebase got good enough to survive!
+_matrix_linux_gnustd_warn_viable:
+  include: &_matrix_linux_gnustd_warn_viable
+  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-9
+        - gcc-9
+        - *deps_driverlibs
+
+# Stuff with warnings made fatal... well, is usually fatal so far:
+_matrix_linux_gnustd_warn_fatal:
+  include: &_matrix_linux_gnustd_warn_fatal
+# Note: Fixing these would make NUT viable again on platforms with only ANSI C!
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# The hardest of two worlds: both strict C standards on Linux and fatal warnings:
+_matrix_linux_cstd_warn:
+  include: &_matrix_linux_cstd_warn
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++98"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c89" CXXFLAGS="-std=c++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    if: branch =~ fightwarn
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+_matrix_freebsd_gnustd_nowarn:
+  include: &_matrix_freebsd_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
+    os: freebsd
+    sudo: true
+    compiler: gcc
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: freebsd
+    sudo: true
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+    os: freebsd
+    sudo: true
+    compiler: gcc
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+    os: freebsd
+    sudo: true
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/.ccache
+
+_matrix_freebsd_gnustd_warn_viable:
+  include: &_matrix_freebsd_gnustd_warn_viable
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
+    os: freebsd
+    sudo: true
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+    os: freebsd
+    sudo: true
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+_matrix_freebsd_gnustd_warn_fatal:
+  include: &_matrix_freebsd_gnustd_warn_fatal
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: freebsd
+    sudo: true
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+    os: freebsd
+    sudo: true
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+
+# Try also a range of platforms for MacOS X builds
+# Inspired by https://github.com/taocpp/operators/blob/master/.travis.yml
+_matrix_osx_gnustd_nowarn:
+  include: &_matrix_osx_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode7.3-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode7.3
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+_matrix_osx_gnustd_warn:
+  include: &_matrix_osx_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+_matrix_osx_cstd_nowarn:
+  include: &_matrix_osx_cstd_nowarn
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+_matrix_osx_cstd_warn:
+  include: &_matrix_osx_cstd_warn
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode7.3
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
+
+# Try also a build on Windows to see our horizons
+# https://docs.travis-ci.com/user/reference/windows/
+# says we have clang-9 there by default (and there is
+# a complex routine to add gcc if we'd need that)
+# and a Git Bash as default shell, but no ccache.
+# TODO: Eventually try native visualstudio compilers?
+_matrix_windows_gnustd_nowarn:
+  include: &_matrix_windows_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
+_matrix_windows_gnustd_warn:
+  include: &_matrix_windows_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
+_matrix_windows_cstd_nowarn:
+  include: &_matrix_windows_cstd_nowarn
+  - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
+_matrix_windows_cstd_warn:
+  include: &_matrix_windows_cstd_warn
+  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
+# Incidentally, this is one platform we know to have clang-9,
+# the version which has (at least partial) C++20 support
+  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c20" CXXFLAGS="-std=c++20" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
+###################################################################################
+# Summarize the matrix blocks above to quickly enable/disable subsets
+# of tests in development (e.g. to focus on fixing bugs and not wasting
+# resources on rebuilding green codebase over and over)
+
+# The original set of tests that are required for master branch CI
+# ...and also the set of builds with various compilers and C standards
+# that should survive at least without warnings made fatal...
+_matrix_required_linux:
+  include: &_matrix_required_linux
+  - *_matrix_required_linux_pass1_quick
+  - *_matrix_required_linux_pass2_shell
+  - *_matrix_required_linux_pass3_large
+  - *_matrix_linux_gnustd_warn_viable
+  - *_matrix_linux_gnustd_nowarn
+  - *_matrix_linux_gnustd_nowarn_x86_32bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_viable
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_viable
+
+_matrix_linux_gnustd_warn:
+  include: &_matrix_linux_gnustd_warn
+  - *_matrix_linux_gnustd_warn_viable
+  - *_matrix_linux_gnustd_warn_fatal
+
+_matrix_allowfail_linux:
+  include: &_matrix_allowfail_linux
+  - *_matrix_linux_cstd_nowarn
+  - *_matrix_linux_gnustd_warn_fatal
+  - *_matrix_linux_cstd_warn
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_fatal
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
+
+_matrix_linux_gnustd_nowarn_arm_64bit:
+  include: &_matrix_linux_gnustd_nowarn_arm_64bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_viable
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_fatal
+
+_matrix_linux_arm:
+  include: &_matrix_linux_arm
+  - *_matrix_linux_gnustd_nowarn_arm_64bit
+
+_matrix_linux_gnustd_nowarn_s390x_64bit:
+  include: &_matrix_linux_gnustd_nowarn_s390x_64bit
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_viable
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
+
+_matrix_linux_s390x:
+  include: &_matrix_linux_s390x
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit
+
+_matrix_linux:
+  include: &_matrix_linux
+  - *_matrix_required_linux
+  - *_matrix_allowfail_linux
+
+_matrix_freebsd:
+  include: &_matrix_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn
+
+_matrix_freebsd_gnustd_warn:
+  include: &_matrix_freebsd_gnustd_warn
+  - *_matrix_freebsd_gnustd_warn_viable
+  - *_matrix_freebsd_gnustd_warn_fatal
+
+_matrix_required_freebsd:
+  include: &_matrix_required_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn_viable
+
+_matrix_allowfail_freebsd:
+  include: &_matrix_allowfail_freebsd
+  - *_matrix_freebsd_gnustd_warn_fatal
+
+_matrix_allowfail_osx:
+  include: &_matrix_allowfail_osx
+  - *_matrix_osx_cstd_nowarn
+  - *_matrix_osx_gnustd_warn
+  - *_matrix_osx_cstd_warn
+
+_matrix_required_osx:
+  include: &_matrix_required_osx
+  - *_matrix_osx_gnustd_nowarn
+
+_matrix_osx:
+  include: &_matrix_osx
+  - *_matrix_required_osx
+  - *_matrix_allowfail_osx
+
+# Nothing this good yet
+#_matrix_required_windows:
+#  include: &_matrix_required_windows
+
+_matrix_allowfail_windows:
+  include: &_matrix_allowfail_windows
+  - *_matrix_windows_gnustd_nowarn
+  - *_matrix_windows_gnustd_warn
+  - *_matrix_windows_cstd_nowarn
+  - *_matrix_windows_cstd_warn
+
+_matrix_windows:
+  include: &_matrix_windows
+#  - *_matrix_required_windows
+  - *_matrix_allowfail_windows
+
+# Different dissections of interest to fixers:
+_matrix_cstd_nowarn:
+  include: &_matrix_cstd_nowarn
+  - *_matrix_linux_cstd_nowarn
+  - *_matrix_osx_cstd_nowarn
+  - *_matrix_windows_cstd_nowarn
+
+_matrix_gnustd_nowarn:
+  include: &_matrix_gnustd_nowarn
+  - *_matrix_osx_gnustd_nowarn
+  - *_matrix_linux_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_nowarn
+#  -*_matrix_windows_gnustd_nowarn
+  - *_matrix_linux_gnustd_nowarn_x86_32bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_viable
+  - *_matrix_linux_gnustd_nowarn_arm_64bit_fatal
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_viable
+  - *_matrix_linux_gnustd_nowarn_s390x_64bit_fatal
+
+_matrix_warn:
+  include: &_matrix_warn
+  - *_matrix_linux_gnustd_warn
+  - *_matrix_linux_cstd_warn
+  - *_matrix_freebsd_gnustd_warn
+  - *_matrix_osx_gnustd_warn
+  - *_matrix_osx_cstd_warn
+  - *_matrix_windows_gnustd_warn
+  - *_matrix_windows_cstd_warn
+
+# Default "jobs:" matrix should reference at least this for master branches
+_matrix_required:
+  include: &_matrix_required
+  - *_matrix_required_linux
+  - *_matrix_required_freebsd
+  - *_matrix_required_osx
+#  - *_matrix_required_windows
+
+_matrix_all:
+  include: &_matrix_all
+  - *_matrix_linux
+  - *_matrix_freebsd
+  - *_matrix_osx
+  - *_matrix_windows
+
+_matrix_master:
+  include: &_matrix_master
+  - *_matrix_required
+### Enabled for branches with names containing "fightwarn" to perform
+### builds that intend to actively fix the issues which preclude the
+### following items from becoming green:
+  - *_matrix_allowfail_linux
+  - *_matrix_allowfail_osx
+  - *_matrix_allowfail_freebsd
+  - *_matrix_windows
+
+_matrix_fixbugs:
+  include: &_matrix_fixbugs
+  - *_matrix_cstd_nowarn
+  - *_matrix_warn
+
+###################################################################################
+# Developers can import some of the definitions above (e.g. _matrix-fixbugs
+# instead of _matrix-master) to get more relevant runs of Travis CI against
+# their branches for their iterations trying to fix stuff.
+#
+# DO NOT COMMIT TO MASTER BRANCH TEST-MATRICES THAT ARE NOT _matrix-master!
+#
+# These days, "jobs" and "matrix" (Travis keywords) are same thing... at least,
+# ours is an explicit list.
+# By "fast_finish" we allow to assign a verdict based on completion of required
+# test cases. The "allow_failures" will proceed to run for our information
+# but should not block nor delay PR considerations etc.
+jobs:
+  fast_finish: true
+  include:
+  - *_matrix_master
+
+###################################################################################
+# Note: "env" lines below must exactly describe a matrix option defined above
+  allow_failures:
+
+### Linux on x86_64
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang-5.0 CXX=clang++-5.0
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32" LDFLAGS="-m32"
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" LDFLAGS="-m32" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="c17-clang-8-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang-8 CXX=clang++-8
+#OK#  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang-5.0 CXX=clang++-5.0
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11"
+#OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11"
+#OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c89" CXXFLAGS="-std=c++89"
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+
+### Linux on s390x (BigEndian)
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-s390x-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-warn-s390x-64bit" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+
+### Linux on ARM
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98"
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+
+### FreeBSD on x86_64
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+
+### macosx
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode7.3-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
+
+### windows on x86_64
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" BUILD_WARNFATAL=yes BUILD_WARNOPT=hard CFLAGS="-std=c20" CXXFLAGS="-std=c++20" CC=clang CXX=clang++
+
+before_install:
+- |-
+  if [ $TRAVIS_OS_NAME = "osx" ] ; then
+    [ -n "$HOMEBREW_NO_AUTO_UPDATE" ] || HOMEBREW_NO_AUTO_UPDATE="$CI_DEFAULT_HOMEBREW_NO_AUTO_UPDATE"
+    if [ "$HOMEBREW_NO_AUTO_UPDATE" = 1 ] ; then
+        echo "NOT CALLING 'brew update' as it takes too long and cleans up preinstalled env"
+        export HOMEBREW_NO_AUTO_UPDATE
+    else
+        unset HOMEBREW_NO_AUTO_UPDATE
+        brew update
+    fi
+    brew install binutils ccache gd
+    if [ "$BUILD_TYPE" = default-withdoc ] ; then
+        brew install asciidoc docbook-xsl
+        XML_CATALOG_FILES=/usr/local/etc/xml/catalog
+        export XML_CATALOG_FILES
+    fi
+  fi
+
+# Please forgive the funny syntax below to dance around
+# both YAML escaping and windows-acceptable shell syntax
+- |-
+    if [[ $TRAVIS_OS_NAME == "windows" ]] ; then
+        if [[ ! -s C:/tools/cygwin/bin/autoreconf.exe ]] ; then
+            if [[ ! -s C:/tools/cygwin/bin/autoreconf ]] ; then
+                choco install cygwin
+                C:\\tools\\cygwin\\cygwinsetup.exe -q -P make,unzip,automake,autoconf,zip
+            fi
+        fi
+        if [[ ! -s C:/tools/bin/ccache.exe ]] ; then
+            mkdir -p C:/tools/bin/
+            pushd C:/tools/bin/ || exit
+                wget https://github.com/ccache/ccache/releases/download/v3.7.12/ccache-3.7.12-windows-64.zip || exit
+                7z e -y ccache-3.7.12-windows-64.zip || exit
+                rm -f ccache-3.7.12-windows-64.zip
+            popd
+        fi
+        export PATH=/C/tools/bin:/cygdrive/c/tools/bin:$PATH:/C/tools/cygwin/bin:/cygdrive/c/tools/cygwin/bin
+        CI_TRACE=true
+        CI_TIME=false
+        ( echo "user::rwx"
+          echo "group::r--"
+          echo "mask:rwx"
+          echo "other:r--"
+        ) > /tmp/faclx
+        if ! setfacl -f /tmp/faclx /cygdrive/c/tools/cygwin/*bin/* ; then
+            setfacl -f /tmp/faclx /C/tools/cygwin/*bin/*
+        fi
+    fi
+- if [ "$TRAVIS_OS_NAME" = "freebsd" ] ; then sudo pkg install -y libgd ; fi
+- if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh

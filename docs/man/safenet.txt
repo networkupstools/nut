@@ -3,21 +3,29 @@ SAFENET(8)
 
 NAME
 ----
+
 safenet - Driver for SafeNet compatible UPS equipment
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*safenet* -h
+
+*safenet* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 safenet driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports UPS equipment which can be controlled via
 SafeNet v1.0 for Windows (serial interface only).
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5] file:
 
@@ -38,8 +46,9 @@ Time to wait before switching on the UPS (minutes). Defaults to 1 minute.
 *offdelay=*'value'::
 Time to wait before shutting down the UPS (seconds). Defaults to 30 seconds.
 
-UPSCMD
-------
+INSTANT COMMANDS
+----------------
+
 This driver supports some instant commands (see linkman:upscmd[8]):
 
 *test.battery.start*::
@@ -73,6 +82,7 @@ and *ondelay*.
 
 KNOWN PROBLEMS
 --------------
+
 If you run the *shutdown.return* command with mains present, the output
 may stay on or switch off and not back on again. The *shutdown.reboot*
 command will unconditionally switch on the load again (with or without mains
@@ -87,6 +97,7 @@ return when the power comes back.
 
 AUTHOR
 ------
+
 Arjen de Korte <adkorte-guest at alioth.debian.org>
 
 SEE ALSO
@@ -94,8 +105,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

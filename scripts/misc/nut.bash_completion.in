@@ -1,0 +1,208 @@
+# Bash completion function for Network UPS Tools 'upsc' command.
+#
+# Install in /etc/bash_completion.d (and run '. /etc/bash_completion if this
+# has not been done in your startup files already).
+#
+# Charles Lepple <clepple@gmail>
+
+_nut_local_upses()
+{
+    upsc -l 2>/dev/null
+}
+
+_nut_upses()
+{
+    upsc -l 2>/dev/null
+    # Example syntax:
+    echo UPS@host:port
+    # ... could add others from upsmon.conf, etc.
+}
+
+###
+
+_nut_upsc_completion()
+{
+    local upses cur
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    # The 'list' options can take a hostname and a port, but we don't complete
+    # the port number:
+    case "$prev" in
+        -l|-L)
+            COMPREPLY=( $(compgen -A hostname ${cur}) ) ; return 0 ;;
+    esac
+
+    # If the user starts to type an option, then only offer options for that word:
+    if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "-l -L" -- ${cur}) ) ; return 0
+    fi
+
+    upses="$(_nut_upses)"
+    COMPREPLY=( $(compgen -W "-l -L $upses" -- ${cur}) )
+    return 0
+}
+
+complete -F _nut_upsc_completion upsc
+
+###
+
+_nut_upscmd_completion()
+{
+    local cur options prev pprev upses
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    (( COMP_CWORD >= 3 )) && pprev=${COMP_WORDS[COMP_CWORD-3]}
+    options="-h -l -u -p"
+
+    case "$prev" in
+        -u|-p) # TODO: match against upsd.users, if readable.
+            COMPREPLY=( ) ; return 0 ;;
+        -l)
+            upses="$(_nut_upses)"
+            COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
+        upscmd)
+            upses="$(_nut_upses)"
+            COMPREPLY=( $(compgen -W "$options $upses" -- ${cur}) ) ; return 0 ;;
+    esac
+
+    # If the user starts to type an option, then only offer options for that word:
+    if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "$options" -- ${cur}) ) ; return 0
+    fi
+
+    # If we have hit the end of the command line, then don't try and match the command as a host:
+    [[ "$pprev" == -* || "$pprev" == "upscmd" ]] && return 0
+
+    # Get the list of commands from the UPS named in the previous word:
+    local cmds
+    cmds=$(upscmd -l $prev 2>/dev/null | @TAIL@ @TAIL_ARGS_FROM_NTH_LINE@ +3 | sed 's/ - .*//' )
+    COMPREPLY=( $(compgen -W "$cmds" -- ${cur}) )
+
+    return 0
+}
+
+complete -F _nut_upscmd_completion upscmd
+
+###
+
+_nut_upsd_completion()
+{
+    local cur options prev
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    options="-c -D -f -h -r -u -V -4 -6"
+
+    case "$prev" in
+        -c) # commands:
+            COMPREPLY=( $(compgen -W "reload stop" -- ${cur}) ) ; return 0 ;;
+        -r) # chroot:
+            COMPREPLY=( $(compgen -A directory -- ${cur}) ) ; return 0 ;;
+        -u) # system user, not in upsd.users
+            COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
+    esac
+
+    # Only options, no other words:
+    COMPREPLY=( $(compgen -W "$options" -- ${cur}) ) ; return 0
+
+    return 0
+}
+
+complete -F _nut_upsd_completion upsd
+
+###
+
+_nut_upsdrvctl_completion()
+{
+    local cur options prev upses
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    options="-h -r -t -u -D"
+
+    case "$prev" in
+        -r) # chroot:
+            COMPREPLY=( $(compgen -A directory -- ${cur}) ) ; return 0 ;;
+        -u) # system user, not in upsd.users
+            COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
+        start|stop|shutdown)
+            upses="$(_nut_local_upses)"
+            COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
+    esac
+
+    # If the user starts to type an option, then only offer options for that word:
+    if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "$options" -- ${cur}) ) ; return 0
+    fi
+
+    # Don't auto-complete shutdown because it doesn't usually do what you want (upsmon -c fsd):
+    COMPREPLY=( $(compgen -W "$options start stop" -- ${cur}) )
+
+    return 0
+}
+
+complete -F _nut_upsdrvctl_completion upsdrvctl
+
+###
+
+_nut_upsmon_completion()
+{
+    local cur options prev
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    options="-c -D -h -K -u -4 -6"
+
+    case "$prev" in
+        -c) # commands:
+            COMPREPLY=( $(compgen -W "fsd reload stop" -- ${cur}) ) ; return 0 ;;
+        -u) # system user, not in upsd.users
+            COMPREPLY=( $(compgen -u -- ${cur}) ) ; return 0 ;;
+    esac
+
+    # Only options, no other words:
+    COMPREPLY=( $(compgen -W "$options" -- ${cur}) ) ; return 0
+
+    return 0
+}
+
+complete -F _nut_upsmon_completion upsmon
+
+###
+
+_nut_upsrw_completion()
+{
+    local cur options prev upses
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    options="-s -u -p -h"
+
+    upses="$(_nut_upses)"
+
+    case "$prev" in
+        -u|-p) # TODO: match against upsd.users, if readable.
+            COMPREPLY=( ) ; return 0 ;;
+        -l)
+            COMPREPLY=( $(compgen -W "$upses" -- ${cur}) ) ; return 0 ;;
+    esac
+
+    # If the user starts to type an option, then only offer options for that word:
+    if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "$options" -- ${cur}) ) ; return 0
+    fi
+
+    COMPREPLY=( $(compgen -W "$options $upses" -- ${cur}) )
+    return 0
+}
+
+complete -F _nut_upsrw_completion upsrw

@@ -1,6 +1,17 @@
 # Network UPS Tools: example upsmon configuration
 #
 # This file contains passwords, so keep it secure.
+#
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
+# A minimal configuration should include at least one MONITOR instruction,
+# MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
+# and a POWERDOWNFLAG if this machine is a "primary" system connected to
+# the UPS and drives its late-shutdown power-off command in an emergency.
+# You should also define a SHUTDOWNCMD (like the example below, or something
+# special for your deployment) if MINSUPPLIES is at least 1 and you MONITOR
+# an UPS. A NOTIFYCMD integrating with `upssched` is a common situation too.
 
 # --------------------------------------------------------------------------
 # RUN_AS_USER <userid>
@@ -9,9 +20,9 @@
 # waits to run the SHUTDOWNCMD.  The other one switches to another userid
 # and does everything else.
 #
-# The default nonprivileged user is set at compile-time with
-# 	'configure --with-user=...'.  
-# 
+# The default unprivileged user is set at compile-time with the option
+#   'configure --with-user=...'
+#
 # You can override it with '-u <user>' when starting upsmon, or just
 # define it here for convenience.
 #
@@ -27,22 +38,23 @@
 #
 # This user should not have write access to upsmon.conf.
 #
+# (Unprivileged) OS account to run as:
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
-# MONITOR <system> <powervalue> <username> <password> ("master"|"slave")
+# MONITOR <system> <powervalue> <username> <password> ("primary"|"secondary")
 #
 # List systems you want to monitor.  Not all of these may supply power
 # to the system running upsmon, but if you want to watch it, it has to
 # be in this section.
-# 
+#
 # You must have at least one of these declared.
 #
 # <system> is a UPS identifier in the form <upsname>@<hostname>[:<port>]
 # like ups@localhost, su700@mybox, etc.
-# 
+#
 # Examples:
-# 
+#
 #  - "su700@mybox" means a UPS called "su700" on a system called "mybox"
 #
 #  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
@@ -54,34 +66,67 @@
 # If the ups.conf on host "doghouse" has a section called "snoopy", the
 # identifier for it would be "snoopy@doghouse".
 #
-# <powervalue> is an integer - the number of power supplies that this UPS 
-# feeds on this system.  Most computers only have one power supply, so this 
-# is normally set to 1.  You need a pretty big or special box to have any 
-# other value here.
+# <powervalue> is an integer - the number of power supplies that this UPS
+# feeds on this system.  Most personal computers only have one power supply,
+# so this value is normally set to 1, while most modern servers have at least
+# two.  You need a pretty big or special box to have any other value here.
 #
-# You can also set this to 0 for a system that doesn't supply any power,
-# but you still want to monitor.  Use this when you want to hear about
-# changes for a given UPS without shutting down when it goes critical,
-# unless <powervalue> is 0.
+# You can also set this to 0 for a system that doesn't take any power
+# from the MONITORed supply, which you still want to monitor (e.g. for an
+# administrative workstation fed from a different circuit than the datacenter
+# servers it monitors). Use <powervalue> if 0 when you want to hear about
+# changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "monmaster" and your password is 
+# upsd.users.  If your NUT username is "monuser" and your password is
 # "blah", the upsd.users would look like this:
 #
-#	[monmaster]
+#	[monuser]
 #		password  = blah
-#		upsmon master 	(or slave)
-# 
-# "master" means this system will shutdown last, allowing the slaves
-# time to shutdown first.
+#		upsmon primary 	# (or secondary)
 #
-# "slave" means this system shuts down immediately when power goes critical.
+# "primary" means this system will shutdown last, allowing the secondary
+# systems time to shutdown first.
 #
-# Examples: 
+# "secondary" means this system shuts down immediately when power goes
+# critical and less than MINSUPPLIES power sources have reliable input feeds.
 #
-# MONITOR myups@bigserver 1 monmaster blah master
-# MONITOR su700@server.example.com 1 upsmon secretpass slave
-# MONITOR myups@localhost 1 upsmon pass master	(or slave)
+# The general assumption is that the "primary" system is the one with direct
+# connection to an UPS (such as serial or USB cable), so the primary system
+# runs the NUT driver and 'upsd' server locally and can manage the device,
+# and it would often tell the UPS to completely power itself off as a step
+# in power-race avoidance (see POWERDOWNFLAG for details).
+#
+# Also, since the primary system stays up the longest, it suffers higher risks
+# of ungraceful shutdown if the estimation of remaining runtime (or of the
+# time it takes to shut down this system) was guessed wrong. By consequence,
+# the "secondary" systems typically monitor the power environment state
+# through the 'upsd' processes running on the remote (often "primary") systems
+# and do not directly interact with an UPS (no local NUT drivers are running
+# on the secondary systems). As such, secondaries typically shut down as
+# soon as there is a sufficiently long power outage, or a low-battery alert
+# from the UPS, or a loss of connection to the primary while the power was
+# last known to be missing.
+#
+# This assumption and configuration can also make sense for networked UPSes,
+# where a rack full of servers might overload the communications capacity
+# of the networked management card on the UPS - in this case you might either
+# reduce the 'snmp-ups' or 'netxml-ups' driver polling rate, or dedicate a
+# "primary" server and set up the rest as "secondary" systems.
+#
+# In case of such large setups as mentioned above, beware also that shutdown
+# times of the rack done all at once can substantially differ from smaller
+# scale experiments with single-server shutdowns, since systems can compete
+# for shared storage and other limited resources as they go down (and also
+# not everyone may safely shut down simultaneously - e.g. a NAS or DB server
+# would better go down after all its clients). You would be well served by
+# higher-end UPSes with manageable thresholds to declare a critical state.
+#
+# Examples:
+#
+# MONITOR myups@bigserver 1 upswired blah primary
+# MONITOR su700@server.example.com 1 monuser secretpass secondary
+# MONITOR myups@localhost 1 monuser pass primary	# (or secondary)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
@@ -91,7 +136,7 @@
 # put "1" in this field.
 #
 # Large/expensive server type systems usually have more, and can run with
-# a few missing.  The HP NetServer LH4 can run with 2 out of 4, for example,
+# a few missing.  Some of these can run with 2 out of 4, for example,
 # so you'd set that to 2.  The idea is to keep the box running as long
 # as possible, right?
 #
@@ -106,35 +151,96 @@ MINSUPPLIES 1
 #
 # upsmon runs this command when the system needs to be brought down.
 #
-# This should work just about everywhere ... if it doesn't, well, change it.
+# This should work just about everywhere ... if it doesn't, well, change it,
+# perhaps to a more complicated custom script.
+#
+# Note that while you experiment with the initial setup and want to test how
+# your configuration reacts to power state changes and ultimately when power
+# is reported to go critical, but do not want your system to actually turn
+# off, consider setting the SHUTDOWNCMD temporarily to do something benign -
+# such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
+# to plug the UPS back into the wall in a timely fashion.
+#
+# For Windows setup you should escape backslashes (or use forward slashes in
+# recent OS releases). To shut down, use something like:
+# SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
+# If you have a command line using space characters, you have to add double
+# quote to them, like this:
+# SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
+# Or use the old DOS 8.3 file name, like this:
+# SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
+
+# --------------------------------------------------------------------------
+# SHUTDOWNEXIT <boolean|num>
+#
+# After initiating shutdown, should this upsmon daemon itself exit?
+# By doing so NUT secondary systems can tell the NUT primary that
+# it can proceed with its own shutdown and eventually tell the UPS
+# to cut power for the load. ("Yes" by default)
+#
+# Some "secondary" systems with workloads that take considerable time
+# to stop (e.g. virtual machines or large databases) can benefit from
+# reporting (by virtue of logging off the data server) that they are
+# ready for the "primary" system to begin its own shutdown and eventually
+# to tell the UPS to cut the power - not as soon as they have triggered
+# their own shutdown, but at a later point (e.g. when the upsmon service
+# is stopped AFTER the heavier workloads).
+#
+# Note that the actual ability to complete such shutdown depends on the
+# remaining battery run-time at the moment when UPS power state becomes
+# considered critical and the shutdowns begin. You may also have to tune
+# HOSTSYNC on the NUT primary to be long enough for those secondaries to
+# stop their services. In practice, it may be worthwhile to investigate
+# ways to trigger shutdowns earlier on these systems, e.g. by setting up
+# `upssched` integration, or `dummy-ups` driver with overrides for stricter
+# `battery.charge` or `battery.runtime` triggers than used by the rest of
+# your servers.
+#
+# This option supports Boolean-style strings (yes/on/true or no/off/false)
+# or numbers to define a delay (in seconds) between calling SHUTDOWNCMD
+# and exiting the daemon. Zero means immediate exit (default), negative
+# values mean never exiting on its own accord.
+#
+#SHUTDOWNEXIT yes
 
 # --------------------------------------------------------------------------
 # NOTIFYCMD <command>
 #
 # upsmon calls this to send messages when things happen
 #
-# This command is called with the full text of the message as one argument.
+# This command is called with the full text of the message (from NOTIFYMSG)
+# as one argument.
+#
 # The environment string NOTIFYTYPE will contain the type string of
 # whatever caused this event to happen.
+#
+# The environment string UPSNAME will contain the name of the system/device
+# that generated the change.
 #
 # Note that this is only called for NOTIFY events that have EXEC set with
 # NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 #
-# Making this some sort of shell script might not be a bad idea.  For more
-# information and ideas, see docs/scheduling.txt
+# Making this some sort of shell script might not be a bad idea.
+# Alternately you can use the upssched program as your NOTIFYCMD for some
+# more complex setups (e.g. to ease handling of notification storms).
+# For more information and ideas, see docs/scheduling.txt
 #
 # Example:
 # NOTIFYCMD @BINDIR@/notifyme
 
 # --------------------------------------------------------------------------
-# POLLFREQ <n> 
+# POLLFREQ <n>
 #
 # Polling frequency for normal activities, measured in seconds.
 #
-# Adjust this to keep upsmon from flooding your network, but don't make 
+# Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
+#
+# NOTE: This setting is different from a `pollfreq` supported by some of
+# the NUT driver programs, such as usbhid-ups (about how often the driver
+# polls a particular device).
 
 POLLFREQ 5
 
@@ -144,8 +250,8 @@ POLLFREQ 5
 # Polling frequency in seconds while UPS on battery.
 #
 # You can make this number lower than POLLFREQ, which will make updates
-# faster when any UPS is running on battery.  This is a good way to tune 
-# network load if you have a lot of these things running.  
+# faster when any UPS is running on battery.  This is a good way to tune
+# network load if you have a lot of these things running.
 #
 # The default is 5 seconds for both this and POLLFREQ.
 
@@ -154,17 +260,17 @@ POLLFREQALERT 5
 # --------------------------------------------------------------------------
 # HOSTSYNC - How long upsmon will wait before giving up on another upsmon
 #
-# The master upsmon process uses this number when waiting for slaves to
-# disconnect once it has set the forced shutdown (FSD) flag.  If they
-# don't disconnect after this many seconds, it goes on without them.
+# The primary upsmon process uses this number when waiting for secondary
+# systems to disconnect once it has set the forced shutdown (FSD) flag.
+# If they don't disconnect after this many seconds, it goes on without them.
 #
-# Similarly, upsmon slave processes wait up to this interval for the 
-# master upsmon to set FSD when a UPS they are monitoring goes critical -
-# that is, on battery and low battery.  If the master doesn't do its job,
-# the slaves will shut down anyway to avoid damage to the file systems.
+# Similarly, upsmon secondary processes wait up to this interval for the
+# primary upsmon to set FSD when an UPS they are monitoring goes critical -
+# that is, on battery and low battery.  If the primary doesn't do its job,
+# the secondaries will shut down anyway to avoid damage to the file systems.
 #
 # This "wait for FSD" is done to avoid races where the status changes
-# to critical and back between polls by the master.
+# to critical and back between polls by the primary.
 
 HOSTSYNC 15
 
@@ -188,18 +294,29 @@ HOSTSYNC 15
 DEADTIME 15
 
 # --------------------------------------------------------------------------
-# POWERDOWNFLAG - Flag file for forcing UPS shutdown on the master system
+# POWERDOWNFLAG - Flag file for forcing UPS shutdown on the primary system
 #
-# upsmon will create a file with this name in master mode when it's time
+# upsmon will create a file with this name in primary mode when it's time
 # to shut down the load.  You should check for this file's existence in
-# your shutdown scripts and run 'upsdrvctl shutdown' if it exists.
+# your shutdown scripts and run 'upsdrvctl shutdown' if it exists, to tell
+# the UPS(es) to power off.
 #
 # See the config-notes.txt file in the docs subdirectory for more information.
 # Refer to the section:
 # [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events"
 # or refer to the online version.
-
-POWERDOWNFLAG /etc/killpower
+#
+# For Windows setup use something like:
+# POWERDOWNFLAG "C:\\killpower"
+#
+# For Unix/Linux systems the legacy common value is:
+#   POWERDOWNFLAG /etc/killpower
+# but nowadays you may want it in a temporary filesystem (e.g. under /run)
+#
+# WARNING: The 'upsmon' binary program does not have a built-in default,
+# so this setting MUST be specified in the configuration, in order for the
+# late shutdown integration to work on the particular primary-mode system!
+POWERDOWNFLAG "@POWERDOWNFLAG@"
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
@@ -215,30 +332,66 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYMSG COMMOK	"Communications with UPS %s established"
 # NOTIFYMSG COMMBAD	"Communications with UPS %s lost"
 # NOTIFYMSG SHUTDOWN	"Auto logout and shutdown proceeding"
+# NOTIFYMSG SHUTDOWN_HOSTSYNC	"Shutdown initiated; primary system is waiting for secondaries to log out or time out"
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
+# NOTIFYMSG CAL		"UPS %s: calibration in progress"
+# NOTIFYMSG NOTCAL	"UPS %s: calibration finished"
+# NOTIFYMSG OFF		"UPS %s: administratively OFF or asleep"
+# NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
+# NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
+# NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
+# NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
+# NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
 #
-# Note that %s is replaced with the identifier of the UPS in question.
+# NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
+# or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
+# NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
-# Possible values for <notify type>:
+# NOTIFYMSG OVER	"UPS %s: overloaded"
+# NOTIFYMSG NOTOVER	"UPS %s: no longer overloaded"
+# NOTIFYMSG TRIM	"UPS %s: trimming incoming voltage"
+# NOTIFYMSG NOTTRIM	"UPS %s: no longer trimming incoming voltage"
+# NOTIFYMSG BOOST	"UPS %s: boosting incoming voltage"
+# NOTIFYMSG NOTBOOST	"UPS %s: no longer boosting incoming voltage"
+#
+# Special handling is provided for surprise tokens seen in ups.status, which
+# are not in the standard NUT dictionary (but some drivers are known to use);
+# note that unlike other formatting strings, the "OTHER" one has two string
+# placeholders "%s" (it is safe to use one, leaving just the UPS name, or none):
+#
+# NOTIFYMSG OTHER	"UPS %s: has at least one unclassified status token: [%s]"
+# NOTIFYMSG NOTOTHER	"UPS %s has no unclassified status tokens anymore"
+#
+# A few messages not directly related to UPS events are also available:
+#
+# NOTIFYMSG SUSPEND_STARTING	"OS is entering sleep/suspend/hibernate mode"
+# NOTIFYMSG SUSPEND_FINISHED	"OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown"
+#
+# Note that %s (where used) is replaced with the identifier of the UPS in question.
+#
+# Meanings of some possible values for <notify type>:
 #
 # ONLINE   : UPS is back online
 # ONBATT   : UPS is on battery
 # LOWBATT  : UPS has a low battery (if also on battery, it's "critical")
-# FSD      : UPS is being shutdown by the master (FSD = "Forced Shutdown")
+# FSD      : UPS is being shutdown by the primary (FSD = "Forced Shutdown")
 # COMMOK   : Communications established with the UPS
 # COMMBAD  : Communications lost to the UPS
 # SHUTDOWN : The system is being shutdown
 # REPLBATT : The UPS battery is bad and needs to be replaced
 # NOCOMM   : A UPS is unavailable (can't be contacted for monitoring)
 # NOPARENT : The process that shuts down the system has died (shutdown impossible)
+# ALARM    : UPS has one or more alarms (look at "ups.alarm" for details)
 
 # --------------------------------------------------------------------------
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
 #
 # By default, upsmon sends walls (global messages to all logged in users)
-# and writes to the syslog when things happen.  You can change this.
+# and writes to the syslog when things happen.
+# Except for Windows where upsmon only writes to the syslog by default.
+# You can change this.
 #
 # NOTIFYFLAG <notify type> <flag>[+<flag>][+<flag>] ...
 #
@@ -249,18 +402,104 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYFLAG COMMOK	SYSLOG+WALL
 # NOTIFYFLAG COMMBAD	SYSLOG+WALL
 # NOTIFYFLAG SHUTDOWN	SYSLOG+WALL
+# NOTIFYFLAG SHUTDOWN_HOSTSYNC	SYSLOG+WALL
 # NOTIFYFLAG REPLBATT	SYSLOG+WALL
 # NOTIFYFLAG NOCOMM	SYSLOG+WALL
 # NOTIFYFLAG NOPARENT	SYSLOG+WALL
+# NOTIFYFLAG CAL	SYSLOG+WALL
+# NOTIFYFLAG NOTCAL	SYSLOG+WALL
+# NOTIFYFLAG OFF	SYSLOG+WALL
+# NOTIFYFLAG NOTOFF	SYSLOG+WALL
+# NOTIFYFLAG BYPASS	SYSLOG+WALL
+# NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
+# NOTIFYFLAG ECO	SYSLOG+WALL
+# NOTIFYFLAG NOTECO	SYSLOG+WALL
+#
+# NOTIFYFLAG ALARM	SYSLOG+WALL
+# NOTIFYFLAG NOTALARM	SYSLOG+WALL
+#
+# NOTIFYFLAG OVER	SYSLOG+WALL
+# NOTIFYFLAG NOTOVER	SYSLOG+WALL
+# NOTIFYFLAG TRIM	SYSLOG+WALL
+# NOTIFYFLAG NOTTRIM	SYSLOG+WALL
+# NOTIFYFLAG BOOST	SYSLOG+WALL
+# NOTIFYFLAG NOTBOOST	SYSLOG+WALL
+#
+# NOTIFYFLAG OTHER	SYSLOG+WALL
+# NOTIFYFLAG NOTOTHER	SYSLOG+WALL
+#
+# NOTIFYFLAG SUSPEND_STARTING	SYSLOG+WALL
+# NOTIFYFLAG SUSPEND_FINISHED	SYSLOG+WALL
 #
 # Possible values for the flags:
 #
-# SYSLOG - Write the message in the syslog 
+# SYSLOG - Write the message in the syslog
 # WALL   - Write the message to all users on the system
 # EXEC   - Execute NOTIFYCMD (see above) with the message
 # IGNORE - Don't do anything
 #
 # If you use IGNORE, don't use any other flags on the same line.
+
+# --------------------------------------------------------------------------
+# OFFDURATION - put "OFF" state into effect if it persists for this many seconds
+#
+# NUT supports an "administrative OFF" for power devices which can be managed to
+# turn off their application workload, while the UPS or ePDU remains accessible
+# for monitoring and management. This toggle allows to delay propagation of such
+# state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+# which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+# power sources or because they as the load are not really turned off), because
+# when some devices begin battery calibration, they report "OFF" for a few seconds
+# and only then they might report "CAL" after switching all the power relays --
+# thus causing false-positives for `upsmon` FSD trigger.
+#
+# A negative value means to disable decreasing the counter of working power
+# supplies in such cases, and a zero makes the effect of detected "OFF" state
+# immediate. Built-in default value is 30 (seconds).
+
+OFFDURATION 30
+
+# --------------------------------------------------------------------------
+# OVERDURATION - timeout after which OVER status can cause a critical UPS
+# OVERDURATION -1
+#
+# This setting handles how a UPS that is overloaded should be treated in
+# situations when it is not fully communicating. Because such a UPS may be
+# in a potentially severe state, some users may want their systems to be
+# shutdown either immediately or after a set timeout has elapsed. The
+# OVERDURATION setting defines this timeout (in seconds), after which an
+# overloaded UPS that is not communicating will be considered critical.
+#
+# A value of zero means the UPS will instantly be considered critical when
+# overloaded and not communicating. In case a negative value is set (the
+# default), such a UPS will never be considered critical, at least not
+# because of the overload itself.
+#
+
+OVERDURATION -1
+
+# --------------------------------------------------------------------------
+# OBLBDURATION - put "OB LB" state into effect if it persists for this many
+# seconds
+#
+# NUT normally raises alarms for immediate shutdown (FSD) for consumers of an
+# UPS known to be on battery (OB) and achieving the low battery status (LB),
+# if that is their last remaining power source to satisfy their MINSUPPLIES
+# setting. In some special cases, users may want to delay raising the alarm
+# (using the OBLBDURATION option) at their discretion and risk of an ungraceful
+# shutdown.
+#
+# A non-positive value makes the FSD effect of detected "OB LB" state immediate.
+# Built-in default value is 0 (seconds).
+#
+# NOTE: If both `OBLBDURATION` and `HOSTSYNC` options are set on the same
+# (secondary) `upsmon` client system, and `HOSTSYNC` is shorter, it would be
+# effectively ignored: `upsmon` would wait for up to `OBLBDURATION` seconds
+# for the "OB LB" state to clear, and then the secondary client logic would
+# fall through to immediate shutdown. If the primary system issues an FSD on
+# this UPS, that would take an even higher-priority effect as soon as seen.
+#
+#OBLBDURATION 0
 
 # --------------------------------------------------------------------------
 # RBWARNTIME - replace battery warning time in seconds
@@ -269,7 +508,7 @@ POWERDOWNFLAG /etc/killpower
 # every 43200 seconds, which is 12 hours.  It does this by triggering a
 # NOTIFY_REPLBATT which is then handled by the usual notify structure
 # you've defined above.
-# 
+#
 # If this number is not to your liking, override it here.
 
 RBWARNTIME 43200
@@ -279,27 +518,66 @@ RBWARNTIME 43200
 #
 # upsmon will let you know through the usual notify system if it can't
 # talk to any of the UPS entries that are defined in this file.  It will
-# trigger a NOTIFY_NOCOMM by default every 300 seconds unless you 
+# trigger a NOTIFY_NOCOMM by default every 300 seconds unless you
 # change the interval with this directive.
 
 NOCOMMWARNTIME 300
 
 # --------------------------------------------------------------------------
+# POLLFAIL_LOG_THROTTLE_MAX - device poll failure logging throttle
+#
+# upsmon normally reports polling failures for each device that are in place
+# for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+# system log as configured.  If your devices are expected to be AWOL for an
+# extended timeframe, you can use this throttle to reduce the stress on
+# syslog traffic and storage, by posting these messages only once in every
+# several loop cycles, and when the error condition has changed or cleared.
+# A negative value means standard behavior (log on every loop, same as when
+# max=1), and a zero value means to never repeat the message (log only on
+# start and end/change of the failure state).
+# Note that this throttle only applies to one latest-active error state per
+# monitored device.
+#
+#POLLFAIL_LOG_THROTTLE_MAX 100
+
+# --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system
 #
-# On a master, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
-# before executing your SHUTDOWNCMD.  If you need to do something in between
-# those events, increase this number.  Remember, at this point your UPS is 
-# almost depleted, so don't make this too high.
+# In FSD handling, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
+# message before executing your SHUTDOWNCMD.  If you need to do something in
+# between those events, increase this number.  Remember, at this point your UPS
+# is almost depleted, so don't make this too high.  If needed, on high-end UPS
+# devices you can usually configure when the low-battery state is announced
+# based on estimated remaining run-time or on charge level of the batteries.
 #
 # Alternatively, you can set this very low so you don't wait around when
 # it's time to shut down.  Some UPSes don't give much warning for low
 # battery and will require a value of 0 here for a safe shutdown.
 #
-# Note: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
-# the master will give up waiting for the slave to disconnect.
+# Note: If FINALDELAY on the secondary is greater than HOSTSYNC on the
+# primary, the primary will give up waiting for that secondary system
+# to disconnect.
 
 FINALDELAY 5
+
+# --------------------------------------------------------------------------
+# ALARMCRITICAL - an ALARM status can cause the UPS to become critical
+# ALARMCRITICAL 1
+#
+# Some drivers implement handling device-/manufacturer-specific UPS alarms.
+# Such alarms would generally be raised for severe UPS device conditions,
+# but were also seen for mundane conditions such as an active HE/ECO mode.
+#
+# By default a device in an ALARM status is considered to be in a volatile
+# state and e.g. loss of connection will result in the UPS being considered
+# critical/dead, possibly resulting in shutdown depending on 'MINSUPPLIES'.
+#
+# If this behavior is unwanted (due to mundane device states raising ALARM
+# and false shutdowns occurring as a side-effect), 'ALARMCRITICAL 0' can be
+# set to disable this behavior and treat 'ALARM' as any regular UPS status.
+#
+
+ALARMCRITICAL 1
 
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)
@@ -307,9 +585,9 @@ FINALDELAY 5
 # When compiled with SSL support, you can enter the certificate path here.
 #
 # With NSS:
-# Certificates are stored in a dedicated database (splitted in 3 files).
+# Certificates are stored in a dedicated database (split into 3 files).
 # Specify the path of the database directory.
-# 
+#
 # CERTPATH @CONFPATH@/cert/upsmon
 #
 # With OpenSSL:
@@ -319,7 +597,7 @@ FINALDELAY 5
 # name hash value, which must hence be available.
 #
 # CERTPATH /usr/ssl/certs
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -332,7 +610,7 @@ FINALDELAY 5
 # required to access certificate related private key.
 #
 # CERTIDENT "my nut monitor" "MyPasSw0rD"
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -355,14 +633,14 @@ FINALDELAY 5
 # CERTVERIFY - make upsmon verify all connections with certificates
 # CERTVERIFY 1
 #
-# When compiled with SSL support, make upsmon verify all connections with 
+# When compiled with SSL support, make upsmon verify all connections with
 # certificates.
 # Without this, there is no guarantee that the upsd is the right host.
 # Enabling this greatly reduces the risk of man in the middle attacks.
 # This effectively forces the use of SSL, so don't use this unless
 # all of your upsd hosts are ready for SSL and have their certificates
 # in order.
-# When compiled with NSS support of SSL, can be overriden for host 
+# When compiled with NSS support of SSL, can be overridden for host
 # specified with a CERTHOST directive.
 
 
@@ -376,5 +654,26 @@ FINALDELAY 5
 # that nobody can sniff your sessions without a large effort.  Setting
 # this will make upsmon drop connections if the remote upsd doesn't
 # support SSL, so don't use it unless all of them have it running.
-# When compiled with NSS support of SSL, can be overriden for host 
+# When compiled with NSS support of SSL, can be overridden for host
 # specified with a CERTHOST directive.
+
+# --------------------------------------------------------------------------
+# DEBUG_MIN - specify minimal debugging level for upsmon daemon
+# e.g. DEBUG_MIN 6
+#
+# Optionally specify a minimum debug level for `upsmon` daemon, e.g. for
+# troubleshooting a deployment, without impacting foreground or background
+# running mode directly, and without need to edit init-scripts or service
+# unit definitions. Note that command-line option `-D` can only increase
+# this verbosity level.
+#
+# NOTE: if the running daemon receives a `reload` command, presence of the
+# `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
+# debugging verbosity in the running service daemon (it is recommended to
+# comment it away or set the minimum to explicit zero when done, to avoid
+# huge journals and I/O system abuse). Keep in mind that for this run-time
+# tuning, the `DEBUG_MIN` value *present* in *reloaded* configuration files
+# is applied instantly and overrides any previously set value, from file
+# or CLI options, regardless of older logging level being higher or lower
+# than the newly found number; a missing (or commented away) value however
+# does not change the previously active logging verbosity.

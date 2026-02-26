@@ -1,0 +1,7 @@
+# Nested configuration file
+
+# The following documents with code samples have
+# intentional trailing whitespace and should be
+# only reformatted manually and attentively:
+[{ci-farm-lxc-setup,solaris-usb}.txt]
+trim_trailing_whitespace = false

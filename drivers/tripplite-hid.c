@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.82"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.85"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -47,17 +47,20 @@ static double   io_current_scale = 1.0;
 /* Specific handlers for USB device matching */
 static void *battery_scale_1dot0(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
 static void *battery_scale_0dot1(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 0.1;
 	return NULL;
 }
 static void *smart1500lcdt_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 100000.0;
 	io_voltage_scale = 100000.0;
 	io_frequency_scale = 0.01;
@@ -71,6 +74,9 @@ static void *smart1500lcdt_scale(USBDevice_t *device)
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
 
+/* Delta/Minuteman */
+#define DELTA_VENDORID 0x05dd
+
 /* USB IDs device table */
 static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. TrippLite AVR550U */
@@ -81,6 +87,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1009), battery_scale_0dot1 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1010), battery_scale_0dot1 },
+	/* e.g. TrippLite SU3000LCD2UHV */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1330), battery_scale_1dot0 },
 	/* e.g. TrippLite OMNI1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
@@ -109,6 +117,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite Smart1500LCD (newer unit) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), smart1500lcdt_scale },
+	/* e.g. TrippLite AVR750U (newer unit) */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3024), smart1500lcdt_scale },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -142,8 +152,13 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 
+	/* Delta/Minuteman Enterprise Plus E1500RM2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa011), battery_scale_1dot0 },
+	/* Delta/Minuteman PRO1500RT2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa0a0), battery_scale_1dot0 },
+
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -169,7 +184,7 @@ static const char *tripplite_chemistry_fun(double value)
 }
 
 static info_lkp_t tripplite_chemistry[] = {
-	{ 0, NULL, tripplite_chemistry_fun }
+	{ 0, NULL, tripplite_chemistry_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -184,7 +199,7 @@ static const char *tripplite_battvolt_fun(double value)
 }
 
 static info_lkp_t tripplite_battvolt[] = {
-	{ 0, NULL, tripplite_battvolt_fun }
+	{ 0, NULL, tripplite_battvolt_fun, NULL }
 };
 
 static const char *tripplite_iovolt_fun(double value)
@@ -197,7 +212,7 @@ static const char *tripplite_iovolt_fun(double value)
 }
 
 static info_lkp_t tripplite_iovolt[] = {
-	{ 0, NULL, tripplite_iovolt_fun }
+	{ 0, NULL, tripplite_iovolt_fun, NULL }
 };
 
 static const char *tripplite_iofreq_fun(double value)
@@ -210,7 +225,7 @@ static const char *tripplite_iofreq_fun(double value)
 }
 
 static info_lkp_t tripplite_iofreq[] = {
-	{ 0, NULL, tripplite_iofreq_fun }
+	{ 0, NULL, tripplite_iofreq_fun, NULL }
 };
 
 static const char *tripplite_ioamp_fun(double value)
@@ -223,7 +238,7 @@ static const char *tripplite_ioamp_fun(double value)
 }
 
 static info_lkp_t tripplite_ioamp[] = {
-	{ 0, NULL, tripplite_ioamp_fun }
+	{ 0, NULL, tripplite_ioamp_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -233,8 +248,8 @@ static info_lkp_t tripplite_ioamp[] = {
 /* TRIPPLITE usage table */
 static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown:
-	   00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
-	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
+	 * 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
+	 * ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
 	{ "TLCustom",	0xffff0010 },
 	{ "TLDelayBeforeStartup",	0xffff0056 }, /* in minutes */
@@ -263,7 +278,7 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	{ "TLOutletsStatusMask",		0xffff0096 },
 
 	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
-	   following 4 items, on some OMNI1000LCD devices. */
+	 * following 4 items, on some OMNI1000LCD devices. */
 	{ "TLCharging",			0x00840044 },  /* conflicts with HID spec! */
 	/* conflicts with HID spec (and HP implementation) for TrippLite!
 	 * Refer to tripplite_discharging_info */
@@ -286,7 +301,7 @@ static usage_tables_t tripplite_utab[] = {
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
 
-#ifdef USBHID_UPS_TRIPPLITE_DEBUG
+#if WITH_UNMAPPED_DATA_POINTS || (defined USBHID_UPS_TRIPPLITE_DEBUG)
 
 	/* unmapped variables - meaning unknown */
 	{ "UPS.Flow.0xffff0097", 0, 0, "UPS.Flow.0xffff0097", NULL, "%.0f", 0, NULL },
@@ -327,7 +342,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.OutletSystem.Outlet.0xffff00ac", 0, 0, "UPS.OutletSystem.Outlet.0xffff00ac", NULL, "%.0f", 0, NULL },
 	{ "UPS.PowerSummary.iOEMInformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
-#endif /* USBHID_UPS_TRIPPLITE_DEBUG */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS || USBHID_UPS_TRIPPLITE_DEBUG */
 
 	/* Device page */
 	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
@@ -514,8 +529,8 @@ static int tripplite_claim(HIDDevice_t *hd) {
 			if (hd->ProductID == 0x0001) {
 				/* e.g. SMART550USB, SMART3000RM2U */
 				upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-						 "Please use the tripplite_usb driver instead.\n",
-						 hd->VendorID, hd->ProductID);
+					"Please use the tripplite_usb driver instead.\n",
+					hd->VendorID, hd->ProductID);
 				return 0;
 			}
 
@@ -549,4 +564,5 @@ subdriver_t tripplite_subdriver = {
 	tripplite_format_model,
 	tripplite_format_mfr,
 	tripplite_format_serial,
+	fix_report_desc,
 };

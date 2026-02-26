@@ -3,14 +3,18 @@ Support instructions
 ====================
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/support.html
+//////////////////////////////////////////////////////////////////////////////
 
 There are various ways to obtain support for NUT.
 
 Documentation
 -------------
 
-- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common problems are already
-addressed there.
+- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common
+problems are already addressed there.
 
 ifdef::website[]
 - Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
@@ -65,16 +69,18 @@ In this case, be sure to include the following information:
 
 - OS name and version,
 - exact NUT version,
-- NUT installation method: from source tarball, package or Subversion,
-- exact device name and related information (manufacturing date, web pointers, ...),
-- complete problem description, with any relevant traces, like system log excerpts,
-and driver debug output. You can obtain the latter using the following command,
-as root and after having stopped NUT:
+- NUT installation method: package, or a custom build from source tarball
+  or GitHub (which fork, branch, PR),
+- exact device name and related information (manufacturing date, web
+  pointers, ...),
+- complete problem description, with any relevant traces, like system
+  log excerpts, and driver debug output. You can obtain the latter using
+  the following command, running as root and after having stopped NUT:
 
 	/path/to/driver -DD -a <upsname>
 
-If you don't include the above information in your help request, we will not be
-able to help you!
+If you don't include the above information in your help request, we will
+not be able to help you!
 
 Post a patch, ask a development question, ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,18 +88,23 @@ Post a patch, ask a development question, ...
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
-for more information, and the chapter on how to 
-link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+for more information, and the chapter on how to
+link:docs/developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
-for more information, and the chapter on how to 
-link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+for more information, and the chapter on how to
+link:../developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 
+Note that the currently preferable way for ultimate submission of improvements
+is to link:https://github.com/networkupstools/nut/pulls[post a pull request]
+from your GitHub fork of NUT. Benefits of PRs include automated testing and
+merge-conflict detection and resolution, as well as tracking discussion that
+is often needed to better understand, integrate or document the patch.
 
 Discuss packaging and related topics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,7 +112,7 @@ Discuss packaging and related topics
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]
@@ -109,3 +120,33 @@ ifndef::website[]
 linkdoc:packager-guide[NUT Packager Guide]
 endif::website[]
  for more information.
+
+
+IRC (Internet Relay Chat)
+-------------------------
+
+Yes, we're open!
+
+There is an official `#nut` channel on https://libera.chat/ network.
+
+Feel free to hang out with whoever is on-line at the moment, or watch reports
+from the NUT CI farm as they come.
+
+Please don't forget the basics of netiquette, such as that any help is done
+on a best-effort basis, people have other obligations, and are not always
+there even if their chat client is, and that respect and politeness are the
+norm (this includes doing some research before asking, and explaining the
+context where it is not trivial).
+
+
+GitHub Issues
+-------------
+
+See https://github.com/networkupstools/nut/issues for another venue of
+asking (and answering) questions, as well as proposing improvements.
+
+To report new Devices Dumps Library entries, posting an issue is okay, but
+posting a link:https://github.com/networkupstools/nut-ddl/pulls[pull request]
+is a lot better -- easier for maintainers to review and merge any time.
+For some more detailed instructions about useful DDL reports, please see
+link:https://www.networkupstools.org/ddl/#_file_naming_convention[NUT DDL page].

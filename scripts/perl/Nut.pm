@@ -164,7 +164,7 @@ sub _initialize {
 # Author: Kit Peters
   my $self = shift;
   my %arg = @_;
-  my $host = $arg{HOST}     || 'localhost'; # Host running master upsd
+  my $host = $arg{HOST}     || 'localhost'; # Host running upsd and probably drivers
   my $port = $arg{PORT}     || '3493'; # 3493 is IANA assigned port for NUT
   my $proto = $arg{PROTO}   || 'tcp'; # use tcp unless user tells us to
   my $user = $arg{USERNAME} || undef; # username passed to upsd
@@ -591,6 +591,8 @@ sub Master { # check for MASTER level access
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
+# TODO: API change pending to replace MASTER with PRIMARY
+# (and backwards-compatible alias handling)
   my $self = shift;
 
   my $req = "MASTER $self->{name}"; # build request
@@ -726,7 +728,7 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
 
 This is an object-oriented (whoo!) interface between Perl and upsd from 
 the Network UPS Tools package version 1.5 and above
-(http://www.networkupstools.org/).
+(https://www.networkupstools.org/).
 Note that it only talks to upsd for you in a Perl-ish way.
 It doesn't monitor the UPS continously.
 
@@ -840,6 +842,9 @@ It is automatically done if connection closed.
 
 Use this to find out whether or not we have MASTER privileges for
 this UPS. Returns 1 if we have MASTER privileges, returns 0 otherwise.
+
+TODO: API change pending to replace MASTER with PRIMARY
+(and backwards-compatible alias handling)
 
 =item ListVar($variable, ...)
 

@@ -3,31 +3,44 @@ Documentation
 =============
 endif::website[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/documentation.html
+//////////////////////////////////////////////////////////////////////////////
 
 User Documentation
 ------------------
 
 ifdef::website[]
+- link:docs/man/nut.html[NUT Overview (manual page)]
 - FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
 - Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
-- link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported; see also link:stable-hcl.html[the HCL]
+- link:docs/solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 ifndef::website[]
+- link:../man/nut.html[NUT Overview (manual page)]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
 - linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
-- link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:https://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported; see also link:https://www.networkupstools.org/stable-hcl.html[the HCL]
+- link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
+- link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT Configuration Examples] book maintained by Roger Price
+- link:https://github.com/networkupstools/nut/wiki[NUT GitHub Wiki]
 
 Developer Documentation
 -----------------------
 
 ifdef::website[]
 - NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
+- NUT Quality Assurance Guide (link:docs/qa-guide.chunked/index.html[online]) (link:docs/qa-guide.pdf[PDF])
 - NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
+- NUT Release Notes (link:docs/release-notes.chunked/index.html[online]) (link:docs/release-notes.pdf[PDF])
+- NUT Change Log (link:docs/ChangeLog.chunked/index.html[online]) (link:docs/ChangeLog.pdf[PDF])
 - link:ups-protocols.html[UPS protocols library]
 - link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
@@ -35,32 +48,72 @@ ifdef::website[]
 endif::website[]
 ifndef::website[]
 - linkdoc:developer-guide[NUT Developer Guide]
+- linkdoc:qa-guide[NUT Quality Assurance and Build Automation Guide]
 - linkdoc:packager-guide[NUT Packager Guide]
+- linkdoc:release-notes[NUT Release Notes]
+- linkdoc:ChangeLog[NUT Change Log]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
-- link:http://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
+- link:https://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
+
+Data dumps for the DDL
+----------------------
+
+Note: both developers contributing a driver and users using an existing driver
+for device not previously documented as supported by it, are welcome to report
+new data for the Devices Dumps Library (DDL) mentioned above. Best of all such
+"data dump" reports can be prepared by the
+ifdef::website[]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-ddl-dump.sh[`tools/nut-ddl-dump.sh`]
+endif::website[]
+ifndef::website[]
+`./tools/nut-ddl-dump.sh`
+endif::website[]
+script from the main NUT codebase, and reported on the NUT mailing list or
+via link:https://github.com/networkupstools/nut/issues[NUT issues on GitHub]
+or as a pull request against the
+link:https://github.com/networkupstools/nut-ddl[NUT Devices Dumps Library]
+following the naming and other rules described in the DDL documentation page.
+
+Data dumps collected by the tools above, or by `upsc` client, or by drivers
+in exploratory data-dumping mode (with `-d 1` argument), can be compared by
+ifdef::website[]
+link:https://raw.githubusercontent.com/networkupstools/nut/master/tools/nut-dumpdiff.sh[`tools/nut-dumpdiff.sh`]
+endif::website[]
+ifndef::website[]
+`./tools/nut-dumpdiff.sh`
+endif::website[]
+script from the main NUT codebase, which strips away lines with only numeric
+values (aiming to minimize the risk of losing meaningful changes like counters).
 
 Offsite Links
 -------------
 
 [[general_powerdev_info]]
-These are general information about UPS and PDU.
+These are general information about UPS, PDU, ATS, PSU and SCD:
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
 - link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
 - link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
+- link:https://en.wikipedia.org/wiki/Transfer_switch[Automatic Transfer Switch]
+- link:https://en.wikipedia.org/wiki/Power_supply_unit_%28computer%29[Power Supply Units]
 - link:http://en.wikipedia.org/wiki/Solar_controller[Solar controller on Wikipedia]
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 
 These are writeups by users of the software.
 
-- link:http://rogerprice.org/NUT.html[NUT Setup with openSUSE] '(Roger Price)'
-- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'   
+- link:http://rogerprice.org/NUT[NUT Configuration Examples and helper scripts]
+  '(Roger Price)' (sources replicated in NUT GitHub organization as
+  link:https://github.com/networkupstools/ConfigExamples[ConfigExamples],
+  link:https://github.com/networkupstools/TLS-UPSmon[TLS-UPSmon],
+  and link:https://github.com/networkupstools/TLS-Shims[TLS-Shims])
+- link:https://dan.langille.org/2020/09/10/nut-testing-the-shutdown-mechanism/[nut – testing the shutdown mechanism] '(Dan Langille)'
+- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
-- link:http://trac.networkupstools.org/projects/nut/wiki/NutOnMacOSX[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
+- link:https://github.com/networkupstools/nut/wiki/NUT-on-Mac-OS-X[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
 - link:http://www.llondel.org/ups.shtml[Interfacing a Contact-Closure UPS to Mac OS X and Linux] '(David Hough)'
 - link:http://fedoranews.org/contributors/kazutoshi_morioka/nut/[How to use UPS with nut on RedHat / Fedora Core] '(Kazutoshi Morioka)'
 - link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
@@ -69,6 +122,16 @@ These are writeups by users of the software.
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 - link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
+- link:https://www.jamesridgway.co.uk/monitoring-eaton-5sc-ups-scripts-and-integration-network-tools-home-assistant/amp/[USB UPS, notifications, and Home Assistant] '(James Ridgway)'
+- link:https://www.hirschler.solutions/posts/2022/06/powerwalker-ups-on-fedora-server-36[PowerWalker UPS on Fedora Server 36] '(Michael Hirschler)'
+
+Video articles are also available:
+
+- link:https://www.youtube.com/watch?v=vyBP7wpN72c[Network UPS Tools (NUT Server) Ultimate Guide] '(Techno Tim)'
+- link:https://www.jeffgeerling.com/blog/2025/nut-on-my-pi-so-my-servers-dont-die[NUT on my Pi, so my servers don't die] '(Jeff Geerling)' also including Home Assistant (HA) examples
+  * link:https://www.youtube.com/watch?v=fLt5YhOubxk&t=207s[Jeff's lab tour due to an outage]
+  * link:https://youtu.be/yFnItLSRpLI[Save your servers! NUT on a Raspberry Pi!]
+  * link:https://github.com/geerlingguy/pi-nut[Ansible PiNUT project] and link:https://github.com/geerlingguy/ansible-role-nut_client[`geerlingguy.nut_client` Ansible role]
 
 News articles and Press releases
 --------------------------------

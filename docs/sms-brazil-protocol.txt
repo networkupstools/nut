@@ -1,0 +1,351 @@
+SMS Brazil Protocols
+====================
+
+Using the PowerView (accompanying UPS application for Windows) as source,
+there is a folder, called `protocols` inside the installed directory, e.g.
+`"C:\Alerta24h\SMS_Power_View\resource"`. There are 4 protocol files
+(`monofasico.xml`, `trifasico.xml`, `upsilon.xml` and `voltronic.xml`),
+and one file called `verificaProtocolo.xml`.
+
+The file `verificaProtocolo.xml` has serial/USB commands to be sent,
+to detect the UPS device.
+
+The file contents are:
+
+.verificaProtocolo.xml
+[source,xml]
+----
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocols-config.dtd">
+<protocol name="NAO_IDENTIFICADO" type="NAO_IDENTIFICADO">
+  <Command>
+    <key>QSG</key>
+    <alias>isNobreakVoltronic</alias>
+    <description>Resgata medidores e status do UPS</description>
+    <products>
+      <product id="20833" vendor="1637" />
+    </products>
+    <Request beanType="ComandoNobreak" tipoNoBreak="5">
+      <param name="Comando" type="char" value="Q" />
+      <param name="Param1" type="char" value="G" />
+      <param name="Param2" type="char" value="S" />
+      <param name="CaracterInicial" type="char" value="(" />
+      <param name="TamanhoResposta" type="int" value="76" />
+    </Request>
+    <Response beanType="MedidorEstadoBean" validation="false" start="1">
+    </Response>
+  </Command>
+
+  <Command>
+    <key>G1</key>
+    <alias>isNobreakTrifasico</alias>
+    <description>Detecta se o no-break é trifásico</description>
+    <products>
+      <product id="21760" vendor="1204" />
+    </products>
+    <Request beanType="ComandoNobreak" tipoNoBreak="1">
+      <param name="Comando" type="binary" value="71" />
+      <param name="Param1" type="binary" value="1" />
+      <param name="Param2" type="binary" value="-1" />
+      <param name="Param3" type="binary" value="-1" />
+      <param name="Param4" type="binary" value="-1" />
+      <param name="Check" type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1" />
+    </Request>
+    <Response beanType="MedidorEstadoBean" validation="true">
+    </Response>
+  </Command>
+  
+  <Command>
+    <key>I</key>
+    <alias>isNobreakMonofasico</alias>
+    <description>Detecta se o no-break é monofásico</description>
+    <products>
+      <product id="21760" vendor="1204" />
+    </products>
+    <Request beanType="ComandoNobreak" tipoNoBreak="2" searchFor="3A#3a#3F#3f">
+      <param name="Comando" type="binary" value="73" />
+      <param name="Param1" type="binary" value="-1" />
+      <param name="Param2" type="binary" value="-1" />
+      <param name="Param3" type="binary" value="-1" />
+      <param name="Param4" type="binary" value="-1" />
+      <param name="Check" type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1" />
+    </Request>
+    <Response beanType="InformacoesBean" validation="true">
+    </Response>
+  </Command>
+  
+  <Command>
+    <key>Q1</key>
+    <alias>isNobreakSinusTriad</alias>
+    <description>Resgata medidores e status do UPS</description>
+    <products>
+      <product id="0" vendor="-1" />
+    </products>
+    <Request beanType="ComandoNobreak" tipoNoBreak="3">
+      <param name="Comando" type="char" value="Q" />
+      <param name="Param1" type="char" value="1" />
+      <param name="CaracterInicial" type="char" value="(" />
+      <param name="TamanhoResposta" type="int" value="47" />
+    </Request>
+    <Response beanType="MedidorEstadoBean" validation="false" start="1">
+    </Response>
+  </Command>
+</protocol>
+----
+
+In the `sms_ser.c` and `sms_ser.h` there is only the `monofasico.xml` implementation, because is describes my UPS and I can implement and validate it. But it is totally valid if someone has another SMS_Brazil UPS and wanted to include another protocol, you can send me an email (looking in the `sms_ser.h` source to get it).
+
+Here is the `monofasico.xml` protocol:
+
+.monofasico.xml
+[source,xml]
+----
+<?xml version="1.0"?>
+<!DOCTYPE protocol SYSTEM "protocols-config.dtd">
+<protocol name="TRADICIONAL" type="MONO">
+	<Command> <!-- key="Q" alias="MedidoresEstado">  -->
+		<key>Q</key>
+		<alias>MedidoresEstado</alias><!--  usedby="MONO, TRI"> -->
+		<description>Resgata medidores e status do UPS</description>
+<!-- Pattern: ‘Q’ Xh Xh Xh Xh CK <CR> -->
+		<Request beanType="ComandoNobreak"> 
+			<param name="Comando" type="binary" value="81"/>
+			<param name="Param1"  type="binary" value="-1"/>
+			<param name="Param2"  type="binary" value="-1"/>
+			<param name="Param3"  type="binary" value="-1"/>
+			<param name="Param4"  type="binary" value="-1"/>
+			<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+<!-- Pattern: H ZH ZL MH ML PH PL QH QL RH RL SH SL TH TL Bh CK <CR> 
+			  3d005a46a002582ffffffbc2449ffffffdfd-->
+		<Response beanType="MedidorEstadoBean" validation="true">
+			<param name="Tipo" size="2" type="hexaString"/> 
+					<!-- validvalues="[\x3C|\x3D|\x3E]"/> -->
+					<!-- Value: \x3C	-> Sinal de menor que "<"
+						 Value: \x3D	-> Sinal de igual "=" 
+						 Value: \x3E	-> Sinal de maior que ">" -->
+			<param name="UltimaTensao"				size="4" type="hexa" calc="{UltimaTensao}/10"/>
+			<param name="TensaoEntrada"				size="4" type="hexa" calc="{TensaoEntrada}/10"/>
+			<param name="TensaoSaida"				size="4" type="hexa" calc="{TensaoSaida}/10"/>
+			<param name="PotenciaSaida"				size="4" type="hexa" calc="{PotenciaSaida}/10"/>
+			<param name="FrequenciaSaida"			size="4" type="hexa" calc="{FrequenciaSaida}/10"/>
+			<param name="PorcentagemTensaoBateria"	size="4" type="hexa" />
+			<param name="Temperatura"				size="4" type="hexa" calc="{Temperatura}/10"/>
+			<!-- O EstadoBateria não será carregado no bean, portanto tem o atributo ignore="true" 
+				 este servirá para o cálculo dos outros atrobutos -->
+			<param name="EstadoBateria"				size="2" type="binary" ignore="true"/>
+			<param name="BeepLigado"				size="1" type="boolean" start="7" refs="EstadoBateria"/>
+			<param name="ShutdownAtivo"				size="1" type="boolean" start="6" refs="EstadoBateria"/>
+			<param name="TesteAtivo"				size="1" type="boolean" start="5" refs="EstadoBateria"/>
+			<param name="UpsOk"						size="1" type="boolean" start="4" refs="EstadoBateria"/>
+			<param name="Boost"						size="1" type="boolean" start="3" refs="EstadoBateria"/>
+			<param name="ByPass"					size="1" type="boolean" start="2" refs="EstadoBateria"/>
+			<param name="BateriaBaixa"				size="1" type="boolean" start="1" refs="EstadoBateria"/>
+			<param name="BateriaLigada"				size="1" type="boolean" start="0" refs="EstadoBateria"/>
+			<!-- param name="Check" size="2" type="string" ignore="true" />
+			<param name="CR" size="2" ignore="true" type="string"/ --> 
+			<!-- <validation required="true"/> -->
+		</Response>
+	</Command>
+
+	<Command> <!-- key="Q" alias="MedidoresEstado">  -->
+		<key>Q</key>
+		<alias>MedidoresEstadoDefault</alias><!--  usedby="MONO, TRI"> -->
+		<description>Resgata um bean com os valores pré-definidos para os medidores e status do UPS</description>
+<!-- Pattern: ‘Q’ Xh Xh Xh Xh CK <CR> -->
+		<Request beanType="MedidorEstadoBean"> 
+			<param name="UltimaTensao"				size="1" type="hexa" 	value="0"/>
+			<param name="TensaoEntrada"				size="1" type="hexa" 	value="0"/>
+			<param name="TensaoSaida"				size="1" type="hexa" 	value="0"/>
+			<param name="PotenciaSaida"				size="1" type="hexa" 	value="0"/>
+			<param name="FrequenciaSaida"			size="1" type="hexa" 	value="0"/>
+			<param name="PorcentagemTensaoBateria"	size="1" type="hexa" 	value="0"/>
+			<param name="Temperatura"				size="1" type="hexa" 	value="0"/>
+			<param name="BeepLigado"				size="1" type="boolean" value="false"/>
+			<param name="ShutdownAtivo"				size="1" type="boolean" value="false"/>
+			<param name="TesteAtivo"				size="1" type="boolean" value="false"/>
+			<param name="UpsOk"						size="1" type="boolean" value="false"/>
+			<param name="Boost"						size="1" type="boolean" value="false"/>
+			<param name="ByPass"					size="1" type="boolean" value="false"/>
+			<param name="BateriaBaixa"				size="1" type="boolean" value="false"/>
+			<param name="BateriaLigada"				size="1" type="boolean" value="false"/>
+			<param name="Tipo" 						size="2" type="string" 	value="="/>
+		</Request>
+	</Command>
+
+	<Command>
+		<key>I</key>
+		<alias>Informacoes</alias>
+		<description>Resgata informações do UPS</description>
+		<Request beanType="ComandoNobreak" searchFor="3A#3a#3F#3f">
+			<!-- Pattern: ‘I’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="73" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+		<Response beanType="InformacoesBean" start="2" validation="true">
+			<!-- Pattern: H M M M M M M M M M M M M V V V CK <CR> -->
+			<param name="Modelo"	size="24" type="string" />
+			<param name="Versao"	size="6" type="string" />
+			<!-- param name="Check" size="2" type="string" ignore="true" />
+			<param name="CR" size="2" ignore="true" type="string"/ -->
+			<!-- <validation required="false"/> -->
+		</Response>
+	</Command>
+
+	<Command>
+		<key>I</key>
+		<alias>InformacoesDefault</alias>
+		<description>Resgata informações do UPS</description>
+		<Request beanType="InformacoesBean">The
+			<param name="Modelo"	size="1" type="string" value=""/>
+			<param name="Versao"	size="1" type="string" value=""/>
+		</Request>
+	</Command>
+		
+	<Command>
+		<key>F</key>
+		<alias>Caracteristicas</alias>
+		<description>Resgata características do UPS</description>
+		 <Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘F’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="70" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+		<Response beanType="CaracteristicasBean" start="2" validation="true">
+			<!-- Pattern: H M M M M M M M Q Q Q S S S R R CK <CR> -->
+			<param name="FaixaTensao"	size="14" type="string" />
+			<param name="FaixaCorrente"	size="6"  type="string" />
+			<param name="TensaoBateria"	size="6"  type="string" />
+			<param name="Frequencia"	size="4"  type="string" />
+			<!-- <param name="CR" size="2" ignore="true" type="string"/ -->
+		</Response>
+	</Command>
+	
+	<Command>
+		<key>F</key>
+		<alias>CaracteristicasDefault</alias>
+		<description>Resgata características default do UPS</description>
+		 <Request beanType="CaracteristicasBean">
+			<param name="FaixaTensao"	size="14" type="string" value="0"/>
+			<param name="FaixaCorrente"	size="6"  type="string" value="0"/>
+			<param name="TensaoBateria"	size="6"  type="string" value="0"/>
+			<param name="Frequencia"	size="4"  type="string" value="0"/>
+		</Request>
+	</Command>
+
+	<!-- ################################################# Disparos ################################################# -->
+	
+	<Command>
+		<key>M</key>
+		<alias>MudaBeep</alias>
+		<description>Muda o beep</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘M’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="77" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>L</key>
+		<alias>TesteBateriaBaixa</alias>
+		<description>Teste até bateria baixa</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘L’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="76" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>T</key>
+		<alias>TestePorSegundos</alias>
+		<description>Teste por 'n' segundos</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘T’ NH NL Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="84" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"  type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>S</key>
+		<alias>ShutdownPorSegundos</alias>
+		<description>Shutdown em n segundos</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘S’SH SL Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="83" />
+				<param name="Param1"  type="binary" value="-1"  />
+				<param name="Param2"  type="binary" value="-1"  />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>R</key>
+		<alias>ShutdownRestore</alias>
+		<description>Shutdown e restore</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘R’ SH SL RH RL CK <CR> -->
+				<param name="Comando" type="binary" value="82" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>D</key>
+		<alias>CancelarTeste</alias>
+		<description>Cancelamento de Teste</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘D’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="68" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+	
+	<Command>
+		<key>C</key>
+		<alias>CancelarShutdownRestore</alias>
+		<description>Cancelamento de Shutdown ou restore</description>
+		<Request beanType="ComandoNobreak">
+			<!-- Pattern: ‘C’ Xh Xh Xh Xh CK <CR> -->
+				<param name="Comando" type="binary" value="67" />
+				<param name="Param1"  type="binary" value="-1" />
+				<param name="Param2"  type="binary" value="-1" />
+				<param name="Param3"  type="binary" value="-1" />
+				<param name="Param4"  type="binary" value="-1" />
+				<param name="Check"   type="check" calc="(({Comando})+({Param1})+({Param2})+({Param3})+({Param4}))*-1"/>
+		</Request>
+	</Command>
+</protocol>
+----

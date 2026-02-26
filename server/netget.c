@@ -69,6 +69,7 @@ static void get_upsdesc(nut_ctype_t *client, const char *upsname)
 static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const	upstype_t	*ups;
+	const	char	*varptr;
 	const	char	*desc;
 
 	ups = get_ups_ptr(upsname);
@@ -81,7 +82,15 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 	if (!ups_available(ups, client))
 		return;
 
-	desc = desc_get_var(var);
+	/* Strip out upstream. for proxying (failover, clone...) lookups,
+	 * but return the requested full variable info back to the client. */
+	if (var && !strncmp(var, "upstream.", 9)) {
+		varptr = var + 9;
+	} else {
+		varptr = var;
+	}
+
+	desc = desc_get_var(varptr);
 
 	if (desc)
 		sendback(client, "DESC %s %s \"%s\"\n", upsname, var, desc);
@@ -92,6 +101,7 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cmd)
 {
 	const	upstype_t	*ups;
+	const	char	*cmdptr;
 	const	char	*desc;
 
 	ups = get_ups_ptr(upsname);
@@ -104,12 +114,20 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	if (!ups_available(ups, client))
 		return;
 
-	desc = desc_get_cmd(cmd);
+	/* Strip out upstream. for proxying (failover, clone...) lookups,
+	 * but return the requested full command info back to the client. */
+	if (cmd && !strncmp(cmd, "upstream.", 9)) {
+		cmdptr = cmd + 9;
+	} else {
+		cmdptr = cmd;
+	}
+
+	desc = desc_get_cmd(cmdptr);
 
 	if (desc)
 		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);
 	else
-		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n", 
+		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n",
 			upsname, cmd);
 }
 
@@ -142,37 +160,67 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 		snprintfcat(buf, sizeof(buf), " RW");
 
 	if (node->enum_list) {
-		sendback(client, "%s ENUM\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " ENUM");
 	}
 
 	if (node->range_list) {
-		sendback(client, "%s RANGE\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " RANGE");
 	}
 
 	if (node->flags & ST_FLAG_STRING) {
-		sendback(client, "%s STRING:%d\n", buf, node->aux);
+		sendback(client, "%s STRING:%ld\n", buf, node->aux);
 		return;
 	}
 
-	/* hmm... */
+	/* Any variable that is not string | range | enum is just a simple
+	 * numeric value */
 
-	sendback(client, "TYPE %s %s UNKNOWN\n", upsname, var);
-}		
+	if (!(node->flags & ST_FLAG_NUMBER)) {
+		upsdebugx(3, "%s: assuming that UPS[%s] variable %s which has no type flag is a NUMBER",
+			__func__, upsname, var);
+	}
+
+	sendback(client, "%s NUMBER\n", buf);
+}
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	int	pkgurlHasNutOrg = PACKAGE_URL ? (strstr(PACKAGE_URL, "networkupstools.org") != NULL) : 0;
+
 	if (!strcasecmp(var, "server.info")) {
+		/* NOTE: Some compilers deduce that macro-based decisions about
+		 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+		 * a particular build. So we pragmatically handwave this away.
+		 */
 		sendback(client, "VAR %s server.info "
 			"\"Network UPS Tools upsd %s - "
-			"http://www.networkupstools.org/\"\n", 
-			upsname, UPS_VERSION);
+			"%s%s%s\"\n",
+			upsname, UPS_VERSION,
+			PACKAGE_URL ? PACKAGE_URL : "",
+			(PACKAGE_URL && !pkgurlHasNutOrg) ? " or " : "",
+			pkgurlHasNutOrg ? "" : "https://www.networkupstools.org/"
+			);
 		return;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	if (!strcasecmp(var, "server.version")) {
-		sendback(client, "VAR %s server.version \"%s\"\n", 
+		sendback(client, "VAR %s server.version \"%s\"\n",
 			upsname, UPS_VERSION);
 		return;
 	}
@@ -215,8 +263,27 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 		sendback(client, "VAR %s %s \"%s\"\n", upsname, var, val);
 }
 
-void net_get(nut_ctype_t *client, int numarg, const char **arg)
+void net_get(nut_ctype_t *client, size_t numarg, const char **arg)
 {
+	if (numarg < 1) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	/* GET TRACKING [ID] */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		if (numarg < 2) {
+			sendback(client, "%s\n", (client->tracking) ? "ON" : "OFF");
+		}
+		else {
+			if (client->tracking)
+				sendback(client, "%s\n", tracking_get(arg[1]));
+			else
+				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
+		}
+		return;
+	}
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

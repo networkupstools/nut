@@ -1,6 +1,8 @@
 /* upscmd - simple "client" to test instant commands via upsd
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2000  Russell Kroll <rkroll@exploits.org>
+     2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,16 +22,26 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 
-static char		*upsname = NULL, *hostname = NULL;
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
+
+static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+static int			tracking_enabled = 0;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -38,26 +50,38 @@ struct list_t {
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
-	printf("usage: %s [-h]\n", prog);
+	print_banner_once(prog, 2);
+	printf("NUT administration client program to initiate instant commands on UPS hardware.\n");
+
+	printf("\nusage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] <ups> <command> [<value>]\n\n", prog);
-	printf("Administration program to initiate instant commands on UPS hardware.\n");
+	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("\n");
-	printf("  -h		display this help text\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
+	printf("  -w            wait for the completion of command by the driver\n");
+	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -h         - display this help text\n");
+
+	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
 
 static void print_cmd(char *cmdname)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 
@@ -80,7 +104,7 @@ static void print_cmd(char *cmdname)
 static void listcmds(void)
 {
 	int		ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
 	struct list_t	*lhead = NULL, *llast = NULL, *ltmp, *lnext;
@@ -105,13 +129,13 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,
-		   before we can start reading the descriptions */
+		 * before we can start reading the descriptions */
 
-		ltmp = xcalloc(1, sizeof(*ltmp));
+		ltmp = (struct list_t *)xcalloc(1, sizeof(*ltmp));
 		ltmp->name = xstrdup(answer[2]);
 
 		if (llast) {
@@ -136,9 +160,21 @@ static void listcmds(void)
 	}
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_cmd(char **argv, const int argc)
 {
+	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
+	char	tracking_id[UUID4_LEN];
+	time_t	start, now;
 
 	if (argc > 1) {
 		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
@@ -154,13 +190,91 @@ static void do_cmd(char **argv, const int argc)
 		fatalx(EXIT_FAILURE, "Instant command failed: %s", upscli_strerror(ups));
 	}
 
-	/* FUTURE: status cookies will tie in here */
+	/* verify answer */
 	if (strncmp(buf, "OK", 2) != 0) {
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	/* check for status tracking id */
+	if (
+		!tracking_enabled ||
+		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
+		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
+	) {
+		/* reply as usual */
+		fprintf(stderr, "%s\n", buf);
+		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
+			"but as we did not wait for result, we do not know if it was handled in fact.",
+			__func__);
+		return;
+	}
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
+	 */
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
+	time(&start);
+
+	/* send status tracking request, looping if status is PENDING */
+	while (!cmd_complete) {
+
+		/* check for timeout */
+		time(&now);
+		if (difftime(now, start) >= timeout)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+
+		snprintf(buf, sizeof(buf), "GET TRACKING %s\n", tracking_id);
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
+			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* and get status tracking reply */
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
+
+		if (strncmp(buf, "PENDING", 7))
+			cmd_complete = 1;
+		else
+			/* wait a second before retrying */
+			sleep(1);
+	}
+
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
 static void clean_exit(void)
 {
@@ -175,12 +289,30 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, ret, port;
+	int	i;
+	uint16_t	port;
+	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF], username[SMALLBUF], password[SMALLBUF];
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
 	const char	*prog = xbasename(argv[0]);
+	const char	*net_connect_timeout = NULL;
 
-	while ((i = getopt(argc, argv, "+lhu:p:V")) != -1) {
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+	upsdebugx(1, "Starting NUT client: %s", prog);
+
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
+	while ((i = getopt(argc, argv, "+lhu:p:t:wVW:")) != -1) {
 
 		switch (i)
 		{
@@ -198,14 +330,36 @@ int main(int argc, char **argv)
 			have_pw = 1;
 			break;
 
+		case 't':
+			if (!str_to_uint(optarg, &timeout, 10))
+				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
+			break;
+
+		case 'w':
+			tracking_enabled = 1;
+			break;
+
 		case 'V':
-			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
+			nut_report_config_flags();
+			exit(EXIT_SUCCESS);
+
+		case 'W':
+			net_connect_timeout = optarg;
+			break;
 
 		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
 	}
 
 	argc -= optind;
@@ -223,9 +377,9 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
-	if (upscli_connect(ups, hostname, port, 0) < 0) {
+	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
@@ -275,7 +429,7 @@ int main(int argc, char **argv)
 	/* getpass leaks slightly - use -p when testing in valgrind */
 	if (!have_pw) {
 		/* using getpass or getpass_r might not be a
-		   good idea here (marked obsolete in POSIX) */
+		 * good idea here (marked obsolete in POSIX) */
 		char	*pwtmp = GETPASS("Password: ");
 
 		if (!pwtmp) {
@@ -313,6 +467,25 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
 
+	/* enable status tracking ID */
+	if (tracking_enabled) {
+
+		snprintf(buf, sizeof(buf), "SET TRACKING ON\n");
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Can't enable command status tracking: %s", upscli_strerror(ups));
+		}
+
+		if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed: %s", upscli_strerror(ups));
+		}
+
+		/* Verify the result */
+		if (strncmp(buf, "OK", 2) != 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
+		}
+	}
+
 	do_cmd(&argv[1], argc - 1);
 
 	exit(EXIT_SUCCESS);
@@ -322,6 +495,6 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

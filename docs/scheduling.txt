@@ -1,9 +1,14 @@
 Advanced usage and scheduling notes
 ===================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/Advanced_usage_scheduling_notes.html
+//////////////////////////////////////////////////////////////////////////////
+
 upsmon can call out to a helper script or program when the device changes
 state.  The example upsmon.conf has a full list of which state changes
-are available - ONLINE, ONBATT, LOWBATT, and more.
+are available -- ONLINE, ONBATT, LOWBATT, and more.
 
 There are two options, that will be presented in details:
 
@@ -23,7 +28,7 @@ Your command will be called with the full text of the message as one argument.
 For the default values, refer to the sample upsmon.conf file.
 
 The environment string NOTIFYTYPE will contain the type string of whatever
-caused this event to happen - ONLINE, ONBATT, LOWBATT, ...
+caused this event to happen -- ONLINE, ONBATT, LOWBATT, ...
 
 Making this some sort of shell script might be a good idea, but the helper can
 be in any programming or scripting language.
@@ -52,7 +57,7 @@ You get the idea.
 
 	NOTIFYCMD /path/to/my/script
 
-- Make a simple script like this at that location:   
+- Make a simple script like this at that location:
 
 	#! /bin/bash
 	echo "$*" | sendmail -F"ups@mybox" bofh@pager.example.com
@@ -66,7 +71,7 @@ alert in the body of the message, since upsmon passes the alert text
 Using more advanced features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Your helper script will be run with a few environment variables set.  
+Your helper script will be run with a few environment variables set.
 
 - UPSNAME: the name of the system that generated the change.
 +
@@ -107,7 +112,7 @@ in your upsmon.conf, if you also enable the 'EXEC' in your 'NOTIFYFLAGS'.  In
 this case, we want upsmon to call upssched as the notifier, since it will
 be doing all the work for us.  So, in the upsmon.conf:
 
-	NOTIFYCMD /usr/local/ups/bin/upssched
+	NOTIFYCMD /usr/local/ups/sbin/upssched
 
 Then we want upsmon to actually _use_ it for the notify events, so again
 in the upsmon.conf we set the flags:
@@ -157,31 +162,35 @@ calling sendmail, or opening a subspace channel to V'ger.
 Establishing timers
 ^^^^^^^^^^^^^^^^^^^
 
-Let's say that you want to receive a page when any UPS has been running on
-battery for 30 seconds.  Create a handler that starts a 30 second timer
+Let's say that you want to receive a notification when any UPS has been running
+on battery for 30 seconds.  Create a handler that starts a 30 second timer
 for an ONBATT condition.
 
 	AT ONBATT * START-TIMER onbattwarn 30
 
 This means "when any UPS (the *) goes on battery, start a timer called
 onbattwarn that will trigger in 30 seconds".  We'll come back to the
-onbattwarn part in a moment.  Right now we need to make sure that we 
+onbattwarn part in a moment.  Right now we need to make sure that we
 don't trigger that timer if the UPS happens to come back before the
 time is up.  In essence, if it goes back on line, we need to cancel it.
 So, let's tell upssched that.
 
 	AT ONLINE * CANCEL-TIMER onbattwarn
 
+NOTE: Timers are pure in-memory mechanisms, specific to upssched.  Conversely
+to other mechanisms found in NUT, such as upsmon->POWERDOWNFLAG, there is no
+file created on the filesystem.
+
 Executing commands immediately
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example, consider the scenario where a UPS goes onto battery power.
-However, the users are not informed until 60 seconds later - using a timer as
+However, the users are not informed until 30 seconds later -- using a timer as
 described above. Whilst this may let the *logged in* users know that the UPS
 is on battery power, it does not inform any users subsequently logging in. To
 enable this we could, at the same time, create a file which is read and
 displayed to any user trying to login whilst the UPS is on battery power. If
-the UPS comes back onto utility power within 60 seconds, then we can cancel
+the UPS comes back onto utility power within 30 seconds, then we can cancel
 the timer and remove the file, as described above. However, if the UPS comes
 back onto utility power say 5 minutes later then we do not want to use any
 timers but we still want to remove the file. To do this we could use:
@@ -208,10 +217,14 @@ shell script writing to deal with that input.
 
 	case $1 in
 		onbattwarn)
+			# Send a notification mail
 			echo "The UPS has been on battery for awhile" \
 			| mail -s"UPS monitor" bofh@pager.example.com
+			# Create a flag-file on the filesystem, for your own processing
+			/usr/bin/touch /some/path/ups-on-battery
 			;;
 		ups-back-on-power)
+			# Delete the flag-file on the filesystem
 			/bin/rm -f /some/path/ups-on-battery
 			;;
 		*)
@@ -227,7 +240,7 @@ names, you will need to test for each possibility and handle it according
 to your desires.
 
 NOTE: You can invoke just about anything from inside the CMDSCRIPT.  It doesn't
-need to be a shell script, either - that's just an example.  If you want to
+need to be a shell script, either -- that's just an example.  If you want to
 write a program that will parse argv[1] and deal with the  possibilities, that
 will work too.
 
@@ -242,14 +255,20 @@ Just be sure to cancel this timer if you go back ONLINE before then.
 
 The best way to do this is to use the upsmon callback feature.  You can
 make upsmon set the "forced shutdown" (FSD) flag on the upsd so your
-slave systems shut down early too.  Just do something like this in your
-CMDSCRIPT:
+secondary systems shut down early too.  Just do something like this
+in your CMDSCRIPT:
 
-	/usr/local/ups/sbin/upsmon -c fsd
+	/sbin/upsmon -c fsd
 
-It's not a good idea to call your system's shutdown routine directly 
-from the CMDSCRIPT, since there's no synchronization with the slave
-systems hooked to the same UPS.  FSD is the master's way of saying
+NOTE: The path to `upsmon` must be provided. The default for an installation
+built from sources is `/usr/local/ups` (so `/usr/local/ups/sbin/upsmon`),
+while packaged installations will generally comply to
+link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy Standard]
+(so `/sbin/upsmon`).
+
+It's not a good idea to call your system's shutdown routine directly
+from the CMDSCRIPT, since there's no synchronization with the secondary
+systems hooked to the same UPS.  FSD is the primary's way of saying
 "we're shutting down *now* like it or not, so you'd better get ready".
 
 
@@ -276,7 +295,7 @@ no timers are present in the queue, the background process exits.
 This means that you will only see upssched running when one of two things
 is happening:
 
- 1. There's a timer of some sort currently running 
+ 1. There's a timer of some sort currently running
  2. upsmon just called it, and you managed to catch the brief instance
 
 The final optimization handles the possibility of trying to cancel a timer

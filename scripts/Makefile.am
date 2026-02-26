@@ -1,4 +1,7 @@
-EXTRA_DIST = README \
+# Network UPS Tools: scripts (root)
+
+EXTRA_DIST = \
+    README.adoc \
     avahi/nut.service.in \
     HP-UX/nut-drvctl \
     HP-UX/nut-drvctl.sh \
@@ -7,22 +10,52 @@ EXTRA_DIST = README \
     HP-UX/nut-upsmon \
     HP-UX/nut-upsmon.sh \
     logrotate/nutlogd \
-    misc/nut.bash_completion \
+    misc/nut.bash_completion.in \
     misc/osd-notify \
     perl/Nut.pm \
     RedHat/halt.patch \
-    RedHat/README \
-    RedHat/ups \
-    RedHat/upsd \
+    RedHat/README.adoc \
+    RedHat/ups.in \
     RedHat/upsd.in \
-    RedHat/upsmon \
     RedHat/upsmon.in \
     Solaris8/S99upsmon \
     subdriver/gen-usbhid-subdriver.sh \
     subdriver/gen-snmp-subdriver.sh \
-    ufw/README \
+    upower/95-upower-hid.hwdb \
     upower/95-upower-hid.rules \
-    Windows/halt.c \
-    Windows/Makefile
+    usb_resetter/README.adoc \
+    usb_resetter/nut-driver.service \
+    valgrind/README.adoc \
+    valgrind/.valgrind.supp.in \
+    valgrind/valgrind.sh.in \
+    Windows/halt.c
 
-SUBDIRS = augeas devd hotplug python systemd udev Solaris
+SUBDIRS = augeas devd hotplug installer obs python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
+
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
+# We also have to export some variables that may be tainted by relative
+# paths when parsing the other makefile (e.g. MKDIR_P that may be defined
+# via expanded $(top_builddir)/install-sh):
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
+#	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
+
+DISTCLEANFILES = misc/nut.bash_completion
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

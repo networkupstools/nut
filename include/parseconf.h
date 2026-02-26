@@ -22,6 +22,19 @@
 
 #include <stdio.h>
 
+/* Not including nut_stdint.h because this is part of end-user API */
+#if defined HAVE_INTTYPES_H
+#	include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#	include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#	include <limits.h>
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -39,7 +52,7 @@ typedef struct {
 	FILE	*f;			/* stream to current file	*/
 	int	state;			/* current parser state		*/
 	int	ch;			/* last character read		*/
-	
+
 	char	**arglist;		/* array of pointers to words	*/
 	size_t	*argsize;		/* list of sizes for realloc	*/
 	size_t	numargs;		/* max usable in arglist	*/

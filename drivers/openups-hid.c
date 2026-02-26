@@ -21,12 +21,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h" /* must be first */
+
 #include "usbhid-ups.h"
 #include "openups-hid.h"
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.4"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.50"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
@@ -61,6 +63,8 @@ static void *get_voltage_multiplier(USBDevice_t *device)
 			ccharge_scale = 0.1; /* unverified */
 			cdischarge_scale = 0.1; /* unverified */
 			break;
+		default:
+			break;
 	}
 
 	upsdebugx(1, "vin_scale = %g; vout_scale = %g\n", vin_scale, vout_scale);
@@ -75,14 +79,14 @@ static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), get_voltage_multiplier},
 
 	/* Terminating entry */
-	{-1, -1, NULL}
+	{ 0, 0, NULL }
 };
 
-/* Thermistor table used for temperature lookups 
+/* Thermistor table used for temperature lookups
  * taken from the windows monitoring application
  */
 static const unsigned int therm_tbl[] =
-{ 
+{
 	(unsigned int)0x31,
 	(unsigned int)0x40,
 	(unsigned int)0x53,
@@ -119,12 +123,11 @@ static const unsigned int therm_tbl[] =
 	(unsigned int)0x3CC
 };
 
-static const unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
+static const unsigned int therm_tbl_size = SIZEOF_ARRAY(therm_tbl);
 
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);
 static const char *openups_online_fun(double value);
-static const char *openups_nobattery_fun(double value);
 static const char *openups_off_fun(double value);
 
 static const char *openups_scale_vin_fun(double value);
@@ -135,47 +138,43 @@ static const char *openups_scale_cdischarge_fun(double value);
 static const char *openups_temperature_fun(double value);
 
 static info_lkp_t openups_charging_info[] = {
-	{0, NULL, openups_charging_fun}
+	{0, NULL, openups_charging_fun, NULL }
 };
 
 static info_lkp_t openups_discharging_info[] = {
-	{0, NULL, openups_discharging_fun}
+	{0, NULL, openups_discharging_fun, NULL }
 };
 
 static info_lkp_t openups_online_info[] = {
-	{0, NULL, openups_online_fun}
-};
-
-static info_lkp_t openups_nobattery_info[] = {
-	{0, NULL, openups_nobattery_fun}
+	{0, NULL, openups_online_fun, NULL }
 };
 
 static info_lkp_t openups_off_info[] = {
-	{0, NULL, openups_off_fun}
+	{0, NULL, openups_off_fun, NULL }
 };
 
 static info_lkp_t openups_vin_info[] = {
-	{0, NULL, openups_scale_vin_fun}
+	{0, NULL, openups_scale_vin_fun, NULL }
 };
 
 static info_lkp_t openups_vout_info[] = {
-	{0, NULL, openups_scale_vout_fun}
+	{0, NULL, openups_scale_vout_fun, NULL }
 };
 
 /* static info_lkp_t openups_vbat_info[] = {
-	{0, NULL, openups_scale_vbat_fun}
+	{0, NULL, openups_scale_vbat_fun, NULL }
 };*/
 
 static info_lkp_t openups_ccharge_info[] = {
-	{0, NULL, openups_scale_ccharge_fun}
+	{0, NULL, openups_scale_ccharge_fun, NULL }
 };
 
 static info_lkp_t openups_cdischarge_info[] = {
-	{0, NULL, openups_scale_cdischarge_fun}
+	{0, NULL, openups_scale_cdischarge_fun, NULL }
 };
 
 static info_lkp_t openups_temperature_info[] = {
-	{0, NULL, openups_temperature_fun}
+	{0, NULL, openups_temperature_fun, NULL }
 };
 
 static const char *openups_charging_fun(double value)
@@ -191,11 +190,6 @@ static const char *openups_discharging_fun(double value)
 static const char *openups_online_fun(double value)
 {
 	return value ? "online" : "!online";
-}
-
-static const char *openups_nobattery_fun(double value)
-{
-	return value ? "nobattery" : "!nobattery";
 }
 
 static const char *openups_off_fun(double value)
@@ -236,7 +230,7 @@ static const char *openups_scale_cdischarge_fun(double value)
 static const char *openups_temperature_fun(double value)
 {
 	int i;
-	int pos = -1;
+	int pos = 0;
 	unsigned int thermistor = value * 100;
 
 	if (thermistor <= therm_tbl[0]) {
@@ -282,7 +276,7 @@ static usage_lkp_t openups_usage_lkp[] = {
 	{"Cell4", 0x00000004},	/* Battery cell 4 on J6 pin 4 */
 	{"Cell5", 0x00000005},	/* Battery cell 5 on J6 pin 5 */
 	{"Cell6", 0x00000006},	/* Battery cell 6 on J4 pin 1 */
-	/* Usage table for windows monitoring app only updates when 
+	/* Usage table for windows monitoring app only updates when
 	 * certain request codes are written to USB endpoint */
 	/*{ "OpenUPSExtra", 0xff000001 }, */
 	{NULL, 0}
@@ -303,7 +297,7 @@ static hid_info_t openups_hid2nut[] = {
 
 	/* Battery */
 	{"battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
-	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion},
+	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
 	{"battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
 	/* { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info }, */
 	{"battery.current", 0, 0, "UPS.PowerSummary.Current", NULL, "%.3f", HU_FLAG_QUICK_POLL, NULL},
@@ -340,7 +334,7 @@ static hid_info_t openups_hid2nut[] = {
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, openups_discharging_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_online_info},
-	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_nobattery_info},
+	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, HU_FLAG_QUICK_POLL, nobattery_info},
 
 	/* end of structure. */
 	{NULL, 0, 0, NULL, NULL, NULL, 0, NULL}
@@ -393,4 +387,5 @@ subdriver_t openups_subdriver = {
 	openups_format_model,
 	openups_format_mfr,
 	openups_format_serial,
+	fix_report_desc,
 };

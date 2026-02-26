@@ -25,7 +25,7 @@
 #include "usbhid-ups.h"
 #include "explore-hid.h"
 
-#define EXPLORE_HID_VERSION	"EXPLORE HID 0.1"
+#define EXPLORE_HID_VERSION	"EXPLORE HID 0.2"
 
 static usage_tables_t explore_utab[] = {
 	hid_usage_lkp,
@@ -57,11 +57,13 @@ static const char *explore_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int explore_claim(HIDDevice_t *hd) {
-        if (testvar("explore")) {
-                return 1;
-        } else {
-                return 0;
-        }
+	NUT_UNUSED_VARIABLE(hd);
+
+	if (testvar("explore")) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 subdriver_t explore_subdriver = {
@@ -72,4 +74,5 @@ subdriver_t explore_subdriver = {
 	explore_format_model,
 	explore_format_mfr,
 	explore_format_serial,
+	fix_report_desc,
 };

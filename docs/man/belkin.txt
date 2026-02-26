@@ -3,27 +3,36 @@ BELKIN(8)
 
 NAME
 ----
-  
+
 belkin - Driver for Belkin serial UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
-belkin driver.  For information about the core driver, see  
+*belkin* -h
+
+*belkin* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 The *belkin* driver is known to support the Regulator Pro 525 (F6C525-SER).
 Other similar models such as the 425 and 625 should also work.
 
 The Trust UPS and older Belkin units are not supported.
 
+This driver only supports serial connections. If your UPS has a USB port,
+please consult the Hardware Compatibility List (HCL) to see which of the USB
+drivers you should use.
+
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the    
+This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 BUGS
@@ -33,7 +42,7 @@ There are dragons lurking within the protocol to this UPS.  I have one
 that essentially behaves like a glorified power strip due to some
 invasive probing on my part.  Don't mess with it directly.
 
-NOTE: the driver doesn't go anywhere near these character sequences,
+NOTE: The driver doesn't go anywhere near these character sequences,
 so it won't zap your UPS.  I only mention this here as yet another
 reminder of the perils of closed hardware.
 
@@ -42,8 +51,18 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
+
+Other Belkin drivers:
+~~~~~~~~~~~~~~~~~~~~~
+
+linkman:belkinunv[8],
+linkman:blazer_ser[8],
+linkman:blazer_usb[8],
+linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -40,11 +40,10 @@
 #include "serial.h"
 #include "timehead.h"
 #include "nut_stdint.h"
-
-#include <math.h>
+#include "nut_float.h"
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.89"
+#define DRIVER_VERSION	"0.96"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -83,7 +82,7 @@ upsdrv_info_t	upsdrv_info = {
 typedef enum {
 	t_ignore,	/* Ignore this response  */
 	t_value,	/* Sets a NUT variable */
-	t_final,        /* Marks the end of UPS data for this command */
+	t_final,	/* Marks the end of UPS data for this command */
 	t_string,	/* Set a NUT string variable */
 	t_finstr,	/* Set a NUT string variable, and marks end of data */
 	t_setval,	/* Sets a variable in the driver and possibly in NUT */
@@ -100,7 +99,7 @@ typedef struct simple_s {
 	const char *code;
 	type_t type;
 	const char *desc;
-	int status;
+	uint32_t status;
 	float *aux;
 	struct simple_s *stats;
 } simple_t;
@@ -127,11 +126,13 @@ static char has_uppm_p[100];
 
 static int
 	input_timeout_sec = INP_TIMO_SEC,
-	output_pace_usec = OUT_PACE_USEC,
 	full_update_timer = FULL_UPDATE_TIMER,
 	use_crlf = 0,
 	use_pre_lf = 0,
 	buffer_empty = 0;
+
+static useconds_t
+	output_pace_usec = OUT_PACE_USEC;
 
 static uint32_t
 	status = UPSC_STAT_NOTINIT;
@@ -168,287 +169,287 @@ static int
 
 /* Status codes for the STAT and STMF status responses */
 static simple_t att[] = {
-	{ "00", t_ignore  },
-	{ "AC", t_alarm,  "Aux contact failure", 0 },
-	{ "BA", t_alarm,  "Batteries disconnected", 0 },
-	{ "BC", t_alarm,  "Backfeed contact failure", 0 },
-	{ "BD", t_alarm,  "Abnormal battery discharge", 0 },
-	{ "BF", t_alarm,  "Battery fuse  failure", 0 },
-	{ "BL", t_status, "Battery low limit", UPSC_STAT_LOBATT },
-	{ "BO", t_alarm,  "Battery over voltage", 0 },
-	{ "BP", t_alarm,  "Bypass fuse failure", 0 },
-	{ "BR", t_alarm,  "Abnormal battery recharge", 0 },
-	{ "BT", t_alarm,  "Battery over temperature", 0 },
-	{ "BX", t_alarm,  "Bypass unavailable", 0 },
-	{ "BY", t_alarm,  "Battery failure", 0 },
-	{ "CE", t_alarm,  "Configuration error", 0 },
-	{ "CM", t_alarm,  "Battery converter failure", 0 },
-	{ "CT", t_alarm,  "Cabinet over temperature", 0 },
-	{ "DO", t_alarm,  "DC over voltage", 0 },
-	{ "DU", t_alarm,  "DC under voltage", 0 },
-	{ "EP", t_alarm,  "Emergency power off", 0 },
-	{ "FF", t_alarm,  "Fan failure", 0 },
-	{ "FH", t_alarm,  "Line frequency high", 0 },
-	{ "FL", t_alarm,  "Line frequency low", 0 },
-	{ "FT", t_alarm,  "Filter over temperature", 0 },
-	{ "GF", t_alarm,  "Ground failure", 0 },
-	{ "HT", t_alarm,  "Charger over temperature", 0 },
-	{ "IB", t_alarm,  "Internal data bus failure", 0 },
-	{ "IF", t_alarm,  "Inverter fuse failure", 0 },
-	{ "IM", t_alarm,  "Inverter failure", 0 },
-	{ "IO", t_alarm,  "Inverter over voltage", 0 },
-	{ "IP", t_alarm,  "Internal power supply failure", 0 },
-	{ "IT", t_alarm,  "Inverter over temperature", 0 },
-	{ "IU", t_alarm,  "Inverter under voltage", 0 },
-	{ "IV", t_alarm,  "Inverter off", 0 },
-	{ "LR", t_alarm,  "Loss of redundancy", 0 },
-	{ "NF", t_alarm,  "Neutral fault", 0 },
-	{ "OD", t_status, "UPS not supplying load", UPSC_STAT_OFF },
-	{ "OF", t_alarm,  "Oscillator failure", 0 },
-	{ "OL", t_status, "Overload", UPSC_STAT_OVERLOAD },
-	{ "OR", t_alarm,  "Redundancy overload", 0 },
-	{ "OV", t_alarm,  "Abnormal output voltage", 0 },
-	{ "OW", t_alarm,  "Output failure", 0 },
-	{ "PB", t_alarm,  "Parallel bus failure", 0 },
-	{ "PE", t_alarm,  "Phase rotation error", 0 },
-	{ "RE", t_alarm,  "Rectifier off", 0 },
-	{ "RF", t_alarm,  "Rectifier fuse failure", 0 },
-	{ "RM", t_alarm,  "Rectifier failure", 0 },
-	{ "RT", t_alarm,  "Rectifier over temperature", 0 },
-	{ "SM", t_alarm,  "Static switch failure", 0 },
-	{ "ST", t_alarm,  "Static switch over temperature", 0 },
-	{ "TT", t_alarm,  "Trafo over temperature", 0 },
-	{ "UD", t_alarm,  "UPS disabled", 0 },
-	{ "UO", t_alarm,  "Utility over voltage", 0 },
-	{ "US", t_alarm,  "Unsynchronized", 0 },
-	{ "UU", t_alarm,  "Utility under voltage", 0 },
-	{ "VE", t_alarm,  "internal voltage error", 0 },
-	{ NULL }
+	{ "00", t_ignore, NULL, 0, NULL, NULL },
+	{ "AC", t_alarm,  "Aux contact failure", 0, NULL, NULL },
+	{ "BA", t_alarm,  "Batteries disconnected", 0, NULL, NULL },
+	{ "BC", t_alarm,  "Backfeed contact failure", 0, NULL, NULL },
+	{ "BD", t_alarm,  "Abnormal battery discharge", 0, NULL, NULL },
+	{ "BF", t_alarm,  "Battery fuse  failure", 0, NULL, NULL },
+	{ "BL", t_status, "Battery low limit", UPSC_STAT_LOBATT, NULL, NULL },
+	{ "BO", t_alarm,  "Battery over voltage", 0, NULL, NULL },
+	{ "BP", t_alarm,  "Bypass fuse failure", 0, NULL, NULL },
+	{ "BR", t_alarm,  "Abnormal battery recharge", 0, NULL, NULL },
+	{ "BT", t_alarm,  "Battery over temperature", 0, NULL, NULL },
+	{ "BX", t_alarm,  "Bypass unavailable", 0, NULL, NULL },
+	{ "BY", t_alarm,  "Battery failure", 0, NULL, NULL },
+	{ "CE", t_alarm,  "Configuration error", 0, NULL, NULL },
+	{ "CM", t_alarm,  "Battery converter failure", 0, NULL, NULL },
+	{ "CT", t_alarm,  "Cabinet over temperature", 0, NULL, NULL },
+	{ "DO", t_alarm,  "DC over voltage", 0, NULL, NULL },
+	{ "DU", t_alarm,  "DC under voltage", 0, NULL, NULL },
+	{ "EP", t_alarm,  "Emergency power off", 0, NULL, NULL },
+	{ "FF", t_alarm,  "Fan failure", 0, NULL, NULL },
+	{ "FH", t_alarm,  "Line frequency high", 0, NULL, NULL },
+	{ "FL", t_alarm,  "Line frequency low", 0, NULL, NULL },
+	{ "FT", t_alarm,  "Filter over temperature", 0, NULL, NULL },
+	{ "GF", t_alarm,  "Ground failure", 0, NULL, NULL },
+	{ "HT", t_alarm,  "Charger over temperature", 0, NULL, NULL },
+	{ "IB", t_alarm,  "Internal data bus failure", 0, NULL, NULL },
+	{ "IF", t_alarm,  "Inverter fuse failure", 0, NULL, NULL },
+	{ "IM", t_alarm,  "Inverter failure", 0, NULL, NULL },
+	{ "IO", t_alarm,  "Inverter over voltage", 0, NULL, NULL },
+	{ "IP", t_alarm,  "Internal power supply failure", 0, NULL, NULL },
+	{ "IT", t_alarm,  "Inverter over temperature", 0, NULL, NULL },
+	{ "IU", t_alarm,  "Inverter under voltage", 0, NULL, NULL },
+	{ "IV", t_alarm,  "Inverter off", 0, NULL, NULL },
+	{ "LR", t_alarm,  "Loss of redundancy", 0, NULL, NULL },
+	{ "NF", t_alarm,  "Neutral fault", 0, NULL, NULL },
+	{ "OD", t_status, "UPS not supplying load", UPSC_STAT_OFF, NULL, NULL },
+	{ "OF", t_alarm,  "Oscillator failure", 0, NULL, NULL },
+	{ "OL", t_status, "Overload", UPSC_STAT_OVERLOAD, NULL, NULL },
+	{ "OR", t_alarm,  "Redundancy overload", 0, NULL, NULL },
+	{ "OV", t_alarm,  "Abnormal output voltage", 0, NULL, NULL },
+	{ "OW", t_alarm,  "Output failure", 0, NULL, NULL },
+	{ "PB", t_alarm,  "Parallel bus failure", 0, NULL, NULL },
+	{ "PE", t_alarm,  "Phase rotation error", 0, NULL, NULL },
+	{ "RE", t_alarm,  "Rectifier off", 0, NULL, NULL },
+	{ "RF", t_alarm,  "Rectifier fuse failure", 0, NULL, NULL },
+	{ "RM", t_alarm,  "Rectifier failure", 0, NULL, NULL },
+	{ "RT", t_alarm,  "Rectifier over temperature", 0, NULL, NULL },
+	{ "SM", t_alarm,  "Static switch failure", 0, NULL, NULL },
+	{ "ST", t_alarm,  "Static switch over temperature", 0, NULL, NULL },
+	{ "TT", t_alarm,  "Trafo over temperature", 0, NULL, NULL },
+	{ "UD", t_alarm,  "UPS disabled", 0, NULL, NULL },
+	{ "UO", t_alarm,  "Utility over voltage", 0, NULL, NULL },
+	{ "US", t_alarm,  "Unsynchronized", 0, NULL, NULL },
+	{ "UU", t_alarm,  "Utility under voltage", 0, NULL, NULL },
+	{ "VE", t_alarm,  "internal voltage error", 0, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 /* Status code for the STLR response */
 static simple_t stlr[] = {
-	{ "NO", t_ignore },
-	{ "SD", t_status, NULL, UPSC_STAT_TRIM },
-	{ "SU", t_status, NULL, UPSC_STAT_BOOST },
-	{ "DU", t_status, NULL, UPSC_STAT_BOOST },
-	{ NULL }
+	{ "NO", t_ignore, NULL, 0, NULL, NULL },
+	{ "SD", t_status, NULL, UPSC_STAT_TRIM, NULL, NULL },
+	{ "SU", t_status, NULL, UPSC_STAT_BOOST, NULL, NULL },
+	{ "DU", t_status, NULL, UPSC_STAT_BOOST, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 /* Status code for the STEA and STEM responses */
 static simple_t env[] = {
-	{ "HH", t_ignore, "Humidity high", 0 },
-	{ "HL", t_ignore, "Humidity low", 0 },
-	{ "TH", t_ignore, "Temperature high", 0 },
-	{ "TL", t_ignore, "Temperature low", 0 },
-	{ "01", t_ignore, "Environment alarm 1", 0 },
-	{ "02", t_ignore, "Environment alarm 2", 0 },
-	{ "03", t_ignore, "Environment alarm 3", 0 },
-	{ "04", t_ignore, "Environment alarm 4", 0 },
-	{ "05", t_ignore, "Environment alarm 5", 0 },
-	{ "06", t_ignore, "Environment alarm 6", 0 },
-	{ "07", t_ignore, "Environment alarm 7", 0 },
-	{ "08", t_ignore, "Environment alarm 8", 0 },
-	{ "09", t_ignore, "Environment alarm 9", 0 },
-	{ NULL }
+	{ "HH", t_ignore, "Humidity high", 0, NULL, NULL },
+	{ "HL", t_ignore, "Humidity low", 0, NULL, NULL },
+	{ "TH", t_ignore, "Temperature high", 0, NULL, NULL },
+	{ "TL", t_ignore, "Temperature low", 0, NULL, NULL },
+	{ "01", t_ignore, "Environment alarm 1", 0, NULL, NULL },
+	{ "02", t_ignore, "Environment alarm 2", 0, NULL, NULL },
+	{ "03", t_ignore, "Environment alarm 3", 0, NULL, NULL },
+	{ "04", t_ignore, "Environment alarm 4", 0, NULL, NULL },
+	{ "05", t_ignore, "Environment alarm 5", 0, NULL, NULL },
+	{ "06", t_ignore, "Environment alarm 6", 0, NULL, NULL },
+	{ "07", t_ignore, "Environment alarm 7", 0, NULL, NULL },
+	{ "08", t_ignore, "Environment alarm 8", 0, NULL, NULL },
+	{ "09", t_ignore, "Environment alarm 9", 0, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 /* Responses for UPSS and UPDS */
 static simple_t simple[] = {
-	{ "STAT", t_list,   NULL, 0, 0, att },
-	{ "STBO", t_status, NULL, UPSC_STAT_ONBATT },
-	{ "STBL", t_status, NULL, UPSC_STAT_LOBATT },
-	{ "STBM", t_ignore },
-	{ "STBP", t_status, NULL, UPSC_STAT_BYPASS },
-	{ "STEA", t_list,   NULL, 0, 0, env },
-	{ "STEM", t_list,   NULL, 0, 0, env },
-	{ "STLR", t_list,   NULL, 0, 0, stlr },
-	{ "STMF", t_list,   NULL, 0, 0, att },
-	{ "STOK", t_ignore },
-	{ "STUF", t_status, NULL, UPSC_STAT_ONBATT },
+	{ "STAT", t_list,   NULL, 0, NULL, att },
+	{ "STBO", t_status, NULL, UPSC_STAT_ONBATT, NULL, NULL },
+	{ "STBL", t_status, NULL, UPSC_STAT_LOBATT, NULL, NULL },
+	{ "STBM", t_ignore, NULL, 0, NULL, NULL },
+	{ "STBP", t_status, NULL, UPSC_STAT_BYPASS, NULL, NULL },
+	{ "STEA", t_list,   NULL, 0, NULL, env },
+	{ "STEM", t_list,   NULL, 0, NULL, env },
+	{ "STLR", t_list,   NULL, 0, NULL, stlr },
+	{ "STMF", t_list,   NULL, 0, NULL, att },
+	{ "STOK", t_ignore, NULL, 0, NULL, NULL },
+	{ "STUF", t_status, NULL, UPSC_STAT_ONBATT, NULL, NULL },
 
-	{ "BTIME", t_setval, NULL, 0, &batt_runtime },
+	{ "BTIME", t_setval, NULL, 0, &batt_runtime, NULL },
 
-	{ "METE1", t_value, "ambient.temperature" },
-	{ "MERH1", t_value, "ambient.humidity" },
+	{ "METE1", t_value, "ambient.temperature", 0, NULL, NULL },
+	{ "MERH1", t_value, "ambient.humidity", 0, NULL, NULL },
 
-	{ "MIFFF", t_value, "input.frequency" },
-	{ "MIIL1", t_value, "input.current" },
-	{ "MIIL2", t_value, "input.L2.current" },
-	{ "MIIL3", t_value, "input.L3.current" },
-	{ "MIPL1", t_value, "input.realpower" },
-	{ "MIPL2", t_value, "input.L2.realpower" },
-	{ "MIPL3", t_value, "input.L3.realpower" },
-	{ "MISL1", t_value, "input.power" },
-	{ "MISL2", t_value, "input.L2.power" },
-	{ "MISL3", t_value, "input.L3.power" },
-	{ "MIUL1", t_value, "input.voltage" },
-	{ "MIUL2", t_value, "input.L2-N.voltage" },
-	{ "MIUL3", t_value, "input.L3-N.voltage" },
-	{ "MIU12", t_value, "input.L1-L2.voltage" },
-	{ "MIU23", t_value, "input.L2-L3.voltage" },
-	{ "MIU31", t_value, "input.L3-L1.voltage" },
+	{ "MIFFF", t_value, "input.frequency", 0, NULL, NULL },
+	{ "MIIL1", t_value, "input.current", 0, NULL, NULL },
+	{ "MIIL2", t_value, "input.L2.current", 0, NULL, NULL },
+	{ "MIIL3", t_value, "input.L3.current", 0, NULL, NULL },
+	{ "MIPL1", t_value, "input.realpower", 0, NULL, NULL },
+	{ "MIPL2", t_value, "input.L2.realpower", 0, NULL, NULL },
+	{ "MIPL3", t_value, "input.L3.realpower", 0, NULL, NULL },
+	{ "MISL1", t_value, "input.power", 0, NULL, NULL },
+	{ "MISL2", t_value, "input.L2.power", 0, NULL, NULL },
+	{ "MISL3", t_value, "input.L3.power", 0, NULL, NULL },
+	{ "MIUL1", t_value, "input.voltage", 0, NULL, NULL },
+	{ "MIUL2", t_value, "input.L2-N.voltage", 0, NULL, NULL },
+	{ "MIUL3", t_value, "input.L3-N.voltage", 0, NULL, NULL },
+	{ "MIU12", t_value, "input.L1-L2.voltage", 0, NULL, NULL },
+	{ "MIU23", t_value, "input.L2-L3.voltage", 0, NULL, NULL },
+	{ "MIU31", t_value, "input.L3-L1.voltage", 0, NULL, NULL },
 
-	{ "MBCH1", t_setval, NULL, 0, &batt_charge }, /* battery.charge */
-	{ "MBIII", t_setval, "battery.current", 0, &batt_current },
-	{ "MBINE", t_ignore, /* "battery.current.negative" */ },
-	{ "MBIPO", t_ignore, /* "battery.current.positive" */ },
-	{ "MBUNE", t_ignore, /* "battery.voltage.negative" */ },
-	{ "MBUPO", t_ignore, /* "battery.voltage.positive" */},
-	{ "MBUUU", t_setval, "battery.voltage", 0, &batt_volt },
+	{ "MBCH1", t_setval, NULL, 0, &batt_charge, NULL }, /* battery.charge */
+	{ "MBIII", t_setval, "battery.current", 0, &batt_current, NULL },
+	{ "MBINE", t_ignore, /* "battery.current.negative" */ NULL, 0, NULL, NULL },
+	{ "MBIPO", t_ignore, /* "battery.current.positive" */ NULL, 0, NULL, NULL },
+	{ "MBUNE", t_ignore, /* "battery.voltage.negative" */ NULL, 0, NULL, NULL },
+	{ "MBUPO", t_ignore, /* "battery.voltage.positive" */ NULL, 0, NULL, NULL },
+	{ "MBUUU", t_setval, "battery.voltage", 0, &batt_volt, NULL },
 
-	{ "MLUNE", t_ignore, /* "dc.voltage.negative" */ },
-	{ "MLUPO", t_ignore, /* "dc.voltage.positive" */ },
-	{ "MLUUU", t_ignore, /* "dc.voltage" */ },
+	{ "MLUNE", t_ignore, /* "dc.voltage.negative" */ NULL, 0, NULL, NULL },
+	{ "MLUPO", t_ignore, /* "dc.voltage.positive" */ NULL, 0, NULL, NULL },
+	{ "MLUUU", t_ignore, /* "dc.voltage" */ NULL, 0, NULL, NULL },
 
-	{ "MOFFF", t_final, "output.frequency" },
-	{ "MOIL1", t_value, "output.current" },
-	{ "MOIL2", t_value, "output.L2.current" },
-	{ "MOIL3", t_value, "output.L3.current" },
-	{ "MOIP1", t_value, "output.current.peak" },
-	{ "MOIP2", t_value, "output.L2.current.peak" },
-	{ "MOIP3", t_value, "output.L3.current.peak" },
-	{ "MOPL1", t_value, "output.realpower", 0, &kilo_to_unity },
-	{ "MOPL2", t_value, "output.L2.realpower", 0, &kilo_to_unity },
-	{ "MOPL3", t_value, "output.L3.realpower", 0, &kilo_to_unity },
-	{ "MOSL1", t_value, "output.power" },
-	{ "MOSL2", t_value, "output.L2.power" },
-	{ "MOSL3", t_value, "output.L3.power" },
-	{ "MOUL1", t_value, "output.voltage" },
-	{ "MOUL2", t_value, "output.L2-N.voltage" },
-	{ "MOUL3", t_value, "output.L3-N.voltage" },
-	{ "MOU12", t_value, "output.L1-L2.voltage" },
-	{ "MOU23", t_value, "output.L2-L3.voltage" },
-	{ "MOU31", t_value, "output.L3-L1.voltage" },
+	{ "MOFFF", t_final, "output.frequency", 0, NULL, NULL },
+	{ "MOIL1", t_value, "output.current", 0, NULL, NULL },
+	{ "MOIL2", t_value, "output.L2.current", 0, NULL, NULL },
+	{ "MOIL3", t_value, "output.L3.current", 0, NULL, NULL },
+	{ "MOIP1", t_value, "output.current.peak", 0, NULL, NULL },
+	{ "MOIP2", t_value, "output.L2.current.peak", 0, NULL, NULL },
+	{ "MOIP3", t_value, "output.L3.current.peak", 0, NULL, NULL },
+	{ "MOPL1", t_value, "output.realpower", 0, &kilo_to_unity, NULL },
+	{ "MOPL2", t_value, "output.L2.realpower", 0, &kilo_to_unity, NULL },
+	{ "MOPL3", t_value, "output.L3.realpower", 0, &kilo_to_unity, NULL },
+	{ "MOSL1", t_value, "output.power", 0, NULL, NULL },
+	{ "MOSL2", t_value, "output.L2.power", 0, NULL, NULL },
+	{ "MOSL3", t_value, "output.L3.power", 0, NULL, NULL },
+	{ "MOUL1", t_value, "output.voltage", 0, NULL, NULL },
+	{ "MOUL2", t_value, "output.L2-N.voltage", 0, NULL, NULL },
+	{ "MOUL3", t_value, "output.L3-N.voltage", 0, NULL, NULL },
+	{ "MOU12", t_value, "output.L1-L2.voltage", 0, NULL, NULL },
+	{ "MOU23", t_value, "output.L2-L3.voltage", 0, NULL, NULL },
+	{ "MOU31", t_value, "output.L3-L1.voltage", 0, NULL, NULL },
 
-	{ "MPUL1", t_value, "input.bypass.L1-N.voltage" },
-	{ "MPUL2", t_value, "input.bypass.L2-N.voltage" },
-	{ "MPUL3", t_value, "input.bypass.L3-N.voltage" },
+	{ "MPUL1", t_value, "input.bypass.L1-N.voltage", 0, NULL, NULL },
+	{ "MPUL2", t_value, "input.bypass.L2-N.voltage", 0, NULL, NULL },
+	{ "MPUL3", t_value, "input.bypass.L3-N.voltage", 0, NULL, NULL },
 
-	{ "MUTE1", t_value, "ups.temperature" },
-	{ NULL }
+	{ "MUTE1", t_value, "ups.temperature", 0, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 /* Responses for UPDV */
 static simple_t nominal[] = {
-	{ "NIUHH", t_value, "input.voltage.maximum" },
-	{ "NIULL", t_value, "input.voltage.minimum" },
-	{ "NIUNN", t_value, "input.voltage.nominal" },
+	{ "NIUHH", t_value, "input.voltage.maximum", 0, NULL, NULL },
+	{ "NIULL", t_value, "input.voltage.minimum", 0, NULL, NULL },
+	{ "NIUNN", t_value, "input.voltage.nominal", 0, NULL, NULL },
 
-	{ "NIIHH", t_value, "input.current.maximum" },
-	{ "NIILL", t_value, "input.current.minimum" },
-	{ "NIINN", t_value, "input.current.nominal" },
+	{ "NIIHH", t_value, "input.current.maximum", 0, NULL, NULL },
+	{ "NIILL", t_value, "input.current.minimum", 0, NULL, NULL },
+	{ "NIINN", t_value, "input.current.nominal", 0, NULL, NULL },
 
-	{ "NIPHH", t_value, "input.realpower.maximum" },
-	{ "NIPNN", t_value, "input.realpower.nominal" },
+	{ "NIPHH", t_value, "input.realpower.maximum", 0, NULL, NULL },
+	{ "NIPNN", t_value, "input.realpower.nominal", 0, NULL, NULL },
 
-	{ "NISHH", t_value, "input.power.maximum" },
-	{ "NISNN", t_value, "input.power.nominal" },
+	{ "NISHH", t_value, "input.power.maximum", 0, NULL, NULL },
+	{ "NISNN", t_value, "input.power.nominal", 0, NULL, NULL },
 
-	{ "NBAHN", t_setval, "battery.capacity.nominal", 0, &batt_cap_nom },
-	{ "NBIHH", t_ignore, "battery charge current maximum" },
-	{ "NBILL", t_setval, NULL, 0, &batt_disch_curr_max},
-	{ "NBINN", t_value, "battery.current.nominal" },
-	{ "NBTHH", t_setval, NULL, 0, &batt_runtime_max},
-	{ "NBUHH", t_setval, "battery.voltage.maximum", 0, &batt_volt_high },
-	{ "NBULL", t_setval, "battery.voltage.minimum", 0, &batt_volt_low },
-	{ "NBUNN", t_setval,  "battery.voltage.nominal", 0, &batt_volt_nom },
+	{ "NBAHN", t_setval, "battery.capacity.nominal", 0, &batt_cap_nom, NULL },
+	{ "NBIHH", t_ignore, "battery charge current maximum", 0, NULL, NULL },
+	{ "NBILL", t_setval, NULL, 0, &batt_disch_curr_max, NULL },
+	{ "NBINN", t_value,  "battery.current.nominal", 0, NULL, NULL },
+	{ "NBTHH", t_setval, NULL, 0, &batt_runtime_max, NULL },
+	{ "NBUHH", t_setval, "battery.voltage.maximum", 0, &batt_volt_high, NULL },
+	{ "NBULL", t_setval, "battery.voltage.minimum", 0, &batt_volt_low, NULL },
+	{ "NBUNN", t_setval, "battery.voltage.nominal", 0, &batt_volt_nom, NULL },
 
-	{ "NOFHH", t_value,  "output.frequency.maximum" },
-	{ "NOFLL", t_final,  "output.frequency.minimum" },
-	{ "NOIHH", t_setval,  "output.current.maximum", 0, &max_out_current },
-	{ "NOINN", t_setval, "output.current.nominal", 0, &nom_out_current },
-	{ "NOPNN", t_value, "output.realpower.nominal", 0, &outpwr_factor },
-	{ "NOSNN", t_value,  "ups.power.nominal", 0, &outpwr_factor },
-	{ "NOUHH", t_value,  "output.voltage.maximum" },
-	{ "NOULL", t_value,  "output.voltage.minimum" },
-	{ "NOUNN", t_value,  "output.voltage.nominal" },
+	{ "NOFHH", t_value,  "output.frequency.maximum", 0, NULL, NULL },
+	{ "NOFLL", t_final,  "output.frequency.minimum", 0, NULL, NULL },
+	{ "NOIHH", t_setval, "output.current.maximum", 0, &max_out_current, NULL },
+	{ "NOINN", t_setval, "output.current.nominal", 0, &nom_out_current, NULL },
+	{ "NOPNN", t_value,  "output.realpower.nominal", 0, &outpwr_factor, NULL },
+	{ "NOSNN", t_value,  "ups.power.nominal", 0, &outpwr_factor, NULL },
+	{ "NOUHH", t_value,  "output.voltage.maximum", 0, NULL, NULL },
+	{ "NOULL", t_value,  "output.voltage.minimum", 0, NULL, NULL },
+	{ "NOUNN", t_value,  "output.voltage.nominal", 0, NULL, NULL },
 
-	{ "NUTEH", t_value,  "ups.temperature.maximum" },
-	{ NULL }
+	{ "NUTEH", t_value,  "ups.temperature.maximum", 0, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 /* Status responses for UPBS command */
 static simple_t battery[] = {
-	{ "MBTE1", t_value, "battery.1.temperature" },
-	{ "MBIN1", t_ignore, NULL /* aging index */ },
-	{ "BDAT1", t_string, "battery.1.date" },
-	{ "MBTE2", t_value, "battery.2.temperature.2" },
-	{ "MBIN2", t_ignore, NULL },
-	{ "BDAT2", t_string, "battery.2.date" },
-	{ "MBTE3", t_value, "battery.3.temperature" },
-	{ "MBIN3", t_ignore, NULL },
-	{ "BDAT3", t_string, "battery.3.date" },
-	{ "MBTE4", t_value, "battery.4.temperature" },
-	{ "MBIN4", t_ignore, NULL },
-	{ "BDAT4", t_string, "battery.4.date" },
-	{ "MBTE5", t_value, "battery.5.temperature" },
-	{ "MBIN5", t_ignore, NULL },
-	{ "BDAT5", t_string, "battery.5.date" },
-	{ "MBTE6", t_value, "battery.6.temperature" },
-	{ "MBIN6", t_ignore, NULL },
-	{ "BDAT6", t_string, "battery.6.date" },
-	{ "MBTE7", t_value, "battery.7.temperature" },
-	{ "MBIN7", t_ignore, NULL },
-	{ "BDAT7", t_string, "battery.7.date" },
-	{ "MBTE8", t_value, "battery.8.temperature" },
-	{ "MBIN8", t_ignore, NULL },
-	{ "BDAT8", t_finstr, "battery.8.date" },
-	{ NULL }
+	{ "MBTE1", t_value, "battery.1.temperature", 0, NULL, NULL },
+	{ "MBIN1", t_ignore, NULL /* aging index */, 0, NULL, NULL },
+	{ "BDAT1", t_string, "battery.1.date", 0, NULL, NULL },
+	{ "MBTE2", t_value, "battery.2.temperature.2", 0, NULL, NULL },
+	{ "MBIN2", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT2", t_string, "battery.2.date", 0, NULL, NULL },
+	{ "MBTE3", t_value, "battery.3.temperature", 0, NULL, NULL },
+	{ "MBIN3", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT3", t_string, "battery.3.date", 0, NULL, NULL },
+	{ "MBTE4", t_value, "battery.4.temperature", 0, NULL, NULL },
+	{ "MBIN4", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT4", t_string, "battery.4.date", 0, NULL, NULL },
+	{ "MBTE5", t_value, "battery.5.temperature", 0, NULL, NULL },
+	{ "MBIN5", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT5", t_string, "battery.5.date", 0, NULL, NULL },
+	{ "MBTE6", t_value, "battery.6.temperature", 0, NULL, NULL },
+	{ "MBIN6", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT6", t_string, "battery.6.date", 0, NULL, NULL },
+	{ "MBTE7", t_value, "battery.7.temperature", 0, NULL, NULL },
+	{ "MBIN7", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT7", t_string, "battery.7.date", 0, NULL, NULL },
+	{ "MBTE8", t_value, "battery.8.temperature", 0, NULL, NULL },
+	{ "MBIN8", t_ignore, NULL, 0, NULL, NULL },
+	{ "BDAT8", t_finstr, "battery.8.date", 0, NULL, NULL },
+	{ NULL, t_ignore, NULL, 0, NULL, NULL }
 };
 
 
 static cmd_t commands[] = {
-	{ "load.off",			NULL, NULL },
-	{ "load.on",			NULL, NULL },
-	{ "shutdown.return",		"UPPF", "IJHLDMGCIU" },
-	{ "shutdown.stayoff",		"UPPD", "LGGNLMDPGV" },
-	{ "shutdown.stop",		"UPPU", NULL },
-	{ "shutdown.reboot",		"UPPC", "IJHLDMGCIU" },
-	{ "shutdown.reboot.graceful",	NULL, NULL },
-	{ "test.panel.start",		"UPIS", NULL },
-	{ "test.panel.stop",		NULL, NULL },
-	{ "test.failure.start",		NULL, NULL },
-	{ "test.failure.stop",		NULL, NULL },
-	{ "test.battery.start",		"UPBT", "1" },
-	{ "test.battery.stop",		NULL, NULL },
-	{ "calibrate.start",		NULL, NULL },
-	{ "calibrate.stop",		NULL, NULL },
-	{ "bypass.start",		NULL, NULL },
-	{ "bypass.stop",		NULL, NULL },
-	{ "reset.input.minmax",		NULL, NULL },
-	{ "reset.watchdog",		NULL, NULL },
-	{ "beeper.enable",		NULL, NULL },
-	{ "beeper.disable",		NULL, NULL },
-	{ "beeper.on",			NULL, NULL },
-	{ "beeper.off",			NULL, NULL },
-	{ NULL }
+	{ "load.off",			NULL, NULL, 0 },
+	{ "load.on",			NULL, NULL, 0 },
+	{ "shutdown.return",		"UPPF", "IJHLDMGCIU", 0 },
+	{ "shutdown.stayoff",		"UPPD", "LGGNLMDPGV", 0 },
+	{ "shutdown.stop",		"UPPU", NULL, 0 },
+	{ "shutdown.reboot",		"UPPC", "IJHLDMGCIU", 0 },
+	{ "shutdown.reboot.graceful",	NULL, NULL, 0 },
+	{ "test.panel.start",		"UPIS", NULL, 0 },
+	{ "test.panel.stop",		NULL, NULL, 0 },
+	{ "test.failure.start",		NULL, NULL, 0 },
+	{ "test.failure.stop",		NULL, NULL, 0 },
+	{ "test.battery.start",		"UPBT", "1", 0 },
+	{ "test.battery.stop",		NULL, NULL, 0 },
+	{ "calibrate.start",		NULL, NULL, 0 },
+	{ "calibrate.stop",		NULL, NULL, 0 },
+	{ "bypass.start",		NULL, NULL, 0 },
+	{ "bypass.stop",		NULL, NULL, 0 },
+	{ "reset.input.minmax",		NULL, NULL, 0 },
+	{ "reset.watchdog",		NULL, NULL, 0 },
+	{ "beeper.enable",		NULL, NULL, 0 },
+	{ "beeper.disable",		NULL, NULL, 0 },
+	{ "beeper.on",			NULL, NULL, 0 },
+	{ "beeper.off",			NULL, NULL, 0 },
+	{ NULL, NULL, NULL, 0 }
 };
 
 
 static cmd_t variables[] = {
-	{ "ups.delay.reboot",		"UPCD", "ACCD" },
-	{ "ups.delay.shutdown",		"UPSD", "ACSD" },
-	{ NULL }
+	{ "ups.delay.reboot",		"UPCD", "ACCD", 0 },
+	{ "ups.delay.shutdown",		"UPSD", "ACSD", 0 },
+	{ NULL, NULL, NULL, 0 }
 };
 
 
 static int instcmd (const char *auxcmd, const char *data);
 static int setvar (const char *var, const char *data);
-static void upsc_setstatus(unsigned int status);
+static void upsc_setstatus(unsigned int upsc_status);
 static void upsc_flush_input(void);
 static void upsc_getbaseinfo(void);
 static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
-	const char *resp, const char *var, char *ret);
-static int upscsend(const char *cmd);
-static int upscrecv(char *buf);
+	const char *resp, const char *var, char *ret, size_t retsz);
+static ssize_t upscsend(const char *cmd);
+static ssize_t upscrecv(char *buf);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
 static void check_uppm(void);
 static float batt_charge_pct(void);
@@ -459,11 +460,15 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
 
 void upsdrv_initups(void)
 {
 	struct termios tio;
-	int baud = B1200;
+	speed_t baud = B1200;
 	char *str;
 
 	if ((str = getval("baudrate")) != NULL) {
@@ -510,12 +515,13 @@ void upsdrv_initups(void)
 	upsdebugx(1, "input_timeout = %d Sec", input_timeout_sec);
 
 	if ((str = getval("output_pace")) != NULL) {
-		int temp = atoi(str);
+		/* Range should be at least up to 1000000; a C99+ long guarantees that */
+		long temp = atol(str);
 		if (temp <= 0)
 			fatalx(EXIT_FAILURE, "Bad output_pace parameter: %s", str);
-		output_pace_usec = temp;
+		output_pace_usec = (useconds_t)temp;
 	}
-	upsdebugx(1, "output_pace = %d uSec", output_pace_usec);
+	upsdebugx(1, "output_pace = %" PRIuMAX " uSec", (uintmax_t)output_pace_usec);
 
 	if ((str = getval("full_update_timer")) != NULL) {
 		int temp = atoi(str);
@@ -548,7 +554,7 @@ void upsdrv_initinfo(void)
 		upscsend("UPDA");
 	}
 	if (can_upid) {
-		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL);
+		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL, 0);
 	}
 	if (can_uppm) {
 		check_uppm();
@@ -807,13 +813,13 @@ void upsdrv_updateinfo(void)
 	/* TODO/FIXME: Set UPS date/time on startup and daily if needed */
 	if (can_updt) {
 		char dtbuf[UPSC_BUFLEN];
-		if (upsc_getvalue("UPDT", "0", "ACDT", NULL, dtbuf)) {
+		if (upsc_getvalue("UPDT", "0", "ACDT", NULL, dtbuf, sizeof(dtbuf))) {
 			dstate_setinfo("ups.date", "%s", dtbuf);
 		}
 	}
 	if (can_uptm) {
 		char tmbuf[UPSC_BUFLEN];
-		if (upsc_getvalue("UPTM", "0", "ACTM", NULL, tmbuf)) {
+		if (upsc_getvalue("UPTM", "0", "ACTM", NULL, tmbuf, sizeof(tmbuf))) {
 			dstate_setinfo("ups.time", "%s", tmbuf);
 		}
 	}
@@ -837,8 +843,8 @@ void upsdrv_updateinfo(void)
 	if (batt_runtime >= 0 && batt_runtime < 9999) {
 		dstate_setinfo("battery.runtime", "%.0f", batt_runtime*60);
 	}
-	else if (load > 0 && batt_disch_curr_max != 0) {
-		float est_battcurr = load * abs(batt_disch_curr_max);
+	else if (load > 0 && ! f_equal(batt_disch_curr_max, 0)) {
+		float est_battcurr = load * fabs(batt_disch_curr_max);
 		/* Peukert equation */
 		float runtime = (batt_cap_nom*3600)/pow(est_battcurr, 1.35);
 
@@ -874,6 +880,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	upslogx(LOG_EMERG, "Shutting down...");
 
 	/* send shutdown command twice, just to be sure */
@@ -902,12 +911,15 @@ static int instcmd (const char *auxcmd, const char *data)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
+	upsdebug_INSTCMD_STARTING(auxcmd, (data ? data : "\"\""));
 
 	for (cp = commands; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, auxcmd)) {
 			continue;
 		}
+
+		upslog_INSTCMD_POWERSTATE_CHECKED(auxcmd, data);
+
 		upscsend(cp->upsc);
 		if (cp->upsp) {
 			upscsend(cp->upsp);
@@ -917,7 +929,7 @@ static int instcmd (const char *auxcmd, const char *data)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "instcmd: unknown command %s", auxcmd);
+	upslog_INSTCMD_UNKNOWN(auxcmd, data);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -926,17 +938,18 @@ static int setvar (const char *var, const char *data)
 {
 	cmd_t *cp;
 
-	upsdebugx(1, "Setvar: %s %s", var, data);
+	upsdebug_SET_STARTING(var, data);
 
 	for (cp = variables; cp->cmd; cp++) {
 		if (strcasecmp(cp->cmd, var)) {
 			continue;
 		}
-		upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL);
+		upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL, 0);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_INFO, "Setvar: unsettable variable %s", var);
+	upslogx(LOG_SET_UNKNOWN, "%s: unsettable variable %s",
+		__func__, NUT_STRARG(var));
 	return STAT_SET_UNKNOWN;
 }
 
@@ -963,8 +976,10 @@ void upsdrv_cleanup(void)
 /*
  * Generate status string from bitfield
  */
-static void upsc_setstatus(unsigned int status)
+static void upsc_setstatus(unsigned int upsc_status)
 {
+	/* Save into global state variable for the driver instance */
+	status = upsc_status;
 
 	/*
 	 * I'll look for all available statuses, even though they might not be
@@ -1000,9 +1015,9 @@ static void upsc_setstatus(unsigned int status)
 
 /* Add \r to end of command and send to UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscsend(const char *cmd)
+static ssize_t upscsend(const char *cmd)
 {
-	int	res;
+	ssize_t	res;
 
 	res = ser_send_pace(upsfd, output_pace_usec, "%s%s%s",
 		use_pre_lf ? "\n" : "",
@@ -1023,13 +1038,13 @@ static int upscsend(const char *cmd)
 
 /* Return a string read from UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
-static int upscrecv(char *buf)
+static ssize_t upscrecv(char *buf)
 {
-	int	res;
+	ssize_t	res;
 
 	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
-	   which means ser_get_buf() either returns one line terminated with
-	   ENDCHAR, an error or times out. */
+	 * which means ser_get_buf() either returns one line terminated with
+	 * ENDCHAR, an error or times out. */
 
 	while (1) {
 		res = ser_get_buf(upsfd, buf, UPSC_BUFLEN, input_timeout_sec, 0);
@@ -1046,7 +1061,9 @@ static int upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
+		/* Note: s should end up same as buf */
+		char *s = str_rtrim(buf, ENDCHAR);
+		upsdebugx(3, "upscrecv: %" PRIiSIZE " bytes:\t'%s'", res-1, s);
 	}
 
 	return res;
@@ -1107,7 +1124,7 @@ static int upsc_commandlist(void)
 				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
 				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
-	            break;
+				break;
 			}
 		}
 
@@ -1125,7 +1142,7 @@ static int upsc_commandlist(void)
 
 	for (cp = variables; cp->cmd; cp++) {
 		if (cp->enabled) {
-			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL);
+			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL, 0);
 			dstate_setflags(cp->cmd, ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux(cp->cmd, 7);
 		}
@@ -1185,19 +1202,19 @@ static void check_uppm(void)
 	if (strcmp(var, "ACPM"))
 		upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 	while (1) {
-		int val, stat;
+		int intval, stat;
 		upscrecv(var);
 		if (strlen(var) == 0)
 			break;
 		upsdebugx(2, "UPPM available: %s", var);
-		stat = sscanf(var, "P%2d", &val);
+		stat = sscanf(var, "P%2d", &intval);
 		if (stat != 1) {
 			upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 			return;
 		}
-		has_uppm_p[val] = 1;
-		if (val > last)
-			last = val;
+		has_uppm_p[intval] = 1;
+		if (intval > last)
+			last = intval;
 	}
 
 	for (i = 0; i <= last; i++) {
@@ -1218,7 +1235,8 @@ static void check_uppm(void)
 
 
 static int upsc_getvalue(const char *cmd, const char *param,
-			const char *resp, const char *nutvar, char *ret)
+			const char *resp, const char *nutvar,
+			char *ret, size_t retsz)
 {
 	char var[UPSC_BUFLEN];
 	char val[UPSC_BUFLEN];
@@ -1239,7 +1257,7 @@ static int upsc_getvalue(const char *cmd, const char *param,
 		if (nutvar)
 			dstate_setinfo(nutvar, "%s", val);
 		if (ret)
-			strcpy(ret, val);
+			strncpy(ret, val, retsz);
 	}
 	return 1;
 }
@@ -1252,9 +1270,9 @@ static void upsc_getbaseinfo(void)
 	dstate_setinfo("ups.mfr", "%s",
 		((buf = getval("manufacturer")) != NULL) ? buf : "unknown");
 
-	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL))
-		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL);
-	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial", NULL);
+	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL, 0))
+		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL, 0);
+	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial", NULL, 0);
 }
 
 
@@ -1300,7 +1318,10 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				break;
 			case t_final:
 				buffer_empty = 1;
+				/* FIXME? Should this really fall through, or should break? */
+				goto fallthrough_bufempty_processing_1;
 			case t_value:
+			fallthrough_bufempty_processing_1:
 				if (!sp->desc) {
 					break;
 				}
@@ -1317,7 +1338,10 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				break;
 			case t_finstr:
 				buffer_empty = 1;
+				/* FIXME? Should this really fall through, or should break? */
+				goto fallthrough_bufempty_processing_2;
 			case t_string:
+			fallthrough_bufempty_processing_2:
 				if (!sp->desc) {
 					break;
 				}
@@ -1347,9 +1371,36 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 					upslogx(LOG_ERR, "Unknown value: %s %s",
 						var, val);
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* All enum cases defined as of the time of coding
+			 * have been covered above. Handle later definitions,
+			 * memory corruptions and buggy inputs below...
+			 */
 			default:
 				upslogx(LOG_ERR, "Unknown type for %s", var);
 				break;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+
 			}
 			return 1;
 		}

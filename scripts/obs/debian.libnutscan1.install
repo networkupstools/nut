@@ -1,0 +1,4 @@
+lib/*/libnutscan.so.*
+debian/tmp/bin/nut-scanner-reindex-dmfsnmp
+usr/share/nut/dmfnutscan
+usr/share/nut/dmfnutscan.d

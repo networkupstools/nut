@@ -1,0 +1,30 @@
+# See https://openbuildservice.org/help/manuals/obs-user-guide/cha-obs-scm-ci-workflow-integration
+
+main_PR_workflow:
+  steps:
+    - branch_package:
+        source_project: home:networkupstools:nut-stable
+        source_package: "%{SCM_REPOSITORY_NAME}"
+        target_project: home:networkupstools:nut-pull-requests
+  filters:
+    event: pull_request
+
+rebuild_master:
+  steps:
+    - trigger_services:
+        project: home:networkupstools:nut-stable
+        package: "%{SCM_REPOSITORY_NAME}"
+  filters:
+    event: push
+    branches:
+      only:
+        - master
+
+release_tag:
+  steps:
+    - branch_package:
+        source_project: home:networkupstools:nut-stable
+        source_package: "%{SCM_REPOSITORY_NAME}"
+        target_project: home:networkupstools:nut-releases
+  filters:
+    event: tag_push

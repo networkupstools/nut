@@ -1,18 +1,20 @@
 /*
 	anything commented is optional
 	anything else is mandatory
-	 
+
 	for more information, refer to:
 	* docs/developers.txt
 	* docs/new-drivers.txt
-	* docs/new-names.txt
-	
+	* docs/nut-names.txt
+
 	and possibly also to:
 	* docs/hid-subdrivers.txt for USB/HID devices
 	* or docs/snmp-subdrivers.txt for SNMP devices
 */
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 /* #include "serial.h" */
 
@@ -20,7 +22,7 @@
 /* #define IGNCHARS	""	*/
 
 #define DRIVER_NAME	"Skeleton UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -30,6 +32,9 @@ upsdrv_info_t upsdrv_info = {
 	DRV_STABLE,
 	{ NULL }
 };
+
+/* Forward decls */
+/*static int instcmd(const char *cmdname, const char *extra);*/
 
 void upsdrv_initinfo(void)
 {
@@ -42,6 +47,9 @@ void upsdrv_initinfo(void)
 	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
 	/* dstate_setinfo("device.model", "longrun 15000"); */
 
+	/* commands ----------------------------------------------- */
+	/*dstate_addcmd("shutdown.return");*/
+	/*dstate_addcmd("test.battery.stop);*/
 
 	/* upsh.instcmd = instcmd; */
 }
@@ -55,7 +63,7 @@ void upsdrv_updateinfo(void)
 	/* ser_send(upsfd, "foo%d", 1234); */
 	/* ser_send_buf(upsfd, bincmd, 12); */
 
-	/* 
+	/*
 	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
 	 *
 	 * if (ret < STATUS_LEN) {
@@ -94,16 +102,22 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -113,12 +127,23 @@ void upsdrv_shutdown(void)
 /*
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/ * May be used in logging below, but not as a command argument * /
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		ser_send_buf(upsfd, ...);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */
@@ -126,17 +151,25 @@ static int instcmd(const char *cmdname, const char *extra)
 /*
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.test.interval")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 */
 
+/* print driver-specific usage info */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -1,4 +1,4 @@
-/* netxml-ups.c	Driver routines for network XML UPS units 
+/* netxml-ups.c	Driver routines for network XML UPS units
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -39,11 +39,18 @@
 #include <ne_auth.h>
 #include <ne_socket.h>
 
+#include "nut_stdint.h"
+
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.40"
+#define DRIVER_VERSION	"0.49"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
+
+#ifdef WIN32 /* FIXME ?? skip alarm handling */
+#define HAVE_NE_SET_CONNECT_TIMEOUT  1
+#define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
+#endif	/* WIN32 */
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -174,7 +181,7 @@ static object_entry_t *set_object_add(
 /**
  *  \brief  SET_OBJECT: RAW POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -184,7 +191,7 @@ static object_query_t *set_object_raw(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: FORM POST mode implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return \c NULL (FORM POST mode resp. is ignored by specification)
  */
@@ -194,7 +201,7 @@ static object_query_t *set_object_form(object_query_t *req);
 /**
  *  \brief  SET_OBJECT: implementation
  *
- *  \brief  req  SET_OBJECT request
+ *  \param  req  SET_OBJECT request
  *
  *  \return Response to the request
  */
@@ -222,24 +229,25 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle);
 
 
 /* FIXME:
- * "built with neon library %s" LIBNEON_VERSION 
+ * "built with neon library %s" LIBNEON_VERSION
  * subdrivers (limited to MGE only ATM) */
 
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
-int			shutdown_duration = 120;
+int		shutdown_duration = 120;
 static int		shutdown_timer = 0;
 static time_t		lastheard = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
 static ne_uri		uri;
+static char	*product_page = NULL;
 
 /* Support functions */
 static void netxml_alarm_set(void);
 static void netxml_status_set(void);
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password);
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 static int netxml_get_page(const char *page);
 
@@ -261,7 +269,7 @@ void upsdrv_initinfo(void)
 {
 	char	*page, *last = NULL;
 	char	buf[SMALLBUF];
-	
+
 	snprintf(buf, sizeof(buf), "%s", subdriver->initinfo);
 
 	for (page = strtok_r(buf, " ", &last); page != NULL; page = strtok_r(NULL, " ", &last)) {
@@ -269,11 +277,17 @@ void upsdrv_initinfo(void)
 		if (netxml_get_page(page) != NE_OK) {
 			continue;
 		}
+		/* store product page, for later use */
+		product_page = xstrdup(page);
 
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
+#ifndef WIN32
 			extrafd = ne_sock_fd(sock);
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 			time(&lastheard);
 		}
 
@@ -292,7 +306,8 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int	ret, errors = 0;
+	ssize_t	ret;
+	int	errors = 0;
 
 	/* We really should be dealing with alarms through a separate callback, so that we can keep the
 	 * processing of alarms and polling for data separated. Currently, this isn't supported by the
@@ -308,7 +323,7 @@ void upsdrv_updateinfo(void)
 			/* alarm message received */
 
 			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
+			upsdebugx(2, "%s: ne_sock_read(%" PRIiSIZE " bytes) => %s", __func__, ret, buf);
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
@@ -324,17 +339,27 @@ void upsdrv_updateinfo(void)
 
 			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
 
-			upsdebugx(2, "%s: ne_sock_read(%d) => %s", __func__, ret, ne_sock_error(sock));
+			upsdebugx(2, "%s: ne_sock_read(%" PRIiSIZE ") => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
+#ifndef WIN32
 				extrafd = ne_sock_fd(sock);
+#else	/* WIN32 */
+				NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
 				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
-			extrafd = -1;
+
+#ifndef WIN32
+			extrafd = ERROR_FD;
+#else	/* WIN32 */
+			NUT_WIN32_INCOMPLETE_DETAILED("TODO: port extrafd to Windows");
+#endif	/* WIN32 */
+
 			return;
 		}
 	}
@@ -346,6 +371,12 @@ void upsdrv_updateinfo(void)
 	}
 
 	ret = netxml_get_page(subdriver->summary);
+	if (ret != NE_OK) {
+		errors++;
+	}
+
+	/* also refresh the product information, at least for firmware information */
+	ret = netxml_get_page(product_page);
 	if (ret != NE_OK) {
 		errors++;
 	}
@@ -368,16 +399,37 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: Make a name for default original shutdown
+	 * in particular to make it one of the options and
+	 * call protocol cleanup below, if needed.
+	 */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
 	/* fatalx(EXIT_FAILURE, "shutdown not supported"); */
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -425,20 +477,30 @@ void upsdrv_shutdown(void) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
-	if (STAT_SET_HANDLED != status)
-		fatalx(EXIT_FAILURE, "Shutdown failed: %d", status);
+	if (STAT_SET_HANDLED != status) {
+		upslogx(LOG_ERR, "Shutdown failed: %d", status);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: shutdown per above? */
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
-
 */
-	upslogx(LOG_NOTICE, "%s: unknown command [%s]", __func__, cmdname);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -447,6 +509,8 @@ static int setvar(const char *varname, const char *val) {
 
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {
@@ -467,6 +531,7 @@ static int setvar(const char *varname, const char *val) {
 
 		/* Check if setting was done */
 		if (1 > object_query_size(resp)) {
+			upslog_SET_UNKNOWN(varname, val);
 			status = STAT_SET_UNKNOWN;
 
 			break;
@@ -483,10 +548,17 @@ static int setvar(const char *varname, const char *val) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
+	if (status == STAT_SET_FAILED)
+		upslog_SET_FAILED(varname, val);
 	return status;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -513,6 +585,9 @@ void upsdrv_makevartable(void)
 		snprintf(buf, sizeof(buf), "shutdown timer in second (default: none)");
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
+
+	/* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
+	addvar(VAR_FLAG, "do_convert_deci", "enable legacy convert_deci() for certain measurements 10x too large");
 }
 
 void upsdrv_initups(void)
@@ -556,7 +631,7 @@ void upsdrv_initups(void)
 		shutdown_timer = atoi(val);
 
 		if (shutdown_timer < 0) {
-			fatalx(EXIT_FAILURE, "shutdwon timer must be greater than or equal to 0");
+			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
 	}
 
@@ -575,7 +650,7 @@ void upsdrv_initups(void)
 	if (uri.scheme == NULL) {
 		uri.scheme = strdup("http");
 	}
- 
+
 	if (uri.host == NULL) {
 		uri.host = strdup(device_path);
 	}
@@ -584,10 +659,10 @@ void upsdrv_initups(void)
 		uri.port = ne_uri_defaultport(uri.scheme);
 	}
 
-	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
+	upsdebugx(1, "using %s://%s port %u", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
-	
+
 	/* timeout if we can't (re)connect to the UPS */
 #ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);
@@ -606,7 +681,11 @@ void upsdrv_initups(void)
 
 	/* if debug level is set, direct output to stderr */
 	if (!nut_debug_level) {
+#ifndef WIN32
 		fp = fopen("/dev/null", "w");
+#else	/* WIN32 */
+		fp = fopen("nul", "w");
+#endif	/* WIN32 */
 	} else {
 		fp = stderr;
 	}
@@ -638,6 +717,7 @@ void upsdrv_cleanup(void)
 	free(subdriver->summary);
 	free(subdriver->getobject);
 	free(subdriver->setobject);
+	free(product_page);
 
 	if (sock) {
 		ne_sock_close(sock);
@@ -656,33 +736,36 @@ void upsdrv_cleanup(void)
 
 static int netxml_get_page(const char *page)
 {
-	int		ret;
+	int		ret = NE_ERROR;
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(2, "%s: %s", __func__, page);
+	upsdebugx(2, "%s: %s", __func__, (page != NULL)?page:"(null)");
 
-	request = ne_request_create(session, "GET", page);
+	if (page != NULL) {
+		request = ne_request_create(session, "GET", page);
 
-	parser = ne_xml_create();
+		parser = ne_xml_create();
 
-	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = netxml_dispatch_request(request, parser);
+		ret = netxml_dispatch_request(request, parser);
 
-	if (ret) {
-		upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		if (ret) {
+			upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		}
+
+		ne_xml_destroy(parser);
+		ne_request_destroy(request);
 	}
-
-	ne_xml_destroy(parser);
-	ne_request_destroy(request);
-
 	return ret;
 }
 
 static int netxml_alarm_subscribe(const char *page)
 {
-	int	ret, port = -1, secret = -1;
+	ssize_t	ret;
+	int	secret = -1;
+	unsigned int	port = 0;
 	char	buf[LARGEBUF], *s;
 	ne_request	*request;
 	ne_sock_addr	*addr;
@@ -757,20 +840,39 @@ static int netxml_alarm_subscribe(const char *page)
 	ne_request_destroy(request);
 
 	/* due to different formats used by the various NMCs, we need to\
-	   break up the reply in lines and parse each one separately */
+	 * break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);
 
-		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
+		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%lli", &tmp_port) != 1)) {
 			return NE_RETRY;
 		}
 
-		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%u", &secret) != 1)) {
+		/* FIXME? Does a port==0 make sense here? Or should the test below be for port<1?
+		 * Legacy code until a fix here used sscanf() above to get a '%u' value...
+		 */
+		if (tmp_port < 0 || tmp_port > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad port value", __func__);
 			return NE_RETRY;
 		}
+
+		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%lli", &tmp_secret) != 1)) {
+			return NE_RETRY;
+		}
+
+		if (tmp_secret < 0 || tmp_secret > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad secret value", __func__);
+			return NE_RETRY;
+		}
+
+		/* Range of valid values constrained above */
+		port = (unsigned int)tmp_port;
+		secret = (int)tmp_secret;
+
 	}
 
-	if ((port == -1) || (secret == -1)) {
+	if ((port < 1) || (secret == -1)) {
 		upsdebugx(2, "%s: parsing initial subcription failed", __func__);
 		return NE_RETRY;
 	}
@@ -790,7 +892,7 @@ static int netxml_alarm_subscribe(const char *page)
 
 	for (ai = ne_addr_first(addr); ai != NULL; ai = ne_addr_next(addr)) {
 
-		upsdebugx(2, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
+		upsdebugx(2, "%s: connecting to host %s port %u", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
 
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
@@ -813,7 +915,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", secret);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", (unsigned int)secret);
 	ret = ne_sock_fullwrite(sock, buf, strlen(buf) + 1);
 
 	if (ret != NE_OK) {
@@ -872,11 +974,12 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 }
 
 /* Supply the 'login' and 'password' when authentication is required */
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password)
 {
 	char	*val;
+	NUT_UNUSED_VARIABLE(userdata);
 
-	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
+	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, try_num);
 
 	val = getval("login");
 	snprintf(username, NE_ABUFSIZ, "%s", val ? val : "");
@@ -884,7 +987,7 @@ static int netxml_authenticate(void *userdata, const char *realm, int attempt, c
 	val = getval("password");
 	snprintf(password, NE_ABUFSIZ, "%s", val ? val : "");
 
-	return attempt;
+	return try_num;
 }
 
 /* Convert the local status information to NUT format and set NUT
@@ -961,7 +1064,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (STATUS_BIT(REPLACEBATT)) {
+	if (STATUS_BIT(REPLACEBATT) || STATUS_BIT(NOBATTERY)) {
 		status_set("RB");		/* replace batt */
 	}
 	if (STATUS_BIT(TRIM)) {
@@ -979,6 +1082,9 @@ static void netxml_status_set(void)
 
 	if (STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("FSD");		/* shutdown imminent */
+	}
+	if (STATUS_BIT(CALIB)) {
+		status_set("CAL");		/* calibrating */
 	}
 }
 
@@ -1030,7 +1136,7 @@ static void set_object_req_destroy(set_object_req_t *req) {
 /**
  *  \brief  SET_OBJECT response list entry destructor
  *
- *  \param  req  SET_OBJECT response list entry
+ *  \param  resp  SET_OBJECT response list entry
  */
 static void set_object_resp_destroy(set_object_resp_t *resp) {
 	assert(NULL != resp);
@@ -1087,13 +1193,36 @@ static void object_entry_destroy(object_query_t *handle, object_entry_t *entry) 
 	switch (handle->type) {
 		case SET_OBJECT_REQUEST:
 			set_object_req_destroy(&entry->payld.req);
-
 			break;
 
 		case SET_OBJECT_RESPONSE:
 			set_object_resp_destroy(&entry->payld.resp);
-
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	/* Destroy entry */
@@ -1153,13 +1282,14 @@ static object_entry_t *set_object_add(
 	const char     *name,
 	const char     *value)
 {
-	char *name_cpy;
-	char *value_cpy;
+	char	*name_cpy;
+	char	*value_cpy;
+	object_entry_t	*entry;
 
 	assert(NULL != name);
 	assert(NULL != value);
 
-	object_entry_t *entry = (object_entry_t *)calloc(1,
+	entry = (object_entry_t *)calloc(1,
 		sizeof(object_entry_t));
 
 	if (NULL == entry)
@@ -1199,8 +1329,8 @@ static object_entry_t *set_object_add(
  *  \param  buff   Buffer
  *  \param  entry  SET_OBJECT request entry
  *
- *  \retval OBJECT_OK    on success
- *  \retval OBJECT_ERROR otherwise
+ *  \return OBJECT_OK    on success
+ *  \return OBJECT_ERROR otherwise
  */
 static object_query_status_t set_object_serialise_entries(ne_buffer *buff, object_entry_t *entry) {
 	object_query_status_t status = OBJECT_OK;
@@ -1234,13 +1364,15 @@ static object_query_status_t set_object_serialise_entries(ne_buffer *buff, objec
 
 
 static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
+	ne_buffer	*buff;
+
 	assert(NULL != handle);
 
 	/* Sanity checks */
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1253,7 +1385,8 @@ static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
 
 
 static ne_buffer *set_object_serialise_form(object_query_t *handle) {
-	const char *vname = NULL;
+	const char	*vname = NULL;
+	ne_buffer	*buff;
 
 	assert(NULL != handle);
 
@@ -1261,7 +1394,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle) {
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1480,6 +1613,9 @@ static int set_object_raw_resp_end_element(
 	const char *nspace,
 	const char *name)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
+
 	/* OBJECT (as a SET_OBJECT child) */
 	if (NE_XML_STATEROOT + 2 == state) {
 		assert(0 == strcasecmp(name, "OBJECT"));
@@ -1496,18 +1632,20 @@ static int set_object_raw_resp_end_element(
 
 
 static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
-	int ne_status;
+	int	ne_status;
+	object_query_t	*handle;
+	ne_xml_parser	*parser;
 
 	assert(NULL != buff);
 
 	/* Create SET_OBJECT query response */
-	object_query_t *handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
+	handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
 
 	if (NULL == handle)
 		return NULL;
 
 	/* Create XML parser */
-	ne_xml_parser *parser = ne_xml_create();
+	parser = ne_xml_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != parser);
@@ -1538,9 +1676,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *
  *  The function creates HTTP request, sends it and reads-out the response.
  *
- *  \param[in]   session    HTTP session
+ *  \param[in]   argsession HTTP session
  *  \param[in]   method     Request method
- *  \param[in]   uri        Request URI
+ *  \param[in]   arguri     Request URI
  *  \param[in]   ct         Request content type (optional, \c NULL accepted)
  *  \param[in]   req_body   Request body (optional, \c NULL is accepted)
  *  \param[out]  resp_body  Response body (optional, \c NULL is accepted)
@@ -1548,9 +1686,9 @@ static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
  *  \return HTTP status code if response was sent, 0 on send error
  */
 static int send_http_request(
-	ne_session *session,
+	ne_session *argsession,
 	const char *method,
-	const char *uri,
+	const char *arguri,
 	const char *ct,
 	ne_buffer  *req_body,
 	ne_buffer  *resp_body)
@@ -1560,13 +1698,14 @@ static int send_http_request(
 	ne_request *req = NULL;
 
 	/* Create request */
-	req = ne_request_create(session, method, uri);
+	req = ne_request_create(argsession, method, arguri);
 
 	/* Neon claims that request creation is always successful */
 	assert(NULL != req);
 
 	do {  /* Pragmatic do ... while (0) loop allowing breaks on error */
-		const ne_status *req_st;
+		const ne_status	*req_st;
+		int	status;
 
 		/* Set Content-Type */
 		if (NULL != ct)
@@ -1579,7 +1718,7 @@ static int send_http_request(
 				req_body->data, req_body->used - 1);
 
 		/* Send request */
-		int status = ne_begin_request(req);
+		status = ne_begin_request(req);
 
 		if (NE_OK != status) {
 			break;
@@ -1606,7 +1745,7 @@ static int send_http_request(
 				break;
 
 			if (NULL != resp_body)
-				ne_buffer_append(resp_body, buff, read);
+				ne_buffer_append(resp_body, buff, (size_t)read);
 		}
 
 		if (NE_OK != status) {
@@ -1737,13 +1876,36 @@ static object_query_t *set_object(object_query_t *req) {
 	switch (req->mode) {
 		case RAW_POST:
 			resp = set_object_raw(req);
-
 			break;
 
 		case FORM_POST:
 			resp = set_object_form(req);
-
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	return resp;

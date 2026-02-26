@@ -1,6 +1,7 @@
 /* upsset - CGI program to manage read/write variables
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,11 +20,16 @@
 
 #include "common.h"
 
+#ifndef WIN32
 #include <netdb.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "cgilib.h"
 #include "parseconf.h"
@@ -39,12 +45,15 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
-	char	*monups, *username, *password, *function, *upscommand;
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
-	/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
-	int	magic_string_set = 0;
+static char	*monups, *username, *password, *function, *upscommand;
 
-static	int	port;
+/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
+static int	magic_string_set = 0;
+
+static	uint16_t	port;
 static	char	*upsname, *hostname;
 static	UPSCONN_t	ups;
 
@@ -54,13 +63,18 @@ typedef struct {
 	void	*next;
 }	uvtype_t;
 
-	uvtype_t	*firstuv = NULL;
+static uvtype_t	*firstuv = NULL;
 
 void parsearg(char *var, char *value)
 {
 	char	*ptr;
 	uvtype_t	*last, *tmp = NULL;
 	static	int upsvc = 0;
+
+	if (var == NULL || value == NULL) {
+		upslogx(LOG_ERR, "parsearg() called with var null or value null");
+		return;
+	}
 
 	/* store variables from a SET command for the later commit */
 	if (!strncmp(var, "UPSVAR_", 7)) {
@@ -83,10 +97,10 @@ void parsearg(char *var, char *value)
 		tmp = last = firstuv;
 		while (tmp) {
 			last = tmp;
-			tmp = tmp->next;
+			tmp = (uvtype_t *)tmp->next;
 		}
 
-		tmp = xmalloc(sizeof(uvtype_t));
+		tmp = (uvtype_t *)xmalloc(sizeof(uvtype_t));
 		tmp->var = xstrdup(ptr);
 		tmp->value = xstrdup(value);
 		tmp->next = NULL;
@@ -134,7 +148,7 @@ static void do_header(const char *title)
 	printf("<HTML>\n");
 	printf("<HEAD><TITLE>upsset: %s</TITLE></HEAD>\n", title);
 
-	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
+	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n");
 
 	printf("<TABLE BGCOLOR=\"#50A0A0\" ALIGN=\"CENTER\">\n");
 	printf("<TR><TD>\n");
@@ -144,7 +158,7 @@ static void start_table(void)
 {
 	printf("<TABLE CELLPADDING=\"5\" CELLSPACING=\"0\" ALIGN=\"CENTER\" WIDTH=\"100%%\">\n");
 	printf("<TR><TH COLSPAN=2 BGCOLOR=\"#60B0B0\">\n");
-	printf("<FONT SIZE=\"+2\">Network UPS Tools upsset %s</FONT>\n", 
+	printf("<FONT SIZE=\"+2\">Network UPS Tools upsset %s</FONT>\n",
 		UPS_VERSION);
 	printf("</TH></TR>\n");
 }
@@ -158,12 +172,20 @@ static void do_hidden(const char *next)
 		password);
 
 	if (next)
-		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"%s\">\n", 
+		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"%s\">\n",
 			next);
 }
 
+static void do_hidden_sentinel(void)
+{
+	/* MS IIS tends to not close CGI STDIN and not serve the last byte(s)
+	 * but just hangs at fgets(), so we truncate the inputs in cgilib,
+	 * and add a dummy entry here that we can afford to lose in the end */
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"zzz\" VALUE=\"sentinel\">\n");
+}
+
 /* generate SELECT chooser from hosts.conf entries */
-static void upslist_arg(int numargs, char **arg)
+static void upslist_arg(size_t numargs, char **arg)
 {
 	if (numargs < 3)
 		return;
@@ -189,12 +211,12 @@ static void upsset_hosts_err(const char *errmsg)
 /* this defaults to wherever we are now, ups and function-wise */
 static void do_pickups(const char *currfunc)
 {
-	char	hostfn[SMALLBUF];
+	char	hostfn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
 
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 
 	printf("Select UPS and function:\n<BR>\n");
 
@@ -222,7 +244,7 @@ static void do_pickups(const char *currfunc)
 			continue;
 		}
 
-		upslist_arg(ctx.numargs, ctx.arglist);		
+		upslist_arg(ctx.numargs, ctx.arglist);
 	}
 
 	pconf_finish(&ctx);
@@ -250,8 +272,14 @@ static void do_pickups(const char *currfunc)
 	do_hidden(NULL);
 
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"View\">\n");
+
+	do_hidden_sentinel();
 	printf("</FORM>\n");
 }
+
+static void error_page(const char *next, const char *title,
+	const char *fmt, ...)
+	__attribute__((noreturn));
 
 static void error_page(const char *next, const char *title,
 	const char *fmt, ...)
@@ -260,7 +288,22 @@ static void error_page(const char *next, const char *title,
 	va_list	ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) quite extensively. */
 	vsnprintf(msg, sizeof(msg), fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	do_header(title);
@@ -283,9 +326,12 @@ static void error_page(const char *next, const char *title,
 }
 
 static void loginscreen(void)
+	__attribute__((noreturn));
+
+static void loginscreen(void)
 {
 	do_header("Login");
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
@@ -302,6 +348,7 @@ static void loginscreen(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"pickups\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Login\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset fields\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR></TABLE>\n");
 	printf("</FORM>\n");
 	printf("</TD></TR></TABLE>\n");
@@ -320,7 +367,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, 0) < 0) {
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -331,7 +378,7 @@ static void upsd_connect(void)
 static void print_cmd(const char *cmd)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -354,7 +401,7 @@ static void print_cmd(const char *cmd)
 static void showcmds(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -391,12 +438,12 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 3)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 3)\n", numa);
 
 			return;
 		}
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -415,7 +462,7 @@ static void showcmds(void)
 			"This UPS doesn't support any instant commands.");
 
 	do_header("Instant commands");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -453,6 +500,7 @@ static void showcmds(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Issue command\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -466,7 +514,7 @@ static void showcmds(void)
 
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
-}	
+}
 
 /* handle setting authentication data in the server */
 static void send_auth(const char *next)
@@ -491,7 +539,7 @@ static void send_auth(const char *next)
 				"upsd version too old - USERNAME not supported");
 		}
 
-		error_page(next, "Can't set user name", 
+		error_page(next, "Can't set user name",
 			"Set user name failed: %s", upscli_strerror(&ups));
 	}
 
@@ -504,7 +552,10 @@ static void send_auth(const char *next)
 	if (upscli_readline(&ups, buf, sizeof(buf)) < 0)
 		error_page(next, "Can't set password",
 			"Password set failed: %s", upscli_strerror(&ups));
-}	
+}
+
+static void docmd(void)
+	__attribute__((noreturn));
 
 static void docmd(void)
 {
@@ -515,13 +566,13 @@ static void docmd(void)
 			"Access to that host is not authorized");
 
 	/* the user is messing with us */
-	if (!upscommand)	
-		error_page("showcmds", "Form error", 
+	if (!upscommand)
+		error_page("showcmds", "Form error",
 			"No instant command selected");
 
 	/* (l)user took the default blank option */
 	if (strlen(upscommand) == 0)
-		error_page("showcmds", "Form error", 
+		error_page("showcmds", "Form error",
 			"No instant command selected");
 
 	upsd_connect();
@@ -595,7 +646,7 @@ static void docmd(void)
 static const char *get_data(const char *type, const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -633,7 +684,7 @@ static void do_string(const char *varname, int maxlen)
 static void do_enum(const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer, *val;
 	const	char	*query[4], *tmp;
 
@@ -659,8 +710,9 @@ static void do_enum(const char *varname)
 
 	if (ret < 0) {
 		printf("Unavailable\n");
-		fprintf(stderr, "Error doing ENUM %s %s: %s\n", 
+		fprintf(stderr, "Error doing ENUM %s %s: %s\n",
 			upsname, varname, upscli_strerror(&ups));
+		free(val);
 		return;
 	}
 
@@ -674,7 +726,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 4)\n", numa);
+				"(got %" PRIuSIZE " args, need at least 4)\n", numa);
 
 			free(val);
 			return;
@@ -697,7 +749,7 @@ static void do_enum(const char *varname)
 static void do_type(const char *varname)
 {
 	int	ret;
-	unsigned int	i, numq, numa;
+	size_t	i, numq, numa;
 	char	**answer;
 	const	char	*query[4];
 
@@ -709,7 +761,7 @@ static void do_type(const char *varname)
 	ret = upscli_get(&ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
-		printf("Unknown type\n");	
+		printf("Unknown type\n");
 		return;
 	}
 
@@ -723,14 +775,31 @@ static void do_type(const char *varname)
 
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
 			char	*ptr, len;
+			long	l;
 
 			/* split out the :<len> data */
 			ptr = strchr(answer[i], ':');
 			*ptr++ = '\0';
-			len = strtol(ptr, (char **) NULL, 10);
+			l = strtol(ptr, (char **) NULL, 10);
+			assert(l <= 127);	/* FIXME: Loophole about longer numbers? Why are we limited to char at all here? */
+			len = (char)l;
 
 			do_string(varname, len);
 			return;
+		}
+
+		if (!strcasecmp(answer[i], "NUMBER")) {
+			/* 20 is a reasonable default size for the text box */
+			do_string(varname, 20);
+			return;
+		}
+
+		/* RANGE is usually paired with NUMBER.
+		 *  We can ignore 'RANGE' and let the 'NUMBER'
+		 *  case (which should come next) handle it.
+		 */
+		if (!strcasecmp(answer[i], "RANGE")) {
+			continue;
 		}
 
 		/* ignore this one */
@@ -741,9 +810,11 @@ static void do_type(const char *varname)
 	}
 }
 
-static void print_rw(const char *upsname, const char *varname)
+static void print_rw(const char *arg_upsname, const char *varname)
 {
 	const	char	*tmp;
+
+	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", arg_upsname);
 
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
@@ -766,9 +837,12 @@ static void print_rw(const char *upsname, const char *varname)
 }
 
 static void showsettings(void)
+	__attribute__((noreturn));
+
+static void showsettings(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[2];
 	char	**answer, *desc = NULL;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -803,7 +877,7 @@ static void showsettings(void)
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -818,7 +892,7 @@ static void showsettings(void)
 	}
 
 	do_header("Current settings");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -850,6 +924,7 @@ static void showsettings(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Save changes\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -908,12 +983,15 @@ static int setvar(const char *var, const char *val)
 
 /* turn a form submission of settings into SET commands for upsd */
 static void savesettings(void)
+	__attribute__((noreturn));
+
+static void savesettings(void)
 {
 	int	changed = 0;
 	char	*desc;
 	uvtype_t	*upsvar;
 
-	if (!checkhost(monups, &desc)) 
+	if (!checkhost(monups, &desc))
 		error_page("showsettings", "Access denied",
 			"Access to that host is not authorized");
 
@@ -930,7 +1008,7 @@ static void savesettings(void)
 
 	while (upsvar) {
 		changed += setvar(upsvar->var, upsvar->value);
-		upsvar = upsvar->next;
+		upsvar = (uvtype_t *)upsvar->next;
 	}
 
 	if (changed == 0)
@@ -952,6 +1030,9 @@ static void savesettings(void)
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
+
+static void initial_pickups(void)
+	__attribute__((noreturn));
 
 static void initial_pickups(void)
 {
@@ -978,10 +1059,11 @@ static void upsset_conf_err(const char *errmsg)
 /* see if the user has confirmed their cgi directory's secure state */
 static void check_conf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsset_conf_err);
 
@@ -1027,29 +1109,70 @@ static void check_conf(void)
 	fprintf(stderr, "upsset.conf does not permit execution\n");
 
 	exit(EXIT_FAILURE);
-}	
+}
 
 int main(int argc, char **argv)
 {
+	char *s;
+	int i;
+
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
+
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+	/* Also do not break what we receive from HTTP POST queries */
+	setmode(STDIN_FILENO, O_BINARY);
+#endif
+
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: text/html\n");
+	printf("Pragma: no-cache\n");
+	printf("\n");
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+
+#ifdef NUT_CGI_DEBUG_UPSSET
+# if (NUT_CGI_DEBUG_UPSSET - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSSET
+#  define NUT_CGI_DEBUG_UPSSET 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSSET;
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
+	}
 
 	/* see if the magic string is present in the config file */
 	check_conf();
 
-	/* see if there's anything waiting .. the server my not close STDIN properly */
-	if (1) {
-	    fd_set fds;
-	    struct timeval tv;
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 
-	    FD_ZERO(&fds);
-	    FD_SET(STDIN_FILENO, &fds);
-	    tv.tv_sec = 0;
-	    tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-	    if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
-		extractpostargs();
-	}
+	extractpostargs();
+
+	/* Nothing POSTed (or parsed correctly)? */
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 
@@ -1074,6 +1197,6 @@ int main(int argc, char **argv)
 		docmd();
 
 	printf("Error: Unhandled function name [%s]\n", function);
-	
+
 	return 0;
 }

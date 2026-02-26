@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+# Revert /etc/nut/nut.conf mangling done by older versions of the postinst
+# See #677054
+# changed configfile created by a fresh install in lenny, upgraded to squeeze
+if [ "$1" = "install" -o "$1" = "upgrade" ] \
+    && dpkg --compare-versions "$2" lt "2.6.4-2" \
+    && [ -f /etc/nut/nut.conf ] \
+    && [ "`md5sum /etc/nut/nut.conf | cut -d ' ' -f 1`" = 331cca39153f451c2968f4b734c1cf3f ]; then
+       sed -i '29,$ d' /etc/nut/nut.conf
+fi
+
+# changed configfile created by a fresh install in squeeze
+if [ "$1" = "install" -o "$1" = "upgrade" ] \
+    && dpkg --compare-versions "$2" lt "2.6.4-2" \
+    && [ -f /etc/nut/nut.conf ] \
+    && [ "`md5sum /etc/nut/nut.conf | cut -d ' ' -f 1`" = f9b571ae65952e3a761fac2202633478 ]; then
+    sed -i 's/^MODE=none$/MODE = none/' /etc/nut/nut.conf
+fi
+
+#DEBHELPER#

@@ -25,19 +25,26 @@
  */
 
 #ifndef UPSD_H_SEEN
-#define UPSD_H_SEEN
+#define UPSD_H_SEEN 1
 
 #include "attribute.h"
 
 #include "common.h"
 
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif	/* !WIN32 */
 
 #include "timehead.h"
 
 #include <sys/file.h>
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 
 #include "parseconf.h"
 #include "nut_ctype.h"
@@ -68,17 +75,43 @@ void server_free(void);
 
 void check_perms(const char *fn);
 
-/* declarations from upsd.c */
+/* return values for instcmd / setvar status tracking,
+ * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
+enum {
+   STAT_PENDING = -1,	/* not yet completed */
+   STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
+   STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
+   STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
+   STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+   STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
+};
 
-extern int		maxage, maxconn;
+/* Commands and settings status tracking functions */
+int tracking_add(const char *id);
+int tracking_set(const char *id, const char *value);
+int tracking_del(const char *id);
+void tracking_free(void);
+void tracking_cleanup(void);
+char *tracking_get(const char *id);
+int tracking_enable(void);
+int tracking_disable(void);
+int tracking_is_enabled(void);
+
+/* declarations from upsd.c */
+extern int		maxage, tracking_delay, allow_no_device, allow_not_all_listeners;
+extern nfds_t		maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
-
+#ifndef WIN32
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
+#else	/* WIN32 */
+#define SIGCMD_STOP    COMMAND_STOP
+#define SIGCMD_RELOAD  COMMAND_RELOAD
+#endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
 
@@ -90,6 +123,10 @@ extern nut_ctype_t	*firstclient;
 #else
 #define shutdown_how 2
 #endif
+
+/* UUID v4 generation function
+ * Note: 'dest' must be at least `UUID4_LEN` long */
+int nut_uuid_v4(char *uuid_str);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

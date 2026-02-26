@@ -19,10 +19,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef UPSTYPE_H_SEEN
-#define UPSTYPE_H_SEEN 1
+#ifndef NUT_UPSTYPE_H_SEEN
+#define NUT_UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
+#include "common.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -33,10 +34,13 @@ extern "C" {
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {
 	char			*name;
-	char			*fn;
+	char			*fn;	/* base filename of UPS socket (or part of pipe name in WIN32) as "drivername-upsname" */
 	char			*desc;
-
-	int			sock_fd;
+	TYPE_FD			sock_fd;
+#ifdef WIN32
+	char 			buf[SMALLBUF];
+	OVERLAPPED		read_overlapped;
+#endif	/* WIN32 */
 	int			stale;
 	int			dumpdone;
 	int			data_ok;
@@ -51,7 +55,7 @@ typedef struct upstype_s {
 	int	fsd;		/* forced shutdown in effect? */
 
 	int	retain;
-	
+
 	struct upstype_s	*next;
 
 } upstype_t;
@@ -64,4 +68,4 @@ extern upstype_t	*firstups;
 /* *INDENT-ON* */
 #endif
 
-#endif	/* UPSTYPE_H_SEEN */
+#endif	/* NUT_UPSTYPE_H_SEEN */

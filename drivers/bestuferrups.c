@@ -1,4 +1,4 @@
-/* 
+/*
    bestuferrups.c - model specific routines for Best Power Micro-Ferrups
 
    This module is a 40% rewritten mangle of the bestfort module by
@@ -33,7 +33,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups Series ME/RE/MD driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -61,49 +61,147 @@ upsdrv_info_t upsdrv_info = {
 #include <string.h>
 #include <unistd.h>
 
-int debugging = 0;
-
+static int debugging = 0;
 
 /* Blob of UPS configuration data from the formatconfig string */
-struct {
-  int valid;			/* set to 1 when this is filled in */
+static struct {
+	int valid;			/* set to 1 when this is filled in */
 
-  float  idealbvolts;		/* various interestin battery voltages */
-  float  fullvolts;
-  float  emptyvolts;
-  int va;			/* capacity of UPS in Volt-Amps */
-  int watts;			/* capacity of UPS in watts */
-  int model;			/* enumerated model type */
+	float idealbvolts;		/* various interestin battery voltages */
+	float fullvolts;
+	float emptyvolts;
+	int va;			/* capacity of UPS in Volt-Amps */
+	int watts;			/* capacity of UPS in watts */
+	int model;			/* enumerated model type */
 } fc;
 
 
 /* Forward decls */
+static ssize_t execute(const char *cmd, char *result, size_t resultsize);
+static int instcmd(const char *cmdname, const char *extra);
+static void sync_serial(void);
+static void ups_sync(void);
 
 /* Set up all the funky shared memory stuff used to communicate with upsd */
-void  upsdrv_initinfo (void)
+void upsdrv_initinfo (void)
 {
+	char	temp[256], fcstring[512];
+
 	/* now set up room for all future variables that are supported */
+	sync_serial();
+	ups_sync();
+
+	fc.model = UNKNOWN;
+	/* Obtain Model */
+	if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
+		fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
+	}
+
+	/* response is a one-line packed string starting with $ */
+	if (memcmp(fcstring, "Unit", 4)) {
+		fatalx(EXIT_FAILURE,
+			"Bad response from formatconfig command in ups_ident()\n"
+			"id: %s\n", fcstring
+		);
+	}
+
+	/* FIXME: upsdebugx() */
+	if (debugging)
+		fprintf(stderr, "id: %s\n", fcstring);
+
+	/* chars 4:2 are a two-digit ascii hex enumerated model code */
+	memcpy(temp, fcstring+9, 2);
+	temp[2] = '\0';
+
+	if (memcmp(temp, "ME", 2) == 0) {
+		fc.model = ME3100;
+	} else if ((memcmp(temp, "RE", 2) == 0)) {
+		fc.model = RE1800;
+	} else if (memcmp(temp, "C1", 2) == 0) {
+		/* Better way to identify unit is using "d 15\r", which results in
+		 * "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
+		fc.model = MD1KVA;
+	}
+
+	switch(fc.model) {
+		case ME3100:
+			fc.va = 3100;
+			fc.watts = 2200;
+			/* determine shutdown battery voltage */
+			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 54.20;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case RE1800:
+			fc.va = 1800;
+			fc.watts = 1200;
+			/* determine shutdown battery voltage */
+			if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 54.20;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case MD1KVA:
+			fc.va = 1100;
+			fc.watts = 770; /* Approximate, based on 0.7 power factor */
+			/* determine shutdown battery voltage */
+			if (execute("d 27\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "27 LowBatt  %f", &fc.emptyvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 28\r", fcstring, sizeof(fcstring)) > 0) {
+				sscanf(fcstring, "28 Hi Batt  %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 13.70;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in ups_ident()", temp);
+	}
+
+	fc.valid = 1;
 
 	dstate_setinfo("ups.mfr", "%s", "Best Power");
-	switch(fc.model) {
-          case ME3100:
-	    dstate_setinfo("ups.model", "Micro Ferrups (ME) %d", fc.va);
-	    break;
-          case MD1KVA:
-	    dstate_setinfo("ups.model", "Micro Ferrups (MD) %d", fc.va);
-	    break;
-          case RE1800:
-            dstate_setinfo("ups.model", "Micro Ferrups (RE) %d", fc.va);
-            break;
-          default:
-	    fatalx(EXIT_FAILURE, "UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
-        } 
-	fprintf(stderr, "Best Power %s detected\n", 
+	switch(fc.model)
+	{
+		case ME3100:
+			dstate_setinfo("ups.model", "Micro Ferrups (ME) %d", fc.va);
+			break;
+		case MD1KVA:
+			dstate_setinfo("ups.model", "Micro Ferrups (MD) %d", fc.va);
+			break;
+		case RE1800:
+			dstate_setinfo("ups.model", "Micro Ferrups (RE) %d", fc.va);
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
+	}
+	fprintf(stderr, "Best Power %s detected\n",
 		dstate_getinfo("ups.model"));
-	fprintf(stderr, "Battery voltages %5.1f nominal, %5.1f full, %5.1f empty\n", 
-	 fc.idealbvolts,
-	 fc.fullvolts,
-	 fc.emptyvolts);
+	fprintf(stderr, "Battery voltages %5.1f nominal, %5.1f full, %5.1f empty\n",
+		fc.idealbvolts,
+		fc.fullvolts,
+		fc.emptyvolts);
+
+	/* commands ----------------------------------------------- */
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 
@@ -114,236 +212,285 @@ time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 ----------------------------------------------------
 */
 
-static int execute(const char *cmd, char *result, int resultsize) 
+static ssize_t execute(const char *cmd, char *result, size_t resultsize)
 {
-  int ret;
-  char buf[256];
-  
-  ser_send(upsfd, "%s", cmd);
-  ser_get_line(upsfd, buf, sizeof(buf), '\012', "", 3, 0);
-  ret = ser_get_line(upsfd, result, resultsize, '\015', "\012", 3, 0);
-  ser_get_line(upsfd, buf, sizeof(buf), '>', "", 3, 0);
-  return ret;
+	ssize_t ret;
+	char buf[256];
+
+	ser_send(upsfd, "%s", cmd);
+	ser_get_line(upsfd, buf, sizeof(buf), '\012', "", 3, 0);
+	ret = ser_get_line(upsfd, result, resultsize, '\015', "\012", 3, 0);
+	ser_get_line(upsfd, buf, sizeof(buf), '>', "", 3, 0);
+	return ret;
 
 }
 
 
 void upsdrv_updateinfo(void)
 {
-  char fstring[512];
+	char fstring[512];
 
-  if (! fc.valid) {
-    fprintf(stderr, 
-	    "upsupdate run before ups_ident() read ups config\n");
-    assert(0);
-  }
+	if (! fc.valid) {
+		fprintf(stderr,
+			"upsupdate run before ups_ident() read ups config\n");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		/* NOTE: This assert() always fails because of "0":
+		 * error: will never be executed [-Werror,-Wunreachable-code]
+		 *   ((0) ? (void) (0) : __assert_fail ("0", "bestuferrups.c", 138, __PRETTY_FUNCTION__));
+		 *                  ^
+		 */
+		assert(0);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+	}
 
-  if (execute("f\r", fstring, sizeof(fstring)) > 0) {
-    int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0, 
-      alstat=0, vaout=0;
-    double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
-      hstemp=0.0, acfreq=0.0, ambtemp=0.0;
-    char tmp[16];
+	if (execute("f\r", fstring, sizeof(fstring)) > 0) {
+		int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0,
+			alstat=0, vaout=0;
+		double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
+			hstemp=0.0, acfreq=0.0, ambtemp=0.0;
+		char tmp[16];
 
-    /* Inverter status.  0=off 1=on */
-    memcpy(tmp, fstring+16, 2);
-    tmp[2] = '\0';
-    inverter = atoi(tmp);
+		/* Inverter status: 0=off 1=on */
+		memcpy(tmp, fstring+16, 2);
+		tmp[2] = '\0';
+		inverter = atoi(tmp);
 
-    /* Charger status.  0=off 1=on */
-    memcpy(tmp, fstring+18, 2);
-    tmp[2] = '\0';
-    charger = atoi(tmp);
-    
-    /* Input Voltage. integer number */
-    memcpy(tmp, fstring+24, 4);
-    tmp[4] = '\0';
-    vin = atoi(tmp);
+		/* Charger status: 0=off 1=on */
+		memcpy(tmp, fstring+18, 2);
+		tmp[2] = '\0';
+		charger = atoi(tmp);
 
-    /* Output Voltage. integer number */
-    memcpy(tmp, fstring+28, 4);
-    tmp[4] = '\0';
-    vout = atoi(tmp);
+		/* Input Voltage. integer number */
+		memcpy(tmp, fstring+24, 4);
+		tmp[4] = '\0';
+		vin = atoi(tmp);
 
-    /* Iout.  int times 10 */
-    memcpy(tmp, fstring+36, 4);
-    tmp[4] = '\0';
-    ampsout = ((double)(atoi(tmp)) / 10.0);
+		/* Output Voltage. integer number */
+		memcpy(tmp, fstring+28, 4);
+		tmp[4] = '\0';
+		vout = atoi(tmp);
 
-    /* Battery voltage.  int times 10 */
-    memcpy(tmp, fstring+50, 4);
-    tmp[4] = '\0';
-    vbatt = ((double)(atoi(tmp)) / 10.0);
+		/* Iout: int times 10 */
+		memcpy(tmp, fstring+36, 4);
+		tmp[4] = '\0';
+		ampsout = ((double)(atoi(tmp)) / 10.0);
 
-    /* Volt-amps out.  int  */
-    memcpy(tmp, fstring+40, 6);
-    tmp[6] = '\0';
-    vaout = atoi(tmp);
+		/* Battery voltage: int times 10 */
+		memcpy(tmp, fstring+50, 4);
+		tmp[4] = '\0';
+		vbatt = ((double)(atoi(tmp)) / 10.0);
 
-    /* Line status.  Bitmask */
-    memcpy(tmp, fstring+72, 2);
-    tmp[2] = '\0';
-    linestat = atoi(tmp);
+		/* Volt-amps out: int */
+		memcpy(tmp, fstring+40, 6);
+		tmp[6] = '\0';
+		vaout = atoi(tmp);
 
-    /* Alarm status reg 1.  Bitmask */
-    memcpy(tmp, fstring+20, 2);
-    tmp[2] = '\0';
-    alstat = atoi(tmp);
+		/* Line status.  Bitmask */
+		memcpy(tmp, fstring+72, 2);
+		tmp[2] = '\0';
+		linestat = atoi(tmp);
 
-    /* Alarm status reg 2.  Bitmask */
-    memcpy(tmp, fstring+22, 2);
-    tmp[2] = '\0';
-    alstat = alstat | (atoi(tmp) << 8);
+		/* Alarm status reg 1.  Bitmask */
+		memcpy(tmp, fstring+20, 2);
+		tmp[2] = '\0';
+		alstat = atoi(tmp);
 
-    /* AC line frequency */
-    memcpy(tmp, fstring+54, 4);
-    tmp[4]= '\0';
-    acfreq = ((double)(atoi(tmp)) / 100.0);
+		/* Alarm status reg 2.  Bitmask */
+		memcpy(tmp, fstring+22, 2);
+		tmp[2] = '\0';
+		alstat = alstat | (atoi(tmp) << 8);
 
-    /* Runtime remaining */
-    memcpy(tmp, fstring+58, 4);
-    tmp[4]= '\0';
-    btimeleft = atoi(tmp);
+		/* AC line frequency */
+		memcpy(tmp, fstring+54, 4);
+		tmp[4]= '\0';
+		acfreq = ((double)(atoi(tmp)) / 100.0);
 
-    /* UPS Temperature */
-    memcpy(tmp, fstring+62, 4);
-    tmp[4]= '\0';
-    ambtemp = (double)(atoi(tmp));
+		/* Runtime remaining */
+		memcpy(tmp, fstring+58, 4);
+		tmp[4]= '\0';
+		btimeleft = atoi(tmp);
 
-    /* Percent Load */
-    switch(fc.model) {
-      case ME3100:
-        if (execute("d 16\r", fstring, sizeof(fstring)) > 0) {
-          int l;
-          sscanf(fstring, "16 FullLoad%% %d", &l);
-          loadpercent = (double) l;
-        }
-	break;
-      case RE1800:
-        if (execute("d 16\r", fstring, sizeof(fstring)) > 0) {
-          int l;
-          sscanf(fstring, "16 FullLoad%% %d", &l);
-          loadpercent = (double) l;
-        }
-        if (execute("d 12\r", fstring, sizeof(fstring)) > 0) {
-          int l;
-          sscanf(fstring, "12 HS Temp  %dC", &l);
-          hstemp = (double) l;
-        }
-        break;
-      case MD1KVA:
-        if (execute("d 22\r", fstring, sizeof(fstring)) > 0) {
-          int l;
-          sscanf(fstring, "22 FullLoad%% %d", &l);
-          loadpercent = (double) l;
-        }
-	break;
-      default: /* Will never happen, caught in upsdrv_initups() */
-        fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
-    }
-    /* Compute battery percent left based on battery voltages. */
-    battpercent = ((vbatt - fc.emptyvolts) 
-		   / (fc.fullvolts - fc.emptyvolts) * 100.0);
-    if (battpercent < 0.0) 
-      battpercent = 0.0;
-    else if (battpercent > 100.0)
-      battpercent = 100.0;
-    
-    /* Compute status string */
-    {
-	int lowbatt, overload, replacebatt, boosting, trimming;
+		/* UPS Temperature */
+		memcpy(tmp, fstring+62, 4);
+		tmp[4]= '\0';
+		ambtemp = (double)(atoi(tmp));
 
-	lowbatt = alstat & (1<<1);
-	overload = alstat & (1<<6);
-	replacebatt = alstat & (1<<10);
-	boosting = inverter && (linestat & (1<<2)) && (vin < 115);
-	trimming = inverter && (linestat & (1<<2)) && (vin > 115);
+		/* Percent Load */
+		switch(fc.model)
+		{
+			case ME3100:
+				if (execute("d 16\r", fstring, sizeof(fstring)) > 0) {
+					int l;
+					sscanf(fstring, "16 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			case RE1800:
+				if (execute("d 16\r", fstring, sizeof(fstring)) > 0) {
+					int l;
+					sscanf(fstring, "16 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				if (execute("d 12\r", fstring, sizeof(fstring)) > 0) {
+					int l;
+					sscanf(fstring, "12 HS Temp  %dC", &l);
+					hstemp = (double) l;
+				}
+				break;
+			case MD1KVA:
+				if (execute("d 22\r", fstring, sizeof(fstring)) > 0) {
+					int l;
+					sscanf(fstring, "22 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			default: /* Will never happen, caught in upsdrv_initups() */
+				fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
+		}
+		/* Compute battery percent left based on battery voltages. */
+		battpercent = ((vbatt - fc.emptyvolts)
+		              / (fc.fullvolts - fc.emptyvolts) * 100.0);
+		if (battpercent < 0.0)
+			battpercent = 0.0;
+		else if (battpercent > 100.0)
+			battpercent = 100.0;
 
-	status_init();
-      
-	if (inverter) 
-		status_set("OB");
-	else
-		status_set("OL");
+		/* Compute status string */
+		{
+			int lowbatt, overload, replacebatt, boosting, trimming;
 
-	if (lowbatt)
-		status_set("LB");
+			lowbatt = alstat & (1<<1);
+			overload = alstat & (1<<6);
+			replacebatt = alstat & (1<<10);
+			boosting = inverter && (linestat & (1<<2)) && (vin < 115);
+			trimming = inverter && (linestat & (1<<2)) && (vin > 115);
 
-	if (trimming)
-		status_set("TRIM");
+			status_init();
 
-	if (boosting)
-		status_set("BOOST");
+			if (inverter)
+				status_set("OB");
+			else
+				status_set("OL");
 
-	if (replacebatt)
-		status_set("RB");
+			if (lowbatt)
+				status_set("LB");
 
-	if (overload)
-		status_set("OVER");
+			if (trimming)
+				status_set("TRIM");
 
-	status_commit();
-    }
+			if (boosting)
+				status_set("BOOST");
 
-    if (debugging) {
-      fprintf(stderr,
-	      "Poll: inverter %d charger %d vin %d vout %d vaout %d btimeleft %d\n",
-	      inverter, charger, vin, vout, vaout, btimeleft);
-      fprintf(stderr,
-	      "      ampsout %5.1f vbatt %5.1f batpcnt %5.1f loadpcnt %5.1f upstemp %5.1f acfreq %5.2f ambtemp %5.1f\n",
-	      ampsout, vbatt, battpercent, loadpercent, hstemp, acfreq, ambtemp);
+			if (replacebatt)
+				status_set("RB");
 
-    }
+			if (overload)
+				status_set("OVER");
 
-    /* Stuff information into info structures */
+			status_commit();
+		}
 
-    dstate_setinfo("input.voltage", "%05.1f", (double)vin);
-    dstate_setinfo("output.voltage", "%05.1f", (double)vout);
-    dstate_setinfo("battery.charge", "%02.1f", battpercent);
-    dstate_setinfo("ups.load", "%02.1f", loadpercent);
-    dstate_setinfo("battery.voltage", "%02.1f", vbatt);
-    dstate_setinfo("input.frequency", "%05.2f", (double)acfreq);
-    dstate_setinfo("ups.temperature", "%05.1f", (double)hstemp);
-    dstate_setinfo("battery.runtime", "%d", btimeleft);
-    dstate_setinfo("ambient.temperature", "%05.1f", (double)ambtemp);
+		/* FIXME: change to upsdebugx() and friends */
+		if (debugging) {
+			fprintf(stderr,
+				"Poll: inverter %d charger %d vin %d vout %d vaout %d btimeleft %d\n",
+				inverter, charger, vin, vout, vaout, btimeleft);
+			fprintf(stderr,
+				"      ampsout %5.1f vbatt %5.1f batpcnt %5.1f loadpcnt %5.1f upstemp %5.1f acfreq %5.2f ambtemp %5.1f\n",
+				ampsout, vbatt, battpercent, loadpercent, hstemp, acfreq, ambtemp);
 
-    dstate_dataok();
-    /* Tim: With out this return, it always falls over to the
-        datastate() at the end of the function */
-    return;
-  } else {
+		}
 
-    dstate_datastale();  
+		/* Stuff information into info structures */
 
-  } /* if (execute("f\r", fstring, sizeof(fstring)) > 0) */
+		dstate_setinfo("input.voltage", "%05.1f", (double)vin);
+		dstate_setinfo("output.voltage", "%05.1f", (double)vout);
+		dstate_setinfo("battery.charge", "%02.1f", battpercent);
+		dstate_setinfo("ups.load", "%02.1f", loadpercent);
+		dstate_setinfo("battery.voltage", "%02.1f", vbatt);
+		dstate_setinfo("input.frequency", "%05.2f", (double)acfreq);
+		dstate_setinfo("ups.temperature", "%05.1f", (double)hstemp);
+		dstate_setinfo("battery.runtime", "%d", btimeleft);
+		dstate_setinfo("ambient.temperature", "%05.1f", (double)ambtemp);
 
-  dstate_datastale();
-  return;
+		dstate_dataok();
+		/* Tim: Without this return, it always falls over to the
+		 *  datastate() at the end of the function */
+		return;
+	} else {
+
+		dstate_datastale();
+
+	} /* if (execute("f\r", fstring, sizeof(fstring)) > 0) */
+
+	dstate_datastale();
+	return;
 }
 
 
 static void ups_sync(void)
 {
-  char	buf[256];
+	char	buf[256];
 
-  printf ("Syncing: ");
-  fflush (stdout);
+	printf ("Syncing: ");
+	fflush (stdout);
 
-  /* A bit better sanity might be good here.  As is, we expect the
-     human to observe the time being totally not a time. */
+	/* A bit better sanity might be good here.  As is, we expect the
+	 * human to observe the time being totally not a time. */
 
-  if (execute("time\r", buf, sizeof(buf)) > 0) {
-    fprintf(stderr, "UPS Time: %s\n", buf);
-  } else {
-    fatalx(EXIT_FAILURE, "Error connecting to UPS");
-  }
+	if (execute("time\r", buf, sizeof(buf)) > 0) {
+		fprintf(stderr, "UPS Time: %s\n", buf);
+	} else {
+		fatalx(EXIT_FAILURE, "Error connecting to UPS");
+	}
+}
+
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
+		/* NB: hard-wired password */
+		ser_send(upsfd, "pw377\r");
+		/* power off in 1 second and restart when line power returns */
+		ser_send(upsfd, "off 1 a\r");
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-/* NB: hard-wired password */
-  ser_send(upsfd, "pw377\r");
-  ser_send(upsfd, "off 1 a\r");	/* power off in 1 second and restart when line power returns */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* list flags and values that you want to receive via -x */
@@ -352,6 +499,11 @@ void upsdrv_makevartable(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -369,12 +521,12 @@ static void sync_serial(void) {
 
 /* Begin code stolen from bestups.c */
 static void setup_serial(void)
-{  
-	struct   termios  tio;
-			     
+{
+	struct termios tio;
+
 	if (tcgetattr(upsfd, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
-				     
+
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
 	tio.c_cflag = (CS8 | CREAD | HUPCL | CLOCAL);
@@ -392,106 +544,17 @@ static void setup_serial(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 /* end code stolen from bestups.c */
-
-	sync_serial();
 }
 
 
-void upsdrv_initups ()
+void upsdrv_initups (void)
 {
-  char	temp[256], fcstring[512];
-
-  upsfd = ser_open(device_path);
-  ser_set_speed(upsfd, device_path, B1200);
-  setup_serial();
-  ups_sync();
-
-  fc.model = UNKNOWN;
-  /* Obtain Model */
-  if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
-    fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
-  }
-  
-  /* response is a one-line packed string starting with $ */
-  if (memcmp(fcstring, "Unit", 4)) {
-    fatalx(EXIT_FAILURE, 
-	"Bad response from formatconfig command in ups_ident()\n"
-	"id: %s\n", fcstring
-    );
-  }
-
-  if (debugging)
-    fprintf(stderr, "id: %s\n", fcstring);
-  
-  /* chars 4:2  are a two-digit ascii hex enumerated model code */
-  memcpy(temp, fcstring+9, 2);
-  temp[2] = '\0';
-
-  if (memcmp(temp, "ME", 2) == 0)  {
-    fc.model = ME3100;
-  } else if ((memcmp(temp, "RE", 2) == 0)) {
-    fc.model = RE1800;
-  } else if (memcmp(temp, "C1", 2) == 0)  {
-    /* Better way to identify unit is using "d 15\r", which results in
-       "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
-    fc.model = MD1KVA;
-  }
- 
-  switch(fc.model) {
-    case ME3100:
-      fc.va = 3100;
-      fc.watts = 2200;
-      /* determine shutdown battery voltage */
-      if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
-      }
-      /* determine fully charged battery voltage */
-      if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
-      }
-      fc.fullvolts = 54.20;
-      /* determine "ideal" voltage by a guess */
-      fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-      break;
-    case RE1800:
-      fc.va = 1800;
-      fc.watts = 1200;
-      /* determine shutdown battery voltage */
-      if (execute("d 29\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "29 LowBat   %f", &fc.emptyvolts);
-      }
-      /* determine fully charged battery voltage */
-      if (execute("d 31\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "31 HiBatt   %f", &fc.fullvolts);
-      }
-      fc.fullvolts = 54.20;
-      /* determine "ideal" voltage by a guess */
-      fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-      break;
-    case MD1KVA:
-      fc.va = 1100;
-      fc.watts = 770; /* Approximate, based on 0.7 power factor */
-      /* determine shutdown battery voltage */
-      if (execute("d 27\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "27 LowBatt  %f", &fc.emptyvolts);
-      }
-      /* determine fully charged battery voltage */
-      if (execute("d 28\r", fcstring, sizeof(fcstring)) > 0) {
-        sscanf(fcstring, "28 Hi Batt  %f", &fc.fullvolts);
-      }
-      fc.fullvolts = 13.70;
-      /* determine "ideal" voltage by a guess */
-      fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-      break;
-    default:
-      fatalx(EXIT_FAILURE, "Uknown model %s in ups_ident()", temp);
-  }
-
-  fc.valid = 1;
-  return;
+	upsfd = ser_open(device_path);
+	ser_set_speed(upsfd, device_path, B1200);
+	setup_serial();
 }
 
 void upsdrv_cleanup(void)
 {
-  ser_close(upsfd, device_path);
+	ser_close(upsfd, device_path);
 }

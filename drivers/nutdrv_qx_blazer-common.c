@@ -1,4 +1,4 @@
-/* nutdrv_qx_blazer-common.c - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,q1,voltronic-qs,zinto}.{c,h}
+/* nutdrv_qx_blazer-common.c - Common functions/settings for nutdrv_qx_{innovart31,innovart33,innovatae,mecer,megatec,megatec-old,mustek,q1,q2,q6,voltronic-qs,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -191,6 +191,8 @@ void	blazer_initups_light(item_t *qx2nut)
 /* Preprocess setvars */
 int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
+	/* upsdebug_SET_STARTING(item->info_type, value); */
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
@@ -198,16 +200,27 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 
 	if (!strcasecmp(item->info_type, "ups.delay.start")) {
 
-		int	ondelay = strtol(value, NULL, 10);
+		long	ondelay = strtol(value, NULL, 10);
+
+		if (ondelay < 0) {
+			upslogx(LOG_ERR, "%s: ondelay '%ld' should not be negative",
+				item->info_type, ondelay);
+			return -1;
+		}
 
 		/* Truncate to minute */
 		ondelay -= (ondelay % 60);
-
-		snprintf(value, valuelen, "%d", ondelay);
+		snprintf(value, valuelen, "%ld", ondelay);
 
 	} else if (!strcasecmp(item->info_type, "ups.delay.shutdown")) {
 
-		int	offdelay = strtol(value, NULL, 10);
+		long	offdelay = strtol(value, NULL, 10);
+
+		if (offdelay < 0) {
+			upslogx(LOG_ERR, "%s: offdelay '%ld' should not be negative",
+				item->info_type, offdelay);
+			return -1;
+		}
 
 		/* Truncate to nearest settable value */
 		if (offdelay < 60) {
@@ -216,11 +229,12 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 			offdelay -= (offdelay % 60);
 		}
 
-		snprintf(value, valuelen, "%d", offdelay);
+		snprintf(value, valuelen, "%ld", offdelay);
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_SET_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}
@@ -231,6 +245,8 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 /* Preprocess instant commands */
 int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
+	/* upsdebug_INSTCMD_STARTING(item->info_type, value); */
+
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -242,29 +258,47 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		 * The fix is to push the return value up by 2, i.e. S01R0003, and it will return online properly.
 		 * (thus the default of ondelay=3 mins) */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
-			ondelay = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
+			ondelay  = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
 		char	buf[SMALLBUF] = "";
 
-		if (ondelay == 0) {
+		if (ondelay <= 0) {
+
+			if (offdelay < 0) {
+				upslogx(LOG_ERR, "%s: offdelay '%ld' should not be negative",
+					item->info_type, offdelay);
+				return -1;
+			}
 
 			if (offdelay < 60) {
-				snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
+				snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
 			} else {
-				snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+				snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 			}
 
 		} else if (offdelay < 60) {
 
-			snprintf(buf, sizeof(buf), ".%dR%04d", offdelay / 6, ondelay);
+			if (offdelay < 0) {
+				upslogx(LOG_ERR, "%s: offdelay '%ld' should not be negative",
+					item->info_type, offdelay);
+				return -1;
+			}
+
+			snprintf(buf, sizeof(buf), ".%ldR%04ld", offdelay / 6, ondelay);
 
 		} else {
 
-			snprintf(buf, sizeof(buf), "%02dR%04d", offdelay / 60, ondelay);
+			if (offdelay < 0) {
+				upslogx(LOG_ERR, "%s: offdelay '%ld' should not be negative",
+					item->info_type, offdelay);
+				return -1;
+			}
+
+			snprintf(buf, sizeof(buf), "%02ldR%04ld", offdelay / 60, ondelay);
 
 		}
 
-		snprintf(value, valuelen, item->command, buf);
+		snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	} else if (!strcasecmp(item->info_type, "shutdown.stayoff")) {
 
@@ -272,33 +306,58 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		 * Shutdown after n minutes and stay off
 		 * Accepted values for n: .2 -> .9 , 01 -> 10 */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
 		char	buf[SMALLBUF] = "";
 
-		if (offdelay < 60) {
-			snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
-		} else {
-			snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+		if (offdelay < 0) {
+			upslogx(LOG_ERR, "%s: offdelay '%ld' should not be negative",
+				item->info_type, offdelay);
+			return -1;
 		}
 
-		snprintf(value, valuelen, item->command, buf);
+		if (offdelay < 60) {
+			snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
+		} else {
+			snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
+		}
+
+		snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	} else if (!strcasecmp(item->info_type, "test.battery.start")) {
 
-		int	delay = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
+		long	delay = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
 
 		if ((delay < 60) || (delay > 5940)) {
-			upslogx(LOG_ERR, "%s: battery test time '%d' out of range [60..5940] seconds", item->info_type, delay);
+			upslogx(LOG_ERR, "%s: battery test time '%ld' out of range [60..5940] seconds", item->info_type, delay);
 			return -1;
 		}
 
 		delay = delay / 60;
 
-		snprintf(value, valuelen, item->command, delay);
+		/* In various mapping tables, "%02d" is prevalent; actual
+		 * value is range-checked above to fit into a typical int
+		 */
+		if (validate_formatting_string(item->command, "%d", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
+			/* The most likely case, should not cause much overhead */
+			snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
+		} else {
+			if (validate_formatting_string(item->command, "", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
+				/* A few mappings seem to just request the test
+				 * without parameters, so the second check is
+				 * for that eventuality
+				 */
+				snprintf(value, valuelen, "%s", item->command);
+			} else {
+				/* Finally try the actual long int (complaining
+				 * with default verbosity==1 if a bad fit) */
+				snprintf_dynamic(value, valuelen, item->command, "%ld", delay);
+			}
+		}
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_INSTCMD_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}

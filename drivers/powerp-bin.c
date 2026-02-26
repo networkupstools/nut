@@ -1,6 +1,6 @@
 /*
  * powerp-bin.c - Model specific routines for CyberPower binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -31,8 +31,12 @@
 #include "serial.h"
 
 #include "powerp-bin.h"
+#include "nut_stdint.h"
+#include "nut_float.h"
 
 #include <math.h>
+
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.65"
 
 typedef struct {
 	unsigned char	start;
@@ -64,34 +68,34 @@ static unsigned char	powpan_answer[SMALLBUF];
 static const valtab_t	tran_high_pr[] = {
 	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
 	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147",  0 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	tran_high_op[] = {
 	{ "140", -5 }, { "141", -4 }, { "142", -3 }, { "143", -2 }, { "144", -1 },
 	{ "145",  0 }, { "146", +1 }, { "147", +2 }, { "148", +3 }, { "149", +4 },
-	{ "150", +5 }, { NULL }
+	{ "150", +5 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	tran_low_pr[] = {
 	{ "88",  0 }, { "89", +1 }, { "90", +2 }, { "91", +3 }, { "92", +4 },
 	{ "93", +5 }, { "94", +6 }, { "95", +7 }, { "96", +8 }, { "97", +9 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	tran_low_op[] = {
 	{ "85", -5 }, { "86", -4 }, { "87", -3 }, { "88", -2 }, { "89", -1 },
 	{ "90",  0 }, { "91", +1 }, { "92", +2 }, { "93", +3 }, { "94", +4 },
-	{ "95", +5 }, { NULL }
+	{ "95", +5 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	batt_low_pr[] = {
 	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 }, { "45",  0 },
-	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL }
+	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL, 0 }
 };
 
 /* OP series */
@@ -99,23 +103,23 @@ static const valtab_t	batt_low_op[] = {
 	{ "15", -8 }, { "18", -7 }, { "19", -6 }, { "20", -5 }, { "22", -4 },
 	{ "24", -3 }, { "25", -2 }, { "26", -1 }, { "28",  0 }, { "30", +1 },
 	{ "32", +2 }, { "34", +3 }, { "35", +4 }, { "36", +5 }, { "38", +6 },
-	{ "40", +7 }, { NULL }
+	{ "40", +7 }, { NULL, 0 }
 };
 
 /* PR series */
 static const valtab_t	out_volt_pr[] = {
-	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL }
+	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL, 0 }
 };
 
 /* OP series */
 static const valtab_t	out_volt_op[] = {
 	{ "110", -2 }, { "115", -1 }, { "120",  0 }, { "124", +1 }, { "128", +2 },
-	{ "130", +3 }, { NULL }
+	{ "130", +3 }, { NULL, 0 }
 };
 
 static const valtab_t 	yes_no_info[] = {
 	{ "yes", 2 }, { "no", 0 },
-	{ NULL }
+	{ NULL, 0 }
 };
 
 /* Older models report the model in a numeric format 'rOnn' */
@@ -133,7 +137,7 @@ static const struct {
 	{ "rO41", "OP700AVR" },
 	{ "rO43", "OP1250AVR" },
 	{ "rO45", "OP1500AVR" },
-	{ NULL }
+	{ NULL, NULL }
 };
 
 static const struct {
@@ -147,13 +151,13 @@ static const struct {
 	{ "battery.charge.low", "R\x08\r", "Q\x08%c\r", { batt_low_pr, batt_low_op } },
 	{ "ups.start.battery", "R\x0F\r", "Q\x0F%c\r", { yes_no_info, yes_no_info } },
 	{ "output.voltage.nominal", "R\x18\r", "Q\x18%c\r", { out_volt_pr, out_volt_op } },
-	{ NULL }
+	{ NULL, NULL, NULL, { NULL, 0 } }
 };
 
 static const struct {
 	const char	*cmd;
 	const char	*command;
-	const int	len;
+	const size_t	len;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\230\r", 3 },		/* 20 seconds test */
 	{ "test.battery.stop", "CT\r", 3 },
@@ -163,7 +167,7 @@ static const struct {
 	 * as shutdown.return when on battery */
 	{ "shutdown.stayoff", "S\0\0W\r", 5 },
 	{ "shutdown.stop", "C\r", 2 },
-	{ NULL }
+	{ NULL, NULL, 0 }
 };
 
 /* map UPS data to (approximated) input/output voltage */
@@ -212,9 +216,9 @@ static float op_freq(unsigned char in)
 	return (12600.0 / (in + 32));
 }
 
-static int powpan_command(const char *buf, size_t bufsize)
+static ssize_t powpan_command(const char *buf, size_t bufsize)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -248,7 +252,7 @@ static int powpan_command(const char *buf, size_t bufsize)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", powpan_answer, ret);
+	upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 	return ret;
 }
 
@@ -256,23 +260,32 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 {
 	int	i;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
+		ssize_t	ret;
 
 		if (strcasecmp(cmdname, cmdtab[i].cmd)) {
 			continue;
 		}
 
-		if ((powpan_command(cmdtab[i].command, cmdtab[i].len) ==
-				cmdtab[i].len - 1) &&
-				(!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))) {
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
+		ret = powpan_command(cmdtab[i].command, cmdtab[i].len);
+		assert(cmdtab[i].len < SSIZE_MAX);
+		if (ret >= 0
+		 && (ret == (ssize_t)(cmdtab[i].len - 1))
+		 && (!memcmp(powpan_answer, cmdtab[i].command, cmdtab[i].len - 1))
+		) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslog_INSTCMD_FAILED(cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] not found", __func__, cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -280,6 +293,8 @@ static int powpan_setvar(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
 	int 	i, j;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	for (i = 0;  vartab[i].var != NULL; i++) {
 
@@ -298,23 +313,23 @@ static int powpan_setvar(const char *varname, const char *val)
 				continue;
 			}
 
-			snprintf(command, sizeof(command), vartab[i].set,
-				vartab[i].map[type][j].command);
+			snprintf_dynamic(command, sizeof(command), vartab[i].set,
+				"%c", vartab[i].map[type][j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, "%s", val);
 				return STAT_SET_HANDLED;
 			}
 
-			upslogx(LOG_ERR, "powpan_setvar: setting variable [%s] to [%s] failed", varname, val);
-			return STAT_SET_UNKNOWN;
+			upslog_SET_FAILED(varname, val);
+			return STAT_SET_UNKNOWN;	/* FIXME: ..._FAILED ? */
 		}
 
-		upslogx(LOG_ERR, "powpan_setvar: [%s] is not valid for variable [%s]", val, varname);
-		return STAT_SET_UNKNOWN;
+		upslog_SET_INVALID(varname, val);
+		return STAT_SET_UNKNOWN;	/* FIXME: ..._INVALID? */
 	}
 
-	upslogx(LOG_ERR, "powpan_setvar: variable [%s] not found", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -359,7 +374,7 @@ static void powpan_initinfo(void)
 	}
 
 	for (i = 0; vartab[i].var != NULL; i++) {
-		
+
 		if (powpan_command(vartab[i].get, 3) < 2) {
 			continue;
 		}
@@ -373,7 +388,7 @@ static void powpan_initinfo(void)
 			dstate_setinfo(vartab[i].var, "%s", vartab[i].map[type][j].val);
 			break;
 		}
-	
+
 		if (dstate_getinfo(vartab[i].var) == NULL) {
 			upslogx(LOG_WARNING, "warning: [%d] unknown value for [%s]!",
 				powpan_answer[1], vartab[i].var);
@@ -397,21 +412,25 @@ static void powpan_initinfo(void)
 		powpan_command("R\x2B\r", 3);
 		powpan_command("R\x3D\r", 3);
 	}
-		
+
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
+
+	/* install handlers */
+	upsh.instcmd = powpan_instcmd;
+	upsh.setvar = powpan_setvar;
 }
 
-static int powpan_status(status_t *status)
+static ssize_t powpan_status(status_t *status)
 {
-	int	ret;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
 	/*
 	 * WRITE D\r
 	 * READ #VVL.CTF.....\r
-        *      01234567890123
+	 *      01234567890123
 	 */
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 
@@ -443,7 +462,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", status, ret);
+	upsdebug_hex(3, "read", status, (size_t)ret);
 
 	if ((status->flags[0] + status->flags[1]) != 255) {
 		upsdebugx(4, "  \\_ : checksum flags[0..1] failed");
@@ -481,7 +500,19 @@ static int powpan_updateinfo(void)
 		dstate_setinfo("input.frequency", "%.1f", op_freq(status.i_freq));
 		break;
 
+	case PR:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+	/* All enum cases defined as of the time of coding
+	 * have been covered above. Handle later definitions,
+	 * memory corruptions and buggy inputs below...
+	 */
 	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 		dstate_setinfo("input.voltage", "%d", status.i_volt);
 		if (status.flags[0] & 0x84) {
 			dstate_setinfo("output.voltage", "%s", dstate_getinfo("output.voltage.nominal"));
@@ -514,7 +545,7 @@ static int powpan_updateinfo(void)
 	}
 
 	/* !OB && !TEST */
-	if (!(status.flags[0] & 0x84)) {
+	if (!(status.flags[0] & 0x84) && status.o_volt) {
 
 		if (status.o_volt < 0.5 * status.i_volt) {
 			upsdebugx(2, "%s: output voltage too low", __func__);
@@ -523,7 +554,7 @@ static int powpan_updateinfo(void)
 		} else if (status.o_volt < 1.05 * status.i_volt) {
 			upsdebugx(2, "%s: appears to be in BYPASS state", __func__);
 		} else if (status.o_volt < 1.5 * status.i_volt) {
-			status_set("BOOST"); 
+			status_set("BOOST");
 		} else {
 			upsdebugx(2, "%s: output voltage too high", __func__);
 		}
@@ -542,9 +573,10 @@ static int powpan_updateinfo(void)
 	return (status.flags[0] & 0x80) ? 1 : 0;
 }
 
-static int powpan_initups(void)
+static ssize_t powpan_initups(void)
 {
-	int	ret, i;
+	ssize_t	ret;
+	int	i;
 
 	upsdebugx(1, "Trying %s protocol...", powpan_binary.version);
 
@@ -593,10 +625,10 @@ static int powpan_initups(void)
 			continue;
 		}
 
-		upsdebug_hex(3, "read", powpan_answer, ret);
+		upsdebug_hex(3, "read", powpan_answer, (size_t)ret);
 
 		if (ret < 20) {
-			upsdebugx(2, "Expected 20 bytes but only got %d", ret);
+			upsdebugx(2, "Expected 20 bytes but only got %" PRIiSIZE, ret);
 			continue;
 		}
 
@@ -631,6 +663,7 @@ static int powpan_initups(void)
 
 subdriver_t powpan_binary = {
 	"binary",
+	POWERPANEL_BIN_VERSION,
 	powpan_instcmd,
 	powpan_setvar,
 	powpan_initups,
