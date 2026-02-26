@@ -461,7 +461,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();
 		if (code==SSL_ERROR_NO_CERTIFICATE) {
-			upslogx(LOG_WARNING, "Client %s do not provide certificate.",
+			upslogx(LOG_WARNING, "Client %s did not provide any certificate.",
 				client->addr);
 		} else {
 			nss_error("net_starttls / SSL_ForceHandshake");
@@ -637,16 +637,16 @@ void ssl_init(void)
 #  endif	/* NSS_VMAJOR */
 	}
 
-#  ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-	if (certrequest < NETSSL_CERTREQ_NO
-	 && certrequest > NETSSL_CERTREQ_REQUEST
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	if (certrequest < NETSSL_CERTREQ_NO		/* < 0 */
+	 || certrequest > NETSSL_CERTREQ_REQUIRE	/* > 2 */
 	) {
 		upslogx(LOG_ERR, "Invalid certificate requirement");
 		return;
 	}
 
-	if (certrequest == NETSSL_CERTREQ_REQUEST
-	 || certrequest == NETSSL_CERTREQ_REQUIRE
+	if (certrequest == NETSSL_CERTREQ_REQUEST	/* 1 */
+	 || certrequest == NETSSL_CERTREQ_REQUIRE	/* 2 */
 	) {
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
@@ -656,7 +656,7 @@ void ssl_init(void)
 		}
 	}
 
-	if (certrequest == NETSSL_CERTREQ_REQUIRE) {
+	if (certrequest == NETSSL_CERTREQ_REQUIRE) {	/* 2 */
 		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate requirement");

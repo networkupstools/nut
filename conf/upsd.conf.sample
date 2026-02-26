@@ -174,9 +174,10 @@
 # validation (disabled by default, see 'docs/security.txt'),
 # you can specify if upsd requests or requires clients' certificates.
 # Possible values are :
-#  - 0 to not request to clients to provide any certificate
-#  - 1 to require to all clients a certificate
-#  - 2 to require to all clients a valid certificate
+#  - '0' or 'NO' to not request that clients provide any certificate
+#  - '1' or 'REQUEST' to require all clients to present some certificate
+#  - '2' or 'REQUIRE' to require all clients to present a valid certificate
+#    (trusted by server database)
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.

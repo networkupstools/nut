@@ -589,15 +589,16 @@ NOTE: This functionality is disabled by default. To activate it, initially
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION"
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive `CERTREQUEST` with the corresponding value in the `upsd.conf`
-file:
+the directive `CERTREQUEST` with the corresponding numeric or string value
+in the `upsd.conf` file:
 
-- NO: no client authentication.
-- REQUEST: a certificate is request to the client but it is not strictly
-validated.
-If the client does not send any certificate, the connection is closed.
-- REQUIRE: a certificate is requested to the client and if it is not valid
-(no validation chain) the connection is closed.
+- ('0') 'NO': no client authentication.
+- ('1') 'REQUEST': a certificate is requested from the client, but it is not
+  strictly validated.
++
+NOTE: If the client does not send *any* certificate, the connection is closed.
+- ('2') 'REQUIRE': a certificate is requested from the client, and if it is
+  not valid (no trusted validation chain) the connection is closed.
 
 Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
