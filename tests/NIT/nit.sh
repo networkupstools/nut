@@ -1068,6 +1068,7 @@ generatecfg_upsd_add_SSL() {
     case "${WITH_SSL_SERVER}" in
         none) return 0;;
         OpenSSL)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
             { cat << EOF
 # OpenSSL CERTFILE: PEM file with data server cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
@@ -1077,6 +1078,7 @@ EOF
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
             ;;
         NSS)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_SERVER}"
@@ -1085,9 +1087,10 @@ EOF
 
               if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue -a x"${WITH_SSL_CLIENT}" = xNSS ]; then
                 cat << EOF
-#  - 0 to not request to clients to provide any certificate
-#  - 1 to require to all clients a certificate
-#  - 2 to require to all clients a valid certificate
+#  - 0 to not request clients to provide any certificate
+#  - 1 to require all clients to present some certificate
+#  - 2 to require all clients to present a valid certificate
+#      (trusted by server database)
 CERTREQUEST 2
 EOF
               fi
@@ -1275,6 +1278,7 @@ generatecfg_upsmon_add_SSL() {
     case "${WITH_SSL_CLIENT}" in
         none) return 0;;
         OpenSSL)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
             { cat << EOF
 # OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
 #  CA subject name hash value (which must include our NUT server).
@@ -1297,6 +1301,7 @@ EOF
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
         NSS)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_CLIENT}"
@@ -1671,6 +1676,7 @@ sandbox_generate_configs() {
 
     log_info "Generating configs for sandbox"
     generatecfg_upsd_nodev
+    generatecfg_upsd_add_SSL
     generatecfg_upsdusers_trivial
     generatecfg_ups_dummy
     SANDBOX_CONFIG_GENERATED=true
@@ -2501,6 +2507,7 @@ sandbox_start_upsmon_master() {
 
     sandbox_generate_configs
     generatecfg_upsmon_master "$@"
+    generatecfg_upsmon_add_SSL
 
     log_info "Starting UPSMON as master for sandbox"
 
