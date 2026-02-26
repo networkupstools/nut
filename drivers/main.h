@@ -218,11 +218,12 @@ typedef struct upsdrv_callback_s {
 	 * generations of NUT drivers try to link with the
 	 * main() logic shipped as a shared library aimed
 	 * at its particular release */
+	char		struct_magic[16];	/* should be UPSDRV_CALLBACK_MAGIC */
+
 	uint64_t	struct_version;	/* how to interpret what we see */
 	uint64_t	ptr_size;	/* be sure about bitness */
 	uint64_t	ptr_count;	/* amount of non-null pointers passed here */
-	char		struct_magic[16];
-	/* char		NUT_VERSION[32];	/ * Just have it built into each binary */
+	/* char		NUT_VERSION[32];	/ * TO THINK: Just have it built into each binary */
 
 	/* Do not change the order of these entries,
 	 * only add at the end of list (if needed).
@@ -273,19 +274,21 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not init callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not init callbacks for shared driver code: unexpected structure size");	\
 	memset((cbptr), 0, sizeof(upsdrv_callback_t));			\
+	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
 	(cbptr)->struct_version = 1;					\
 	(cbptr)->ptr_size = sizeof(void*);				\
 	(cbptr)->ptr_count = 16;						\
 	(cbptr)->sentinel = NULL;					\
 	for (cbptr_counter = 0; cbptr_counter < UPSDRV_CALLBACK_PADDING; cbptr_counter++)	\
 		(cbptr)->padding[cbptr_counter] = NULL;			\
-	snprintf((cbptr)->struct_magic, sizeof((cbptr)->struct_magic), "%s", UPSDRV_CALLBACK_MAGIC);	\
 	} while (0)
 
 #define validate_upsdrv_callbacks(cbptr, cbsz, isnew) do {		\
 	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIuMAX, (uintmax_t)cbsz);	\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
+	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
+		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong magic");	\
 	upsdebugx(5, "validate_upsdrv_callbacks: ver=%" PRIu64 " ptr_count=%" PRIu64, (cbptr)->struct_version, (cbptr)->ptr_count);	\
 	if ((cbptr)->struct_version != 1				\
 	 || (cbptr)->ptr_count != 16					\
@@ -293,8 +296,6 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	upsdebugx(5, "validate_upsdrv_callbacks: ptr_size: passed=%" PRIu64 " expected=%" PRIuSIZE, (cbptr)->ptr_size, sizeof(void*));	\
 	if ((cbptr)->ptr_size != sizeof(void*))				\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong structure bitness");	\
-	if (strcmp((cbptr)->struct_magic, UPSDRV_CALLBACK_MAGIC))	\
-		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong magic");	\
 	upsdebugx(5, "validate_upsdrv_callbacks: NULL-check: sentinel: %s", (cbptr)->sentinel == NULL ? "Y" : "N");	\
 	if ((cbptr)->sentinel != NULL)					\
 		fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: wrong sentinels");	\
