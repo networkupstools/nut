@@ -309,7 +309,9 @@ https://github.com/networkupstools/nut/milestone/12
      or Windows `HANDLE`'s at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
      environment variable (e.g. in tests). [#3302]
-   * Added `configure --with-ssl-client-validation` toggle to expose the
+   * Extended processing of `CERTREQUEST` setting to handle numeric or specific
+     string values, to match both ways of reading ambiguous documentation.
+     Added `configure --with-ssl-client-validation` toggle to expose the
      macro previously meant to be passed via `make` command line. [PR #3330,
      but beware issue #3329]
 

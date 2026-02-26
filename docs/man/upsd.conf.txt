@@ -198,9 +198,10 @@ some certain certificate.
 +
 Possible values are:
 +
-- '0' to not request to clients to provide any certificate
-- '1' to require to all clients a certificate
-- '2' to require to all clients a valid certificate
+- '0' or 'NO' to not request that clients provide any certificate
+- '1' or 'REQUEST' to require all clients to present *some* certificate
+- '2' or 'REQUIRE' to require all clients to present a valid certificate
+  (with auth chain trusted by server database)
 
 *DISABLE_WEAK_SSL 'BOOLEAN'*::
 
