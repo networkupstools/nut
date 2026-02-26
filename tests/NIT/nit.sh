@@ -918,7 +918,7 @@ CERTPATH "${NUT_CONFPATH}/cert/upsd"
 CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
 EOF
 
-              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
+              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue -a x"${WITH_SSL_CLIENT}" = xNSS ]; then
                 cat << EOF
 #  - 0 to not request to clients to provide any certificate
 #  - 1 to require to all clients a certificate
@@ -1119,11 +1119,16 @@ generatecfg_upsmon_add_SSL() {
 # We only support CERTPATH (to recognize servers), FORCESSL and
 # CERTVERIFY in OpenSSL builds.
 CERTPATH "${NUT_CONFPATH}/cert/upsd"
+EOF
+
+              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                cat << EOF
 # With OpenSSL this is the only way to configure these behaviors,
 # no CERTHOST setting here so far:
 FORCESSL 1
 CERTVERIFY 1
 EOF
+              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
@@ -1133,12 +1138,30 @@ EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${NUT_CONFPATH}/cert/upsmon"
 CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+EOF
+
+              case "${WITH_SSL_SERVER}" in
+                none) ;;
+                NSS)
+                    cat << EOF
 CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+EOF
+                ;;
+                *)  # OpenSSL
+                    cat << EOF
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 0 0
+EOF
+                ;;
+              esac
+
+              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                cat << EOF
 # Defaults that NSS CERTHOST may override per-server, but
 # note that this impacts also the general upsmon behavior:
 FORCESSL 1
 CERTVERIFY 1
 EOF
+              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             && mkdir -p "${NUT_CONFPATH}/cert/upsmon" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
