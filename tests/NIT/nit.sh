@@ -337,7 +337,16 @@ if [ x"${TOP_BUILDDIR}" = x ] || [ ! -d "${TOP_BUILDDIR}" ] ; then
     case "${BUILDDIR}" in
         */tests/NIT)
             TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
-        *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
+        *)  if [ -x ./tests/NIT/nit.sh ] ; then
+                TOP_BUILDDIR="`pwd`"
+            else
+                if [ -x ./NIT/nit.sh ] ; then
+                    TOP_BUILDDIR="`cd .. && pwd`"
+                else
+                    log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT or similar"
+                fi
+            fi
+            ;;
     esac
     log_info "Guessing TOP_BUILDDIR='${TOP_BUILDDIR}' from script location and/or BUILDDIR value..."
 else
