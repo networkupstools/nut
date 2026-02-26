@@ -1168,11 +1168,12 @@ static void parse_cmdchars_dual(const unsigned char *data, size_t len)
 		/* detect prefix:subcmds pattern (byte followed by 0x3A colon) */
 		if (j + 1 < len && data[j + 1] == 0x3A) {
 			dual_prefix = data[j];
-			j++;	/* skip the colon */
 			upsdebugx(1, "%s: found dual-byte prefix 0x%02X",
 				__func__, dual_prefix);
 			continue;
 		}
+		if (data[j] == 0x3A)
+			continue;	/* skip literal colon separator */
 		if (dual_prefix)
 			protocol_verify_dual(dual_prefix, data[j]);
 	}
