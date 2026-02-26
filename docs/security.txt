@@ -536,7 +536,7 @@ other certificates.
 Create a self-signed CA certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NSS provides a way to create self-signed certificate which can acting as
+NSS provides a way to create self-signed certificate which can act as
 CA certificate, and to sign other certificates with this CA certificate.
 This method can be used to provide a CA certification chain without using
 an "official" certificate authority.
