@@ -259,15 +259,25 @@ typedef struct upsdrv_callback_s {
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz);
 
-/* simple call to register implementations named as dictated
- * by this header, which (being a macro) can be called easily
- * from both static and shared builds; keep in mind that builds
- * using these macros for binaries that try to fit together may
- * be years apart eventually. Note that consumers may have to
- * use HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS and/or
- * some of HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE*
- * pragmas around these macros, for builds to succeed under
- * stricter compiler settings (see examples in existing code).
+/* Suite of simple calls to register driver callback method implementations
+ * named as dictated by this header, which (being macros) can be called easily
+ * from both static and shared builds (with libnutprivate-X_Y_Z-drivers-common).
+ * Keep in mind that practical builds using these macros for binaries that try
+ * to fit together may be years apart eventually.
+ *
+ * Note that consumers may have to use HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+ * and/or some of HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE* pragmas
+ * around these macros, for builds to succeed under stricter compiler settings
+ * (see examples in existing code).
+ */
+
+/* Initialize an upsdrv_callback_t* cbptr memory block sized cbsz (should
+ * be sizeof(upsdrv_callback_t)) with basic metadata (version, ARCH info).
+ * Claims to serve the 9 non-NULL method pointers currently defined by the
+ * NUT driver coding standard, and some more from common_nut-version.c,
+ * named in the current structure version definition above (which are in fact
+ * NULL just after this call -- so we must use validate_upsdrv_callbacks()
+ * before actually referencing or calling that stuff).
  */
 #define init_upsdrv_callbacks(cbptr, cbsz) do {		\
 	size_t	cbptr_counter = 0;					\
@@ -283,6 +293,8 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 		(cbptr)->padding[cbptr_counter] = NULL;			\
 	} while (0)
 
+/* Make sure metadata seems valid and method pointers are not NULL (if !isnew),
+ * or crash with reasonable diagnostics */
 #define validate_upsdrv_callbacks(cbptr, cbsz, isnew) do {		\
 	upsdebugx(5, "validate_upsdrv_callbacks: cbsz=%" PRIuMAX, (uintmax_t)cbsz);	\
 	if ((cbptr) == NULL) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: null structure pointer");	\
@@ -335,6 +347,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	if (isnew) upsdebugx(5, "validate_upsdrv_callbacks: this is a newly created structure, so some/all NULL references are okay");	\
 	} while (0)
 
+/* Populate library's copy of callbacks and other info with what the driver tells us */
 #define safe_copy_upsdrv_callbacks(cbptrDrv, cbptrLib, cbszDrv) do {			\
 	validate_upsdrv_callbacks(cbptrDrv, cbszDrv, 0);				\
 	init_upsdrv_callbacks(cbptrLib, sizeof(upsdrv_callback_t));			\
@@ -357,6 +370,10 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	(cbptrLib)->suggest_NDE_conflict	= (cbptrDrv)->suggest_NDE_conflict;	\
 	} while (0)
 
+/* Simplify life for driver implementations which have the legacy-named methods
+ * required by NUT coding standards (including test code that partially poses
+ * as a driver).
+ */
 #define default_register_upsdrv_callbacks() do {				\
 	upsdrv_callback_t	callbacksTmp;					\
 	init_upsdrv_callbacks(&callbacksTmp, sizeof(callbacksTmp));		\
