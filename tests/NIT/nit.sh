@@ -485,10 +485,14 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         ;;
 esac
 
+TESTCERT_ROOTCA_NAME="NUT Mock Root CA"
+TESTCERT_ROOTCA_PASS="VeryS@cur@1337"
 TESTCERT_CLIENT_NAME="NIT upsmon"
 TESTCERT_CLIENT_PASS="MyPasSw0rD"
 TESTCERT_SERVER_NAME="NIT data server"
 TESTCERT_SERVER_PASS="TestS@rv!"
+# Continued below regarding setup of crypto material data files
+# (and possibly skipping SSL tests if we fail this setup).
 
 # Platforms vary in abilities to report this...
 I_AM_NAME=""
@@ -813,6 +817,168 @@ export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
+# SSL preparations: Can only do this after we learn NUT_CONFPATH
+TESTCERT_PATH_ROOTCA="${NUT_CONFPATH}/cert/rootca"
+TESTCERT_PATH_SERVER="${NUT_CONFPATH}/cert/upsd"
+# TOTHINK: If other NUT clients get SSL support tested,
+# should they use same or different cryptostore?..
+TESTCERT_PATH_CLIENT="${NUT_CONFPATH}/cert/upsmon"
+
+# Follow docs/security.txt points about setting up the crypto material
+# stores and their contents (mock a self-signed CA here where appropriate)
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*|*NSS*)
+        ( # Sub-shelling here to keep soft failure cases handled once,
+          # and changes of directory constrained without pushd/popd
+          # (not in all shells) or remembering of `pwd` (clumsy-ish)
+            log_info "Setting up crypto material storage for SSL capability tests..."
+
+            if shouldDebug ; then
+                set -x
+            fi
+            set -e
+
+            mkdir -p "${TESTCERT_PATH_ROOTCA}"
+            (   cd "${TESTCERT_PATH_ROOTCA}"
+                log_info "SSL: Preparing test Root CA..."
+                echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *NSS*)
+                        { [ -e /dev/urandom ] && \
+                            dd if=/dev/urandom of=.random bs=16 count=1
+                        } || {
+                            [ -e /dev/random ] && \
+                                dd if=/dev/random of=.random bs=16 count=1
+                        } || date > .random
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Generate a certificate for CA:
+                        # HACK NOTE: The first "yes" is for "Is this a CA certificate [y/N]?" question,
+                        # others default (empty) for possible other questions, e.g.
+                        #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
+                        #   Is this a critical extension [y/N]? :
+                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random
+                        # Extract the CA certificate to be able to use or import it later:
+                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem
+                        # Use this later for signing, move on to server/client requests...
+
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt
+                        ;;
+                esac
+
+                [ -s rootca.pem ] || \
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *OpenSSL*)
+                        # Generate an AES encrypted private key:
+                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096
+                        # Generate a certificate for CA using that key:
+                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        ;;
+                esac
+
+                ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+            )
+
+            mkdir -p "${TESTCERT_PATH_SERVER}"
+            (   cd "${TESTCERT_PATH_SERVER}"
+                log_info "SSL: Preparing test server certificate..."
+                echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
+                case "${WITH_SSL_SERVER}" in
+                    NSS)
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        # Create a server certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer
+
+                        # Import the signed certificate into server database:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",,"
+
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt
+                        ;;
+                    OpenSSL)
+                        # Create a server certificate request:
+                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        cat > server.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+IP.1 = 127.0.0.1
+IP.2 = ::1
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
+                        )
+                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem
+
+                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem
+                        ;;
+                esac
+            )
+
+            mkdir -p "${TESTCERT_PATH_CLIENT}"
+            (   cd "${TESTCERT_PATH_CLIENT}"
+                case "${WITH_SSL_CLIENT}" in
+                    NSS)
+                        log_info "SSL: Preparing test client certificate..."
+                        # Also create 3-file database of client key+cert store
+                        echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+
+                        # Import server cert into client database so we can trust it (CERTHOST directive):
+                        # NOTE: Seems we must do this before requesting or signing the client cert,
+                        # otherwise (if importing server cert after doing everything about the
+                        # client one) we get an error:
+                        #  certutil: could not decode certificate: SEC_ERROR_REUSED_ISSUER_AND_SERIAL:
+                        #    You are attempting to import a cert with the same issuer/serial
+                        #    as an existing cert, but that is not the same cert.
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i "${TESTCERT_PATH_SERVER}/server.crt" -t ",,"
+
+                        # Create a client certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o client.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient
+
+                        # Import the signed certificate into client database:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",,"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt
+                        ;;
+                    OpenSSL)
+                        # NOTE: No special keys for an OpenSSL client so far,
+                        # it only checks/trusts a server (public data in a PEM file)
+                        log_info "SSL: Exporting public data of server certificate for client use..."
+                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem
+
+                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem"
+                        ;;
+                esac
+            )
+        ) || {
+            log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        }
+        ;;
+esac
+
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
 # quickly source needed values into their shell.
@@ -828,7 +994,7 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | ${EGREP} '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | ${EGREP} '^(NUT_|TESTDIR|TESTCERT|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
@@ -905,16 +1071,15 @@ generatecfg_upsd_add_SSL() {
             { cat << EOF
 # OpenSSL CERTFILE: PEM file with data server cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
-CERTFILE "${NUT_CONFPATH}/cert/upsd/upsd.pem"
+CERTFILE "${TESTCERT_PATH_SERVER}/upsd.pem"
 EOF
             } >> "$NUT_CONFPATH/upsd.conf" \
-            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
             ;;
         NSS)
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
-CERTPATH "${NUT_CONFPATH}/cert/upsd"
+CERTPATH "${TESTCERT_PATH_SERVER}"
 CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
 EOF
 
@@ -927,7 +1092,6 @@ CERTREQUEST 2
 EOF
               fi
             } >> "$NUT_CONFPATH/upsd.conf" \
-            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
             ;;
     esac
@@ -1118,7 +1282,7 @@ generatecfg_upsmon_add_SSL() {
 #  by the generatecfg_upsd_add_SSL() method.
 # We only support CERTPATH (to recognize servers), FORCESSL and
 # CERTVERIFY in OpenSSL builds.
-CERTPATH "${NUT_CONFPATH}/cert/upsd"
+CERTPATH "${TESTCERT_PATH_CLIENT}"
 EOF
 
               if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
@@ -1130,13 +1294,12 @@ CERTVERIFY 1
 EOF
               fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
-            && mkdir -p "${NUT_CONFPATH}/cert/upsd" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
         NSS)
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
-CERTPATH "${NUT_CONFPATH}/cert/upsmon"
+CERTPATH "${TESTCERT_PATH_CLIENT}"
 CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
 EOF
 
@@ -1163,7 +1326,6 @@ CERTVERIFY 1
 EOF
               fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
-            && mkdir -p "${NUT_CONFPATH}/cert/upsmon" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
     esac
