@@ -582,8 +582,9 @@ a hard rule. The certificate can be named as useful.
 upsd (optional): client authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NOTE: This functionality is disabled by default. To activate it, recompile
-NUT with `WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
+NOTE: This functionality is disabled by default. To activate it, initially
+`configure --with-ssl-client-validation` or just recompile NUT with macro
+`WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
 
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION"
 
@@ -601,6 +602,9 @@ If the client does not send any certificate, the connection is closed.
 Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
+WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
+#3329] is solved, not all stock NUT clients may even have a way to present
+some certain certificate.
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

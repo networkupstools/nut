@@ -170,9 +170,9 @@
 # CERTREQUEST <certificate request level>
 # CERTREQUEST REQUIRE
 #
-# When compiled with SSL support with NSS backend and client certificate
+# When compiled with SSL support with NSS backend *and* client certificate
 # validation (disabled by default, see 'docs/security.txt'),
-# you can specify if upsd requests or requires client's' certificates.
+# you can specify if upsd requests or requires clients' certificates.
 # Possible values are :
 #  - 0 to not request to clients to provide any certificate
 #  - 1 to require to all clients a certificate
@@ -180,6 +180,9 @@
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
+#
+# WARNING: Until https://github.com/networkupstools/nut/issues/3329 is solved,
+# not all stock NUT clients even have a way to present some certain certificate.
 
 # =======================================================================
 # DISABLE_WEAK_SSL <Boolean>
