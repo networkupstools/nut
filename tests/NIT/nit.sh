@@ -465,6 +465,26 @@ esac
 log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
 log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*)
+        (command -v certutil) || {
+            log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*)
+        (command -v openssl) || {
+            log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
 TESTCERT_CLIENT_NAME="NIT upsmon"
 TESTCERT_CLIENT_PASS="MyPasSw0rD"
 TESTCERT_SERVER_NAME="NIT data server"
