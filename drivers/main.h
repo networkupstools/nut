@@ -275,7 +275,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	memset((cbptr), 0, sizeof(upsdrv_callback_t));			\
 	(cbptr)->struct_version = 1;					\
 	(cbptr)->ptr_size = sizeof(void*);				\
-	(cbptr)->ptr_count = 9;						\
+	(cbptr)->ptr_count = 16;						\
 	(cbptr)->sentinel = NULL;					\
 	for (cbptr_counter = 0; cbptr_counter < UPSDRV_CALLBACK_PADDING; cbptr_counter++)	\
 		(cbptr)->padding[cbptr_counter] = NULL;			\
@@ -288,7 +288,7 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	if ((cbsz) != sizeof(upsdrv_callback_t)) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure size");	\
 	upsdebugx(5, "validate_upsdrv_callbacks: ver=%" PRIu64 " ptr_count=%" PRIu64, (cbptr)->struct_version, (cbptr)->ptr_count);	\
 	if ((cbptr)->struct_version != 1				\
-	 || (cbptr)->ptr_count != 9					\
+	 || (cbptr)->ptr_count != 16					\
 	) fatalx(EXIT_FAILURE, "Could not register callbacks for shared driver code: unexpected structure contents");	\
 	upsdebugx(5, "validate_upsdrv_callbacks: ptr_size: passed=%" PRIu64 " expected=%" PRIuSIZE, (cbptr)->ptr_size, sizeof(void*));	\
 	if ((cbptr)->ptr_size != sizeof(void*))				\
