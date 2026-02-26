@@ -988,6 +988,13 @@ EOF
         ;;
 esac
 
+# This does not seem to cause NUT clients to trust nor distrust
+# (or anyhow verify) a presented server certificate:
+#if [ "${WITH_SSL_CLIENT}" = OpenSSL ] ; then
+#    SSL_CERT_DIR="${TESTCERT_PATH_CLIENT}"
+#    export SSL_CERT_DIR
+#fi
+
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
 # quickly source needed values into their shell.
