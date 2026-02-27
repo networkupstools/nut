@@ -457,6 +457,18 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();
 		if (code==SSL_ERROR_NO_CERTIFICATE) {
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+			if (certrequest == NETSSL_CERTREQ_REQUEST
+			 || certrequest == NETSSL_CERTREQ_REQUIRE
+			) {
+				upslogx(LOG_ERR, "Client %s did not provide any certificate while we %s one.",
+					client->addr,
+					(certrequest == NETSSL_CERTREQ_REQUIRE ? "require" : "request")
+					);
+				nss_error("net_starttls / SSL_ForceHandshake");
+				return;
+			}
+# endif
 			upslogx(LOG_WARNING, "Client %s did not provide any certificate.",
 				client->addr);
 		} else {
