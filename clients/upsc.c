@@ -48,14 +48,14 @@ static void fatalx_error_json_simple(int msg_is_simple, const char *msg) {
 	if (output_json) {
 		if (msg_is_simple) {
 			/* Caller knows there is nothing to escape here, pass through */
-			printf("{\"error\": \"%s\"}\n", msg);
+			printf("{\"error\": \"%s\"}\n", NUT_STRARG(msg));
 		} else {
 			printf("{\"error\": \"");
 			json_print_esc(msg);
 			printf("\"}\n");
 		}
 	}
-	fatalx(EXIT_FAILURE, "Error: %s", msg);
+	fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
 }
 
 static void usage(const char *prog)
@@ -169,6 +169,8 @@ static void list_vars(void)
 		int	msg_is_simple = 1;
 
 		/* check for an old upsd */
+		upsdebugx(1, "%s: got code %d, upserror %d",
+			__func__, ret, upscli_upserror(ups));
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
 			msg = "upsd is too old to support this query";
 		} else {
@@ -178,14 +180,14 @@ static void list_vars(void)
 
 		if (output_json) {
 			if (msg_is_simple) {
-				printf("  \"error\": \"%s\"\n}\n", msg);
+				printf("  \"error\": \"%s\"\n}\n", NUT_STRARG(msg));
 			} else {
 				printf("  \"error\": \"");
 				json_print_esc(msg);
 				printf("\"\n}\n");
 			}
 		}
-		fatalx(EXIT_FAILURE, "Error: %s", msg);
+		fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
 	}
 
 	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
@@ -238,6 +240,8 @@ static void list_upses(int verbose)
 		int	msg_is_simple = 1;
 
 		/* check for an old upsd */
+		upsdebugx(1, "%s: got code %d, upserror %d",
+			__func__, ret, upscli_upserror(ups));
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
 			msg = "upsd is too old to support this query";
 		} else {
