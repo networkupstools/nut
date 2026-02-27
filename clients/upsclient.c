@@ -596,7 +596,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
 
-	if (ups->upserror > UPSCLI_ERR_MAX) {
+	if (ups->upserror < 0 || ups->upserror > UPSCLI_ERR_MAX) {
 		return "Invalid error number";
 	}
 
@@ -612,7 +612,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			"%s", strerror(ups->syserrno));
 		return ups->errbuf;
 
-	case 2:		/* SSL error */
+	case 2:		/* SSL error, with 1 arg */
 #ifdef WITH_OPENSSL
 		err = ERR_get_error();
 		if (err) {
@@ -628,12 +628,19 @@ const char *upscli_strerror(UPSCONN_t *ups)
 				"%s", "peer disconnected");
 		}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		if (PR_GetErrorTextLength() < UPSCLI_ERRBUF_LEN) {
-			PR_GetErrorText(ups->errbuf);
+		if (PR_GetErrorTextLength() > 0 && PR_GetErrorTextLength() + strlen(upscli_errlist[ups->upserror].str) < UPSCLI_ERRBUF_LEN) {
+			char	errbuf[UPSCLI_ERRBUF_LEN];
+			memset(errbuf, 0, UPSCLI_ERRBUF_LEN);
+			PR_GetErrorText(errbuf);
+			snprintf_dynamic(
+				ups->errbuf, UPSCLI_ERRBUF_LEN,
+				upscli_errlist[ups->upserror].str,
+				"%s", errbuf);
 		} else {
 			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
-				"SSL error #%ld, message too long to be displayed",
-				(long)PR_GetError());
+				"SSL error #%ld, message too %s to be displayed",
+				(long)PR_GetError(),
+				PR_GetErrorTextLength() > 0 ? "long" : "short");
 		}
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
