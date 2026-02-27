@@ -826,12 +826,34 @@ export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
+# Adjust path spelling to run-time platform, libraries seem to want that on WIN32
+# NOTE: Windows backslashes are pre-escaped in the configure-generated value
+case "${ABS_TOP_BUILDDIR}" in
+    ?":\\"*)
+        TESTCERT_PATH_SEP='\\'
+        TESTCERT_PATH_BASE="${ABS_TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+        ;;
+    "") case "${TOP_BUILDDIR}" in
+            ?":\\"*) TESTCERT_PATH_SEP='\\'
+                TESTCERT_PATH_BASE="${TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+                ;;
+            *) TESTCERT_PATH_SEP="/" ;;
+        esac
+        ;;
+    *)  TESTCERT_PATH_SEP="/"
+        ;;
+esac
+
+case "${TESTCERT_PATH_SEP}" in
+    /) TESTCERT_PATH_BASE="${NUT_CONFPATH}${TESTCERT_PATH_SEP}cert" ;;
+esac
+
 # SSL preparations: Can only do this after we learn NUT_CONFPATH
-TESTCERT_PATH_ROOTCA="${NUT_CONFPATH}/cert/rootca"
-TESTCERT_PATH_SERVER="${NUT_CONFPATH}/cert/upsd"
+TESTCERT_PATH_ROOTCA="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}rootca"
+TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
 # TOTHINK: If other NUT clients get SSL support tested,
 # should they use same or different cryptostore?..
-TESTCERT_PATH_CLIENT="${NUT_CONFPATH}/cert/upsmon"
+TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
@@ -1088,7 +1110,7 @@ generatecfg_upsd_add_SSL() {
             { cat << EOF
 # OpenSSL CERTFILE: PEM file with data server cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
-CERTFILE "${TESTCERT_PATH_SERVER}/upsd.pem"
+CERTFILE "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}upsd.pem"
 EOF
             } >> "$NUT_CONFPATH/upsd.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
