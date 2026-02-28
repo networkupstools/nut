@@ -35,6 +35,10 @@ Changes from 2.8.4 to 2.8.5
   library files to deliver with the packages (formally versioned and
   named by NUT release semantic version triplet). [issue #2800]
 
+- Related to the above, `libupsclient` will remove the exported symbol for
+  `nut_debug_level` variable in a later NUT release, and now introduces the
+  `upscli_set_debug_level()` and `upscli_get_debug_level()` methods. [PR #3330]
+
 - For ages, most recipes for building NUT had customized the `sysconfdir` to
   be `/etc/nut`, which is not exactly the *system* configuration directory.
   This is finally deprecated, with new `--with-confdir` configuration option

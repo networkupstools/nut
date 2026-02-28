@@ -99,6 +99,16 @@ typedef struct {
 
 const char *upscli_strerror(UPSCONN_t *ups);
 
+/* On some platforms, libupsclient builds tend to get a built-in copy
+ * of the internal code from NUT libcommon library, so for NUT client
+ * programs using both libraries as dynamically-linked shared code,
+ * the nut_debug_level setting is backed by independent variables in
+ * active memory, and upsdebugx() calls suffer if the library's copy
+ * is never changed from zero.
+ */
+void upscli_set_debug_level(int lvl);
+int  upscli_get_debug_level(void);
+
 /* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup(void);
