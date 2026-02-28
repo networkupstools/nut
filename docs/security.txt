@@ -314,6 +314,16 @@ You can choose to use one of them by specifying it with a build option
 (`--with-nss` or `--with-openssl`). If neither is specified, the configure
 script will try to detect one of them, with a precedence for OpenSSL.
 
+Starting with NUT v2.8.5, you can check the actual support of your NUT build
+with `upsd -Dh` for the server, and `upsmon -Dh` for the typical client, e.g.:
+
+------
+   0.000000     [D1] Network UPS Tools version 2.8.4....
+   0.019319     [D1] NUT data server was built with SSL support: OpenSSL;
+                     without client certificate validation
+------
+
+
 OpenSSL backend usage
 ~~~~~~~~~~~~~~~~~~~~~
 
