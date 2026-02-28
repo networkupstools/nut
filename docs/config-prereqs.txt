@@ -77,7 +77,8 @@ variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
 For reproducible runs of various pre-sets of configuration during
 development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
 (and other) environment variable settings that it supports. A minimal run
-with it is just to call the script, e.g.:
+with it is just to call the script, possibly using an alternate source
+code branch of interest, e.g.:
 
 ------
 :; mkdir -p nut && cd nut && \
