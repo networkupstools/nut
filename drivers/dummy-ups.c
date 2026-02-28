@@ -120,6 +120,8 @@ void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
 
+	upscli_set_debug_level(nut_debug_level);
+
 	switch (mode)
 	{
 		case MODE_DUMMY_ONCE:
@@ -265,6 +267,8 @@ static int prepare_filepath(char *fn, size_t buflen)
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
+
+	upscli_set_debug_level(nut_debug_level);
 
 	sleep(1);
 
@@ -415,6 +419,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_help(void)
 {
+	upscli_set_debug_level(nut_debug_level);
 	upscli_report_build_details();
 }
 
@@ -432,6 +437,8 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	const char *val;
+
+	upscli_set_debug_level(nut_debug_level);
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {

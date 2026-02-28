@@ -52,6 +52,7 @@ static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
 			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 static int (*nut_upscli_ssl_caps)(void);
+static int (*nut_upscli_set_debug_level)(int);
 static void (*nut_upscli_report_build_details)(void);
 
 /* This variable collects device(s) from a sequential or parallel scan,
@@ -156,6 +157,16 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		nut_upscli_ssl_caps = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_set_debug_level) = lt_dlsym(dl_handle,
+		symbol = "upscli_set_debug_level");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_set_debug_level = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	} else {
+		(*nut_upscli_set_debug_level)(nut_debug_level);
 	}
 
 	*(void **) (&nut_upscli_report_build_details) = lt_dlsym(dl_handle,

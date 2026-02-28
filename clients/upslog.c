@@ -538,6 +538,7 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				upscli_set_debug_level(nut_debug_level);
 				break;
 
 			case 'm': { /* var scope */
