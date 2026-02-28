@@ -608,6 +608,7 @@ ALARMCRITICAL 1
 # When compiled with SSL support with NSS, you can specify the certificate
 # name to retrieve from database to authenticate itself and the password
 # required to access certificate related private key.
+# Currently no-op when built with OpenSSL.
 #
 # CERTIDENT "my nut monitor" "MyPasSw0rD"
 #
@@ -623,6 +624,7 @@ ALARMCRITICAL 1
 # Each entry maps server name with the expected certificate name and flags
 # indicating if the server certificate is verified and if the connection
 # must be secure.
+# Currently no-op when built with OpenSSL.
 #
 # CERTHOST localhost "My nut server" 1 1
 #

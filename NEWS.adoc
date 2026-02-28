@@ -104,6 +104,16 @@ https://github.com/networkupstools/nut/milestone/12
      characters. Now it is evaluated at `configure` time (to check that the
      characters may be used), and if not -- during `nut_stdint.h` parsing to
      fit known `int`/`long`/`long long` types. [#3300]
+   * Added new API methods and defined bitmap values for `libupsclient`
+     C binding to query and report SSL capabilities of the current library
+     build (none, OpenSSL, Mozilla NSS): `upscli_ssl_caps_descr()` and
+     `upscli_ssl_caps()`. Updated common NUT clients to report this info
+     in their detailed help banners. Done similarly for `upsd`. The NIT
+     (NUT Integration Test) suite piggy-backs on this to add run-time
+     dependent tests of SSL capability. Added `upscli_set_debug_level()`
+     and `upscli_set_debug_level()` methods to facilitate NUT debugging
+     for clients built with shared NUT private libraries. [issues #3328,
+     #1771, #2800, PR #3330]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -302,6 +312,11 @@ https://github.com/networkupstools/nut/milestone/12
      or Windows `HANDLE`'s at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
      environment variable (e.g. in tests). [#3302]
+   * Extended processing of `CERTREQUEST` setting to handle numeric or specific
+     string values, to match both ways of reading ambiguous documentation.
+     Added `configure --with-ssl-client-validation` toggle to expose the
+     macro previously meant to be passed via `make` command line. [PR #3330,
+     but beware issue #3329]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child

@@ -1759,6 +1759,21 @@ static void mainloop(void)
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
+			upsdebug_with_errno(3, "%s: Disconnect %s%s due to%s%s%s",
+				__func__,
+				(handler[i].type==DRIVER ? "driver " :
+				(handler[i].type==CLIENT ? "client " :
+				(handler[i].type==SERVER ? "server"  :
+				"<unknown>"))),
+				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
+				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
+				(handler[i].type==SERVER ? "" :
+				""))),
+				(fds[i].revents & POLLHUP ? " POLLHUP" : ""),
+				(fds[i].revents & POLLERR ? " POLLERR" : ""),
+				(fds[i].revents & POLLNVAL ? " POLLNVAL" : "")
+				);
+
 			switch(handler[i].type)
 			{
 			case DRIVER:
@@ -2211,6 +2226,7 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 
 	nut_report_config_flags();
+	upsdebugx(1, "NUT data server was built %s", net_ssl_caps_descr());
 
 	printf("\n%s", suggest_doc_links(progname, "ups.conf, upsd.conf and upsd.users"));
 

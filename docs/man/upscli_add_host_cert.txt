@@ -29,9 +29,12 @@ The rule is composed of the certificate name 'certname' expected for
 the host, 'certverify' if the certificate must be validated for the host
 and 'forcessl' if a secured connection must be used to connect to the host.
 
-Note: This call only functions if upsclient has been compiled with NSS
-support. If instead it was compiled with OpenSSL support, this function
-contains an empty definition and will take no action when called.
+NOTE: This call currently only functions if `libupsclient` has been compiled
+with NSS support. If instead it was compiled with OpenSSL support, this method
+contains an empty definition and will take no action when called. Starting with
+NUT v2.8.5, you can use linkman:upscli_ssl_caps[3] from consumer code to query
+the library about its build circumstances (whether it supports SSL, and which
+backend(s)).
 
 RETURN VALUE
 ------------
@@ -41,5 +44,6 @@ RETURN VALUE
 SEE ALSO
 --------
 
-linkman:upscli_init[3], linkman:upscli_connect[3], linkman:upscli_ssl[3],
+linkman:upscli_init[3], linkman:upscli_connect[3],
+linkman:upscli_ssl[3], linkman:upscli_ssl_caps[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

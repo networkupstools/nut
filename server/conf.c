@@ -1,6 +1,8 @@
 /* conf.c - configuration handlers for upsd
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2001		Russell Kroll <rkroll@exploits.org>
+	2019 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -285,6 +287,18 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 1;
 		}
 		else {
+			if (!strcmp(arg[1], "NO")) {
+				certrequest = NETSSL_CERTREQ_NO;	/* 0 */
+				return 1;
+			}
+			if (!strcmp(arg[1], "REQUEST")) {
+				certrequest = NETSSL_CERTREQ_REQUEST;	/* 1 */
+				return 1;
+			}
+			if (!strcmp(arg[1], "REQUIRE")) {
+				certrequest = NETSSL_CERTREQ_REQUIRE;	/* 2 */
+				return 1;
+			}
 			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
 			return 0;
 		}

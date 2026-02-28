@@ -188,15 +188,20 @@ are using a value with spaces in it.
 
 *CERTREQUEST 'certificate request level'*::
 
-When compiled with SSL support with NSS backend and client certificate
+When compiled with SSL support with NSS backend *and* client certificate
 validation (disabled by default, see `docs/security.txt` in NUT sources),
-you can specify if `upsd` requests or requires clients' certificates.
+you can specify whether `upsd` requests or requires clients' certificates.
++
+WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
+#3329] is solved, not all stock NUT clients may even have a way to present
+some certain certificate.
 +
 Possible values are:
 +
-- '0' to not request to clients to provide any certificate
-- '1' to require to all clients a certificate
-- '2' to require to all clients a valid certificate
+- '0' or 'NO' to not request that clients provide any certificate
+- '1' or 'REQUEST' to require all clients to present *some* certificate
+- '2' or 'REQUIRE' to require all clients to present a valid certificate
+  (with auth chain trusted by server database)
 
 *DISABLE_WEAK_SSL 'BOOLEAN'*::
 

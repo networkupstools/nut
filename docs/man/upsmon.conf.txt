@@ -600,6 +600,8 @@ When compiled with SSL support with NSS, you can specify the certificate
 name to retrieve from database to authenticate itself and the password
 required to access certificate related private key.
 +
+Currently no-op when built with OpenSSL.
++
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.
 
@@ -611,6 +613,8 @@ for each server you can contact.
 Each entry maps server name with the expected certificate name and flags
 indicating if the server certificate is verified and if the connection
 must be secure.
++
+Currently no-op when built with OpenSSL.
 +
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.

@@ -337,7 +337,16 @@ if [ x"${TOP_BUILDDIR}" = x ] || [ ! -d "${TOP_BUILDDIR}" ] ; then
     case "${BUILDDIR}" in
         */tests/NIT)
             TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
-        *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
+        *)  if [ -x ./tests/NIT/nit.sh ] ; then
+                TOP_BUILDDIR="`pwd`"
+            else
+                if [ -x ./NIT/nit.sh ] ; then
+                    TOP_BUILDDIR="`cd .. && pwd`"
+                else
+                    log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT or similar"
+                fi
+            fi
+            ;;
     esac
     log_info "Guessing TOP_BUILDDIR='${TOP_BUILDDIR}' from script location and/or BUILDDIR value..."
 else
@@ -437,6 +446,68 @@ PID_UPSSCHED=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
+
+WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
+# NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
+# Interesting idea: build and test server with one and clients with the other...
+# SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
+case "${WITH_SSL_CLIENT}" in
+    *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ;;
+    *NSS*) WITH_SSL_CLIENT="NSS" ;;
+    *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
+esac
+log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
+
+WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none"
+WITH_SSL_SERVER_CLIVAL="none"
+case "${WITH_SSL_SERVER}" in
+    *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
+    *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
+esac
+case "${WITH_SSL_SERVER}" in
+    *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ;;
+    *NSS*) WITH_SSL_SERVER="NSS" ;;
+    *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
+esac
+log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
+
+if [ x"${WITHOUT_SSL_TESTS}" = xtrue ]; then
+    log_info "Disabling SSL tests (even if they are possible) due to WITHOUT_SSL_TESTS='${WITHOUT_SSL_TESTS}'"
+    WITH_SSL_CLIENT="none"
+    WITH_SSL_SERVER="none"
+fi
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*)
+        (command -v certutil) || {
+            log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*)
+        (command -v openssl) || {
+            log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+TESTCERT_ROOTCA_NAME="NUT Mock Root CA"
+TESTCERT_ROOTCA_PASS="VeryS@cur@1337"
+TESTCERT_CLIENT_NAME="NIT upsmon"
+TESTCERT_CLIENT_PASS="MyPasSw0rD"
+TESTCERT_SERVER_NAME="NIT data server"
+TESTCERT_SERVER_PASS="TestS@rv!"
+# Continued below regarding setup of crypto material data files
+# (and possibly skipping SSL tests if we fail this setup).
 
 # Platforms vary in abilities to report this...
 I_AM_NAME=""
@@ -761,6 +832,199 @@ export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
+# Adjust path spelling to run-time platform, libraries seem to want that on WIN32
+# NOTE: Windows backslashes are pre-escaped in the configure-generated value
+case "${ABS_TOP_BUILDDIR}" in
+    ?":\\"*)
+        TESTCERT_PATH_SEP='\\'
+        TESTCERT_PATH_BASE="${ABS_TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+        ;;
+    "") case "${TOP_BUILDDIR}" in
+            ?":\\"*) TESTCERT_PATH_SEP='\\'
+                TESTCERT_PATH_BASE="${TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+                ;;
+            *) TESTCERT_PATH_SEP="/" ;;
+        esac
+        ;;
+    *)  TESTCERT_PATH_SEP="/"
+        ;;
+esac
+
+case "${TESTCERT_PATH_SEP}" in
+    /) TESTCERT_PATH_BASE="${NUT_CONFPATH}${TESTCERT_PATH_SEP}cert" ;;
+esac
+
+# SSL preparations: Can only do this after we learn NUT_CONFPATH
+TESTCERT_PATH_ROOTCA="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}rootca"
+TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
+# TOTHINK: If other NUT clients get SSL support tested,
+# should they use same or different cryptostore?..
+TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
+
+# Follow docs/security.txt points about setting up the crypto material
+# stores and their contents (mock a self-signed CA here where appropriate)
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*|*NSS*)
+        ( # Sub-shelling here to keep soft failure cases handled once,
+          # and changes of directory constrained without pushd/popd
+          # (not in all shells) or remembering of `pwd` (clumsy-ish)
+            log_info "Setting up crypto material storage for SSL capability tests..."
+
+            if shouldDebug ; then
+                set -x
+            fi
+            set -e
+
+            mkdir -p "${TESTCERT_PATH_ROOTCA}"
+            (   cd "${TESTCERT_PATH_ROOTCA}"
+                log_info "SSL: Preparing test Root CA..."
+                echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *NSS*)
+                        { [ -e /dev/urandom ] && \
+                            dd if=/dev/urandom of=.random bs=16 count=1
+                        } || {
+                            [ -e /dev/random ] && \
+                                dd if=/dev/random of=.random bs=16 count=1
+                        } || date > .random
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Generate a certificate for CA:
+                        # HACK NOTE: The first "yes" is for "Is this a CA certificate [y/N]?" question,
+                        # others default (empty) for possible other questions, e.g.
+                        #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
+                        #   Is this a critical extension [y/N]? :
+                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random
+                        # Extract the CA certificate to be able to use or import it later:
+                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem
+                        # Use this later for signing, move on to server/client requests...
+
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt
+                        ;;
+                esac
+
+                [ -s rootca.pem ] || \
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *OpenSSL*)
+                        # Generate an AES encrypted private key:
+                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096
+                        # Generate a certificate for CA using that key:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        ;;
+                esac
+
+                ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+            )
+
+            mkdir -p "${TESTCERT_PATH_SERVER}"
+            (   cd "${TESTCERT_PATH_SERVER}"
+                log_info "SSL: Preparing test server certificate..."
+                echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
+                case "${WITH_SSL_SERVER}" in
+                    NSS)
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        # Create a server certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer
+
+                        # Import the signed certificate into server database:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",,"
+
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt
+                        ;;
+                    OpenSSL)
+                        # Create a server certificate request:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        cat > server.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+IP.1 = 127.0.0.1
+IP.2 = ::1
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
+                        )
+                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem
+
+                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem
+                        ;;
+                esac
+            )
+
+            mkdir -p "${TESTCERT_PATH_CLIENT}"
+            (   cd "${TESTCERT_PATH_CLIENT}"
+                case "${WITH_SSL_CLIENT}" in
+                    NSS)
+                        log_info "SSL: Preparing test client certificate..."
+                        # Also create 3-file database of client key+cert store
+                        echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+
+                        # Import server cert into client database so we can trust it (CERTHOST directive):
+                        # NOTE: Seems we must do this before requesting or signing the client cert,
+                        # otherwise (if importing server cert after doing everything about the
+                        # client one) we get an error:
+                        #  certutil: could not decode certificate: SEC_ERROR_REUSED_ISSUER_AND_SERIAL:
+                        #    You are attempting to import a cert with the same issuer/serial
+                        #    as an existing cert, but that is not the same cert.
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i "${TESTCERT_PATH_SERVER}/server.crt" -t ",,"
+
+                        # Create a client certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o client.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient
+
+                        # Import the signed certificate into client database:
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",,"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt
+                        ;;
+                    OpenSSL)
+                        # NOTE: No special keys for an OpenSSL client so far,
+                        # it only checks/trusts a server (public data in a PEM file)
+                        log_info "SSL: Exporting public data of server certificate for client use..."
+                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem
+
+                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem"
+                        ;;
+                esac
+            )
+        ) || {
+            log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        }
+        ;;
+esac
+
+# This does not seem to cause NUT clients to trust nor distrust
+# (or anyhow verify) a presented server certificate:
+#if [ "${WITH_SSL_CLIENT}" = OpenSSL ] ; then
+#    SSL_CERT_DIR="${TESTCERT_PATH_CLIENT}"
+#    export SSL_CERT_DIR
+#fi
+
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
 # quickly source needed values into their shell.
@@ -776,7 +1040,7 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | ${EGREP} '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | ${EGREP} '^(NUT_|TESTDIR|TESTCERT|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
@@ -834,6 +1098,57 @@ generatecfg_upsd_nodev() {
     generatecfg_upsd_trivial
     echo "ALLOW_NO_DEVICE true" >> "$NUT_CONFPATH/upsd.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+}
+
+generatecfg_upsd_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsd_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsd.conf" ] ; then
+        generatecfg_upsd_trivial
+    fi
+
+    if grep CERT "$NUT_CONFPATH/upsd.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_SERVER}" in
+        none) return 0;;
+        OpenSSL)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
+            { cat << EOF
+# OpenSSL CERTFILE: PEM file with data server cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}upsd.pem"
+EOF
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+        NSS)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${TESTCERT_PATH_SERVER}"
+CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
+EOF
+
+              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue -a x"${WITH_SSL_CLIENT}" = xNSS ]; then
+                cat << EOF
+#  - 0 to not request clients to provide any certificate
+#  - 1 to require all clients to present some certificate
+#  - 2 to require all clients to present a valid certificate
+#      (trusted by server database)
+CERTREQUEST 2
+EOF
+              fi
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+    esac
+
+    # FIXME: Check for old/new OS and libs to toggle this?
+    # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
+    # || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+
 }
 
 ### upsd.users: ##################################################
@@ -993,6 +1308,78 @@ generatecfg_upsmon_secondary() {
     if [ $# -gt 0 ] ; then
         updatecfg_upsmon_supplies "$1"
     fi
+}
+
+generatecfg_upsmon_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsmon_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsmon.conf" ] ; then
+        generatecfg_upsmon_trivial
+    fi
+
+    if grep CERTPATH "$NUT_CONFPATH/upsmon.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_CLIENT}" in
+        none) return 0;;
+        OpenSSL)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
+            { cat << EOF
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+# We only support CERTPATH (to recognize servers), FORCESSL and
+# CERTVERIFY in OpenSSL builds.
+CERTPATH "${TESTCERT_PATH_CLIENT}"
+EOF
+
+              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                cat << EOF
+# With OpenSSL this is the only way to configure these behaviors,
+# no CERTHOST setting here so far:
+FORCESSL 1
+CERTVERIFY 1
+EOF
+              fi
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+        NSS)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${TESTCERT_PATH_CLIENT}"
+CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+EOF
+
+              case "${WITH_SSL_SERVER}" in
+                none) ;;
+                NSS)
+                    cat << EOF
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+EOF
+                ;;
+                *)  # OpenSSL
+                    cat << EOF
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 0 0
+EOF
+                ;;
+              esac
+
+              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                cat << EOF
+# Defaults that NSS CERTHOST may override per-server, but
+# note that this impacts also the general upsmon behavior:
+FORCESSL 1
+CERTVERIFY 1
+EOF
+              fi
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+    esac
 }
 
 ### ups.conf: ##################################################
@@ -1335,6 +1722,7 @@ sandbox_generate_configs() {
 
     log_info "Generating configs for sandbox"
     generatecfg_upsd_nodev
+    generatecfg_upsd_add_SSL
     generatecfg_upsdusers_trivial
     generatecfg_ups_dummy
     SANDBOX_CONFIG_GENERATED=true
@@ -2165,6 +2553,7 @@ sandbox_start_upsmon_master() {
 
     sandbox_generate_configs
     generatecfg_upsmon_master "$@"
+    generatecfg_upsmon_add_SSL
 
     log_info "Starting UPSMON as master for sandbox"
 

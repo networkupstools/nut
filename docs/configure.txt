@@ -789,9 +789,20 @@ Enable SSL support, using either Mozilla NSS or OpenSSL.
 If both are present, and nothing was specified, OpenSSL support will
 be preferred.
 
-Read link:docs/security.txt[] for instructions on SSL support.
-
 NOTE: Currently the two implementations differ in supported features.
+
+	--with-ssl-client-validation (default: no)
+
+Enable the `upsd` server-side ability to set up `CERTREQUEST` directive in
+`upsd.conf`, which lets the server reject clients which do not present a
+certificate.
+
+WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
+#3329] is solved, not all stock NUT clients may even have a way to present
+some certain certificate.
+
+Read link:docs/security.txt[] for instructions on practical setup of SSL
+support.
 
 Networking access security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
