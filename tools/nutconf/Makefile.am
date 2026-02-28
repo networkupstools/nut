@@ -30,7 +30,6 @@ $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy @dotMAKE@
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/clients/libupsclient.la $(top_builddir)/common/libparseconf.la
-$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
@@ -42,9 +41,11 @@ $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
 
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la $(top_builddir)/include/nut_version.h
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
 $(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la $(top_builddir)/clients/libupsclient-version.h
 else !ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/include/nut_version.h
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/tools/nut-scanner/libnutscan.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libcommonclient.la $(top_builddir)/clients/libupsclient-version.h $(top_builddir)/common/libcommonstr.la
 endif !ENABLE_SHARED_PRIVATE_LIBS

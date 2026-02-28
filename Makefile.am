@@ -250,6 +250,7 @@ all-libs-local/common: all-libs-local/include @dotMAKE@
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
 ### Delivers: libupsclient-version.h
 ### LIB-Requires-ext: common/libcommonclient.la
+### Requires-ext: include/nut_version.h
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: common/libparseconf.la

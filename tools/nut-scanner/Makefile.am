@@ -59,7 +59,7 @@ $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.
 # To extract the values used in the factually built library, this header's
 # recipe internally (clients/Makefile.am) requires libupsclient.la, and in
 # turn libcommonclient.la and in turn libparseconf.la:
-$(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 
 # do not hard depend on '../clients/libupsclient-version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -81,7 +81,12 @@ $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-comm
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
-endif ENABLE_SHARED_PRIVATE_LIBS
+
+# Additionally depend on SO made from libcommonclient.la:
+$(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/common/libcommonclient.la $(top_builddir)/include/nut_version.h
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # We optionally append values to this below
 bin_PROGRAMS =
