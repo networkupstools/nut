@@ -2074,3 +2074,20 @@ int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
 ) {
 	return str_add_unique_token(tgt, tgtsize, token, callback_always, callback_unique);
 }
+
+/* On some platforms, libupsclient builds tend to get a built-in copy
+ * of the internal code from NUT libcommon library, so for NUT client
+ * programs using both libraries as dynamically-linked shared code,
+ * the nut_debug_level setting is backed by independent variables in
+ * active memory, and upsdebugx() calls suffer if the library's copy
+ * is never changed from zero.
+ */
+void upscli_set_debug_level(int lvl)
+{
+	nut_debug_level = lvl;
+}
+
+int  upscli_get_debug_level(void)
+{
+	return nut_debug_level;
+}

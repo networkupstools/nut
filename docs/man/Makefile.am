@@ -546,6 +546,7 @@ SRC_DEV_PAGES = \
 	upscli_readline.txt \
 	upscli_report_build_details.txt \
 	upscli_sendline.txt \
+	upscli_set_debug_level.txt \
 	upscli_splitaddr.txt \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
@@ -656,6 +657,11 @@ UPSCLI_SSL_CAPS_DEPS = \
 
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
+UPSCLI_SET_DEBUG_LEVEL_DEPS = \
+	upscli_get_debug_level.$(MAN_SECTION_API)
+
+$(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
+
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
@@ -676,6 +682,8 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
+	upscli_set_debug_level.$(MAN_SECTION_API) \
+	$(UPSCLI_SET_DEBUG_LEVEL_DEPS) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
@@ -793,6 +801,7 @@ INST_HTML_DEV_MANS = \
 	upscli_readline.html \
 	upscli_report_build_details.html \
 	upscli_sendline.html \
+	upscli_set_debug_level.html \
 	upscli_splitaddr.html \
 	upscli_splitname.html \
 	upscli_ssl.html \

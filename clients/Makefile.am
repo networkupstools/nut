@@ -186,6 +186,15 @@ endif WITH_SSL
 # object .so names would differ)
 
 # libupsclient version information
+# NOTE: with libnutprivate*common* builds dynamically linked into the same
+# program (a typical in-tree NUT client, not typical for out-of-tree third
+# party clients) we can end up with two copies of libcommon symbols present
+# in each library. It's recommended to explicitly call upscli_set_debug_level()
+# instead of ambiguously manipulating the nut_debug_level variable by name.
+# TOTHINK: Un-export nut_debug_level from this library to avoid ambiguity
+# for the run-time dynamic linker resolution? For now the shared-library
+# builds are "exotic", but it makes sense to deprecate this export in a
+# future release.
 libupsclient_la_LDFLAGS = -version-info 7:0:0
 libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
 #|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'

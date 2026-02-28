@@ -110,7 +110,10 @@ https://github.com/networkupstools/nut/milestone/12
      `upscli_ssl_caps()`. Updated common NUT clients to report this info
      in their detailed help banners. Done similarly for `upsd`. The NIT
      (NUT Integration Test) suite piggy-backs on this to add run-time
-     dependent tests of SSL capability. [issues #3328, #1771]
+     dependent tests of SSL capability. Added `upscli_set_debug_level()`
+     and `upscli_set_debug_level()` methods to facilitate NUT debugging
+     for clients built with shared NUT private libraries. [issues #3328,
+     #1771, #2800, PR #3330]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files

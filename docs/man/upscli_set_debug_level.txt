@@ -1,0 +1,51 @@
+UPSCLI_SET_DEBUG_LEVEL(3)
+=========================
+
+NAME
+----
+
+upscli_set_debug_level, upscli_get_debug_level - manipulate the possibly
+separate copy of the `nut_debug_level` variable in the `libupsclient` build
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	void upscli_set_debug_level(int);
+	int  upscli_get_debug_level(void);
+------
+
+DESCRIPTION
+-----------
+
+On some platforms, 'libupsclient' builds tend to get a built-in copy
+of the internal code from NUT 'libcommon' library, so for NUT client
+programs using both libraries as dynamically-linked shared code,
+the `nut_debug_level` setting is backed by independent variables in
+active memory, and `upsdebugx()` calls suffer if the library's copy
+is never changed from zero.
+
+These methods allow to set or retrieve the value of `nut_debug_level`
+setting known by the 'libupsclient' library, regardless of build mode.
+
+The most likely use (at least in NUT programs) is to call
+`upscli_set_debug_level(nut_debug_level);` after changing the
+original variable. Values of the debugging level are zero to disable
+debug, may be negative for a few special cases, and generally are
+positive numbers to cut off the more verbose logging attempts;
+otherwise it is up to the code base and NUT style guide practices
+to assign certain levels to some classes of messages.
+
+RETURN VALUE
+------------
+
+There is no return value for the setter.
+
+The getter returns the current value of the internal variable.
+
+SEE ALSO
+--------
+
+linkman:upscli_init[3], linkman:upscli_report_build_details[3]
