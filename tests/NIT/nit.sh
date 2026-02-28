@@ -474,6 +474,12 @@ esac
 log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
 log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
+if [ x"${WITHOUT_SSL_TESTS}" = xtrue ]; then
+    log_info "Disabling SSL tests (even if they are possible) due to WITHOUT_SSL_TESTS='${WITHOUT_SSL_TESTS}'"
+    WITH_SSL_CLIENT="none"
+    WITH_SSL_SERVER="none"
+fi
+
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *NSS*)
         (command -v certutil) || {
