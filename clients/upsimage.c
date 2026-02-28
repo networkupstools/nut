@@ -645,6 +645,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+		upscli_set_debug_level(nut_debug_level);
 	}
 
 #ifdef NUT_CGI_DEBUG_UPSIMAGE
@@ -654,6 +655,7 @@ int main(int argc, char **argv)
 # endif
 	/* Un-comment via make flags when developer-troubleshooting: */
 	nut_debug_level = NUT_CGI_DEBUG_UPSIMAGE;
+	upscli_set_debug_level(nut_debug_level);
 #endif
 
 	if (nut_debug_level > 0) {
