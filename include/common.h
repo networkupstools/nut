@@ -50,19 +50,19 @@
 #include <sys/stat.h>
 
 #ifdef HAVE_SYS_SIGNAL_H
-#include <sys/signal.h>
+# include <sys/signal.h>
 #endif
 #ifdef HAVE_SIGNAL_H
-#include <signal.h>
+# include <signal.h>
 #endif
 
 #include <stdlib.h>
 
 #ifdef HAVE_STRINGS_H
-#include <strings.h>	/* for strncasecmp() and strcasecmp() */
+# include <strings.h>	/* for strncasecmp() and strcasecmp() */
 #endif
 #ifdef HAVE_STRING_H
-#include <string.h>	/* for strdup() and many others */
+# include <string.h>	/* for strdup() and many others */
 #endif
 
 #ifndef WIN32
@@ -745,12 +745,12 @@ char * get_libname(const char* base_libname);
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
-#include <getopt.h>
+# include <getopt.h>
 #else
-#ifdef NEED_GETOPT_DECLS
+# ifdef NEED_GETOPT_DECLS
 extern char *optarg;
 extern int optind;
-#endif /* NEED_GETOPT_DECLS */
+# endif /* NEED_GETOPT_DECLS */
 #endif /* HAVE_GETOPT_H */
 
 /* logging flags: bitmask! */
