@@ -903,6 +903,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Generate an AES encrypted private key:
                         openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096
                         # Generate a certificate for CA using that key:
+                        MSYS_NO_PATHCONV=1 \
                         openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
                         ;;
                 esac
@@ -935,6 +936,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
+                        MSYS_NO_PATHCONV=1 \
                         openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
                         cat > server.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
