@@ -2670,6 +2670,7 @@ static void loadconfig(void)
 					nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
+		upscli_set_debug_level(nut_debug_level);
 
 		if (pollfail_log_throttle_max >= 0) {
 			upslogx(LOG_INFO,
@@ -3407,12 +3408,14 @@ static void help(const char *arg_progname)
 		nut_debug_level = -2;
 		nut_debug_level_args = -2;
 		nut_debug_level_global = -2;
+		upscli_set_debug_level(nut_debug_level);
 
 		loadconfig();
 
 		nut_debug_level = old_debug_level;
 		nut_debug_level_args = old_debug_level_args;
 		nut_debug_level_global = old_debug_level_global;
+		upscli_set_debug_level(nut_debug_level);
 
 		/* Separate from logs emitted by loadconfig() */
 		/* printf("\n"); */
@@ -3848,6 +3851,7 @@ int main(int argc, char *argv[])
 			case 'D':
 				nut_debug_level++;
 				nut_debug_level_args++;
+				upscli_set_debug_level(nut_debug_level);
 				break;
 			case 'F':
 				foreground = 1;
@@ -3916,6 +3920,7 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+		upscli_set_debug_level(nut_debug_level);
 	}
 
 	if (cmd) {
@@ -4065,8 +4070,10 @@ int main(int argc, char *argv[])
 	if (checking_flag) {
 		/* Do not normally report the UPSes we would monitor, etc.
 		 * from loadconfig() for just checking the killpower flag */
-		if (nut_debug_level == 0)
+		if (nut_debug_level == 0) {
 			nut_debug_level = -2;
+			upscli_set_debug_level(nut_debug_level);
+		}
 	}
 
 	loadconfig();
@@ -4075,8 +4082,10 @@ int main(int argc, char *argv[])
 	 * in upsmon.conf. Note that non-zero debug_min does not impact
 	 * foreground running mode.
 	 */
-	if (nut_debug_level_global > nut_debug_level)
+	if (nut_debug_level_global > nut_debug_level) {
 		nut_debug_level = nut_debug_level_global;
+		upscli_set_debug_level(nut_debug_level);
+	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	if (checking_flag)
