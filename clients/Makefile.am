@@ -166,8 +166,13 @@ upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 # not LDADD... why?
 libupsclient_la_SOURCES = upsclient.c upsclient.h
 # NOTE: The library does not require libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+libupsclient_la_LIBADD = \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
 libupsclient_la_LIBADD = \
 	$(top_builddir)/common/libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 if HAVE_WINDOWS_SOCKETS
   libupsclient_la_LIBADD += -lws2_32
 endif HAVE_WINDOWS_SOCKETS
