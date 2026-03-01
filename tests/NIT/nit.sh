@@ -915,7 +915,20 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         ;;
                 esac
 
-                ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *OpenSSL*)
+                        # OpenSSL CA trust "database" should include hashes
+                        # of CA PEM certificates as symlinks to actual files:
+                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`"
+                        ln -s rootca.pem "${CERTHASH}".0
+                        ln -s rootca.pem "${CERTHASH}"
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"*
+                        ;;
+                    *)
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        ;;
+                esac
+
             )
 
             mkdir -p "${TESTCERT_PATH_SERVER}"
@@ -1020,10 +1033,13 @@ EOF
 esac
 
 # This does not seem to cause NUT clients to trust nor distrust
-# (or anyhow verify) a presented server certificate:
+# (or anyhow verify) a presented server certificate, but just in case:
 #if [ "${WITH_SSL_CLIENT}" = OpenSSL ] ; then
-#    SSL_CERT_DIR="${TESTCERT_PATH_CLIENT}"
+#    SSL_CERT_DIR="${TESTCERT_PATH_ROOTCA}"
 #    export SSL_CERT_DIR
+#
+#    SSL_CERT_FILE="${TESTCERT_PATH_ROOTCA}/rootca.pem"
+#    export SSL_CERT_FILE
 #fi
 
 # This file is not used by the test code, it is an
@@ -1335,7 +1351,7 @@ generatecfg_upsmon_add_SSL() {
 #  by the generatecfg_upsd_add_SSL() method.
 # We only support CERTPATH (to recognize servers), FORCESSL and
 # CERTVERIFY in OpenSSL builds.
-CERTPATH "${TESTCERT_PATH_CLIENT}"
+CERTPATH "${TESTCERT_PATH_ROOTCA}"
 EOF
 
               if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
