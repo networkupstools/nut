@@ -545,6 +545,10 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Dropped the `compile` script from Git sources. It originates from automake
      and is added to work area (if missing) during `autogen.sh` rituals anyway.
      It is still distributed as part of `make dist` tarball. [#1209]
+   * Extended `ci_build.sh` and `build-mingw-nut.sh` so that certain values
+     of `NUT_SSL_VARIANTS=[yes, no, auto, ssl, nss, openssl]` can be used
+     with generic builds to test a specific code path and not only the
+     auto-detected one. [#1711]
 
  - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
    which can be used with OBS (Open Build Service by SUSE), both to support

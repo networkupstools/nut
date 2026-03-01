@@ -158,6 +158,17 @@ do_build_mingw_nut() {
 		ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG="--enable-shared-private-libs"
 	fi
 
+	WITH_SSL_FLAG=""
+	case "${NUT_SSL_VARIANTS}" in
+		ssl|nss|openssl)
+		      WITH_SSL_FLAG="--with-${NUT_SSL_VARIANTS}" ;;
+		yes)  WITH_SSL_FLAG="--with-ssl" ;;
+		no)   WITH_SSL_FLAG="--without-ssl" ;;
+		auto) WITH_SSL_FLAG="--with-ssl=auto" ;;
+		"")  ;;
+		*)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+	esac
+
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
 	# WIN32 builds resolve PREFIX'ed paths relative to each current binary
@@ -171,6 +182,7 @@ do_build_mingw_nut() {
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
+	    $WITH_SSL_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
 	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
