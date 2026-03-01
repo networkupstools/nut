@@ -75,6 +75,7 @@ LANG=C
 LC_ALL=C
 export TZ LANG LC_ALL
 
+# May flip to "false" if SSL tests are enabled
 NUT_QUIET_INIT_SSL="true"
 export NUT_QUIET_INIT_SSL
 
@@ -1149,6 +1150,8 @@ EOF
     # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
     # || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
 }
 
 ### upsd.users: ##################################################
@@ -1380,6 +1383,9 @@ EOF
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
     esac
+
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
 }
 
 ### ups.conf: ##################################################
