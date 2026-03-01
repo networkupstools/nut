@@ -1274,7 +1274,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			upslogx(LOG_INFO, "Connected to NUT server %s in SSL", host);
 			if (certverify == 0) {
 				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
-				upslogx(LOG_WARNING, "Certificate verification is disabled");
+				upslogx(LOG_WARNING, "Certificate verification (by client) is disabled");
+			} else {
+				upsdebugx(1, "Certificate verification (by client) is enabled, and apparently succeeded");
 			}
 		}
 	}
