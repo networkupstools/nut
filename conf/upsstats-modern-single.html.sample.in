@@ -36,6 +36,538 @@
   --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
   --dim: #94a3b8; --green: #4ade80; --border: #334155;
   --accent: #38bdf8; --warn: #fbbf24; --crit: #ef4444;
+
+@IFEQ upsstats.use_celsius 1@
+  --x-nut-temperature-mode: "default-C";
+  --x-nut-temperature-nominal:  30;
+  --x-nut-temperature-graphmin: 0;
+  --x-nut-temperature-graphmax: 65;
+@ELSE@
+  --x-nut-temperature-mode: "default-F";
+  --x-nut-temperature-nominal:  86;
+  --x-nut-temperature-graphmin: 32;
+  --x-nut-temperature-graphmax: 150;
+@ENDIF@
+
+@IFSUPP battery.voltage.nominal@
+  --x-nut-battery-voltage-mode: "nominal";
+  --x-nut-battery-voltage-nominal: @VAR battery.voltage.nominal@;
+  --x-nut-battery-voltage-graphmin: round(down, calc(var(--x-nut-battery-voltage-nominal) * 0.8), 0.1);
+  --x-nut-battery-voltage-graphmax: round(up, calc(var(--x-nut-battery-voltage-nominal) * 1.2), 0.1);
+
+@ELSE@
+
+@IFSUPP battery.voltage@
+@IFBETWEEN 0 1.75 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-0-1.75-AAA";
+  --x-nut-battery-voltage-nominal: 1.5;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 3;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 1.75 2.3 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-1.75-2.3-PbAc-#1";
+  --x-nut-battery-voltage-nominal: 2.0;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 3;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 2.3 3.8 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-2.3-3.8-CR2032";
+  --x-nut-battery-voltage-nominal: 3.0;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 5;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 3.8 5.5 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-3.8-5.5-Li";
+  --x-nut-battery-voltage-nominal: 4.2;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 7;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 5.5 9.9 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-5.5-9.9-D";
+  --x-nut-battery-voltage-nominal: 9.0;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 12;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 9.9 18 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-9.9-18.0-PbAc#6";
+  --x-nut-battery-voltage-nominal: 12.0;
+  --x-nut-battery-voltage-graphmin: 9;
+  --x-nut-battery-voltage-graphmax: 18;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 18 30 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#12";
+  --x-nut-battery-voltage-nominal: 24.0;
+  --x-nut-battery-voltage-graphmin: 18;
+  --x-nut-battery-voltage-graphmax: 30;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 30 42 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#18";
+  --x-nut-battery-voltage-nominal: 36.0;
+  --x-nut-battery-voltage-graphmin: 30;
+  --x-nut-battery-voltage-graphmax: 42;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 42 54 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#24";
+  --x-nut-battery-voltage-nominal: 48.0;
+  --x-nut-battery-voltage-graphmin: 42;
+  --x-nut-battery-voltage-graphmax: 54;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 54 66 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#30";
+  --x-nut-battery-voltage-nominal: 60.0;
+  --x-nut-battery-voltage-graphmin: 54;
+  --x-nut-battery-voltage-graphmax: 66;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 66 78 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#36";
+  --x-nut-battery-voltage-nominal: 72.0;
+  --x-nut-battery-voltage-graphmin: 66;
+  --x-nut-battery-voltage-graphmax: 78;
+@ELSE@
+@IFSUPP battery.voltage@
+@IFBETWEEN 78 90 battery.voltage@
+  --x-nut-battery-voltage-mode: "battery-18-30-PbAc#42";
+  --x-nut-battery-voltage-nominal: 84.0;
+  --x-nut-battery-voltage-graphmin: 78;
+  --x-nut-battery-voltage-graphmax: 90;
+@ELSE@
+  --x-nut-battery-voltage-mode: "battery-default";
+  --x-nut-battery-voltage-nominal:  12;
+  --x-nut-battery-voltage-graphmin: 0;
+  --x-nut-battery-voltage-graphmax: 100;
+@ENDIF@
+
+@IFSUPP input.L2-L3.voltage@
+@IFBETWEEN 90 160 input.L2-L3.voltage@
+  --x-nut-input-L2-L3-voltage-nominal: 120;
+  --x-nut-input-L2-L3-voltage-graphmin: 90;
+  --x-nut-input-L2-L3-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L2-L3.voltage@
+@IFBETWEEN 160 280 input.L2-L3.voltage@
+  --x-nut-input-L2-L3-voltage-nominal: 240;
+  --x-nut-input-L2-L3-voltage-graphmin: 160;
+  --x-nut-input-L2-L3-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L2-L3.voltage@
+@IFBETWEEN 280 500 input.L2-L3.voltage@
+  --x-nut-input-L2-L3-voltage-nominal: 400;
+  --x-nut-input-L2-L3-voltage-graphmin: 280;
+  --x-nut-input-L2-L3-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L2-L3-voltage-nominal:  240;
+  --x-nut-input-L2-L3-voltage-graphmin: 0;
+  --x-nut-input-L2-L3-voltage-graphmax: 500;
+@ENDIF@
+
+@IFSUPP input.L1-L2.voltage@
+@IFBETWEEN 90 160 input.L1-L2.voltage@
+  --x-nut-input-L1-L2-voltage-nominal: 120;
+  --x-nut-input-L1-L2-voltage-graphmin: 90;
+  --x-nut-input-L1-L2-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L1-L2.voltage@
+@IFBETWEEN 160 280 input.L1-L2.voltage@
+  --x-nut-input-L1-L2-voltage-nominal: 240;
+  --x-nut-input-L1-L2-voltage-graphmin: 160;
+  --x-nut-input-L1-L2-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L1-L2.voltage@
+@IFBETWEEN 280 500 input.L1-L2.voltage@
+  --x-nut-input-L1-L2-voltage-nominal: 400;
+  --x-nut-input-L1-L2-voltage-graphmin: 280;
+  --x-nut-input-L1-L2-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP input.L1-L2.voltage@
+  --x-nut-input-L1-L2-voltage-nominal:  240;
+  --x-nut-input-L1-L2-voltage-graphmin: 0;
+  --x-nut-input-L1-L2-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L1-L2-voltage-nominal:  var(--x-nut-input-L2-L3-voltage-nominal);
+  --x-nut-input-L1-L2-voltage-graphmin: var(--x-nut-input-L2-L3-voltage-graphmin);
+  --x-nut-input-L1-L2-voltage-graphmax: var(--x-nut-input-L2-L3-voltage-graphmax);
+@ENDIF@
+
+@IFSUPP input.L3-L1.voltage@
+@IFBETWEEN 90 160 input.L3-L1.voltage@
+  --x-nut-input-L3-L1-voltage-nominal: 120;
+  --x-nut-input-L3-L1-voltage-graphmin: 90;
+  --x-nut-input-L3-L1-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L3-L1.voltage@
+@IFBETWEEN 160 280 input.L3-L1.voltage@
+  --x-nut-input-L3-L1-voltage-nominal: 240;
+  --x-nut-input-L3-L1-voltage-graphmin: 160;
+  --x-nut-input-L3-L1-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L3-L1.voltage@
+@IFBETWEEN 280 500 input.L3-L1.voltage@
+  --x-nut-input-L3-L1-voltage-nominal: 400;
+  --x-nut-input-L3-L1-voltage-graphmin: 280;
+  --x-nut-input-L3-L1-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP input.L3-L1.voltage@
+  --x-nut-input-L3-L1-voltage-nominal:  240;
+  --x-nut-input-L3-L1-voltage-graphmin: 0;
+  --x-nut-input-L3-L1-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L3-L1-voltage-nominal:  var(--x-nut-input-L2-L3-voltage-nominal);
+  --x-nut-input-L3-L1-voltage-graphmin: var(--x-nut-input-L2-L3-voltage-graphmin);
+  --x-nut-input-L3-L1-voltage-graphmax: var(--x-nut-input-L2-L3-voltage-graphmax);
+@ENDIF@
+
+
+@IFSUPP input.L2-N.voltage@
+@IFBETWEEN 90 160 input.L2-N.voltage@
+  --x-nut-input-L2-N-voltage-nominal: 120;
+  --x-nut-input-L2-N-voltage-graphmin: 90;
+  --x-nut-input-L2-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+@IFBETWEEN 160 280 input.L2-N.voltage@
+  --x-nut-input-L2-N-voltage-nominal: 240;
+  --x-nut-input-L2-N-voltage-graphmin: 160;
+  --x-nut-input-L2-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L2-N.voltage@
+@IFBETWEEN 280 500 input.L2-N.voltage@
+  --x-nut-input-L2-N-voltage-nominal: 400;
+  --x-nut-input-L2-N-voltage-graphmin: 280;
+  --x-nut-input-L2-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L2-N-voltage-nominal:  240;
+  --x-nut-input-L2-N-voltage-graphmin: 0;
+  --x-nut-input-L2-N-voltage-graphmax: 500;
+@ENDIF@
+
+@IFSUPP input.L1-N.voltage@
+@IFBETWEEN 90 160 input.L1-N.voltage@
+  --x-nut-input-L1-N-voltage-nominal: 120;
+  --x-nut-input-L1-N-voltage-graphmin: 90;
+  --x-nut-input-L1-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L1-N.voltage@
+@IFBETWEEN 160 280 input.L1-N.voltage@
+  --x-nut-input-L1-N-voltage-nominal: 240;
+  --x-nut-input-L1-N-voltage-graphmin: 160;
+  --x-nut-input-L1-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L1-N.voltage@
+@IFBETWEEN 280 500 input.L1-N.voltage@
+  --x-nut-input-L1-N-voltage-nominal: 400;
+  --x-nut-input-L1-N-voltage-graphmin: 280;
+  --x-nut-input-L1-N-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP input.L1-N.voltage@
+  --x-nut-input-L1-N-voltage-nominal:  240;
+  --x-nut-input-L1-N-voltage-graphmin: 0;
+  --x-nut-input-L1-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L1-N-voltage-nominal:  var(--x-nut-input-L2-N-voltage-nominal);
+  --x-nut-input-L1-N-voltage-graphmin: var(--x-nut-input-L2-N-voltage-graphmin);
+  --x-nut-input-L1-N-voltage-graphmax: var(--x-nut-input-L2-N-voltage-graphmax);
+@ENDIF@
+
+@IFSUPP input.L3-N.voltage@
+@IFBETWEEN 90 160 input.L3-N.voltage@
+  --x-nut-input-L3-N-voltage-nominal: 120;
+  --x-nut-input-L3-N-voltage-graphmin: 90;
+  --x-nut-input-L3-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.L3-N.voltage@
+@IFBETWEEN 160 280 input.L3-N.voltage@
+  --x-nut-input-L3-N-voltage-nominal: 240;
+  --x-nut-input-L3-N-voltage-graphmin: 160;
+  --x-nut-input-L3-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.L3-N.voltage@
+@IFBETWEEN 280 500 input.L3-N.voltage@
+  --x-nut-input-L3-N-voltage-nominal: 400;
+  --x-nut-input-L3-N-voltage-graphmin: 280;
+  --x-nut-input-L3-N-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP input.L3-N.voltage@
+  --x-nut-input-L3-N-voltage-nominal:  240;
+  --x-nut-input-L3-N-voltage-graphmin: 0;
+  --x-nut-input-L3-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-L3-N-voltage-nominal:  var(--x-nut-input-L2-N-voltage-nominal);
+  --x-nut-input-L3-N-voltage-graphmin: var(--x-nut-input-L2-N-voltage-graphmin);
+  --x-nut-input-L3-N-voltage-graphmax: var(--x-nut-input-L2-N-voltage-graphmax);
+@ENDIF@
+
+
+@IFSUPP input.L2-L3.voltage@
+  --x-nut-input-voltage-mode: "L2-L3";
+  --x-nut-input-voltage-nominal:  calc( (var(--x-nut-input-L3-L1-voltage-nominal) + var(--x-nut-input-L2-L3-voltage-nominal) + var(--x-nut-input-L1-L2-voltage-nominal)) / 3);
+  --x-nut-input-voltage-graphmin: min(var(--x-nut-input-L3-L1-voltage-graphmin), var(--x-nut-input-L2-L3-voltage-graphmin), var(--x-nut-input-L1-L2-voltage-graphmin));
+  --x-nut-input-voltage-graphmax: max(var(--x-nut-input-L3-L1-voltage-graphmax), var(--x-nut-input-L2-L3-voltage-graphmax), var(--x-nut-input-L1-L2-voltage-graphmax));
+
+@ELSE@
+
+@IFSUPP input.L2-N.voltage@
+  --x-nut-input-voltage-mode: "L2-N";
+  --x-nut-input-voltage-nominal:  calc( (var(--x-nut-input-L3-N-voltage-nominal) + var(--x-nut-input-L2-N-voltage-nominal) + var(--x-nut-input-L1-N-voltage-nominal)) / 3);
+  --x-nut-input-voltage-graphmin: min(var(--x-nut-input-L3-N-voltage-graphmin), var(--x-nut-input-L2-N-voltage-graphmin), var(--x-nut-input-L1-N-voltage-graphmin));
+  --x-nut-input-voltage-graphmax: max(var(--x-nut-input-L3-N-voltage-graphmax), var(--x-nut-input-L2-N-voltage-graphmax), var(--x-nut-input-L1-N-voltage-graphmax));
+
+@ELSE@
+
+@IFSUPP input.voltage.nominal@
+  --x-nut-input-voltage-mode: "nominal";
+  --x-nut-input-voltage-nominal: @VAR input.voltage.nominal@;
+  --x-nut-input-voltage-graphmin: round(down, calc(var(--x-nut-input-voltage-nominal) * 0.8), 10);
+  --x-nut-input-voltage-graphmax: round(up, calc(var(--x-nut-input-voltage-nominal) * 1.2), 10);
+
+@ELSE@
+
+@IFSUPP input.voltage@
+@IFBETWEEN 90 160 input.voltage@
+  --x-nut-input-voltage-mode: "input-90-160";
+  --x-nut-input-voltage-nominal: 120;
+  --x-nut-input-voltage-graphmin: 90;
+  --x-nut-input-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP input.voltage@
+@IFBETWEEN 160 280 input.voltage@
+  --x-nut-input-voltage-mode: "input-160-280";
+  --x-nut-input-voltage-nominal: 240;
+  --x-nut-input-voltage-graphmin: 160;
+  --x-nut-input-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP input.voltage@
+@IFBETWEEN 280 500 input.voltage@
+  --x-nut-input-voltage-mode: "input-280-500";
+  --x-nut-input-voltage-nominal: 400;
+  --x-nut-input-voltage-graphmin: 280;
+  --x-nut-input-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-input-voltage-mode: "input-default";
+  --x-nut-input-voltage-nominal:  240;
+  --x-nut-input-voltage-graphmin: 0;
+  --x-nut-input-voltage-graphmax: 500;
+@ENDIF@
+
+
+@IFSUPP output.L2-L3.voltage@
+@IFBETWEEN 90 160 output.L2-L3.voltage@
+  --x-nut-output-L2-L3-voltage-nominal: 120;
+  --x-nut-output-L2-L3-voltage-graphmin: 90;
+  --x-nut-output-L2-L3-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L2-L3.voltage@
+@IFBETWEEN 160 280 output.L2-L3.voltage@
+  --x-nut-output-L2-L3-voltage-nominal: 240;
+  --x-nut-output-L2-L3-voltage-graphmin: 160;
+  --x-nut-output-L2-L3-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L2-L3.voltage@
+@IFBETWEEN 280 500 output.L2-L3.voltage@
+  --x-nut-output-L2-L3-voltage-nominal: 400;
+  --x-nut-output-L2-L3-voltage-graphmin: 280;
+  --x-nut-output-L2-L3-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L2-L3-voltage-nominal:  240;
+  --x-nut-output-L2-L3-voltage-graphmin: 0;
+  --x-nut-output-L2-L3-voltage-graphmax: 500;
+@ENDIF@
+
+@IFSUPP output.L1-L2.voltage@
+@IFBETWEEN 90 160 output.L1-L2.voltage@
+  --x-nut-output-L1-L2-voltage-nominal: 120;
+  --x-nut-output-L1-L2-voltage-graphmin: 90;
+  --x-nut-output-L1-L2-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L1-L2.voltage@
+@IFBETWEEN 160 280 output.L1-L2.voltage@
+  --x-nut-output-L1-L2-voltage-nominal: 240;
+  --x-nut-output-L1-L2-voltage-graphmin: 160;
+  --x-nut-output-L1-L2-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L1-L2.voltage@
+@IFBETWEEN 280 500 output.L1-L2.voltage@
+  --x-nut-output-L1-L2-voltage-nominal: 400;
+  --x-nut-output-L1-L2-voltage-graphmin: 280;
+  --x-nut-output-L1-L2-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP output.L1-L2.voltage@
+  --x-nut-output-L1-L2-voltage-nominal:  240;
+  --x-nut-output-L1-L2-voltage-graphmin: 0;
+  --x-nut-output-L1-L2-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L1-L2-voltage-nominal:  var(--x-nut-output-L2-L3-voltage-nominal);
+  --x-nut-output-L1-L2-voltage-graphmin: var(--x-nut-output-L2-L3-voltage-graphmin);
+  --x-nut-output-L1-L2-voltage-graphmax: var(--x-nut-output-L2-L3-voltage-graphmax);
+@ENDIF@
+
+@IFSUPP output.L3-L1.voltage@
+@IFBETWEEN 90 160 output.L3-L1.voltage@
+  --x-nut-output-L3-L1-voltage-nominal: 120;
+  --x-nut-output-L3-L1-voltage-graphmin: 90;
+  --x-nut-output-L3-L1-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L3-L1.voltage@
+@IFBETWEEN 160 280 output.L3-L1.voltage@
+  --x-nut-output-L3-L1-voltage-nominal: 240;
+  --x-nut-output-L3-L1-voltage-graphmin: 160;
+  --x-nut-output-L3-L1-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L3-L1.voltage@
+@IFBETWEEN 280 500 output.L3-L1.voltage@
+  --x-nut-output-L3-L1-voltage-nominal: 400;
+  --x-nut-output-L3-L1-voltage-graphmin: 280;
+  --x-nut-output-L3-L1-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP output.L3-L1.voltage@
+  --x-nut-output-L3-L1-voltage-nominal:  240;
+  --x-nut-output-L3-L1-voltage-graphmin: 0;
+  --x-nut-output-L3-L1-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L3-L1-voltage-nominal:  var(--x-nut-output-L2-L3-voltage-nominal);
+  --x-nut-output-L3-L1-voltage-graphmin: var(--x-nut-output-L2-L3-voltage-graphmin);
+  --x-nut-output-L3-L1-voltage-graphmax: var(--x-nut-output-L2-L3-voltage-graphmax);
+@ENDIF@
+
+
+@IFSUPP output.L2-N.voltage@
+@IFBETWEEN 90 160 output.L2-N.voltage@
+  --x-nut-output-L2-N-voltage-nominal: 120;
+  --x-nut-output-L2-N-voltage-graphmin: 90;
+  --x-nut-output-L2-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+@IFBETWEEN 160 280 output.L2-N.voltage@
+  --x-nut-output-L2-N-voltage-nominal: 240;
+  --x-nut-output-L2-N-voltage-graphmin: 160;
+  --x-nut-output-L2-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L2-N.voltage@
+@IFBETWEEN 280 500 output.L2-N.voltage@
+  --x-nut-output-L2-N-voltage-nominal: 400;
+  --x-nut-output-L2-N-voltage-graphmin: 280;
+  --x-nut-output-L2-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L2-N-voltage-nominal:  240;
+  --x-nut-output-L2-N-voltage-graphmin: 0;
+  --x-nut-output-L2-N-voltage-graphmax: 500;
+@ENDIF@
+
+@IFSUPP output.L1-N.voltage@
+@IFBETWEEN 90 160 output.L1-N.voltage@
+  --x-nut-output-L1-N-voltage-nominal: 120;
+  --x-nut-output-L1-N-voltage-graphmin: 90;
+  --x-nut-output-L1-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+@IFBETWEEN 160 280 output.L1-N.voltage@
+  --x-nut-output-L1-N-voltage-nominal: 240;
+  --x-nut-output-L1-N-voltage-graphmin: 160;
+  --x-nut-output-L1-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+@IFBETWEEN 280 500 output.L1-N.voltage@
+  --x-nut-output-L1-N-voltage-nominal: 400;
+  --x-nut-output-L1-N-voltage-graphmin: 280;
+  --x-nut-output-L1-N-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+  --x-nut-output-L1-N-voltage-nominal:  240;
+  --x-nut-output-L1-N-voltage-graphmin: 0;
+  --x-nut-output-L1-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L1-N-voltage-nominal:  var(--x-nut-output-L2-N-voltage-nominal);
+  --x-nut-output-L1-N-voltage-graphmin: var(--x-nut-output-L2-N-voltage-graphmin);
+  --x-nut-output-L1-N-voltage-graphmax: var(--x-nut-output-L2-N-voltage-graphmax);
+@ENDIF@
+
+@IFSUPP output.L3-N.voltage@
+@IFBETWEEN 90 160 output.L3-N.voltage@
+  --x-nut-output-L3-N-voltage-nominal: 120;
+  --x-nut-output-L3-N-voltage-graphmin: 90;
+  --x-nut-output-L3-N-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.L3-N.voltage@
+@IFBETWEEN 160 280 output.L3-N.voltage@
+  --x-nut-output-L3-N-voltage-nominal: 240;
+  --x-nut-output-L3-N-voltage-graphmin: 160;
+  --x-nut-output-L3-N-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.L3-N.voltage@
+@IFBETWEEN 280 500 output.L3-N.voltage@
+  --x-nut-output-L3-N-voltage-nominal: 400;
+  --x-nut-output-L3-N-voltage-graphmin: 280;
+  --x-nut-output-L3-N-voltage-graphmax: 500;
+@ELSE@
+@IFSUPP output.L3-N.voltage@
+  --x-nut-output-L3-N-voltage-nominal:  240;
+  --x-nut-output-L3-N-voltage-graphmin: 0;
+  --x-nut-output-L3-N-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-L3-N-voltage-nominal:  var(--x-nut-output-L2-N-voltage-nominal);
+  --x-nut-output-L3-N-voltage-graphmin: var(--x-nut-output-L2-N-voltage-graphmin);
+  --x-nut-output-L3-N-voltage-graphmax: var(--x-nut-output-L2-N-voltage-graphmax);
+@ENDIF@
+
+
+@IFSUPP output.L2-L3.voltage@
+  --x-nut-output-voltage-mode: "L2-L3";
+  --x-nut-output-voltage-nominal:  calc( (var(--x-nut-output-L3-L1-voltage-nominal) + var(--x-nut-output-L2-L3-voltage-nominal) + var(--x-nut-output-L1-L2-voltage-nominal)) / 3);
+  --x-nut-output-voltage-graphmin: min(var(--x-nut-output-L3-L1-voltage-graphmin), var(--x-nut-output-L2-L3-voltage-graphmin), var(--x-nut-output-L1-L2-voltage-graphmin));
+  --x-nut-output-voltage-graphmax: max(var(--x-nut-output-L3-L1-voltage-graphmax), var(--x-nut-output-L2-L3-voltage-graphmax), var(--x-nut-output-L1-L2-voltage-graphmax));
+
+@ELSE@
+
+@IFSUPP output.L2-N.voltage@
+  --x-nut-output-voltage-mode: "L2-N";
+  --x-nut-output-voltage-nominal:  calc( (var(--x-nut-output-L3-N-voltage-nominal) + var(--x-nut-output-L2-N-voltage-nominal) + var(--x-nut-output-L1-N-voltage-nominal)) / 3);
+  --x-nut-output-voltage-graphmin: min(var(--x-nut-output-L3-N-voltage-graphmin), var(--x-nut-output-L2-N-voltage-graphmin), var(--x-nut-output-L1-N-voltage-graphmin));
+  --x-nut-output-voltage-graphmax: max(var(--x-nut-output-L3-N-voltage-graphmax), var(--x-nut-output-L2-N-voltage-graphmax), var(--x-nut-output-L1-N-voltage-graphmax));
+
+@ELSE@
+
+@IFSUPP output.voltage.nominal@
+  --x-nut-output-voltage-mode: "nominal";
+  --x-nut-output-voltage-nominal:  @VAR output.voltage.nominal@;
+  --x-nut-output-voltage-graphmin: round(down, calc(var(--x-nut-output-voltage-nominal) * 0.8), 10);
+  --x-nut-output-voltage-graphmax: round(up, calc(var(--x-nut-output-voltage-nominal) * 1.2), 10);
+@ELSE@
+@IFSUPP output.voltage@
+@IFBETWEEN 90 160 output.voltage@
+  --x-nut-output-voltage-mode: "output-90-160";
+  --x-nut-output-voltage-nominal:  120;
+  --x-nut-output-voltage-graphmin: 90;
+  --x-nut-output-voltage-graphmax: 160;
+@ELSE@
+@IFSUPP output.voltage@
+@IFBETWEEN 160 280 output.voltage@
+  --x-nut-output-voltage-mode: "output-160-280";
+  --x-nut-output-voltage-nominal:  240;
+  --x-nut-output-voltage-graphmin: 160;
+  --x-nut-output-voltage-graphmax: 280;
+@ELSE@
+@IFSUPP output.voltage@
+@IFBETWEEN 280 500 output.voltage@
+  --x-nut-output-voltage-mode: "output-280-500";
+  --x-nut-output-voltage-nominal:  400;
+  --x-nut-output-voltage-graphmin: 280;
+  --x-nut-output-voltage-graphmax: 500;
+@ELSE@
+  --x-nut-output-voltage-mode: "output-default";
+  --x-nut-output-voltage-nominal:  240;
+  --x-nut-output-voltage-graphmin: 0;
+  --x-nut-output-voltage-graphmax: 500;
+@ENDIF@
+
 }
 * { box-sizing: border-box; }
 
@@ -200,24 +732,22 @@ on @HOST@</div>
 </div>
 @ENDIF@
 
-<!-- WARNING: Hardcoded for ~24V nominal battery -->
 @IFSUPP battery.voltage@
 <div class="bar-group">
 <div class="threshold-battery"></div>
 <div class="bar-wrapper">
 <div class="label-top">Voltage</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR battery.voltage@ - 10) / 20 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR battery.voltage@ - var(--x-nut-battery-voltage-graphmin)) / (var(--x-nut-battery-voltage-graphmax) - var(--x-nut-battery-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR battery.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">30</div><div class="tick" style="bottom: 50%">20</div><div class="tick" style="bottom: 0%">10</div>
+<div class="tick js-populate-var" data-var="--x-nut-battery-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-battery-voltage-nominal" style="bottom: calc( ( (var(--x-nut-battery-voltage-nominal) - var(--x-nut-battery-voltage-graphmin)) / (var(--x-nut-battery-voltage-graphmax) - var(--x-nut-battery-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-battery-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 </div>
 @ENDIF@
 </div>
 </div>
 
-<!-- WARNING: Hardcoded for ~120V nominal wall/load voltage -->
 <div class="card">
 <div class="card-header">Line Voltage</div>
 <div class="charts">
@@ -227,20 +757,29 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L1-L2</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L1-L2.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L1-L2.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L1-L2.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L2-L3</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L2-L3.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L2-L3.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L2-L3.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L3-L1</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L3-L1.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L3-L1.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L3-L1.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 </div>
@@ -252,20 +791,29 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L1-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L1-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L1-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L1-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L2-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L2-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L2-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L2-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L3-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.L3-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L3-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L3-N.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 </div>
@@ -275,41 +823,43 @@ on @HOST@</div>
 <div class="threshold-voltage"></div>
 <div class="bar-wrapper">
 <div class="label-top">Input</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR input.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.voltage@ V</div>
+</div>
+<div class="y-axis">
+<div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-nominal" style="bottom: calc( ( (var(--x-nut-input-voltage-nominal) - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-input-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 </div>
 @ENDIF@
-<!-- WARNING: Hardcoded for ~120V nominal wall/load voltage -->
 @IFSUPP output.L2-L3.voltage@
 <div class="bar-group">
 <div class="threshold-voltage"></div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L1-L2</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L1-L2.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L1-L2.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L1-L2.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L2-L3</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L2-L3.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L2-L3.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L2-L3.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L3-L1</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L3-L1.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L3-L1.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L3-L1.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 </div>
@@ -320,29 +870,29 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L1-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L1-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L1-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L1-N.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L2-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L2-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L2-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L2-N.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L3-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.L3-N.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L3-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L3-N.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 
 </div>
@@ -352,11 +902,11 @@ on @HOST@</div>
 <div class="threshold-voltage"></div>
 <div class="bar-wrapper">
 <div class="label-top">Output</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc((@VAR output.voltage@ - 60) / 100 * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.voltage@ V</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">160</div><div class="tick" style="bottom: 50%">110</div><div class="tick" style="bottom: 0%">60</div>
+<div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-nominal" style="bottom: calc( ( (var(--x-nut-output-voltage-nominal) - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%)">NOM</div><div class="tick js-populate-var" data-var="--x-nut-output-voltage-graphmin" style="bottom: 0%">MIN</div>
 </div>
 </div>
 @ENDIF@
@@ -446,17 +996,16 @@ on @HOST@</div>
 
 @IFSUPP ambient.temperature@
 <div class="card">
-<!-- WARNING: Hardcoded for MAX 50 degrees (likely C, probably wrong for F) -->
 <div class="card-header">Environment</div>
 <div class="charts">
 <div class="bar-group">
 <div class="bar-wrapper">
 <div class="label-top">Temp</div>
-<div class="bar-bg"><div class="bar-fill fill-warn" style="height: calc((@VAR ambient.temperature@ / 50) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-warn" style="height: calc( ( (@VAR ambient.temperature@ - var(--x-nut-temperature-graphmin)) / (var(--x-nut-temperature-graphmax) - var(--x-nut-temperature-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR ambient.temperature@ &deg;</div>
 </div>
 <div class="y-axis">
-<div class="tick" style="bottom: 100%">50</div><div class="tick" style="bottom: 0%">0</div>
+<div class="tick js-populate-var" data-var="--x-nut-temperature-graphmax" style="bottom: 100%">MAX</div><div class="tick js-populate-var" data-var="--x-nut-temperature-graphmin" style="bottom: 0%">MIN</div>
 </div>
 </div>
 </div>
@@ -478,6 +1027,26 @@ on @HOST@</div>
 </small></div>
 
 </div>
+
+<script>
+var els = document.querySelectorAll('.js-populate-var');
+
+els.forEach(el => {
+  // Create dummy element
+  const dummy = document.createElement('div')
+
+  // Set dummy size (named via "data-var" in original caller)
+  dummy.style.width = "calc(" + getComputedStyle(el).getPropertyValue(el.dataset.var) + "*1px)"
+  document.body.appendChild(dummy)
+
+  elementWidth = dummy.getBoundingClientRect().width
+
+  // Remove the element when we're finished with it
+  dummy.remove()
+
+  el.innerHTML = Math.round(elementWidth)
+})
+</script>
 
 </body>
 </html>

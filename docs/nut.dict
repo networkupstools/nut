@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3677 utf-8
+personal_ws-1.1 en 3687 utf-8
 AAC
 AAS
 ABI
@@ -541,6 +541,7 @@ IDEN
 IDEs
 IDentifiers
 IFBETWEEN
+IFEQ
 IFF
 IFSUPP
 IGN
@@ -1795,6 +1796,7 @@ cdc
 cdf
 cee
 cef
+celsius
 centos
 cerr
 certfile
@@ -1893,6 +1895,7 @@ cpqpower
 cpsups
 cpu
 cr
+createElement
 crestfactor
 crit
 criticality
@@ -2066,6 +2069,8 @@ ef
 egrep
 ei
 el
+elementWidth
+els
 emacs
 emptor
 emptyDir
@@ -2146,6 +2151,7 @@ fmt
 fno
 fontconfig
 fopen
+forEach
 forceshutdown
 forcessl
 formatconfig
@@ -2226,6 +2232,8 @@ gpg
 gpgsign
 gpio
 gpiochip
+graphmax
+graphmin
 graphviz
 groupadd
 groupname
@@ -2338,6 +2346,7 @@ inittime
 initups
 inline
 inlined
+innerHTML
 innotech
 innovart
 innovatae
@@ -2404,6 +2413,7 @@ jpeg
 jpg
 jq
 jre
+js
 json
 kVA
 kadets
