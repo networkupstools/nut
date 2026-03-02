@@ -73,6 +73,9 @@ supported" messages by avoiding the label and variable call entirely.
 *@IFEQ* 'var' 'value'*@*::
 Starts a block if the value returned from the variable 'var' matches
 'value'.
++
+NOTE: You can use `@IFEQ upsstats.use_celsius (0|1)@` to check for the
+current setting of *@TEMPC@* or *@TEMPF@* toggle.
 
 *@IFBETWEEN* 'varlow' 'varhigh' 'varvalue'*@*::
 Starts a block if the value returned by the variable 'varvalue' is between

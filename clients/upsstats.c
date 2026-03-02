@@ -633,6 +633,13 @@ static void do_ifsupp(const char *var, const char *val)
 
 	upsdebug_call_starting3("for '%s' ( =? '%s')", NUT_STRARG(var), NUT_STRARG(val));
 
+	if (!strcmp(var, "upsstats.use_celsius")) {
+		snprintf(dummy, sizeof(dummy), "%d", use_celsius);
+		skip_clause = 1;
+		upsdebug_call_finished1(": get_var() returned unexpected val");
+		return;
+	}
+
 	/* if not connected, act like it's not supported and skip the rest */
 	if (!check_ups_fd(0)) {
 		skip_clause = 1;
