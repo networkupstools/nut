@@ -27,11 +27,11 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.
 # Developers can run the script directly or override the make variable.
-### if WITH_OPENSSL
-### WITHOUT_SSL_TESTS = true
-### else !WITH_OPENSSL
+if WITH_OPENSSL
+WITHOUT_SSL_TESTS = true
+else !WITH_OPENSSL
 WITHOUT_SSL_TESTS = false
-### endif !WITH_OPENSSL
+endif !WITH_OPENSSL
 
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that
