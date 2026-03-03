@@ -344,7 +344,7 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
- - `upsstats` tool updates:
+ - `upsstats` CGI tool updates:
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
      New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
      these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
@@ -357,7 +357,7 @@ several `FSD` notifications into one executed action. [PR #3097]
      [issue #3252, PR #3249]
    * (Experimental) Custom templates other than `upsstats{,-single}.html` can
      now be specified as CGI parameters, if locally permitted via `hosts.conf`.
-     [issue #2524, PR #3304]
+     Modern-looking templates were provided. [issues #2524, #3316, PR #3304]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
