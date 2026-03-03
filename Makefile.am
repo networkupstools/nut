@@ -95,13 +95,22 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
 
+all: all-fanout-cleanup
+
+# Run as part of "all", but after the autotools-standard "all-recursive"
+# where we quiesce nut_version.h regeneration attempts for each subdir
+all-fanout-cleanup: all-recursive
+	@rm -f include/.all.nut_version-generated.timestamp
+
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
 SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
+CLEANFILES += include/.all.nut_version-generated.timestamp
 all-fanout-maybe: @dotMAKE@
+	@rm -f include/.all.nut_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
@@ -220,6 +229,10 @@ SUBDIR_TGT_RULE = ( \
 all-libs-local/include: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
+	@[ -s include/nut_version.h ]
+	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch include/.all.nut_version-generated.timestamp
 
 ### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
@@ -1052,6 +1065,7 @@ ChangeLog.adoc: ChangeLog @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
 
 nut_version.h include/nut_version.h: @dotMAKE@
+	@rm -f include/.all.nut_version-generated.timestamp
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
 # May involve (re-)build of libupsclient.la
