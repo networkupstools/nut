@@ -6,8 +6,8 @@
  * - Uses only SetupAPI/hid.dll/kernel32 APIs mirrored in gethidwindows.py.
  * - Avoids IOCTL/DeviceIoControl usage.
  * - Keeps matcher flow used by libusb backends (VID/PID and regex chain).
- * - Builds a synthetic report descriptor from HidP caps as a best-effort bridge
- *   to existing NUT HID parser path.
+ * - Builds a minimal synthetic report descriptor from HidP caps as a transport
+ *   bridge to the existing NUT hidparser/libhid path.
  */
 
 #include "config.h"
@@ -153,6 +153,17 @@ typedef struct win_hidp_button_caps_s {
 	win_hidp_union_range_t u;
 } win_hidp_button_caps_t;
 
+typedef struct win_hidp_link_collection_node_s {
+	USHORT LinkUsage;
+	USHORT LinkUsagePage;
+	USHORT Parent;
+	USHORT NumberOfChildren;
+	USHORT NextSibling;
+	USHORT FirstChild;
+	ULONG Flags;
+	PVOID UserContext;
+} win_hidp_link_collection_node_t;
+
 typedef HDEVINFO (WINAPI *pSetupDiGetClassDevsW)(
 	const GUID *ClassGuid,
 	PCWSTR Enumerator,
@@ -210,6 +221,11 @@ typedef ULONG (WINAPI *pHidP_GetButtonCaps)(
 	USHORT *ButtonCapsLength,
 	win_phidp_preparsed_data_t PreparsedData);
 
+typedef ULONG (WINAPI *pHidP_GetLinkCollectionNodes)(
+	win_hidp_link_collection_node_t *LinkCollectionNodes,
+	ULONG *LinkCollectionNodesLength,
+	win_phidp_preparsed_data_t PreparsedData);
+
 typedef HANDLE (WINAPI *pCreateFileW_t)(
 	LPCWSTR lpFileName,
 	DWORD dwDesiredAccess,
@@ -261,6 +277,7 @@ typedef struct winhid_api_s {
 	pHidP_GetCaps HidP_GetCaps;
 	pHidP_GetValueCaps HidP_GetValueCaps;
 	pHidP_GetButtonCaps HidP_GetButtonCaps;
+	pHidP_GetLinkCollectionNodes HidP_GetLinkCollectionNodes;
 
 	pCreateFileW_t CreateFileW;
 	pReadFile_t ReadFile;
@@ -333,11 +350,6 @@ typedef struct winhid_descbuf_s {
 #define WINHID_COLLECTION_PHYSICAL   0x00
 #define WINHID_COLLECTION_APPLICATION 0x01
 
-#define WINHID_USAGE_PAGE_POWER_DEVICE   0x0084U
-#define WINHID_USAGE_PAGE_BATTERY_SYSTEM 0x0085U
-#define WINHID_USAGE_POWER_SUMMARY       0x0024U
-#define WINHID_USAGE_PRESENT_STATUS      0x0002U
-
 static const GUID g_hid_interface_guid = {
 	0x4D1E55B2,
 	0xF16F,
@@ -383,6 +395,14 @@ static int winhid_load_apis(void)
 	WINHID_RESOLVE(g_winhid_api.HidP_GetCaps, g_winhid_api.hid_mod, "HidP_GetCaps");
 	WINHID_RESOLVE(g_winhid_api.HidP_GetValueCaps, g_winhid_api.hid_mod, "HidP_GetValueCaps");
 	WINHID_RESOLVE(g_winhid_api.HidP_GetButtonCaps, g_winhid_api.hid_mod, "HidP_GetButtonCaps");
+	{
+		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidP_GetLinkCollectionNodes");
+		if (!fp) {
+			upsdebugx(2, "%s: optional API HidP_GetLinkCollectionNodes not found", __func__);
+		} else {
+			memcpy(&g_winhid_api.HidP_GetLinkCollectionNodes, &fp, sizeof(fp));
+		}
+	}
 
 	WINHID_RESOLVE(g_winhid_api.CreateFileW, g_winhid_api.kernel32_mod, "CreateFileW");
 	WINHID_RESOLVE(g_winhid_api.ReadFile, g_winhid_api.kernel32_mod, "ReadFile");
@@ -794,6 +814,184 @@ static size_t winhid_get_button_caps(
 	return (size_t)len;
 }
 
+static size_t winhid_get_link_collection_nodes(
+	win_phidp_preparsed_data_t preparsed,
+	USHORT count,
+	win_hidp_link_collection_node_t **out)
+{
+	ULONG len;
+	ULONG status;
+	win_hidp_link_collection_node_t *arr;
+
+	if (!out) {
+		return 0;
+	}
+	*out = NULL;
+
+	if (!preparsed || count == 0) {
+		return 0;
+	}
+	if (!g_winhid_api.HidP_GetLinkCollectionNodes) {
+		return 0;
+	}
+
+	arr = (win_hidp_link_collection_node_t *)calloc((size_t)count, sizeof(*arr));
+	if (!arr) {
+		return 0;
+	}
+
+	len = (ULONG)count;
+	status = g_winhid_api.HidP_GetLinkCollectionNodes(arr, &len, preparsed);
+	if (status != WINHID_HIDP_STATUS_SUCCESS) {
+		free(arr);
+		return 0;
+	}
+
+	*out = arr;
+	return (size_t)len;
+}
+
+static void winhid_debug_dump_feature_caps_summary(
+	const win_hidp_value_caps_t *value_caps,
+	size_t value_caps_n,
+	const win_hidp_button_caps_t *button_caps,
+	size_t button_caps_n)
+{
+	unsigned int i;
+	unsigned int value_count_by_rid[256];
+	unsigned int button_count_by_rid[256];
+	unsigned int seen = 0U;
+	char line[1024];
+	int n;
+
+	if (nut_debug_level < 3) {
+		return;
+	}
+
+	memset(value_count_by_rid, 0, sizeof(value_count_by_rid));
+	memset(button_count_by_rid, 0, sizeof(button_count_by_rid));
+
+	if (value_caps && value_caps_n > 0U) {
+		for (i = 0U; i < (unsigned int)value_caps_n; i++) {
+			value_count_by_rid[(unsigned int)value_caps[i].ReportID]++;
+		}
+	}
+
+	if (button_caps && button_caps_n > 0U) {
+		for (i = 0U; i < (unsigned int)button_caps_n; i++) {
+			button_count_by_rid[(unsigned int)button_caps[i].ReportID]++;
+		}
+	}
+
+	n = snprintf(line, sizeof(line), "%s: Feature caps summary:", __func__);
+	if (n < 0) {
+		return;
+	}
+
+	for (i = 0U; i < 256U; i++) {
+		unsigned int v = value_count_by_rid[i];
+		unsigned int b = button_count_by_rid[i];
+		int add;
+
+		if (v == 0U && b == 0U) {
+			continue;
+		}
+		seen = 1U;
+
+		add = snprintfcat(
+			line,
+			sizeof(line),
+			" RID=0x%02x(V=%u,B=%u)",
+			i, v, b);
+		if (add < 0) {
+			return;
+		}
+		n = add;
+	}
+
+	if (!seen) {
+		(void)snprintfcat(line, sizeof(line), " none");
+	}
+
+	upsdebugx(3, "%s", line);
+}
+
+static void winhid_debug_dump_feature_value_caps(
+	const win_hidp_value_caps_t *caps,
+	size_t caps_n)
+{
+	size_t i;
+
+	if (!caps || caps_n == 0U || nut_debug_level < 3) {
+		return;
+	}
+
+	upsdebugx(3, "%s: Feature ValueCaps count=%zu", __func__, caps_n);
+	for (i = 0; i < caps_n; i++) {
+		const win_hidp_value_caps_t *vc = &caps[i];
+
+		if (vc->IsRange) {
+			upsdebugx(3,
+				"Feature ValueCaps[%zu]: ReportID=0x%02x BitField=%u DataIndex=%u-%u UsagePage=0x%04x Usage=0x%04x-0x%04x",
+				i,
+				(unsigned int)vc->ReportID,
+				(unsigned int)vc->BitField,
+				(unsigned int)vc->u.Range.DataIndexMin,
+				(unsigned int)vc->u.Range.DataIndexMax,
+				(unsigned int)vc->UsagePage,
+				(unsigned int)vc->u.Range.UsageMin,
+				(unsigned int)vc->u.Range.UsageMax);
+		} else {
+			upsdebugx(3,
+				"Feature ValueCaps[%zu]: ReportID=0x%02x BitField=%u DataIndex=%u UsagePage=0x%04x Usage=0x%04x",
+				i,
+				(unsigned int)vc->ReportID,
+				(unsigned int)vc->BitField,
+				(unsigned int)vc->u.NotRange.DataIndex,
+				(unsigned int)vc->UsagePage,
+				(unsigned int)vc->u.NotRange.Usage);
+		}
+	}
+}
+
+static void winhid_debug_dump_feature_button_caps(
+	const win_hidp_button_caps_t *caps,
+	size_t caps_n)
+{
+	size_t i;
+
+	if (!caps || caps_n == 0U || nut_debug_level < 3) {
+		return;
+	}
+
+	upsdebugx(3, "%s: Feature ButtonCaps count=%zu", __func__, caps_n);
+	for (i = 0; i < caps_n; i++) {
+		const win_hidp_button_caps_t *bc = &caps[i];
+
+		if (bc->IsRange) {
+			upsdebugx(3,
+				"Feature ButtonCaps[%zu]: ReportID=0x%02x BitField=%u DataIndex=%u-%u UsagePage=0x%04x Usage=0x%04x-0x%04x",
+				i,
+				(unsigned int)bc->ReportID,
+				(unsigned int)bc->BitField,
+				(unsigned int)bc->u.Range.DataIndexMin,
+				(unsigned int)bc->u.Range.DataIndexMax,
+				(unsigned int)bc->UsagePage,
+				(unsigned int)bc->u.Range.UsageMin,
+				(unsigned int)bc->u.Range.UsageMax);
+		} else {
+			upsdebugx(3,
+				"Feature ButtonCaps[%zu]: ReportID=0x%02x BitField=%u DataIndex=%u UsagePage=0x%04x Usage=0x%04x",
+				i,
+				(unsigned int)bc->ReportID,
+				(unsigned int)bc->BitField,
+				(unsigned int)bc->u.NotRange.DataIndex,
+				(unsigned int)bc->UsagePage,
+				(unsigned int)bc->u.NotRange.Usage);
+		}
+	}
+}
+
 static void winhid_track_input_report_id(winhid_dev_ctx_t *ctx, unsigned int report_id)
 {
 	if (!ctx || report_id > 0xFFU) {
@@ -999,45 +1197,100 @@ static int winhid_desc_emit_report_id(winhid_descbuf_t *db, unsigned int report_
 	return winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_REPORT_ID, (uint32_t)report_id);
 }
 
-static int winhid_is_present_status_link(uint16_t link_usage_page, uint16_t link_usage)
+static uint8_t winhid_link_collection_type(const win_hidp_link_collection_node_t *node)
 {
-	return (link_usage_page == WINHID_USAGE_PAGE_POWER_DEVICE
-		&& link_usage == WINHID_USAGE_PRESENT_STATUS);
-}
-
-static int winhid_usage_is_battery_status_semantic(uint16_t usage)
-{
-	switch (usage) {
-	case 0x0042U: /* BelowRemainingCapacityLimit */
-	case 0x0043U: /* RemainingTimeLimitExpired */
-	case 0x0044U: /* Charging */
-	case 0x0045U: /* Discharging */
-	case 0x0046U: /* FullyCharged */
-	case 0x0047U: /* FullyDischarged */
-	case 0x004BU: /* NeedReplacement */
-	case 0x00D0U: /* ACPresent */
-	case 0x00D1U: /* BatteryPresent */
-		return 1;
-	default:
-		return 0;
+	if (!node) {
+		return WINHID_COLLECTION_PHYSICAL;
 	}
+	return (uint8_t)(node->Flags & 0xFFU);
 }
 
-static int winhid_range_is_battery_status_semantic(uint16_t usage_min, uint16_t usage_max)
+static int winhid_emit_link_collection_chain(
+	winhid_descbuf_t *db,
+	const win_hidp_link_collection_node_t *nodes,
+	size_t nodes_n,
+	USHORT link_collection,
+	USHORT link_usage_page,
+	USHORT link_usage,
+	size_t *opened_count)
 {
-	uint16_t usage;
+	size_t opened = 0;
 
-	if (usage_max < usage_min) {
+	if (opened_count) {
+		*opened_count = 0;
+	}
+
+	if (!db) {
 		return 0;
 	}
 
-	for (usage = usage_min; usage <= usage_max; usage++) {
-		if (!winhid_usage_is_battery_status_semantic(usage)) {
+	/* Prefer explicit parent/child topology from link collection nodes.
+	 * This retains nested collection hierarchy better than flat caps fields. */
+	if (nodes && nodes_n > 0U && link_collection > 0U && (size_t)link_collection < nodes_n) {
+		USHORT chain[64];
+		size_t chain_len = 0;
+		USHORT idx = link_collection;
+		size_t guard;
+
+		for (guard = 0; guard < (sizeof(chain) / sizeof(chain[0])); guard++) {
+			const win_hidp_link_collection_node_t *node;
+			USHORT parent;
+
+			if (idx == 0U || (size_t)idx >= nodes_n) {
+				break;
+			}
+
+			chain[chain_len++] = idx;
+			node = &nodes[idx];
+			parent = node->Parent;
+
+			if (parent == idx || (size_t)parent >= nodes_n) {
+				break;
+			}
+
+			idx = parent;
+		}
+
+		while (chain_len > 0U) {
+			const win_hidp_link_collection_node_t *node;
+			uint8_t ctype;
+
+			node = &nodes[chain[--chain_len]];
+			ctype = winhid_link_collection_type(node);
+
+			if (node->LinkUsagePage == 0U && node->LinkUsage == 0U) {
+				continue;
+			}
+
+			if (!winhid_desc_emit_usage_page(db, node->LinkUsagePage)
+			 || !winhid_desc_emit_usage(db, node->LinkUsage)
+			 || !winhid_desc_emit_collection(db, ctype)) {
+				return 0;
+			}
+
+			opened++;
+		}
+
+		if (opened > 0U) {
+			if (opened_count) {
+				*opened_count = opened;
+			}
+			return 1;
+		}
+	}
+
+	/* Fallback when no usable node topology is available. */
+	if (link_usage_page != 0U && link_usage != 0U) {
+		if (!winhid_desc_emit_usage_page(db, link_usage_page)
+		 || !winhid_desc_emit_usage(db, link_usage)
+		 || !winhid_desc_emit_collection(db, WINHID_COLLECTION_PHYSICAL)) {
 			return 0;
 		}
-		if (usage == UINT16_MAX) {
-			break;
-		}
+		opened = 1U;
+	}
+
+	if (opened_count) {
+		*opened_count = opened;
 	}
 
 	return 1;
@@ -1046,12 +1299,12 @@ static int winhid_range_is_battery_status_semantic(uint16_t usage_min, uint16_t 
 static int winhid_emit_one_value_cap(
 	winhid_descbuf_t *db,
 	const win_hidp_value_caps_t *vc,
+	const win_hidp_link_collection_node_t *link_nodes,
+	size_t link_nodes_n,
 	unsigned int report_type,
 	unsigned int *last_report_id)
 {
-	int opened_link = 0;
-	int status_link;
-	uint16_t usage_page;
+	size_t opened_link = 0;
 	uint8_t main_flags = 0x02;
 	uint32_t usage = 0;
 
@@ -1066,38 +1319,18 @@ static int winhid_emit_one_value_cap(
 		*last_report_id = (unsigned int)vc->ReportID;
 	}
 
-	status_link = winhid_is_present_status_link(vc->LinkUsagePage, vc->LinkUsage);
-	if (vc->LinkUsagePage != 0U && vc->LinkUsage != 0U) {
-		if (status_link
-		 && (!winhid_desc_emit_usage_page(db, WINHID_USAGE_PAGE_POWER_DEVICE)
-		  || !winhid_desc_emit_usage(db, WINHID_USAGE_POWER_SUMMARY)
-		  || !winhid_desc_emit_collection(db, WINHID_COLLECTION_PHYSICAL))) {
-			return 0;
-		}
-		if (!winhid_desc_emit_usage_page(db, vc->LinkUsagePage)
-		 || !winhid_desc_emit_usage(db, vc->LinkUsage)
-		 || !winhid_desc_emit_collection(db, WINHID_COLLECTION_PHYSICAL)) {
-			return 0;
-		}
-		opened_link = status_link ? 2 : 1;
+	if (!winhid_emit_link_collection_chain(
+		db,
+		link_nodes,
+		link_nodes_n,
+		vc->LinkCollection,
+		vc->LinkUsagePage,
+		vc->LinkUsage,
+		&opened_link)) {
+		return 0;
 	}
 
-	usage_page = vc->UsagePage;
-	if (status_link
-	 && usage_page == WINHID_USAGE_PAGE_POWER_DEVICE
-	) {
-		if (vc->IsRange) {
-			if (winhid_range_is_battery_status_semantic(vc->u.Range.UsageMin, vc->u.Range.UsageMax)) {
-				usage_page = WINHID_USAGE_PAGE_BATTERY_SYSTEM;
-			}
-		} else {
-			if (winhid_usage_is_battery_status_semantic(vc->u.NotRange.Usage)) {
-				usage_page = WINHID_USAGE_PAGE_BATTERY_SYSTEM;
-			}
-		}
-	}
-
-	if (!winhid_desc_emit_usage_page(db, usage_page)) {
+	if (!winhid_desc_emit_usage_page(db, vc->UsagePage)) {
 		return 0;
 	}
 
@@ -1132,13 +1365,11 @@ static int winhid_emit_one_value_cap(
 		return 0;
 	}
 
-	if (opened_link) {
+	while (opened_link > 0U) {
 		if (!winhid_desc_emit_end_collection(db)) {
 			return 0;
 		}
-		if (opened_link > 1 && !winhid_desc_emit_end_collection(db)) {
-			return 0;
-		}
+		opened_link--;
 	}
 
 	return 1;
@@ -1147,12 +1378,12 @@ static int winhid_emit_one_value_cap(
 static int winhid_emit_one_button_cap(
 	winhid_descbuf_t *db,
 	const win_hidp_button_caps_t *bc,
+	const win_hidp_link_collection_node_t *link_nodes,
+	size_t link_nodes_n,
 	unsigned int report_type,
 	unsigned int *last_report_id)
 {
-	int opened_link = 0;
-	int status_link;
-	uint16_t usage_page;
+	size_t opened_link = 0;
 	uint32_t count = 1U;
 
 	if (!db || !bc || !last_report_id) {
@@ -1166,38 +1397,18 @@ static int winhid_emit_one_button_cap(
 		*last_report_id = (unsigned int)bc->ReportID;
 	}
 
-	status_link = winhid_is_present_status_link(bc->LinkUsagePage, bc->LinkUsage);
-	if (bc->LinkUsagePage != 0U && bc->LinkUsage != 0U) {
-		if (status_link
-		 && (!winhid_desc_emit_usage_page(db, WINHID_USAGE_PAGE_POWER_DEVICE)
-		  || !winhid_desc_emit_usage(db, WINHID_USAGE_POWER_SUMMARY)
-		  || !winhid_desc_emit_collection(db, WINHID_COLLECTION_PHYSICAL))) {
-			return 0;
-		}
-		if (!winhid_desc_emit_usage_page(db, bc->LinkUsagePage)
-		 || !winhid_desc_emit_usage(db, bc->LinkUsage)
-		 || !winhid_desc_emit_collection(db, WINHID_COLLECTION_PHYSICAL)) {
-			return 0;
-		}
-		opened_link = status_link ? 2 : 1;
+	if (!winhid_emit_link_collection_chain(
+		db,
+		link_nodes,
+		link_nodes_n,
+		bc->LinkCollection,
+		bc->LinkUsagePage,
+		bc->LinkUsage,
+		&opened_link)) {
+		return 0;
 	}
 
-	usage_page = bc->UsagePage;
-	if (status_link
-	 && usage_page == WINHID_USAGE_PAGE_POWER_DEVICE
-	) {
-		if (bc->IsRange) {
-			if (winhid_range_is_battery_status_semantic(bc->u.Range.UsageMin, bc->u.Range.UsageMax)) {
-				usage_page = WINHID_USAGE_PAGE_BATTERY_SYSTEM;
-			}
-		} else {
-			if (winhid_usage_is_battery_status_semantic(bc->u.NotRange.Usage)) {
-				usage_page = WINHID_USAGE_PAGE_BATTERY_SYSTEM;
-			}
-		}
-	}
-
-	if (!winhid_desc_emit_usage_page(db, usage_page)) {
+	if (!winhid_desc_emit_usage_page(db, bc->UsagePage)) {
 		return 0;
 	}
 
@@ -1217,21 +1428,433 @@ static int winhid_emit_one_button_cap(
 
 	if (!winhid_desc_emit_s(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_LOGICAL_MIN, 0)
 	 || !winhid_desc_emit_s(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_LOGICAL_MAX, 1)
+	 || !winhid_desc_emit_s(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_PHYSICAL_MIN, 0)
+	 || !winhid_desc_emit_s(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_PHYSICAL_MAX, 0)
+	 || !winhid_desc_emit_s(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_UNIT_EXP, 0)
+	 || !winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_UNIT, 0)
 	 || !winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_REPORT_SIZE, 1)
 	 || !winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_REPORT_COUNT, count)
 	 || !winhid_desc_emit_main_data(db, report_type, 0x02)) {
 		return 0;
 	}
 
-	if (opened_link) {
+	while (opened_link > 0U) {
 		if (!winhid_desc_emit_end_collection(db)) {
 			return 0;
 		}
-		if (opened_link > 1 && !winhid_desc_emit_end_collection(db)) {
-			return 0;
-		}
+		opened_link--;
 	}
 
+	return 1;
+}
+
+typedef struct winhid_ordered_cap_s {
+	unsigned int kind;
+	size_t index;
+	UCHAR report_id;
+	USHORT data_index;
+	USHORT bit_field;
+} winhid_ordered_cap_t;
+
+#define WINHID_ORDERED_CAP_VALUE  1U
+#define WINHID_ORDERED_CAP_BUTTON 2U
+
+static USHORT winhid_value_cap_data_index(const win_hidp_value_caps_t *vc)
+{
+	if (!vc) {
+		return 0U;
+	}
+	if (vc->IsRange) {
+		return vc->u.Range.DataIndexMin;
+	}
+	return vc->u.NotRange.DataIndex;
+}
+
+static USHORT winhid_button_cap_data_index(const win_hidp_button_caps_t *bc)
+{
+	if (!bc) {
+		return 0U;
+	}
+	if (bc->IsRange) {
+		return bc->u.Range.DataIndexMin;
+	}
+	return bc->u.NotRange.DataIndex;
+}
+
+static int winhid_value_caps_signature_match(
+	const win_hidp_value_caps_t *a,
+	const win_hidp_value_caps_t *b)
+{
+	if (!a || !b) {
+		return 0;
+	}
+
+	return a->IsRange == b->IsRange
+		&& a->BitField == b->BitField
+		&& a->LinkCollection == b->LinkCollection
+		&& a->LinkUsage == b->LinkUsage
+		&& a->LinkUsagePage == b->LinkUsagePage
+		&& a->UsagePage == b->UsagePage
+		&& a->BitSize == b->BitSize
+		&& a->ReportCount == b->ReportCount
+		&& a->UnitsExp == b->UnitsExp
+		&& a->Units == b->Units
+		&& a->LogicalMin == b->LogicalMin
+		&& a->LogicalMax == b->LogicalMax
+		&& a->PhysicalMin == b->PhysicalMin
+		&& a->PhysicalMax == b->PhysicalMax;
+}
+
+static int winhid_button_caps_signature_match(
+	const win_hidp_button_caps_t *a,
+	const win_hidp_button_caps_t *b)
+{
+	if (!a || !b) {
+		return 0;
+	}
+
+	return a->IsRange == b->IsRange
+		&& a->BitField == b->BitField
+		&& a->LinkCollection == b->LinkCollection
+		&& a->LinkUsage == b->LinkUsage
+		&& a->LinkUsagePage == b->LinkUsagePage
+		&& a->UsagePage == b->UsagePage;
+}
+
+static int winhid_ordered_caps_match_run_signature(
+	const winhid_ordered_cap_t *left,
+	const winhid_ordered_cap_t *right,
+	const win_hidp_value_caps_t *vals,
+	const win_hidp_button_caps_t *btns)
+{
+	if (!left || !right || !vals || !btns) {
+		return 0;
+	}
+
+	if (left->kind != right->kind || left->report_id != right->report_id) {
+		return 0;
+	}
+
+	/* Only consider adjacent DataIndex controls for run reversal. */
+	if ((unsigned int)right->data_index != (unsigned int)left->data_index + 1U) {
+		return 0;
+	}
+
+	if (left->kind == WINHID_ORDERED_CAP_VALUE) {
+		const win_hidp_value_caps_t *a = &vals[left->index];
+		const win_hidp_value_caps_t *b = &vals[right->index];
+
+		/* Range caps should preserve emitted order. */
+		if (a->IsRange || b->IsRange) {
+			return 0;
+		}
+
+		return winhid_value_caps_signature_match(a, b);
+	}
+
+	if (left->kind == WINHID_ORDERED_CAP_BUTTON) {
+		const win_hidp_button_caps_t *a = &btns[left->index];
+		const win_hidp_button_caps_t *b = &btns[right->index];
+
+		/* Range caps should preserve emitted order. */
+		if (a->IsRange || b->IsRange) {
+			return 0;
+		}
+
+		return winhid_button_caps_signature_match(a, b);
+	}
+
+	return 0;
+}
+
+static void winhid_reverse_ordered_caps_range(
+	winhid_ordered_cap_t *ordered,
+	size_t start,
+	size_t end)
+{
+	while (start < end) {
+		winhid_ordered_cap_t tmp = ordered[start];
+		ordered[start] = ordered[end];
+		ordered[end] = tmp;
+		start++;
+		end--;
+	}
+}
+
+static size_t winhid_reorder_multicontrol_runs(
+	winhid_ordered_cap_t *ordered,
+	size_t total,
+	const win_hidp_value_caps_t *vals,
+	const win_hidp_button_caps_t *btns)
+{
+	size_t i = 0U;
+	size_t reversed_runs = 0U;
+
+	if (!ordered || total < 2U || !vals || !btns) {
+		return 0U;
+	}
+
+	while (i < total) {
+		size_t j = i + 1U;
+
+		while (j < total
+			&& winhid_ordered_caps_match_run_signature(&ordered[j - 1U], &ordered[j], vals, btns)) {
+			j++;
+		}
+
+		if (j > i + 1U) {
+			winhid_reverse_ordered_caps_range(ordered, i, j - 1U);
+			reversed_runs++;
+		}
+
+		i = j;
+	}
+
+	return reversed_runs;
+}
+
+static uint32_t winhid_value_cap_bit_count(const win_hidp_value_caps_t *vc)
+{
+	uint32_t bit_size;
+	uint32_t count;
+
+	if (!vc) {
+		return 0U;
+	}
+
+	bit_size = vc->BitSize ? (uint32_t)vc->BitSize : 1U;
+	count = vc->ReportCount ? (uint32_t)vc->ReportCount : 1U;
+	return bit_size * count;
+}
+
+static uint32_t winhid_button_cap_count(const win_hidp_button_caps_t *bc)
+{
+	if (!bc) {
+		return 0U;
+	}
+
+	if (bc->IsRange && bc->u.Range.UsageMax >= bc->u.Range.UsageMin) {
+		return (uint32_t)(bc->u.Range.UsageMax - bc->u.Range.UsageMin + 1U);
+	}
+
+	return 1U;
+}
+
+static int winhid_emit_const_padding_bits(
+	winhid_descbuf_t *db,
+	unsigned int report_type,
+	uint32_t bits)
+{
+	if (!db) {
+		return 0;
+	}
+	if (bits == 0U) {
+		return 1;
+	}
+	if (!winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_REPORT_SIZE, 1U)
+	 || !winhid_desc_emit_u(db, WINHID_TYPE_GLOBAL, WINHID_GLOBAL_REPORT_COUNT, bits)
+	 || !winhid_desc_emit_main_data(db, report_type, 0x03)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+static int winhid_cmp_ordered_caps(const void *pa, const void *pb)
+{
+	const winhid_ordered_cap_t *a = (const winhid_ordered_cap_t *)pa;
+	const winhid_ordered_cap_t *b = (const winhid_ordered_cap_t *)pb;
+
+	if (a->report_id < b->report_id) {
+		return -1;
+	}
+	if (a->report_id > b->report_id) {
+		return 1;
+	}
+	if (a->data_index < b->data_index) {
+		return -1;
+	}
+	if (a->data_index > b->data_index) {
+		return 1;
+	}
+	if (a->bit_field < b->bit_field) {
+		return -1;
+	}
+	if (a->bit_field > b->bit_field) {
+		return 1;
+	}
+	if (a->kind < b->kind) {
+		return -1;
+	}
+	if (a->kind > b->kind) {
+		return 1;
+	}
+	if (a->index < b->index) {
+		return -1;
+	}
+	if (a->index > b->index) {
+		return 1;
+	}
+
+	return 0;
+}
+
+static int winhid_emit_ordered_caps(
+	winhid_descbuf_t *db,
+	const win_hidp_value_caps_t *vals, size_t vals_n,
+	const win_hidp_button_caps_t *btns, size_t btns_n,
+	const win_hidp_link_collection_node_t *link_nodes, size_t link_nodes_n,
+	unsigned int report_type)
+{
+	size_t total;
+	winhid_ordered_cap_t *ordered;
+	size_t i;
+	size_t n = 0U;
+	size_t reversed_runs;
+	unsigned int last_report_id = UINT_MAX;
+	UCHAR current_report_id = 0xFFU;
+	uint32_t current_report_bitpos = 0U;
+	unsigned int prev_kind = 0U;
+	int prev_was_single_button = 0;
+	USHORT prev_data_index = 0U;
+	int prev_data_index_valid = 0;
+
+	if (!db) {
+		return 0;
+	}
+
+	total = vals_n + btns_n;
+	if (total == 0U) {
+		return 1;
+	}
+
+	ordered = (winhid_ordered_cap_t *)calloc(total, sizeof(*ordered));
+	if (!ordered) {
+		return 0;
+	}
+
+	for (i = 0U; i < vals_n; i++) {
+		ordered[n].kind = WINHID_ORDERED_CAP_VALUE;
+		ordered[n].index = i;
+		ordered[n].report_id = vals[i].ReportID;
+		ordered[n].data_index = winhid_value_cap_data_index(&vals[i]);
+		ordered[n].bit_field = vals[i].BitField;
+		n++;
+	}
+	for (i = 0U; i < btns_n; i++) {
+		ordered[n].kind = WINHID_ORDERED_CAP_BUTTON;
+		ordered[n].index = i;
+		ordered[n].report_id = btns[i].ReportID;
+		ordered[n].data_index = winhid_button_cap_data_index(&btns[i]);
+		ordered[n].bit_field = btns[i].BitField;
+		n++;
+	}
+
+	qsort(ordered, total, sizeof(*ordered), winhid_cmp_ordered_caps);
+	reversed_runs = winhid_reorder_multicontrol_runs(ordered, total, vals, btns);
+	if (nut_debug_level >= 3 && reversed_runs > 0U) {
+		upsdebugx(3, "%s: reordered %zu contiguous cap run(s) to preserve usage declaration order",
+			__func__, reversed_runs);
+	}
+
+	for (i = 0U; i < total; i++) {
+		if (ordered[i].report_id != current_report_id) {
+			if (current_report_id != 0xFFU && nut_debug_level >= 3 && report_type == WINHID_REPORT_FEATURE) {
+				upsdebugx(3,
+					"%s: synthesized Feature RID=0x%02x payload_bits=%u payload_bytes=%u",
+					__func__,
+					(unsigned int)current_report_id,
+					(unsigned int)current_report_bitpos,
+					(unsigned int)((current_report_bitpos + 7U) >> 3));
+			}
+				current_report_id = ordered[i].report_id;
+				current_report_bitpos = 0U;
+				prev_kind = 0U;
+				prev_was_single_button = 0;
+				prev_data_index_valid = 0;
+			}
+
+			if (report_type == WINHID_REPORT_FEATURE
+			 && prev_kind == WINHID_ORDERED_CAP_BUTTON
+			 && prev_was_single_button
+			 && prev_data_index_valid
+			 && (unsigned int)ordered[i].data_index > (unsigned int)prev_data_index + 1U
+			 && ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
+				const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
+				uint32_t bit_size = vc->BitSize ? (uint32_t)vc->BitSize : 1U;
+				uint32_t misalign = current_report_bitpos & 7U;
+
+				/* Heuristic: some UPS descriptors place a 7-bit const pad after one 1-bit flag.
+				 * HidP caps do not expose that const field directly, but DataIndex usually skips. */
+				if (!vc->IsRange && bit_size >= 8U && misalign == 1U) {
+					uint32_t pad_bits = 8U - misalign;
+
+				if (!winhid_emit_const_padding_bits(db, report_type, pad_bits)) {
+					free(ordered);
+					return 0;
+				}
+				current_report_bitpos += pad_bits;
+				if (nut_debug_level >= 3) {
+					upsdebugx(3,
+						"%s: inserted %u bit constant padding before ReportID=0x%02x DataIndex=%u",
+						__func__,
+						(unsigned int)pad_bits,
+						(unsigned int)ordered[i].report_id,
+						(unsigned int)ordered[i].data_index);
+				}
+			}
+		}
+
+			if (ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
+				const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
+
+			if (!winhid_emit_one_value_cap(
+				db,
+				vc,
+					link_nodes, link_nodes_n,
+					report_type,
+					&last_report_id)) {
+					free(ordered);
+					return 0;
+				}
+
+				current_report_bitpos += winhid_value_cap_bit_count(vc);
+				prev_kind = WINHID_ORDERED_CAP_VALUE;
+				prev_was_single_button = 0;
+				prev_data_index = ordered[i].data_index;
+				prev_data_index_valid = 1;
+			} else {
+				const win_hidp_button_caps_t *bc = &btns[ordered[i].index];
+				uint32_t bcount = winhid_button_cap_count(bc);
+
+			if (!winhid_emit_one_button_cap(
+				db,
+				bc,
+				link_nodes, link_nodes_n,
+				report_type,
+				&last_report_id)) {
+					free(ordered);
+					return 0;
+				}
+
+				current_report_bitpos += bcount;
+				prev_kind = WINHID_ORDERED_CAP_BUTTON;
+				prev_was_single_button = (!bc->IsRange && bcount == 1U);
+				prev_data_index = ordered[i].data_index;
+				prev_data_index_valid = 1;
+			}
+		}
+
+	if (current_report_id != 0xFFU && nut_debug_level >= 3 && report_type == WINHID_REPORT_FEATURE) {
+		upsdebugx(3,
+			"%s: synthesized Feature RID=0x%02x payload_bits=%u payload_bytes=%u",
+			__func__,
+			(unsigned int)current_report_id,
+			(unsigned int)current_report_bitpos,
+			(unsigned int)((current_report_bitpos + 7U) >> 3));
+	}
+
+	free(ordered);
 	return 1;
 }
 
@@ -1243,13 +1866,12 @@ static int winhid_build_descriptor_from_caps(
 	const win_hidp_button_caps_t *out_btns, size_t out_btns_n,
 	const win_hidp_value_caps_t *feat_vals, size_t feat_vals_n,
 	const win_hidp_button_caps_t *feat_btns, size_t feat_btns_n,
+	const win_hidp_link_collection_node_t *link_nodes, size_t link_nodes_n,
 	unsigned char *out_buf,
 	size_t out_buf_size,
 	usb_ctrl_charbufsize *out_len)
 {
 	winhid_descbuf_t db;
-	size_t i;
-	unsigned int last_report_id;
 
 	if (!caps || !out_buf || !out_len) {
 		return 0;
@@ -1259,51 +1881,39 @@ static int winhid_build_descriptor_from_caps(
 
 	if (!winhid_desc_emit_usage_page(&db, caps->UsagePage)
 	 || !winhid_desc_emit_usage(&db, caps->Usage)
-	 || !winhid_desc_emit_collection(&db, WINHID_COLLECTION_APPLICATION)) {
+		 || !winhid_desc_emit_collection(&db, WINHID_COLLECTION_APPLICATION)) {
 		free(db.data);
 		return 0;
 	}
 
-	last_report_id = UINT_MAX;
-	for (i = 0; i < in_vals_n; i++) {
-		if (!winhid_emit_one_value_cap(&db, &in_vals[i], WINHID_REPORT_INPUT, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
-	}
-	for (i = 0; i < in_btns_n; i++) {
-		if (!winhid_emit_one_button_cap(&db, &in_btns[i], WINHID_REPORT_INPUT, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
+	if (!winhid_emit_ordered_caps(
+		&db,
+		in_vals, in_vals_n,
+		in_btns, in_btns_n,
+		link_nodes, link_nodes_n,
+		WINHID_REPORT_INPUT)) {
+		free(db.data);
+		return 0;
 	}
 
-	last_report_id = UINT_MAX;
-	for (i = 0; i < out_vals_n; i++) {
-		if (!winhid_emit_one_value_cap(&db, &out_vals[i], WINHID_REPORT_OUTPUT, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
-	}
-	for (i = 0; i < out_btns_n; i++) {
-		if (!winhid_emit_one_button_cap(&db, &out_btns[i], WINHID_REPORT_OUTPUT, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
+	if (!winhid_emit_ordered_caps(
+		&db,
+		out_vals, out_vals_n,
+		out_btns, out_btns_n,
+		link_nodes, link_nodes_n,
+		WINHID_REPORT_OUTPUT)) {
+		free(db.data);
+		return 0;
 	}
 
-	last_report_id = UINT_MAX;
-	for (i = 0; i < feat_vals_n; i++) {
-		if (!winhid_emit_one_value_cap(&db, &feat_vals[i], WINHID_REPORT_FEATURE, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
-	}
-	for (i = 0; i < feat_btns_n; i++) {
-		if (!winhid_emit_one_button_cap(&db, &feat_btns[i], WINHID_REPORT_FEATURE, &last_report_id)) {
-			free(db.data);
-			return 0;
-		}
+	if (!winhid_emit_ordered_caps(
+		&db,
+		feat_vals, feat_vals_n,
+		feat_btns, feat_btns_n,
+		link_nodes, link_nodes_n,
+		WINHID_REPORT_FEATURE)) {
+		free(db.data);
+		return 0;
 	}
 
 	if (!winhid_desc_emit_end_collection(&db)) {
@@ -1334,8 +1944,10 @@ static int winhid_collect_caps_and_optional_descriptor(
 	win_phidp_preparsed_data_t preparsed;
 	win_hidp_value_caps_t *in_vals = NULL, *out_vals = NULL, *feat_vals = NULL;
 	win_hidp_button_caps_t *in_btns = NULL, *out_btns = NULL, *feat_btns = NULL;
+	win_hidp_link_collection_node_t *link_nodes = NULL;
 	size_t in_vals_n = 0, out_vals_n = 0, feat_vals_n = 0;
 	size_t in_btns_n = 0, out_btns_n = 0, feat_btns_n = 0;
+	size_t link_nodes_n = 0;
 	size_t i;
 	int ok = 0;
 
@@ -1350,6 +1962,11 @@ static int winhid_collect_caps_and_optional_descriptor(
 
 	ctx->input_report_len = (size_t)caps.InputReportByteLength;
 	ctx->feature_report_len = (size_t)caps.FeatureReportByteLength;
+	upsdebugx(3, "%s: HidP report lengths Input=%u Output=%u Feature=%u",
+		__func__,
+		(unsigned int)caps.InputReportByteLength,
+		(unsigned int)caps.OutputReportByteLength,
+		(unsigned int)caps.FeatureReportByteLength);
 
 	in_vals_n = winhid_get_value_caps(preparsed, WINHID_REPORT_INPUT, caps.NumberInputValueCaps, &in_vals);
 	out_vals_n = winhid_get_value_caps(preparsed, WINHID_REPORT_OUTPUT, caps.NumberOutputValueCaps, &out_vals);
@@ -1358,6 +1975,12 @@ static int winhid_collect_caps_and_optional_descriptor(
 	in_btns_n = winhid_get_button_caps(preparsed, WINHID_REPORT_INPUT, caps.NumberInputButtonCaps, &in_btns);
 	out_btns_n = winhid_get_button_caps(preparsed, WINHID_REPORT_OUTPUT, caps.NumberOutputButtonCaps, &out_btns);
 	feat_btns_n = winhid_get_button_caps(preparsed, WINHID_REPORT_FEATURE, caps.NumberFeatureButtonCaps, &feat_btns);
+	link_nodes_n = winhid_get_link_collection_nodes(preparsed, caps.NumberLinkCollectionNodes, &link_nodes);
+	upsdebugx(3, "%s: collected %zu/%u link collection nodes",
+		__func__, link_nodes_n, (unsigned int)caps.NumberLinkCollectionNodes);
+	winhid_debug_dump_feature_caps_summary(feat_vals, feat_vals_n, feat_btns, feat_btns_n);
+	winhid_debug_dump_feature_value_caps(feat_vals, feat_vals_n);
+	winhid_debug_dump_feature_button_caps(feat_btns, feat_btns_n);
 
 	for (i = 0; i < in_vals_n; i++) {
 		winhid_track_input_report_id(ctx, in_vals[i].ReportID);
@@ -1375,6 +1998,7 @@ static int winhid_collect_caps_and_optional_descriptor(
 			out_btns, out_btns_n,
 			feat_vals, feat_vals_n,
 			feat_btns, feat_btns_n,
+			link_nodes, link_nodes_n,
 			rdbuf,
 			rdbuf_size,
 			rdlen);
@@ -1391,6 +2015,7 @@ static int winhid_collect_caps_and_optional_descriptor(
 	free(in_btns);
 	free(out_btns);
 	free(feat_btns);
+	free(link_nodes);
 
 	return ok;
 }
@@ -1635,6 +2260,12 @@ static int nut_winhid_get_report(
 	if (ctx->feature_report_len > query_size) {
 		query_size = ctx->feature_report_len;
 	}
+	upsdebugx(3, "%s: ReportID=0x%02x ReportSize=%u query_size=%zu feature_len=%zu",
+		__func__,
+		(unsigned int)(ReportId & 0xffU),
+		(unsigned int)ReportSize,
+		query_size,
+		ctx->feature_report_len);
 
 	if (query_size < 1 || query_size > (size_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		return LIBUSB_ERROR_INVALID_PARAM;
@@ -1656,6 +2287,14 @@ static int nut_winhid_get_report(
 	}
 
 	copy_len = ((size_t)ReportSize < query_size) ? (size_t)ReportSize : query_size;
+	if (query_size > (size_t)ReportSize) {
+		upsdebugx(3,
+			"%s: truncating ReportID=0x%02x from %zu to %u bytes to match synthesized descriptor",
+			__func__,
+			(unsigned int)(ReportId & 0xffU),
+			query_size,
+			(unsigned int)ReportSize);
+	}
 	memcpy(raw_buf, tmp, copy_len);
 	free(tmp);
 
