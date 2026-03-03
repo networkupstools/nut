@@ -1284,7 +1284,7 @@ static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration, int log_unhandled_loudly)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -1389,8 +1389,13 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			 || response->variables->type == SNMP_NOSUCHINSTANCE
 			 || response->variables->type == SNMP_ENDOFMIBVIEW
 			) {
-				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+				if (log_unhandled_loudly) {
+					upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
 						upsname?upsname:device_name, OID);
+				} else {
+					upsdebugx(2, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				}
 				snmp_free_pdu(response);
 				break;
 			}
@@ -1407,7 +1412,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
 		if (new_ret_array == NULL) {
-			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			upsdebugx(1, "%s: Failed to realloc ret_array", __func__);
 			break;
 		}
 		else {
@@ -1425,7 +1430,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	return ret_array;
 }
 
-struct snmp_pdu *nut_snmp_get(const char *OID)
+static struct snmp_pdu *do_nut_snmp_get(const char *OID, int log_unhandled_loudly)
 {
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * ret_pdu;
@@ -1435,7 +1440,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
 
-	pdu_array = nut_snmp_walk(OID,1);
+	pdu_array = nut_snmp_walk(OID, 1, log_unhandled_loudly);
 
 	if(pdu_array == NULL) {
 		return NULL;
@@ -1446,6 +1451,11 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	nut_snmp_free(pdu_array);
 
 	return ret_pdu;
+}
+
+struct snmp_pdu *nut_snmp_get(const char *OID)
+{
+	return do_nut_snmp_get(OID, 1);
 }
 
 static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info)
@@ -1616,7 +1626,7 @@ static bool_t do_nut_snmp_get_int(const char *OID, long *pval, int log_unhandled
 
 	upsdebugx(3, "Entering %s()", __func__);
 
-	pdu = nut_snmp_get(OID);
+	pdu = do_nut_snmp_get(OID, log_unhandled_loudly);
 	if (pdu == NULL)
 		return FALSE;
 
@@ -3757,7 +3767,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					upsdebugx(2, "=> truncating alarms present to INT_MAX");
 					value = INT_MAX;
 				}
-				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value);
+				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value, 1);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;
