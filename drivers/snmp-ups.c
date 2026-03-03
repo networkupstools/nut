@@ -1377,6 +1377,8 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
 			/* Checked the "type" field of the returned varbind if
 			 * it is a type error exception (only applicable with
 			 * SNMPv2 or SNMPv3 protocol, would not happen with
