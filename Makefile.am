@@ -100,7 +100,8 @@ all: all-fanout-cleanup
 # Run as part of "all", but after the autotools-standard "all-recursive"
 # where we quiesce nut_version.h regeneration attempts for each subdir
 all-fanout-cleanup: all-recursive
-	@rm -f include/.all.nut_version-generated.timestamp
+	@rm -f include/.all.nut_version-generated.timestamp \
+	       clients/.all.libupsclient_version-generated.timestamp
 
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
@@ -108,9 +109,10 @@ SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
-CLEANFILES += include/.all.nut_version-generated.timestamp
+CLEANFILES += include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
 all-fanout-maybe: @dotMAKE@
-	@rm -f include/.all.nut_version-generated.timestamp
+	@rm -f include/.all.nut_version-generated.timestamp \
+	       clients/.all.libupsclient_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
@@ -256,6 +258,10 @@ all-libs-local/common: all-libs-local/include @dotMAKE@
 all-libs-local/clients: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
+	@[ -s clients/libupsclient-version.h ]
+	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch clients/.all.libupsclient_version-generated.timestamp
 
 ### Delivers: libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
@@ -1068,8 +1074,10 @@ nut_version.h include/nut_version.h: @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
+# May depend on nut_version.h at least when we ENABLE_SHARED_PRIVATE_LIBS
 # May involve (re-)build of libupsclient.la
-libupsclient-version.h clients/libupsclient-version.h: @dotMAKE@
+libupsclient-version.h clients/libupsclient-version.h: include/nut_version.h @dotMAKE@
+	@rm -f clients/.all.libupsclient_version-generated.timestamp
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in @dotMAKE@
