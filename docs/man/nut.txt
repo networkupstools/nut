@@ -370,7 +370,7 @@ to secure access to those files and their copies as well.
 
 include::index.txt[]
 
-:!included-skip-title:
+:included-skip-title!:
 
 ///////////////
 :leveloffset: 0
