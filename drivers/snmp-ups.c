@@ -179,7 +179,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.39"
+#define DRIVER_VERSION	"1.40"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1605,7 +1605,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 	return ret;
 }
 
-bool_t nut_snmp_get_int(const char *OID, long *pval)
+static bool_t do_nut_snmp_get_int(const char *OID, long *pval, int log_unhandled_loudly)
 {
 	char tmp_buf[SU_LARGEBUF];
 	struct snmp_pdu *pdu;
@@ -1639,8 +1639,8 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	case ASN_OBJECT_ID:
 		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
 		upsdebugx(2, "Received an OID value: %s", tmp_buf);
-		/* Try to get the value of the pointed OID */
-		if (nut_snmp_get_int(tmp_buf, &value) == FALSE) {
+		/* Try to get the value of the pointed OID, quietly */
+		if (do_nut_snmp_get_int(tmp_buf, &value, 0) == FALSE) {
 			char	*oid_leaf;
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
@@ -1650,8 +1650,19 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		}
 		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
-			upsname?upsname:device_name, pdu->variables->type, OID);
+		/* This is often seen with "ASN 0x80" meaning "context-specific"
+		 * (ASN_CONTEXT) with no further bits. In practice in may mean
+		 * trying to read from an OID that is itself the value, which
+		 * the fallback above handles for us. For analysis, see:
+		 *   https://github.com/networkupstools/nut/issues/1358
+		 */
+		if (log_unhandled_loudly) {
+			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		} else {
+			upsdebugx(3, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		}
 		return FALSE;
 	}
 
@@ -1661,6 +1672,11 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		*pval = value;
 
 	return TRUE;
+}
+
+bool_t nut_snmp_get_int(const char *OID, long *pval)
+{
+	return do_nut_snmp_get_int(OID, pval, 1);
 }
 
 bool_t nut_snmp_set(const char *OID, char type, const char *value)
