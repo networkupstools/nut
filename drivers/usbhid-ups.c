@@ -1352,8 +1352,7 @@ void upsdrv_makevartable(void)
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
-	addvar(VAR_FLAG, "exprimentalhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
-	addvar(VAR_FLAG, "experimentalhid", "Alias for exprimentalhid");
+	addvar(VAR_FLAG, "experimentalhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1699,26 +1698,34 @@ void upsdrv_initups(void)
 	subdriver_matcher = device_path;
 #else	/* !SHUT_MODE => USB */
 	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
-
+	const char *transport_backend;
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 # ifdef WIN32
-	if (testvar("exprimentalhid") || testvar("experimentalhid")) {
+	if (testvar("experimentalhid")) {
 		comm_driver = &winhid_subdriver;
-		upslogx(LOG_INFO, "Using exprimentalhid backend: %s %s",
+		dstate_setinfo("driver.version.usb", "winhid-%s (Windows HID API)",
+			comm_driver->version);
+		upslogx(LOG_INFO, "Using experimentalhid backend: %s %s",
 			comm_driver->name, comm_driver->version);
 	} else {
 		comm_driver = &usb_subdriver;
 	}
 # else	/* !WIN32 */
-	if (testvar("exprimentalhid") || testvar("experimentalhid")) {
-		upslogx(LOG_WARNING, "exprimentalhid is only supported on WIN32 builds; ignoring option");
+	if (testvar("experimentalhid")) {
+		upslogx(LOG_WARNING, "experimentalhid is only supported on WIN32 builds; ignoring option");
 	}
 	comm_driver = &usb_subdriver;
 # endif	/* WIN32 */
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+	transport_backend = dstate_getinfo("driver.version.usb");
+# ifdef WIN32
+	if (comm_driver == &winhid_subdriver) {
+		transport_backend = "Windows HID API";
+	}
+# endif	/* WIN32 */
+	upsdebugx(2, "Initializing an USB-connected UPS with backend %s " \
 		"(NUT subdriver name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"),
+		transport_backend ? transport_backend : "(unknown)",
 		comm_driver->name, comm_driver->version );
 
 	warn_if_bad_usb_port_filename(device_path);
@@ -2044,7 +2051,7 @@ static void process_boolean_info(const char *nutvalue)
 }
 
 #if !((defined SHUT_MODE) && SHUT_MODE) && defined WIN32
-/* For exprimentalhid backend we keep transport-side synthesis minimal in
+/* For experimentalhid backend we keep transport-side synthesis minimal in
  * libwinhid, then canonicalize the parsed HIDDesc_t here before any mapping.
  * This keeps subdriver tables operating on their expected libhid/hidparser
  * model (not on backend-specific semantics).
@@ -2314,7 +2321,7 @@ static int winhid_canonicalize_parsed_report_desc(HIDDesc_t *desc)
 
 	if (changed || skipped_insert || alias_dup_skipped || alias_realloc_fail) {
 		upsdebugx(2,
-			"%s: exprimentalhid parser fixups changed=%d inserted=%d repaged=%d "
+			"%s: experimentalhid parser fixups changed=%d inserted=%d repaged=%d "
 			"alias_added=%d alias_id_nodes=%d alias_flattened=%d "
 			"skipped_insert=%d alias_dups=%d alias_oom=%d",
 			__func__, changed, inserted, repaged,
@@ -2777,7 +2784,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	 && comm_driver == &winhid_subdriver
 	 && items_polled == 0
 	) {
-		upsdebugx(2, "%s: no quick-poll mappings with exprimentalhid/pollonly; falling back to full update", __func__);
+		upsdebugx(2, "%s: no quick-poll mappings with experimentalhid/pollonly; falling back to full update", __func__);
 		return hid_ups_walk(HU_WALKMODE_FULL_UPDATE);
 	}
 #endif

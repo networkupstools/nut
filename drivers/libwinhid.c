@@ -20,149 +20,10 @@
 
 #ifdef WIN32
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN 1
-#endif
-#include <windows.h>
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define WINHID_DRIVER_NAME           "USB communication driver (Windows HID API)"
-#define WINHID_DRIVER_VERSION        "0.10"
-#define WINHID_MAX_REPORT_SIZE       0x1800
-#define WINHID_HIDP_STATUS_SUCCESS   0x00110000UL
-
-#ifndef ERROR_NO_MORE_ITEMS
-#define ERROR_NO_MORE_ITEMS 259
-#endif
-
-#ifndef DIGCF_PRESENT
-#define DIGCF_PRESENT 0x00000002
-#endif
-
-#ifndef DIGCF_DEVICEINTERFACE
-#define DIGCF_DEVICEINTERFACE 0x00000010
-#endif
-
-typedef void *HDEVINFO;
-
-typedef struct win_sp_devinfo_data_s {
-	DWORD cbSize;
-	GUID ClassGuid;
-	DWORD DevInst;
-	ULONG_PTR Reserved;
-} win_sp_devinfo_data_t;
-
-typedef struct win_sp_device_interface_data_s {
-	DWORD cbSize;
-	GUID InterfaceClassGuid;
-	DWORD Flags;
-	ULONG_PTR Reserved;
-} win_sp_device_interface_data_t;
-
-typedef PVOID win_phidp_preparsed_data_t;
-
-typedef struct win_hidp_caps_s {
-	USHORT Usage;
-	USHORT UsagePage;
-	USHORT InputReportByteLength;
-	USHORT OutputReportByteLength;
-	USHORT FeatureReportByteLength;
-	USHORT Reserved[17];
-	USHORT NumberLinkCollectionNodes;
-	USHORT NumberInputButtonCaps;
-	USHORT NumberInputValueCaps;
-	USHORT NumberInputDataIndices;
-	USHORT NumberOutputButtonCaps;
-	USHORT NumberOutputValueCaps;
-	USHORT NumberOutputDataIndices;
-	USHORT NumberFeatureButtonCaps;
-	USHORT NumberFeatureValueCaps;
-	USHORT NumberFeatureDataIndices;
-} win_hidp_caps_t;
-
-typedef struct win_hidp_range_s {
-	USHORT UsageMin;
-	USHORT UsageMax;
-	USHORT StringMin;
-	USHORT StringMax;
-	USHORT DesignatorMin;
-	USHORT DesignatorMax;
-	USHORT DataIndexMin;
-	USHORT DataIndexMax;
-} win_hidp_range_t;
-
-typedef struct win_hidp_notrange_s {
-	USHORT Usage;
-	USHORT Reserved1;
-	USHORT StringIndex;
-	USHORT Reserved2;
-	USHORT DesignatorIndex;
-	USHORT Reserved3;
-	USHORT DataIndex;
-	USHORT Reserved4;
-} win_hidp_notrange_t;
-
-typedef union win_hidp_union_range_u {
-	win_hidp_range_t Range;
-	win_hidp_notrange_t NotRange;
-} win_hidp_union_range_t;
-
-typedef struct win_hidp_value_caps_s {
-	USHORT UsagePage;
-	UCHAR ReportID;
-	BOOLEAN IsAlias;
-	USHORT BitField;
-	USHORT LinkCollection;
-	USHORT LinkUsage;
-	USHORT LinkUsagePage;
-	BOOLEAN IsRange;
-	BOOLEAN IsStringRange;
-	BOOLEAN IsDesignatorRange;
-	BOOLEAN IsAbsolute;
-	BOOLEAN HasNull;
-	UCHAR Reserved;
-	USHORT BitSize;
-	USHORT ReportCount;
-	USHORT Reserved2[5];
-	ULONG UnitsExp;
-	ULONG Units;
-	LONG LogicalMin;
-	LONG LogicalMax;
-	LONG PhysicalMin;
-	LONG PhysicalMax;
-	win_hidp_union_range_t u;
-} win_hidp_value_caps_t;
-
-typedef struct win_hidp_button_caps_s {
-	USHORT UsagePage;
-	UCHAR ReportID;
-	BOOLEAN IsAlias;
-	USHORT BitField;
-	USHORT LinkCollection;
-	USHORT LinkUsage;
-	USHORT LinkUsagePage;
-	BOOLEAN IsRange;
-	BOOLEAN IsStringRange;
-	BOOLEAN IsDesignatorRange;
-	BOOLEAN IsAbsolute;
-	DWORD Reserved[10];
-	win_hidp_union_range_t u;
-} win_hidp_button_caps_t;
-
-typedef struct win_hidp_link_collection_node_s {
-	USHORT LinkUsage;
-	USHORT LinkUsagePage;
-	USHORT Parent;
-	USHORT NumberOfChildren;
-	USHORT NextSibling;
-	USHORT FirstChild;
-	ULONG Flags;
-	PVOID UserContext;
-} win_hidp_link_collection_node_t;
 
 typedef HDEVINFO (WINAPI *pSetupDiGetClassDevsW)(
 	const GUID *ClassGuid,
@@ -204,6 +65,32 @@ typedef BOOLEAN (WINAPI *pHidD_GetFeature)(
 	HANDLE HidDeviceObject,
 	PVOID ReportBuffer,
 	ULONG ReportBufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_GetIndexedString)(
+	HANDLE HidDeviceObject,
+	ULONG StringIndex,
+	PVOID Buffer,
+	ULONG BufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_GetManufacturerString)(
+	HANDLE HidDeviceObject,
+	PVOID Buffer,
+	ULONG BufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_GetProductString)(
+	HANDLE HidDeviceObject,
+	PVOID Buffer,
+	ULONG BufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_GetSerialNumberString)(
+	HANDLE HidDeviceObject,
+	PVOID Buffer,
+	ULONG BufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_GetStringFn)(
+	HANDLE HidDeviceObject,
+	PVOID Buffer,
+	ULONG BufferLength);
 
 typedef ULONG (WINAPI *pHidP_GetCaps)(
 	win_phidp_preparsed_data_t PreparsedData,
@@ -274,6 +161,10 @@ typedef struct winhid_api_s {
 	pHidD_FreePreparsedData HidD_FreePreparsedData;
 	pHidD_GetInputReport HidD_GetInputReport;
 	pHidD_GetFeature HidD_GetFeature;
+	pHidD_GetIndexedString HidD_GetIndexedString;
+	pHidD_GetManufacturerString HidD_GetManufacturerString;
+	pHidD_GetProductString HidD_GetProductString;
+	pHidD_GetSerialNumberString HidD_GetSerialNumberString;
 	pHidP_GetCaps HidP_GetCaps;
 	pHidP_GetValueCaps HidP_GetValueCaps;
 	pHidP_GetButtonCaps HidP_GetButtonCaps;
@@ -392,6 +283,38 @@ static int winhid_load_apis(void)
 	WINHID_RESOLVE(g_winhid_api.HidD_FreePreparsedData, g_winhid_api.hid_mod, "HidD_FreePreparsedData");
 	WINHID_RESOLVE(g_winhid_api.HidD_GetInputReport, g_winhid_api.hid_mod, "HidD_GetInputReport");
 	WINHID_RESOLVE(g_winhid_api.HidD_GetFeature, g_winhid_api.hid_mod, "HidD_GetFeature");
+	{
+		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidD_GetIndexedString");
+		if (!fp) {
+			upsdebugx(2, "%s: optional API HidD_GetIndexedString not found", __func__);
+		} else {
+			memcpy(&g_winhid_api.HidD_GetIndexedString, &fp, sizeof(fp));
+		}
+	}
+	{
+		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidD_GetManufacturerString");
+		if (!fp) {
+			upsdebugx(2, "%s: optional API HidD_GetManufacturerString not found", __func__);
+		} else {
+			memcpy(&g_winhid_api.HidD_GetManufacturerString, &fp, sizeof(fp));
+		}
+	}
+	{
+		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidD_GetProductString");
+		if (!fp) {
+			upsdebugx(2, "%s: optional API HidD_GetProductString not found", __func__);
+		} else {
+			memcpy(&g_winhid_api.HidD_GetProductString, &fp, sizeof(fp));
+		}
+	}
+	{
+		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidD_GetSerialNumberString");
+		if (!fp) {
+			upsdebugx(2, "%s: optional API HidD_GetSerialNumberString not found", __func__);
+		} else {
+			memcpy(&g_winhid_api.HidD_GetSerialNumberString, &fp, sizeof(fp));
+		}
+	}
 	WINHID_RESOLVE(g_winhid_api.HidP_GetCaps, g_winhid_api.hid_mod, "HidP_GetCaps");
 	WINHID_RESOLVE(g_winhid_api.HidP_GetValueCaps, g_winhid_api.hid_mod, "HidP_GetValueCaps");
 	WINHID_RESOLVE(g_winhid_api.HidP_GetButtonCaps, g_winhid_api.hid_mod, "HidP_GetButtonCaps");
@@ -517,6 +440,83 @@ static char *winhid_wstr_to_ascii(const WCHAR *wstr)
 	}
 	ret[len] = '\0';
 	return ret;
+}
+
+static int winhid_copy_ascii_to_buf(
+	const char *src,
+	char *dst,
+	usb_ctrl_charbufsize dstlen)
+{
+	size_t copy;
+
+	if (!dst || dstlen < 1) {
+		return -1;
+	}
+
+	if (!src || src[0] == '\0') {
+		dst[0] = '\0';
+		return 0;
+	}
+
+	copy = strlen(src);
+	if (copy >= (size_t)dstlen) {
+		copy = (size_t)dstlen - 1U;
+	}
+
+	memcpy(dst, src, copy);
+	dst[copy] = '\0';
+	return (int)copy;
+}
+
+static char *winhid_hidd_get_string(HANDLE handle, pHidD_GetStringFn get_string_fn)
+{
+	WCHAR wbuf[512];
+
+	if (!get_string_fn || !handle || handle == INVALID_HANDLE_VALUE) {
+		return NULL;
+	}
+
+	memset(wbuf, 0, sizeof(wbuf));
+	if (!get_string_fn(handle, wbuf, (ULONG)sizeof(wbuf))) {
+		return NULL;
+	}
+	wbuf[(sizeof(wbuf) / sizeof(wbuf[0])) - 1U] = L'\0';
+
+	return winhid_wstr_to_ascii(wbuf);
+}
+
+static void winhid_replace_device_string(char **dst, char *src)
+{
+	if (!src || !dst) {
+		free(src);
+		return;
+	}
+
+	if (src[0] == '\0') {
+		free(src);
+		return;
+	}
+
+	free(*dst);
+	*dst = src;
+}
+
+static void winhid_fill_device_strings(HANDLE handle, USBDevice_t *curDevice)
+{
+	char *s;
+
+	if (!curDevice || !handle || handle == INVALID_HANDLE_VALUE) {
+		return;
+	}
+
+	s = winhid_hidd_get_string(handle, g_winhid_api.HidD_GetManufacturerString);
+	winhid_replace_device_string(&curDevice->Vendor, s);
+
+	s = winhid_hidd_get_string(handle, g_winhid_api.HidD_GetProductString);
+	winhid_replace_device_string(&curDevice->Product, s);
+
+	s = winhid_hidd_get_string(handle, g_winhid_api.HidD_GetSerialNumberString);
+	winhid_replace_device_string(&curDevice->Serial, s);
 }
 
 static int winhid_is_sane_device_path(const WCHAR *path)
@@ -1767,27 +1767,27 @@ static int winhid_emit_ordered_caps(
 					(unsigned int)current_report_bitpos,
 					(unsigned int)((current_report_bitpos + 7U) >> 3));
 			}
-				current_report_id = ordered[i].report_id;
-				current_report_bitpos = 0U;
-				prev_kind = 0U;
-				prev_was_single_button = 0;
-				prev_data_index_valid = 0;
-			}
+			current_report_id = ordered[i].report_id;
+			current_report_bitpos = 0U;
+			prev_kind = 0U;
+			prev_was_single_button = 0;
+			prev_data_index_valid = 0;
+		}
 
-			if (report_type == WINHID_REPORT_FEATURE
-			 && prev_kind == WINHID_ORDERED_CAP_BUTTON
-			 && prev_was_single_button
-			 && prev_data_index_valid
-			 && (unsigned int)ordered[i].data_index > (unsigned int)prev_data_index + 1U
-			 && ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
-				const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
-				uint32_t bit_size = vc->BitSize ? (uint32_t)vc->BitSize : 1U;
-				uint32_t misalign = current_report_bitpos & 7U;
+		if (report_type == WINHID_REPORT_FEATURE
+		 && prev_kind == WINHID_ORDERED_CAP_BUTTON
+		 && prev_was_single_button
+		 && prev_data_index_valid
+		 && (unsigned int)ordered[i].data_index > (unsigned int)prev_data_index + 1U
+		 && ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
+			const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
+			uint32_t bit_size = vc->BitSize ? (uint32_t)vc->BitSize : 1U;
+			uint32_t misalign = current_report_bitpos & 7U;
 
-				/* Heuristic: some UPS descriptors place a 7-bit const pad after one 1-bit flag.
-				 * HidP caps do not expose that const field directly, but DataIndex usually skips. */
-				if (!vc->IsRange && bit_size >= 8U && misalign == 1U) {
-					uint32_t pad_bits = 8U - misalign;
+			/* Heuristic: some UPS descriptors place a 7-bit const pad after one 1-bit flag.
+			 * HidP caps do not expose that const field directly, but DataIndex usually skips. */
+			if (!vc->IsRange && bit_size >= 8U && misalign == 1U) {
+				uint32_t pad_bits = 8U - misalign;
 
 				if (!winhid_emit_const_padding_bits(db, report_type, pad_bits)) {
 					free(ordered);
@@ -1805,27 +1805,27 @@ static int winhid_emit_ordered_caps(
 			}
 		}
 
-			if (ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
-				const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
+		if (ordered[i].kind == WINHID_ORDERED_CAP_VALUE) {
+			const win_hidp_value_caps_t *vc = &vals[ordered[i].index];
 
 			if (!winhid_emit_one_value_cap(
 				db,
 				vc,
-					link_nodes, link_nodes_n,
-					report_type,
-					&last_report_id)) {
-					free(ordered);
-					return 0;
-				}
+				link_nodes, link_nodes_n,
+				report_type,
+				&last_report_id)) {
+				free(ordered);
+				return 0;
+			}
 
-				current_report_bitpos += winhid_value_cap_bit_count(vc);
-				prev_kind = WINHID_ORDERED_CAP_VALUE;
-				prev_was_single_button = 0;
-				prev_data_index = ordered[i].data_index;
-				prev_data_index_valid = 1;
-			} else {
-				const win_hidp_button_caps_t *bc = &btns[ordered[i].index];
-				uint32_t bcount = winhid_button_cap_count(bc);
+			current_report_bitpos += winhid_value_cap_bit_count(vc);
+			prev_kind = WINHID_ORDERED_CAP_VALUE;
+			prev_was_single_button = 0;
+			prev_data_index = ordered[i].data_index;
+			prev_data_index_valid = 1;
+		} else {
+			const win_hidp_button_caps_t *bc = &btns[ordered[i].index];
+			uint32_t bcount = winhid_button_cap_count(bc);
 
 			if (!winhid_emit_one_button_cap(
 				db,
@@ -1833,17 +1833,17 @@ static int winhid_emit_ordered_caps(
 				link_nodes, link_nodes_n,
 				report_type,
 				&last_report_id)) {
-					free(ordered);
-					return 0;
-				}
-
-				current_report_bitpos += bcount;
-				prev_kind = WINHID_ORDERED_CAP_BUTTON;
-				prev_was_single_button = (!bc->IsRange && bcount == 1U);
-				prev_data_index = ordered[i].data_index;
-				prev_data_index_valid = 1;
+				free(ordered);
+				return 0;
 			}
+
+			current_report_bitpos += bcount;
+			prev_kind = WINHID_ORDERED_CAP_BUTTON;
+			prev_was_single_button = (!bc->IsRange && bcount == 1U);
+			prev_data_index = ordered[i].data_index;
+			prev_data_index_valid = 1;
 		}
+	}
 
 	if (current_report_id != 0xFFU && nut_debug_level >= 3 && report_type == WINHID_REPORT_FEATURE) {
 		upsdebugx(3,
@@ -1881,7 +1881,7 @@ static int winhid_build_descriptor_from_caps(
 
 	if (!winhid_desc_emit_usage_page(&db, caps->UsagePage)
 	 || !winhid_desc_emit_usage(&db, caps->Usage)
-		 || !winhid_desc_emit_collection(&db, WINHID_COLLECTION_APPLICATION)) {
+	 || !winhid_desc_emit_collection(&db, WINHID_COLLECTION_APPLICATION)) {
 		free(db.data);
 		return 0;
 	}
@@ -2166,6 +2166,7 @@ static int nut_winhid_open(
 
 		winhid_reset_curdevice(curDevice);
 		winhid_fill_device_identity(curDevice, device_path, (size_t)index);
+		winhid_fill_device_strings(handle, curDevice);
 
 		ret = 1;
 		for (m = matcher; m != NULL; m = m->next) {
@@ -2323,14 +2324,50 @@ static int nut_winhid_get_string(
 	char *buf,
 	usb_ctrl_charbufsize buflen)
 {
-	NUT_UNUSED_VARIABLE(sdev);
-	NUT_UNUSED_VARIABLE(StringIdx);
+	winhid_dev_ctx_t *ctx;
+	WCHAR wbuf[512];
+	char *tmp;
+	DWORD err;
+	int ret;
 
-	if (buf && buflen > 0) {
-		buf[0] = '\0';
+	if (!sdev || !buf || buflen < 1) {
+		return -1;
+	}
+	buf[0] = '\0';
+
+	if (StringIdx < 1) {
+		return -1;
 	}
 
-	return 0;
+	ctx = (winhid_dev_ctx_t *)sdev;
+	if (!ctx->handle || ctx->handle == INVALID_HANDLE_VALUE) {
+		return LIBUSB_ERROR_NO_DEVICE;
+	}
+	if (!g_winhid_api.HidD_GetIndexedString) {
+		return 0;
+	}
+
+	memset(wbuf, 0, sizeof(wbuf));
+	if (!g_winhid_api.HidD_GetIndexedString(
+		ctx->handle,
+		(ULONG)StringIdx,
+		wbuf,
+		(ULONG)sizeof(wbuf))) {
+		err = GetLastError();
+		if (err == ERROR_INVALID_FUNCTION) {
+			return 0;
+		}
+		return winhid_map_winerr_to_libusb(err);
+	}
+	wbuf[(sizeof(wbuf) / sizeof(wbuf[0])) - 1U] = L'\0';
+
+	tmp = winhid_wstr_to_ascii(wbuf);
+	if (!tmp) {
+		return LIBUSB_ERROR_NO_MEM;
+	}
+	ret = winhid_copy_ascii_to_buf(tmp, buf, buflen);
+	free(tmp);
+	return ret;
 }
 
 static int winhid_get_interrupt_overlapped(
