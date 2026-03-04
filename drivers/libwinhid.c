@@ -1,22 +1,47 @@
-/*! 
+/*!
  * @file libwinhid.c
- * @brief Generic USB communication backend (Windows HID API, phase 1)
+ * @brief NUT USB communication backend using native Windows HID API
  *
- * Notes for phase-1 implementation:
- * - Uses only SetupAPI/hid.dll/kernel32 APIs mirrored in gethidwindows.py.
- * - Avoids IOCTL/DeviceIoControl usage.
- * - Keeps matcher flow used by libusb backends (VID/PID and regex chain).
- * - Builds a minimal synthetic report descriptor from HidP caps as a transport
- *   bridge to the existing NUT hidparser/libhid path.
- */
+ * This backend implements the usb_communication_subdriver_t interface using
+ * only the native Windows HID API (SetupAPI, hid.dll, kernel32).  It provides
+ * an alternative to the libusb-based backends for Windows builds, avoiding the
+ * need for third-party USB filter drivers (e.g. Zadig/WinUSB).
+ *
+ * Implementation notes:
+ *   - All Windows APIs are dynamically loaded at runtime via LoadLibrary/
+ *     GetProcAddress so that the build does not require Windows SDK headers.
+ *   - A synthetic HID report descriptor is reconstructed from the parsed
+ *     HidP caps data, then fed into the existing NUT hidparser/libhid
+ *     pipeline unchanged.
+ *   - Matcher flow mirrors the libusb backends (VID/PID and regex chain).
+ *
+ * @author Copyright (C)
+ * 2026 Owen Li <geek@geeking.moe>
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * -------------------------------------------------------------------------- */
 
-#include "config.h"
+#include "config.h" /* must be the first header */
 
 #include "common.h"
 #include "usb-common.h"
 #include "nut_libusb.h"
 #include "nut_stdint.h"
 #include "libwinhid.h"
+#include "hidtypes.h"
 
 #ifdef WIN32
 
@@ -2560,6 +2585,326 @@ static void nut_winhid_close(usb_dev_handle *sdev)
 	winhid_dev_ctx_t *ctx = (winhid_dev_ctx_t *)sdev;
 	winhid_free_ctx(ctx);
 }
+
+/* ---------------------------------------------------------------------- */
+/* Report descriptor canonicalization                                     */
+/*                                                                        */
+/* After Parse_ReportDesc() produces a HIDDesc_t from the synthetic       */
+/* descriptor, these fixups align the parsed paths with what existing NUT  */
+/* subdriver mapping tables expect.  Moved here from usbhid-ups.c so that */
+/* all winhid-specific logic is contained in the backend module.          */
+/* ---------------------------------------------------------------------- */
+
+/*!
+ * @brief Map 0x84xx (Power Device page) status leaf usages to canonical
+ *        0x85xx (Battery System page) equivalents.
+ *
+ * The Windows HidP caps expose status booleans under the Power Device
+ * usage page, while NUT subdriver tables expect the Battery System page.
+ */
+static int winhid_canon_presentstatus_leaf(HIDNode_t *leaf)
+{
+	if (!leaf) {
+		return 0;
+	}
+
+	switch (*leaf) {
+	case USAGE_POW_CONFIG_FREQUENCY:
+		*leaf = USAGE_BAT_BELOW_REMAINING_CAPACITY_LIMIT;
+		return 1;
+	case USAGE_POW_CONFIG_APPARENT_POWER:
+		*leaf = USAGE_BAT_REMAINING_TIME_LIMIT_EXPIRED;
+		return 1;
+	case USAGE_POW_CONFIG_ACTIVE_POWER:
+		*leaf = USAGE_BAT_CHARGING;
+		return 1;
+	case USAGE_POW_CONFIG_PERCENT_LOAD:
+		*leaf = USAGE_BAT_DISCHARGING;
+		return 1;
+	case USAGE_POW_CONFIG_TEMPERATURE:
+		*leaf = USAGE_BAT_FULLY_CHARGED;
+		return 1;
+	case USAGE_POW_CONFIG_HUMIDITY:
+		*leaf = USAGE_BAT_FULLY_DISCHARGED;
+		return 1;
+	case 0x0084004BU:
+		*leaf = USAGE_BAT_NEED_REPLACEMENT;
+		return 1;
+	case 0x008400D0U:
+		*leaf = USAGE_BAT_AC_PRESENT;
+		return 1;
+	case 0x008400D1U:
+		*leaf = USAGE_BAT_BATTERY_PRESENT;
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+/*!
+ * @brief Map collection ID nodes (e.g. BatterySystemID) to their base
+ *        collection form (e.g. BatterySystem).
+ */
+static HIDNode_t winhid_canon_collection_id_node(HIDNode_t node)
+{
+	switch (node) {
+	case USAGE_POW_BATTERY_SYSTEM_ID:
+		return USAGE_POW_BATTERY_SYSTEM;
+	case USAGE_POW_BATTERY_ID:
+		return USAGE_POW_BATTERY;
+	case USAGE_POW_CHARGER_ID:
+		return USAGE_POW_CHARGER;
+	case USAGE_POW_POWER_CONVERTER_ID:
+		return USAGE_POW_POWER_CONVERTER;
+	case USAGE_POW_OUTLET_SYSTEM_ID:
+		return USAGE_POW_OUTLET_SYSTEM;
+	case USAGE_POW_INPUT_ID:
+		return USAGE_POW_INPUT;
+	case USAGE_POW_OUTPUT_ID:
+		return USAGE_POW_OUTPUT;
+	case USAGE_POW_FLOW_ID:
+		return USAGE_POW_FLOW;
+	case USAGE_POW_OUTLET_ID:
+		return USAGE_POW_OUTLET;
+	case USAGE_POW_GANG_ID:
+		return USAGE_POW_GANG;
+	case USAGE_POW_POWER_SUMMARY_ID:
+		return USAGE_POW_POWER_SUMMARY;
+	default:
+		return node;
+	}
+}
+
+/*! @brief Compare two HIDPath_t structs for exact equality. */
+static int winhid_path_equals(const HIDPath_t *a, const HIDPath_t *b)
+{
+	if (!a || !b) {
+		return 0;
+	}
+	if (a->Size != b->Size) {
+		return 0;
+	}
+	if (a->Size == 0) {
+		return 1;
+	}
+	return memcmp(a->Node, b->Node, (size_t)a->Size * sizeof(a->Node[0])) == 0;
+}
+
+/*!
+ * @brief Append an alias HIDData item to the descriptor if no duplicate exists.
+ *
+ * @return 1 on success, 0 if duplicate found (skip), -1 on allocation failure.
+ */
+static int winhid_append_alias_item(
+	HIDDesc_t *desc,
+	const HIDData_t *src_item,
+	const HIDPath_t *alias_path)
+{
+	size_t j;
+	HIDData_t *nitems;
+
+	if (!desc || !desc->item || !src_item || !alias_path) {
+		return 0;
+	}
+
+	for (j = 0; j < desc->nitems; j++) {
+		const HIDData_t *it = &desc->item[j];
+		if (it->ReportID != src_item->ReportID
+		 || it->Offset != src_item->Offset
+		 || it->Size != src_item->Size
+		 || it->Type != src_item->Type) {
+			continue;
+		}
+
+		if (winhid_path_equals(&it->Path, alias_path)) {
+			return 0;
+		}
+	}
+
+	nitems = realloc(desc->item, (desc->nitems + 1U) * sizeof(*desc->item));
+	if (!nitems) {
+		upsdebugx(1, "%s: realloc() failed while appending winhid alias item", __func__);
+		return -1;
+	}
+	desc->item = nitems;
+	desc->item[desc->nitems] = *src_item;
+	desc->item[desc->nitems].Path = *alias_path;
+	desc->nitems++;
+
+	return 1;
+}
+
+/*!
+ * @brief Build an aliased path by rewriting collection ID nodes and
+ *        optionally flattening intermediate collection hierarchy.
+ *
+ * @return Non-zero if the alias differs from the source path.
+ */
+static int winhid_build_path_aliases(
+	const HIDPath_t *src_path,
+	HIDPath_t *alias_path,
+	int *id_nodes_rewritten,
+	int *flattened)
+{
+	uint8_t p;
+	int changed = 0;
+
+	if (!src_path || !alias_path) {
+		return 0;
+	}
+
+	*alias_path = *src_path;
+
+	for (p = 0; p < alias_path->Size; p++) {
+		HIDNode_t node = alias_path->Node[p];
+		HIDNode_t canon = winhid_canon_collection_id_node(node);
+		if (canon != node) {
+			alias_path->Node[p] = canon;
+			changed = 1;
+			if (id_nodes_rewritten) {
+				(*id_nodes_rewritten)++;
+			}
+		}
+	}
+
+	/* Some devices expose "UPS.PowerConverter.Input.*" (or similar nested
+	 * forms) while current subdriver tables often expect "UPS.Input.*" and
+	 * siblings.  Keep original path, but add a flattened alias branch. */
+	if (alias_path->Size >= 3
+	 && alias_path->Node[0] == USAGE_POW_UPS
+	 && (alias_path->Node[1] == USAGE_POW_POWER_CONVERTER
+	  || alias_path->Node[1] == USAGE_POW_BATTERY_SYSTEM)
+	 && (alias_path->Node[2] == USAGE_POW_INPUT
+	  || alias_path->Node[2] == USAGE_POW_OUTPUT
+	  || alias_path->Node[2] == USAGE_POW_BATTERY)) {
+		for (p = 1; (uint8_t)(p + 1) < alias_path->Size; p++) {
+			alias_path->Node[p] = alias_path->Node[p + 1];
+		}
+		alias_path->Size--;
+		changed = 1;
+		if (flattened) {
+			(*flattened)++;
+		}
+	}
+
+	return changed;
+}
+
+/*!
+ * @brief Canonicalize a parsed HID report descriptor for winhid compatibility.
+ *
+ * See the documentation in libwinhid.h for the full description of what
+ * this function does and why it is needed.
+ */
+int winhid_canonicalize_parsed_report_desc(HIDDesc_t *desc)
+{
+	size_t i;
+	size_t original_nitems;
+	int changed = 0;
+	int inserted = 0;
+	int repaged = 0;
+	int skipped_insert = 0;
+	int alias_added = 0;
+	int alias_id_nodes_rewritten = 0;
+	int alias_flattened = 0;
+	int alias_realloc_fail = 0;
+	int alias_dup_skipped = 0;
+
+	if (!desc || !desc->item) {
+		return 0;
+	}
+
+	/* Alias generation below appends new items; iterate only over originals. */
+	original_nitems = desc->nitems;
+	for (i = 0; i < original_nitems; i++) {
+		HIDPath_t *path = &desc->item[i].Path;
+		uint8_t p = 0;
+		int has_ups = 0;
+		int ps_idx = -1;
+
+		if (!path || path->Size < 2) {
+			continue;
+		}
+
+		for (p = 0; p < path->Size; p++) {
+			if (path->Node[p] == USAGE_POW_UPS) {
+				has_ups = 1;
+			}
+			if (ps_idx < 0 && path->Node[p] == USAGE_POW_PRESENT_STATUS) {
+				ps_idx = (int)p;
+			}
+		}
+
+		if (ps_idx >= 0) {
+			/* Expected by APC-like mappings:
+			 * UPS.PowerSummary.PresentStatus.* */
+			if (has_ups
+			 && ps_idx > 0
+			 && path->Node[ps_idx - 1] != USAGE_POW_POWER_SUMMARY
+			) {
+				if (path->Size >= PATH_SIZE) {
+					skipped_insert++;
+				} else {
+					for (p = path->Size; p > (uint8_t)ps_idx; p--) {
+						path->Node[p] = path->Node[p - 1];
+					}
+					path->Node[ps_idx] = USAGE_POW_POWER_SUMMARY;
+					path->Size++;
+					ps_idx++;
+					inserted++;
+					changed++;
+				}
+			}
+
+			/* Map known status leaves from 0x84xx aliases
+			 * to canonical 0x85xx. */
+			if (winhid_canon_presentstatus_leaf(&path->Node[path->Size - 1])) {
+				repaged++;
+				changed++;
+			}
+		}
+
+		{
+			HIDPath_t alias_path;
+			int alias_changed;
+			int addres;
+
+			alias_changed = winhid_build_path_aliases(
+				path,
+				&alias_path,
+				&alias_id_nodes_rewritten,
+				&alias_flattened);
+
+			if (alias_changed && !winhid_path_equals(path, &alias_path)) {
+				addres = winhid_append_alias_item(desc, &desc->item[i], &alias_path);
+				if (addres > 0) {
+					alias_added++;
+					changed++;
+				} else if (addres == 0) {
+					alias_dup_skipped++;
+				} else {
+					alias_realloc_fail++;
+				}
+			}
+		}
+	}
+
+	if (changed || skipped_insert || alias_dup_skipped || alias_realloc_fail) {
+		upsdebugx(2,
+			"%s: winhid parser fixups changed=%d inserted=%d repaged=%d "
+			"alias_added=%d alias_id_nodes=%d alias_flattened=%d "
+			"skipped_insert=%d alias_dups=%d alias_oom=%d",
+			__func__, changed, inserted, repaged,
+			alias_added, alias_id_nodes_rewritten, alias_flattened,
+			skipped_insert, alias_dup_skipped, alias_realloc_fail);
+	}
+
+	return changed;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Subdriver interface registration                                       */
+/* ---------------------------------------------------------------------- */
 
 usb_communication_subdriver_t winhid_subdriver = {
 	WINHID_DRIVER_NAME,
