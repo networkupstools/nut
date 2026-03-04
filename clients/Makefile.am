@@ -163,10 +163,30 @@ upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 
 ################################## Plain C client library (libupsclient) :
 
-# not LDADD... why?
-libupsclient_la_SOURCES = upsclient.c upsclient.h
-upsclient.c: $(top_builddir)/include/nut_version.h
 # NOTE: The library does not require libcommonversion.la
+# but it needs nut_version.h made before the rest of build,
+# to include it into upsclient.c (without an explicit link,
+# this target is sometimes missed in parallel builds):
+libupsclient_la_SOURCES = upsclient.c upsclient.h
+
+# See comments for similar trick in common/Makefile.am for common-nut_version.c
+if BUILDING_IN_TREE
+  upsclient.c: $(top_builddir)/include/nut_version.h
+else !BUILDING_IN_TREE
+  upsclient.c: $(top_builddir)/include/nut_version.h $(srcdir)/upsclient.c
+	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+		exit 0 ; \
+	 else \
+		echo "  LN      $(top_srcdir)/clients/upsclient.c => $@ (relative to `pwd`)" ; \
+		ln -s -f "$(top_srcdir)/clients/upsclient.c" "$@" ; \
+	 fi
+
+  CLEANFILES += $(top_builddir)/clients/upsclient.c
+  BUILT_SOURCES = upsclient.c
+endif !BUILDING_IN_TREE
+
+
+# not LDADD... why?
 if ENABLE_SHARED_PRIVATE_LIBS
 libupsclient_la_LIBADD = \
 	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
