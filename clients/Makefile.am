@@ -201,9 +201,27 @@ endif HAVE_WINDOWS
 #   dlname='libupsclient-6.dll'
 #   library_names='libupsclient.dll.a'
 #   libdir='//lib'
+# Note that volatile dependencies like nut_version.h can cause re-evaluation
+# of the libupsclient.la goal even if ultimately nothing has changed, and so
+# cause needless evaluations of libupsclient-version.h. We try a couple of
+# ways to skip this rebuild noise for common NUT parallel `make -j N all` runs.
 CLEANFILES += libupsclient-version.h libupsclient-version.h.tmp*
 libupsclient-version.h: libupsclient.la
-	@echo "  GENERATE-HEADER	$@" ; \
+	@if [ -s '$@' -a -s '$?' ] ; then \
+	    if test -n "`find '$@' -newer '$?' 2>/dev/null`" ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (libupsclient.la is older than the generated file - not remade when re-evaluated)" >&2; \
+	        fi ; \
+	        exit 0; \
+	    fi ; \
+	    if test -n "`find '$@' -newer '.all.libupsclient_version-generated.timestamp' 2>/dev/null`" ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (.all.libupsclient_version-generated.timestamp was made in this larger run and is older than the generated file)" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	 fi ; \
+	 echo "  GENERATE-HEADER	$@" ; \
 	 RES=0; \
 	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
 	 SOFILE_LIBUPSCLIENT="`$(EGREP) '^dlname' '$?' | dlname_filter`" \
