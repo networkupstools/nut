@@ -1078,7 +1078,7 @@ nut_version.h include/nut_version.h: @dotMAKE@
 # May involve (re-)build of libupsclient.la
 libupsclient-version.h clients/libupsclient-version.h: include/nut_version.h @dotMAKE@
 	@rm -f clients/.all.libupsclient_version-generated.timestamp
-	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
+	+cd $(abs_top_builddir)/clients && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)
