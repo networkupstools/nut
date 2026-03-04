@@ -3,7 +3,12 @@ NUT Release Notes
 =================
 endif::txt[]
 
-If you're upgrading from an earlier version, see the link:UPGRADING.adoc[] file.
+This document summarizes the practical side of changes coming with each
+newer release development, as compared to the preceding release.
+
+If you're upgrading from an earlier version, or are a package maintainer,
+please see also the link:UPGRADING.adoc[] file about anticipated impacts
+of ongoing development on existing deployments and third-party consumers.
 
 Please note that web and source document links, product and service names
 listed in historic entries of past releases may no longer be relevant.

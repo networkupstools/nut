@@ -4,8 +4,15 @@ Upgrading notes
 endif::txt[]
 
 This file lists changes that affect users who installed older versions
-of this software.  When upgrading from an older version, be sure to
-check this file to see if you need to make changes to your system.
+of this software, or third-party integrations and library or data consumers.
+When upgrading from an older NUT version, be sure to check this file to
+see if you need to make changes to your system.
+
+We welcome feedback from package maintainers -- if you had to patch something
+out, or work around something in NUT code or recipes, please let us know in
+the issue tracker. Chances are, other distributions feel your pain, and some
+generalized solution belongs in the upstream project as an easy to use build
+configuration toggle to be shared by all interested downstream projects.
 
 [NOTE]
 ======
