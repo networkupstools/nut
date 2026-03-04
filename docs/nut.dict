@@ -2103,6 +2103,7 @@ executables
 executeCommand
 execve
 expandsize
+experimentalhid
 extapi
 extern
 externalConsole
