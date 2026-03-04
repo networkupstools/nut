@@ -103,6 +103,18 @@ all-fanout-cleanup: all-recursive
 	@rm -f include/.all.nut_version-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 
+touch-include-all-nut_version-generated.timestamp:
+	@[ -s include/nut_version.h ]
+	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch include/.all.nut_version-generated.timestamp
+
+touch-clients-all-libupsclient_version-generated.timestamp:
+	@[ -s clients/libupsclient-version.h ]
+	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch clients/.all.libupsclient_version-generated.timestamp
+
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
 SUBDIR_MAKE_VERBOSE = default
@@ -231,10 +243,7 @@ SUBDIR_TGT_RULE = ( \
 all-libs-local/include: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
-	@[ -s include/nut_version.h ]
-	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
-	 touch -d '1970-01-01' include/.all.nut_version-generated.timestamp && exit ; \
-	 touch include/.all.nut_version-generated.timestamp
+	+@$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
 
 ### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
@@ -258,10 +267,7 @@ all-libs-local/common: all-libs-local/include @dotMAKE@
 all-libs-local/clients: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
-	@[ -s clients/libupsclient-version.h ]
-	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
-	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
-	 touch clients/.all.libupsclient_version-generated.timestamp
+	+@$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
 
 ### Delivers: libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
