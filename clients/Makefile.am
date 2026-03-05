@@ -222,6 +222,7 @@ endif HAVE_WINDOWS
 # ways to skip this rebuild noise for common NUT parallel `make -j N all` runs.
 CLEANFILES += libupsclient-version.h libupsclient-version.h.tmp*
 libupsclient-version.h: libupsclient.la
+	@test -s '$?' || { echo "[Error] Missing or empty input file: $?" >&2 ; exit 1; }
 	@if [ -s '$@' -a -s '$?' ] ; then \
 	    if test -n "`find '$@' -newer '$?' 2>/dev/null`" ; then \
 	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
