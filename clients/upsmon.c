@@ -4266,7 +4266,7 @@ int main(int argc, char *argv[])
 				dt = difftimeval(now, start);
 
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
-				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %g seconds since previous loop cycle start", prog, dt);
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %.06f seconds since previous loop cycle start", prog, dt);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
@@ -4350,11 +4350,11 @@ int main(int argc, char *argv[])
 					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
 					dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
-					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles) by %.06f seconds", dt);
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles) by %.06f seconds", dt);
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
@@ -4451,11 +4451,11 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed");
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upslogx(LOG_WARNING, "It seems the system clock was changed into the past");
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
