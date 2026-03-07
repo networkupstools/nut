@@ -12,6 +12,7 @@
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy @dotMAKE@
@@ -19,11 +20,10 @@ $(top_builddir)/clients/libupsclient.la: dummy @dotMAKE@
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
-# (sub-makes are independent as far as trying to write into same files):
-$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libparseconf.la
+# (sub-makes are independent as far as trying to write into same files).
 # Internally (clients/Makefile.am) libupsclient.la requires libcommonclient.la
-# and that in turn libparseconf.la:
-$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libparseconf.la
+# (or the shared libnutprivate equivalent), and that in turn libparseconf.la:
+$(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 
 if ENABLE_SHARED_PRIVATE_LIBS
@@ -35,7 +35,11 @@ $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-comm
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
-endif ENABLE_SHARED_PRIVATE_LIBS
+
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la $(top_builddir)/include/nut_version.h
+else !ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/include/nut_version.h
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 lib_LTLIBRARIES =
 

@@ -164,13 +164,29 @@ static int handle_reload_flag(void);
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
 static int reload_requires_restart = -1;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic push
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+/* Note about the pragmas: for pedantic warnings, the sub-arrays in our struct
+ * (struct_magic and padding) are "sub-objects" that should all have their own
+ * initializers, e.g. { {0}, 0, ..., 0, {0} } which would be insane to maintain.
+ * Newer C standards require that a statically initialized object is zeroed by
+ * the compiler (so `= {0}` part is not needed at all), but I guess NUT with
+ * decades of backwards compatibility should not rely on that being the case
+ * with each and every one of 1990's compilers. Likewise, this initializer
+ * should ensure that all memory in the struct is zeroed out, and so does the
+ * init_upsdrv_callbacks() macro. So belts and suspenders, better safe than
+ * sorry, and all that.
+ */
 static upsdrv_callback_t	upsdrv_callbacks = {0};
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC)
-# pragma GCC diagnostic pop
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic pop
 #endif
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz) {
 	/* Plain memcpy of arbitrarily ordered list of function pointers
@@ -179,17 +195,17 @@ void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_s
 	 * shared library, years apart from a driver that tries to use it)
 	 * was built against: */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
-# pragma GCC diagnostic push
+#pragma GCC diagnostic push
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
-# pragma GCC diagnostic ignored "-Waddress"
+#pragma GCC diagnostic ignored "-Waddress"
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
+#pragma GCC diagnostic ignored "-Wunreachable-code"
 #endif
 	safe_copy_upsdrv_callbacks(runtime_callbacks, &upsdrv_callbacks, cb_struct_sz);
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
-# pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif
 }
 

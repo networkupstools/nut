@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3690 utf-8
+personal_ws-1.1 en 3691 utf-8
 AAC
 AAS
 ABI
@@ -305,6 +305,7 @@ DeviceKit
 DeviceLogin
 DeviceLogout
 Dgtk
+Dh
 Dharm
 Diehl
 Dietze
@@ -1909,6 +1910,7 @@ crossbuild
 crt
 crw
 crypto
+cryptographic
 csh
 cshdelay
 csi
@@ -2207,6 +2209,7 @@ getenv
 gethostbyname
 getopt
 getproctag
+getter
 gettext
 gettextize
 getval
@@ -3282,6 +3285,7 @@ structs
 sts
 stst
 stty
+stunnel
 stylesheet
 stylesheets
 su

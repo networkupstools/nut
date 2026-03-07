@@ -3,7 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -95,6 +95,9 @@
 #else
 #	define shutdown_how	2
 #endif
+
+#include "nut_version.h"
+static const char *UPSCLI_VERSION = NUT_VERSION_MACRO;
 
 static struct {
 	int	flags;
@@ -337,20 +340,25 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
-	const char *quiet_init_ssl;
+	const char	*quiet_init_ssl;
 #ifdef WITH_OPENSSL
-	long ret;
-	int ssl_mode = SSL_VERIFY_NONE;
+	long	ret;
+	int	ssl_mode = SSL_VERIFY_NONE;
+	/* Now these are technically "used" below for the log messaging.
+	 * Keeping macros here to remind devs that these arguments are
+	 * not really used by library code in this variant of the build.
+	 */
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+#elif defined(WITH_NSS)	/* WITH_OPENSSL */
 	SECStatus	status;
-#else
+#else	/* neither backend: */
+	/* See comment above */
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
-#endif /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
@@ -377,6 +385,10 @@ int upscli_init(int certverify, const char *certpath,
 	}
 
 #ifdef WITH_OPENSSL
+
+	if (certname || certpasswd) {
+		upslogx(LOG_ERR, "upscli_init called with 'certname' and/or 'certpasswd' but OpenSSL backend does not use them");
+	}
 
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
@@ -489,9 +501,12 @@ int upscli_init(int certverify, const char *certpath,
 	verify_certificate = certverify;
 #else
 	/* Note: historically we do not return with error here,
+	 * and nowadays have the default timeout handling etc.,
 	 * just fall through to below and treat as initialized.
 	 */
-	upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+	if (certverify || certpath || certname || certpasswd) {
+		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+	}
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
@@ -513,6 +528,8 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(forcessl);
+
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
 #endif /* WITH_NSS */
 }
 
@@ -530,6 +547,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 	}
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+
+	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
 #endif /* WITH_NSS */
 	return NULL;
 }
@@ -577,7 +596,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
 
-	if (ups->upserror > UPSCLI_ERR_MAX) {
+	if (ups->upserror < 0 || ups->upserror > UPSCLI_ERR_MAX) {
 		return "Invalid error number";
 	}
 
@@ -593,7 +612,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			"%s", strerror(ups->syserrno));
 		return ups->errbuf;
 
-	case 2:		/* SSL error */
+	case 2:		/* SSL error, with 1 arg */
 #ifdef WITH_OPENSSL
 		err = ERR_get_error();
 		if (err) {
@@ -609,12 +628,19 @@ const char *upscli_strerror(UPSCONN_t *ups)
 				"%s", "peer disconnected");
 		}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-		if (PR_GetErrorTextLength() < UPSCLI_ERRBUF_LEN) {
-			PR_GetErrorText(ups->errbuf);
+		if (PR_GetErrorTextLength() > 0 && PR_GetErrorTextLength() + strlen(upscli_errlist[ups->upserror].str) < UPSCLI_ERRBUF_LEN) {
+			char	errbuf[UPSCLI_ERRBUF_LEN];
+			memset(errbuf, 0, UPSCLI_ERRBUF_LEN);
+			PR_GetErrorText(errbuf);
+			snprintf_dynamic(
+				ups->errbuf, UPSCLI_ERRBUF_LEN,
+				upscli_errlist[ups->upserror].str,
+				"%s", errbuf);
 		} else {
 			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
-				"SSL error #%ld, message too long to be displayed",
-				(long)PR_GetError());
+				"SSL error #%ld, message too %s to be displayed",
+				(long)PR_GetError(),
+				PR_GetErrorTextLength() > 0 ? "long" : "short");
 		}
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
@@ -811,23 +837,30 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 # pragma GCC diagnostic pop
 #endif
 
-
-#ifdef WITH_SSL
-
 /*
- * 1 : OK
+ * 1  : OK
  * -1 : ERROR
- * 0 : SSL NOT SUPPORTED
+ * 0  : SSL NOT SUPPORTED (whether by library or by server)
  */
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
-#ifdef WITH_OPENSSL
+#ifndef WITH_SSL
+	NUT_UNUSED_VARIABLE(ups);
+	NUT_UNUSED_VARIABLE(verifycert);
+
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
+
+	return 0;	/* not supported */
+
+#else	/* WITH_SSL */
+
+# ifdef WITH_OPENSSL
 	int res;
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 	PRFileDesc	*socket;
 	HOST_CERT_t *cert;
-#endif /* WITH_OPENSSL | WITH_NSS */
+# endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
 	/* Intend to initialize upscli with no ssl db if not already done.
@@ -856,7 +889,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	/* upsd is happy, so let's crank up the client */
 
-#ifdef WITH_OPENSSL
+# ifdef WITH_OPENSSL
 
 	if (!ssl_ctx) {
 		upsdebugx(3, "SSL context is not available");
@@ -898,7 +931,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	return 1;
 
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(ups->fd);
 	if (socket == NULL){
@@ -987,20 +1020,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	return 1;
 
-#endif /* WITH_OPENSSL | WITH_NSS */
-}
-
-#else /* WITH_SSL */
-
-static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
-{
-	NUT_UNUSED_VARIABLE(ups);
-	NUT_UNUSED_VARIABLE(verifycert);
-
-	return 0;	/* not supported */
-}
-
+# endif /* WITH_OPENSSL | WITH_NSS */
 #endif /* WITH_SSL */
+}
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval * timeout)
 {
@@ -1252,7 +1274,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			upslogx(LOG_INFO, "Connected to NUT server %s in SSL", host);
 			if (certverify == 0) {
 				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
-				upslogx(LOG_WARNING, "Certificate verification is disabled");
+				upslogx(LOG_WARNING, "Certificate verification (by client) is disabled");
+			} else {
+				upsdebugx(1, "Certificate verification (by client) is enabled, and apparently succeeded");
 			}
 		}
 	}
@@ -1881,6 +1905,55 @@ int upscli_ssl(UPSCONN_t *ups)
 	return 0;
 }
 
+/* Return a bitmap of the abilities for the current libupsclient build */
+int upscli_ssl_caps(void)
+{
+	int	ret = UPSCLI_SSL_CAPS_NONE;
+
+#ifdef WITH_SSL
+# ifdef WITH_OPENSSL
+	ret |= UPSCLI_SSL_CAPS_OPENSSL;
+# endif
+# ifdef WITH_NSS
+	ret |= UPSCLI_SSL_CAPS_NSS;
+# endif
+#endif	/* WITH_SSL */
+
+	return ret;
+}
+
+/* String version (English) for program help banners etc. */
+const char *upscli_ssl_caps_descr(void)
+{
+	static const char	*ret = "with"
+#ifndef WITH_SSL
+		"out SSL support";
+#else	/* WITH_SSL */
+		" SSL support: "
+# ifdef WITH_OPENSSL
+		"OpenSSL"
+#  ifdef WITH_NSS
+	/* Not likely we'd get here, but... */
+		" and "
+#  endif
+# endif
+# ifdef WITH_NSS
+		"Mozilla NSS"
+# endif
+# if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
+		"oddly undefined"
+# endif
+		;
+#endif	/* WITH_SSL */
+
+	return ret;
+}
+
+void upscli_report_build_details(void)
+{
+	upsdebugx(1, "Using NUT libupsclient library version %s built %s", UPSCLI_VERSION, upscli_ssl_caps_descr());
+}
+
 int upscli_set_default_connect_timeout(const char *secs) {
 	double fsecs;
 
@@ -2002,4 +2075,21 @@ int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
 				int (*callback_unique)(char *, size_t, const char *)
 ) {
 	return str_add_unique_token(tgt, tgtsize, token, callback_always, callback_unique);
+}
+
+/* On some platforms, libupsclient builds tend to get a built-in copy
+ * of the internal code from NUT libcommon library, so for NUT client
+ * programs using both libraries as dynamically-linked shared code,
+ * the nut_debug_level setting is backed by independent variables in
+ * active memory, and upsdebugx() calls suffer if the library's copy
+ * is never changed from zero.
+ */
+void upscli_set_debug_level(int lvl)
+{
+	nut_debug_level = lvl;
+}
+
+int  upscli_get_debug_level(void)
+{
+	return nut_debug_level;
 }

@@ -43,7 +43,11 @@
 #  define suggest_doc_links		LIBNUTPRIVATE_suggest_doc_links
 #  define suggest_NDE_conflict		LIBNUTPRIVATE_suggest_NDE_conflict
 # else	/* !BUILD_FOR_SHARED_PRIVATE_LIBS => for leaf binary */
-   extern const char *LIBNUTPRIVATE_UPS_VERSION;
+   /* Refer to UPS_VERSION => LIBNUTPRIVATE_UPS_VERSION (renamed by macro
+    * above) as exported by the library build so a NUT program can see
+    * the source code version of libnutprivate-XYZ-...so binary library.
+    */
+   extern const char	*LIBNUTPRIVATE_UPS_VERSION;
 # endif	/* !BUILD_FOR_SHARED_PRIVATE_LIBS */
 #endif
 
@@ -63,6 +67,8 @@
  * depends on nut_version.h), and also to prevent all sources from having
  * to be recompiled each time the version changes (they only need to be
  * re-linked). Similarly for other variables below in the code.
+ * NOTE: Depending on build circumstances, the symbol may in fact be named
+ * LIBNUTPRIVATE_UPS_VERSION, or not (when built into leaf binaries).
  */
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;

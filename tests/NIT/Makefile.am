@@ -24,6 +24,15 @@ endif !WITH_CHECK_NIT
 ABS_TOP_SRCDIR = @ABS_TOP_SRCDIR@
 ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 
+# Early in issue #1711 OpenSSL tests failed more often than we liked, so
+# this toggle was added.  It may still be useful for CI on some platforms.
+# Developers can run the script directly or override the make variable.
+if WITH_OPENSSL
+WITHOUT_SSL_TESTS = true
+else !WITH_OPENSSL
+WITHOUT_SSL_TESTS = false
+endif !WITH_OPENSSL
+
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that
 check-NIT: $(abs_srcdir)/nit.sh
@@ -33,6 +42,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
 	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
+	WITHOUT_SSL_TESTS='$(WITHOUT_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
 # Make sure pre-requisites for NIT are fresh as we iterate
@@ -57,6 +67,7 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
 	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
+	WITHOUT_SSL_TESTS='$(WITHOUT_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
 check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh @dotMAKE@

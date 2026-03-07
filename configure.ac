@@ -2840,6 +2840,7 @@ nut_ssl_lib=""
 NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation ability (currently requires NSS, beware issue #3329)], [auto])
 
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
@@ -2881,6 +2882,18 @@ AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
 
 NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
 					[WITH_SSL], [Define to enable SSL])
+
+AS_CASE([${nut_with_ssl_client_validation}],
+    [no], [],
+    [yes|""], [nut_with_ssl_client_validation="yes"],
+        dnl TOTHINK: reject if openssl/none build?
+    [auto|*], [nut_with_ssl_client_validation="no"]
+        dnl Until #3329 is solved, auto==no
+)
+NUT_REPORT_FEATURE([enable SSL client certificate validation],
+	[${nut_with_ssl_client_validation}], [],
+	[WITH_CLIENT_CERTIFICATE_VALIDATION],
+	[Define to enable SSL client certificate validation])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries

@@ -35,6 +35,11 @@ SCRIPT_ARGS=("$@")
 # in a different directory and then it would be used with a warning. This may
 # require that you `make distclean` the original source checkout first:
 #   CI_BUILDDIR=obj BUILD_TYPE=default-all-errors ./ci_build.sh
+#
+# The NUT_SSL_VARIANTS=[yes, no, auto, ssl, nss, openssl] values can be used
+# with generic builds (not only iteration of a default-all-errors* matrix)
+# to set specific SSL options in tested NUT builds.
+#
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-all)
@@ -1947,7 +1952,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
     case "$BUILD_TYPE" in
         "default-all-errors"*) ;;	# Treated below
-        *) configure_nut ;;
+        *)  # Final choices that can conflict with the matrix
+            # tried in default-all-errors* builds
+            case "${NUT_SSL_VARIANTS}" in
+                ssl|nss|openssl)
+                    CONFIG_OPTS+=("--with-${NUT_SSL_VARIANTS}")
+                    ;;
+                yes) CONFIG_OPTS+=("--with-ssl") ;;
+                no)  CONFIG_OPTS+=("--without-ssl") ;;
+                auto) CONFIG_OPTS+=("--with-ssl=auto") ;;
+                "") ;;
+                *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+            esac
+            configure_nut
+            ;;
     esac
 
     # NOTE: There is also a case "$BUILD_TYPE" above for setting CONFIG_OPTS
@@ -2842,6 +2860,17 @@ bindings)
         CONFIG_OPTS+=("--enable-shared-private-libs")
     fi
 
+    case "${NUT_SSL_VARIANTS}" in
+        ssl|nss|openssl)
+            CONFIG_OPTS+=("--with-${NUT_SSL_VARIANTS}")
+            ;;
+        yes) CONFIG_OPTS+=("--with-ssl") ;;
+        no)  CONFIG_OPTS+=("--without-ssl") ;;
+        auto) CONFIG_OPTS+=("--with-ssl=auto") ;;
+        "") ;;
+        *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+    esac
+
     if [ -n "${BUILD_DEBUGINFO-}" ]; then
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
     else
@@ -2986,6 +3015,8 @@ cross-windows-mingw*)
         WITH_LIBNUTPRIVATE=true
     fi	# else we have some value from caller
     export WITH_LIBNUTPRIVATE
+
+    export NUT_SSL_VARIANTS
 
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \

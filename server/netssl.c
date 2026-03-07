@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    based on the original implementation:
 
@@ -67,10 +68,42 @@ char	*certpasswd = NULL;
 int	disable_weak_ssl = 0;
 
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-int certrequest = 0;
+int	certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 static int	ssl_initialized = 0;
+
+/* Similar to upscli_ssl_caps_descr() for client library,
+ * but with more bells and whistles */
+const char *net_ssl_caps_descr(void)
+{
+	static const char	*ret = "with"
+#ifndef WITH_SSL
+		"out SSL support";
+#else
+		" SSL support: "
+# ifdef WITH_OPENSSL
+		"OpenSSL"
+#  ifdef WITH_NSS
+	/* Not likely we'd get here, but... */
+		" and "
+#  endif
+# endif
+# ifdef WITH_NSS
+		"Mozilla NSS"
+# endif
+# if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
+		"oddly undefined"
+# endif
+		"; with"
+# ifndef WITH_CLIENT_CERTIFICATE_VALIDATION
+		"out"
+# endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+		" client certificate validation";
+#endif
+
+	return ret;
+}
 
 #ifndef WITH_SSL
 
@@ -428,7 +461,19 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();
 		if (code==SSL_ERROR_NO_CERTIFICATE) {
-			upslogx(LOG_WARNING, "Client %s do not provide certificate.",
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+			if (certrequest == NETSSL_CERTREQ_REQUEST
+			 || certrequest == NETSSL_CERTREQ_REQUIRE
+			) {
+				upslogx(LOG_ERR, "Client %s did not provide any certificate while we %s one.",
+					client->addr,
+					(certrequest == NETSSL_CERTREQ_REQUIRE ? "require" : "request")
+					);
+				nss_error("net_starttls / SSL_ForceHandshake");
+				return;
+			}
+# endif
+			upslogx(LOG_WARNING, "Client %s did not provide any certificate.",
 				client->addr);
 		} else {
 			nss_error("net_starttls / SSL_ForceHandshake");
@@ -604,16 +649,16 @@ void ssl_init(void)
 #  endif	/* NSS_VMAJOR */
 	}
 
-#  ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-	if (certrequest < NETSSL_CERTREQ_NO
-	 && certrequest > NETSSL_CERTREQ_REQUEST
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	if (certrequest < NETSSL_CERTREQ_NO		/* < 0 */
+	 || certrequest > NETSSL_CERTREQ_REQUIRE	/* > 2 */
 	) {
 		upslogx(LOG_ERR, "Invalid certificate requirement");
 		return;
 	}
 
-	if (certrequest == NETSSL_CERTREQ_REQUEST
-	 || certrequest == NETSSL_CERTREQ_REQUIRE
+	if (certrequest == NETSSL_CERTREQ_REQUEST	/* 1 */
+	 || certrequest == NETSSL_CERTREQ_REQUIRE	/* 2 */
 	) {
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
@@ -623,7 +668,7 @@ void ssl_init(void)
 		}
 	}
 
-	if (certrequest == NETSSL_CERTREQ_REQUIRE) {
+	if (certrequest == NETSSL_CERTREQ_REQUIRE) {	/* 2 */
 		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate requirement");
