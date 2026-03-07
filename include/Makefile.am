@@ -52,7 +52,10 @@ nut_version.h: @FORCE_NUT_VERSION@
 	        fi ; \
 	        exit 0 ; \
 	    fi ; \
-	    if test -n "`find '$@' -newer '.all.nut_version-generated.timestamp' 2>/dev/null`" ; then \
+	    if test -n "`find '$@' -newer '.all.nut_version-generated.timestamp' 2>/dev/null`" \
+	    && [ x"$(NUT_VERSION_H_GENERATED)" != xfalse ] \
+	    && [ x"$${NUT_VERSION_H_GENERATED}" != xfalse ] \
+	    ; then \
 	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
 	            echo "=== SKIP (include) $@ (.all.nut_version-generated.timestamp was made in this larger run and is older than the generated file)" >&2; \
 	        fi ; \
