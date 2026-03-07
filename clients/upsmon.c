@@ -4345,11 +4345,11 @@ int main(int argc, char *argv[])
 					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
 					dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
-					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upsdebugx(2, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
@@ -4446,11 +4446,11 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed");
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upsdebugx(2, "It seems the system clock was changed into the past");
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past");
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
