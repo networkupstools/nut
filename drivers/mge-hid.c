@@ -2059,9 +2059,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* Duplicate data for some units (such as 3S) that use a different path
 	 * Only the first valid one will be used */
-	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
-	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
-	{ "ups.beeper.status", 0 ,0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },	/* yonesmit - support for Masterpower MF-UPS650VA */
+	{ "ups.beeper.status", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },	/* yonesmit - support for Masterpower MF-UPS650VA */
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ApparentPower", NULL, "%.0f", 0, NULL },
