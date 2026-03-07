@@ -67,6 +67,9 @@ static char	*upsimgpath = "upsimage.cgi" EXEEXT, *upsstatpath = "upsstats.cgi" E
 	*template_single = NULL, *template_list = NULL;
 static UPSCONN_t	ups;
 
+#define DEFAULT_TEMPLATE_SINGLE	"upsstats-single.html"
+#define DEFAULT_TEMPLATE_LIST	"upsstats.html"
+
 static FILE	*tf;
 static long	forofs = 0;
 
@@ -546,11 +549,11 @@ static void do_hostlink(void)
 
 	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
 
-	if (template_single && strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (template_list && strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
@@ -574,11 +577,11 @@ static void do_treelink_json(const char *text)
 	printf("<a href=\"%s?host=%s&amp;json",
 		upsstatpath, currups->sys);
 
-	if (template_single && strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (template_list && strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
@@ -604,11 +607,11 @@ static void do_treelink(const char *text)
 	printf("<a href=\"%s?host=%s&amp;treemode",
 		upsstatpath, currups->sys);
 
-	if (template_single && strcmp(template_single, "upsstats-single.html")) {
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
 		printf("&amp;template_single=%s", template_single);
 	}
 
-	if (template_list && strcmp(template_list, "upsstats.html")) {
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
 		printf("&amp;template_list=%s", template_list);
 	}
 
@@ -629,6 +632,13 @@ static void do_ifsupp(const char *var, const char *val)
 	char	dummy[SMALLBUF];
 
 	upsdebug_call_starting3("for '%s' ( =? '%s')", NUT_STRARG(var), NUT_STRARG(val));
+
+	if (!strcmp(var, "upsstats.use_celsius")) {
+		snprintf(dummy, sizeof(dummy), "%d", use_celsius);
+		skip_clause = 1;
+		upsdebug_call_finished1(": get_var() returned unexpected val");
+		return;
+	}
 
 	/* if not connected, act like it's not supported and skip the rest */
 	if (!check_ups_fd(0)) {
@@ -1699,6 +1709,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+		upscli_set_debug_level(nut_debug_level);
 	}
 
 
@@ -1709,6 +1720,7 @@ int main(int argc, char **argv)
 # endif
 	/* Un-comment via make flags when developer-troubleshooting: */
 	nut_debug_level = NUT_CGI_DEBUG_UPSSTATS;
+	upscli_set_debug_level(nut_debug_level);
 #endif
 
 	if (nut_debug_level > 0) {
@@ -1720,8 +1732,8 @@ int main(int argc, char **argv)
 	}
 
 	/* Built-in defaults */
-	template_single = xstrdup("upsstats-single.html");
-	template_list = xstrdup("upsstats.html");
+	template_single = xstrdup(DEFAULT_TEMPLATE_SINGLE);
+	template_list = xstrdup(DEFAULT_TEMPLATE_LIST);
 
 	extractcgiargs();
 
@@ -1762,8 +1774,8 @@ int main(int argc, char **argv)
 
 	/* if a host is specified, use upsstats-single.html instead
 	 * of listing whatever we know about with upsstats.html */
-	add_allowed_template_single("upsstats-single.html");
-	add_allowed_template_list("upsstats.html");
+	add_allowed_template_single(DEFAULT_TEMPLATE_SINGLE);
+	add_allowed_template_list(DEFAULT_TEMPLATE_LIST);
 	if (monhost) {
 		load_hosts_conf(0);
 		display_single();

@@ -1,0 +1,55 @@
+UPSCLI_SSL_CAPS(3)
+==================
+
+NAME
+----
+
+upscli_ssl_caps, upscli_ssl_caps_descr - Report SSL capabilities of the
+current libupsclient build as a bitmap or string
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	/* Header above defines bitmap values:
+	 * UPSCLI_SSL_CAPS_NONE   	- No ability to use SSL
+	 * UPSCLI_SSL_CAPS_OPENSSL	- Can use OpenSSL-specific setup
+	 * UPSCLI_SSL_CAPS_NSS    	- Can use Mozilla NSS-specific setup
+	 */
+
+	int upscli_ssl_caps(void);
+	const char *upscli_ssl_caps_descr(void);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_ssl_caps*() function returns an `int` as a bitmap of SSL capability
+flags which may be of interest to the consumer of the linkman:upsclient[3]
+library (e.g. how to set up cryptographic material storage, and whether that
+should have any effect when initializing connections).
+
+The *upscli_ssl_caps_descr*() function returns a string with such information
+primarily intended for humans, e.g. to be used in NUT client program banners.
+
+If there is no built-in SSL support, alternative methods like SSH tunnels or
+the `stunnel` tool can be explored.
+
+RETURN VALUE
+------------
+
+The *upscli_ssl_caps*() function effectively returns '0' if SSL support is
+missing, '1' if OpenSSL can be used, or '2' if Mozilla NSS can be used,
+since currently the backends are exclusive and it matters because they
+are differently capable.
+
+In the future it may return '-1' in the event of an error, or e.g. '3' if
+both OpenSSL and Mozilla NSS could be supported simultaneously (current code
+structure does not allow for that though).
+
+SEE ALSO
+--------
+
+linkman:upscli_ssl[3], linkman:upscli_report_build_details[3]

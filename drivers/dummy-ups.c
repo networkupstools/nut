@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -119,6 +119,8 @@ static int repeater_disable_strict_start = 0;
 void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
+
+	upscli_set_debug_level(nut_debug_level);
 
 	switch (mode)
 	{
@@ -265,6 +267,8 @@ static int prepare_filepath(char *fn, size_t buflen)
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
+
+	upscli_set_debug_level(nut_debug_level);
 
 	sleep(1);
 
@@ -415,6 +419,8 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_help(void)
 {
+	upscli_set_debug_level(nut_debug_level);
+	upscli_report_build_details();
 }
 
 /* optionally tweak prognames[] entries */
@@ -431,6 +437,8 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	const char *val;
+
+	upscli_set_debug_level(nut_debug_level);
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {

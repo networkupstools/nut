@@ -12,6 +12,10 @@
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
 
+CLEANFILES =
+DISTCLEANFILES =
+MAINTAINERCLEANFILES =
+
 # Autotools' SUBDIRS (our values are listed below) allow for powerful recursive
 # recipe automation, with one notable weakness: the dirs are processed in a
 # loop sequentially, even in parallel builds (each such sub-make is parallel
@@ -91,17 +95,44 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
 
+all: all-fanout-cleanup
+
+# Run as part of "all", but after the autotools-standard "all-recursive"
+# where we quiesce nut_version.h regeneration attempts for each subdir
+all-fanout-cleanup: all-recursive
+	@rm -f include/.all.nut_version-generated.timestamp \
+	       clients/.all.libupsclient_version-generated.timestamp
+
+touch-include-all-nut_version-generated.timestamp:
+	@[ -s include/nut_version.h ]
+	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch include/.all.nut_version-generated.timestamp
+
+touch-clients-all-libupsclient_version-generated.timestamp:
+	@[ -s clients/libupsclient-version.h ]
+	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch clients/.all.libupsclient_version-generated.timestamp
+
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
 SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
+CLEANFILES += include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
 all-fanout-maybe: @dotMAKE@
+	@rm -f include/.all.nut_version-generated.timestamp \
+	       clients/.all.libupsclient_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
+		$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h || exit ; \
+		$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp || exit ; \
+		$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h || exit ; \
+		$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp || exit ; \
 		exit 0 ; \
 	  fi ; \
 	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
@@ -116,7 +147,12 @@ all-fanout-maybe: @dotMAKE@
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
-			fi ;; \
+			fi ; \
+			$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h || exit ; \
+			$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp || exit ; \
+			$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h || exit ; \
+			$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp || exit \
+			;; \
 	  esac
 
 # We start with a pass to `make all` in `common` dir because our wild recipes
@@ -216,6 +252,7 @@ SUBDIR_TGT_RULE = ( \
 all-libs-local/include: @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=false; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
+	+@$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
 
 ### Delivers: libcommon.la libcommonclient.la libcommonstr.la libcommonstrjson.la
 ###           (consume only one of these at a time!)
@@ -231,6 +268,7 @@ all-libs-local/common: all-libs-local/include @dotMAKE@
 ### Delivers: libupsclient.la libnutclient.la libnutclientstub.la
 ### Delivers: libupsclient-version.h
 ### LIB-Requires-ext: common/libcommonclient.la
+### Requires-ext: include/nut_version.h
 ### Requires-ext: common/libcommon.la common/libcommonclient.la
 ### Requires-ext: common/libcommonversion.la
 ### Requires-ext: common/libparseconf.la
@@ -239,6 +277,7 @@ all-libs-local/common: all-libs-local/include @dotMAKE@
 all-libs-local/clients: all-libs-local/common @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
+	+@$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
 
 ### Delivers: libdummy_main.la libdummy_serial.la libdummy_upsdrvquery.la
 ### Delivers: libdummy_mockdrv.la libserial-nutscan.la
@@ -630,8 +669,8 @@ distcleancheck:
 realclean: maintainer-clean
 
 # Files made by our targets:
-CLEANFILES = *-spellchecked *.adoc-parsed cppcheck*.xml config.log.inplace-outer
-DISTCLEANFILES = ChangeLog
+CLEANFILES += *-spellchecked *.adoc-parsed cppcheck*.xml config.log.inplace-outer
+DISTCLEANFILES += ChangeLog
 
 # Most of the files generated by custom rules in the configure script
 # or by autogen.sh are cleaned by the Makefile.am in their directories.
@@ -647,7 +686,7 @@ DISTCLEANFILES += include/config.h.in~
 # from their installation, or made by `automake` etc. on the system
 # which generates `configure`; rebuilding NUT after deleting these
 # requires `autogen.sh` script to be re-run (and tools available):
-MAINTAINERCLEANFILES = INSTALL
+MAINTAINERCLEANFILES += INSTALL
 MAINTAINERCLEANFILES += aclocal.m4 config.guess config.sub
 MAINTAINERCLEANFILES += configure
 MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh test-driver ar-lib
@@ -1048,11 +1087,14 @@ ChangeLog.adoc: ChangeLog @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
 
 nut_version.h include/nut_version.h: @dotMAKE@
+	@rm -f include/.all.nut_version-generated.timestamp
 	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
+# May depend on nut_version.h at least when we ENABLE_SHARED_PRIVATE_LIBS
 # May involve (re-)build of libupsclient.la
-libupsclient-version.h clients/libupsclient-version.h: @dotMAKE@
-	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
+libupsclient-version.h clients/libupsclient-version.h: include/nut_version.h @dotMAKE@
+	@rm -f clients/.all.libupsclient_version-generated.timestamp
+	+cd $(abs_top_builddir)/clients && $(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)

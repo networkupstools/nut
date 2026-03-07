@@ -77,7 +77,8 @@ variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
 For reproducible runs of various pre-sets of configuration during
 development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
 (and other) environment variable settings that it supports. A minimal run
-with it is just to call the script, e.g.:
+with it is just to call the script, possibly using an alternate source
+code branch of interest, e.g.:
 
 ------
 :; mkdir -p nut && cd nut && \
@@ -254,9 +255,11 @@ metadata about recently published package revisions:
 # NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
 # and/or "openssl-dev" instead of "libssl-dev" by its modern name
 # and may lack a libgpiod2 + libgpiod-dev altogether
+# For NIT tests of SSL support you would also want key store management tools.
 :; apt-get install \
     libcppunit-dev \
-    libssl-dev libnss3-dev \
+    libssl-dev openssl \
+    libnss3-dev libnss3-tools \
     augeas-tools libaugeas-dev augeas-lenses \
     libusb-dev libusb-1.0-0-dev \
     libglib2.0-dev \
@@ -267,6 +270,9 @@ metadata about recently published package revisions:
     libfreeipmi-dev libipmimonitoring-dev \
     libavahi-common-dev libavahi-core-dev libavahi-client-dev
 # For libneon, see below
+
+# NOTE: On Termux the -dev suffixes may be missing, so you would need e.g.
+:; pkg install libnss nss-utils
 
 # NOTE: Older Debian-like distributions may lack a "libgpiod-dev"
 # Others above are present as far back as Debian 7 at least
@@ -1450,6 +1456,10 @@ Typical tooling would include:
     freeipmi \
     avahi
 
+# For tests with NSS, the certutil tool is needed:
+:; pkg install \
+    system/mozilla-nss
+
 # With 2024.04, some packages were split for development vs. run-time
 # and/or based on architecture:
 :; pkg install \
@@ -2022,6 +2032,12 @@ export PATH
     mingw-w64-clang-x86_64-libmodbus-git \
     mingw-w64-x86_64-libgd \
     mingw-w64-clang-x86_64-libgd
+
+# For SSL support (note that OpenSSL is usually available
+# in the default MSYS2 footprint, but may get upgraded here):
+:; pacman -S --needed \
+    mingw-w64-x86_64-openssl \
+    mingw-w64-x86_64-nss
 
 # For C++ tests:
 :; pacman -S --needed \

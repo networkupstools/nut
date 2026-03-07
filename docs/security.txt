@@ -314,6 +314,16 @@ You can choose to use one of them by specifying it with a build option
 (`--with-nss` or `--with-openssl`). If neither is specified, the configure
 script will try to detect one of them, with a precedence for OpenSSL.
 
+Starting with NUT v2.8.5, you can check the actual support of your NUT build
+with `upsd -Dh` for the server, and `upsmon -Dh` for the typical client, e.g.:
+
+------
+   0.000000     [D1] Network UPS Tools version 2.8.4....
+   0.019319     [D1] NUT data server was built with SSL support: OpenSSL;
+                     without client certificate validation
+------
+
+
 OpenSSL backend usage
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -536,7 +546,7 @@ other certificates.
 Create a self-signed CA certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NSS provides a way to create self-signed certificate which can acting as
+NSS provides a way to create self-signed certificate which can act as
 CA certificate, and to sign other certificates with this CA certificate.
 This method can be used to provide a CA certification chain without using
 an "official" certificate authority.
@@ -582,25 +592,30 @@ a hard rule. The certificate can be named as useful.
 upsd (optional): client authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NOTE: This functionality is disabled by default. To activate it, recompile
-NUT with `WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
+NOTE: This functionality is disabled by default. To activate it, initially
+`configure --with-ssl-client-validation` or just recompile NUT with macro
+`WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
 
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION"
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive `CERTREQUEST` with the corresponding value in the `upsd.conf`
-file:
+the directive `CERTREQUEST` with the corresponding numeric or string value
+in the `upsd.conf` file:
 
-- NO: no client authentication.
-- REQUEST: a certificate is request to the client but it is not strictly
-validated.
-If the client does not send any certificate, the connection is closed.
-- REQUIRE: a certificate is requested to the client and if it is not valid
-(no validation chain) the connection is closed.
+- ('0') 'NO': no client authentication.
+- ('1') 'REQUEST': a certificate is requested from the client, but it is not
+  strictly validated.
++
+NOTE: If the client does not send *any* certificate, the connection is closed.
+- ('2') 'REQUIRE': a certificate is requested from the client, and if it is
+  not valid (no trusted validation chain) the connection is closed.
 
 Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
+WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
+#3329] is solved, not all stock NUT clients may even have a way to present
+some certain certificate.
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

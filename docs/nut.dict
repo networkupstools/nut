@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3660 utf-8
+personal_ws-1.1 en 3691 utf-8
 AAC
 AAS
 ABI
@@ -33,6 +33,7 @@ AQ
 ARB
 ARG
 ARS
+ASN
 ATEK
 ATR
 ATT
@@ -304,6 +305,7 @@ DeviceKit
 DeviceLogin
 DeviceLogout
 Dgtk
+Dh
 Dharm
 Diehl
 Dietze
@@ -541,6 +543,7 @@ IDEN
 IDEs
 IDentifiers
 IFBETWEEN
+IFEQ
 IFF
 IFSUPP
 IGN
@@ -1085,6 +1088,7 @@ QVFW
 QWS
 QinHeng
 Quette
+Quiesced
 RBAC
 RBWARNTIME
 RDLCK
@@ -1222,6 +1226,7 @@ SRC
 SSD
 SSSS
 STARTTLS
+STATUSCOLOR
 STB
 STDCALL
 STESTI
@@ -1582,6 +1587,7 @@ addr
 addrange
 addvar
 addvars
+ade
 adelsystem
 adkorte
 adm
@@ -1719,6 +1725,7 @@ bcdDevice
 bcm
 bcmxcp
 bd
+bdf
 belkin
 belkinunv
 bestfcom
@@ -1792,6 +1799,7 @@ cdc
 cdf
 cee
 cef
+celsius
 centos
 cerr
 certfile
@@ -1890,6 +1898,7 @@ cpqpower
 cpsups
 cpu
 cr
+createElement
 crestfactor
 crit
 criticality
@@ -1901,6 +1910,7 @@ crossbuild
 crt
 crw
 crypto
+cryptographic
 csh
 cshdelay
 csi
@@ -2063,6 +2073,8 @@ ef
 egrep
 ei
 el
+elementWidth
+els
 emacs
 emptor
 emptyDir
@@ -2111,11 +2123,13 @@ extradata
 faa
 fabula
 facto
+fafc
 failmode
 failover
 fallthrough
 fasttrack
 fatalx
+fbbf
 fc
 fcb
 fcntl
@@ -2142,6 +2156,7 @@ fmt
 fno
 fontconfig
 fopen
+forEach
 forceshutdown
 forcessl
 formatconfig
@@ -2195,6 +2210,7 @@ getenv
 gethostbyname
 getopt
 getproctag
+getter
 gettext
 gettextize
 getval
@@ -2222,6 +2238,8 @@ gpg
 gpgsign
 gpio
 gpiochip
+graphmax
+graphmin
 graphviz
 groupadd
 groupname
@@ -2334,6 +2352,7 @@ inittime
 initups
 inline
 inlined
+innerHTML
 innotech
 innovart
 innovatae
@@ -2400,6 +2419,7 @@ jpeg
 jpg
 jq
 jre
+js
 json
 kVA
 kadets
@@ -2423,6 +2443,7 @@ ktrace
 kvm
 labcd
 lan
+lang
 langid
 lasaine
 launchd
@@ -2617,6 +2638,7 @@ middleware
 mincharge
 mingw
 minicol
+minmax
 minruntime
 mins
 minva
@@ -2689,6 +2711,7 @@ natively
 nb
 nbproject
 nbr
+nbsp
 nc
 nd
 nde
@@ -2756,6 +2779,7 @@ notransferoids
 novendor
 nowait
 nowarn
+nowrap
 np
 nspr
 nss
@@ -3043,6 +3067,7 @@ rex
 rexx
 rf
 rfc
+rgba
 rh
 richcomm
 riello
@@ -3261,6 +3286,7 @@ structs
 sts
 stst
 stty
+stunnel
 stylesheet
 stylesheets
 su
@@ -3321,6 +3347,7 @@ sysutils
 sysvinit
 tagname
 targetArchitecture
+tbody
 tcflush
 tcgetattr
 tcl
@@ -3346,6 +3373,7 @@ tgt
 tgtsize
 tgz
 th
+thead
 timeframe
 timehead
 timername
@@ -3366,6 +3394,8 @@ topFrame
 topbot
 tport
 transactional
+translateX
+translateY
 treemode
 tripplite
 tripplitesu
@@ -3427,6 +3457,7 @@ unconfigured
 undefine
 undervoltage
 unescaped
+unhandled
 unicast
 unicode
 uninstall
@@ -3552,9 +3583,11 @@ verifySourceSig
 versa
 versioned
 versioning
+vh
 victron
 victronups
 vid
+viewport
 vin
 vio
 virsh
@@ -3571,6 +3604,7 @@ vscode
 vsnprintf
 vsnprintfcat
 vt
+vw
 wDescriptorLength
 waitbeforereconnect
 wakeup

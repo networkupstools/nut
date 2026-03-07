@@ -3,7 +3,12 @@ NUT Release Notes
 =================
 endif::txt[]
 
-If you're upgrading from an earlier version, see the link:UPGRADING.adoc[] file.
+This document summarizes the practical side of changes coming with each
+newer release development, as compared to the preceding release.
+
+If you're upgrading from an earlier version, or are a package maintainer,
+please see also the link:UPGRADING.adoc[] file about anticipated impacts
+of ongoing development on existing deployments and third-party consumers.
 
 Please note that web and source document links, product and service names
 listed in historic entries of past releases may no longer be relevant.
@@ -104,6 +109,16 @@ https://github.com/networkupstools/nut/milestone/12
      characters. Now it is evaluated at `configure` time (to check that the
      characters may be used), and if not -- during `nut_stdint.h` parsing to
      fit known `int`/`long`/`long long` types. [#3300]
+   * Added new API methods and defined bitmap values for `libupsclient`
+     C binding to query and report SSL capabilities of the current library
+     build (none, OpenSSL, Mozilla NSS): `upscli_ssl_caps_descr()` and
+     `upscli_ssl_caps()`. Updated common NUT clients to report this info
+     in their detailed help banners. Done similarly for `upsd`. The NIT
+     (NUT Integration Test) suite piggy-backs on this to add run-time
+     dependent tests of SSL capability. Added `upscli_set_debug_level()`
+     and `upscli_set_debug_level()` methods to facilitate NUT debugging
+     for clients built with shared NUT private libraries. [issues #3328,
+     #1771, #2800, PR #3330]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -218,6 +233,9 @@ https://github.com/networkupstools/nut/milestone/12
      mappings. Suggest how user can help improve the driver if too few data
      points were seen, or if the `mibs=auto` detection only found the fallback
      IETF mapping. [PR #3095]
+   * Quiesced "unhandled ASN 0x80 received from ..." messages when we fall
+     back to using the numeric value from last OID section. [issue #1358,
+     PE #3337]
    * Added new vendor extension mappings for Vertiv Liebert UPS, tested with
      PSI5-750MT120 UPS model and IS-UNITY-DP (Firmware 8.4.7.0) SNMP card.
      [issue #3296, PR #3299]
@@ -302,6 +320,11 @@ https://github.com/networkupstools/nut/milestone/12
      or Windows `HANDLE`'s at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
      environment variable (e.g. in tests). [#3302]
+   * Extended processing of `CERTREQUEST` setting to handle numeric or specific
+     string values, to match both ways of reading ambiguous documentation.
+     Added `configure --with-ssl-client-validation` toggle to expose the
+     macro previously meant to be passed via `make` command line. [PR #3330,
+     but beware issue #3329]
 
  - `upsdrvctl` tool updates:
    * Make use of `setproctag()` and `getproctag()` to report parent/child
@@ -344,7 +367,7 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
 
- - `upsstats` tool updates:
+ - `upsstats` CGI tool updates:
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
      New `@TREELINK_JSON@` keyword added and HTML templates updated to expose
      these JSON documents when browsing. [issue #2524, PRs #3171, #3249]
@@ -357,7 +380,7 @@ several `FSD` notifications into one executed action. [PR #3097]
      [issue #3252, PR #3249]
    * (Experimental) Custom templates other than `upsstats{,-single}.html` can
      now be specified as CGI parameters, if locally permitted via `hosts.conf`.
-     [issue #2524, PR #3304]
+     Modern-looking templates were provided. [issues #2524, #3316, PR #3304]
 
  - `upssched` tool updates:
    * Previously in PR #2896 (NUT releases v2.8.3 and v2.8.4) the `UPSNAME` and
@@ -530,6 +553,10 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Dropped the `compile` script from Git sources. It originates from automake
      and is added to work area (if missing) during `autogen.sh` rituals anyway.
      It is still distributed as part of `make dist` tarball. [#1209]
+   * Extended `ci_build.sh` and `build-mingw-nut.sh` so that certain values
+     of `NUT_SSL_VARIANTS=[yes, no, auto, ssl, nss, openssl]` can be used
+     with generic builds to test a specific code path and not only the
+     auto-detected one. [#1711]
 
  - Upstreamed reference packaging recipes (DEB, RPM) from the 42ITy project
    which can be used with OBS (Open Build Service by SUSE), both to support
