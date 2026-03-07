@@ -2285,6 +2285,27 @@ static hid_info_t mge_hid2nut[] =
 	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
 	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 
+	/* Third outlet (group) [4] */
+	{ "outlet.3.id", 0, 0, "UPS.OutletSystem.Outlet.[4].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "outlet.3.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[4].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
+	/* needed for Pegasus to enable master/slave mode:
+	 * FIXME: rename to something more suitable (outlet.?) */
+	{ "outlet.3.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[4].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, pegasus_yes_no_info },
+	/* Generic version (RO) for other models */
+	{ "outlet.3.switchable", 0, 0, "UPS.OutletSystem.Outlet.[4].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
+	{ "outlet.3.status", 0, 0, "UPS.OutletSystem.Outlet.[4].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.3.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[4].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[4].Status? */
+	{ "outlet.3.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[4].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.3.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[4].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.3.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[4].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.3.power", 0, 0, "UPS.OutletSystem.Outlet.[4].ApparentPower", NULL, "%.0f", 0, NULL },
+	{ "outlet.3.realpower", 0, 0, "UPS.OutletSystem.Outlet.[4].ActivePower", NULL, "%.0f", 0, NULL },
+	{ "outlet.3.current", 0, 0, "UPS.OutletSystem.Outlet.[4].Current", NULL, "%.2f", 0, NULL },
+	{ "outlet.3.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[4].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
+	{ "outlet.3.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[4].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
+
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
 	 * ie: test.battery.start quick
@@ -2314,6 +2335,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "outlet.3.load.off", 0, 0, "UPS.OutletSystem.Outlet.[4].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "outlet.3.load.on", 0, 0, "UPS.OutletSystem.Outlet.[4].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* Command to switch ECO(HE), ESS Mode */
 	{ "experimental.ecomode.stop", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
