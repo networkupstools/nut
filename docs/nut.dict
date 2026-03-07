@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3691 utf-8
+personal_ws-1.1 en 3697 utf-8
 AAC
 AAS
 ABI
@@ -1522,6 +1522,7 @@ Willian
 WinMerge
 WinNUT
 WinPower
+WinUSB
 Wireshark
 Wl
 Wrede
@@ -3617,6 +3618,7 @@ whitespace
 wiki
 wildcard
 wildcards
+winhid
 wininit
 winnutclient
 winpthreads
