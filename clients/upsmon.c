@@ -4224,9 +4224,11 @@ int main(int argc, char *argv[])
 
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			upsdebugx(0, "%s: Dozing off until system tells us otherwise; send a SIGHUP or SIGTERM to break the loop manually", prog);
+
 			while ((sleep_inhibitor_status = isPreparingForSleep()) == -1 && !reload_flag && !exit_flag) {
 				usleep(1000000);
 			}
+
 			if (nut_debug_level == 0) {
 				upsdebugx(0, "%s: Dozing off finished", prog);
 			} else {
@@ -4258,15 +4260,18 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
+				/* Note the system clock may be or not be updated */
+				gettimeofday(&now, NULL);
+				time(&ttNow);
+				dt = difftimeval(now, start);
+
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
-				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %g seconds since previous loop cycle start", prog, dt);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				gettimeofday(&now, NULL);
-				time(&ttNow);
 				for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 					ups->status = 0;
 					ups->lastpoll = ttNow;
