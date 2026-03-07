@@ -1352,7 +1352,7 @@ void upsdrv_makevartable(void)
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
-	addvar(VAR_FLAG, "experimentalhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
+	addvar(VAR_FLAG, "winhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1701,18 +1701,18 @@ void upsdrv_initups(void)
 	const char *transport_backend;
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 # ifdef WIN32
-	if (testvar("experimentalhid")) {
+	if (testvar("winhid")) {
 		comm_driver = &winhid_subdriver;
 		dstate_setinfo("driver.version.usb", "winhid-%s (Windows HID API)",
 			comm_driver->version);
-		upslogx(LOG_INFO, "Using experimentalhid backend: %s %s",
+		upslogx(LOG_INFO, "Using experimental winhid backend: %s %s",
 			comm_driver->name, comm_driver->version);
 	} else {
 		comm_driver = &usb_subdriver;
 	}
 # else	/* !WIN32 */
-	if (testvar("experimentalhid")) {
-		upslogx(LOG_WARNING, "experimentalhid is only supported on WIN32 builds; ignoring option");
+	if (testvar("winhid")) {
+		upslogx(LOG_WARNING, "winhid is only supported on WIN32 builds; ignoring option");
 	}
 	comm_driver = &usb_subdriver;
 # endif	/* WIN32 */
@@ -2505,7 +2505,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	 && comm_driver == &winhid_subdriver
 	 && items_polled == 0
 	) {
-		upsdebugx(2, "%s: no quick-poll mappings with experimentalhid/pollonly; falling back to full update", __func__);
+		upsdebugx(2, "%s: no quick-poll mappings with winhid/pollonly; falling back to full update", __func__);
 		return hid_ups_walk(HU_WALKMODE_FULL_UPDATE);
 	}
 #endif

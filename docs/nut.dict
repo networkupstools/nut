@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3697 utf-8
+personal_ws-1.1 en 3696 utf-8
 AAC
 AAS
 ABI
@@ -2116,7 +2116,6 @@ executables
 executeCommand
 execve
 expandsize
-experimentalhid
 extapi
 extern
 externalConsole
