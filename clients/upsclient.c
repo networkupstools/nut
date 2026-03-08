@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #ifndef WIN32
+# include <sys/select.h>	/* fd_set and select(); (or sys/time.h on older BSDs) */
 # include <netdb.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -913,20 +914,105 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
 	}
 
-	res = SSL_connect(ups->ssl);
-	switch(res)
+	/* SSL_connect() on a non-blocking socket requires a retry loop.
+	 * When SSL_connect() returns -1 with SSL_ERROR_WANT_READ or
+	 * SSL_ERROR_WANT_WRITE it is signalling a non-fatal "not done yet"
+	 * condition: the TLS handshake needs more I/O turns to complete.
+	 * The correct response is to wait for the fd to become ready in the
+	 * indicated direction and call SSL_connect() again with the SAME ssl
+	 * object (per OpenSSL docs for all versions >= 0.9.x).
+	 *
+	 * On Linux the loopback is fast enough that the handshake nearly always
+	 * completes in a single call, masking this requirement.  On BSD, macOS,
+	 * illumos/OmniOS/OpenIndiana and other non-Linux platforms the loopback
+	 * socket behaviour differs enough that WANT_READ/WANT_WRITE are returned
+	 * regularly, causing the previous single-shot code to treat a transient
+	 * condition as a fatal error and tear down the connection.
+	 *
+	 * The retry behaviour and the SSL_ERROR_WANT_* codes are identical
+	 * across all supported OpenSSL versions (0.9.x, 1.0.x, 1.1.x, 3.x):
+	 * the API contract has never changed in this regard.
+	 */
 	{
-	case 1:
-		upsdebugx(3, "SSL connected (%s)", SSL_get_version(ups->ssl));
-		break;
-	case 0:
-		upsdebug_with_errno(1, "SSL_connect do not accept handshake.");
-		ssl_error(ups->ssl, res);
-		return -1;
-	default:
-		upsdebug_with_errno(1, "Unknown return value from SSL_connect %d", res);
-		ssl_error(ups->ssl, res);
-		return -1;
+		int	ssl_err;
+		int	ssl_retries = 0;
+		/* Cap retries to avoid spinning forever on a broken socket.
+		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+		 * local handshake while being safe for CI timeouts.        */
+		const int	SSL_CONNECT_MAX_RETRIES = 250;
+		fd_set	fds;
+		struct timeval	tv;
+
+		res = -1;
+		while (ssl_retries < SSL_CONNECT_MAX_RETRIES) {
+			res = SSL_connect(ups->ssl);
+
+			if (res == 1) {
+				upsdebugx(3, "SSL connected (%s)",
+					SSL_get_version(ups->ssl));
+				break;
+			}
+
+			ssl_err = SSL_get_error(ups->ssl, res);
+
+			if (ssl_err == SSL_ERROR_WANT_READ
+			 || ssl_err == SSL_ERROR_WANT_WRITE
+			) {
+				/* Non-fatal: handshake needs another I/O turn.
+				 * Wait up to 20 ms for the fd to be ready, then
+				 * retry SSL_connect() with the same ssl object. */
+				FD_ZERO(&fds);
+				FD_SET(ups->fd, &fds);
+				tv.tv_sec  = 0;
+				tv.tv_usec = 20000;	/* 20 ms */
+
+				upsdebugx(4,
+					"%s: SSL_connect WANT_%s, retry %d/%d",
+					__func__,
+					(ssl_err == SSL_ERROR_WANT_READ)
+						? "READ" : "WRITE",
+					ssl_retries + 1,
+					SSL_CONNECT_MAX_RETRIES);
+
+				if (select(ups->fd + 1,
+					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+					(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+					NULL, &tv) < 0
+				) {
+					upsdebug_with_errno(1,
+						"%s: select() failed during SSL_connect",
+						__func__);
+					ssl_error(ups->ssl, res);
+					return -1;
+				}
+				ssl_retries++;
+				continue;
+			}
+
+			/* Any other error is fatal */
+			if (res == 0) {
+				upsdebug_with_errno(1,
+					"%s: SSL_connect did not accept handshake"
+					" (SSL_ERROR %d)",
+					__func__, ssl_err);
+			} else {
+				upsdebug_with_errno(1,
+					"%s: SSL_connect failed"
+					" (SSL_ERROR %d)",
+					__func__, ssl_err);
+			}
+			ssl_error(ups->ssl, res);
+			return -1;
+		}
+
+		if (ssl_retries >= SSL_CONNECT_MAX_RETRIES) {
+			upslogx(LOG_ERR,
+				"%s: SSL_connect timed out after %d retries"
+				" (non-blocking handshake never completed)",
+				__func__, ssl_retries);
+			ssl_error(ups->ssl, res);
+			return -1;
+		}
 	}
 
 	return 1;
