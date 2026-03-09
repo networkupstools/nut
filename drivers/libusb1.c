@@ -476,6 +476,17 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				usb_subdriver.hid_desc_index = 1;
 		}
 
+		/* Liebert PSI5 / PowerSure PST (10af:0002): the HID Power Device
+		 * Class descriptor is on interface 1.  Interface 0 exposes only a
+		 * 27-byte vendor-specific report that contains no usable UPS data,
+		 * which caused NUT to incorrectly report the UPS as on battery
+		 * (OB) even when AC power was present.
+		 * See GitHub issues #1252 and #3340. */
+		if ((curDevice->VendorID == 0x10af) && (curDevice->ProductID == 0x0002)) {
+			if (!getval("usb_hid_rep_index"))
+				usb_subdriver.hid_rep_index = 1;
+		}
+
 		upsdebugx(2, "Trying to match device");
 		for (m = matcher; m; m=m->next) {
 			ret = matches(m, curDevice);
