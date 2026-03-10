@@ -5,7 +5,7 @@
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *  2011, 2014  Charles Lepple <clepple+nut@gmail.com>
  *  2024        James R. Parks <jrjparks@zathera.com>
- *  2024        Jim Klimov <jimklimov+nut@gmail.com>
+ *  2024 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -32,7 +32,7 @@
 #include "usb-common.h"
 #include "nut_float.h"	/* For fabs() */
 
-#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.22"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.23"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -82,6 +82,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
+
+static usb_communication_subdriver_t	*usb = &usb_subdriver;
 
 static const char *liebert_online_fun(double value);
 static const char *liebert_discharging_fun(double value);
@@ -661,6 +663,18 @@ static int belkin_claim(HIDDevice_t *hd)
 		case LIEBERT_VENDORID:
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
+				/* Liebert PSI5 / PowerSure PST (10af:0002): the HID Power Device
+				 * Class descriptor is on interface 1.  Interface 0 exposes only a
+				 * 27-byte vendor-specific report that contains no usable UPS data,
+				 * which caused NUT to incorrectly report the UPS as on battery
+				 * (OB) even when AC power was present, and serve no useful data.
+				 * See GitHub issues #1252 and #3340, PR #3345. */
+				if (hd->ProductID == 0x0002
+				 && !getval("usb_hid_rep_index")
+				) {
+					usb->hid_rep_index = 1;
+				}
+
 				return 1;
 			}
 			possibly_supported("Liebert", hd);
@@ -672,6 +686,14 @@ static int belkin_claim(HIDDevice_t *hd)
 		return 0;
 
 	case SUPPORTED:
+		/* See comment above */
+		if (hd->VendorID == LIEBERT_VENDORID
+		 && hd->ProductID == 0x0002
+		 && !getval("usb_hid_rep_index")
+		) {
+			usb->hid_rep_index = 1;
+		}
+
 		return 1;
 
 	case NOT_SUPPORTED:
