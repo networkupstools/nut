@@ -672,6 +672,7 @@ static int belkin_claim(HIDDevice_t *hd)
 				if (hd->ProductID == 0x0002
 				 && !getval("usb_hid_rep_index")
 				) {
+					upsdebugx(1, "%s: defaulting usb_hid_rep_index=1 for this model", __func__);
 					usb->hid_rep_index = 1;
 				}
 
@@ -691,6 +692,7 @@ static int belkin_claim(HIDDevice_t *hd)
 		 && hd->ProductID == 0x0002
 		 && !getval("usb_hid_rep_index")
 		) {
+			upsdebugx(1, "%s: defaulting usb_hid_rep_index=1 for this model", __func__);
 			usb->hid_rep_index = 1;
 		}
 
