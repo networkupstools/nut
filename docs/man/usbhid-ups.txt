@@ -129,6 +129,18 @@ If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
 
+*winhid*::
+If this flag is set on Windows builds, use the experimental native Windows HID
+backend instead of libusb.
++
+This backend currently follows a read-focused scope. It supports
+device discovery and matching by identifiers such as `vendorid` and
+`productid`, input/feature reads, and interrupt-report fallback handling.
+Feature-report writes are not implemented in this phase, so writable
+`setvar`/`instcmd` operations may be unavailable.
++
+This option is ignored on non-WIN32 builds.
+
 *interrupt_pipe_no_events_tolerance*='num'::
 Set the tolerance for how many times in a row could we have "Got 0 HID objects"
 when using USB interrupt mode?  This may normally be due to a device having
