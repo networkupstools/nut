@@ -297,7 +297,11 @@ https://github.com/networkupstools/nut/milestone/12
      `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
    * Introduced a `winhid` extension in NUT for Windows builds, to directly
      work with Windows HID API so that extra driver like WinUSB or Zadig is
-     not needed. [#3335]
+     not needed. Note that currently this backend follows a read-focused
+     scope: it supports device discovery and matching by identifiers such
+     as `vendorid` and `productid`, input/feature reads, and interrupt-report
+     fallback handling. Feature-report writes are not implemented in this
+     phase, so `setvar`/`instcmd` operations may be unavailable. [PR #3335]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
