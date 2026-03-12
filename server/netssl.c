@@ -31,6 +31,7 @@
 #ifndef WIN32
 #	include <netinet/in.h>
 #	include <sys/socket.h>
+#	include <sys/select.h>	/* fd_set and select(); (or sys/time.h on older BSDs) */
 #else	/* WIN32 */
 #	include "wincompat.h"
 #endif	/* WIN32 */
@@ -366,25 +367,106 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
-	ret = SSL_accept(client->ssl);
-	switch (ret)
+	/* SSL_accept() on a non-blocking socket (which upsd uses) requires a
+	 * retry loop. When SSL_accept() returns -1 with SSL_ERROR_WANT_READ or
+	 * SSL_ERROR_WANT_WRITE it is signalling a non-fatal "not done yet"
+	 * condition: the TLS handshake needs more I/O turns to complete.
+	 * The correct response is to wait for the fd to become ready in the
+	 * indicated direction and call SSL_accept() again with the SAME ssl
+	 * object and arguments (per OpenSSL docs for all versions >= 0.9.x).
+	 *
+	 * On Linux the loopback is fast enough that the handshake nearly always
+	 * completes in a single call, masking this requirement.  On BSD, macOS,
+	 * illumos/OmniOS/OpenIndiana and other non-Linux platforms the loopback
+	 * socket behaviour differs enough that WANT_READ/WANT_WRITE are returned
+	 * regularly, causing the previous single-shot code to treat a transient
+	 * condition as a fatal error and tear down the connection.
+	 *
+	 * The retry behaviour and the SSL_ERROR_WANT_* codes are identical
+	 * across all supported OpenSSL versions (0.9.x, 1.0.x, 1.1.x, 3.x):
+	 * the API contract has never changed in this regard.
+	 */
 	{
-	case 1:
-		client->ssl_connected = 1;
-		upsdebugx(3, "SSL connected (%s)", SSL_get_version(client->ssl));
-		break;
+		int	ssl_err;
+		int	ssl_retries = 0;
+		/* Cap retries to avoid spinning forever on a broken socket.
+		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+		 * local handshake while being safe for CI timeouts.        */
+		const int	SSL_ACCEPT_MAX_RETRIES = 250;
+		fd_set	fds;
+		struct timeval	tv;
 
-	case 0:
-		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
-		ssl_error(client->ssl, ret);
-		break;
+		ret = -1;
+		while (ssl_retries < SSL_ACCEPT_MAX_RETRIES) {
+			ret = SSL_accept(client->ssl);
 
-	case -1:
-		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
-		ssl_error(client->ssl, ret);
-		break;
-	default:
-		break;
+			if (ret == 1) {
+				client->ssl_connected = 1;
+				upsdebugx(3, "SSL_accept succeeded (%s)",
+					SSL_get_version(client->ssl));
+				break;
+			}
+
+			ssl_err = SSL_get_error(client->ssl, ret);
+
+			if (ssl_err == SSL_ERROR_WANT_READ
+			 || ssl_err == SSL_ERROR_WANT_WRITE
+			) {
+				/* Non-fatal: handshake needs another I/O turn.
+				 * Wait up to 20 ms for the fd to be ready, then
+				 * retry SSL_accept() with the same ssl object.  */
+				FD_ZERO(&fds);
+				FD_SET(client->sock_fd, &fds);
+				tv.tv_sec  = 0;
+				tv.tv_usec = 20000;	/* 20 ms */
+
+				upsdebugx(4,
+					"%s: SSL_accept WANT_%s, retry %d/%d",
+					__func__,
+					(ssl_err == SSL_ERROR_WANT_READ)
+						? "READ" : "WRITE",
+					ssl_retries + 1,
+					SSL_ACCEPT_MAX_RETRIES);
+
+				if (select(client->sock_fd + 1,
+					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+					(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+					NULL, &tv) < 0
+				) {
+					upslog_with_errno(LOG_ERR,
+						"%s: select() failed during SSL_accept",
+						__func__);
+					ssl_error(client->ssl, ret);
+					return;
+				}
+				ssl_retries++;
+				continue;
+			}
+
+			/* Any other error is fatal */
+			if (ret == 0) {
+				upslog_with_errno(LOG_ERR,
+					"%s: SSL_accept did not accept handshake"
+					" (SSL_ERROR %d)",
+					__func__, ssl_err);
+			} else {
+				upslog_with_errno(LOG_ERR,
+					"%s: SSL_accept failed"
+					" (SSL_ERROR %d)",
+					__func__, ssl_err);
+			}
+			ssl_error(client->ssl, ret);
+			return;
+		}
+
+		if (ssl_retries >= SSL_ACCEPT_MAX_RETRIES) {
+			upslogx(LOG_ERR,
+				"%s: SSL_accept timed out after %d retries"
+				" (non-blocking handshake never completed)",
+				__func__, ssl_retries);
+			ssl_error(client->ssl, ret);
+			return;
+		}
 	}
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
