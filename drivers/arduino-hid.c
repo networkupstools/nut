@@ -155,24 +155,36 @@ static int arduino_claim(HIDDevice_t *hd)
 		case POSSIBLY_SUPPORTED:
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
-				if (!getval("usb_hid_ep_in"))
+				if (!getval("usb_hid_ep_in")) {
+					upsdebugx(1, "%s: defaulting usb_hid_ep_in=4 for this model", __func__);
 					usb->hid_ep_in=4;
-				if (!getval("usb_hid_ep_out"))
+				}
+				if (!getval("usb_hid_ep_out")) {
+					upsdebugx(1, "%s: defaulting usb_hid_ep_out=5 for this model", __func__);
 					usb->hid_ep_out=5;
-				if (!getval("usb_hid_rep_index"))
+				}
+				if (!getval("usb_hid_rep_index")) {
+					upsdebugx(1, "%s: defaulting usb_hid_rep_index=2 for this model", __func__);
 					usb->hid_rep_index = 2;
+				}
 				return 1;
 			}
 			possibly_supported("Arduino", hd);
 			return 0;
 
 		case SUPPORTED:
-			if (!getval("usb_hid_ep_in"))
+			if (!getval("usb_hid_ep_in")) {
+				upsdebugx(1, "%s: defaulting usb_hid_ep_in=4 for this model", __func__);
 				usb->hid_ep_in=4;
-			if (!getval("usb_hid_ep_out"))
+			}
+			if (!getval("usb_hid_ep_out")) {
+				upsdebugx(1, "%s: defaulting usb_hid_ep_out=5 for this model", __func__);
 				usb->hid_ep_out=5;
-			if (!getval("usb_hid_rep_index"))
+			}
+			if (!getval("usb_hid_rep_index")) {
+				upsdebugx(1, "%s: defaulting usb_hid_rep_index=2 for this model", __func__);
 				usb->hid_rep_index = 2;
+			}
 			return 1;
 
 		case NOT_SUPPORTED:
