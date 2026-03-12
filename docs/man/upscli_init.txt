@@ -69,6 +69,10 @@ security policy before initialize connections to them.
 
 You must call linkman:upscli_cleanup[3] when exiting application.
 
+Starting with NUT v2.8.5, you can use linkman:upscli_ssl_caps[3] from consumer
+code to query the library about its build circumstances (whether it supports
+SSL, and which backend(s)).
+
 RETURN VALUE
 ------------
 
@@ -82,5 +86,6 @@ linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3],
 linkman:upscli_init_default_connect_timeout[3], linkman:upscli_fd[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
-linkman:upscli_ssl[3], linkman:upscli_strerror[3],
-linkman:upscli_upserror[3]
+linkman:upscli_ssl[3], linkman:upscli_ssl_caps[3],
+linkman:upscli_ssl_caps_descr[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

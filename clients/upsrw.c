@@ -75,6 +75,7 @@ static void usage(const char *prog)
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
@@ -663,6 +664,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+		upscli_set_debug_level(nut_debug_level);
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 

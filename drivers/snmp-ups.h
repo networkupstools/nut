@@ -401,7 +401,7 @@ typedef struct {
 #define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
 /* "flags" bit 25 */
-#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop care about this report; if not, may be a point for improvement... */
+#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop cared about this report and retrieved something successfully; if not, may be a point for improvement... */
 
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 

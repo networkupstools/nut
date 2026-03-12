@@ -88,7 +88,7 @@ else !BUILDING_IN_TREE
 		ln -s -f "$(top_srcdir)/common/common-nut_version.c" "$@" ; \
 	 fi
 
-  CLEANFILES += $(top_builddir)/common/nut_version.c
+  CLEANFILES += $(top_builddir)/common/common-nut_version.c
   BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 

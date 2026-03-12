@@ -544,10 +544,13 @@ SRC_DEV_PAGES = \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
+	upscli_report_build_details.txt \
 	upscli_sendline.txt \
+	upscli_set_debug_level.txt \
 	upscli_splitaddr.txt \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
+	upscli_ssl_caps.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	upscli_str_add_unique_token.txt \
@@ -649,6 +652,16 @@ LIBNUTCLIENT_DEVICES_DEPS = \
 $(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.$(MAN_SECTION_API)
 	touch $@
 
+UPSCLI_SSL_CAPS_DEPS = \
+	upscli_ssl_caps_descr.$(MAN_SECTION_API)
+
+$(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
+
+UPSCLI_SET_DEBUG_LEVEL_DEPS = \
+	upscli_get_debug_level.$(MAN_SECTION_API)
+
+$(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
+
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
@@ -666,11 +679,16 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
 	upscli_readline_timeout.$(MAN_SECTION_API) \
+	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
+	upscli_set_debug_level.$(MAN_SECTION_API) \
+	$(UPSCLI_SET_DEBUG_LEVEL_DEPS) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
+	upscli_ssl_caps.$(MAN_SECTION_API) \
+	$(UPSCLI_SSL_CAPS_DEPS) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
@@ -781,10 +799,13 @@ INST_HTML_DEV_MANS = \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \
+	upscli_report_build_details.html \
 	upscli_sendline.html \
+	upscli_set_debug_level.html \
 	upscli_splitaddr.html \
 	upscli_splitname.html \
 	upscli_ssl.html \
+	upscli_ssl_caps.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	upscli_str_add_unique_token.html \

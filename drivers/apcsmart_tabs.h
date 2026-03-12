@@ -4,6 +4,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
+ *           (C) 2026  Owen Li <geek@geeking.moe>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
 
 #include "main.h"
 
-#define APC_TABLE_VERSION	"version 3.1"
+#define APC_TABLE_VERSION	"version 3.2"
 
 /* common flags */
 
@@ -98,9 +99,19 @@ typedef struct {
 	int		flags;
 } apc_compattab_t;
 
+/* dual-byte (multi-byte) command variable table for SPM series and similar */
+typedef struct {
+	const char	*name;		/* NUT variable name	*/
+	unsigned char	prefix;		/* first byte (e.g. 0x9F)	*/
+	unsigned char	sub;		/* second byte (e.g. 0xD3)	*/
+	unsigned int	flags;		/* APC_POLL|APC_PRESENT, APC_F_*, etc. */
+	const char	*regex;		/* optional validation regex	*/
+} apc_vartab_dual_t;
+
 extern apc_vartab_t apc_vartab[];
 extern apc_cmdtab_t apc_cmdtab[];
 extern apc_compattab_t apc_compattab[];
+extern apc_vartab_dual_t apc_vartab_dual[];
 extern upsdrv_info_t apc_tab_info;
 
 #endif  /* NUT_APCSMART_TABS_H_SEEN */

@@ -163,11 +163,37 @@ upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 
 ################################## Plain C client library (libupsclient) :
 
-# not LDADD... why?
-libupsclient_la_SOURCES = upsclient.c upsclient.h
 # NOTE: The library does not require libcommonversion.la
+# but it needs nut_version.h made before the rest of build,
+# to include it into upsclient.c (without an explicit link,
+# this target is sometimes missed in parallel builds):
+libupsclient_la_SOURCES = upsclient.c upsclient.h
+
+# See comments for similar trick in common/Makefile.am for common-nut_version.c
+if BUILDING_IN_TREE
+  upsclient.c: $(top_builddir)/include/nut_version.h
+else !BUILDING_IN_TREE
+  upsclient.c: $(top_builddir)/include/nut_version.h $(srcdir)/upsclient.c
+	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+		exit 0 ; \
+	 else \
+		echo "  LN      $(top_srcdir)/clients/upsclient.c => $@ (relative to `pwd`)" ; \
+		ln -s -f "$(top_srcdir)/clients/upsclient.c" "$@" ; \
+	 fi
+
+  CLEANFILES += $(top_builddir)/clients/upsclient.c
+  BUILT_SOURCES = upsclient.c
+endif !BUILDING_IN_TREE
+
+
+# not LDADD... why?
+if ENABLE_SHARED_PRIVATE_LIBS
+libupsclient_la_LIBADD = \
+	$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
 libupsclient_la_LIBADD = \
 	$(top_builddir)/common/libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 if HAVE_WINDOWS_SOCKETS
   libupsclient_la_LIBADD += -lws2_32
 endif HAVE_WINDOWS_SOCKETS
@@ -181,6 +207,15 @@ endif WITH_SSL
 # object .so names would differ)
 
 # libupsclient version information
+# NOTE: with libnutprivate*common* builds dynamically linked into the same
+# program (a typical in-tree NUT client, not typical for out-of-tree third
+# party clients) we can end up with two copies of libcommon symbols present
+# in each library. It's recommended to explicitly call upscli_set_debug_level()
+# instead of ambiguously manipulating the nut_debug_level variable by name.
+# TOTHINK: Un-export nut_debug_level from this library to avoid ambiguity
+# for the run-time dynamic linker resolution? For now the shared-library
+# builds are "exotic", but it makes sense to deprecate this export in a
+# future release.
 libupsclient_la_LDFLAGS = -version-info 7:0:0
 libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
 #|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'
@@ -201,9 +236,28 @@ endif HAVE_WINDOWS
 #   dlname='libupsclient-6.dll'
 #   library_names='libupsclient.dll.a'
 #   libdir='//lib'
+# Note that volatile dependencies like nut_version.h can cause re-evaluation
+# of the libupsclient.la goal even if ultimately nothing has changed, and so
+# cause needless evaluations of libupsclient-version.h. We try a couple of
+# ways to skip this rebuild noise for common NUT parallel `make -j N all` runs.
 CLEANFILES += libupsclient-version.h libupsclient-version.h.tmp*
 libupsclient-version.h: libupsclient.la
-	@echo "  GENERATE-HEADER	$@" ; \
+	@test -s '$?' || { echo "[Error] Missing or empty input file: $?" >&2 ; exit 1; }
+	@if [ -s '$@' -a -s '$?' ] ; then \
+	    if test -n "`find '$@' -newer '$?' 2>/dev/null`" ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (libupsclient.la is older than the generated file - not remade when re-evaluated)" >&2; \
+	        fi ; \
+	        exit 0; \
+	    fi ; \
+	    if test -n "`find '$@' -newer '.all.libupsclient_version-generated.timestamp' 2>/dev/null`" ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (.all.libupsclient_version-generated.timestamp was made in this larger run and is older than the generated file)" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	 fi ; \
+	 echo "  GENERATE-HEADER	$@" ; \
 	 RES=0; \
 	 dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
 	 SOFILE_LIBUPSCLIENT="`$(EGREP) '^dlname' '$?' | dlname_filter`" \

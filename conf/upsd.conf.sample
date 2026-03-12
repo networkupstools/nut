@@ -135,7 +135,7 @@
 # you can enter the certificate file here.
 # The certificates must be in PEM format and must be sorted starting with
 # the subject's certificate (server certificate), followed by intermediate
-# CA certificates (if applicable_ and the highest level (root) CA. It should
+# CA certificates (if applicable) and the highest level (root) CA. It should
 # end with the server key. See 'docs/security.txt' or the Security chapter of
 # NUT user manual for more information on the SSL support in NUT.
 #
@@ -170,16 +170,20 @@
 # CERTREQUEST <certificate request level>
 # CERTREQUEST REQUIRE
 #
-# When compiled with SSL support with NSS backend and client certificate
+# When compiled with SSL support with NSS backend *and* client certificate
 # validation (disabled by default, see 'docs/security.txt'),
-# you can specify if upsd requests or requires client's' certificates.
+# you can specify if upsd requests or requires clients' certificates.
 # Possible values are :
-#  - 0 to not request to clients to provide any certificate
-#  - 1 to require to all clients a certificate
-#  - 2 to require to all clients a valid certificate
+#  - '0' or 'NO' to not request that clients provide any certificate
+#  - '1' or 'REQUEST' to require all clients to present some certificate
+#  - '2' or 'REQUIRE' to require all clients to present a valid certificate
+#    (trusted by server database)
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
+#
+# WARNING: Until https://github.com/networkupstools/nut/issues/3329 is solved,
+# not all stock NUT clients even have a way to present some certain certificate.
 
 # =======================================================================
 # DISABLE_WEAK_SSL <Boolean>
