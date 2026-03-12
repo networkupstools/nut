@@ -26,9 +26,19 @@ UPS with the following characteristics.
 
 1. Output power: 1 kVA to 3 kVA (higher power models are unsupported).
 
-2. Connection: USB or RS-232 (for most UPS models, USB is only supported
-on Linux 5.12 and newer kernels, but there are exceptions, read the section
-*Cabling* carefully).
+2. Connection: USB or RS-232 (driver compatibility issues exist, read
+the section *Cabling* carefully).
+
+   * USB: For most models, Linux 5.12 or a newer kernel is required,
+     Windows also requires an additional serial port driver. For other
+     Unix-like systems, driver incompatibility exists, use RS-232.
+
+   * RS-232: Always supported.
+
+   * RS-485: Untested. Testers needed.
+
+3. Operating system: Unix/Linux supported by default, Windows requires
+NUT v2.8.5 or newer.
 
 The UPS2000 series has two variants: UPS2000-A with a tower chassis,
 and UPS2000-G with a rack-mount chassis. Within these two variants,
@@ -36,8 +46,8 @@ there are also two sub-variants: a standard runtime model powered by
 an internal battery pack denoted by an "S" suffix, and a long runtime
 model powered by an external battery pack denoted by an "L" suffix.
 
-All of these models should be equally supported, but more testers are
-needed. Currently, it has been tested on the following models.
+All of these models should be equally supported, currently, it has
+been tested on the following models.
 
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
@@ -64,12 +74,17 @@ huawei-ups2000 uses the libmodbus project, for Modbus implementation.
 CABLING
 -------
 
-The UPS has a USB port and a RS-232 port. Both are supported, but on
-most UPS models, USB is only usable on Linux 5.12 and later, via the
-*xr_serial* kernel module. But for the newer hardware variant with a
-WCH CH341 chip, it should have better compatibility via the *ch341*
-kernel module. See subsection *USB* for details. On the other hand,
-RS-232 is always supported on all operating systems.
+The UPS has a USB port and a RS-232 port. USB is conditionally supported,
+depending on hardware driver availability. RS-232 is always supported
+on all operating systems, which can be used as a fallback.
+
+On most UPS models, USB is powered by the Exar/MaxLinear RX21V1410
+USB-to-serial chip. On Linux, it's only usable on Linux 5.12 and later, via
+the *xr_serial* kernel module. On Windows, it's also suggested to install
+an additional device driver. On some newer UPS hardware variants, a WCH
+CH341 chip is used instead, these should have better compatibility (via the
+*ch341* Linux kernel module, or Windows Update). See subsection *Linux USB*
+and *Windows USB* for details.
 
 Only one port can be used at a time. When USB is used, RS-232 should be
 unplugged from the UPS, and vice versa. Further, optional adapter cards,
@@ -82,8 +97,8 @@ after changing the port type. That is, turn off the UPS power output via the
 front panel, then unplug the UPS from line power input.  Wait for the LCD
 screen to go black. Finally reconnect line power and restart your UPS.
 
-USB
-~~~~
+Linux USB
+~~~~~~~~~
 
 The USB port on the UPS2000 is originally powered by a MaxLinear/Exar
 RX21V1410 USB-to-serial converter chip, it's only supported by Linux
@@ -137,6 +152,44 @@ When upgrading the Linux kernel isn't an option, or when you are using
 another operating system (e.g. FreeBSD), RS-232 must be used. Even for
 CH341 users, one can try this option if USB somehow refuses to work.
 
+Windows USB
+~~~~~~~~~~~~
+
+Windows Update should automatically install appropriate drivers for
+your USB device, however, manual intervention may be required in case
+this process fails.
+
+MaxLinear/Exar RX21V1410
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For UPS models with a MaxLinear/Exar RX21V1410 USB-to-serial converter
+chip, an additional device driver may be required.
+
+According to the official manual, it instructs users to install a special
+MaxLinear device driver called *XR21x141x-XP2KVista7-DriversOnly-Vers1.7.0.0*.
+See *Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide*.
+
+The driver described in the official manual may be outdated or difficult
+to obtain. If so, please also try downloading the latest driver from
+MaxLinear XR21V1410 product page on the Web. At the time of writing, the
+latest driver is named *XR21x_Win10_V2.7.0.0.zip* in the *Software: Drivers,
+Windows 10 and newer* category.
+
+URLs are available at the bottom of the manual.
+
+WCH CH341
+^^^^^^^^^
+
+For UPS models with a WCH CH341 USB-to-serial converter chip, an additional
+device driver may be required.
+
+At the time of writing, the latest driver is named *CH341SER.EXE* (v3.9,
+2024/10/16) as a self-installer, available on WCH official website.
+An alternative *.zip* archive named *CH341SER.ZIP* with the same version
+can also be used for manual installation via *Device Manager*.
+
+URLs are available the bottom of the manual.
+
 RS-232
 ~~~~~~
 
@@ -145,6 +198,14 @@ port on your computer, or by using an external USB-to-RS-232 converter. If
 you plan to use an USB-to-RS-232 converter, make sure it's supported by your
 operating system.
 
+RS-485
+~~~~~~
+
+RS-485 support is provided by UPS2000 using an optional adapter card. This
+driver is untested on RS-485, but the author suspects that RS-485 uses the
+same serial protocol as RS-232, which should be supported. If you have a
+RS-485 adapter, we encourage you to report successful or unsuccessful results
+to the bug tracker or the mailing list.
 
 INSTALLATION
 ------------
@@ -302,6 +363,20 @@ equivalent of *ondelay*. See description of *ondelay*.
 KNOWN ISSUES AND BUGS
 ---------------------
 
+Fixed bugs
+~~~~~~~~~~
+
+Driver v0.03 (NUT v2.8.1) added support for UPS2000G with a WCH CH341
+USB-to-serial interface, these models were previously unsupported.
+
+Driver v0.04 (NUT v2.8.1) fixed a timeout recovery bug that leads
+to endless read failures and permanent data stalls.
+
+Driver v0.12 (NUT v2.8.5) fixed support for Microsoft Windows,
+Windows was previously unsupported due to a file locking bug.
+
+See *Historical bugs* at the bottom of this manual for links.
+
 Battery status has a non-fatal read failure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -386,11 +461,6 @@ units made after 2022), it should have better compatibility.
 
 See the previous section *Cabling* for more information.
 
-Finally, in the unlike scenario that you are using NUT on Microsoft
-Windows, you should be able to install the USB device driver following
-the steps in the Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development
-Guide.
-
 AUTHOR
 ------
 
@@ -403,6 +473,45 @@ The core driver:
 ~~~~~~~~~~~~~~~~
 
 linkman:nutupsdrv[8]
+
+Historical bugs:
+~~~~~~~~~~~~~~~~
+
+* Commit: support newer UPS2000G/CH341 variants:
+https://github.com/networkupstools/nut/commit/59af0780af0db7341ff81d460fc10736458722aa
+
+* Issue 1846: huawei-ups2000: Data Stale with Endless "Register has a read failure. Retrying..."
+https://github.com/networkupstools/nut/issues/1846
+
+* Commit: fix broken timeout recovery behavior in Issue #1846:
+https://github.com/networkupstools/nut/commit/3dae58f403f88dace52e2caac3c0690e45b8ef22
+
+* Issue 3244: USB and serial ports work on Linux but not on Windows (file locking):
+https://github.com/networkupstools/nut/issues/3244
+
+* Commit: call ser_close() before modbus_connect(), fix #3244:
+https://github.com/networkupstools/nut/commit/db2e148503d654726d5520d68e20e71117335813
+
+Windows Drivers:
+~~~~~~~~~~~~~~~~
+
+* Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:
+  https://support.huawei.com/enterprise/en/doc/EDOC1000110696
+* MaxLinear XR21V1410 Product Page:
+  https://www.maxlinear.com/product/interface/uarts/usb-uarts/xr21v1410
+* CH341SER.EXE - Nanjing QinHeng Microelectronics Co., Ltd:
+  https://www.wch-ic.com/downloads/CH341SER_EXE.html
+* CH341SER.ZIP - Nanjing QinHeng Microelectronics Co., Ltd:
+  https://www.wch-ic.com/downloads/CH341SER_ZIP.html
+
+If a download link expires, use a snapshot from the Internet Archive:
+
+* XR21x_Win10_V2.7.0.0.zip:
+  https://web.archive.org/web/20260310005640if_/https://www.maxlinear.com/Document/index?id=23338&languageid=1033&type=Software%3A%20Drivers&partnumber=XR21V1410
+* CH341SER.EXE:
+  https://web.archive.org/web/20260112182437if_/https://www.wch-ic.com/download/file?id=65
+* CH341SER.ZIP:
+  https://web.archive.org/web/20260217145229if_/https://www.wch-ic.com/download/file?id=5
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

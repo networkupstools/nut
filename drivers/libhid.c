@@ -111,7 +111,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 	if (!arg_pDesc)
 		return NULL;
 
-	rbuf = calloc(1, sizeof(*rbuf));
+	rbuf = (reportbuf_t *)calloc(1, sizeof(*rbuf));
 	if (!rbuf) {
 		return NULL;
 	}
@@ -135,7 +135,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 			continue;
 		}
 
-		rbuf->data[id] = calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
+		rbuf->data[id] = (unsigned char *)calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
 		if (rbuf->data[id])
 			continue;
 

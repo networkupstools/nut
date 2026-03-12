@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
 #endif
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				/* NOTE: here and below, freed by generic_gpio_close(&upsfdtest) */
 				jmp_result = setjmp(env_buffer);
 				if(jmp_result) {	/* test case  exiting */
@@ -252,11 +252,11 @@ int main(int argc, char **argv) {
 			if(!strcmp(testType, "states")) {
 				int expectedStateValue;
 				int calculatedStateValue;
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
+				upsfdtest->upsLinesStates = (int *)xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j=0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 				char chargeStatus[256];
 				char chargeLow[256];
 				char charge[256];
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				/* "volatile" trickery to avoid the likes of:
@@ -296,7 +296,7 @@ int main(int argc, char **argv) {
 				const char * volatile currCharge = NULL;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
+				upsfdtest->upsLinesStates = (int *)xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j = 0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}

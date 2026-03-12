@@ -41,6 +41,7 @@ const char * nutscan_device_type_strings[TYPE_END] = {
 	"IPMI",
 	"Avahi",
 	"serial",
+	"UPOWER",
 };
 
 /* lower strings, used for device names */
@@ -54,13 +55,14 @@ const char * nutscan_device_type_lstrings[TYPE_END] = {
 	"ipmi",
 	"avahi",
 	"serial",
+	"upower",
 };
 
 nutscan_device_t * nutscan_new_device(void)
 {
 	nutscan_device_t * device;
 
-	device = malloc(sizeof(nutscan_device_t));
+	device = (nutscan_device_t*)malloc(sizeof(nutscan_device_t));
 	if (device == NULL) {
 		return NULL;
 	}

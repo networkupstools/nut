@@ -38,6 +38,7 @@ typedef struct conn_s {
 	struct conn_s	*next;
 } conn_t;
 
+static int			exit_flag = 0;
 static DWORD			upsd_pid = 0;
 static DWORD			upsmon_pid = 0;
 static DWORD			upsdrvctl_pid = 0;
@@ -581,6 +582,54 @@ static void ReportSvcStatus(
 	SetServiceStatus(SvcStatusHandle, &SvcStatus);
 }
 
+/* For `nut.exe -N` runs
+ * https://learn.microsoft.com/en-us/windows/console/registering-a-control-handler-function
+ */
+static BOOL WINAPI ConsoleCtrlHandler(DWORD Ctrl)
+{
+	switch(Ctrl)
+	{
+		case CTRL_C_EVENT:
+			print_event(LOG_INFO, "Ctrl+C received on console");
+			exit_flag = 1;	/* Break SvcMain() infinite loop */
+			if (upsmon_pid) {
+				print_event(LOG_INFO, "Stopping upsmon");
+				stop_upsmon();
+			}
+			if (upsd_pid) {
+				print_event(LOG_INFO, "Stopping upsd");
+				stop_upsd();
+			}
+			if (upsdrvctl_pid) {
+				print_event(LOG_INFO, "Stopping drivers");
+				stop_drivers();
+			}
+			exit_flag = 2;	/* Allow to finish SvcMain() infinite loop and proceed to exit() */
+			/* confirm that the user wants to exit */
+			return TRUE;
+
+		case CTRL_CLOSE_EVENT:
+			print_event(LOG_INFO, "Close event received on console, currently ignored");
+			return FALSE;
+
+		case CTRL_BREAK_EVENT:
+			print_event(LOG_INFO, "Ctrl+Break event received on console, currently ignored");
+			return FALSE;
+
+		/* TOTHINK: Do we in fact want these two handled specially? */
+		case CTRL_LOGOFF_EVENT:
+			print_event(LOG_INFO, "Logoff event received on console, currently ignored");
+			return FALSE;
+
+		case CTRL_SHUTDOWN_EVENT:
+			print_event(LOG_INFO, "Shutdown event received on console, currently ignored");
+			return FALSE;
+
+		default:
+			return FALSE;
+	}
+}
+
 static void WINAPI SvcCtrlHandler(DWORD Ctrl)
 {
 	switch(Ctrl)
@@ -659,7 +708,7 @@ static void close_all(void)
 static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 {
 	DWORD	ret;
-	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];  /* 64 per current WinAPI sheaders */
+	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];  /* 64 per current WinAPI headers */
 	size_t	maxhandle = 0;
 	pipe_conn_t	*conn;
 	DWORD	priority;
@@ -697,7 +746,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 		SvcReady();
 	}
 
-	while (1) {
+	while (!exit_flag) {
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
 
@@ -766,6 +815,10 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 			}
 		}
 
+		/* Do not check on daemons nor revive them in vain if we are exiting */
+		if (exit_flag)
+			break;
+
 		/* Check on each daemon: Was it supposed to run? Does it still? */
 		if (upsdrvctl_pid) {
 			DWORD	status = 0;
@@ -785,6 +838,10 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 			}
 		}
 
+		/* Do not check on daemons nor revive them in vain if we are exiting */
+		if (exit_flag)
+			break;
+
 		if (upsd_pid) {
 			DWORD	status = 0;
 			BOOL	res = FALSE;
@@ -803,6 +860,10 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 			}
 		}
 
+		/* Do not check on daemons nor revive them in vain if we are exiting */
+		if (exit_flag)
+			break;
+
 		if (upsmon_pid) {
 			DWORD	status = 0;
 			BOOL	res = FALSE;
@@ -820,6 +881,10 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 				upslog_with_errno(LOG_ERR, "%s: GetExitCodeProcess(upsmon)", __func__);
 			}
 		}
+	}
+
+	while (exit_flag < 2) {
+		Sleep(1000);
 	}
 }
 
@@ -1020,6 +1085,10 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
+		if (!SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE)) {
+			upslog_with_errno(LOG_ERR, "SetConsoleCtrlHandler failed, may ignore Ctrl+C");
+		}
+
 		SvcMain(argc, argv);
 	}
 

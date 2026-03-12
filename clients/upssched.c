@@ -151,7 +151,7 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 	if (!string_arr || !(*string_arr) || !(**string_arr))
 		return NULL;
 
-	buf = xcalloc(bufsize, sizeof(char));
+	buf = (char *)xcalloc(bufsize, sizeof(char));
 	if (!buf) {
 		upsdebugx(1, "%s: failed to allocate buffer, will not report any %s values", __func__, logtag);
 		return NULL;
@@ -187,7 +187,7 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 				if (bufsize < SIZE_MAX - LARGEBUF) {
 					bufsize += LARGEBUF;
 					upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, bufsize);
-					buf = realloc(buf, bufsize);
+					buf = (char *)realloc(buf, bufsize);
 
 					if (!buf) {
 						upsdebugx(1, "%s: buffer overflowed and failed to re-allocate, will not report any %s values", __func__, logtag);
@@ -435,12 +435,12 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						}
 
 						if (*ps == NULL) {
-							tmp->notifytypes = xrealloc(tmp->notifytypes, count + 2);
+							tmp->notifytypes = (char **)xrealloc(tmp->notifytypes, count + 2);
 							tmp->notifytypes[count] = xstrdup(notifytype);
 							tmp->notifytypes[count + 1] = NULL;
 						}
 					} else {
-						tmp->notifytypes = xcalloc(2, sizeof(char*));
+						tmp->notifytypes = (char **)xcalloc(2, sizeof(char*));
 						tmp->notifytypes[0] = xstrdup(notifytype);
 						tmp->notifytypes[1] = NULL;
 					}
@@ -458,12 +458,12 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						}
 
 						if (*ps == NULL) {
-							tmp->notifymsgs = xrealloc(tmp->notifymsgs, count + 2);
+							tmp->notifymsgs = (char **)xrealloc(tmp->notifymsgs, count + 2);
 							tmp->notifymsgs[count] = xstrdup(notifymsg);
 							tmp->notifymsgs[count + 1] = NULL;
 						}
 					} else {
-						tmp->notifymsgs = xcalloc(2, sizeof(char*));
+						tmp->notifymsgs = (char **)xcalloc(2, sizeof(char*));
 						tmp->notifymsgs[0] = xstrdup(notifymsg);
 						tmp->notifymsgs[1] = NULL;
 					}
@@ -481,12 +481,12 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 						}
 
 						if (*ps == NULL) {
-							tmp->upsnames = xrealloc(tmp->upsnames, count + 2);
+							tmp->upsnames = (char **)xrealloc(tmp->upsnames, count + 2);
 							tmp->upsnames[count] = xstrdup(upsname);
 							tmp->upsnames[count + 1] = NULL;
 						}
 					} else {
-						tmp->upsnames = xcalloc(2, sizeof(char*));
+						tmp->upsnames = (char **)xcalloc(2, sizeof(char*));
 						tmp->upsnames[0] = xstrdup(upsname);
 						tmp->upsnames[1] = NULL;
 					}
@@ -515,7 +515,7 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 		}
 	}	/* else we already know */
 
-	tmp = xmalloc(sizeof(ttype_t));
+	tmp = (ttype_t *)xmalloc(sizeof(ttype_t));
 	tmp->name = xstrdup(name);
 	tmp->etime = now + ofs;
 	tmp->notifytypes = NULL;
@@ -524,19 +524,19 @@ static void start_timer(const char *name, const char *ofsstr, const char *notify
 	tmp->next = NULL;
 
 	if (notifytype && *notifytype) {
-		tmp->notifytypes = xcalloc(2, sizeof(char*));
+		tmp->notifytypes = (char **)xcalloc(2, sizeof(char*));
 		tmp->notifytypes[0] = xstrdup(notifytype);
 		tmp->notifytypes[1] = NULL;
 	}
 
 	if (notifymsg && *notifymsg) {
-		tmp->notifymsgs = xcalloc(2, sizeof(char*));
+		tmp->notifymsgs = (char **)xcalloc(2, sizeof(char*));
 		tmp->notifymsgs[0] = xstrdup(notifymsg);
 		tmp->notifymsgs[1] = NULL;
 	}
 
 	if (upsname && *upsname) {
-		tmp->upsnames = xcalloc(2, sizeof(char*));
+		tmp->upsnames = (char **)xcalloc(2, sizeof(char*));
 		tmp->upsnames[0] = xstrdup(upsname);
 		tmp->upsnames[1] = NULL;
 	}
@@ -927,7 +927,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(conn_t));
+	tmp = (conn_t *)xmalloc(sizeof(conn_t));
 	tmp->fd = acc;
 	tmp->next = NULL;
 
@@ -945,7 +945,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	conn_t	*conn, *tmp, *last;
 
 	/* We have detected a connection on the opened pipe. So we start
-	   by saving its handle  and create a new pipe for future connection */
+	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
@@ -983,9 +983,11 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	ConnectNamedPipe(acc,&connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created.
-	   We could manage the current connection now */
-	/* Start a read operation on the newly connected pipe so we could wait
-	   on the event associated to this IO */
+	 * We could manage the current connection now.
+	 */
+
+	/* Start a read operation on the newly connected pipe so we could
+	 * wait on the event associated to this IO */
 	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
 	memset(conn->buf,0,sizeof(conn->buf));
 	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/

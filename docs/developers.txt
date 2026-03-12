@@ -337,7 +337,8 @@ locations can be wiped by a careless `git clean -fdX`. You are advised
 to explore configuring your IDE to store project configurations outside
 the source codebase location, or to track such subdirectories as `nbproject`
 or `nb-cache` or `.idea` as a separate Git repository (not necessarily a
-submodule of NUT nor really diligently tracked) to avoid such surprises.
+submodule of NUT nor really diligently tracked) to avoid such surprises,
+e.g. `(cd nbproject && git init .)` can help.
 
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~

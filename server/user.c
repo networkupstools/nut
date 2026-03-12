@@ -45,7 +45,7 @@ static void user_add(const char *un)
 		return;
 	}
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		last = tmp;
 
@@ -55,7 +55,7 @@ static void user_add(const char *un)
 		}
 	}
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (ulist_t*)xcalloc(1, sizeof(*tmp));
 	tmp->username = xstrdup(un);
 
 	if (last) {
@@ -105,7 +105,7 @@ static void user_add_instcmd(const char *cmd)
 		return;
 	}
 
-	for (tmp = curr_user->firstcmd; tmp != NULL; tmp = tmp->next) {
+	for (tmp = curr_user->firstcmd; tmp != NULL; tmp = (instcmdlist_t*)tmp->next) {
 
 		last = tmp;
 
@@ -118,7 +118,7 @@ static void user_add_instcmd(const char *cmd)
 	upsdebugx(2, "user_add_instcmd: adding '%s' for %s",
 				cmd, curr_user->username);
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (instcmdlist_t*)xcalloc(1, sizeof(*tmp));
 
 	tmp->cmd = xstrdup(cmd);
 
@@ -137,12 +137,12 @@ static actionlist_t *addaction(actionlist_t *base, const char *action)
 		return base;
 	}
 
-	for (tmp = base; tmp != NULL; tmp = tmp->next) {
+	for (tmp = base; tmp != NULL; tmp = (actionlist_t*)tmp->next) {
 
 		last = tmp;
 	}
 
-	tmp = xcalloc(1, sizeof(*tmp));
+	tmp = (actionlist_t*)xcalloc(1, sizeof(*tmp));
 	tmp->action = xstrdup(action);
 
 	if (last) {
@@ -174,7 +174,7 @@ static void flushcmd(instcmdlist_t *ptr)
 		return;
 	}
 
-	flushcmd(ptr->next);
+	flushcmd((instcmdlist_t*)ptr->next);
 
 	free(ptr->cmd);
 	free(ptr);
@@ -186,7 +186,7 @@ static void flushaction(actionlist_t *ptr)
 		return;
 	}
 
-	flushaction(ptr->next);
+	flushaction((actionlist_t*)ptr->next);
 
 	free(ptr->action);
 	free(ptr);
@@ -198,7 +198,7 @@ static void flushuser(ulist_t *ptr)
 		return;
 	}
 
-	flushuser(ptr->next);
+	flushuser((ulist_t*)ptr->next);
 	flushcmd(ptr->firstcmd);
 	flushaction(ptr->firstaction);
 
@@ -218,7 +218,7 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 {
 	instcmdlist_t	*tmp;
 
-	for (tmp = user->firstcmd; tmp != NULL; tmp = tmp->next) {
+	for (tmp = user->firstcmd; tmp != NULL; tmp = (instcmdlist_t*)tmp->next) {
 
 		if (!strcasecmp(tmp->cmd, cmd)) {
 			return 1;	/* good */
@@ -240,7 +240,7 @@ int user_checkinstcmd(const char *un, const char *pw, const char *cmd)
 		return 0;	/* failed */
 	}
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		/* let's be paranoid before we call strcmp */
 
@@ -274,7 +274,7 @@ static int user_matchaction(ulist_t *user, const char *action)
 {
 	actionlist_t	*tmp;
 
-	for (tmp = user->firstaction; tmp != NULL; tmp = tmp->next) {
+	for (tmp = user->firstaction; tmp != NULL; tmp = (actionlist_t*)tmp->next) {
 
 		if (!strcasecmp(tmp->action, action)) {
 			return 1;	/* good */
@@ -291,7 +291,7 @@ int user_checkaction(const char *un, const char *pw, const char *action)
 	if ((!un) || (!pw) || (!action))
 		return 0;	/* failed */
 
-	for (tmp = users; tmp != NULL; tmp = tmp->next) {
+	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		/* let's be paranoid before we call strcmp */
 

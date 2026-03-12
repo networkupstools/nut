@@ -141,6 +141,7 @@ jobs:
             libfreeipmi-dev libipmimonitoring-dev \
             libavahi-common-dev libavahi-core-dev libavahi-client-dev \
             libgpiod-dev \
+            libglib2.0-dev \
             bash dash ksh busybox \
             libneon27-gnutls-dev \
             build-essential git-core libi2c-dev i2c-tools lm-sensors \

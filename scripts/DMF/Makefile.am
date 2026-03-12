@@ -54,7 +54,7 @@ $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/drivers/dstate.o \
 $(top_builddir)/common/libnutwincompat.la \
-$(top_builddir)/common/libnutdmfsnmp.la:
+$(top_builddir)/common/libnutdmfsnmp.la: @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
@@ -100,7 +100,7 @@ include $(LEGACY_MIBFILES_LIST)
 EXTRA_DIST += legacy-mibfiles-list.mk.in
 
 # Support development experiments for lookup with functions
-testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf:
+testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 
 #$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
@@ -375,7 +375,7 @@ DMFLNK_CMD = ( \
 .PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
         $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
 
-$(DMFSNMP_RES_SUBDIR)/.uptodate:
+$(DMFSNMP_RES_SUBDIR)/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 
 $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
@@ -401,7 +401,7 @@ $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 	 fi
 	touch '$@'
 
-$(DMFSNMP_SUBDIR)/.uptodate:
+$(DMFSNMP_SUBDIR)/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 
 $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
@@ -416,7 +416,7 @@ $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
 #       so we add them in desired order explicitly...
 DMFNUTSCAN_DEPS = $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
-$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf:
+$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 
 if WITH_REGENERATE_DMF_NUTSCAN
@@ -465,7 +465,7 @@ $(DMFNUTSCAN_SYMLINK): $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/
 $(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
 	@DMFFILE="$(INSTALL_NUT_DMFNUTSCAN_FILE)"; DMFLINK='$@'; $(DMFLNK_CMD)
 
-$(DMFNUTSCAN_RES_SUBDIR)/.uptodate:
+$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
 
 $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
@@ -473,7 +473,7 @@ $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(abs_top_builddir)/scripts/
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch '$@'
 
-$(DMFNUTSCAN_SUBDIR)/.uptodate:
+$(DMFNUTSCAN_SUBDIR)/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 
 $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SYMLINK)
@@ -483,16 +483,16 @@ $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SYMLINK)
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
 # TODO: Maybe per-DMF *.dmf.validated files would be better?
-$(DMFSNMP_RES_SUBDIR)/.validated:
+$(DMFSNMP_RES_SUBDIR)/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.validated
 
-$(DMFSNMP_SUBDIR)/.validated:
+$(DMFSNMP_SUBDIR)/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFSNMP_SUBDIR)/.validated
 
-$(DMFNUTSCAN_RES_SUBDIR)/.validated:
+$(DMFNUTSCAN_RES_SUBDIR)/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated
 
-$(DMFNUTSCAN_SUBDIR)/.validated:
+$(DMFNUTSCAN_SUBDIR)/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
 
 # The DMFLINT_XSD and DMFLINT_OPTION are fed by caller
@@ -646,7 +646,7 @@ endif WITH_DMF
 #else
 CLEANFILES += dmf-reindex$(EXEEXT)
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
-dmf-reindex:
+dmf-reindex: @dotMAKE@
 	+cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-reindex-dmfsnmp
 	$(LN_S_R) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
 #endif
@@ -713,17 +713,17 @@ if WITH_LIBXML2
   dmf_fun_test_CFLAGS += $(LIBXML2_CFLAGS)
 endif WITH_LIBXML2
 
-testdata-lua/.validated:
+testdata-lua/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/testdata-lua/.validated
 
-testdata-fun/.validated:
+testdata-fun/.validated: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/testdata-fun/.validated
 
 LUA_EXAMPLE_DMFS = $(abs_srcdir)/testdata-lua/lua-eaton-mib.dmf $(abs_srcdir)/testdata-lua/lua-mge-mib.dmf
 # LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata-lua/lua-example-mib.dmf
 FUN_EXAMPLE_DMFS = $(abs_srcdir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 
-testdata-lua/.uptodate:
+testdata-lua/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/testdata-lua/.uptodate
 
 $(abs_builddir)/testdata-lua/.uptodate: $(LUA_EXAMPLE_DMFS)
@@ -731,7 +731,7 @@ $(abs_builddir)/testdata-lua/.uptodate: $(LUA_EXAMPLE_DMFS)
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch '$@'
 
-testdata-fun/.uptodate:
+testdata-fun/.uptodate: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/testdata-fun/.uptodate
 
 $(abs_builddir)/testdata-fun/.uptodate: $(FUN_EXAMPLE_DMFS)
@@ -821,13 +821,13 @@ EXTRA_DIST += $(SPELLCHECK_SRC)
 # by a wildcard target in case the make implementation can put the two together.
 *-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 
-.sample.sample-spellchecked:
+.sample.sample-spellchecked: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-.in.in-spellchecked:
+.in.in-spellchecked: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-spellcheck spellcheck-interactive spellcheck-sortdict:
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES += *-spellchecked

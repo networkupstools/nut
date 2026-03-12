@@ -121,7 +121,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) 
  * and check lines numbers validity - consistency with h/w chip
  */
 void gpio_open(struct gpioups_t *gpioupsfdlocal) {
-	struct libgpiod_data_t *libgpiod_data = xcalloc(1, sizeof(struct libgpiod_data_t));
+	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)xcalloc(1, sizeof(struct libgpiod_data_t));
 	gpioupsfdlocal->lib_data = libgpiod_data;
 
 #if WITH_LIBGPIO_VERSION < 0x00020000
@@ -129,7 +129,7 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
 	if(!strchr(gpioupsfdlocal->chipName, '/')) {
 		size_t	pathNameLen = strlen(gpioupsfdlocal->chipName)+6;
-		char	*pathName = xcalloc(pathNameLen, sizeof(char));
+		char	*pathName = (char *)xcalloc(pathNameLen, sizeof(char));
 		strncpy(pathName, "/dev/", pathNameLen);
 		strncat(pathName, gpioupsfdlocal->chipName, pathNameLen);
 		libgpiod_data->gpioChipHandle = gpiod_chip_open(pathName);
@@ -182,7 +182,7 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 			&libgpiod_data->gpioLines
 		);
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
-		libgpiod_data->values = xcalloc(gpioupsfdlocal->upsLinesCount, sizeof(*libgpiod_data->values));
+		libgpiod_data->values = (enum gpiod_line_value *)xcalloc(gpioupsfdlocal->upsLinesCount, sizeof(*libgpiod_data->values));
 		lineSettings = gpiod_line_settings_new();
 		libgpiod_data->lineConfig = gpiod_line_config_new();
 		libgpiod_data->config = gpiod_request_config_new();
@@ -197,8 +197,9 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 		if(gpioRc) {
 			fatal_with_errno(LOG_ERR, "Failed to set lines to GPIOD_LINE_EDGE_BOTH");
 		}
-		gpioRc = gpiod_line_config_add_line_settings(libgpiod_data->lineConfig, (unsigned int *)gpioupsfdlocal->upsLines,
-							  gpioupsfdlocal->upsLinesCount, lineSettings);
+		gpioRc = gpiod_line_config_add_line_settings(
+			libgpiod_data->lineConfig, (unsigned int *)gpioupsfdlocal->upsLines,
+			gpioupsfdlocal->upsLinesCount, lineSettings);
 		if(gpioRc) {
 			fatalx(LOG_ERR,	"Failed to attach line settings to line configuration");
 		}

@@ -235,7 +235,7 @@ static void belkin_nut_open_tty(void)
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* must clear DTR and set RTS for 1 second for UPS to go to
-	   "smart" mode */
+	 * "smart" mode */
 	ser_set_dtr(upsfd, 0);
 	ser_set_rts(upsfd, 1);
 	sleep(1);
@@ -463,8 +463,8 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 	}
 
 	/* set communications parameters: 2400 baud, 8 bits, 1 stop bit, no
-	   parity, enable reading, hang up when done, ignore modem control
-	   lines. */
+	 * parity, enable reading, hang up when done, ignore modem control
+	 * lines. */
 	memset(&tios, 0, sizeof(tios));
 	tios.c_cflag = B2400 | CS8 | CREAD | HUPCL | CLOCAL;
 	tios.c_cc[VMIN] = 1;
@@ -476,16 +476,16 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 	}
 
 	/* signal the UPS to enter "smart" mode. This is done by setting RTS
-	   and dropping DTR for at least 0.25 seconds. RTS and DTR refer to
-	   two specific pins in the 9-pin serial connector. Note: this must
-	   be done for at least 0.25 seconds for the UPS to react. Ignore
-	   any errors, as this probably means we are not on a "real" serial
-	   port. */
+	 * and dropping DTR for at least 0.25 seconds. RTS and DTR refer to
+	 * two specific pins in the 9-pin serial connector. Note: this must
+	 * be done for at least 0.25 seconds for the UPS to react. Ignore
+	 * any errors, as this probably means we are not on a "real" serial
+	 * port. */
 	ser_set_dtr(upsfd, 0);
 	ser_set_rts(upsfd, 1);
 
 	/* flush both directions of serial port: throw away all data in
-	   transit */
+	 * transit */
 	r = ser_flush_io(fd);
 	if (r == -1) {
 		close(fd);
@@ -507,11 +507,11 @@ static TYPE_FD_SER belkin_std_open_tty(const char *device) {
 #endif	/* WIN32 */
 
 	/* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
-	   software sleeps 1 second, so that's what we do, too. */
+	 * software sleeps 1 second, so that's what we do, too. */
 	usleep(1000000);
 
 	/* flush incoming data again, and read any remaining garbage
-	   bytes. There should not be any. */
+	 * bytes. There should not be any. */
 	r = tcflush(fd, TCIFLUSH);
 	if (r == -1) {
 		close(fd);
@@ -836,7 +836,7 @@ static int belkin_wait(void)
 		}
 
 		/* wait until the UPS is online and the battery level
-		   is >= level */
+		 * is >= level */
 		bs = belkin_std_read_int(fd, REG_BATSTATUS);  /* battery status */
 		if (bs==-1) {
 			failcount++;
@@ -1050,9 +1050,9 @@ void upsdrv_updateinfo(void)
 	if (us & US_ACFAILURE) {
 		status_set("ACFAIL");	 /* AC failure, self-invented */
 		/* Note: this is not the same as "on battery", because this
-		   flag makes sense even during a test, or when the load is
-		   off. It simply reflects the status of utility power.	 A
-		   "critical" situation should be OB && BL && ACFAIL. */
+		 * flag makes sense even during a test, or when the load is
+		 * off. It simply reflects the status of utility power.	 A
+		 * "critical" situation should be OB && BL && ACFAIL. */
 	}
 	if (us & US_OVERLOAD) {
 		status_set("OVER");	 /* overload */
@@ -1175,20 +1175,20 @@ void upsdrv_shutdown(void)
 	 * general handling of other `sdcommands` here */
 
 	/* Note: this UPS cannot (apparently) be put into "soft
-	   shutdown" mode; thus the -k option should not normally be
-	   used; instead, a workaround using the "-x wait" option
-	   should be used; see belkinunv(8) for details.
-
-	   In case somebody uses the -k option, the best we can do
-	   here is a timed shutdown; this will wake up the attached
-	   load after 10 minutes, come rain come shine. If AC power
-	   does not return, this will probably lead to a few
-	   shutdown/reboot cycles, until the batteries finally die and
-	   possibly cause a system crash.
-
-	   Don't use this! Use the solution involving the "-x wait"
-	   option instead, as suggested on the belkinunv(8) man
-	   page.
+	 * shutdown" mode; thus the -k option should not normally be
+	 * used; instead, a workaround using the "-x wait" option
+	 * should be used; see belkinunv(8) for details.
+	 *
+	 * In case somebody uses the -k option, the best we can do
+	 * here is a timed shutdown; this will wake up the attached
+	 * load after 10 minutes, come rain come shine. If AC power
+	 * does not return, this will probably lead to a few
+	 * shutdown/reboot cycles, until the batteries finally die and
+	 * possibly cause a system crash.
+	 *
+	 * Don't use this! Use the solution involving the "-x wait"
+	 * option instead, as suggested on the belkinunv(8) man
+	 * page.
 	 */
 
 	upslogx(LOG_WARNING,
@@ -1209,10 +1209,11 @@ int instcmd(const char *cmdname, const char *extra)
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	/* We use test.failure.start to initiate a "deep battery test".
-	   This does not really simulate a 'power failure', because we
-	   won't start shutdown procedures during a test.
-
-	   We use test.battery.start to initiate a "10-second battery test".  */
+	 * This does not really simulate a 'power failure', because we
+	 * won't start shutdown procedures during a test.
+	 *
+	 * We use test.battery.start to initiate a "10-second battery test".
+	 */
 
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
@@ -1277,11 +1278,11 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		/* restarttimer is in minutes, shutdowntimer is in
-		   seconds.  Still, restarttimer=1 is not safe,
-		   because it might be decremented before
-		   shutdowntimer is set, which would cause the UPS to
-		   stay off. So we need restarttimer=2, which means,
-		   the UPS will stay off between 60 and 120 seconds */
+		 * seconds.  Still, restarttimer=1 is not safe,
+		 * because it might be decremented before
+		 * shutdowntimer is set, which would cause the UPS to
+		 * stay off. So we need restarttimer=2, which means,
+		 * the UPS will stay off between 60 and 120 seconds */
 		r = belkin_nut_write_int(REG_RESTARTTIMER, 2); /* 2 minutes */
 		r |= belkin_nut_write_int(REG_SHUTDOWNTIMER, 1); /* 1 second */
 		if (r == -1) upslogx(LOG_WARNING, "Command '%s' failed", cmdname);
@@ -1387,9 +1388,9 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	/* If '-x wait' or '-x wait=<level>' option given, branch into
-	   standalone behavior. */
+	 * standalone behavior. */
 	if (getval("wait") || dstate_getinfo("driver.flag.wait")) {
-	  exit(belkin_wait());
+		exit(belkin_wait());
 	}
 
 	belkin_nut_open_tty();

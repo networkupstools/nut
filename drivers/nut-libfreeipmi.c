@@ -336,25 +336,30 @@ static void libfreeipmi_cleanup(void)
 	if (fru_ctx) {
 		ipmi_fru_close_device_id (fru_ctx);
 		ipmi_fru_ctx_destroy (fru_ctx);
+		fru_ctx = NULL;
 	}
 
 	if (sdr_ctx) {
 		ipmi_sdr_ctx_destroy (sdr_ctx);
+		sdr_ctx = NULL;
 	}
 
 #ifndef HAVE_FREEIPMI_11X_12X
 	if (sdr_parse_ctx) {
 		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+		sdr_parse_ctx = NULL;
 	}
 #endif
 
 	if (ipmi_ctx) {
 		ipmi_ctx_close (ipmi_ctx);
 		ipmi_ctx_destroy (ipmi_ctx);
+		ipmi_ctx = NULL;
 	}
 
 	if (mon_ctx) {
 		ipmi_monitoring_ctx_destroy (mon_ctx);
+		mon_ctx = NULL;
 	}
 }
 
@@ -632,15 +637,16 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 	if (ipmi_sdr_ctx_errnum (sdr_ctx) == IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
 	{
-		if (ipmi_sdr_cache_create (sdr_ctx,
-				 ipmi_ctx, CACHE_LOCATION,
-				 NUT_IPMI_SDR_CACHE_DEFAULTS,
-				 NULL, NULL) < 0)
+		if (ipmi_sdr_cache_create (
+			sdr_ctx, ipmi_ctx, CACHE_LOCATION,
+			NUT_IPMI_SDR_CACHE_DEFAULTS,
+			NULL, NULL) < 0)
 		{
 			libfreeipmi_cleanup();
 			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_create: %s",
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 		}
+
 		if (ipmi_sdr_cache_open (sdr_ctx, ipmi_ctx, CACHE_LOCATION) < 0)
 		{
 			if (ipmi_sdr_ctx_errnum (sdr_ctx) != IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
@@ -808,11 +814,13 @@ cleanup:
 	/* Cleanup */
 	if (sdr_ctx) {
 		ipmi_sdr_ctx_destroy (sdr_ctx);
+		sdr_ctx = NULL;
 	}
 
 #ifndef HAVE_FREEIPMI_11X_12X
 	if (sdr_parse_ctx) {
 		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+		sdr_parse_ctx = NULL;
 	}
 #endif /* HAVE_FREEIPMI_11X_12X */
 

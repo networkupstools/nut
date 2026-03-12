@@ -3,7 +3,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
- *
+ *           (C) 2026  Owen Li <geek@geeking.moe>
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -73,14 +73,29 @@ apc_vartab_t apc_vartab[] = {
 
 	{ NULL, 0, 0, NULL, 0, 0 }
 	/* todo:
-
-	   I = alarm enable (hex field) - split into alarm.n.enable
-	   J = alarm status (hex field) - split into alarm.n.status
-
-	0x15 = output voltage selection (APC_F_VOLT)
-	0x5C = load power (APC_POLL|APC_F_PERCENT)
-
+	 *
+	 * I = alarm enable (hex field) - split into alarm.n.enable
+	 * J = alarm status (hex field) - split into alarm.n.status
+	 *
+	 * 0x15 = output voltage selection (APC_F_VOLT)
+	 * 0x5C = load power (APC_POLL|APC_F_PERCENT)
+	 *
 	 */
+};
+
+/*
+ * Dual-byte (multi-byte) command variable table.
+ * These are used by UPS models (e.g. SPM series) whose command set response
+ * includes dual-byte command extensions in the format: prefix + 0x3A + subcmds.
+ * Entries are marked APC_PRESENT at runtime when the UPS reports the
+ * corresponding prefix:sub pair in its command set.
+ */
+apc_vartab_dual_t apc_vartab_dual[] = {
+/* name                   prefix  sub   flags                regex */
+	{ "input.frequency",  0x9F,   0xD3, APC_POLL|APC_F_DEC,  NULL },
+	{ "battery.current",  0x9F,   0xD4, APC_POLL|APC_F_AMP,  NULL },
+
+	{ NULL, 0, 0, 0, NULL }
 };
 
 /*
@@ -159,7 +174,8 @@ upsdrv_info_t apc_tab_info = {
 	APC_TABLE_VERSION,
 	"Russell Kroll <rkroll@exploits.org>\n" \
 	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n" \
-	"Michal Soltys <soltys@ziu.info>",
+	"Michal Soltys <soltys@ziu.info>\n"\
+	"Owen Li <geek@geeking.moe>",
 	DRV_STABLE,
 	{ NULL }
 };

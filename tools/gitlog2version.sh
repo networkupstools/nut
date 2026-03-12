@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2016-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2016-2026 by Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -241,9 +241,13 @@ getver_git() {
 
     # Praises to old gits and the new, who may --exclude;
     # NOTE: match/exclude by shell glob expressions, not regex!
-    DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
+    DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0123456789]*.[0123456789]*.[0123456789]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
     && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | ${EGREP} -v '(rc|-signed|alpha|beta|Windows|IPM)' | ${EGREP} 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
+    || { # Try our luck with versions before --exclude
+        DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0123456789]*.[0123456789]*.[0123456789]' 2>/dev/null`" \
+        && [ -n "${DESC}" ] \
+        || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | ${EGREP} -v '(rc|-signed|alpha|beta|Windows|IPM)' | ${EGREP} 'v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*'`"
+    }
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     # Follow https://semver.org/#spec-item-10 about build metadata:

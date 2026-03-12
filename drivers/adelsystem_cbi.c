@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -82,10 +82,6 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
 /* instant command triggered by upsd */
 int upscmd(const char *cmdname, const char *extra);
-
-/* count the time elapsed since start */
-long time_elapsed(struct timeval *start);
-
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -790,31 +786,6 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	return rval;
 }
 
-/* returns the time elapsed since start in milliseconds */
-long time_elapsed(struct timeval *start)
-{
-	long rval;
-	struct timeval end;
-
-	rval = gettimeofday(&end, NULL);
-	if (rval < 0) {
-		upslog_with_errno(LOG_ERR, "time_elapsed");
-	}
-	if (start->tv_usec < end.tv_usec) {
-		suseconds_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
-		end.tv_usec -= 1000000 * nsec;
-		end.tv_sec += nsec;
-	}
-	if (start->tv_usec - end.tv_usec > 1000000) {
-		suseconds_t nsec = (start->tv_usec - end.tv_usec) / 1000000;
-		end.tv_usec += 1000000 * nsec;
-		end.tv_sec -= nsec;
-	}
-	rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
-
-	return rval;
-}
-
 /* instant command triggered by upsd */
 int upscmd(const char *cmdname, const char *extra)
 {
@@ -861,7 +832,7 @@ int upscmd(const char *cmdname, const char *extra)
 			}
 
 			/* wait for an increasing time interval before sending shutdown command */
-			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			while ((etime = elapsed_since_timeval(&start)) < ( FSD_REPEAT_INTRV / cnt));
 			upsdebugx(2, "ERROR: load.off failed, wait for %lims, retries left: %d", etime, cnt - 1);
 			cnt--;
 		}
@@ -1336,7 +1307,7 @@ modbus_t *modbus_new(const char *port)
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context");
 		}
 	} else if ((sp = strchr(port, ':')) != NULL) {
-		char *tcp_port = xmalloc(sizeof(sp));
+		char	*tcp_port = (char*)xmalloc(sizeof(sp));
 		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));

@@ -115,7 +115,7 @@ static char ** add_port(char ** list, char * port)
 
 	/*+1 to get the number of port from the index nb_ports*/
 	/*+1 for the terminal NULL */
-	res = realloc(list, sizeof(char*) * (count + 1 + 1));
+	res = (char**)realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
 		upsdebugx(0, "%s: Failed to realloc port list", __func__);
 		return list;

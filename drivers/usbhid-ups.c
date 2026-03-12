@@ -44,6 +44,9 @@
 #ifdef WIN32
 #include "wincompat.h"
 #endif	/* WIN32 */
+#if !((defined SHUT_MODE) && SHUT_MODE) && defined WIN32
+#include "libwinhid.h"
+#endif	/* !SHUT_MODE => USB && WIN32 */
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -699,8 +702,8 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
-	halfused_names = xcalloc(halfused_bufsize, sizeof(char));
+	unused_names = (char *)xcalloc(unused_bufsize, sizeof(char));
+	halfused_names = (char *)xcalloc(halfused_bufsize, sizeof(char));
 
 	for (d = 0; d < pDesc->nitems; d++) {
 		HIDData_t	*pData = &pDesc->item[d];
@@ -770,7 +773,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char *)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
@@ -1349,6 +1352,7 @@ void upsdrv_makevartable(void)
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
+	addvar(VAR_FLAG, "winhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1694,12 +1698,34 @@ void upsdrv_initups(void)
 	subdriver_matcher = device_path;
 #else	/* !SHUT_MODE => USB */
 	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
-
+	const char *transport_backend;
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+# ifdef WIN32
+	if (testvar("winhid")) {
+		comm_driver = &winhid_subdriver;
+		dstate_setinfo("driver.version.usb", "winhid-%s (Windows HID API)",
+			comm_driver->version);
+		upslogx(LOG_INFO, "Using experimental winhid backend: %s %s",
+			comm_driver->name, comm_driver->version);
+	} else {
+		comm_driver = &usb_subdriver;
+	}
+# else	/* !WIN32 */
+	if (testvar("winhid")) {
+		upslogx(LOG_WARNING, "winhid is only supported on WIN32 builds; ignoring option");
+	}
+	comm_driver = &usb_subdriver;
+# endif	/* WIN32 */
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+	transport_backend = dstate_getinfo("driver.version.usb");
+# ifdef WIN32
+	if (comm_driver == &winhid_subdriver) {
+		transport_backend = "Windows HID API";
+	}
+# endif	/* WIN32 */
+	upsdebugx(2, "Initializing an USB-connected UPS with backend %s " \
 		"(NUT subdriver name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"),
+		transport_backend ? transport_backend : "(unknown)",
 		comm_driver->name, comm_driver->version );
 
 	warn_if_bad_usb_port_filename(device_path);
@@ -1779,7 +1805,7 @@ void upsdrv_initups(void)
 	}
 
 	/* Search for the first supported UPS matching the
-	   regular expression (USB) or device_path (SHUT) */
+	 * regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
 	if (ret < 1)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
@@ -2024,6 +2050,10 @@ static void process_boolean_info(const char *nutvalue)
 	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
+/* Winhid report descriptor canonicalization has been moved to libwinhid.c.
+ * The public entry point winhid_canonicalize_parsed_report_desc() is
+ * declared in libwinhid.h and called from callback() below. */
+
 static int callback(
 	hid_dev_handle_t argudev,
 	HIDDevice_t *arghd,
@@ -2067,6 +2097,12 @@ static int callback(
 		upsdebug_with_errno(1, "Failed to parse report descriptor!");
 		return 0;
 	}
+
+#if !((defined SHUT_MODE) && SHUT_MODE) && defined WIN32
+	if (comm_driver == &winhid_subdriver) {
+		(void)winhid_canonicalize_parsed_report_desc(pDesc);
+	}
+#endif
 
 	/* prepare report buffer */
 	free_report_buffer(reportbuf);
@@ -2180,6 +2216,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	hid_info_t	*item;
 	double		value;
 	int		retcode;
+	int		items_polled = 0;    /* Poll attempts on mapped HID objects */
 	int		items_succeeded = 0; /* Track successful polls to detect total failure */
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
@@ -2346,6 +2383,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		}
 #endif	/* !SHUT_MODE => USB */
 
+		if (item->hiddata == NULL) {
+			continue;
+		}
+		items_polled++;
+
 		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
 
 		switch (retcode)
@@ -2453,10 +2495,29 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		}
 	}
 
+	/* Experimental WIN32 HID backend can expose enough data for full polling
+	 * while still missing some quick-poll path mappings (notably status bits)
+	 * due descriptor synthesis limitations. In poll-only mode, if quick update
+	 * has nothing mapped to poll, fall back to a full walk. */
+#if !((defined SHUT_MODE) && SHUT_MODE) && defined WIN32
+	if (mode == HU_WALKMODE_QUICK_UPDATE
+	 && !use_interrupt_pipe
+	 && comm_driver == &winhid_subdriver
+	 && items_polled == 0
+	) {
+		upsdebugx(2, "%s: no quick-poll mappings with winhid/pollonly; falling back to full update", __func__);
+		return hid_ups_walk(HU_WALKMODE_FULL_UPDATE);
+	}
+#endif
+
 	/* Safety check: if we got zero successful polls during update,
 	 * device may be truly disconnected (not just transient errors).
-	 * Skip this check during INIT mode where failures are expected. */
-	if (items_succeeded == 0 && (mode == HU_WALKMODE_QUICK_UPDATE || mode == HU_WALKMODE_FULL_UPDATE)) {
+	 * Skip this check during INIT mode where failures are expected.
+	 * Also skip when there were no mapped items to poll in this mode. */
+	if (items_polled > 0
+	 && items_succeeded == 0
+	 && (mode == HU_WALKMODE_QUICK_UPDATE || mode == HU_WALKMODE_FULL_UPDATE)
+	) {
 		upsdebugx(1, "Got zero successful data polls - device may be disconnected");
 		dstate_setinfo("driver.state", "reconnect.trying");
 		hd = NULL;

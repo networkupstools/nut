@@ -61,8 +61,8 @@ jobs:
       run: >-
         set -e ;
         cd scripts/python/module ;
-        cp -f Makefile.am Makefile ;
-        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON_DEFAULT="${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }}" top_srcdir="../../.." srcdir="." builddir="." ;
+        sed 's,@dotMAKE@,,' < Makefile.am > Makefile ;
+        make -f Makefile clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON_DEFAULT="${{ steps.pythoncmd.outputs.PYTHON_DEFAULT }}" top_srcdir="../../.." srcdir="." builddir="." ;
         find . -ls
     - name: Publish master distribution 📦 to Test PyPI
       # https://github.com/pypa/gh-action-pypi-publish

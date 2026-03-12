@@ -347,9 +347,10 @@ typedef struct {
 #define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
-#define SU_FLAG_SEMI_STATIC	(1UL << 9)	/* Refresh this entry once in several walks
-                                      	 * (for R/W values user can set on device,
-                                      	 * like descriptions or contacts) */
+#define SU_FLAG_SEMI_STATIC	(1UL << 9)
+	/* Refresh this entry once in several walks
+	 * (for R/W values user can set on device,
+	 * like descriptions or contacts) */
 
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -400,7 +401,7 @@ typedef struct {
 #define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
 /* "flags" bit 25 */
-#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop care about this report; if not, may be a point for improvement... */
+#define SU_FLAG_MAPPING_HANDLED	(1UL << 25)	/* raised internally if any (sub)driver handling loop cared about this report and retrieved something successfully; if not, may be a point for improvement... */
 
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 

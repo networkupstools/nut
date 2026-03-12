@@ -113,7 +113,7 @@ BUILT_SOURCES = $(abs_top_builddir)/docs/man/.prep-src-docs all-optional
 # been provided by automake, since we want to do nothing in certain cases.
 # Ideally it would refuse "make all" in certain cases, but we can't override
 # the automake-generated rules in each make implementation we care for.
-all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs
+all-optional: $(abs_top_builddir)/docs/man/.prep-src-docs @dotMAKE@
 	+@case "$(ALL_TGT)" in \
 	  ""|" "|"  "|"   ") echo "  DOCS_NO_MAN	SKIP: $@ called in docs/man/Makefile: No format of man page rendering is enabled" ; exit 0 ;; \
 	  *all-*) \
@@ -544,10 +544,13 @@ SRC_DEV_PAGES = \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
+	upscli_report_build_details.txt \
 	upscli_sendline.txt \
+	upscli_set_debug_level.txt \
 	upscli_splitaddr.txt \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
+	upscli_ssl_caps.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	upscli_str_add_unique_token.txt \
@@ -649,6 +652,16 @@ LIBNUTCLIENT_DEVICES_DEPS = \
 $(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.$(MAN_SECTION_API)
 	touch $@
 
+UPSCLI_SSL_CAPS_DEPS = \
+	upscli_ssl_caps_descr.$(MAN_SECTION_API)
+
+$(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
+
+UPSCLI_SET_DEBUG_LEVEL_DEPS = \
+	upscli_get_debug_level.$(MAN_SECTION_API)
+
+$(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
+
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
@@ -666,11 +679,16 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
 	upscli_readline_timeout.$(MAN_SECTION_API) \
+	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
+	upscli_set_debug_level.$(MAN_SECTION_API) \
+	$(UPSCLI_SET_DEBUG_LEVEL_DEPS) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
+	upscli_ssl_caps.$(MAN_SECTION_API) \
+	$(UPSCLI_SSL_CAPS_DEPS) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
@@ -781,10 +799,13 @@ INST_HTML_DEV_MANS = \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \
+	upscli_report_build_details.html \
 	upscli_sendline.html \
+	upscli_set_debug_level.html \
 	upscli_splitaddr.html \
 	upscli_splitname.html \
 	upscli_ssl.html \
+	upscli_ssl_caps.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	upscli_str_add_unique_token.html \
@@ -1483,6 +1504,38 @@ else !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
 LINKMAN_PAGES_DRIVERS += $(SRC_GPIO_PAGES)
 endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
 
+# (--with-upower)
+SRC_UPOWER_PAGES = nut-upower.txt
+INST_MAN_UPOWER_PAGES = nut-upower.$(MAN_SECTION_CMD_SYS)
+DIST_ALL_MAN_PAGES += $(INST_MAN_UPOWER_PAGES)
+
+if ! SOME_DRIVERS
+if WITH_MANS
+MAN_UPOWER_PAGES = $(INST_MAN_UPOWER_PAGES)
+endif WITH_MANS
+
+if WITH_UPOWER
+mansys_DATA += $(MAN_UPOWER_PAGES)
+endif WITH_UPOWER
+endif ! SOME_DRIVERS
+
+INST_HTML_UPOWER_MANS = \
+	nut-upower.html
+DIST_ALL_HTML_PAGES += $(INST_HTML_UPOWER_MANS)
+
+if ! SOME_DRIVERS
+HTML_UPOWER_MANS = $(INST_HTML_UPOWER_MANS)
+endif ! SOME_DRIVERS
+
+# FIXME? Refine for HTML etc.?
+if DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+if WITH_UPOWER
+LINKMAN_PAGES_DRIVERS += $(SRC_UPOWER_PAGES)
+endif WITH_UPOWER
+else !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+LINKMAN_PAGES_DRIVERS += $(SRC_UPOWER_PAGES)
+endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
+
 # Summarize which pages we ultimately install:
 MAN_MANS =
 if WITH_MANS
@@ -1507,7 +1560,8 @@ MAN_MANS += \
 	$(MAN_MACOSX_PAGES) \
 	$(MAN_MODBUS_PAGES) \
 	$(MAN_LINUX_I2C_PAGES) \
-	$(MAN_GPIO_PAGES)
+	$(MAN_GPIO_PAGES) \
+	$(MAN_UPOWER_PAGES)
 endif WITH_MANS
 
 SRC_DRIVERS_PAGES = \
@@ -1522,7 +1576,8 @@ SRC_DRIVERS_PAGES = \
 	$(SRC_MACOSX_PAGES) \
 	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES) \
-	$(SRC_GPIO_PAGES)
+	$(SRC_GPIO_PAGES) \
+	$(SRC_UPOWER_PAGES)
 
 if SOME_DRIVERS
 # (Legacy note) The list above probably came up empty in this case, so make sure
@@ -1599,7 +1654,8 @@ HTML_MANS = \
 	$(HTML_MACOSX_MANS) \
 	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS) \
-	$(HTML_GPIO_MANS)
+	$(HTML_GPIO_MANS) \
+	$(HTML_UPOWER_MANS)
 
 # htmlmandir is set by autoconf/automake
 htmlman_DATA =
@@ -2039,16 +2095,16 @@ endif !HAVE_ASCIIDOC
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
-#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-.txt.txt-spellchecked:
+.txt.txt-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-spellcheck spellcheck-interactive spellcheck-sortdict:
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # When building out-of-tree, be sure to have all asciidoc resources

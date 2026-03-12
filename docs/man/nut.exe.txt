@@ -99,6 +99,12 @@ Install as a Windows service called "Network UPS Tools". Does not start it.
 
 *-N*::
 Run once in non-service mode (for troubleshooting).
++
+Since NUT v2.8.5, using `nut.exe -N` for testing and pressing 'Ctrl+C' should
+cause the started daemons to be killed off.  Previously they would linger and
+e.g. preclude subsequent experiments with the service wrapper.  Console close
+events are ignored, so there is a way to indefinitely keep the daemons started
+by the test-mode wrapper running (kill later if needed via Task Manager).
 
 *start*::
 Install as a Windows service called "Network UPS Tools" (if not yet done),

@@ -73,7 +73,7 @@ static const char *ecoflow_battery_runtime_conversion(double hid_value) {
 		converted_runtime = hid_value * 60.0;
 
 		/* Allocate memory for string representation */
-		converted_value = xmalloc(HU_INFOSIZE);
+		converted_value = (char*)xmalloc(HU_INFOSIZE);
 		snprintf(converted_value, HU_INFOSIZE, "%.0f", converted_runtime);
 		return converted_value;
 	}

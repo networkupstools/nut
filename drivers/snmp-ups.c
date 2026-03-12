@@ -80,6 +80,7 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
+#include "vertiv-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -159,6 +160,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&netvision,			/* This struct comes from : netvision-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&vertiv,		/* This struct comes from : vertiv-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
@@ -213,7 +215,7 @@ static const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION	"1.38"
+#define DRIVER_VERSION	"1.40"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -296,7 +298,7 @@ static void analyze_mapping_usage(void) {
 		return;
 	}
 
-	unused_names = xcalloc(unused_bufsize, sizeof(char));
+	unused_names = (char*)xcalloc(unused_bufsize, sizeof(char));
 
 	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
 	{
@@ -349,7 +351,7 @@ static void analyze_mapping_usage(void) {
 					if (*pBufSize < SIZE_MAX - LARGEBUF) {
 						*pBufSize = *pBufSize + LARGEBUF;
 						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
-							*pNames = realloc(*pNames, *pBufSize);
+							*pNames = (char*)realloc(*pNames, *pBufSize);
 
 						if (!*pNames) {
 							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
@@ -903,9 +905,10 @@ void upsdrv_initups(void)
 	if (!strcmp(mibs, "--list")) {
 		int i;
 
-		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
-		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
-		       "the first one matches your device\n\n", mibs);
+		printf(
+			"The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
+			"and for 'mibs=auto' these mappings will be tried in the following order until\n"
+			"the first one matches your device\n\n", mibs);
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
 			"NUMBER", "MAPPING NAME", "VERSION",
 			"ENTRY POINT OID", "AUTO CHECK OID");
@@ -995,7 +998,7 @@ void upsdrv_initups(void)
 
 	if (status == TRUE)
 		upslogx(LOG_INFO, "Detected %s on host %s (mib: %s %s)",
-			 model, device_path, mibname, mibvers);
+			model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
 		/* FIXME: "No supported device detected" */
@@ -1400,7 +1403,7 @@ static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration, int log_unhandled_loudly)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -1493,17 +1496,25 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
 			/* Checked the "type" field of the returned varbind if
 			 * it is a type error exception (only applicable with
 			 * SNMPv2 or SNMPv3 protocol, would not happen with
 			 * SNMPv1). This allows to proceed interpreting large
 			 * responses when one entry in the middle is rejectable.
 			 */
-			if (response->variables->type == SNMP_NOSUCHOBJECT ||
-			    response->variables->type == SNMP_NOSUCHINSTANCE ||
-			    response->variables->type == SNMP_ENDOFMIBVIEW) {
-				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+			if (response->variables->type == SNMP_NOSUCHOBJECT
+			 || response->variables->type == SNMP_NOSUCHINSTANCE
+			 || response->variables->type == SNMP_ENDOFMIBVIEW
+			) {
+				if (log_unhandled_loudly) {
+					upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
 						upsname?upsname:device_name, OID);
+				} else {
+					upsdebugx(2, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				}
 				snmp_free_pdu(response);
 				break;
 			}
@@ -1515,12 +1526,12 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		new_ret_array = realloc(
+		new_ret_array = (struct snmp_pdu**)realloc(
 			ret_array,
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
 		if (new_ret_array == NULL) {
-			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			upsdebugx(1, "%s: Failed to realloc ret_array", __func__);
 			break;
 		}
 		else {
@@ -1538,7 +1549,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	return ret_array;
 }
 
-struct snmp_pdu *nut_snmp_get(const char *OID)
+static struct snmp_pdu *do_nut_snmp_get(const char *OID, int log_unhandled_loudly)
 {
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * ret_pdu;
@@ -1548,7 +1559,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
 
-	pdu_array = nut_snmp_walk(OID,1);
+	pdu_array = nut_snmp_walk(OID, 1, log_unhandled_loudly);
 
 	if(pdu_array == NULL) {
 		return NULL;
@@ -1559,6 +1570,11 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	nut_snmp_free(pdu_array);
 
 	return ret_pdu;
+}
+
+struct snmp_pdu *nut_snmp_get(const char *OID)
+{
+	return do_nut_snmp_get(OID, 1);
 }
 
 static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info)
@@ -1720,7 +1736,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 	return ret;
 }
 
-bool_t nut_snmp_get_int(const char *OID, long *pval)
+static bool_t do_nut_snmp_get_int(const char *OID, long *pval, int log_unhandled_loudly)
 {
 	char tmp_buf[SU_LARGEBUF];
 	struct snmp_pdu *pdu;
@@ -1729,14 +1745,14 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 
 	upsdebugx(3, "Entering %s()", __func__);
 
-	pdu = nut_snmp_get(OID);
+	pdu = do_nut_snmp_get(OID, log_unhandled_loudly);
 	if (pdu == NULL)
 		return FALSE;
 
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
 	case ASN_OPAQUE:
-		buf = xmalloc(pdu->variables->val_len + 1);
+		buf = (char*)xmalloc(pdu->variables->val_len + 1);
 		memcpy(buf, pdu->variables->val.string, pdu->variables->val_len);
 		buf[pdu->variables->val_len] = '\0';
 		value = strtol(buf, NULL, 0);
@@ -1754,8 +1770,8 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	case ASN_OBJECT_ID:
 		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
 		upsdebugx(2, "Received an OID value: %s", tmp_buf);
-		/* Try to get the value of the pointed OID */
-		if (nut_snmp_get_int(tmp_buf, &value) == FALSE) {
+		/* Try to get the value of the pointed OID, quietly */
+		if (do_nut_snmp_get_int(tmp_buf, &value, 0) == FALSE) {
 			char	*oid_leaf;
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
@@ -1765,8 +1781,19 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		}
 		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
-			upsname?upsname:device_name, pdu->variables->type, OID);
+		/* This is often seen with "ASN 0x80" meaning "context-specific"
+		 * (ASN_CONTEXT) with no further bits. In practice in may mean
+		 * trying to read from an OID that is itself the value, which
+		 * the fallback above handles for us. For analysis, see:
+		 *   https://github.com/networkupstools/nut/issues/1358
+		 */
+		if (log_unhandled_loudly) {
+			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		} else {
+			upsdebugx(3, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		}
 		return FALSE;
 	}
 
@@ -1776,6 +1803,11 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		*pval = value;
 
 	return TRUE;
+}
+
+bool_t nut_snmp_get_int(const char *OID, long *pval)
+{
+	return do_nut_snmp_get_int(OID, pval, 1);
 }
 
 bool_t nut_snmp_set(const char *OID, char type, const char *value)
@@ -2044,13 +2076,13 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 				info_lkp != NULL && info_lkp->info_value != NULL;
 				info_lkp++
 			) {
-					dstate_addenum(info_type, "%s", info_lkp->info_value);
+				dstate_addenum(info_type, "%s", info_lkp->info_value);
 			}
 		}
 
 		/* Commit the current value, to avoid staleness with huge
 		 * data collections on slow devices */
-		 dstate_dataok();
+		dstate_dataok();
 	}
 }
 
@@ -2482,7 +2514,7 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 
 		if (!(strcmp(info_lkp->info_value, value))) {
 			upsdebugx(1, "%s: found %s (value: %s)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
 			errno = 0;
 			return info_lkp->oid_value;
@@ -2548,12 +2580,16 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 #endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
-	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-
+	for (
+		info_lkp = oid2info;
+		(info_lkp != NULL)
+		&& (info_lkp->info_value != NULL)
+		&& (strcmp(info_lkp->info_value, "NULL"));
+		info_lkp++
+	) {
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
 			errno = 0;
 			return info_lkp->info_value;
@@ -3657,7 +3693,8 @@ bool_t snmp_ups_walk(int mode)
 			/* skip instcmd, not linked to outlets */
 			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+			) {
 				upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 				continue;
 			}
@@ -3681,11 +3718,10 @@ bool_t snmp_ups_walk(int mode)
 			/* Set default value if we cannot fetch it
 			 * and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if (
-				    (su_info_p->flags & SU_FLAG_ABSENT)
-				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)
-				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
+			if ( (su_info_p->flags & SU_FLAG_ABSENT)
+			 && !(su_info_p->flags & SU_OUTLET)
+			 && !(su_info_p->flags & SU_OUTLET_GROUP)
+			 && !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
 			{
 				if (mode == SU_WALKMODE_INIT)
 				{
@@ -3961,7 +3997,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					upsdebugx(2, "=> truncating alarms present to INT_MAX");
 					value = INT_MAX;
 				}
-				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value);
+				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value, 1);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;

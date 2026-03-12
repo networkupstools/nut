@@ -81,6 +81,11 @@ global section.
 
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
+Alternatively the value can be set via +debug_min+ in global section of
+linkman:ups.conf[5].  Note the global setting applies to both the tool
+and a started driver; but another line in a driver's individual section
+can override that with a larger or smaller value (including a `debug_min=0`
+to disable tracing the driver by default).
 +
 Note that this does not preclude the `upsdrvctl` tool from exiting after
 its job is done (however an explicit *-F* option does).

@@ -1102,7 +1102,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.2",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL),
 	snmp_info_default("outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE,
-		 ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.3",
+		".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.3",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL),
 	snmp_info_default("outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.4",

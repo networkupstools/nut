@@ -132,13 +132,13 @@ static void add_arg_word(PCONF_CTX_t *ctx)
 		ctx->maxargs = ctx->numargs;
 
 		/* resize the lists */
-		ctx->arglist = realloc(ctx->arglist,
+		ctx->arglist = (char **)realloc(ctx->arglist,
 			sizeof(char *) * ctx->numargs);
 
 		if (!ctx->arglist)
 			pconf_fatal(ctx, "realloc arglist failed");
 
-		ctx->argsize = realloc(ctx->argsize,
+		ctx->argsize = (size_t *)realloc(ctx->argsize,
 			sizeof(size_t) * ctx->numargs);
 
 		if (!ctx->argsize)
@@ -159,7 +159,7 @@ static void add_arg_word(PCONF_CTX_t *ctx)
 		newlen = wbuflen + 1;
 
 		/* expand the string storage */
-		ctx->arglist[argpos] = realloc(ctx->arglist[argpos], newlen);
+		ctx->arglist[argpos] = (char *)realloc(ctx->arglist[argpos], newlen);
 
 		if (!ctx->arglist[argpos])
 			pconf_fatal(ctx, "realloc arglist member failed");
@@ -200,7 +200,7 @@ static void addchar(PCONF_CTX_t *ctx)
 	if (wbuflen >= (ctx->wordbufsize - 1)) {
 		ctx->wordbufsize += 8;
 
-		ctx->wordbuf = realloc(ctx->wordbuf, ctx->wordbufsize);
+		ctx->wordbuf = (char *)realloc(ctx->wordbuf, ctx->wordbufsize);
 
 		if (!ctx->wordbuf)
 			pconf_fatal(ctx, "realloc wordbuf failed");
@@ -415,7 +415,7 @@ int pconf_init(PCONF_CTX_t *ctx, void errhandler(const char *))
 	ctx->argsize = NULL;
 
 	ctx->wordbufsize = 16;
-	ctx->wordbuf = calloc(1, ctx->wordbufsize);
+	ctx->wordbuf = (char *)calloc(1, ctx->wordbufsize);
 
 	if (!ctx->wordbuf)
 		pconf_fatal(ctx, "malloc wordbuf failed");
