@@ -3788,6 +3788,7 @@ int main(int argc, char *argv[])
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
+	struct timeval	prevstart;
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
@@ -4163,6 +4164,7 @@ int main(int argc, char *argv[])
 	open_syslog(prog);
 
 	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+	gettimeofday(&prevstart, NULL);
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
@@ -4224,9 +4226,11 @@ int main(int argc, char *argv[])
 
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			upsdebugx(0, "%s: Dozing off until system tells us otherwise; send a SIGHUP or SIGTERM to break the loop manually", prog);
+
 			while ((sleep_inhibitor_status = isPreparingForSleep()) == -1 && !reload_flag && !exit_flag) {
 				usleep(1000000);
 			}
+
 			if (nut_debug_level == 0) {
 				upsdebugx(0, "%s: Dozing off finished", prog);
 			} else {
@@ -4258,15 +4262,18 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
+				/* Note the system clock may be or not be updated */
+				gettimeofday(&now, NULL);
+				time(&ttNow);
+				dt = difftimeval(now, prevstart);
+
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
-				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %.06f seconds since previous loop cycle start", prog, dt);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				gettimeofday(&now, NULL);
-				time(&ttNow);
 				for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 					ups->status = 0;
 					ups->lastpoll = ttNow;
@@ -4345,11 +4352,11 @@ int main(int argc, char *argv[])
 					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
 					dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
-					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles) by %.06f seconds", dt);
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upsdebugx(2, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles) by %.06f seconds", dt);
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
@@ -4446,14 +4453,19 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upsdebugx(2, "It seems the system clock was changed into the past");
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
+
+		/* Note that "start" is not initialized in all code paths,
+		 * e.g. we can skip out early because of FSD or hibernation.
+		 */
+		prevstart = start;
 
 end_loop_cycle:
 		if (exit_flag < 0 && userfsd)
