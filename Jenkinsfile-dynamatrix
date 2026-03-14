@@ -1383,6 +1383,7 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
 {
     dynamatrixGlobalState.enableDebugTrace = true
+	//dynamatrixGlobalState.enableDebugTraceResolver = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
