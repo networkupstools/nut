@@ -101,7 +101,9 @@ class PyNUTClient :
     __release     = "2026-03-16"
 
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5, use_ssl=False, ssl_context=None ) :
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5,
+                  use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
+                  cert_file=None, key_file=None, force_ssl=False ) :
         """ Class initialization method
 
 host        : Host to connect (default to localhost)
@@ -112,6 +114,12 @@ debug       : Boolean, put class in debug mode (prints everything on console, de
 timeout     : Timeout used to wait for network response
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
+cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
+ca_file     : Path to CA certificate file (PEM format)
+ca_path     : Path to directory with CA certificates (PEM format)
+cert_file   : Path to client certificate file (PEM format)
+key_file    : Path to client private key file (PEM format)
+force_ssl   : Boolean, if True, the connection must be secure (default to False)
         """
         self.__debug = debug
 
@@ -119,7 +127,7 @@ ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to No
             print( "[DEBUG] Class initialization..." )
             print( "[DEBUG]  -> Host  = %s (port %s)" % ( host, port ) )
             print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
-            print( "[DEBUG]  -> SSL   = %s" % use_ssl )
+            print( "[DEBUG]  -> SSL   = %s (force: %s, verify: %s)" % (use_ssl, force_ssl, cert_verify) )
 
         self.__host        = host
         self.__port        = port
@@ -127,13 +135,31 @@ ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to No
         self.__password    = password
         self.__timeout     = timeout
         if ssl_available:
-            self.__use_ssl     = use_ssl
+            self.__use_ssl     = use_ssl or force_ssl
+            self.__force_ssl   = force_ssl
             self.__ssl_context = ssl_context
+            if self.__use_ssl and self.__ssl_context is None:
+                if self.__debug:
+                    print( "[DEBUG] Creating SSL context" )
+                # Create a default context and apply parameters
+                self.__ssl_context = ssl.create_default_context(cafile=ca_file, capath=ca_path)
+                if cert_verify is not None:
+                    if not cert_verify:
+                        # Must be set first, else we get
+                        #   ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled.
+                        self.__ssl_context.check_hostname = False
+                    self.__ssl_context.verify_mode = ssl.CERT_REQUIRED if cert_verify else ssl.CERT_NONE
+                if cert_file:
+                    self.__ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file)
         else:
             self.__use_ssl     = False
+            self.__force_ssl   = False
             self.__ssl_context = None
-            if self.__debug and (use_ssl or ssl_context is not None):
-                print( "[DEBUG] SSL requested but 'ssl' module was not available for import" )
+            if (use_ssl or force_ssl or ssl_context is not None):
+                if self.__debug:
+                    print( "[DEBUG] SSL requested but 'ssl' module was not available for import" )
+                if force_ssl:
+                    raise PyNUTError( "SSL required but 'ssl' module not available" )
 
         self.__connect()
 
@@ -193,7 +219,12 @@ if something goes wrong.
             else :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS failed: %s" % result )
-                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+                if self.__force_ssl:
+                    raise PyNUTError( "STARTTLS failed but SSL is required: %s" % result.replace( b"\n", b"" ).decode('ascii') )
+                else:
+                    if self.__debug:
+                        print( "[DEBUG] STARTTLS failed, but not forced, continuing insecurely" )
+                    self.__use_ssl = False
 
         if self.__login != None :
             self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )
