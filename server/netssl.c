@@ -325,6 +325,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	NUT_UNUSED_VARIABLE(arg);
 
 	if (client->ssl) {
+		upsdebugx(2, "%s: NUT_ERR_ALREADY_SSL_MODE because this connection is already initialized as SSL",
+			__func__);
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
 		return;
 	}
@@ -332,6 +334,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	client->ssl_connected = 0;
 
 	if ((!certfile) || (!ssl_initialized)) {
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to certfile='%s' ssl_initialized=%d",
+			__func__, NUT_STRARG(certfile), ssl_initialized);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		return;
 	}
@@ -342,6 +346,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (!NSS_IsInitialized())
 # endif	/* WITH_OPENSSL | WITH_NSS */
 	{
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to lack of initialized context",
+			__func__);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		ssl_initialized = 0;
 		return;
@@ -577,6 +583,7 @@ void ssl_init(void)
 # endif /* WITH_NSS */
 
 	if (!certfile) {
+		upsdebugx(2, "%s: no certfile", __func__);
 		return;
 	}
 
@@ -640,6 +647,7 @@ void ssl_init(void)
 
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
+	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
@@ -774,6 +782,7 @@ void ssl_init(void)
 		return;
 	}
 
+	upsdebugx(2, "%s: initialized with NSS and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
 # else /* not (WITH_OPENSSL | WITH_NSS) */
 	/* Looking at ifdefs, we should not get here. But just in case... */
@@ -895,6 +904,7 @@ void ssl_cleanup(void)
 	PL_ArenaFinish();
 # endif	/* WITH_OPENSSL | WITH_NSS */
 	ssl_initialized = 0;
+	upsdebugx(2, "%s: SSL ability un-initialized", __func__);
 }
 
 #endif /* WITH_SSL */
