@@ -62,7 +62,8 @@ pedantically correct (for Python 3 at least).
 ------
 class PyNUTClient :
   def __init__( self, host='127.0.0.1', port=3493,
-    login=None, password=None, debug=False, timeout=5 ) :
+    login=None, password=None, debug=False, timeout=5,
+    use_ssl=False, ssl_context=None ) :
 
   def help( self ) :
 
@@ -115,6 +116,14 @@ __init__
 When you initialize the class instance, it performs the connection to the NUT
 data server or raises a Python exception from the `__connect()` method called
 internally.
+
+Optional `use_ssl=True` can be passed to request a secure connection via
+the NUT `STARTTLS` protocol command. In this case, an `ssl_context` can
+also be provided (as an `ssl.SSLContext` object) to configure the SSL/TLS
+parameters (such as CA certificates, client certificates, or selecting
+the underlying library implementation if the Python `ssl` module supports
+it). By default, a default context is created if `use_ssl=True` and no
+context is provided.
 
 
 help
