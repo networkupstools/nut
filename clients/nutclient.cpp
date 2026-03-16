@@ -228,6 +228,9 @@ public:
 	bool isConnected()const;
 	void setDebugConnect(bool d);
 
+	void startTLS(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file);
+	bool isSSL()const;
+
 	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
@@ -240,13 +243,26 @@ public:
 
 private:
 	SOCKET _sock;
+#ifdef WITH_OPENSSL
+	SSL* _ssl;
+	static SSL_CTX* _ssl_ctx;
+#elif defined(WITH_NSS)
+	PRFileDesc* _ssl;
+#endif
 	bool _debugConnect;
 	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
 };
 
+#ifdef WITH_OPENSSL
+SSL_CTX* Socket::_ssl_ctx = nullptr;
+#endif
+
 Socket::Socket():
 _sock(INVALID_SOCKET),
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+_ssl(nullptr),
+#endif
 _debugConnect(false),
 _tv()
 {
@@ -571,12 +587,141 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 void Socket::disconnect()
 {
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	if (_ssl) {
+# ifdef WITH_OPENSSL
+		SSL_shutdown(_ssl);
+		SSL_free(_ssl);
+# elif defined(WITH_NSS)
+		PR_Close(_ssl);
+# endif
+		_ssl = nullptr;
+	}
+#endif
 	if(_sock != INVALID_SOCKET)
 	{
 		::closesocket(_sock);
 		_sock = INVALID_SOCKET;
 	}
 	_buffer.clear();
+}
+
+bool Socket::isSSL()const
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	return _ssl != nullptr;
+#else
+	return false;
+#endif
+}
+
+void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file)
+{
+	NUT_UNUSED_VARIABLE(ca_path);
+	NUT_UNUSED_VARIABLE(ca_file);
+	NUT_UNUSED_VARIABLE(cert_file);
+	NUT_UNUSED_VARIABLE(key_file);
+
+	if (!isConnected()) {
+		throw nut::NotConnectedException();
+	}
+
+	write("STARTTLS");
+	std::string res = read();
+	if (res.substr(0, 11) != "OK STARTTLS") {
+		if (force_ssl) {
+			disconnect();
+			throw nut::IOException("STARTTLS failed: " + res);
+		}
+		return;
+	}
+
+#ifdef WITH_OPENSSL
+	if (!_ssl_ctx) {
+# if OPENSSL_VERSION_NUMBER < 0x10100000L
+		SSL_load_error_strings();
+		SSL_library_init();
+		_ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+# else
+		_ssl_ctx = SSL_CTX_new(TLS_client_method());
+# endif
+		if (!_ssl_ctx) {
+			throw nut::IOException("Cannot create SSL context");
+		}
+	}
+
+	if (!ca_file.empty() || !ca_path.empty()) {
+		if (SSL_CTX_load_verify_locations(_ssl_ctx, ca_file.empty() ? nullptr : ca_file.c_str(), ca_path.empty() ? nullptr : ca_path.c_str()) != 1) {
+			throw nut::IOException("Failed to load CA verify locations");
+		}
+	}
+	if (certverify != -1) {
+		SSL_CTX_set_verify(_ssl_ctx, certverify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, nullptr);
+	}
+	if (!cert_file.empty()) {
+		if (SSL_CTX_use_certificate_chain_file(_ssl_ctx, cert_file.c_str()) != 1) {
+			throw nut::IOException("Failed to load client certificate file");
+		}
+		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, key_file.empty() ? cert_file.c_str() : key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
+			throw nut::IOException("Failed to load client private key file");
+		}
+	}
+
+	_ssl = SSL_new(_ssl_ctx);
+	if (!_ssl) {
+		throw nut::IOException("Cannot create SSL object");
+	}
+	SSL_set_fd(_ssl, static_cast<int>(_sock));
+	if (SSL_connect(_ssl) != 1) {
+		unsigned long err = ERR_get_error();
+		char errbuf[256];
+		ERR_error_string_n(err, errbuf, sizeof(errbuf));
+		SSL_free(_ssl);
+		_ssl = nullptr;
+		disconnect();
+		throw nut::IOException(std::string("SSL connection failed: ") + errbuf);
+	}
+
+#elif defined(WITH_NSS)
+	/* NSS implementation following upsclient.c logic */
+	static bool nss_initialized = false;
+	if (!nss_initialized) {
+		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+		if (NSS_NoDB_Init(NULL) != SECSuccess) {
+			throw nut::IOException("NSS initialization failed");
+		}
+		nss_initialized = true;
+	}
+
+	PRFileDesc *model = SSL_ImportFD(NULL, PR_NewTCPSocket());
+	if (!model) {
+		throw nut::IOException("NSS: Cannot create model FD");
+	}
+	if (SSL_OptionSet(model, SSL_SECURITY, PR_TRUE) != SECSuccess ||
+	    SSL_OptionSet(model, SSL_HANDSHAKE_AS_CLIENT, PR_TRUE) != SECSuccess) {
+		PR_Close(model);
+		throw nut::IOException("NSS: Cannot set options on model FD");
+	}
+
+	_ssl = SSL_ImportFD(model, PR_ImportTCPSocket(static_cast<int>(_sock)));
+	PR_Close(model);
+	if (!_ssl) {
+		throw nut::IOException("NSS: Cannot import socket FD");
+	}
+
+	if (SSL_ResetHandshake(_ssl, PR_FALSE) != SECSuccess ||
+	    SSL_ForceHandshake(_ssl) != SECSuccess) {
+		PR_Close(_ssl);
+		_ssl = nullptr;
+		disconnect();
+		throw nut::IOException("NSS: Handshake failed");
+	}
+#else
+	if (force_ssl) {
+		disconnect();
+		throw nut::IOException("SSL support not compiled in");
+	}
+#endif
 }
 
 bool Socket::isConnected()const
@@ -602,7 +747,21 @@ size_t Socket::read(void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = sktread(_sock, buf, sz);
+	ssize_t res;
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	if (_ssl) {
+# ifdef WITH_OPENSSL
+		res = SSL_read(_ssl, buf, static_cast<int>(sz));
+# elif defined(WITH_NSS)
+		res = PR_Read(_ssl, buf, static_cast<int>(sz));
+# endif
+	} else {
+		res = sktread(_sock, buf, sz);
+	}
+#else
+	res = sktread(_sock, buf, sz);
+#endif
+
 	if(res==-1)
 	{
 		disconnect();
@@ -629,7 +788,21 @@ size_t Socket::write(const void* buf, size_t sz)
 		}
 	}
 
-	ssize_t res = sktwrite(_sock, buf, sz);
+	ssize_t res;
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	if (_ssl) {
+# ifdef WITH_OPENSSL
+		res = SSL_write(_ssl, buf, static_cast<int>(sz));
+# elif defined(WITH_NSS)
+		res = PR_Write(_ssl, buf, static_cast<int>(sz));
+# endif
+	} else {
+		res = sktwrite(_sock, buf, sz);
+	}
+#else
+	res = sktwrite(_sock, buf, sz);
+#endif
+
 	if(res==-1)
 	{
 		disconnect();
@@ -801,18 +974,24 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(NUT_PORT),
+_use_ssl(false),
+_force_ssl(false),
+_certverify(-1),
 _timeout(0),
 _socket(new internal::Socket)
 {
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, uint16_t port):
+TcpClient::TcpClient(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl):
 Client(),
+_use_ssl(use_ssl),
+_force_ssl(force_ssl),
+_certverify(-1),
 _timeout(0),
 _socket(new internal::Socket)
 {
-	connect(host, port);
+	connect(host, port, use_ssl, force_ssl);
 }
 
 TcpClient::~TcpClient()
@@ -820,16 +999,35 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
-void TcpClient::connect(const std::string& host, uint16_t port)
+void TcpClient::setSSLConfig(int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
+{
+	_certverify = certverify;
+	if (ca_path) _ca_path = ca_path;
+	if (ca_file) _ca_file = ca_file;
+	if (cert_file) _cert_file = cert_file;
+	if (key_file) _key_file = key_file;
+}
+
+void TcpClient::connect(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl)
 {
 	_host = host;
 	_port = port;
+	_use_ssl = use_ssl;
+	_force_ssl = force_ssl;
 	connect();
 }
 
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
+	if (_use_ssl || _force_ssl) {
+		_socket->startTLS(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file);
+	}
+}
+
+bool TcpClient::isSSL() const
+{
+	return _socket->isSSL();
 }
 
 void TcpClient::setDebugConnect(bool d)
@@ -1932,6 +2130,34 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 
 }
 
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl)
+{
+	nut::TcpClient* client = new nut::TcpClient;
+	try
+	{
+		client->connect(host, port, use_ssl != 0, force_ssl != 0);
+		return static_cast<NUTCLIENT_TCP_t>(client);
+	}
+	catch(nut::NutException& ex)
+	{
+		NUT_UNUSED_VARIABLE(ex);
+		delete client;
+		return nullptr;
+	}
+}
+
+void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSSLConfig(certverify, ca_path, ca_file, cert_file, key_file);
+		}
+	}
+}
+
 void nutclient_destroy(NUTCLIENT_t client)
 {
 	if(client)
@@ -1981,6 +2207,19 @@ int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client)
 		}
 	}
 	return -1;
+}
+
+int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			return cl->isSSL() ? 1 : 0;
+		}
+	}
+	return 0;
 }
 
 void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout)

@@ -23,6 +23,14 @@
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
 
+#ifdef WITH_OPENSSL
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+#	include <nss.h>
+#	include <ssl.h>
+#endif  /* WITH_OPENSSL | WITH_NSS */
+
 #include <string>
 #include <vector>
 #include <map>
@@ -396,16 +404,30 @@ public:
 	 * Construct a nut TcpClient object then connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
+	 * \param use_ssl Use SSL/TLS for the connection.
+	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
 	 */
-	TcpClient(const std::string& host, uint16_t port = NUT_PORT);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool use_ssl = false, bool force_ssl = false);
 	~TcpClient() override;
+
+	/**
+	 * Set SSL configuration.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 */
+	void setSSLConfig(int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 
 	/**
 	 * Connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
+	 * \param use_ssl Use SSL/TLS for the connection.
+	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
 	 */
-	void connect(const std::string& host, uint16_t port = NUT_PORT);
+	void connect(const std::string& host, uint16_t port = NUT_PORT, bool use_ssl = false, bool force_ssl = false);
 
 	/**
 	 * Connect to the server.
@@ -486,6 +508,8 @@ public:
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
+	virtual bool isSSL() const;
+
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
 
@@ -507,6 +531,13 @@ protected:
 private:
 	std::string _host;
 	uint16_t _port;
+	bool _use_ssl;
+	bool _force_ssl;
+	int _certverify;
+	std::string _ca_path;
+	std::string _ca_file;
+	std::string _cert_file;
+	std::string _key_file;
 	time_t _timeout;
 	internal::Socket* _socket;
 };
@@ -1065,6 +1096,8 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl);
+void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.
@@ -1083,6 +1116,7 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
  * \todo Implement different error codes.
  */
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
+int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
 /**
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.

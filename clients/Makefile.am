@@ -306,6 +306,9 @@ if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
+if WITH_SSL
+  libnutclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+endif WITH_SSL
 else !HAVE_CXX11
 EXTRA_DIST += nutclient.h nutclient.cpp
 endif !HAVE_CXX11
