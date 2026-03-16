@@ -397,13 +397,14 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		int	ssl_retries = 0;
 		/* Cap retries to avoid spinning forever on a broken socket.
 		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
-		 * local handshake while being safe for CI timeouts.        */
-		const int	SSL_ACCEPT_MAX_RETRIES = 250;
+		 * local handshake while being safe for CI timeouts.
+		 */
+		const int	SSL_IO_MAX_RETRIES = 250;
 		fd_set	fds;
 		struct timeval	tv;
 
 		ret = -1;
-		while (ssl_retries < SSL_ACCEPT_MAX_RETRIES) {
+		while (ssl_retries < SSL_IO_MAX_RETRIES) {
 			ret = SSL_accept(client->ssl);
 
 			if (ret == 1) {
@@ -432,7 +433,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 					(ssl_err == SSL_ERROR_WANT_READ)
 						? "READ" : "WRITE",
 					ssl_retries + 1,
-					SSL_ACCEPT_MAX_RETRIES);
+					SSL_IO_MAX_RETRIES);
 
 				if (select(client->sock_fd + 1,
 					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
@@ -442,6 +443,9 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 					upslog_with_errno(LOG_ERR,
 						"%s: select() failed during SSL_accept",
 						__func__);
+					/* Returns 0 on non-fatal WANT_READ/WRITE;
+					 * we stop retrying even if non-fatal because
+					 * select() itself failed. */
 					ssl_error(client->ssl, ret);
 					return;
 				}
@@ -465,7 +469,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 			return;
 		}
 
-		if (ssl_retries >= SSL_ACCEPT_MAX_RETRIES) {
+		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
 			upslogx(LOG_ERR,
 				"%s: SSL_accept timed out after %d retries"
 				" (non-blocking handshake never completed)",
@@ -802,12 +806,24 @@ void ssl_init(void)
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+
 # ifdef WITH_OPENSSL
-	int	iret;
-# endif
+	int iret, ssl_err, ssl_retries = 0;
+	/* Cap retries to avoid spinning forever on a broken socket.
+	 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+	 * local handshake while being safe for CI timeouts.
+	 */
+	const int	SSL_IO_MAX_RETRIES = 250;
+	fd_set	fds;
+	struct timeval	tv;
+# endif	/* WITH_OPENSSL */
 
 	if (!client->ssl_connected) {
 		return -1;
+	}
+
+	if (buflen == 0) {
+		return 0;
 	}
 
 # ifdef WITH_OPENSSL
@@ -817,9 +833,52 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	iret = SSL_read(client->ssl, buf, (int)buflen);
-	assert(iret <= SSIZE_MAX);
-	ret = (ssize_t)iret;
+
+	while (ssl_retries < SSL_IO_MAX_RETRIES) {
+		iret = SSL_read(client->ssl, buf, (int)buflen);
+
+		if (iret > 0) {
+			ret = (ssize_t)iret;
+			break;
+		}
+
+		if (iret == 0) {
+			/* Orderly shutdown or actual EOF */
+			ret = 0;
+			break;
+		}
+
+		ssl_err = SSL_get_error(client->ssl, iret);
+		if (ssl_err == SSL_ERROR_WANT_READ
+		 || ssl_err == SSL_ERROR_WANT_WRITE
+		) {
+			FD_ZERO(&fds);
+			FD_SET(client->sock_fd, &fds);
+			tv.tv_sec  = 0;
+			tv.tv_usec = 20000;	/* 20 ms */
+
+			if (select(client->sock_fd + 1,
+				(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+				(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+				NULL, &tv) < 0
+			) {
+				/* select failure is fatal enough to stop retrying */
+				ssl_error(client->ssl, (ssize_t)iret);
+				return -1;
+			}
+			ssl_retries++;
+			continue;
+		}
+
+		/* Other errors are fatal */
+		ssl_error(client->ssl, (ssize_t)iret);
+		return -1;
+	}
+
+	if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+		upslogx(LOG_ERR, "%s: SSL_read timed out after %d retries", __func__, ssl_retries);
+		return -1;
+	}
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -838,12 +897,24 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+
 # ifdef WITH_OPENSSL
-	int	iret;
-# endif
+	int	iret, ssl_err, ssl_retries = 0;
+	/* Cap retries to avoid spinning forever on a broken socket.
+	 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+	 * local handshake while being safe for CI timeouts.
+	 */
+	const int	SSL_IO_MAX_RETRIES = 250;
+	fd_set	fds;
+	struct timeval	tv;
+# endif	/* WITH_OPENSSL */
 
 	if (!client->ssl_connected) {
 		return -1;
+	}
+
+	if (buflen == 0) {
+		return 0;
 	}
 
 # ifdef WITH_OPENSSL
@@ -853,9 +924,46 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	iret = SSL_write(client->ssl, buf, (int)buflen);
-	assert(iret <= SSIZE_MAX);
-	ret = (ssize_t)iret;
+
+	while (ssl_retries < SSL_IO_MAX_RETRIES) {
+		iret = SSL_write(client->ssl, buf, (int)buflen);
+
+		if (iret > 0) {
+			ret = (ssize_t)iret;
+			break;
+		}
+
+		ssl_err = SSL_get_error(client->ssl, iret);
+		if (ssl_err == SSL_ERROR_WANT_READ
+		 || ssl_err == SSL_ERROR_WANT_WRITE
+		) {
+			FD_ZERO(&fds);
+			FD_SET(client->sock_fd, &fds);
+			tv.tv_sec  = 0;
+			tv.tv_usec = 20000;	/* 20 ms */
+
+			if (select(client->sock_fd + 1,
+				(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+				(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+				NULL, &tv) < 0
+			) {
+				/* select failure is fatal enough to stop retrying */
+				ssl_error(client->ssl, (ssize_t)iret);
+				return -1;
+			}
+			ssl_retries++;
+			continue;
+		}
+
+		/* Other errors (including iret=0) are fatal */
+		ssl_error(client->ssl, (ssize_t)iret);
+		return -1;
+	}
+
+	if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+		upslogx(LOG_ERR, "%s: SSL_write timed out after %d retries", __func__, ssl_retries);
+		return -1;
+	}
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
