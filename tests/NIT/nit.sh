@@ -2250,6 +2250,41 @@ isTestablePython() {
     return $PY_RES
 }
 
+# Executed in subshell context of test cases below
+setenv_ssl_python() {
+	# Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
+    # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
+    # NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'true') == 'true')
+    # NUT_CAFILE = os.getenv('NUT_CAFILE', None)
+    # NUT_CAPATH = os.getenv('NUT_CAPATH', None)
+    # NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    # NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
+
+    case "${WITH_SSL_SERVER}" in
+        none) return 0;;
+        OpenSSL|NSS)
+            log_info "Adding client-side SSL config to python env to talk to our ${WITH_SSL_CLIENT}-capable upsd"
+
+            NUT_SSL=true
+            NUT_FORCESSL=true
+            export NUT_SSL NUT_FORCESSL
+
+            if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
+                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                    NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
+                    NUT_CERTVERIFY=true
+                    export NUT_CAPATH NUT_CERTVERIFY
+                else if test -s "${TESTCERT_PATH_ROOTCA}"/rootca.pem ; then
+                    NUT_CAFILE="${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                    NUT_CERTVERIFY=true
+                    export NUT_CAFILE NUT_CERTVERIFY
+                fi ; fi
+            fi
+            ;;
+    esac
+}
+
 testcase_sandbox_python_without_credentials() {
     isTestablePython && [ -n "${PYTHON}" ] || return 0
 
@@ -2257,7 +2292,8 @@ testcase_sandbox_python_without_credentials() {
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+         setenv_ssl_python
+         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2280,6 +2316,7 @@ testcase_sandbox_python_with_credentials() {
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
+        setenv_ssl_python
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
@@ -2300,6 +2337,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
+        setenv_ssl_python
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
