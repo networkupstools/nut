@@ -185,12 +185,12 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
+		return 0;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
+		return 0;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
