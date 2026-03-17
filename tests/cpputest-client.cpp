@@ -224,12 +224,8 @@ void NutActiveClientTest::test_query_ver() {
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
-	std::string s;
-
-	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
-		<< c.getHost() << ':' << c.getPort() << std::endl;
 	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
+		<< " NUT_SSL(try):" << c.getSslTry()
 		<< " NUT_FORCESSL:" << c.getSslForce()
 		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
 		<< " NUT_CAPATH:" << c.getSslCAPath()
@@ -237,6 +233,13 @@ void NutActiveClientTest::test_query_ver() {
 		<< " NUT_CERTFILE:" << c.getSslCertFile()
 		<< " NUT_KEYFILE:" << c.getSslKeyFile()
 		<< std::endl;
+
+	// This can crash if the server is not running, SSL mismatch, etc.
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
+	std::string s;
+
+	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
+		<< c.getHost() << ':' << c.getPort() << std::endl;
 
 	CPPUNIT_ASSERT_MESSAGE(
 		"TcpClient is not connected after constructor",
