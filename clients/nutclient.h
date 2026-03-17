@@ -117,6 +117,39 @@ public:
 };
 
 /**
+ * IO oriented nut exceptions specialized for SSL secured channel setup problems.
+ */
+class SSLException : public IOException
+{
+public:
+	SSLException(const std::string& msg):IOException(msg){}
+	SSLException():IOException("SSL failure"){}
+	SSLException(const SSLException&) = default;
+	SSLException& operator=(SSLException& rhs) = default;
+	virtual ~SSLException() noexcept override;
+};
+
+class SSLException_OpenSSL : public SSLException
+{
+public:
+	SSLException_OpenSSL(const std::string& msg):SSLException(std::string("OpenSSL: ") + msg){}
+	SSLException_OpenSSL():SSLException("OpenSSL: failure"){}
+	SSLException_OpenSSL(const SSLException_OpenSSL&) = default;
+	SSLException_OpenSSL& operator=(SSLException_OpenSSL& rhs) = default;
+	virtual ~SSLException_OpenSSL() noexcept override;
+};
+
+class SSLException_NSS : public SSLException
+{
+public:
+	SSLException_NSS(const std::string& msg):SSLException(std::string("NSS: ") + msg){}
+	SSLException_NSS():SSLException("NSS: failure"){}
+	SSLException_NSS(const SSLException_NSS&) = default;
+	SSLException_NSS& operator=(SSLException_NSS& rhs) = default;
+	virtual ~SSLException_NSS() noexcept override;
+};
+
+/**
  * IO oriented nut exception specialized for unknown host
  */
 class UnknownHostException : public IOException

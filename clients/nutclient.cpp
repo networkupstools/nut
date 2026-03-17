@@ -203,6 +203,9 @@ std::string SystemException::err()
 NutException::~NutException() noexcept {}
 SystemException::~SystemException() noexcept {}
 IOException::~IOException() noexcept {}
+SSLException::~SSLException() noexcept {}
+SSLException_OpenSSL::~SSLException_OpenSSL() noexcept {}
+SSLException_NSS::~SSLException_NSS() noexcept {}
 UnknownHostException::~UnknownHostException() noexcept {}
 NotConnectedException::~NotConnectedException() noexcept {}
 TimeoutException::~TimeoutException() noexcept {}
@@ -661,7 +664,7 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 	if (res.substr(0, 11) != "OK STARTTLS") {
 		if (force_ssl) {
 			disconnect();
-			throw nut::IOException("STARTTLS failed: " + res);
+			throw nut::SSLException("STARTTLS failed: " + res);
 		}
 		return;
 	}
@@ -678,13 +681,13 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		_ssl_ctx = SSL_CTX_new(TLS_client_method());
 # endif
 		if (!_ssl_ctx) {
-			throw nut::IOException("Cannot create SSL context");
+			throw nut::SSLException_OpenSSL("Cannot create SSL context");
 		}
 	}
 
 	if (!ca_file.empty() || !ca_path.empty()) {
 		if (SSL_CTX_load_verify_locations(_ssl_ctx, ca_file.empty() ? nullptr : ca_file.c_str(), ca_path.empty() ? nullptr : ca_path.c_str()) != 1) {
-			throw nut::IOException("Failed to load CA verify locations");
+			throw nut::SSLException_OpenSSL("Failed to load CA verify locations");
 		}
 	}
 	if (certverify != -1) {
@@ -692,16 +695,16 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 	}
 	if (!cert_file.empty()) {
 		if (SSL_CTX_use_certificate_chain_file(_ssl_ctx, cert_file.c_str()) != 1) {
-			throw nut::IOException("Failed to load client certificate file");
+			throw nut::SSLException_OpenSSL("Failed to load client certificate file");
 		}
 		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, key_file.empty() ? cert_file.c_str() : key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
-			throw nut::IOException("Failed to load client private key file");
+			throw nut::SSLException_OpenSSL("Failed to load client private key file");
 		}
 	}
 
 	_ssl = SSL_new(_ssl_ctx);
 	if (!_ssl) {
-		throw nut::IOException("Cannot create SSL object");
+		throw nut::SSLException_OpenSSL("Cannot create SSL object");
 	}
 	SSL_set_fd(_ssl, static_cast<int>(_sock));
 	if (SSL_connect(_ssl) != 1) {
@@ -711,7 +714,7 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		SSL_free(_ssl);
 		_ssl = nullptr;
 		disconnect();
-		throw nut::IOException(std::string("SSL connection failed: ") + errbuf);
+		throw nut::SSLException_OpenSSL(std::string("SSL connection failed: ") + errbuf);
 	}
 
 #elif defined(WITH_NSS)
@@ -720,24 +723,24 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 	if (!nss_initialized) {
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 		if (NSS_NoDB_Init(NULL) != SECSuccess) {
-			throw nut::IOException("NSS initialization failed");
+			throw nut::SSLException_NSS("NSS initialization failed");
 		}
 		nss_initialized = true;
 	}
 
 	PRFileDesc *model = SSL_ImportFD(NULL, PR_NewTCPSocket());
 	if (!model) {
-		throw nut::IOException("NSS: Cannot create model FD");
+		throw nut::SSLException_NSS("Cannot create model FD");
 	}
 	if (SSL_OptionSet(model, SSL_SECURITY, PR_TRUE) != SECSuccess ||
 	    SSL_OptionSet(model, SSL_HANDSHAKE_AS_CLIENT, PR_TRUE) != SECSuccess) {
 		PR_Close(model);
-		throw nut::IOException("NSS: Cannot set options on model FD");
+		throw nut::SSLException_NSS("Cannot set options on model FD");
 	}
 
 	_ssl = SSL_ImportFD(NULL, PR_ImportTCPSocket(static_cast<int>(_sock)));
 	if (!_ssl) {
-		throw nut::IOException("NSS: Cannot import socket FD");
+		throw nut::SSLException_NSS("Cannot import socket FD");
 	}
 
 	if (certverify != -1) {
@@ -755,7 +758,7 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		PR_Close(_ssl);
 		_ssl = nullptr;
 		disconnect();
-		throw nut::IOException("NSS: Handshake failed");
+		throw nut::SSLException_NSS("Handshake failed");
 	}
 #else
 	NUT_UNUSED_VARIABLE(ca_path);
@@ -764,7 +767,7 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 	NUT_UNUSED_VARIABLE(key_file);
 	if (force_ssl) {
 		disconnect();
-		throw nut::IOException("SSL support not compiled in");
+		throw nut::SSLException("SSL support not compiled in");
 	}
 #endif
 }
