@@ -569,15 +569,18 @@ get_group_id() {
     # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
 
     # Non-numeric (empty) stdout; non-successful exit code
+    # and "-1" to avoid "not a number" error messages
     case "`uname -a | tr 'A-Z' 'a-z'`" in
         *mingw*|*msys*|*win*)
-            # Windows? Avoid "not a number" error messages,
-            # common Unix groups are unlikely here...
+            log_warn "Group ID for name '${1-}' was not found; common Unix groups are unlikely on Windows"
+            echo "-1"
+            ;;
+        *)  # Packaging build roots may lack user/group databases too
+            log_warn "Group ID for name '${1-}' was not found"
             echo "-1"
             ;;
     esac
 
-    log_warn "Group ID for name '${1-}' was not found"
     return 1
 }
 
