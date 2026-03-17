@@ -70,6 +70,13 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
+#ifndef _NUTCLIENTTEST_BUILD
+# define _NUTCLIENTTEST_BUILD 1
+#endif
+
+#include "../clients/nutclient.h"
+#include "../clients/nutclientmem.h"
+
 namespace nut {
 
 class NutActiveClientTest : public CppUnit::TestFixture
@@ -125,17 +132,6 @@ public:
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION( NutActiveClientTest );
-
-} // namespace nut {}
-
-#ifndef _NUTCLIENTTEST_BUILD
-# define _NUTCLIENTTEST_BUILD 1
-#endif
-
-#include "../clients/nutclient.h"
-#include "../clients/nutclientmem.h"
-
-namespace nut {
 
 extern "C" {
 strarr stringset_to_strarr(const std::set<std::string>& strset);

@@ -613,10 +613,12 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_is_connected.$(MAN_SECTION_API) \
 	nutclient_tcp_reconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_set_timeout.$(MAN_SECTION_API) \
-	nutclient_tcp_create_client_ssl.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_caps.$(MAN_SECTION_API) \
 	nutclient_tcp_is_ssl.$(MAN_SECTION_API) \
-	nutclient_tcp_set_ssl_config.$(MAN_SECTION_API) \
+	nutclient_tcp_create_client_ssl_OpenSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_config_OpenSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_create_client_ssl_NSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_config_NSS.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_try.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_try.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_force.$(MAN_SECTION_API) \
@@ -630,7 +632,17 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_set_ssl_certfile.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certfile.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_keyfile.$(MAN_SECTION_API) \
-	nutclient_tcp_get_ssl_keyfile.$(MAN_SECTION_API)
+	nutclient_tcp_get_ssl_keyfile.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_keypass.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_keypass.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certstore_path.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certstore_path.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certstore_pass.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certstore_pass.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
 
 $(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
