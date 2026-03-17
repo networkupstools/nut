@@ -562,12 +562,19 @@ public:
 
 	virtual bool isSSL() const;
 	virtual bool getSslTry() const;
+	virtual void setSslTry(bool try_ssl);
 	virtual bool getSslForce() const;
+	virtual void setSslForce(bool force_ssl);
 	virtual int getSslCertVerify() const;
+	virtual void setSslCertVerify(int certverify);
 	virtual const std::string& getSslCAPath() const;
+	virtual void setSslCAPath(const char* ca_path);
 	virtual const std::string& getSslCAFile() const;
+	virtual void setSslCAFile(const char* ca_file);
 	virtual const std::string& getSslCertFile() const;
+	virtual void setSslCertFile(const char* cert_file);
 	virtual const std::string& getSslKeyFile() const;
+	virtual void setSslKeyFile(const char* key_file);
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
@@ -1179,12 +1186,19 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
  */
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl);
 int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl);
 int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify);
 int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_capath(NUTCLIENT_TCP_t client, const char* ca_path);
 const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_cafile(NUTCLIENT_TCP_t client, const char* ca_file);
 const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_certfile(NUTCLIENT_TCP_t client, const char* cert_file);
 const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client);
+void nutclient_tcp_set_ssl_keyfile(NUTCLIENT_TCP_t client, const char* key_file);
 const char* nutclient_tcp_get_ssl_keyfile(NUTCLIENT_TCP_t client);
 /**
  * Set the timeout value for the TCP connection.

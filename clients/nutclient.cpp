@@ -1087,9 +1087,19 @@ bool TcpClient::getSslTry() const
 	return _try_ssl;
 }
 
+void TcpClient::setSslTry(bool try_ssl)
+{
+	_try_ssl = try_ssl;
+}
+
 bool TcpClient::getSslForce() const
 {
 	return _force_ssl;
+}
+
+void TcpClient::setSslForce(bool force_ssl)
+{
+	_force_ssl = force_ssl;
 }
 
 int TcpClient::getSslCertVerify() const
@@ -1097,9 +1107,19 @@ int TcpClient::getSslCertVerify() const
 	return _certverify;
 }
 
+void TcpClient::setSslCertVerify(int certverify)
+{
+	_certverify = certverify;
+}
+
 const std::string& TcpClient::getSslCAPath() const
 {
 	return _ca_path;
+}
+
+void TcpClient::setSslCAPath(const char* ca_path)
+{
+	_ca_path = ca_path ? ca_path : "";
 }
 
 const std::string& TcpClient::getSslCAFile() const
@@ -1107,14 +1127,29 @@ const std::string& TcpClient::getSslCAFile() const
 	return _ca_file;
 }
 
+void TcpClient::setSslCAFile(const char* ca_file)
+{
+	_ca_file = ca_file ? ca_file : "";
+}
+
 const std::string& TcpClient::getSslCertFile() const
 {
 	return _cert_file;
 }
 
+void TcpClient::setSslCertFile(const char* cert_file)
+{
+	_cert_file = cert_file ? cert_file : "";
+}
+
 const std::string& TcpClient::getSslKeyFile() const
 {
 	return _key_file;
+}
+
+void TcpClient::setSslKeyFile(const char* key_file)
+{
+	_key_file = key_file ? key_file : "";
 }
 
 void TcpClient::setDebugConnect(bool d)
@@ -2310,6 +2345,18 @@ int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
+void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslTry(try_ssl ? true : false);
+		}
+	}
+}
+
 int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client)
 {
 	if(client)
@@ -2321,6 +2368,18 @@ int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client)
 		}
 	}
 	return 0;
+}
+
+void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslForce(force_ssl ? true : false);
+		}
+	}
 }
 
 int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client)
@@ -2336,6 +2395,18 @@ int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
+void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslCertVerify(certverify);
+		}
+	}
+}
+
 int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client)
 {
 	if(client)
@@ -2347,6 +2418,18 @@ int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client)
 		}
 	}
 	return -1;
+}
+
+void nutclient_tcp_set_ssl_capath(NUTCLIENT_TCP_t client, const char* ca_path)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslCAPath(ca_path);
+		}
+	}
 }
 
 const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client)
@@ -2362,6 +2445,18 @@ const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client)
 	return nullptr;
 }
 
+void nutclient_tcp_set_ssl_cafile(NUTCLIENT_TCP_t client, const char* ca_file)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslCAFile(ca_file);
+		}
+	}
+}
+
 const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client)
 {
 	if(client)
@@ -2375,6 +2470,18 @@ const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client)
 	return nullptr;
 }
 
+void nutclient_tcp_set_ssl_certfile(NUTCLIENT_TCP_t client, const char* cert_file)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslCertFile(cert_file);
+		}
+	}
+}
+
 const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client)
 {
 	if(client)
@@ -2386,6 +2493,18 @@ const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client)
 		}
 	}
 	return nullptr;
+}
+
+void nutclient_tcp_set_ssl_keyfile(NUTCLIENT_TCP_t client, const char* key_file)
+{
+	if(client)
+	{
+		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
+		if(cl)
+		{
+			cl->setSslKeyFile(key_file);
+		}
+	}
 }
 
 const char* nutclient_tcp_get_ssl_keyfile(NUTCLIENT_TCP_t client)
