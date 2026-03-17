@@ -32,7 +32,7 @@
 #ifdef WITH_OPENSSL
 #	include <openssl/err.h>
 #	include <openssl/ssl.h>
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
+#elif defined(WITH_NSS) /* not WITH_OPENSSL */
 #	include <nss.h>
 #	include <ssl.h>
 #endif  /* WITH_OPENSSL | WITH_NSS */

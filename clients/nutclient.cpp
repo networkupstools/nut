@@ -47,6 +47,15 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef WITH_NSS
+# include <prerror.h>
+# include <prinit.h>
+# include <pk11func.h>
+# include <prtypes.h>
+# include <ssl.h>
+# include <private/pprio.h>
+#endif	/* WITH_NSS */
+
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
@@ -252,12 +261,32 @@ private:
 #elif defined(WITH_NSS)
 	PRFileDesc* _ssl;
 #endif
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
-	int _certverify_cache;
-#endif
 	bool _debugConnect;
 	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
+	std::string _host;
+	uint16_t _port;
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	int _certverify;
+	std::string _ca_path;
+	std::string _ca_file;
+	std::string _cert_file;
+	std::string _key_file;
+#endif
+
+#if defined(WITH_NSS)
+	/* Callbacks, syntax dictated by NSS */
+	static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, void *arg);
+	static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
+		PRBool checksig, PRBool isServer);
+	static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg,
+		PRFileDesc *fd, PRBool checksig, PRBool isServer);
+	static SECStatus BadCertHandler(void *arg, PRFileDesc *fd);
+	static SECStatus GetClientAuthData(void *arg, PRFileDesc *fd,
+		CERTDistNames *caNames, CERTCertificate **pRetCert,
+		SECKEYPrivateKey **pRetKey);
+	static void HandshakeCallback(PRFileDesc *fd, void *arg);
+#endif
 };
 
 #ifdef WITH_OPENSSL
@@ -265,17 +294,43 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 #endif
 
 #ifdef WITH_NSS
-static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
+static void nss_error(const char* funcname)
+{
+	char buffer[256];
+	PRInt32 length = PR_GetErrorText(buffer);
+	if (length > 0 && length < 256) {
+		std::cerr << "nss_error " << static_cast<long>(PR_GetError()) << " in " << funcname << " : " << buffer << std::endl;
+	} else {
+		std::cerr << "nss_error " << static_cast<long>(PR_GetError()) << " in " << funcname << std::endl;
+	}
+}
+
+/*static*/ char *Socket::nss_password_callback(PK11SlotInfo *slot, PRBool retry,
+		void *arg)
+{
+	NUT_UNUSED_VARIABLE(slot);
+	NUT_UNUSED_VARIABLE(retry);
+	Socket* sock = static_cast<Socket*>(arg);
+
+	if (!sock || sock->_key_file.empty()) {
+		return nullptr;
+	}
+
+	return PL_strdup(sock->_key_file.c_str());
+}
+
+/*static*/ SECStatus Socket::AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
+	//Socket *sock = static_cast<Socket*>(SSL_RevealPinArg(fd));
 	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
 	if (status != SECSuccess) {
-		/* TODO: log error like nss_error in upsclient.c */
+		nss_error("SSL_AuthCertificate");
 	}
 	return status;
 }
 
-static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd,
+/*static*/ SECStatus Socket::AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
 	NUT_UNUSED_VARIABLE(arg);
@@ -286,23 +341,70 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 	return SECSuccess;
 }
 
-static SECStatus BadCertHandler(void *arg, PRFileDesc *fd)
+/*static*/ SECStatus Socket::BadCertHandler(void *arg, PRFileDesc *fd)
 {
-	int certverify = *static_cast<int*>(arg);
+	Socket* sock = static_cast<Socket*>(arg);
 	NUT_UNUSED_VARIABLE(fd);
 
-	return certverify == 0 ? SECSuccess : SECFailure;
+	if (sock->_certverify == 0) {
+		return SECSuccess;
+	}
+
+	return SECFailure;
 }
-#endif
+
+/*static*/ SECStatus Socket::GetClientAuthData(void *arg, PRFileDesc *fd,
+	CERTDistNames *caNames, CERTCertificate **pRetCert, SECKEYPrivateKey **pRetKey)
+{
+	Socket* sock = static_cast<Socket*>(arg);
+	CERTCertificate *cert;
+	SECKEYPrivateKey *privKey;
+	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
+
+	if (status == SECFailure) {
+		if (sock && !sock->_cert_file.empty()) {
+			cert = PK11_FindCertFromNickname(sock->_cert_file.c_str(), nullptr);
+			if (cert == nullptr) {
+				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
+			} else {
+				privKey = PK11_FindKeyByAnyCert(cert, nullptr);
+				if (privKey == nullptr) {
+					nss_error("GetClientAuthData / PK11_FindKeyByAnyCert");
+					CERT_DestroyCertificate(cert);
+				} else {
+					*pRetCert = cert;
+					*pRetKey = privKey;
+					status = SECSuccess;
+				}
+			}
+		}
+	}
+
+	return status;
+}
+
+/*static*/ void Socket::HandshakeCallback(PRFileDesc *fd, void *arg)
+{
+	NUT_UNUSED_VARIABLE(fd);
+	Socket* sock = static_cast<Socket*>(arg);
+
+	if (sock && sock->_debugConnect) {
+		std::cerr << "SSL handshake done successfully with server " << sock->_host << std::endl;
+	}
+}
+#endif	/* WITH_NSS */
 
 Socket::Socket():
 _sock(INVALID_SOCKET),
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 _ssl(nullptr),
-_certverify_cache(-1),
 #endif
 _debugConnect(false),
-_tv()
+_tv(),
+_port(NUT_PORT)
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+,_certverify(-1)
+#endif
 {
 	_tv.tv_sec = -1;
 	_tv.tv_usec = 0;
@@ -332,6 +434,9 @@ void Socket::connect(const std::string& host, uint16_t port)
 	fd_set 			wfds;
 	int			error;
 	socklen_t		error_size;
+
+	_host = host;
+	_port = port;
 
 #ifndef WIN32
 	long			fd_flags;
@@ -669,9 +774,24 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		return;
 	}
 
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* These need to be saved at least to handle NSS callbacks
+	 * (to see if errors are fatal or ignorable)
+	 */
+	_ca_path = ca_path;
+	_ca_file = ca_file;
+	_cert_file = cert_file;
+	_key_file = key_file;
+	_certverify = certverify;
+#else
+	NUT_UNUSED_VARIABLE(ca_path);
+	NUT_UNUSED_VARIABLE(ca_file);
+	NUT_UNUSED_VARIABLE(cert_file);
+	NUT_UNUSED_VARIABLE(key_file);
+	NUT_UNUSED_VARIABLE(certverify);
+#endif
+
 #ifdef WITH_OPENSSL
-	/* Private field does not see action here yet */
-	NUT_UNUSED_VARIABLE(_certverify_cache);
 	if (!_ssl_ctx) {
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 		SSL_load_error_strings();
@@ -685,19 +805,19 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		}
 	}
 
-	if (!ca_file.empty() || !ca_path.empty()) {
-		if (SSL_CTX_load_verify_locations(_ssl_ctx, ca_file.empty() ? nullptr : ca_file.c_str(), ca_path.empty() ? nullptr : ca_path.c_str()) != 1) {
+	if (!_ca_file.empty() || !_ca_path.empty()) {
+		if (SSL_CTX_load_verify_locations(_ssl_ctx, _ca_file.empty() ? nullptr : _ca_file.c_str(), _ca_path.empty() ? nullptr : _ca_path.c_str()) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load CA verify locations");
 		}
 	}
-	if (certverify != -1) {
-		SSL_CTX_set_verify(_ssl_ctx, certverify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, nullptr);
+	if (_certverify != -1) {
+		SSL_CTX_set_verify(_ssl_ctx, _certverify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, nullptr);
 	}
-	if (!cert_file.empty()) {
-		if (SSL_CTX_use_certificate_chain_file(_ssl_ctx, cert_file.c_str()) != 1) {
+	if (!_cert_file.empty()) {
+		if (SSL_CTX_use_certificate_chain_file(_ssl_ctx, _cert_file.c_str()) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load client certificate file");
 		}
-		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, key_file.empty() ? cert_file.c_str() : key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
+		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, _key_file.empty() ? _cert_file.c_str() : _key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load client private key file");
 		}
 	}
@@ -720,37 +840,59 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 #elif defined(WITH_NSS)
 	/* NSS implementation following upsclient.c logic */
 	static bool nss_initialized = false;
+
 	if (!nss_initialized) {
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-		if (NSS_NoDB_Init(NULL) != SECSuccess) {
+		PK11_SetPasswordFunc(nss_password_callback);
+
+		SECStatus status;
+		if (!_ca_path.empty()) {
+			status = NSS_Init(_ca_path.c_str());
+		} else {
+			status = NSS_NoDB_Init(NULL);
+		}
+
+		if (status != SECSuccess) {
 			throw nut::SSLException_NSS("NSS initialization failed");
 		}
 		nss_initialized = true;
 	}
 
-	PRFileDesc *model = SSL_ImportFD(NULL, PR_NewTCPSocket());
-	if (!model) {
-		throw nut::SSLException_NSS("Cannot create model FD");
-	}
-	if (SSL_OptionSet(model, SSL_SECURITY, PR_TRUE) != SECSuccess ||
-	    SSL_OptionSet(model, SSL_HANDSHAKE_AS_CLIENT, PR_TRUE) != SECSuccess) {
-		PR_Close(model);
-		throw nut::SSLException_NSS("Cannot set options on model FD");
-	}
-
-	_ssl = SSL_ImportFD(NULL, PR_ImportTCPSocket(static_cast<int>(_sock)));
-	if (!_ssl) {
+	PRFileDesc *socket = PR_ImportTCPSocket(static_cast<int>(_sock));
+	if (!socket) {
 		throw nut::SSLException_NSS("Cannot import socket FD");
 	}
 
+	_ssl = SSL_ImportFD(NULL, socket);
+	if (!_ssl) {
+		throw nut::SSLException_NSS("Cannot import SSL FD");
+	}
+
+	if (SSL_SetPKCS11PinArg(_ssl, this) != SECSuccess) {
+		nss_error("SSL_SetPKCS11PinArg");
+	}
+
 	if (certverify != -1) {
-		_certverify_cache = certverify;
 		if (certverify) {
 			SSL_AuthCertificateHook(_ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 		} else {
 			SSL_AuthCertificateHook(_ssl, (SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
 		}
-		SSL_BadCertHook(_ssl, (SSLBadCertHandler)BadCertHandler, &_certverify_cache);
+	}
+	SSL_BadCertHook(_ssl, (SSLBadCertHandler)BadCertHandler, this);
+
+	if (SSL_GetClientAuthDataHook(_ssl, (SSLGetClientAuthData)GetClientAuthData, this) != SECSuccess) {
+		nss_error("SSL_GetClientAuthDataHook");
+	}
+
+	if (SSL_HandshakeCallback(_ssl, (SSLHandshakeCallback)HandshakeCallback, this) != SECSuccess) {
+		nss_error("SSL_HandshakeCallback");
+	}
+
+	if (!_cert_file.empty()) {
+		SSL_SetURL(_ssl, _cert_file.c_str());
+	} else {
+		SSL_SetURL(_ssl, _host.c_str());
 	}
 
 	if (SSL_ResetHandshake(_ssl, PR_FALSE) != SECSuccess ||
@@ -761,10 +903,6 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		throw nut::SSLException_NSS("Handshake failed");
 	}
 #else
-	NUT_UNUSED_VARIABLE(ca_path);
-	NUT_UNUSED_VARIABLE(ca_file);
-	NUT_UNUSED_VARIABLE(cert_file);
-	NUT_UNUSED_VARIABLE(key_file);
 	if (force_ssl) {
 		disconnect();
 		throw nut::SSLException("SSL support not compiled in");

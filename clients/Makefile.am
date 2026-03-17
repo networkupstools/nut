@@ -16,6 +16,9 @@ CLEANFILES =
 # optionally includes "common.h" with the NUT build setup - and this option
 # was never triggered in fact, not until pushed through command line like this:
 AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_builddir)/include -I$(top_srcdir)/include
+if WITH_SSL
+  AM_CXXFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \

@@ -23,6 +23,9 @@ CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+if WITH_SSL
+  AM_CXXFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
 
 # Compiler flags for cppunit tests
 CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
