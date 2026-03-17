@@ -465,11 +465,8 @@ public:
 	 * Connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
-	 * \param use_ssl Use SSL/TLS for the connection.
-	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
-	 * \param certverify Whether to verify the server certificate.
 	 */
-	void connect(const std::string& host, uint16_t port = NUT_PORT, bool use_ssl = false, bool force_ssl = false, int certverify = -1);
+	void connect(const std::string& host, uint16_t port = NUT_PORT);
 
 	/**
 	 * Connect to the server.

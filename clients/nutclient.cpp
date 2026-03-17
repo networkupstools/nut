@@ -1057,13 +1057,10 @@ void TcpClient::setSSLConfig(bool force_ssl, int certverify, const char *ca_path
 	if (key_file) _key_file = key_file;
 }
 
-void TcpClient::connect(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl, int certverify)
+void TcpClient::connect(const std::string& host, uint16_t port)
 {
 	_host = host;
 	_port = port;
-	_use_ssl = use_ssl;
-	_force_ssl = force_ssl;
-	_certverify = certverify;
 	connect();
 }
 

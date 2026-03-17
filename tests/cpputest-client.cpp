@@ -224,7 +224,7 @@ void NutActiveClientTest::test_query_ver() {
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL, env_NUT_FORCESSL);
+	c.connect("localhost", env_NUT_PORT);
 	std::string s;
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
