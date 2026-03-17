@@ -1,6 +1,12 @@
 /* nutclient.h - definitions for nutclient C/C++ library
 
-   Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2026 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -509,6 +515,13 @@ public:
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
 	virtual bool isSSL() const;
+	virtual bool getSslUse() const;
+	virtual bool getSslForce() const;
+	virtual int getSslCertVerify() const;
+	virtual const std::string& getSslCAPath() const;
+	virtual const std::string& getSslCAFile() const;
+	virtual const std::string& getSslCertFile() const;
+	virtual const std::string& getSslKeyFile() const;
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
@@ -1117,6 +1130,13 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
  */
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
+int nutclient_tcp_get_ssl_use(NUTCLIENT_TCP_t client);
+int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
+int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client);
+const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client);
+const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client);
+const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client);
+const char* nutclient_tcp_get_ssl_keyfile(NUTCLIENT_TCP_t client);
 /**
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.

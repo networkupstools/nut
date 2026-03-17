@@ -226,10 +226,21 @@ void NutActiveClientTest::test_query_ver() {
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
 		<< c.getHost() << ':' << c.getPort() << std::endl;
+	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
+		<< " NUT_FORCESSL:" << c.getSslForce()
+		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
+		<< " NUT_CAPATH:" << c.getSslCAPath()
+		<< " NUT_CAFILE:" << c.getSslCAFile()
+		<< " NUT_CERTFILE:" << c.getSslCertFile()
+		<< " NUT_KEYFILE:" << c.getSslKeyFile()
+		<< std::endl;
 
 	CPPUNIT_ASSERT_MESSAGE(
 		"TcpClient is not connected after constructor",
 		c.isConnected());
+
+	std::cerr << "[D] Channel protected by STARTTLS? "
+		<< (c.isSSL() ? "true" : "false") << std::endl;
 
 	/* Note: generic client code can not use protected methods
 	 * like low-level sendQuery(), list(), get() and some more,
