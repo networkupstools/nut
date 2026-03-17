@@ -1063,6 +1063,12 @@ void TcpClient::connect(const std::string& host, uint16_t port)
 	connect();
 }
 
+void TcpClient::connect(const std::string& host, uint16_t port, bool try_ssl)
+{
+	_try_ssl = try_ssl;
+	connect(host, port);
+}
+
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);

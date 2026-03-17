@@ -473,6 +473,15 @@ public:
 	void connect(const std::string& host, uint16_t port = NUT_PORT);
 
 	/**
+	 * Connect it to the specified server with explicit toggle
+	 * to allow (or not) use of SSL/TLS.
+	 * \param host Server host name.
+	 * \param port Server port.
+	 * \param try_ssl Use SSL/TLS for the connection (may be overridden by force_ssl if set to true).
+	 */
+	void connect(const std::string& host, uint16_t port, bool try_ssl);
+
+	/**
 	 * Connect to the server.
 	 * Host name and ports must have already set (useful for reconnection).
 	 */
