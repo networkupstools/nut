@@ -249,6 +249,9 @@ private:
 #elif defined(WITH_NSS)
 	PRFileDesc* _ssl;
 #endif
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	int _certverify_cache;
+#endif
 	bool _debugConnect;
 	struct timeval	_tv;
 	std::string _buffer; /* Received buffer, string because data should be text only. */
@@ -258,10 +261,42 @@ private:
 SSL_CTX* Socket::_ssl_ctx = nullptr;
 #endif
 
+#ifdef WITH_NSS
+static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
+	PRBool checksig, PRBool isServer)
+{
+	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	if (status != SECSuccess) {
+		/* TODO: log error like nss_error in upsclient.c */
+	}
+	return status;
+}
+
+static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd,
+	PRBool checksig, PRBool isServer)
+{
+	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(fd);
+	NUT_UNUSED_VARIABLE(checksig);
+	NUT_UNUSED_VARIABLE(isServer);
+
+	return SECSuccess;
+}
+
+static SECStatus BadCertHandler(void *arg, PRFileDesc *fd)
+{
+	int certverify = *static_cast<int*>(arg);
+	NUT_UNUSED_VARIABLE(fd);
+
+	return certverify == 0 ? SECSuccess : SECFailure;
+}
+#endif
+
 Socket::Socket():
 _sock(INVALID_SOCKET),
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 _ssl(nullptr),
+_certverify_cache(-1),
 #endif
 _debugConnect(false),
 _tv()
@@ -637,6 +672,8 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 	}
 
 #ifdef WITH_OPENSSL
+	/* Private field does not see action here yet */
+	NUT_UNUSED_VARIABLE(_certverify_cache);
 	if (!_ssl_ctx) {
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 		SSL_load_error_strings();
@@ -703,10 +740,19 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		throw nut::IOException("NSS: Cannot set options on model FD");
 	}
 
-	_ssl = SSL_ImportFD(model, PR_ImportTCPSocket(static_cast<int>(_sock)));
-	PR_Close(model);
+	_ssl = SSL_ImportFD(NULL, PR_ImportTCPSocket(static_cast<int>(_sock)));
 	if (!_ssl) {
 		throw nut::IOException("NSS: Cannot import socket FD");
+	}
+
+	if (certverify != -1) {
+		_certverify_cache = certverify;
+		if (certverify) {
+			SSL_AuthCertificateHook(_ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
+		} else {
+			SSL_AuthCertificateHook(_ssl, (SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
+		}
+		SSL_BadCertHook(_ssl, (SSLBadCertHandler)BadCertHandler, &_certverify_cache);
 	}
 
 	if (SSL_ResetHandshake(_ssl, PR_FALSE) != SECSuccess ||
