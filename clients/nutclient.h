@@ -452,13 +452,14 @@ public:
 
 	/**
 	 * Set SSL configuration.
+	 * \param force_ssl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
 	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 */
-	void setSSLConfig(int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
+	void setSSLConfig(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 
 	/**
 	 * Connect it to the specified server.
@@ -1148,7 +1149,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl, int certverify);
-void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
+void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.

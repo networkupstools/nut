@@ -1047,8 +1047,9 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
-void TcpClient::setSSLConfig(int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
+void TcpClient::setSSLConfig(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
 {
+	_force_ssl = force_ssl;
 	_certverify = certverify;
 	if (ca_path) _ca_path = ca_path;
 	if (ca_file) _ca_file = ca_file;
@@ -2230,14 +2231,14 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port,
 	}
 }
 
-void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
+void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSSLConfig(certverify, ca_path, ca_file, cert_file, key_file);
+			cl->setSSLConfig((force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file);
 		}
 	}
 }

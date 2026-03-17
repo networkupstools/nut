@@ -210,12 +210,15 @@ void NutActiveClientTest::tearDown()
 void NutActiveClientTest::test_query_ver() {
 	nut::TcpClient c;
 	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
 	 || !env_NUT_CAFILE.empty()
 	 || !env_NUT_CAPATH.empty()
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
 	) {
-		c.setSSLConfig(env_NUT_CERTVERIFY,
+		c.setSSLConfig(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
 			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
