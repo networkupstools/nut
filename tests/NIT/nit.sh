@@ -2313,8 +2313,9 @@ isTestablePython() {
 }
 
 # Executed in subshell context of test cases below
+# Same vars are also used for C++ (cppnit) tests
 setenv_ssl_python() {
-	# Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
+    # Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
     # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
     # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
     # NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'true') == 'true')
@@ -2439,7 +2440,8 @@ testcase_sandbox_cppnit_without_creds() {
     log_info "[testcase_sandbox_cppnit_without_creds] Call libnutclient test suite: cppnit without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        "${TOP_BUILDDIR}/tests/cppnit"
+         setenv_ssl_python
+         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2467,6 +2469,7 @@ testcase_sandbox_cppnit_simple_admin() {
         fi
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
+        setenv_ssl_python
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
@@ -2489,6 +2492,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_python
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
@@ -2511,6 +2515,7 @@ testcase_sandbox_cppnit_upsmon_master() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_python
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
