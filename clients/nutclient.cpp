@@ -652,11 +652,6 @@ bool Socket::isSSL()const
 
 void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file)
 {
-	NUT_UNUSED_VARIABLE(ca_path);
-	NUT_UNUSED_VARIABLE(ca_file);
-	NUT_UNUSED_VARIABLE(cert_file);
-	NUT_UNUSED_VARIABLE(key_file);
-
 	if (!isConnected()) {
 		throw nut::NotConnectedException();
 	}
@@ -763,6 +758,10 @@ void Socket::startTLS(bool force_ssl, int certverify, const std::string& ca_path
 		throw nut::IOException("NSS: Handshake failed");
 	}
 #else
+	NUT_UNUSED_VARIABLE(ca_path);
+	NUT_UNUSED_VARIABLE(ca_file);
+	NUT_UNUSED_VARIABLE(cert_file);
+	NUT_UNUSED_VARIABLE(key_file);
 	if (force_ssl) {
 		disconnect();
 		throw nut::IOException("SSL support not compiled in");
