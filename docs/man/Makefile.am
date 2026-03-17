@@ -614,6 +614,7 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_reconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_set_timeout.$(MAN_SECTION_API) \
 	nutclient_tcp_create_client_ssl.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_caps.$(MAN_SECTION_API) \
 	nutclient_tcp_is_ssl.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_config.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_try.$(MAN_SECTION_API) \

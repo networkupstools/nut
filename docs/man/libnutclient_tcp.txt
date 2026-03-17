@@ -7,7 +7,8 @@ NAME
 libnutclient_tcp, nutclient_tcp_create_client, nutclient_tcp_is_connected,
 nutclient_tcp_disconnect, nutclient_tcp_reconnect,
 nutclient_tcp_set_timeout, nutclient_tcp_get_timeout,
-nutclient_tcp_create_client_ssl, nutclient_tcp_is_ssl,
+nutclient_tcp_get_ssl_caps, nutclient_tcp_is_ssl,
+nutclient_tcp_create_client_ssl,
 nutclient_tcp_set_ssl_config,
 nutclient_tcp_set_ssl_try,
 nutclient_tcp_get_ssl_try,
@@ -64,6 +65,12 @@ SYNOPSIS
 		const char *cert_file, const char *key_file);
 
 	int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
+
+	/* Capabilities of this build, bitmask: */
+	#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+	#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
+	#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+	int nutclient_tcp_get_ssl_caps(void);
 
 	/* Individual SSL option getters/setters: */
 

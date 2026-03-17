@@ -1194,6 +1194,23 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
+/* Return a bitmap of the abilities for the current libupsclient build */
+/*static*/ int TcpClient::getSslCaps(void)
+{
+	int	ret = UPSCLI_SSL_CAPS_NONE;
+
+#ifdef WITH_SSL
+# ifdef WITH_OPENSSL
+	ret |= UPSCLI_SSL_CAPS_OPENSSL;
+# endif
+# ifdef WITH_NSS
+	ret |= UPSCLI_SSL_CAPS_NSS;
+# endif
+#endif	/* WITH_SSL */
+
+	return ret;
+}
+
 void TcpClient::setSSLConfig(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
 {
 	_force_ssl = force_ssl;
@@ -2429,6 +2446,8 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 	}
 
 }
+
+int nutclient_tcp_get_ssl_caps(void) { return nut::TcpClient::getSslCaps(); }
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file)
 {

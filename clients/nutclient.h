@@ -58,6 +58,11 @@
 # define NUT_PORT 3493
 #endif
 
+#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+
+
 namespace nut
 {
 
@@ -587,6 +592,12 @@ public:
 	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
+
+	/**
+	 * Return a bitmask of SSL capabilities supported by this build of
+	 * libnutclient, see UPSCLI_SSL_CAPS_NONE, UPSCLI_SSL_CAPS_OPENSSL,
+	 * UPSCLI_SSL_CAPS_NSS. */
+	static int getSslCaps();
 
 	virtual bool isSSL() const;
 	virtual bool getSslTry() const;
@@ -1197,6 +1208,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
+int nutclient_tcp_get_ssl_caps(void);
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 /**
