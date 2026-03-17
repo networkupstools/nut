@@ -446,8 +446,12 @@ public:
 	 * \param try_ssl Try to use SSL/TLS for the connection.
 	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
 	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 */
-	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool try_ssl = false, bool force_ssl = false, int certverify = -1);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool try_ssl = false, bool force_ssl = false, int certverify = -1, const char *ca_path = nullptr, const char *ca_file = nullptr, const char *cert_file = nullptr, const char *key_file = nullptr);
 	~TcpClient() override;
 
 	/**
@@ -1145,7 +1149,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify);
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 /**
  * Test if a nut TCP client is connected.
