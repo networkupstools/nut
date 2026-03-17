@@ -100,9 +100,11 @@ private:
 	std::string env_NUT_CAPATH = "";
 	std::string env_NUT_CERTFILE = "";
 	std::string env_NUT_KEYFILE = "";
+	std::string env_NUT_KEYPASS = "";
 
 public:
 	void setUp() override;
+	void setupClientSSL(nut::TcpClient &c);
 	void tearDown() override;
 
 	void test_query_ver();
@@ -201,6 +203,46 @@ void NutActiveClientTest::setUp()
 	if (s) {
 		env_NUT_KEYFILE = s;
 	}
+
+	s = std::getenv("NUT_KEYPASS");
+	if (s) {
+		env_NUT_KEYPASS = s;
+	}
+}
+
+void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
+{
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+		c.setSSLConfig_OpenSSL(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
+			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
+			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
+			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
+			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str(),
+			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str()
+			);
+	}
+	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
+		<< " NUT_SSL(try):" << c.getSslTry()
+		<< " NUT_FORCESSL:" << c.getSslForce()
+		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
+		<< " NUT_CAPATH:" << c.getSslCAPath()
+		<< " NUT_CAFILE:" << c.getSslCAFile()
+		// OpenSSL-only:
+		<< " NUT_CERTFILE:" << c.getSslCertFile()
+		<< " NUT_KEYFILE:" << c.getSslKeyFile()
+		// NSS-only:
+//		<< " NUT_CERTPATH:" << c.getSslCertPath()
+//		<< " NUT_CERTIDENT_NAME:" << c.getSslCertIdentName()
+//		<< " NUT_CERTIDENT_PASS:" << c.getSslCertIdentPass()
+		<< std::endl;
 }
 
 void NutActiveClientTest::tearDown()
@@ -209,30 +251,7 @@ void NutActiveClientTest::tearDown()
 
 void NutActiveClientTest::test_query_ver() {
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1
-	 || env_NUT_FORCESSL
-	 || !env_NUT_CAFILE.empty()
-	 || !env_NUT_CAPATH.empty()
-	 || !env_NUT_CERTFILE.empty()
-	 || !env_NUT_KEYFILE.empty()
-	) {
-		c.setSSLConfig(
-			env_NUT_FORCESSL,
-			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
-	}
-	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
-		<< " NUT_SSL(try):" << c.getSslTry()
-		<< " NUT_FORCESSL:" << c.getSslForce()
-		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
-		<< " NUT_CAPATH:" << c.getSslCAPath()
-		<< " NUT_CAFILE:" << c.getSslCAFile()
-		<< " NUT_CERTFILE:" << c.getSslCertFile()
-		<< " NUT_KEYFILE:" << c.getSslKeyFile()
-		<< std::endl;
+	setupClientSSL(c);
 
 	// This can crash if the server is not running, SSL mismatch, etc.
 	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
@@ -293,21 +312,8 @@ void NutActiveClientTest::test_query_ver() {
 
 void NutActiveClientTest::test_list_ups() {
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1
-	 || env_NUT_FORCESSL
-	 || !env_NUT_CAFILE.empty()
-	 || !env_NUT_CAPATH.empty()
-	 || !env_NUT_CERTFILE.empty()
-	 || !env_NUT_KEYFILE.empty()
-	) {
-		c.setSSLConfig(
-			env_NUT_FORCESSL,
-			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
-	}
+	setupClientSSL(c);
+
 	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::set<std::string> devs;
 	bool noException = true;
@@ -341,21 +347,8 @@ void NutActiveClientTest::test_list_ups() {
 
 void NutActiveClientTest::test_list_ups_clients() {
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1
-	 || env_NUT_FORCESSL
-	 || !env_NUT_CAFILE.empty()
-	 || !env_NUT_CAPATH.empty()
-	 || !env_NUT_CERTFILE.empty()
-	 || !env_NUT_KEYFILE.empty()
-	) {
-		c.setSSLConfig(
-			env_NUT_FORCESSL,
-			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
-	}
+	setupClientSSL(c);
+
 	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::map<std::string, std::set<std::string>> deviceClients;
 	bool noException = true;
@@ -424,21 +417,8 @@ void NutActiveClientTest::test_auth_user() {
 	}
 
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1
-	 || env_NUT_FORCESSL
-	 || !env_NUT_CAFILE.empty()
-	 || !env_NUT_CAPATH.empty()
-	 || !env_NUT_CERTFILE.empty()
-	 || !env_NUT_KEYFILE.empty()
-	) {
-		c.setSSLConfig(
-			env_NUT_FORCESSL,
-			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
-	}
+	setupClientSSL(c);
+
 	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
@@ -561,21 +541,8 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1
-	 || env_NUT_FORCESSL
-	 || !env_NUT_CAFILE.empty()
-	 || !env_NUT_CAPATH.empty()
-	 || !env_NUT_CERTFILE.empty()
-	 || !env_NUT_KEYFILE.empty()
-	) {
-		c.setSSLConfig(
-			env_NUT_FORCESSL,
-			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
-	}
+	setupClientSSL(c);
+
 	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
