@@ -1022,7 +1022,7 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(NUT_PORT),
-_use_ssl(false),
+_try_ssl(false),
 _force_ssl(false),
 _certverify(-1),
 _timeout(0),
@@ -1031,15 +1031,15 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl, int certverify):
+TcpClient::TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify):
 Client(),
-_use_ssl(use_ssl),
 _force_ssl(force_ssl),
 _certverify(certverify),
+_try_ssl(try_ssl),
 _timeout(0),
 _socket(new internal::Socket)
 {
-	connect(host, port, use_ssl, force_ssl, certverify);
+	connect(host, port, try_ssl, force_ssl, certverify);
 }
 
 TcpClient::~TcpClient()
@@ -1067,7 +1067,7 @@ void TcpClient::connect(const std::string& host, uint16_t port)
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
-	if (_use_ssl || _force_ssl) {
+	if (_try_ssl || _force_ssl) {
 		_socket->startTLS(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file);
 	}
 }
@@ -1077,9 +1077,9 @@ bool TcpClient::isSSL() const
 	return _socket->isSSL();
 }
 
-bool TcpClient::getSslUse() const
+bool TcpClient::getSslTry() const
 {
-	return _use_ssl;
+	return _try_ssl;
 }
 
 bool TcpClient::getSslForce() const
@@ -2212,12 +2212,12 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl, int certverify)
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->connect(host, port, use_ssl != 0, force_ssl != 0, certverify);
+		client->connect(host, port, try_ssl != 0, force_ssl != 0, certverify);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
 	catch(nut::NutException& ex)
@@ -2304,14 +2304,14 @@ int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
-int nutclient_tcp_get_ssl_use(NUTCLIENT_TCP_t client)
+int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			return cl->getSslUse() ? 1 : 0;
+			return cl->getSslTry() ? 1 : 0;
 		}
 	}
 	return 0;

@@ -443,11 +443,11 @@ public:
 	 * Construct a nut TcpClient object then connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
-	 * \param use_ssl Use SSL/TLS for the connection.
+	 * \param try_ssl Try to use SSL/TLS for the connection.
 	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
 	 * \param certverify Whether to verify the server certificate.
 	 */
-	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool use_ssl = false, bool force_ssl = false, int certverify = -1);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool try_ssl = false, bool force_ssl = false, int certverify = -1);
 	~TcpClient() override;
 
 	/**
@@ -548,7 +548,7 @@ public:
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 
 	virtual bool isSSL() const;
-	virtual bool getSslUse() const;
+	virtual bool getSslTry() const;
 	virtual bool getSslForce() const;
 	virtual int getSslCertVerify() const;
 	virtual const std::string& getSslCAPath() const;
@@ -577,7 +577,7 @@ protected:
 private:
 	std::string _host;
 	uint16_t _port;
-	bool _use_ssl;
+	bool _try_ssl;
 	bool _force_ssl;
 	int _certverify;
 	std::string _ca_path;
@@ -1139,13 +1139,13 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * Create a client to NUTD using a TCP connection.
  * \param host Host name to connect to.
  * \param port Host port.
- * \param use_ssl Use SSL/TLS for the connection.
+ * \param try_ssl Try to use SSL/TLS for the connection.
  * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
  * \param certverify Whether to verify the server certificate.
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl, int certverify);
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify);
 void nutclient_tcp_set_ssl_config(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 /**
  * Test if a nut TCP client is connected.
@@ -1166,7 +1166,7 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
  */
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
-int nutclient_tcp_get_ssl_use(NUTCLIENT_TCP_t client);
+int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
 int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
 int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client);
 const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client);
