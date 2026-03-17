@@ -224,7 +224,7 @@ void NutActiveClientTest::test_query_ver() {
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT);
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::string s;
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
@@ -290,14 +290,22 @@ void NutActiveClientTest::test_query_ver() {
 
 void NutActiveClientTest::test_list_ups() {
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1 || !env_NUT_CAFILE.empty() || !env_NUT_CAPATH.empty() || !env_NUT_CERTFILE.empty() || !env_NUT_KEYFILE.empty()) {
-		c.setSSLConfig(env_NUT_CERTVERIFY,
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+		c.setSSLConfig(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
 			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL, env_NUT_FORCESSL);
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::set<std::string> devs;
 	bool noException = true;
 
@@ -330,14 +338,22 @@ void NutActiveClientTest::test_list_ups() {
 
 void NutActiveClientTest::test_list_ups_clients() {
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1 || !env_NUT_CAFILE.empty() || !env_NUT_CAPATH.empty() || !env_NUT_CERTFILE.empty() || !env_NUT_KEYFILE.empty()) {
-		c.setSSLConfig(env_NUT_CERTVERIFY,
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+		c.setSSLConfig(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
 			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL, env_NUT_FORCESSL);
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::map<std::string, std::set<std::string>> deviceClients;
 	bool noException = true;
 
@@ -405,14 +421,22 @@ void NutActiveClientTest::test_auth_user() {
 	}
 
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1 || !env_NUT_CAFILE.empty() || !env_NUT_CAPATH.empty() || !env_NUT_CERTFILE.empty() || !env_NUT_KEYFILE.empty()) {
-		c.setSSLConfig(env_NUT_CERTVERIFY,
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+		c.setSSLConfig(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
 			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL, env_NUT_FORCESSL);
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
 		c.authenticate(env_NUT_USER, env_NUT_PASS);
@@ -534,14 +558,22 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 
 	nut::TcpClient c;
-	if (env_NUT_CERTVERIFY != -1 || !env_NUT_CAFILE.empty() || !env_NUT_CAPATH.empty() || !env_NUT_CERTFILE.empty() || !env_NUT_KEYFILE.empty()) {
-		c.setSSLConfig(env_NUT_CERTVERIFY,
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+		c.setSSLConfig(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
 			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str());
 	}
-	c.connect("localhost", env_NUT_PORT, env_NUT_SSL, env_NUT_FORCESSL);
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
 		c.authenticate(env_NUT_USER, env_NUT_PASS);
