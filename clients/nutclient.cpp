@@ -1179,6 +1179,16 @@ _socket(new internal::Socket)
 	connect(host, port);
 }
 
+TcpClient::TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file):
+Client(),
+_try_ssl(try_ssl),
+_timeout(0),
+_socket(new internal::Socket)
+{
+	setSSLConfig(force_ssl, certverify, ca_path, ca_file, cert_file, key_file);
+	connect(host, port);
+}
+
 TcpClient::~TcpClient()
 {
 	delete _socket;
@@ -1192,6 +1202,16 @@ void TcpClient::setSSLConfig(bool force_ssl, int certverify, const char *ca_path
 	if (ca_file) _ca_file = ca_file;
 	if (cert_file) _cert_file = cert_file;
 	if (key_file) _key_file = key_file;
+}
+
+void TcpClient::setSSLConfig(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file)
+{
+	_force_ssl = force_ssl;
+	_certverify = certverify;
+	_ca_path = ca_path;
+	_ca_file = ca_file;
+	_cert_file = cert_file;
+	_key_file = key_file;
 }
 
 void TcpClient::connect(const std::string& host, uint16_t port)
@@ -1257,7 +1277,12 @@ const std::string& TcpClient::getSslCAPath() const
 
 void TcpClient::setSslCAPath(const char* ca_path)
 {
-	_ca_path = ca_path ? ca_path : "";
+	_ca_path = ca_path ? ca_path : std::string();
+}
+
+void TcpClient::setSslCAPath(const std::string& ca_path)
+{
+	_ca_path = ca_path;
 }
 
 const std::string& TcpClient::getSslCAFile() const
@@ -1267,7 +1292,12 @@ const std::string& TcpClient::getSslCAFile() const
 
 void TcpClient::setSslCAFile(const char* ca_file)
 {
-	_ca_file = ca_file ? ca_file : "";
+	_ca_file = ca_file ? ca_file : std::string();
+}
+
+void TcpClient::setSslCAFile(const std::string& ca_file)
+{
+	_ca_file = ca_file;
 }
 
 const std::string& TcpClient::getSslCertFile() const
@@ -1277,7 +1307,12 @@ const std::string& TcpClient::getSslCertFile() const
 
 void TcpClient::setSslCertFile(const char* cert_file)
 {
-	_cert_file = cert_file ? cert_file : "";
+	_cert_file = cert_file ? cert_file : std::string();
+}
+
+void TcpClient::setSslCertFile(const std::string& cert_file)
+{
+	_cert_file = cert_file;
 }
 
 const std::string& TcpClient::getSslKeyFile() const
@@ -1287,7 +1322,12 @@ const std::string& TcpClient::getSslKeyFile() const
 
 void TcpClient::setSslKeyFile(const char* key_file)
 {
-	_key_file = key_file ? key_file : "";
+	_key_file = key_file ? key_file : std::string();
+}
+
+void TcpClient::setSslKeyFile(const std::string& key_file)
+{
+	_key_file = key_file;
 }
 
 void TcpClient::setDebugConnect(bool d)

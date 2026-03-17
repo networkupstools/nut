@@ -440,7 +440,8 @@ public:
 	TcpClient();
 
 	/**
-	 * Construct a nut TcpClient object then connect it to the specified server.
+	 * Construct a nut TcpClient object then connect it to the specified server
+	 * (with C-style string arguments for SSL-related file paths).
 	 * \param host Server host name.
 	 * \param port Server port.
 	 * \param try_ssl Try to use SSL/TLS for the connection.
@@ -452,7 +453,34 @@ public:
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 */
 	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool try_ssl = false, bool force_ssl = false, int certverify = -1, const char *ca_path = nullptr, const char *ca_file = nullptr, const char *cert_file = nullptr, const char *key_file = nullptr);
+
+	/**
+	 * Construct a nut TcpClient object then connect it to the specified server.
+	 * \param host Server host name.
+	 * \param port Server port.
+	 * \param try_ssl Try to use SSL/TLS for the connection.
+	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 */
+	TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file);
+
 	~TcpClient() override;
+
+	/**
+	 * Set SSL configuration
+	 * (with C-style string arguments for SSL-related file paths).
+	 * \param force_ssl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 */
+	void setSSLConfig(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
 
 	/**
 	 * Set SSL configuration.
@@ -463,7 +491,7 @@ public:
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 */
-	void setSSLConfig(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file);
+	void setSSLConfig(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file);
 
 	/**
 	 * Connect it to the specified server.
@@ -569,12 +597,16 @@ public:
 	virtual void setSslCertVerify(int certverify);
 	virtual const std::string& getSslCAPath() const;
 	virtual void setSslCAPath(const char* ca_path);
+	virtual void setSslCAPath(const std::string& ca_path);
 	virtual const std::string& getSslCAFile() const;
 	virtual void setSslCAFile(const char* ca_file);
+	virtual void setSslCAFile(const std::string& ca_file);
 	virtual const std::string& getSslCertFile() const;
 	virtual void setSslCertFile(const char* cert_file);
+	virtual void setSslCertFile(const std::string& cert_file);
 	virtual const std::string& getSslKeyFile() const;
 	virtual void setSslKeyFile(const char* key_file);
+	virtual void setSslKeyFile(const std::string& key_file);
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
