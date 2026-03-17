@@ -983,15 +983,15 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl):
+TcpClient::TcpClient(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl, int certverify):
 Client(),
 _use_ssl(use_ssl),
 _force_ssl(force_ssl),
-_certverify(-1),
+_certverify(certverify),
 _timeout(0),
 _socket(new internal::Socket)
 {
-	connect(host, port, use_ssl, force_ssl);
+	connect(host, port, use_ssl, force_ssl, certverify);
 }
 
 TcpClient::~TcpClient()
@@ -1008,12 +1008,13 @@ void TcpClient::setSSLConfig(int certverify, const char *ca_path, const char *ca
 	if (key_file) _key_file = key_file;
 }
 
-void TcpClient::connect(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl)
+void TcpClient::connect(const std::string& host, uint16_t port, bool use_ssl, bool force_ssl, int certverify)
 {
 	_host = host;
 	_port = port;
 	_use_ssl = use_ssl;
 	_force_ssl = force_ssl;
+	_certverify = certverify;
 	connect();
 }
 
@@ -2165,12 +2166,12 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl)
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl(const char* host, uint16_t port, int use_ssl, int force_ssl, int certverify)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->connect(host, port, use_ssl != 0, force_ssl != 0);
+		client->connect(host, port, use_ssl != 0, force_ssl != 0, certverify);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
 	catch(nut::NutException& ex)
