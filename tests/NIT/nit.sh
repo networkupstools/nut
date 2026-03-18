@@ -910,8 +910,14 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Generate an AES encrypted private key:
                         openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096
                         # Generate a certificate for CA using that key:
+                        cat > rootca.v3.ext << EOF
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints=critical,CA:TRUE
+keyUsage=critical,digitalSignature,cRLSign,keyCertSign
+subjectKeyIdentifier=hash
+EOF
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" -extfile rootca.v3.ext
                         ;;
                 esac
 
