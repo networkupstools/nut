@@ -2267,17 +2267,17 @@ setenv_ssl_python() {
             log_info "Adding client-side SSL config to python env to talk to our ${WITH_SSL_CLIENT}-capable upsd"
 
             NUT_SSL=true
-            NUT_FORCESSL=true
+            NUT_FORCESSL=1
             export NUT_SSL NUT_FORCESSL
 
             if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
                 if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
                     NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
-                    NUT_CERTVERIFY=true
+                    NUT_CERTVERIFY=1
                     export NUT_CAPATH NUT_CERTVERIFY
                 else if test -s "${TESTCERT_PATH_ROOTCA}"/rootca.pem ; then
                     NUT_CAFILE="${TESTCERT_PATH_ROOTCA}"/rootca.pem
-                    NUT_CERTVERIFY=true
+                    NUT_CERTVERIFY=1
                     export NUT_CAFILE NUT_CERTVERIFY
                 fi ; fi
             fi
