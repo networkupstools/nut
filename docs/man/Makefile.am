@@ -644,8 +644,16 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
 
+# There are currently so many page aliases that some asciidoc
+# versions do not populate more than ~8 of these files, either
+# touching empty files or none at all (valid creations start
+# with first mentions in the NAME section).
 $(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
-	touch $@
+	@if [ x"`cat '$@'`" != x ] 2>/dev/null ; then \
+		touch '$@' ; \
+	 else \
+		cat nutclient_tcp_create_client.$(MAN_SECTION_API) > '$@' ; \
+	 fi
 
 LIBNUTCLIENT_GENERAL_DEPS = \
 	nutclient_destroy.$(MAN_SECTION_API)
