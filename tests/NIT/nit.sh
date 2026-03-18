@@ -876,6 +876,12 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
             fi
             set -e
 
+            # Be sure to avoid confusion with earlier/aborted tests!
+            # With a failsafe against wiping the system ;)
+            case "${TESTCERT_PATH_BASE-}" in
+                *cert) rm -rf "${TESTCERT_PATH_BASE}" || true ;;
+                *) log_warn "TESTCERT_PATH_BASE seems wrong: '${TESTCERT_PATH_BASE}'" ;;
+            esac
             mkdir -p "${TESTCERT_PATH_ROOTCA}"
             (   cd "${TESTCERT_PATH_ROOTCA}"
                 log_info "SSL: Preparing test Root CA..."
