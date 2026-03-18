@@ -2845,18 +2845,18 @@ NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation 
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
+   if test "${nut_with_nss}" = "yes" || test "${nut_with_ssl}" = "nss" ; then
       NUT_CHECK_LIBNSS
       if test "${nut_have_libnss}" != "yes"; then
          AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
       fi
-   elif test "${nut_with_openssl}" = "yes"; then
+   elif test "${nut_with_openssl}" = "yes" || test "${nut_with_ssl}" = "openssl" ; then
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
          AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
       fi
    else
-      dnl Prefer OpenSSL over NSS otherwise
+      dnl e.g. "auto" or "yes": want *some* SSL, prefer OpenSSL over NSS otherwise
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
          NUT_CHECK_LIBNSS
