@@ -2279,7 +2279,7 @@ setenv_ssl_python() {
     case "${WITH_SSL_SERVER}" in
         none) return 0;;
         OpenSSL|NSS)
-            log_info "Adding client-side SSL config to python env to talk to our ${WITH_SSL_CLIENT}-capable upsd"
+            log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
             NUT_SSL=true
             NUT_FORCESSL=1
