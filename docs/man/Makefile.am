@@ -606,7 +606,8 @@ LIBNUTCLIENT_MISC_DEPS = \
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_TCP_DEPS = \
+# Asciidoc seems to reliably support up to 8 first aliases
+LIBNUTCLIENT_TCP_DEPS_FIRST = \
 	nutclient_tcp_create_client.$(MAN_SECTION_API) \
 	nutclient_tcp_disconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_get_timeout.$(MAN_SECTION_API) \
@@ -614,7 +615,9 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_reconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_set_timeout.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_caps.$(MAN_SECTION_API) \
-	nutclient_tcp_is_ssl.$(MAN_SECTION_API) \
+	nutclient_tcp_is_ssl.$(MAN_SECTION_API)
+
+LIBNUTCLIENT_TCP_DEPS_SUB = \
 	nutclient_tcp_create_client_ssl_OpenSSL.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_config_OpenSSL.$(MAN_SECTION_API) \
 	nutclient_tcp_create_client_ssl_NSSL.$(MAN_SECTION_API) \
@@ -644,11 +647,18 @@ LIBNUTCLIENT_TCP_DEPS = \
 	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
 
+LIBNUTCLIENT_TCP_DEPS = \
+	$(LIBNUTCLIENT_TCP_DEPS_FIRST) \
+	$(LIBNUTCLIENT_TCP_DEPS_SUB)
+
 # There are currently so many page aliases that some asciidoc
 # versions do not populate more than ~8 of these files, either
 # touching empty files or none at all (valid creations start
 # with first mentions in the NAME section).
-$(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
+$(LIBNUTCLIENT_TCP_DEPS_FIRST): libnutclient_tcp.$(MAN_SECTION_API)
+	touch $@
+
+$(LIBNUTCLIENT_TCP_DEPS_SUB): nutclient_tcp_create_client.$(MAN_SECTION_API)
 	@if [ x"`cat '$@'`" != x ] 2>/dev/null ; then \
 		touch '$@' ; \
 	 else \
