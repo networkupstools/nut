@@ -491,6 +491,10 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     avahi-devel \
     neon-devel
 
+# For SSL testing (at least in Fedora 43) tools come in separate packages:
+:; yum install \
+    openssl nss-tools
+
 # Not in recent Fedora releases:
 :; yum install \
     powerman-devel
