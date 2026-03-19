@@ -918,15 +918,33 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # Generate an AES encrypted private key:
                         openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 || exit
-                        # Generate a certificate for CA using that key:
-                        cat > rootca.v3.ext << EOF
+                        # Generate a certificate for CA using that key;
+                        # note that not all "openssl" versions have the
+                        # "-extfile" option for self-signed (CA) certs;
+                        # such is burden of legacy OS support (in NUT CI
+                        # farm worker population at least):
+                        cat > rootca.req.conf << EOF
+[ req ]
+distinguished_name = dn
+x509_extensions = extensions
+prompt = no
+
+[ dn ]
+commonName = ${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US
+
+[ extensions ]
 authorityKeyIdentifier=keyid:always,issuer
 basicConstraints=critical,CA:TRUE
 keyUsage=critical,digitalSignature,cRLSign,keyCertSign
 subjectKeyIdentifier=hash
 EOF
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" -extfile rootca.v3.ext || exit
+                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf || {
+                            log_info "Retry ROOTCA without authorityKeyIdentifier extension"
+                            # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
+                            sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
+                            && openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf
+                        } || exit
                         ;;
                 esac
 
