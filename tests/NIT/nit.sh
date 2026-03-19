@@ -998,6 +998,9 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.3 = 127.0.0.1
+DNS.4 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
