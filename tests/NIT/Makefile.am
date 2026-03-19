@@ -27,6 +27,14 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.
 # Developers can run the script directly or override the make variable.
+#   no          Avoid the SSL test setup even if possible
+#   required-conditional    Require that the SSL tests are set up (NSS/OpenSSL
+#               tools are available and succeed to generate certificate stores)
+#               if NUT was built with SSL support
+#   required    Require that the SSL tests are set up always (e.g. fail if NUT
+#               was built without SSL support)
+# Default: try to set up crypto if possible (tools available, NUT built with
+# SSL support) and run the tests in resulting conditions.
 ### if WITH_OPENSSL
 ### WITH_SSL_TESTS = no
 ### else !WITH_OPENSSL

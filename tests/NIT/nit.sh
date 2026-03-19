@@ -481,6 +481,23 @@ if [ x"${WITH_SSL_TESTS}" = xno ] ; then
     WITH_SSL_SERVER="none"
 fi
 
+case "${WITH_SSL_TESTS}" in
+    require) WITH_SSL_TESTS=required ;;
+    require-conditional) WITH_SSL_TESTS=required-conditional ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*|*OpenSSL*)
+        if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            WITH_SSL_TESTS=required-conditional
+        fi
+        ;;
+    *)  if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            die "Aborting because SSL tests are required, but NUT was not built with SSL support"
+        fi
+        ;;
+esac
+
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *NSS*)
         (command -v certutil) || {
@@ -1060,8 +1077,7 @@ EOF
                 esac
             ) || exit
         ) || {
-            # TOTHINK: add plain "required" to fail if not built with SSL at all?
-            if [ x"${WITH_SSL_TESTS}" = xrequire-conditional ] || [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
                 die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
             fi
             log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
