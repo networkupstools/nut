@@ -473,7 +473,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 #ifndef WIN32
 	long			fd_flags;
 #else	/* WIN32 */
-	HANDLE event = NULL;
+	HANDLE event = NULL;	/* TOTHINK: nullptr for C++? */
 	unsigned long argp;
 
 	/* Required ritual before calling any socket functions */
@@ -588,6 +588,7 @@ void Socket::connect(const std::string& host, uint16_t port)
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
 #else	/* WIN32 */
+			/* TOTHINK: nullptr instead of NULL for C++? */
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
@@ -965,7 +966,7 @@ void Socket::startTLS()
 			// FIXME: Use _certstore_pass
 			status = NSS_Init(_certstore_path.c_str());
 		} else {
-			status = NSS_NoDB_Init(NULL);
+			status = NSS_NoDB_Init(nullptr);
 		}
 
 		if (status != SECSuccess) {
@@ -979,7 +980,7 @@ void Socket::startTLS()
 		throw nut::SSLException_NSS("Cannot import socket FD");
 	}
 
-	_ssl = SSL_ImportFD(NULL, socket);
+	_ssl = SSL_ImportFD(nullptr, socket);
 	if (!_ssl) {
 		throw nut::SSLException_NSS("Cannot import SSL FD");
 	}
