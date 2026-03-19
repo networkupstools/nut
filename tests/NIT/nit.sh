@@ -501,6 +501,9 @@ esac
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *NSS*)
         (command -v certutil) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for NSS"
+            fi
             log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
             if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
             if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
@@ -511,6 +514,9 @@ esac
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *OpenSSL*)
         (command -v openssl) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for OpenSSL"
+            fi
             log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
             if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
             if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
