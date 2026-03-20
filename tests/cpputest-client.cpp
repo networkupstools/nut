@@ -248,11 +248,11 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		c.setSSLConfig(new SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
-			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
-			env_NUT_CAFILE.empty() ? nullptr : env_NUT_CAFILE.c_str(),
-			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
-			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str(),
-			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str()
+			env_NUT_CAPATH,
+			env_NUT_CAFILE,
+			env_NUT_CERTFILE,
+			env_NUT_KEYFILE,
+			env_NUT_KEYPASS
 			));
 	}
 
@@ -266,11 +266,11 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		c.setSSLConfig(new SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
-			env_NUT_CERTSTORE_PATH.empty() ? nullptr : env_NUT_CERTSTORE_PATH.c_str(),
-			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str(),
-			env_NUT_CERTSTORE_PREFIX.empty() ? nullptr : env_NUT_CERTSTORE_PREFIX.c_str(),
-			env_NUT_CERTHOST_NAME.empty() ? nullptr : env_NUT_CERTHOST_NAME.c_str(),
-			env_NUT_CERTIDENT_NAME.empty() ? nullptr : env_NUT_CERTIDENT_NAME.c_str()
+			env_NUT_CERTSTORE_PATH,
+			env_NUT_KEYPASS,
+			env_NUT_CERTSTORE_PREFIX,
+			env_NUT_CERTHOST_NAME,
+			env_NUT_CERTIDENT_NAME
 			));
 	}
 
