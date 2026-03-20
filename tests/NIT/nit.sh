@@ -975,10 +975,11 @@ EOF
                     *OpenSSL*)
                         # OpenSSL CA trust "database" should include hashes
                         # of CA PEM certificates as symlinks to actual files:
-                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" && [ -n "${CERTHASH}" ] || exit
-                        ln -s rootca.pem "${CERTHASH}".0
-                        ln -s rootca.pem "${CERTHASH}"
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* || exit
+                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`"
+                        # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
+                        ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
+                        ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"*
                         ;;
                     *)
                         ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
