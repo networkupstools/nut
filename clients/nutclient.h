@@ -439,41 +439,10 @@ class TcpClient : public Client
 
 public:
 	/**
-	 * Construct a nut TcpClient object.
+	 * Construct a NUT TcpClient object.
 	 * You must call one of TcpClient::connect() after.
 	 */
 	TcpClient();
-
-	/**
-	 * Construct a nut TcpClient object for OpenSSL options,
-	 * then connect it to the specified server
-	 * (with C-style string arguments for SSL-related file paths).
-	 * \param host Server host name.
-	 * \param port Server port.
-	 * \param try_ssl Try to use SSL/TLS for the connection.
-	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
-	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
-	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
-	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
-	 * \param key_pass Optional passphrase to decrypt the private key.
-	 */
-	TcpClient(const std::string& host, uint16_t port = NUT_PORT, bool try_ssl = false, bool force_ssl = false, int certverify = -1, const char *ca_path = nullptr, const char *ca_file = nullptr, const char *cert_file = nullptr, const char *key_file = nullptr, const char *key_pass = nullptr);
-
-	/**
-	 * Construct a nut TcpClient object then connect it to the specified server.
-	 * \param host Server host name.
-	 * \param port Server port.
-	 * \param try_ssl Try to use SSL/TLS for the connection.
-	 * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
-	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
-	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
-	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
-	 */
-	TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
 
 	~TcpClient() override;
 

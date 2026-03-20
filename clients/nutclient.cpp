@@ -1296,26 +1296,6 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass):
-Client(),
-_try_ssl(try_ssl),
-_timeout(0),
-_socket(new internal::Socket)
-{
-	setSSLConfig_OpenSSL(force_ssl, certverify, ca_path, ca_file, cert_file, key_file, key_pass);
-	connect(host, port);
-}
-
-TcpClient::TcpClient(const std::string& host, uint16_t port, bool try_ssl, bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass):
-Client(),
-_try_ssl(try_ssl),
-_timeout(0),
-_socket(new internal::Socket)
-{
-	setSSLConfig_OpenSSL(force_ssl, certverify, ca_path, ca_file, cert_file, key_file, key_pass);
-	connect(host, port);
-}
-
 TcpClient::~TcpClient()
 {
 	delete _socket;
