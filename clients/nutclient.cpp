@@ -1332,6 +1332,11 @@ TcpClient::~TcpClient()
 	return ret;
 }
 
+SSLConfig::~SSLConfig()
+{
+}
+
+
 void SSLConfig::apply(TcpClient& client) const
 {
 	client.setSslForce(_force_ssl);

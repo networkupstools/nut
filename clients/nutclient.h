@@ -86,7 +86,7 @@ class SSLConfig
 public:
 	SSLConfig(bool force_ssl = false, int certverify = -1)
 		: _force_ssl(force_ssl), _certverify(certverify) {}
-	virtual ~SSLConfig() = default;
+	virtual ~SSLConfig();
 
 	bool getForceSsl() const { return _force_ssl; }
 	int getCertVerify() const { return _certverify; }
