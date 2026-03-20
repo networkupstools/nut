@@ -640,8 +640,8 @@ LIBNUTCLIENT_TCP_DEPS_SUB = \
 	nutclient_tcp_get_ssl_keypass.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certstore_path.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certstore_path.$(MAN_SECTION_API) \
-	nutclient_tcp_set_ssl_certstore_pass.$(MAN_SECTION_API) \
-	nutclient_tcp_get_ssl_certstore_pass.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certstore_prefix.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certstore_prefix.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certident_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certident_name.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \

@@ -2378,11 +2378,11 @@ setenv_ssl_cppnit() {
                     export NUT_CERTVERIFY
 
                     NUT_CERTSTORE_PATH="${TESTCERT_PATH_CLIENT}"
-                    NUT_CERTSTORE_PASS=""
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    NUT_CERTSTORE_PREFIX=""
                     NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
-                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
-                    export NUT_CERTSTORE_PATH NUT_CERTSTORE_PASS NUT_CERTHOST_NAME NUT_CERTIDENT_NAME NUT_KEYPASS
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
                     ;;
                 esac
             fi

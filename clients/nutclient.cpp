@@ -241,7 +241,7 @@ public:
 	void setDebugConnect(bool d);
 
 	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certhost_name, const std::string& certident_name, const std::string& certident_pass);
+	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
 
 	void startTLS();
 	bool isSSL()const;
@@ -278,10 +278,10 @@ private:
 	std::string _ca_file;
 	std::string _cert_file;
 	std::string _key_file;
-	std::string _key_pass;	/* aka certident_pass for NSS */
+	std::string _key_pass;	/* aka certstore_pass for NSS */
 	/* NSS specific */
 	std::string _certstore_path;
-	std::string _certstore_pass;
+	std::string _certstore_prefix;
 	std::string _certident_name;
 	std::string _certhost_name;
 #endif
@@ -731,8 +731,6 @@ void Socket::connect(const std::string& host, uint16_t port)
 		throw nut::IOException("Cannot connect to host");
 	}
 
-	/* TODO? See upsclient.c for NSS/SSL connection handling */
-
 #ifdef OLD
 	struct hostent *hostinfo = nullptr;
 	SOCKADDR_IN sin = { 0 };
@@ -819,8 +817,8 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 #endif
 }
 
-void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certhost_name, const std::string& certident_name, const std::string& certident_pass
-) {
+void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
+{
 	_force_ssl = force_ssl;
 
 #if defined(WITH_NSS)
@@ -829,19 +827,19 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 	 * (to see if errors are fatal or ignorable)
 	 */
 	_certstore_path = certstore_path;
-	_certstore_pass = certstore_pass;
-	_certident_name = certident_name;
-	_key_pass = certident_pass;	/* Note: same concept, different name */
+	_key_pass = certstore_pass;	/* Note: same concept, different name */
+	_certstore_prefix = certstore_prefix;
 	_certhost_name = certhost_name;
+	_certident_name = certident_name;
 
 	_ssl_configured |= UPSCLI_SSL_CAPS_NSS;
 #else
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(certstore_path);
 	NUT_UNUSED_VARIABLE(certstore_pass);
-	NUT_UNUSED_VARIABLE(certident_name);
-	NUT_UNUSED_VARIABLE(certident_pass);
+	NUT_UNUSED_VARIABLE(certstore_prefix);
 	NUT_UNUSED_VARIABLE(certhost_name);
+	NUT_UNUSED_VARIABLE(certident_name);
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_NSS;
 #endif
@@ -961,9 +959,9 @@ void Socket::startTLS()
 
 		SECStatus status;
 		if (!_certstore_path.empty()) {
-			if (!_certstore_pass.empty())
-				throw nut::SSLException_NSS("NSS database password support not implemented yet");
-			// FIXME: Use _certstore_pass
+			if (!_certstore_prefix.empty())
+				throw nut::SSLException_NSS("NSS database prefix support not implemented yet");
+			// FIXME: Use _certstore_prefix
 			status = NSS_Init(_certstore_path.c_str());
 		} else {
 			status = NSS_NoDB_Init(nullptr);
@@ -1362,26 +1360,26 @@ void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::
 	_key_pass = key_pass;
 }
 
-void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certhost_name, const char *certident_name, const char *certident_pass)
+void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
 	_force_ssl = force_ssl;
 	_certverify = certverify;
 	if (certstore_path) _certstore_path = certstore_path;
-	if (certstore_pass) _certstore_pass = certstore_pass;
+	if (certstore_pass) _key_pass = certstore_pass;	/* Note: another name, same concept */
+	if (certstore_prefix) _certstore_prefix = certstore_prefix;
 	if (certhost_name) _certhost_name = certhost_name;
 	if (certident_name) _certident_name = certident_name;
-	if (certident_pass) _key_pass = certident_pass;	/* Note: another name, same concept */
 }
 
-void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certhost_name, const std::string& certident_name, const std::string& certident_pass)
+void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
 {
 	_force_ssl = force_ssl;
 	_certverify = certverify;
 	_certstore_path = certstore_path;
-	_certstore_pass = certstore_pass;
+	_key_pass = certstore_pass;	/* Note: another name, same concept */
+	_certstore_prefix = certstore_prefix;
 	_certhost_name = certhost_name;
 	_certident_name = certident_name;
-	_key_pass = certident_pass;	/* Note: another name, same concept */
 }
 
 void TcpClient::connect(const std::string& host, uint16_t port)
@@ -1403,8 +1401,8 @@ void TcpClient::connect()
 	if (_try_ssl || _force_ssl) {
 		if (!_ca_path.empty() || !_ca_file.empty() || !_cert_file.empty() || !_key_file.empty()) {
 			_socket->setSSLConfig_OpenSSL(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass);
-		} else if (!_certstore_path.empty() || !_certstore_pass.empty() || !_certhost_name.empty() || !_certident_name.empty()) {
-			_socket->setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _certstore_pass, _certhost_name, _certident_name, _key_pass);
+		} else if (!_certstore_path.empty() || !_certstore_prefix.empty() || !_certhost_name.empty() || !_certident_name.empty()) {
+			_socket->setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _key_pass, _certstore_prefix, _certhost_name, _certident_name);
 		}
 
 		_socket->startTLS();
@@ -1536,19 +1534,19 @@ void TcpClient::setSslCertstorePath(const std::string& certstore_path)
 	_certstore_path = certstore_path;
 }
 
-const std::string& TcpClient::getSslCertstorePass() const
+const std::string& TcpClient::getSslCertstorePrefix() const
 {
-	return _certstore_pass;
+	return _certstore_prefix;
 }
 
-void TcpClient::setSslCertstorePass(const char* certstore_pass)
+void TcpClient::setSslCertstorePrefix(const char* certstore_prefix)
 {
-	_certstore_pass = certstore_pass ? certstore_pass : std::string();
+	_certstore_prefix = certstore_prefix ? certstore_prefix : std::string();
 }
 
-void TcpClient::setSslCertstorePass(const std::string& certstore_pass)
+void TcpClient::setSslCertstorePrefix(const std::string& certstore_prefix)
 {
-	_certstore_pass = certstore_pass;
+	_certstore_prefix = certstore_prefix;
 }
 
 const std::string& TcpClient::getSslCertIdentName() const
@@ -3030,26 +3028,26 @@ const char* nutclient_tcp_get_ssl_certstore_path(NUTCLIENT_TCP_t client)
 	return nullptr;
 }
 
-void nutclient_tcp_set_ssl_certstore_pass(NUTCLIENT_TCP_t client, const char* certstore_pass)
+void nutclient_tcp_set_ssl_certstore_prefix(NUTCLIENT_TCP_t client, const char* certstore_prefix)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSslCertstorePass(certstore_pass);
+			cl->setSslCertstorePrefix(certstore_prefix);
 		}
 	}
 }
 
-const char* nutclient_tcp_get_ssl_certstore_pass(NUTCLIENT_TCP_t client)
+const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			return cl->getSslCertstorePass().c_str();
+			return cl->getSslCertstorePrefix().c_str();
 		}
 	}
 	return nullptr;

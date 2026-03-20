@@ -114,7 +114,7 @@ private:
 
 	/* SSL options: NSS */
 	std::string env_NUT_CERTSTORE_PATH = "";
-	std::string env_NUT_CERTSTORE_PASS = "";
+	std::string env_NUT_CERTSTORE_PREFIX = "";
 	std::string env_NUT_CERTHOST_NAME = "";
 	std::string env_NUT_CERTIDENT_NAME = "";
 
@@ -219,9 +219,10 @@ void NutActiveClientTest::setUp()
 		env_NUT_CERTSTORE_PATH = s;
 	}
 
-	s = std::getenv("NUT_CERTSTORE_PASS");
+	/* NOTE: What could be NUT_CERTSTORE_PASS is NUT_KEYPASS too */
+	s = std::getenv("NUT_CERTSTORE_PREFIX");
 	if (s) {
-		env_NUT_CERTSTORE_PASS = s;
+		env_NUT_CERTSTORE_PREFIX = s;
 	}
 
 	s = std::getenv("NUT_CERTHOST_NAME");
@@ -258,7 +259,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	if (env_NUT_CERTVERIFY != -1
 	 || env_NUT_FORCESSL
 	 || !env_NUT_CERTSTORE_PATH.empty()
-	 || !env_NUT_CERTSTORE_PASS.empty()
+	 || !env_NUT_CERTSTORE_PREFIX.empty()
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
@@ -266,10 +267,10 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CERTSTORE_PATH.empty() ? nullptr : env_NUT_CERTSTORE_PATH.c_str(),
-			env_NUT_CERTSTORE_PASS.empty() ? nullptr : env_NUT_CERTSTORE_PASS.c_str(),
+			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str(),
+			env_NUT_CERTSTORE_PREFIX.empty() ? nullptr : env_NUT_CERTSTORE_PREFIX.c_str(),
 			env_NUT_CERTHOST_NAME.empty() ? nullptr : env_NUT_CERTHOST_NAME.c_str(),
-			env_NUT_CERTIDENT_NAME.empty() ? nullptr : env_NUT_CERTIDENT_NAME.c_str(),
-			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str()
+			env_NUT_CERTIDENT_NAME.empty() ? nullptr : env_NUT_CERTIDENT_NAME.c_str()
 			);
 	}
 
@@ -278,19 +279,19 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< " NUT_SSL(try):" << c.getSslTry()
 		<< " NUT_FORCESSL:" << c.getSslForce()
 		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
-		<< " NUT_CAPATH:" << c.getSslCAPath()
-		<< " NUT_CAFILE:" << c.getSslCAFile()
+		<< " NUT_CAPATH:'" << c.getSslCAPath()
+		<< "' NUT_CAFILE:'" << c.getSslCAFile()
 		// OpenSSL-only:
-		<< " NUT_CERTFILE:" << c.getSslCertFile()
-		<< " NUT_KEYFILE:" << c.getSslKeyFile()
+		<< "' NUT_CERTFILE:'" << c.getSslCertFile()
+		<< "' NUT_KEYFILE:'" << c.getSslKeyFile()
 		// shared:
-		<< " NUT_KEYPASS:" << c.getSslKeyFile()
+		<< "' NUT_KEYPASS:'" << c.getSslKeyPass()
 		// NSS-only:
-		<< " NUT_CERTSTORE_PATH:" << c.getSslCertstorePath()
-		<< " NUT_CERTSTORE_PASS:" << c.getSslCertstorePass()
-		<< " NUT_CERTHOST_NAME:" << c.getSslCertHostName()
-		<< " NUT_CERTIDENT_NAME:" << c.getSslCertIdentName()
-		<< std::endl;
+		<< "' NUT_CERTSTORE_PATH:'" << c.getSslCertstorePath()
+		<< "' NUT_CERTSTORE_PREFIX:'" << c.getSslCertstorePrefix()
+		<< "' NUT_CERTHOST_NAME:'" << c.getSslCertHostName()
+		<< "' NUT_CERTIDENT_NAME:'" << c.getSslCertIdentName()
+		<< "'" << std::endl;
 }
 
 void NutActiveClientTest::tearDown()

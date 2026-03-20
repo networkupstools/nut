@@ -30,8 +30,8 @@ nutclient_tcp_set_ssl_keypass,
 nutclient_tcp_get_ssl_keypass,
 nutclient_tcp_set_ssl_certstore_path,
 nutclient_tcp_get_ssl_certstore_path,
-nutclient_tcp_set_ssl_certstore_pass,
-nutclient_tcp_get_ssl_certstore_pass,
+nutclient_tcp_set_ssl_certstore_prefix,
+nutclient_tcp_get_ssl_certstore_prefix,
 nutclient_tcp_set_ssl_certident_name,
 nutclient_tcp_get_ssl_certident_name,
 nutclient_tcp_set_ssl_certhost_name,
@@ -89,14 +89,16 @@ SYNOPSIS
 		const char* host, uint16_t port, int try_ssl,
 		int force_ssl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix,
 		const char *certhost_name,
-		const char *certident_name, const char *certident_pass);
+		const char *certident_name);
 
 	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
 		int force_ssl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix,
 		const char *certhost_name,
-		const char *certident_name, const char *certident_pass);
+		const char *certident_name);
 
 	/* Individual SSL option getters/setters: */
 
@@ -133,9 +135,9 @@ SYNOPSIS
 		const char* certstore_path);
 	const char* nutclient_tcp_get_ssl_certstore_path(NUTCLIENT_TCP_t client);
 
-	void nutclient_tcp_set_ssl_certstore_pass(NUTCLIENT_TCP_t client,
-		const char* certstore_pass);
-	const char* nutclient_tcp_get_ssl_certstore_pass(NUTCLIENT_TCP_t client);
+	void nutclient_tcp_set_ssl_certstore_prefix(NUTCLIENT_TCP_t client,
+		const char* certstore_prefix);
+	const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client);
 
 	void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client,
 		const char* certident_name);
