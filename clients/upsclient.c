@@ -204,16 +204,16 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
+		return 0;
 
 	case SSL_ERROR_WANT_WRITE:
-		upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
+		return 0;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
-			upslogx(LOG_ERR, "ssl_error() EOF from client");
+			upslogx(LOG_ERR, "ssl_error() EOF from server");
 		} else {
 			upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_SYSCALL", ret);
 		}
@@ -709,16 +709,68 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 #ifdef WITH_SSL
 	if (ups->ssl) {
 # ifdef WITH_OPENSSL
+		int	iret, ssl_err, ssl_retries = 0;
+		/* Cap retries to avoid spinning forever on a broken socket.
+		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+		 * local handshake while being safe for CI timeouts.
+		 */
+		const int	SSL_IO_MAX_RETRIES = 250;
+		fd_set	fds;
+		struct timeval	tv;
+
 		/* SSL_* routines deal with int type for return and buflen
 		 * We might need to window our I/O if we exceed 2GB (in
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
-		int iret;
 		assert(buflen <= INT_MAX);
-		iret = SSL_read(ups->ssl, buf, (int)buflen);
-		assert(iret <= SSIZE_MAX);
-		ret = (ssize_t)iret;
+
+		while (ssl_retries < SSL_IO_MAX_RETRIES) {
+			iret = SSL_read(ups->ssl, buf, (int)buflen);
+
+			assert(iret <= SSIZE_MAX);
+			if (iret > 0) {
+				ret = (ssize_t)iret;
+				break;
+			}
+
+			if (iret == 0) {
+				/* Orderly shutdown or actual EOF */
+				ret = 0;
+				break;
+			}
+
+			ssl_err = SSL_get_error(ups->ssl, iret);
+			if (ssl_err == SSL_ERROR_WANT_READ
+			 || ssl_err == SSL_ERROR_WANT_WRITE
+			) {
+				FD_ZERO(&fds);
+				FD_SET(ups->fd, &fds);
+				tv.tv_sec  = 0;
+				tv.tv_usec = 20000;	/* 20 ms */
+
+				if (select(ups->fd + 1,
+					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+					(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+					NULL, &tv) < 0
+				) {
+					/* select failure is fatal enough to stop retrying */
+					ssl_error(ups->ssl, (ssize_t)iret);
+					return -1;
+				}
+				ssl_retries++;
+				continue;
+			}
+
+			/* Other errors are fatal */
+			ssl_error(ups->ssl, (ssize_t)iret);
+			return -1;
+		}
+
+		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+			upslogx(LOG_ERR, "%s: SSL_read timed out after %d retries", __func__, ssl_retries);
+			return -1;
+		}
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
@@ -794,16 +846,62 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 #ifdef WITH_SSL
 	if (ups->ssl) {
 # ifdef WITH_OPENSSL
+		int	iret, ssl_err, ssl_retries = 0;
+		/* Cap retries to avoid spinning forever on a broken socket.
+		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+		 * local handshake while being safe for CI timeouts.
+		 */
+		const int	SSL_IO_MAX_RETRIES = 250;
+		fd_set	fds;
+		struct timeval	tv;
+
 		/* SSL_* routines deal with int type for return and buflen
 		 * We might need to window our I/O if we exceed 2GB (in
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
-		int iret;
 		assert(buflen <= INT_MAX);
-		iret = SSL_write(ups->ssl, buf, (int)buflen);
-		assert(iret <= SSIZE_MAX);
-		ret = (ssize_t)iret;
+
+		while (ssl_retries < SSL_IO_MAX_RETRIES) {
+			iret = SSL_write(ups->ssl, buf, (int)buflen);
+
+			assert(iret <= SSIZE_MAX);
+			if (iret > 0) {
+				ret = (ssize_t)iret;
+				break;
+			}
+
+			ssl_err = SSL_get_error(ups->ssl, iret);
+			if (ssl_err == SSL_ERROR_WANT_READ
+			 || ssl_err == SSL_ERROR_WANT_WRITE
+			) {
+				FD_ZERO(&fds);
+				FD_SET(ups->fd, &fds);
+				tv.tv_sec  = 0;
+				tv.tv_usec = 20000;	/* 20 ms */
+
+				if (select(ups->fd + 1,
+					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+					(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+					NULL, &tv) < 0
+				) {
+					/* select failure is fatal enough to stop retrying */
+					ssl_error(ups->ssl, (ssize_t)iret);
+					return -1;
+				}
+				ssl_retries++;
+				continue;
+			}
+
+			/* Other errors (including iret=0) are fatal */
+			ssl_error(ups->ssl, (ssize_t)iret);
+			return -1;
+		}
+
+		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+			upslogx(LOG_ERR, "%s: SSL_write timed out after %d retries", __func__, ssl_retries);
+			return -1;
+		}
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
@@ -938,13 +1036,14 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		int	ssl_retries = 0;
 		/* Cap retries to avoid spinning forever on a broken socket.
 		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
-		 * local handshake while being safe for CI timeouts.        */
-		const int	SSL_CONNECT_MAX_RETRIES = 250;
+		 * local handshake while being safe for CI timeouts.
+		 */
+		const int	SSL_IO_MAX_RETRIES = 250;
 		fd_set	fds;
 		struct timeval	tv;
 
 		res = -1;
-		while (ssl_retries < SSL_CONNECT_MAX_RETRIES) {
+		while (ssl_retries < SSL_IO_MAX_RETRIES) {
 			res = SSL_connect(ups->ssl);
 
 			if (res == 1) {
@@ -972,7 +1071,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 					(ssl_err == SSL_ERROR_WANT_READ)
 						? "READ" : "WRITE",
 					ssl_retries + 1,
-					SSL_CONNECT_MAX_RETRIES);
+					SSL_IO_MAX_RETRIES);
 
 				if (select(ups->fd + 1,
 					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
@@ -982,6 +1081,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 					upsdebug_with_errno(1,
 						"%s: select() failed during SSL_connect",
 						__func__);
+					/* Returns 0 on non-fatal WANT_READ/WRITE;
+					 * we stop retrying even if non-fatal because
+					 * select() itself failed. */
 					ssl_error(ups->ssl, res);
 					return -1;
 				}
@@ -1005,7 +1107,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			return -1;
 		}
 
-		if (ssl_retries >= SSL_CONNECT_MAX_RETRIES) {
+		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
 			upslogx(LOG_ERR,
 				"%s: SSL_connect timed out after %d retries"
 				" (non-blocking handshake never completed)",

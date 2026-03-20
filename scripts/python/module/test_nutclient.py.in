@@ -12,6 +12,14 @@ if __name__ == "__main__" :
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
     NUT_USER = os.getenv('NUT_USER', None)
     NUT_PASS = os.getenv('NUT_PASS', None)
+    NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    NUT_FORCESSL = (os.getenv('NUT_FORCESSL', 'false') in ["true", "1"])
+    NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'false') in ["true", "1"])
+    NUT_CAFILE = os.getenv('NUT_CAFILE', None)
+    NUT_CAPATH = os.getenv('NUT_CAPATH', None)
+    NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
+    NUT_KEYPASS = os.getenv('NUT_KEYPASS', None)
 
     NUT_DEBUG = ("true" == os.getenv('DEBUG', 'false') or os.getenv('NUT_DEBUG_LEVEL', None) is not None)
 
@@ -22,8 +30,20 @@ if __name__ == "__main__" :
     print( "PyNUTClient test..." )
     #nut    = PyNUT.PyNUTClient( debug=True, port=NUT_PORT )
     #nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, host=NUT_HOST, port=NUT_PORT )
-    nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT )
     #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True, port=NUT_PORT )
+    try:
+        nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT,
+                                    use_ssl=NUT_SSL, force_ssl=NUT_FORCESSL, cert_verify=NUT_CERTVERIFY,
+                                    ca_file=NUT_CAFILE, ca_path=NUT_CAPATH,
+                                    cert_file=NUT_CERTFILE, key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
+    except:
+        ex = str(sys.exc_info()[1])
+        print( "EXCEPTION during initialization: %s" % ex )
+        if (NUT_SSL and (ex == 'ERR FEATURE-NOT-CONFIGURED' or ex == 'ERR FEATURE-NOT-SUPPORTED')):
+            print( "(anticipated error: server does not support STARTTLS)" )
+            sys.exit(0)
+        else:
+            raise
 
     print( 80*"-" + "\nTesting 'GetUPSList' :")
     result = nut.GetUPSList( )

@@ -475,15 +475,35 @@ esac
 log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
 log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
-if [ x"${WITHOUT_SSL_TESTS}" = xtrue ]; then
-    log_info "Disabling SSL tests (even if they are possible) due to WITHOUT_SSL_TESTS='${WITHOUT_SSL_TESTS}'"
+if [ x"${WITH_SSL_TESTS}" = xno ] ; then
+    log_info "Disabling SSL tests (even if they are possible) due to WITH_SSL_TESTS='${WITH_SSL_TESTS}'"
     WITH_SSL_CLIENT="none"
     WITH_SSL_SERVER="none"
 fi
 
+case "${WITH_SSL_TESTS}" in
+    require) WITH_SSL_TESTS=required ;;
+    require-conditional) WITH_SSL_TESTS=required-conditional ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*|*OpenSSL*)
+        if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            WITH_SSL_TESTS=required-conditional
+        fi
+        ;;
+    *)  if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            die "Aborting because SSL tests are required, but NUT was not built with SSL support"
+        fi
+        ;;
+esac
+
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *NSS*)
         (command -v certutil) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for NSS"
+            fi
             log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
             if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
             if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
@@ -494,6 +514,9 @@ esac
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *OpenSSL*)
         (command -v openssl) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for OpenSSL"
+            fi
             log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
             if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
             if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
@@ -569,15 +592,18 @@ get_group_id() {
     # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
 
     # Non-numeric (empty) stdout; non-successful exit code
+    # and "-1" to avoid "not a number" error messages
     case "`uname -a | tr 'A-Z' 'a-z'`" in
         *mingw*|*msys*|*win*)
-            # Windows? Avoid "not a number" error messages,
-            # common Unix groups are unlikely here...
+            log_warn "Group ID for name '${1-}' was not found; common Unix groups are unlikely on Windows"
+            echo "-1"
+            ;;
+        *)  # Packaging build roots may lack user/group databases too
+            log_warn "Group ID for name '${1-}' was not found"
             echo "-1"
             ;;
     esac
 
-    log_warn "Group ID for name '${1-}' was not found"
     return 1
 }
 
@@ -876,7 +902,13 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
             fi
             set -e
 
-            mkdir -p "${TESTCERT_PATH_ROOTCA}"
+            # Be sure to avoid confusion with earlier/aborted tests!
+            # With a failsafe against wiping the system ;)
+            case "${TESTCERT_PATH_BASE-}" in
+                *cert) rm -rf "${TESTCERT_PATH_BASE}" || true ;;
+                *) log_warn "TESTCERT_PATH_BASE seems wrong: '${TESTCERT_PATH_BASE}'" ;;
+            esac
+            mkdir -p "${TESTCERT_PATH_ROOTCA}" || exit
             (   cd "${TESTCERT_PATH_ROOTCA}"
                 log_info "SSL: Preparing test Root CA..."
                 echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
@@ -895,12 +927,12 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # others default (empty) for possible other questions, e.g.
                         #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
                         #   Is this a critical extension [y/N]? :
-                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random
+                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random || exit
                         # Extract the CA certificate to be able to use or import it later:
-                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem
+                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem || exit
                         # Use this later for signing, move on to server/client requests...
 
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt || exit
                         ;;
                 esac
 
@@ -908,10 +940,34 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # Generate an AES encrypted private key:
-                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096
-                        # Generate a certificate for CA using that key:
+                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 || exit
+                        # Generate a certificate for CA using that key;
+                        # note that not all "openssl" versions have the
+                        # "-extfile" option for self-signed (CA) certs;
+                        # such is burden of legacy OS support (in NUT CI
+                        # farm worker population at least):
+                        cat > rootca.req.conf << EOF
+[ req ]
+distinguished_name = dn
+x509_extensions = extensions
+prompt = no
+
+[ dn ]
+commonName = ${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US
+
+[ extensions ]
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints=critical,CA:TRUE
+keyUsage=critical,digitalSignature,cRLSign,keyCertSign
+subjectKeyIdentifier=hash
+EOF
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -subj "/CN=${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf || {
+                            log_info "Retry ROOTCA without authorityKeyIdentifier extension"
+                            # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
+                            sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
+                            && openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf
+                        } || exit
                         ;;
                 esac
 
@@ -919,17 +975,16 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # OpenSSL CA trust "database" should include hashes
                         # of CA PEM certificates as symlinks to actual files:
-                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`"
+                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" && [ -n "${CERTHASH}" ] || exit
                         ln -s rootca.pem "${CERTHASH}".0
                         ln -s rootca.pem "${CERTHASH}"
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"*
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* || exit
                         ;;
                     *)
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
                         ;;
                 esac
-
-            )
+            ) || exit
 
             mkdir -p "${TESTCERT_PATH_SERVER}"
             (   cd "${TESTCERT_PATH_SERVER}"
@@ -940,24 +995,24 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Create the certificate database:
                         certutil -N -d . -f .pwfile
                         # Import the CA certificate, so users of this DB trust it:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
                         # Create a server certificate request:
                         # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
-                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random || exit
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer || exit
 
                         # Import the signed certificate into server database:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",,"
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",," || exit
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt || exit
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US"
+                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" || exit
                         cat > server.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -966,19 +1021,22 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.3 = 127.0.0.1
+DNS.4 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
                             openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
-                        )
-                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem
+                        ) || exit
+                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem || exit
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem
+                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem || exit
                         ;;
                 esac
-            )
+            ) || exit
 
             mkdir -p "${TESTCERT_PATH_CLIENT}"
             (   cd "${TESTCERT_PATH_CLIENT}"
@@ -990,7 +1048,7 @@ EOF
                         # Create the certificate database:
                         certutil -N -d . -f .pwfile
                         # Import the CA certificate, so users of this DB trust it:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
 
                         # Import server cert into client database so we can trust it (CERTHOST directive):
                         # NOTE: Seems we must do this before requesting or signing the client cert,
@@ -999,32 +1057,35 @@ EOF
                         #  certutil: could not decode certificate: SEC_ERROR_REUSED_ISSUER_AND_SERIAL:
                         #    You are attempting to import a cert with the same issuer/serial
                         #    as an existing cert, but that is not the same cert.
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i "${TESTCERT_PATH_SERVER}/server.crt" -t ",,"
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i "${TESTCERT_PATH_SERVER}/server.crt" -t ",," || exit
 
                         # Create a client certificate request:
                         # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
-                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o client.req -z "${TESTCERT_PATH_ROOTCA}"/.random
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o client.req -z "${TESTCERT_PATH_ROOTCA}"/.random || exit
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient || exit
 
                         # Import the signed certificate into client database:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",,"
+                        certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",," || exit
 
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt || exit
                         ;;
                     OpenSSL)
                         # NOTE: No special keys for an OpenSSL client so far,
                         # it only checks/trusts a server (public data in a PEM file)
                         log_info "SSL: Exporting public data of server certificate for client use..."
-                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem
+                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem || exit
 
-                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem"
+                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" || exit
                         ;;
                 esac
-            )
+            ) || exit
         ) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+                die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
+            fi
             log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
             WITH_SSL_CLIENT="none"
             WITH_SSL_SERVER="none"
@@ -2250,6 +2311,41 @@ isTestablePython() {
     return $PY_RES
 }
 
+# Executed in subshell context of test cases below
+setenv_ssl_python() {
+	# Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
+    # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
+    # NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'true') == 'true')
+    # NUT_CAFILE = os.getenv('NUT_CAFILE', None)
+    # NUT_CAPATH = os.getenv('NUT_CAPATH', None)
+    # NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    # NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
+
+    case "${WITH_SSL_SERVER}" in
+        none) return 0;;
+        OpenSSL|NSS)
+            log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+
+            NUT_SSL=true
+            NUT_FORCESSL=1
+            export NUT_SSL NUT_FORCESSL
+
+            if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
+                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                    NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
+                    NUT_CERTVERIFY=1
+                    export NUT_CAPATH NUT_CERTVERIFY
+                else if test -s "${TESTCERT_PATH_ROOTCA}"/rootca.pem ; then
+                    NUT_CAFILE="${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                    NUT_CERTVERIFY=1
+                    export NUT_CAFILE NUT_CERTVERIFY
+                fi ; fi
+            fi
+            ;;
+    esac
+}
+
 testcase_sandbox_python_without_credentials() {
     isTestablePython && [ -n "${PYTHON}" ] || return 0
 
@@ -2257,7 +2353,8 @@ testcase_sandbox_python_without_credentials() {
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+         setenv_ssl_python
+         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2280,6 +2377,7 @@ testcase_sandbox_python_with_credentials() {
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
+        setenv_ssl_python
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
@@ -2300,6 +2398,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
+        setenv_ssl_python
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"

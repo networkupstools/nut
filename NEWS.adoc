@@ -122,6 +122,9 @@ https://github.com/networkupstools/nut/milestone/12
    * Revised OpenSSL handshake to support retries requested by the library,
      so it at least works reliably on different platforms within the scope
      it has now. [issue #3331, PR #3344]
+   * Extended `PyNUTClient` to support `STARTTLS` and optional server/self
+     identification, added NIT tests for that ability. [issues #1711, #3329,
+     #1600, PR #3352].
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
