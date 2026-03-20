@@ -263,7 +263,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
-	    SSLConfig_NSS cfg = new SSLConfig_NSS(
+		c.setSSLConfig(new SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CERTSTORE_PATH.empty() ? nullptr : env_NUT_CERTSTORE_PATH.c_str(),
@@ -271,8 +271,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTSTORE_PREFIX.empty() ? nullptr : env_NUT_CERTSTORE_PREFIX.c_str(),
 			env_NUT_CERTHOST_NAME.empty() ? nullptr : env_NUT_CERTHOST_NAME.c_str(),
 			env_NUT_CERTIDENT_NAME.empty() ? nullptr : env_NUT_CERTIDENT_NAME.c_str()
-			);
-		c.setSSLConfig(cfg);
+			));
 	}
 
 	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
