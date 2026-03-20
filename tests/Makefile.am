@@ -217,12 +217,20 @@ if WITH_LIBNUTCONF
 cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
 cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
 endif WITH_LIBNUTCONF
+if WITH_SSL
+# Not really used here, but transient dependency from libnutclient
+# At least on NetBSD consumers should know directly...
+cppunittest_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL
 
 cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppnit_LDADD   = $(top_builddir)/clients/libnutclientstub.la
 cppnit_LDADD  += $(top_builddir)/clients/libnutclient.la
 cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+if WITH_SSL
+cppnit_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL
 
 
 else !HAVE_CPPUNIT
