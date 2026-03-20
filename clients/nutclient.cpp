@@ -2701,7 +2701,9 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(const char* host, uint16
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->setSSLConfig_OpenSSL((force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass);
+		client->setSSLConfig(new nut::SSLConfig_OpenSSL(
+			(force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass
+		));
 		client->connect(host, port, try_ssl != 0);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
@@ -2720,17 +2722,21 @@ void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client, int force_ssl,
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSSLConfig_OpenSSL((force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass);
+			cl->setSSLConfig(new nut::SSLConfig_OpenSSL((
+				force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass
+			));
 		}
 	}
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certhost_name, const char *certident_name, const char *key_pass)
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->setSSLConfig_OpenSSL((force_ssl > 0), certverify, certstore_path, certstore_pass, certhost_name, certident_name, key_pass);
+		client->setSSLConfig(new nut::SSLConfig_NSS(
+			(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
+		));
 		client->connect(host, port, try_ssl != 0);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
@@ -2742,14 +2748,16 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t p
 	}
 }
 
-void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certhost_name, const char *certident_name, const char *key_pass)
+void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSSLConfig_OpenSSL((force_ssl > 0), certverify, certstore_path, certstore_pass, certhost_name, certident_name, key_pass);
+			cl->setSSLConfig(new nut::SSLConfig_NSS(
+				(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
+			));
 		}
 	}
 }

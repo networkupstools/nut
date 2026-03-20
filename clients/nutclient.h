@@ -537,6 +537,10 @@ class TcpClient : public Client
 	 * generally, but still want covered with integration tests
 	 */
 	friend class NutActiveClientTest;
+	/* The SSL options are stamped via apply() methods */
+	friend class SSLConfig;
+	friend class SSLConfig_OpenSSL;
+	friend class SSLConfig_NSS;
 
 public:
 	/**
@@ -571,57 +575,6 @@ public:
 	 *               class for OpenSSL or NSS).
 	 */
 	void setSSLConfig(const SSLConfig& config);
-
-	/**
-	 * Set SSL configuration for OpenSSL
-	 * (with C-style string arguments for SSL-related file paths).
-	 * Primarily exposed for C API bridges
-	 * \param force_ssl Whether to require SSL connection.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
-	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
-	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
-	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
-	 * \param key_pass Optional passphrase to decrypt the private key.
-	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass);
-
-	/**
-	 * Set SSL configuration for OpenSSL.
-	 * \param force_ssl Whether to require SSL connection.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
-	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
-	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
-	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
-	 * \param key_pass Optional passphrase to decrypt the private key.
-	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
-
-	/**
-	 * Set SSL configuration for Mozilla NSS
-	 * (with C-style string arguments for SSL-related file paths).
-	 * \param force_ssl Whether to require SSL connection.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
-	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
-	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
-	 */
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name);
-
-	/**
-	 * Set SSL configuration for Mozilla NSS.
-	 * \param force_ssl Whether to require SSL connection.
-	 * \param certverify Whether to verify the server certificate.
-	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
-	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
-	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
-	 */
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
 
 	/**
 	 * Connect it to the specified server.
@@ -789,6 +742,57 @@ protected:
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
 	static std::string escape(const std::string& str);
+
+	/**
+	 * Set SSL configuration for OpenSSL
+	 * (with C-style string arguments for SSL-related file paths).
+	 * Primarily exposed for C API bridges
+	 * \param force_ssl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 * \param key_pass Optional passphrase to decrypt the private key.
+	 */
+	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass);
+
+	/**
+	 * Set SSL configuration for OpenSSL.
+	 * \param force_ssl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 * \param key_pass Optional passphrase to decrypt the private key.
+	 */
+	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
+
+	/**
+	 * Set SSL configuration for Mozilla NSS
+	 * (with C-style string arguments for SSL-related file paths).
+	 * \param force_ssl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
+	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
+	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certhost_name Remote host name to match in the certificate (NSS database).
+	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 */
+	void setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name);
+
+	/**
+	 * Set SSL configuration for Mozilla NSS.
+	 * \param force_ssl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
+	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
+	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certhost_name Remote host name to match in the certificate (NSS database).
+	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 */
+	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
 
 private:
 	std::string _host;

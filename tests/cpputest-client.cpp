@@ -245,7 +245,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
 	) {
-		c.setSSLConfig_OpenSSL(
+		c.setSSLConfig(new SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH.empty() ? nullptr : env_NUT_CAPATH.c_str(),
@@ -253,7 +253,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTFILE.empty() ? nullptr : env_NUT_CERTFILE.c_str(),
 			env_NUT_KEYFILE.empty() ? nullptr : env_NUT_KEYFILE.c_str(),
 			env_NUT_KEYPASS.empty() ? nullptr : env_NUT_KEYPASS.c_str()
-			);
+			));
 	}
 
 	if (env_NUT_CERTVERIFY != -1
@@ -263,7 +263,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
-		c.setSSLConfig_NSS(
+	    SSLConfig_NSS cfg = new SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CERTSTORE_PATH.empty() ? nullptr : env_NUT_CERTSTORE_PATH.c_str(),
@@ -272,6 +272,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTHOST_NAME.empty() ? nullptr : env_NUT_CERTHOST_NAME.c_str(),
 			env_NUT_CERTIDENT_NAME.empty() ? nullptr : env_NUT_CERTIDENT_NAME.c_str()
 			);
+		c.setSSLConfig(cfg);
 	}
 
 	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
