@@ -79,6 +79,107 @@ class Variable;
 class Command;
 
 /**
+ * Base class of SSL configuration for NUT connections.
+ */
+class SSLConfig
+{
+public:
+	SSLConfig(bool force_ssl = false, int certverify = -1)
+		: _force_ssl(force_ssl), _certverify(certverify) {}
+	virtual ~SSLConfig() = default;
+
+	bool getForceSsl() const { return _force_ssl; }
+	int getCertVerify() const { return _certverify; }
+
+	virtual void apply(TcpClient& client) const;
+
+protected:
+	bool _force_ssl;
+	int _certverify;
+};
+
+/**
+ * SSL configuration with added options specific for OpenSSL.
+ */
+class SSLConfig_OpenSSL : public SSLConfig
+{
+public:
+	SSLConfig_OpenSSL(bool force_ssl = false, int certverify = -1,
+		const std::string& ca_path = "", const std::string& ca_file = "",
+		const std::string& cert_file = "", const std::string& key_file = "",
+		const std::string& key_pass = "")
+		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
+		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
+
+	SSLConfig_OpenSSL(bool force_ssl, int certverify,
+		const char *ca_path, const char *ca_file,
+		const char *cert_file, const char *key_file,
+		const char *key_pass)
+		: SSLConfig(force_ssl, certverify),
+		  _ca_path(ca_path ? std::string(ca_path) : std::string()),
+		  _ca_file(ca_file ? std::string(ca_file) : std::string()),
+		  _cert_file(cert_file ? std::string(cert_file) : std::string()),
+		  _key_file(key_file ? std::string(key_file) : std::string()),
+		  _key_pass(key_pass ? std::string(key_pass) : std::string()) {}
+
+	const std::string& getCAPath() const { return _ca_path; }
+	const std::string& getCAFile() const { return _ca_file; }
+	const std::string& getCertFile() const { return _cert_file; }
+	const std::string& getKeyFile() const { return _key_file; }
+	const std::string& getKeyPass() const { return _key_pass; }
+
+	virtual void apply(TcpClient& client) const override;
+
+private:
+	std::string _ca_path;
+	std::string _ca_file;
+	std::string _cert_file;
+	std::string _key_file;
+	std::string _key_pass;
+};
+
+/**
+ * SSL configuration with added options specific for Mozilla NSS.
+ */
+class SSLConfig_NSS : public SSLConfig
+{
+public:
+	SSLConfig_NSS(bool force_ssl = false, int certverify = -1,
+		const std::string& certstore_path = "", const std::string& certstore_pass = "",
+		const std::string& certstore_prefix = "", const std::string& certhost_name = "",
+		const std::string& certident_name = "")
+		: SSLConfig(force_ssl, certverify), _certstore_path(certstore_path),
+		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
+		  _certhost_name(certhost_name), _certident_name(certident_name) {}
+
+	SSLConfig_NSS(bool force_ssl, int certverify,
+		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix, const char *certhost_name,
+		const char *certident_name)
+		: SSLConfig(force_ssl, certverify),
+		  _certstore_path(certstore_path ? std::string(certstore_path) : std::string()),
+		  _certstore_pass(certstore_pass ? std::string(certstore_pass) : std::string()),
+		  _certstore_prefix(certstore_prefix ? std::string(certstore_prefix) : std::string()),
+		  _certhost_name(certhost_name ? std::string(certhost_name) : std::string()),
+		  _certident_name(certident_name ? std::string(certident_name) : std::string()) {}
+
+	const std::string& getCertStorePath() const { return _certstore_path; }
+	const std::string& getCertStorePass() const { return _certstore_pass; }
+	const std::string& getCertStorePrefix() const { return _certstore_prefix; }
+	const std::string& getCertHostName() const { return _certhost_name; }
+	const std::string& getCertIdentName() const { return _certident_name; }
+
+	virtual void apply(TcpClient& client) const override;
+
+private:
+	std::string _certstore_path;
+	std::string _certstore_pass;
+	std::string _certstore_prefix;
+	std::string _certhost_name;
+	std::string _certident_name;
+};
+
+/**
  * Basic nut exception.
  */
 class NutException : public std::exception
@@ -428,7 +529,7 @@ protected:
 
 /**
  * TCP NUTD client.
- * It connect to NUTD with a TCP socket.
+ * It connects to NUTD with a TCP socket.
  */
 class TcpClient : public Client
 {
@@ -444,11 +545,37 @@ public:
 	 */
 	TcpClient();
 
+	/**
+	 * Construct a NUT TcpClient object, then connect it to the
+	 * specified server right away (without any SSL options).
+	 * \param host Server host name.
+	 * \param port Server port.
+	 */
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT);
+
+	/**
+	 * Construct a NUT TcpClient object with SSL options,
+	 * then connect it to the specified server right away.
+	 * \param host Server host name.
+	 * \param port Server port.
+	 * \param config SSL configuration (typically a derived
+	 *               class for OpenSSL or NSS).
+	 */
+	TcpClient(const std::string& host, uint16_t port, const SSLConfig& config);
+
 	~TcpClient() override;
+
+	/**
+	 * Set SSL configuration.
+	 * \param config SSL configuration (typically a derived
+	 *               class for OpenSSL or NSS).
+	 */
+	void setSSLConfig(const SSLConfig& config);
 
 	/**
 	 * Set SSL configuration for OpenSSL
 	 * (with C-style string arguments for SSL-related file paths).
+	 * Primarily exposed for C API bridges
 	 * \param force_ssl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
@@ -508,7 +635,8 @@ public:
 	 * to allow (or not) use of SSL/TLS.
 	 * \param host Server host name.
 	 * \param port Server port.
-	 * \param try_ssl Use SSL/TLS for the connection (may be overridden by force_ssl if set to true).
+	 * \param try_ssl Use SSL/TLS for the connection (may be
+	                  overridden by force_ssl if set to true earlier).
 	 */
 	void connect(const std::string& host, uint16_t port, bool try_ssl);
 

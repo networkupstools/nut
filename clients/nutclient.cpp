@@ -1296,6 +1296,20 @@ _socket(new internal::Socket)
 	// Do not connect now
 }
 
+TcpClient::TcpClient(const std::string& host, uint16_t port)
+	: Client(), _host(host), _port(port), _try_ssl(true), _force_ssl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
+{
+	// No SSL settings, so just plaintext protocol
+	connect();
+}
+
+TcpClient::TcpClient(const std::string& host, uint16_t port, const SSLConfig& config)
+	: Client(), _host(host), _port(port), _try_ssl(true), _force_ssl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
+{
+	setSSLConfig(config);
+	connect();
+}
+
 TcpClient::~TcpClient()
 {
 	delete _socket;
@@ -1316,6 +1330,27 @@ TcpClient::~TcpClient()
 #endif	/* WITH_SSL */
 
 	return ret;
+}
+
+void SSLConfig::apply(TcpClient& client) const
+{
+	client.setSslForce(_force_ssl);
+	client.setSslCertVerify(_certverify);
+}
+
+void SSLConfig_OpenSSL::apply(TcpClient& client) const
+{
+	client.setSSLConfig_OpenSSL(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass);
+}
+
+void SSLConfig_NSS::apply(TcpClient& client) const
+{
+	client.setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _certstore_pass, _certstore_prefix, _certhost_name, _certident_name);
+}
+
+void TcpClient::setSSLConfig(const SSLConfig& config)
+{
+	config.apply(*this);
 }
 
 void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass)
