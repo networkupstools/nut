@@ -2313,8 +2313,9 @@ isTestablePython() {
 }
 
 # Executed in subshell context of test cases below
+# Same vars are also used for C++ (cppnit) tests
 setenv_ssl_python() {
-	# Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
+    # Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
     # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
     # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
     # NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'true') == 'true')
@@ -2342,6 +2343,48 @@ setenv_ssl_python() {
                     NUT_CERTVERIFY=1
                     export NUT_CAFILE NUT_CERTVERIFY
                 fi ; fi
+            fi
+            ;;
+    esac
+}
+
+# Executed in subshell context of test cases below
+# Same vars are also used for Python (PyNUTClient) tests
+setenv_ssl_cppnit() {
+    case "${WITH_SSL_CLIENT}" in
+        none) return 0;;
+        OpenSSL|NSS)
+            log_info "Adding client-side SSL (${WITH_SSL_CLIENT}) config to C++ env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+
+            NUT_SSL=true
+            NUT_FORCESSL=1
+            export NUT_SSL NUT_FORCESSL
+
+            if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
+                case "${WITH_SSL_CLIENT}" in
+                OpenSSL)
+                    if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                        NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
+                        NUT_CERTVERIFY=1
+                        export NUT_CAPATH NUT_CERTVERIFY
+                    else if test -s "${TESTCERT_PATH_ROOTCA}"/rootca.pem ; then
+                        NUT_CAFILE="${TESTCERT_PATH_ROOTCA}"/rootca.pem
+                        NUT_CERTVERIFY=1
+                        export NUT_CAFILE NUT_CERTVERIFY
+                    fi ; fi
+                    ;;
+                NSS)
+                    NUT_CERTVERIFY=1
+                    export NUT_CERTVERIFY
+
+                    NUT_CERTSTORE_PATH="${TESTCERT_PATH_CLIENT}"
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    NUT_CERTSTORE_PREFIX=""
+                    NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
+                    NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    ;;
+                esac
             fi
             ;;
     esac
@@ -2439,7 +2482,8 @@ testcase_sandbox_cppnit_without_creds() {
     log_info "[testcase_sandbox_cppnit_without_creds] Call libnutclient test suite: cppnit without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        "${TOP_BUILDDIR}/tests/cppnit"
+         setenv_ssl_cppnit
+         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2467,6 +2511,7 @@ testcase_sandbox_cppnit_simple_admin() {
         fi
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
+        setenv_ssl_cppnit
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
@@ -2489,6 +2534,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_cppnit
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
@@ -2511,6 +2557,7 @@ testcase_sandbox_cppnit_upsmon_master() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_cppnit
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"

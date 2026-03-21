@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3697 utf-8
+personal_ws-1.1 en 3705 utf-8
 AAC
 AAS
 ABI
@@ -1789,8 +1789,10 @@ bypassOn
 cStandard
 cablepower
 cachefile
+cafile
 calc
 calloc
+capath
 cb
 cbe
 cbi
@@ -1805,9 +1807,12 @@ celsius
 centos
 cerr
 certfile
+certhost
+certident
 certname
 certpasswd
 certpath
+certstore
 certutil
 certverify
 cfg
@@ -2212,6 +2217,7 @@ gethostbyname
 getopt
 getproctag
 getter
+getters
 gettext
 gettextize
 getval
@@ -2429,8 +2435,10 @@ kde
 kex
 kext
 keychain
+keyfile
 keygen
 keyout
+keypass
 keyring
 keyrings
 keyserver

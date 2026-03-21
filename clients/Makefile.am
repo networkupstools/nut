@@ -16,6 +16,9 @@ CLEANFILES =
 # optionally includes "common.h" with the NUT build setup - and this option
 # was never triggered in fact, not until pushed through command line like this:
 AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_builddir)/include -I$(top_srcdir)/include
+if WITH_SSL
+  AM_CXXFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
@@ -289,7 +292,7 @@ libupsclient-version.h: libupsclient.la
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 2:2:0
+libnutclient_la_LDFLAGS = -version-info 3:0:1
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 if ENABLE_SHARED_PRIVATE_LIBS
@@ -306,6 +309,9 @@ if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutclient_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
+if WITH_SSL
+  libnutclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+endif WITH_SSL
 else !HAVE_CXX11
 EXTRA_DIST += nutclient.h nutclient.cpp
 endif !HAVE_CXX11

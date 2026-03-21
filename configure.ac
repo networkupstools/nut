@@ -2845,18 +2845,18 @@ NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation 
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
+   if test "${nut_with_nss}" = "yes" || test "${nut_with_ssl}" = "nss" ; then
       NUT_CHECK_LIBNSS
       if test "${nut_have_libnss}" != "yes"; then
          AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
       fi
-   elif test "${nut_with_openssl}" = "yes"; then
+   elif test "${nut_with_openssl}" = "yes" || test "${nut_with_ssl}" = "openssl" ; then
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
          AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
       fi
    else
-      dnl Prefer OpenSSL over NSS otherwise
+      dnl e.g. "auto" or "yes": want *some* SSL, prefer OpenSSL over NSS otherwise
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
          NUT_CHECK_LIBNSS
@@ -7062,6 +7062,52 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
+
+AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d "${TERMUX__PREFIX-}"], [
+    dnl There is a bit of trouble with third-party dependencies whose pkgconf
+    dnl files or our own code add `-isystem` entries (to avoid warnings about
+    dnl sloppy code, among other things): this can circumvent (clang++) search
+    dnl for C++ headers. Simple `-I/path/name` is okay in this regard.
+    dnl Such a problem for NUT was only seen/reported on Termux so far.
+    dnl https://github.com/termux/termux-packages/issues/23578
+    dnl https://github.com/termux/termux-packages/pull/23579
+    AC_MSG_CHECKING(if C++11 support in current compiler needs help in Termux)
+
+    my_CFLAGS="${CFLAGS}"
+    my_CPPFLAGS="${CPPFLAGS}"
+    my_CXXFLAGS="${CXXFLAGS}"
+
+    dnl # set the proper header include order - first package includes, then prefix includes
+    dnl # -isystem${TERMUX_PREFIX}/include/c++/v1 is needed here for on-device building to work correctly
+    dnl NOTE: two underscores when building, at least on android directly
+    my_FIXX="-isystem${TERMUX__PREFIX}/include/c++/v1 -isystem${TERMUX__PREFIX}/include"
+
+    AC_LANG_PUSH([C++])
+
+    CPLUSPLUS_DECL='#include <iostream>'
+    CPLUSPLUS_MAIN='std::cout << "hello world" << std::endl'
+
+    CXXFLAGS="${my_CXXFLAGS} ${LIBSSL_CFLAGS}"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [AC_MSG_RESULT([LIBSSL flags work out of the box])],
+        [CXXFLAGS="${my_CXXFLAGS} ${my_FIXX} ${LIBSSL_CFLAGS}"
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+            [AC_MSG_RESULT([yes, -isystem preference helps for LIBSSL fkags])
+             LIBSSL_CFLAGS="${my_FIXX} ${LIBSSL_CFLAGS}"
+            ],
+            [AC_MSG_RESULT([LIBSSL flags just won't work])
+             have_cxx11=no
+            ])
+        ])
+
+    CFLAGS="${my_CFLAGS}"
+    CPPFLAGS="${my_CPPFLAGS}"
+    CXXFLAGS="${my_CXXFLAGS}"
+    AC_LANG_POP([C++])
+    unset CPLUSPLUS_MAIN
+    unset CPLUSPLUS_DECL
+    umset my_FIXX
+])
 
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)
