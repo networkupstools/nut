@@ -2084,13 +2084,16 @@ static void mainloop(void)
 		for (chunk = 0; chunk < chunks; chunk++) {
 			upsdebugx(5,
 				"%s: chunked filedescriptor polling #%" PRIuSIZE
-				" of %" PRIuSIZE " chunks, with %" PRIu64 " hits so far",
-				__func__, chunk, chunks, ret);
+				" of %" PRIuSIZE " chunks",
+				__func__, chunk, chunks, ret == WAIT_TIMEOUT ? 0 : ret);
 			tmpret = WaitForMultipleObjects(
 				(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
 				&fds[chunk * sysmaxconn],
 				FALSE, poll_TO);
 			if (tmpret != WAIT_TIMEOUT) {
+				/* NOTE: Actual offset depends on this value
+				 *  being in ABANDONED or OBJECT range, further
+				 *  shifted for array lookup by N chunks */
 				ret = tmpret;
 				break;
 			}
@@ -2122,18 +2125,19 @@ static void mainloop(void)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+	/* https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects */
 	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* One abandoned mutex object that satisfied the wait? */
-		ret = ret - WAIT_ABANDONED_0;
-		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64, __func__, nfds, ret);
+		ret = ret - WAIT_ABANDONED_0 + chunk * sysmaxconn;
+		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64 " of %" PRIu64, __func__, ret, nfds - 1);
 		/* FIXME: Should this be handled somehow? Cleanup? Abort?.. */
 	} else
-	if (ret >= WAIT_OBJECT_0 && ret <= WAIT_OBJECT_0 + nfds - 1) {
+	if (ret >= WAIT_OBJECT_0 && ret <= WAIT_OBJECT_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* Which one handle was triggered this time? */
 		/* Note: WAIT_OBJECT_0 may be currently defined as 0,
 		 * but docs insist on checking and shifting the range */
 		ret = ret - WAIT_OBJECT_0 + chunk * sysmaxconn;
-		upsdebugx(5, "%s: got event on FD array item: %" PRIu64, __func__, nfds, ret);
+		upsdebugx(5, "%s: got event on FD array item: %" PRIu64 " of %" PRIu64, __func__, ret, nfds - 1);
 	}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
