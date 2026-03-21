@@ -341,7 +341,10 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      operating system allows, by only waiting for that amount of Unix sockets
      or Windows `HANDLE`'s at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
-     environment variable (e.g. in tests). [#3302]
+     environment variable (e.g. in tests). For the other side of the coin, the
+     NIT script now supports an optional `DUMMY_UPS_SWARM_COUNT` environment
+     variable which can specify the amount of additional drivers to spawn for
+     the sake of stress-testing. [#3302]
    * Extended processing of `CERTREQUEST` setting to handle numeric or specific
      string values, to match both ways of reading ambiguous documentation.
      Added `configure --with-ssl-client-validation` toggle to expose the

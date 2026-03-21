@@ -111,6 +111,9 @@ if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
 TABCHAR="`printf '\t'`"
 
+# Special case to launch a lot of drivers and stress-test the select() loops etc.
+[ -n "${DUMMY_UPS_SWARM_COUNT}" ] && [ "${DUMMY_UPS_SWARM_COUNT}" -gt 0 ] || DUMMY_UPS_SWARM_COUNT=0
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2
@@ -447,6 +450,7 @@ PID_UPSSCHED=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
+PIDS_DUMMYUPS_SWARM=""
 
 WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
@@ -779,10 +783,10 @@ stop_daemons() {
         PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PIDS_DUMMYUPS_SWARM$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
@@ -791,6 +795,7 @@ stop_daemons() {
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
+    PIDS_DUMMYUPS_SWARM=""
 
     unset PID_UPSSCHED_NOW
 }
@@ -1556,8 +1561,38 @@ EOF
             mv -f "$F.bak" "$F"
             ${EGREP} '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
-    fi
 
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Adding a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                case "`expr $N % 3`" in
+                    0) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example event sequence"
+    port = evolution500.seq
+EOF
+                        ;;
+                    1) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump"
+    port = epdu-managed.dev
+    mode = dummy-once
+EOF
+                        ;;
+                    2) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump (loop)"
+    port = epdu-managed.dev
+    mode = dummy-loop
+EOF
+                        ;;
+                esac
+            done >> "$NUT_CONFPATH/ups.conf"
+        fi
+    fi
 }
 
 #####################################################
@@ -1565,6 +1600,21 @@ EOF
 isPidAlive() {
     [ -n "$1" ] && [ "$1" -gt 0 ] || return
     [ -d "/proc/$1" ] || kill -0 "$1" 2>/dev/null
+}
+
+arePidsAlive() {
+    _DEAD=""
+    for _PID in "$@" ; do
+        isPidAlive "$_PID" || _DEAD="${_DEAD} $_PID"
+    done
+    unset _PID
+    if [ -n "${_DEAD}" ]; then
+        log_error "[arePidsAlive] Some are dead:${_DEAD}"
+        unset _DEAD
+        return 1
+    fi
+    unset _DEAD
+    return 0
 }
 
 FAILED=0
@@ -1833,7 +1883,7 @@ sandbox_start_upsd() {
 
 sandbox_start_drivers() {
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
@@ -1860,6 +1910,15 @@ sandbox_start_drivers() {
         execcmd dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
+
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Starting a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                execcmd dummy-ups -a UPSwarm$N ${ARG_USER} ${ARG_FG} &
+                PIDS_DUMMYUPS_SWARM="$PIDS_DUMMYUPS_SWARM $!"
+                log_debug "Tried to start dummy-ups driver for 'UPSwarm$N' as PID $!"
+            done
+        fi
     fi
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
@@ -1870,7 +1929,7 @@ sandbox_start_drivers() {
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
