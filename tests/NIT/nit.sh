@@ -1958,6 +1958,12 @@ testcase_sandbox_start_upsd_alone() {
         EXPECTED_UPSLIST="$EXPECTED_UPSLIST
 UPS1
 UPS2"
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                EXPECTED_UPSLIST="$EXPECTED_UPSLIST
+UPSwarm$N"
+            done
+        fi
         # For windows runners (strip CR if any):
         EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
@@ -1968,6 +1974,18 @@ UPS2"
         EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON},"'
   "UPS1",
   "UPS2"'
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON,"
+            if [ "$DUMMY_UPS_SWARM_COUNT" -gt 1 ] ; then
+                DUMMY_UPS_SWARM_COUNT_1="`expr $DUMMY_UPS_SWARM_COUNT - 1`"
+                for N in `seq 1 $DUMMY_UPS_SWARM_COUNT_1` ; do
+                    EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm$N\","
+                done
+            fi
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm${DUMMY_UPS_SWARM_COUNT}\""
+        fi
     fi
     EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON}"'
 ]'
@@ -2718,7 +2736,7 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             PORTS_WANT=1
         else
-            PORTS_WANT=3
+            PORTS_WANT="`expr 3 + $DUMMY_UPS_SWARM_COUNT`"
         fi
         PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 
