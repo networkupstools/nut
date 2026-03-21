@@ -115,12 +115,8 @@ public:
 		const char *ca_path, const char *ca_file,
 		const char *cert_file, const char *key_file,
 		const char *key_pass)
-		: SSLConfig(force_ssl, certverify),
-		  _ca_path(ca_path ? std::string(ca_path) : std::string()),
-		  _ca_file(ca_file ? std::string(ca_file) : std::string()),
-		  _cert_file(cert_file ? std::string(cert_file) : std::string()),
-		  _key_file(key_file ? std::string(key_file) : std::string()),
-		  _key_pass(key_pass ? std::string(key_pass) : std::string()) {}
+		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
+		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
 
 	const std::string& getCAPath() const { return _ca_path; }
 	const std::string& getCAFile() const { return _ca_file; }
@@ -156,12 +152,9 @@ public:
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix, const char *certhost_name,
 		const char *certident_name)
-		: SSLConfig(force_ssl, certverify),
-		  _certstore_path(certstore_path ? std::string(certstore_path) : std::string()),
-		  _certstore_pass(certstore_pass ? std::string(certstore_pass) : std::string()),
-		  _certstore_prefix(certstore_prefix ? std::string(certstore_prefix) : std::string()),
-		  _certhost_name(certhost_name ? std::string(certhost_name) : std::string()),
-		  _certident_name(certident_name ? std::string(certident_name) : std::string()) {}
+		: SSLConfig(force_ssl, certverify), _certstore_path(certstore_path),
+		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
+		  _certhost_name(certhost_name), _certident_name(certident_name) {}
 
 	const std::string& getCertStorePath() const { return _certstore_path; }
 	const std::string& getCertStorePass() const { return _certstore_pass; }
