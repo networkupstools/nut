@@ -1475,7 +1475,9 @@ EOF
 
 generatecfg_ups_trivial() {
     # Populate the configs for the run
-    (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
+    (   # Hints primarily for upsdrvctl:
+        echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
+        echo 'maxstartdelay = 1' >> "$NUT_CONFPATH/ups.conf" || exit
         if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
             # NOTE: Windows backslashes are pre-escaped in the configure-generated value
             case "${ABS_TOP_BUILDDIR}" in
