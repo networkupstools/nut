@@ -2706,7 +2706,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(const char* host, uint16
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->setSSLConfig(new nut::SSLConfig_OpenSSL(
+		client->setSSLConfig(nut::SSLConfig_OpenSSL(
 			(force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass
 		));
 		client->connect(host, port, try_ssl != 0);
@@ -2727,7 +2727,7 @@ void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client, int force_ssl,
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSSLConfig(new nut::SSLConfig_OpenSSL((
+			cl->setSSLConfig(nut::SSLConfig_OpenSSL((
 				force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass
 			));
 		}
@@ -2739,7 +2739,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t p
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
-		client->setSSLConfig(new nut::SSLConfig_NSS(
+		client->setSSLConfig(nut::SSLConfig_NSS(
 			(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
 		));
 		client->connect(host, port, try_ssl != 0);
@@ -2760,7 +2760,7 @@ void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int force_ssl, int
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSSLConfig(new nut::SSLConfig_NSS(
+			cl->setSSLConfig(nut::SSLConfig_NSS(
 				(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
 			));
 		}

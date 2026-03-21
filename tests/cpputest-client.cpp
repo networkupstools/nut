@@ -245,7 +245,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
 	) {
-		c.setSSLConfig(new SSLConfig_OpenSSL(
+		c.setSSLConfig(SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CAPATH,
@@ -263,7 +263,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
-		c.setSSLConfig(new SSLConfig_NSS(
+		c.setSSLConfig(SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
 			env_NUT_CERTSTORE_PATH,
