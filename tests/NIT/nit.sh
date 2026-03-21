@@ -1176,6 +1176,11 @@ EOF
     if [ -n "${NUT_DEBUG_MIN-}" ] ; then
         echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
+
+    if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] ; then
+        # Enable select-group looping (especially on Windows with sysmaxconn=64):
+        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + 20`" >> "$NUT_CONFPATH/upsd.conf" || exit
+    fi
 }
 
 generatecfg_upsd_nodev() {
