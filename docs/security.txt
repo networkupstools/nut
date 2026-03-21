@@ -323,6 +323,13 @@ with `upsd -Dh` for the server, and `upsmon -Dh` for the typical client, e.g.:
                      without client certificate validation
 ------
 
+The NUT Integration Test (NIT) suite handles verification of server and clients
+with OpenSSL and NSS support. You can investigate the `tests/NIT/nit.sh` script
+in the NUT source tree about creation of files for a new Certificate Authority,
+requesting and signing individual server and client certificates, and setting
+up NUT configuration files to use them.  That script roughly follows the steps
+documented below.
+
 
 OpenSSL backend usage
 ~~~~~~~~~~~~~~~~~~~~~

@@ -120,6 +120,12 @@ https://github.com/networkupstools/nut/milestone/12
      and `upscli_set_debug_level()` methods to facilitate NUT debugging
      for clients built with shared NUT private libraries. [issues #3328,
      #1771, #2800, PR #3330]
+   * Revised OpenSSL handshake to support retries requested by the library,
+     so it at least works reliably on different platforms within the scope
+     it has now. [issue #3331, PR #3344]
+   * Extended `PyNUTClient` to support `STARTTLS` and optional server/self
+     identification, added NIT tests for that ability. [issues #1711, #3329,
+     #1600, PR #3352].
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -278,6 +284,8 @@ https://github.com/networkupstools/nut/milestone/12
      ignore any useful reports, and that we successfully use reasonably many
      of the existing mappings. Suggest how user can help improve the driver
      if too few data points were seen. [#3082, #3095]
+   * Default to `usb_hid_rep_index=1` for Liebert PSI5 and PowerSure PST
+     devices with ID `10af:0002`. [#3345, #1028, #1252 etc.]
    * `cps-hid` updated with Replace Battery information. [PR #3268]
    * `openups-hid` had `nobattery` definition inverted, causing alarms -- now
      fixed to use the same mapping helper as other subdrivers. [issue #3246]
@@ -294,8 +302,15 @@ https://github.com/networkupstools/nut/milestone/12
      continues polling rather than triggering expensive reconnection attempts.
      True disconnections are still detected via other error codes or when all
      polls fail. [issue #3116]
-  * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
-    `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
+   * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
+     `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
+   * Introduced a `winhid` extension in NUT for Windows builds, to directly
+     work with Windows HID API so that extra driver like WinUSB or Zadig is
+     not needed. Note that currently this backend follows a read-focused
+     scope: it supports device discovery and matching by identifiers such
+     as `vendorid` and `productid`, input/feature reads, and interrupt-report
+     fallback handling. Feature-report writes are not implemented in this
+     phase, so `setvar`/`instcmd` operations may be unavailable. [PR #3335]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the

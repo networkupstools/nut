@@ -55,7 +55,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -192,7 +192,7 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Yifeng Li <tomli@tomli.me>\n",
-	DRV_EXPERIMENTAL,
+	DRV_BETA,
 	{ NULL }
 };
 
