@@ -327,7 +327,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
-     stale" messages were logged in the same second, especially no busy
+     stale" messages were logged in the same second, especially on busy
      systems. Now we allow one more second on top of `MAXAGE` setting to
      declare the device dead, just in case fractional/whole second rounding
      comes into play and breaks things. [issue #661]
