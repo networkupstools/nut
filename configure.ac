@@ -7099,7 +7099,7 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
          my_FIXED=true],
         [AC_MSG_RESULT([This system needs help. We have a few platform-dependent ideas ready...])
          AS_IF([test x"${TERMUX__PREFIX-}" != x && test -d "${TERMUX__PREFIX-}/include"],
-            [AC_MSG_CHECKING([whether tweaks for Termux would help])
+            [AC_MSG_CHECKING([whether tweaks for Termux via TERMUX__PREFIX would help])
              dnl https://github.com/termux/termux-packages/issues/23578
              dnl https://github.com/termux/termux-packages/pull/23579 :
              dnl # set the proper header include order - first package includes, then prefix includes
@@ -7108,8 +7108,13 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
              my_INCLUDEDIR_C="${TERMUX__PREFIX}/include"
             ], [
              AS_IF([test x"${MSYS_HOME-}" != x && test -d "${MSYS_HOME-}/../include"],
-                [AC_MSG_CHECKING([whether tweaks for MSYS2 would help])
-                 my_INCLUDEDIR_C="${MSYS_HOME}/../include"
+                [AC_MSG_CHECKING([whether tweaks for MSYS2 via MSYS_HOME would help])
+                 dnl my_INCLUDEDIR_C="${MSYS_HOME}/../include"
+                 my_INCLUDEDIR_C="`printf '%s' \"${MSYS_HOME}/../include\" | tr '\\' '/'`"],
+                [AS_IF([test x"${MSYSTEM_PREFIX-}" != x && test -d "${MSYSTEM_PREFIX-}/include"],
+                    [AC_MSG_CHECKING([whether tweaks for MSYS2 via MSYSTEM_PREFIX would help])
+                     my_INCLUDEDIR_C="${MSYSTEM_PREFIX-}/include"
+                    ])
                 ])
             ])
 
