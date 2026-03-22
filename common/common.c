@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -3961,6 +3961,14 @@ vupslog_too_long:
 
 		gettimeofday(&now, NULL);
 		upslog_start = now;
+
+#ifdef WIN32
+		/* Ensure line buffering for sane logs on Windows console
+		 * especially when many threads/daemons write there. */
+		setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
+		/* Also stdout (some messages go there) for good measure: */
+		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#endif
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {
