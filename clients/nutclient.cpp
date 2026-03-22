@@ -258,11 +258,13 @@ public:
 
 private:
 	SOCKET _sock;
-#ifdef WITH_OPENSSL
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
 	SSL* _ssl;
 	static SSL_CTX* _ssl_ctx;
-#elif defined(WITH_NSS)
+# elif defined(WITH_NSS)
 	PRFileDesc* _ssl;
+# endif
 #endif
 	bool _debugConnect;
 	struct timeval	_tv;
@@ -271,7 +273,8 @@ private:
 	uint16_t _port;
 	int _ssl_configured;
 	int _force_ssl;	/* Always known, so even non-SSL builds can fail if security is required */
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#ifdef WITH_SSL_CXX
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	int _certverify;
 	/* OpenSSL specific */
 	std::string _ca_path;
@@ -284,14 +287,14 @@ private:
 	std::string _certstore_prefix;
 	std::string _certident_name;
 	std::string _certhost_name;
-#endif
+# endif
 
-#if defined(WITH_OPENSSL)
+# if defined(WITH_OPENSSL)
 	/* Callbacks, syntax dictated by OpenSSL */
 	static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata);	/* pem_passwd_cb, 1.1.0+ */
-#endif
+# endif
 
-#if defined(WITH_NSS)
+# if defined(WITH_NSS)
 	/* Callbacks, syntax dictated by NSS */
 	static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, void *arg);
 	static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
@@ -303,10 +306,12 @@ private:
 		CERTDistNames *caNames, CERTCertificate **pRetCert,
 		SECKEYPrivateKey **pRetKey);
 	static void HandshakeCallback(PRFileDesc *fd, void *arg);
-#endif
+# endif
+#endif	/* WITH_SSL_CXX */
 };
 
-#ifdef WITH_OPENSSL
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
 SSL_CTX* Socket::_ssl_ctx = nullptr;
 
 /*static*/ int Socket::openssl_password_callback(char *buf, int size, int rwflag, void *userdata)	/* pem_passwd_cb, 1.1.0+ */
@@ -322,9 +327,9 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 	buf[size - 1] = '\0';
 	return static_cast<int>(strlen(buf));
 }
-#endif
+# endif	/* WITH_OPENSSL */
 
-#ifdef WITH_NSS
+# ifdef WITH_NSS
 static void nss_error(const char* funcname)
 {
 	char buffer[256];
@@ -423,20 +428,25 @@ static void nss_error(const char* funcname)
 		std::cerr << "SSL handshake done successfully with server " << sock->_host << std::endl;
 	}
 }
-#endif	/* WITH_NSS */
+# endif	/* WITH_NSS */
+#endif	/* WITH_SSL_CXX */
 
 Socket::Socket():
 _sock(INVALID_SOCKET),
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#ifdef WITH_SSL_CXX
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 _ssl(nullptr),
+# endif
 #endif
 _debugConnect(false),
 _tv(),
 _port(NUT_PORT),
 _force_ssl(0)
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#ifdef WITH_SSL_CXX
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 ,_certverify(-1)
-#endif
+# endif
+#endif	/* WITH_SSL_CXX */
 {
 	_tv.tv_sec = -1;
 	_tv.tv_usec = 0;
@@ -761,17 +771,20 @@ void Socket::connect(const std::string& host, uint16_t port)
 
 void Socket::disconnect()
 {
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#ifdef WITH_SSL_CXX
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	if (_ssl) {
-# ifdef WITH_OPENSSL
+#  ifdef WITH_OPENSSL
 		SSL_shutdown(_ssl);
 		SSL_free(_ssl);
-# elif defined(WITH_NSS)
+#  elif defined(WITH_NSS)
 		PR_Close(_ssl);
-# endif
+#  endif
 		_ssl = nullptr;
 	}
-#endif
+# endif
+#endif	/* WITH_SSL_CXX */
+
 	if(_sock != INVALID_SOCKET)
 	{
 		::closesocket(_sock);
@@ -782,7 +795,7 @@ void Socket::disconnect()
 
 bool Socket::isSSL()const
 {
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#if defined (WITH_SSL_CXX) && (defined(WITH_OPENSSL) || defined(WITH_NSS))
 	return _ssl != nullptr;
 #else
 	return false;
@@ -793,7 +806,7 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 {
 	_force_ssl = force_ssl;
 
-#if defined(WITH_OPENSSL)
+#if defined(WITH_SSL_CXX) && defined(WITH_OPENSSL)
 	_certverify = certverify;
 	/* These need to be saved at least to handle callbacks
 	 * (to see if errors are fatal or ignorable)
@@ -821,7 +834,7 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 {
 	_force_ssl = force_ssl;
 
-#if defined(WITH_NSS)
+#if defined(WITH_SSL_CXX) && defined(WITH_NSS)
 	_certverify = certverify;
 	/* These need to be saved at least to handle NSS callbacks
 	 * (to see if errors are fatal or ignorable)
@@ -851,7 +864,8 @@ void Socket::startTLS()
 		throw nut::NotConnectedException();
 	}
 
-#ifdef WITH_OPENSSL
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
 	if (!(_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) {
 		if (_debugConnect) std::cerr <<
 			"[D2] Socket::startTLS(): Not configured for OpenSSL" <<
@@ -863,7 +877,7 @@ void Socket::startTLS()
 		}
 		return;
 	}
-#elif defined(WITH_NSS)
+# elif defined(WITH_NSS)
 	if (!(_ssl_configured & UPSCLI_SSL_CAPS_NSS)) {
 		if (_debugConnect) std::cerr <<
 			"[D2] Socket::startTLS(): Not configured for NSS" <<
@@ -875,9 +889,9 @@ void Socket::startTLS()
 		}
 		return;
 	}
-#endif	/* WITH_OPENSSL || WITH_NSS */
+# endif	/* WITH_OPENSSL || WITH_NSS */
 
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	write("STARTTLS");
 	std::string res = read();
 	if (res.substr(0, 11) != "OK STARTTLS") {
@@ -887,17 +901,17 @@ void Socket::startTLS()
 		}
 		return;
 	}
-#endif	/* WITH_OPENSSL || WITH_NSS */
+# endif	/* WITH_OPENSSL || WITH_NSS */
 
-#ifdef WITH_OPENSSL
+# ifdef WITH_OPENSSL
 	if (!_ssl_ctx) {
-# if OPENSSL_VERSION_NUMBER < 0x10100000L
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
 		SSL_load_error_strings();
 		SSL_library_init();
 		_ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-# else
+#  else
 		_ssl_ctx = SSL_CTX_new(TLS_client_method());
-# endif
+#  endif
 		if (!_ssl_ctx) {
 			throw nut::SSLException_OpenSSL("Cannot create SSL context");
 		}
@@ -916,9 +930,9 @@ void Socket::startTLS()
 			throw nut::SSLException_OpenSSL("Failed to load client certificate file");
 		}
 		if (!_key_pass.empty()) {
-# if OPENSSL_VERSION_NUMBER < 0x10100000L
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
 			throw nut::SSLException_OpenSSL("Private key password support not implemented for OpenSSL < 1.1 yet");
-# else
+#  else
 			/* OpenSSL 1.1.0+
 			 * https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb/#return-values
 			 */
@@ -926,7 +940,7 @@ void Socket::startTLS()
 			SSL_CTX_set_default_passwd_cb(_ssl_ctx, openssl_password_callback);
 			/* 2. Set the userdata to the password string */
 			SSL_CTX_set_default_passwd_cb_userdata(_ssl_ctx, const_cast<void *>(static_cast<const void *>(_key_pass.c_str())));
-# endif
+#  endif
 		}
 		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, _key_file.empty() ? _cert_file.c_str() : _key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load client private key file");
@@ -948,7 +962,7 @@ void Socket::startTLS()
 		throw nut::SSLException_OpenSSL(std::string("SSL connection failed: ") + errbuf);
 	}
 
-#elif defined(WITH_NSS)
+# elif defined(WITH_NSS)
 	/* NSS implementation following upsclient.c logic */
 	static bool nss_initialized = false;
 
@@ -1025,6 +1039,7 @@ void Socket::startTLS()
 		disconnect();
 		throw nut::SSLException_NSS("Handshake failed");
 	}
+# endif	/* WITH_NSS */
 #else
 	if (_debugConnect) std::cerr <<
 		"[D2] Socket::startTLS(): SSL support not compiled in" <<
@@ -1034,7 +1049,7 @@ void Socket::startTLS()
 		disconnect();
 		throw nut::SSLException("SSL support not compiled in");
 	}
-#endif
+#endif	/* WITH_SSL_CXX */
 }
 
 bool Socket::isConnected()const
@@ -1061,7 +1076,7 @@ size_t Socket::read(void* buf, size_t sz)
 	}
 
 	ssize_t res;
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#if defined(WITH_SSL_CXX) && (defined(WITH_OPENSSL) || defined(WITH_NSS))
 	if (_ssl) {
 # ifdef WITH_OPENSSL
 		res = SSL_read(_ssl, buf, static_cast<int>(sz));
@@ -1102,7 +1117,7 @@ size_t Socket::write(const void* buf, size_t sz)
 	}
 
 	ssize_t res;
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#if defined(WITH_SSL_CXX) && (defined(WITH_OPENSSL) || defined(WITH_NSS))
 	if (_ssl) {
 # ifdef WITH_OPENSSL
 		res = SSL_write(_ssl, buf, static_cast<int>(sz));
@@ -1320,14 +1335,14 @@ TcpClient::~TcpClient()
 {
 	int	ret = UPSCLI_SSL_CAPS_NONE;
 
-#ifdef WITH_SSL
+#ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
 	ret |= UPSCLI_SSL_CAPS_OPENSSL;
 # endif
 # ifdef WITH_NSS
 	ret |= UPSCLI_SSL_CAPS_NSS;
 # endif
-#endif	/* WITH_SSL */
+#endif	/* WITH_SSL_CXX */
 
 	return ret;
 }

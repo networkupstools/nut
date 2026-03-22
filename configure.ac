@@ -7076,6 +7076,7 @@ dnl for C++ headers. Simple `-I/path/name` is okay in this regard.
 dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
 
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
+nut_with_ssl_cxx=no
 AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
@@ -7176,10 +7177,10 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
                 )
             ])
 
-        AS_IF([test "$my_FIXED" = false],
+        AS_IF([test "$my_FIXED" = true],
+            [nut_with_ssl_cxx=yes],
             [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
-             dnl FIXME: Disable just C++ support in the library? (need more make/macro definitions)
-             have_cxx11=no
+             dnl We disable just SSL support in the C++ library
             ])
         ]
 	)
@@ -7195,7 +7196,10 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     unset my_INCLUDEDIR_C
     unset my_INCLUDEDIR_CXX
 ])
+
 AC_SUBST(LIBSSL_CXXFLAGS)
+NUT_REPORT_FEATURE([enable SSL support in C++ client library], [${nut_with_ssl_cxx}], [${nut_ssl_lib}],
+					[WITH_SSL_CXX], [Define to enable SSL in libnutclient])
 
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)

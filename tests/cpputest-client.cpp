@@ -181,7 +181,11 @@ void NutActiveClientTest::setUp()
 
 	s = std::getenv("NUT_FORCESSL");
 	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
+#ifdef WITH_SSL_CXX
 		env_NUT_FORCESSL = true;
+#else
+		std::cerr << "[D] Not built with WITH_SSL_CXX, ignoring NUT_FORCESSL=true" << std::endl;
+#endif
 	}
 
 	s = std::getenv("NUT_CERTVERIFY");
@@ -245,6 +249,9 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
 	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
 		c.setSSLConfig(SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -254,6 +261,13 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_KEYFILE,
 			env_NUT_KEYPASS
 			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(OpenSSL): " << ex.what() << std::endl;
+		}
+#endif
 	}
 
 	if (env_NUT_CERTVERIFY != -1
@@ -263,6 +277,9 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
 		c.setSSLConfig(SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -272,6 +289,13 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTHOST_NAME,
 			env_NUT_CERTIDENT_NAME
 			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(NSS): " << ex.what() << std::endl;
+		}
+#endif
 	}
 
 	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
