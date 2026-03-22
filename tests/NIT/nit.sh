@@ -113,6 +113,7 @@ TABCHAR="`printf '\t'`"
 
 # Special case to launch a lot of drivers and stress-test the select() loops etc.
 [ -n "${DUMMY_UPS_SWARM_COUNT}" ] && [ "${DUMMY_UPS_SWARM_COUNT}" -gt 0 ] || DUMMY_UPS_SWARM_COUNT=0
+[ -n "${UPSLOG_SWARM_COUNT}" ] && [ "${UPSLOG_SWARM_COUNT}" -gt 0 ] || UPSLOG_SWARM_COUNT=0
 
 log_separator() {
     echo "" >&2
@@ -451,6 +452,7 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 PIDS_DUMMYUPS_SWARM=""
+PIDS_UPSLOG_SWARM=""
 
 WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
@@ -783,10 +785,10 @@ stop_daemons() {
         PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PIDS_DUMMYUPS_SWARM$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PIDS_DUMMYUPS_SWARM$PIDS_UPSLOG_SWARM$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
@@ -796,6 +798,7 @@ stop_daemons() {
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
     PIDS_DUMMYUPS_SWARM=""
+    PIDS_UPSLOG_SWARM=""
 
     unset PID_UPSSCHED_NOW
 }
@@ -1177,9 +1180,9 @@ EOF
         echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
 
-    if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] ; then
+    if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] || [ "$UPSLOG_SWARM_COUNT" -gt 5 ] ; then
         # Enable select-group looping (especially on Windows with sysmaxconn=64):
-        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + 20`" >> "$NUT_CONFPATH/upsd.conf" || exit
+        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + $UPSLOG_SWARM_COUNT + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
 }
 
@@ -2309,6 +2312,16 @@ testcase_sandbox_upsc_query_timer() {
     execcmd upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
     PID_UPSLOG="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
+
+    # No timeout, no kill - keep them running if requested (trap exit):
+    if [ "$UPSLOG_SWARM_COUNT" -gt 0 ] ; then
+        log_info "Starting a swarm of ${UPSLOG_SWARM_COUNT} clients"
+        for N in `seq 1 $UPSLOG_SWARM_COUNT` ; do
+            execcmd upslog -F -i 1 -N -m "*@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy-$N.log" &
+            PIDS_UPSLOG_SWARM="$PIDS_UPSLOG_SWARM $!"
+            log_debug "Tried to start upslog as PID $!"
+        done
+    fi
 
     # TODO: Any need to convert to runcmd()?
     OUT1="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
