@@ -131,7 +131,9 @@ maxretry = 3
 # user, group: OPTIONAL. Overrides the compiled-in (also global-section,
 #                when used in driver section) default unprivileged user/group
 #                name for NUT device driver. Impacts access rights used for
-#                the socket file access (group) and communication ports (user).
+#                the socket file access (group) and communication ports (user
+#                and its default group; you may want to add that user in the
+#                operating system to `dialout` group to access serial ports).
 #
 # synchronous: OPTIONAL.  The driver work by default in asynchronous
 #              mode (like *no*) with fallback to synchronous if sending
