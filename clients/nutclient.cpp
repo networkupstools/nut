@@ -47,14 +47,16 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef WITH_NSS
-# include <prerror.h>
-# include <prinit.h>
-# include <pk11func.h>
-# include <prtypes.h>
-# include <ssl.h>
-# include <private/pprio.h>
-#endif	/* WITH_NSS */
+#ifdef WITH_SSL_CXX
+# ifdef WITH_NSS
+#  include <prerror.h>
+#  include <prinit.h>
+#  include <pk11func.h>
+#  include <prtypes.h>
+#  include <ssl.h>
+#  include <private/pprio.h>
+# endif	/* WITH_NSS */
+#endif	/* WITH_SSL_CXX */
 
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
