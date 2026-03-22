@@ -7063,25 +7063,29 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
+dnl We can use OpenSSL or NSS in C++ libnutclient builds, and their CFLAGS on
+dnl various platforms can pull in options which can confuse C++ preprocessing,
+dnl such as -isystem settings which preclude looking for standard headers (due
+dnl to `#include_next` involved in C++ headers ignoring certain directories to
+dnl avoid loops).
+
+dnl There is a bit of trouble with third-party dependencies whose pkgconf
+dnl files or our own code add `-isystem` entries (to avoid warnings about
+dnl sloppy code, among other things): this can circumvent (clang++) search
+dnl for C++ headers. Simple `-I/path/name` is okay in this regard.
+dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
+
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
-AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d "${TERMUX__PREFIX-}"], [
-    dnl There is a bit of trouble with third-party dependencies whose pkgconf
-    dnl files or our own code add `-isystem` entries (to avoid warnings about
-    dnl sloppy code, among other things): this can circumvent (clang++) search
-    dnl for C++ headers. Simple `-I/path/name` is okay in this regard.
-    dnl Such a problem for NUT was only seen/reported on Termux so far.
-    dnl https://github.com/termux/termux-packages/issues/23578
-    dnl https://github.com/termux/termux-packages/pull/23579
-    AC_MSG_CHECKING(if C++11 support in current compiler needs help in Termux)
+AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
+    AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
     my_CFLAGS="${CFLAGS}"
     my_CPPFLAGS="${CPPFLAGS}"
     my_CXXFLAGS="${CXXFLAGS}"
-
-    dnl # set the proper header include order - first package includes, then prefix includes
-    dnl # -isystem${TERMUX_PREFIX}/include/c++/v1 is needed here for on-device building to work correctly
-    dnl NOTE: two underscores when building, at least on android directly
-    my_FIXX="-isystem${TERMUX__PREFIX}/include/c++/v1 -isystem${TERMUX__PREFIX}/include"
+    my_FIXX=""
+    my_INCLUDEDIR_C=""
+    my_INCLUDEDIR_CXX=""
+    my_FIXED=false
 
     AC_LANG_PUSH([C++])
 
@@ -7090,16 +7094,95 @@ AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d 
 
     CXXFLAGS="${my_CXXFLAGS} ${LIBSSL_CFLAGS}"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [AC_MSG_RESULT([LIBSSL flags work out of the box])],
-        [CXXFLAGS="${my_CXXFLAGS} ${my_FIXX} ${LIBSSL_CFLAGS}"
-         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-            [AC_MSG_RESULT([yes, -isystem preference helps for LIBSSL fkags])
-             LIBSSL_CXXFLAGS="${my_FIXX} ${LIBSSL_CFLAGS}"
-            ],
-            [AC_MSG_RESULT([LIBSSL flags just won't work])
+        [AC_MSG_RESULT([LIBSSL flags work out of the box])
+         my_FIXED=true],
+        [AC_MSG_RESULT([This system needs help. We have a few platform-dependent ideas ready...])
+         AS_IF([test x"${TERMUX__PREFIX-}" != x && test -d "${TERMUX__PREFIX-}/include"],
+            [AC_MSG_CHECKING([whether tweaks for Termux would help])
+             dnl https://github.com/termux/termux-packages/issues/23578
+             dnl https://github.com/termux/termux-packages/pull/23579 :
+             dnl # set the proper header include order - first package includes, then prefix includes
+             dnl # -isystem${TERMUX_PREFIX}/include/c++/v1 is needed here for on-device building to work correctly
+             dnl NOTE: two underscores when building, at least on android directly
+             my_INCLUDEDIR_C="${TERMUX__PREFIX}/include"
+            ], [
+             AS_IF([test x"${MSYS_HOME-}" != x && test -d "${MSYS_HOME-}/../include"],
+                [AC_MSG_CHECKING([whether tweaks for MSYS2 would help])
+                 my_INCLUDEDIR_C="${MSYS_HOME}/../include"
+                ])
+            ])
+
+        AS_IF([test -n "$my_INCLUDEDIR_C"], [
+            AS_IF([test "${CLANGCC}" = "yes" && test -d "${my_INCLUDEDIR_C}/c++/v1"],
+                 [my_INCLUDEDIR_CXX="${my_INCLUDEDIR_C}/c++/v1"],
+                 [AS_IF([test "${GCC}" = "yes" && test -d "${my_INCLUDEDIR_C}/c++/${CXX_VERSION_NUMBER}"],
+                     [my_INCLUDEDIR_CXX="${my_INCLUDEDIR_C}/c++/${CXX_VERSION_NUMBER}"]
+                  )]
+                )
+            ])
+
+        AS_IF([test -n "$my_INCLUDEDIR_CXX"], [
+            my_FIXX="-isystem${my_INCLUDEDIR_CXX} -isystem${my_INCLUDEDIR_C}"
+            CXXFLAGS="${my_CXXFLAGS} ${my_FIXX} ${LIBSSL_CFLAGS}"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                [AC_MSG_RESULT([yes, tweaking -isystem preference helps for LIBSSL flags])
+                 LIBSSL_CXXFLAGS="${my_FIXX} ${LIBSSL_CFLAGS}"
+                 my_FIXED=true],
+                [AC_MSG_RESULT([no, tweaking -isystem preference did not help])
+                 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+                    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Tried LIBSSL_CXXFLAGS="${my_FIXX-} ${LIBSSL_CFLAGS}"])
+                 ])
+                ])
+            ],[AC_MSG_RESULT([no, could not determine directories to tweak -isystem preference])]
+            )
+
+        AS_IF([test "$my_FIXED" = false], [
+            AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+                AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Tried my_INCLUDEDIR_C="${my_INCLUDEDIR_C-}"])
+                AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Tried my_INCLUDEDIR_CXX="${my_INCLUDEDIR_CXX-}"])
+                AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXX_VERSION_NUMBER="${CXX_VERSION_NUMBER}"])
+            ])
+
+            AS_CASE([${LIBSSL_CXXFLAGS}],
+                [*-isystem*],
+                    [AC_MSG_CHECKING([whether removing -isystem from LIBSSL_CXXFLAGS would help])
+                     my_FIXX=""
+                     my_SKIP=false
+                     for TOKEN in $LIBSSL_CXXFLAGS ; do
+                        AS_CASE([${TOKEN}],
+                            [-isystem],  [my_SKIP=true],
+                            [-isystem*], [my_SKIP=false],
+                                [AS_IF([test "${my_SKIP}" = true],
+                                    [my_SKIP=false],
+                                    [my_FIXX="$my_FIXX $TOKEN"]
+                                 )]
+                            )
+                     done
+                     unset TOKEN
+                     unset my_SKIP
+
+                     CXXFLAGS="${my_CXXFLAGS} ${my_FIXX}"
+                     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                        [AC_MSG_RESULT([yes, removing -isystem helps for LIBSSL flags])
+                         LIBSSL_CXXFLAGS="${my_FIXX}"
+                         my_FIXED=true],
+                        [AC_MSG_RESULT([no, removing -isystem from LIBSSL_CXXFLAGS did not help])
+                         AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+                            AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Tried LIBSSL_CXXFLAGS="${my_FIXX-}"])
+                         ])
+                        ]
+                        )
+                    ]
+                )
+            ])
+
+        AS_IF([test "$my_FIXED" = false],
+            [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
+             dnl FIXME: Disable just C++ support in the library? (need more make/macro definitions)
              have_cxx11=no
             ])
-        ])
+        ]
+	)
 
     CFLAGS="${my_CFLAGS}"
     CPPFLAGS="${my_CPPFLAGS}"
@@ -7108,6 +7191,9 @@ AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d 
     unset CPLUSPLUS_MAIN
     unset CPLUSPLUS_DECL
     unset my_FIXX
+    unset my_FIXED
+    unset my_INCLUDEDIR_C
+    unset my_INCLUDEDIR_CXX
 ])
 AC_SUBST(LIBSSL_CXXFLAGS)
 
