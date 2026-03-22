@@ -7063,6 +7063,7 @@ AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
+LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
 AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d "${TERMUX__PREFIX-}"], [
     dnl There is a bit of trouble with third-party dependencies whose pkgconf
     dnl files or our own code add `-isystem` entries (to avoid warnings about
@@ -7093,7 +7094,7 @@ AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d 
         [CXXFLAGS="${my_CXXFLAGS} ${my_FIXX} ${LIBSSL_CFLAGS}"
          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
             [AC_MSG_RESULT([yes, -isystem preference helps for LIBSSL fkags])
-             LIBSSL_CFLAGS="${my_FIXX} ${LIBSSL_CFLAGS}"
+             LIBSSL_CXXFLAGS="${my_FIXX} ${LIBSSL_CFLAGS}"
             ],
             [AC_MSG_RESULT([LIBSSL flags just won't work])
              have_cxx11=no
@@ -7106,8 +7107,9 @@ AS_IF([test "${have_cxx11}" = yes && test x"${TERMUX__PREFIX-}" != x && test -d 
     AC_LANG_POP([C++])
     unset CPLUSPLUS_MAIN
     unset CPLUSPLUS_DECL
-    umset my_FIXX
+    unset my_FIXX
 ])
+AC_SUBST(LIBSSL_CXXFLAGS)
 
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)
