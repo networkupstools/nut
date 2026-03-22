@@ -37,16 +37,6 @@
 #	include <nss.h>
 #	include <ssl.h>
 # endif  /* WITH_OPENSSL | WITH_NSS */
-/*
-// This should not be needed if macros in code are all in the right places:
-#else
-# ifdef WITH_OPENSSL
-#  undefine WITH_OPENSSL
-# endif
-# ifdef WITH_NSS
-#  undefine WITH_NSS
-# endif
-*/
 #endif	/* WITH_SSL_CXX */
 
 #include <string>
