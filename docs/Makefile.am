@@ -811,14 +811,24 @@ qa-guide.pdf: docinfo-since-v2.8.3.xml qa-guide-docinfo.xml
 	@$(GENERATE_PDF)
 
 # Used below for spellcheck and for .prep-src-docs
-SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
+# List most-frequently edited files first, to hit typos there sooner when
+# developing. Some files from sub-directories are spell-checked here and
+# not in their own makefiles, because they are included as chapters in
+# some larger documents anchored here.
+# Note that in builds with enabled parallel fanout mode (even if done
+# sequentially, e.g. without NUT_MAKE_SKIP_FANOUT=true explicitly),
+# files located in the current directory are processed first anyway,
+# as one (possibly parallelized) sub-make call.
+SPELLCHECK_SRC_DEFAULT = \
+	../NEWS.adoc ../UPGRADING.adoc \
 	asciidoc-vars.conf \
-	../ci_build.adoc ../README.adoc ../NEWS.adoc \
-	../INSTALL.nut.adoc ../UPGRADING.adoc \
+	../ci_build.adoc ../README.adoc \
+	../INSTALL.nut.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
-	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
+	$(ALL_TXT_SRC)
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
