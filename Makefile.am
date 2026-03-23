@@ -94,22 +94,43 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
+
+# Make sure automake-defined check/install goals begin with our hack for
+# touch-files for generated headers (so each depending sub-directory does
+# not re-evaluate those rules in whole); note that these goals may end up
+# also calling all-fanout-maybe (as they depend on "all"):
 check-recursive install-recursive: generated-headers-with-a-touch
 
-all check install: all-fanout-cleanup
-
+# NOTE: Beside dependency above, also called from some code paths in
+# the all-fanout-maybe implementation:
 generated-headers-with-a-touch: @dotMAKE@
-	$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h
-	$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
-	$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
-	$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h
+	+$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
+	+$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
+
+# After completing the automake-defined goals, clean up:
+all: all-fanout-cleanup
+check: check-fanout-cleanup
+install: install-fanout-cleanup
 
 # Run as part of "all", but after the autotools-standard "all-recursive"
 # where we quiesce nut_version.h regeneration attempts for each subdir
-all-fanout-cleanup: all-recursive
+# which automake recipes iterate; similarly for "check" and "install":
+cleanup-touchfiles-for-generated-headers:
 	@rm -f include/.all.nut_version-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 
+all-fanout-cleanup: all-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+check-fanout-cleanup: check-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+install-fanout-cleanup: install-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+# Called from generated-headers-with-a-touch:
 touch-include-all-nut_version-generated.timestamp:
 	@[ -s include/nut_version.h ]
 	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
