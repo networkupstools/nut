@@ -1011,11 +1011,18 @@ spellcheck: @dotMAKE@
 			|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 		done ; \
 	 else \
+		SPELLCHECK_NOEXT_DOCS_FIRST="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in ../NEWS.adoc|../UPGRADING.adoc) printf '%s ' \"$${docsrc}\" ;; *) ;; esac ; done`" ; \
 		SPELLCHECK_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in */*) ;; *.adoc|*.txt|*.in|*.conf|*.sample) printf '%s ' \"$${docsrc}-spellchecked-auto\" ;; esac ; done`" ; \
-		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in */*) printf '%s ' \"$${docsrc}\" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' \"$${docsrc}\" ;; esac ; done`" ; \
+		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in ../NEWS.adoc|../UPGRADING.adoc) ;; */*) printf '%s ' \"$${docsrc}\" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' \"$${docsrc}\" ;; esac ; done`" ; \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
-			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}' SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'" ; \
+			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS_FIRST='$${SPELLCHECK_NOEXT_DOCS_FIRST}'    SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'    SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}'" ; \
 		else true ; fi ; \
+		if [ x"$${SPELLCHECK_NOEXT_DOCS_FIRST}" != x ] ; then \
+			for docsrc in $${SPELLCHECK_NOEXT_DOCS_FIRST} ; do \
+				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+			done ; \
+		fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
 			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ] ; then printf '%s ' \"$(SPELLCHECK_SRCDIR)/$${docsrc}\" ; rm -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ; fi ; done`" ; \
