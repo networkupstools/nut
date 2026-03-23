@@ -47,6 +47,9 @@
 # include <sys/stat.h>
 #endif
 
+static const char * getmyprocname(void);
+static const char * getmyprocbasename(void);
+
 #if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
 #  ifdef HAVE_SYSTEMD_SD_BUS_H
 #   include <systemd/sd-bus.h>
@@ -760,7 +763,7 @@ void background(void)
 	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
 #endif	/* WIN32 */
 
-	upslogx(LOG_INFO, "Startup successful");
+	upslogx(LOG_INFO, "Startup successful: %s", getmyprocbasename());
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
