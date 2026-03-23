@@ -134,7 +134,7 @@ all-fanout-maybe: @dotMAKE@
 	       clients/.all.libupsclient_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+			echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
 		$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
 		exit 0 ; \
@@ -142,15 +142,15 @@ all-fanout-maybe: @dotMAKE@
 	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+				echo "  SUBDIR-MAKE	LAUNCH  	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
 			fi ; \
 			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs || exit ; \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
+				echo "  SUBDIR-MAKE	FINISH  	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
 			fi ;; \
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
+				echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
 			fi ; \
 			$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
 			;; \
@@ -234,12 +234,12 @@ SUBDIR_TGT_RULE = ( \
 	[ x"$${TGT-}" != x ] || TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	[ x"$${DIR-}" != x ] || DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	STARTING $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
+		echo "  SUBDIR-MAKE	STARTING	$@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
 	fi ; \
 	cd "$(abs_builddir)/$${DIR}" && \
 	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE	FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	SUCCESS  $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
+		echo "  SUBDIR-MAKE	SUCCESS 	$@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
 	fi ; \
 	)
 
@@ -761,7 +761,7 @@ spellcheck spellcheck-interactive: @dotMAKE@
 	  if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		RES=0 ; \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+			echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
 		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
