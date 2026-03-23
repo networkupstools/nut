@@ -15,6 +15,7 @@
 Makefile
 Makefile.in
 tags
+.all.*-generated.timestamp
 
 ## Parent directory only
 /aclocal.m4
