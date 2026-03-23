@@ -1704,15 +1704,43 @@ LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
 # TOTHINK: Parse sources for `include::` hits dynamically to build (parts of) this regex?
 LINKMAN_EXCLUDE_NONDRIVER = '^(nutupsdrv|blazer-common|nut_usb_addvars|networked_hostnames)\.txt$$'
 
-CLEANFILES = linkman-*.txt.tmp*
+CLEANFILES = linkman-*.txt.tmp* .all.nut_*-generated.timestamp
 
 # Note we can have a pre-built file from the tarball, sort of useful when
 # e.g. no man page building tools are locally available (we might not be
 # able to render a new instance though). At least do not let '$@' confuse
 # us into overwriting its instance in srcdir (if differs from builddir).
+
+# Shared shell snippet to quickly bail out from (re-)building these files
+# in a parallelized build/check sequence:
+LINKMAN_CHECK_GENERATED = { \
+	if [ -s '$@' ] ; then \
+	    if [ x"$(NUT_LINKMAN_GENERATED)" = xtrue ] || [ x"$${NUT_LINKMAN_GENERATED}" = xtrue ] ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (NUT_LINKMAN_GENERATED makevar=$(NUT_LINKMAN_GENERATED) shellvar=$${NUT_LINKMAN_GENERATED})" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	    if test -n "`find '$@' -newer '.all.nut_linkman-generated.timestamp' 2>/dev/null`" \
+	    && [ x"$(NUT_LINKMAN_GENERATED)" != xfalse ] \
+	    && [ x"$${NUT_LINKMAN_GENERATED}" != xfalse ] \
+	    ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (.all.nut_linkman-generated.timestamp was made in this larger run and is older than the generated file)" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	fi; \
+	if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	    echo "  GENERATE-LINKMAN	$@ (NUT_LINKMAN_GENERATED makevar=$(NUT_LINKMAN_GENERATED) shellvar=$${NUT_LINKMAN_GENERATED})"; \
+	else \
+	    echo "  GENERATE-LINKMAN	$@"; \
+	fi ; \
+}
+
 linkman-driver-names.txt: Makefile
-	@echo "  GENERATE-LINKMAN	$@"
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@$(LINKMAN_CHECK_GENERATED) ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
 	    | $(EGREP) -v $(LINKMAN_EXCLUDE_NONDRIVER) \
 	    | sort -n | uniq \
@@ -1733,8 +1761,8 @@ linkman-driver-names.txt: Makefile
 	 fi
 
 linkman-drivertool-names.txt: Makefile
-	@echo "  GENERATE-LINKMAN	$@"
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@$(LINKMAN_CHECK_GENERATED) ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERTOOLS) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
@@ -2139,6 +2167,9 @@ spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 # stack (causing a dependency loop)!
 PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 ASCIIDOC_LINKMANEXT_SECTION_REWRITE = @ASCIIDOC_LINKMANEXT_SECTION_REWRITE@
+
+# Allow this to be called before top-level parallel or recursive build fanout:
+prep-linkman-generated: $(LINKMAN_INCLUDE_GENERATED) Makefile
 
 # NOTE: Some "make" implementations prefix a relative or absent path to
 # the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute

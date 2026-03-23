@@ -108,6 +108,8 @@ generated-headers-with-a-touch: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
 	+$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 	+$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_LINKMAN_GENERATED=false prep-linkman-generated
+	+$(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated-generated.timestamp
 
 # After completing the automake-defined goals, clean up:
 all: all-fanout-cleanup
@@ -119,6 +121,7 @@ install: install-fanout-cleanup
 # which automake recipes iterate; similarly for "check" and "install":
 cleanup-touchfiles-for-generated-headers:
 	@rm -f include/.all.nut_version-generated.timestamp \
+	       docs/man/.all.nut_linkman-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 
 all-fanout-cleanup: all-recursive @dotMAKE@
@@ -142,6 +145,16 @@ touch-clients-all-libupsclient_version-generated.timestamp:
 	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch clients/.all.libupsclient_version-generated.timestamp
+
+touch-docs-man-all-linkman-generated-generated.timestamp:
+	@[ -s docs/man/linkman-driver-names.txt ] && [ -s docs/man/linkman-drivertool-names.txt ]
+	@if test -n "`find docs/man/linkman-driver-names.txt -newer docs/man/linkman-drivertool-names.txt`" ; then \
+	    touch -r docs/man/linkman-drivertool-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 else \
+	    touch -r docs/man/linkman-driver-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 fi ; \
+	 touch -d '1970-01-01' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 touch docs/man/.all.nut_linkman-generated.timestamp
 
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
@@ -364,16 +377,30 @@ all/include: all-libs-local/include @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs/man: @dotMAKE@
-	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; \
+# Quickly bail out if somehow recursed into this goal from a dependency
+# (looking at all/docs with its several sub-make calls):
+prep-linkman-generated/docs/man: @dotMAKE@
+	+@if [ x"$(NUT_LINKMAN_GENERATED)" = xtrue ] || [ x"$${NUT_LINKMAN_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
+	  SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=false'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=false; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE) || exit ; \
+	  $(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated-generated.timestamp
+
+prep-src-docs/docs/man: prep-linkman-generated/docs/man @dotMAKE@
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3 NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs: @dotMAKE@
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+prep-src-docs/docs: prep-linkman-generated/docs/man @dotMAKE@
+	+@SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
 all/docs/man: prep-src-docs/docs/man @dotMAKE@
-	+@$(SUBDIR_TGT_RULE)
+	+@SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
 # pre-processed for html/pdf renders (if any are requested), so they surely
@@ -382,7 +409,8 @@ all/docs/man: prep-src-docs/docs/man @dotMAKE@
 # types are enabled.
 MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
 all/docs: prep-src-docs/docs/man @dotMAKE@
-	+@case "@DOC_BUILD_LIST@" in \
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
 			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
@@ -392,11 +420,14 @@ all/docs: prep-src-docs/docs/man @dotMAKE@
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ : SUCCESS" ;; \
 		*) ;; \
 	  esac
-	+@$(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all-recursive/docs: all/docs all/docs/man @dotMAKE@
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Dependencies below are dictated by who needs whose library from another dir
 # (generated by a sub-make there, so we pre-emptively ensure it exists to avoid
@@ -1108,6 +1139,10 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 
 ChangeLog.adoc: ChangeLog @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
+
+prep-linkman-generated: @dotMAKE@
+	@rm -f docs/man/.all.nut_linkman-generated.timestamp
+	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) prep-linkman-generated
 
 nut_version.h include/nut_version.h: @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp
