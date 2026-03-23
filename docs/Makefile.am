@@ -997,6 +997,8 @@ spellcheck: @dotMAKE@
 		$(ASPELL) --help || true; \
 		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "SPELLCHECK_SRCDIR: $(SPELLCHECK_SRCDIR)" ; \
+		echo "SPELLCHECK_SRC: $(SPELLCHECK_SRC)" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
