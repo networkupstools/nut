@@ -86,6 +86,10 @@ https://github.com/networkupstools/nut/milestone/12
      not-requested (e.g. do not start `upsd` in `MODE=netclient`), even though
      the unit is nominally enabled; this should make packaging and providing
      service pre-sets more simple. [issue #837, PR #3233]
++
+In a way, this should also fix fallout of a change delivered in NUT v2.8.4
+release, where `upsmon` could have started with `MODE=none` in `nut.conf`,
+but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]
