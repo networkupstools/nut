@@ -2147,6 +2147,8 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 int upscli_disconnect(UPSCONN_t *ups)
 {
+	char	tmp[UPSCLI_NETBUF_LEN];
+
 	if (!ups) {
 		return -1;
 	}
@@ -2165,6 +2167,24 @@ int upscli_disconnect(UPSCONN_t *ups)
 	}
 
 	net_write(ups, "LOGOUT\n", 7, 0);
+
+	/* Give it a bit of time to gracefully close connections,
+	 * drain the buffer and avoid noise in logs of upsd like:
+	 *   write() failed for 127.0.0.1: Transport endpoint is not connected
+	 */
+	memset(tmp, 0, sizeof(tmp));
+	if (net_read(ups, tmp, sizeof(tmp), DEFAULT_NETWORK_TIMEOUT) > 0) {
+		if (!strcmp(tmp, "OK Goodbye\n")) {
+			/* There may be trailing garbage from the buffer after the newline, not sure why */
+			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, as expected", __func__, tmp);
+		} else if (!strncmp(tmp, "OK", 2)) {
+			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, good enough", __func__, tmp);
+		} else {
+			upsdebugx(1, "%s: We logged out, and server said '%s', not OK but oh well", __func__, tmp);
+		}
+	} else {
+		upsdebugx(1, "%s: We logged out, and server did not reply in a short time frame", __func__);
+	}
 
 #ifdef WITH_OPENSSL
 	if (ups->ssl) {
