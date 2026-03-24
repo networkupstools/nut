@@ -3,7 +3,7 @@
    Copyright (C)
    2001		Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
-   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -806,6 +806,43 @@ static void debugcmdline(int level, const char *msg, char *const argv[])
 	upsdebugx(level, "%s", cmdline);
 }
 
+#ifndef WIN32
+static int forkexec_parent_analyze(pid_t waitret, int wstat, int *puexectimeout)
+{
+	if (waitret == -1) {
+		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+		exec_timeout++;
+		if (puexectimeout) *puexectimeout = 1;
+		return 0;
+	}
+
+	if (WIFEXITED(wstat) == 0) {
+		upslogx(LOG_WARNING, "Driver exited abnormally");
+		exec_error++;
+		return -1;
+	}
+
+	/* the rest of checks only work when WIFEXITED is nonzero */
+
+	if (WEXITSTATUS(wstat) != 0) {
+		upslogx(LOG_WARNING, "Driver failed to start"
+			" (exit status=%d)", WEXITSTATUS(wstat));
+		exec_error++;
+		return -2;
+	}
+
+	if (WIFSIGNALED(wstat)) {
+		upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
+			WTERMSIG(wstat));
+		exec_error++;
+		return -3;
+	}
+
+	if (puexectimeout) *puexectimeout = 0;
+	return 1;
+}
+#endif	/* WIN32 */
+
 static void forkexec(char *const argv[], const ups_t *ups)
 {
 #ifndef WIN32
@@ -900,40 +937,16 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				}
 			}
 
+			/* Block until alarm */
 			waitret = waitpid(pid, &wstat, 0);
 
 			alarm(0);
 
-			if (waitret == -1) {
-				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
-				exec_timeout++;
-				*puexectimeout = 1;
-				return;
-			}
-
-			if (WIFEXITED(wstat) == 0) {
-				upslogx(LOG_WARNING, "Driver exited abnormally");
-				exec_error++;
-				return;
-			}
-
-			/* the rest only work when WIFEXITED is nonzero */
-
-			if (WEXITSTATUS(wstat) != 0) {
-				upslogx(LOG_WARNING, "Driver failed to start"
-				" (exit status=%d)", WEXITSTATUS(wstat));
-				exec_error++;
-				return;
-			}
-
-			if (WIFSIGNALED(wstat)) {
-				upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
-					WTERMSIG(wstat));
-				exec_error++;
-			}
+			/* Bump timeout or error counts if appropriate */
+			forkexec_parent_analyze(waitret, wstat, puexectimeout);
 
 			return;
-		}
+		}	/* end of pid != 0 (fork parent) part */
 
 		if (getproctag()) {
 			char	tag[SMALLBUF];
@@ -942,7 +955,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		} else {
 			setproctag("child");
 		}
-	}
+	}	/* forked, maybe */
 
 	/* child or foreground mode (no fork, e.g. single driver operation)
 	 * execute the specified binary and args into current process
@@ -1434,9 +1447,32 @@ static void start_driver(const ups_t *ups)
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
 				if (drv_retrydelay >= 0) {
+#ifndef WIN32
+					int	*puexectimeout = (int *)&(ups->exceeded_timeout);
+#endif
+
 					upsdebugx(3, "%s: retrying after %u seconds",
 						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
+
+#ifndef WIN32
+					if (upscount > 1 && *puexectimeout) {
+						int	wstat;
+						pid_t	waitret;
+
+						/* Final checks, similar to those in forkexec() */
+						waitret = waitpid(ups->pid, &wstat, WNOHANG);
+						if (forkexec_parent_analyze(waitret, wstat, puexectimeout) > 0) {
+							upslogx(LOG_INFO, "%s: driver %s [%s] completed startup "
+								"while we were sleeping to retry", __func__,
+								ups->driver, ups->upsname);
+							drv_maxretry = 0;
+							exec_error = initial_exec_error;
+							exec_timeout = initial_exec_timeout;
+						}
+					}
+#endif
+
 				}
 		}
 	}
