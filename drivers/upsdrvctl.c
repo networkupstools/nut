@@ -54,6 +54,7 @@ typedef struct {
 	pid_t	pid;
 #else	/* WIN32 */
 	int	pid;	/* for WIN32 used just as a flag that this UPS was started by this tool in this run */
+	PROCESS_INFORMATION	ProcessInformation;
 #endif	/* WIN32 */
 	void	*next;
 }	ups_t;
@@ -807,12 +808,24 @@ static void debugcmdline(int level, const char *msg, char *const argv[])
 }
 
 #ifndef WIN32
-static int forkexec_parent_analyze(pid_t waitret, int wstat, int *puexectimeout)
+static int forkexec_parent_analyze(pid_t waitret, int wstat, const ups_t *ups)
+#else
+static int forkexec_parent_analyze(DWORD res, const ups_t *ups)
+#endif
 {
+	/* work around const for this one... */
+#ifdef WIN32
+	int *pupid = (int *)&(ups->pid);
+#endif
+	int *puexectimeout = (int *)&(ups->exceeded_timeout);
+
+	*puexectimeout = 0;
+
+#ifndef WIN32
 	if (waitret == -1) {
 		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
 		exec_timeout++;
-		if (puexectimeout) *puexectimeout = 1;
+		*puexectimeout = 1;
 		return 0;
 	}
 
@@ -838,10 +851,28 @@ static int forkexec_parent_analyze(pid_t waitret, int wstat, int *puexectimeout)
 		return -3;
 	}
 
-	if (puexectimeout) *puexectimeout = 0;
+#else	/* WIN32 */
+
+	if (res == WAIT_OBJECT_0) {
+		/* all ok, no-op */
+	} else
+	if (res == WAIT_TIMEOUT) {
+		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+		*pupid = 0;	/* For WIN32, just a flag (not "-1" has a meaning) */
+		*puexectimeout = 1;
+		return 0;
+	} else {
+		DWORD	exit_code = 0;
+		GetExitCodeProcess( ups->ProcessInformation.hProcess, &exit_code );
+		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", exit_code);
+		exec_error++;
+		return -2;
+	}
+#endif	/* WIN32 */
+
+	upsdebugx(3, "%s: startup seems successful", __func__);
 	return 1;
 }
-#endif	/* WIN32 */
 
 static void forkexec(char *const argv[], const ups_t *ups)
 {
@@ -943,7 +974,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			alarm(0);
 
 			/* Bump timeout or error counts if appropriate */
-			forkexec_parent_analyze(waitret, wstat, puexectimeout);
+			forkexec_parent_analyze(waitret, wstat, ups);
 
 			return;
 		}	/* end of pid != 0 (fork parent) part */
@@ -970,13 +1001,14 @@ static void forkexec(char *const argv[], const ups_t *ups)
 #else	/* WIN32 */
 	BOOL	ret;
 	DWORD	res;
-	DWORD	exit_code = 0;
 	char	commandline[LARGEBUF];
 	STARTUPINFO	StartupInfo;
-	PROCESS_INFORMATION	ProcessInformation;
+	/* work around const for this one... */
+	PROCESS_INFORMATION	*pProcessInformation = (PROCESS_INFORMATION*)&(ups->ProcessInformation);
 	int	i = 1, waited = 0;
 
 	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
+	memset(pProcessInformation, 0, sizeof(PROCESS_INFORMATION));
 
 	/* the command line is made of the driver name followed by args */
 	if (strstr(argv[0], ups->driver)) {
@@ -1014,10 +1046,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			NULL,
 			NULL,
 			&StartupInfo,
-			&ProcessInformation
+			pProcessInformation
 			);
 
-	if (ret == 0) {
+	if (!ret) {
 		fatal_with_errno(EXIT_FAILURE, "execv");
 	}
 
@@ -1035,7 +1067,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				"to check that driver survived this long "
 				"(per device configuration section)",
 				__func__, (unsigned int)ups->maxstartdelay);
-			res = WaitForSingleObject(ProcessInformation.hProcess,
+			res = WaitForSingleObject(pProcessInformation->hProcess,
 				((unsigned int)ups->maxstartdelay) * 1000);
 			waited = 1;
 		}
@@ -1045,7 +1077,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				"to check that driver survived this long "
 				"(per global configuration section)",
 				__func__, (unsigned int)maxstartdelay);
-			res = WaitForSingleObject(ProcessInformation.hProcess,
+			res = WaitForSingleObject(pProcessInformation->hProcess,
 				((unsigned int)maxstartdelay) * 1000);
 			waited = 1;
 		}
@@ -1056,22 +1088,11 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			"to check that driver survived this long "
 			"(not required by global nor by device "
 			"configuration sections)", __func__);
-		res = WaitForSingleObject(ProcessInformation.hProcess,
+		res = WaitForSingleObject(pProcessInformation->hProcess,
 			0);
 	}
 
-	if (res != WAIT_TIMEOUT) {
-		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
-		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
-		exec_error++;
-		return;
-	} else {
-		/* work around const for this one... */
-		int *pupid = (int *)&(ups->pid);
-		int *puexectimeout = (int *)&(ups->exceeded_timeout);
-		*pupid = 0;	/* For WIN32, just a flag (not "-1" has a meaning) */
-		*puexectimeout = 1;
-	}
+	forkexec_parent_analyze(res, ups);
 
 	return;
 #endif	/* WIN32 */
@@ -1449,22 +1470,23 @@ static void start_driver(const ups_t *ups)
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
 				if (drv_retrydelay >= 0) {
-#ifndef WIN32
-					int	*puexectimeout = (int *)&(ups->exceeded_timeout);
-#endif
-
 					upsdebugx(3, "%s: retrying after %u seconds",
 						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
 
+					if (upscount > 1 && ups->exceeded_timeout) {
+						/* Final checks, similar to those in forkexec() */
 #ifndef WIN32
-					if (upscount > 1 && *puexectimeout) {
 						int	wstat;
 						pid_t	waitret;
 
-						/* Final checks, similar to those in forkexec() */
 						waitret = waitpid(ups->pid, &wstat, WNOHANG);
-						if (forkexec_parent_analyze(waitret, wstat, puexectimeout) > 0) {
+						if (forkexec_parent_analyze(waitret, wstat, ups) > 0)
+#else
+						DWORD res = WaitForSingleObject(ups->ProcessInformation.hProcess, 0);
+						if (forkexec_parent_analyze(res, ups))
+#endif
+						{
 							upslogx(LOG_INFO, "%s: driver %s [%s] completed startup "
 								"while we were sleeping to retry", __func__,
 								ups->driver, ups->upsname);
@@ -1473,7 +1495,6 @@ static void start_driver(const ups_t *ups)
 							exec_timeout = initial_exec_timeout;
 						}
 					}
-#endif
 
 				}
 		}
