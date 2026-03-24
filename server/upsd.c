@@ -2315,6 +2315,7 @@ int main(int argc, char **argv)
 	struct passwd	*new_uid = NULL;
 
 	progname = xbasename(argv[0]);
+	setproctag(progname);
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
