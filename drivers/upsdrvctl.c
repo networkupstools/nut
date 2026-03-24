@@ -1483,7 +1483,7 @@ static void start_driver(const ups_t *ups)
 						waitret = waitpid(ups->pid, &wstat, WNOHANG);
 						if (forkexec_parent_analyze(waitret, wstat, ups) > 0)
 #else
-						DWORD res = WaitForSingleObject(ups->ProcessInformation->hProcess, 0);
+						DWORD res = WaitForSingleObject(ups->ProcessInformation.hProcess, 0);
 						if (forkexec_parent_analyze(res, ups))
 #endif
 						{
@@ -2055,7 +2055,7 @@ int main(int argc, char **argv)
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay %d sec but has finished by now",
+						"maxstartdelay %d sec but has finished starting by now",
 						tmp->upsname, (intmax_t)tmp->pid,
 						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					tmp->exceeded_timeout = 0;
@@ -2217,6 +2217,8 @@ int main(int argc, char **argv)
 				reset_signal_flag();
 				upsdebugx(1, "upsdrvctl: handling signal: finished");
 			}
+#else	/* WIN32 */
+			/* TOTHINK: Is there something we can do on the platform? */
 #endif	/* !WIN32 */
 
 			sleep(1);
