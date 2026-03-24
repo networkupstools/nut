@@ -4251,6 +4251,16 @@ static void proctag_cleanup(void)
 		char	*pn = xstrdup(getmyprocbasename());
 		char	*tn = xstrdup(proctag);
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (strlen(EXEEXT) > 0) {
 			/* TOTHINK: Generalize provided-if-missing strcasestr()? */
 			char	*s;
@@ -4264,6 +4274,12 @@ static void proctag_cleanup(void)
 				if (s) *s='\0';
 			}
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 		if (pn && tn && !strcmp(pn, tn)) {
 			/* Avoid reporting this line as misleading "sub-process"
@@ -4327,6 +4343,16 @@ void setproctag(const char *tag)
 		char	*tn = xstrdup(tag);
 		int	tagged = 0;
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (strlen(EXEEXT) > 0) {
 			/* TOTHINK: Generalize provided-if-missing strcasestr()?
 			 *  One implementation is currently tucked away in
@@ -4343,6 +4369,12 @@ void setproctag(const char *tag)
 				if (s) *s='\0';
 			}
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
 			/* Only add the process name if asked for and substantially
