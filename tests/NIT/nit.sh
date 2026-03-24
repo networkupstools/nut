@@ -2423,7 +2423,12 @@ setenv_ssl_python() {
     # NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
 
     case "${WITH_SSL_SERVER}" in
-        none) return 0;;
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
         OpenSSL|NSS)
             log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
@@ -2450,7 +2455,12 @@ setenv_ssl_python() {
 # Same vars are also used for Python (PyNUTClient) tests
 setenv_ssl_cppnit() {
     case "${WITH_SSL_CLIENT}" in
-        none) return 0;;
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
         OpenSSL|NSS)
             log_info "Adding client-side SSL (${WITH_SSL_CLIENT}) config to C++ env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
