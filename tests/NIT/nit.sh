@@ -1181,8 +1181,9 @@ EOF
     fi
 
     if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] || [ "$UPSLOG_SWARM_COUNT" -gt 5 ] ; then
-        # Enable select-group looping (especially on Windows with sysmaxconn=64):
-        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + $UPSLOG_SWARM_COUNT + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
+        # Enable select-group looping (especially on Windows with sysmaxconn=64);
+        # note that each upslog monitors all devices (*) so has many connections:
+        echo "MAXCONN `expr \( 3 + $DUMMY_UPS_SWARM_COUNT \) \* \( 1 + $UPSLOG_SWARM_COUNT \) + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
 }
 
