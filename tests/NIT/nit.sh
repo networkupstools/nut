@@ -454,6 +454,14 @@ PID_DUMMYUPS2=""
 PIDS_DUMMYUPS_SWARM=""
 PIDS_UPSLOG_SWARM=""
 
+if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT}`" ] ; then
+    # upsd may take longer to walk its connections,
+    # so upsc et al should be more patient:
+    NUT_DEFAULT_CONNECT_TIMEOUT="`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT} / 5`"
+    export NUT_DEFAULT_CONNECT_TIMEOUT
+    log_info "Applying NUT_DEFAULT_CONNECT_TIMEOUT='$NUT_DEFAULT_CONNECT_TIMEOUT' due to DUMMY_UPS_SWARM_COUNT=$DUMMY_UPS_SWARM_COUNT and UPSLOG_SWARM_COUNT=$UPSLOG_SWARM_COUNT"
+fi
+
 WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
