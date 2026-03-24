@@ -1030,7 +1030,7 @@ EOF
                         || die "Could not import the CA certificate to NSS Server database"
                         # Create a server certificate request:
                         # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
-                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random \
+                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random --extSAN "dns:localhost,dns:localhost6,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1" \
                         || die "Could not create a NSS Server certificate request"
 
                         # Sign a certificate request with the CA certificate:
