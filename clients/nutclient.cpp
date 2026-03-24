@@ -450,7 +450,16 @@ _force_ssl(0)
 # endif
 #endif	/* WITH_SSL_CXX */
 {
+	/* Initialize timeout from envvar NUT_DEFAULT_CONNECT_TIMEOUT if present */
+	char	*s = getenv("NUT_DEFAULT_CONNECT_TIMEOUT");
+
 	_tv.tv_sec = -1;
+	if (s) {
+		long	l = atol(s);
+		if (l > 0)
+			_tv.tv_sec = l;
+	}
+
 	_tv.tv_usec = 0;
 }
 
