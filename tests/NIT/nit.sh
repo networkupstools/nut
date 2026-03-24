@@ -903,7 +903,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         ( # Sub-shelling here to keep soft failure cases handled once,
           # and changes of directory constrained without pushd/popd
           # (not in all shells) or remembering of `pwd` (clumsy-ish)
-            log_info "Setting up crypto material storage for SSL capability tests..."
+            log_info "Setting up crypto material storage for SSL capability tests under '${TESTCERT_PATH_BASE}'..."
 
             if shouldDebug ; then
                 set -x
@@ -936,8 +936,11 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # others default (empty) for possible other questions, e.g.
                         #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
                         #   Is this a critical extension [y/N]? :
-                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random \
-                        || die "Could not generate NSS CA certificate"
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -m "$$" -z .random \
+                        || { (echo y; echo ''; echo n) | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -m "`expr $$ + 1`" -z .random ; } \
+                        || die "Could not generate NSS CA certificate ($?)"
                         # Extract the CA certificate to be able to use or import it later:
                         certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
                         || die "Could not extract the NSS CA certificate to PEM"
@@ -1024,8 +1027,11 @@ EOF
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer \
-                        || die "Could not sign a NSS Server certificate request with the NSS CA database"
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer -m "`expr $$ + 2`" \
+                        || { (echo n; echo ''; echo 'n') | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer -m "`expr $$ + 3`" ; } \
+                        || die "Could not sign a NSS Server certificate request with the NSS CA database ($?)"
 
                         # Import the signed certificate into server database:
                         certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",," \
@@ -1098,8 +1104,11 @@ EOF
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient \
-                        || die "Could not sign a NSS Client certificate request with the NSS CA database"
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient -m "`expr $$ + 4`" \
+                        || { (echo n; echo ""; echo n) | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient -m "`expr $$ + 5`" ; } \
+                        || die "Could not sign a NSS Client certificate request with the NSS CA database ($?)"
 
                         # Import the signed certificate into client database:
                         certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",," \
@@ -1120,7 +1129,9 @@ EOF
                         ;;
                 esac
             ) || die "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
-        ) || {
+        ) && {
+            log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+        } || {
             if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
                 die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
             fi
