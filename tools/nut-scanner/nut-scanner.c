@@ -1230,6 +1230,8 @@ int main(int argc, char *argv[])
 	}
 #endif	/* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED ) && HAVE_SYS_RESOURCE_H */
 
+	setproctag(progname);
+
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
 	memset(&xml_sec, 0, sizeof(xml_sec));
@@ -1724,6 +1726,7 @@ display_help:
  * during build also serve as a fallback for pthread failure at runtime?
  */
 	if (allow_usb && nutscan_avail_usb) {
+		setproctag("usb");
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
@@ -1744,6 +1747,7 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
+			setproctag("snmp");
 			upsdebugx(quiet, "Scanning SNMP bus.");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "SNMP SCAN: starting pthread_create with run_snmp...");
@@ -1767,6 +1771,7 @@ display_help:
 		 * so it just runs (if requested and
 		 * supported).
 		 */
+		setproctag("netxml");
 		upsdebugx(quiet, "Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
@@ -1790,6 +1795,7 @@ display_help:
 			nutscan_avail_nut = 0;
 		}
 		else {
+			setproctag("oldnut");
 			upsdebugx(quiet, "Scanning NUT bus (old libupsclient connect method).");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
@@ -1808,6 +1814,7 @@ display_help:
 	}
 
 	if (allow_nut_simulation && nutscan_avail_nut_simulation) {
+		setproctag("nut_simulation");
 		upsdebugx(quiet, "Scanning NUT simulation devices.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "NUT simulation devices SCAN: starting pthread_create with run_nut_simulation...");
@@ -1825,6 +1832,7 @@ display_help:
 	}
 
 	if (allow_avahi && nutscan_avail_avahi) {
+		setproctag("avahi");
 		upsdebugx(quiet, "Scanning NUT bus (avahi method).");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
@@ -1847,6 +1855,7 @@ display_help:
 		 * so it just runs (if requested and
 		 * supported).
 		 */
+		setproctag("ipmi");
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
@@ -1864,6 +1873,7 @@ display_help:
 	}
 
 	if (allow_upower && nutscan_avail_upower) {
+		setproctag("upower");
 		upsdebugx(quiet, "Scanning UPower bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "UPOWER SCAN: starting pthread_create with run_upower...");
@@ -1881,6 +1891,7 @@ display_help:
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
+		setproctag("serial");
 		upsdebugx(quiet, "Scanning serial bus for Eaton devices.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
@@ -1896,6 +1907,8 @@ display_help:
 	} else {
 		upsdebugx(1, "SERIAL SCAN: not requested or supported, SKIPPED");
 	}
+
+	setproctag("post-processing");
 
 #ifdef HAVE_PTHREAD
 	if (allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
