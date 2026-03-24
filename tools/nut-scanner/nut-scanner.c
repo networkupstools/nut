@@ -1257,8 +1257,11 @@ int main(int argc, char *argv[])
 			nut_debug_level++;
 	}
 
+	setproctag("init-ip-ranges");
 	nutscan_init_ip_ranges(&ip_ranges_list);
+	setproctag("init-libnutscan");
 	nutscan_init();
+	setproctag(progname);
 
 	/* Default, see -Q/-N/-P below */
 	display_func = nutscan_display_ups_conf_with_sanity_check;
@@ -1723,10 +1726,14 @@ display_help:
 	}
 
 /* TODO/discuss : Should the #else...#endif code below for lack of pthreads
- * during build also serve as a fallback for pthread failure at runtime?
+ *  during build also serve as a fallback for pthread failure at runtime?
+ *  Also consider a setproctag() variant for threads, where it would be most
+ *  useful in troubleshooting. Currently it relies on a process-wide variable,
+ *  and threads are all in same process space...
  */
+	setproctag("scanning");
+
 	if (allow_usb && nutscan_avail_usb) {
-		setproctag("usb");
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
@@ -1734,6 +1741,7 @@ display_help:
 			nutscan_avail_usb = 0;
 		}
 #else
+		setproctag("usb");
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
 		dev[TYPE_USB] = run_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
@@ -1747,7 +1755,6 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-			setproctag("snmp");
 			upsdebugx(quiet, "Scanning SNMP bus.");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "SNMP SCAN: starting pthread_create with run_snmp...");
@@ -1756,6 +1763,7 @@ display_help:
 				nutscan_avail_snmp = 0;
 			}
 #else
+			setproctag("snmp");
 			upsdebugx(1, "SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
 			/* dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec); */
 			run_snmp(&snmp_sec);
@@ -1771,7 +1779,6 @@ display_help:
 		 * so it just runs (if requested and
 		 * supported).
 		 */
-		setproctag("netxml");
 		upsdebugx(quiet, "Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
@@ -1781,6 +1788,7 @@ display_help:
 			nutscan_avail_xml_http = 0;
 		}
 #else
+		setproctag("netxml");
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
 		run_xml(&xml_sec);
@@ -1795,7 +1803,6 @@ display_help:
 			nutscan_avail_nut = 0;
 		}
 		else {
-			setproctag("oldnut");
 			upsdebugx(quiet, "Scanning NUT bus (old libupsclient connect method).");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
@@ -1804,6 +1811,7 @@ display_help:
 				nutscan_avail_nut = 0;
 			}
 #else
+			setproctag("oldnut");
 			upsdebugx(1, "NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
 			/*dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);*/
 			run_nut_old(NULL);
@@ -1814,7 +1822,6 @@ display_help:
 	}
 
 	if (allow_nut_simulation && nutscan_avail_nut_simulation) {
-		setproctag("nut_simulation");
 		upsdebugx(quiet, "Scanning NUT simulation devices.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "NUT simulation devices SCAN: starting pthread_create with run_nut_simulation...");
@@ -1823,6 +1830,7 @@ display_help:
 			nutscan_avail_nut_simulation = 0;
 		}
 #else
+		setproctag("nut_simulation");
 		upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
 		/* dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(); */
 		run_nut_simulation(NULL);
@@ -1832,7 +1840,6 @@ display_help:
 	}
 
 	if (allow_avahi && nutscan_avail_avahi) {
-		setproctag("avahi");
 		upsdebugx(quiet, "Scanning NUT bus (avahi method).");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
@@ -1841,6 +1848,7 @@ display_help:
 			nutscan_avail_avahi = 0;
 		}
 #else
+		setproctag("avahi");
 		upsdebugx(1, "NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
 		/* dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout); */
 		run_avahi(NULL);
@@ -1855,7 +1863,6 @@ display_help:
 		 * so it just runs (if requested and
 		 * supported).
 		 */
-		setproctag("ipmi");
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
@@ -1864,6 +1871,7 @@ display_help:
 			nutscan_avail_ipmi = 0;
 		}
 #else
+		setproctag("ipmi");
 		upsdebugx(1, "IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
 		/* dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec); */
 		run_ipmi(&ipmi_sec);
@@ -1873,7 +1881,6 @@ display_help:
 	}
 
 	if (allow_upower && nutscan_avail_upower) {
-		setproctag("upower");
 		upsdebugx(quiet, "Scanning UPower bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "UPOWER SCAN: starting pthread_create with run_upower...");
@@ -1882,6 +1889,7 @@ display_help:
 			nutscan_avail_upower = 0;
 		}
 #else
+		setproctag("upower");
 		upsdebugx(1, "UPOWER SCAN: no pthread support, starting nutscan_scan_upower...");
 		run_upower(NULL);
 #endif /* HAVE_PTHREAD */
@@ -1891,7 +1899,6 @@ display_help:
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
-		setproctag("serial");
 		upsdebugx(quiet, "Scanning serial bus for Eaton devices.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
@@ -1900,6 +1907,7 @@ display_help:
 		/* upsdebugx(1, "pthread_create returned an error; disabling this scan mode"); */
 		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
+		setproctag("serial");
 		upsdebugx(1, "SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
 		/* dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports); */
 		run_eaton_serial(serial_ports);
@@ -1907,8 +1915,6 @@ display_help:
 	} else {
 		upsdebugx(1, "SERIAL SCAN: not requested or supported, SKIPPED");
 	}
-
-	setproctag("post-processing");
 
 #ifdef HAVE_PTHREAD
 	if (allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
@@ -1948,6 +1954,8 @@ display_help:
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
+
+	setproctag("post-processing");
 
 	upsdebugx(1, "SCANS DONE: display results");
 
@@ -1996,6 +2004,7 @@ display_help:
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
+	setproctag("cleanup");
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(nutscan_semaphore());
@@ -2012,6 +2021,10 @@ display_help:
 	nutscan_free_ip_ranges(&ip_ranges_list);
 	nutscan_free();
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(progname);
+
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
+
 	return EXIT_SUCCESS;
 }
