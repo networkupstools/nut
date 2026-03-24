@@ -526,6 +526,7 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
+	setproctag(prog);
 	print_banner_once(prog, 0);
 
 	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
