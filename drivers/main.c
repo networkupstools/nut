@@ -2004,6 +2004,10 @@ static void exit_cleanup(void)
 			free((char*)(prognames[i]));
 		}
 	}
+
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	upsdebugx(1, "%s: finished, exiting", __func__);
+	setproctag(NULL);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -2506,6 +2510,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE,
 			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
+	setproctag(upsname);
 
 	/* we need to get the port from somewhere, unless we are just sending a signal and exiting */
 	if (!device_path && !cmd) {
