@@ -4248,9 +4248,40 @@ static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 static void proctag_cleanup(void)
 {
 	if (proctag) {
-		upsdebugx(2, "a %s sub-process (%s) is exiting now",
-			NUT_STRARG(getmyprocbasename()), getproctag());
+		char	*pn = xstrdup(getmyprocbasename());
+		char	*tn = xstrdup(proctag);
+
+		if (strlen(EXEEXT) > 0) {
+			/* TOTHINK: Generalize provided-if-missing strcasestr()? */
+			char	*s;
+			if (pn) {
+				s = strstr(pn, EXEEXT);
+				if (s) *s='\0';
+			}
+
+			if (tn) {
+				s = strstr(tn, EXEEXT);
+				if (s) *s='\0';
+			}
+		}
+
+		if (pn && tn && !strcmp(pn, tn)) {
+			/* Avoid reporting this line as misleading "sub-process"
+			 * after a plain singular setproctag(progname) call in
+			 * a NUT program: */
+			upsdebugx(2, "a process (%s) is exiting now", pn);
+		} else {
+			/* Some ptr not set, or strings not equal */
+			upsdebugx(2, "a %s sub-process (%s) is exiting now",
+				NUT_STRARG(pn), proctag);
+		}
+
+		if (pn)
+			free(pn);
+		if (tn)
+			free(tn);
 	}
+
 	setproctag(NULL);
 }
 
@@ -4292,7 +4323,50 @@ void setproctag(const char *tag)
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
 	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
-		snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+		char	*pn = xstrdup(getmyprocbasename());
+		char	*tn = xstrdup(tag);
+		int	tagged = 0;
+
+		if (strlen(EXEEXT) > 0) {
+			/* TOTHINK: Generalize provided-if-missing strcasestr()?
+			 *  One implementation is currently tucked away in
+			 *  libusb0.c because net-snmp may provide another...
+			 */
+			char	*s;
+			if (pn) {
+				s = strstr(pn, EXEEXT);
+				if (s) *s='\0';
+			}
+
+			if (tn) {
+				s = strstr(tn, EXEEXT);
+				if (s) *s='\0';
+			}
+		}
+
+		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
+			/* Only add the process name if asked for and substantially
+			 * different from tag value -- e.g. do not duplicate text
+			 * when callers initialize with settagname(progname) */
+			char	*s = NULL;
+			proctag_for_upsdebug_buflen += strlen(pn) + 1;
+			s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+			if (s) {
+				snprintf(s, proctag_for_upsdebug_buflen, ":%s:%s", pn, tag);
+				free(proctag_for_upsdebug);
+				proctag_for_upsdebug = s;
+				tagged = 1;
+			}
+		}
+
+		if (!tagged) {
+			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+		}
+
+		if (pn)
+			free(pn);
+		if (tn)
+			free(tn);
 	}
 }
 

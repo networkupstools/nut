@@ -46,6 +46,11 @@ https://github.com/networkupstools/nut/milestone/12
  - common code:
    * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
      to help track the log messages from massively-forking NUT daemons. [#3084]
+   * Introduced `NUT_DEBUG_PROCNAME` environment variable support to optionally
+     log also the process name (or however the program chose to identify itself).
+     This may be useful when multiple NUT daemons log into the same file or
+     console, without syslog to prefix the name into each line (e.g. in tests,
+     single init script systems like Home Assistant, etc.) [PR 3368]
    * Extended with plural `checkprocnames()` and `compareprocnames()`,
      as well as `sendsignalpidaliases()` and `sendsignalfnaliases()`, for
      binaries that expect to have one of several names at the moment (e.g.

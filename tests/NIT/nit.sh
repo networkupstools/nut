@@ -98,6 +98,9 @@ export NUT_DEBUG_LEVEL
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
 
+NUT_DEBUG_PROCNAME="true"
+export NUT_DEBUG_PROCNAME
+
 # Just keep upsdrvctl quiet if used in test builds or with the sandbox
 NUT_QUIET_INIT_NDE_WARNING="true"
 export NUT_QUIET_INIT_NDE_WARNING
