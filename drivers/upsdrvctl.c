@@ -878,11 +878,26 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			/* Use the local maxstartdelay, if available */
 			if (ups->maxstartdelay != -1) {
-				if (ups->maxstartdelay >= 0)
+				if (ups->maxstartdelay >= 0) {
+					upsdebugx(2, "%s[POSIX]: will wait for %u seconds "
+						"to check that driver survived this long "
+						"(per device configuration section)",
+						__func__, (unsigned int)ups->maxstartdelay);
 					alarm((unsigned int)ups->maxstartdelay);
+				}
 			} else { /* Otherwise, use the global (or default) value */
-				if (maxstartdelay >= 0)
+				if (maxstartdelay >= 0) {
+					upsdebugx(2, "%s[POSIX]: will wait for %u seconds "
+						"to check that driver survived this long "
+						"(per global configuration section)",
+						__func__, (unsigned int)maxstartdelay);
 					alarm((unsigned int)maxstartdelay);
+				} else {
+					upsdebugx(2, "%s[POSIX]: will NOT wait "
+						"to check that driver survived this long "
+						"(not required by global nor by device "
+						"configuration sections)", __func__);
+				}
 			}
 
 			waitret = waitpid(pid, &wstat, 0);
@@ -946,7 +961,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	char	commandline[LARGEBUF];
 	STARTUPINFO	StartupInfo;
 	PROCESS_INFORMATION	ProcessInformation;
-	int	i = 1;
+	int	i = 1, waited = 0;
 
 	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
 
@@ -997,8 +1012,38 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	 * Unlike under Linux, Windows spawn drivers directly. If the driver is alive, all is OK.
 	 * An optimization can probably be implemented to prevent waiting so much time when all is OK.
 	 */
-	res = WaitForSingleObject(ProcessInformation.hProcess,
-			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
+
+	/* Use the local maxstartdelay, if available */
+	if (ups->maxstartdelay != -1) {
+		if (ups->maxstartdelay >= 0) {
+			upsdebugx(2, "%s[WIN32]: will wait for %u seconds "
+				"to check that driver survived this long "
+				"(per device configuration section)",
+				__func__, (unsigned int)ups->maxstartdelay);
+			res = WaitForSingleObject(ProcessInformation.hProcess,
+				((unsigned int)ups->maxstartdelay) * 1000);
+			waited = 1;
+		}
+	} else { /* Otherwise, use the global (or default) value */
+		if (maxstartdelay >= 0) {
+			upsdebugx(2, "%s[WIN32]: will wait for %u seconds "
+				"to check that driver survived this long "
+				"(per global configuration section)",
+				__func__, (unsigned int)maxstartdelay);
+			res = WaitForSingleObject(ProcessInformation.hProcess,
+				((unsigned int)maxstartdelay) * 1000);
+			waited = 1;
+		}
+	}
+
+	if (!waited) {
+		upsdebugx(2, "%s[WIN32]: will NOT wait "
+			"to check that driver survived this long "
+			"(not required by global nor by device "
+			"configuration sections)", __func__);
+		res = WaitForSingleObject(ProcessInformation.hProcess,
+			0);
+	}
 
 	if (res != WAIT_TIMEOUT) {
 		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
@@ -1370,12 +1415,13 @@ static void start_driver(const ups_t *ups)
 		int cur_exec_error = exec_error;
 		int cur_exec_timeout = exec_timeout;
 
-		upsdebugx(2, "%i remaining attempts", drv_maxretry);
+		upsdebugx(2, "%s: %i remaining attempts", __func__, drv_maxretry);
 		debugcmdline(2, "exec: ", argv);
 		drv_maxretry--;
 
 		if (!testmode) {
 			forkexec(argv, ups);
+			upsdebugx(3, "%s: forkexec() finished", __func__);
 		}
 
 		/* driver command succeeded */
@@ -1387,8 +1433,11 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				if (drv_retrydelay >= 0)
+				if (drv_retrydelay >= 0) {
+					upsdebugx(3, "%s: retrying after %u seconds",
+						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
+				}
 		}
 	}
 }

@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@
 #if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
 #endif
+
+static const char * getmyprocname(void);
+static const char * getmyprocbasename(void);
 
 #if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
 #  ifdef HAVE_SYSTEMD_SD_BUS_H
@@ -760,7 +763,7 @@ void background(void)
 	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
 #endif	/* WIN32 */
 
-	upslogx(LOG_INFO, "Startup successful");
+	upslogx(LOG_INFO, "Startup successful: %s", getmyprocbasename());
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
@@ -3961,6 +3964,14 @@ vupslog_too_long:
 
 		gettimeofday(&now, NULL);
 		upslog_start = now;
+
+#ifdef WIN32
+		/* Ensure line buffering for sane logs on Windows console
+		 * especially when many threads/daemons write there. */
+		setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
+		/* Also stdout (some messages go there) for good measure: */
+		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#endif
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {

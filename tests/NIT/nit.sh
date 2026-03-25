@@ -111,6 +111,10 @@ if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
 TABCHAR="`printf '\t'`"
 
+# Special case to launch a lot of drivers and stress-test the select() loops etc.
+[ -n "${DUMMY_UPS_SWARM_COUNT}" ] && [ "${DUMMY_UPS_SWARM_COUNT}" -gt 0 ] || DUMMY_UPS_SWARM_COUNT=0
+[ -n "${UPSLOG_SWARM_COUNT}" ] && [ "${UPSLOG_SWARM_COUNT}" -gt 0 ] || UPSLOG_SWARM_COUNT=0
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2
@@ -447,6 +451,8 @@ PID_UPSSCHED=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
+PIDS_DUMMYUPS_SWARM=""
+PIDS_UPSLOG_SWARM=""
 
 WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
@@ -779,10 +785,10 @@ stop_daemons() {
         PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PIDS_DUMMYUPS_SWARM$PIDS_UPSLOG_SWARM$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
@@ -791,6 +797,8 @@ stop_daemons() {
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
+    PIDS_DUMMYUPS_SWARM=""
+    PIDS_UPSLOG_SWARM=""
 
     unset PID_UPSSCHED_NOW
 }
@@ -1171,6 +1179,11 @@ EOF
     if [ -n "${NUT_DEBUG_MIN-}" ] ; then
         echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
+
+    if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] || [ "$UPSLOG_SWARM_COUNT" -gt 5 ] ; then
+        # Enable select-group looping (especially on Windows with sysmaxconn=64):
+        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + $UPSLOG_SWARM_COUNT + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
+    fi
 }
 
 generatecfg_upsd_nodev() {
@@ -1470,7 +1483,9 @@ EOF
 
 generatecfg_ups_trivial() {
     # Populate the configs for the run
-    (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
+    (   # Hints primarily for upsdrvctl:
+        echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
+        echo 'maxstartdelay = 1' >> "$NUT_CONFPATH/ups.conf" || exit
         if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
             # NOTE: Windows backslashes are pre-escaped in the configure-generated value
             case "${ABS_TOP_BUILDDIR}" in
@@ -1556,8 +1571,38 @@ EOF
             mv -f "$F.bak" "$F"
             ${EGREP} '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
-    fi
 
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Adding a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                case "`expr $N % 3`" in
+                    0) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example event sequence"
+    port = evolution500.seq
+EOF
+                        ;;
+                    1) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump"
+    port = epdu-managed.dev
+    mode = dummy-once
+EOF
+                        ;;
+                    2) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump (loop)"
+    port = epdu-managed.dev
+    mode = dummy-loop
+EOF
+                        ;;
+                esac
+            done >> "$NUT_CONFPATH/ups.conf"
+        fi
+    fi
 }
 
 #####################################################
@@ -1565,6 +1610,21 @@ EOF
 isPidAlive() {
     [ -n "$1" ] && [ "$1" -gt 0 ] || return
     [ -d "/proc/$1" ] || kill -0 "$1" 2>/dev/null
+}
+
+arePidsAlive() {
+    _DEAD=""
+    for _PID in "$@" ; do
+        isPidAlive "$_PID" || _DEAD="${_DEAD} $_PID"
+    done
+    unset _PID
+    if [ -n "${_DEAD}" ]; then
+        log_error "[arePidsAlive] Some are dead:${_DEAD}"
+        unset _DEAD
+        return 1
+    fi
+    unset _DEAD
+    return 0
 }
 
 FAILED=0
@@ -1833,7 +1893,7 @@ sandbox_start_upsd() {
 
 sandbox_start_drivers() {
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
@@ -1860,6 +1920,15 @@ sandbox_start_drivers() {
         execcmd dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
+
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Starting a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                execcmd dummy-ups -a UPSwarm$N ${ARG_USER} ${ARG_FG} &
+                PIDS_DUMMYUPS_SWARM="$PIDS_DUMMYUPS_SWARM $!"
+                log_debug "Tried to start dummy-ups driver for 'UPSwarm$N' as PID $!"
+            done
+        fi
     fi
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
@@ -1870,7 +1939,7 @@ sandbox_start_drivers() {
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
@@ -1892,6 +1961,12 @@ testcase_sandbox_start_upsd_alone() {
         EXPECTED_UPSLIST="$EXPECTED_UPSLIST
 UPS1
 UPS2"
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                EXPECTED_UPSLIST="$EXPECTED_UPSLIST
+UPSwarm$N"
+            done
+        fi
         # For windows runners (strip CR if any):
         EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
@@ -1902,6 +1977,18 @@ UPS2"
         EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON},"'
   "UPS1",
   "UPS2"'
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON,"
+            if [ "$DUMMY_UPS_SWARM_COUNT" -gt 1 ] ; then
+                DUMMY_UPS_SWARM_COUNT_1="`expr $DUMMY_UPS_SWARM_COUNT - 1`"
+                for N in `seq 1 $DUMMY_UPS_SWARM_COUNT_1` ; do
+                    EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm$N\","
+                done
+            fi
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm${DUMMY_UPS_SWARM_COUNT}\""
+        fi
     fi
     EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON}"'
 ]'
@@ -2225,6 +2312,16 @@ testcase_sandbox_upsc_query_timer() {
     execcmd upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
     PID_UPSLOG="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
+
+    # No timeout, no kill - keep them running if requested (trap exit):
+    if [ "$UPSLOG_SWARM_COUNT" -gt 0 ] ; then
+        log_info "Starting a swarm of ${UPSLOG_SWARM_COUNT} clients"
+        for N in `seq 1 $UPSLOG_SWARM_COUNT` ; do
+            execcmd upslog -F -i 1 -N -m "*@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy-$N.log" &
+            PIDS_UPSLOG_SWARM="$PIDS_UPSLOG_SWARM $!"
+            log_debug "Tried to start upslog as PID $!"
+        done
+    fi
 
     # TODO: Any need to convert to runcmd()?
     OUT1="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
@@ -2652,7 +2749,7 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             PORTS_WANT=1
         else
-            PORTS_WANT=3
+            PORTS_WANT="`expr 3 + $DUMMY_UPS_SWARM_COUNT`"
         fi
         PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 

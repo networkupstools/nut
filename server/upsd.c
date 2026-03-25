@@ -1713,34 +1713,38 @@ static void mainloop(void)
 		 */
 		size_t	last_chunk = nfds % sysmaxconn, chunk,
 			chunks = nfds / sysmaxconn + (last_chunk ? 1 : 0);
-		int	poll_TO = 2000 / chunks, tmpret;
+		int	poll_TO, poll_TO_chunk = 2000 / chunks, tmpret;
 
-		if (poll_TO < 10)
-			poll_TO = 10;
-
-		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
-			" chunks, last one sized %" PRIuSIZE
-			", with timeout of %d msec per chunk",
-			__func__, chunks, last_chunk, poll_TO);
+		if (poll_TO_chunk < 10)
+			poll_TO_chunk = 10;
 
 		ret = 0;
-		for (chunk = 0; chunk < chunks; chunk++) {
-			upsdebugx(5,
-				"%s: chunked filedescriptor polling #%" PRIuSIZE
-				" of %" PRIuSIZE " chunks, with %d hits so far",
-				__func__, chunk, chunks, ret);
-			tmpret = poll(&fds[chunk * sysmaxconn],
-				(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
-				poll_TO);
-			if (tmpret < 0) {
-				upsdebug_with_errno(2,
-					"%s: failed during chunked polling, handled %" PRIuSIZE
-					" of %" PRIuSIZE " chunks so far, with %d hits",
+		/* First run a quick check if anyone is already waiting
+		 * (especially in non-first chunks), then a loop with waits */
+		for (poll_TO = 0; poll_TO <= poll_TO_chunk && ret == 0; poll_TO += poll_TO_chunk) {
+			upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+				" chunks, last one sized %" PRIuSIZE
+				", with timeout of %d msec per chunk",
+				__func__, chunks, last_chunk, poll_TO);
+
+			for (chunk = 0; chunk < chunks; chunk++) {
+				upsdebugx(5,
+					"%s: chunked filedescriptor polling #%" PRIuSIZE
+					" of %" PRIuSIZE " chunks, with %d hits so far",
 					__func__, chunk, chunks, ret);
-				ret = tmpret;
-				break;
+				tmpret = poll(&fds[chunk * sysmaxconn],
+					(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
+					poll_TO);
+				if (tmpret < 0) {
+					upsdebug_with_errno(2,
+						"%s: failed during chunked polling, handled %" PRIuSIZE
+						" of %" PRIuSIZE " chunks so far, with %d hits",
+						__func__, chunk, chunks, ret);
+					ret = tmpret;
+					break;
+				}
+				ret += tmpret;
 			}
-			ret += tmpret;
 		}
 	}
 
@@ -2070,29 +2074,36 @@ static void mainloop(void)
 		 */
 		size_t	last_chunk = nfds % sysmaxconn,
 			chunks = nfds / sysmaxconn + (last_chunk ? 1 : 0);
-		DWORD	poll_TO = 2000 / chunks, tmpret;
+		DWORD	poll_TO, poll_TO_chunk = 2000 / chunks, tmpret;
 
-		if (poll_TO < 10)
-			poll_TO = 10;
-
-		upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
-			" chunks, last one sized %" PRIuSIZE
-			", with timeout of %" PRIi64 " msec per chunk",
-			__func__, chunks, last_chunk, poll_TO);
+		if (poll_TO_chunk < 10)
+			poll_TO_chunk = 10;
 
 		ret = WAIT_TIMEOUT;
-		for (chunk = 0; chunk < chunks; chunk++) {
-			upsdebugx(5,
-				"%s: chunked filedescriptor polling #%" PRIuSIZE
-				" of %" PRIuSIZE " chunks, with %" PRIu64 " hits so far",
-				__func__, chunk, chunks, ret);
-			tmpret = WaitForMultipleObjects(
-				(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
-				&fds[chunk * sysmaxconn],
-				FALSE, poll_TO);
-			if (tmpret != WAIT_TIMEOUT) {
-				ret = tmpret;
-				break;
+		/* First run a quick check if anyone is already waiting
+		 * (especially in non-first chunks), then a loop with waits */
+		for (poll_TO = 0; poll_TO <= poll_TO_chunk && ret == WAIT_TIMEOUT; poll_TO += poll_TO_chunk) {
+			upsdebugx(4, "%s: chunked filedescriptor polling via %" PRIuSIZE
+				" chunks, last one sized %" PRIuSIZE
+				", with timeout of %" PRIi64 " msec per chunk",
+				__func__, chunks, last_chunk, poll_TO);
+
+			for (chunk = 0; chunk < chunks; chunk++) {
+				upsdebugx(5,
+					"%s: chunked filedescriptor polling #%" PRIuSIZE
+					" of %" PRIuSIZE " chunks",
+					__func__, chunk, chunks);
+				tmpret = WaitForMultipleObjects(
+					(last_chunk && chunk == chunks - 1 ? last_chunk : sysmaxconn),
+					&fds[chunk * sysmaxconn],
+					FALSE, poll_TO);
+				if (tmpret != WAIT_TIMEOUT) {
+					/* NOTE: Actual offset depends on this value
+					 *  being in ABANDONED or OBJECT range, further
+					 *  shifted for array lookup by N chunks */
+					ret = tmpret;
+					break;
+				}
 			}
 		}
 	}
@@ -2122,18 +2133,19 @@ static void mainloop(void)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+	/* https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects */
 	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* One abandoned mutex object that satisfied the wait? */
-		ret = ret - WAIT_ABANDONED_0;
-		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64, __func__, nfds, ret);
+		ret = ret - WAIT_ABANDONED_0 + chunk * sysmaxconn;
+		upsdebugx(5, "%s: got abandoned FD array item: %" PRIu64 " of %" PRIu64, __func__, ret, nfds - 1);
 		/* FIXME: Should this be handled somehow? Cleanup? Abort?.. */
 	} else
-	if (ret >= WAIT_OBJECT_0 && ret <= WAIT_OBJECT_0 + nfds - 1) {
+	if (ret >= WAIT_OBJECT_0 && ret <= WAIT_OBJECT_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* Which one handle was triggered this time? */
 		/* Note: WAIT_OBJECT_0 may be currently defined as 0,
 		 * but docs insist on checking and shifting the range */
 		ret = ret - WAIT_OBJECT_0 + chunk * sysmaxconn;
-		upsdebugx(5, "%s: got event on FD array item: %" PRIu64, __func__, nfds, ret);
+		upsdebugx(5, "%s: got event on FD array item: %" PRIu64 " of %" PRIu64, __func__, ret, nfds - 1);
 	}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
