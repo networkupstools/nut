@@ -286,6 +286,10 @@ static void clean_exit(void)
 	free(upsname);
 	free(hostname);
 	free(ups);
+
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	upsdebugx(1, "%s: finished, exiting", __func__);
+	setproctag(NULL);
 }
 
 int main(int argc, char **argv)
@@ -298,6 +302,7 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
 
+	setproctag(prog);
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
 	 * the subsystem, and set initial timestamp. Debugging the client is
@@ -378,6 +383,7 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
+	setproctag(argv[0]);
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
