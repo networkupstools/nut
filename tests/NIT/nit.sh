@@ -454,6 +454,14 @@ PID_DUMMYUPS2=""
 PIDS_DUMMYUPS_SWARM=""
 PIDS_UPSLOG_SWARM=""
 
+if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT}`" ] ; then
+    # upsd may take longer to walk its connections,
+    # so upsc et al should be more patient:
+    NUT_DEFAULT_CONNECT_TIMEOUT="`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT} / 5`"
+    export NUT_DEFAULT_CONNECT_TIMEOUT
+    log_info "Applying NUT_DEFAULT_CONNECT_TIMEOUT='$NUT_DEFAULT_CONNECT_TIMEOUT' due to DUMMY_UPS_SWARM_COUNT=$DUMMY_UPS_SWARM_COUNT and UPSLOG_SWARM_COUNT=$UPSLOG_SWARM_COUNT"
+fi
+
 WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
@@ -903,7 +911,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         ( # Sub-shelling here to keep soft failure cases handled once,
           # and changes of directory constrained without pushd/popd
           # (not in all shells) or remembering of `pwd` (clumsy-ish)
-            log_info "Setting up crypto material storage for SSL capability tests..."
+            log_info "Setting up crypto material storage for SSL capability tests under '${TESTCERT_PATH_BASE}'..."
 
             if shouldDebug ; then
                 set -x
@@ -916,8 +924,11 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 *cert) rm -rf "${TESTCERT_PATH_BASE}" || true ;;
                 *) log_warn "TESTCERT_PATH_BASE seems wrong: '${TESTCERT_PATH_BASE}'" ;;
             esac
-            mkdir -p "${TESTCERT_PATH_ROOTCA}" || exit
-            (   cd "${TESTCERT_PATH_ROOTCA}"
+
+            SKID="0x1234567890abcdef1234"
+
+            mkdir -p "${TESTCERT_PATH_ROOTCA}" || die "Could not mkdir TESTCERT_PATH_ROOTCA"
+            (   cd "${TESTCERT_PATH_ROOTCA}" || exit
                 log_info "SSL: Preparing test Root CA..."
                 echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
@@ -928,19 +939,70 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                             [ -e /dev/random ] && \
                                 dd if=/dev/random of=.random bs=16 count=1
                         } || date > .random
+
                         # Create the certificate database:
-                        certutil -N -d . -f .pwfile
+                        certutil -N -d . -f .pwfile \
+                        || die "Could not init NSS CA database in `pwd`"
+
                         # Generate a certificate for CA:
                         # HACK NOTE: The first "yes" is for "Is this a CA certificate [y/N]?" question,
                         # others default (empty) for possible other questions, e.g.
                         #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
                         #   Is this a critical extension [y/N]? :
-                        (echo y; yes "") | certutil -S -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -t "CT,," -x -2 -z .random || exit
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        cscmd() {
+                            certutil -S -x \
+                                -d . -f .pwfile \
+                                -n "${TESTCERT_ROOTCA_NAME}" \
+                                -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                                -t "CT,C,C" \
+                                -m 1 \
+                                --keyUsage critical,certSigning,crlSigning,digitalSignature,nonRepudiation \
+                                -z .random \
+                                -2 \
+                                -3 \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo y
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo '-1'
+                            #> Is this a critical extension [y/N]
+                            echo y
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die "Could not generate NSS CA certificate ($?)"
+
                         # Extract the CA certificate to be able to use or import it later:
-                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem || exit
+                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
+                        || die "Could not extract the NSS CA certificate to PEM"
                         # Use this later for signing, move on to server/client requests...
 
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt || exit
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
+                        || die "Could not list NSS CA DB files"
                         ;;
                 esac
 
@@ -948,7 +1010,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # Generate an AES encrypted private key:
-                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 || exit
+                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 \
+                        || die "Could not generate an AES encrypted private key for OpenSSL CA"
                         # Generate a certificate for CA using that key;
                         # note that not all "openssl" versions have the
                         # "-extfile" option for self-signed (CA) certs;
@@ -975,7 +1038,7 @@ EOF
                             # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
                             sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
                             && openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf
-                        } || exit
+                        } || die "Could not self-sign OpenSSL CA req"
                         ;;
                 esac
 
@@ -983,45 +1046,114 @@ EOF
                     *OpenSSL*)
                         # OpenSSL CA trust "database" should include hashes
                         # of CA PEM certificates as symlinks to actual files:
-                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`"
+                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
+                        && [ -n "${CERTHASH}" ] \
+                        || die "Could not determine OpenSSL certificate hash for Root CA files"
+
                         # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
                         ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
                         ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"*
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* \
+                        || die "Could not list OpenSSL CA PEM file and hash links"
                         ;;
                     *)
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                        || die "Could not list OpenSSL CA PEM file (exported from NSS)"
                         ;;
                 esac
-            ) || exit
+            ) || die "Could not prepare Root CA in '${TESTCERT_PATH_ROOTCA}'"
 
             mkdir -p "${TESTCERT_PATH_SERVER}"
-            (   cd "${TESTCERT_PATH_SERVER}"
+            (   cd "${TESTCERT_PATH_SERVER}" || exit
                 log_info "SSL: Preparing test server certificate..."
                 echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
                 case "${WITH_SSL_SERVER}" in
                     NSS)
                         # Create the certificate database:
-                        certutil -N -d . -f .pwfile
+                        certutil -N -d . -f .pwfile \
+                        || die "Could not init NSS Server database in `pwd`"
+
                         # Import the CA certificate, so users of this DB trust it:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_ROOTCA_NAME}" \
+                            -t "TC,," \
+                            -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                        || die "Could not import the CA certificate to NSS Server database"
+
                         # Create a server certificate request:
                         # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
-                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o server.req -z "${TESTCERT_PATH_ROOTCA}"/.random || exit
+                        certutil -R -d . -f .pwfile \
+                            -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                            -a -o server.req \
+                            -z "${TESTCERT_PATH_ROOTCA}"/.random \
+                            --extKeyUsage "serverAuth" \
+                            --nsCertType sslServer \
+                            --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
+                            --extSAN "dns:localhost,dns:localhost6,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1" \
+                        || die "Could not create a NSS Server certificate request"
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i server.req -o server.crt -2 --extKeyUsage "serverAuth" --nsCertType sslServer || exit
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        cscmd() {
+                            certutil -C -d "${TESTCERT_PATH_ROOTCA}" \
+                                -f "${TESTCERT_PATH_ROOTCA}"/.pwfile \
+                                -c "${TESTCERT_ROOTCA_NAME}" \
+                                -a -i server.req -o server.crt \
+                                --extKeyUsage "serverAuth" \
+                                --nsCertType sslServer \
+                                -m 2 \
+                                -2 \
+                                -3 \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo n
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo ''
+                            #> Is this a critical extension [y/N]
+                            echo n
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die "Could not sign a NSS Server certificate request with the NSS CA database ($?)"
 
                         # Import the signed certificate into server database:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i server.crt -t ",," || exit
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_SERVER_NAME}" \
+                            -a -i server.crt -t ",," \
+                        || die "Could not import the signed NSS Server certificate into server database"
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt || exit
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
+                        || die "Could not list NSS Server DB files"
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" || exit
+                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        || die "Could not create a OpenSSL Server certificate request"
                         cat > server.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
@@ -1039,25 +1171,35 @@ EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
                             openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
-                        ) || exit
-                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem || exit
+                        ) || die "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem || exit
+                        cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem \
+                        || die "Could not combine an upsd.pem"
+
+                        ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
+                        || die "Could not list an upsd.pem"
                         ;;
                 esac
-            ) || exit
+            ) || die "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
 
             mkdir -p "${TESTCERT_PATH_CLIENT}"
-            (   cd "${TESTCERT_PATH_CLIENT}"
+            (   cd "${TESTCERT_PATH_CLIENT}" || exit
                 case "${WITH_SSL_CLIENT}" in
                     NSS)
                         log_info "SSL: Preparing test client certificate..."
                         # Also create 3-file database of client key+cert store
                         echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+
                         # Create the certificate database:
-                        certutil -N -d . -f .pwfile
+                        certutil -N -d . -f .pwfile \
+                        || die "Could not init NSS Client database in `pwd`"
+
                         # Import the CA certificate, so users of this DB trust it:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -t "TC,," -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem || exit
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_ROOTCA_NAME}" \
+                            -t "TC,," \
+                            -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                        || die "Could not import the CA certificate to NSS Client database"
 
                         # Import server cert into client database so we can trust it (CERTHOST directive):
                         # NOTE: Seems we must do this before requesting or signing the client cert,
@@ -1066,32 +1208,92 @@ EOF
                         #  certutil: could not decode certificate: SEC_ERROR_REUSED_ISSUER_AND_SERIAL:
                         #    You are attempting to import a cert with the same issuer/serial
                         #    as an existing cert, but that is not the same cert.
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_SERVER_NAME}" -a -i "${TESTCERT_PATH_SERVER}/server.crt" -t ",," || exit
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_SERVER_NAME}" \
+                            -a -i "${TESTCERT_PATH_SERVER}/server.crt" \
+                            -t ",," \
+                        || die "Could not import the Server certificate to NSS Client database"
 
                         # Create a client certificate request:
                         # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
-                        certutil -R -d . -f .pwfile -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" -a -o client.req -z "${TESTCERT_PATH_ROOTCA}"/.random || exit
+                        certutil -R -d . -f .pwfile \
+                            -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                            -a -o client.req \
+                            -z "${TESTCERT_PATH_ROOTCA}"/.random \
+                        || die "Could not create a NSS Client certificate request"
 
                         # Sign a certificate request with the CA certificate:
                         # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
-                        (echo n; yes "") | certutil -C -d "${TESTCERT_PATH_ROOTCA}" -f "${TESTCERT_PATH_ROOTCA}"/.pwfile -c "${TESTCERT_ROOTCA_NAME}" -a -i client.req -o client.crt -2 --extKeyUsage "clientAuth" --nsCertType sslClient || exit
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        cscmd() {
+                            certutil -C -d "${TESTCERT_PATH_ROOTCA}" \
+                                -f "${TESTCERT_PATH_ROOTCA}"/.pwfile \
+                                -c "${TESTCERT_ROOTCA_NAME}" \
+                                -a -i client.req -o client.crt \
+                                --extKeyUsage "clientAuth" \
+                                --nsCertType sslClient \
+                                -m 3 \
+                                -2 \
+                                -3 \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo n
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo ''
+                            #> Is this a critical extension [y/N]
+                            echo n
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die "Could not sign a NSS Client certificate request with the NSS CA database ($?)"
 
                         # Import the signed certificate into client database:
-                        certutil -A -d . -f .pwfile -n "${TESTCERT_CLIENT_NAME}" -a -i client.crt -t ",," || exit
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_CLIENT_NAME}" \
+                            -a -i client.crt -t ",," \
+                        || die "Could not import the signed NSS Client certificate into client database"
 
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt || exit
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
+                        || die "Could not list NSS Client DB files"
                         ;;
                     OpenSSL)
                         # NOTE: No special keys for an OpenSSL client so far,
                         # it only checks/trusts a server (public data in a PEM file)
                         log_info "SSL: Exporting public data of server certificate for client use..."
-                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem || exit
+                        cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem \
+                        || die "Could not combine a upsd-public.pem"
 
-                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" || exit
+                        ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
+                        || die "Could not list a upsd-public.pem"
                         ;;
                 esac
-            ) || exit
-        ) || {
+            ) || die "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
+        ) && {
+            log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+        } || {
             if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
                 die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
             fi
@@ -1181,8 +1383,9 @@ EOF
     fi
 
     if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] || [ "$UPSLOG_SWARM_COUNT" -gt 5 ] ; then
-        # Enable select-group looping (especially on Windows with sysmaxconn=64):
-        echo "MAXCONN `expr $DUMMY_UPS_SWARM_COUNT + $UPSLOG_SWARM_COUNT + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
+        # Enable select-group looping (especially on Windows with sysmaxconn=64);
+        # note that each upslog monitors all devices (*) so has many connections:
+        echo "MAXCONN `expr \( 3 + $DUMMY_UPS_SWARM_COUNT \) \* \( 1 + $UPSLOG_SWARM_COUNT \) + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
 }
 
@@ -2422,7 +2625,12 @@ setenv_ssl_python() {
     # NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
 
     case "${WITH_SSL_SERVER}" in
-        none) return 0;;
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
         OpenSSL|NSS)
             log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
@@ -2449,7 +2657,12 @@ setenv_ssl_python() {
 # Same vars are also used for Python (PyNUTClient) tests
 setenv_ssl_cppnit() {
     case "${WITH_SSL_CLIENT}" in
-        none) return 0;;
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
         OpenSSL|NSS)
             log_info "Adding client-side SSL (${WITH_SSL_CLIENT}) config to C++ env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
