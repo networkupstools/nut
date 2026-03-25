@@ -99,11 +99,11 @@ all-recursive: all-fanout-maybe
 # touch-files for generated headers (so each depending sub-directory does
 # not re-evaluate those rules in whole); note that these goals may end up
 # also calling all-fanout-maybe (as they depend on "all"):
-check-recursive install-recursive: generated-headers-with-a-touch
+check-recursive install-recursive: generated-sources-with-a-touch
 
 # NOTE: Beside dependency above, also called from some code paths in
 # the all-fanout-maybe implementation:
-generated-headers-with-a-touch: @dotMAKE@
+generated-sources-with-a-touch: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h
 	+$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
 	+$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
@@ -133,7 +133,7 @@ check-fanout-cleanup: check-recursive @dotMAKE@
 install-fanout-cleanup: install-recursive @dotMAKE@
 	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
 
-# Called from generated-headers-with-a-touch:
+# Called from generated-sources-with-a-touch:
 touch-include-all-nut_version-generated.timestamp:
 	@[ -s include/nut_version.h ]
 	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
@@ -170,7 +170,7 @@ all-fanout-maybe: @dotMAKE@
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 			echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
-		$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
+		$(MAKE) $(AM_MAKEFLAGS) generated-sources-with-a-touch || exit ; \
 		exit 0 ; \
 	  fi ; \
 	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
@@ -186,7 +186,7 @@ all-fanout-maybe: @dotMAKE@
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
 				echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
+			$(MAKE) $(AM_MAKEFLAGS) generated-sources-with-a-touch || exit ; \
 			;; \
 	  esac
 
