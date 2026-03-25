@@ -29,13 +29,15 @@
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
 
-#ifdef WITH_OPENSSL
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
 #	include <openssl/err.h>
 #	include <openssl/ssl.h>
-#elif defined(WITH_NSS) /* not WITH_OPENSSL */
+# elif defined(WITH_NSS) /* not WITH_OPENSSL */
 #	include <nss.h>
 #	include <ssl.h>
-#endif  /* WITH_OPENSSL | WITH_NSS */
+# endif  /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_SSL_CXX */
 
 #include <string>
 #include <vector>

@@ -86,6 +86,10 @@ https://github.com/networkupstools/nut/milestone/12
      not-requested (e.g. do not start `upsd` in `MODE=netclient`), even though
      the unit is nominally enabled; this should make packaging and providing
      service pre-sets more simple. [issue #837, PR #3233]
++
+In a way, this should also fix fallout of a change delivered in NUT v2.8.4
+release, where `upsmon` could have started with `MODE=none` in `nut.conf`,
+but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]
@@ -327,7 +331,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
-     stale" messages were logged in the same second, especially no busy
+     stale" messages were logged in the same second, especially on busy
      systems. Now we allow one more second on top of `MAXAGE` setting to
      declare the device dead, just in case fractional/whole second rounding
      comes into play and breaks things. [issue #661]
@@ -502,6 +506,8 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Added an option to (primarily) `--disable-threading` for systems with
      detected but broken `libpthread` support, or to test alternate code
      paths during development or in CI. [#3300]
+   * Adjusted C++ header search path on Termux when `-isystem` is involved,
+     as noted with NSS builds. [issues #1599, #1711, PR #3353]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
