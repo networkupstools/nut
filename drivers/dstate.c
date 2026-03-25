@@ -328,6 +328,7 @@ static void send_to_all(const char *fmt, ...)
 		if (result == 0) {
 			upsdebugx(2, "%s: write failed on handle %p, disconnecting", __func__, conn->fd);
 			sock_disconnect(conn);
+			conn = NULL;
 			continue;
 		}
 		else {
@@ -348,6 +349,7 @@ static void send_to_all(const char *fmt, ...)
 			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
 			sock_disconnect(conn);
+			conn = NULL;
 
 			/* TOTHINK: Maybe fallback elsewhere in other cases? */
 			if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
@@ -474,6 +476,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif	/* WIN32 */
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);
+		conn = NULL;
 
 		/* TOTHINK: Maybe fallback elsewhere in other cases? */
 		if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
@@ -1003,6 +1006,7 @@ static void sock_read(conn_t *conn)
 
 		default:
 			sock_disconnect(conn);
+			conn = NULL;
 			return;
 		}
 	}
@@ -1035,6 +1039,7 @@ static void sock_read(conn_t *conn)
 		if (is_closed) {
 			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
 			sock_disconnect(conn);
+			conn = NULL;
 			return;
 		}
 	} else {
@@ -1048,6 +1053,7 @@ static void sock_read(conn_t *conn)
 	if (res == 0) {
 		upslogx(LOG_INFO, "Read error : %d", (int)GetLastError());
 		sock_disconnect(conn);
+		conn = NULL;
 		return;
 	}
 	ret = bytesRead;
@@ -1128,6 +1134,7 @@ static void sock_close(void)
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
 		sock_disconnect(conn);
+		conn = NULL;
 	}
 
 	connhead = NULL;
@@ -1262,6 +1269,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (conn->closing) {
 			sock_disconnect(conn);
+			conn = NULL;
 		}
 	}
 
@@ -1351,6 +1359,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (conn->closing) {
 			sock_disconnect(conn);
+			conn = NULL;
 		}
 	}
 
