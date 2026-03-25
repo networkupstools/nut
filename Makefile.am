@@ -109,7 +109,7 @@ generated-headers-with-a-touch: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
 	+$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
 	+$(MAKE) $(AM_MAKEFLAGS) NUT_LINKMAN_GENERATED=false prep-linkman-generated
-	+$(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated.timestamp
 
 # After completing the automake-defined goals, clean up:
 all: all-fanout-cleanup
@@ -146,7 +146,7 @@ touch-clients-all-libupsclient_version-generated.timestamp:
 	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch clients/.all.libupsclient_version-generated.timestamp
 
-touch-docs-man-all-linkman-generated-generated.timestamp:
+touch-docs-man-all-linkman-generated.timestamp:
 	@[ -s docs/man/linkman-driver-names.txt ] && [ -s docs/man/linkman-drivertool-names.txt ]
 	@if test -n "`find docs/man/linkman-driver-names.txt -newer docs/man/linkman-drivertool-names.txt`" ; then \
 	    touch -r docs/man/linkman-drivertool-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
@@ -384,7 +384,7 @@ prep-linkman-generated/docs/man: @dotMAKE@
 	  SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=false'; export SUBDIR_TGT_MAKEFLAGS; \
 	  NUT_LINKMAN_GENERATED=false; export NUT_LINKMAN_GENERATED; \
 	  $(SUBDIR_TGT_RULE) || exit ; \
-	  $(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated-generated.timestamp
+	  $(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated.timestamp
 
 prep-src-docs/docs/man: prep-linkman-generated/docs/man @dotMAKE@
 	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3 NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
