@@ -4,7 +4,7 @@
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
      2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -236,8 +236,9 @@ static void wall(const char *text)
 	char	*command;
 
 	/* first +1 is for the space between message and text
-	   second +1 is for trailing 0
-	   +2 is for "" */
+	 * second +1 is for trailing 0
+	 * +2 is for ""
+	 */
 	size_t	commandsz = strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1;
 
 	command = malloc (commandsz);
@@ -1103,7 +1104,7 @@ static void doshutdown(void)
 
 			/* Contact the data server(s) regularly so this
 			 * client is not assumed dead while looping */
-			for (ups = firstups; ups != NULL && !exit_flag; ups = ups->next) {
+			for (ups = firstups; ups != NULL && !exit_flag; ups = (utype_t *)ups->next) {
 				set_alarm();
 
 				if (get_var(ups, "numlogins", temp, sizeof(temp)) >= 0) {
@@ -1336,7 +1337,7 @@ static void sync_secondaries(void)
 
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
-		for (ups = firstups; ups != NULL; ups = ups->next) {
+		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 
 			/* only check login count on devices we are the primary for */
 			if (!flag_isset(ups->status, ST_PRIMARY))
@@ -1403,7 +1404,7 @@ static void forceshutdown(void)
 		userfsd, exit_flag, use_pipe);
 
 	/* set FSD on any "primary" UPS entries (forced shutdown in progress) */
-	for (ups = firstups; ups != NULL; ups = ups->next)
+	for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next)
 		if (flag_isset(ups->status, ST_PRIMARY)) {
 			isaprimary = 1;
 			upsdebugx(2, "%s: tell data server to setfsd(%s@%s)",
@@ -1593,7 +1594,7 @@ static int is_ups_critical(utype_t *ups)
 	if (flag_isset(ups->status, ST_CAL)) {
 		upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OB+LB now, but "
 			"it is also calibrating - not declaring a critical state",
-			  __func__, ups->upsname);
+			__func__, ups->upsname);
 		return 0;
 	}
 
@@ -1722,7 +1723,7 @@ static void recalc(void)
 		else
 			val_ol += ups->pv;
 
-		ups = ups->next;
+		ups = (utype_t *)ups->next;
 	}
 
 	upsdebugx(3, "Current power value: %u", val_ol);
@@ -2129,10 +2130,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 			return;
 		}
 
-		tmp = tmp->next;
+		tmp = (utype_t *)tmp->next;
 	}
 
-	tmp = xcalloc(1, sizeof(utype_t));
+	tmp = (utype_t *)xcalloc(1, sizeof(utype_t));
 	/* TOTHINK: init (UPSCONN_t)tmp->conn struct fields too? */
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
@@ -2619,7 +2620,7 @@ static void loadconfig(void)
 			while (ups) {
 				ups->pollfail_log_throttle_count = -1;
 				ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
-				ups = ups->next;
+				ups = (utype_t *)ups->next;
 			}
 		}
 	}
@@ -2669,6 +2670,7 @@ static void loadconfig(void)
 					nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
+		upscli_set_debug_level(nut_debug_level);
 
 		if (pollfail_log_throttle_max >= 0) {
 			upslogx(LOG_INFO,
@@ -2739,7 +2741,7 @@ static void upsmon_cleanup(void)
 	utmp = firstups;
 
 	while (utmp) {
-		unext = utmp->next;
+		unext = (utype_t *)utmp->next;
 
 		drop_connection(utmp);
 		ups_free(utmp);
@@ -3406,12 +3408,14 @@ static void help(const char *arg_progname)
 		nut_debug_level = -2;
 		nut_debug_level_args = -2;
 		nut_debug_level_global = -2;
+		upscli_set_debug_level(nut_debug_level);
 
 		loadconfig();
 
 		nut_debug_level = old_debug_level;
 		nut_debug_level_args = old_debug_level_args;
 		nut_debug_level_global = old_debug_level_global;
+		upscli_set_debug_level(nut_debug_level);
 
 		/* Separate from logs emitted by loadconfig() */
 		/* printf("\n"); */
@@ -3441,10 +3445,11 @@ static void help(const char *arg_progname)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
 
@@ -3624,7 +3629,7 @@ static void delete_ups(utype_t *target)
 
 			/* about to delete the first ups? */
 			if (ptr == last)
-				firstups = ptr->next;
+				firstups = (utype_t *)ptr->next;
 			else
 				last->next = ptr->next;
 
@@ -3636,7 +3641,7 @@ static void delete_ups(utype_t *target)
 		}
 
 		last = ptr;
-		ptr = ptr->next;
+		ptr = (utype_t *)ptr->next;
 	}
 
 	/* shouldn't happen */
@@ -3676,7 +3681,7 @@ static void reload_conf(void)
 
 	while (tmp) {
 		tmp->retain = 0;
-		tmp = tmp->next;
+		tmp = (utype_t *)tmp->next;
 	}
 
 	/* reset paranoia checker */
@@ -3687,9 +3692,8 @@ static void reload_conf(void)
 
 	/* go through the utype_t struct again */
 	tmp = firstups;
-
 	while (tmp) {
-		next = tmp->next;
+		next = (utype_t *)tmp->next;
 
 		/* !retain means it wasn't in the .conf this time around */
 		if (tmp->retain == 0)
@@ -3784,6 +3788,7 @@ int main(int argc, char *argv[])
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
 	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
+	struct timeval	prevstart;
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
@@ -3815,9 +3820,9 @@ int main(int argc, char *argv[])
 	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
-	configfile = xmalloc(SMALLBUF);
+	configfile = (char *)xmalloc(SMALLBUF);
 	snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
-	configfile = xrealloc(configfile, strlen(configfile) + 1);
+	configfile = (char *)xrealloc(configfile, strlen(configfile) + 1);
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
@@ -3847,6 +3852,7 @@ int main(int argc, char *argv[])
 			case 'D':
 				nut_debug_level++;
 				nut_debug_level_args++;
+				upscli_set_debug_level(nut_debug_level);
 				break;
 			case 'F':
 				foreground = 1;
@@ -3915,6 +3921,7 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
+		upscli_set_debug_level(nut_debug_level);
 	}
 
 	if (cmd) {
@@ -4064,8 +4071,10 @@ int main(int argc, char *argv[])
 	if (checking_flag) {
 		/* Do not normally report the UPSes we would monitor, etc.
 		 * from loadconfig() for just checking the killpower flag */
-		if (nut_debug_level == 0)
+		if (nut_debug_level == 0) {
 			nut_debug_level = -2;
+			upscli_set_debug_level(nut_debug_level);
+		}
 	}
 
 	loadconfig();
@@ -4074,8 +4083,10 @@ int main(int argc, char *argv[])
 	 * in upsmon.conf. Note that non-zero debug_min does not impact
 	 * foreground running mode.
 	 */
-	if (nut_debug_level_global > nut_debug_level)
+	if (nut_debug_level_global > nut_debug_level) {
 		nut_debug_level = nut_debug_level_global;
+		upscli_set_debug_level(nut_debug_level);
+	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	if (checking_flag)
@@ -4153,6 +4164,7 @@ int main(int argc, char *argv[])
 	open_syslog(prog);
 
 	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+	gettimeofday(&prevstart, NULL);
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
@@ -4214,9 +4226,11 @@ int main(int argc, char *argv[])
 
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			upsdebugx(0, "%s: Dozing off until system tells us otherwise; send a SIGHUP or SIGTERM to break the loop manually", prog);
+
 			while ((sleep_inhibitor_status = isPreparingForSleep()) == -1 && !reload_flag && !exit_flag) {
 				usleep(1000000);
 			}
+
 			if (nut_debug_level == 0) {
 				upsdebugx(0, "%s: Dozing off finished", prog);
 			} else {
@@ -4248,16 +4262,19 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
+				/* Note the system clock may be or not be updated */
+				gettimeofday(&now, NULL);
+				time(&ttNow);
+				dt = difftimeval(now, prevstart);
+
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
-				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %.06f seconds since previous loop cycle start", prog, dt);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				gettimeofday(&now, NULL);
-				time(&ttNow);
-				for (ups = firstups; ups != NULL; ups = ups->next) {
+				for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 					ups->status = 0;
 					ups->lastpoll = ttNow;
 				}
@@ -4279,7 +4296,7 @@ int main(int argc, char *argv[])
 		/* Reset the value, regardless of support */
 		sleep_inhibitor_status = -2;
 
-		for (ups = firstups; ups != NULL; ups = ups->next) {
+		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) >= 0) {
 				upsdebugx(2, "Aborting UPS polling sub-loop because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
@@ -4335,11 +4352,11 @@ int main(int argc, char *argv[])
 					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
 					dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
-					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles) by %.06f seconds", dt);
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upsdebugx(2, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
+					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles) by %.06f seconds", dt);
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
@@ -4436,14 +4453,19 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upsdebugx(2, "It seems the system clock was changed into the past");
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %.06f seconds", dt);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
+
+		/* Note that "start" is not initialized in all code paths,
+		 * e.g. we can skip out early because of FSD or hibernation.
+		 */
+		prevstart = start;
 
 end_loop_cycle:
 		if (exit_flag < 0 && userfsd)

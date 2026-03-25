@@ -58,6 +58,7 @@ int nutscan_avail_nut_simulation = 0;
 int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
+int nutscan_avail_upower = 0;
 
 /* Methods defined in scan_*.c source files */
 int nutscan_load_usb_library(const char *libname_path);
@@ -72,6 +73,8 @@ int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
+int nutscan_load_upower_library(const char *libname_path);
+int nutscan_unload_upower_library(void);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
@@ -138,7 +141,7 @@ size_t max_threads_ipmi = 0;	/* limits not yet known */
 #endif /* HAVE_PTHREAD */
 
 #ifdef WIN32
-/* Stub for libupsclient */
+/* Stub for libupsclient, no need to register a callback for ENABLE_SHARED_PRIVATE_LIBS builds */
 void do_upsconf_args(char *confupsname, char *var, char *val) {
 	NUT_UNUSED_VARIABLE(confupsname);
 	NUT_UNUSED_VARIABLE(var);
@@ -239,7 +242,7 @@ void nutscan_init(void)
 	 * known-compatible SOFILE_LIB<X> first.
 	 */
 
-#ifdef WITH_USB
+#if (defined WITH_USB) && WITH_USB
 # if WITH_LIBUSB_1_0
 
 #  ifdef SOFILE_LIBUSB1
@@ -347,8 +350,8 @@ void nutscan_init(void)
 		__func__, "LibUSB");
 #endif	/* WITH_USB */
 
-#ifdef WITH_SNMP
-# ifdef WITH_SNMP_STATIC
+#if (defined WITH_SNMP) && WITH_SNMP
+# if (defined WITH_SNMP_STATIC) && WITH_SNMP_STATIC
 	/* This is a rare situation, reserved for platforms where libnetsnmp or
 	 * equivalent (some other ucd-snmp descendants) was not packaged, and
 	 * thus was custom-built for NUT (so linked statically to avoid potential
@@ -416,7 +419,7 @@ void nutscan_init(void)
 		__func__, "LibSNMP");
 #endif	/* WITH_SNMP */
 
-#ifdef WITH_NEON
+#if (defined WITH_NEON) && WITH_NEON
 # ifdef SOFILE_LIBNEON
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBNEON);
@@ -485,7 +488,7 @@ void nutscan_init(void)
 		__func__, "LibNeon");
 #endif	/* WITH_NEON */
 
-#ifdef WITH_AVAHI
+#if (defined WITH_AVAHI) && WITH_AVAHI
 # ifdef SOFILE_LIBAVAHI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBAVAHI);
@@ -532,7 +535,57 @@ void nutscan_init(void)
 		__func__, "LibAvahi");
 #endif	/* WITH_AVAHI */
 
-#ifdef WITH_FREEIPMI
+#if (defined WITH_UPOWER) && WITH_UPOWER
+/* NOTE: There may be a stack of libraries involved (libgio, libglib2,
+ *  libmount...) in driver programs, but one entry point suffices
+ *  (and/or dynamically pulls in the others) for just the scan itself */
+# ifdef SOFILE_LIBGIO
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBGIO);
+	}
+# endif	/* SOFILE_LIBGIO */
+	if (!libname) {
+		libname = get_libname("libgio-2.0" SOEXT);
+	}
+# ifdef SOPATH_LIBGIO
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBGIO);
+	}
+# endif	/* SOPATH_LIBGIO */
+
+	if (libname) {
+		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
+			__func__, libname, "LibGIO");
+		nutscan_avail_upower = nutscan_load_upower_library(libname);
+		free(libname);
+		libname = NULL;
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
+			"trying to load it with libtool default resolver",
+			__func__, "LibGIO");
+# ifdef SOFILE_LIBGIO
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
+		}
+# endif	/* SOFILE_LIBGIO */
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library("libgio-2.0" SOEXT);
+		}
+# ifdef SOPATH_LIBGIO
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library(SOPATH_LIBGIO);
+		}
+# endif	/* SOPATH_LIBGIO */
+	}
+	upsdebugx(1, "%s: %s to load the library for %s",
+		__func__, nutscan_avail_upower ? "succeeded" : "failed", "LibGIO");
+#else	/* not WITH_UPOWER */
+	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
+		__func__, "LibGIO");
+#endif	/* WITH_UPOWER */
+
+#if (defined WITH_FREEIPMI) && WITH_FREEIPMI
 # ifdef SOFILE_LIBFREEIPMI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
@@ -662,7 +715,7 @@ int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
 	}
 
 	/* if previous init failed */
-	if (*pdl_handle == (void *)1) {
+	if (*pdl_handle == (lt_dlhandle)1) {
 		goto end;
 	}
 
@@ -703,6 +756,7 @@ void nutscan_free(void)
 	nutscan_unload_avahi_library();
 	nutscan_unload_ipmi_library();
 	nutscan_unload_upsclient_library();
+	nutscan_unload_upower_library();
 
 #ifdef HAVE_PTHREAD
 /* TOTHINK: See comments near mutex/semaphore init code above */

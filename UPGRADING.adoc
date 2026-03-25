@@ -4,8 +4,15 @@ Upgrading notes
 endif::txt[]
 
 This file lists changes that affect users who installed older versions
-of this software.  When upgrading from an older version, be sure to
-check this file to see if you need to make changes to your system.
+of this software, or third-party integrations and library or data consumers.
+When upgrading from an older NUT version, be sure to check this file to
+see if you need to make changes to your system.
+
+We welcome feedback from package maintainers -- if you had to patch something
+out, or work around something in NUT code or recipes, please let us know in
+the issue tracker. Chances are, other distributions feel your pain, and some
+generalized solution belongs in the upstream project as an easy to use build
+configuration toggle to be shared by all interested downstream projects.
 
 [NOTE]
 ======
@@ -34,6 +41,10 @@ Changes from 2.8.4 to 2.8.5
   a NUT packaging build, note there would be several more NUT shared
   library files to deliver with the packages (formally versioned and
   named by NUT release semantic version triplet). [issue #2800]
+
+- Related to the above, `libupsclient` will remove the exported symbol for
+  `nut_debug_level` variable in a later NUT release, and now introduces the
+  `upscli_set_debug_level()` and `upscli_get_debug_level()` methods. [PR #3330]
 
 - For ages, most recipes for building NUT had customized the `sysconfdir` to
   be `/etc/nut`, which is not exactly the *system* configuration directory.
@@ -93,6 +104,16 @@ Changes from 2.8.4 to 2.8.5
   of this new facility to keep working under both old and new file names.
   [#3101]
 
+- The `upsdrvquery*` semi-internal API for talking on the driver socket was
+  updated with default handling for SIGPIPE. If your consumer wants to catch
+  it themselves, instead of using `errno=EPIPE` after a failed call, you can
+  use `upsdrvquery_NOSIGPIPE=0` to disable neutering of the signal inside
+  the API itself. [PR #3277]
+
+- Added new API methods and defined bitmap values for `libupsclient` C binding
+  to query and report SSL capabilities of the library build (none, OpenSSL,
+  Mozilla NSS): `upscli_ssl_caps_descr()` and `upscli_ssl_caps()`. [PR #33xx]
+
 - Fixed man page naming for `nutdrv_siemens-sitop(.8)` (dash vs. underscore)
   to match the driver program name. Packaging recipes may have to be updated.
   Follow-up from slightly botched renaming in original contribution. [PR #545]
@@ -119,6 +140,15 @@ Changes from 2.8.4 to 2.8.5
   updated, either to explicitly package the binding for several versions,
   or to not-deliver files no longer installed into the prototype area. [#1792]
 
+- Added a `configure` script option to (primarily) `--disable-threading`
+  for systems with detected but broken `libpthread` support, which can
+  cause `nut-scanner` to crash while loading system libraries. [#3300]
+
+- Introduced a new driver category for interaction with OS-reported UPS
+  devices via D-Bus, with the `nut-upower` driver as the first implementation.
+  This driver requires `glib-2.0` and `gio-2.0` development libraries to be
+  available at build time. For packagers, this adds new dependencies if the
+  build should include this driver. [PR #3279]
 
 Changes from 2.8.3 to 2.8.4
 ---------------------------

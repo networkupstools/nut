@@ -35,6 +35,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <utility>
 #include <cassert>
 
 
@@ -270,23 +271,23 @@ NutParser::Token NutParser::parseToken()
 				} else if (c == '[') {
 					token = Token(Token::TOKEN_BRACKET_OPEN, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == ']') {
 					token = Token(Token::TOKEN_BRACKET_CLOSE, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == ':' && !hasOptions(OPTION_IGNORE_COLON)) {
 					token = Token(Token::TOKEN_COLON, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '=') {
 					token = Token(Token::TOKEN_EQUAL, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '\r' || c == '\n') {
 					token = Token(Token::TOKEN_EOL, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '#') {
 					token.type = Token::TOKEN_COMMENT;
 					state = LEXPARSING_STATE_COMMENT;
@@ -318,7 +319,7 @@ NutParser::Token NutParser::parseToken()
 						token.str += '"';
 					} else {
 						popPos();
-						return token;
+						return Token(std::move(token));
 					}
 				} else if (c == '\\') {
 					if (escaped) {
@@ -333,10 +334,10 @@ NutParser::Token NutParser::parseToken()
 					/* WTF ? consider it as correct ? */
 					back();
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == 0) /* EOF */ {
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else /* Bad character ?? */ {
 					/* WTF ? Keep, Ignore ? */
 				}
@@ -355,7 +356,7 @@ NutParser::Token NutParser::parseToken()
 					} else {
 						back();
 						popPos();
-						return token;
+						return Token(std::move(token));
 					}
 				} else if (c == '\\') {
 					if (escaped) {
@@ -367,10 +368,10 @@ NutParser::Token NutParser::parseToken()
 				} else if (c == '\r' || c == '\n') /* EOL */{
 					back();
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == 0) /* EOF */ {
 					popPos();
-					return token;
+					return Token(std::move(token));
 				}else if (isgraph(c)) {
 					token.str += c;
 				} else /* Bad character ?? */ {
@@ -382,7 +383,7 @@ NutParser::Token NutParser::parseToken()
 			case LEXPARSING_STATE_COMMENT:
 			{
 				if (c == '\r' || c == '\n') {
-					return token;
+					return Token(std::move(token));
 				} else {
 					token.str += c;
 				}
@@ -416,7 +417,7 @@ NutParser::Token NutParser::parseToken()
 		}
 	}
 	popPos();
-	return token;
+	return Token(std::move(token));
 }
 
 std::list<NutParser::Token> NutParser::parseLine()
@@ -1044,15 +1045,13 @@ void GenericConfiguration::removeSection(const std::string & section)
 
 std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool caseSensitive) const
 {
-	std::string str;
-
 	ConfigParamList params;
 
 	if (!get(section, entry, params, caseSensitive))
-		return str;
+		return std::string();
 
 	if (params.empty())
-		return str;
+		return std::string();
 
 	return params.front();
 }

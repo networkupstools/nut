@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3677 utf-8
+personal_ws-1.1 en 3741 utf-8
 AAC
 AAS
 ABI
@@ -33,6 +33,7 @@ AQ
 ARB
 ARG
 ARS
+ASN
 ATEK
 ATR
 ATT
@@ -241,6 +242,7 @@ Cygwin
 DATACABLE
 DATAPATH
 DBCF
+DBUS
 DCE
 DCF
 DCO
@@ -304,6 +306,7 @@ DeviceKit
 DeviceLogin
 DeviceLogout
 Dgtk
+Dh
 Dharm
 Diehl
 Dietze
@@ -331,6 +334,7 @@ EE
 EEPROM
 EFI
 EG
+EINVAL
 EL
 ELCD
 EMI
@@ -345,6 +349,7 @@ EOLed
 EPEL
 EPERM
 EPFCLCD
+EPIPE
 EPO
 EPS
 ESC
@@ -352,6 +357,7 @@ ESS
 ESV
 ESXi
 ETIME
+ETIMEDOUT
 EUROCASE
 EVeRr
 EXtreme
@@ -431,11 +437,14 @@ FullLoad
 Fuß
 GC
 GCCVER
+GDBus
 GES
 GETADDRINFO
 GETPID
 GID
+GIO
 GITREV
+GLib
 GND
 GNUMakefile
 GNUmakefile
@@ -536,6 +545,7 @@ IDEN
 IDEs
 IDentifiers
 IFBETWEEN
+IFEQ
 IFF
 IFSUPP
 IGN
@@ -814,6 +824,7 @@ NONBLOCK
 NONUT
 NOP
 NOPARENT
+NOSIGPIPE
 NOTALARM
 NOTBOOST
 NOTBYPASS
@@ -855,6 +866,7 @@ Netman
 NetworkUPSTools
 Neus
 Niels
+Niemueller
 Niklas
 Niro
 NixOS
@@ -955,6 +967,7 @@ PPDnnn
 PPP
 PR
 PR'ed
+PRIuSIZE
 PROGRA
 PROGS
 PROTVER
@@ -1080,6 +1093,7 @@ QVFW
 QWS
 QinHeng
 Quette
+Quiesced
 RBAC
 RBWARNTIME
 RDLCK
@@ -1218,6 +1232,7 @@ SRC
 SSD
 SSSS
 STARTTLS
+STATUSCOLOR
 STB
 STDCALL
 STESTI
@@ -1237,6 +1252,7 @@ SX
 SXI
 SXL
 SYMLINKDIR
+SYSMAXCONN
 SafeNet
 Salicru
 Salvia
@@ -1317,6 +1333,7 @@ SyntaxWarning
 Sysgration
 SyslogIdentifier
 SystemIO
+SystemRoot
 Systeme
 Syu
 Szady
@@ -1433,6 +1450,7 @@ UUU
 UUUU
 UX
 Ubuntu
+Ugreen
 Ulf
 Ulfat
 Uncomment
@@ -1471,6 +1489,7 @@ Valderen
 Vdc
 Velloso
 VendorID
+Vertiv
 Viewpower
 Viewsonic
 Viktor
@@ -1513,6 +1532,7 @@ Willian
 WinMerge
 WinNUT
 WinPower
+WinUSB
 Wireshark
 Wl
 Wrede
@@ -1578,6 +1598,7 @@ addr
 addrange
 addvar
 addvars
+ade
 adelsystem
 adkorte
 adm
@@ -1717,6 +1738,7 @@ bcdDevice
 bcm
 bcmxcp
 bd
+bdf
 belkin
 belkinunv
 bestfcom
@@ -1790,6 +1812,7 @@ cdc
 cdf
 cee
 cef
+celsius
 centos
 cerr
 certfile
@@ -1888,6 +1911,7 @@ cpqpower
 cpsups
 cpu
 cr
+createElement
 crestfactor
 crit
 criticality
@@ -1899,6 +1923,7 @@ crossbuild
 crt
 crw
 crypto
+cryptographic
 csh
 cshdelay
 csi
@@ -1937,6 +1962,7 @@ datasheet
 datasize
 datastale
 dblatex
+dbus
 dcd
 dcn
 ddk
@@ -2072,6 +2098,8 @@ ef
 egrep
 ei
 el
+elementWidth
+els
 emacs
 emptor
 emptyDir
@@ -2119,11 +2147,13 @@ extradata
 faa
 fabula
 facto
+fafc
 failmode
 failover
 fallthrough
 fasttrack
 fatalx
+fbbf
 fc
 fcb
 fcntl
@@ -2151,6 +2181,7 @@ fmt
 fno
 fontconfig
 fopen
+forEach
 forceshutdown
 forcessl
 formatconfig
@@ -2158,6 +2189,7 @@ formatstring
 fosshost
 fp
 freebsd
+freedesktop
 freeipmi
 freetype
 frob
@@ -2204,12 +2236,14 @@ getenv
 gethostbyname
 getopt
 getproctag
+getter
 gettext
 gettextize
 getval
 getvar
 gh
 gif
+gio
 gitcache
 github
 gitignore
@@ -2230,6 +2264,8 @@ gpg
 gpgsign
 gpio
 gpiochip
+graphmax
+graphmin
 graphviz
 groupadd
 groupname
@@ -2342,6 +2378,7 @@ inittime
 initups
 inline
 inlined
+innerHTML
 innotech
 innovart
 innovatae
@@ -2408,6 +2445,7 @@ jpeg
 jpg
 jq
 jre
+js
 json
 jsonify
 kVA
@@ -2432,6 +2470,7 @@ ktrace
 kvm
 labcd
 lan
+lang
 langid
 lasaine
 launchd
@@ -2460,6 +2499,8 @@ libexecdir
 libexpat
 libfreeipmi
 libgd
+libgio
+libglib
 libgpgme
 libgpiod
 libhid
@@ -2485,6 +2526,7 @@ libnutscan
 libpcre
 libpng
 libpowerman
+libpthread
 libre
 libregex
 libs
@@ -2625,6 +2667,7 @@ middleware
 mincharge
 mingw
 minicol
+minmax
 minruntime
 mins
 minva
@@ -2698,6 +2741,7 @@ natively
 nb
 nbproject
 nbr
+nbsp
 nc
 nd
 nde
@@ -2766,6 +2810,7 @@ notransferoids
 novendor
 nowait
 nowarn
+nowrap
 np
 nspr
 nss
@@ -2850,6 +2895,7 @@ pF
 pacman
 pacstrap
 parallelizable
+parallelize
 parallelized
 param
 parsability
@@ -3010,6 +3056,7 @@ rc
 rcctl
 readline
 readonly
+realpath
 realpower
 realups
 rebase
@@ -3057,6 +3104,7 @@ rex
 rexx
 rf
 rfc
+rgba
 rh
 richcomm
 riello
@@ -3154,6 +3202,7 @@ setproctag
 setq
 setuid
 setupCommands
+setuptools
 setvar
 setvar's
 sfr
@@ -3245,6 +3294,7 @@ startup
 statepath
 stayoff
 stderr
+stdint
 stdlib
 stdout
 stdupsv
@@ -3274,6 +3324,7 @@ structs
 sts
 stst
 stty
+stunnel
 stylesheet
 stylesheets
 su
@@ -3334,6 +3385,7 @@ sysutils
 sysvinit
 tagname
 targetArchitecture
+tbody
 tcflush
 tcgetattr
 tcl
@@ -3351,12 +3403,15 @@ testime
 testtime
 testuser
 testvar
+tex
+texlive
 textproc
 tgcware
 tgt
 tgtsize
 tgz
 th
+thead
 timeframe
 timehead
 timername
@@ -3378,6 +3433,8 @@ topFrame
 topbot
 tport
 transactional
+translateX
+translateY
 treemode
 tripplite
 tripplitesu
@@ -3439,6 +3496,7 @@ unconfigured
 undefine
 undervoltage
 unescaped
+unhandled
 unicast
 unicode
 uninstall
@@ -3453,6 +3511,7 @@ unstash
 updateinfo
 upexia
 upower
+upquote
 upsBypassCurrent
 upsBypassPower
 upsBypassVoltage
@@ -3563,9 +3622,11 @@ verifySourceSig
 versa
 versioned
 versioning
+vh
 victron
 victronups
 vid
+viewport
 vin
 vio
 virsh
@@ -3583,6 +3644,7 @@ vscode
 vsnprintf
 vsnprintfcat
 vt
+vw
 wDescriptorLength
 waitbeforereconnect
 wakeup
@@ -3596,6 +3658,7 @@ whitespace
 wiki
 wildcard
 wildcards
+winhid
 wininit
 winnutclient
 winpthreads
@@ -3671,6 +3734,7 @@ znapzendzetup
 zpool
 zroot
 zsh
+zu
 zw
 zwfa
 zzz

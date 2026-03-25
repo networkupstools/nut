@@ -612,9 +612,11 @@ testcase_semver_compare() {
         "SEMVER comparison helper: shell-style maths: equality with added trailing zeroed components (and different leading zero pads)" 0 "" \
         test 01.02.03 = 1.002.0003.0
 
+    # Note: escaping the double-equals token to keep shell checkers quiet
+    # about what they can think of as unportable bashism
     run_testcase_generic callSEMVERCMP \
         "SEMVER comparison helper: shell-style maths: (non-)equality with added trailing zero value e.g. 3 vs 30" 1 "" \
-        test 01.02.03 == 1.002.00030
+        test 01.02.03 \=\= 1.002.00030
 
     run_testcase_generic callSEMVERCMP \
         "SEMVER comparison helper: shell-style maths: non-equality with added trailing zeroed components (and different leading zero pads)" 1 "" \

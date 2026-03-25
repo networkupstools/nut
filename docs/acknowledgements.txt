@@ -161,6 +161,7 @@ document
 - Tank provided documentation on the Belkin/Delta protocol
 - Potrans provided a Fenton PowerPal 600 (P series) for development of the
 safenet driver.
+- Tim Niemueller wrote nut-upower driver for UPower devices and scanner support.
 
 Older entries (before 2005)
 ---------------------------

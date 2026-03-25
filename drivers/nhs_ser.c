@@ -945,7 +945,7 @@ static int write_serial_int(int fd, const unsigned int *data, size_t size) {
 		uint8_t	*message = NULL;
 		size_t	i = 0;
 
-		message = xcalloc(size, sizeof(uint8_t));
+		message = (uint8_t *)xcalloc(size, sizeof(uint8_t));
 		for (i = 0; i < size; i++) {
 			message[i] = (uint8_t)data[i];
 			/* //upsdebugx(5, "%d %c %u %d %c %u", message[i], message[i], data[i], data[i]); */

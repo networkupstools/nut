@@ -390,10 +390,10 @@ static ssize_t bicker_receive_parameter(uint8_t id, BickerParameter *dst)
 	parameter.value = WORDLH(data[8], data[9]);
 
 	upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
-		  (unsigned)parameter.id, (unsigned)parameter.value,
-		  parameter.enabled ? "enabled" : "disabled",
-		  (unsigned)parameter.min, (unsigned)parameter.max,
-		  (unsigned)parameter.std);
+		(unsigned)parameter.id, (unsigned)parameter.value,
+		parameter.enabled ? "enabled" : "disabled",
+		(unsigned)parameter.min, (unsigned)parameter.max,
+		(unsigned)parameter.std);
 
 	if (dst != NULL) {
 		memcpy(dst, &parameter, sizeof(parameter));
@@ -715,7 +715,7 @@ static int bicker_setvar(const char *varname, const char *val)
 
 			if (parameter.enabled) {
 				dstate_setinfo(varname, "%u",
-					       (unsigned)parameter.value);
+					(unsigned)parameter.value);
 			} else {
 				/* Disabled parameters are removed from NUT */
 				dstate_delinfo(varname);
@@ -879,9 +879,9 @@ void upsdrv_updateinfo(void)
 		status_set("DISCHRG");
 	}
 	dstate_setinfo("battery.charger.status",
-		       (u8 & 0x01) > 0 ? "charging" :
-		       (u8 & 0x02) > 0 ? "discharging" :
-		       "resting");
+		(u8 & 0x01) > 0 ? "charging"
+		: (u8 & 0x02) > 0 ? "discharging"
+			: "resting");
 
 	status_set((u8 & 0x04) > 0 ? "OL" : "OB");
 	if ((u8 & 0x20) > 0) {

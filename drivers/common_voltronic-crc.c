@@ -106,7 +106,7 @@ unsigned short	common_voltronic_crc_compute(const char *input, const size_t len)
 unsigned short	common_voltronic_crc_calc(const char *input, const size_t inputlen)
 {
 	size_t	len;
-	char	*cr = memchr(input, '\r', inputlen);
+	char	*cr = (char*)memchr(input, '\r', inputlen);
 
 	/* No CR, fall back to string length (and hope *input* doesn't contain inner '\0's) */
 	if (cr == NULL)
@@ -127,7 +127,7 @@ int	common_voltronic_crc_calc_and_add(const char *input, const size_t inputlen, 
 {
 	unsigned short	crc, crc_MSB, crc_LSB;
 	size_t		len;
-	char		*cr = memchr(input, '\r', inputlen);
+	char		*cr = (char*)memchr(input, '\r', inputlen);
 
 	/* No CR, fall back to string length (and hope *input* doesn't contain inner '\0's) */
 	if (cr == NULL)
@@ -173,7 +173,7 @@ int	common_voltronic_crc_calc_and_add(const char *input, const size_t inputlen, 
 int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen)
 {
 	int	len;
-	char	*buf = xcalloc(inputlen, sizeof(char));
+	char	*buf = (char*)xcalloc(inputlen, sizeof(char));
 
 	if (!buf)
 		return -1;
@@ -203,7 +203,7 @@ int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen)
 int	common_voltronic_crc_check(const char *input, const size_t inputlen)
 {
 	unsigned short	crc, crc_MSB, crc_LSB;
-	char		*cr = memchr(input, '\r', inputlen);
+	char		*cr = (char*)memchr(input, '\r', inputlen);
 	size_t		len;
 
 	/* No CR, fall back to string length (and hope *input* doesn't contain inner '\0's) */
@@ -244,7 +244,7 @@ int	common_voltronic_crc_check_and_remove(const char *input, const size_t inputl
 
 	/* *input* successfully validated -> remove CRC bytes */
 
-	cr = memchr(input, '\r', inputlen);
+	cr = (char*)memchr(input, '\r', inputlen);
 	/* No CR, fall back to string length */
 	if (cr == NULL)
 		len = strlen(input);
@@ -277,7 +277,7 @@ int	common_voltronic_crc_check_and_remove(const char *input, const size_t inputl
 int	common_voltronic_crc_check_and_remove_m(char *input, const size_t inputlen)
 {
 	int	len;
-	char	*buf = xcalloc(inputlen, sizeof(char));
+	char	*buf = (char*)xcalloc(inputlen, sizeof(char));
 
 	if (!buf)
 		return -1;

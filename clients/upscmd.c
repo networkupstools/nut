@@ -70,10 +70,11 @@ static void usage(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
@@ -133,9 +134,9 @@ static void listcmds(void)
 		}
 
 		/* we must first read the entire list of commands,
-		   before we can start reading the descriptions */
+		 * before we can start reading the descriptions */
 
-		ltmp = xcalloc(1, sizeof(*ltmp));
+		ltmp = (struct list_t *)xcalloc(1, sizeof(*ltmp));
 		ltmp->name = xstrdup(answer[2]);
 
 		if (llast) {
@@ -305,6 +306,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+		upscli_set_debug_level(nut_debug_level);
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
@@ -377,7 +379,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
@@ -429,7 +431,7 @@ int main(int argc, char **argv)
 	/* getpass leaks slightly - use -p when testing in valgrind */
 	if (!have_pw) {
 		/* using getpass or getpass_r might not be a
-		   good idea here (marked obsolete in POSIX) */
+		 * good idea here (marked obsolete in POSIX) */
 		char	*pwtmp = GETPASS("Password: ");
 
 		if (!pwtmp) {

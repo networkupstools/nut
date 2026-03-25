@@ -483,8 +483,8 @@ void syslog(int priority, const char *fmt, ...)
 	WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
 
 	/* testing result is useless. If we have an error and try to report it,
-	   this will probably lead to a call to this function and an infinite
-	   loop */
+	 * this will probably lead to a call to this function and an infinite
+	 * loop */
 	CloseHandle(pipe);
 }
 
@@ -758,9 +758,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		}
 		else if (sh->vtime_) {
 			/* non-interruptible -- have to use kernel timeouts
-			   also note that this is not strictly correct.
-			   if vmin > ulen then things won't work right.
-			   sh->overlapped_armed = -1;
+			 * also note that this is not strictly correct.
+			 * if vmin > ulen then things won't work right.
+			 * // sh->overlapped_armed = -1;
 			 */
 			inq = ulen;
 		}
@@ -909,7 +909,7 @@ err:
 serial_handler_t * w32_serial_open (const char *name, int flags)
 {
 	/* flags are currently ignored, it's here just to have the same
-	   interface as POSIX open */
+	 * interface as POSIX open */
 	NUT_UNUSED_VARIABLE(flags);
 	COMMTIMEOUTS to;
 
@@ -942,7 +942,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	SetCommTimeouts (sh->handle, &to);
 
 	/* Reset serial port to known state of 9600-8-1-no flow control
-	   on open for better behavior under Win 95.
+	 * on open for better behavior under Win 95.
 	 */
 	DCB state;
 	GetCommState (sh->handle, &state);
@@ -962,8 +962,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	state.XonChar = 0x11;
 	state.XoffChar = 0x13;
 	state.fOutxDsrFlow = FALSE; /* disable DSR flow control */
-	state.fRtsControl = RTS_CONTROL_ENABLE; /* ignore lead control except
-						   DTR */
+	state.fRtsControl = RTS_CONTROL_ENABLE; /* ignore lead control except DTR */
 	state.fOutxCtsFlow = FALSE; /* disable output flow control */
 	state.fDtrControl = DTR_CONTROL_ENABLE; /* assert DTR */
 	state.fDsrSensitivity = FALSE; /* don't assert DSR */
@@ -1097,7 +1096,7 @@ int tcflush (serial_handler_t * sh, int queue)
 
 	if ((queue == TCIFLUSH) | (queue == TCIOFLUSH))
 		/* Input flushing by polling until nothing turns up
-		   (we stop after 1000 chars anyway) */
+		 * (we stop after 1000 chars anyway) */
 		for (max = 1000; max > 0; max--)
 		{
 			DWORD ev;
@@ -1147,7 +1146,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 
 	/* -------------- Set baud rate ------------------ */
 	/* FIXME: WIN32 also has 14400, 56000, 128000, and 256000.
-	   Unix also has 230400. */
+	 * Unix also has 230400. */
 
 	switch (t->c_ospeed)
 	{
@@ -1253,10 +1252,11 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	state.ErrorChar = 0;
 
 	/* -------------- Set software flow control ------------------ */
-	/* Set fTXContinueOnXoff to FALSE.  This prevents the triggering of a
-	   premature XON when the remote device interprets a received character
-	   as XON (same as IXANY on the remote side).  Otherwise, a TRUE
-	   value separates the TX and RX functions. */
+	/* Set fTXContinueOnXoff to FALSE.  This prevents the triggering
+	 * of a premature XON when the remote device interprets a received
+	 * character as XON (same as IXANY on the remote side).
+	 * Otherwise, a TRUE value separates the TX and RX functions.
+	 */
 
 	state.fTXContinueOnXoff = TRUE;     /* separate TX and RX flow control */
 
@@ -1283,9 +1283,10 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	state.fOutxDsrFlow = FALSE;
 
 	/* Some old flavors of Unix automatically enabled hardware flow
-	   control when software flow control was not enabled.  Since newer
-	   Unices tend to require explicit setting of hardware flow-control,
-	   this is what we do. */
+	 * control when software flow control was not enabled.  Since newer
+	 * Unices tend to require explicit setting of hardware flow-control,
+	 * this is what we do.
+	 */
 
 	/* RTS/CTS flow control */
 	if (t->c_cflag & CRTSCTS)
@@ -1300,9 +1301,9 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	}
 
 	/*
-	   if (t->c_cflag & CRTSXOFF)
-	   state.fRtsControl = RTS_CONTROL_HANDSHAKE;
-	 */
+	if (t->c_cflag & CRTSXOFF)
+		state.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	*/
 
 	/* -------------- DTR ------------------ */
 	/* Assert DTR on device open */
@@ -1318,8 +1319,8 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		state.fDsrSensitivity = TRUE;   /* yes */
 
 	/* -------------- Error handling ------------------ */
-	/* Since read/write operations terminate upon error, we
-	   will use ClearCommError() to resume. */
+	/* Since read/write operations terminate upon error,
+	 * we will use ClearCommError() to resume. */
 
 	state.fAbortOnError = TRUE;
 
@@ -1335,42 +1336,43 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	else
 	{
 		/* FIXME: Sometimes when CLRDTR is set, setting
-		   state.fDtrControl = DTR_CONTROL_ENABLE will fail.  This
-		   is a problem since a program might want to change some
-		   parameters while DTR is still down. */
+		 * state.fDtrControl = DTR_CONTROL_ENABLE will fail.
+		 * This is a problem since a program might want to
+		 * change some parameters while DTR is still down.
+		 */
 
 		EscapeCommFunction (sh->handle, SETDTR);
 	}
 
 	/*
-	   The following documentation on was taken from "Linux Serial Programming
-	   HOWTO".  It explains how MIN (t->c_cc[VMIN] || vmin_) and TIME
-	   (t->c_cc[VTIME] || vtime_) is to be used.
-
-	   In non-canonical input processing mode, input is not assembled into
-	   lines and input processing (erase, kill, delete, etc.) does not
-	   occur. Two parameters control the behavior of this mode: c_cc[VTIME]
-	   sets the character timer, and c_cc[VMIN] sets the minimum number of
-	   characters to receive before satisfying the read.
-
-	   If MIN > 0 and TIME = 0, MIN sets the number of characters to receive
-	   before the read is satisfied. As TIME is zero, the timer is not used.
-
-	   If MIN = 0 and TIME > 0, TIME serves as a timeout value. The read will
-	   be satisfied if a single character is read, or TIME is exceeded (t =
-	   TIME *0.1 s). If TIME is exceeded, no character will be returned.
-
-	   If MIN > 0 and TIME > 0, TIME serves as an inter-character timer. The
-	   read will be satisfied if MIN characters are received, or the time
-	   between two characters exceeds TIME. The timer is restarted every time
-	   a character is received and only becomes active after the first
-	   character has been received.
-
-	   If MIN = 0 and TIME = 0, read will be satisfied immediately. The
-	   number of characters currently available, or the number of characters
-	   requested will be returned. According to Antonino (see contributions),
-	   you could issue a fcntl(fd, F_SETFL, FNDELAY); before reading to get
-	   the same result.
+	 * The following documentation on was taken from "Linux Serial
+	 * Programming HOWTO".  It explains how MIN (t->c_cc[VMIN] || vmin_)
+	 * and TIME (t->c_cc[VTIME] || vtime_) is to be used.
+	 *
+	 * In non-canonical input processing mode, input is not assembled into
+	 * lines and input processing (erase, kill, delete, etc.) does not
+	 * occur. Two parameters control the behavior of this mode: c_cc[VTIME]
+	 * sets the character timer, and c_cc[VMIN] sets the minimum number of
+	 * characters to receive before satisfying the read.
+	 *
+	 * If MIN > 0 and TIME = 0, MIN sets the number of characters to receive
+	 * before the read is satisfied. As TIME is zero, the timer is not used.
+	 *
+	 * If MIN = 0 and TIME > 0, TIME serves as a timeout value. The read will
+	 * be satisfied if a single character is read, or TIME is exceeded (t =
+	 * TIME *0.1 s). If TIME is exceeded, no character will be returned.
+	 *
+	 * If MIN > 0 and TIME > 0, TIME serves as an inter-character timer. The
+	 * read will be satisfied if MIN characters are received, or the time
+	 * between two characters exceeds TIME. The timer is restarted every time
+	 * a character is received and only becomes active after the first
+	 * character has been received.
+	 *
+	 * If MIN = 0 and TIME = 0, read will be satisfied immediately. The
+	 * number of characters currently available, or the number of characters
+	 * requested will be returned. According to Antonino (see contributions),
+	 * you could issue a fcntl(fd, F_SETFL, FNDELAY); before reading to get
+	 * the same result.
 	 */
 
 	if (t->c_lflag & ICANON)
@@ -1398,15 +1400,15 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	if ((sh->vmin_ > 0) && (sh->vtime_ == 0))
 	{
 		/* Returns immediately with whatever is in buffer on a ReadFile();
-		   or blocks if nothing found.  We will keep calling ReadFile(); until
-		   vmin_ characters are read */
+		 * or blocks if nothing found.  We will keep calling ReadFile();
+		 * until vmin_ characters are read */
 		to.ReadIntervalTimeout = to.ReadTotalTimeoutMultiplier = MAXDWORD;
 		to.ReadTotalTimeoutConstant = MAXDWORD - 1;
 	}
 	else if ((sh->vmin_ == 0) && (sh->vtime_ > 0))
 	{
 		/* set timeoout constant appropriately and we will only try to
-		   read one character in ReadFile() */
+		 * read one character in ReadFile() */
 		to.ReadTotalTimeoutConstant = sh->vtime_;
 		to.ReadIntervalTimeout = to.ReadTotalTimeoutMultiplier = MAXDWORD;
 	}
@@ -1418,7 +1420,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	else if ((sh->vmin_ == 0) && (sh->vtime_ == 0))
 	{
 		/* returns immediately with whatever is in buffer as per
-		   Time-Outs docs in Win32 SDK API docs */
+		 * Time-Outs docs in Win32 SDK API docs */
 		to.ReadIntervalTimeout = MAXDWORD;
 	}
 
@@ -1567,24 +1569,24 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 
 	/* -------------- Hardware flow control ------------------ */
 	/* Some old flavors of Unix automatically enabled hardware flow
-	   control when software flow control was not enabled.  Since newer
-	   Unices tend to require explicit setting of hardware flow-control,
-	   this is what we do. */
+	 * control when software flow control was not enabled.  Since newer
+	 * Unices tend to require explicit setting of hardware flow-control,
+	 * this is what we do. */
 
 	/* Input flow-control */
 	if ((state.fRtsControl == RTS_CONTROL_HANDSHAKE) &&
 			(state.fOutxCtsFlow == TRUE))
 		t->c_cflag |= CRTSCTS;
 	/*
-	   if (state.fRtsControl == RTS_CONTROL_HANDSHAKE)
-	   t->c_cflag |= CRTSXOFF;
-	 */
+	if (state.fRtsControl == RTS_CONTROL_HANDSHAKE)
+		t->c_cflag |= CRTSXOFF;
+	*/
 
 	/* -------------- CLOCAL --------------- */
 	/* DSR is only lead toggled only by CLOCAL.  Check it to see if
-	   CLOCAL was called. */
+	 * CLOCAL was called. */
 	/* FIXME: If tcsetattr() hasn't been called previously, this may
-	   give a false CLOCAL. */
+	 * give a false CLOCAL. */
 
 	if (state.fDsrSensitivity == FALSE)
 		t->c_cflag |= CLOCAL;

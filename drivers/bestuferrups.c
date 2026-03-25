@@ -119,7 +119,7 @@ void upsdrv_initinfo (void)
 		fc.model = RE1800;
 	} else if (memcmp(temp, "C1", 2) == 0) {
 		/* Better way to identify unit is using "d 15\r", which results in
-		   "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
+		 * "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
 		fc.model = MD1KVA;
 	}
 
@@ -428,8 +428,8 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("ambient.temperature", "%05.1f", (double)ambtemp);
 
 		dstate_dataok();
-		/* Tim: With out this return, it always falls over to the
-		    datastate() at the end of the function */
+		/* Tim: Without this return, it always falls over to the
+		 *  datastate() at the end of the function */
 		return;
 	} else {
 
@@ -450,7 +450,7 @@ static void ups_sync(void)
 	fflush (stdout);
 
 	/* A bit better sanity might be good here.  As is, we expect the
-	   human to observe the time being totally not a time. */
+	 * human to observe the time being totally not a time. */
 
 	if (execute("time\r", buf, sizeof(buf)) > 0) {
 		fprintf(stderr, "UPS Time: %s\n", buf);

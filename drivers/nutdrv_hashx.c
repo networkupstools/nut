@@ -139,8 +139,9 @@ static ssize_t hashx_recv(char *buf, size_t bufsize)
 {
 	ssize_t nread;
 
-	nread = ser_get_line(upsfd, buf, bufsize - 1, ENDCHAR, IGNCHAR,
-	                     SER_WAIT_SEC, SER_WAIT_USEC);
+	nread = ser_get_line(
+		upsfd, buf, bufsize - 1, ENDCHAR, IGNCHAR,
+		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	assert(nread < (ssize_t) bufsize);
 	buf[nread] = '\0';
@@ -149,8 +150,10 @@ static ssize_t hashx_recv(char *buf, size_t bufsize)
 		char base_msg[128];
 		int n;
 
-		n = snprintf(base_msg, sizeof(base_msg),
-		             "%s: read %" PRIiSIZE ": ", __func__, nread);
+		n = snprintf(
+			base_msg, sizeof(base_msg),
+			"%s: read %" PRIiSIZE ": ",
+			__func__, nread);
 		assert(n > 0);
 		upsdebug_ascii(4, base_msg, buf, nread);
 	}
@@ -188,14 +191,16 @@ static int hashx_send_command(const char *command)
 	int status;
 
 	if ((transferred = ser_send(upsfd, "%s%c", command, ENDCHAR)) != strlen (command) + 1) {
-		upslogx(LOG_ERR, "%s: Failed to send command: %s",
-		        __func__, command);
+		upslogx(LOG_ERR,
+			"%s: Failed to send command: %s",
+			__func__, command);
 		return STATUS_UNKNOWN_FAILURE;
 	}
 
 	if ((status = hashx_status_value(buf, sizeof(buf))) != STATUS_SUCCESS) {
-		upslogx(LOG_ERR, "%s: unexpected hash protocol response: %s (status %d)",
-		        __func__, buf, status);
+		upslogx(LOG_ERR,
+			"%s: unexpected hash protocol response: %s (status %d)",
+			__func__, buf, status);
 	}
 
 	return status;
@@ -256,8 +261,9 @@ void upsdrv_initinfo(void)
 	for (i = 0; ; ++i) {
 		upsdebugx(4, "Checking if device supports the #-protocol... [%" PRIuSIZE "]", i+1);
 		if ((transferred = ser_send_char(upsfd, ENDCHAR)) != 1) {
-			fatalx(EXIT_FAILURE, "%s: Initialization failure %s",
-			       __func__, device_path);
+			fatalx(EXIT_FAILURE,
+				"%s: Initialization failure %s",
+				__func__, device_path);
 		}
 		if ((status = hashx_status_value(buf, sizeof(buf))) == -1) {
 			break;
@@ -267,8 +273,9 @@ void upsdrv_initinfo(void)
 			continue;
 		}
 
-		fatalx(EXIT_FAILURE, "%s: unexpected hash protocol response: %s (status %d)",
-		       __func__, buf, status);
+		fatalx(EXIT_FAILURE,
+			"%s: unexpected hash protocol response: %s (status %d)",
+			__func__, buf, status);
 	}
 
 	/* The K19 function needs a 16 bytes value and the device should reply
@@ -277,17 +284,20 @@ void upsdrv_initinfo(void)
 	 * send one value we know about, to verify the protocol.
 	 */
 	if ((status = hashx_send_command(COMMAND_SET_SESSION_ID":"SESSION_ID)) != STATUS_SUCCESS) {
-		fatalx(EXIT_FAILURE, "%s: Failed to set session ID: %s",
-		       __func__, SESSION_ID);
+		fatalx(EXIT_FAILURE,
+			"%s: Failed to set session ID: %s",
+			__func__, SESSION_ID);
 	}
 
 	if ((transferred = ser_send(upsfd, COMMAND_GET_SESSION_HASH"%c", ENDCHAR)) != 4) {
 		fatalx(EXIT_FAILURE, "%s: Failed to get session hash", __func__);
 	}
-	if ((transferred = hashx_recv(buf, sizeof(buf))) != strlen(SESSION_HASH) + 1 ||
-	    (transferred > 0 && strncmp(buf, "#"SESSION_HASH, sizeof(buf)) != 0)) {
-		fatalx(EXIT_FAILURE, "%s: unexpected hash protocol response: %s",
-		       __func__, buf);
+	if ((transferred = hashx_recv(buf, sizeof(buf))) != strlen(SESSION_HASH) + 1
+	 || (transferred > 0 && strncmp(buf, "#"SESSION_HASH, sizeof(buf)) != 0)
+	) {
+		fatalx(EXIT_FAILURE,
+			"%s: unexpected hash protocol response: %s",
+			__func__, buf);
 	}
 
 	/* XXX: Maybe now repeat the same with a random value, without checking
@@ -314,8 +324,9 @@ void upsdrv_initinfo(void)
 		fatalx(EXIT_FAILURE, "%s: Failed to get UPS info", __func__);
 	}
 	if ((transferred = hashx_recv(buf, sizeof(buf))) < 3) {
-		fatalx(EXIT_FAILURE, "%s: unexpected UPS info response: %s",
-		       __func__, buf);
+		fatalx(EXIT_FAILURE,
+			"%s: unexpected UPS info response: %s",
+			__func__, buf);
 	}
 	/* This is in the format:
 	 * #1200,PE02022.002,000000000000,000000000000000000
@@ -362,8 +373,9 @@ void upsdrv_initinfo(void)
 		upslogx(LOG_ERR, "%s: Failed to get UPS power info", __func__);
 	}
 	if ((transferred = hashx_recv(buf, sizeof(buf))) < 3) {
-		upslogx(LOG_ERR, "%s: unexpected UPS power info response: %s",
-		        __func__, buf);
+		upslogx(LOG_ERR,
+			"%s: unexpected UPS power info response: %s",
+			__func__, buf);
 	}
 	/* This is in the format:
 	 * #1200,0720,230,40,70,05.20
@@ -396,9 +408,10 @@ void upsdrv_initinfo(void)
 	}
 
 	if (strsep(&reply, ",") != NULL) {
-		upslogx(LOG_WARNING, "This UPS returns unexpected power info fields (%s), "
-		        "previously decoded values may have not been correctly assigned!",
-		        buf + 1);
+		upslogx(LOG_WARNING,
+			"This UPS returns unexpected power info fields (%s), "
+			"previously decoded values may have not been correctly assigned!",
+			buf + 1);
 	}
 
 	upsh.instcmd = hashx_instcmd;
@@ -450,22 +463,24 @@ void upsdrv_updateinfo(void)
 	 * S) UPS Status bytes (see below)
 	 */
 	status = buf + 1;
-	if ((ret = sscanf(status, "I%fO%fL%dB%dV%fF%fH%fR%dS",
-		              &input_voltage, &output_voltage, &output_load,
-		              &battery_charge, &battery_voltage, &input_frequency,
-		              &output_frequency, &remaining_runtime)) == EOF ||
-		              ret < 1) {
+	if ((ret = sscanf(
+		status, "I%fO%fL%dB%dV%fF%fH%fR%dS",
+		&input_voltage, &output_voltage, &output_load,
+		&battery_charge, &battery_voltage, &input_frequency,
+		&output_frequency, &remaining_runtime)) == EOF ||
+		ret < 1
+	) {
 		upslogx(LOG_ERR, "%s: Impossible to parse: %s", __func__, status);
 		dstate_datastale();
 		return;
 	}
 
 	upsdebugx(6, "Poll: input voltage %.1f, output voltage %.1f, load balance %d%%, "
-	          "battery level: %d%%, battery voltage: %.1f, input frequency: %.1f, "
-	          "output frequency %.1f, remaining runtime: %d minutes",
-	          input_voltage, output_voltage, output_load,
-	          battery_charge, battery_voltage, input_frequency,
-	          output_frequency, remaining_runtime);
+		"battery level: %d%%, battery voltage: %.1f, input frequency: %.1f, "
+		"output frequency %.1f, remaining runtime: %d minutes",
+		input_voltage, output_voltage, output_load,
+		battery_charge, battery_voltage, input_frequency,
+		output_frequency, remaining_runtime);
 
 	if (input_voltage >= 0) {
 		dstate_setinfo("input.voltage", "%.1f", input_voltage);
@@ -510,7 +525,7 @@ void upsdrv_updateinfo(void)
 
 	if (!status_bytes || status_bytes_size < 5) {
 		upslogx(LOG_ERR, "Status bytes are not enough: %" PRIuSIZE,
-		        status_bytes_size);
+			status_bytes_size);
 		dstate_dataok();
 		return;
 	}
@@ -621,7 +636,7 @@ static int hashx_instcmd(const char *cmd_name, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 
 		upslogx(LOG_INSTCMD_FAILED, "Failed to execute command [%s] [%s]: %d",
-		        NUT_STRARG(cmd_name), NUT_STRARG(extra), status);
+			NUT_STRARG(cmd_name), NUT_STRARG(extra), status);
 		return STAT_INSTCMD_FAILED;
 	}
 

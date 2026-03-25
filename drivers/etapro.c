@@ -82,8 +82,8 @@ etapro_get_response(const char *resp_type)
 	unsigned int n, val;
 
 	/* Read until a newline is found or there is no room in the buffer.
-	   Unlike ser_get_line(), don't discard the following characters
-	   because we have to handle multi-line responses.  */
+	 * Unlike ser_get_line(), don't discard the following characters
+	 * because we have to handle multi-line responses.  */
 	n = 0;
 	while (ser_get_char(upsfd, (unsigned char *)&tmp[n], 1, 0) == 1) {
 		if (n >= sizeof(tmp) - 1 || tmp[n] == '\n')
@@ -292,7 +292,7 @@ upsdrv_updateinfo(void)
 	}
 
 	/* TODO: >= 1000VA models have a 24V battery (max 28V) - check
-	   the model string returned by the RI command.  */
+	 * the model string returned by the RI command.  */
 	battvolt = (14.0 / 255) * x;
 
 	x = etapro_get_response("SL");  /* load (on battery), 0xFF = 150% */
@@ -308,8 +308,8 @@ upsdrv_updateinfo(void)
 		return;
 	}
 	/* This is the time how long the UPS has been running on battery
-	   (in seconds, reset to zero after power returns), but there
-	   seems to be no variable defined for this yet...  */
+	 * (in seconds, reset to zero after power returns), but there
+	 * seems to be no variable defined for this yet...  */
 
 	status_init();
 

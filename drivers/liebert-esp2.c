@@ -525,10 +525,10 @@ void upsdrv_shutdown(void)
 
 	char	reply[8];
 
-	if(!(do_command(cmd_setOutOffMode, reply, 8) != -1) &&
-	    (do_command(cmd_setOutOffDelay, reply, 8) != -1) &&
-	    (do_command(cmd_sysLoadKey, reply, 6) != -1) &&
-	    (do_command(cmd_shutdown, reply, 8) != -1)
+	if(!(do_command(cmd_setOutOffMode, reply, 8) != -1)
+	 && (do_command(cmd_setOutOffDelay, reply, 8) != -1)
+	 && (do_command(cmd_sysLoadKey, reply, 6) != -1)
+	 && (do_command(cmd_shutdown, reply, 8) != -1)
 	) {
 		upslogx(LOG_ERR, "Failed to shutdown UPS");
 		if (handling_upsdrv_shutdown > 0)

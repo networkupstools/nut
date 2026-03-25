@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.13"
+#define VOLTRONIC_VERSION "Voltronic 0.14"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -1685,40 +1685,61 @@ static testing_t	voltronic_testing[] = {
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
 static int	voltronic_claim(void)
 {
+	int	query_result;
 
 	/* We need at least QGS and QPI to run this subdriver */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
 
-	/* Don't know what happened */
-	if (!item)
+	/* Don't know what happened - should have looked up in the mapping table here! */
+	if (!item) {
+		upsdebug_with_errno(4, "%s: did not find 'input.voltage' in mapping table", __func__);
 		return 0;
+	}
 
 	/* No reply/Unable to get value */
-	if (qx_process(item, NULL))
-		return 0;
+	if ((query_result = qx_process(item, NULL))) {
+		upsdebug_with_errno(4, "%s: failed (%d) to get 'input.voltage'", __func__, query_result);
+
+		if (errno == ETIMEDOUT) {
+			upsdebugx(2, "%s: Sometimes the device is laggy, and we could have posted many queries and the buffer is full of replies to them (or it is still producing the answers); try to sleep, flush it and ask again", __func__);
+			usleep(5000000);	/* arbitrary 5s delay for the device to maybe produce answers to earlier voltage requests */
+			upsdebugx(2, "%s: Retry the query now, buffers will be flushed then", __func__);
+			query_result = qx_process(item, NULL);
+		}
+
+		if (query_result) {
+			/* Not a known timeout/zero-read initially, or still a bad response */
+			return 0;
+		}
+	}
 
 	/* Unable to process value */
-	if (ups_infoval_set(item) != 1)
+	if ((query_result = ups_infoval_set(item)) != 1) {
+		upsdebug_with_errno(4, "%s: failed (%d) to set infoval for 'input.voltage'", __func__, query_result);
 		return 0;
+	}
 
 	/* UPS Protocol */
 	item = find_nut_info("ups.firmware.aux", 0, 0);
 
 	/* Don't know what happened */
 	if (!item) {
+		upsdebug_with_errno(4, "%s: did not find 'ups.firmware.aux' in mapping table", __func__);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
 
 	/* No reply/Unable to get value */
-	if (qx_process(item, NULL)) {
+	if ((query_result = qx_process(item, NULL))) {
+		upsdebug_with_errno(4, "%s: failed (%d) to get 'ups.firmware.aux'", __func__, query_result);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
 
 	/* Unable to process value/Protocol out of range */
-	if (ups_infoval_set(item) != 1) {
+	if ((query_result = ups_infoval_set(item)) != 1) {
+		upsdebug_with_errno(4, "%s: failed (%d) to set infoval for 'ups.firmware.aux'", __func__, query_result);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}

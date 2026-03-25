@@ -456,7 +456,7 @@ static void ups_sync(void)
 	char buf[256];
 
 	/* A bit better sanity might be good here. As is, we expect the
-	 human to observe the time being totally not a time. */
+	 * human to observe the time being totally not a time. */
 
 	if (execute("time\r", buf, sizeof(buf)) > 0) {
 		upsdebugx(1, "UPS Time: %s", buf);
@@ -606,7 +606,7 @@ static void upsdrv_init_nofc(void)
 	upsdebugx(2, "id response: %s", rstring);
 
 	/* Better way to identify this unit is using "d 15\r", which results in
-	   "15 M#	 MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
+	 * "15 M#	 MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
 	if (strstr(rstring, "Unit ID \"C1K")){
 		fc.model = MDxxxx;
 		snprintf(fc.name, sizeof(fc.name), "%s", "Micro Ferrups");

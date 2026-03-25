@@ -69,12 +69,13 @@ static void usage(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
@@ -617,7 +618,7 @@ static void print_rwlist(void)
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -663,6 +664,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
+		upscli_set_debug_level(nut_debug_level);
 	}
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
@@ -731,7 +733,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
 
-	ups = xcalloc(1, sizeof(*ups));
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));

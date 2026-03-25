@@ -316,8 +316,8 @@ static void do_capabilities(void)
 
 	upsdebugx(1, "APC - About to get capabilities string");
 	/* If we can do caps, then we need the Firmware revision which has
-	   the locale descriptor as the last character (ugh)
-	*/
+	 * the locale descriptor as the last character (ugh)
+	 */
 	ptr = dstate_getinfo("ups.firmware");
 	if (ptr)
 		upsloc = ptr[strlen(ptr) - 1];
@@ -340,8 +340,8 @@ static void do_capabilities(void)
 
 		/* Early Smart-UPS, not as smart as later ones */
 		/* This should never happen since we only call
-		   this if the REQ_CAPABILITIES command is supported
-		*/
+		 * this if the REQ_CAPABILITIES command is supported
+		 */
 		upslogx(LOG_ERR, "ERROR: APC cannot do capabilities but said it could!");
 		return;
 	}
@@ -494,8 +494,8 @@ static void oldapcsetup(void)
 	update_status();
 
 	/* If we have come down this path then we dont do capabilities and
-	   other shiny features
-	*/
+	 * other shiny features
+	 */
 }
 
 static void protocol_verify(unsigned char cmd)
@@ -645,9 +645,9 @@ static void getbaseinfo(void)
 
 	upsdebugx(1, "APC - Attempting to find command set");
 	/* Initially we ask the UPS what commands it takes
-	   If this fails we are going to need an alternate
-	   strategy - we can deal with that if it happens
-	*/
+	 *  If this fails we are going to need an alternate
+	 *  strategy - we can deal with that if it happens
+	 */
 
 	ret = ser_send_char(upsfd, APC_CMDSET);
 
@@ -667,12 +667,12 @@ static void getbaseinfo(void)
 
 	upsdebugx(1, "APC - Parsing out command set");
 	/* We have the version.alert.cmdchars string
-	   NB the alert chars are normally in IGNCHARS
-	   so will have been pretty much edited out.
-	   You will need to change the ser_get_line above if
-	   you want to check those out too....
-	*/
- 	alrts = strchr(temp, '.');
+	 * NB the alert chars are normally in IGNCHARS
+	 * so will have been pretty much edited out.
+	 * You will need to change the ser_get_line above if
+	 * you want to check those out too....
+	 */
+	alrts = strchr(temp, '.');
 	if (alrts == NULL) {
 		fatalx(EXIT_FAILURE, "Unable to split APC version string");
 	}
@@ -1016,11 +1016,12 @@ static void upsdrv_shutdown_simple(long status)
 static void upsdrv_shutdown_advanced(long status)
 {
 	const char *strval;
-	const char deforder[] = {48 + SDIDX_S,
-				 48 + SDIDX_AT3N,
-				 48 + SDIDX_K,
-				 48 + SDIDX_Z,
-				  0};
+	const char deforder[] = {
+		48 + SDIDX_S,
+		48 + SDIDX_AT3N,
+		48 + SDIDX_K,
+		48 + SDIDX_Z,
+		0};
 	size_t i;
 	long n;
 

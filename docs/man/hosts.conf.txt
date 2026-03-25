@@ -40,6 +40,26 @@ The description must be one element, so if it has spaces, then it must
 be wrapped with quotes as shown above.  The default hostname is
 "localhost".
 
+*CUSTOM_TEMPLATE_LIST* 'filename'::
+*CUSTOM_TEMPLATE_SINGLE* 'filename'::
+
+linkman:upsstats[8] allows to use custom HTML template files for some of
+its outputs (JSON and "treemode" mark-ups are currently hard-coded in
+the binary), which you can specify in the query string part of the
+URI (in your `index.html` and/or added cells of `header.html`) as e.g.
+------
+.../cgi-bin/upsstats.cgi?template_single=custom-s.htm&template_list=custom-l.htm
+------
++
+Specific file names for a specific role must be permitted with these
+directives (can be repeated).  File names must contain the `.htm` sub-string
+and must be located directly in the NUT configuration directory (same as
+default templates). If custom templates are used in the original request
+URI, they will be automatically suffixed to generated links (primarily
+`HOSTLINK`, but also just in case added to `TREELINK` and `TREELINK_JSON`,
+see linkman:upsstats.html[5] for more details).
+
+
 SEE ALSO
 --------
 

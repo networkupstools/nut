@@ -84,11 +84,14 @@ static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 	union i2c_smbus_data data;
 	int err;
 
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
+	if ((err = i2c_smbus_access(
+		file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_BYTE_DATA, &data)) < 0
+	) {
 		return err;
-	else
+	} else {
 		return 0x0FF & data.byte;
+	}
 }
 # endif
 
@@ -99,11 +102,14 @@ static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value
 	int err;
 
 	data.byte = value;
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
-	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
+	if ((err = i2c_smbus_access(
+		file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_BYTE_DATA, &data)) < 0
+	) {
 		return err;
-	else
+	} else {
 		return 0x0FF & data.byte;
+	}
 }
 # endif
 
@@ -113,11 +119,14 @@ static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 	union i2c_smbus_data data;
 	int err;
 
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
+	if ((err = i2c_smbus_access(
+		file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_WORD_DATA, &data)) < 0
+	) {
 		return err;
-	else
+	} else {
 		return 0x0FFFF & data.word;
+	}
 }
 # endif
 
@@ -128,11 +137,14 @@ static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 valu
 	int err;
 
 	data.word = value;
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
-	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
+	if ((err = i2c_smbus_access(
+		file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_WORD_DATA, &data)) < 0
+	) {
 		return err;
-	else
+	} else {
 		return 0x0FFFF & data.word;
+	}
 }
 # endif
 
@@ -150,11 +162,14 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 	data.block[0] = length;
 	memcpy(data.block + 1, values, length);
 
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_I2C_BLOCK_DATA, &data)) < 0)
+	if ((err = i2c_smbus_access(
+		file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_I2C_BLOCK_DATA, &data)) < 0
+	) {
 		return NULL;
-	else
+	} else {
 		memcpy(values, &data.block[1], data.block[0]);
+	}
 
 	return values;
 }
@@ -410,9 +425,9 @@ static void get_status(void)
 			upsdebugx(1, "Power Input 5v: UNKNOWN");
 	}
 
-	if ( batteryStatus == BATT_NORMAL ||
-	     batteryStatus == BATT_CHARGING_FROM_IN ||
-	     batteryStatus == BATT_CHARGING_FROM_5V )
+	if ( batteryStatus == BATT_NORMAL
+	 ||  batteryStatus == BATT_CHARGING_FROM_IN
+	 ||  batteryStatus == BATT_CHARGING_FROM_5V )
 	{
 		get_charge_level_hi_res();
 
@@ -432,12 +447,12 @@ static void get_status(void)
 		status_set("RB");
 	}
 
-	if ( batteryStatus  <= BATT_NOT_PRESENT &&
-	     powerInput     <= POWER_PRESENT &&
-	     powerInput5vIo <= POWER_PRESENT )
+	if ( batteryStatus  <= BATT_NOT_PRESENT
+	 &&  powerInput     <= POWER_PRESENT
+	 &&  powerInput5vIo <= POWER_PRESENT )
 	{
-		if ( powerInput       == POWER_NOT_PRESENT &&
-		     ( powerInput5vIo != POWER_NOT_PRESENT ))
+		if ( powerInput       == POWER_NOT_PRESENT
+		 &&  ( powerInput5vIo != POWER_NOT_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
@@ -461,9 +476,9 @@ static void get_status(void)
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
-		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
-		      ( powerInput   != POWER_NOT_PRESENT &&
-		        powerInput   <= POWER_PRESENT ))
+		else if ( powerInput5vIo == POWER_NOT_PRESENT
+		      &&  powerInput     != POWER_NOT_PRESENT
+		      &&  powerInput     <= POWER_PRESENT )
 		{
 			if ( gpio_power != 1 || usb_power != 0 )
 			{
@@ -487,8 +502,8 @@ static void get_status(void)
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
-		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) &&
-		          ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
+		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT )
+		       && ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 1 )
 			{
