@@ -196,11 +196,11 @@ static TYPE_FD sock_open(const char *fn)
 
 	fd = CreateNamedPipe(
 			fn,			/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_WAIT,
 			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 			ST_SOCK_BUF_LEN,	/* output buffer size */
 			ST_SOCK_BUF_LEN,	/* input buffer size */
@@ -236,11 +236,26 @@ static TYPE_FD sock_open(const char *fn)
 static void sock_disconnect(conn_t *conn)
 {
 #ifndef WIN32
+# if 0
+	if (VALID_FD(conn->fd)) {
+		FILE	*f = fdopen(conn->fd, 600);
+		if (f) {
+			upsdebugx(4, "%s: flushing socket %d", __func__, (int)conn->fd);
+			setvbuf(f, NULL, _IONBF, 0);
+			fflush(f);
+		}
+	}
+# endif
 	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
 #else	/* WIN32 */
 	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right way to close a connection */
 	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		if (VALID_FD(conn->fd)) {
+			upsdebugx(4, "%s: flushing named pipe handle %p", __func__, conn->fd);
+			FlushFileBuffers(conn->fd);
+		}
+		upsdebugx(4, "%s: closing not-invalid named pipe handle %p", __func__, conn->fd);
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
