@@ -1785,16 +1785,18 @@ static void mainloop(void)
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
-			upsdebug_with_errno(3, "%s: Disconnect %s%s due to%s%s%s",
+			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %d] due to%s%s%s",
 				__func__,
-				(handler[i].type==DRIVER ? "driver " :
-				(handler[i].type==CLIENT ? "client " :
-				(handler[i].type==SERVER ? "server"  :
+				(handler[i].type==DRIVER ? "DRIVER" :
+				(handler[i].type==CLIENT ? "CLIENT" :
+				(handler[i].type==SERVER ? "SERVER"  :
 				"<unknown>"))),
 				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
 				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
 				(handler[i].type==SERVER ? "" :
 				""))),
+				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
+				fds[i].fd,
 				(fds[i].revents & POLLHUP ? " POLLHUP" : ""),
 				(fds[i].revents & POLLERR ? " POLLERR" : ""),
 				(fds[i].revents & POLLNVAL ? " POLLNVAL" : "")
@@ -1847,6 +1849,21 @@ static void mainloop(void)
 		}
 
 		if (fds[i].revents & POLLIN) {
+
+			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %d]",
+				__func__,
+				(handler[i].type==SERVER ? "connection" : "data"),
+				(handler[i].type==DRIVER ? "DRIVER" :
+				(handler[i].type==CLIENT ? "CLIENT" :
+				(handler[i].type==SERVER ? "SERVER"  :
+				"<unknown>"))),
+				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
+				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
+				(handler[i].type==SERVER ? "" :
+				""))),
+				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
+				fds[i].fd
+				);
 
 			switch(handler[i].type)
 			{
@@ -2212,6 +2229,23 @@ static void mainloop(void)
 	upsdebugx(6, "%s: requesting handler[%" PRIu64 "]", __func__, ret);
 	upsdebugx(6, "%s: handler.type=%d handler.data=%p", __func__, handler[ret].type, handler[ret].data);
 
+	upsdebugx(3, "%s: Incoming %s from %s [%s%sarray entry %" PRIuMAX "]",
+		__func__,
+		(handler[ret].type==SERVER || (handler[ret].type==NAMED_PIPE && fds[ret] == pipe_connection_overlapped.hEvent) ? "connection" : "data"),
+		(handler[ret].type==DRIVER ? "DRIVER" :
+		(handler[ret].type==CLIENT ? "CLIENT" :
+		(handler[ret].type==SERVER ? "SERVER" :
+		(handler[ret].type==NAMED_PIPE ? "NAMED_PIPE" :
+		"<unknown>")))),
+		(handler[ret].type==DRIVER ? ((upstype_t *)handler[ret].data)->name  :
+		(handler[ret].type==CLIENT ? ((nut_ctype_t *)handler[ret].data)->addr :
+		(handler[ret].type==SERVER ? "" :
+		(handler[ret].type==NAMED_PIPE ? "" :
+		"")))),
+		(handler[ret].type==DRIVER || handler[ret].type==CLIENT ? ", " : ""),
+		(uintmax_t)ret
+		);
+
 	switch(handler[ret].type) {
 		case DRIVER:
 			upsdebugx(4, "%s: calling sstate_readline() for DRIVER", __func__);
@@ -2243,8 +2277,8 @@ static void mainloop(void)
 						set_reload_flag(1);
 					}
 					else {
-						upslogx(LOG_ERR,"Unknown signal"
-						       );
+						upsdebugx(1, "Unknown signal via NAMED_PIPE: '%s'", NUT_STRARG(conn->buf));
+						upslogx(LOG_ERR, "Unknown signal");
 					}
 
 					upsdebugx(4, "%s: calling pipe_disconnect() for NAMED_PIPE", __func__);
