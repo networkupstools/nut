@@ -396,6 +396,11 @@ https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.i
 (a copy tailored for your OS distribution may be or not be included
 in NUT packages, if you installed from those).
 
+NOTE: The NUT-provided `nutshutdown` and its derivatives in packages
+provided by OS distributions are subject to proper NUT configuration,
+such as that you do not keep `MODE=none` in `nut.conf` (at which point
+the standard shutdown hook script would exit without doing anything).
+
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
 
