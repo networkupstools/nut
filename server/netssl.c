@@ -251,18 +251,35 @@ static void nss_error(const char* text)
 		char	*buffer = calloc(err_len + 1, sizeof(char));
 		if (buffer) {
 			PR_GetErrorText(buffer);
-			upsdebugx(1, "nss_error %ld%s in %s : %s", (long)err_num, err_name_buf, text, buffer);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				buffer);
 			free(buffer);
 		} else {
-			upsdebugx(1, "nss_error %ld%s in %s : Failed to allocate internal error buffer for detailed error text, needs %ld bytes", (long)err_num, err_name_buf, text, (long)err_len);
+			upsdebugx(1, "nss_error %ld%s in %s : "
+				"Failed to allocate internal error buffer "
+				"for detailed error text, needs %ld bytes",
+				(long)err_num,
+				err_name_buf,
+				text,
+				(long)err_len);
 		}
 	} else {
 		/* The code above may be obsolete or not ubiquitous, try another way */
 		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
 		if (err_text && *err_text) {
-			upsdebugx(1, "nss_error %ld%s in %s : %s", (long)err_num, err_name_buf, text, err_text);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				err_text);
 		} else {
-			upsdebugx(1, "nss_error %ld%s in %s", (long)err_num, err_name_buf, text);
+			upsdebugx(1, "nss_error %ld%s in %s",
+				(long)err_num,
+				err_name_buf,
+				text);
 		}
 	}
 }
