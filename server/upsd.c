@@ -2127,6 +2127,9 @@ static void mainloop(void)
 
 	/* https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects
 	 * We handle whoever lights up first, one per loop cycle.
+	 * Maybe later we will prepare and walk an array of eager
+	 * handles, like we do in POSIX builds:
+	 * https://github.com/networkupstools/nut/issues/3376
 	 */
 	chunk = 0;
 	if (nfds <= sysmaxconn) {
