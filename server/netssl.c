@@ -232,7 +232,7 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
  *  it with caller-provided text (typically the calling function name). */
 static void nss_error(const char* text)
 {
-	char	buffer[SMALLBUF], err_name_buf[SMALLBUF];
+	char	err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
 	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
@@ -248,11 +248,13 @@ static void nss_error(const char* text)
 	}
 
 	if (err_len > 0) {
-		if ((size_t)err_len < sizeof(buffer)) {
+		char	*buffer = (char *)calloc(err_len + 1, sizeof(char));
+		if (buffer) {
 			PR_GetErrorText(buffer);
 			upsdebugx(1, "nss_error %ld%s in %s : %s", (long)err_num, err_name_buf, text, buffer);
+			free(buffer);
 		} else {
-			upsdebugx(1, "nss_error %ld%s in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, err_name_buf, text, (long)err_len);
+			upsdebugx(1, "nss_error %ld%s in %s : Failed to allocate internal error buffer for detailed error text, needs %ld bytes", (long)err_num, err_name_buf, text, (long)err_len);
 		}
 	} else {
 		/* The code above may be obsolete or not ubiquitous, try another way */
