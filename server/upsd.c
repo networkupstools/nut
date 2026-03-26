@@ -1774,10 +1774,13 @@ static void mainloop(void)
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "%s", __func__);
+		/* Sleep to avoid insane looping: */
+		upsdebugx(2, "%s: polling failed: code %d; sleeping 0.1 sec and retrying the loop", __func__, ret);
 		usleep(100000);	/* 0.1 sec */
 		return;
 	}
 
+	upsdebugx(2, "%s: polling returned %d hits", __func__, ret);
 	for (i = 0; i < nfds; i++) {
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
@@ -2155,7 +2158,7 @@ static void mainloop(void)
 	upsdebugx(6, "%s: wait for filedescriptors done: %" PRIu64, __func__, ret);
 
 	if (ret == WAIT_TIMEOUT) {
-		upsdebugx(2, "%s: no data available", __func__);
+		upsdebugx(2, "%s: wait timed out: no data available", __func__);
 		return;
 	}
 
@@ -2163,7 +2166,8 @@ static void mainloop(void)
 		DWORD err = GetLastError();
 		err = err; /* remove compile time warning */
 		upslog_with_errno(LOG_ERR, "%s", __func__);
-		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64, __func__, err);
+		/* Sleep to avoid insane looping: */
+		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64 "; sleeping 0.1 sec and retrying the loop", __func__, err);
 		Sleep(100);	/* 0.1 sec */
 		return;
 	}
