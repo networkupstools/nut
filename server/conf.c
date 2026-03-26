@@ -272,14 +272,29 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
+
+	if (!strcmp(arg[0], "CERTREQUEST") || !strcmp(arg[0], "CERTPATH") || !strcmp(arg[0], "CERTIDENT")) {
+		upsdebugx(1, "%s is not supported in this SSL build: --without-nss", arg[0]);
+		return 0;
+	}
+
 #elif (defined WITH_NSS) /* WITH_OPENSSL */
+
 	/* CERTPATH <dir> */
 	if (!strcmp(arg[0], "CERTPATH")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+
+	if (!strcmp(arg[0], "CERTFILE")) {
+		upsdebugx(1, "%s is not supported in this SSL build: --without-openssl", arg[0]);
+		return 0;
+	}
+
+	/* See below for NSS handling of `CERTIDENT <name> <passwd>` with 2 arguments */
+
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
 		if (isdigit((size_t)arg[1][0])) {
@@ -303,8 +318,24 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 0;
 		}
 	}
-#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
-#endif /* WITH_OPENSSL | WITH_NSS */
+# else	/* WITH_NSS && !WITH_CLIENT_CERTIFICATE_VALIDATION */
+	if (!strcmp(arg[0], "CERTREQUEST")) {
+		upslogx(LOG_ERR, "CERTREQUEST is not supported in this SSL build: --with-nss --without-ssl-client-validation");
+		return 0;
+	}
+# endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
+
+#else	/* Neither WITH_OPENSSL nor WITH_NSS: */
+
+	if (!strcmp(arg[0], "CERTREQUEST") || !strcmp(arg[0], "CERTPATH")
+	 || !strcmp(arg[0], "CERTIDENT") || !strcmp(arg[0], "CERTFILE")
+	 || !strcmp(arg[0], "DISABLE_WEAK_SSL")
+	) {
+		upsdebugx(1, "%s is not supported in this non-SSL build", arg[0]);
+		return 0;
+	}
+
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	/* DISABLE_WEAK_SSL <bool> */
@@ -350,6 +381,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 #ifdef WITH_NSS
 	/* CERTIDENT <name> <passwd> */
+	/* Note: warning logs about rejection of the keyword for non-NSS builds is handled above */
 	if (!strcmp(arg[0], "CERTIDENT")) {
 		free(certname);
 		certname = xstrdup(arg[1]);
