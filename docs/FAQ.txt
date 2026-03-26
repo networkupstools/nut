@@ -1094,12 +1094,13 @@ in https://github.com/networkupstools/nut/issues/1899
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
 If you are not actively developing a driver, can you use a snapshot instead?
-The NUT instance of Buildbot generates tar files of the latest NUT source
-after each successful build, and these snapshots include a pre-built version
-of the `./configure` script.
-
-WARNING: There is an outstanding bug that after the shutdown of BuildBot,
-no regular distribution tarballs are in fact published.
+A NUT CI job generates tar files of the latest NUT source for pull requests and
+eventual increments of the `master` branch as part of each successful build,
+and these snapshots include a pre-built version of the `./configure` script.
+In GitHub build status for each such commit you can see status entries with
+a "GHA-01: Tarballs" prefix -- one of those would have an URL to a ZIP file
+with a standard source tarball, and another tarball with rendered documentation
+files.
 
 To build from Git, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
