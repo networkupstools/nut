@@ -2345,3 +2345,13 @@ int  upscli_get_debug_level(void)
 {
 	return nut_debug_level;
 }
+
+void upscli_setproctag(const char *tag)
+{
+	setproctag(tag);
+}
+
+const char *upscli_getproctag(void)
+{
+	return getproctag();
+}

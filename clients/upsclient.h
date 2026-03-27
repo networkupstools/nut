@@ -109,6 +109,10 @@ const char *upscli_strerror(UPSCONN_t *ups);
 void upscli_set_debug_level(int lvl);
 int  upscli_get_debug_level(void);
 
+/* Similarly for sub-process tags that help with troubleshooting */
+void upscli_setproctag(const char *tag);
+const char *upscli_getproctag(void);
+
 /* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup(void);

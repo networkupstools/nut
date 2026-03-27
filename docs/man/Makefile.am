@@ -707,7 +707,9 @@ UPSCLI_SSL_CAPS_DEPS = \
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
 UPSCLI_SET_DEBUG_LEVEL_DEPS = \
-	upscli_get_debug_level.$(MAN_SECTION_API)
+	upscli_get_debug_level.$(MAN_SECTION_API) \
+	upscli_getproctag.$(MAN_SECTION_API) \
+	upscli_setproctag.$(MAN_SECTION_API)
 
 $(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
 
