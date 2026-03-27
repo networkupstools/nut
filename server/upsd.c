@@ -2317,7 +2317,7 @@ int main(int argc, char **argv)
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 
-	progname = xbasename(argv[0]);
+	progname = xbasename_no_ext(argv[0]);
 	setproctag(progname);
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
@@ -2330,22 +2330,7 @@ int main(int argc, char **argv)
 	datapath = xstrdup(NUT_DATADIR);
 #else	/* WIN32 */
 	datapath = getfullpath2(NUT_DATADIR, PATH_SHARE);
-	/* no statepath here, we talk via named pipes */
-
-	/* remove trailing .exe */
-	char * drv_name;
-	drv_name = (char *)xbasename(argv[0]);
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			progname = strdup(drv_name);
-			char * t = strrchr(progname,'.');
-			*t = 0;
-		}
-	}
-	else {
-		progname = drv_name;
-	}
+	/* no statepath here really, we talk via named pipes */
 #endif	/* WIN32 */
 
 	/* set up some things for later */
