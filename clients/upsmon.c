@@ -3788,7 +3788,7 @@ static void init_Inhibitor(const char *prog)
 
 int main(int argc, char *argv[])
 {
-	const char	*prog = xbasename_no_ext(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsmon");
 	const char	*net_connect_timeout = NULL;
 	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
 	struct timeval	prevstart;
@@ -3829,12 +3829,12 @@ int main(int argc, char *argv[])
 
 				/* bad command name given */
 				if (cmd == 0)
-					help(argv[0]);
+					help(prog);
 				break;
 #ifndef WIN32
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
-					help(argv[0]);
+					help(prog);
 				break;
 #endif	/* !WIN32 */
 			case 'D':
@@ -3853,7 +3853,7 @@ int main(int argc, char *argv[])
 				configfile = xstrdup(optarg);
 				break;
 			case 'h':
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
@@ -3883,7 +3883,7 @@ int main(int argc, char *argv[])
 				net_connect_timeout = optarg;
 				break;
 			default:
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
