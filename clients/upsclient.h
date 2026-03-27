@@ -113,6 +113,19 @@ int  upscli_get_debug_level(void);
 void upscli_setproctag(const char *tag);
 const char *upscli_getproctag(void);
 
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep and report the original setting).
+ * Returns the pointer to the currently set value, so it
+ * can be propagated or used in difftime() computations.
+ * NOTE: In WIN32 builds also enforces line-buffering for
+ * stdout and stderr streams.
+ */
+struct timeval *upscli_upslog_start_sync(struct timeval *tv);
+
 /* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup(void);
