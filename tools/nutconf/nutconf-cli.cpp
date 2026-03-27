@@ -1,7 +1,7 @@
 /*
  *  Copyright (C)
  *      2013 - EATON
- *      2024-2025 - Jim Klimov <jimklimov+nut@gmail.com>
+ *      2024-2026 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,10 +62,10 @@ class Usage {
 	public:
 
 	/** Print version and usage to stderr */
-	static void print(const std::string & bin);
+	static void print(const std::string & bin, const std::string & binpath);
 
 	/** Print version info to stdout */
-	static void printVersion(const std::string & bin);
+	static void printVersion(const std::string & bin, const std::string & binpath);
 
 };  // end of class usage
 
@@ -185,21 +185,24 @@ const char * Usage::s_text[] = {
 /**
  * Print version info to stdout (like other NUT tools)
  */
-void Usage::printVersion(const std::string & bin) {
+void Usage::printVersion(const std::string & bin, const std::string & binpath) {
 	std::cout
 		<< "Network UPS Tools " << bin
 		<< " " << describe_NUT_VERSION_once() << std::endl;
+
+	if (!binpath.empty()) std::cout
+		<< "Located in " << binpath << std::endl;
 }
 
 /**
  * Print help text (including version info) to stderr
  */
-void Usage::print(const std::string & bin) {
+void Usage::print(const std::string & bin, const std::string & binpath) {
 	std::cerr
 		<< "Network UPS Tools " << bin
 		<< " " << describe_NUT_VERSION_once() << std::endl
 		<< std::endl
-		<< "Usage: " << bin << " [OPTIONS]" << std::endl
+		<< "Usage: " << (binpath.empty() ? bin : binpath) << " [OPTIONS]" << std::endl
 		<< std::endl
 		<< "OPTIONS:" << std::endl;
 
@@ -3123,7 +3126,7 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutconf");
 	char	*s = nullptr;
 
 	// Get options
@@ -3131,14 +3134,14 @@ static int mainx(int argc, char * const argv[]) {
 
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
-		Usage::print(prog);
+		Usage::print(prog, "");
 
 		::exit(0);
 	}
 
 	// Usage
 	if (options.exists("version") || options.existsSingle("V")) {
-		Usage::printVersion(prog);
+		Usage::printVersion(prog, "");
 
 		::exit(0);
 	}
@@ -3147,7 +3150,7 @@ static int mainx(int argc, char * const argv[]) {
 	if (!options.valid) {
 		options.reportInvalid();
 
-		Usage::print(argv[0]);
+		Usage::print(prog, argv[0]);
 
 		::exit(1);
 	}
