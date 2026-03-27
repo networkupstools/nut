@@ -75,6 +75,7 @@ int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
 void nutscan_upscli_set_debug_level(int level);
 void nutscan_upscli_setproctag(const char *tag);
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
 int nutscan_load_upower_library(const char *libname_path);
 int nutscan_unload_upower_library(void);
 
@@ -174,7 +175,7 @@ const char *nutscan_getproctag(void)
 	return getproctag();
 }
 
-struct timeval *upscli_upslog_start_sync(struct timeval *tv)
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv)
 {
 	struct timeval *nstv = upslog_start_sync(tv);
 	/* Succeeds after init and if the library is loaded, else no-op */
