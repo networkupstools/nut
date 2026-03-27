@@ -445,6 +445,25 @@ int sendsignalfnaliases(const char *pidfn, const char * sig, const char **progna
 /* return a pointer to character inside the file that starts a basename
  * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
+/* like above, but also strip platform-specific EXEEXT if present,
+ * e.g. convert ".../upsd.exe" => "upsd"; returns a newly allocated
+ * string that the caller must free() eventually, or NULL in case
+ * of errors (e.g. NULL or empty input or xbasename() output. */
+char *xbasename_no_ext(const char *file);
+/* like above with fallback support; always returns a new allocation,
+ * even if a copy of inputs or "UNDEFINED" if can not determine the
+ * value (and fallback is NULL) */
+char *xbasename_no_ext_default(const char *file, const char *fallback);
+
+/* Used in main() and similar methods to set a "const char *progname" from
+ * argv[0] in a way that this may be either a pointer to sub-string of
+ * that argv[0] or to the fallback (if not NULL) without wasting RAM for
+ * copies, or to a variable automatically cleaned by the NUT common
+ * library at exit. Uses logic similar to xbasename_no_ext_default()
+ * internally to strip EXEEXT on platforms that have it.
+ * Call with getprogname_argv0_default(NULL, NULL) would return the
+ * previously saved value, or "UNDEFINED" if never set yet. */
+const char *getprogname_argv0_default(const char *file, const char *fallback);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
  * the stdout instead of stderr, and end them with HTML <BR/> tag,
@@ -544,6 +563,19 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
  */
 #define UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY	((uint64_t)INT64_MAX)
 extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
+
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep and report the original setting).
+ * Returns the pointer to the currently set value, so it
+ * can be propagated or used in difftime() computations.
+ * NOTE: In WIN32 builds also enforces line-buffering for
+ * stdout and stderr streams.
+ */
+struct timeval *upslog_start_sync(struct timeval *tv);
 
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */

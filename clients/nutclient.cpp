@@ -332,14 +332,60 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 # endif	/* WITH_OPENSSL */
 
 # ifdef WITH_NSS
-static void nss_error(const char* funcname)
+/** Detail the currently raised NSS error code if possible, and debug-log
+ *  it with caller-provided text (typically the calling function name). */
+static void nss_error(const char* text)
 {
-	char buffer[256];
-	PRInt32 length = PR_GetErrorText(buffer);
-	if (length > 0 && length < 256) {
-		std::cerr << "nss_error " << static_cast<long>(PR_GetError()) << " in " << funcname << " : " << buffer << std::endl;
+	std::string	err_name_buf;
+	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
+	PRInt32	err_len = PR_GetErrorTextLength();
+
+	if (err_name) {
+		err_name_buf << " (" << err_name << ")";
+	}
+
+	if (err_len > 0) {
+		char	*buffer = calloc(err_len + 1, sizeof(char));
+		if (buffer) {
+			PR_GetErrorText(buffer);
+			std::cerr << "nss_error "
+				<< static_cast<long>(err_num)
+				<< err_name_buf
+				<< " in " << text
+				<< " : "
+				<< buffer
+				<< std::endl;
+			free(buffer);
+		} else {
+			std::cerr << "nss_error "
+				<< static_cast<long>(err_num)
+				<< err_name_buf
+				<< " in " << text
+				<< " : "
+				<< "Failed to allocate internal error buffer "
+				<< "for detailed error text, needs "
+				<< static_cast<long>(err_len) << " bytes"
+				<< std::endl;
+		}
 	} else {
-		std::cerr << "nss_error " << static_cast<long>(PR_GetError()) << " in " << funcname << std::endl;
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			std::cerr << "nss_error "
+				<< static_cast<long>(err_num)
+				<< err_name_buf
+				<< " in " << text
+				<< " : "
+				<< err_text
+				<< std::endl;
+		} else {
+			std::cerr << "nss_error "
+				<< static_cast<long>(err_num)
+				<< err_name_buf
+				<< " in " << text
+				<< std::endl;
+		}
 	}
 }
 

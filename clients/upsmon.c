@@ -3393,6 +3393,9 @@ static int check_pdflag(void)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+DFBhic:P:f:pu:VK46W:";
+
 static void help(const char *arg_progname)
 {
 	int old_debug_level = nut_debug_level;
@@ -3785,9 +3788,9 @@ static void init_Inhibitor(const char *prog)
 
 int main(int argc, char *argv[])
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsmon");
 	const char	*net_connect_timeout = NULL;
-	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
 	struct timeval	prevstart;
 
 #ifndef WIN32
@@ -3800,21 +3803,6 @@ int main(int argc, char *argv[])
 	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
 	int		maxhandle = 0;
 	pipe_conn_t	*conn;
-
-	/* remove trailing .exe */
-	char * drv_name;
-	drv_name = (char *)xbasename(argv[0]);
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			prog = strdup(drv_name);
-			char * t = strrchr(prog,'.');
-			*t = 0;
-		}
-	}
-	else {
-		prog = drv_name;
-	}
 #endif	/* WIN32 */
 
 	print_banner_once(prog, 0);
@@ -3826,8 +3814,8 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
 					cmd = SIGCMD_FSD;
@@ -3841,12 +3829,12 @@ int main(int argc, char *argv[])
 
 				/* bad command name given */
 				if (cmd == 0)
-					help(argv[0]);
+					help(prog);
 				break;
 #ifndef WIN32
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
-					help(argv[0]);
+					help(prog);
 				break;
 #endif	/* !WIN32 */
 			case 'D':
@@ -3865,7 +3853,7 @@ int main(int argc, char *argv[])
 				configfile = xstrdup(optarg);
 				break;
 			case 'h':
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
@@ -3895,7 +3883,7 @@ int main(int argc, char *argv[])
 				net_connect_timeout = optarg;
 				break;
 			default:
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif

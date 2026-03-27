@@ -73,6 +73,9 @@ int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
+void nutscan_upscli_set_debug_level(int level);
+void nutscan_upscli_setproctag(const char *tag);
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
 int nutscan_load_upower_library(const char *libname_path);
 int nutscan_unload_upower_library(void);
 
@@ -148,6 +151,37 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 	NUT_UNUSED_VARIABLE(val);
 }
 #endif	/* WIN32 */
+
+void nutscan_set_debug_level(int level) {
+	nut_debug_level = level;
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_set_debug_level(level);
+}
+
+int  nutscan_get_debug_level(void)
+{
+	return nut_debug_level;
+}
+
+void nutscan_setproctag(const char *tag)
+{
+	setproctag(tag);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setproctag(tag);
+}
+
+const char *nutscan_getproctag(void)
+{
+	return getproctag();
+}
+
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv)
+{
+	struct timeval *nstv = upslog_start_sync(tv);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_upslog_start_sync(nstv);
+	return nstv;
+}
 
 void nutscan_init(void)
 {

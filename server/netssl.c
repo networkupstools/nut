@@ -228,42 +228,96 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	return certpasswd ? PL_strdup(certpasswd) : NULL;
 }
 
+/** Detail the currently raised NSS error code if possible, and debug-log
+ *  it with caller-provided text (typically the calling function name). */
 static void nss_error(const char* text)
 {
-	char	buffer[SMALLBUF];
+	char	err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			PR_GetErrorText(buffer);
-			upsdebugx(1, "nss_error %ld in %s : %s", (long)err_num, text, buffer);
-		} else {
-			upsdebugx(1, "nss_error %ld in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, text, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		char	*buffer = calloc(err_len + 1, sizeof(char));
+		if (buffer) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				buffer);
+			free(buffer);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s : "
+				"Failed to allocate internal error buffer "
+				"for detailed error text, needs %ld bytes",
+				(long)err_num,
+				err_name_buf,
+				text,
+				(long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				err_text);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s",
+				(long)err_num,
+				err_name_buf,
+				text);
+		}
 	}
 }
 
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
-	char	buffer[256];
+	char	buffer[256], err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
-	PRInt32	length;
 	NUT_UNUSED_VARIABLE(ssl);
 	NUT_UNUSED_VARIABLE(ret);
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			length = PR_GetErrorText(buffer);
-			upsdebugx(1, "ssl_error %ld : %*s", (long)err_num, length, buffer);
-		} else {
-			upsdebugx(1, "ssl_error %ld : Internal error buffer too small, needs %ld bytes", (long)err_num, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "ssl_error %ld", (long)err_num);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		if ((size_t)err_len < sizeof(buffer)) {
+			PRInt32	length = PR_GetErrorText(buffer);
+			upsdebugx(1, "ssl_error %ld%s : %*s", (long)err_num, err_name_buf, length, buffer);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s : Internal error buffer too small, needs %ld bytes", (long)err_num, err_name_buf, (long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "ssl_error %ld%s : %s", (long)err_num, err_name_buf, err_text);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s", (long)err_num, err_name_buf);
+		}
 	}
 
 	return -1;

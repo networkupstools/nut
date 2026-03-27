@@ -240,14 +240,59 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
 }
 
-static void nss_error(const char* funcname)
+/** Detail the currently raised NSS error code if possible, and debug-log
+ *  it with caller-provided text (typically the calling function name). */
+static void nss_error(const char* text)
 {
-	char buffer[SMALLBUF];
-	PRInt32 length = PR_GetErrorText(buffer);
-	if (length > 0 && length < SMALLBUF) {
-		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(), funcname, buffer);
-	}else{
-		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), funcname);
+	char	err_name_buf[SMALLBUF];
+	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
+	PRInt32	err_len = PR_GetErrorTextLength();
+
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
+		}
+	} else {
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		char	*buffer = calloc(err_len + 1, sizeof(char));
+		if (buffer) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				buffer);
+			free(buffer);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s : "
+				"Failed to allocate internal error buffer "
+				"for detailed error text, needs %ld bytes",
+				(long)err_num,
+				err_name_buf,
+				text,
+				(long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				err_text);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s",
+				(long)err_num,
+				err_name_buf,
+				text);
+		}
 	}
 }
 
@@ -2007,6 +2052,8 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 
 int upscli_disconnect(UPSCONN_t *ups)
 {
+	char	tmp[UPSCLI_NETBUF_LEN];
+
 	if (!ups) {
 		return -1;
 	}
@@ -2025,6 +2072,23 @@ int upscli_disconnect(UPSCONN_t *ups)
 	}
 
 	net_write(ups, "LOGOUT\n", 7, 0);
+
+	/* Give it a bit of time to gracefully close connections,
+	 * drain the buffer and avoid noise in logs of upsd like:
+	 *   write() failed for 127.0.0.1: Transport endpoint is not connected
+	 */
+	if (net_read(ups, tmp, sizeof(tmp), 5) > 0) {
+		if (!strcmp(tmp, "OK Goodbye")) {
+			/* There may be trailing garbage from the buffer after the newline, not sure why */
+			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, as expected", __func__, tmp);
+		} else if (!strncmp(tmp, "OK", 2)) {
+			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, good enough", __func__, tmp);
+		} else {
+			upsdebugx(1, "%s: We logged out, and server said '%s', not OK but oh well", __func__, tmp);
+		}
+	} else {
+		upsdebugx(1, "%s: We logged out, and server did not reply in a short time frame", __func__);
+	}
 
 #ifdef WITH_OPENSSL
 	if (ups->ssl) {
@@ -2280,4 +2344,19 @@ void upscli_set_debug_level(int lvl)
 int  upscli_get_debug_level(void)
 {
 	return nut_debug_level;
+}
+
+void upscli_setproctag(const char *tag)
+{
+	setproctag(tag);
+}
+
+const char *upscli_getproctag(void)
+{
+	return getproctag();
+}
+
+struct timeval *upscli_upslog_start_sync(struct timeval *tv)
+{
+	return upslog_start_sync(tv);
 }

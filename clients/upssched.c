@@ -7,7 +7,7 @@
 	2006-2019  Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2006-2007  Peter Selinger <selinger@users.sourceforge.net>
 	2010-2012  Frederic BOHE <fredericbohe@eaton.com>
-	2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 	2022       Dimitris Economou <dimitris.s.economou@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -2170,6 +2170,9 @@ static void checkconf(void)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+DVhl";
+
 static void help(const char *arg_progname)
 {
 	printf("upssched: upsmon's scheduling helper for offset timers\n");
@@ -2190,22 +2193,20 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	i, argn = 0;
+	int	opt_ret, argn = 0;
 
-	if (argc > 0)
-		prog = xbasename(argv[0]);
-	if (!prog)
-		prog = "upssched";
+	/* Here this is a global variable, used also in start_daemon() */
+	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
-	while ((i = getopt(argc, argv, "+DVhl")) != -1) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 		argn++;
-		switch (i) {
+		switch (opt_ret) {
 			case 'D':
 				nut_debug_level_args++;
 				break;
 
 			case 'h':
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
@@ -2222,7 +2223,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 
