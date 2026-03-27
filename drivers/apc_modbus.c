@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -96,9 +96,21 @@ static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
 static int64_t last_send_time = 0;
+static int needs_word_swap_quirk = 0;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
+
+/* Reverse word order in register array */
+static void _apc_modbus_word_swap(uint16_t *regs, size_t len)
+{
+	size_t i;
+	for (i = 0; i < len / 2; i++) {
+		uint16_t tmp = regs[i];
+		regs[i] = regs[len - 1 - i];
+		regs[len - 1 - i] = tmp;
+	}
+}
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1315,7 +1327,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	addr = apc_value->modbus_addr;
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_SET_FAILED;
 	}
@@ -1431,6 +1443,10 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 		return STAT_INSTCMD_CONVERSION_FAILED;
 	}
 
+	if (needs_word_swap_quirk == 1) {
+		_apc_modbus_word_swap(value, apc_command->modbus_len);
+	}
+
 	addr = apc_command->modbus_addr;
 	nb = apc_command->modbus_len;
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
@@ -1445,7 +1461,31 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
+	uint16_t regbuf[2];
 	size_t i;
+
+	/*
+		* Some models seem to have a different word order for multi register bitfields,
+		* so we detect this using an invalid write to the OutletCommand_BF register.
+		*
+		* On devices that behave according to spec this will return an EMBXILVAL error,
+		* but on devices with the quirk the invalid combination will end up in the reserved
+		* bits of the bitfield and the write will be accepted.
+		*/
+	regbuf[0] = APC_MODBUS_OUTLETCOMMAND_BF_CMD_CANCEL | APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF;
+	regbuf[1] = 0;
+	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, regbuf) < 0) {
+		/*
+			* MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE observed on SMX2200RMHV2U with NMC
+			* MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE observed on SMT1500RMI2U
+			*/
+		if (errno != EMBXILVAL && errno != EMBXSFAIL) {
+			upslogx(LOG_ERR, "%s: Failed to detect word swap quirk, unexpected error: %s (%s)", __func__, modbus_strerror(errno), device_path);
+		} else {
+			upslogx(LOG_WARNING, "%s: Detected word swap quirk in multi-register bitfields (%s)", __func__, device_path);
+			needs_word_swap_quirk = 1;
+		}
+	}
 
 	if (!_apc_modbus_read_inventory()) {
 		fatalx(EXIT_FAILURE, "Can't read inventory information from the UPS");
@@ -1853,6 +1893,8 @@ void upsdrv_initups(void)
 		val = "serial";
 #endif /* defined NUT_MODBUS_HAS_USB */
 	}
+
+	needs_word_swap_quirk = 0;
 
 	is_open = 0;
 

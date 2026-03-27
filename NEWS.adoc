@@ -623,6 +623,11 @@ several `FSD` notifications into one executed action. [PR #3097]
    so the names would be better exposed in generated `udev.rules` and similar
    files. [PR #3139]
 
+ - `apc_modbus` driver updates:
+   * Added a quirk for devices that have word swapped command bitfields as
+     reported in issue #2338. [PR #3381]
+   * Fixed register range in a logging string.
+
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
 ----------------------------------------------------
