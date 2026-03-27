@@ -262,6 +262,13 @@ static void forceshutdown(void)
 	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
+/* For getopt loops; should match usage documented below: */
+static const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
+#ifndef WIN32
+		"P:"
+#endif	/* WIN32 */
+		;
+
 /* this function only prints the usage message; it does not call exit() */
 static void help_msg(void)
 {
@@ -2167,12 +2174,6 @@ int main(int argc, char **argv)
 	char	* drv_name = NULL;
 	char	name[NUT_PATH_MAX + 1];
 #endif	/* WIN32 */
-
-	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
-#ifndef WIN32
-		"P:"
-#endif	/* WIN32 */
-		;
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
