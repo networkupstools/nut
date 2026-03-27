@@ -2695,6 +2695,74 @@ char *xbasename_no_ext(const char *file)
 	return bn;
 }
 
+char *xbasename_no_ext_default(const char *file, const char *fallback) {
+	char	*bn = xbasename_no_ext(file);
+
+	if (bn && *bn)
+		return bn;
+
+	if (!fallback || !*fallback) {
+		return xstrdup(fallback);
+	}
+
+	return xstrdup(fallback);
+}
+
+/* Keep tabs on the value from setprogname_argv0_default()
+ * to possibly free() in the end */
+static char	*progname_argv0_default = NULL;
+static void cleanup_progname_argv0_default(void) {
+	if (progname_argv0_default) {
+		free(progname_argv0_default);
+		progname_argv0_default = NULL;
+	}
+}
+
+/* Take the caller-allocated string and keep to free() later */
+static const char *reset_progname_argv0_default(char *arg) {
+	static int	atexit_hooked = 0;
+
+	if (!atexit_hooked) {
+		/* First time here */
+		atexit(cleanup_progname_argv0_default);
+		atexit_hooked = 1;
+	}
+
+	cleanup_progname_argv0_default();
+	progname_argv0_default = arg;
+	return (const char *)progname_argv0_default;
+}
+
+const char *getprogname_argv0_default(const char *file, const char *fallback) {
+	if (!file || !*file) {
+		if (!fallback || !*fallback) {
+			if (progname_argv0_default && *progname_argv0_default) {
+				return (const char *)progname_argv0_default;
+			}
+			return reset_progname_argv0_default(xstrdup("UNDEFINED"));
+		}
+		return fallback;
+	} else {
+		const char	*cs = xbasename(file);
+		if (!cs || !*cs) {
+			if (!fallback || !*fallback) {
+				return reset_progname_argv0_default(xstrdup("UNDEFINED"));
+			}
+			return fallback;
+		} else {
+			char	*bn = xbasename_no_ext(cs);	/* New allocation with non-trivial text or NULL */
+			if (bn) {
+				if (!strcmp(bn, cs)) {
+					free(bn);
+					return cs;
+				}
+				return reset_progname_argv0_default(bn);
+			}
+			return cs;
+		}
+	}
+}
+
 /* Based on https://www.gnu.org/software/libc/manual/html_node/Calculating-Elapsed-Time.html
  * modified for a syntax similar to difftime()
  */
