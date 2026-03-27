@@ -816,6 +816,7 @@ nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to
 
 NUTSCAN_SET_DEBUG_LEVEL_DEPS = \
 	nutscan_get_debug_level.$(MAN_SECTION_API) \
+	nutscan_upslog_start_sync.$(MAN_SECTION_API) \
 	nutscan_getproctag.$(MAN_SECTION_API) \
 	nutscan_setproctag.$(MAN_SECTION_API)
 

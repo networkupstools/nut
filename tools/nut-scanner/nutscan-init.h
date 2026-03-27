@@ -50,6 +50,8 @@ int  nutscan_get_debug_level(void);
 void nutscan_setproctag(const char *tag);
 const char *nutscan_getproctag(void);
 
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv);
+
 #define DEFAULT_THREAD  512
 
 #ifdef __cplusplus
