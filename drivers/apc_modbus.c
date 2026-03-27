@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1315,7 +1315,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	addr = apc_value->modbus_addr;
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_SET_FAILED;
 	}
