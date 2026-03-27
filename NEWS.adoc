@@ -178,6 +178,9 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
 
+ - `apc_modbus` driver updates:
+   * Fixed register range in a logging string.
+
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
 
