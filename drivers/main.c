@@ -2172,7 +2172,7 @@ int main(int argc, char **argv)
 	const char	* cmd = NULL;
 
 	char	* drv_name = NULL;
-	char	name[NUT_PATH_MAX + 1];
+	char	drv_pipe_name[NUT_PATH_MAX + 1];
 #endif	/* WIN32 */
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
@@ -2938,7 +2938,7 @@ int main(int argc, char **argv)
 		}
 	}
 #else	/* WIN32 */
-	snprintf(name, sizeof(name), "%s-%s", progname, upsname);
+	snprintf(drv_pipe_name, sizeof(drv_pipe_name), "%s-%s", progname, upsname);
 
 	if (cmd) {
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
@@ -2946,10 +2946,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
 	}
 
-	mutex = CreateMutex(NULL, TRUE, name);
+	mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 	if (mutex == NULL) {
 		if (GetLastError() != ERROR_ACCESS_DENIED) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", name, (int)GetLastError());
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", drv_pipe_name, (int)GetLastError());
 		}
 	}
 
@@ -2957,7 +2957,7 @@ int main(int argc, char **argv)
 		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
 		for (i = 0; i < 10; i++) {
 			DWORD	res;
-			sendsignal(name, COMMAND_STOP, 1);
+			sendsignal(drv_pipe_name, COMMAND_STOP, 1);
 			if (mutex != NULL) {
 				res = WaitForSingleObject(mutex, 1000);
 				if (res == WAIT_OBJECT_0) {
@@ -2966,7 +2966,7 @@ int main(int argc, char **argv)
 			}
 			else {
 				sleep(1);
-				mutex = CreateMutex(NULL, TRUE, name);
+				mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 				if (mutex != NULL) {
 					break;
 				}
