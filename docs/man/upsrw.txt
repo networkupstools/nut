@@ -84,6 +84,10 @@ COMMON OPTIONS
 *-h*::
 Show the command-line help message.
 
+*-D*::
+Raise the debugging level. Use this option multiple times for more details.
+Overrides the optional `NUT_DEBUG_LEVEL` environment variable.
+
 *-V*::
 Show NUT version banner.  More details may be available if you also
 `export NUT_DEBUG_LEVEL=1` or greater verbosity level.
