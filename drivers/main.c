@@ -2154,7 +2154,7 @@ int main(int argc, char **argv)
 # endif
 {
 	struct	passwd	*new_uid = NULL;
-	int	i, do_forceshutdown = 0;
+	int	opt_ret = 0, do_forceshutdown = 0, i;
 	int	update_count = 0;
 
 #ifndef WIN32
@@ -2198,8 +2198,8 @@ int main(int argc, char **argv)
 	nut_debug_level_args = nut_debug_level;
 
 	/* handle CLI-driven debug level in advance, to trace initialization if needed */
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'D':
 				/* bump right here, may impact reporting of other CLI args */
 				nut_debug_level++;
@@ -2304,8 +2304,8 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_callbacks.upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'a':
 				if (upsname)
 					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
@@ -2364,7 +2364,8 @@ int main(int argc, char **argv)
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
-						"sent with option -%c. Try -h for help.", i);
+						"sent with option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
@@ -2393,7 +2394,8 @@ int main(int argc, char **argv)
 				if (!cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
-						"Error: unknown argument to option -%c. Try -h for help.", i);
+						"Error: unknown argument to option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 #ifndef WIN32
 				if (cmd > 0)
@@ -2485,7 +2487,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 

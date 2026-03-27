@@ -3790,7 +3790,7 @@ int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
-	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
 	struct timeval	prevstart;
 
 #ifndef WIN32
@@ -3829,8 +3829,8 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
 					cmd = SIGCMD_FSD;

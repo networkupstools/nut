@@ -511,7 +511,7 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
+	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
@@ -532,8 +532,8 @@ int main(int argc, char **argv)
 	setproctag(prog);
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch(i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch(opt_ret) {
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -657,7 +657,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 
 		}
 	}

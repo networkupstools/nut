@@ -924,15 +924,15 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	i, default_opterr = opterr;
+	int	opt_ret = 0, default_opterr = opterr;
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
 
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
 	 * Currently neutered because that method ignores argc/argv de-facto.
 	 *    opterr = 0;
 	 */
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
 			case 'U':
@@ -968,7 +968,7 @@ int main(int argc, char **argv)
 				 */
 				upsdebugx(1, "%s: unknown option ignored "
 					"(maybe SvcMain would use it later): '%c'",
-					progname, i);
+					progname, (char)opt_ret);
 				break;
 		}
 	}

@@ -658,7 +658,7 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	opt_ret = 0, i;
 	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
 	const char	*net_connect_timeout = NULL;
@@ -681,8 +681,8 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i)
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret)
 		{
 		case 's':
 			setvar = optarg;

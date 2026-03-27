@@ -2193,16 +2193,16 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	i, argn = 0;
+	int	opt_ret, argn = 0;
 
 	if (argc > 0)
 		prog = xbasename(argv[0]);
 	if (!prog)
 		prog = "upssched";
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 		argn++;
-		switch (i) {
+		switch (opt_ret) {
 			case 'D':
 				nut_debug_level_args++;
 				break;
@@ -2225,7 +2225,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 
