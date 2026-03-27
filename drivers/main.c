@@ -2194,7 +2194,10 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-	/* init verbosity from default in common.c (0 probably) */
+	/* init verbosity from default in common.c (0 probably)
+	 * Note that unlike simpler programs, this is a long-running
+	 * daemon which can change debug verbosity on the fly, so
+	 * we track numerous variables for juggling that act. */
 	nut_debug_level_args = nut_debug_level;
 
 	/* handle CLI-driven debug level in advance, to trace initialization if needed */
