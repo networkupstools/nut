@@ -52,7 +52,7 @@ struct list_t {
 /* For getopt loops; should match usage documented below: */
 static const char	optstring[] = "+hls:p:t:u:wVW:";
 
-static void usage(const char *prog)
+static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT administration client program to set variables within UPS hardware.\n");
@@ -717,7 +717,7 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
@@ -731,7 +731,7 @@ int main(int argc, char **argv)
 	argv += optind;
 
 	if (argc < 1) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 
