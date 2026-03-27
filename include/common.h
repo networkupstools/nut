@@ -450,6 +450,20 @@ const char *xbasename(const char *file);
  * string that the caller must free() eventually, or NULL in case
  * of errors (e.g. NULL or empty input or xbasename() output. */
 char *xbasename_no_ext(const char *file);
+/* like above with fallback support; always returns a new allocation,
+ * even if a copy of inputs or "UNDEFINED" if can not determine the
+ * value (and fallback is NULL) */
+char *xbasename_no_ext_default(const char *file, const char *fallback);
+
+/* Used in main() and similar methods to set a "const char *progname" from
+ * argv[0] in a way that this may be either a pointer to sub-string of
+ * that argv[0] or to the fallback (if not NULL) without wasting RAM for
+ * copies, or to a variable automatically cleaned by the NUT common
+ * library at exit. Uses logic similar to xbasename_no_ext_default()
+ * internally to strip EXEEXT on platforms that have it.
+ * Call with getprogname_argv0_default(NULL, NULL) would return the
+ * previously saved value, or "UNDEFINED" if never set yet. */
+const char *getprogname_argv0_default(const char *file, const char *fallback);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
  * the stdout instead of stderr, and end them with HTML <BR/> tag,
