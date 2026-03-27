@@ -1,0 +1,41 @@
+NUTSCAN_SET_DEBUG_LEVEL(3)
+==========================
+
+NAME
+----
+
+nutscan_set_debug_level, nutscan_get_debug_level - manipulate
+debugging level for NUT common code in the nutscan library;
+propagate to `libupsclient` if already loaded.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	void nutscan_set_debug_level(int level);
+	int  nutscan_get_debug_level(void);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_set_debug_level()* function sets internal debug verbosity
+for common NUT code in the library and optionally into the loaded
+`libupsclient` (*nutscan_init()* function must be called at least once
+before this then).
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-init.h' file.
+
+For legacy reasons, the `nut_debug_level` (or its copy from the NUT common
+library objects linked into `libnutscan`) is also exposed, but should not
+be used directly.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init[3], linkman:upscli_set_debug_level[3]
