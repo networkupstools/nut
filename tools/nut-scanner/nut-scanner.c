@@ -1174,7 +1174,7 @@ static void show_usage(const char *arg_progname)
 
 int main(int argc, char *argv[])
 {
-	const char	*progname = xbasename(argv[0]);
+	const char	*progname = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nut-scanner");
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
 	nutscan_xml_t  xml_sec;
