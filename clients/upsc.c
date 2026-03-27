@@ -42,7 +42,7 @@ static int	output_json = 0;
 /* For getopt loops below: */
 static const char	optstring[] = "+hlLcVW:j";
 
-static void usage(const char *prog)
+static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT read-only client program to display UPS variables.\n");
@@ -448,7 +448,7 @@ int main(int argc, char **argv)
 
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
