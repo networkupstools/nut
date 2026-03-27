@@ -2170,8 +2170,6 @@ int main(int argc, char **argv)
 #else	/* WIN32 */
 /* FIXME NUT_WIN32_INCOMPLETE : *actually* handle WIN32 builds too */
 	const char	* cmd = NULL;
-
-	char	* drv_name = NULL;
 	char	drv_pipe_name[NUT_PATH_MAX + 1];
 #endif	/* WIN32 */
 
@@ -2271,23 +2269,10 @@ int main(int argc, char **argv)
 	memset(prognames, 0, sizeof(prognames));
 	memset(prognames_should_free, 0, sizeof(prognames_should_free));
 
-	/* Note: "const char *" to (substring of) argv[0] itself: */
-	prognames[0] = xbasename(argv[0]);
-
-#ifdef WIN32
-	/* remove trailing .exe if present; returns new allocation (if not NULL) */
-	drv_name = xbasename_no_ext(prognames[0]);
-	if (drv_name) {
-		if (strcmp(drv_name, prognames[0])) {
-			/* strings differ */
-			prognames[0] = drv_name;
-			prognames_should_free[0] = 1;
-		} else {
-			/* discard the dynamic copy */
-			free(drv_name);
-		}
-	}
-#endif	/* WIN32 */
+	/* Note: "const char *" to (substring of) argv[0] itself,
+	 * or an allocated string auto-cleaned by the NUT common
+	 * library; either way, this program does not free() it: */
+	prognames[0] = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutdrv");
 
 	upsdrv_callbacks.upsdrv_tweak_prognames();
 
