@@ -2164,8 +2164,7 @@ int main(int argc, char **argv)
 /* FIXME NUT_WIN32_INCOMPLETE : *actually* handle WIN32 builds too */
 	const char	* cmd = NULL;
 
-	const char	* drv_name = NULL;
-	char	* dot = NULL;
+	char	* drv_name = NULL;
 	char	name[NUT_PATH_MAX + 1];
 #endif	/* WIN32 */
 
@@ -2267,24 +2266,22 @@ int main(int argc, char **argv)
 
 	memset(prognames, 0, sizeof(prognames));
 	memset(prognames_should_free, 0, sizeof(prognames_should_free));
+
+	/* Note: "const char *" to (substring of) argv[0] itself: */
 	prognames[0] = xbasename(argv[0]);
 
 #ifdef WIN32
-	drv_name = prognames[0];
-	/* remove trailing .exe */
-	dot = strrchr(drv_name,'.');
-	if (dot != NULL) {
-		if (strcasecmp(dot, ".exe") == 0) {
-			char	*fixed_progname = strdup(drv_name);
-			char	*t = strrchr(fixed_progname,'.');
-			*t = 0;
-			prognames[0] = fixed_progname;
+	/* remove trailing .exe if present; returns new allocation (if not NULL) */
+	drv_name = xbasename_no_ext(prognames[0]);
+	if (drv_name) {
+		if (strcmp(drv_name, prognames[0])) {
+			/* strings differ */
+			prognames[0] = drv_name;
 			prognames_should_free[0] = 1;
+		} else {
+			/* discard the dynamic copy */
+			free(drv_name);
 		}
-	}
-	else {
-		prognames[0] = strdup(drv_name);
-		prognames_should_free[0] = 1;
 	}
 #endif	/* WIN32 */
 
