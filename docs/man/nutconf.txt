@@ -31,6 +31,10 @@ OPTIONS
 *-h* | *-help* | *--help*::
 Display the help text.
 
+*-D*::
+Raise the debugging level. Use this option multiple times for more details.
+Overrides the optional `NUT_DEBUG_LEVEL` environment variable.
+
 *-v* | *--verbose*::
 Increase output verbosity (may be used multiple times).
 
