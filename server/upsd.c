@@ -2317,7 +2317,7 @@ int main(int argc, char **argv)
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 
-	progname = xbasename_no_ext(argv[0]);
+	progname = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsd");
 	setproctag(progname);
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS

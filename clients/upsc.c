@@ -395,7 +395,7 @@ int main(int argc, char **argv)
 	int	opt_ret = 0;
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsc");
 	const char	*net_connect_timeout = NULL;
 
 	/* NOTE: Debugging the client is primarily of use to developers, so
@@ -483,6 +483,8 @@ int main(int argc, char **argv)
 		fatalx_error_json_simple(0, msg);
 	}
 
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
@@ -498,7 +500,7 @@ int main(int argc, char **argv)
 			fatalx_error_json_simple(0, "invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 		}
 	}
-	setproctag(argv[0]);
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 

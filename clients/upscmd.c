@@ -304,7 +304,7 @@ int main(int argc, char **argv)
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upscmd");
 	const char	*net_connect_timeout = NULL;
 
 	/* NOTE: Debugging the client is primarily of use to developers, so
@@ -398,6 +398,8 @@ int main(int argc, char **argv)
 			net_connect_timeout);
 	}
 
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
@@ -412,7 +414,7 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
-	setproctag(argv[0]);
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 

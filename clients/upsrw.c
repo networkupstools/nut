@@ -661,7 +661,7 @@ int main(int argc, char **argv)
 {
 	int	opt_ret = 0;
 	uint16_t	port;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsrw");
 	const char	*net_connect_timeout = NULL;
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
@@ -753,6 +753,8 @@ int main(int argc, char **argv)
 			net_connect_timeout);
 	}
 
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
@@ -767,7 +769,7 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
-	setproctag(argv[0]);
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 

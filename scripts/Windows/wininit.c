@@ -925,6 +925,9 @@ static void help(const char *arg_progname)
 int main(int argc, char **argv)
 {
 	int	opt_ret = 0, default_opterr = opterr;
+	/* Note: here we do want ".exe" in the name, to reference
+	 * the man page from suggest_doc_links() correctly later!
+	 */
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
 
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
