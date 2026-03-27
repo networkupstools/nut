@@ -85,6 +85,15 @@ int nutscan_unload_upsclient_library(void)
 	return nutscan_unload_library(&nutscan_avail_nut, &dl_handle, &dl_saved_libname);
 }
 
+/* Visible externally */
+void nutscan_upscli_set_debug_level(int level);
+void nutscan_upscli_set_debug_level(int level)
+{
+	if (nut_upscli_set_debug_level) {
+		(*nut_upscli_set_debug_level)(level);
+	}
+}
+
 /* Return 0 on error; visible externally */
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
@@ -166,6 +175,7 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	} else {
+		/* Propagate value currently known in libnutscan into libupsclient */
 		(*nut_upscli_set_debug_level)(nut_debug_level);
 	}
 

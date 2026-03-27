@@ -44,6 +44,9 @@ extern int nutscan_avail_upower;
 void nutscan_init(void);
 void nutscan_free(void);
 
+void nutscan_set_debug_level(int level);
+int  nutscan_get_debug_level(void);
+
 #define DEFAULT_THREAD  512
 
 #ifdef __cplusplus
