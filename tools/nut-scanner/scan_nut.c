@@ -53,6 +53,7 @@ static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 static int (*nut_upscli_ssl_caps)(void);
 static int (*nut_upscli_set_debug_level)(int);
+static void (*nut_upscli_setproctag)(const char *tag);
 static void (*nut_upscli_report_build_details)(void);
 
 /* This variable collects device(s) from a sequential or parallel scan,
@@ -91,6 +92,14 @@ void nutscan_upscli_set_debug_level(int level)
 {
 	if (nut_upscli_set_debug_level) {
 		(*nut_upscli_set_debug_level)(level);
+	}
+}
+
+void nutscan_upscli_setproctag(const char *tag);
+void nutscan_upscli_setproctag(const char *tag)
+{
+	if (nut_upscli_setproctag) {
+		(*nut_upscli_setproctag)(tag);
 	}
 }
 
@@ -166,6 +175,17 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		nut_upscli_ssl_caps = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_setproctag) = lt_dlsym(dl_handle,
+		symbol = "upscli_setproctag");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_setproctag = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	} else {
+		/* Propagate value currently known in libnutscan into libupsclient */
+		(*nut_upscli_setproctag)(getproctag());
 	}
 
 	*(void **) (&nut_upscli_set_debug_level) = lt_dlsym(dl_handle,

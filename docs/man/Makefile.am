@@ -814,7 +814,9 @@ nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to
 	touch $@
 
 NUTSCAN_SET_DEBUG_LEVEL_DEPS = \
-	nutscan_get_debug_level.$(MAN_SECTION_API)
+	nutscan_get_debug_level.$(MAN_SECTION_API) \
+	nutscan_getproctag.$(MAN_SECTION_API) \
+	nutscan_setproctag.$(MAN_SECTION_API)
 
 $(NUTSCAN_SET_DEBUG_LEVEL_DEPS): nutscan_set_debug_level.$(MAN_SECTION_API)
 
