@@ -3,7 +3,7 @@
 
    Copyright (C)
 	2010	Frederic Bohe <fredericbohe@eaton.com>
-	2021-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2021-2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -888,6 +888,9 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 	}
 }
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+IUNDVh";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -928,7 +931,7 @@ int main(int argc, char **argv)
 	 * Currently neutered because that method ignores argc/argv de-facto.
 	 *    opterr = 0;
 	 */
-	while ((i = getopt(argc, argv, "+IUNDVh")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);

@@ -190,6 +190,9 @@ static void setup_signals(void)
 static void help(const char *prog)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+hDs:l:i:d:Nf:u:Vp:FBm:W:";
+
 static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
@@ -529,7 +532,7 @@ int main(int argc, char **argv)
 	setproctag(prog);
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);

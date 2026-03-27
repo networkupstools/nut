@@ -39,6 +39,9 @@ static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int	output_json = 0;
 
+/* For getopt loops below: */
+static const char	optstring[] = "+hlLcVW:j";
+
 static void usage(const char *prog)
 {
 	print_banner_once(prog, 2);
@@ -412,7 +415,7 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, "+hlLcVW:j")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 
 		switch (i)
 		{

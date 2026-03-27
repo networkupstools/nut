@@ -3393,6 +3393,9 @@ static int check_pdflag(void)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+DFBhic:P:f:pu:VK46W:";
+
 static void help(const char *arg_progname)
 {
 	int old_debug_level = nut_debug_level;
@@ -3826,7 +3829,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46W:")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg))) {
