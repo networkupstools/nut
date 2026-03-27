@@ -3156,7 +3156,7 @@ static int mainx(int argc, char * const argv[]) {
 	 * initial timestamp, for the eventuality that debugs would be printed:
 	 */
 	nutscan_set_debug_level(nut_debug_level);
-	setproctag(prog);
+	nutscan_setproctag(prog);
 	upsdebugx(1, "Starting NUT configuration tool: %s", prog);
 
 	// Usage
