@@ -548,6 +548,39 @@ pid_t get_max_pid_t(void)
 
 	struct timeval	upslog_start = { 0, 0 };
 
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep the original setting).
+ * Returns the currently set value so it can be propagated.
+ */
+struct timeval *upslog_start_sync(struct timeval *tv) {
+	if (tv == &upslog_start)
+		return tv;
+
+	if (upslog_start.tv_sec == 0 || upslog_start.tv_usec == 0) {
+		if (tv && (tv->tv_sec > 0 || tv->tv_usec > 0)) {
+			upslog_start = *tv;
+		} else {
+			struct timeval		now;
+
+			gettimeofday(&now, NULL);
+			upslog_start = now;
+
+#ifdef WIN32
+			/* Ensure line buffering for sane logs on Windows console
+			 * especially when many threads/daemons write there. */
+			setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
+			/* Also stdout (some messages go there) for good measure: */
+			setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#endif
+		}
+	}
+	return &upslog_start;
+}
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -4097,21 +4130,9 @@ vupslog_too_long:
 	}
 
 	/* Note: nowadays debug level can be changed during run-time,
-	 * so mark the starting point whenever we first try to log */
-	if (upslog_start.tv_sec == 0) {
-		struct timeval		now;
-
-		gettimeofday(&now, NULL);
-		upslog_start = now;
-
-#ifdef WIN32
-		/* Ensure line buffering for sane logs on Windows console
-		 * especially when many threads/daemons write there. */
-		setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
-		/* Also stdout (some messages go there) for good measure: */
-		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
-#endif
-	}
+	 * so mark the starting point (if not yet set) whenever we
+	 * first try to log */
+	upslog_start_sync(NULL);
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {
 		if (nut_debug_level > 0) {
