@@ -4455,7 +4455,7 @@ void setproctag(const char *tag)
 		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
 			/* Only add the process name if asked for and substantially
 			 * different from tag value -- e.g. do not duplicate text
-			 * when callers initialize with settagname(progname) */
+			 * when callers initialize with setproctag(progname) */
 			char	*s = NULL;
 			proctag_for_upsdebug_buflen += strlen(pn) + 1;
 			s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
