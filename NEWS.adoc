@@ -397,7 +397,8 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsc` has now optional JSON output [issue #3172, PR #3178]
 
- - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
+ - `upsset` CGI tool should now recognize `RANGE NUMBER` and `NUMBER` types.
+   [#3164]
 
  - `upsstats` CGI tool updates:
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
