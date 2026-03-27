@@ -174,6 +174,14 @@ const char *nutscan_getproctag(void)
 	return getproctag();
 }
 
+struct timeval *upscli_upslog_start_sync(struct timeval *tv)
+{
+	struct timeval *nstv = upslog_start_sync(tv);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_upslog_start_sync(nstv);
+	return nstv;
+}
+
 void nutscan_init(void)
 {
 	char *libname = NULL;
