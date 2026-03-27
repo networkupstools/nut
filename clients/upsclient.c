@@ -2355,3 +2355,8 @@ const char *upscli_getproctag(void)
 {
 	return getproctag();
 }
+
+struct timeval *upscli_upslog_start_sync(struct timeval *tv)
+{
+	return upslog_start_sync(tv);
+}
