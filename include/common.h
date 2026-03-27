@@ -564,6 +564,19 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #define UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY	((uint64_t)INT64_MAX)
 extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
 
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep and report the original setting).
+ * Returns the pointer to the currently set value, so it
+ * can be propagated or used in difftime() computations.
+ * NOTE: In WIN32 builds also enforces line-buffering for
+ * stdout and stderr streams.
+ */
+struct timeval *upslog_start_sync(struct timeval *tv);
+
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)
