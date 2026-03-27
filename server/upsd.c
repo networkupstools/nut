@@ -2391,7 +2391,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmdret = 0, foreground = -1;
+	int	opt_ret = 0, cmdret = 0, foreground = -1;
 #ifndef WIN32
 	int	cmd = 0;
 	pid_t	oldpid = -1;
@@ -2438,8 +2438,8 @@ int main(int argc, char **argv)
 
 	print_banner_once(progname, 0);
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"

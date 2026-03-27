@@ -391,7 +391,7 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i = 0;
+	int	opt_ret = 0, i;
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
@@ -415,9 +415,9 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 
-		switch (i)
+		switch (opt_ret)
 		{
 		case 'L':
 			verbose = 1;

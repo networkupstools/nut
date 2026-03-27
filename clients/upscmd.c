@@ -298,7 +298,7 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	opt_ret = 0;
 	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
@@ -323,9 +323,9 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 
-		switch (i)
+		switch (opt_ret)
 		{
 		case 'l':
 			cmdlist = 1;
