@@ -74,6 +74,7 @@ int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
 void nutscan_upscli_set_debug_level(int level);
+void nutscan_upscli_setproctag(const char *tag);
 int nutscan_load_upower_library(const char *libname_path);
 int nutscan_unload_upower_library(void);
 
@@ -159,6 +160,18 @@ void nutscan_set_debug_level(int level) {
 int  nutscan_get_debug_level(void)
 {
 	return nut_debug_level;
+}
+
+void nutscan_setproctag(const char *tag)
+{
+	setproctag(tag);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setproctag(tag);
+}
+
+const char *nutscan_getproctag(void)
+{
+	return getproctag();
 }
 
 void nutscan_init(void)

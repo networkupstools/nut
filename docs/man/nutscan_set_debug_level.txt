@@ -4,8 +4,10 @@ NUTSCAN_SET_DEBUG_LEVEL(3)
 NAME
 ----
 
-nutscan_set_debug_level, nutscan_get_debug_level - manipulate
-debugging level for NUT common code in the nutscan library;
+nutscan_set_debug_level, nutscan_get_debug_level,
+nutscan_setproctag, nutscan_getproctag - manipulate
+debugging level and sub-process tags for NUT common
+code in the nutscan library;
 propagate to `libupsclient` if already loaded.
 
 SYNOPSIS
@@ -16,6 +18,9 @@ SYNOPSIS
 
 	void nutscan_set_debug_level(int level);
 	int  nutscan_get_debug_level(void);
+
+	void nutscan_setproctag(const char *tag);
+	const char *nutscan_getproctag(void);
 ------
 
 DESCRIPTION
@@ -32,8 +37,9 @@ NOTES
 Technically, the function is currently defined in 'nutscan-init.h' file.
 
 For legacy reasons, the `nut_debug_level` (or its copy from the NUT common
-library objects linked into `libnutscan`) is also exposed, but should not
-be used directly.
+library objects linked into `libnutscan`) and `setproctag()` method are
+also exposed, but should not be used directly; may be removed in later
+releases.
 
 SEE ALSO
 --------
