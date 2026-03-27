@@ -2614,7 +2614,7 @@ const char *xbasename(const char *file)
 	const char *p = strrchr(file, '\\');
 	const char *r = strrchr(file, '/');
 	/* if not found, try '/' */
-	if( r > p ) {
+	if (r > p) {
 		p = r;
 	}
 #endif	/* WIN32 */
@@ -2622,6 +2622,77 @@ const char *xbasename(const char *file)
 	if (p == NULL)
 		return file;
 	return p + 1;
+}
+
+char *xbasename_no_ext(const char *file)
+{
+	const char	*cs;
+	char	*bn = NULL;
+	static char	*exeext = NULL;
+	static size_t	exeext_len = 0;
+
+	if (!file || !*file)
+		return NULL;
+
+	cs = xbasename(file);
+	if (!cs || !*cs)
+		return NULL;
+
+	/* Some compilers detect that conditions are not changing at run-time: */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+
+	if (!exeext) {
+#ifdef EXEEXT
+		exeext = EXEEXT;
+#endif
+#ifdef WIN32
+		if (!exeext || !*exeext)
+			exeext = ".exe";
+#endif
+
+		exeext_len = strlen(exeext);
+	}
+
+	if (exeext_len > 0) {
+		size_t	cs_len = strlen(cs),
+			bn_len = (cs_len > exeext_len ? cs_len - exeext_len : 0);
+
+		if (bn_len) {
+			/* TOTHINK: Generalize provided-if-missing strcasestr()?
+			 *  One implementation is currently tucked away in
+			 *  libusb0.c because net-snmp may provide another...
+			 */
+			char	*s = strstr(cs, exeext);
+			if (s && (bn_len == (size_t)(s - cs))) {
+				/* s points to first character that matches exeext,
+				 * this character is what we already do not want */
+				bn = (char*)xmalloc(bn_len + 1);
+				/* Extract first bn_len characters, add '\0' in the end */
+				snprintf(bn, bn_len, "%s", cs);
+			}
+		}
+	}
+
+	if (!bn) {
+		bn = xstrdup(cs);
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+	return bn;
 }
 
 /* Based on https://www.gnu.org/software/libc/manual/html_node/Calculating-Elapsed-Time.html
@@ -4248,38 +4319,8 @@ static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 static void proctag_cleanup(void)
 {
 	if (proctag) {
-		char	*pn = xstrdup(getmyprocbasename());
-		char	*tn = xstrdup(proctag);
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-		if (strlen(EXEEXT) > 0) {
-			/* TOTHINK: Generalize provided-if-missing strcasestr()? */
-			char	*s;
-			if (pn) {
-				s = strstr(pn, EXEEXT);
-				if (s) *s='\0';
-			}
-
-			if (tn) {
-				s = strstr(tn, EXEEXT);
-				if (s) *s='\0';
-			}
-		}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+		char	*pn = xbasename_no_ext(getmyprocbasename());
+		char	*tn = xbasename_no_ext(proctag);
 
 		if (pn && tn && !strcmp(pn, tn)) {
 			/* Avoid reporting this line as misleading "sub-process"
@@ -4339,42 +4380,9 @@ void setproctag(const char *tag)
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
 	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
-		char	*pn = xstrdup(getmyprocbasename());
-		char	*tn = xstrdup(tag);
+		char	*pn = xbasename_no_ext(getmyprocbasename());
+		char	*tn = xbasename_no_ext(tag);
 		int	tagged = 0;
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-		if (strlen(EXEEXT) > 0) {
-			/* TOTHINK: Generalize provided-if-missing strcasestr()?
-			 *  One implementation is currently tucked away in
-			 *  libusb0.c because net-snmp may provide another...
-			 */
-			char	*s;
-			if (pn) {
-				s = strstr(pn, EXEEXT);
-				if (s) *s='\0';
-			}
-
-			if (tn) {
-				s = strstr(tn, EXEEXT);
-				if (s) *s='\0';
-			}
-		}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
 
 		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
 			/* Only add the process name if asked for and substantially

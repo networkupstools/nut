@@ -445,6 +445,11 @@ int sendsignalfnaliases(const char *pidfn, const char * sig, const char **progna
 /* return a pointer to character inside the file that starts a basename
  * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
+/* like above, but also strip platform-specific EXEEXT if present,
+ * e.g. convert ".../upsd.exe" => "upsd"; returns a newly allocated
+ * string that the caller must free() eventually, or NULL in case
+ * of errors (e.g. NULL or empty input or xbasename() output. */
+char *xbasename_no_ext(const char *file);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
  * the stdout instead of stderr, and end them with HTML <BR/> tag,
