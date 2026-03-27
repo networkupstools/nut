@@ -1194,6 +1194,7 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+	int _nut_debug_level = 0;
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	sem_t	*current_sem;
@@ -1254,13 +1255,30 @@ int main(int argc, char *argv[])
 	opterr = 0;
 	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 		if (opt_ret == 'D')
-			nut_debug_level++;
+			_nut_debug_level++;
 	}
 
+	if (_nut_debug_level) {
+		nutscan_set_debug_level(_nut_debug_level);
+	} else {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			_nut_debug_level = l;
+			nutscan_set_debug_level(_nut_debug_level);
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* A non-trivial _nut_debug_level set above allows
+	 *  debug-tracing to troubleshoot these init methods: */
 	setproctag("init-ip-ranges");
 	nutscan_init_ip_ranges(&ip_ranges_list);
 	setproctag("init-libnutscan");
 	nutscan_init();
+	/* Re-set to cover libupsclient, if loaded: */
+	nutscan_set_debug_level(_nut_debug_level);
 	setproctag(progname);
 
 	/* Default, see -Q/-N/-P below */
