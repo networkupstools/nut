@@ -3,6 +3,7 @@
    Copyright (C)
      1999  Russell Kroll <rkroll@exploits.org>
      2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,6 +48,9 @@ struct list_t {
 	char	*name;
 	struct	list_t	*next;
 };
+
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+hls:p:t:u:wVW:";
 
 static void usage(const char *prog)
 {
@@ -677,7 +681,7 @@ int main(int argc, char **argv)
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, "+hls:p:t:u:wVW:")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i)
 		{
 		case 's':

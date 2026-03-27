@@ -2296,6 +2296,9 @@ static void mainloop(void)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+h46p:qr:i:fu:Vc:P:DFB";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -2435,7 +2438,7 @@ int main(int argc, char **argv)
 
 	print_banner_once(progname, 0);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
 			case 'p':
 			case 'i':

@@ -1504,6 +1504,9 @@ static void start_driver(const ups_t *ups)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+htu:r:DdFBVc:l";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -1760,7 +1763,7 @@ int main(int argc, char **argv)
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
 	print_banner_once(progdesc, 0);
 
-	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
