@@ -3788,7 +3788,7 @@ static void init_Inhibitor(const char *prog)
 
 int main(int argc, char *argv[])
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = xbasename_no_ext(argv[0]);
 	const char	*net_connect_timeout = NULL;
 	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
 	struct timeval	prevstart;
@@ -3803,21 +3803,6 @@ int main(int argc, char *argv[])
 	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
 	int		maxhandle = 0;
 	pipe_conn_t	*conn;
-
-	/* remove trailing .exe */
-	char * drv_name;
-	drv_name = (char *)xbasename(argv[0]);
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			prog = strdup(drv_name);
-			char * t = strrchr(prog,'.');
-			*t = 0;
-		}
-	}
-	else {
-		prog = drv_name;
-	}
 #endif	/* WIN32 */
 
 	print_banner_once(prog, 0);
