@@ -39,25 +39,6 @@ static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int	output_json = 0;
 
-static void fatalx_error_json_simple(int msg_is_simple, const char *msg)
-	__attribute__((noreturn));
-
-static void fatalx_error_json_simple(int msg_is_simple, const char *msg) {
-	/* To be used in simpler cases, where the possible JSON
-	 * message is not embedded into other lists/objects */
-	if (output_json) {
-		if (msg_is_simple) {
-			/* Caller knows there is nothing to escape here, pass through */
-			printf("{\"error\": \"%s\"}\n", NUT_STRARG(msg));
-		} else {
-			printf("{\"error\": \"");
-			json_print_esc(msg);
-			printf("\"}\n");
-		}
-	}
-	fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
-}
-
 static void usage(const char *prog)
 {
 	print_banner_once(prog, 2);
@@ -94,6 +75,25 @@ static void usage(const char *prog)
 	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, NULL));
+}
+
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg)
+	__attribute__((noreturn));
+
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg) {
+	/* To be used in simpler cases, where the possible JSON
+	 * message is not embedded into other lists/objects */
+	if (output_json) {
+		if (msg_is_simple) {
+			/* Caller knows there is nothing to escape here, pass through */
+			printf("{\"error\": \"%s\"}\n", NUT_STRARG(msg));
+		} else {
+			printf("{\"error\": \"");
+			json_print_esc(msg);
+			printf("\"}\n");
+		}
+	}
+	fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
 }
 
 static void printvar(const char *var)
