@@ -2195,10 +2195,8 @@ int main(int argc, char **argv)
 {
 	int	opt_ret, argn = 0;
 
-	if (argc > 0)
-		prog = xbasename(argv[0]);
-	if (!prog)
-		prog = "upssched";
+	/* Here this is a global variable, used also in start_daemon() */
+	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
 	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 		argn++;
@@ -2208,7 +2206,7 @@ int main(int argc, char **argv)
 				break;
 
 			case 'h':
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif

@@ -513,7 +513,7 @@ int main(int argc, char **argv)
 {
 	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upslog");
 	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
