@@ -137,6 +137,8 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Ported C client library `libupsclient` support logic for SSL connections
      into C++ client library `libnutclient` and added tests for it. [issues
      #1599, #1711, PR #3353]
+   * Added support for command-line debugging with `-D` option into `upsc`,
+     `upscmd` and `upsrw` command-line clients. [#3378]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
