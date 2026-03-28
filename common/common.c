@@ -934,7 +934,17 @@ void chroot_start(const char *path)
 /* In forking, assume process name does not change (PID might); cache it */
 static char	*myProcName = NULL;
 static const char	*myProcBaseName = NULL;
+
+/* We also keep a buffer with prefixed colon for debug printouts.
+ * Var/method used in procname_cleanup(), implemented further in the file */
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
+	*proctag_lib = NULL, proctag_cleanup_registered = 0;
+static void proctag_cleanup(void);
+
 static void procname_cleanup(void) {
+	if (proctag_cleanup_registered)
+		proctag_cleanup();	/* calls getmyprocname() */
+
 	if (myProcBaseName) {
 		/* points to inside of myProcName */
 		myProcBaseName = NULL;
@@ -4412,10 +4422,6 @@ void upslogx(int priority, const char *fmt, ...)
 #endif
 	va_end(va);
 }
-
-/* also keep a buffer with prefixed colon for debug printouts */
-static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
-	*proctag_lib = NULL, proctag_cleanup_registered = 0;
 
 static void proctag_cleanup(void)
 {
