@@ -4064,8 +4064,10 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 					newbufsize = (size_t)ret + LARGEBUF;
 				} /* else: errno, e.g. ERANGE printing:
 				   *  "...(34 => Result too large)" */
-				if (nut_debug_level > 0) {
-					fprintf(stderr, "WARNING: vupslog: "
+				if (nut_debug_level > 0
+				&& (nut_debug_level > 5 || bufsize > LARGEBUF)
+				) {
+					fprintf(stderr, "[D0] WARNING: vupslog: "
 						"vsnprintf needed more than %"
 						PRIuSIZE " bytes: %d (%d => %s),"
 						" extending to %" PRIuSIZE "\n",
