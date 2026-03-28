@@ -162,8 +162,8 @@ SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
-CLEANFILES += include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
-all-fanout-maybe: @dotMAKE@
+CLEANFILES += .libs-dev-PATH include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
+all-fanout-maybe: .libs-dev-PATH @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
@@ -190,6 +190,27 @@ all-fanout-maybe: @dotMAKE@
 			;; \
 	  esac
 
+.libs-dev-PATH: Makefile
+	echo '# Sourcable script for developers to run built progs with their shared libs:' > '$@'
+	echo 'for D in common clients drivers tools/nut-scanner ; do \
+	    for S in "" "/.libs" ; do \
+	        DN="$(abs_top_builddir)/$${D}$${S}" ; \
+	        case "$${PATH}" in \
+	            "$${DN}"|*:"$${DN}}"|"$${DN}":*|*:"$${DN}":*) ;; \
+	            "") PATH="$${DN}" ;; \
+	            *)  PATH="$${DN}:$${PATH}" ;; \
+	        esac ; \
+	        case "$${LD_LIBRARY_PATH}" in \
+	            "$${DN}"|*:"$${DN}}"|"$${DN}":*|*:"$${DN}":*) ;; \
+	            "") LD_LIBRARY_PATH="$${DN}" ;; \
+	            *)  LD_LIBRARY_PATH="$${DN}:$${LD_LIBRARY_PATH}" ;; \
+	        esac ; \
+	    done ; \
+	done ; \
+	export PATH ; \
+	export LD_LIBRARY_PATH ; \
+	' >> '$@'
+
 # We start with a pass to `make all` in `common` dir because our wild recipes
 # (with other subdirs ensuring the libraries they need have been built) can
 # sometimes cause parallel compilation and library generation for same files
@@ -208,7 +229,7 @@ all-fanout-staged: @dotMAKE@
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
-all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
+all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL) .libs-dev-PATH
 
 #all all-am-local all-local: @dotMAKE@
 #	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all

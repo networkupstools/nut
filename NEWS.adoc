@@ -545,6 +545,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      which should now not re-check source texts that were okay with the previous
      dictionary contents, in case some new terms have to be added. [PRs #3186,
      #2871]
+   * Added `make .libs-dev-PATH` recipe to generate a file which developers
+     or CI scripts can source to prefer freshly built NUT libraries and some
+     tools in their `LD_LIBRARY_PATH` and `PATH`. [#3379]
    * Introduced `make distcheck-completeness` goal to verify that our
      distribution archives can exactly reproduce themselves. [#2829]
    * Added a GitHub Actions CI job to generate, upload and recycle `make dist`
