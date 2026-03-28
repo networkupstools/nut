@@ -2272,9 +2272,14 @@ int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
  * active memory, and upsdebugx() calls suffer if the library's copy
  * is never changed from zero.
  */
+
+/* privately exported from common.c for internal libs */
+const char *setproctag_lib_once(const char *val);
+
 void upscli_set_debug_level(int lvl)
 {
 	nut_debug_level = lvl;
+	setproctag_lib_once("libupsclient");
 }
 
 int  upscli_get_debug_level(void)
@@ -2284,6 +2289,7 @@ int  upscli_get_debug_level(void)
 
 void upscli_setproctag(const char *tag)
 {
+	setproctag_lib_once("libupsclient");
 	setproctag(tag);
 }
 
@@ -2294,5 +2300,6 @@ const char *upscli_getproctag(void)
 
 struct timeval *upscli_upslog_start_sync(struct timeval *tv)
 {
+	setproctag_lib_once("libupsclient");
 	return upslog_start_sync(tv);
 }

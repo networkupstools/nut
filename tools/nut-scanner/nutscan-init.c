@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - 2021 EATON
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2021 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,6 +79,9 @@ struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
 int nutscan_load_upower_library(const char *libname_path);
 int nutscan_unload_upower_library(void);
 
+/* privately exported from common.c for internal libs */
+const char *setproctag_lib_once(const char *val);
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
 /* Shared by library consumers, exposed by nutscan_semaphore() below */
@@ -154,6 +157,7 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 
 void nutscan_set_debug_level(int level) {
 	nut_debug_level = level;
+	setproctag_lib_once("libnutscan");
 	/* Succeeds after init and if the library is loaded, else no-op */
 	nutscan_upscli_set_debug_level(level);
 }
@@ -165,6 +169,7 @@ int  nutscan_get_debug_level(void)
 
 void nutscan_setproctag(const char *tag)
 {
+	setproctag_lib_once("libnutscan");
 	setproctag(tag);
 	/* Succeeds after init and if the library is loaded, else no-op */
 	nutscan_upscli_setproctag(tag);
@@ -178,6 +183,7 @@ const char *nutscan_getproctag(void)
 struct timeval *nutscan_upslog_start_sync(struct timeval *tv)
 {
 	struct timeval *nstv = upslog_start_sync(tv);
+	setproctag_lib_once("libnutscan");
 	/* Succeeds after init and if the library is loaded, else no-op */
 	nutscan_upscli_upslog_start_sync(nstv);
 	return nstv;

@@ -4403,7 +4403,7 @@ void upslogx(int priority, const char *fmt, ...)
 
 /* also keep a buffer with prefixed colon for debug printouts */
 static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
-	proctag_cleanup_registered = 0;
+	*proctag_lib = NULL, proctag_cleanup_registered = 0;
 
 static void proctag_cleanup(void)
 {
@@ -4428,7 +4428,31 @@ static void proctag_cleanup(void)
 			free(tn);
 	}
 
+	/* Free the global vars */
+	if (proctag_lib) {
+		free(proctag_lib);
+		proctag_lib = NULL;
+	}
+
 	setproctag(NULL);
+}
+
+/* privately exported for internal libs for their quiet init without
+ * debug log noise like getmyprocname() below - in fact, help identify it */
+const char *setproctag_lib_once(const char *val);
+const char *setproctag_lib_once(const char *val) {
+	if (val && !proctag_lib) {
+		size_t	proctag_lib_buflen = strlen(val) + 2;
+		proctag_lib = (char *)xcalloc(proctag_lib_buflen, sizeof(char));
+		snprintf(proctag_lib, proctag_lib_buflen, ":%s", val);
+
+		if (proctag_cleanup_registered < 1) {
+			atexit(proctag_cleanup);
+			proctag_cleanup_registered = 1;
+		}
+	}
+
+	return (const char *)proctag_lib;
 }
 
 const char *getproctag(void)
@@ -4439,6 +4463,20 @@ const char *getproctag(void)
 void setproctag(const char *tag)
 {
 	size_t	proctag_for_upsdebug_buflen = 0;
+
+	if (proctag_cleanup_registered < 2) {
+		/* We would use this anyway in exit handler (probably many times
+		 * for forked children), so better get it over with quickly.
+		 * In libraries proctag_for_upsdebug may be pre-initialized
+		 * and can show up here.
+		 */
+		getmyprocname();
+
+		if (proctag_cleanup_registered < 1)
+			atexit(proctag_cleanup);
+		proctag_cleanup_registered = 2;
+	}
+
 	if (proctag) {
 		free(proctag);
 		proctag = NULL;
@@ -4450,53 +4488,57 @@ void setproctag(const char *tag)
 	}
 
 	if (!tag) {
-		/* wipe */
+		/* only wipe */
 		return;
-	}
-
-	if (!proctag_cleanup_registered) {
-		/* We would use this anyway in exit handler (probably many times
-		 * for forked children), so better get it over with quickly */
-		getmyprocname();
-
-		atexit(proctag_cleanup);
-		proctag_cleanup_registered = 1;
 	}
 
 	/* let the caller's copy be freed */
 	proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
+	if (proctag_lib)
+		proctag_for_upsdebug_buflen += strlen(proctag_lib) + 2;
 	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
 		char	*pn = xbasename_no_ext(getmyprocbasename());
 		char	*tn = xbasename_no_ext(tag);
 		int	tagged = 0;
 
-		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
-			/* Only add the process name if asked for and substantially
-			 * different from tag value -- e.g. do not duplicate text
-			 * when callers initialize with setproctag(progname) */
-			char	*s = NULL;
-			proctag_for_upsdebug_buflen += strlen(pn) + 1;
-			s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
-			if (s) {
-				snprintf(s, proctag_for_upsdebug_buflen, ":%s:%s", pn, tag);
-				free(proctag_for_upsdebug);
-				proctag_for_upsdebug = s;
+		if (pn && tn) {
+			if (strcmp(pn, tn)) {
+				/* Only add the process name if asked for and substantially
+				 * different from tag value -- e.g. do not duplicate text
+				 * when callers initialize with setproctag(progname) */
+				if (getenv("NUT_DEBUG_PROCNAME") != NULL) {
+					char	*s = NULL;
+					proctag_for_upsdebug_buflen += strlen(pn) + 1;
+					s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+					if (s) {
+						snprintf(s, proctag_for_upsdebug_buflen, ":%s%s:%s", pn, proctag_lib ? proctag_lib : "", tag);
+						free(proctag_for_upsdebug);
+						proctag_for_upsdebug = s;
+						tagged = 1;
+					} /* else alloc error */
+				}
+			} else {
+				/* tn == pn, print procname before libname
+				 * (don't care about envvar, this is an
+				 * explicit tag too) */
+				snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s%s", pn, proctag_lib ? proctag_lib : "");
 				tagged = 1;
 			}
 		}
 
 		if (!tagged) {
-			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, "%s:%s", proctag_lib ? proctag_lib : "", tag);
 		}
 
 		if (pn)
 			free(pn);
 		if (tn)
 			free(tn);
-	}
+	}  /* else alloc error, we'll print no proctag
+	    * (but maybe libname, see vupslog) */
 }
 
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
@@ -4529,12 +4571,12 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 			 * change during the run-time (forking etc.) */
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
 				level, (intmax_t)getpid(),
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		} else {
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
 				level,
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
@@ -4593,12 +4635,12 @@ void s_upsdebugx(int level, const char *fmt, ...)
 			 * change during the run-time (forking etc.) */
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
 				level, (intmax_t)getpid(),
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		} else {
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
 				level,
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		}
 
