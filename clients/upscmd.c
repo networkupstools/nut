@@ -3,6 +3,7 @@
    Copyright (C)
      2000  Russell Kroll <rkroll@exploits.org>
      2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +49,10 @@ struct list_t {
 	struct list_t	*next;
 };
 
-static void usage(const char *prog)
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+Dlhu:p:t:wVW:";
+
+static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT administration client program to initiate instant commands on UPS hardware.\n");
@@ -71,6 +75,7 @@ static void usage(const char *prog)
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
 		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -D         - raise debugging level\n");
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
@@ -294,35 +299,59 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	opt_ret = 0;
 	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
-	const char	*prog = xbasename(argv[0]);
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upscmd");
 	const char	*net_connect_timeout = NULL;
 
-	setproctag(prog);
-	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
-	 * and NUT methods called from it. This line aims to just initialize
-	 * the subsystem, and set initial timestamp. Debugging the client is
-	 * primarily of use to developers, so is not exposed via `-D` args.
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
 	 */
-	s = getenv("NUT_DEBUG_LEVEL");
-	if (s && str_to_int(s, &i, 10) && i > 0) {
-		nut_debug_level = i;
-		upscli_set_debug_level(nut_debug_level);
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
 	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_set_debug_level(nut_debug_level);
+	setproctag(prog);
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
 #if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, "+lhu:p:t:wVW:")) != -1) {
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 
-		switch (i)
+		switch (opt_ret)
 		{
+		case 'D': break;	/* See nut_debug_level handled above */
 		case 'l':
 			cmdlist = 1;
 			break;
@@ -359,7 +388,7 @@ int main(int argc, char **argv)
 
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
@@ -369,11 +398,13 @@ int main(int argc, char **argv)
 			net_connect_timeout);
 	}
 
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
 	if (argc < 1) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -383,7 +414,7 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
-	setproctag(argv[0]);
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
@@ -397,7 +428,7 @@ int main(int argc, char **argv)
 	}
 
 	if (argc < 2) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 

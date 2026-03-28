@@ -262,6 +262,13 @@ static void forceshutdown(void)
 	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
+/* For getopt loops; should match usage documented below: */
+static const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
+#ifndef WIN32
+		"P:"
+#endif	/* WIN32 */
+		;
+
 /* this function only prints the usage message; it does not call exit() */
 static void help_msg(void)
 {
@@ -2154,7 +2161,7 @@ int main(int argc, char **argv)
 # endif
 {
 	struct	passwd	*new_uid = NULL;
-	int	i, do_forceshutdown = 0;
+	int	opt_ret = 0, do_forceshutdown = 0, i;
 	int	update_count = 0;
 
 #ifndef WIN32
@@ -2163,17 +2170,8 @@ int main(int argc, char **argv)
 #else	/* WIN32 */
 /* FIXME NUT_WIN32_INCOMPLETE : *actually* handle WIN32 builds too */
 	const char	* cmd = NULL;
-
-	const char	* drv_name = NULL;
-	char	* dot = NULL;
-	char	name[NUT_PATH_MAX + 1];
+	char	drv_pipe_name[NUT_PATH_MAX + 1];
 #endif	/* WIN32 */
-
-	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
-#ifndef WIN32
-		"P:"
-#endif	/* WIN32 */
-		;
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
@@ -2194,12 +2192,15 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-	/* init verbosity from default in common.c (0 probably) */
+	/* init verbosity from default in common.c (0 probably)
+	 * Note that unlike simpler programs, this is a long-running
+	 * daemon which can change debug verbosity on the fly, so
+	 * we track numerous variables for juggling that act. */
 	nut_debug_level_args = nut_debug_level;
 
 	/* handle CLI-driven debug level in advance, to trace initialization if needed */
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'D':
 				/* bump right here, may impact reporting of other CLI args */
 				nut_debug_level++;
@@ -2267,26 +2268,11 @@ int main(int argc, char **argv)
 
 	memset(prognames, 0, sizeof(prognames));
 	memset(prognames_should_free, 0, sizeof(prognames_should_free));
-	prognames[0] = xbasename(argv[0]);
 
-#ifdef WIN32
-	drv_name = prognames[0];
-	/* remove trailing .exe */
-	dot = strrchr(drv_name,'.');
-	if (dot != NULL) {
-		if (strcasecmp(dot, ".exe") == 0) {
-			char	*fixed_progname = strdup(drv_name);
-			char	*t = strrchr(fixed_progname,'.');
-			*t = 0;
-			prognames[0] = fixed_progname;
-			prognames_should_free[0] = 1;
-		}
-	}
-	else {
-		prognames[0] = strdup(drv_name);
-		prognames_should_free[0] = 1;
-	}
-#endif	/* WIN32 */
+	/* Note: "const char *" to (substring of) argv[0] itself,
+	 * or an allocated string auto-cleaned by the NUT common
+	 * library; either way, this program does not free() it: */
+	prognames[0] = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutdrv");
 
 	upsdrv_callbacks.upsdrv_tweak_prognames();
 
@@ -2304,8 +2290,8 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_callbacks.upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'a':
 				if (upsname)
 					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
@@ -2364,7 +2350,8 @@ int main(int argc, char **argv)
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
-						"sent with option -%c. Try -h for help.", i);
+						"sent with option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
@@ -2393,7 +2380,8 @@ int main(int argc, char **argv)
 				if (!cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
-						"Error: unknown argument to option -%c. Try -h for help.", i);
+						"Error: unknown argument to option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 #ifndef WIN32
 				if (cmd > 0)
@@ -2485,7 +2473,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 
@@ -2935,7 +2923,7 @@ int main(int argc, char **argv)
 		}
 	}
 #else	/* WIN32 */
-	snprintf(name, sizeof(name), "%s-%s", progname, upsname);
+	snprintf(drv_pipe_name, sizeof(drv_pipe_name), "%s-%s", progname, upsname);
 
 	if (cmd) {
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
@@ -2943,10 +2931,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
 	}
 
-	mutex = CreateMutex(NULL, TRUE, name);
+	mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 	if (mutex == NULL) {
 		if (GetLastError() != ERROR_ACCESS_DENIED) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", name, (int)GetLastError());
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", drv_pipe_name, (int)GetLastError());
 		}
 	}
 
@@ -2954,7 +2942,7 @@ int main(int argc, char **argv)
 		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
 		for (i = 0; i < 10; i++) {
 			DWORD	res;
-			sendsignal(name, COMMAND_STOP, 1);
+			sendsignal(drv_pipe_name, COMMAND_STOP, 1);
 			if (mutex != NULL) {
 				res = WaitForSingleObject(mutex, 1000);
 				if (res == WAIT_OBJECT_0) {
@@ -2963,7 +2951,7 @@ int main(int argc, char **argv)
 			}
 			else {
 				sleep(1);
-				mutex = CreateMutex(NULL, TRUE, name);
+				mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 				if (mutex != NULL) {
 					break;
 				}

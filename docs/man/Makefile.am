@@ -587,8 +587,9 @@ SRC_DEV_PAGES = \
 	nutscan_free_device.txt \
 	nutscan_add_option_to_device.txt \
 	nutscan_add_device_to_device.txt \
-	nutscan_init.txt \
 	nutscan_get_serial_ports_list.txt \
+	nutscan_set_debug_level.txt \
+	nutscan_init.txt \
 	libupsclient-config.txt \
 	sockdebug.txt \
 	skel.txt
@@ -706,7 +707,10 @@ UPSCLI_SSL_CAPS_DEPS = \
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
 UPSCLI_SET_DEBUG_LEVEL_DEPS = \
-	upscli_get_debug_level.$(MAN_SECTION_API)
+	upscli_get_debug_level.$(MAN_SECTION_API) \
+	upscli_upslog_start_sync.$(MAN_SECTION_API) \
+	upscli_getproctag.$(MAN_SECTION_API) \
+	upscli_setproctag.$(MAN_SECTION_API)
 
 $(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
 
@@ -781,6 +785,8 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_add_commented_option_to_device.$(MAN_SECTION_API) \
 	nutscan_add_device_to_device.$(MAN_SECTION_API) \
 	nutscan_get_serial_ports_list.$(MAN_SECTION_API) \
+	nutscan_set_debug_level.$(MAN_SECTION_API) \
+	$(NUTSCAN_SET_DEBUG_LEVEL_DEPS) \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
@@ -807,6 +813,14 @@ nutscan_scan_ip_range_ipmi.$(MAN_SECTION_API): nutscan_scan_ipmi.$(MAN_SECTION_A
 
 nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to_device.$(MAN_SECTION_API)
 	touch $@
+
+NUTSCAN_SET_DEBUG_LEVEL_DEPS = \
+	nutscan_get_debug_level.$(MAN_SECTION_API) \
+	nutscan_upslog_start_sync.$(MAN_SECTION_API) \
+	nutscan_getproctag.$(MAN_SECTION_API) \
+	nutscan_setproctag.$(MAN_SECTION_API)
+
+$(NUTSCAN_SET_DEBUG_LEVEL_DEPS): nutscan_set_debug_level.$(MAN_SECTION_API)
 
 INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
@@ -891,6 +905,7 @@ INST_HTML_DEV_MANS = \
 	nutscan_add_option_to_device.html \
 	nutscan_add_device_to_device.html \
 	nutscan_get_serial_ports_list.html \
+	nutscan_set_debug_level.html \
 	nutscan_init.html \
 	libupsclient-config.html \
 	sockdebug.html \

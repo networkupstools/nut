@@ -548,6 +548,39 @@ pid_t get_max_pid_t(void)
 
 	struct timeval	upslog_start = { 0, 0 };
 
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep the original setting).
+ * Returns the currently set value so it can be propagated.
+ */
+struct timeval *upslog_start_sync(struct timeval *tv) {
+	if (tv == &upslog_start)
+		return tv;
+
+	if (upslog_start.tv_sec == 0 || upslog_start.tv_usec == 0) {
+		if (tv && (tv->tv_sec > 0 || tv->tv_usec > 0)) {
+			upslog_start = *tv;
+		} else {
+			struct timeval		now;
+
+			gettimeofday(&now, NULL);
+			upslog_start = now;
+
+#ifdef WIN32
+			/* Ensure line buffering for sane logs on Windows console
+			 * especially when many threads/daemons write there. */
+			setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
+			/* Also stdout (some messages go there) for good measure: */
+			setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#endif
+		}
+	}
+	return &upslog_start;
+}
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -901,7 +934,17 @@ void chroot_start(const char *path)
 /* In forking, assume process name does not change (PID might); cache it */
 static char	*myProcName = NULL;
 static const char	*myProcBaseName = NULL;
+
+/* We also keep a buffer with prefixed colon for debug printouts.
+ * Var/method used in procname_cleanup(), implemented further in the file */
+static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
+	*proctag_lib = NULL, proctag_cleanup_registered = 0;
+static void proctag_cleanup(void);
+
 static void procname_cleanup(void) {
+	if (proctag_cleanup_registered)
+		proctag_cleanup();	/* calls getmyprocname() */
+
 	if (myProcBaseName) {
 		/* points to inside of myProcName */
 		myProcBaseName = NULL;
@@ -2614,7 +2657,7 @@ const char *xbasename(const char *file)
 	const char *p = strrchr(file, '\\');
 	const char *r = strrchr(file, '/');
 	/* if not found, try '/' */
-	if( r > p ) {
+	if (r > p) {
 		p = r;
 	}
 #endif	/* WIN32 */
@@ -2622,6 +2665,155 @@ const char *xbasename(const char *file)
 	if (p == NULL)
 		return file;
 	return p + 1;
+}
+
+char *xbasename_no_ext(const char *file)
+{
+	const char	*cs;
+	char	*bn = NULL;
+	static char	*exeext = NULL;
+	static size_t	exeext_len = 0;
+
+	if (!file || !*file)
+		return NULL;
+
+	cs = xbasename(file);
+	if (!cs || !*cs)
+		return NULL;
+
+	/* TOTHINK: Generalize provided-if-missing strcasestr()?
+	 *  One implementation is currently tucked away in
+	 *  libusb0.c because net-snmp may provide another...
+	 */
+
+#ifdef WIN32
+	/* Special handling for a known outlier (for man pages, etc.) */
+	if (!strcmp(cs, "nut.exe"))
+		return xstrdup(cs);
+
+	if (!strcmp(cs, "nut"))
+		return xstrdup("nut.exe");
+#endif
+
+	/* Some compilers detect that conditions are not changing at run-time: */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+
+	if (!exeext) {
+#ifdef EXEEXT
+		exeext = EXEEXT;
+#endif
+#ifdef WIN32
+		if (!exeext || !*exeext)
+			exeext = ".exe";
+#endif
+
+		exeext_len = strlen(exeext);
+	}
+
+	if (exeext_len > 0) {
+		size_t	cs_len = strlen(cs),
+			bn_len = (cs_len > exeext_len ? cs_len - exeext_len : 0);
+
+		if (bn_len) {
+			char	*s = strstr(cs, exeext);
+			if (s && (bn_len == (size_t)(s - cs))) {
+				/* s points to first character that matches exeext,
+				 * this character is what we already do not want */
+				bn = (char*)xmalloc(bn_len + 1);
+				/* Extract first bn_len characters, add '\0' in the end */
+				snprintf(bn, bn_len, "%s", cs);
+			}
+		}
+	}
+
+	if (!bn) {
+		bn = xstrdup(cs);
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+	return bn;
+}
+
+char *xbasename_no_ext_default(const char *file, const char *fallback) {
+	char	*bn = xbasename_no_ext(file);
+
+	if (bn && *bn)
+		return bn;
+
+	if (!fallback || !*fallback) {
+		return xstrdup(fallback);
+	}
+
+	return xstrdup(fallback);
+}
+
+/* Keep tabs on the value from setprogname_argv0_default()
+ * to possibly free() in the end */
+static char	*progname_argv0_default = NULL;
+static void cleanup_progname_argv0_default(void) {
+	if (progname_argv0_default) {
+		free(progname_argv0_default);
+		progname_argv0_default = NULL;
+	}
+}
+
+/* Take the caller-allocated string and keep to free() later */
+static const char *reset_progname_argv0_default(char *arg) {
+	static int	atexit_hooked = 0;
+
+	if (!atexit_hooked) {
+		/* First time here */
+		atexit(cleanup_progname_argv0_default);
+		atexit_hooked = 1;
+	}
+
+	cleanup_progname_argv0_default();
+	progname_argv0_default = arg;
+	return (const char *)progname_argv0_default;
+}
+
+const char *getprogname_argv0_default(const char *file, const char *fallback) {
+	if (!file || !*file) {
+		if (!fallback || !*fallback) {
+			if (progname_argv0_default && *progname_argv0_default) {
+				return (const char *)progname_argv0_default;
+			}
+			return reset_progname_argv0_default(xstrdup("UNDEFINED"));
+		}
+		return fallback;
+	} else {
+		const char	*cs = xbasename(file);
+		if (!cs || !*cs) {
+			if (!fallback || !*fallback) {
+				return reset_progname_argv0_default(xstrdup("UNDEFINED"));
+			}
+			return fallback;
+		} else {
+			char	*bn = xbasename_no_ext(cs);	/* New allocation with non-trivial text or NULL */
+			if (bn) {
+				if (!strcmp(bn, cs)) {
+					free(bn);
+					return cs;
+				}
+				return reset_progname_argv0_default(bn);
+			}
+			return cs;
+		}
+	}
 }
 
 /* Based on https://www.gnu.org/software/libc/manual/html_node/Calculating-Elapsed-Time.html
@@ -3882,8 +4074,10 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 					newbufsize = (size_t)ret + LARGEBUF;
 				} /* else: errno, e.g. ERANGE printing:
 				   *  "...(34 => Result too large)" */
-				if (nut_debug_level > 0) {
-					fprintf(stderr, "WARNING: vupslog: "
+				if (nut_debug_level > 0
+				&& (nut_debug_level > 5 || bufsize > LARGEBUF)
+				) {
+					fprintf(stderr, "[D0] WARNING: vupslog: "
 						"vsnprintf needed more than %"
 						PRIuSIZE " bytes: %d (%d => %s),"
 						" extending to %" PRIuSIZE "\n",
@@ -3958,21 +4152,9 @@ vupslog_too_long:
 	}
 
 	/* Note: nowadays debug level can be changed during run-time,
-	 * so mark the starting point whenever we first try to log */
-	if (upslog_start.tv_sec == 0) {
-		struct timeval		now;
-
-		gettimeofday(&now, NULL);
-		upslog_start = now;
-
-#ifdef WIN32
-		/* Ensure line buffering for sane logs on Windows console
-		 * especially when many threads/daemons write there. */
-		setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
-		/* Also stdout (some messages go there) for good measure: */
-		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
-#endif
-	}
+	 * so mark the starting point (if not yet set) whenever we
+	 * first try to log */
+	upslog_start_sync(NULL);
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR) || xbit_test(upslog_flags, UPSLOG_STDOUT)) {
 		if (nut_debug_level > 0) {
@@ -4241,45 +4423,13 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
-/* also keep a buffer with prefixed colon for debug printouts */
-static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
-	proctag_cleanup_registered = 0;
-
 static void proctag_cleanup(void)
 {
+	upsdebugx(3, "%s: starting...", __func__);
+
 	if (proctag) {
-		char	*pn = xstrdup(getmyprocbasename());
-		char	*tn = xstrdup(proctag);
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-		if (strlen(EXEEXT) > 0) {
-			/* TOTHINK: Generalize provided-if-missing strcasestr()? */
-			char	*s;
-			if (pn) {
-				s = strstr(pn, EXEEXT);
-				if (s) *s='\0';
-			}
-
-			if (tn) {
-				s = strstr(tn, EXEEXT);
-				if (s) *s='\0';
-			}
-		}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+		char	*pn = xbasename_no_ext(getmyprocbasename());
+		char	*tn = xbasename_no_ext(proctag);
 
 		if (pn && tn && !strcmp(pn, tn)) {
 			/* Avoid reporting this line as misleading "sub-process"
@@ -4298,7 +4448,31 @@ static void proctag_cleanup(void)
 			free(tn);
 	}
 
+	/* Free the global vars */
+	if (proctag_lib) {
+		free(proctag_lib);
+		proctag_lib = NULL;
+	}
+
 	setproctag(NULL);
+}
+
+/* privately exported for internal libs for their quiet init without
+ * debug log noise like getmyprocname() below - in fact, help identify it */
+const char *setproctag_lib_once(const char *val);
+const char *setproctag_lib_once(const char *val) {
+	if (val && !proctag_lib) {
+		size_t	proctag_lib_buflen = strlen(val) + 2;
+		proctag_lib = (char *)xcalloc(proctag_lib_buflen, sizeof(char));
+		snprintf(proctag_lib, proctag_lib_buflen, ":%s", val);
+
+		if (proctag_cleanup_registered < 1) {
+			atexit(proctag_cleanup);
+			proctag_cleanup_registered = 1;
+		}
+	}
+
+	return (const char *)proctag_lib;
 }
 
 const char *getproctag(void)
@@ -4309,6 +4483,21 @@ const char *getproctag(void)
 void setproctag(const char *tag)
 {
 	size_t	proctag_for_upsdebug_buflen = 0;
+
+	if (proctag_cleanup_registered < 2) {
+		/* We would use this anyway in exit handler (probably many times
+		 * for forked children), so better get it over with quickly.
+		 * In libraries proctag_for_upsdebug may be pre-initialized
+		 * and can show up here.
+		 */
+		upsdebugx(3, "%s: starting first tagging as '%s'...", __func__, NUT_STRARG(tag));
+		getmyprocname();
+
+		if (proctag_cleanup_registered < 1)
+			atexit(proctag_cleanup);
+		proctag_cleanup_registered = 2;
+	}
+
 	if (proctag) {
 		free(proctag);
 		proctag = NULL;
@@ -4320,86 +4509,57 @@ void setproctag(const char *tag)
 	}
 
 	if (!tag) {
-		/* wipe */
+		/* only wipe */
 		return;
-	}
-
-	if (!proctag_cleanup_registered) {
-		/* We would use this anyway in exit handler (probably many times
-		 * for forked children), so better get it over with quickly */
-		getmyprocname();
-
-		atexit(proctag_cleanup);
-		proctag_cleanup_registered = 1;
 	}
 
 	/* let the caller's copy be freed */
 	proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
+	if (proctag_lib)
+		proctag_for_upsdebug_buflen += strlen(proctag_lib) + 2;
 	proctag_for_upsdebug = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
 	if (proctag_for_upsdebug) {
-		char	*pn = xstrdup(getmyprocbasename());
-		char	*tn = xstrdup(tag);
+		char	*pn = xbasename_no_ext(getmyprocbasename());
+		char	*tn = xbasename_no_ext(tag);
 		int	tagged = 0;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-		if (strlen(EXEEXT) > 0) {
-			/* TOTHINK: Generalize provided-if-missing strcasestr()?
-			 *  One implementation is currently tucked away in
-			 *  libusb0.c because net-snmp may provide another...
-			 */
-			char	*s;
-			if (pn) {
-				s = strstr(pn, EXEEXT);
-				if (s) *s='\0';
-			}
-
-			if (tn) {
-				s = strstr(tn, EXEEXT);
-				if (s) *s='\0';
-			}
-		}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
-
-		if (pn && tn && getenv("NUT_DEBUG_PROCNAME") != NULL && strcmp(pn, tn)) {
-			/* Only add the process name if asked for and substantially
-			 * different from tag value -- e.g. do not duplicate text
-			 * when callers initialize with settagname(progname) */
-			char	*s = NULL;
-			proctag_for_upsdebug_buflen += strlen(pn) + 1;
-			s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
-			if (s) {
-				snprintf(s, proctag_for_upsdebug_buflen, ":%s:%s", pn, tag);
-				free(proctag_for_upsdebug);
-				proctag_for_upsdebug = s;
+		if (pn && tn) {
+			if (strcmp(pn, tn)) {
+				/* Only add the process name if asked for and substantially
+				 * different from tag value -- e.g. do not duplicate text
+				 * when callers initialize with setproctag(progname) */
+				if (getenv("NUT_DEBUG_PROCNAME") != NULL) {
+					char	*s = NULL;
+					proctag_for_upsdebug_buflen += strlen(pn) + 1;
+					s = (char *)xcalloc(proctag_for_upsdebug_buflen, sizeof(char));
+					if (s) {
+						snprintf(s, proctag_for_upsdebug_buflen, ":%s%s:%s", pn, proctag_lib ? proctag_lib : "", tag);
+						free(proctag_for_upsdebug);
+						proctag_for_upsdebug = s;
+						tagged = 1;
+					} /* else alloc error */
+				}
+			} else {
+				/* tn == pn, print procname before libname
+				 * (don't care about envvar, this is an
+				 * explicit tag too) */
+				snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s%s", pn, proctag_lib ? proctag_lib : "");
 				tagged = 1;
 			}
 		}
 
 		if (!tagged) {
-			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, ":%s", tag);
+			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, "%s:%s", proctag_lib ? proctag_lib : "", tag);
 		}
 
 		if (pn)
 			free(pn);
 		if (tn)
 			free(tn);
-	}
+	}  /* else alloc error, we'll print no proctag
+	    * (but maybe libname, see vupslog) */
 }
 
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
@@ -4432,12 +4592,12 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 			 * change during the run-time (forking etc.) */
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
 				level, (intmax_t)getpid(),
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		} else {
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
 				level,
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
@@ -4496,12 +4656,12 @@ void s_upsdebugx(int level, const char *fmt, ...)
 			 * change during the run-time (forking etc.) */
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "%s] %s",
 				level, (intmax_t)getpid(),
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		} else {
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d%s] %s",
 				level,
-				proctag_for_upsdebug ? proctag_for_upsdebug : "",
+				proctag_for_upsdebug ? proctag_for_upsdebug : (proctag_lib ? proctag_lib : ""),
 				fmt);
 		}
 

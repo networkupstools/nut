@@ -1,7 +1,7 @@
 /*
  *  Copyright (C)
  *      2013 - EATON
- *      2024-2025 - Jim Klimov <jimklimov+nut@gmail.com>
+ *      2024-2026 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,10 +62,10 @@ class Usage {
 	public:
 
 	/** Print version and usage to stderr */
-	static void print(const std::string & bin);
+	static void print(const std::string & bin, const std::string & binpath);
 
 	/** Print version info to stdout */
-	static void printVersion(const std::string & bin);
+	static void printVersion(const std::string & bin, const std::string & binpath);
 
 };  // end of class usage
 
@@ -113,9 +113,10 @@ const char * Usage::s_text[] = {
 	"                                        specified multiple times to set multiple users",
 	"    --add-user <spec>                   Same as --set-user, but keeps existing users",
 	"                                        The two options are mutually exclusive",
-	/* FIXME: Alias as "-D"? Is this the same as nut_debug_level
-	 * NOTE: upsdebugx() not used here directly (yet?), though we
+	/* NOTE: upsdebugx() not used here directly (yet?), though we
 	 * could setenv() the envvar for libnutscan perhaps? */
+	"    -D                                  Raise debugging level",
+	/* TOCHECK: Is this the same as nut_debug_level, or tool verbosity? */
 	"    -v",
 	"    --verbose                           Increase verbosity of output one level",
 	"                                        May be specified multiple times",
@@ -185,21 +186,24 @@ const char * Usage::s_text[] = {
 /**
  * Print version info to stdout (like other NUT tools)
  */
-void Usage::printVersion(const std::string & bin) {
+void Usage::printVersion(const std::string & bin, const std::string & binpath) {
 	std::cout
 		<< "Network UPS Tools " << bin
 		<< " " << describe_NUT_VERSION_once() << std::endl;
+
+	if (!binpath.empty()) std::cout
+		<< "Located in " << binpath << std::endl;
 }
 
 /**
  * Print help text (including version info) to stderr
  */
-void Usage::print(const std::string & bin) {
+void Usage::print(const std::string & bin, const std::string & binpath) {
 	std::cerr
 		<< "Network UPS Tools " << bin
 		<< " " << describe_NUT_VERSION_once() << std::endl
 		<< std::endl
-		<< "Usage: " << bin << " [OPTIONS]" << std::endl
+		<< "Usage: " << (binpath.empty() ? bin : binpath) << " [OPTIONS]" << std::endl
 		<< std::endl
 		<< "OPTIONS:" << std::endl;
 
@@ -1330,17 +1334,25 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	static const std::string dDash("--");
 
 	// Specify single-dashed options
+        // (maybe several short options after a common single dash)
 	List list = stringsSingle();
 
 	for (List::const_iterator opt = list.begin(); opt != list.end(); ++opt) {
-		// Known options
-		if ("v" == *opt) {
-			++verbose;
-		}
+		for (char &opt_ret : std::string(*opt)) {
+			// Known single-character options
+			switch (opt_ret) {
+				case 'v':
+					++verbose;
+					break;
 
-		// Unknown option
-		else {
-			m_unknown.push_back(sDash + *opt);
+				case 'D':
+					++nut_debug_level;
+					break;
+
+				// Unknown option
+				default:
+					m_unknown.push_back(sDash + opt_ret);
+			}
 		}
 	}
 
@@ -3123,22 +3135,47 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
-	const char	*prog = xbasename(argv[0]);
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upslog_start_sync(nutscan_upslog_start_sync(NULL));
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutconf");
 	char	*s = nullptr;
 
-	// Get options
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+
+	// Get options, also set nut_debug_level
 	NutConfOptions options(argv, argc);
+
+	if (!nut_debug_level) {
+		int	l;
+
+		s = ::getenv("NUT_DEBUG_LEVEL");
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	nutscan_set_debug_level(nut_debug_level);
+	nutscan_setproctag(prog);
+	upsdebugx(1, "Starting NUT configuration tool: %s", prog);
 
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
-		Usage::print(prog);
+		Usage::print(prog, "");
 
 		::exit(0);
 	}
 
 	// Usage
 	if (options.exists("version") || options.existsSingle("V")) {
-		Usage::printVersion(prog);
+		Usage::printVersion(prog, "");
 
 		::exit(0);
 	}
@@ -3147,7 +3184,7 @@ static int mainx(int argc, char * const argv[]) {
 	if (!options.valid) {
 		options.reportInvalid();
 
-		Usage::print(argv[0]);
+		Usage::print(prog, argv[0]);
 
 		::exit(1);
 	}

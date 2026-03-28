@@ -137,6 +137,10 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Ported C client library `libupsclient` support logic for SSL connections
      into C++ client library `libnutclient` and added tests for it. [issues
      #1599, #1711, PR #3353]
+   * Added support for command-line debugging with `-D` option into `upsc`,
+     `upscmd` and `upsrw` command-line clients, and the `nutconf` tool.
+     Revised handling of `-D` and/or `NUT_DEBUG_LEVEL` environment variable
+     in other programs. [#3378]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -395,7 +399,8 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsc` has now optional JSON output [issue #3172, PR #3178]
 
- - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
+ - `upsset` CGI tool should now recognize `RANGE NUMBER` and `NUMBER` types.
+   [#3164]
 
  - `upsstats` CGI tool updates:
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
@@ -540,6 +545,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      which should now not re-check source texts that were okay with the previous
      dictionary contents, in case some new terms have to be added. [PRs #3186,
      #2871]
+   * Added `make .libs-dev-PATH` recipe to generate a file which developers
+     or CI scripts can source to prefer freshly built NUT libraries and some
+     tools in their `LD_LIBRARY_PATH` and `PATH`. [#3379]
    * Introduced `make distcheck-completeness` goal to verify that our
      distribution archives can exactly reproduce themselves. [#2829]
    * Added a GitHub Actions CI job to generate, upload and recycle `make dist`

@@ -1445,6 +1445,9 @@ static void start_driver(const ups_t *ups)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+htu:r:DdFBVc:l";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -1688,7 +1691,7 @@ static void exit_cleanup(void)
 
 int main(int argc, char **argv)
 {
-	int	i, lastarg = 0;
+	int	opt_ret = 0, lastarg = 0;
 	char	*prog, *command_name = NULL, progdesc[LARGEBUF];
 
 	prog = argv[0];
@@ -1701,8 +1704,8 @@ int main(int argc, char **argv)
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
 	print_banner_once(progdesc, 0);
 
-	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
-		switch(i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch(opt_ret) {
 			case 'r':
 				pt_root = optarg;
 				break;
@@ -1749,7 +1752,8 @@ int main(int argc, char **argv)
 				if (command || pt_cmd) {
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
-						"sent with option -%c. Try -h for help.", i);
+						"sent with option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 				command = &signal_driver;
 				command_name = "signal";
@@ -1789,7 +1793,8 @@ int main(int argc, char **argv)
 				/* bad command given */
 				if (!signal_flag) {
 					fatalx(EXIT_FAILURE,
-						"Error: unknown argument to option -%c. Try -h for help.", i);
+						"Error: unknown argument to option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 
 				pt_cmd = optarg;
