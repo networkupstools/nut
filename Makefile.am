@@ -855,9 +855,21 @@ SET_PARMAKES_OPT = \
 		;; \
 	esac
 
+all-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} all
+
+install-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} install
+
+check-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
+
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
-	  $(MAKE) $(AM_MAKEFLAGS) -k -s ${PARMAKES_OPT} spellcheck
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick: @dotMAKE@
