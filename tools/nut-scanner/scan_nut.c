@@ -91,7 +91,7 @@ int nutscan_unload_upsclient_library(void)
 void nutscan_upscli_set_debug_level(int level);
 void nutscan_upscli_set_debug_level(int level)
 {
-	if (nut_upscli_set_debug_level) {
+	if (nutscan_avail_nut && dl_handle && nut_upscli_set_debug_level) {
 		(*nut_upscli_set_debug_level)(level);
 	}
 }
@@ -99,7 +99,7 @@ void nutscan_upscli_set_debug_level(int level)
 void nutscan_upscli_setproctag(const char *tag);
 void nutscan_upscli_setproctag(const char *tag)
 {
-	if (nut_upscli_setproctag) {
+	if (nutscan_avail_nut && dl_handle && nut_upscli_setproctag) {
 		(*nut_upscli_setproctag)(tag);
 	}
 }
@@ -107,7 +107,7 @@ void nutscan_upscli_setproctag(const char *tag)
 struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
 struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv)
 {
-	if (nut_upscli_upslog_start_sync) {
+	if (nutscan_avail_nut && dl_handle && nut_upscli_upslog_start_sync) {
 		return (*nut_upscli_upslog_start_sync)(tv);
 	}
 
