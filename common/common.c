@@ -2671,6 +2671,20 @@ char *xbasename_no_ext(const char *file)
 	if (!cs || !*cs)
 		return NULL;
 
+	/* TOTHINK: Generalize provided-if-missing strcasestr()?
+	 *  One implementation is currently tucked away in
+	 *  libusb0.c because net-snmp may provide another...
+	 */
+
+#ifdef WIN32
+	/* Special handling for a known outlier (for man pages, etc.) */
+	if (!strcmp(cs, "nut.exe"))
+		return xstrdup(cs);
+
+	if (!strcmp(cs, "nut"))
+		return xstrdup("nut.exe");
+#endif
+
 	/* Some compilers detect that conditions are not changing at run-time: */
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
@@ -2700,10 +2714,6 @@ char *xbasename_no_ext(const char *file)
 			bn_len = (cs_len > exeext_len ? cs_len - exeext_len : 0);
 
 		if (bn_len) {
-			/* TOTHINK: Generalize provided-if-missing strcasestr()?
-			 *  One implementation is currently tucked away in
-			 *  libusb0.c because net-snmp may provide another...
-			 */
 			char	*s = strstr(cs, exeext);
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
