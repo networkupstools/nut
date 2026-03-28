@@ -4407,6 +4407,8 @@ static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 
 static void proctag_cleanup(void)
 {
+	upsdebugx(3, "%s: starting...", __func__);
+
 	if (proctag) {
 		char	*pn = xbasename_no_ext(getmyprocbasename());
 		char	*tn = xbasename_no_ext(proctag);
@@ -4470,6 +4472,7 @@ void setproctag(const char *tag)
 		 * In libraries proctag_for_upsdebug may be pre-initialized
 		 * and can show up here.
 		 */
+		upsdebugx(3, "%s: starting first tagging as '%s'...", __func__, NUT_STRARG(tag));
 		getmyprocname();
 
 		if (proctag_cleanup_registered < 1)
