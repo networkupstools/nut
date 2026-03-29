@@ -3332,21 +3332,6 @@ static int mainx(int argc, char * const argv[]) {
 #endif  // defined WITH_NUTSCANNER
 
 	upsdebugx(1, "Finishing NUT configuration tool: %s", prog);
-
-#if (defined WITH_NUTSCANNER)
-	/* For proper logging attribution, we call this before exit() which calls
-	 *    static NutScanner::s_init_final ~InitFinal()
-	 * C++ destructor which should run (for global objects)
-	 * after any registered atexit() handlers, per
-	 * https://stackoverflow.com/questions/16010083/order-between-destruction-of-global-object-and-atexit-in-c
-	 * Apparently the destructor still runs and does its work, but
-	 * there is nothing more to log under that copy of nutscan_free()
-	 * which happens without a process/library tag in the debug log.
-	 */
-	if (nut_debug_level)
-		nutscan_free();
-#endif  // defined WITH_NUTSCANNER
-
 	return 0;
 }
 
