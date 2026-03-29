@@ -3788,6 +3788,11 @@ static void init_Inhibitor(const char *prog)
 
 int main(int argc, char *argv[])
 {
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval    *upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL));
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsmon");
 	const char	*net_connect_timeout = NULL;
 	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
@@ -3804,6 +3809,8 @@ int main(int argc, char *argv[])
 	int		maxhandle = 0;
 	pipe_conn_t	*conn;
 #endif	/* WIN32 */
+
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
 
 	print_banner_once(prog, 0);
 

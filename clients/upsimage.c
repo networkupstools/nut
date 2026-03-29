@@ -634,8 +634,8 @@ int main(int argc, char **argv)
 	setmode(STDOUT_FILENO, O_BINARY);
 #endif
 
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	upscli_upslog_start_sync(upslog_start_sync(NULL));
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsimage(CGI)");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize

@@ -1133,8 +1133,9 @@ int main(int argc, char **argv)
 	setmode(STDIN_FILENO, O_BINARY);
 #endif
 
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	upscli_upslog_start_sync(upslog_start_sync(NULL));
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsset(CGI)");
+
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n");
