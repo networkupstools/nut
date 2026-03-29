@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -426,12 +426,21 @@ void upsdrv_help(void)
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+	/* Here we actually tweak libupsclient logging more,
+	 * relying on this method being called early in main.c */
+	upscli_upslog_start_sync(upslog_start_sync(NULL));
+	upscli_set_debug_level(nut_debug_level);
+	upscli_setprocname(xstrdup(getmyprocname()));
+	/* FIXME: All other calls to setproctag() in main.c would currently
+	 * be invisible to upscli_*() as that object file has no idea about
+	 * the library in this one driver... should we introduce a callback? */
+	upscli_setproctag(xstrdup(getproctag()));
 }
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
-	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
+	addvar(VAR_FLAG,	"repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
