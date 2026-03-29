@@ -721,7 +721,8 @@ class NutScanner {
 		/** Initialization */
 		InitFinal() {
 			/* Register atexit() cleanups to scope around libnutscan lifetime */
-			nutscan_upslog_start_sync(upslog_start_sync(NULL));
+			nutscan_upslog_start_sync(upslog_start_sync(nullptr));
+			nutscan_setprocname(xstrdup(getmyprocname()));
 			nutscan_init();
 		}
 

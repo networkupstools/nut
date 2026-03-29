@@ -313,6 +313,7 @@ int main(int argc, char **argv)
 	const char	*net_connect_timeout = NULL;
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_setprocname(xstrdup(getmyprocname()));
 
 	/* NOTE: Debugging the client is primarily of use to developers, so
 	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.

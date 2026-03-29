@@ -3811,6 +3811,7 @@ int main(int argc, char *argv[])
 #endif	/* WIN32 */
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_setprocname(xstrdup(getmyprocname()));
 
 	print_banner_once(prog, 0);
 

@@ -531,6 +531,7 @@ int main(int argc, char **argv)
 	user = RUN_AS_USER;
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_setprocname(xstrdup(getmyprocname()));
 
 	/* NOTE: Debugging the client is primarily of use to developers, so
 	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.

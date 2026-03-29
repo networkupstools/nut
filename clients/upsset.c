@@ -1134,6 +1134,7 @@ int main(int argc, char **argv)
 #endif
 
 	upscli_upslog_start_sync(upslog_start_sync(NULL));
+	upscli_setprocname(xstrdup(getmyprocname()));
 	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsset(CGI)");
 
 	username = password = function = monups = NULL;

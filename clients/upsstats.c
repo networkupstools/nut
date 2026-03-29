@@ -1699,6 +1699,7 @@ int main(int argc, char **argv)
 #endif
 
 	upscli_upslog_start_sync(upslog_start_sync(NULL));
+	upscli_setprocname(xstrdup(getmyprocname()));
 	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsstats(CGI)");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc

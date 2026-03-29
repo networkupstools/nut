@@ -1202,7 +1202,16 @@ int main(int argc, char *argv[])
 #endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
+#endif
 
+	/* NOTE: No hassle in this program about upslog_start_sync()
+	 *  nor nutscan_setprocname(xstrdup(getmyprocname()))
+	 *  because its provider of those data and debugging methods
+	 *  is libnutscan itself.
+	 */
+	nutscan_setproctag(progname);
+
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	/* Limit the max scanning thread count by the amount of allowed open
 	 * file descriptors (which caller can change with `ulimit -n NUM`),
 	 * following practical investigation summarized at
@@ -1230,8 +1239,6 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif	/* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED ) && HAVE_SYS_RESOURCE_H */
-
-	nutscan_setproctag(progname);
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
