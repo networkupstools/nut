@@ -719,7 +719,11 @@ class NutScanner {
 	/** NUT scanner initialization/finalization */
 	struct InitFinal {
 		/** Initialization */
-		InitFinal() { nutscan_init(); }
+		InitFinal() {
+			/* Register atexit() cleanups to scope around libnutscan lifetime */
+			nutscan_upslog_start_sync(upslog_start_sync(NULL));
+			nutscan_init();
+		}
 
 		/** Finalization */
 		~InitFinal() { nutscan_free(); }
@@ -3135,15 +3139,8 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
-	/* Make sure all related logs (copies of code that may
-	 * be spread in different NUT common libs) start on the
-	 * same note; execute this call before everything else,
-	 * at the cost of a temporary otherwise useless variable. */
-	const struct timeval	*upslog_start_tmp = upslog_start_sync(nutscan_upslog_start_sync(NULL));
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutconf");
 	char	*s = nullptr;
-
-	NUT_UNUSED_VARIABLE(upslog_start_tmp);
 
 	// Get options, also set nut_debug_level
 	NutConfOptions options(argv, argc);
@@ -3162,8 +3159,11 @@ static int mainx(int argc, char * const argv[]) {
 	/* These lines aim to just initialize the logging subsystem, and set
 	 * initial timestamp, for the eventuality that debugs would be printed:
 	 */
+#if (defined WITH_NUTSCANNER)
 	nutscan_set_debug_level(nut_debug_level);
 	nutscan_setproctag(prog);
+#endif
+	setproctag(prog);
 	upsdebugx(1, "Starting NUT configuration tool: %s", prog);
 
 	// Usage
@@ -3291,6 +3291,7 @@ static int mainx(int argc, char * const argv[]) {
 	}
 
 #if (defined WITH_NUTSCANNER)
+	upsdebugx(1, "Scanning devices (if enabled)...");
 
 	// SNMP devices scan
 	if (options.scan_snmp_cnt) {
@@ -3327,6 +3328,23 @@ static int mainx(int argc, char * const argv[]) {
 		scanSerialDevices(options);
 	}
 
+	nutscan_setproctag(prog);
+#endif  // defined WITH_NUTSCANNER
+
+	upsdebugx(1, "Finishing NUT configuration tool: %s", prog);
+
+#if (defined WITH_NUTSCANNER)
+	/* For proper logging attribution, we call this before exit() which calls
+	 *    static NutScanner::s_init_final ~InitFinal()
+	 * C++ destructor which should run (for global objects)
+	 * after any registered atexit() handlers, per
+	 * https://stackoverflow.com/questions/16010083/order-between-destruction-of-global-object-and-atexit-in-c
+	 * Apparently the destructor still runs and does its work, but
+	 * there is nothing more to log under that copy of nutscan_free()
+	 * which happens without a process/library tag in the debug log.
+	 */
+	if (nut_debug_level)
+		nutscan_free();
 #endif  // defined WITH_NUTSCANNER
 
 	return 0;
@@ -3343,6 +3361,7 @@ static int mainx(int argc, char * const argv[]) {
  */
 int main(int argc, char * const argv[]) {
 	try {
+		upslog_start_sync(NULL);
 		return mainx(argc, argv);
 	}
 	catch (const std::exception & e) {
