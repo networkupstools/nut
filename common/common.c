@@ -4584,11 +4584,20 @@ static void proctag_cleanup(void)
 			/* Avoid reporting this line as misleading "sub-process"
 			 * after a plain singular setproctag(progname) call in
 			 * a NUT program: */
-			upsdebugx(2, "a process (%s) is exiting now", pn);
+			if (myLT) {
+				upsdebugx(2, "library (%s) used by a process (%s) is exiting now", myLT, pn);
+			} else {
+				upsdebugx(2, "a process (%s) is exiting now", pn);
+			}
 		} else {
 			/* Some ptr not set, or strings not equal */
-			upsdebugx(2, "a %s sub-process (%s) is exiting now",
-				NUT_STRARG(pn), proctag);
+			if (myLT) {
+				upsdebugx(2, "library (%s) used by a %s sub-process (%s) is exiting now",
+					myLT, NUT_STRARG(pn), proctag);
+			} else {
+				upsdebugx(2, "a %s sub-process (%s) is exiting now",
+					NUT_STRARG(pn), proctag);
+			}
 		}
 
 		if (pn)
@@ -4597,12 +4606,13 @@ static void proctag_cleanup(void)
 			free(tn);
 	}
 
-	/* Free the global vars */
+	/* Free some global vars */
 	if (proctag_lib) {
 		free(proctag_lib);
 		proctag_lib = NULL;
 	}
 
+	/* Frees the remaining global vars */
 	setproctag(NULL);
 
 	proctag_cleanup_registered = -1;
