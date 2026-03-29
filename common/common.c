@@ -932,7 +932,7 @@ void chroot_start(const char *path)
 }
 
 /* In forking, assume process name does not change (PID might); cache it */
-static char	*myProcName = NULL;
+static char	*myProcName = NULL, procname_cleanup_registered = 0;
 static const char	*myProcBaseName = NULL;
 
 /* We also keep a buffer with prefixed colon for debug printouts.
@@ -942,8 +942,23 @@ static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 static void proctag_cleanup(void);
 
 static void procname_cleanup(void) {
-	if (proctag_cleanup_registered)
+	char	*myBN, *myPN, *myPT, *myLT, *myPTU;
+
+	if (procname_cleanup_registered < 0)
+		return;	/* already ran */
+
+	myBN = (myProcBaseName ? xstrdup(myProcBaseName) : NULL);
+	myPN = (myProcName ? xstrdup(myProcName) : NULL);
+	myPT = (proctag ? xstrdup(proctag) : NULL);
+	myLT = (proctag_lib ? xstrdup(proctag_lib) : NULL);
+	myPTU = (proctag_for_upsdebug ? xstrdup(proctag_for_upsdebug) : NULL);
+
+	upsdebugx(3, "%s: {%s}: starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+
+	if (proctag_cleanup_registered > 0) {
 		proctag_cleanup();	/* calls getmyprocname() */
+	}
 
 	if (myProcBaseName) {
 		/* points to inside of myProcName */
@@ -953,6 +968,17 @@ static void procname_cleanup(void) {
 		free(myProcName);
 		myProcName = NULL;
 	}
+
+	procname_cleanup_registered = -1;
+
+	upsdebugx(3, "%s: {%s}: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+
+	if (myBN)	free(myBN);
+	if (myPN)	free(myPN);
+	if (myPT)	free(myPT);
+	if (myLT)	free(myLT);
+	if (myPTU)	free(myPTU);
 }
 
 static const char * getmyprocname(void)
@@ -963,7 +989,9 @@ static const char * getmyprocname(void)
 	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
 	if (myProcName) {
 		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
-		atexit(procname_cleanup);
+		if (procname_cleanup_registered < 1)
+			atexit(procname_cleanup);
+		procname_cleanup_registered = 1;
 	}
 
 	return (const char *)myProcName;
@@ -4443,7 +4471,19 @@ void upslogx(int priority, const char *fmt, ...)
 
 static void proctag_cleanup(void)
 {
-	upsdebugx(3, "%s: starting...", __func__);
+	char	*myBN, *myPN, *myPT, *myLT, *myPTU;
+
+	if (proctag_cleanup_registered < 0)
+		return;	/* already ran */
+
+	myBN = (myProcBaseName ? xstrdup(myProcBaseName) : NULL);
+	myPN = (myProcName ? xstrdup(myProcName) : NULL);
+	myPT = (proctag ? xstrdup(proctag) : NULL);
+	myLT = (proctag_lib ? xstrdup(proctag_lib) : NULL);
+	myPTU = (proctag_for_upsdebug ? xstrdup(proctag_for_upsdebug) : NULL);
+
+	upsdebugx(3, "%s:  {%s}: starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
 
 	if (proctag) {
 		char	*pn = xbasename_no_ext(getmyprocbasename());
@@ -4473,6 +4513,17 @@ static void proctag_cleanup(void)
 	}
 
 	setproctag(NULL);
+
+	proctag_cleanup_registered = -1;
+
+	upsdebugx(3, "%s:  {%s}: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+
+	if (myBN)	free(myBN);
+	if (myPN)	free(myPN);
+	if (myPT)	free(myPT);
+	if (myLT)	free(myLT);
+	if (myPTU)	free(myPTU);
 }
 
 /* privately exported for internal libs for their quiet init without
