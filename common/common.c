@@ -1017,13 +1017,15 @@ void chroot_start(const char *path)
 }
 
 /* In forking, assume process name does not change (PID might); cache it */
-static char	*myProcName = NULL, procname_cleanup_registered = 0;
+static char	*myProcName = NULL;
+static int	procname_cleanup_registered = 0;
 static const char	*myProcBaseName = NULL;
 
 /* We also keep a buffer with prefixed colon for debug printouts.
  * Var/method used in procname_cleanup(), implemented further in the file */
 static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
-	*proctag_lib = NULL, proctag_cleanup_registered = 0;
+	*proctag_lib = NULL;
+static int	proctag_cleanup_registered = 0;
 
 static void procname_cleanup(void) {
 	char	*myBN, *myPN, *myPT, *myLT, *myPTU;
