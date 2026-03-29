@@ -50,6 +50,93 @@
 static const char * getmyprocname(void);
 static const char * getmyprocbasename(void);
 
+/* Consistently handle atexit() for internal data of this common library */
+static void nut_free_search_paths(void);
+#if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+static void close_sdbus_once(void);
+#endif
+#ifdef WIN32
+static void win_PREFIX_cleanup(void);
+#endif
+static void cleanup_progname_argv0_default(void);
+static void proctag_cleanup(void);
+static void procname_cleanup(void);
+
+static struct {
+	void (*func)(void);
+	char registered;
+} nut_common_atexit_handlers[] = {
+	/* Listed in order of desired clean-up execution, if activated */
+	{ nut_free_search_paths, 0 },
+#if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+	{ close_sdbus_once, 0 },
+#endif
+#ifdef WIN32
+	{ win_PREFIX_cleanup, 0 },
+#endif
+	{ cleanup_progname_argv0_default, 0 },
+
+	/* These should be last due to debug-trace logging.
+	 * And actually any one of them actually runs (nested). */
+	{ proctag_cleanup, 0 },
+	{ procname_cleanup, 0 },
+
+	/* Sentinel */
+	{ NULL, 0 }
+};
+
+static void nut_common_atexit_cleanup(void)
+{
+	size_t	i;
+	int	iPN = -1, iPT = -1;
+
+	/* Monkey-patch */
+	for (i = 0; nut_common_atexit_handlers[i].func; i++) {
+		if (nut_common_atexit_handlers[i].func == proctag_cleanup) {
+			iPT = i;
+		}
+		if (nut_common_atexit_handlers[i].func == procname_cleanup) {
+			iPN = i;
+		}
+	}
+
+	if (iPN >= 0 && iPT >= 0) {
+		if (nut_common_atexit_handlers[iPN].registered
+		 && nut_common_atexit_handlers[iPT].registered
+		) {
+			/* Only call procname_cleanup(), and it calls
+			 * proctag_cleanup() at the right moment for
+			 * sensible logging */
+			nut_common_atexit_handlers[iPT].registered = 0;
+		}
+	}
+
+	for (i = 0; nut_common_atexit_handlers[i].func; i++) {
+		if (nut_common_atexit_handlers[i].registered) {
+			(*(nut_common_atexit_handlers[i].func))();
+			nut_common_atexit_handlers[i].registered = 0;
+		}
+	}
+}
+
+static void nut_common_atexit(void (*func)(void))
+{
+	static char	registered = 0;
+	size_t	i;
+
+	for (i = 0; nut_common_atexit_handlers[i].func; i++) {
+		if (nut_common_atexit_handlers[i].func == func) {
+			nut_common_atexit_handlers[i].registered = 1;
+			break;
+		}
+	}
+
+	if (!registered) {
+		atexit(nut_common_atexit_cleanup);
+		registered = 1;
+	}
+}
+
 #if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
 #  ifdef HAVE_SYSTEMD_SD_BUS_H
 #   include <systemd/sd-bus.h>
@@ -137,8 +224,8 @@ static int open_sdbus_once(const char *caller) {
 
 	if (systemd_bus && !openedOnce) {
 		openedOnce = 1;
-		atexit(close_sdbus_once);
-		upsdebugx(5, "%s: registered atexit(close_sdbus_once)", __func__);
+		nut_common_atexit(close_sdbus_once);
+		upsdebugx(5, "%s: registered nut_common_atexit(close_sdbus_once)", __func__);
 	}
 
 	if (systemd_bus) {
@@ -940,7 +1027,6 @@ static const char	*myProcBaseName = NULL;
  * Var/method used in procname_cleanup(), implemented further in the file */
 static char	*proctag = NULL, *proctag_for_upsdebug = NULL,
 	*proctag_lib = NULL, proctag_cleanup_registered = 0;
-static void proctag_cleanup(void);
 
 static void procname_cleanup(void) {
 	char	*myBN, *myPN, *myPT, *myLT, *myPTU;
@@ -991,8 +1077,8 @@ static const char * getmyprocname(void)
 	if (myProcName) {
 		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
 		if (procname_cleanup_registered < 1) {
-			atexit(procname_cleanup);
-			upsdebugx(5, "%s: registered atexit(procname_cleanup)", __func__);
+			nut_common_atexit(procname_cleanup);
+			upsdebugx(5, "%s: registered nut_common_atexit(procname_cleanup)", __func__);
 		}
 		procname_cleanup_registered = 1;
 	}
@@ -1938,8 +2024,8 @@ char * getfullpath(char * relative_path)
 
 				if (win_PREFIX == NULL) {
 					win_PREFIX = xstrdup(PREFIX);
-					atexit(win_PREFIX_cleanup);
-					upsdebugx(5, "%s: registered atexit(win_PREFIX_cleanup)", __func__);
+					nut_common_atexit(win_PREFIX_cleanup);
+					upsdebugx(5, "%s: registered nut_common_atexit(win_PREFIX_cleanup)", __func__);
 					last_slash = win_PREFIX;
 					while ( (last_slash = strchr(last_slash, '/')) ) {
 						*last_slash = '\\';
@@ -2809,9 +2895,9 @@ static const char *reset_progname_argv0_default(char *arg) {
 
 	if (!atexit_hooked) {
 		/* First time here */
-		atexit(cleanup_progname_argv0_default);
+		nut_common_atexit(cleanup_progname_argv0_default);
 		atexit_hooked = 1;
-		upsdebugx(5, "%s: registered atexit(cleanup_progname_argv0_default)", __func__);
+		upsdebugx(5, "%s: registered nut_common_atexit(cleanup_progname_argv0_default)", __func__);
 	}
 
 	cleanup_progname_argv0_default();
@@ -4541,9 +4627,9 @@ const char *setproctag_lib_once(const char *val) {
 		snprintf(proctag_lib, proctag_lib_buflen, ":%s", val);
 
 		if (proctag_cleanup_registered < 1) {
-			atexit(proctag_cleanup);
+			nut_common_atexit(proctag_cleanup);
 			proctag_cleanup_registered = 1;
-			/* NOISY? // upsdebugx(8, "%s: registered atexit(proctag_cleanup)", __func__); */
+			/* NOISY? // upsdebugx(8, "%s: registered nut_common_atexit(proctag_cleanup)", __func__); */
 		}
 	}
 
@@ -4569,8 +4655,8 @@ void setproctag(const char *tag)
 		getmyprocname();
 
 		if (proctag_cleanup_registered < 1) {
-			atexit(proctag_cleanup);
-			upsdebugx(5, "%s: registered atexit(proctag_cleanup)", __func__);
+			nut_common_atexit(proctag_cleanup);
+			upsdebugx(5, "%s: registered nut_common_atexit(proctag_cleanup)", __func__);
 		}
 		proctag_cleanup_registered = 2;
 	}
@@ -5348,9 +5434,9 @@ void nut_prepare_search_paths(void) {
 	search_paths = filtered_search_paths;
 
 	if (!atexit_hooked) {
-		atexit(nut_free_search_paths);
+		nut_common_atexit(nut_free_search_paths);
 		atexit_hooked = 1;
-		upsdebugx(5, "%s: registered atexit(nut_free_search_paths)", __func__);
+		upsdebugx(5, "%s: registered nut_common_atexit(nut_free_search_paths)", __func__);
 	}
 }
 
