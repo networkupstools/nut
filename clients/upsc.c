@@ -385,9 +385,7 @@ static void clean_exit(void)
 	free(hostname);
 	free(ups);
 
-	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
 	upsdebugx(1, "%s: finished, exiting", __func__);
-	setproctag(NULL);
 }
 
 int main(int argc, char **argv)
@@ -520,15 +518,13 @@ int main(int argc, char **argv)
 	if (varlist) {
 		upsdebugx(1, "Calling list_upses()");
 		list_upses(verbose);
-		exit(EXIT_SUCCESS);
 	}
-
+	else
 	if (clientlist) {
 		upsdebugx(1, "Calling list_clients()");
 		list_clients(upsname);
-		exit(EXIT_SUCCESS);
 	}
-
+	else
 	if (argc > 1) {
 		upsdebugx(1, "Calling printvar(%s)", argv[1]);
 		printvar(argv[1]);
@@ -537,6 +533,8 @@ int main(int argc, char **argv)
 		list_vars();
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 
