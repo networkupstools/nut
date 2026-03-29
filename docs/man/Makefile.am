@@ -709,6 +709,7 @@ $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 UPSCLI_SET_DEBUG_LEVEL_DEPS = \
 	upscli_get_debug_level.$(MAN_SECTION_API) \
 	upscli_upslog_start_sync.$(MAN_SECTION_API) \
+	upscli_setprocname.$(MAN_SECTION_API) \
 	upscli_getproctag.$(MAN_SECTION_API) \
 	upscli_setproctag.$(MAN_SECTION_API)
 
@@ -817,6 +818,7 @@ nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to
 NUTSCAN_SET_DEBUG_LEVEL_DEPS = \
 	nutscan_get_debug_level.$(MAN_SECTION_API) \
 	nutscan_upslog_start_sync.$(MAN_SECTION_API) \
+	nutscan_setprocname.$(MAN_SECTION_API) \
 	nutscan_getproctag.$(MAN_SECTION_API) \
 	nutscan_setproctag.$(MAN_SECTION_API)
 

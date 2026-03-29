@@ -5,7 +5,7 @@ NAME
 ----
 
 nutscan_set_debug_level, nutscan_get_debug_level,
-nutscan_setproctag, nutscan_getproctag,
+nutscan_setprocname, nutscan_setproctag, nutscan_getproctag,
 nutscan_upslog_start_sync - manipulate
 debugging level and sub-process tags for NUT common
 code in the nutscan library;
@@ -20,6 +20,7 @@ SYNOPSIS
 	void nutscan_set_debug_level(int level);
 	int  nutscan_get_debug_level(void);
 
+	void nutscan_setprocname(const char *full_procname);
 	void nutscan_setproctag(const char *tag);
 	const char *nutscan_getproctag(void);
 

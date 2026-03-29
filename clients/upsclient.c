@@ -2287,6 +2287,15 @@ int  upscli_get_debug_level(void)
 	return nut_debug_level;
 }
 
+/* Avoid re-querying /proc or equivalent and logging about it,
+ * if the caller is a NUT program that already knows its name:
+ * see getmyprocname() in NUT common library */
+void upscli_setprocname(const char *pn)
+{
+	setproctag_lib_once("libupsclient");
+	setmyprocname(pn);
+}
+
 void upscli_setproctag(const char *tag)
 {
 	setproctag_lib_once("libupsclient");

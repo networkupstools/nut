@@ -47,6 +47,7 @@ void nutscan_free(void);
 void nutscan_set_debug_level(int level);
 int  nutscan_get_debug_level(void);
 
+void nutscan_setprocname(const char *pn);
 void nutscan_setproctag(const char *tag);
 const char *nutscan_getproctag(void);
 

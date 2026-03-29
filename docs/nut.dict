@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3707 utf-8
+personal_ws-1.1 en 3709 utf-8
 AAC
 AAS
 ABI
@@ -2983,6 +2983,7 @@ prjconf
 problemMatcher
 probu
 proc
+procname
 productid
 prog
 progname
@@ -3171,6 +3172,7 @@ setfsd
 setgid
 setinfo
 setpci
+setprocname
 setproctag
 setq
 setuid

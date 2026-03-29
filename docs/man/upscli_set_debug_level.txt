@@ -5,7 +5,7 @@ NAME
 ----
 
 upscli_set_debug_level, upscli_get_debug_level,
-upscli_setproctag, upscli_getproctag,
+upscli_setprocname, upscli_setproctag, upscli_getproctag,
 upscli_upslog_start_sync - manipulate
 the possibly separate copies of the `nut_debug_level`
 and sub-process tag variables in the `libupsclient` build
@@ -19,6 +19,7 @@ SYNOPSIS
 	void upscli_set_debug_level(int);
 	int  upscli_get_debug_level(void);
 
+	void upscli_setprocname(const char *full_procname);
 	void upscli_setproctag(const char *tag);
 	const char *upscli_getproctag(void);
 

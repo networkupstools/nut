@@ -110,6 +110,7 @@ void upscli_set_debug_level(int lvl);
 int  upscli_get_debug_level(void);
 
 /* Similarly for sub-process tags that help with troubleshooting */
+void upscli_setprocname(const char *pn);
 void upscli_setproctag(const char *tag);
 const char *upscli_getproctag(void);
 

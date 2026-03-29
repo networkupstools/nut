@@ -298,6 +298,15 @@ const char *getproctag(void);
  */
 void setproctag(const char *tag);
 
+/* These are exported for internal use between NUT libraries (common, libupsclient,
+ * libnutscan...) and not intended for arbitrary consumers */
+/* Gets caller-allocated string which this method frees if not NULL (in atexit()),
+ * typically returned by getmyprocname() */
+void setmyprocname(const char *s);
+/* Returns NULL or a string from getprocname(myPid) that the caller should free() */
+const char *getmyprocname(void);
+const char *getmyprocbasename(void);
+
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name);
 

@@ -54,6 +54,7 @@ static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 static int (*nut_upscli_ssl_caps)(void);
 static int (*nut_upscli_set_debug_level)(int);
 static void (*nut_upscli_setproctag)(const char *tag);
+static void (*nut_upscli_setprocname)(const char *tag);
 static struct timeval *(*nut_upscli_upslog_start_sync)(struct timeval *tv);
 static void (*nut_upscli_report_build_details)(void);
 
@@ -93,6 +94,14 @@ void nutscan_upscli_set_debug_level(int level)
 {
 	if (nutscan_avail_nut && dl_handle && nut_upscli_set_debug_level) {
 		(*nut_upscli_set_debug_level)(level);
+	}
+}
+
+void nutscan_upscli_setprocname(const char *pn);
+void nutscan_upscli_setprocname(const char *pn)
+{
+	if (nutscan_avail_nut && dl_handle && nut_upscli_setprocname) {
+		(*nut_upscli_setprocname)(pn);
 	}
 }
 
@@ -198,6 +207,17 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	} else {
 		/* Propagate value currently known in libnutscan into libupsclient */
 		(*nut_upscli_upslog_start_sync)(upslog_start_sync(NULL));
+	}
+
+	*(void **) (&nut_upscli_setprocname) = lt_dlsym(dl_handle,
+		symbol = "upscli_setprocname");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_setprocname = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	} else {
+		/* Propagate value currently known in libnutscan into libupsclient */
+		(*nut_upscli_setprocname)(xstrdup(getmyprocname()));
 	}
 
 	*(void **) (&nut_upscli_setproctag) = lt_dlsym(dl_handle,

@@ -47,9 +47,6 @@
 # include <sys/stat.h>
 #endif
 
-static const char * getmyprocname(void);
-static const char * getmyprocbasename(void);
-
 /* Consistently handle atexit() for internal data of this common library */
 static void nut_free_search_paths(void);
 #if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
@@ -1073,12 +1070,18 @@ static void procname_cleanup(void) {
 	if (myPTU)	free(myPTU);
 }
 
-static const char * getmyprocname(void)
+/* Exported for internal use between NUT libraries
+ * Gets caller-allocated string which this method frees if not NULL (in atexit())
+ */
+void setmyprocname(const char *s)
 {
-	if (myProcName)
-		return (const char *)myProcName;
+	if (s) {
+		if (myProcName)
+			free(myProcName);
+		/* NOTE: Reference (to free() later), not copy! */
+		myProcName = (char *)s;
+	}
 
-	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
 	if (myProcName) {
 		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
 		if (procname_cleanup_registered < 1) {
@@ -1087,11 +1090,19 @@ static const char * getmyprocname(void)
 		}
 		procname_cleanup_registered = 1;
 	}
+}
+
+const char * getmyprocname(void)
+{
+	if (myProcName)
+		return (const char *)myProcName;
+
+	setmyprocname(getprocname(getpid()));	/* no xstrdup, we own that return value and free this memory later */
 
 	return (const char *)myProcName;
 }
 
-static const char * getmyprocbasename(void)
+const char * getmyprocbasename(void)
 {
 	getmyprocname();
 	return myProcBaseName;

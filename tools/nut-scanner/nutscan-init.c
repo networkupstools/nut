@@ -74,6 +74,7 @@ int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
 void nutscan_upscli_set_debug_level(int level);
+void nutscan_upscli_setprocname(const char *pn);
 void nutscan_upscli_setproctag(const char *tag);
 struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
 int nutscan_load_upower_library(const char *libname_path);
@@ -165,6 +166,17 @@ void nutscan_set_debug_level(int level) {
 int  nutscan_get_debug_level(void)
 {
 	return nut_debug_level;
+}
+
+/* Avoid re-querying /proc or equivalent and logging about it,
+ * if the caller is a NUT program that already knows its name:
+ * see getmyprocname() in NUT common library */
+void nutscan_setprocname(const char *pn)
+{
+	setproctag_lib_once("libnutscan");
+	setmyprocname(pn);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setprocname(pn);
 }
 
 void nutscan_setproctag(const char *tag)
