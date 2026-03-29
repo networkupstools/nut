@@ -138,6 +138,7 @@ static int open_sdbus_once(const char *caller) {
 	if (systemd_bus && !openedOnce) {
 		openedOnce = 1;
 		atexit(close_sdbus_once);
+		upsdebugx(5, "%s: registered atexit(close_sdbus_once)", __func__);
 	}
 
 	if (systemd_bus) {
@@ -989,8 +990,10 @@ static const char * getmyprocname(void)
 	myProcName = getprocname(getpid());	/* no xstrdup, we own and free this later */
 	if (myProcName) {
 		myProcBaseName = xbasename(myProcName);	/* substring inside myProcName */
-		if (procname_cleanup_registered < 1)
+		if (procname_cleanup_registered < 1) {
 			atexit(procname_cleanup);
+			upsdebugx(5, "%s: registered atexit(procname_cleanup)", __func__);
+		}
 		procname_cleanup_registered = 1;
 	}
 
@@ -1936,6 +1939,7 @@ char * getfullpath(char * relative_path)
 				if (win_PREFIX == NULL) {
 					win_PREFIX = xstrdup(PREFIX);
 					atexit(win_PREFIX_cleanup);
+					upsdebugx(5, "%s: registered atexit(win_PREFIX_cleanup)", __func__);
 					last_slash = win_PREFIX;
 					while ( (last_slash = strchr(last_slash, '/')) ) {
 						*last_slash = '\\';
@@ -2807,6 +2811,7 @@ static const char *reset_progname_argv0_default(char *arg) {
 		/* First time here */
 		atexit(cleanup_progname_argv0_default);
 		atexit_hooked = 1;
+		upsdebugx(5, "%s: registered atexit(cleanup_progname_argv0_default)", __func__);
 	}
 
 	cleanup_progname_argv0_default();
@@ -4538,6 +4543,7 @@ const char *setproctag_lib_once(const char *val) {
 		if (proctag_cleanup_registered < 1) {
 			atexit(proctag_cleanup);
 			proctag_cleanup_registered = 1;
+			/* NOISY? // upsdebugx(8, "%s: registered atexit(proctag_cleanup)", __func__); */
 		}
 	}
 
@@ -4562,8 +4568,10 @@ void setproctag(const char *tag)
 		upsdebugx(3, "%s: starting first tagging as '%s'...", __func__, NUT_STRARG(tag));
 		getmyprocname();
 
-		if (proctag_cleanup_registered < 1)
+		if (proctag_cleanup_registered < 1) {
 			atexit(proctag_cleanup);
+			upsdebugx(5, "%s: registered atexit(proctag_cleanup)", __func__);
+		}
 		proctag_cleanup_registered = 2;
 	}
 
@@ -5342,6 +5350,7 @@ void nut_prepare_search_paths(void) {
 	if (!atexit_hooked) {
 		atexit(nut_free_search_paths);
 		atexit_hooked = 1;
+		upsdebugx(5, "%s: registered atexit(nut_free_search_paths)", __func__);
 	}
 }
 
