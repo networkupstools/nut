@@ -204,6 +204,8 @@ void nutscan_init(void)
 	}
 #endif	/* WIN32 */
 
+	upsdebugx(1, "%s: starting...", __func__);
+
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
 
@@ -734,6 +736,8 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
+
+	upsdebugx(1, "%s: done", __func__);
 }
 
 /* Return 0 on success, -1 on error e.g. "was not loaded";
@@ -790,6 +794,8 @@ end:
 
 void nutscan_free(void)
 {
+	upsdebugx(1, "%s: starting...", __func__);
+
 	nutscan_unload_usb_library();
 	nutscan_unload_snmp_library();
 	nutscan_unload_neon_library();
@@ -815,4 +821,5 @@ void nutscan_free(void)
 # endif
 #endif
 
+	upsdebugx(1, "%s: done", __func__);
 }
