@@ -33,6 +33,10 @@
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_setproctag(x); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 

@@ -43,6 +43,10 @@
 # include <stdarg.h>
 #endif
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_setproctag(x); } while(0)
+
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
 static	char	*powerdownflag = NULL, *configfile = NULL;
 
