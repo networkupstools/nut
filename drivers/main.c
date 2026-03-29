@@ -2273,6 +2273,7 @@ int main(int argc, char **argv)
 	 * or an allocated string auto-cleaned by the NUT common
 	 * library; either way, this program does not free() it: */
 	prognames[0] = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutdrv");
+	setproctag(prognames[0]);
 
 	upsdrv_callbacks.upsdrv_tweak_prognames();
 
