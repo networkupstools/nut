@@ -4034,6 +4034,8 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #ifdef HAVE_VA_COPY_VARIANT
 		va_list	va_snprintf;
 
+		errno = 0;
+
 		/* va_copy() to avoid mangling on re-use (see issue #2948),
 		 * this lets us retry safely vsnprintf() with the VA copies */
 		va_copy(va_snprintf, va);
@@ -4044,6 +4046,22 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		 * and will accept truncation if the buffer is too small */
 		ret = vsnprintf(buf, bufsize, fmt, va);
 #endif
+
+		/* NOTE: we may have ret<0 due to other errors, e.g. format
+		 * string errors/typos leading to log reports like:
+		 *   84 => Invalid or incomplete multibyte or wide character
+		 * but implementations of *printf() methods are not required
+		 * to say why they failed (e.g. set a specific errno); some
+		 * may do so though. */
+		if (ret < 0 && errno == EILSEQ) {
+			if (nut_debug_level > 0) {
+				fprintf(stderr, "[D0] WARNING: vupslog: "
+					"vsnprintf could not handle the "
+					"inputs: %d (%d => %s)\n",
+					ret, errno, strerror(errno));
+			}
+			break;
+		}
 
 		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
 			/* Not building the below block on systems without va_copy(),
