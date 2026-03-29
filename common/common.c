@@ -1040,8 +1040,8 @@ static void procname_cleanup(void) {
 	myLT = (proctag_lib ? xstrdup(proctag_lib) : NULL);
 	myPTU = (proctag_for_upsdebug ? xstrdup(proctag_for_upsdebug) : NULL);
 
-	upsdebugx(3, "%s: {%s}: starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
-		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	upsdebugx(3, "%s: starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
 
 	if (proctag_cleanup_registered > 0) {
 		proctag_cleanup();	/* calls getmyprocname() */
@@ -1058,8 +1058,13 @@ static void procname_cleanup(void) {
 
 	procname_cleanup_registered = -1;
 
-	upsdebugx(3, "%s: {%s}: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
-		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	if (myPTU || myLT) {
+		upsdebugx(3, "{%s}: %s: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+			myPTU ? myPTU : myLT, __func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	} else {
+		upsdebugx(3, "%s: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+			__func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	}
 
 	if (myBN)	free(myBN);
 	if (myPN)	free(myPN);
@@ -4573,8 +4578,8 @@ static void proctag_cleanup(void)
 	myLT = (proctag_lib ? xstrdup(proctag_lib) : NULL);
 	myPTU = (proctag_for_upsdebug ? xstrdup(proctag_for_upsdebug) : NULL);
 
-	upsdebugx(3, "%s:  {%s}: starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
-		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	upsdebugx(3, "%s:  starting for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+		__func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
 
 	if (proctag) {
 		char	*pn = xbasename_no_ext(getmyprocbasename());
@@ -4617,8 +4622,13 @@ static void proctag_cleanup(void)
 
 	proctag_cleanup_registered = -1;
 
-	upsdebugx(3, "%s:  {%s}: finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
-		__func__, NUT_STRARG(myPTU), NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	if (myPTU || myLT) {
+		upsdebugx(3, "{%s}: %s:  finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+			myPTU ? myPTU : myLT, __func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	} else {
+		upsdebugx(3, "%s:  finished for: myProcName=[%s] myProcBaseName=[%s] proctag=[%s] proctag_lib=[%s]",
+			__func__, NUT_STRARG(myPN), NUT_STRARG(myBN), NUT_STRARG(myPT), NUT_STRARG(myLT));
+	}
 
 	if (myBN)	free(myBN);
 	if (myPN)	free(myPN);
