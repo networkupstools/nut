@@ -45,7 +45,7 @@
 
 /* name-swap in libupsclient consumer to simplify the look of code base */
 #define builtin_setproctag(x)	setproctag(x)
-#define setproctag(x)	do { builtin_setproctag(x); upscli_setproctag(x); } while(0)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
 
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
 static	char	*powerdownflag = NULL, *configfile = NULL;
@@ -2674,7 +2674,7 @@ static void loadconfig(void)
 					nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 		if (pollfail_log_throttle_max >= 0) {
 			upslogx(LOG_INFO,
@@ -3415,14 +3415,14 @@ static void help(const char *arg_progname)
 		nut_debug_level = -2;
 		nut_debug_level_args = -2;
 		nut_debug_level_global = -2;
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 		loadconfig();
 
 		nut_debug_level = old_debug_level;
 		nut_debug_level_args = old_debug_level_args;
 		nut_debug_level_global = old_debug_level_global;
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 		/* Separate from logs emitted by loadconfig() */
 		/* printf("\n"); */
@@ -3796,7 +3796,7 @@ int main(int argc, char *argv[])
 	 * be spread in different NUT common libs) start on the
 	 * same note; execute this call before everything else,
 	 * at the cost of a temporary otherwise useless variable. */
-	const struct timeval    *upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL));
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsmon");
 	const char	*net_connect_timeout = NULL;
 	int	opt_ret = 0, cmdret = -1, checking_flag = 0, foreground = -1;
@@ -3815,7 +3815,7 @@ int main(int argc, char *argv[])
 #endif	/* WIN32 */
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
-	upscli_setprocname(xstrdup(getmyprocname()));
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
 
 	print_banner_once(prog, 0);
 
@@ -3852,7 +3852,7 @@ int main(int argc, char *argv[])
 			case 'D':
 				nut_debug_level++;
 				nut_debug_level_args++;
-				upscli_set_debug_level(nut_debug_level);
+				upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 				break;
 			case 'F':
 				foreground = 1;
@@ -3921,7 +3921,7 @@ int main(int argc, char *argv[])
 				nut_debug_level_args = l;
 			}	/* else follow -D settings */
 		}	/* else nothing to bother about */
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	}
 
 	if (cmd) {
@@ -4073,7 +4073,7 @@ int main(int argc, char *argv[])
 		 * from loadconfig() for just checking the killpower flag */
 		if (nut_debug_level == 0) {
 			nut_debug_level = -2;
-			upscli_set_debug_level(nut_debug_level);
+			upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 		}
 	}
 
@@ -4085,7 +4085,7 @@ int main(int argc, char *argv[])
 	 */
 	if (nut_debug_level_global > nut_debug_level) {
 		nut_debug_level = nut_debug_level_global;
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 

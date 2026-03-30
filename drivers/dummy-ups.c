@@ -120,7 +120,7 @@ void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	switch (mode)
 	{
@@ -268,7 +268,7 @@ void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	sleep(1);
 
@@ -419,7 +419,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_help(void)
 {
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	upscli_report_build_details();
 }
 
@@ -428,13 +428,13 @@ void upsdrv_tweak_prognames(void)
 {
 	/* Here we actually tweak libupsclient logging more,
 	 * relying on this method being called early in main.c */
-	upscli_upslog_start_sync(upslog_start_sync(NULL));
-	upscli_set_debug_level(nut_debug_level);
-	upscli_setprocname(xstrdup(getmyprocname()));
+	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
 	/* FIXME: All other calls to setproctag() in main.c would currently
 	 * be invisible to upscli_*() as that object file has no idea about
 	 * the library in this one driver... should we introduce a callback? */
-	upscli_setproctag(xstrdup(getproctag()));
+	upscli_upslog_setproctag(xstrdup(getproctag()), nut_common_cookie());
 }
 
 void upsdrv_makevartable(void)
@@ -447,7 +447,7 @@ void upsdrv_initups(void)
 {
 	const char *val;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {

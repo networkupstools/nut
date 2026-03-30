@@ -140,7 +140,9 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Added support for command-line debugging with `-D` option into `upsc`,
      `upscmd` and `upsrw` command-line clients, and the `nutconf` tool.
      Revised handling of `-D` and/or `NUT_DEBUG_LEVEL` environment variable
-     in other programs. [#3378]
+     in other programs. Extended public API of libupsclient and libnutscan
+     to diligently arrange debug-logging when at run-time those libraries
+     actually have different copies of the methods and data involved. [#3378]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files

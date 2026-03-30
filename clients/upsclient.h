@@ -104,15 +104,20 @@ const char *upscli_strerror(UPSCONN_t *ups);
  * programs using both libraries as dynamically-linked shared code,
  * the nut_debug_level setting is backed by independent variables in
  * active memory, and upsdebugx() calls suffer if the library's copy
- * is never changed from zero.
+ * is never changed from zero. It can get even more confusing with
+ * libnutprivate-common being a shared dynamically loaded library
+ * instance behind both the program and libupsclient, hence the cookies:
+ * direct NUT-common consumers like NUT in-tree clients can use their
+ * nut_common_cookie() to pass into methods here.
  */
-void upscli_set_debug_level(int lvl);
-int  upscli_get_debug_level(void);
+const void *upscli_upslog_cookie(void);
+void upscli_upslog_set_debug_level(int lvl, const void *cookie);
+int  upscli_upslog_get_debug_level(void);
 
 /* Similarly for sub-process tags that help with troubleshooting */
-void upscli_setprocname(const char *pn);
-void upscli_setproctag(const char *tag);
-const char *upscli_getproctag(void);
+void upscli_upslog_setprocname(const char *pn, const void *cookie);
+void upscli_upslog_setproctag(const char *tag, const void *cookie);
+const char *upscli_upslog_getproctag(void);
 
 /* The NUT common library code is included in several other
  * libraries, often with their private copies of variables,
@@ -125,7 +130,7 @@ const char *upscli_getproctag(void);
  * NOTE: In WIN32 builds also enforces line-buffering for
  * stdout and stderr streams.
  */
-struct timeval *upscli_upslog_start_sync(struct timeval *tv);
+struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 
 /* NOTE: effectively only runs once; re-runs quickly skip out */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);

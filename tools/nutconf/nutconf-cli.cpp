@@ -721,8 +721,8 @@ class NutScanner {
 		/** Initialization */
 		InitFinal() {
 			/* Register atexit() cleanups to scope around libnutscan lifetime */
-			nutscan_upslog_start_sync(upslog_start_sync(nullptr));
-			nutscan_setprocname(xstrdup(getmyprocname()));
+			nutscan_upslog_start_sync(upslog_start_sync(nullptr), nut_common_cookie());
+			nutscan_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
 			nutscan_init();
 		}
 
@@ -3161,8 +3161,8 @@ static int mainx(int argc, char * const argv[]) {
 	 * initial timestamp, for the eventuality that debugs would be printed:
 	 */
 #if (defined WITH_NUTSCANNER)
-	nutscan_set_debug_level(nut_debug_level);
-	nutscan_setproctag(prog);
+	nutscan_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	nutscan_upslog_setproctag(prog, nut_common_cookie());
 #endif
 	setproctag(prog);
 	upsdebugx(1, "Starting NUT configuration tool: %s", prog);
@@ -3329,7 +3329,7 @@ static int mainx(int argc, char * const argv[]) {
 		scanSerialDevices(options);
 	}
 
-	nutscan_setproctag(prog);
+	nutscan_upslog_setproctag(prog, nut_common_cookie());
 #endif  // defined WITH_NUTSCANNER
 
 	upsdebugx(1, "Finishing NUT configuration tool: %s", prog);

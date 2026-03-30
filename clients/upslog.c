@@ -45,7 +45,7 @@
 
 /* name-swap in libupsclient consumer to simplify the look of code base */
 #define builtin_setproctag(x)	setproctag(x)
-#define setproctag(x)	do { builtin_setproctag(x); upscli_setproctag(x); } while(0)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
 
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
 	 * be spread in different NUT common libs) start on the
 	 * same note; execute this call before everything else,
 	 * at the cost of a temporary otherwise useless variable. */
-	const struct timeval    *upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL));
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upslog");
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 	user = RUN_AS_USER;
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
-	upscli_setprocname(xstrdup(getmyprocname()));
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
 
 	/* NOTE: Debugging the client is primarily of use to developers, so
 	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
@@ -568,7 +568,7 @@ int main(int argc, char **argv)
 	/* These lines aim to just initialize the logging subsystem, and set
 	 * initial timestamp, for the eventuality that debugs would be printed:
 	 */
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	setproctag(prog);
 	print_banner_once(prog, 0);
 

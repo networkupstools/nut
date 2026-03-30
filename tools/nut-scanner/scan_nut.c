@@ -52,10 +52,10 @@ static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
 			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 static int (*nut_upscli_ssl_caps)(void);
-static int (*nut_upscli_set_debug_level)(int);
-static void (*nut_upscli_setproctag)(const char *tag);
-static void (*nut_upscli_setprocname)(const char *tag);
-static struct timeval *(*nut_upscli_upslog_start_sync)(struct timeval *tv);
+static int (*nut_upscli_upslog_set_debug_level)(int level, const void *cookie);
+static void (*nut_upscli_upslog_setproctag)(const char *tag, const void *cookie);
+static void (*nut_upscli_upslog_setprocname)(const char *tag, const void *cookie);
+static struct timeval *(*nut_upscli_upslog_start_sync)(struct timeval *tv, const void *cookie);
 static void (*nut_upscli_report_build_details)(void);
 
 /* This variable collects device(s) from a sequential or parallel scan,
@@ -89,35 +89,35 @@ int nutscan_unload_upsclient_library(void)
 }
 
 /* Visible externally */
-void nutscan_upscli_set_debug_level(int level);
-void nutscan_upscli_set_debug_level(int level)
+void nutscan_upscli_set_debug_level(int level, const void *cookie);
+void nutscan_upscli_set_debug_level(int level, const void *cookie)
 {
-	if (nutscan_avail_nut && dl_handle && nut_upscli_set_debug_level) {
-		(*nut_upscli_set_debug_level)(level);
+	if (nutscan_avail_nut && dl_handle && nut_upscli_upslog_set_debug_level) {
+		(*nut_upscli_upslog_set_debug_level)(level, cookie);
 	}
 }
 
-void nutscan_upscli_setprocname(const char *pn);
-void nutscan_upscli_setprocname(const char *pn)
+void nutscan_upscli_setprocname(const char *pn, const void *cookie);
+void nutscan_upscli_setprocname(const char *pn, const void *cookie)
 {
-	if (nutscan_avail_nut && dl_handle && nut_upscli_setprocname) {
-		(*nut_upscli_setprocname)(pn);
+	if (nutscan_avail_nut && dl_handle && nut_upscli_upslog_setprocname) {
+		(*nut_upscli_upslog_setprocname)(pn, cookie);
 	}
 }
 
-void nutscan_upscli_setproctag(const char *tag);
-void nutscan_upscli_setproctag(const char *tag)
+void nutscan_upscli_setproctag(const char *tag, const void *cookie);
+void nutscan_upscli_setproctag(const char *tag, const void *cookie)
 {
-	if (nutscan_avail_nut && dl_handle && nut_upscli_setproctag) {
-		(*nut_upscli_setproctag)(tag);
+	if (nutscan_avail_nut && dl_handle && nut_upscli_upslog_setproctag) {
+		(*nut_upscli_upslog_setproctag)(tag, cookie);
 	}
 }
 
-struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv);
-struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv)
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
 {
 	if (nutscan_avail_nut && dl_handle && nut_upscli_upslog_start_sync) {
-		return (*nut_upscli_upslog_start_sync)(tv);
+		return (*nut_upscli_upslog_start_sync)(tv, cookie);
 	}
 
 	/* So far return the nutscan library's copy */
@@ -206,40 +206,44 @@ int nutscan_load_upsclient_library(const char *libname_path)
 			__func__, symbol);
 	} else {
 		/* Propagate value currently known in libnutscan into libupsclient */
-		(*nut_upscli_upslog_start_sync)(upslog_start_sync(NULL));
+		upsdebugx(1, "%s: initializing %s() from libnutscan data", __func__, symbol);
+		(*nut_upscli_upslog_start_sync)(upslog_start_sync(NULL), nut_common_cookie());
 	}
 
-	*(void **) (&nut_upscli_setprocname) = lt_dlsym(dl_handle,
-		symbol = "upscli_setprocname");
+	*(void **) (&nut_upscli_upslog_set_debug_level) = lt_dlsym(dl_handle,
+		symbol = "upscli_upslog_set_debug_level");
 	if ((dl_error = lt_dlerror()) != NULL) {
-		nut_upscli_setprocname = NULL;
+		nut_upscli_upslog_set_debug_level = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	} else {
 		/* Propagate value currently known in libnutscan into libupsclient */
-		(*nut_upscli_setprocname)(xstrdup(getmyprocname()));
+		upsdebugx(1, "%s: initializing %s() from libnutscan data (%d)", __func__, symbol, nut_debug_level);
+		(*nut_upscli_upslog_set_debug_level)(nut_debug_level, nut_common_cookie());
 	}
 
-	*(void **) (&nut_upscli_setproctag) = lt_dlsym(dl_handle,
-		symbol = "upscli_setproctag");
+	*(void **) (&nut_upscli_upslog_setprocname) = lt_dlsym(dl_handle,
+		symbol = "upscli_upslog_setprocname");
 	if ((dl_error = lt_dlerror()) != NULL) {
-		nut_upscli_setproctag = NULL;
+		nut_upscli_upslog_setprocname = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	} else {
 		/* Propagate value currently known in libnutscan into libupsclient */
-		(*nut_upscli_setproctag)(getproctag());
+		upsdebugx(1, "%s: initializing %s() from libnutscan data (%s)", __func__, symbol, getmyprocname());
+		(*nut_upscli_upslog_setprocname)(xstrdup(getmyprocname()), nut_common_cookie());
 	}
 
-	*(void **) (&nut_upscli_set_debug_level) = lt_dlsym(dl_handle,
-		symbol = "upscli_set_debug_level");
+	*(void **) (&nut_upscli_upslog_setproctag) = lt_dlsym(dl_handle,
+		symbol = "upscli_upslog_setproctag");
 	if ((dl_error = lt_dlerror()) != NULL) {
-		nut_upscli_set_debug_level = NULL;
+		nut_upscli_upslog_setproctag = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	} else {
 		/* Propagate value currently known in libnutscan into libupsclient */
-		(*nut_upscli_set_debug_level)(nut_debug_level);
+		upsdebugx(1, "%s: initializing %s() from libnutscan data (%s)", __func__, symbol, getproctag());
+		(*nut_upscli_upslog_setproctag)(getproctag(), nut_common_cookie());
 	}
 
 	*(void **) (&nut_upscli_report_build_details) = lt_dlsym(dl_handle,

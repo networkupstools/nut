@@ -298,8 +298,15 @@ const char *getproctag(void);
  */
 void setproctag(const char *tag);
 
-/* These are exported for internal use between NUT libraries (common, libupsclient,
- * libnutscan...) and not intended for arbitrary consumers */
+/* These are exported for internal use between NUT libraries (common,
+ * libupsclient, libnutscan...) and not intended for arbitrary consumers,
+ * except maybe those that have a chance to be linked with both common
+ * and some of the other libraries, with or without libnutprivate-common
+ * as a single dynamically loaded object behind them. To make sense of
+ * it, every instance has a cookie so they can compare notes; it can be
+ * passed to relevant public libraries' methods.
+ */
+const void *nut_common_cookie(void);
 /* Gets caller-allocated string which this method frees if not NULL (in atexit()),
  * typically returned by getmyprocname() */
 void setmyprocname(const char *s);

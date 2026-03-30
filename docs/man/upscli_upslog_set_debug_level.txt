@@ -1,13 +1,14 @@
-UPSCLI_SET_DEBUG_LEVEL(3)
-=========================
+UPSCLI_UPSLOG_SET_DEBUG_LEVEL(3)
+================================
 
 NAME
 ----
 
-upscli_set_debug_level, upscli_get_debug_level,
-upscli_setprocname, upscli_setproctag, upscli_getproctag,
+upscli_upslog_set_debug_level, upscli_upslog_get_debug_level,
+upscli_upslog_cookie, upscli_upslog_setprocname,
+upscli_upslog_setproctag, upscli_upslog_getproctag,
 upscli_upslog_start_sync - manipulate
-the possibly separate copies of the `nut_debug_level`
+the possibly separate (identified via cookie) copies of the `nut_debug_level`
 and sub-process tag variables in the `libupsclient` build
 
 SYNOPSIS
@@ -16,14 +17,16 @@ SYNOPSIS
 ------
 	#include <upsclient.h>
 
-	void upscli_set_debug_level(int);
+	const void *upscli_upslog_cookie(void);
+
+	void upscli_set_debug_level(int, const void *cookie);
 	int  upscli_get_debug_level(void);
 
-	void upscli_setprocname(const char *full_procname);
-	void upscli_setproctag(const char *tag);
+	void upscli_setprocname(const char *full_procname, const void *cookie);
+	void upscli_setproctag(const char *tag, const void *cookie);
 	const char *upscli_getproctag(void);
 
-	struct timeval *upscli_upslog_start_sync(struct timeval *tv);
+	struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 ------
 
 DESCRIPTION
@@ -35,6 +38,12 @@ programs using both libraries as dynamically-linked shared code,
 the `nut_debug_level` setting is backed by independent variables in
 active memory, and `upsdebugx()` calls suffer if the library's copy
 is never changed from zero.
+
+It can get even more confusing with libnutprivate-common being a shared
+dynamically loaded library instance behind both the program and libupsclient,
+hence the cookies: direct NUT-common code consumers like NUT in-tree clients
+can use their `nut_common_cookie()` value to pass into methods here.
+Third-party clients may safely pass 'NULL'.
 
 These methods allow to set or retrieve the value of `nut_debug_level`
 setting known by the 'libupsclient' library, regardless of build mode.

@@ -44,14 +44,28 @@ extern int nutscan_avail_upower;
 void nutscan_init(void);
 void nutscan_free(void);
 
-void nutscan_set_debug_level(int level);
-int  nutscan_get_debug_level(void);
+/* On some platforms, libnutscan builds tend to get a built-in copy
+ * of the internal code from NUT libcommon library (and maybe provide
+ * those methods and data to programs like nut-scanner); also there
+ * may be dynamic loading of libupsclient library. So for NUT client
+ * programs using both libraries as dynamically-linked shared code,
+ * the nut_debug_level setting is backed by independent variables in
+ * active memory, and upsdebugx() calls suffer if the library's copy
+ * is never changed from zero. It can get even more confusing with
+ * libnutprivate-common being a shared dynamically loaded library
+ * instance behind both the program and libnutscan/libupsclient,
+ * hence the cookies: direct NUT-common consumers like NUT in-tree
+ * clients can use their nut_common_cookie() to pass into methods here.
+ */
+const void *nutscan_upslog_cookie(void);
+void nutscan_upslog_set_debug_level(int level, const void *cookie);
+int  nutscan_upslog_get_debug_level(void);
 
-void nutscan_setprocname(const char *pn);
-void nutscan_setproctag(const char *tag);
-const char *nutscan_getproctag(void);
+void nutscan_upslog_setprocname(const char *pn, const void *cookie);
+void nutscan_upslog_setproctag(const char *tag, const void *cookie);
+const char *nutscan_upslog_getproctag(void);
 
-struct timeval *nutscan_upslog_start_sync(struct timeval *tv);
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie);
 
 #define DEFAULT_THREAD  512
 

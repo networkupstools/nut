@@ -4,11 +4,12 @@ NUTSCAN_SET_DEBUG_LEVEL(3)
 NAME
 ----
 
-nutscan_set_debug_level, nutscan_get_debug_level,
-nutscan_setprocname, nutscan_setproctag, nutscan_getproctag,
+nutscan_upslog_set_debug_level, nutscan_upslog_get_debug_level,
+nutscan_upslog_cookie, nutscan_upslog_setprocname,
+nutscan_upslog_setproctag, nutscan_upslog_getproctag,
 nutscan_upslog_start_sync - manipulate
-debugging level and sub-process tags for NUT common
-code in the nutscan library;
+the possibly separate (identified via cookie) debugging level and
+sub-process tags for NUT common code in the nutscan library;
 propagate to `libupsclient` if already loaded.
 
 SYNOPSIS
@@ -17,14 +18,16 @@ SYNOPSIS
 ------
 	#include <nut-scan.h>
 
-	void nutscan_set_debug_level(int level);
+	const void *nutscan_upslog_cookie(void);
+
+	void nutscan_set_debug_level(int level), const void *cookie;
 	int  nutscan_get_debug_level(void);
 
-	void nutscan_setprocname(const char *full_procname);
-	void nutscan_setproctag(const char *tag);
+	void nutscan_setprocname(const char *full_procname, const void *cookie);
+	void nutscan_setproctag(const char *tag, const void *cookie);
 	const char *nutscan_getproctag(void);
 
-	struct timeval *nutscan_upslog_start_sync(struct timeval *tv);
+	struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie);
 ------
 
 DESCRIPTION
@@ -33,6 +36,12 @@ DESCRIPTION
 The NUT common library code is included in several other
 libraries, often with their private copies of variables,
 so we want to synchronize them.
+
+It can get even more confusing with libnutprivate-common being a shared
+dynamically loaded library instance behind both the program and libnutscan
+(and maybe further libupsclient), hence the cookies: direct NUT-common code
+consumers like NUT in-tree clients can use their `nut_common_cookie()` value
+to pass into methods here. Third-party clients may safely pass 'NULL'.
 
 The *nutscan_set_debug_level()* function sets internal debug verbosity
 for common NUT code in the library and optionally into the loaded

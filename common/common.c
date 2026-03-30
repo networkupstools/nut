@@ -47,6 +47,16 @@
 # include <sys/stat.h>
 #endif
 
+/* Just yield a unique value - e.g. address of a statically allocated variable
+ * which would be different if several copies of NUT-common object code are
+ * loaded in memory, e.g. as part of a monolithic NUT client (no libnutprivate
+ * parts) AND as part of libupsclient dynamically linked with it at run-time). */
+const void *nut_common_cookie(void)
+{
+	static char	cookie = 0x42;
+	return &cookie;
+}
+
 /* Consistently handle atexit() for internal data of this common library */
 static void nut_free_search_paths(void);
 #if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
@@ -4678,7 +4688,8 @@ void setproctag(const char *tag)
 {
 	size_t	proctag_for_upsdebug_buflen = 0;
 
-	if (proctag_cleanup_registered < 2) {
+	upsdebugx(6, "%s: starting for '%s'...", __func__, NUT_STRARG(tag));
+	if (proctag_cleanup_registered < 2 && tag) {
 		/* We would use this anyway in exit handler (probably many times
 		 * for forked children), so better get it over with quickly.
 		 * In libraries proctag_for_upsdebug may be pre-initialized
@@ -4694,7 +4705,8 @@ void setproctag(const char *tag)
 		proctag_cleanup_registered = 2;
 	}
 
-	if (proctag) {
+	if (proctag && proctag != tag) {
+		/* Take care to not free the caller's copy, or not too soon */
 		free(proctag);
 		proctag = NULL;
 	}
@@ -4710,7 +4722,9 @@ void setproctag(const char *tag)
 	}
 
 	/* let the caller's copy be freed */
-	proctag = xstrdup(tag);
+	/* TOTHINK: */
+	if (proctag != tag)
+		proctag = xstrdup(tag);
 
 	proctag_for_upsdebug_buflen = strlen(tag) + 2;
 	if (proctag_lib)
@@ -4750,12 +4764,21 @@ void setproctag(const char *tag)
 			snprintf(proctag_for_upsdebug, proctag_for_upsdebug_buflen, "%s:%s", proctag_lib ? proctag_lib : "", tag);
 		}
 
+		upsdebugx(6, "%s: constructed proctag_for_upsdebug[%" PRIuSIZE "]='%s' from pn='%s' tn='%s' tl='%s' tag='%s'",
+			__func__, proctag_for_upsdebug_buflen, NUT_STRARG(proctag_for_upsdebug),
+			NUT_STRARG(pn), NUT_STRARG(tn), NUT_STRARG(proctag_lib), NUT_STRARG(tag));
+
 		if (pn)
 			free(pn);
 		if (tn)
 			free(tn);
-	}  /* else alloc error, we'll print no proctag
-	    * (but maybe libname, see vupslog) */
+	} else {
+		/* alloc error, we'll print no proctag
+		 * (but maybe libname, see vupslog) */
+		upsdebugx(6, "%s: could not allocate proctag_for_upsdebug[%" PRIuSIZE "] from tl='%s' tag='%s'",
+			__func__, proctag_for_upsdebug_buflen,
+			NUT_STRARG(proctag_lib), NUT_STRARG(tag));
+	}
 }
 
 void s_upsdebug_with_errno(int level, const char *fmt, ...)
