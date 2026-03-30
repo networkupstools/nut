@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3721 utf-8
+personal_ws-1.1 en 3725 utf-8
 AAC
 AAS
 ABI
@@ -836,6 +836,7 @@ NOTOTHER
 NOTOVER
 NOTTRIM
 NQA
+NTFS
 NTP
 NTU
 NTU's
@@ -1393,6 +1394,7 @@ TrippLite
 Tru
 Tx
 TxD
+UAC
 UB
 UBD
 UBR
@@ -2727,6 +2729,7 @@ nano
 nanosleep
 nashkaminski
 natively
+nativestrict
 nb
 nbproject
 nbr
@@ -3646,6 +3649,7 @@ winhid
 wininit
 winnutclient
 winpthreads
+winsymlinks
 wix
 wmNUT
 wmnut
