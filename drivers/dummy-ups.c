@@ -607,6 +607,8 @@ void upsdrv_cleanup(void)
 		free(ctx);
 		ctx = NULL;
 	}
+
+	upscli_cleanup();
 }
 
 static int setvar(const char *varname, const char *val)
