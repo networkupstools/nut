@@ -426,15 +426,21 @@ void upsdrv_help(void)
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+	const void	*cookie = nut_common_cookie();
+
 	/* Here we actually tweak libupsclient logging more,
 	 * relying on this method being called early in main.c */
-	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
-	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
-	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+	upscli_upslog_start_sync(upslog_start_sync(NULL), cookie);
+	upscli_upslog_set_debug_level(nut_debug_level, cookie);
+
 	/* FIXME: All other calls to setproctag() in main.c would currently
 	 * be invisible to upscli_*() as that object file has no idea about
 	 * the library in this one driver... should we introduce a callback? */
-	upscli_upslog_setproctag(xstrdup(getproctag()), nut_common_cookie());
+	if (cookie != upscli_upslog_cookie()) {
+		/* Send over a copy */
+		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
+		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+	}
 }
 
 void upsdrv_makevartable(void)
