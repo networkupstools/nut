@@ -143,6 +143,8 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      in other programs. Extended public API of libupsclient and libnutscan
      to diligently arrange debug-logging when at run-time those libraries
      actually have different copies of the methods and data involved. [#3378]
+   * Revised 'dstate' machinery to track socket connections closed mid-way
+     through a call, to avoid access after `free()`. [#3302]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
