@@ -242,6 +242,13 @@ static TYPE_FD sock_open(const char *fn)
 
 static void sock_disconnect(conn_t *conn)
 {
+	if (!conn) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		return;
+	}
+
+	conn->closing = 1;
+
 #ifndef WIN32
 # if 0
 	if (VALID_FD(conn->fd)) {
@@ -306,6 +313,10 @@ static void sock_disconnect(conn_t *conn)
 	free(conn);
 }
 
+/** Iterate all connections to post a formatted string on them.
+ *  Clean up any connections found to be aborted during this cycle.
+ *  No return code.
+ */
 static void send_to_all(const char *fmt, ...)
 {
 	ssize_t	ret;
@@ -363,8 +374,7 @@ static void send_to_all(const char *fmt, ...)
 		result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
 		if (result == 0) {
 			upsdebugx(2, "%s: write failed on handle %p, disconnecting", __func__, conn->fd);
-			sock_disconnect(conn);
-			conn = NULL;
+			conn->closing = 1;
 			continue;
 		}
 		else {
@@ -384,8 +394,7 @@ static void send_to_all(const char *fmt, ...)
 #endif	/* WIN32 */
 			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
-			sock_disconnect(conn);
-			conn = NULL;
+			conn->closing = 1;
 
 			/* TOTHINK: Maybe fallback elsewhere in other cases? */
 			if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
@@ -395,6 +404,9 @@ static void send_to_all(const char *fmt, ...)
 				do_synchronous = 1;
 			}
 
+			/* Note: calls send_to_all() for connections alive
+			 *  at the moment (if any), so it was important to
+			 *  forget the failed one above: */
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
@@ -403,8 +415,29 @@ static void send_to_all(const char *fmt, ...)
 				__func__, buflen, conn->fd, ret, buf);
 		}
 	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
+			conn = NULL;
+		}
+	}
+
+	errno = 0;
 }
 
+/**
+ * Send a formatted string to one given connection.
+ *
+ * @param conn
+ * @param fmt
+ * @param ...
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty formatting string)
+ */
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
 	ssize_t	ret;
@@ -415,6 +448,12 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 #endif	/* WIN32 */
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;	/* failed and freed */
+	}
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -447,6 +486,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (buflen >= SSIZE_MAX) {
 		/* Can't compare buflen to ret... though should not happen with ST_SOCK_BUF_LEN */
 		upslog_with_errno(LOG_NOTICE, "%s failed: buffered message too large", __func__);
+		errno = ENOMEM;
 		return 0;	/* failed */
 	}
 
@@ -463,7 +503,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #else	/* WIN32 */
 	result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0) {
-		ret = 0;
+		ret = -1;	/* wait and retry below */
 	}
 	else {
 		ret = (ssize_t)bytesWritten;
@@ -489,7 +529,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #else	/* WIN32 */
 		result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
 		if (result == 0) {
-			ret = 0;
+			ret = 0;	/* signal error */
 		}
 		else {
 			ret = (ssize_t)bytesWritten;
@@ -522,10 +562,14 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 			do_synchronous = 1;
 		}
 
+		/* Note: calls send_to_all() for connections alive
+		 *  at the moment (if any), so it was important to
+		 *  forget the failed one above: */
 		dstate_setinfo("driver.parameter.synchronous", "%s",
 			(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 
-		return 0;	/* failed */
+		errno = ENOTCONN;
+		return -2;	/* failed and freed */
 	} else {
 #ifndef WIN32
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
@@ -682,34 +726,59 @@ static void sock_connect(TYPE_FD sock)
 
 }
 
+/**
+ * Send data from one state tree node into the given connection
+ * (value and possible enum/range/aux/type information).
+ *
+ * @param node
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty/NULL nodes)
+ */
 static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 {
 	enum_t	*etmp;
 	range_t	*rtmp;
+	int	send_ret;
 
-	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
-		return 0;	/* write failed, bail out */
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
 	}
+
+	send_ret = send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val);
+	if (errno == ENOTCONN)
+		return -2;
+	if (!send_ret)
+		return 0;	/* write failed, bail out */
 
 	/* send any enums */
 	for (etmp = node->enum_list; etmp; etmp = etmp->next) {
-		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val)) {
+		send_ret = send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* send any ranges */
 	for (rtmp = node->range_list; rtmp; rtmp = rtmp->next) {
-		if (!send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max)) {
+		send_ret = send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* provide any auxiliary data */
 	if (node->aux) {
-		if (!send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux)) {
+		send_ret = send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* finally report any flags */
@@ -729,64 +798,138 @@ static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 			snprintfcat(flist, sizeof(flist), " NUMBER");
 		}
 
-		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
+		send_ret = send_to_one(conn, "SETFLAGS %s\n", flist);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	return 1;	/* everything's OK here ... */
 }
 
+/**
+ * Dump the state tree into given connection, as a recursive tree walk
+ * and st_tree_dump_conn_one_node() calls for encountered nodes.
+ *
+ * @param node Starting point for left-right iteration walk
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty/NULL nodes)
+ */
 static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 {
-	int	ret;
+	int	send_ret;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	if (!node) {
 		return 1;	/* not an error */
 	}
 
 	if (node->left) {
-		ret = st_tree_dump_conn(node->left, conn);
-
-		if (!ret) {
+		send_ret = st_tree_dump_conn(node->left, conn);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret) {
 			return 0;	/* write failed in the child */
 		}
 	}
 
-	if (!st_tree_dump_conn_one_node(node, conn))
+	send_ret = st_tree_dump_conn_one_node(node, conn);
+	if (errno == ENOTCONN)
+		return -2;
+	if (!send_ret)
 		return 0;	/* one of writes failed, bail out */
 
 	if (node->right) {
-		return st_tree_dump_conn(node->right, conn);
+		send_ret = st_tree_dump_conn(node->right, conn);
+		if (errno == ENOTCONN)
+			return -2;
+		return send_ret;
 	}
 
-	return 1;	/* everything's OK here ... */
+	return 1;	/* no right node; everything's OK here ... */
 }
 
+/**
+ * Report all known commands for this driver into the given connection.
+ *
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 if any send_to_one() failed otherwise;
+ *		1 for successful send of everything (or no-op with empty list)
+ */
 static int cmd_dump_conn(conn_t *conn)
 {
 	cmdlist_t	*cmd;
+	int	send_ret;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	for (cmd = cmdhead; cmd; cmd = cmd->next) {
-		if (!send_to_one(conn, "ADDCMD %s\n", cmd->name)) {
+		send_ret = send_to_one(conn, "ADDCMD %s\n", cmd->name);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	return 1;
 }
 
-
-static void send_tracking(conn_t *conn, const char *id, int value)
+/**
+ * Send an operation with a tracking ID.
+ * Returns same as send_to_one().
+ *
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty formatting string)
+ */
+static int send_tracking(conn_t *conn, const char *id, int value)
 {
-	send_to_one(conn, "TRACKING %s %i\n", id, value);
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
+
+	return send_to_one(conn, "TRACKING %s %i\n", id, value);
 }
 
+/**
+ * Called from sock_read() to handle command arg[0] (with possible arguments)
+ * for a given connection.
+ *
+ * @return	-3 command recognized but a send_to_one() returned 0;
+ *		-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. insufficient numarg for a specific
+ *		  command, or unknown command overall);
+ *		1 for successful send (or no-op with empty formatting string)
+ *		2 for handled LOGOUT (connection may be already closed with
+ *		  errno=ENOTCONN raised, or will be soon)
+ */
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 #ifdef WIN32
 	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
 #endif	/* WIN32 */
+	int	send_ret, send_errno;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	upsdebugx(6, "%s: Driver on %s is now handling %s with %" PRIuSIZE " args",
 		__func__, sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
@@ -796,40 +939,76 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	}
 
 	if (!strcasecmp(arg[0], "LOGOUT")) {
-		send_to_one(conn, "OK Goodbye\n");
+		/* NOTE: conn may be freed after send_to_one(),
+		 *  do not dereference it anymore */
+		TYPE_FD	conn_fd = conn->fd;
+		send_ret = send_to_one(conn, "OK Goodbye\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(OK Goodbye) returned %d",
+			__func__, arg[0], send_ret);
+
 #ifndef WIN32
-		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn_fd);
 #else	/* WIN32 */
-		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn_fd);
 #endif	/* WIN32 */
+
 		/* Let the system flush the reply somehow (or the other
 		 * side to just see it) before we drop the pipe */
 		usleep(1000000);
-		/* err on the safe side, and actually close/free conn separately */
-		conn->closing = 1;
+
+		/* err on the safe side, and actually close/free the conn
+		 *  separately, if not already discarded by send_to_one()
+		 *  e.g. due to aborted client side: */
+		if (send_errno != ENOTCONN)
+			conn->closing = 1;
 		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
-		return 2;
+		return 2;	/* Special code for LOGOUT to be known by caller */
 	}
 
 	if (!strcasecmp(arg[0], "GETPID")) {
-		send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
-		return 1;
+		send_ret = send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(PID) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;
 	}
 
 	if (!strcasecmp(arg[0], "DUMPALL") || !strcasecmp(arg[0], "DUMPSTATUS") || (!strcasecmp(arg[0], "DUMPVALUE") && numarg > 1)) {
 		/* first thing: the staleness flag (see also below) */
-		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
-			return 1;
+		if (stale == 1) {
+			send_ret = send_to_one(conn, "DATASTALE\n");
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_to_one(DATASTALE) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		}
 
 		if (!strcasecmp(arg[0], "DUMPALL")) {
-			if (!st_tree_dump_conn(dtree_root, conn)) {
-				return 1;
-			}
+			send_ret = st_tree_dump_conn(dtree_root, conn);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: st_tree_dump_conn() returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 
-			if (!cmd_dump_conn(conn)) {
-				return 1;
-			}
+			send_ret = cmd_dump_conn(conn);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: cmd_dump_conn() returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		} else {
 			/* A cheaper version of the dump */
 			char	*varname = (!strcasecmp(arg[0], "DUMPSTATUS") ? "ups.status" : (numarg > 1 ? arg[1] : NULL));
@@ -839,22 +1018,51 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				upsdebugx(1, "%s: %s was requested but currently no %s is known",
 					__func__, arg[0], NUT_STRARG(varname));
 			} else {
-				if (!st_tree_dump_conn_one_node(sttmp, conn))
-					return 1;
+				send_ret = st_tree_dump_conn_one_node(sttmp, conn);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: st_tree_dump_conn_one_node() returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
 			}
 		}
 
-		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
-			return 1;
+		if (stale == 0) {
+			send_ret = send_to_one(conn, "DATAOK\n");
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_to_one(DATAOK) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		}
 
-		send_to_one(conn, "DUMPDONE\n");
-		return 1;
+		send_ret = send_to_one(conn, "DUMPDONE\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(DUMPDONE) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+
+		upsdebugx(4, "%s: %s processing finished", __func__, arg[0]);
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;	/* one way or another, the command was handled */
 	}
 
 	if (!strcasecmp(arg[0], "PING")) {
-		send_to_one(conn, "PONG\n");
-		return 1;
+		send_ret = send_to_one(conn, "PONG\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(PONG) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;
 	}
 
 	if (!strcasecmp(arg[0], "NOBROADCAST")) {
@@ -927,11 +1135,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			 * not pass to driver-provided logic. */
 
 			/* send back execution result if requested */
-			if (cmdid)
-				send_tracking(conn, cmdid, ret);
+			send_ret = 1;
+			if (cmdid) {
+				send_ret = send_tracking(conn, cmdid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(shared INSTCMD) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		} /* else try other handler(s) */
 
 		/* try the driver-provided handler if present */
@@ -939,11 +1156,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			ret = upsh.instcmd(cmdname, cmdparam);
 
 			/* send back execution result if requested */
-			if (cmdid)
-				send_tracking(conn, cmdid, ret);
+			send_ret = 1;
+			if (cmdid) {
+				send_ret = send_tracking(conn, cmdid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(driver-provided INSTCMD) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		}
 
 		if (cmdparam) {
@@ -963,11 +1189,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		 * call stack, or returned by a driver's handler (for unknown
 		 * commands) just a bit above.
 		 */
-		if (cmdid)
-			send_tracking(conn, cmdid, ret);
+		send_ret = 1;
+		if (cmdid) {
+			send_ret = send_tracking(conn, cmdid, ret);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_tracking(other INSTCMD) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
+		}
 
 		/* The command was handled, status is a separate consideration */
-		return 1;
+		return send_ret;
 	}
 
 	if (numarg < 3) {
@@ -1001,11 +1236,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			 * not pass to driver-provided logic. */
 
 			/* send back execution result if requested */
-			if (setid)
-				send_tracking(conn, setid, ret);
+			send_ret = 1;
+			if (setid) {
+				send_ret = send_tracking(conn, setid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(shared SETVAR) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		} /* else try other handler(s) */
 
 		/* try the driver-provided handler if present */
@@ -1013,11 +1257,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			ret = upsh.setvar(arg[1], arg[2]);
 
 			/* send back execution result if requested */
-			if (setid)
-				send_tracking(conn, setid, ret);
+			send_ret = 1;
+			if (setid) {
+				send_ret = send_tracking(conn, setid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(driver-provided SETVAR) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		}
 
 		upslogx(LOG_SET_UNKNOWN, "Got SET, but driver lacks a handler");
@@ -1028,14 +1281,35 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	return 0;
 }
 
-static void sock_read(conn_t *conn)
+/**
+ * Reads incoming data into a buffer and parses them,
+ * to handle via sock_arg().
+ *
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed,
+ *                 including after LOGOUT handling;
+ *		-1 if read() yielded EINTR or EAGAIN (POSIX builds)
+ *                 or buffer parsing failed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful enough handling (no syntax or connection
+ *		  errors along the way; response sending may have failed
+ *		  or unknown commands may have been posted)
+ */
+static int sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
 	int	ret_arg = -1;
-
 #ifndef WIN32
 	char	buf[SMALLBUF];
+#endif
 
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
+
+#ifndef WIN32
 	ret = read(conn->fd, buf, sizeof(buf));
 
 	if (ret < 0) {
@@ -1043,12 +1317,14 @@ static void sock_read(conn_t *conn)
 		{
 		case EINTR:
 		case EAGAIN:
-			return;
+			return -1;
 
+		case ENOTCONN:
 		default:
 			sock_disconnect(conn);
 			conn = NULL;
-			return;
+			errno = ENOTCONN;
+			return -2;
 		}
 	}
 
@@ -1081,7 +1357,8 @@ static void sock_read(conn_t *conn)
 			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
 			sock_disconnect(conn);
 			conn = NULL;
-			return;
+			errno = ENOTCONN;
+			return -2;
 		}
 	} else {
 		conn->readzero = 0;
@@ -1090,19 +1367,25 @@ static void sock_read(conn_t *conn)
 	char *buf = conn->buf;
 	DWORD bytesRead;
 	BOOL res;
+
 	res = GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead, FALSE);
 	if (res == 0) {
 		upslogx(LOG_INFO, "Read error : %d", (int)GetLastError());
 		sock_disconnect(conn);
 		conn = NULL;
-		return;
+		errno = ENOTCONN;
+		return -2;
 	}
 	ret = bytesRead;
+
+	/* TODO: Make use of this for a retry loop like above? */
+	if (ret > 0)
+		conn->readzero = 0;
 
 	/* Special case for signals */
 	if (!strncmp(conn->buf, COMMAND_STOP, sizeof(COMMAND_STOP))) {
 		set_exit_flag(1);
-		return;
+		return 1;
 	}
 #endif	/* WIN32 */
 
@@ -1115,6 +1398,11 @@ static void sock_read(conn_t *conn)
 
 		case 1: /* try to use it, and complain about unknown commands */
 			ret_arg = sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist);
+			if (errno == ENOTCONN) {
+				upsdebugx(1, "%s: socket was closed by sock_arg()", __func__);
+				return -2;
+			}
+
 			if (!ret_arg) {
 				size_t	arg;
 
@@ -1123,37 +1411,48 @@ static void sock_read(conn_t *conn)
 				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
+			} else if (ret_arg == -3) {
+				upslogx(LOG_INFO, "Failed to handle a recognized command on socket");
 			} else if (ret_arg == 2) {
-				/* closed by LOGOUT processing, conn is free()'d */
+				/* closed by LOGOUT processing, conn is free()'d
+				 * or soon will be (at least marked conn->closing=1) */
 				if (i < ret)
-					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
-				return;
+					upsdebugx(1, "%s: returning early after LOGOUT, socket may be not valid anymore", __func__);
+				errno = ENOTCONN;
+				return -2;
 			}
 
 			continue;
 
 		default: /* nothing parsed */
 			upslogx(LOG_NOTICE, "Parse error on sock: %s", conn->ctx.errmsg);
-			return;
+			return -1;
 		}
 	}
 
 #ifdef WIN32
-	/* Restart async read */
-	memset(conn->buf, 0, sizeof(conn->buf));
-	ReadFile(
-		conn->fd,
-		conn->buf,
-		sizeof(conn->buf) - 1,	/* -1 to be sure to have a trailing 0 */
-		NULL,
-		&(conn->read_overlapped)
-	);
+	if (!conn->closing) {
+		/* Restart async read */
+		memset(conn->buf, 0, sizeof(conn->buf));
+		ReadFile(
+			conn->fd,
+			conn->buf,
+			sizeof(conn->buf) - 1,	/* -1 to be sure to have a trailing 0 */
+			NULL,
+			&(conn->read_overlapped)
+		);
+	}
 #endif	/* WIN32 */
+
+	return 1;	/* Handled without errors */
 }
 
+/** Dismantle the socket (or named pipe) and connections */
 static void sock_close(void)
 {
 	conn_t	*conn, *cnext;
+
+	upsdebugx(1, "%s: starting...", __func__);
 
 	if (VALID_FD(sockfd)) {
 #ifndef WIN32
@@ -1180,6 +1479,8 @@ static void sock_close(void)
 
 	connhead = NULL;
 	/* conntail = NULL; */
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 /* interface */
