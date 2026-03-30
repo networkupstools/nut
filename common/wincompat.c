@@ -472,16 +472,19 @@ void syslog(int priority, const char *fmt, ...)
 
 	upsdebugx(6, "%s: posting to event log NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
-			pipe_full_name,	/* pipe name */
-			GENERIC_WRITE,
-			0,			/* no sharing */
-			NULL,			/* default security attributes FIXME */
-			OPEN_EXISTING,		/* opens existing pipe */
-			FILE_FLAG_OVERLAPPED,	/* enable async IO */
-			NULL);			/* no template file */
-
+		pipe_full_name,	/* pipe name */
+		GENERIC_WRITE,
+		0,			/* no sharing */
+		NULL,			/* default security attributes FIXME */
+		OPEN_EXISTING,		/* opens existing pipe */
+		FILE_FLAG_OVERLAPPED,	/* enable async IO */
+		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing event log NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return;
 	}
 
@@ -527,17 +530,17 @@ void pipe_create(const char * pipe_name)
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
 	upsdebugx(2, "%s: creating NAMED_PIPE (listener): '%s'", __func__, pipe_full_name);
 	pipe_connection_handle = CreateNamedPipe(
-			pipe_full_name,
-			PIPE_ACCESS_INBOUND |   /* to server only */
-			FILE_FLAG_OVERLAPPED,   /* async IO */
-			PIPE_TYPE_MESSAGE |
-			PIPE_READMODE_MESSAGE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			LARGEBUF,               /* output buffer size */
-			LARGEBUF,               /* input buffer size */
-			0,                      /* client time-out */
-			NULL);  /* FIXME: default security attribute */
+		pipe_full_name,
+		PIPE_ACCESS_INBOUND	/* to server only */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_MESSAGE
+		| PIPE_READMODE_MESSAGE
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		LARGEBUF,		/* output buffer size */
+		LARGEBUF,		/* input buffer size */
+		0,			/* client time-out */
+		NULL);			/* FIXME: default security attribute */
 
 	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR, "Error creating named pipe");
@@ -546,10 +549,12 @@ void pipe_create(const char * pipe_name)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	pipe_connection_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	pipe_connection_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (pipe_connection_overlapped.hEvent == NULL) {
 		upslogx(LOG_ERR, "Error creating event");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
@@ -583,10 +588,12 @@ void pipe_connect()
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
 	memset(&conn->overlapped, 0, sizeof(conn->overlapped));
 	memset(conn->buf, 0, sizeof(conn->buf));
-	conn->overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	conn->overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (conn->overlapped.hEvent == NULL) {
 		/* FIXME: Is this (still) about event log only? */
 		upslog_with_errno(LOG_ERR, "Can't create event for reading event log");
@@ -666,16 +673,19 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 
 	upsdebugx(6, "%s: posting to NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
-			pipe_full_name,
-			GENERIC_WRITE,
-			0,			/* no sharing */
-			NULL,			/* default security attributes FIXME */
-			OPEN_EXISTING,		/* opens existing pipe */
-			FILE_FLAG_OVERLAPPED,	/* enable async IO */
-			NULL);			/* no template file */
-
+		pipe_full_name,
+		GENERIC_WRITE,
+		0,			/* no sharing */
+		NULL,			/* default security attributes FIXME */
+		OPEN_EXISTING,		/* opens existing pipe */
+		FILE_FLAG_OVERLAPPED,	/* enable async IO */
+		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return 1;
 	}
 
@@ -747,7 +757,12 @@ http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to
 void overlapped_setup (serial_handler_t * sh)
 {
 	memset (&sh->io_status, 0, sizeof (sh->io_status));
-	sh->io_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	sh->io_status.hEvent = CreateEvent (
+		NULL,	/* Security */
+		TRUE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	sh->overlapped_armed = 0;
 }
 
@@ -897,7 +912,12 @@ int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
 	errno = 0;
 
 	memset (&write_status, 0, sizeof (write_status));
-	write_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	write_status.hEvent = CreateEvent (
+		NULL,	/* Security */
+		TRUE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 
 	for (;;)
 	{
@@ -947,7 +967,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	memset(sh,0,sizeof(serial_handler_t));
 
 	sh->handle = CreateFile(name,
-		GENERIC_READ|GENERIC_WRITE,
+		GENERIC_READ | GENERIC_WRITE,
 		0, 0, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 		0);

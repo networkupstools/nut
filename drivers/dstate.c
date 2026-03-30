@@ -194,30 +194,37 @@ static TYPE_FD sock_open(const char *fn)
 
 #else /* WIN32 */
 
+	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
+		__func__, fn);
 	fd = CreateNamedPipe(
-			fn,			/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
-			ST_SOCK_BUF_LEN,	/* output buffer size */
-			ST_SOCK_BUF_LEN,	/* input buffer size */
-			0,			/* client time-out */
-			NULL);			/* FIXME: default security attribute */
+		fn,			/* pipe name */
+		PIPE_ACCESS_DUPLEX	/* read/write access */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_BYTE
+		| PIPE_READMODE_BYTE
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		ST_SOCK_BUF_LEN,	/* output buffer size */
+		ST_SOCK_BUF_LEN,	/* input buffer size */
+		0,			/* client time-out */
+		NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(fd)) {
+		upsdebugx(1, "%s: Can't create a state socket "
+			"(windows named pipe) for listening: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
 	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
-	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	connect_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
@@ -596,46 +603,55 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = sock;
 
 	/* sockfd is the handle of the connection pending pipe */
+	upsdebugx(6, "%s: opening NAMED_PIPE for incoming data: '%s'",
+		__func__, pipename);
 	sockfd = CreateNamedPipe(
-			pipename,		/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
-			ST_SOCK_BUF_LEN,	/* output buffer size */
-			ST_SOCK_BUF_LEN,	/* input buffer size */
-			0,			/* client time-out */
-			NULL);			/* FIXME: default security attribute */
+		pipename,		/* pipe name */
+		PIPE_ACCESS_DUPLEX	/* read/write access */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_BYTE
+		| PIPE_READMODE_BYTE
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		ST_SOCK_BUF_LEN,	/* output buffer size */
+		ST_SOCK_BUF_LEN,	/* input buffer size */
+		0,			/* client time-out */
+		NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(sockfd)) {
+		upsdebugx(1, "%s: Can't open state socket "
+			"(windows named pipe) for incoming data: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare a new async wait for a connection on the pipe */
 	CloseHandle(connect_overlapped.hEvent);
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
-	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(sockfd,&connect_overlapped);
+	ConnectNamedPipe(sockfd, &connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
-	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
-	memset(conn->buf,0,sizeof(conn->buf));
-	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	memset(&conn->read_overlapped, 0, sizeof(conn->read_overlapped));
+	memset(conn->buf, 0, sizeof(conn->buf));
+	conn->read_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if(conn->read_overlapped.hEvent == NULL ) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
