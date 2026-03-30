@@ -4,7 +4,7 @@
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2026	Jim Klimov <jimklimov+nut@gmail.com>
 	2025		desertwitch <dezertwitsh@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -249,18 +249,33 @@ static void sock_disconnect(conn_t *conn)
 	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
 #else	/* WIN32 */
-	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right way to close a connection */
+	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right
+	 *  way to close a connection, but was revised to match
+	 *  the wincompat::pipe_disconnect() implementation.
+	 * In practice at least dummy-ups tends to crash soon after
+	 * this with memory (re-)allocation troubles if send_to_one
+	 * failed (e.g. upsd killed at the right moment). May be an
+	 * MSYS2 platform problem though. */
+	if (conn->fd != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: flushing named pipe handle %p", __func__, conn->fd);
+		FlushFileBuffers(conn->fd);
+	}
+
 	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
-		if (VALID_FD(conn->fd)) {
-			upsdebugx(4, "%s: flushing named pipe handle %p", __func__, conn->fd);
-			FlushFileBuffers(conn->fd);
-		}
-		upsdebugx(4, "%s: closing not-invalid named pipe handle %p", __func__, conn->fd);
+		upsdebugx(4, "%s: closing not-invalid named pipe read_overlapped event handle %p", __func__, conn->fd);
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
-	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
-	DisconnectNamedPipe(conn->fd);
+	if (conn->fd != INVALID_HANDLE_VALUE) {
+		upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
+		if (DisconnectNamedPipe(conn->fd) == 0)
+			upsdebug_with_errno(3, "%s: DisconnectNamedPipe failed");
+		upsdebugx(4, "%s: closing named pipe handle %p", __func__, conn->fd);
+		CloseHandle(conn->fd);
+		conn->fd = INVALID_HANDLE_VALUE;
+	} else {
+		upsdebugx(3, "%s: NOT disconnecting named pipe handle %p: already invalid", __func__, conn->fd);
+	}
 #endif	/* WIN32 */
 
 	upsdebugx(5, "%s: finishing parsing context", __func__);
