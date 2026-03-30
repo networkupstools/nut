@@ -194,6 +194,8 @@ static TYPE_FD sock_open(const char *fn)
 
 #else /* WIN32 */
 
+	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
+		__func__, fn);
 	fd = CreateNamedPipe(
 		fn,			/* pipe name */
 		PIPE_ACCESS_DUPLEX	/* read/write access */
@@ -208,6 +210,9 @@ static TYPE_FD sock_open(const char *fn)
 		NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(fd)) {
+		upsdebugx(1, "%s: Can't create a state socket "
+			"(windows named pipe) for listening: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
@@ -599,6 +604,8 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = sock;
 
 	/* sockfd is the handle of the connection pending pipe */
+	upsdebugx(6, "%s: opening NAMED_PIPE for incoming data: '%s'",
+		__func__, pipename);
 	sockfd = CreateNamedPipe(
 		pipename,		/* pipe name */
 		PIPE_ACCESS_DUPLEX	/* read/write access */
@@ -613,6 +620,9 @@ static void sock_connect(TYPE_FD sock)
 		NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(sockfd)) {
+		upsdebugx(1, "%s: Can't open state socket "
+			"(windows named pipe) for incoming data: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
