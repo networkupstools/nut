@@ -1970,6 +1970,22 @@ Finally, install tools and prerequisites for building NUT; note that some
 of the recommended package names are "umbrellas" for several implementations,
 and the `pacman` would ask you which (or "all") to install in those cases.
 
+NUT build recipes and other scripts use symbolic links generously.
+Creation of these requires not only the use of NTFS, but also a granted
+run-time user privilege on Windows, as well as a setting for MSYS/CygWin
+`ln` implementation to actually create symlinks and not copy the files.
+Add this to your `~/.profile` in the MSYS2 environment, and change your
+account accordingly (or modify the MSYS2 shortcut to always "Run as
+Administrator" and ask for UAC upon launch as needed):
+
+----
+### This may require elevated privileges (Run as Administrator),
+### or a Developer profile in Windows (can come via registry hacks),
+### or a Group Policy setting:
+MSYS="winsymlinks:nativestrict"
+export MSYS
+----
+
 NOTE: Suggestions below use `x86_64` generic variants where possible, and
 `clang` where available to try both build toolkits on the platform. If you
 want to build `i686` (32-bit) or alternate backends (e.g. `ucrt` instead
