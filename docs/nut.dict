@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3710 utf-8
+personal_ws-1.1 en 3721 utf-8
 AAC
 AAS
 ABI
@@ -452,6 +452,7 @@ GPL
 GPLv
 GPSER
 GRs
+GS
 GTK
 GTS
 GUESSTIMATION
@@ -1117,6 +1118,7 @@ RPC
 RPMdrake
 RPT
 RRR
+RS
 RSA
 RSM
 RST
@@ -1875,6 +1877,7 @@ committer
 comms
 compareprocnames
 compat
+compilation's
 compilerPath
 conf
 confargs
@@ -2104,6 +2107,7 @@ ep
 epdu
 eq
 errno
+es
 esac
 essmode
 esupssmart
@@ -2449,6 +2453,7 @@ killpower
 kludgy
 kr
 krauler
+ks
 ksh
 ktrace
 kvm
@@ -2576,6 +2581,7 @@ lowbatt
 lowbattery
 lr
 lregex
+ls
 lsd
 lst
 lsusb
@@ -2678,6 +2684,7 @@ monuser
 morbo
 mortem
 mozilla
+ms
 msec
 msg
 msgfmt
@@ -2899,6 +2906,7 @@ peasy
 peername
 pem
 perc
+percents
 perl
 permalinks
 pfSense
@@ -3103,6 +3111,7 @@ rpc
 rpool
 rq
 rqt
+rs
 rsa
 rsd
 rsync
@@ -3126,6 +3135,7 @@ sc
 scanopts
 scd
 sched
+schuko
 scm
 screenshot
 screenshots
@@ -3415,6 +3425,7 @@ tripplite
 tripplitesu
 troff
 tryconnect
+ts
 tsa
 tsd
 tty
@@ -3695,6 +3706,7 @@ youruid
 yyy
 zaac
 zakx
+zeroes
 zfs
 zinto
 zlib

@@ -36,11 +36,12 @@ which for the project is just a better-tested snapshot of on-going development
 with an opinionated choice of build and run-time system configuration options.
 Some OS distribution maintainers pick fixes from later releases to update
 their software packages while nominally remaining on the same base line
-version that the distribution's major release originally went with. This
-allows to balance delivering stable programs with well-known qualities
-and minimal downsides for a long stretch of time, but misses out on new
-capabilities, features (and yes, new bugs), which the on-going development
-regularly adds to the current code base du-jour.
+version that the corresponding major release of that distribution originally
+went with. This allows them to balance delivering stable programs with
+well-known qualities and minimal downsides for a long stretch of time that
+this OS release is supported (does not cause headaches during minor updates),
+but misses out on new capabilities, features (and yes, new bugs), which the
+on-going development regularly adds to the current code base du-jour.
 
 As such, NUT community support for releases (or any other non-current code)
 is generally limited to suggestions based on experience, but any fixes happen
@@ -216,12 +217,14 @@ improving the wording during the NUT v2.8.x release lineage due to frequent
 questions), these messages are in fact just a troubleshooting aspect that
 is useful at that point in program life cycle: if you expect "other" program
 instances to be running when they are not seen, this message helps catch the
-error.  If this is a first run, so no "other" program instance's artifacts
-should be there, the message says just that.  If your program starts and
-sees an older instance already running, further behavior depends on the
-situation (e.g. did you start a copy to signal the already running daemon
-with some command? did you start a new copy and so any old one is assumed
-stuck and should be terminated automatically?)
+error:
+
+* If this is a first run, so no artifacts from "another" instance of this
+  program should be there, the message says just that.
+* If your program starts and sees an older instance already running, further
+  behavior depends on the situation (e.g. did you start a copy to signal the
+  already running daemon with some command? did you start a new copy and so
+  any old one is assumed stuck and should be terminated automatically?)
 
 The "directory" part of the wording, which may be present in these messages,
 comes from the standard system library.  It does not mean you should blindly

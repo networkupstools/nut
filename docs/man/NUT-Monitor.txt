@@ -40,10 +40,10 @@ as part of NUT; also releases of the module are published as a PyPI package.
   In older NUT releases, this was the file name used by the Python 2.x variant
   directly.
 
-Note that depending on your distribution's packaging choices, you may lack
-the `NUT-Monitor` shell script and just have one set of the desktop window
-manager integration files directly for one particular implementation of the
-actual Python UI client.
+Note that depending on packaging choices made by your OS distribution, you
+may lack the `NUT-Monitor` shell script and just have one set of the desktop
+window manager integration files directly for one particular implementation
+of the actual Python UI client.
 
 For each individual run, the UI client can connect to a single NUT data server
 and a device on it.  This can use either anonymous read-only connections (like

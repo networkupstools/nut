@@ -1104,8 +1104,8 @@ no regular distribution tarballs are in fact published.
 To build from Git, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
 list of the exact versions needed (which will quickly become out of date), we
-recommend you consult your distribution's dependency list for building a NUT
-package, and use that as a starting point.
+recommend you consult the dependency list in the recipes of your OS distribution
+for building their official NUT package, and use that as a starting point.
 
 That said, for the numerous systems running build agents of the NUT CI farm,
 their lists of dependency packages are available in `docs/config-prereqs.txt`
