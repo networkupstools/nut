@@ -3140,7 +3140,7 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
-	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutconf");
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : nullptr, "nutconf");
 	char	*s = nullptr;
 
 	// Get options, also set nut_debug_level
@@ -3347,7 +3347,7 @@ static int mainx(int argc, char * const argv[]) {
  */
 int main(int argc, char * const argv[]) {
 	try {
-		upslog_start_sync(NULL);
+		upslog_start_sync(nullptr);
 		return mainx(argc, argv);
 	}
 	catch (const std::exception & e) {
