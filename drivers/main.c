@@ -54,6 +54,12 @@ const char	*upsname = NULL, *device_name = NULL;
 const char	*prognames[MAX_PROGNAMES];
 char	prognames_should_free[MAX_PROGNAMES];
 
+/* If not NULL, will be called by upsdrv_setproctag() so the tag value can be
+ * propagated to third-party code (should not update the driver's tag with our
+ * own copy of NUT common library -- this is what upsdrv_setproctag() does);
+ * see dummy-ups for an example use-case */
+void (*upsdrv_callback_setproctag)(const char *tag) = NULL;
+
 /* may be set by the driver to wake up while in dstate_poll_fds */
 TYPE_FD	extrafd = ERROR_FD;
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
@@ -1957,6 +1963,14 @@ void vartab_free(void)
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static void upsdrv_setproctag(const char *tag)
+{
+	setproctag(tag);
+	if (upsdrv_callback_setproctag) {
+		(*upsdrv_callback_setproctag)(tag);
+	}
+}
+
 static void exit_upsdrv_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.upsdrv");
@@ -2002,6 +2016,13 @@ static void exit_cleanup(void)
 	}
 #endif	/* WIN32 */
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such)
+	 * although it does bring a bit of clarity to the logs, just the wording is odd:
+	 *  [D2:1112101:dummy-ups:test] a dummy-ups sub-process (test) is exiting now
+	 *
+	 * //TOTHINK// upsdrv_setproctag(xstrdup(prognames[0]));
+	 */
+
 	for (i = 0; i < MAX_PROGNAMES; i++) {
 		/* Some prognames[] may be allocated statically,
 		 * e.g. can be a pointer to part of argv[0];
@@ -2012,9 +2033,7 @@ static void exit_cleanup(void)
 		}
 	}
 
-	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
 	upsdebugx(1, "%s: finished, exiting", __func__);
-	setproctag(NULL);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -2273,7 +2292,7 @@ int main(int argc, char **argv)
 	 * or an allocated string auto-cleaned by the NUT common
 	 * library; either way, this program does not free() it: */
 	prognames[0] = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutdrv");
-	setproctag(prognames[0]);
+	upsdrv_setproctag(prognames[0]);
 
 	upsdrv_callbacks.upsdrv_tweak_prognames();
 
@@ -2499,7 +2518,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE,
 			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
-	setproctag(upsname);
+	upsdrv_setproctag(upsname);
 
 	/* we need to get the port from somewhere, unless we are just sending a signal and exiting */
 	if (!device_path && !cmd) {

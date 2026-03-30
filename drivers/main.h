@@ -259,6 +259,10 @@ typedef struct upsdrv_callback_s {
 } upsdrv_callback_t;
 void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz);
 
+/* If not NULL, e.g. registered early by a driver like dummy-ups,
+ * will be called in upsdrv_setproctag() transitions */
+extern void (*upsdrv_callback_setproctag)(const char *tag);
+
 /* Suite of simple calls to register driver callback method implementations
  * named as dictated by this header, which (being macros) can be called easily
  * from both static and shared builds (with libnutprivate-X_Y_Z-drivers-common).

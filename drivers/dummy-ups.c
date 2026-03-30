@@ -423,6 +423,13 @@ void upsdrv_help(void)
 	upscli_report_build_details();
 }
 
+static void dummy_setproctag_callback(const char *tag) {
+	const void	*cookie = nut_common_cookie();
+
+	if (cookie != upscli_upslog_cookie())
+		upscli_upslog_setproctag(xstrdup(tag), cookie);
+}
+
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
@@ -440,6 +447,8 @@ void upsdrv_tweak_prognames(void)
 		/* Send over a copy */
 		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
 		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+
+		upsdrv_callback_setproctag = dummy_setproctag_callback;
 	}
 }
 
@@ -615,6 +624,7 @@ void upsdrv_cleanup(void)
 	}
 
 	upscli_cleanup();
+	upsdrv_callback_setproctag = NULL;
 }
 
 static int setvar(const char *varname, const char *val)
