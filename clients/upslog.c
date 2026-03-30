@@ -1059,6 +1059,9 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
+
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
@@ -1084,6 +1087,7 @@ int main(int argc, char **argv)
 		logformat = NULL;
 	}
 
+	upscli_cleanup();
 	exit(EXIT_SUCCESS);
 }
 

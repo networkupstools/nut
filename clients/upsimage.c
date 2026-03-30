@@ -617,6 +617,13 @@ static int get_var(const char *var, char *buf, size_t buflen)
 	return 1;
 }
 
+static void clean_exit(void)
+{
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 int main(int argc, char **argv)
 {
 	char	str[SMALLBUF], *s;
@@ -674,6 +681,7 @@ int main(int argc, char **argv)
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))

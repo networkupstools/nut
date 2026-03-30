@@ -1115,6 +1115,13 @@ static void check_conf(void)
 	exit(EXIT_FAILURE);
 }
 
+static void clean_exit(void)
+{
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 int main(int argc, char **argv)
 {
 	char *s;
@@ -1177,6 +1184,7 @@ int main(int argc, char **argv)
 	check_conf();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
 	extractpostargs();
 

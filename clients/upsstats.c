@@ -1681,6 +1681,11 @@ static void display_json(void)
 /* --- END: NEW JSON FUNCTION ---------------------------------- */
 /* ------------------------------------------------------------- */
 
+static void clean_exit(void)
+{
+	upscli_cleanup();
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
 
 int main(int argc, char **argv)
 {
@@ -1743,6 +1748,7 @@ int main(int argc, char **argv)
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
 	/*
 	 * If json is in the query, bypass all HTML and call display_json()

@@ -296,9 +296,9 @@ static void clean_exit(void)
 	free(hostname);
 	free(ups);
 
-	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	upscli_cleanup();
+
 	upsdebugx(1, "%s: finished, exiting", __func__);
-	setproctag(NULL);
 }
 
 int main(int argc, char **argv)
@@ -539,6 +539,8 @@ int main(int argc, char **argv)
 
 	do_cmd(&argv[1], argc - 1);
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 

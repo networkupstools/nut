@@ -389,6 +389,8 @@ static void clean_exit(void)
 	free(hostname);
 	free(ups);
 
+	upscli_cleanup();
+
 	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 

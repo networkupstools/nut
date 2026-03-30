@@ -99,9 +99,9 @@ static void clean_exit(void)
 	free(hostname);
 	free(ups);
 
-	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	upscli_cleanup();
+
 	upsdebugx(1, "%s: finished, exiting", __func__);
-	setproctag(NULL);
 }
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -797,6 +797,8 @@ int main(int argc, char **argv)
 		print_rwlist();
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 
