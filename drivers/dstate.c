@@ -428,7 +428,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 	va_end(ap);
 
-	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
+	upsdebugx(2, "%s: sending (got %" PRIiSIZE " from vsnprintf): %.*s",
+		__func__, ret, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -494,11 +495,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, (int)conn->fd, ret);
 #else	/* WIN32 */
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);
