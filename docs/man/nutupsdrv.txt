@@ -122,9 +122,9 @@ are:
 	           (so an external caller like the new driver instance, or
 	           the systemd or SMF frameworks would start another copy)
 
-With recent NUT v2.8.x releases, such commands can be sent using the Unix socket
-for driver-server interaction. As a fallback, like older releases, signals
-can be sent to the old driver instance's PID (where possible).
+With recent NUT v2.8.x releases, such commands can be sent using the Unix
+socket for driver-server interaction. As a fallback, like older releases,
+signals can be sent to the PID of an older driver instance (where possible).
 
 *-P* 'pid'::
 Send the command signal above using specified PID number, rather than
