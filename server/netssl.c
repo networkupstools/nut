@@ -407,7 +407,9 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	/* Want some ping here to make sure the channel is open? */
 	if (!sendback(client, "OK STARTTLS\n")) {
+		upsdebug_with_errno(2, "%s: could not confirm the beginning of SSL ritual to prospective SSL client", __func__);
 		return;
 	}
 
@@ -535,6 +537,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 
+	upsdebugx(4, "%s: calling PR_ImportTCPSocket()", __func__);
 	socket = PR_ImportTCPSocket(client->sock_fd);
 	if (socket == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -542,6 +545,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ImportFD()", __func__);
 	client->ssl = SSL_ImportFD(NULL, socket);
 	if (client->ssl == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -549,6 +553,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_SetPKCS11PinArg()", __func__);
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
@@ -562,47 +567,59 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
+	upsdebugx(4, "%s: calling SSL_AuthCertificateHook()", __func__);
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_AuthCertificateHook");
+		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL trust failed\"");
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_BadCertHook()", __func__);
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
+		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL trust failed\"");
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_HandshakeCallback()", __func__);
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
+		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL init failed\"");
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ConfigSecureServer()", __func__);
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ConfigSecureServer");
+		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL init failed\"");
 		return;
 	}
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
 #pragma GCC diagnostic pop
 #endif
 
+	upsdebugx(4, "%s: calling SSL_ResetHandshake()", __func__);
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
+		/*client->ssl = NULL;*/
+		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL handshake failed\"");
 		return;
 	}
 
 	/* Note: this call can generate memory leaks not resolvable
 	 * by any release function.
 	 * Probably SSL session key object allocation. */
+	upsdebugx(4, "%s: calling SSL_ForceHandshake()", __func__);
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();
