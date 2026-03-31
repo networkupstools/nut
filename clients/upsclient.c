@@ -556,6 +556,8 @@ int upscli_init(int certverify, const char *certpath,
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	upscli_initialized = 1;
+
+	upsdebugx(1, "%s: completed", __func__);
 	return 1;
 }
 
@@ -731,10 +733,16 @@ static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, 
 	ret = select(fd + 1, &fds, NULL, NULL, &tv);
 
 	if (ret < 1) {
+		upsdebugx(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
 		return ret;
 	}
 
-	return read(fd, buf, buflen);
+	ret = read(fd, buf, buflen);
+	if (ret < 1) {
+		upsdebugx(3, "%s: read() failed: %" PRIiSIZE, __func__, ret);
+	}
+
+	return ret;
 }
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -800,6 +808,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 					NULL, &tv) < 0
 				) {
 					/* select failure is fatal enough to stop retrying */
+					upsdebugx(3, "%s: SSL_read and subsequent select() failed", __func__);
 					ssl_error(ups->ssl, (ssize_t)iret);
 					return -1;
 				}
@@ -808,6 +817,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 			}
 
 			/* Other errors are fatal */
+			upsdebugx(3, "%s: SSL_read failed: %" PRIiSIZE, __func__, (ssize_t)iret);
 			ssl_error(ups->ssl, (ssize_t)iret);
 			return -1;
 		}
@@ -816,11 +826,18 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 			upslogx(LOG_ERR, "%s: SSL_read timed out after %d retries", __func__, ssl_retries);
 			return -1;
 		}
+
+		if (ret < 1) {
+			upsdebugx(3, "%s: SSL_read failed: %" PRIiSIZE, __func__, ret);
+		}
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
 		assert(buflen <= PR_INT32_MAX);
 		ret = PR_Read(ups->ssl, buf, (PRInt32)buflen);
+		if (ret < 1) {
+			upsdebugx(3, "%s: PR_read failed: %" PRIiSIZE, __func__, ret);
+		}
 # endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
@@ -828,19 +845,22 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 		}
 
 		return ret;
-	}
+	}	/* end of: if (ups->ssl) */
 #endif	/* WITH_SSL */
 
+	/* Plaintext read */
 	ret = upscli_select_read(ups->fd, buf, buflen, timeout, 0);
 
 	/* error reading data, server disconnected? */
 	if (ret < 0) {
+		upsdebugx(3, "%s: upscli_select_read failed: %" PRIiSIZE, __func__, ret);
 		ups->upserror = UPSCLI_ERR_READ;
 		ups->syserrno = errno;
 	}
 
 	/* no data available, server disconnected? */
 	if (ret == 0) {
+		upsdebugx(3, "%s: upscli_select_read failed (disconnected?): %" PRIiSIZE, __func__, ret);
 		ups->upserror = UPSCLI_ERR_SRVDISC;
 	}
 
@@ -868,10 +888,16 @@ static ssize_t upscli_select_write(const int fd, const void *buf, const size_t b
 	ret = select(fd + 1, NULL, &fds, NULL, &tv);
 
 	if (ret < 1) {
+		upsdebugx(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
 		return ret;
 	}
 
-	return write(fd, buf, buflen);
+	ret = write(fd, buf, buflen);
+	if (ret < 1) {
+		upsdebugx(3, "%s: write() failed: %" PRIiSIZE, __func__, ret);
+	}
+
+	return ret;
 }
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -931,6 +957,7 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 					NULL, &tv) < 0
 				) {
 					/* select failure is fatal enough to stop retrying */
+					upsdebugx(3, "%s: SSL_write and subsequent select() failed", __func__);
 					ssl_error(ups->ssl, (ssize_t)iret);
 					return -1;
 				}
@@ -939,6 +966,7 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 			}
 
 			/* Other errors (including iret=0) are fatal */
+			upsdebugx(3, "%s: SSL_write failed: %" PRIiSIZE, __func__, (ssize_t)iret);
 			ssl_error(ups->ssl, (ssize_t)iret);
 			return -1;
 		}
@@ -947,11 +975,18 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 			upslogx(LOG_ERR, "%s: SSL_write timed out after %d retries", __func__, ssl_retries);
 			return -1;
 		}
+
+		if (ret < 1) {
+			upsdebugx(3, "%s: SSL_write failed: %" PRIiSIZE, __func__, ret);
+		}
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 		/* PR_* routines deal in PRInt32 type
 		 * We might need to window our I/O if we exceed 2GB :) */
 		assert(buflen <= PR_INT32_MAX);
 		ret = PR_Write(ups->ssl, buf, (PRInt32)buflen);
+		if (ret < 1) {
+			upsdebugx(3, "%s: PR_write failed: %" PRIiSIZE, __func__, ret);
+		}
 # endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
@@ -959,19 +994,22 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 		}
 
 		return ret;
-	}
+	}	/* end of: if (ups->ssl) */
 #endif	/* WITH_SSL */
 
+	/* Plaintext write */
 	ret = upscli_select_write(ups->fd, buf, buflen, timeout, 0);
 
 	/* error writing data, server disconnected? */
 	if (ret < 0) {
+		upsdebugx(3, "%s: upscli_select_write failed: %" PRIiSIZE, __func__, ret);
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
 	}
 
 	/* not ready for writing, server disconnected? */
 	if (ret == 0) {
+		upsdebugx(3, "%s: upscli_select_write failed (disconnected?): %" PRIiSIZE, __func__, ret);
 		ups->upserror = UPSCLI_ERR_SRVDISC;
 	}
 
@@ -1016,18 +1054,22 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		upscli_init(0, NULL, NULL, NULL);
 	}
 
+	upsdebugx(3, "%s: Trying to STARTTLS", __func__);
 	/* see if upsd even talks SSL/TLS */
 	snprintf(buf, sizeof(buf), "STARTTLS\n");
 
 	if (upscli_sendline(ups, buf, strlen(buf)) != 0) {
+		upsdebugx(3, "%s: STARTTLS not established, failed to send request", __func__);
 		return -1;
 	}
 
 	if (upscli_readline(ups, buf, sizeof(buf)) != 0) {
+		upsdebugx(3, "%s: STARTTLS not established, failed to read response", __func__);
 		return -1;
 	}
 
 	if (strncmp(buf, "OK STARTTLS", 11) != 0) {
+		upsdebugx(3, "%s: STARTTLS not supported, unexpected response: %s", __func__, buf);
 		return 0;		/* not supported */
 	}
 
@@ -1036,18 +1078,18 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 # ifdef WITH_OPENSSL
 
 	if (!ssl_ctx) {
-		upsdebugx(3, "SSL context is not available");
+		upsdebugx(3, "%s: SSL context is not available", __func__);
 		return 0;
 	}
 
 	ups->ssl = SSL_new(ssl_ctx);
 	if (!ups->ssl) {
-		upsdebugx(3, "Can not create SSL socket");
+		upsdebugx(3, "%s: Can not create SSL socket", __func__);
 		return 0;
 	}
 
 	if (SSL_set_fd(ups->ssl, ups->fd) != 1) {
-		upsdebugx(3, "Can not bind file descriptor to SSL socket");
+		upsdebugx(3, "%s: Can not bind file descriptor to SSL socket", __func__);
 		return -1;
 	}
 
@@ -1092,8 +1134,8 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			res = SSL_connect(ups->ssl);
 
 			if (res == 1) {
-				upsdebugx(3, "SSL connected (%s)",
-					SSL_get_version(ups->ssl));
+				upsdebugx(3, "%s: SSL connected (%s)",
+					__func__, SSL_get_version(ups->ssl));
 				break;
 			}
 
@@ -1161,6 +1203,8 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			return -1;
 		}
 	}
+
+	upsdebugx(3, "%s: Succeeded to STARTTLS (OpenSSL)", __func__);
 
 	return 1;
 
@@ -1250,6 +1294,8 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		/* TODO : Close the connection. */
 		return -1;
 	}
+
+	upsdebugx(3, "%s: Succeeded to STARTTLS (NSS)", __func__);
 
 	return 1;
 
