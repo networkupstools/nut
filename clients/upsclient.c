@@ -755,19 +755,23 @@ static ssize_t upscli_select_read(const int fd, void *buf, const size_t buflen, 
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
 
+	upsdebugx(6, "%s: will wait on select() for up to %" PRIuMAX ".%" PRIuMAX " seconds",
+		__func__, (uintmax_t)d_sec, (uintmax_t)d_usec);
 	tv.tv_sec = d_sec;
 	tv.tv_usec = d_usec;
 
+	errno = 0;
 	ret = select(fd + 1, &fds, NULL, NULL, &tv);
 
 	if (ret < 1) {
-		upsdebugx(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
+		upsdebug_with_errno(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
 		return ret;
 	}
 
+	errno = 0;
 	ret = read(fd, buf, buflen);
 	if (ret < 1) {
-		upsdebugx(3, "%s: read() failed: %" PRIiSIZE, __func__, ret);
+		upsdebug_with_errno(3, "%s: read() failed: %" PRIiSIZE, __func__, ret);
 	}
 
 	return ret;
@@ -916,16 +920,18 @@ static ssize_t upscli_select_write(const int fd, const void *buf, const size_t b
 	tv.tv_sec = d_sec;
 	tv.tv_usec = d_usec;
 
+	errno = 0;
 	ret = select(fd + 1, NULL, &fds, NULL, &tv);
 
 	if (ret < 1) {
-		upsdebugx(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
+		upsdebug_with_errno(3, "%s: select() failed: %" PRIiSIZE, __func__, ret);
 		return ret;
 	}
 
+	errno = 0;
 	ret = write(fd, buf, buflen);
 	if (ret < 1) {
-		upsdebugx(3, "%s: write() failed: %" PRIiSIZE, __func__, ret);
+		upsdebug_with_errno(3, "%s: write() failed: %" PRIiSIZE, __func__, ret);
 	}
 
 	return ret;
