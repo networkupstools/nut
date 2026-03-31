@@ -838,6 +838,7 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 					/* select failure is fatal enough to stop retrying */
 					upsdebugx(3, "%s: SSL_read and subsequent select() failed", __func__);
 					ssl_error(ups->ssl, (ssize_t)iret);
+					ups->upserror = UPSCLI_ERR_SSLERR;
 					return -1;
 				}
 				ssl_retries++;
@@ -847,11 +848,13 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 			/* Other errors are fatal */
 			upsdebugx(3, "%s: SSL_read failed: %" PRIiSIZE, __func__, (ssize_t)iret);
 			ssl_error(ups->ssl, (ssize_t)iret);
+			ups->upserror = UPSCLI_ERR_SSLERR;
 			return -1;
 		}
 
 		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
 			upslogx(LOG_ERR, "%s: SSL_read timed out after %d retries", __func__, ssl_retries);
+			ups->upserror = UPSCLI_ERR_SSLERR;
 			return -1;
 		}
 
@@ -987,6 +990,7 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 					/* select failure is fatal enough to stop retrying */
 					upsdebugx(3, "%s: SSL_write and subsequent select() failed", __func__);
 					ssl_error(ups->ssl, (ssize_t)iret);
+					ups->upserror = UPSCLI_ERR_SSLERR;
 					return -1;
 				}
 				ssl_retries++;
@@ -996,11 +1000,13 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 			/* Other errors (including iret=0) are fatal */
 			upsdebugx(3, "%s: SSL_write failed: %" PRIiSIZE, __func__, (ssize_t)iret);
 			ssl_error(ups->ssl, (ssize_t)iret);
+			ups->upserror = UPSCLI_ERR_SSLERR;
 			return -1;
 		}
 
 		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
 			upslogx(LOG_ERR, "%s: SSL_write timed out after %d retries", __func__, ssl_retries);
+			ups->upserror = UPSCLI_ERR_SSLERR;
 			return -1;
 		}
 
