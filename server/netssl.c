@@ -616,7 +616,21 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* Note: this call can generate memory leaks not resolvable
 	 * by any release function.
-	 * Probably SSL session key object allocation. */
+	 * Probably SSL session key object allocation.
+	 *
+	 * It also seems to block indefinitely (tested a minute),
+	 * until it decides that the handshake succeeded or failed.
+	 * A malicious or broken client could DoS the server here.
+	 * TOTHINK: Maybe we want to set an alarm and time-limit
+	 *  this attempt?
+	 * TOTHINK: Process such connections or generally dialogs
+	 *  in threads?
+	 *
+	 * In case of certificate expectation mismatches, it can
+	 * also block the server until the caller closes the socket
+	 * (we rely on the client continuing the crypto-dialog
+	 * after receiving OK STARTTLS posted above) :-\
+	 */
 	upsdebugx(4, "%s: calling SSL_ForceHandshake()", __func__);
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
