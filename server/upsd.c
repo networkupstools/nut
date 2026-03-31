@@ -704,6 +704,22 @@ int send_err(nut_ctype_t *client, const char *errtype)
 	return sendback(client, "ERR %s\n", errtype);
 }
 
+int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra)
+{
+	/* TOTHINK: Skip also empty `!*extra` strings? */
+	if (!extra) {
+		return send_err(client, errtype);
+	}
+
+	if (!client) {
+		return -1;
+	}
+
+	upsdebugx(4, "Sending error [%s] [%s] to client %s", errtype, extra, client->addr);
+
+	return sendback(client, "ERR %s %s\n", errtype, extra);
+}
+
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
