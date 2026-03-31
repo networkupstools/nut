@@ -685,10 +685,38 @@ const char *upscli_strerror(UPSCONN_t *ups)
 				upscli_errlist[ups->upserror].str,
 				"%s", errbuf);
 		} else {
-			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
-				"SSL error #%ld, message too %s to be displayed",
-				(long)PR_GetError(),
-				PR_GetErrorTextLength() > 0 ? "long" : "short");
+			/* Retry with other metods before giving up, see nss_error() */
+			char	err_name_buf[SMALLBUF];
+			PRErrorCode	err_num = PR_GetError();
+			const char	*err_name = PR_ErrorToName(err_num),
+					*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+
+			if (err_name) {
+				size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+				if (len > sizeof(err_name_buf) - 2) {
+					err_name_buf[sizeof(err_name_buf) - 2] = ')';
+					err_name_buf[sizeof(err_name_buf) - 1] = '\0';
+				}
+			} else {
+				err_name_buf[0] = '\0';
+			}
+
+			if (err_text && *err_text
+			 && strlen(err_text) + strlen(upscli_errlist[ups->upserror].str) < UPSCLI_ERRBUF_LEN
+			) {
+				snprintf_dynamic(
+					ups->errbuf, UPSCLI_ERRBUF_LEN,
+					upscli_errlist[ups->upserror].str,
+					"%s", err_text);
+				if (err_name && strlen(err_name_buf) + strlen(ups->errbuf) < UPSCLI_ERRBUF_LEN) {
+					strncat(ups->errbuf, err_name_buf, UPSCLI_ERRBUF_LEN - strlen(ups->errbuf) - 1);
+				}
+			} else {
+				snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
+					"SSL error #%ld, message too %s to be displayed",
+					(long)PR_GetError(),
+					PR_GetErrorTextLength() > 0 ? "long" : "short");
+			}
 		}
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
