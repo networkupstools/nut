@@ -611,14 +611,18 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
-		/*client->ssl = NULL;*/
 		send_err_extra(client, NUT_ERR_ACCESS_DENIED, "\"SSL handshake failed\"");
 		return;
 	}
 
 	/* Note: this call can generate memory leaks not resolvable
 	 * by any release function.
-	 * Probably SSL session key object allocation. */
+	 * Probably SSL session key object allocation.
+	 * In case of certificate expectation mismatches, it can
+	 * also block the server until the caller closes the socket
+	 * (we rely on the client continuing the crypto-dialog
+	 * after receiving OK STARTTLS posted above) :-\
+	 */
 	upsdebugx(4, "%s: calling SSL_ForceHandshake()", __func__);
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
