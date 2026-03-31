@@ -599,6 +599,11 @@ static void client_disconnect(nut_ctype_t *client)
 		return;
 	}
 
+	if (client->ssl && !client->ssl_connected) {
+		upsdebugx(3, "%s: semi-initialised SSL on a client, sleep a bit to flush the buffers with possible error messages", __func__);
+		usleep(10000);
+	}
+
 	upsdebugx(2, "Disconnect from %s", client->addr);
 
 	shutdown(client->sock_fd, 2);
