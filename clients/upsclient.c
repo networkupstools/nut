@@ -1929,6 +1929,7 @@ ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, 
 	ret = net_write(ups, buf, buflen, timeout);
 
 	if (ret < 1) {
+		upsdebugx(3, "%s: net_write() returned %" PRIiSIZE ", disconnecting", __func__, ret);
 		upscli_disconnect(ups);
 		return -1;
 	}
@@ -1972,6 +1973,7 @@ ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const 
 			ret = net_read(ups, ups->readbuf, sizeof(ups->readbuf), timeout);
 
 			if (ret < 1) {
+				upsdebugx(3, "%s: net_read() returned %" PRIiSIZE ", disconnecting", __func__, ret);
 				upscli_disconnect(ups);
 				return -1;
 			}
