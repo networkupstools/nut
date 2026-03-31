@@ -733,9 +733,11 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
 	upscli_readline_timeout.$(MAN_SECTION_API) \
+	upscli_readline_timeout_may_disconnect.$(MAN_SECTION_API) \
 	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
+	upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
@@ -795,7 +797,13 @@ INST_MAN_DEV_API_PAGES = \
 upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 	touch $@
 
+upscli_readline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
+	touch $@
+
 upscli_sendline_timeout.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
+	touch $@
+
+upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
 	touch $@
 
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
@@ -922,7 +930,9 @@ HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
 	upscli_readline_timeout.html \
+	upscli_readline_timeout_may_disconnect.html \
 	upscli_sendline_timeout.html \
+	upscli_sendline_timeout_may_disconnect.html \
 	upscli_tryconnect.html \
 	nutscan_scan_ip_range_snmp.html \
 	nutscan_scan_ip_range_xml_http.html \
@@ -930,10 +940,10 @@ HTML_DEV_MANS_FICTION = \
 	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
 
-upscli_readline_timeout.html: upscli_readline.html
+upscli_readline_timeout.html upscli_readline_timeout_may_disconnect.html: upscli_readline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_sendline_timeout.html: upscli_sendline.html
+upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli_sendline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
