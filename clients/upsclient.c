@@ -2077,8 +2077,9 @@ int upscli_disconnect(UPSCONN_t *ups)
 	 * drain the buffer and avoid noise in logs of upsd like:
 	 *   write() failed for 127.0.0.1: Transport endpoint is not connected
 	 */
+	memset(tmp, 0, sizeof(tmp));
 	if (net_read(ups, tmp, sizeof(tmp), 5) > 0) {
-		if (!strcmp(tmp, "OK Goodbye")) {
+		if (!strcmp(tmp, "OK Goodbye\n")) {
 			/* There may be trailing garbage from the buffer after the newline, not sure why */
 			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, as expected", __func__, tmp);
 		} else if (!strncmp(tmp, "OK", 2)) {
