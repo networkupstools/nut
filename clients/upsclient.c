@@ -1099,13 +1099,20 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	snprintf(buf, sizeof(buf), "STARTTLS\n");
 
 	if (upscli_sendline(ups, buf, strlen(buf)) != 0) {
-		upsdebugx(3, "%s: STARTTLS not established, failed to send request", __func__);
+		upsdebugx(3, "%s: STARTTLS not established, failed to send request: %s",
+			__func__, upscli_strerror(ups));
 		return -1;
 	}
 
 	if (upscli_readline(ups, buf, sizeof(buf)) != 0) {
-		upsdebugx(3, "%s: STARTTLS not established, failed to read response", __func__);
+		upsdebugx(3, "%s: STARTTLS not established, failed to read response: %s",
+			__func__, upscli_strerror(ups));
 		return -1;
+	}
+
+	if (strncmp(buf, "ERR ", 4) == 0) {
+		upsdebugx(3, "%s: STARTTLS not supported or init error: %s", __func__, buf);
+		return 0;		/* not supported */
 	}
 
 	if (strncmp(buf, "OK STARTTLS", 11) != 0) {
@@ -1113,7 +1120,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		return 0;		/* not supported */
 	}
 
-	/* upsd is happy, so let's crank up the client */
+	/* upsd is happy and said OK, so let's crank up the client */
 
 # ifdef WITH_OPENSSL
 
