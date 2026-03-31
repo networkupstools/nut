@@ -1903,7 +1903,7 @@ int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
 	return 1;
 }
 
-ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout)
+ssize_t upscli_sendline_timeout_may_disconnect(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout, int may_disconnect)
 {
 	ssize_t	ret;
 
@@ -1929,12 +1929,21 @@ ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, 
 	ret = net_write(ups, buf, buflen, timeout);
 
 	if (ret < 1) {
-		upsdebugx(3, "%s: net_write() returned %" PRIiSIZE ", disconnecting", __func__, ret);
-		upscli_disconnect(ups);
+		if (may_disconnect) {
+			upsdebugx(3, "%s: net_write() returned %" PRIiSIZE ", disconnecting", __func__, ret);
+			upscli_disconnect(ups);
+		} else {
+			upsdebugx(3, "%s: net_write() returned %" PRIiSIZE ", keeping connection open as caller wants it", __func__, ret);
+		}
 		return -1;
 	}
 
 	return 0;
+}
+
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout)
+{
+	return upscli_sendline_timeout_may_disconnect(ups, buf, buflen, timeout, 1);
 }
 
 ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
@@ -1942,7 +1951,7 @@ ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout)
+ssize_t upscli_readline_timeout_may_disconnect(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout, int may_disconnect)
 {
 	ssize_t	ret;
 	size_t	recv;
@@ -1973,8 +1982,12 @@ ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const 
 			ret = net_read(ups, ups->readbuf, sizeof(ups->readbuf), timeout);
 
 			if (ret < 1) {
-				upsdebugx(3, "%s: net_read() returned %" PRIiSIZE ", disconnecting", __func__, ret);
-				upscli_disconnect(ups);
+				if (may_disconnect) {
+					upsdebugx(3, "%s: net_read() returned %" PRIiSIZE ", disconnecting", __func__, ret);
+					upscli_disconnect(ups);
+				} else {
+					upsdebugx(3, "%s: net_read() returned %" PRIiSIZE ", keeping connection open as caller wants it", __func__, ret);
+				}
 				return -1;
 			}
 
@@ -1994,6 +2007,11 @@ ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const 
 
 	buf[recv] = '\0';
 	return 0;
+}
+
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout)
+{
+	return upscli_readline_timeout_may_disconnect(ups, buf, buflen, timeout, 1);
 }
 
 ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
