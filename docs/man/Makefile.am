@@ -546,13 +546,13 @@ SRC_DEV_PAGES = \
 	upscli_readline.txt \
 	upscli_report_build_details.txt \
 	upscli_sendline.txt \
-	upscli_set_debug_level.txt \
 	upscli_splitaddr.txt \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
 	upscli_ssl_caps.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	upscli_upslog_set_debug_level.txt \
 	upscli_str_add_unique_token.txt \
 	upscli_str_contains_token.txt \
 	libnutclient.txt \
@@ -587,8 +587,9 @@ SRC_DEV_PAGES = \
 	nutscan_free_device.txt \
 	nutscan_add_option_to_device.txt \
 	nutscan_add_device_to_device.txt \
-	nutscan_init.txt \
 	nutscan_get_serial_ports_list.txt \
+	nutscan_upslog_set_debug_level.txt \
+	nutscan_init.txt \
 	libupsclient-config.txt \
 	sockdebug.txt \
 	skel.txt
@@ -705,10 +706,15 @@ UPSCLI_SSL_CAPS_DEPS = \
 
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
-UPSCLI_SET_DEBUG_LEVEL_DEPS = \
-	upscli_get_debug_level.$(MAN_SECTION_API)
+UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
+	upscli_upslog_cookie.$(MAN_SECTION_API) \
+	upscli_upslog_get_debug_level.$(MAN_SECTION_API) \
+	upscli_upslog_start_sync.$(MAN_SECTION_API) \
+	upscli_upslog_setprocname.$(MAN_SECTION_API) \
+	upscli_upslog_getproctag.$(MAN_SECTION_API) \
+	upscli_upslog_setproctag.$(MAN_SECTION_API)
 
-$(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
+$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS): upscli_upslog_set_debug_level.$(MAN_SECTION_API)
 
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
@@ -730,8 +736,6 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
-	upscli_set_debug_level.$(MAN_SECTION_API) \
-	$(UPSCLI_SET_DEBUG_LEVEL_DEPS) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
@@ -739,6 +743,8 @@ INST_MAN_DEV_API_PAGES = \
 	$(UPSCLI_SSL_CAPS_DEPS) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
+	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
+	$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
 	upscli_str_contains_token.$(MAN_SECTION_API) \
 	libnutclient.$(MAN_SECTION_API) \
@@ -781,6 +787,8 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_add_commented_option_to_device.$(MAN_SECTION_API) \
 	nutscan_add_device_to_device.$(MAN_SECTION_API) \
 	nutscan_get_serial_ports_list.$(MAN_SECTION_API) \
+	nutscan_upslog_set_debug_level.$(MAN_SECTION_API) \
+	$(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
@@ -807,6 +815,16 @@ nutscan_scan_ip_range_ipmi.$(MAN_SECTION_API): nutscan_scan_ipmi.$(MAN_SECTION_A
 
 nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to_device.$(MAN_SECTION_API)
 	touch $@
+
+NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
+	nutscan_upslog_cookie.$(MAN_SECTION_API) \
+	nutscan_upslog_get_debug_level.$(MAN_SECTION_API) \
+	nutscan_upslog_start_sync.$(MAN_SECTION_API) \
+	nutscan_upslog_setprocname.$(MAN_SECTION_API) \
+	nutscan_upslog_getproctag.$(MAN_SECTION_API) \
+	nutscan_upslog_setproctag.$(MAN_SECTION_API)
+
+$(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS): nutscan_upslog_set_debug_level.$(MAN_SECTION_API)
 
 INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
@@ -849,13 +867,13 @@ INST_HTML_DEV_MANS = \
 	upscli_readline.html \
 	upscli_report_build_details.html \
 	upscli_sendline.html \
-	upscli_set_debug_level.html \
 	upscli_splitaddr.html \
 	upscli_splitname.html \
 	upscli_ssl.html \
 	upscli_ssl_caps.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	upscli_upslog_set_debug_level.html \
 	upscli_str_add_unique_token.html \
 	upscli_str_contains_token.html \
 	libnutclient.html \
@@ -891,6 +909,7 @@ INST_HTML_DEV_MANS = \
 	nutscan_add_option_to_device.html \
 	nutscan_add_device_to_device.html \
 	nutscan_get_serial_ports_list.html \
+	nutscan_upslog_set_debug_level.html \
 	nutscan_init.html \
 	libupsclient-config.html \
 	sockdebug.html \

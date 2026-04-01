@@ -3,7 +3,7 @@
 
    Copyright (C)
 	2010	Frederic Bohe <fredericbohe@eaton.com>
-	2021-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2021-2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -888,6 +888,9 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 	}
 }
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+IUNDVh";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -921,15 +924,18 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	i, default_opterr = opterr;
+	int	opt_ret = 0, default_opterr = opterr;
+	/* Note: here we do want ".exe" in the name, to reference
+	 * the man page from suggest_doc_links() correctly later!
+	 */
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
 
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
 	 * Currently neutered because that method ignores argc/argv de-facto.
 	 *    opterr = 0;
 	 */
-	while ((i = getopt(argc, argv, "+IUNDVh")) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
 			case 'U':
@@ -965,7 +971,7 @@ int main(int argc, char **argv)
 				 */
 				upsdebugx(1, "%s: unknown option ignored "
 					"(maybe SvcMain would use it later): '%c'",
-					progname, i);
+					progname, (char)opt_ret);
 				break;
 		}
 	}

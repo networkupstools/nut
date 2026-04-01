@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -120,7 +120,7 @@ void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	switch (mode)
 	{
@@ -268,7 +268,7 @@ void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	sleep(1);
 
@@ -419,26 +419,50 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_help(void)
 {
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	upscli_report_build_details();
+}
+
+static void dummy_setproctag_callback(const char *tag) {
+	const void	*cookie = nut_common_cookie();
+
+	if (cookie != upscli_upslog_cookie())
+		upscli_upslog_setproctag(xstrdup(tag), cookie);
 }
 
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+	const void	*cookie = nut_common_cookie();
+
+	/* Here we actually tweak libupsclient logging more,
+	 * relying on this method being called early in main.c */
+	upscli_upslog_start_sync(upslog_start_sync(NULL), cookie);
+	upscli_upslog_set_debug_level(nut_debug_level, cookie);
+
+	/* FIXME: All other calls to setproctag() in main.c would currently
+	 * be invisible to upscli_*() as that object file has no idea about
+	 * the library in this one driver... should we introduce a callback? */
+	if (cookie != upscli_upslog_cookie()) {
+		/* Send over a copy */
+		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
+		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+
+		upsdrv_callback_setproctag = dummy_setproctag_callback;
+	}
 }
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
-	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
+	addvar(VAR_FLAG,	"repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
 {
 	const char *val;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {
@@ -598,6 +622,9 @@ void upsdrv_cleanup(void)
 		free(ctx);
 		ctx = NULL;
 	}
+
+	upscli_cleanup();
+	upsdrv_callback_setproctag = NULL;
 }
 
 static int setvar(const char *varname, const char *val)

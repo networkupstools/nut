@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3707 utf-8
+personal_ws-1.1 en 3710 utf-8
 AAC
 AAS
 ABI
@@ -2506,6 +2506,7 @@ libnutclientstub
 libnutclientsub
 libnutconf
 libnutconfig
+libnutprivate
 libnutscan
 libpcre
 libpng
@@ -2983,6 +2984,7 @@ prjconf
 problemMatcher
 probu
 proc
+procname
 productid
 prog
 progname
@@ -3171,6 +3173,7 @@ setfsd
 setgid
 setinfo
 setpci
+setprocname
 setproctag
 setq
 setuid

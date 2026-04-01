@@ -128,7 +128,7 @@ DWORD WINAPI WriteThread( LPVOID lpParameter )
 }
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "pipedebug(WIN32)");
 	HANDLE	pipefd;
 	HANDLE	thread[2];
 

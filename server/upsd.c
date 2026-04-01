@@ -2211,6 +2211,9 @@ static void mainloop(void)
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+h46p:qr:i:fu:Vc:P:DFB";
+
 static void help(const char *arg_progname)
 {
 	print_banner_once(arg_progname, 2);
@@ -2303,7 +2306,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmdret = 0, foreground = -1;
+	int	opt_ret = 0, cmdret = 0, foreground = -1;
 #ifndef WIN32
 	int	cmd = 0;
 	pid_t	oldpid = -1;
@@ -2314,7 +2317,7 @@ int main(int argc, char **argv)
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 
-	progname = xbasename(argv[0]);
+	progname = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsd");
 	setproctag(progname);
 
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
@@ -2327,22 +2330,7 @@ int main(int argc, char **argv)
 	datapath = xstrdup(NUT_DATADIR);
 #else	/* WIN32 */
 	datapath = getfullpath2(NUT_DATADIR, PATH_SHARE);
-	/* no statepath here, we talk via named pipes */
-
-	/* remove trailing .exe */
-	char * drv_name;
-	drv_name = (char *)xbasename(argv[0]);
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			progname = strdup(drv_name);
-			char * t = strrchr(progname,'.');
-			*t = 0;
-		}
-	}
-	else {
-		progname = drv_name;
-	}
+	/* no statepath here really, we talk via named pipes */
 #endif	/* WIN32 */
 
 	/* set up some things for later */
@@ -2350,8 +2338,8 @@ int main(int argc, char **argv)
 
 	print_banner_once(progname, 0);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"

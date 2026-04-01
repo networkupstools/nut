@@ -52,6 +52,7 @@ tags
 /VERSION_FORCED
 /VERSION_FORCED_SEMVER
 /install-sh
+/.libs-dev-PATH
 /libtool
 /ltmain.sh
 /missing

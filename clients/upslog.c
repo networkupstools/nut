@@ -43,6 +43,10 @@
 #include "upslog.h"
 #include "str.h"
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
@@ -189,6 +193,9 @@ static void setup_signals(void)
 
 static void help(const char *prog)
 	__attribute__((noreturn));
+
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+hDs:l:i:d:Nf:u:Vp:FBm:W:";
 
 static void help(const char *prog)
 {
@@ -508,9 +515,14 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upslog");
 	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
@@ -522,25 +534,59 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
+	 */
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
+	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
 #if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	setproctag(prog);
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
-		switch(i) {
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+
+		switch (opt_ret)
+		{
+			case 'D': break;	/* See nut_debug_level handled above */
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
-
-			case 'D':
-				nut_debug_level++;
-				upscli_set_debug_level(nut_debug_level);
-				break;
 
 			case 'm': { /* var scope */
 					char *m_arg, *s;
@@ -654,7 +700,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 
 		}
 	}
@@ -1013,6 +1059,9 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
+
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
@@ -1038,6 +1087,7 @@ int main(int argc, char **argv)
 		logformat = NULL;
 	}
 
+	upscli_cleanup();
 	exit(EXIT_SUCCESS);
 }
 

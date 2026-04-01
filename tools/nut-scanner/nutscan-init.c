@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - 2021 EATON
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2021 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,8 +73,15 @@ int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
+void nutscan_upscli_set_debug_level(int level, const void *cookie);
+void nutscan_upscli_setprocname(const char *pn, const void *cookie);
+void nutscan_upscli_setproctag(const char *tag, const void *cookie);
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 int nutscan_load_upower_library(const char *libname_path);
 int nutscan_unload_upower_library(void);
+
+/* privately exported from common.c for internal libs */
+const char *setproctag_lib_once(const char *val);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
@@ -149,6 +156,69 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 }
 #endif	/* WIN32 */
 
+const void *nutscan_upslog_cookie(void)
+{
+	return nut_common_cookie();
+}
+
+void nutscan_upslog_set_debug_level(int level, const void *cookie) {
+	nut_debug_level = level;
+
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_set_debug_level(level, cookie ? cookie : nutscan_upslog_cookie());
+
+}
+
+int nutscan_upslog_get_debug_level(void)
+{
+	return nut_debug_level;
+}
+
+/* Avoid re-querying /proc or equivalent and logging about it,
+ * if the caller is a NUT program that already knows its name:
+ * see getmyprocname() in NUT common library */
+void nutscan_upslog_setprocname(const char *pn, const void *cookie)
+{
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	setmyprocname(pn);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setprocname(pn, cookie ? cookie : nutscan_upslog_cookie());
+}
+
+void nutscan_upslog_setproctag(const char *tag, const void *cookie)
+{
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	setproctag(tag);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setproctag(tag, cookie ? cookie : nutscan_upslog_cookie());
+}
+
+const char *nutscan_upslog_getproctag(void)
+{
+	return getproctag();
+}
+
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie)
+{
+	/* No-op if internal tv equals passed tv */
+	struct timeval *nstv = upslog_start_sync(tv);
+
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_upslog_start_sync(nstv, cookie ? cookie : nutscan_upslog_cookie());
+
+	return nstv;
+}
+
 void nutscan_init(void)
 {
 	char *libname = NULL;
@@ -163,6 +233,8 @@ void nutscan_init(void)
 		WSA_Started = 1;
 	}
 #endif	/* WIN32 */
+
+	upsdebugx(1, "%s: starting...", __func__);
 
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
@@ -694,6 +766,8 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
+
+	upsdebugx(1, "%s: done", __func__);
 }
 
 /* Return 0 on success, -1 on error e.g. "was not loaded";
@@ -750,6 +824,8 @@ end:
 
 void nutscan_free(void)
 {
+	upsdebugx(1, "%s: starting...", __func__);
+
 	nutscan_unload_usb_library();
 	nutscan_unload_snmp_library();
 	nutscan_unload_neon_library();
@@ -775,4 +851,5 @@ void nutscan_free(void)
 # endif
 #endif
 
+	upsdebugx(1, "%s: done", __func__);
 }

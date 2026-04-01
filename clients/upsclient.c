@@ -2272,12 +2272,59 @@ int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
  * active memory, and upsdebugx() calls suffer if the library's copy
  * is never changed from zero.
  */
-void upscli_set_debug_level(int lvl)
+
+/* privately exported from common.c for internal libs */
+const char *setproctag_lib_once(const char *val);
+
+const void *upscli_upslog_cookie(void)
 {
-	nut_debug_level = lvl;
+	return nut_common_cookie();
 }
 
-int  upscli_get_debug_level(void)
+void upscli_upslog_set_debug_level(int lvl, const void *cookie)
+{
+	nut_debug_level = lvl;
+
+	if (cookie == upscli_upslog_cookie())
+		return;
+
+	setproctag_lib_once("libupsclient");
+}
+
+int upscli_upslog_get_debug_level(void)
 {
 	return nut_debug_level;
+}
+
+/* Avoid re-querying /proc or equivalent and logging about it,
+ * if the caller is a NUT program that already knows its name:
+ * see getmyprocname() in NUT common library */
+void upscli_upslog_setprocname(const char *pn, const void *cookie)
+{
+	if (cookie != upscli_upslog_cookie())
+		setproctag_lib_once("libupsclient");
+
+	setmyprocname(pn);
+}
+
+void upscli_upslog_setproctag(const char *tag, const void *cookie)
+{
+	if (cookie != upscli_upslog_cookie())
+		setproctag_lib_once("libupsclient");
+
+	setproctag(tag);
+}
+
+const char *upscli_upslog_getproctag(void)
+{
+	return getproctag();
+}
+
+struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
+{
+	if (cookie != upscli_upslog_cookie())
+		setproctag_lib_once("libupsclient");
+
+	/* No-op if internal tv equals passed tv */
+	return upslog_start_sync(tv);
 }
