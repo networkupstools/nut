@@ -3,7 +3,7 @@
    Copyright (C)
    2001		Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
-   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -900,10 +900,12 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				}
 			}
 
+			/* Block until alarm */
 			waitret = waitpid(pid, &wstat, 0);
 
 			alarm(0);
 
+			/* Bump timeout or error counts if appropriate */
 			if (waitret == -1) {
 				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
 				exec_timeout++;
@@ -933,7 +935,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			}
 
 			return;
-		}
+		}	/* end of pid != 0 (fork parent) part */
 
 		if (getproctag()) {
 			char	tag[SMALLBUF];
@@ -942,7 +944,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		} else {
 			setproctag("child");
 		}
-	}
+	}	/* forked, maybe */
 
 	/* child or foreground mode (no fork, e.g. single driver operation)
 	 * execute the specified binary and args into current process
@@ -1009,8 +1011,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	}
 
 	/* Wait a bit then look at driver process.
-	 * Unlike under Linux, Windows spawn drivers directly. If the driver is alive, all is OK.
-	 * An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 * Unlike under Linux, Windows spawn drivers directly.
+	 * If the driver is alive, all is OK.
+	 * An optimization can probably be implemented
+	 * to prevent waiting so much time when all is OK.
 	 */
 
 	/* Use the local maxstartdelay, if available */
@@ -1996,7 +2000,7 @@ int main(int argc, char **argv)
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay %d sec but has finished by now",
+						"maxstartdelay %d sec but has finished starting by now",
 						tmp->upsname, (intmax_t)tmp->pid,
 						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					tmp->exceeded_timeout = 0;
@@ -2158,6 +2162,8 @@ int main(int argc, char **argv)
 				reset_signal_flag();
 				upsdebugx(1, "upsdrvctl: handling signal: finished");
 			}
+#else	/* WIN32 */
+			/* TOTHINK: Is there something we can do on the platform? */
 #endif	/* !WIN32 */
 
 			sleep(1);
