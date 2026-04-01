@@ -69,6 +69,7 @@ void kick_login_clients(const char *upsname);
 int sendback(nut_ctype_t *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int send_err(nut_ctype_t *client, const char *errtype);
+int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra);
 
 void server_load(void);
 void server_free(void);

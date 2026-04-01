@@ -143,6 +143,8 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      in other programs. Extended public API of libupsclient and libnutscan
      to diligently arrange debug-logging when at run-time those libraries
      actually have different copies of the methods and data involved. [#3378]
+   * Revised 'dstate' machinery to track socket connections closed mid-way
+     through a call, to avoid access after `free()`. [#3302]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -708,8 +710,8 @@ Release notes for NUT 2.8.4 - what's new since 2.8.3
 
  - `upsdrvquery` API updates [#2969]:
    * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
-     existing `udq_pipe_conn_t *` connection. The caller manages the
-     connection's lifecycle, and the function includes a best-effort call to
+     existing `udq_pipe_conn_t *` connection. The caller manages the lifecycle
+     of the socket connection, and the function includes a best-effort call to
      restore broadcast mode after the query to return the connection as it was.
    * Added `upsdrvquery_oneshot_sockfn()` for initiating one-shot queries using
      a socket filename. Shares internal logic with the existing
