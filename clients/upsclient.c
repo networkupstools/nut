@@ -164,7 +164,7 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 /* Flag for SSL init */
 static int upscli_initialized = 0;
 
-/* 0 means no timeout in upscli_connect() */
+/* 0 means no timeout in upscli_connect(), aka built-in(blocking) default */
 static struct timeval upscli_default_connect_timeout = {0, 0};
 static int upscli_default_connect_timeout_initialized = 0;
 
@@ -2316,7 +2316,7 @@ void upscli_get_default_connect_timeout(struct timeval *ptv) {
 }
 
 int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs) {
-	const char	*envvar_secs, *cause = "built-in";
+	const char	*envvar_secs, *cause = "built-in(blocking)";
 	int	failed = 0, applied = 0;
 
 	/* First the very default: blocking connections as we always had */
