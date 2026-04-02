@@ -675,7 +675,23 @@ during a power failure when low battery is reached.
 
 We will test for the presence of this file in a later step.
 
+It is recommended to use a volatile file system, which is re-created
+during boot, like `/run` or `/var/run` on many OSes. Historic default
+was under `/etc` where unprivileged users could not write, but a
+persistent file could confuse the later shutdowns if it was not removed.
+
 	POWERDOWNFLAG /etc/killpower
+
+As far as NUT is concerned, this should be configured on any `upsmon`
+instance which is "primary" for any device that may be commanded to
+shut down, and is powered by same device.
+
+Other shutdown scripts, on "primary" or "secondary" systems are however
+welcome to check for the time-constrained shutdown due to power outage,
+in case they need to balance graceful vs. urgent activities (e.g. how
+long to wait for their client-server disconnection).
+
+The `upsmon -K` command should be used for such check.
 
 References: man pages: linkman:upsmon[8],
 linkman:upsmon.conf[5]
