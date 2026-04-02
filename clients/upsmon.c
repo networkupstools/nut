@@ -2694,12 +2694,30 @@ static void loadconfig(void)
 
 	/* TOTHINK: Should this warning be limited to non-WIN32 builds? */
 	if (!powerdownflag) {
+		int	is_primary = 0;
+		utype_t	*ups;
+
+		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
+			if (flag_isset(ups->status, ST_PRIMARY)) {
+				is_primary = 1;
+				break;
+			}
+		}
+
 		upslogx(LOG_WARNING, "No POWERDOWNFLAG value was configured in %s!",
 			configfile);
 		upslogx(LOG_INFO,
 			"POWERDOWNFLAG should be a path to file that is normally "
 			"writeable for root user, and remains at least readable "
 			"late in shutdown after all unmounting completes.");
+
+		if (is_primary)
+			upslogx(LOG_WARNING, "This upsmon instance is PRIMARY "
+				"for at least one device, but would not be able "
+				"to arrange its power-cycling when needed, "
+				"in the end of handling a power outage.\n"
+				"In case of a power-race condition, this can "
+				"leave your computer(s) indefinitely halted.");
 	}
 }
 
