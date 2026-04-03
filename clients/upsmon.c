@@ -2694,13 +2694,16 @@ static void loadconfig(void)
 
 	/* TOTHINK: Should this warning be limited to non-WIN32 builds? */
 	if (!powerdownflag) {
-		int	is_primary = 0;
+		int	is_primary = 0, is_fed = 0;
 		utype_t	*ups;
 
 		for (ups = firstups; ups != NULL; ups = (utype_t *)ups->next) {
 			if (flag_isset(ups->status, ST_PRIMARY)) {
 				is_primary = 1;
-				break;
+				if (ups->pv > 0) {
+					is_fed = 1;
+					break;
+				}
 			}
 		}
 
@@ -2713,11 +2716,18 @@ static void loadconfig(void)
 
 		if (is_primary)
 			upslogx(LOG_WARNING, "This upsmon instance is PRIMARY "
-				"for at least one device, but would not be able "
+				"for at least one device%s, but would not be able "
 				"to arrange its power-cycling when needed, "
 				"in the end of handling a power outage.\n"
 				"In case of a power-race condition, this can "
-				"leave your computer(s) indefinitely halted.");
+				"leave your computer(s) indefinitely halted.",
+				is_fed ? " that feeds it" : "");
+		else
+			upslogx(LOG_WARNING, "This upsmon instance is not a "
+				"PRIMARY for any device, so this can be of "
+				"little concern unless other shutdown routines "
+				"on your system also consult it to act fast "
+				"during an outage.");
 	}
 }
 

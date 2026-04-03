@@ -382,6 +382,7 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * Clarify the warning about lack of `POWERDOWNFLAG` in configuration. [#3391]
    * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
      the primary `upsmon` initiated the shutdown and has some secondaries
      to wait for first. [#3084]
