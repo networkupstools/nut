@@ -211,11 +211,22 @@ static void do_cmd(char **argv, const int argc)
 		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
 		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
 	) {
+		char	*e = getenv("NUT_QUIET_OK_NOTRACKING");
+		int	lvl = 0;	/* Visible by default */
+
+		if (e && !strcmp(e, "true"))
+			lvl = 1;	/* Hide into debuging if asked to */
+
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
-		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
-			"but as we did not wait for result, we do not know if it was handled in fact.",
-			__func__);
+		upsdebugx(lvl, "%s: 'OK' only means the NUT data server accepted\n"
+			"the request as valid, but as we did not wait for result,\n"
+			"we do not know if it was handled in fact.%s",
+			lvl ? __func__ : "WARNING",
+			lvl ? "" :
+			"\nYou can export NUT_QUIET_OK_NOTRACKING=true to hide this message,\n"
+			"or use -w [-t SEC] option(s) to track the actual outcome."
+			);
 		return;
 	}
 

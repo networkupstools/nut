@@ -402,6 +402,11 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsc` has now optional JSON output [issue #3172, PR #3178]
 
+ - `upscmd` and `upsrw` clients would now report that the "OK" response only
+   means that the server accepted the query, if wait mode ("TRACKING") was
+   not specified, and what users could do about it (e.g. use the `-w` option
+   or `export NUT_QUIET_OK_NOTRACKING=true` to hide the warning). [issue #3383]
+
  - `upsset` CGI tool should now recognize `RANGE NUMBER` and `NUMBER` types.
    [#3164]
 
