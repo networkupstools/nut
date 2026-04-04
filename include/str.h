@@ -141,6 +141,10 @@ char *strsep(char **stringp, const char *delim);
 #define HAVE_STRSEP 1
 #endif
 
+/* Concatenates "count" strings into a dynamically allocated object which
+ * the caller can use and must free() later on */
+char *	str_concat(size_t count, ...);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
