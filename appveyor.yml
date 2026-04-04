@@ -28,6 +28,20 @@ environment:
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
   CCACHE_DIR: /home/appveyor/.ccache
 
+# Customize GH notification message template
+notifications:
+  - provider: GitHubPullRequest
+    template: |
+      {{#passed}}:white_check_mark:{{/passed}}{{#failed}}:x:{{/failed}} [Build {{&projectName}} {{buildVersion}} {{status}}]({{buildUrl}}) (commit {{commitUrl}} by @{{&commitAuthorUsername}})
+      * [artifacts{{#failed}} (if any){{/failed}}]({{buildurl}}/artifacts)
+      {{#passed}}
+        {{#jobs}}
+          {{#messages}}
+      * {{message}}
+          {{/messages}}
+        {{/jobs}}
+      {{/passed}}
+
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
 # or look for the chapter in nearby lines in later (current) revisions.
 # Note: not using `time` in scripts currently - they did upset
@@ -152,6 +166,14 @@ after_test:
         C:\msys64\usr\bin\bash -lc 'date -u'
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
+
+  - ps: |
+        $nut7z = "NUT-for-Windows-x86_64-SNAPSHOT-$($env:APPVEYOR_BUILD_VERSION).7z"
+        $msg = "A 7-zip archive with built NUT for Windows debug binaries for commit $($env:APPVEYOR_REPO_COMMIT) is temporarily available: [$($nut7z)]($($env:APPVEYOR_URL)/api/buildjobs/$($env:APPVEYOR_JOB_ID)/artifacts/$($nut7z))"
+        echo $msg
+        echo "build-id:$($env:APPVEYOR_BUILD_ID) job-id:$($env:APPVEYOR_JOB_ID) prj-id:$($env:APPVEYOR_PROJECT_ID)"
+        Add-AppveyorMessage $msg
+
   - cmd: |
         REM Preserve the current working directory:
         set CHERE_INVOKING=yes
