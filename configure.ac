@@ -196,7 +196,7 @@ AC_SUBST([NUT_CONFIG_LDFLAGS])
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([subdir-objects tar-pax])
 
 AS_CASE([${target_os}],
 	[*mingw*], [AS_CASE([${CFLAGS-}${CXXFLAGS-}],
