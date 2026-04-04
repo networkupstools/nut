@@ -180,6 +180,7 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
 
  - `apc_modbus` driver updates:
    * Fixed register range in a logging string.
+   * Add outlet group timers.
 
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]

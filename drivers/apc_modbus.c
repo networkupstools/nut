@@ -820,6 +820,42 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
 
 static apc_modbus_converter_t _apc_modbus_date_conversion = { _apc_modbus_date_to_nut, _apc_modbus_date_from_nut };
 
+/*
+ * Timer countdown conversion:
+ * -1: NotActive - No countdown in progress
+ *  0: CountdownExpired - Countdown has ended
+ *  1-2147483647: Seconds remaining
+ */
+static int _apc_modbus_timer_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
+{
+	int res;
+
+	if (value == NULL || output == NULL || output_len == 0) {
+		/* Invalid parameters */
+		return 0;
+	}
+
+	if (value->type != APC_VT_INT) {
+		return 0;
+	}
+
+	if (value->data.int_value == -1) {
+		res = snprintf(output, output_len, "NotActive");
+	} else if (value->data.int_value == 0) {
+		res = snprintf(output, output_len, "CountdownExpired");
+	} else {
+		res = snprintf(output, output_len, "%" PRIi64, value->data.int_value);
+	}
+
+	if (res < 0 || (size_t)res >= output_len) {
+		return 0;
+	}
+
+	return 1;
+}
+
+static apc_modbus_converter_t _apc_modbus_timer_conversion = { _apc_modbus_timer_to_nut, NULL };
+
 typedef struct {
 	const char *nut_variable_name;
 	size_t modbus_addr;
@@ -870,9 +906,18 @@ static apc_modbus_register_t apc_modbus_register_map_dynamic[] = {
 	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     APC_VF_NONE,         NULL,                                   "%" PRIu64, 0,  NULL    },
 	{ "input.voltage",                  151,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_voltage_conversion,        "%.2f",     6,  NULL    },
 	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_efficiency_conversion,     "%.1f",     7,  NULL    },
-	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.start",                156,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "ups.timer.start",                156,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.shutdown",  159,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.start",     160,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.reboot",    161,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.shutdown",  163,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.start",     164,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.reboot",    165,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.shutdown",  167,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.start",     168,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.reboot",    169,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
 	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
@@ -1466,7 +1511,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	uint16_t regbuf[32];
+	uint16_t regbuf[44];
 	uint64_t value;
 
 	if (!is_open) {
@@ -1538,7 +1583,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Dynamic Data */
-	if (_apc_modbus_read_registers(modbus_ctx, 128, 32, regbuf)) {
+	if (_apc_modbus_read_registers(modbus_ctx, 128, 44, regbuf)) {
 		/* InputStatus_BF, 1 register */
 		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
 		if (value & (1 << 5)) {
@@ -1548,7 +1593,7 @@ void upsdrv_updateinfo(void)
 			status_set("TRIM");
 		}
 
-		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 32, 128);
+		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 44, 128);
 	} else {
 		dstate_datastale();
 		return;
