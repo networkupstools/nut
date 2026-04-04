@@ -81,6 +81,20 @@ jobs:
         echo "github.ref='${{ github.ref }}'" || true
         echo "github.ref_name='${{ github.ref_name }}'" || true
 
+    - name: "GHA-01: Create/Update new GH PR comment for future link"
+      if: github.event.pull_request.number > 0
+      continue-on-error: true
+      env:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        message: |
+            Preparing a ZIP file with standard source tarball and another
+            tarball with pre-built docs for commit ${{ env.ref }} ...
+        comment-tag: tarball-url
+        github-token: ${{ env.GITHUB_TOKEN }}
+
     # Make build identification more useful (so we use no fallbacks in script)
     - name: Try to get more Git metadata
       run: |
@@ -266,6 +280,23 @@ jobs:
           nut-*.tar*
         compression-level: 0
         overwrite: true
+
+    - name: "GHA-01: Create/update new GH PR comment with link"
+      if: github.event.pull_request.number > 0
+      continue-on-error: true
+      env:
+        artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+        artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        message: |
+            A ZIP file with standard source tarball and another tarball
+            with pre-built docs for commit ${{ env.ref }} is temporarily
+            available: [${{ env.artifact_name }}](${{ env.artifact_url }}).
+        comment-tag: tarball-url
+        github-token: ${{ env.GITHUB_TOKEN }}
 
     # NOTE: Despite the docs examples, due to GH API changes in Mar 2025
     # this action can no longer update an existing check, only create a
