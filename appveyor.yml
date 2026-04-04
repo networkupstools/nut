@@ -29,6 +29,8 @@ environment:
   CCACHE_DIR: /home/appveyor/.ccache
 
 # Customize GH notification message template
+# TODO: for repetitive commits in a PR consider a clean-up GHA like
+#  https://github.com/marketplace/actions/delete-pr-comments-during-subsequent-ci
 notifications:
   - provider: GitHubPullRequest
     template: |
@@ -167,9 +169,10 @@ after_test:
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
 
+  # Consider APPVEYOR_PULL_REQUEST_HEAD_COMMIT (PR) vs APPVEYOR_REPO_COMMIT (target branch, or ephemeral)
   - ps: |
         $nut7z = "NUT-for-Windows-x86_64-SNAPSHOT-$($env:APPVEYOR_BUILD_VERSION).7z"
-        $msg = "A 7-zip archive with built NUT for Windows debug binaries for commit $($env:APPVEYOR_REPO_COMMIT) is temporarily available: [$($nut7z)]($($env:APPVEYOR_URL)/api/buildjobs/$($env:APPVEYOR_JOB_ID)/artifacts/$($nut7z))"
+        $msg = "A 7-zip archive with built NUT for Windows debug binaries is temporarily available: [$($nut7z)]($($env:APPVEYOR_URL)/api/buildjobs/$($env:APPVEYOR_JOB_ID)/artifacts/$($nut7z))"
         echo $msg
         echo "build-id:$($env:APPVEYOR_BUILD_ID) job-id:$($env:APPVEYOR_JOB_ID) prj-id:$($env:APPVEYOR_PROJECT_ID)"
         Add-AppveyorMessage $msg
