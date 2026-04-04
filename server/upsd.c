@@ -599,6 +599,11 @@ static void client_disconnect(nut_ctype_t *client)
 		return;
 	}
 
+	if (client->ssl && !client->ssl_connected) {
+		upsdebugx(3, "%s: semi-initialised SSL on a client, sleep a bit to flush the buffers with possible error messages", __func__);
+		usleep(10000);
+	}
+
 	upsdebugx(2, "Disconnect from %s", client->addr);
 
 	shutdown(client->sock_fd, 2);
@@ -1547,6 +1552,7 @@ static void mainloop(void)
 	size_t	chunk = 0;
 #endif	/* WIN32 */
 
+	size_t	nfds_tmp_type_all, nfds_tmp_chosen;	/* Report socket counts per type (driver, client...) */
 	size_t	nfds_wanted = 0,	/* Connections we looked at (some may be invalid) */
 		nfds_considered = 0;	/* Connections we wanted to poll (but might be over maxconn limit) */
 	nfds_t	nfds = 0;
@@ -1572,8 +1578,11 @@ static void mainloop(void)
 
 #ifndef WIN32
 	/* scan through driver sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (ups = firstups; ups; ups = ups->next) {
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
@@ -1613,8 +1622,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, FD %d]",
-			__func__, (uintmax_t)nfds, ups->name, ups->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER (%" PRIuMAX "/%" PRIuMAX ") [%s, FD %d]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			ups->name, ups->sock_fd);
 		fds[nfds].fd = ups->sock_fd;
 		fds[nfds].events = POLLIN;
 
@@ -1625,9 +1637,12 @@ static void mainloop(void)
 	}
 
 	/* scan through client sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (client = firstclient; client; client = cnext) {
 		cnext = client->next;
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
@@ -1650,8 +1665,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT [%s => %s, FD %d]",
-			__func__, (uintmax_t)nfds, client->addr, client->loginups, client->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT (%" PRIuMAX "/%" PRIuMAX ") [%s => %s, FD %d]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			client->addr, client->loginups, client->sock_fd);
 		fds[nfds].fd = client->sock_fd;
 		fds[nfds].events = POLLIN;
 
@@ -1662,8 +1680,11 @@ static void mainloop(void)
 	}
 
 	/* scan through server sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (server = firstaddr; server; server = server->next) {
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		if (INVALID_FD_SOCK(server->sock_fd)) {
 			upsdebugx(5, "%s: skip invalid SERVER listener [%s:%s, FD %d]: socket not bound", __func__, server->addr, server->port, server->sock_fd);
@@ -1677,8 +1698,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener [%s:%s, FD %d]",
-			__func__, (uintmax_t)nfds, server->addr, server->port, server->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener (%" PRIuMAX "/%" PRIuMAX ") [%s:%s, FD %d]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			server->addr, server->port, server->sock_fd);
 		fds[nfds].fd = server->sock_fd;
 		fds[nfds].events = POLLIN;
 
@@ -1755,24 +1779,29 @@ static void mainloop(void)
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "%s", __func__);
+		/* Sleep to avoid insane looping: */
+		upsdebugx(2, "%s: polling failed: code %d; sleeping 0.1 sec and retrying the loop", __func__, ret);
 		usleep(100000);	/* 0.1 sec */
 		return;
 	}
 
+	upsdebugx(2, "%s: polling returned %d hits", __func__, ret);
 	for (i = 0; i < nfds; i++) {
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
-			upsdebug_with_errno(3, "%s: Disconnect %s%s due to%s%s%s",
+			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %d] due to%s%s%s",
 				__func__,
-				(handler[i].type==DRIVER ? "driver " :
-				(handler[i].type==CLIENT ? "client " :
-				(handler[i].type==SERVER ? "server"  :
+				(handler[i].type==DRIVER ? "DRIVER" :
+				(handler[i].type==CLIENT ? "CLIENT" :
+				(handler[i].type==SERVER ? "SERVER"  :
 				"<unknown>"))),
 				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
 				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
 				(handler[i].type==SERVER ? "" :
 				""))),
+				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
+				fds[i].fd,
 				(fds[i].revents & POLLHUP ? " POLLHUP" : ""),
 				(fds[i].revents & POLLERR ? " POLLERR" : ""),
 				(fds[i].revents & POLLNVAL ? " POLLNVAL" : "")
@@ -1826,6 +1855,21 @@ static void mainloop(void)
 
 		if (fds[i].revents & POLLIN) {
 
+			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %d]",
+				__func__,
+				(handler[i].type==SERVER ? "connection" : "data"),
+				(handler[i].type==DRIVER ? "DRIVER" :
+				(handler[i].type==CLIENT ? "CLIENT" :
+				(handler[i].type==SERVER ? "SERVER"  :
+				"<unknown>"))),
+				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
+				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
+				(handler[i].type==SERVER ? "" :
+				""))),
+				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
+				fds[i].fd
+				);
+
 			switch(handler[i].type)
 			{
 			case DRIVER:
@@ -1871,10 +1915,15 @@ static void mainloop(void)
 			continue;
 		}
 	}
+
 #else	/* WIN32 */
+
 	/* scan through driver sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (ups = firstups; ups; ups = ups->next) {
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		/* see if we need to (re)connect to the socket */
 		if (INVALID_FD(ups->sock_fd)) {
@@ -1907,7 +1956,7 @@ static void mainloop(void)
 		}
 
 		if (INVALID_FD(ups->read_overlapped.hEvent)) {
-			upsdebugx(5, "%s: skip DRIVER [%s, handle %p: event loop not bound", __func__, ups->name, ups->sock_fd);
+			upsdebugx(5, "%s: skip DRIVER [%s, handle %p]: event loop not bound", __func__, ups->name, ups->sock_fd);
 			continue;
 		}
 
@@ -1918,8 +1967,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER [%s, handle %p]",
-			__func__, (uintmax_t)nfds, ups->name, ups->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for DRIVER (%" PRIuMAX "/%" PRIuMAX ") [%s, handle %p]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			ups->name, ups->sock_fd);
 		fds[nfds] = ups->read_overlapped.hEvent;
 
 		handler[nfds].type = DRIVER;
@@ -1929,9 +1981,12 @@ static void mainloop(void)
 	}
 
 	/* scan through client sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (client = firstclient; client; client = cnext) {
 		cnext = client->next;
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
@@ -1958,8 +2013,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT [%s => %s, FD %" PRIuMAX "]",
-			__func__, (uintmax_t)nfds, client->addr, client->loginups, (uintmax_t)client->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for CLIENT (%" PRIuMAX "/%" PRIuMAX ") [%s => %s, FD %" PRIuMAX "]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			client->addr, client->loginups, (uintmax_t)client->sock_fd);
 		fds[nfds] = client->Event;
 
 		handler[nfds].type = CLIENT;
@@ -1969,8 +2027,11 @@ static void mainloop(void)
 	}
 
 	/* scan through server sockets */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (server = firstaddr; server; server = server->next) {
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		if (INVALID_FD_SOCK(server->sock_fd)) {
 			upsdebugx(5, "%s: skip invalid SERVER listener [%s:%s, FD %" PRIuMAX "]: socket not bound", __func__, server->addr, server->port, (uintmax_t)server->sock_fd);
@@ -1989,8 +2050,11 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener [%s:%s, FD %" PRIuMAX "]",
-			__func__, (uintmax_t)nfds, server->addr, server->port, (uintmax_t)server->sock_fd);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for SERVER listener (%" PRIuMAX "/%" PRIuMAX ") [%s:%s, FD %" PRIuMAX "]",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all,
+			server->addr, server->port, (uintmax_t)server->sock_fd);
 		fds[nfds] = server->Event;
 
 		handler[nfds].type = SERVER;
@@ -2000,8 +2064,11 @@ static void mainloop(void)
 	}
 
 	/* Wait on the read IO on named pipe  */
+	nfds_tmp_type_all = 0;
+	nfds_tmp_chosen = 0;
 	for (conn = pipe_connhead; conn; conn = conn->next) {
 		nfds_considered++;
+		nfds_tmp_type_all++;
 
 		/* FIXME: derive name from conn->handle to report it.
 		 * See GetFileInformationByHandleEx() in API
@@ -2018,8 +2085,10 @@ static void mainloop(void)
 			continue;
 		}
 
-		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for NAMED PIPE",
-			__func__, (uintmax_t)nfds);
+		nfds_tmp_chosen++;
+		upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for NAMED PIPE (%" PRIuMAX "/%" PRIuMAX ")",
+			__func__, (uintmax_t)nfds,
+			(uintmax_t)nfds_tmp_chosen, (uintmax_t)nfds_tmp_type_all);
 		fds[nfds] = conn->overlapped.hEvent;
 		handler[nfds].type = NAMED_PIPE;
 		handler[nfds].data = (void *)conn;
@@ -2036,7 +2105,7 @@ static void mainloop(void)
 			/* ignore listeners that we are unable to handle */
 			upsdebugx(5, "%s: skip handler for new NAMED PIPE connections: too many handled already", __func__);
 		} else {
-			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for new NAMED PIPE connection",
+			upsdebugx(4, "%s: adding FD handler #%" PRIuMAX " for new NAMED PIPE connection (1/1)",
 				__func__, (uintmax_t)nfds);
 			fds[nfds] = pipe_connection_overlapped.hEvent;
 			handler[nfds].type = NAMED_PIPE;
@@ -2063,6 +2132,9 @@ static void mainloop(void)
 
 	/* https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects
 	 * We handle whoever lights up first, one per loop cycle.
+	 * Maybe later we will prepare and walk an array of eager
+	 * handles, like we do in POSIX builds:
+	 * https://github.com/networkupstools/nut/issues/3376
 	 */
 	chunk = 0;
 	if (nfds <= sysmaxconn) {
@@ -2111,7 +2183,7 @@ static void mainloop(void)
 	upsdebugx(6, "%s: wait for filedescriptors done: %" PRIu64, __func__, ret);
 
 	if (ret == WAIT_TIMEOUT) {
-		upsdebugx(2, "%s: no data available", __func__);
+		upsdebugx(2, "%s: wait timed out: no data available", __func__);
 		return;
 	}
 
@@ -2119,7 +2191,8 @@ static void mainloop(void)
 		DWORD err = GetLastError();
 		err = err; /* remove compile time warning */
 		upslog_with_errno(LOG_ERR, "%s", __func__);
-		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64, __func__, err);
+		/* Sleep to avoid insane looping: */
+		upsdebugx(2, "%s: wait failed: code 0x%" PRIx64 "; sleeping 0.1 sec and retrying the loop", __func__, err);
 		Sleep(100);	/* 0.1 sec */
 		return;
 	}
@@ -2161,6 +2234,23 @@ static void mainloop(void)
 	upsdebugx(6, "%s: requesting handler[%" PRIu64 "]", __func__, ret);
 	upsdebugx(6, "%s: handler.type=%d handler.data=%p", __func__, handler[ret].type, handler[ret].data);
 
+	upsdebugx(3, "%s: Incoming %s from %s [%s%sarray entry %" PRIuMAX "]",
+		__func__,
+		(handler[ret].type==SERVER || (handler[ret].type==NAMED_PIPE && fds[ret] == pipe_connection_overlapped.hEvent) ? "connection" : "data"),
+		(handler[ret].type==DRIVER ? "DRIVER" :
+		(handler[ret].type==CLIENT ? "CLIENT" :
+		(handler[ret].type==SERVER ? "SERVER" :
+		(handler[ret].type==NAMED_PIPE ? "NAMED_PIPE" :
+		"<unknown>")))),
+		(handler[ret].type==DRIVER ? ((upstype_t *)handler[ret].data)->name  :
+		(handler[ret].type==CLIENT ? ((nut_ctype_t *)handler[ret].data)->addr :
+		(handler[ret].type==SERVER ? "" :
+		(handler[ret].type==NAMED_PIPE ? "" :
+		"")))),
+		(handler[ret].type==DRIVER || handler[ret].type==CLIENT ? ", " : ""),
+		(uintmax_t)ret
+		);
+
 	switch(handler[ret].type) {
 		case DRIVER:
 			upsdebugx(4, "%s: calling sstate_readline() for DRIVER", __func__);
@@ -2192,8 +2282,8 @@ static void mainloop(void)
 						set_reload_flag(1);
 					}
 					else {
-						upslogx(LOG_ERR,"Unknown signal"
-						       );
+						upsdebugx(1, "Unknown signal via NAMED_PIPE: '%s'", NUT_STRARG(conn->buf));
+						upslogx(LOG_ERR, "Unknown signal");
 					}
 
 					upsdebugx(4, "%s: calling pipe_disconnect() for NAMED_PIPE", __func__);

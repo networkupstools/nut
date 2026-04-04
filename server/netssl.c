@@ -228,42 +228,96 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	return certpasswd ? PL_strdup(certpasswd) : NULL;
 }
 
+/** Detail the currently raised NSS error code if possible, and debug-log
+ *  it with caller-provided text (typically the calling function name). */
 static void nss_error(const char* text)
 {
-	char	buffer[SMALLBUF];
+	char	err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			PR_GetErrorText(buffer);
-			upsdebugx(1, "nss_error %ld in %s : %s", (long)err_num, text, buffer);
-		} else {
-			upsdebugx(1, "nss_error %ld in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, text, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		char	*buffer = (char *)calloc(err_len + 1, sizeof(char));
+		if (buffer) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				buffer);
+			free(buffer);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s : "
+				"Failed to allocate internal error buffer "
+				"for detailed error text, needs %ld bytes",
+				(long)err_num,
+				err_name_buf,
+				text,
+				(long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				err_text);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s",
+				(long)err_num,
+				err_name_buf,
+				text);
+		}
 	}
 }
 
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
-	char	buffer[256];
+	char	buffer[256], err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
-	PRInt32	length;
 	NUT_UNUSED_VARIABLE(ssl);
 	NUT_UNUSED_VARIABLE(ret);
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			length = PR_GetErrorText(buffer);
-			upsdebugx(1, "ssl_error %ld : %*s", (long)err_num, length, buffer);
-		} else {
-			upsdebugx(1, "ssl_error %ld : Internal error buffer too small, needs %ld bytes", (long)err_num, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "ssl_error %ld", (long)err_num);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		if ((size_t)err_len < sizeof(buffer)) {
+			PRInt32	length = PR_GetErrorText(buffer);
+			upsdebugx(1, "ssl_error %ld%s : %*s", (long)err_num, err_name_buf, length, buffer);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s : Internal error buffer too small, needs %ld bytes", (long)err_num, err_name_buf, (long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "ssl_error %ld%s : %s", (long)err_num, err_name_buf, err_text);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s", (long)err_num, err_name_buf);
+		}
 	}
 
 	return -1;
@@ -353,7 +407,13 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	/* Note that after this message, the client assumes that communications
+	 * are encrypted (no more plaintext, even if we wanted to report that
+	 * some further SSL setup failed, e.g. due to untrusted certificates
+	 * as seen during handshake).
+	 */
 	if (!sendback(client, "OK STARTTLS\n")) {
+		upsdebug_with_errno(2, "%s: could not confirm the beginning of SSL ritual to prospective SSL client", __func__);
 		return;
 	}
 
@@ -481,6 +541,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 
+	upsdebugx(4, "%s: calling PR_ImportTCPSocket()", __func__);
 	socket = PR_ImportTCPSocket(client->sock_fd);
 	if (socket == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -488,6 +549,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ImportFD()", __func__);
 	client->ssl = SSL_ImportFD(NULL, socket);
 	if (client->ssl == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -495,6 +557,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_SetPKCS11PinArg()", __func__);
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
@@ -508,6 +571,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
+	upsdebugx(4, "%s: calling SSL_AuthCertificateHook()", __func__);
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -515,6 +579,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_BadCertHook()", __func__);
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -522,6 +587,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_HandshakeCallback()", __func__);
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -529,6 +595,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ConfigSecureServer()", __func__);
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -539,6 +606,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 #pragma GCC diagnostic pop
 #endif
 
+	upsdebugx(4, "%s: calling SSL_ResetHandshake()", __func__);
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -548,7 +616,22 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* Note: this call can generate memory leaks not resolvable
 	 * by any release function.
-	 * Probably SSL session key object allocation. */
+	 * Probably SSL session key object allocation.
+	 *
+	 * It also seems to block indefinitely (tested a minute),
+	 * until it decides that the handshake succeeded or failed.
+	 * A malicious or broken client could DoS the server here.
+	 * TOTHINK: Maybe we want to set an alarm and time-limit
+	 *  this attempt?
+	 * TOTHINK: Process such connections or generally dialogs
+	 *  in threads?
+	 *
+	 * In case of certificate expectation mismatches, it can
+	 * also block the server until the caller closes the socket
+	 * (we rely on the client continuing the crypto-dialog
+	 * after receiving OK STARTTLS posted above) :-\
+	 */
+	upsdebugx(4, "%s: calling SSL_ForceHandshake()", __func__);
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();

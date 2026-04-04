@@ -152,9 +152,11 @@ int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query);
 int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
 		size_t *numa, char ***answer);
 
+ssize_t upscli_sendline_timeout_may_disconnect(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout, int may_disconnect);
 ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout);
 ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
+ssize_t upscli_readline_timeout_may_disconnect(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout, int may_disconnect);
 ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout);
 ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 

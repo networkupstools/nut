@@ -4,7 +4,7 @@
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2026	Jim Klimov <jimklimov+nut@gmail.com>
 	2025		desertwitch <dezertwitsh@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -396,7 +396,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 	va_end(ap);
 
-	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
+	upsdebugx(2, "%s: sending (got %" PRIiSIZE " from vsnprintf): %.*s",
+		__func__, ret, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -462,11 +463,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, (int)conn->fd, ret);
 #else	/* WIN32 */
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);

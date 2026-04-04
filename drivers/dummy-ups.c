@@ -813,24 +813,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 
 	if (now < next_update)
 	{
-		upsdebugx(1, "leaving (paused)...");
+		upsdebugx(1, "%s: leaving (paused)...", __func__);
 		return 1;
 	}
 
 	/* initialise everything, to loop back at the beginning of the file */
 	if (ctx == NULL)
 	{
+		upsdebugx(2, "%s: (re-)initialize PCONF context", __func__);
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
+		if (!ctx) {
+			upsdebugx(1, "%s: failed to malloc()", __func__);
+			return 1;
+		}
 
+		upsdebugx(5, "%s: call prepare_filepath()", __func__);
 		prepare_filepath(fn, sizeof(fn));
+
+		upsdebugx(5, "%s: got '%s', call pconf_init()", __func__, fn);
 		pconf_init(ctx, upsconf_err);
 
+		upsdebugx(5, "%s: call pconf_file_begin()", __func__);
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
 
 		/* we need this for parsing alarm instructions later */
+		upsdebugx(5, "%s: call status_init()", __func__);
 		status_init(); /* in case no ups.status does it */
+		upsdebugx(5, "%s: call alarm_init()", __func__);
 		alarm_init(); /* reset alarms at start of parsing */
 	}
 
@@ -839,6 +850,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	next_update = -1;
 
 	/* Now start or continue parsing... */
+	upsdebugx(3, "%s: proceed parsing PCONF context", __func__);
 	while (pconf_file_next(ctx))
 	{
 		if (pconf_parse_error(ctx))
@@ -849,6 +861,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		}
 
 		/* Check if we have something to process */
+		upsdebugx(4, "%s: %s:%d: numargs:%" PRIuSIZE " token:%s",
+			__func__, fn, ctx->linenum, ctx->numargs,
+			(ctx->numargs < 1 ? "<null>" : ctx->arglist[0])
+			);
 		if (ctx->numargs < 1)
 			continue;
 
@@ -947,9 +963,12 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)
 	{
+		upsdebugx(3, "%s: clean up PCONF context: no pending action", __func__);
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
 	}
+
+	upsdebugx(3, "%s: leaving (finished)", __func__);
 	return 1;
 }
