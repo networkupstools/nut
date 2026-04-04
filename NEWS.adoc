@@ -181,6 +181,11 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
  - `apc_modbus` driver updates:
    * Fixed register range in a logging string.
    * Add outlet group timers.
+   * Fixed outlet group command handling to dynamically detect available groups
+     (MOG, SOG0 - SOG2) in the device. Commands and variables are now only
+	 exposed for outlet groups actually present on the UPS. Global `load.*` and
+	 `shutdown.*` commands now correctly target all available outlet groups.
+	 [PR #3395]
 
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
