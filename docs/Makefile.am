@@ -50,7 +50,9 @@ IMAGE_FILES = \
 	images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
-	images/nut-logo.png \
+	images/nut-logo.svg \
+	images/nut-logo-60x60.png \
+	images/nut-logo-256x256.png \
 	images/note.png \
 	images/warning.png \
 	images/blue-arrow.png \

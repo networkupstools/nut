@@ -63,7 +63,9 @@ Changes from 2.8.4 to 2.8.5
 - Source directory `data/html` was renamed to `data/htmlcgi` in order to better
   reflect its contents and purpose, compared to documentation-oriented `html*`
   directories (and recipe variable names). This may impact some packaging
-  recipes which do not rely on `make install` alone. [#3049]
+  recipes which do not rely on `make install` alone. Note that more files
+  feature in the installation, e.g. a NUT logo rendition to use as favicon.
+  [#3049, #3249]
 
 - Some fixes were applied to HTML templates for NUT CGI clients. It can be
   useful for NUT deployments being upgraded to compare the files they have
