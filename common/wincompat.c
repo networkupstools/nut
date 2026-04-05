@@ -935,16 +935,16 @@ err:
 
 serial_handler_t * w32_serial_open(const char *name, int flags)
 {
+	COMMTIMEOUTS	to;
+	DCB	state;
+	serial_handler_t	*sh;
 	/* flags are currently ignored, it's here just to have the same
 	 * interface as POSIX open */
 	NUT_UNUSED_VARIABLE(flags);
-	COMMTIMEOUTS to;
 
 	errno = 0;
 
 	upslogx(LOG_INFO, "w32_serial_open (%s)", name);
-
-	serial_handler_t * sh;
 
 	sh = xmalloc(sizeof(serial_handler_t));
 	memset(sh, 0, sizeof(serial_handler_t));
@@ -971,7 +971,6 @@ serial_handler_t * w32_serial_open(const char *name, int flags)
 	/* Reset serial port to known state of 9600-8-1-no flow control
 	 * on open for better behavior under Win 95.
 	 */
-	DCB state;
 	GetCommState(sh->handle, &state);
 	upslogx(LOG_INFO, "setting initial state on %s", name);
 	state.BaudRate = CBR_9600;
@@ -1159,6 +1158,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	COMMTIMEOUTS to;
 	DCB ostate, state;
 	unsigned int ovtime = sh->vtime_, ovmin = sh->vmin_;
+	int res;
 
 	errno = 0;
 
@@ -1467,7 +1467,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		(int)to.ReadIntervalTimeout,
 		(int)to.ReadTotalTimeoutMultiplier);
 
-	int res = SetCommTimeouts(sh->handle, &to);
+	res = SetCommTimeouts(sh->handle, &to);
 	if (!res)
 	{
 		upslogx(LOG_ERR, "SetCommTimeout failed");
