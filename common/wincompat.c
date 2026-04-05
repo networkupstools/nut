@@ -50,7 +50,7 @@ char wincompat_password[SMALLBUF];
 uid_t getuid(void)
 {
 	DWORD size = sizeof(wincompat_user_name);
-	if( !GetUserName(wincompat_user_name,&size) ) {
+	if (!GetUserName(wincompat_user_name, &size)) {
 		return NULL;
 	}
 
@@ -64,21 +64,21 @@ struct passwd *getpwuid(uid_t uid)
 	return &wincompat_passwd;
 }
 
-char *getpass( const char *prompt)
+char *getpass(const char *prompt)
 {
 	HANDLE hStdin;
 	DWORD mode;
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	if(hStdin == INVALID_HANDLE_VALUE) {
+	if (hStdin == INVALID_HANDLE_VALUE) {
 		return NULL;
 	}
 
 	printf("%s",prompt);
 
-	GetConsoleMode( hStdin, &mode );
+	GetConsoleMode(hStdin, &mode);
 	mode &= ~ENABLE_ECHO_INPUT;
-	SetConsoleMode( hStdin , mode);
+	SetConsoleMode(hStdin, mode);
 
 	if (fgets(wincompat_password, sizeof(wincompat_password), stdin) == NULL) {
 		upsdebug_with_errno(LOG_INFO, "%s", __func__);
@@ -88,12 +88,12 @@ char *getpass( const char *prompt)
 	/* deal with that pesky newline */
 	if (strlen(wincompat_password) > 1) {
 		wincompat_password[strlen(wincompat_password) - 1] = '\0';
-	};
+	}
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode( hStdin, &mode );
+	GetConsoleMode(hStdin, &mode );
 	mode |= ENABLE_ECHO_INPUT;
-	SetConsoleMode( hStdin , mode);
+	SetConsoleMode(hStdin, mode);
 
 	return wincompat_password;
 }
@@ -104,10 +104,10 @@ http://cygwin.com/cgi-bin/cvsweb.cgi/~checkout~/src/winsup/mingw/mingwex/usleep.
 /* int __cdecl usleep(unsigned int useconds) */
 int __cdecl usleep(useconds_t useconds)
 {
-	if(useconds == 0)
+	if (useconds == 0)
 		return 0;
 
-	if(useconds >= 1000000)
+	if (useconds >= 1000000)
 		return EINVAL;
 
 	Sleep((useconds + 999) / 1000);
@@ -145,25 +145,28 @@ char * strtok_r(char *str, const char *delim, char **saveptr)
 
 int sktconnect(int fh, struct sockaddr * name, int len)
 {
-	int ret = connect(fh,name,len);
+	int	ret = connect(fh, name, len);
 	errno = WSAGetLastError();
 	return ret;
 }
+
 int sktread(int fh, char *buf, int size)
 {
-	int ret = recv(fh,buf,size,0);
+	int	ret = recv(fh, buf, size, 0);
 	errno = WSAGetLastError();
 	return ret;
 }
+
 int sktwrite(int fh, char *buf, int size)
 {
-	int ret = send(fh,buf,size,0);
+	int	ret = send(fh, buf, size, 0);
 	errno = WSAGetLastError();
 	return ret;
 }
+
 int sktclose(int fh)
 {
-	int ret = closesocket((SOCKET)fh);
+	int	ret = closesocket((SOCKET)fh);
 	errno = WSAGetLastError();
 	return ret;
 }
@@ -401,13 +404,13 @@ int win_system(const char * command)
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
-	memset(&si,0,sizeof(si));
+	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
-	memset(&pi,0,sizeof(pi));
+	memset(&pi, 0, sizeof(pi));
 
-	res = CreateProcess(NULL,(char *)command,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi);
+	res = CreateProcess(NULL, (char *)command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
-	if( res != 0 ) {
+	if (res != 0) {
 		return 0;
 	}
 
@@ -423,13 +426,13 @@ char * filter_path(const char * source)
 	char * res;
 	unsigned int i,j;
 
-	if( source == NULL ) {
+	if (source == NULL) {
 		return NULL;
 	}
 
-	res = xmalloc(strlen(source)+1);
-	for(i=0,j=0;i<=strlen(source);i++) {
-		if(source[i] != '"') {
+	res = xmalloc(strlen(source) + 1);
+	for (i=0, j=0; i <= strlen(source); i++) {
+		if (source[i] != '"') {
 			res[j] = source[i];
 			j++;
 		}
@@ -438,7 +441,6 @@ char * filter_path(const char * source)
 	return res;
 }
 
-
 /* syslog sends a message through a pipe to the wininit service. Which is
    in charge of adding an event in the Windows event logger.
    The message is made of 4 bytes containing the priority followed by an array
@@ -446,18 +448,18 @@ char * filter_path(const char * source)
 void syslog(int priority, const char *fmt, ...)
 {
 	char pipe_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
-	char buf1[LARGEBUF+sizeof(DWORD)];
+	char buf1[LARGEBUF + sizeof(DWORD)];
 	char buf2[LARGEBUF];
 	va_list ap;
 	HANDLE pipe;
 	DWORD bytesWritten = 0;
 
-	if( EventLogName == NULL ) {
+	if (EventLogName == NULL) {
 		return;
 	}
 
 	/* Format message */
-	va_start(ap,fmt);
+	va_start(ap, fmt);
 	vsnprintf(buf1, sizeof(buf1), fmt, ap);
 	va_end(ap);
 
@@ -466,9 +468,9 @@ void syslog(int priority, const char *fmt, ...)
 
 	/* Create the frame */
 	/* first 4 bytes are priority */
-	memcpy(buf1,&priority,sizeof(DWORD));
+	memcpy(buf1, &priority, sizeof(DWORD));
 	/* then comes the message */
-	memcpy(buf1+sizeof(DWORD),buf2,sizeof(buf2));
+	memcpy(buf1 + sizeof(DWORD), buf2, sizeof(buf2));
 
 	pipe = CreateFile(
 			pipe_name,	/* pipe name */
@@ -484,7 +486,7 @@ void syslog(int priority, const char *fmt, ...)
 		return;
 	}
 
-	WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
+	WriteFile(pipe, buf1, strlen(buf2) + sizeof(DWORD), &bytesWritten, NULL);
 
 	/* testing result is useless. If we have an error and try to report it,
 	 * this will probably lead to a call to this function and an infinite
@@ -517,10 +519,10 @@ void pipe_create(const char * pipe_name)
 	snprintf(pipe_full_name, sizeof(pipe_full_name),
 		"\\\\.\\pipe\\%s", named_pipe_name);
 
-	if( pipe_connection_overlapped.hEvent != 0 ) {
+	if (pipe_connection_overlapped.hEvent != 0) {
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
-	memset(&pipe_connection_overlapped,0,sizeof(pipe_connection_overlapped));
+	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
 	pipe_connection_handle = CreateNamedPipe(
 			pipe_full_name,
 			PIPE_ACCESS_INBOUND |   /* to server only */
@@ -545,15 +547,15 @@ void pipe_create(const char * pipe_name)
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(pipe_connection_overlapped.hEvent == NULL ) {
+	if (pipe_connection_overlapped.hEvent == NULL) {
 		upslogx(LOG_ERR, "Error creating event");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ret = ConnectNamedPipe(pipe_connection_handle,&pipe_connection_overlapped);
-	if(ret == 0 && GetLastError() != ERROR_IO_PENDING ) {
-		upslogx(LOG_ERR,"ConnectNamedPipe error");
+	ret = ConnectNamedPipe(pipe_connection_handle, &pipe_connection_overlapped);
+	if (ret == 0 && GetLastError() != ERROR_IO_PENDING) {
+		upslogx(LOG_ERR, "ConnectNamedPipe error");
 	}
 }
 
@@ -562,7 +564,7 @@ void pipe_connect()
 	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
 	pipe_conn_t *conn;
 
-	conn = xcalloc(1,sizeof(*conn));
+	conn = xcalloc(1, sizeof(*conn));
 	conn->handle = pipe_connection_handle;
 
 	/* restart a new listening pipe */
@@ -570,19 +572,20 @@ void pipe_connect()
 
 	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
-	memset(&conn->overlapped,0,sizeof(conn->overlapped));
-	memset(conn->buf,0,sizeof(conn->buf));
+	memset(&conn->overlapped, 0, sizeof(conn->overlapped));
+	memset(conn->buf, 0, sizeof(conn->buf));
 	conn->overlapped.hEvent = CreateEvent(NULL, /*Security*/
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(conn->overlapped.hEvent == NULL ) {
-		upslogx(LOG_ERR,"Can't create event for reading event log");
+	if (conn->overlapped.hEvent == NULL) {
+		/* FIXME: Is this (still) about event log only? */
+		upslogx(LOG_ERR, "Can't create event for reading event log");
 		return;
 	}
 
-	ReadFile (conn->handle, conn->buf,
-		sizeof(conn->buf)-1, /* -1 to be sure to have a trailling 0 */
+	ReadFile(conn->handle, conn->buf,
+		sizeof(conn->buf) - 1,	/* -1 to be sure to have a trailling 0 */
 		NULL, &(conn->overlapped));
 
 	if (pipe_connhead) {
@@ -595,12 +598,13 @@ void pipe_connect()
 
 void pipe_disconnect(pipe_conn_t *conn)
 {
-	if( conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
+	if (conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->overlapped.hEvent);
 		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
-	if( conn->handle != INVALID_HANDLE_VALUE) {
-		if ( DisconnectNamedPipe(conn->handle) == 0 ) {
+
+	if (conn->handle != INVALID_HANDLE_VALUE) {
+		if (DisconnectNamedPipe(conn->handle) == 0) {
 			upslogx(LOG_ERR,
 				"DisconnectNamedPipe error : %d",
 				(int)GetLastError());
@@ -608,6 +612,7 @@ void pipe_disconnect(pipe_conn_t *conn)
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;
 	}
+
 	if (conn->prev) {
 		conn->prev->next = conn->next;
 	} else {
@@ -629,11 +634,12 @@ int pipe_ready(pipe_conn_t *conn)
 	BOOL    res;
 
 	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
-	if( res == 0 ) {
+	if (res == 0) {
 		upslogx(LOG_ERR, "Pipe read error");
 		pipe_disconnect(conn);
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -661,9 +667,9 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 		return 1;
 	}
 
-	result = WriteFile (pipe,data,strlen(data)+1,&bytesWritten,NULL);
+	result = WriteFile(pipe, data, strlen(data) + 1, &bytesWritten, NULL);
 
-	if (result == 0 || bytesWritten != strlen(data)+1 ) {
+	if (result == 0 || bytesWritten != strlen(data) + 1) {
 		CloseHandle(pipe);
 		return 1;
 	}
@@ -672,31 +678,31 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	return 0;
 }
 
-int w32_setcomm ( serial_handler_t * h, int * flags )
+int w32_setcomm(serial_handler_t *h, int *flags)
 {
 	int ret = 0;
 
-	if( *flags & TIOCM_DTR ) {
-		if( !EscapeCommFunction(h->handle,SETDTR) ) {
+	if (*flags & TIOCM_DTR) {
+		if (!EscapeCommFunction(h->handle,SETDTR)) {
 			errno = EIO;
 			ret = -1;
 		}
 	}
 	else {
-		if( !EscapeCommFunction(h->handle,CLRDTR) ) {
+		if (!EscapeCommFunction(h->handle,CLRDTR)) {
 			errno = EIO;
 			ret = -1;
 		}
 	}
 
-	if( *flags & TIOCM_RTS ) {
-		if( !EscapeCommFunction(h->handle,SETRTS) ) {
+	if (*flags & TIOCM_RTS) {
+		if (!EscapeCommFunction(h->handle,SETRTS)) {
 			errno = EIO;
 			ret = -1;
 		}
 	}
 	else {
-		if( !EscapeCommFunction(h->handle,CLRRTS) ) {
+		if (!EscapeCommFunction(h->handle,CLRRTS)) {
 			errno = EIO;
 			ret = -1;
 		}
@@ -705,7 +711,7 @@ int w32_setcomm ( serial_handler_t * h, int * flags )
 	return ret;
 }
 
-int w32_getcomm ( serial_handler_t * h, int * flags )
+int w32_getcomm(serial_handler_t *h, int *flags)
 {
 	BOOL ret_val;
 	DWORD f;
@@ -724,14 +730,14 @@ int w32_getcomm ( serial_handler_t * h, int * flags )
 /* Serial port wrapper inspired by :
 http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to-windows-serial.html */
 
-void overlapped_setup (serial_handler_t * sh)
+void overlapped_setup(serial_handler_t *sh)
 {
-	memset (&sh->io_status, 0, sizeof (sh->io_status));
-	sh->io_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	memset(&sh->io_status, 0, sizeof(sh->io_status));
+	sh->io_status.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	sh->overlapped_armed = 0;
 }
 
-int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeout)
+int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 {
 	int tot;
 	DWORD num;
@@ -746,8 +752,8 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		"w32_serial_read : ulen %" PRIuSIZE ", vmin_ %d, vtime_ %d, hEvent %p",
 		ulen, sh->vmin_, sh->vtime_, sh->io_status.hEvent);
 	if (!sh->overlapped_armed) {
-		SetCommMask (sh->handle, EV_RXCHAR);
-		ResetEvent (sh->io_status.hEvent);
+		SetCommMask(sh->handle, EV_RXCHAR);
+		ResetEvent(sh->io_status.hEvent);
 	}
 
 	for (num = 0, tot = 0; ulen; ulen -= num, ptr = (char *)ptr + num) {
@@ -769,7 +775,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			inq = ulen;
 		}
 
-		if (!ClearCommError (sh->handle, &ev, &st)) {
+		if (!ClearCommError(sh->handle, &ev, &st)) {
 			goto err;
 		}
 		else if (ev) {
@@ -784,30 +790,30 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			if ((size_t)tot >= minchars) {
 				break;
 			}
-			else if (WaitCommEvent (sh->handle, &ev, &sh->io_status)) {
+			else if (WaitCommEvent(sh->handle, &ev, &sh->io_status)) {
 				/* WaitCommEvent succeeded */
 				if (!ev) {
 					continue;
 				}
 			}
-			else if (GetLastError () != ERROR_IO_PENDING) {
+			else if (GetLastError() != ERROR_IO_PENDING) {
 				goto err;
 			}
 			else {
 				sh->overlapped_armed = 1;
-				switch (WaitForSingleObject (w4, timeout)) {
+				switch (WaitForSingleObject(w4, timeout)) {
 					case WAIT_OBJECT_0:
-						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE)) {
+						if (!GetOverlappedResult(sh->handle, &sh->io_status, &num, FALSE)) {
 							goto err;
 						}
 						upsdebugx(4,
 							"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
-						if(!tot) {
+						if (!tot) {
 							CancelIo(sh->handle);
 							sh->overlapped_armed = 0;
-							ResetEvent (sh->io_status.hEvent);
+							ResetEvent(sh->io_status.hEvent);
 							upsdebugx(4,
 								"w32_serial_read : timeout %d ms elapsed",
 								(int)timeout);
@@ -822,20 +828,20 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		}
 
 		sh->overlapped_armed = 0;
-		ResetEvent (sh->io_status.hEvent);
+		ResetEvent(sh->io_status.hEvent);
 		if (inq > ulen) {
 			inq = ulen;
 		}
 		upsdebugx(4,
 			"w32_serial_read : Reading %d characters",
 			(int)inq);
-		if (ReadFile (sh->handle, ptr, min (inq, ulen), &num, &sh->io_status)) {
+		if (ReadFile(sh->handle, ptr, min(inq, ulen), &num, &sh->io_status)) {
 			/* Got something */;
 		}
-		else if (GetLastError () != ERROR_IO_PENDING) {
+		else if (GetLastError() != ERROR_IO_PENDING) {
 			goto err;
 		}
-		else if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, TRUE)) {
+		else if (!GetOverlappedResult(sh->handle, &sh->io_status, &num, TRUE)) {
 			goto err;
 		}
 
@@ -849,11 +855,11 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		continue;
 
 err:
-		PurgeComm (sh->handle, PURGE_RXABORT);
+		PurgeComm(sh->handle, PURGE_RXABORT);
 		upsdebugx(4,
 			"w32_serial_read : err %d",
 			(int)GetLastError());
-		if (GetLastError () == ERROR_OPERATION_ABORTED) {
+		if (GetLastError() == ERROR_OPERATION_ABORTED) {
 			num = 0;
 		}
 		else
@@ -869,22 +875,22 @@ err:
 
 /* Cover function to WriteFile to provide Posix interface and semantics
    (as much as possible).  */
-int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
+int w32_serial_write(serial_handler_t *sh, const void *ptr, size_t len)
 {
 	DWORD bytes_written;
 	OVERLAPPED write_status;
 
 	errno = 0;
 
-	memset (&write_status, 0, sizeof (write_status));
-	write_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	memset(&write_status, 0, sizeof(write_status));
+	write_status.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	for (;;)
 	{
-		if (WriteFile (sh->handle, ptr, len, &bytes_written, &write_status))
+		if (WriteFile(sh->handle, ptr, len, &bytes_written, &write_status))
 			break;
 
-		switch (GetLastError ())
+		switch (GetLastError())
 		{
 			case ERROR_OPERATION_ABORTED:
 				continue;
@@ -894,7 +900,7 @@ int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
 				goto err;
 		}
 
-		if (!GetOverlappedResult (sh->handle, &write_status, &bytes_written, TRUE))
+		if (!GetOverlappedResult(sh->handle, &write_status, &bytes_written, TRUE))
 			goto err;
 
 		break;
@@ -910,7 +916,7 @@ err:
 	return -1;
 }
 
-serial_handler_t * w32_serial_open (const char *name, int flags)
+serial_handler_t * w32_serial_open(const char *name, int flags)
 {
 	/* flags are currently ignored, it's here just to have the same
 	 * interface as POSIX open */
@@ -924,33 +930,33 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	serial_handler_t * sh;
 
 	sh = xmalloc(sizeof(serial_handler_t));
-	memset(sh,0,sizeof(serial_handler_t));
+	memset(sh, 0, sizeof(serial_handler_t));
 
 	sh->handle = CreateFile(name,
-		GENERIC_READ|GENERIC_WRITE,
+		GENERIC_READ | GENERIC_WRITE,
 		0, 0, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 		0);
 
-	if(sh->handle == INVALID_HANDLE_VALUE) {
+	if (sh->handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR, "could not open %s", name);
 		errno = EPERM;
 		return NULL;
 	}
 
-	SetCommMask (sh->handle, EV_RXCHAR);
+	SetCommMask(sh->handle, EV_RXCHAR);
 
-	overlapped_setup (sh);
+	overlapped_setup(sh);
 
-	memset (&to, 0, sizeof (to));
-	SetCommTimeouts (sh->handle, &to);
+	memset(&to, 0, sizeof(to));
+	SetCommTimeouts(sh->handle, &to);
 
 	/* Reset serial port to known state of 9600-8-1-no flow control
 	 * on open for better behavior under Win 95.
 	 */
 	DCB state;
-	GetCommState (sh->handle, &state);
-	upslogx (LOG_INFO, "setting initial state on %s", name);
+	GetCommState(sh->handle, &state);
+	upslogx(LOG_INFO, "setting initial state on %s", name);
 	state.BaudRate = CBR_9600;
 	state.ByteSize = 8;
 	state.StopBits = ONESTOPBIT;
@@ -972,27 +978,27 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	state.fDsrSensitivity = FALSE; /* don't assert DSR */
 	state.fAbortOnError = TRUE;
 
-	if (!SetCommState (sh->handle, &state)) {
-		upslogx (LOG_ERR,
+	if (!SetCommState(sh->handle, &state)) {
+		upslogx(LOG_ERR,
 			"couldn't set initial state for %s",
 			name);
 	}
 
-	SetCommMask (sh->handle, EV_RXCHAR);
+	SetCommMask(sh->handle, EV_RXCHAR);
 
-	upslogx (LOG_INFO,
+	upslogx(LOG_INFO,
 		"%p = w32_serial_open (%s)",
 		sh->handle, name);
 	return sh;
 }
 
-int w32_serial_close (serial_handler_t * sh)
+int w32_serial_close(serial_handler_t *sh)
 {
-	if( sh->io_status.hEvent != INVALID_HANDLE_VALUE ) {
-		CloseHandle (sh->io_status.hEvent);
+	if (sh->io_status.hEvent != INVALID_HANDLE_VALUE) {
+		CloseHandle(sh->io_status.hEvent);
 	}
-	if( sh->handle != INVALID_HANDLE_VALUE ) {
-		CloseHandle (sh->handle);
+	if (sh->handle != INVALID_HANDLE_VALUE) {
+		CloseHandle(sh->handle);
 	}
 	free(sh);
 
@@ -1004,7 +1010,7 @@ int w32_serial_close (serial_handler_t * sh)
 /* tcsendbreak: POSIX 7.2.2.1 */
 /* Break for 250-500 milliseconds if duration == 0 */
 /* Otherwise, units for duration are undefined */
-int tcsendbreak (serial_handler_t * sh, int duration)
+int tcsendbreak(serial_handler_t *sh, int duration)
 {
 	unsigned int sleeptime = 300000;
 
@@ -1013,15 +1019,15 @@ int tcsendbreak (serial_handler_t * sh, int duration)
 	if (duration > 0)
 		sleeptime *= duration;
 
-	if (SetCommBreak (sh->handle) == 0) {
+	if (SetCommBreak(sh->handle) == 0) {
 		errno = EIO;
 		return -1;
 	}
 
 	/* FIXME: need to send zero bits during duration */
-	usleep (sleeptime);
+	usleep(sleeptime);
 
-	if (ClearCommBreak (sh->handle) == 0) {
+	if (ClearCommBreak(sh->handle) == 0) {
 		errno = EIO;
 		return -1;
 	}
@@ -1032,11 +1038,11 @@ int tcsendbreak (serial_handler_t * sh, int duration)
 }
 
 /* tcdrain: POSIX 7.2.2.1 */
-int tcdrain (serial_handler_t * sh)
+int tcdrain(serial_handler_t *sh)
 {
 	errno = 0;
 
-	if (FlushFileBuffers (sh->handle) == 0) {
+	if (FlushFileBuffers(sh->handle) == 0) {
 		errno = EIO;
 		return -1;
 	}
@@ -1045,7 +1051,7 @@ int tcdrain (serial_handler_t * sh)
 }
 
 /* tcflow: POSIX 7.2.2.1 */
-int tcflow (serial_handler_t * sh, int action)
+int tcflow(serial_handler_t *sh, int action)
 {
 	DWORD win32action = 0;
 	DCB dcb;
@@ -1060,27 +1066,33 @@ int tcflow (serial_handler_t * sh, int action)
 		case TCOOFF:
 			win32action = SETXOFF;
 			break;
+
 		case TCOON:
 			win32action = SETXON;
 			break;
+
 		case TCION:
 		case TCIOFF:
-			if (GetCommState (sh->handle, &dcb) == 0)
+			if (GetCommState(sh->handle, &dcb) == 0)
 				return -1;
+
 			if (action == TCION)
 				xchar = (dcb.XonChar ? dcb.XonChar : 0x11);
 			else
 				xchar = (dcb.XoffChar ? dcb.XoffChar : 0x13);
-			if (TransmitCommChar (sh->handle, xchar) == 0)
+
+			if (TransmitCommChar(sh->handle, xchar) == 0)
 				return -1;
+
 			return 0;
 			break;
+
 		default:
 			return -1;
 			break;
 	}
 
-	if (EscapeCommFunction (sh->handle, win32action) == 0) {
+	if (EscapeCommFunction(sh->handle, win32action) == 0) {
 		errno = EIO;
 		return -1;
 	}
@@ -1089,34 +1101,36 @@ int tcflow (serial_handler_t * sh, int action)
 }
 
 /* tcflush: POSIX 7.2.2.1 */
-int tcflush (serial_handler_t * sh, int queue)
+int tcflush(serial_handler_t *sh, int queue)
 {
 	int max;
 
 	errno = 0;
 
 	if (queue == TCOFLUSH || queue == TCIOFLUSH)
-		PurgeComm (sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
+		PurgeComm(sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
 
 	if ((queue == TCIFLUSH) | (queue == TCIOFLUSH))
+	{
 		/* Input flushing by polling until nothing turns up
 		 * (we stop after 1000 chars anyway) */
 		for (max = 1000; max > 0; max--)
 		{
 			DWORD ev;
 			COMSTAT st;
-			if (!PurgeComm (sh->handle, PURGE_RXABORT | PURGE_RXCLEAR))
+			if (!PurgeComm(sh->handle, PURGE_RXABORT | PURGE_RXCLEAR))
 				break;
-			Sleep (100);
-			if (!ClearCommError (sh->handle, &ev, &st) || !st.cbInQue)
+			Sleep(100);
+			if (!ClearCommError(sh->handle, &ev, &st) || !st.cbInQue)
 				break;
 		}
+	}
 
 	return 0;
 }
 
 /* tcsetattr: POSIX 7.2.1.1 */
-int tcsetattr (serial_handler_t * sh, int action, const struct termios *t)
+int tcsetattr(serial_handler_t *sh, int action, const struct termios *t)
 {
 	/* Possible actions:
 TCSANOW:   immediately change attributes.
@@ -1134,14 +1148,14 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	upslogx(LOG_DEBUG, "action %d", action);
 	if ((action == TCSADRAIN) || (action == TCSAFLUSH))
 	{
-		FlushFileBuffers (sh->handle);
+		FlushFileBuffers(sh->handle);
 		upslogx(LOG_DEBUG, "flushed file buffers");
 	}
 	if (action == TCSAFLUSH)
-		PurgeComm (sh->handle, (PURGE_RXABORT | PURGE_RXCLEAR));
+		PurgeComm(sh->handle, (PURGE_RXABORT | PURGE_RXCLEAR));
 
 	/* get default/last comm state */
-	if (!GetCommState (sh->handle, &ostate)) {
+	if (!GetCommState(sh->handle, &ostate)) {
 		errno = EIO;
 		return -1;
 	}
@@ -1294,12 +1308,12 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 
 	/* RTS/CTS flow control */
 	if (t->c_cflag & CRTSCTS)
-	{       /* enable */
+	{	/* enable */
 		state.fOutxCtsFlow = TRUE;
 		state.fRtsControl = RTS_CONTROL_HANDSHAKE;
 	}
 	else
-	{       /* disable */
+	{	/* disable */
 		state.fRtsControl = RTS_CONTROL_ENABLE;
 		state.fOutxCtsFlow = FALSE;
 	}
@@ -1329,14 +1343,14 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	state.fAbortOnError = TRUE;
 
 	/* -------------- Set state and exit ------------------ */
-	if (memcmp (&ostate, &state, sizeof (state)) != 0)
-		SetCommState (sh->handle, &state);
+	if (memcmp(&ostate, &state, sizeof(state)) != 0)
+		SetCommState(sh->handle, &state);
 
 	sh->r_binary = ((t->c_iflag & IGNCR) ? 0 : 1);
 	sh->w_binary = ((t->c_oflag & ONLCR) ? 0 : 1);
 
 	if (dropDTR == TRUE)
-		EscapeCommFunction (sh->handle, CLRDTR);
+		EscapeCommFunction(sh->handle, CLRDTR);
 	else
 	{
 		/* FIXME: Sometimes when CLRDTR is set, setting
@@ -1345,7 +1359,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		 * change some parameters while DTR is still down.
 		 */
 
-		EscapeCommFunction (sh->handle, SETDTR);
+		EscapeCommFunction(sh->handle, SETDTR);
 	}
 
 	/*
@@ -1399,7 +1413,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		return 0;
 	}
 
-	memset (&to, 0, sizeof (to));
+	memset(&to, 0, sizeof(to));
 
 	if ((sh->vmin_ > 0) && (sh->vtime_ == 0))
 	{
@@ -1448,20 +1462,20 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 }
 
 /* tcgetattr: POSIX 7.2.1.1 */
-int tcgetattr (serial_handler_t * sh, struct termios *t)
+int tcgetattr(serial_handler_t *sh, struct termios *t)
 {
 	DCB state;
 
 	errno = 0;
 
 	/* Get current Win32 comm state */
-	if (GetCommState (sh->handle, &state) == 0) {
+	if (GetCommState(sh->handle, &state) == 0) {
 		errno = EIO;
 		return -1;
 	}
 
 	/* for safety */
-	memset (t, 0, sizeof (*t));
+	memset(t, 0, sizeof(*t));
 
 	/* -------------- Baud rate ------------------ */
 
@@ -1597,14 +1611,14 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 
 	/* FIXME: need to handle IGNCR */
 #if 0
-	if (!sh->r_binary ())
+	if (!sh->r_binary())
 		t->c_iflag |= IGNCR;
 #endif
 
 	if (!sh->w_binary)
 		t->c_oflag |= ONLCR;
 
-	upslogx (LOG_DEBUG,
+	upslogx(LOG_DEBUG,
 		"vmin_ %d, vtime_ %d",
 		sh->vmin_, sh->vtime_);
 	if (sh->vmin_ == MAXDWORD)
@@ -1622,14 +1636,16 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 }
 
 /* FIXME no difference between ispeed and ospeed */
-void cfsetispeed(struct termios * t, speed_t speed)
+void cfsetispeed(struct termios *t, speed_t speed)
 {
 	t->c_ispeed = t->c_ospeed = speed;
 }
-void cfsetospeed(struct termios * t, speed_t speed)
+
+void cfsetospeed(struct termios *t, speed_t speed)
 {
 	t->c_ispeed = t->c_ospeed = speed;
 }
+
 speed_t cfgetispeed(const struct termios *t)
 {
 	return t->c_ispeed;
@@ -1643,6 +1659,6 @@ speed_t cfgetospeed(const struct termios *t)
 #else	/* !WIN32 */
 
 /* Just avoid: ISO C forbids an empty translation unit [-Werror=pedantic] */
-int main (int argc, char ** argv);
+int main(int argc, char ** argv);
 
 #endif	/* !WIN32 */
