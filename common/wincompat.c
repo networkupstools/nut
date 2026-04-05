@@ -447,7 +447,10 @@ char * filter_path(const char * source)
    of chars containing the message to display (no terminal 0 required here) */
 void syslog(int priority, const char *fmt, ...)
 {
-	char pipe_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
+	/* At least while this is not configurable, can be static to speed up;
+	 * see https://github.com/networkupstools/nut/issues/3375
+	 */
+	static char pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
 	char buf1[LARGEBUF + sizeof(DWORD)];
 	char buf2[LARGEBUF];
 	va_list ap;
@@ -473,14 +476,13 @@ void syslog(int priority, const char *fmt, ...)
 	memcpy(buf1 + sizeof(DWORD), buf2, sizeof(buf2));
 
 	pipe = CreateFile(
-			pipe_name,	/* pipe name */
-			GENERIC_WRITE,
-			0,			/* no sharing */
-			NULL,			/* default security attributes FIXME */
-			OPEN_EXISTING,		/* opens existing pipe */
-			FILE_FLAG_OVERLAPPED,	/* enable async IO */
-			NULL);			/* no template file */
-
+		pipe_full_name,	/* pipe name */
+		GENERIC_WRITE,
+		0,			/* no sharing */
+		NULL,			/* default security attributes FIXME */
+		OPEN_EXISTING,		/* opens existing pipe */
+		FILE_FLAG_OVERLAPPED,	/* enable async IO */
+		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
 		return;
@@ -497,9 +499,11 @@ void syslog(int priority, const char *fmt, ...)
 /* Signal emulation via NamedPipe */
 
 static HANDLE		pipe_connection_handle;
+static const char	*named_pipe_name=NULL;
+
+/* Note these are shared (upsd, upsmon, nut.exe...) for other named pipe uses as well */
 OVERLAPPED		pipe_connection_overlapped;
 pipe_conn_t		*pipe_connhead = NULL;
-static const char	*named_pipe_name=NULL;
 
 void pipe_create(const char * pipe_name)
 {
@@ -524,17 +528,17 @@ void pipe_create(const char * pipe_name)
 	}
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
 	pipe_connection_handle = CreateNamedPipe(
-			pipe_full_name,
-			PIPE_ACCESS_INBOUND |   /* to server only */
-			FILE_FLAG_OVERLAPPED,   /* async IO */
-			PIPE_TYPE_MESSAGE |
-			PIPE_READMODE_MESSAGE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			LARGEBUF,               /* output buffer size */
-			LARGEBUF,               /* input buffer size */
-			0,                      /* client time-out */
-			NULL);  /* FIXME: default security attribute */
+		pipe_full_name,
+		PIPE_ACCESS_INBOUND	/* to server only */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_MESSAGE
+		| PIPE_READMODE_MESSAGE
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		LARGEBUF,		/* output buffer size */
+		LARGEBUF,		/* input buffer size */
+		0,			/* client time-out */
+		NULL);			/* FIXME: default security attribute */
 
 	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR, "Error creating named pipe");
@@ -543,10 +547,12 @@ void pipe_create(const char * pipe_name)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	pipe_connection_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	pipe_connection_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (pipe_connection_overlapped.hEvent == NULL) {
 		upslogx(LOG_ERR, "Error creating event");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
@@ -574,10 +580,12 @@ void pipe_connect()
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
 	memset(&conn->overlapped, 0, sizeof(conn->overlapped));
 	memset(conn->buf, 0, sizeof(conn->buf));
-	conn->overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	conn->overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (conn->overlapped.hEvent == NULL) {
 		/* FIXME: Is this (still) about event log only? */
 		upslogx(LOG_ERR, "Can't create event for reading event log");
@@ -649,19 +657,18 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	HANDLE pipe;
 	BOOL result = FALSE;
 	DWORD bytesWritten = 0;
-	char buf[SMALLBUF];
+	char pipe_full_name[NUT_PATH_MAX + 1];
 
-	snprintf(buf, sizeof(buf), "\\\\.\\pipe\\%s", pipe_name);
+	snprintf(pipe_full_name, sizeof(pipe_full_name), "\\\\.\\pipe\\%s", pipe_name);
 
 	pipe = CreateFile(
-			buf,
-			GENERIC_WRITE,
-			0,			/* no sharing */
-			NULL,			/* default security attributes FIXME */
-			OPEN_EXISTING,		/* opens existing pipe */
-			FILE_FLAG_OVERLAPPED,	/* enable async IO */
-			NULL);			/* no template file */
-
+		pipe_full_name,
+		GENERIC_WRITE,
+		0,			/* no sharing */
+		NULL,			/* default security attributes FIXME */
+		OPEN_EXISTING,		/* opens existing pipe */
+		FILE_FLAG_OVERLAPPED,	/* enable async IO */
+		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
 		return 1;
@@ -733,7 +740,12 @@ http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to
 void overlapped_setup(serial_handler_t *sh)
 {
 	memset(&sh->io_status, 0, sizeof(sh->io_status));
-	sh->io_status.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	sh->io_status.hEvent = CreateEvent(
+		NULL,	/* Security */
+		TRUE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	sh->overlapped_armed = 0;
 }
 
@@ -883,7 +895,12 @@ int w32_serial_write(serial_handler_t *sh, const void *ptr, size_t len)
 	errno = 0;
 
 	memset(&write_status, 0, sizeof(write_status));
-	write_status.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	write_status.hEvent = CreateEvent(
+		NULL,	/* Security */
+		TRUE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 
 	for (;;)
 	{
