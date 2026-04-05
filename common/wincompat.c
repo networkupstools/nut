@@ -49,7 +49,7 @@ char wincompat_password[SMALLBUF];
 
 uid_t getuid(void)
 {
-	DWORD size = sizeof(wincompat_user_name);
+	DWORD	size = sizeof(wincompat_user_name);
 	if (!GetUserName(wincompat_user_name, &size)) {
 		return NULL;
 	}
@@ -66,8 +66,8 @@ struct passwd *getpwuid(uid_t uid)
 
 char *getpass(const char *prompt)
 {
-	HANDLE hStdin;
-	DWORD mode;
+	HANDLE	hStdin;
+	DWORD	mode;
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if (hStdin == INVALID_HANDLE_VALUE) {
@@ -118,7 +118,7 @@ int __cdecl usleep(useconds_t useconds)
 
 char * strtok_r(char *str, const char *delim, char **saveptr)
 {
-	char *token_start, *token_end;
+	char	*token_start, *token_end;
 
 	/* Subsequent call ? */
 	token_start = str ? str : *saveptr;
@@ -188,7 +188,7 @@ const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 	switch (af) {
 	case AF_INET:
 		{
-			struct sockaddr_in srcaddr;
+			struct sockaddr_in	srcaddr;
 			memset(&srcaddr, 0, sizeof(struct sockaddr_in));
 			memcpy(&(srcaddr.sin_addr), src, sizeof(srcaddr.sin_addr));
 			srcaddr.sin_family = af;
@@ -202,7 +202,7 @@ const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 	case AF_INET6:
 		/* NOTE: Since WinXP SP1, with IPv6 installed on the system */
 		{
-			struct sockaddr_in6 srcaddr;
+			struct sockaddr_in6	srcaddr;
 			memset(&srcaddr, 0, sizeof(struct sockaddr_in6));
 			memcpy(&(srcaddr.sin6_addr), src, sizeof(srcaddr.sin6_addr));
 			srcaddr.sin6_family = af;
@@ -237,11 +237,11 @@ const char* inet_ntop(int af, const void* src, char* dst, size_t cnt)
 
 static int inet_pton4(const char *src, void *dst)
 {
-	uint8_t tmp[NS_INADDRSZ], *tp;	/* for struct in_addr *dst */
+	uint8_t	tmp[NS_INADDRSZ], *tp;	/* for struct in_addr *dst */
 
-	int saw_digit = 0;
-	int octets = 0;
-	int ch;
+	int	saw_digit = 0;
+	int	octets = 0;
+	int	ch;
 
 	*(tp = tmp) = 0;
 
@@ -249,7 +249,7 @@ static int inet_pton4(const char *src, void *dst)
 	{
 		if (ch >= '0' && ch <= '9')
 		{
-			uint32_t n = *tp * 10 + (ch - '0');
+			uint32_t	n = *tp * 10 + (ch - '0');
 
 			if (saw_digit && *tp == 0)
 				return 0;
@@ -285,17 +285,16 @@ static int inet_pton4(const char *src, void *dst)
 
 static int inet_pton6(const char *src, void *dst)
 {
-	static const char xdigits[] = "0123456789abcdef";
-	uint8_t tmp[NS_IN6ADDRSZ];	/* for struct in6_addr *dst */
+	static const char	xdigits[] = "0123456789abcdef";
+	uint8_t	tmp[NS_IN6ADDRSZ];	/* for struct in6_addr *dst */
 
-	uint8_t *tp = (uint8_t*) memset(tmp, '\0', NS_IN6ADDRSZ);
-	uint8_t *endp = tp + NS_IN6ADDRSZ;
-	uint8_t *colonp = NULL;
+	uint8_t	*tp = (uint8_t*) memset(tmp, '\0', NS_IN6ADDRSZ);
+	uint8_t	*endp = tp + NS_IN6ADDRSZ;
+	uint8_t	*colonp = NULL;
 
-	const char *curtok = NULL;
-	int saw_xdigit = 0;
-	uint32_t val = 0;
-	int ch;
+	const char	*curtok = NULL;
+	int	saw_xdigit = 0, ch;
+	uint32_t	val = 0;
 
 	/* Leading :: requires some special handling. */
 	if (*src == ':')
@@ -308,7 +307,7 @@ static int inet_pton6(const char *src, void *dst)
 
 	while ((ch = tolower(*src++)) != '\0')
 	{
-		const char *pch = strchr(xdigits, ch);
+		const char	*pch = strchr(xdigits, ch);
 		if (pch != NULL)
 		{
 			val <<= 4;
@@ -362,8 +361,8 @@ static int inet_pton6(const char *src, void *dst)
 		 * Since some memmove()'s erroneously fail to handle
 		 * overlapping regions, we'll do the shift by hand.
 		 */
-		const int n = tp - colonp;
-		int i;
+		const int	n = tp - colonp;
+		int	i;
 
 		if (tp == endp)
 			return 0;
@@ -400,9 +399,9 @@ int inet_pton(int af, const char *src, void *dst)
 /* "system" call seems to handle path with blank name incorrectly */
 int win_system(const char * command)
 {
-	BOOL res;
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
+	BOOL	res;
+	STARTUPINFO	si;
+	PROCESS_INFORMATION	pi;
 
 	memset(&si, 0, sizeof(si));
 	si.cb = sizeof(si);
@@ -423,8 +422,8 @@ distinguish the command from its parameter. This avoid complicated
 explanation in the documentation */
 char * filter_path(const char * source)
 {
-	char * res;
-	unsigned int i,j;
+	char	*res;
+	unsigned int	i, j;
 
 	if (source == NULL) {
 		return NULL;
@@ -450,12 +449,12 @@ void syslog(int priority, const char *fmt, ...)
 	/* At least while this is not configurable, can be static to speed up;
 	 * see https://github.com/networkupstools/nut/issues/3375
 	 */
-	static char pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
-	char buf1[LARGEBUF + sizeof(DWORD)];
-	char buf2[LARGEBUF];
-	va_list ap;
-	HANDLE pipe;
-	DWORD bytesWritten = 0;
+	static char	pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
+	char	buf1[LARGEBUF + sizeof(DWORD)];
+	char	buf2[LARGEBUF];
+	va_list	ap;
+	HANDLE	pipe;
+	DWORD	bytesWritten = 0;
 
 	if (EventLogName == NULL) {
 		return;
@@ -507,8 +506,8 @@ pipe_conn_t		*pipe_connhead = NULL;
 
 void pipe_create(const char * pipe_name)
 {
-	BOOL ret;
-	char pipe_full_name[NUT_PATH_MAX + 1];
+	BOOL	ret;
+	char	pipe_full_name[NUT_PATH_MAX + 1];
 
 	/* save pipe name for further use in pipe_connect */
 	if (pipe_name == NULL) {
@@ -568,7 +567,7 @@ void pipe_create(const char * pipe_name)
 void pipe_connect()
 {
 	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
-	pipe_conn_t *conn;
+	pipe_conn_t	*conn;
 
 	conn = xcalloc(1, sizeof(*conn));
 	conn->handle = pipe_connection_handle;
@@ -638,8 +637,8 @@ void pipe_disconnect(pipe_conn_t *conn)
 
 int pipe_ready(pipe_conn_t *conn)
 {
-	DWORD   bytesRead;
-	BOOL    res;
+	DWORD	bytesRead;
+	BOOL	res;
 
 	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
 	if (res == 0) {
@@ -654,10 +653,10 @@ int pipe_ready(pipe_conn_t *conn)
 /* return 1 on error, 0 if OK */
 int send_to_named_pipe(const char * pipe_name, const char * data)
 {
-	HANDLE pipe;
-	BOOL result = FALSE;
-	DWORD bytesWritten = 0;
-	char pipe_full_name[NUT_PATH_MAX + 1];
+	HANDLE	pipe;
+	BOOL	result = FALSE;
+	DWORD	bytesWritten = 0;
+	char	pipe_full_name[NUT_PATH_MAX + 1];
 
 	snprintf(pipe_full_name, sizeof(pipe_full_name), "\\\\.\\pipe\\%s", pipe_name);
 
@@ -720,8 +719,8 @@ int w32_setcomm(serial_handler_t *h, int *flags)
 
 int w32_getcomm(serial_handler_t *h, int *flags)
 {
-	BOOL ret_val;
-	DWORD f;
+	BOOL	ret_val;
+	DWORD	f;
 
 	ret_val = GetCommModemStatus(h->handle, &f);
 	if (ret_val == 0) {
@@ -751,10 +750,10 @@ void overlapped_setup(serial_handler_t *sh)
 
 int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 {
-	int tot;
-	DWORD num;
-	HANDLE w4;
-	DWORD minchars = sh->vmin_ ? sh->vmin_ : ulen;
+	int	tot;
+	DWORD	num;
+	HANDLE	w4;
+	DWORD	minchars = sh->vmin_ ? sh->vmin_ : ulen;
 
 	errno = 0;
 
@@ -769,9 +768,9 @@ int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 	}
 
 	for (num = 0, tot = 0; ulen; ulen -= num, ptr = (char *)ptr + num) {
-		DWORD ev;
-		COMSTAT st;
-		DWORD inq = 1;
+		DWORD	ev;
+		COMSTAT	st;
+		DWORD	inq = 1;
 
 		num = 0;
 
@@ -1028,7 +1027,7 @@ int w32_serial_close(serial_handler_t *sh)
 /* Otherwise, units for duration are undefined */
 int tcsendbreak(serial_handler_t *sh, int duration)
 {
-	unsigned int sleeptime = 300000;
+	unsigned int	sleeptime = 300000;
 
 	errno = 0;
 
@@ -1069,9 +1068,9 @@ int tcdrain(serial_handler_t *sh)
 /* tcflow: POSIX 7.2.2.1 */
 int tcflow(serial_handler_t *sh, int action)
 {
-	DWORD win32action = 0;
-	DCB dcb;
-	char xchar;
+	DWORD	win32action = 0;
+	DCB	dcb;
+	char	xchar;
 
 	errno = 0;
 
@@ -1119,7 +1118,7 @@ int tcflow(serial_handler_t *sh, int action)
 /* tcflush: POSIX 7.2.2.1 */
 int tcflush(serial_handler_t *sh, int queue)
 {
-	int max;
+	int	max;
 
 	errno = 0;
 
@@ -1132,8 +1131,8 @@ int tcflush(serial_handler_t *sh, int queue)
 		 * (we stop after 1000 chars anyway) */
 		for (max = 1000; max > 0; max--)
 		{
-			DWORD ev;
-			COMSTAT st;
+			DWORD	ev;
+			COMSTAT	st;
 			if (!PurgeComm(sh->handle, PURGE_RXABORT | PURGE_RXCLEAR))
 				break;
 			Sleep(100);
@@ -1154,11 +1153,11 @@ TCSADRAIN: flush output, then change attributes.
 TCSAFLUSH: flush output and discard input, then change attributes.
 	 */
 
-	BOOL dropDTR = FALSE;
-	COMMTIMEOUTS to;
-	DCB ostate, state;
-	unsigned int ovtime = sh->vtime_, ovmin = sh->vmin_;
-	int res;
+	BOOL	dropDTR = FALSE;
+	COMMTIMEOUTS	to;
+	DCB	ostate, state;
+	unsigned int	ovtime = sh->vtime_, ovmin = sh->vmin_;
+	int	res;
 
 	errno = 0;
 
