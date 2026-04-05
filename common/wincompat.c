@@ -409,6 +409,7 @@ int win_system(const char * command)
 	si.cb = sizeof(si);
 	memset(&pi, 0, sizeof(pi));
 
+	upsdebugx(4, "%s: calling CreateProcess: %s", __func__, NUT_STRARG(command));
 	res = CreateProcess(NULL, (char *)command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
 	if (res != 0) {
@@ -478,6 +479,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* then comes the message */
 	memcpy(buf1 + sizeof(DWORD), buf2, sizeof(buf2));
 
+	upsdebugx(6, "%s: posting to event log NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
 		pipe_full_name,	/* pipe name */
 		GENERIC_WRITE,
@@ -496,6 +498,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* testing result is useless. If we have an error and try to report it,
 	 * this will probably lead to a call to this function and an infinite
 	 * loop */
+	upsdebugx(6, "%s: closing event log NAMED_PIPE", __func__);
 	CloseHandle(pipe);
 }
 
@@ -530,6 +533,7 @@ void pipe_create(const char * pipe_name)
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
+	upsdebugx(2, "%s: creating NAMED_PIPE (listener): '%s'", __func__, pipe_full_name);
 	pipe_connection_handle = CreateNamedPipe(
 		pipe_full_name,
 		PIPE_ACCESS_INBOUND	/* to server only */
@@ -573,6 +577,12 @@ void pipe_connect()
 	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
 	pipe_conn_t	*conn;
 
+	/* TOTHINK: Here we seem to have assumptions about a general connection
+	 * via overlapped I/O being the signal to daemon (via named_pipe_name)...
+	 * might this conflict with other I/Os (driver/server sockets, dummy-ups
+	 * files, etc.)?
+	 */
+	upsdebugx(3, "%s: handle incoming connection on NAMED PIPE", __func__);
 	conn = xcalloc(1, sizeof(*conn));
 	conn->handle = pipe_connection_handle;
 
@@ -609,17 +619,22 @@ void pipe_connect()
 
 void pipe_disconnect(pipe_conn_t *conn)
 {
+	upsdebugx(3, "%s: starting", __func__);
+
 	if (conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: calling CloseHandle() for conn->overlapped.hEvent", __func__);
 		CloseHandle(conn->overlapped.hEvent);
 		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
 
 	if (conn->handle != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: calling DisconnectNamedPipe() for not-yet-invalid conn->handle", __func__);
 		if (DisconnectNamedPipe(conn->handle) == 0) {
 			upslogx(LOG_ERR,
 				"DisconnectNamedPipe error : %d",
 				(int)GetLastError());
 		}
+		upsdebugx(4, "%s: calling CloseHandle() for conn->handle", __func__);
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;
 	}
@@ -665,6 +680,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 
 	snprintf(pipe_full_name, sizeof(pipe_full_name), "\\\\.\\pipe\\%s", pipe_name);
 
+	upsdebugx(6, "%s: posting to NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
 		pipe_full_name,
 		GENERIC_WRITE,
@@ -686,6 +702,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 		return 1;
 	}
 
+	upsdebugx(6, "%s: closing event log NAMED_PIPE", __func__);
 	CloseHandle(pipe);
 	return 0;
 }
