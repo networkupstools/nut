@@ -1125,7 +1125,7 @@ int tcflush(serial_handler_t *sh, int queue)
 	if (queue == TCOFLUSH || queue == TCIOFLUSH)
 		PurgeComm(sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
 
-	if ((queue == TCIFLUSH) | (queue == TCIOFLUSH))
+	if ((queue == TCIFLUSH) || (queue == TCIOFLUSH))
 	{
 		/* Input flushing by polling until nothing turns up
 		 * (we stop after 1000 chars anyway) */
