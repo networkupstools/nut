@@ -90,8 +90,7 @@ jobs:
       uses: thollander/actions-comment-pull-request@v3
       with:
         message: |
-            Preparing a ZIP file with standard source tarball and another
-            tarball with pre-built docs for commit ${{ env.ref }} ...
+            Preparing a ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} ...
         comment-tag: tarball-url
         github-token: ${{ env.GITHUB_TOKEN }}
 
@@ -292,9 +291,7 @@ jobs:
       uses: thollander/actions-comment-pull-request@v3
       with:
         message: |
-            A ZIP file with standard source tarball and another tarball
-            with pre-built docs for commit ${{ env.ref }} is temporarily
-            available: [${{ env.artifact_name }}](${{ env.artifact_url }}).
+            A ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} is temporarily available: [${{ env.artifact_name }}](${{ env.artifact_url }}).
         comment-tag: tarball-url
         github-token: ${{ env.GITHUB_TOKEN }}
 
