@@ -568,7 +568,7 @@ void pipe_create(const char * pipe_name)
 	/* Wait for a connection */
 	ret = ConnectNamedPipe(pipe_connection_handle, &pipe_connection_overlapped);
 	if (ret == 0 && GetLastError() != ERROR_IO_PENDING) {
-		upslogx(LOG_ERR, "ConnectNamedPipe error");
+		upslog_with_errno(LOG_ERR, "ConnectNamedPipe error");
 	}
 }
 
@@ -601,7 +601,7 @@ void pipe_connect()
 	);
 	if (conn->overlapped.hEvent == NULL) {
 		/* FIXME: Is this (still) about event log only? */
-		upslogx(LOG_ERR, "Can't create event for reading event log");
+		upslog_with_errno(LOG_ERR, "Can't create event for reading event log");
 		return;
 	}
 
@@ -630,9 +630,7 @@ void pipe_disconnect(pipe_conn_t *conn)
 	if (conn->handle != INVALID_HANDLE_VALUE) {
 		upsdebugx(4, "%s: calling DisconnectNamedPipe() for not-yet-invalid conn->handle", __func__);
 		if (DisconnectNamedPipe(conn->handle) == 0) {
-			upslogx(LOG_ERR,
-				"DisconnectNamedPipe error : %d",
-				(int)GetLastError());
+			upslog_with_errno(LOG_ERR, "DisconnectNamedPipe failed");
 		}
 		upsdebugx(4, "%s: calling CloseHandle() for conn->handle", __func__);
 		CloseHandle(conn->handle);
@@ -661,7 +659,7 @@ int pipe_ready(pipe_conn_t *conn)
 
 	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
 	if (res == 0) {
-		upslogx(LOG_ERR, "Pipe read error");
+		upslog_with_errno(LOG_ERR, "Pipe read error");
 		pipe_disconnect(conn);
 		return 0;
 	}
@@ -698,6 +696,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	result = WriteFile(pipe, data, len + 1, &bytesWritten, NULL);
 
 	if (result == 0 || bytesWritten != len + 1) {
+		upsdebug_with_errno(6, "%s: closing event log NAMED_PIPE, did not write as much as expected to", __func__);
 		CloseHandle(pipe);
 		return 1;
 	}
@@ -978,7 +977,7 @@ serial_handler_t * w32_serial_open(const char *name, int flags)
 		0);
 
 	if (sh->handle == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR, "could not open %s", name);
+		upslog_with_errno(LOG_ERR, "could not open %s", name);
 		errno = EPERM;
 		return NULL;
 	}
@@ -1017,7 +1016,7 @@ serial_handler_t * w32_serial_open(const char *name, int flags)
 	state.fAbortOnError = TRUE;
 
 	if (!SetCommState(sh->handle, &state)) {
-		upslogx(LOG_ERR,
+		upslog_with_errno(LOG_ERR,
 			"couldn't set initial state for %s",
 			name);
 	}
@@ -1492,7 +1491,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	res = SetCommTimeouts(sh->handle, &to);
 	if (!res)
 	{
-		upslogx(LOG_ERR, "SetCommTimeout failed");
+		upslog_with_errno(LOG_ERR, "SetCommTimeout failed");
 		errno = EIO;
 		return -1;
 	}
