@@ -68,6 +68,7 @@ char *getpass(const char *prompt)
 {
 	HANDLE	hStdin;
 	DWORD	mode;
+	size_t	len;
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if (hStdin == INVALID_HANDLE_VALUE) {
@@ -86,8 +87,9 @@ char *getpass(const char *prompt)
 	}
 
 	/* deal with that pesky newline */
-	if (strlen(wincompat_password) > 1) {
-		wincompat_password[strlen(wincompat_password) - 1] = '\0';
+	len = strlen(wincompat_password);
+	if (len > 1) {
+		wincompat_password[len - 1] = '\0';
 	}
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
