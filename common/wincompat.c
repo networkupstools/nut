@@ -1,6 +1,10 @@
 /*
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	1999	Russell Kroll <rkroll@exploits.org>
+	2010 - 2013	Frederic Bohe <fredericbohe@eaton.com>
+	2010	Arnaud Quette <arnaud.quette@free.fr>
+	2022 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
