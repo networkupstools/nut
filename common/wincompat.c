@@ -490,6 +490,10 @@ void syslog(int priority, const char *fmt, ...)
 		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing event log NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return;
 	}
 
@@ -689,6 +693,10 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return 1;
 	}
 
