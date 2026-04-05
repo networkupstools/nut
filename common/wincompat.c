@@ -417,20 +417,22 @@ int win_system(const char * command)
 }
 
 /* the " character is forbiden in Windows files , so we filter this character
-in data file paths to be coherent with command line which require " to
-distinguish the command from its parameter. This avoid complicated
-explanation in the documentation */
+ * in data file paths to be coherent with command line which require " to
+ * distinguish the command from its parameter. This avoid complicated
+ * explanation in the documentation */
 char * filter_path(const char * source)
 {
 	char	*res;
 	unsigned int	i, j;
+	size_t	len;
 
 	if (source == NULL) {
 		return NULL;
 	}
 
-	res = xmalloc(strlen(source) + 1);
-	for (i=0, j=0; i <= strlen(source); i++) {
+	len = strlen(source);
+	res = xmalloc(len + 1);
+	for (i=0, j=0; i <= len; i++) {
 		if (source[i] != '"') {
 			res[j] = source[i];
 			j++;
