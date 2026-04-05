@@ -1290,6 +1290,7 @@ static apc_modbus_outlet_group_info_t apc_modbus_outlet_group_info[] = {
 
 /* Outlet command types for dynamic handling */
 typedef enum {
+	APC_OC_NULL = 0,
 	APC_OC_LOAD_OFF,
 	APC_OC_LOAD_ON,
 	APC_OC_LOAD_CYCLE,
@@ -1316,7 +1317,7 @@ static apc_modbus_outlet_cmd_suffix_t apc_modbus_outlet_cmd_suffixes[] = {
 	{ "shutdown.stayoff",           APC_OC_SHUTDOWN_STAYOFF         },
 	{ "shutdown.reboot",            APC_OC_SHUTDOWN_REBOOT          },
 	{ "shutdown.reboot.graceful",   APC_OC_SHUTDOWN_REBOOT_GRACEFUL },
-	{ NULL, 0 }
+	{ NULL, APC_OC_NULL }
 };
 
 /* Build outlet command value from command type and target bits */
@@ -1367,6 +1368,7 @@ static uint64_t _apc_modbus_build_outlet_cmd(apc_modbus_outlet_cmd_type_t type, 
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
+	case APC_OC_NULL:
 	default:
 		/* Must not occur. */
 		break;
