@@ -661,6 +661,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	BOOL	result = FALSE;
 	DWORD	bytesWritten = 0;
 	char	pipe_full_name[NUT_PATH_MAX + 1];
+	size_t	len;
 
 	snprintf(pipe_full_name, sizeof(pipe_full_name), "\\\\.\\pipe\\%s", pipe_name);
 
@@ -677,9 +678,10 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 		return 1;
 	}
 
-	result = WriteFile(pipe, data, strlen(data) + 1, &bytesWritten, NULL);
+	len = strlen(data);
+	result = WriteFile(pipe, data, len + 1, &bytesWritten, NULL);
 
-	if (result == 0 || bytesWritten != strlen(data) + 1) {
+	if (result == 0 || bytesWritten != len + 1) {
 		CloseHandle(pipe);
 		return 1;
 	}
