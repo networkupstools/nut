@@ -2,7 +2,11 @@
 #define NUT_WINCOMPAT_H 1
 
 /*
-   Copyright (C) 2001 Andrew Delpha (delpha@computer.org)
+   Copyright (C)
+	2001	Andrew Delpha (delpha@computer.org)
+	2010 - 2013	Frederic Bohe <fredericbohe@eaton.com>
+	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2022 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
