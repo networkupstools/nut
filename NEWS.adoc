@@ -174,6 +174,10 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      would focus on preparing communications, and `upsdrv_initinfo()` would
      actually talk to the device and set initial critical data values. [#1962]
 
+ - `apcsmart` driver updates:
+   * Add support for dual-byte command for APC SPM series (and potentially
+     SPRM SRVS series). [PR #3327]
+
  - `apcupsd-ups` driver updates:
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
