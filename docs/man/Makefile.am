@@ -546,13 +546,13 @@ SRC_DEV_PAGES = \
 	upscli_readline.txt \
 	upscli_report_build_details.txt \
 	upscli_sendline.txt \
-	upscli_set_debug_level.txt \
 	upscli_splitaddr.txt \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
 	upscli_ssl_caps.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	upscli_upslog_set_debug_level.txt \
 	upscli_str_add_unique_token.txt \
 	upscli_str_contains_token.txt \
 	libnutclient.txt \
@@ -587,8 +587,9 @@ SRC_DEV_PAGES = \
 	nutscan_free_device.txt \
 	nutscan_add_option_to_device.txt \
 	nutscan_add_device_to_device.txt \
-	nutscan_init.txt \
 	nutscan_get_serial_ports_list.txt \
+	nutscan_upslog_set_debug_level.txt \
+	nutscan_init.txt \
 	libupsclient-config.txt \
 	sockdebug.txt \
 	skel.txt
@@ -606,16 +607,64 @@ LIBNUTCLIENT_MISC_DEPS = \
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.$(MAN_SECTION_API)
 	touch $@
 
-LIBNUTCLIENT_TCP_DEPS = \
+# Asciidoc seems to reliably support up to 8 first aliases
+LIBNUTCLIENT_TCP_DEPS_FIRST = \
 	nutclient_tcp_create_client.$(MAN_SECTION_API) \
 	nutclient_tcp_disconnect.$(MAN_SECTION_API) \
 	nutclient_tcp_get_timeout.$(MAN_SECTION_API) \
 	nutclient_tcp_is_connected.$(MAN_SECTION_API) \
 	nutclient_tcp_reconnect.$(MAN_SECTION_API) \
-	nutclient_tcp_set_timeout.$(MAN_SECTION_API)
+	nutclient_tcp_set_timeout.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_caps.$(MAN_SECTION_API) \
+	nutclient_tcp_is_ssl.$(MAN_SECTION_API)
 
-$(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.$(MAN_SECTION_API)
+LIBNUTCLIENT_TCP_DEPS_SUB = \
+	nutclient_tcp_create_client_ssl_OpenSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_config_OpenSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_create_client_ssl_NSSL.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_config_NSS.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_try.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_try.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_force.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_force.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certverify.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certverify.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_capath.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_capath.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_cafile.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_cafile.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certfile.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certfile.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_keyfile.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_keyfile.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_keypass.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_keypass.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certstore_path.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certstore_path.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certstore_prefix.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certstore_prefix.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
+
+LIBNUTCLIENT_TCP_DEPS = \
+	$(LIBNUTCLIENT_TCP_DEPS_FIRST) \
+	$(LIBNUTCLIENT_TCP_DEPS_SUB)
+
+# There are currently so many page aliases that some asciidoc
+# versions do not populate more than ~8 of these files, either
+# touching empty files or none at all (valid creations start
+# with first mentions in the NAME section).
+$(LIBNUTCLIENT_TCP_DEPS_FIRST): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
+
+$(LIBNUTCLIENT_TCP_DEPS_SUB): nutclient_tcp_create_client.$(MAN_SECTION_API)
+	@if [ x"`cat '$@'`" != x ] 2>/dev/null ; then \
+		touch '$@' ; \
+	 else \
+		cat nutclient_tcp_create_client.$(MAN_SECTION_API) > '$@' ; \
+	 fi
 
 LIBNUTCLIENT_GENERAL_DEPS = \
 	nutclient_destroy.$(MAN_SECTION_API)
@@ -657,10 +706,15 @@ UPSCLI_SSL_CAPS_DEPS = \
 
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
-UPSCLI_SET_DEBUG_LEVEL_DEPS = \
-	upscli_get_debug_level.$(MAN_SECTION_API)
+UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
+	upscli_upslog_cookie.$(MAN_SECTION_API) \
+	upscli_upslog_get_debug_level.$(MAN_SECTION_API) \
+	upscli_upslog_start_sync.$(MAN_SECTION_API) \
+	upscli_upslog_setprocname.$(MAN_SECTION_API) \
+	upscli_upslog_getproctag.$(MAN_SECTION_API) \
+	upscli_upslog_setproctag.$(MAN_SECTION_API)
 
-$(UPSCLI_SET_DEBUG_LEVEL_DEPS): upscli_set_debug_level.$(MAN_SECTION_API)
+$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS): upscli_upslog_set_debug_level.$(MAN_SECTION_API)
 
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
@@ -679,11 +733,11 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_list_start.$(MAN_SECTION_API) \
 	upscli_readline.$(MAN_SECTION_API) \
 	upscli_readline_timeout.$(MAN_SECTION_API) \
+	upscli_readline_timeout_may_disconnect.$(MAN_SECTION_API) \
 	upscli_report_build_details.$(MAN_SECTION_API) \
 	upscli_sendline.$(MAN_SECTION_API) \
 	upscli_sendline_timeout.$(MAN_SECTION_API) \
-	upscli_set_debug_level.$(MAN_SECTION_API) \
-	$(UPSCLI_SET_DEBUG_LEVEL_DEPS) \
+	upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API) \
 	upscli_splitaddr.$(MAN_SECTION_API) \
 	upscli_splitname.$(MAN_SECTION_API) \
 	upscli_ssl.$(MAN_SECTION_API) \
@@ -691,6 +745,8 @@ INST_MAN_DEV_API_PAGES = \
 	$(UPSCLI_SSL_CAPS_DEPS) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
+	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
+	$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
 	upscli_str_contains_token.$(MAN_SECTION_API) \
 	libnutclient.$(MAN_SECTION_API) \
@@ -733,13 +789,21 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_add_commented_option_to_device.$(MAN_SECTION_API) \
 	nutscan_add_device_to_device.$(MAN_SECTION_API) \
 	nutscan_get_serial_ports_list.$(MAN_SECTION_API) \
+	nutscan_upslog_set_debug_level.$(MAN_SECTION_API) \
+	$(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
 upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 	touch $@
 
+upscli_readline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
+	touch $@
+
 upscli_sendline_timeout.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
+	touch $@
+
+upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN_SECTION_API)
 	touch $@
 
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
@@ -759,6 +823,16 @@ nutscan_scan_ip_range_ipmi.$(MAN_SECTION_API): nutscan_scan_ipmi.$(MAN_SECTION_A
 
 nutscan_add_commented_option_to_device.$(MAN_SECTION_API): nutscan_add_option_to_device.$(MAN_SECTION_API)
 	touch $@
+
+NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
+	nutscan_upslog_cookie.$(MAN_SECTION_API) \
+	nutscan_upslog_get_debug_level.$(MAN_SECTION_API) \
+	nutscan_upslog_start_sync.$(MAN_SECTION_API) \
+	nutscan_upslog_setprocname.$(MAN_SECTION_API) \
+	nutscan_upslog_getproctag.$(MAN_SECTION_API) \
+	nutscan_upslog_setproctag.$(MAN_SECTION_API)
+
+$(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS): nutscan_upslog_set_debug_level.$(MAN_SECTION_API)
 
 INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
@@ -801,13 +875,13 @@ INST_HTML_DEV_MANS = \
 	upscli_readline.html \
 	upscli_report_build_details.html \
 	upscli_sendline.html \
-	upscli_set_debug_level.html \
 	upscli_splitaddr.html \
 	upscli_splitname.html \
 	upscli_ssl.html \
 	upscli_ssl_caps.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	upscli_upslog_set_debug_level.html \
 	upscli_str_add_unique_token.html \
 	upscli_str_contains_token.html \
 	libnutclient.html \
@@ -843,6 +917,7 @@ INST_HTML_DEV_MANS = \
 	nutscan_add_option_to_device.html \
 	nutscan_add_device_to_device.html \
 	nutscan_get_serial_ports_list.html \
+	nutscan_upslog_set_debug_level.html \
 	nutscan_init.html \
 	libupsclient-config.html \
 	sockdebug.html \
@@ -855,7 +930,9 @@ HTML_DEV_MANS = $(INST_HTML_DEV_MANS)
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
 	upscli_readline_timeout.html \
+	upscli_readline_timeout_may_disconnect.html \
 	upscli_sendline_timeout.html \
+	upscli_sendline_timeout_may_disconnect.html \
 	upscli_tryconnect.html \
 	nutscan_scan_ip_range_snmp.html \
 	nutscan_scan_ip_range_xml_http.html \
@@ -863,10 +940,10 @@ HTML_DEV_MANS_FICTION = \
 	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
 
-upscli_readline_timeout.html: upscli_readline.html
+upscli_readline_timeout.html upscli_readline_timeout_may_disconnect.html: upscli_readline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_sendline_timeout.html: upscli_sendline.html
+upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli_sendline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
@@ -1679,15 +1756,43 @@ LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt nut.txt
 # TOTHINK: Parse sources for `include::` hits dynamically to build (parts of) this regex?
 LINKMAN_EXCLUDE_NONDRIVER = '^(nutupsdrv|blazer-common|nut_usb_addvars|networked_hostnames)\.txt$$'
 
-CLEANFILES = linkman-*.txt.tmp*
+CLEANFILES = linkman-*.txt.tmp* .all.nut_*-generated.timestamp
 
 # Note we can have a pre-built file from the tarball, sort of useful when
 # e.g. no man page building tools are locally available (we might not be
 # able to render a new instance though). At least do not let '$@' confuse
 # us into overwriting its instance in srcdir (if differs from builddir).
+
+# Shared shell snippet to quickly bail out from (re-)building these files
+# in a parallelized build/check sequence:
+LINKMAN_CHECK_GENERATED = { \
+	if [ -s '$@' ] ; then \
+	    if [ x"$(NUT_LINKMAN_GENERATED)" = xtrue ] || [ x"$${NUT_LINKMAN_GENERATED}" = xtrue ] ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (NUT_LINKMAN_GENERATED makevar=$(NUT_LINKMAN_GENERATED) shellvar=$${NUT_LINKMAN_GENERATED})" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	    if test -n "`find '$@' -newer '.all.nut_linkman-generated.timestamp' 2>/dev/null`" \
+	    && [ x"$(NUT_LINKMAN_GENERATED)" != xfalse ] \
+	    && [ x"$${NUT_LINKMAN_GENERATED}" != xfalse ] \
+	    ; then \
+	        if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	            echo "=== SKIP (include) $@ (.all.nut_linkman-generated.timestamp was made in this larger run and is older than the generated file)" >&2; \
+	        fi ; \
+	        exit 0 ; \
+	    fi ; \
+	fi; \
+	if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	    echo "  GENERATE-LINKMAN	$@ (NUT_LINKMAN_GENERATED makevar=$(NUT_LINKMAN_GENERATED) shellvar=$${NUT_LINKMAN_GENERATED})"; \
+	else \
+	    echo "  GENERATE-LINKMAN	$@"; \
+	fi ; \
+}
+
 linkman-driver-names.txt: Makefile
-	@echo "  GENERATE-LINKMAN	$@"
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@$(LINKMAN_CHECK_GENERATED) ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERS) ; do echo "$$F" ; done \
 	    | $(EGREP) -v $(LINKMAN_EXCLUDE_NONDRIVER) \
 	    | sort -n | uniq \
@@ -1708,8 +1813,8 @@ linkman-driver-names.txt: Makefile
 	 fi
 
 linkman-drivertool-names.txt: Makefile
-	@echo "  GENERATE-LINKMAN	$@"
-	@(LC_ALL=C; LANG=C; export LC_ALL LANG; \
+	@$(LINKMAN_CHECK_GENERATED) ; \
+	 (LC_ALL=C; LANG=C; export LC_ALL LANG; \
 	  for F in $(LINKMAN_PAGES_DRIVERTOOLS) ; do echo "$$F" ; done \
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[$(MAN_SECTION_CMD_SYS)],' ; \
@@ -2114,6 +2219,9 @@ spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 # stack (causing a dependency loop)!
 PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 ASCIIDOC_LINKMANEXT_SECTION_REWRITE = @ASCIIDOC_LINKMANEXT_SECTION_REWRITE@
+
+# Allow this to be called before top-level parallel or recursive build fanout:
+prep-linkman-generated: $(LINKMAN_INCLUDE_GENERATED) Makefile
 
 # NOTE: Some "make" implementations prefix a relative or absent path to
 # the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute

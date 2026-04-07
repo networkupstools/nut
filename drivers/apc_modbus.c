@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -117,7 +117,8 @@ typedef enum {
 
 typedef enum {
 	APC_VF_NONE = 0,
-	APC_VF_RW = (1 << 0)
+	APC_VF_RW = (1 << 0),
+	APC_VF_UNAVAILABLE = (1 << 1)
 } apc_modbus_value_flags;
 
 static const apc_modbus_value_types apc_modbus_value_types_max = APC_VT_STRING;
@@ -820,6 +821,42 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
 
 static apc_modbus_converter_t _apc_modbus_date_conversion = { _apc_modbus_date_to_nut, _apc_modbus_date_from_nut };
 
+/*
+ * Timer countdown conversion:
+ * -1: NotActive - No countdown in progress
+ *  0: CountdownExpired - Countdown has ended
+ *  1-2147483647: Seconds remaining
+ */
+static int _apc_modbus_timer_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
+{
+	int res;
+
+	if (value == NULL || output == NULL || output_len == 0) {
+		/* Invalid parameters */
+		return 0;
+	}
+
+	if (value->type != APC_VT_INT) {
+		return 0;
+	}
+
+	if (value->data.int_value == -1) {
+		res = snprintf(output, output_len, "NotActive");
+	} else if (value->data.int_value == 0) {
+		res = snprintf(output, output_len, "CountdownExpired");
+	} else {
+		res = snprintf(output, output_len, "%" PRIi64, value->data.int_value);
+	}
+
+	if (res < 0 || (size_t)res >= output_len) {
+		return 0;
+	}
+
+	return 1;
+}
+
+static apc_modbus_converter_t _apc_modbus_timer_conversion = { _apc_modbus_timer_to_nut, NULL };
+
 typedef struct {
 	const char *nut_variable_name;
 	size_t modbus_addr;
@@ -870,9 +907,18 @@ static apc_modbus_register_t apc_modbus_register_map_dynamic[] = {
 	{ "experimental.output.energy",     145,    2,  APC_VT_UINT,     APC_VF_NONE,         NULL,                                   "%" PRIu64, 0,  NULL    },
 	{ "input.voltage",                  151,    1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_voltage_conversion,        "%.2f",     6,  NULL    },
 	{ "ups.efficiency",                 154,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_efficiency_conversion,     "%.1f",     7,  NULL    },
-	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.start",                156,    1,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
-	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      APC_VF_NONE,         NULL,                                   "%" PRIi64, 0,  NULL    },
+	{ "ups.timer.shutdown",             155,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "ups.timer.start",                156,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "ups.timer.reboot",               157,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.shutdown",  159,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.start",     160,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.1.timer.reboot",    161,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.shutdown",  163,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.start",     164,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.2.timer.reboot",    165,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.shutdown",  167,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.start",     168,    1,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
+	{ "outlet.group.3.timer.reboot",    169,    2,  APC_VT_INT,      APC_VF_NONE,         &_apc_modbus_timer_conversion,          NULL,       0,  NULL    },
 	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
@@ -903,6 +949,40 @@ static apc_modbus_register_t* apc_modbus_register_maps[] = {
 	apc_modbus_register_map_dynamic,
 	apc_modbus_register_map_static
 };
+
+/*
+ * Find a register variable entry by NUT variable name prefix.
+ * If start_after is non-NULL, search starts after that entry.
+ * Returns pointer to the entry, or NULL if not found.
+ */
+static apc_modbus_register_t* _apc_modbus_find_register_variable(const char *nut_variable_name, apc_modbus_register_t *start_after)
+{
+	apc_modbus_register_t *reg;
+	size_t i, prefix_len;
+	int skip = (start_after != NULL);
+
+	if (nut_variable_name == NULL) {
+		return NULL;
+	}
+
+	prefix_len = strlen(nut_variable_name);
+
+	for (i = 0; i < SIZEOF_ARRAY(apc_modbus_register_maps); i++) {
+		for (reg = apc_modbus_register_maps[i]; reg->nut_variable_name != NULL; reg++) {
+			if (skip) {
+				if (reg == start_after) {
+					skip = 0;
+				}
+				continue;
+			}
+			if (strncmp(nut_variable_name, reg->nut_variable_name, prefix_len) == 0) {
+				return reg;
+			}
+		}
+	}
+
+	return NULL;
+}
 
 static void _apc_modbus_close(int free_modbus)
 {
@@ -1179,6 +1259,10 @@ static int _apc_modbus_process_registers(apc_modbus_register_t* values, const ui
 	for (i = 0; values[i].nut_variable_name; i++) {
 		v = &values[i];
 
+		if ((v->value_flags & APC_VF_UNAVAILABLE) != 0) {
+			continue;
+		}
+
 		if ((size_t)v->modbus_addr < regs_offset || (size_t)(v->modbus_addr + v->modbus_len) > regs_offset + regs_len) {
 			continue;
 		}
@@ -1189,12 +1273,249 @@ static int _apc_modbus_process_registers(apc_modbus_register_t* values, const ui
 	return 1;
 }
 
+typedef struct {
+	const char *id;
+	const char *designator;
+	uint16_t sog_relay_config_bit;
+	uint16_t outlet_command_target_bit;
+	int present;
+} apc_modbus_outlet_group_info_t;
+
+static apc_modbus_outlet_group_info_t apc_modbus_outlet_group_info[] = {
+	{ "MOG",	"Main",		APC_MODBUS_SOGRELAYCONFIGSETTING_BF_MOG_PRESENT,	APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP,		0 },
+	{ "SOG0",	"Group 1",	APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_0_PRESENT,	APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_0,	0 },
+	{ "SOG1",	"Group 2",	APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_1_PRESENT,	APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_1,	0 },
+	{ "SOG2",	"Group 3",	APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_2_PRESENT,	APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2,	0 },
+};
+
+/* Outlet command types for dynamic handling */
+typedef enum {
+	APC_OC_NULL = 0,
+	APC_OC_LOAD_OFF,
+	APC_OC_LOAD_ON,
+	APC_OC_LOAD_CYCLE,
+	APC_OC_LOAD_OFF_DELAY,
+	APC_OC_LOAD_ON_DELAY,
+	APC_OC_SHUTDOWN_RETURN,
+	APC_OC_SHUTDOWN_STAYOFF,
+	APC_OC_SHUTDOWN_REBOOT,
+	APC_OC_SHUTDOWN_REBOOT_GRACEFUL
+} apc_modbus_outlet_cmd_type_t;
+
+typedef struct {
+	const char *suffix;
+	apc_modbus_outlet_cmd_type_t type;
+} apc_modbus_outlet_cmd_suffix_t;
+
+static apc_modbus_outlet_cmd_suffix_t apc_modbus_outlet_cmd_suffixes[] = {
+	{ "load.off",                   APC_OC_LOAD_OFF                 },
+	{ "load.on",                    APC_OC_LOAD_ON                  },
+	{ "load.cycle",                 APC_OC_LOAD_CYCLE               },
+	{ "load.off.delay",             APC_OC_LOAD_OFF_DELAY           },
+	{ "load.on.delay",              APC_OC_LOAD_ON_DELAY            },
+	{ "shutdown.return",            APC_OC_SHUTDOWN_RETURN          },
+	{ "shutdown.stayoff",           APC_OC_SHUTDOWN_STAYOFF         },
+	{ "shutdown.reboot",            APC_OC_SHUTDOWN_REBOOT          },
+	{ "shutdown.reboot.graceful",   APC_OC_SHUTDOWN_REBOOT_GRACEFUL },
+	{ NULL, APC_OC_NULL }
+};
+
+/* Build outlet command value from command type and target bits */
+static uint64_t _apc_modbus_build_outlet_cmd(apc_modbus_outlet_cmd_type_t type, uint64_t target_bits)
+{
+	uint64_t cmd = target_bits;
+
+	switch (type) {
+	case APC_OC_LOAD_OFF:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF;
+		break;
+	case APC_OC_LOAD_ON:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON;
+		break;
+	case APC_OC_LOAD_CYCLE:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT;
+		break;
+	case APC_OC_LOAD_OFF_DELAY:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
+		break;
+	case APC_OC_LOAD_ON_DELAY:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_ON_DELAY;
+		break;
+	case APC_OC_SHUTDOWN_RETURN:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
+		break;
+	case APC_OC_SHUTDOWN_STAYOFF:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
+		break;
+	case APC_OC_SHUTDOWN_REBOOT:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT;
+		break;
+	case APC_OC_SHUTDOWN_REBOOT_GRACEFUL:
+		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
+		break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+	case APC_OC_NULL:
+	default:
+		/* Must not occur. */
+		break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+
+	return cmd;
+}
+
+/* Get combined target bits for MOG and all available SOGs (for global commands) */
+static uint64_t _apc_modbus_get_all_outlet_targets(void)
+{
+	size_t i;
+	uint64_t targets = 0;
+
+	for (i = 0; i < SIZEOF_ARRAY(apc_modbus_outlet_group_info); i++) {
+		if (apc_modbus_outlet_group_info[i].present) {
+			targets |= apc_modbus_outlet_group_info[i].outlet_command_target_bit;
+		}
+	}
+
+	return targets;
+}
+
+/*
+ * Handle dynamic outlet.group.N.* and global load/shutdown commands
+ * Returns: 1 if command was handled, 0 if not an outlet/load/shutdown command
+ *
+ * Command mapping:
+ *   load.*           -> targets all outlet groups (equivalent to outlet.group.0.*)
+ *   shutdown.*       -> targets all outlet groups (equivalent to outlet.group.0.*)
+ *   outlet.group.0.* -> targets all outlet groups (MOG operations include all SOGs)
+ *   outlet.group.N.* -> targets only outlet group N
+ */
+static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *extra, int *result)
+{
+	size_t i, group_idx = 0;
+	apc_modbus_outlet_cmd_type_t cmd_type = APC_OC_LOAD_OFF;
+	uint64_t target_bits = 0;
+	uint64_t cmd_value;
+	uint16_t value[2];
+	int found_suffix = 0;
+	const char *suffix = NULL;
+
+#define STR_LOAD_PFX		"load."
+#define STR_SHUTDOWN_PFX	"shutdown."
+#define STR_OUTLET_GROUP_PFX	"outlet.group."
+
+	/* Parse command to extract suffix and group index */
+	if (strncmp(nut_cmdname, STR_LOAD_PFX, strlen(STR_LOAD_PFX)) == 0 ||
+	    strncmp(nut_cmdname, STR_SHUTDOWN_PFX, strlen(STR_SHUTDOWN_PFX)) == 0) {
+		/* Global load.* and shutdown.* commands are equivalent to outlet.group.0.* */
+		group_idx = 0;
+
+		/* Rewrite shutdown.default to shutdown.return */
+		if (strcmp(nut_cmdname, "shutdown.default") == 0) {
+			suffix = "shutdown.return";
+		} else {
+			suffix = nut_cmdname;
+		}
+	} else if (strncmp(nut_cmdname, STR_OUTLET_GROUP_PFX, strlen(STR_OUTLET_GROUP_PFX)) == 0) {
+		const char *p = nut_cmdname + strlen(STR_OUTLET_GROUP_PFX);
+		char *endptr;
+
+		/* Parse group index */
+		group_idx = strtoul(p, &endptr, 10);
+		if (endptr == p || *endptr != '.') {
+			return 0;  /* Not a valid outlet.group.N.* format */
+		}
+
+		/* Get command suffix after "outlet.group.N." */
+		suffix = endptr + 1;
+	} else {
+		return 0;  /* Not an outlet/load/shutdown command */
+	}
+
+	/* Validate group index */
+	if (group_idx >= SIZEOF_ARRAY(apc_modbus_outlet_group_info)) {
+		upslogx(LOG_ERR, "%s: Invalid outlet group index %" PRIuPTR " in command [%s]",
+			__func__, group_idx, nut_cmdname);
+		*result = STAT_INSTCMD_INVALID;
+		return 1;
+	}
+
+	/* For group 0 (MOG or global commands) use all available targets.
+	 * For specific groups, check if that group is available. */
+	if (group_idx == 0) {
+		target_bits = _apc_modbus_get_all_outlet_targets();
+	} else {
+		if (!apc_modbus_outlet_group_info[group_idx].present) {
+			upslogx(LOG_ERR, "%s: Outlet group %" PRIuPTR " not available for command [%s]",
+				__func__, group_idx, nut_cmdname);
+			*result = STAT_INSTCMD_INVALID;
+			return 1;
+		}
+		target_bits = apc_modbus_outlet_group_info[group_idx].outlet_command_target_bit;
+	}
+
+	/* Look up command suffix in table */
+	for (i = 0; apc_modbus_outlet_cmd_suffixes[i].suffix; i++) {
+		if (strcmp(suffix, apc_modbus_outlet_cmd_suffixes[i].suffix) == 0) {
+			cmd_type = apc_modbus_outlet_cmd_suffixes[i].type;
+			found_suffix = 1;
+			break;
+		}
+	}
+
+	if (!found_suffix) {
+		return 0;  /* Not a known command suffix */
+	}
+
+	/* Build and send the command */
+	cmd_value = _apc_modbus_build_outlet_cmd(cmd_type, target_bits);
+
+	if (!_apc_modbus_from_uint64(cmd_value, value, 2)) {
+		upslogx(LOG_ERR, "%s: Failed to convert command value for [%s]", __func__, nut_cmdname);
+		*result = STAT_INSTCMD_CONVERSION_FAILED;
+		return 1;
+	}
+
+	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
+	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, value) < 0) {
+		upslogx(LOG_ERR, "%s: Write of outlet command failed: %s (%s)",
+			__func__, modbus_strerror(errno), device_path);
+		_apc_modbus_handle_error(modbus_ctx);
+		*result = STAT_INSTCMD_FAILED;
+		return 1;
+	}
+
+	*result = STAT_INSTCMD_HANDLED;
+	return 1;
+}
+
 static int _apc_modbus_read_inventory(void)
 {
 	uint16_t regbuf[120];
 	int start_addr;
 	uint16_t sog_relay_config;
 	int outlet_group_count;
+	char var_name[64];
+	size_t i, j;
+	apc_modbus_register_t *reg;
 
 	/* Inventory Information */
 	start_addr = apc_modbus_register_map_inventory[0].modbus_addr;
@@ -1202,22 +1523,60 @@ static int _apc_modbus_read_inventory(void)
 		sog_relay_config = regbuf[APC_MODBUS_SOGRELAYCONFIGSETTING_BF_REG - start_addr];
 
 		outlet_group_count = 0;
-		if ((sog_relay_config & APC_MODBUS_SOGRELAYCONFIGSETTING_BF_MOG_PRESENT)) {
-			outlet_group_count++;
+		for (i = 0; i < SIZEOF_ARRAY(apc_modbus_outlet_group_info); i++) {
+			if ((sog_relay_config & apc_modbus_outlet_group_info[i].sog_relay_config_bit) != 0) {
+				apc_modbus_outlet_group_info[i].present = 1;
+				outlet_group_count++;
+
+				snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".id", i);
+				dstate_setinfo(var_name, "%s", apc_modbus_outlet_group_info[i].id);
+
+				snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".designator", i);
+				dstate_setinfo(var_name, "%s", apc_modbus_outlet_group_info[i].designator);
+
+				/* Add all outlet.group commands for available groups */
+				for (j = 0; apc_modbus_outlet_cmd_suffixes[j].suffix; j++) {
+					snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".%s",
+						i, apc_modbus_outlet_cmd_suffixes[j].suffix);
+					dstate_addcmd(var_name);
+				}
+			} else {
+				apc_modbus_outlet_group_info[i].present = 0;
+			}
+
+			snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".", i);
+			reg = _apc_modbus_find_register_variable(var_name, NULL);
+			while (reg != NULL) {
+				if (apc_modbus_outlet_group_info[i].present > 0) {
+					reg->value_flags = (apc_modbus_value_flags)(reg->value_flags & ~APC_VF_UNAVAILABLE);
+				} else {
+					reg->value_flags |= APC_VF_UNAVAILABLE;
+				}
+				reg = _apc_modbus_find_register_variable(var_name, reg);
+			}
 		}
-		if ((sog_relay_config & APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_0_PRESENT)) {
-			outlet_group_count++;
+
+		/* Add global load.* and shutdown.* commands if any outlet group is present */
+		if (outlet_group_count > 0) {
+			dstate_addcmd("load.off");
+			dstate_addcmd("load.on");
+			dstate_addcmd("load.cycle");
+			dstate_addcmd("load.off.delay");
+			dstate_addcmd("load.on.delay");
+			dstate_addcmd("shutdown.default");
+			dstate_addcmd("shutdown.return");
+			dstate_addcmd("shutdown.stayoff");
+			dstate_addcmd("shutdown.reboot");
+			dstate_addcmd("shutdown.reboot.graceful");
 		}
-		if ((sog_relay_config & APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_1_PRESENT)) {
-			outlet_group_count++;
-		}
-		if ((sog_relay_config & APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_2_PRESENT)) {
-			outlet_group_count++;
-		}
-		/* Documentation says there is a bit for SOG3, but everything else does not have it */
+
+		/*
+		 * Documentation says there is a bit for SOG3, but there are no known models that have it
+		 * and the rest of the documentation is inconsistent about it.
+		 * If your unit has SOG3, please report it.
+		 */
 		if ((sog_relay_config & APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_3_PRESENT)) {
 			upslogx(LOG_WARNING, "%s: SOG3 present, but we don't know how to use it", __func__);
-			outlet_group_count++;
 		}
 
 		dstate_setinfo("outlet.group.count", "%d", outlet_group_count);
@@ -1253,6 +1612,11 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	if (!apc_map || !apc_value) {
 		upslog_SET_UNKNOWN(nut_varname, str_value);
 		return STAT_SET_UNKNOWN;
+	}
+
+	if (!(apc_value->value_flags & APC_VF_UNAVAILABLE)) {
+		upslogx(LOG_SET_INVALID, "%s: [%s] is not available", __func__, nut_varname);
+		return STAT_SET_INVALID;
 	}
 
 	if (!(apc_value->value_flags & APC_VF_RW)) {
@@ -1315,7 +1679,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	addr = apc_value->modbus_addr;
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
-		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
 		_apc_modbus_handle_error(modbus_ctx);
 		return STAT_SET_FAILED;
 	}
@@ -1341,6 +1705,7 @@ typedef struct {
 	uint64_t value;
 } apc_modbus_command_t;
 
+/* Static command map for non-outlet/load/shutdown commands */
 static apc_modbus_command_t apc_modbus_command_map[] = {
 	{ "test.battery.start",         APC_MODBUS_REPLACEBATTERYTESTCOMMAND_BF_REG,    1,  APC_MODBUS_REPLACEBATTERYTESTCOMMAND_BF_START   },
 	{ "test.battery.stop",          APC_MODBUS_REPLACEBATTERYTESTCOMMAND_BF_REG,    1,  APC_MODBUS_REPLACEBATTERYTESTCOMMAND_BF_ABORT   },
@@ -1350,61 +1715,13 @@ static apc_modbus_command_t apc_modbus_command_map[] = {
 	{ "bypass.start",               APC_MODBUS_UPSCOMMAND_BF_REG,                   2,  APC_MODBUS_UPSCOMMAND_BF_OUTPUT_INTO_BYPASS     },
 	{ "bypass.stop",                APC_MODBUS_UPSCOMMAND_BF_REG,                   2,  APC_MODBUS_UPSCOMMAND_BF_OUTPUT_OUT_OF_BYPASS   },
 	{ "beeper.mute",                APC_MODBUS_USERINTERFACECOMMAND_BF_REG,         1,  APC_MODBUS_USERINTERFACECOMMAND_BF_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS },
-	{ "load.off",                   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "load.on",                    APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "load.off.delay",             APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "load.on.delay",              APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_ON_DELAY },
-	{ "shutdown.return",            APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "shutdown.stayoff",           APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "shutdown.reboot",            APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "shutdown.reboot.graceful",   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "outlet.0.shutdown.return",   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "outlet.0.load.off",          APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "outlet.0.load.on",           APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "outlet.0.load.cycle",        APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP },
-	{ "outlet.1.shutdown.return",   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_0 | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "outlet.1.load.off",          APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_0 },
-	{ "outlet.1.load.on",           APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_0 },
-	{ "outlet.1.load.cycle",        APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_0 },
-	{ "outlet.2.shutdown.return",   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_1 | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "outlet.2.load.off",          APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_1 },
-	{ "outlet.2.load.on",           APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_1 },
-	{ "outlet.2.load.cycle",        APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_1 },
-	{ "outlet.3.shutdown.return",   APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2 | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY },
-	{ "outlet.3.load.off",          APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2 },
-	{ "outlet.3.load.on",           APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2 },
-	{ "outlet.3.load.cycle",        APC_MODBUS_OUTLETCOMMAND_BF_REG,                2,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2 },
 	{ NULL, 0, 0, 0 }
 };
 
 static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 {
 	size_t i;
-	int addr, nb;
+	int addr, nb, result;
 	apc_modbus_command_t *apc_command = NULL;
 	uint16_t value[4]; /* Max 64-bit */
 
@@ -1412,6 +1729,12 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	NUT_UNUSED_VARIABLE(extra);
 	upsdebug_INSTCMD_STARTING(nut_cmdname, extra);
 
+	/* First try to handle as an outlet/load/shutdown command */
+	if (_apc_modbus_handle_outlet_cmd(nut_cmdname, extra, &result)) {
+		return result;
+	}
+
+	/* Fall back to static command map */
 	for (i = 0; apc_modbus_command_map[i].nut_command_name; i++) {
 		if (!strcasecmp(nut_cmdname, apc_modbus_command_map[i].nut_command_name)) {
 			apc_command = &apc_modbus_command_map[i];
@@ -1466,8 +1789,10 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	uint16_t regbuf[32];
+	uint16_t regbuf[44];
 	uint64_t value;
+	char var_name[64];
+	size_t i, ri;
 
 	if (!is_open) {
 		if (!_apc_modbus_reopen()) {
@@ -1513,6 +1838,24 @@ void upsdrv_updateinfo(void)
 			status_set("OVER");
 		}
 
+		/* OutletStatus_BF */
+		for (i = 0; i < SIZEOF_ARRAY(apc_modbus_outlet_group_info); i++) {
+			if (apc_modbus_outlet_group_info[i].present == 0) {
+				continue;
+			}
+
+			snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".status", i);
+
+			ri = 3 + (i * 3);
+			_apc_modbus_to_uint64(&regbuf[ri], 2, &value);
+
+			if ((value & APC_MODBUS_OUTLETSTATUS_BF_STATE_ON) != 0) {
+				dstate_setinfo(var_name, "on");
+			} else {
+				dstate_setinfo(var_name, "off");
+			}
+		}
+
 		/* SimpleSignalingStatus_BF, 1 register */
 		_apc_modbus_to_uint64(&regbuf[18], 1, &value);
 		if (value & (1 << 1)) { /* ShutdownImminent */
@@ -1538,7 +1881,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Dynamic Data */
-	if (_apc_modbus_read_registers(modbus_ctx, 128, 32, regbuf)) {
+	if (_apc_modbus_read_registers(modbus_ctx, 128, 44, regbuf)) {
 		/* InputStatus_BF, 1 register */
 		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
 		if (value & (1 << 5)) {
@@ -1548,7 +1891,7 @@ void upsdrv_updateinfo(void)
 			status_set("TRIM");
 		}
 
-		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 32, 128);
+		_apc_modbus_process_registers(apc_modbus_register_map_dynamic, regbuf, 44, 128);
 	} else {
 		dstate_datastale();
 		return;
@@ -1570,6 +1913,8 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	int result;
+
 	/* Only implement "shutdown.default"; do not invoke
 	 * general handling of other `sdcommands` here */
 
@@ -1579,22 +1924,17 @@ void upsdrv_shutdown(void)
 	 * In order to be of any use, the driver should be called
 	 * near the end of the system halt script (or a service
 	 * management framework's equivalent, if any). By that
-	 * time we, in all likelyhood, won't have basic network
+	 * time we, in all likelihood, won't have basic network
 	 * capabilities anymore, so we could never send this
 	 * command to the UPS. This is not an error, but rather
 	 * a limitation (on some platforms) of the interface/media
 	 * used for these devices.
 	 */
 
-	/* FIXME: got no direct equivalent in apc_modbus_command_map[]
-	 *  used for instcmd above. Investigate if we can add this
-	 *  combo into that map and name it as an INSTCMD to call by
-	 *  this driver's standard approach.
-	 */
-	modbus_write_register(modbus_ctx,
-		APC_MODBUS_OUTLETCOMMAND_BF_REG,
-		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP
-	);
+	/* Use the standard outlet command handler which targets all outlet groups */
+	if (!_apc_modbus_handle_outlet_cmd("shutdown.default", NULL, &result)) {
+		upslogx(LOG_ERR, "%s: shutdown.default command not handled", __func__);
+	}
 }
 
 void upsdrv_help(void)

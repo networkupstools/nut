@@ -45,6 +45,10 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
@@ -1111,6 +1115,13 @@ static void check_conf(void)
 	exit(EXIT_FAILURE);
 }
 
+static void clean_exit(void)
+{
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 int main(int argc, char **argv)
 {
 	char *s;
@@ -1133,8 +1144,10 @@ int main(int argc, char **argv)
 	setmode(STDIN_FILENO, O_BINARY);
 #endif
 
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsset(CGI)");
+
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n");
@@ -1149,7 +1162,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	}
 
 #ifdef NUT_CGI_DEBUG_UPSSET
@@ -1159,7 +1172,7 @@ int main(int argc, char **argv)
 # endif
 	/* Un-comment via make flags when developer-troubleshooting: */
 	nut_debug_level = NUT_CGI_DEBUG_UPSSET;
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
 	if (nut_debug_level > 0) {
@@ -1171,6 +1184,7 @@ int main(int argc, char **argv)
 	check_conf();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
 	extractpostargs();
 

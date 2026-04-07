@@ -89,6 +89,12 @@ if test -z "${nut_compiler_family_seen}"; then
   AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo \"${CC_VERSION_FULL}\" | head -1`"])
   AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | head -1`"])
   AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | head -1`"])
+
+  dnl Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+  dnl but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+  CC_VERSION_NUMBER="`echo \"${CC_VERSION}\"   | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
+  CXX_VERSION_NUMBER="`echo \"${CXX_VERSION}\" | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
+  CPP_VERSION_NUMBER="`echo \"${CPP_VERSION}\" | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
 fi
 ])
 

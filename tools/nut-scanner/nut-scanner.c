@@ -1225,7 +1225,7 @@ static void show_usage(const char *arg_progname)
 
 int main(int argc, char *argv[])
 {
-	const char	*progname = xbasename(argv[0]);
+	const char	*progname = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nut-scanner");
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
 	nutscan_xml_t  xml_sec;
@@ -1245,6 +1245,7 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+	int _nut_debug_level = 0;
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	sem_t	*current_sem;
@@ -1252,7 +1253,17 @@ int main(int argc, char *argv[])
 #endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
+#endif
 
+	/* NOTE: No hassle in this program about upslog_start_sync()
+	 *  nor nutscan_upslog_setprocname(xstrdup(getmyprocname()))
+	 *  because its provider of those data and debugging methods
+	 *  is libnutscan itself (so cookie is NULL as we do not even
+	 *  see NUT-common methods in the program source).
+	 */
+	nutscan_upslog_setproctag(progname, NULL);
+
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	/* Limit the max scanning thread count by the amount of allowed open
 	 * file descriptors (which caller can change with `ulimit -n NUM`),
 	 * following practical investigation summarized at
@@ -1303,11 +1314,33 @@ int main(int argc, char *argv[])
 	opterr = 0;
 	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 		if (opt_ret == 'D')
-			nut_debug_level++;
+			_nut_debug_level++;
 	}
 
+	if (_nut_debug_level) {
+		nutscan_upslog_set_debug_level(_nut_debug_level, NULL);
+	} else {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		if (s) {
+			int	l = atol(s);
+			if (l > 0) {
+				_nut_debug_level = l;
+				nutscan_upslog_set_debug_level(_nut_debug_level, NULL);
+				upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+			}
+		}	/* else follow -D settings */
+	}
+
+	/* A non-trivial _nut_debug_level set above allows
+	 *  debug-tracing to troubleshoot these init methods: */
+	nutscan_upslog_setproctag("init-ip-ranges", NULL);
 	nutscan_init_ip_ranges(&ip_ranges_list);
+	nutscan_upslog_setproctag("init-libnutscan", NULL);
 	nutscan_init();
+	/* Re-set to cover libupsclient, if loaded: */
+	nutscan_upslog_set_debug_level(_nut_debug_level, NULL);
+	nutscan_upslog_setproctag(progname, NULL);
 
 	/* Default, see -Q/-N/-P below */
 	display_func = nutscan_display_ups_conf_with_sanity_check;
@@ -1799,8 +1832,13 @@ display_help:
 	}
 
 /* TODO/discuss : Should the #else...#endif code below for lack of pthreads
- * during build also serve as a fallback for pthread failure at runtime?
+ *  during build also serve as a fallback for pthread failure at runtime?
+ *  Also consider a setproctag() variant for threads, where it would be most
+ *  useful in troubleshooting. Currently it relies on a process-wide variable,
+ *  and threads are all in same process space...
  */
+	nutscan_upslog_setproctag("scanning", NULL);
+
 	if (allow_usb && nutscan_avail_usb) {
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
@@ -1809,6 +1847,7 @@ display_help:
 			nutscan_avail_usb = 0;
 		}
 #else
+		nutscan_upslog_setproctag("usb", NULL);
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
 		dev[TYPE_USB] = run_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
@@ -1843,6 +1882,7 @@ display_help:
 				nutscan_avail_snmp = 0;
 			}
 #else
+			nutscan_upslog_setproctag("snmp", NULL);
 			upsdebugx(1, "SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
 			/* dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec); */
 			run_snmp(&snmp_sec);
@@ -1867,6 +1907,7 @@ display_help:
 			nutscan_avail_xml_http = 0;
 		}
 #else
+		nutscan_upslog_setproctag("netxml", NULL);
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
 		run_xml(&xml_sec);
@@ -1889,6 +1930,7 @@ display_help:
 				nutscan_avail_nut = 0;
 			}
 #else
+			nutscan_upslog_setproctag("oldnut", NULL);
 			upsdebugx(1, "NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
 			/*dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);*/
 			run_nut_old(NULL);
@@ -1907,6 +1949,7 @@ display_help:
 			nutscan_avail_nut_simulation = 0;
 		}
 #else
+		nutscan_upslog_setproctag("nut_simulation", NULL);
 		upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
 		/* dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(); */
 		run_nut_simulation(NULL);
@@ -1924,6 +1967,7 @@ display_help:
 			nutscan_avail_avahi = 0;
 		}
 #else
+		nutscan_upslog_setproctag("avahi", NULL);
 		upsdebugx(1, "NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
 		/* dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout); */
 		run_avahi(NULL);
@@ -1946,6 +1990,7 @@ display_help:
 			nutscan_avail_ipmi = 0;
 		}
 #else
+		nutscan_upslog_setproctag("ipmi", NULL);
 		upsdebugx(1, "IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
 		/* dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec); */
 		run_ipmi(&ipmi_sec);
@@ -1963,6 +2008,7 @@ display_help:
 			nutscan_avail_upower = 0;
 		}
 #else
+		nutscan_upslog_setproctag("upower", NULL);
 		upsdebugx(1, "UPOWER SCAN: no pthread support, starting nutscan_scan_upower...");
 		run_upower(NULL);
 #endif /* HAVE_PTHREAD */
@@ -1980,6 +2026,7 @@ display_help:
 		/* upsdebugx(1, "pthread_create returned an error; disabling this scan mode"); */
 		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
+		nutscan_upslog_setproctag("serial", NULL);
 		upsdebugx(1, "SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
 		/* dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports); */
 		run_eaton_serial(serial_ports);
@@ -2026,6 +2073,8 @@ display_help:
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
+
+	nutscan_upslog_setproctag("post-processing", NULL);
 
 	upsdebugx(1, "SCANS DONE: display results");
 
@@ -2074,6 +2123,7 @@ display_help:
 	upsdebugx(1, "SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
+	nutscan_upslog_setproctag("cleanup", NULL);
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(nutscan_semaphore());
@@ -2095,6 +2145,10 @@ display_help:
 	uninit_snmp_device_table();
 #endif
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	nutscan_upslog_setproctag(progname, NULL);
+
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
+
 	return EXIT_SUCCESS;
 }

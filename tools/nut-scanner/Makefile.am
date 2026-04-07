@@ -197,8 +197,7 @@ else !WITH_DMF
 export_symbols_DMF=nutscan_
 endif !WITH_DMF
 
-libnutscan_la_LDFLAGS += -export-symbols-regex '^($(export_symbols_DMF)|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
-
+libnutscan_la_LDFLAGS += -export-symbols-regex '^($(export_symbols_DMF)|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|setproctag|xcalloc|xbasename|getprogname_argv0_default|snprintfcat|snprintf_dynamic|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \

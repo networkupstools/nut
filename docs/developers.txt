@@ -1450,12 +1450,14 @@ then advise which special environment variables to `export` in your situation
 and re-run it.
 ======
 
-Even if you do not use your distribution's packages of NUT, installing the
-distribution's list of build dependencies for NUT can reduce the amount of
-trial-and-error when installing dependencies. For instance, in Debian, you
-can run `apt-get build-dep nut` to install all of the auto* tools as well
-as any development libraries and headers -- as known for the version of NUT
-packaged with the OS distribution release you are using.
+Even if you do not use the official NUT packages provided by your
+OS distribution, installing the list of build dependencies and tools
+according to their recipes for NUT packaging can reduce the amount of
+trial-and-error when preparing for a custom build. For instance, in Debian
+and derived operating systems, you can run `apt-get build-dep nut` to
+install all of the auto* tools as well as any development libraries and
+headers -- as known for the version of NUT packaged with the OS distribution
+release you are using.
 
 After running `./autogen.sh`, you can pass your local configuration
 options to `./configure` and run `make` from the top-level directory.

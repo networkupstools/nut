@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -120,7 +120,7 @@ void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	switch (mode)
 	{
@@ -268,7 +268,7 @@ void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	sleep(1);
 
@@ -419,26 +419,50 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_help(void)
 {
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	upscli_report_build_details();
+}
+
+static void dummy_setproctag_callback(const char *tag) {
+	const void	*cookie = nut_common_cookie();
+
+	if (cookie != upscli_upslog_cookie())
+		upscli_upslog_setproctag(xstrdup(tag), cookie);
 }
 
 /* optionally tweak prognames[] entries */
 void upsdrv_tweak_prognames(void)
 {
+	const void	*cookie = nut_common_cookie();
+
+	/* Here we actually tweak libupsclient logging more,
+	 * relying on this method being called early in main.c */
+	upscli_upslog_start_sync(upslog_start_sync(NULL), cookie);
+	upscli_upslog_set_debug_level(nut_debug_level, cookie);
+
+	/* FIXME: All other calls to setproctag() in main.c would currently
+	 * be invisible to upscli_*() as that object file has no idea about
+	 * the library in this one driver... should we introduce a callback? */
+	if (cookie != upscli_upslog_cookie()) {
+		/* Send over a copy */
+		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
+		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+
+		upsdrv_callback_setproctag = dummy_setproctag_callback;
+	}
 }
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
-	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
+	addvar(VAR_FLAG,	"repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
 {
 	const char *val;
 
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {
@@ -598,6 +622,9 @@ void upsdrv_cleanup(void)
 		free(ctx);
 		ctx = NULL;
 	}
+
+	upscli_cleanup();
+	upsdrv_callback_setproctag = NULL;
 }
 
 static int setvar(const char *varname, const char *val)
@@ -786,24 +813,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 
 	if (now < next_update)
 	{
-		upsdebugx(1, "leaving (paused)...");
+		upsdebugx(1, "%s: leaving (paused)...", __func__);
 		return 1;
 	}
 
 	/* initialise everything, to loop back at the beginning of the file */
 	if (ctx == NULL)
 	{
+		upsdebugx(2, "%s: (re-)initialize PCONF context", __func__);
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
+		if (!ctx) {
+			upsdebugx(1, "%s: failed to malloc()", __func__);
+			return 1;
+		}
 
+		upsdebugx(5, "%s: call prepare_filepath()", __func__);
 		prepare_filepath(fn, sizeof(fn));
+
+		upsdebugx(5, "%s: got '%s', call pconf_init()", __func__, fn);
 		pconf_init(ctx, upsconf_err);
 
+		upsdebugx(5, "%s: call pconf_file_begin()", __func__);
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
 
 		/* we need this for parsing alarm instructions later */
+		upsdebugx(5, "%s: call status_init()", __func__);
 		status_init(); /* in case no ups.status does it */
+		upsdebugx(5, "%s: call alarm_init()", __func__);
 		alarm_init(); /* reset alarms at start of parsing */
 	}
 
@@ -812,6 +850,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	next_update = -1;
 
 	/* Now start or continue parsing... */
+	upsdebugx(3, "%s: proceed parsing PCONF context", __func__);
 	while (pconf_file_next(ctx))
 	{
 		if (pconf_parse_error(ctx))
@@ -822,6 +861,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		}
 
 		/* Check if we have something to process */
+		upsdebugx(4, "%s: %s:%d: numargs:%" PRIuSIZE " token:%s",
+			__func__, fn, ctx->linenum, ctx->numargs,
+			(ctx->numargs < 1 ? "<null>" : ctx->arglist[0])
+			);
 		if (ctx->numargs < 1)
 			continue;
 
@@ -920,9 +963,12 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)
 	{
+		upsdebugx(3, "%s: clean up PCONF context: no pending action", __func__);
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
 	}
+
+	upsdebugx(3, "%s: leaving (finished)", __func__);
 	return 1;
 }

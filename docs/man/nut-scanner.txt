@@ -186,11 +186,12 @@ the first "auto*" request would be honoured, others ignored with a warning.
 +
 An `/ADDRLEN` suffix can be added to the option, to filter out discovered
 subnets with too many bits available for the host address part (avoiding
-millions of scans in the extreme cases).  For example, if your IPv4 LAN's
-network range is `10.2.3.0/24`, its address part is `(32-24)=8`. Note that
-while this is applied to IPv6 networks also, their typical `/64` subnets
-are not likely to have a NUT/SNMP/NetXML/... server *that* close nearby
-(in addressing terms), for a tight filter to find them. Default is `8`.
+millions of scans in the extreme cases).  For example, if the IPv4 network
+range of your LAN is `10.2.3.0/24`, its address part is `(32-24)=8`.
+Note that while this is applied to IPv6 networks also, their typical `/64`
+subnets are not likely to have a NUT/SNMP/NetXML/... server *that* close
+nearby (in addressing terms), for a tight filter to find them.
+Default is `8`.
 
 NUT DEVICE OPTION
 -----------------

@@ -137,7 +137,7 @@ Shutdown
 ~~~~~~~~
 
 *FSD_pulse_duration*='value'::
-A number specifying the duration in ms for the inhibit pulse.
+A number specifying the duration in milliseconds for the inhibit pulse.
 If it's not defined, signal has only one transition depending
 on FSD_noro configuration.
 +

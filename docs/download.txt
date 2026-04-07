@@ -244,7 +244,8 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
       Windows path you deem fit (the built-in `mingw{32,64}` prefix directory
       is also not required).
 +
-The latest release's automated build archive is available here:
+The automatically generated binary build archive of the latest release is
+available here:
       link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
 +
 ------

@@ -6,7 +6,7 @@ EXTRA_DIST = README.adoc
 if WITH_CGI
  dist_htmlcgi_DATA = index.html bottom.html nut-banner.png
  # Note: logo is not really generated, just nodist for THIS directory:
- nodist_htmlcgi_DATA = header.html $(top_srcdir)/docs/images/nut-logo.png
+ nodist_htmlcgi_DATA = header.html $(top_srcdir)/docs/images/nut-logo-60x60.png
 else
  EXTRA_DIST += index.html bottom.html nut-banner.png header.html.in
 endif

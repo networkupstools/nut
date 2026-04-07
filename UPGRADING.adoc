@@ -31,8 +31,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - Added a `configure` script option to `--enable-shared-private-libs` which
   allows to deliver NUT common libraries as shared objects used by different
   NUT binaries, rather than linking just the used bits into each binary.
@@ -63,7 +61,9 @@ Changes from 2.8.4 to 2.8.5
 - Source directory `data/html` was renamed to `data/htmlcgi` in order to better
   reflect its contents and purpose, compared to documentation-oriented `html*`
   directories (and recipe variable names). This may impact some packaging
-  recipes which do not rely on `make install` alone. [#3049]
+  recipes which do not rely on `make install` alone. Note that more files
+  feature in the installation, e.g. a NUT logo rendition to use as favicon.
+  [#3049, #3249]
 
 - Some fixes were applied to HTML templates for NUT CGI clients. It can be
   useful for NUT deployments being upgraded to compare the files they have

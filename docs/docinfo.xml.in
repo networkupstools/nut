@@ -4,6 +4,7 @@
     -->
 
   <!-- Current release of NUT (to be left on top) -->
+<!--
   <revision>
     <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
     <date>@now@</date>
@@ -12,6 +13,7 @@
       Current release snapshot of Network UPS Tools (NUT).
     </revremark>
   </revision>
+-->
 
   <!-- 'Real' revision history (news on top). The revremarks are based
        on 'git diff ${RELTAG}..${RELTAG_NEXT} NEWS UPGRADING "*.txt"'
@@ -27,6 +29,21 @@
         Some changes to docs and recipes, especially for parallel builds.
         Updated NUT SEMVER definition some more.
         Some rounds of code-hardening project.
+        Numerous driver updates, some new ones introduced.
+    </revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.8.5</revnumber>
+    <date>2026-01-29</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, especially for parallel builds;
+        introduced a way to build with private shared libraries to save space.
+        Updated NUT SEMVER definition some more, added a normalization and
+        comparison script.
+        Some rounds of code-hardening project.
+        Added reference RPM/DEB recipes to test NUT iterations on OBS.
         Numerous driver updates, some new ones introduced.
     </revremark>
   </revision>

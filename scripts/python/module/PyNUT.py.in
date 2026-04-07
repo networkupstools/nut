@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #   Copyright (C) 2008 David Goncalves <david@lestat.st>
+#   Copyright (C) 2021-2026 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -63,8 +64,19 @@
 #
 # 2025-01-31 cgar <github.com/cgarz> - Version 1.8.0
 #            Removed telnetlib dependency. Switched to using socket directly.
+#
+# 2026-03-16 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.9.0
+#            Implement selectable OpenSSL and NSS client support via
+#            NUT STARTTLS protocol action.
 
 import socket
+
+ssl_available = False
+try:
+    import ssl
+    ssl_available = True
+except:
+    pass
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
@@ -73,7 +85,7 @@ class PyNUTError( Exception ) :
 class PyNUTClient :
     """ Abstraction class to access NUT (Network UPS Tools) server """
 
-    __debug       = None   # Set class to debug mode (prints everything useful for debuging...)
+    __debug       = None   # Set class to debug mode (prints everything useful for debugging...)
     __host        = None
     __port        = None
     __login       = None
@@ -81,33 +93,83 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
     __recv_leftover = b''
+    # Subject to global ssl_available:
+    __use_ssl     = False
+    __ssl_context = None
 
-    __version     = "1.8.0"
-    __release     = "2025-02-07"
+    __version     = "1.9.0"
+    __release     = "2026-03-16"
 
+    try:
+        NUT_DEFAULT_CONNECT_TIMEOUT = float(os.getenv("NUT_DEFAULT_CONNECT_TIMEOUT", "5.0"))
+    except:
+        NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT,
+                  use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
+                  cert_file=None, key_file=None, key_pass=None, force_ssl=False ) :
         """ Class initialization method
 
-host     : Host to connect (default to localhost)
-port     : Port where NUT listens for connections (default to 3493)
-login    : Login used to connect to NUT server (default to None for no authentication)
-password : Password used when using authentication (default to None)
-debug    : Boolean, put class in debug mode (prints everything on console, default to False)
-timeout  : Timeout used to wait for network response
+host        : Host to connect (default to localhost)
+port        : Port where NUT listens for connections (default to 3493)
+login       : Login used to connect to NUT server (default to None for no authentication)
+password    : Password used when using authentication (default to None)
+debug       : Boolean, put class in debug mode (prints everything on console, default to False)
+timeout     : Timeout used to wait for network response
+use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
+ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
+cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
+ca_file     : Path to CA certificate file (PEM format)
+ca_path     : Path to directory with CA certificates (PEM format)
+cert_file   : Path to client certificate file (PEM format)
+key_file    : Path to client private key file (PEM format)
+key_pass    : Password for client private key file (default to None)
+force_ssl   : Boolean, if True, the connection must be secure (default to False)
         """
         self.__debug = debug
 
         if self.__debug :
             print( "[DEBUG] Class initialization..." )
-            print( "[DEBUG]  -> Host  = %s (port %s)" % ( host, port ) )
+            print( "[DEBUG]  -> Host  = %s (port %s, timeout %s)" % ( host, port, timeout) )
             print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
+            print( "[DEBUG]  -> SSL   = %s (force: %s, verify: %s)" % (use_ssl, force_ssl, cert_verify) )
 
-        self.__host     = host
-        self.__port     = port
-        self.__login    = login
-        self.__password = password
-        self.__timeout  = timeout
+        self.__host        = host
+        self.__port        = port
+        self.__login       = login
+        self.__password    = password
+        # TOTHINK: we could call socket.getdefaulttimeout() but it
+        # might upset other scripts that use PyNUTClient, and/or
+        # their imposed timeouts might confuse NUT expectations:
+        self.__timeout     = NUT_DEFAULT_CONNECT_TIMEOUT if (timeout is None or type(timeout) not in [float, int] or timeout < 0.0) else timeout
+        if ssl_available:
+            self.__use_ssl     = use_ssl or force_ssl
+            self.__force_ssl   = force_ssl
+            self.__ssl_context = ssl_context
+            if self.__use_ssl and self.__ssl_context is None:
+                if self.__debug:
+                    print( "[DEBUG] Creating SSL context" )
+                # Create a default context and apply parameters
+                self.__ssl_context = ssl.create_default_context(cafile=ca_file, capath=ca_path)
+                if cert_verify is not None:
+                    if not cert_verify:
+                        # Must be set first, else we get
+                        #   ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled.
+                        self.__ssl_context.check_hostname = False
+                    self.__ssl_context.verify_mode = ssl.CERT_REQUIRED if cert_verify else ssl.CERT_NONE
+                if cert_file:
+                    self.__ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file, password=key_pass)
+                if self.__debug:
+                    print( "[DEBUG] SSL context created")
+        else:
+            self.__use_ssl     = False
+            self.__force_ssl   = False
+            self.__ssl_context = None
+            if (use_ssl or force_ssl or ssl_context is not None):
+                if self.__debug:
+                    print( "[DEBUG] SSL requested but 'ssl' module was not available for import" )
+                if force_ssl:
+                    raise PyNUTError( "SSL required but 'ssl' module not available" )
 
         self.__connect()
 
@@ -149,6 +211,30 @@ if something goes wrong.
             (self.__host, self.__port),
             self.__timeout
         )
+
+        if self.__use_ssl :
+            if self.__debug :
+                print( "[DEBUG] Requesting STARTTLS" )
+            self.__srv_handler.send( b"STARTTLS\n" )
+            result = self.__read_until( b"\n" )
+            if result[:11] == b"OK STARTTLS" :
+                if self.__debug :
+                    print( "[DEBUG] STARTTLS accepted, wrapping socket" )
+                if self.__ssl_context is None :
+                    self.__ssl_context = ssl.create_default_context()
+                self.__srv_handler = self.__ssl_context.wrap_socket(
+                    self.__srv_handler,
+                    server_hostname=self.__host
+                )
+            else :
+                if self.__debug :
+                    print( "[DEBUG] STARTTLS failed: %s" % result )
+                if self.__force_ssl:
+                    raise PyNUTError( "STARTTLS failed but SSL is required: %s" % result.replace( b"\n", b"" ).decode('ascii') )
+                else:
+                    if self.__debug:
+                        print( "[DEBUG] STARTTLS failed, but not forced, continuing insecurely" )
+                    self.__use_ssl = False
 
         if self.__login != None :
             self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )

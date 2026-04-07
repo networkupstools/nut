@@ -62,7 +62,10 @@ pedantically correct (for Python 3 at least).
 ------
 class PyNUTClient :
   def __init__( self, host='127.0.0.1', port=3493,
-    login=None, password=None, debug=False, timeout=5 ) :
+    login=None, password=None, debug=False, timeout=5,
+    use_ssl=False, ssl_context=None, cert_verify=None,
+    ca_file=None, ca_path=None, cert_file=None, key_file=None,
+    force_ssl=False ) :
 
   def help( self ) :
 
@@ -115,6 +118,32 @@ __init__
 When you initialize the class instance, it performs the connection to the NUT
 data server or raises a Python exception from the `__connect()` method called
 internally.
+
+Optional `use_ssl=True` can be passed to request a secure connection via
+the NUT `STARTTLS` protocol command. If `force_ssl=True` is also passed,
+the connection MUST be secure; otherwise, it may fall back to insecure
+if the server does not support `STARTTLS`.
+
+An `ssl_context` can be provided (as an `ssl.SSLContext` object) to
+configure the SSL/TLS parameters. Alternatively, the following
+parameters can be used to automatically configure a default context:
+
+- `cert_verify`: Boolean, whether to verify the server certificate.
+- `ca_file`: Path to a CA certificate file (PEM format).
+- `ca_path`: Path to a directory with CA certificates (PEM format).
+- `cert_file`: Path to a client certificate file (PEM format).
+- `key_file`: Path to a client private key file (PEM format).
+
+By default, if `use_ssl=True` and no context or CA info is provided,
+the system's default CA certificates are used for verification.
+
+[NOTE]
+======
+Python's `ssl` module is typically based on OpenSSL and expects
+certificates in PEM format. For NSS-based setups (using certificate
+databases), you may need to export the certificates to PEM files
+first to use them with this Python module.
+======
 
 
 help

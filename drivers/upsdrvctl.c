@@ -3,7 +3,7 @@
    Copyright (C)
    2001		Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
-   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -878,17 +878,34 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			/* Use the local maxstartdelay, if available */
 			if (ups->maxstartdelay != -1) {
-				if (ups->maxstartdelay >= 0)
+				if (ups->maxstartdelay >= 0) {
+					upsdebugx(2, "%s[POSIX]: will wait for %u seconds "
+						"to check that driver survived this long "
+						"(per device configuration section)",
+						__func__, (unsigned int)ups->maxstartdelay);
 					alarm((unsigned int)ups->maxstartdelay);
+				}
 			} else { /* Otherwise, use the global (or default) value */
-				if (maxstartdelay >= 0)
+				if (maxstartdelay >= 0) {
+					upsdebugx(2, "%s[POSIX]: will wait for %u seconds "
+						"to check that driver survived this long "
+						"(per global configuration section)",
+						__func__, (unsigned int)maxstartdelay);
 					alarm((unsigned int)maxstartdelay);
+				} else {
+					upsdebugx(2, "%s[POSIX]: will NOT wait "
+						"to check that driver survived this long "
+						"(not required by global nor by device "
+						"configuration sections)", __func__);
+				}
 			}
 
+			/* Block until alarm */
 			waitret = waitpid(pid, &wstat, 0);
 
 			alarm(0);
 
+			/* Bump timeout or error counts if appropriate */
 			if (waitret == -1) {
 				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
 				exec_timeout++;
@@ -918,7 +935,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			}
 
 			return;
-		}
+		}	/* end of pid != 0 (fork parent) part */
 
 		if (getproctag()) {
 			char	tag[SMALLBUF];
@@ -927,7 +944,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		} else {
 			setproctag("child");
 		}
-	}
+	}	/* forked, maybe */
 
 	/* child or foreground mode (no fork, e.g. single driver operation)
 	 * execute the specified binary and args into current process
@@ -946,7 +963,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	char	commandline[LARGEBUF];
 	STARTUPINFO	StartupInfo;
 	PROCESS_INFORMATION	ProcessInformation;
-	int	i = 1;
+	int	i = 1, waited = 0;
 
 	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
 
@@ -994,11 +1011,43 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	}
 
 	/* Wait a bit then look at driver process.
-	 * Unlike under Linux, Windows spawn drivers directly. If the driver is alive, all is OK.
-	 * An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 * Unlike under Linux, Windows spawn drivers directly.
+	 * If the driver is alive, all is OK.
+	 * An optimization can probably be implemented
+	 * to prevent waiting so much time when all is OK.
 	 */
-	res = WaitForSingleObject(ProcessInformation.hProcess,
-			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
+
+	/* Use the local maxstartdelay, if available */
+	if (ups->maxstartdelay != -1) {
+		if (ups->maxstartdelay >= 0) {
+			upsdebugx(2, "%s[WIN32]: will wait for %u seconds "
+				"to check that driver survived this long "
+				"(per device configuration section)",
+				__func__, (unsigned int)ups->maxstartdelay);
+			res = WaitForSingleObject(ProcessInformation.hProcess,
+				((unsigned int)ups->maxstartdelay) * 1000);
+			waited = 1;
+		}
+	} else { /* Otherwise, use the global (or default) value */
+		if (maxstartdelay >= 0) {
+			upsdebugx(2, "%s[WIN32]: will wait for %u seconds "
+				"to check that driver survived this long "
+				"(per global configuration section)",
+				__func__, (unsigned int)maxstartdelay);
+			res = WaitForSingleObject(ProcessInformation.hProcess,
+				((unsigned int)maxstartdelay) * 1000);
+			waited = 1;
+		}
+	}
+
+	if (!waited) {
+		upsdebugx(2, "%s[WIN32]: will NOT wait "
+			"to check that driver survived this long "
+			"(not required by global nor by device "
+			"configuration sections)", __func__);
+		res = WaitForSingleObject(ProcessInformation.hProcess,
+			0);
+	}
 
 	if (res != WAIT_TIMEOUT) {
 		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
@@ -1370,12 +1419,13 @@ static void start_driver(const ups_t *ups)
 		int cur_exec_error = exec_error;
 		int cur_exec_timeout = exec_timeout;
 
-		upsdebugx(2, "%i remaining attempts", drv_maxretry);
+		upsdebugx(2, "%s: %i remaining attempts", __func__, drv_maxretry);
 		debugcmdline(2, "exec: ", argv);
 		drv_maxretry--;
 
 		if (!testmode) {
 			forkexec(argv, ups);
+			upsdebugx(3, "%s: forkexec() finished", __func__);
 		}
 
 		/* driver command succeeded */
@@ -1387,14 +1437,20 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				if (drv_retrydelay >= 0)
+				if (drv_retrydelay >= 0) {
+					upsdebugx(3, "%s: retrying after %u seconds",
+						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
+				}
 		}
 	}
 }
 
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
+
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+htu:r:DdFBVc:l";
 
 static void help(const char *arg_progname)
 {
@@ -1639,7 +1695,7 @@ static void exit_cleanup(void)
 
 int main(int argc, char **argv)
 {
-	int	i, lastarg = 0;
+	int	opt_ret = 0, lastarg = 0;
 	char	*prog, *command_name = NULL, progdesc[LARGEBUF];
 
 	prog = argv[0];
@@ -1652,8 +1708,8 @@ int main(int argc, char **argv)
 	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
 	print_banner_once(progdesc, 0);
 
-	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
-		switch(i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch(opt_ret) {
 			case 'r':
 				pt_root = optarg;
 				break;
@@ -1700,7 +1756,8 @@ int main(int argc, char **argv)
 				if (command || pt_cmd) {
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
-						"sent with option -%c. Try -h for help.", i);
+						"sent with option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 				command = &signal_driver;
 				command_name = "signal";
@@ -1740,7 +1797,8 @@ int main(int argc, char **argv)
 				/* bad command given */
 				if (!signal_flag) {
 					fatalx(EXIT_FAILURE,
-						"Error: unknown argument to option -%c. Try -h for help.", i);
+						"Error: unknown argument to option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 
 				pt_cmd = optarg;
@@ -1942,7 +2000,7 @@ int main(int argc, char **argv)
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
-						"maxstartdelay %d sec but has finished by now",
+						"maxstartdelay %d sec but has finished starting by now",
 						tmp->upsname, (intmax_t)tmp->pid,
 						(tmp->maxstartdelay!=-1?tmp->maxstartdelay:maxstartdelay));
 					tmp->exceeded_timeout = 0;
@@ -2104,6 +2162,8 @@ int main(int argc, char **argv)
 				reset_signal_flag();
 				upsdebugx(1, "upsdrvctl: handling signal: finished");
 			}
+#else	/* WIN32 */
+			/* TOTHINK: Is there something we can do on the platform? */
 #endif	/* !WIN32 */
 
 			sleep(1);
