@@ -1027,7 +1027,8 @@ spellcheck: @dotMAKE@
 		fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
-			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ] ; then printf '%s ' \"$(SPELLCHECK_SRCDIR)/$${docsrc}\" ; rm -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ; fi ; done`" ; \
+			FAILED_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do if [ -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ] ; then printf '%s ' \"$(SPELLCHECK_SRCDIR)/$${docsrc}\" ; rm -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ; fi ; done`" ; \
+			if test -n "$$FAILED" ; then FAILED="$$FAILED $$FAILED_AUTO_TGT" ; else FAILED="$$FAILED_AUTO_TGT" ; fi ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \
