@@ -145,6 +145,13 @@ symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
   `DRIVER_VERSION` or equivalent macros
 ** ideally maintained during development, as features are getting merged for
    community testing and future development baseline in the master branch
+** for the last pre-release check, this can help match changes in code and
+   metadata (note that not all changes are worth reflecting in a version bump,
+   e.g. non-functional code style and comment improvements):
++
+----
+:; git diff v2.8.4 drivers/*.c 2>&1 | egrep '(^diff |_VERSION)'
+----
 ** this is the good time to remove the `PLANNED` status from the upcoming
    release info section title and commit it separately, e.g.:
 +
