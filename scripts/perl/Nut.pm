@@ -1233,7 +1233,10 @@ use strict;
 sub new {
   my $class = shift;
   my $id = shift;
-  my $self = { id => $id };
+  my $self = {
+    id => $id,
+    created => time()
+  };
   bless $self, $class;
   return $self;
 }
@@ -1241,6 +1244,16 @@ sub new {
 sub id {
   my $self = shift;
   return $self->{id};
+}
+
+sub created {
+  my $self = shift;
+  return $self->{created};
+}
+
+sub age {
+  my $self = shift;
+  return time() - $self->{created};
 }
 
 sub toString {
