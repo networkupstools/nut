@@ -2066,15 +2066,20 @@ testgroup_upsd_questionable_configs() {
 ### Tests in a common sandbox with driver(s) + server ###
 #########################################################
 
-SANDBOX_CONFIG_GENERATED=false
-sandbox_generate_configs() {
-    if $SANDBOX_CONFIG_GENERATED ; then return ; fi
-
+# Let this be a NIT_CASE=generatecfg_sandbox
+generatecfg_sandbox() {
     log_info "Generating configs for sandbox"
     generatecfg_upsd_nodev
     generatecfg_upsd_add_SSL
     generatecfg_upsdusers_trivial
     generatecfg_ups_dummy
+}
+
+SANDBOX_CONFIG_GENERATED=false
+sandbox_generate_configs() {
+    if $SANDBOX_CONFIG_GENERATED ; then return ; fi
+
+    generatecfg_sandbox
     SANDBOX_CONFIG_GENERATED=true
 }
 
