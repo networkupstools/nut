@@ -28,6 +28,11 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
+Changes from 2.8.5 to 2.8.6
+---------------------------
+
+- PLANNED: Keep track of any further API clean-up?
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 
