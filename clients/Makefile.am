@@ -292,7 +292,7 @@ libupsclient-version.h: libupsclient.la
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 3:0:1
+libnutclient_la_LDFLAGS = -version-info 4:0:2
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 if ENABLE_SHARED_PRIVATE_LIBS

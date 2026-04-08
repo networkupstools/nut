@@ -289,7 +289,26 @@ public:
 /**
  * Cookie given when performing async action, used to redeem result at a later date.
  */
-typedef std::string TrackingID;
+class TrackingID
+{
+public:
+	TrackingID(const std::string& id = "") : _id(id), _created(std::time(nullptr)) {}
+	virtual ~TrackingID() {}
+
+	const std::string& id() const { return _id; }
+	std::time_t created() const { return _created; }
+	double age() const { return std::difftime(std::time(nullptr), _created); }
+
+	bool isValid() const { return !_id.empty(); }
+
+	operator std::string() const { return _id; }
+	bool operator==(const TrackingID& other) const { return _id == other._id; }
+	bool operator<(const TrackingID& other) const { return _id < other._id; }
+
+private:
+	std::string _id;
+	std::time_t _created;
+};
 
 /**
  * Result of an async action.
