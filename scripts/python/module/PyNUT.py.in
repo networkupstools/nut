@@ -316,8 +316,8 @@ if something goes wrong.
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def WaitTrackingResult( self, tracking_id="", wait_interval_sec = 1, wait_max_count = 10) :
-        if tracking_id is None or str(tracking_id).trim() == "" or
-                wait_interval_sec is None or wait_interval_sec < 1 or
+        if tracking_id is None or str(tracking_id).strip() == "" or \
+                wait_interval_sec is None or wait_interval_sec < 1 or \
                 wait_max_count is None or wait_max_count < 1 :
             # Non-fatal skip; TOTHINK: raise a special exception for bad args?
             return None
@@ -334,9 +334,10 @@ if something goes wrong.
                 if self.__debug :
                     print( "[DEBUG] Still waiting for TRACKING ID %s..." % tracking_id )
             else:
-                print( "[DEBUG] Got bogus reply while waiting for TRACKING ID %s: %s" % (tracking_id, str(value)) )
+                if self.__debug:
+                    print( "[DEBUG] Got bogus reply while waiting for TRACKING ID %s: %s" % (tracking_id, str(value)) )
 
-            sleep(wait_interval_sec)
+            time.sleep(wait_interval_sec)
             wait_max_count = wait_max_count - 1
 
         if self.__debug :
