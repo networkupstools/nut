@@ -91,10 +91,9 @@ sub SetTrackingMode {
   my $errmsg; # error message, sent to _debug and $self->{err}
 
   # 'ON'/'OFF'/undef
-  if (!(defined $value) || ($value != 'ON' && $value != 'OFF')) {
+  if (!(defined $value) || ($value ne 'ON' && $value ne 'OFF')) {
       $self->{err} = "Invalid setting for TRACKING mode was requested";
       return undef;
-    }
   }
 
   $ans = $self->_send("SET TRACKING $value");
@@ -116,12 +115,13 @@ sub SetTrackingMode {
 sub EnableTrackingModeOnce {
   my $self = shift;
 
-  if (defined $self->{tracking} && $self->{tracking} == 'ON') {
+  if (defined $self->{tracking} && $self->{tracking} eq 'ON') {
     return 1;
   }
 
-  if (self->SetTrackingMode('ON') == 'ON')
+  if ($self->SetTrackingMode('ON') eq 'ON') {
     return 1;
+  }
 
   # Unsupported by server? Other errors?
   return undef;
@@ -401,7 +401,7 @@ sub Set {
   my $wait_max_count = shift || undef;
   my $do_wait = 0;
 
-  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_max_count > 0) {
+  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_interval_sec > 0) {
     $self->EnableTrackingModeOnce;
     $do_wait = 1;
   }
@@ -482,7 +482,7 @@ sub InstCmd { # send instant command to ups
   my $wait_max_count = shift || undef;
   my $do_wait = 0;
 
-  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_max_count > 0) {
+  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_interval_sec > 0) {
     $self->EnableTrackingModeOnce;
     $do_wait = 1;
   }
@@ -561,15 +561,13 @@ sub WaitTrackingResult {
   do {
     my $value = $self->GetTrackingResult($id);
     if (defined $value) {
-      if ($value == 'SUCCESS') {
+      if ($value eq 'SUCCESS') {
         $self->_debug("Request with TRACKING ID $id has successfully completed");
         return 1;
-      } else
-      if ($value =~ 'ERR') {
+      } elsif ($value =~ 'ERR') {
         $self->_debug("Request with TRACKING ID $id has completed with a failure: $value");
         return -1;
-      } else
-      if ($value == 'PENDING') {
+      } elsif ($value eq 'PENDING') {
         $self->_debug("Still waiting for TRACKING ID $id...");
       } else {
         $self->_debug("Got bogus reply while waiting for TRACKING ID $id: $value");
