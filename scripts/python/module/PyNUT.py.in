@@ -97,8 +97,8 @@ class PyNUTClient :
     __use_ssl     = False
     __ssl_context = None
 
-    __version     = "1.9.0"
-    __release     = "2026-03-16"
+    __version     = "1.10.0"
+    __release     = "2026-04-08"
 
     try:
         NUT_DEFAULT_CONNECT_TIMEOUT = float(os.getenv("NUT_DEFAULT_CONNECT_TIMEOUT", "5.0"))
@@ -255,6 +255,108 @@ if something goes wrong.
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetTrackingResult( self, tracking_id="" ) :
+        """ Returns the result of an asynchronous command execution
+        """
+        if self.__debug :
+            print( "[DEBUG] GetTrackingResult for %s" % tracking_id )
+
+        self.__srv_handler.send( ("GET TRACKING %s\n" % tracking_id).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:8] == b"TRACKING" :
+            # TRACKING <id> <status>
+            return result.replace( b"\n", b"" ).split(b' ')[2].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetVariableType( self, ups="", var="" ) :
+        """ Returns the type of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableType for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("GET TYPE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"TYPE" :
+            # TYPE <ups> <var> <type>
+            off = len( ("TYPE %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetVariableDescription( self, ups="", var="" ) :
+        """ Returns the description of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableDescription for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("GET DESC %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"DESC" :
+            # DESC <ups> <var> "<description>"
+            off = len( ("DESC %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].split(b'"')[1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetEnumList( self, ups="", var="" ) :
+        """ Returns the list of possible values for an ENUM variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetEnumList for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        enum_list = []
+        result = self.__read_until( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("ENUM %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            enum_list.append( current[offset:].split( b'"' )[1].decode('ascii') )
+
+        return enum_list
+
+    def GetRangeList( self, ups="", var="" ) :
+        """ Returns the list of possible ranges for a RANGE variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetRangeList for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        range_list = []
+        result = self.__read_until( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("RANGE %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            # RANGE <ups> <var> "<min>" "<max>"
+            ranges = current[offset:].split( b'"' )
+            range_list.append( { 'min' : ranges[1].decode('ascii'), 'max' : ranges[3].decode('ascii') } )
+
+        return range_list
+
+    def GetDeviceNumLogins( self, ups="" ) :
+        """ Returns the number of connected clients for the specified UPS
+        """
+        if self.__debug :
+            print( "[DEBUG] GetDeviceNumLogins for %s" % ups )
+
+        self.__srv_handler.send( ("GET NUMLOGINS %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:9] == b"NUMLOGINS" :
+            # NUMLOGINS <ups> <value>
+            return int( result.replace( b"\n", b"" ).split(b' ')[2] )
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server

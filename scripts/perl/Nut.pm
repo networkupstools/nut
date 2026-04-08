@@ -25,7 +25,7 @@ my $_eol = "\n";
 BEGIN {
     use Exporter ();
     use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = 1.51;
+    $VERSION     = 1.60;
     @ISA         = qw(Exporter IO::Socket::INET);
     @EXPORT      = qw();
     @EXPORT_OK   = qw();
@@ -79,6 +79,34 @@ sub Temperature { # get the internal temperature of UPS
 
 # control functions: they control our relationship to upsd, and send 
 # commands to upsd.
+
+sub StartTLS {
+  my $self = shift;
+  my %arg = @_;
+  my $ans;
+
+  eval { require IO::Socket::SSL; };
+  if ($@) {
+    $self->{err} = "IO::Socket::SSL not available";
+    return undef;
+  }
+
+  $ans = $self->_send("STARTTLS");
+  if (defined $ans && $ans =~ /^OK STARTTLS/) {
+    $self->_debug("STARTTLS accepted, upgrading socket.");
+    IO::Socket::SSL->start_SSL($self->{srvsock},
+      SSL_verify_mode => $arg{CERTVERIFY} ? IO::Socket::SSL::SSL_VERIFY_PEER() : IO::Socket::SSL::SSL_VERIFY_NONE(),
+      SSL_ca_file => $arg{CAPATH},
+      %arg
+    ) or do {
+      $self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr();
+      return undef;
+    };
+    return 1;
+  }
+  $self->{err} = "STARTTLS failed: $ans";
+  return undef;
+}
 
 sub Login { # login to upsd, so that it won't shutdown unless we say we're 
             # ok.  This should only be used if you're actually connected 
@@ -393,6 +421,46 @@ sub ListUPS {
 	return $self->_get_list("LIST UPS", 2, 1);
 }
 
+sub GetTracking {
+  my $self = shift;
+  my $id = shift;
+  my $ans = $self->_send("GET TRACKING $id");
+  unless (defined $ans) {
+      $self->{err} = "Network error: $!";
+      return undef;
+  };
+  if ($ans =~ /^TRACKING/) {
+    my @fields = split(' ', $ans);
+    return $fields[2];
+  }
+  $self->{err} = "Error: $ans";
+  return undef;
+}
+
+sub ListClient {
+  my $self = shift;
+  my $ups = shift || $self->{name};
+  return $self->_get_list("LIST CLIENT $ups", 2, 2);
+}
+
+sub GetUPSDesc {
+  my $self = shift;
+  my $ups = shift || $self->{name};
+  my $ans = $self->_send("GET UPSDESC $ups");
+  unless (defined $ans) {
+      $self->{err} = "Network error: $!";
+      return undef;
+  };
+  if ($ans =~ /^UPSDESC/) {
+    my @fields = split(' ', $ans, 3);
+    my $desc = $fields[2];
+    $desc =~ s/^"(.*)"$/$1/;
+    return $desc;
+  }
+  $self->{err} = "Error: $ans";
+  return undef;
+}
+
 sub ListVar {
 	my $self = shift;
 	my $vars = $self->_get_list("LIST VAR $self->{name}", 3, 2);
@@ -414,6 +482,37 @@ sub ListEnum {
 	my $self = shift;
 	my $var = shift;
 	return $self->_get_list("LIST ENUM $self->{name} $var", 3);
+}
+
+sub ListRange {
+	my $self = shift;
+	my $var = shift;
+	my $req = "LIST RANGE $self->{name} $var";
+	my $ans = $self->_send($req);
+
+	unless (defined $ans) {
+		$self->{err} = "Network error: $!";
+		return undef;
+	};
+
+	if ($ans =~ /^ERR/) {
+		$self->{err} = "Error: $ans";
+		return undef;
+	}
+	elsif ($ans =~ /^BEGIN LIST RANGE/) {
+		my $retval = [];
+		my $line;
+		while ($line = $self->_getline) {
+			last if $line =~ /^END LIST RANGE/;
+			# RANGE <ups> <var> "<min>" "<max>"
+			if ($line =~ /^RANGE \S+ \S+ "([^"]+)" "([^"]+)"/) {
+				push(@$retval, { min => $1, max => $2 });
+			}
+		}
+		return $retval;
+	}
+	$self->{err} = "Unrecognized response: $ans";
+	return undef;
 }
 
 sub _get_list {
@@ -587,15 +686,17 @@ sub Error { # what was the last thing that went bang?
   else { return "No error explanation available."; }
 }
 
+sub Primary { goto &Master; }
+
 sub Master { # check for MASTER level access
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
-# TODO: API change pending to replace MASTER with PRIMARY
+# NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 # (and backwards-compatible alias handling)
   my $self = shift;
 
-  my $req = "MASTER $self->{name}"; # build request
+  my $req = "PRIMARY $self->{name}"; # build request
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -604,13 +705,24 @@ sub Master { # check for MASTER level access
   };
 
   if ($ans =~ /^OK/) { # access granted
+    $self->_debug("PRIMARY level access granted.  Upsd reports: $ans");
+    return 1;
+  }
+  
+  # Retry with MASTER if PRIMARY failed
+  $req = "MASTER $self->{name}";
+  $ans = $self->_send( $req );
+  unless (defined $ans) {
+      $self->{err} = "Network error: $!";
+      return undef;
+  };
+  
+  if ($ans =~ /^OK/) { # access granted
     $self->_debug("MASTER level access granted.  Upsd reports: $ans");
     return 1;
   }
   else { # access denied, or unrecognized reponse
-    $self->{err} = "MASTER level access denied.  Upsd responded: $ans";
-# ### changelog: 8/3/2002 - KP - Master() returns undef rather than 0 on 
-# ### failure.  this makes it consistent with other methods
+    $self->{err} = "Access denied.  Upsd responded: $ans";
     return undef;
   }
 }
