@@ -78,6 +78,20 @@ try:
 except:
     pass
 
+class TrackingID:
+    """ Cookie given when performing async action, used to redeem result at a later date. """
+    def __init__(self, tracking_id):
+        self.__id = tracking_id
+
+    def id(self):
+        return self.__id
+
+    def __str__(self):
+        return self.__id
+
+    def isValid(self):
+        return self.__id is not None and self.__id != ""
+
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
 
@@ -304,6 +318,9 @@ if something goes wrong.
     def GetTrackingResult( self, tracking_id="" ) :
         """ Returns the result of an asynchronous command execution
         """
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
         if self.__debug :
             print( "[DEBUG] GetTrackingResult for %s" % tracking_id )
 
@@ -316,6 +333,10 @@ if something goes wrong.
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def WaitTrackingResult( self, tracking_id="", wait_interval_sec = 1, wait_max_count = 10) :
+        tid = tracking_id
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
         if tracking_id is None or str(tracking_id).strip() == "" or \
                 wait_interval_sec is None or wait_interval_sec < 1 or \
                 wait_max_count is None or wait_max_count < 1 :
@@ -323,7 +344,7 @@ if something goes wrong.
             return None
 
         while wait_max_count > 0:
-            value = self.GetTracking(tracking_id)
+            value = self.GetTrackingResult(tid)
 
             if value == 'SUCCESS':
                 if self.__debug :
@@ -609,9 +630,10 @@ rights to set it (maybe login/password).
                 if self.__debug :
                     print( "[DEBUG] Variable setting %s %s sent successfully, got tracking ID '%s'" % (var, value, tracking_id) )
 
-                if do_wait and self.WaitTrackingResult(tracking_id, wait_interval_sec, wait_max_count):
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
                     return( "OK" )
-                return( tracking_id )
+                return( tid )
             else:
                 raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
@@ -640,9 +662,10 @@ Returns OK on success or raises an error
                 if self.__debug :
                     print( "[DEBUG] Instant command %s sent successfully, got tracking ID '%s'" % (command, tracking_id) )
 
-                if do_wait and self.WaitTrackingResult(tracking_id, wait_interval_sec, wait_max_count):
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
                     return( "OK" )
-                return( tracking_id )
+                return( tid )
             else:
                 raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
