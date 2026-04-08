@@ -70,6 +70,7 @@
 #            NUT STARTTLS protocol action.
 
 import socket
+import time
 
 ssl_available = False
 try:
@@ -82,9 +83,16 @@ class TrackingID:
     """ Cookie given when performing async action, used to redeem result at a later date. """
     def __init__(self, tracking_id):
         self.__id = tracking_id
+        self.__created = time.time()
 
     def id(self):
         return self.__id
+
+    def created(self):
+        return self.__created
+
+    def age(self):
+        return time.time() - self.__created
 
     def __str__(self):
         return self.__id
