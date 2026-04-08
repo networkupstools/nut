@@ -465,7 +465,7 @@ if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM
     log_info "Applying NUT_DEFAULT_CONNECT_TIMEOUT='$NUT_DEFAULT_CONNECT_TIMEOUT' due to DUMMY_UPS_SWARM_COUNT=$DUMMY_UPS_SWARM_COUNT and UPSLOG_SWARM_COUNT=$UPSLOG_SWARM_COUNT"
 fi
 
-WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none"
+[ -n "${WITH_SSL_CLIENT}" ] || { WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none" ; }
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
 # SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
@@ -477,8 +477,8 @@ case "${WITH_SSL_CLIENT}" in
 esac
 log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
 
-WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none"
-WITH_SSL_SERVER_CLIVAL="none"
+[ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
+[ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
 case "${WITH_SSL_SERVER}" in
     *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
     *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
