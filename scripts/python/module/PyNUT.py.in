@@ -105,7 +105,7 @@ class PyNUTClient :
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
                   cert_file=None, key_file=None, key_pass=None, force_ssl=False ) :
         """ Class initialization method
@@ -116,6 +116,7 @@ login       : Login used to connect to NUT server (default to None for no authen
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
 timeout     : Timeout used to wait for network response
+tracking    : Boolean or 'ON'/'OFF', try to enable TRACKING support right away
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
@@ -172,6 +173,8 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
                     raise PyNUTError( "SSL required but 'ssl' module not available" )
 
         self.__connect()
+
+        self.__tracking = self.SetTrackingMode(tracking)
 
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
@@ -256,6 +259,48 @@ if something goes wrong.
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
+    def SetTrackingMode( self, value="" ) :
+        """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
+
+            Remember in $self.__tracking if we could set it with this upsd
+            version, and then to which value?
+        """
+        if value is None or str(value).strip() == "":
+            return None
+
+        if str(value) == 'False':
+            value = 'OFF'
+
+        if str(value) == 'True':
+            value = 'ON'
+
+        if value not in ['ON', 'OFF']:
+            if self.__debug :
+                print( "[DEBUG] Invalid setting for TRACKING mode was requested" )
+            # TOTHINK # raise PyNUTError( "Invalid setting for TRACKING mode was requested" )
+            return None
+
+        self.__srv_handler.send( ("SET TRACKING %s\n" % value).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result == b"OK\n" :
+            self.__tracking = value
+            return value
+
+        if self.__debug :
+            print( "[DEBUG] Failed to set TRACKING mode: %s" % result.replace( b"\n", b"" ).decode('ascii') )
+
+        self.__tracking = None
+        return None
+
+    def EnableTrackingModeOnce( self ) :
+        if self.__tracking is not None and self.__tracking == 'ON':
+            return True
+
+        if self.SetTrackingMode('ON') == 'ON':
+            return True
+
+        return False
+
     def GetTrackingResult( self, tracking_id="" ) :
         """ Returns the result of an asynchronous command execution
         """
@@ -264,11 +309,40 @@ if something goes wrong.
 
         self.__srv_handler.send( ("GET TRACKING %s\n" % tracking_id).encode('ascii') )
         result = self.__read_until( b"\n" )
-        if result[:8] == b"TRACKING" :
-            # TRACKING <id> <status>
-            return result.replace( b"\n", b"" ).split(b' ')[2].decode('ascii')
+        if result in [b"PENDING\n", b"SUCCESS\n"]:
+            return result.replace( b"\n", b"" ).decode('ascii')
         else :
+            # ERR...
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def WaitTrackingResult( self, tracking_id="", wait_interval_sec = 1, wait_max_count = 10) :
+        if tracking_id is None or str(tracking_id).trim() == "" or
+                wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1 :
+            # Non-fatal skip; TOTHINK: raise a special exception for bad args?
+            return None
+
+        while wait_max_count > 0:
+            value = self.GetTracking(tracking_id)
+
+            if value == 'SUCCESS':
+                if self.__debug :
+                    print( "[DEBUG] Request with TRACKING ID %s has successfully completed" % tracking_id )
+                return True
+
+            if value == 'PENDING':
+                if self.__debug :
+                    print( "[DEBUG] Still waiting for TRACKING ID %s..." % tracking_id )
+            else:
+                print( "[DEBUG] Got bogus reply while waiting for TRACKING ID %s: %s" % (tracking_id, str(value)) )
+
+            sleep(wait_interval_sec)
+            wait_max_count = wait_max_count - 1
+
+        if self.__debug :
+            print( "[DEBUG] Timed out waiting for TRACKING ID %s" % tracking_id )
+
+        return False
 
     def GetVariableType( self, ups="", var="" ) :
         """ Returns the type of the specified variable
@@ -511,21 +585,36 @@ The result is presented as a dictionary containing 'key->val' pairs
 
         return( rw_vars )
 
-    def SetRWVar( self, ups="", var="", value="" ):
+    def SetRWVar( self, ups="", var="", value="", wait_interval_sec = None, wait_max_count = None ):
         """ Set a variable to the specified value on selected UPS
 
 The variable must be a writable value (cf GetRWVars) and you must have the proper
 rights to set it (maybe login/password).
         """
 
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
         self.__srv_handler.send( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
-        else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+        else:
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Variable setting %s %s sent successfully, got tracking ID '%s'" % (var, value, tracking_id) )
 
-    def RunUPSCommand( self, ups="", command="" ) :
+                if do_wait and self.WaitTrackingResult(tracking_id, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tracking_id )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def RunUPSCommand( self, ups="", command="", wait_interval_sec = None, wait_max_count = None ) :
         """ Send a command to the specified UPS
 
 Returns OK on success or raises an error
@@ -534,12 +623,27 @@ Returns OK on success or raises an error
         if self.__debug :
             print( "[DEBUG] RunUPSCommand called..." )
 
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
         self.__srv_handler.send( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Instant command %s sent successfully, got tracking ID '%s'" % (command, tracking_id) )
+
+                if do_wait and self.WaitTrackingResult(tracking_id, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tracking_id )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def DeviceLogin( self, ups="") :
         """ Establish a login session with a device (like upsmon does)
