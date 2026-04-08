@@ -27,6 +27,8 @@
 #include "nutclient.h"
 
 #include <sstream>
+#include <chrono>
+#include <thread>
 
 /* TODO: Make it a run-time option like upsdebugx(),
  * probably with a verbosity level variable in each
@@ -1857,20 +1859,20 @@ std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient
 	return map;
 }
 
-TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec, int waitMaxCount)
 {
 	std::string query = "SET VAR " + dev + " " + name + " " + escape(value);
-	return sendTrackingQuery(query);
+	return sendTrackingQuery(query, waitIntervalSec, waitMaxCount);
 }
 
-TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values, int waitIntervalSec, int waitMaxCount)
 {
 	std::string query = "SET VAR " + dev + " " + name;
 	for(size_t n=0; n<values.size(); ++n)
 	{
 		query += " " + escape(values[n]);
 	}
-	return sendTrackingQuery(query);
+	return sendTrackingQuery(query, waitIntervalSec, waitMaxCount);
 }
 
 std::set<std::string> TcpClient::getDeviceCommandNames(const std::string& dev)
@@ -1891,9 +1893,9 @@ std::string TcpClient::getDeviceCommandDescription(const std::string& dev, const
 	return get("CMDDESC", dev + " " + name)[0];
 }
 
-TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
+TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param, int waitIntervalSec, int waitMaxCount)
 {
-	return sendTrackingQuery("INSTCMD " + dev + " " + name + " " + param);
+	return sendTrackingQuery("INSTCMD " + dev + " " + name + " " + param, waitIntervalSec, waitMaxCount);
 }
 
 std::map<std::string, std::set<std::string>> TcpClient::listDeviceClients(void)
@@ -1983,11 +1985,13 @@ TrackingResult TcpClient::getTrackingResult(const TrackingID& id)
 {
 	if (id.empty())
 	{
-		return TrackingResult::SUCCESS;
+		return TrackingResult::UNSET;
+		/* TOTHINK // return TrackingResult::SUCCESS;*/
 	}
 
-	std::string result = sendQuery("GET TRACKING " + id);
+	std::string result = sendQuery("GET TRACKING " + id.id());
 
+	/* TOTHINK: Update id.setStatus() ? */
 	if (result == "PENDING")
 	{
 		return TrackingResult::PENDING;
@@ -2008,6 +2012,48 @@ TrackingResult TcpClient::getTrackingResult(const TrackingID& id)
 	{
 		return TrackingResult::FAILURE;
 	}
+}
+
+void TcpClient::enableTrackingModeOnce()
+{
+	setFeature(TRACKING, true);
+}
+
+TrackingResult TcpClient::waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount)
+{
+	if (id.empty())
+	{
+		return TrackingResult::SUCCESS;
+	}
+
+	int count = 0;
+	while (true)
+	{
+		TrackingResult res = getTrackingResult(id);
+		if (res != TrackingResult::PENDING)
+		{
+			return res;
+		}
+
+		if (waitMaxCount > 0 && ++count >= waitMaxCount)
+		{
+			return TrackingResult::PENDING;
+		}
+
+		if (waitIntervalSec > 0)
+		{
+			std::this_thread::sleep_for(std::chrono::seconds(waitIntervalSec));
+		}
+		else
+		{
+			// Default to some small sleep if not specified but we are waiting?
+			// Actually Perl/Python just loop or use the interval.
+			// If interval is 0, we might busy loop, which is bad.
+			// But let's follow the provided parameters.
+			if (waitIntervalSec == 0) break;
+		}
+	}
+	return TrackingResult::PENDING;
 }
 
 bool TcpClient::isFeatureEnabled(const Feature& feature)
@@ -2273,8 +2319,13 @@ std::string TcpClient::escape(const std::string& str)
 	return res;
 }
 
-TrackingID TcpClient::sendTrackingQuery(const std::string& req)
+TrackingID TcpClient::sendTrackingQuery(const std::string& req, int waitIntervalSec, int waitMaxCount)
 {
+	if (waitIntervalSec > 0)
+	{
+		enableTrackingModeOnce();
+	}
+
 	std::string reply = sendQuery(req);
 	detectError(reply);
 	std::vector<std::string> res = explode(reply);
@@ -2285,7 +2336,50 @@ TrackingID TcpClient::sendTrackingQuery(const std::string& req)
 	}
 	else if (res.size() == 3 && res[0] == "OK" && res[1] == "TRACKING")
 	{
-		return TrackingID(res[2]);
+		TrackingID	id = TrackingID(res[2]);
+		if (waitIntervalSec > 0 && !id.empty())
+		{
+			TrackingResult	wtres = waitTrackingResult(id, waitIntervalSec, waitMaxCount);
+			switch (wtres) {
+				case TrackingResult::SUCCESS:
+				case TrackingResult::UNSET:
+				case TrackingResult::PENDING:
+					id.setStatus(wtres);
+					break;
+
+				case TrackingResult::UNKNOWN:
+				case TrackingResult::FAILURE:
+				case TrackingResult::INVALID_ARGUMENT:
+					id.setStatus(wtres);
+					throw NutException("TRACKING query failed: " + reply);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+				default:
+					/* Must not occur. */
+					throw NutException("TRACKING query failed: " + reply);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+			}
+		}
+		return id;
 	}
 	else
 	{
@@ -2396,19 +2490,17 @@ std::set<std::string> Device::getRWVariableNames()
 	return getClient()->getDeviceRWVariableNames(getName());
 }
 
-void Device::setVariable(const std::string& name, const std::string& value)
+TrackingID Device::setVariable(const std::string& name, const std::string& value, int waitIntervalSec, int waitMaxCount)
 {
 	if (!isOk()) throw NutException("Invalid device");
-	getClient()->setDeviceVariable(getName(), name, value);
+	return getClient()->setDeviceVariable(getName(), name, value, waitIntervalSec, waitMaxCount);
 }
 
-void Device::setVariable(const std::string& name, const std::vector<std::string>& values)
+TrackingID Device::setVariable(const std::string& name, const std::vector<std::string>& values, int waitIntervalSec, int waitMaxCount)
 {
 	if (!isOk()) throw NutException("Invalid device");
-	getClient()->setDeviceVariable(getName(), name, values);
+	return getClient()->setDeviceVariable(getName(), name, values, waitIntervalSec, waitMaxCount);
 }
-
-
 
 Variable Device::getVariable(const std::string& name)
 {
@@ -2475,10 +2567,10 @@ Command Device::getCommand(const std::string& name)
 		return Command(nullptr, "");
 }
 
-TrackingID Device::executeCommand(const std::string& name, const std::string& param)
+TrackingID Device::executeCommand(const std::string& name, const std::string& param, int waitIntervalSec, int waitMaxCount)
 {
 	if (!isOk()) throw NutException("Invalid device");
-	return getClient()->executeDeviceCommand(getName(), name, param);
+	return getClient()->executeDeviceCommand(getName(), name, param, waitIntervalSec, waitMaxCount);
 }
 
 std::set<std::string> Device::getClients()
@@ -2603,14 +2695,14 @@ std::string Variable::getDescription()
 	return getDevice()->getClient()->getDeviceVariableDescription(getDevice()->getName(), getName());
 }
 
-void Variable::setValue(const std::string& value)
+TrackingID Variable::setValue(const std::string& value, int waitIntervalSec, int waitMaxCount)
 {
-	getDevice()->setVariable(getName(), value);
+	return getDevice()->setVariable(getName(), value, waitIntervalSec, waitMaxCount);
 }
 
-void Variable::setValues(const std::vector<std::string>& values)
+TrackingID Variable::setValues(const std::vector<std::string>& values, int waitIntervalSec, int waitMaxCount)
 {
-	getDevice()->setVariable(getName(), values);
+	return getDevice()->setVariable(getName(), values, waitIntervalSec, waitMaxCount);
 }
 
 
@@ -2692,9 +2784,9 @@ std::string Command::getDescription()
 	return getDevice()->getClient()->getDeviceCommandDescription(getDevice()->getName(), getName());
 }
 
-void Command::execute(const std::string& param)
+TrackingID Command::execute(const std::string& param, int waitIntervalSec, int waitMaxCount)
 {
-	getDevice()->executeCommand(getName(), param);
+	return getDevice()->executeCommand(getName(), param, waitIntervalSec, waitMaxCount);
 }
 
 } /* namespace nut */
@@ -3488,7 +3580,23 @@ void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, co
 		{
 			try
 			{
-				cl->setDeviceVariable(dev, var, value);
+				cl->setDeviceVariable(dev, var, value, -1, -1);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_set_device_variable_value_wait(NUTCLIENT_t client, const char* dev, const char* var, const char* value, int waitIntervalSec, int waitMaxCount)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				cl->setDeviceVariable(dev, var, value, waitIntervalSec, waitMaxCount);
 			}
 			catch(...){}
 		}
@@ -3513,6 +3621,30 @@ void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, c
 				}
 
 				cl->setDeviceVariable(dev, var, vals);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_set_device_variable_values_wait(NUTCLIENT_t client, const char* dev, const char* var, const strarr values, int waitIntervalSec, int waitMaxCount)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				std::vector<std::string> vals;
+				strarr pstr = static_cast<strarr>(values);
+				while(*pstr)
+				{
+					vals.push_back(std::string(*pstr));
+					++pstr;
+				}
+
+				cl->setDeviceVariable(dev, var, vals, waitIntervalSec, waitMaxCount);
 			}
 			catch(...){}
 		}
@@ -3579,7 +3711,23 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 		{
 			try
 			{
-				cl->executeDeviceCommand(dev, cmd, param);
+				cl->executeDeviceCommand(dev, cmd, param, -1, -1);
+			}
+			catch(...){}
+		}
+	}
+}
+
+void nutclient_execute_device_command_wait(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param, int waitIntervalSec, int waitMaxCount)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				cl->executeDeviceCommand(dev, cmd, param, waitIntervalSec, waitMaxCount);
 			}
 			catch(...){}
 		}

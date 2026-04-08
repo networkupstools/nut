@@ -61,12 +61,12 @@ public:
 	virtual ListValue getDeviceVariableValue(const std::string& dev, const std::string& name) override;
 	virtual ListObject getDeviceVariableValues(const std::string& dev) override;
 	virtual ListDevice getDevicesVariableValues(const std::set<std::string>& devs) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values, int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual void deviceLogin(const std::string& dev) override;
 	/* Note: "master" is deprecated, but supported
@@ -78,7 +78,11 @@ public:
 	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
 	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
+	using Client::getTrackingResult;
+
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
+	virtual void enableTrackingModeOnce(void) override;
+	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) override;
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;

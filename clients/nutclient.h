@@ -287,19 +287,37 @@ public:
 };
 
 /**
+ * Result of an async action.
+ */
+typedef enum
+{
+	UNSET,
+	UNKNOWN,
+	PENDING,
+	SUCCESS,
+	INVALID_ARGUMENT,
+	FAILURE,
+} TrackingResult;
+
+/**
  * Cookie given when performing async action, used to redeem result at a later date.
  */
 class TrackingID
 {
 public:
-	TrackingID(const std::string& id = "") : _id(id), _created(std::time(nullptr)) {}
-	virtual ~TrackingID() {}
+	TrackingID(const std::string& id = "", TrackingResult status = UNSET) : _id(id), _status(status), _created(std::time(nullptr)), _finished(0) {}
 
 	const std::string& id() const { return _id; }
 	std::time_t created() const { return _created; }
+	std::time_t finished() const { return _finished; }
 	double age() const { return std::difftime(std::time(nullptr), _created); }
+	double duration() const { if (_finished > 0) { return std::difftime(_finished, _created); } else { return -1; } }
 
 	bool isValid() const { return !_id.empty(); }
+	bool empty() const { return _id.empty(); }
+
+	void setStatus(TrackingResult status) { _status = status; if (status != TrackingResult::PENDING && status != TrackingResult::UNSET) { _finished = std::time(nullptr); } }
+	TrackingResult getStatus() const { return _status; }
 
 	operator std::string() const { return _id; }
 	bool operator==(const TrackingID& other) const { return _id == other._id; }
@@ -307,20 +325,10 @@ public:
 
 private:
 	std::string _id;
+	TrackingResult _status;
 	std::time_t _created;
+	std::time_t _finished;
 };
-
-/**
- * Result of an async action.
- */
-typedef enum
-{
-	UNKNOWN,
-	PENDING,
-	SUCCESS,
-	INVALID_ARGUMENT,
-	FAILURE,
-} TrackingResult;
 
 typedef std::string Feature;
 
@@ -445,14 +453,14 @@ public:
 	 * \param name Variable name
 	 * \param value Variable value
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) = 0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \param values Vector of variable values
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) = 0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/** \} */
 
 	/**
@@ -486,7 +494,7 @@ public:
 	 * \param name Command name
 	 * \param param Additional command parameter
 	 */
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") = 0;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/** \} */
 
 	/**
@@ -529,7 +537,33 @@ public:
 	 * Retrieve the result of a tracking ID.
 	 * \param id Tracking ID.
 	 */
+	virtual TrackingResult getTrackingResult(const std::string id) { return getTrackingResult(TrackingID(id)); }
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
+	virtual TrackingResult getTrackingResult(const char *id) { return getTrackingResult(TrackingID(std::string(id))); }
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
 	virtual TrackingResult getTrackingResult(const TrackingID& id) = 0;
+
+	/**
+	 * Enable tracking mode once.
+	 */
+	virtual void enableTrackingModeOnce() = 0;
+
+	/**
+	 * Wait for a tracking result.
+	 * \param id Tracking ID to wait for.
+	 * \param waitIntervalSec Interval between checks in seconds.
+	 * \param waitMaxCount Maximum number of checks.
+	 * \return The tracking result.
+	 */
+	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) = 0;
 
 	virtual bool hasFeature(const Feature& feature);
 	virtual bool isFeatureEnabled(const Feature& feature) = 0;
@@ -665,12 +699,12 @@ public:
 	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name) override;
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev) override;
 	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual void deviceLogin(const std::string& dev) override;
 	/* FIXME: Protocol update needed to handle master/primary alias
@@ -684,7 +718,11 @@ public:
 
 	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
+	using Client::getTrackingResult;
+
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
+	virtual void enableTrackingModeOnce() override;
+	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) override;
 
 	/**
 	 * Return a bitmask of SSL capabilities supported by this build of
@@ -746,7 +784,7 @@ protected:
 	std::string sendQuery(const std::string& req);
 	void sendAsyncQueries(const std::vector<std::string>& req);
 	static void detectError(const std::string& req);
-	TrackingID sendTrackingQuery(const std::string& req);
+	TrackingID sendTrackingQuery(const std::string& req, int waitIntervalSec, int waitMaxCount);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "");
 
@@ -917,13 +955,13 @@ public:
 	 * \param name Variable name.
 	 * \param value New variable value.
 	 */
-	void setVariable(const std::string& name, const std::string& value);
+	TrackingID setVariable(const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0);
 	/**
 	 * Intend to set values of a variable of the device.
 	 * \param name Variable name.
 	 * \param values Vector of new variable values.
 	 */
-	void setVariable(const std::string& name, const std::vector<std::string>& values);
+	TrackingID setVariable(const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0);
 
 	/**
 	 * Retrieve a Variable object representing the specified variable.
@@ -963,7 +1001,7 @@ public:
 	 * \param name Command name.
 	 * \param param Additional command parameter
 	 */
-	TrackingID executeCommand(const std::string& name, const std::string& param="");
+	TrackingID executeCommand(const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0);
 
 	/**
 	 * Login current client's user for the device.
@@ -1061,13 +1099,19 @@ public:
 	/**
 	 * Intend to set a value to the variable.
 	 * \param value New variable value.
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void setValue(const std::string& value);
+	TrackingID setValue(const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0);
 	/**
 	 * Intend to set (multiple) values to the variable.
 	 * \param values Vector of new variable values.
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void setValues(const std::vector<std::string>& values);
+	TrackingID setValues(const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0);
 
 protected:
 	Variable(Device* dev, const std::string& name);
@@ -1141,8 +1185,11 @@ public:
 	/**
 	 * Intend to execute the instant command on device.
 	 * \param param Optional additional command parameter
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void execute(const std::string& param="");
+	TrackingID execute(const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0);
 
 protected:
 	Command(Device* dev, const std::string& name);
@@ -1324,13 +1371,31 @@ strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev,
 void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value);
 
 /**
- * Intend to set device variable  multiple values.
+ * Intend to set device variable value and wait for result.
  * \param client Nut client handle.
  * \param dev Device name.
  * \param var Variable name.
- * \param values Values to set. The cller is responsible to free it after call.
+ * \param value Value to set.
+ */
+void nutclient_set_device_variable_value_wait(NUTCLIENT_t client, const char* dev, const char* var, const char* value, int waitIntervalSec, int waitMaxCount);
+
+/**
+ * Intend to set device variable multiple values.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param values Values to set. The caller is responsible to free it after call.
  */
 void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var, const strarr values);
+
+/**
+ * Intend to set device variable multiple values and wait for result.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param values Values to set. The caller is responsible to free it after call.
+ */
+void nutclient_set_device_variable_values_wait(NUTCLIENT_t client, const char* dev, const char* var, const strarr values, int waitIntervalSec, int waitMaxCount);
 
 /**
  * Intend to retrieve device command names.
@@ -1365,6 +1430,14 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
  * \param cmd Command name.
  */
 void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="");
+
+/**
+ * Intend to execute device command and wait for result.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param cmd Command name.
+ */
+void nutclient_execute_device_command_wait(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="", int waitIntervalSec=-1, int waitMaxCount=-1);
 
 /** \} */
 
