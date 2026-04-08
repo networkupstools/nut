@@ -7,6 +7,7 @@
 # ### changelog: comments in code
 # ### changelog: Removed timeleft() function.
 # ### changelog: 1.60: JK 2026-04-08: Added basic STARTTLS, as well as TRACKING support, LIST CLIENT, LIST RANGE, GET UPSDESC and PRIMARY/MASTER aliasing.
+# ### changelog: 1.61: JK 2026-04-08: Make TrackingID a class, similar to C++.
 
 package UPS::Nut;
 use strict;
@@ -26,7 +27,7 @@ my $_eol = "\n";
 BEGIN {
     use Exporter ();
     use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = 1.60;
+    $VERSION     = 1.61;
     @ISA         = qw(Exporter IO::Socket::INET);
     @EXPORT      = qw();
     @EXPORT_OK   = qw();
@@ -425,10 +426,11 @@ sub Set {
     ) {
       # UUID
       $self->_debug("Variable setting $var $value sent successfully, got tracking ID '$id'.");
-      if ($do_wait && $self->WaitTrackingResult($id, $wait_interval_sec, $wait_max_count)) {
+      my $tid = UPS::Nut::TrackingID->new($id);
+      if ($do_wait && $self->WaitTrackingResult($tid, $wait_interval_sec, $wait_max_count)) {
         return $value;
       }
-      return ($value, $id);
+      return ($value, $tid);
     }
     $self->_debug("Variable setting $var $value sent successfully, but got bogus tracking ID: $ans");
     return $value;
@@ -506,10 +508,11 @@ sub InstCmd { # send instant command to ups
     ) {
       # UUID
       $self->_debug("Instant command $cmd sent successfully, got tracking ID '$id'.");
-      if ($do_wait && $self->WaitTrackingResult($id, $wait_interval_sec, $wait_max_count)) {
+      my $tid = UPS::Nut::TrackingID->new($id);
+      if ($do_wait && $self->WaitTrackingResult($tid, $wait_interval_sec, $wait_max_count)) {
         return 1;
       }
-      return (1, $id);
+      return (1, $tid);
     }
     $self->_debug("Instant command $cmd sent successfully, but got bogus tracking ID: $ans");
     return 1;
@@ -531,7 +534,8 @@ sub ListUPS {
 
 sub GetTrackingResult {
   my $self = shift;
-  my $id = shift;
+  my $tid = shift;
+  my $id = ref($tid) eq 'UPS::Nut::TrackingID' ? $tid->id : $tid;
   my $ans = $self->_send("GET TRACKING $id");
   unless (defined $ans) {
       $self->{err} = "Network error: $!";
@@ -548,8 +552,8 @@ sub GetTrackingResult {
 
 sub WaitTrackingResult {
   my $self = shift;
-
-  chomp (my $id = shift);
+  my $tid = shift;
+  my $id = ref($tid) eq 'UPS::Nut::TrackingID' ? $tid->id : $tid;
 
   my $wait_interval_sec = shift || 1;
   my $wait_max_count = shift || 10;
@@ -559,7 +563,7 @@ sub WaitTrackingResult {
   }
 
   do {
-    my $value = $self->GetTrackingResult($id);
+    my $value = $self->GetTrackingResult($tid);
     if (defined $value) {
       if ($value eq 'SUCCESS') {
         $self->_debug("Request with TRACKING ID $id has successfully completed");
@@ -1222,6 +1226,32 @@ accessor methods for all supported vars.
 This module is distributed under the same license as Perl itself.
 
 =cut
+
+package UPS::Nut::TrackingID;
+use strict;
+
+sub new {
+  my $class = shift;
+  my $id = shift;
+  my $self = { id => $id };
+  bless $self, $class;
+  return $self;
+}
+
+sub id {
+  my $self = shift;
+  return $self->{id};
+}
+
+sub toString {
+  my $self = shift;
+  return $self->{id};
+}
+
+sub isValid {
+  my $self = shift;
+  return defined $self->{id} && $self->{id} ne "";
+}
 
 1;
 __END__
