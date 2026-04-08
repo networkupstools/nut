@@ -253,8 +253,8 @@ The automatically generated binary build archive of the latest release is
 available here:
       link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
 +
-------
 [NOTE]
+------
 Windows binaries may be quite large but sparse, so it may be useful to
 enable compression on the folder where you have unpacked a NUT tarball.
 ------
