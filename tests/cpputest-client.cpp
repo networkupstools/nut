@@ -587,6 +587,31 @@ void NutActiveClientTest::test_auth_user() {
 			if (noException) {
 				std::cerr << "[D] Tweaked device variable value OK" << std::endl;
 			}
+
+			/* Specific test: SET VAR driver.debug 1 with TRACKING (1s interval, 10s timeout) */
+			std::cerr << "[D] Testing SET VAR " << env_NUT_SETVAR_DEVICE << " driver.debug 1 with TRACKING..." << std::endl;
+			try {
+				tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, "driver.debug", "1", 1, 10);
+				if (tid.empty()) {
+					std::cerr << "[D] Failed to get tracking ID for driver.debug" << std::endl;
+					noException = false;
+				} else {
+					tres = tid.getStatus();
+					std::cerr << "[D] Got tracking ID: " << (std::string)tid << ", created: " << tid.created() << ", status: " << tres << std::endl;
+					if (tres == PENDING || tres == UNSET)
+						tres = c.getTrackingResult(tid);
+					std::cerr << "[D] Final tracking result: " << tres << " (age: " << tid.age() << "s, duration: " << tid.duration() << "s)" << std::endl;
+					if (tres != SUCCESS) {
+						std::cerr << "[D] TRACKING failed for driver.debug" << std::endl;
+						noException = false;
+					}
+				}
+			}
+			catch(nut::NutException& ex)
+			{
+				std::cerr << "[D] Failed to set driver.debug with tracking: " << ex.what() << std::endl;
+				noException = false;
+			}
 		}
 		catch(nut::NutException& ex)
 		{
