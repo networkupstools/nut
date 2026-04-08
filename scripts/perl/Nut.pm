@@ -6,6 +6,7 @@
 # ### changelog: made debug messages slightly more descriptive, improved
 # ### changelog: comments in code
 # ### changelog: Removed timeleft() function.
+# ### changelog: 1.60: JK 2026-04-08: Added basic STARTTLS, as well as TRACKING support, LIST CLIENT, LIST RANGE, GET UPSDESC and PRIMARY/MASTER aliasing.
 
 package UPS::Nut;
 use strict;
@@ -80,6 +81,52 @@ sub Temperature { # get the internal temperature of UPS
 # control functions: they control our relationship to upsd, and send 
 # commands to upsd.
 
+sub SetTrackingMode {
+  # Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
+  # Remember in $self->{tracking} if we could set it with this upsd
+  # version, and then to which value?
+  my $self = shift;
+  my $value = shift;
+  my $ans; # scalar to hold responses from upsd
+  my $errmsg; # error message, sent to _debug and $self->{err}
+
+  # 'ON'/'OFF'/undef
+  if (!(defined $value) || ($value != 'ON' && $value != 'OFF')) {
+      $self->{err} = "Invalid setting for TRACKING mode was requested";
+      return undef;
+    }
+  }
+
+  $ans = $self->_send("SET TRACKING $value");
+  unless (defined $ans) {
+      $self->{err} = "Network error: $!";
+      return undef;
+  };
+
+  if ($ans =~ /^OK/) {
+    $self->{tracking} = $value;
+    return $value;
+  }
+
+  $self->{tracking} = undef;
+  $self->{err} = "Error: $ans";
+  return undef;
+}
+
+sub EnableTrackingModeOnce {
+  my $self = shift;
+
+  if (defined $self->{tracking} && $self->{tracking} == 'ON') {
+    return 1;
+  }
+
+  if (self->SetTrackingMode('ON') == 'ON')
+    return 1;
+
+  # Unsupported by server? Other errors?
+  return undef;
+}
+
 sub StartTLS {
   my $self = shift;
   my %arg = @_;
@@ -94,7 +141,9 @@ sub StartTLS {
   $ans = $self->_send("STARTTLS");
   if (defined $ans && $ans =~ /^OK STARTTLS/) {
     $self->_debug("STARTTLS accepted, upgrading socket.");
-    IO::Socket::SSL->start_SSL($self->{srvsock},
+    # NOTE: Currently nothing fancy like client's own certificate databases...
+    IO::Socket::SSL->start_SSL(
+      $self->{srvsock},
       SSL_verify_mode => $arg{CERTVERIFY} ? IO::Socket::SSL::SSL_VERIFY_PEER() : IO::Socket::SSL::SSL_VERIFY_NONE(),
       SSL_ca_file => $arg{CAPATH},
       %arg
@@ -104,6 +153,7 @@ sub StartTLS {
     };
     return 1;
   }
+
   $self->{err} = "STARTTLS failed: $ans";
   return undef;
 }
@@ -199,6 +249,10 @@ sub _initialize {
   my $pass = $arg{PASSWORD} || undef; # password passed to upsd
   my $login = $arg{LOGIN}   || 0; # login to upsd on init?
 
+  # Explicitly enable/disable TRACKING mode for SETVAR/INSTCMD on init?
+  # Remember in $self->{tracking} if we could toggle it with
+  # this upsd version, and to which value? ('ON'/'OFF'/undef)
+  my $tracking = $arg{TRACKING} || undef;
 
   $self->{name} = $arg{NAME} || 'default'; # UPS name in etc/ups.conf on $host
   $self->{timeout} = $arg{TIMEOUT} || 30; # timeout
@@ -236,6 +290,9 @@ sub _initialize {
     $self->{err} = "Network error: $!";
     return undef;
   }
+
+  # Can error out on invalid "TRACKING" value setting, returns undef then:
+  $self->{tracking} = $self->SetTrackingMode($tracking);
 
   return $self;
 }
@@ -339,6 +396,16 @@ sub Set {
   my $var = shift;
   (my $value = shift) =~ s/^"?(.*)"?$/"$1"/;	# add quotes if missing
 
+  # Optional TRACKING wait support:
+  my $wait_interval_sec = shift || undef;
+  my $wait_max_count = shift || undef;
+  my $do_wait = 0;
+
+  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_max_count > 0) {
+    $self->EnableTrackingModeOnce;
+    $do_wait = 1;
+  }
+
   my $req = "SET VAR $self->{name} $var $value"; # build request
   my $ans = $self->_send( $req );
 
@@ -351,7 +418,23 @@ sub Set {
     $self->{err} = "Error: $ans";
     return undef;
   }
+  elsif ($ans =~ /^OK TRACKING /) { # command successful
+    my $id;
+    (undef, undef, $id) = split(' ', $ans, 3);
+    if (defined $id && $id =~ /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    ) {
+      # UUID
+      $self->_debug("Variable setting $var $value sent successfully, got tracking ID '$id'.");
+      if ($do_wait && $self->WaitTrackingResult($id, $wait_interval_sec, $wait_max_count)) {
+        return $value;
+      }
+      return ($value, $id);
+    }
+    $self->_debug("Variable setting $var $value sent successfully, but got bogus tracking ID: $ans");
+    return $value;
+  }
   elsif ($ans =~ /^OK/) {
+    $self->_debug("Variable setting $var $value sent successfully.");
     return $value;
   }
   else { # unrecognized response
@@ -394,6 +477,16 @@ sub InstCmd { # send instant command to ups
 
   chomp (my $cmd = shift);
 
+  # Optional TRACKING wait support:
+  my $wait_interval_sec = shift || undef;
+  my $wait_max_count = shift || undef;
+  my $do_wait = 0;
+
+  if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_max_count > 0) {
+    $self->EnableTrackingModeOnce;
+    $do_wait = 1;
+  }
+
   my $req = "INSTCMD $self->{name} $cmd";
   my $ans = $self->_send( $req );
 
@@ -405,6 +498,21 @@ sub InstCmd { # send instant command to ups
   if ($ans =~ /^ERR/) { # error reported from upsd
     $self->{err} = "Can't send instant command $cmd. Reason: $ans";
     return undef;
+  }
+  elsif ($ans =~ /^OK TRACKING /) { # command successful
+    my $id;
+    (undef, undef, $id) = split(' ', $ans, 3);
+    if (defined $id && $id =~ /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    ) {
+      # UUID
+      $self->_debug("Instant command $cmd sent successfully, got tracking ID '$id'.");
+      if ($do_wait && $self->WaitTrackingResult($id, $wait_interval_sec, $wait_max_count)) {
+        return 1;
+      }
+      return (1, $id);
+    }
+    $self->_debug("Instant command $cmd sent successfully, but got bogus tracking ID: $ans");
+    return 1;
   }
   elsif ($ans =~ /^OK/) { # command successful
     $self->_debug("Instant command $cmd sent successfully.");
@@ -421,7 +529,7 @@ sub ListUPS {
 	return $self->_get_list("LIST UPS", 2, 1);
 }
 
-sub GetTracking {
+sub GetTrackingResult {
   my $self = shift;
   my $id = shift;
   my $ans = $self->_send("GET TRACKING $id");
@@ -431,10 +539,53 @@ sub GetTracking {
   };
   if ($ans =~ /^TRACKING/) {
     my @fields = split(' ', $ans);
+    # SUCCESS, PENDING, ERR...
     return $fields[2];
   }
   $self->{err} = "Error: $ans";
   return undef;
+}
+
+sub WaitTrackingResult {
+  my $self = shift;
+
+  chomp (my $id = shift);
+
+  my $wait_interval_sec = shift || 1;
+  my $wait_max_count = shift || 10;
+
+  if (!(defined $id && defined $wait_interval_sec && defined $wait_max_count)) {
+    return undef;
+  }
+
+  do {
+    my $value = $self->GetTrackingResult($id);
+    if (defined $value) {
+      if ($value == 'SUCCESS') {
+        $self->_debug("Request with TRACKING ID $id has successfully completed");
+        return 1;
+      } else
+      if ($value =~ 'ERR') {
+        $self->_debug("Request with TRACKING ID $id has completed with a failure: $value");
+        return -1;
+      } else
+      if ($value == 'PENDING') {
+        $self->_debug("Still waiting for TRACKING ID $id...");
+      } else {
+        $self->_debug("Got bogus reply while waiting for TRACKING ID $id: $value");
+      }
+    } else {
+      # TOTHINK: Keep retrying? Here in case of network or explicit error...
+      $self->_debug("Got bogus reply while waiting for TRACKING ID $id: undef");
+    }
+
+    sleep($wait_interval_sec);
+    $wait_max_count = $wait_max_count - 1;
+  } while ($wait_max_count > 0);
+
+  # Timed out?..
+  $self->_debug("Timed out while waiting for TRACKING ID $id");
+  return 0;
 }
 
 sub ListClient {
@@ -511,6 +662,7 @@ sub ListRange {
 		}
 		return $retval;
 	}
+
 	$self->{err} = "Unrecognized response: $ans";
 	return undef;
 }
@@ -691,6 +843,8 @@ sub Primary { goto &Master; }
 sub Master { # check for MASTER level access
 # Author: Kit Peters
 # ### changelog: uses the new _send command
+# ### changelog: 8/3/2002 - KP - Master() returns undef rather than 0 on
+# ### failure.  this makes it consistent with other methods
 #
 # NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 # (and backwards-compatible alias handling)
@@ -708,7 +862,7 @@ sub Master { # check for MASTER level access
     $self->_debug("PRIMARY level access granted.  Upsd reports: $ans");
     return 1;
   }
-  
+
   # Retry with MASTER if PRIMARY failed
   $req = "MASTER $self->{name}";
   $ans = $self->_send( $req );
@@ -716,13 +870,13 @@ sub Master { # check for MASTER level access
       $self->{err} = "Network error: $!";
       return undef;
   };
-  
+
   if ($ans =~ /^OK/) { # access granted
     $self->_debug("MASTER level access granted.  Upsd reports: $ans");
     return 1;
   }
   else { # access denied, or unrecognized reponse
-    $self->{err} = "Access denied.  Upsd responded: $ans";
+    $self->{err} = "PRIMARY/MASTER level access denied.  Upsd responded: $ans";
     return undef;
   }
 }
