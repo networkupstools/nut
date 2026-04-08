@@ -67,7 +67,7 @@ sub LineVoltage { # get line voltage
 	$context = "L$context-N" if $context =~ /^[123]$/;
 	$context = ".$context" if $context;
 	return $self->GetVar("input$context.voltage");
-}  
+}
 
 sub Status { # get status of UPS
 	return shift->GetVar('ups.status');
@@ -87,7 +87,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
 # Author: Kit Peters
 # ### changelog: modified login logic a bit.  Now it doesn't check to see 
 # ### changelog: if we got OK, ERR, or something else from upsd.  It 
-# ### changelog: simply checks for a response beginning with OK from upsd.  
+# ### changelog: simply checks for a response beginning with OK from upsd.
 # ### changelog: Anything else is an error.
 #
 # ### changelog: uses the new _send command
@@ -100,7 +100,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
 
   $self->Authenticate($user, $pass) or return;
   $ans = $self->_send( "LOGIN $self->{name}" );
-  if (defined $ans && $ans =~ /^OK/) { # Login successful. 
+  if (defined $ans && $ans =~ /^OK/) { # Login successful.
     $self->_debug("LOGIN successful.");
     return 1;
   }
@@ -111,7 +111,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
       $errmsg = "Network error: $!";
   }
   $self->_debug($self->{err} = $errmsg);
-  return undef; 
+  return undef;
 }
 
 sub Authenticate { # Announce to the UPS who we are to set up the proper 
@@ -141,7 +141,7 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
       $errmsg = "Network error: $!";
   }
   $self->_debug($self->{err} = $errmsg);
-  return undef; 
+  return undef;
 }
 
 sub Logout { # logout of upsd
@@ -160,7 +160,7 @@ sub Logout { # logout of upsd
 # please don't use them otherwise.  If you really think an internal 
 # function should be externalized, let me know.
 
-sub _initialize { 
+sub _initialize {
 # Author: Kit Peters
   my $self = shift;
   my %arg = @_;
@@ -179,13 +179,13 @@ sub _initialize {
 
   my $srvsock = $self->{srvsock} = # establish connection to upsd
     IO::Socket::INET->new(
-      PeerAddr => $host, 
+      PeerAddr => $host,
       PeerPort => $port,
       Proto    => $proto
     );
 
   unless ( defined $srvsock) { # can't connect
-    $self->{err} = "Unable to connect via $proto to $host:$port: $!"; 
+    $self->{err} = "Unable to connect via $proto to $host:$port: $!";
     return undef;
   }
 
@@ -212,7 +212,7 @@ sub _initialize {
   return $self;
 }
 
-# 
+#
 # _send
 #
 # Sends a command to the server and retrieves the results.
@@ -236,7 +236,7 @@ sub _send
 
     @handles = IO::Select->select( $select, undef, $select, $self->{timeout} );
     return undef if ( !scalar  $handles[0]);
-    
+
     $result = $socket->getline;
     return undef if ( !defined ( $result ) );
     chomp $result;
@@ -288,11 +288,11 @@ sub GetVar { # request a variable from the UPS
   elsif ($ans =~ /^VAR/) {
     my $checkvar; # to make sure the var we asked for is the var we got.
     my $retval; # returned value for requested VAR
-    (undef, undef, $checkvar, $retval) = split(' ', $ans, 4); 
+    (undef, undef, $checkvar, $retval) = split(' ', $ans, 4);
         # get checkvar and retval from the answer
     if ($checkvar ne $var) { # did not get expected var
       $self->{err} = "requested $var, received $checkvar";
-      return undef;  
+      return undef;
     }
     $retval =~ s/^"(.*)"$/$1/;
     return $retval; # return the requested value
@@ -301,7 +301,7 @@ sub GetVar { # request a variable from the UPS
     $self->{err} = "Unrecognized response from upsd: $ans";
     return undef;
   }
-}   
+}
 
 sub Set {
 # Contributor: Wayne Wylupski
@@ -330,7 +330,7 @@ sub Set {
     $self->{err} = "Unrecognized response from upsd: $ans";
     return undef;
   }
-}   
+}
 
 sub FSD { # set forced shutdown flag
 # Author: Kit Peters
@@ -567,7 +567,7 @@ sub _debug { # print debug messages to stdout or file
     my $out; # filehandle for output
     if ($self->{debugout}) { # if filename is given, use that
       $out = new FileHandle ($self->{debugout}, ">>") or warn "Error: $!";
-    } 
+    }
     if ($out) { # if out was set to a filehandle, create nifty timestamp
       my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
       $year = sprintf("%02d", $year % 100); # Y2.1K compliant, even!
@@ -627,7 +627,7 @@ sub AUTOLOAD {
     }
 
     croak "No such InstCmd: $name" if (! $self->{cmds}{$name} );
-    
+
     return $self->InstCmd( $name );
 }
 
@@ -646,7 +646,7 @@ sub AUTOLOAD {
 #
 #  $ups{UPSIDENT} = "MyUPS";
 #  print $ups{MFR}, " " $ups{MODEL}, "\n";
-#  
+#
 #-------------------------------------------------------------------------
 sub TIEHASH {
     my $class = shift || 'UPS::Nut';
@@ -734,12 +734,12 @@ It doesn't monitor the UPS continously.
 
 =head1 CONSTRUCTOR
 
-Shown with defaults: new UPS::Nut( NAME => "default", 
-                                   HOST => "localhost", 
-                                   PORT => "3493", 
-                                   USERNAME => "", 
-                                   PASSWORD => "", 
-                                   DEBUG => 0, 
+Shown with defaults: new UPS::Nut( NAME => "default",
+                                   HOST => "localhost",
+                                   PORT => "3493",
+                                   USERNAME => "",
+                                   PASSWORD => "",
+                                   DEBUG => 0,
                                    DEBUGOUT => "",
                                  );
 * NAME is the name of the UPS to monitor, as specified in ups.conf
@@ -765,7 +765,7 @@ Unlike in version 0.04 no methods return list values but a
 single reference or undef.
 
 =head2 Methods for querying UPS status
- 
+
 =over 4
 
 =item Getvar($varname)
@@ -801,7 +801,7 @@ in case of single phase UPS.
 
 =item Status()
 
-returns UPS status, one of OL or OB. OL or OB may be followed by LB, 
+returns UPS status, one of OL or OB. OL or OB may be followed by LB,
 which signifies low battery state. OL or OB may also be followed by 
 FSD, which denotes that the forced shutdown state 
 ( see UPS::Nut->FSD() ) has been set on upsd. Returns undef if status 
@@ -848,7 +848,7 @@ TODO: API change pending to replace MASTER with PRIMARY
 
 =item ListVar($variable, ...)
 
-This is an implementation of "LIST VAR" command. 
+This is an implementation of "LIST VAR" command.
 Returns a hash reference to selected variable names and values supported
 by the UPS. If no variables given it returns all.
 Returns undef if "LIST VAR" failed.
@@ -880,7 +880,7 @@ undef if the command can't be completed.
 
 Set the FSD (forced shutdown) flag for the UPS. This means that we're 
 planning on shutting down the UPS very soon, so the attached load should 
-be shut down as well. Returns 1 on success, returns undef on failure. 
+be shut down as well. Returns 1 on success, returns undef on failure.
 This cannot be unset, so don't set it unless you mean it.
 
 =item Error()
@@ -927,7 +927,7 @@ value of 'tie' useful, as in:
 
   my %ups;
   my $ups_obj = tie %ups, 'UPS::Nut', HOSTNAME=>"firewall";
-  
+
   print $ups{UPSIDENT}, "\n";
 
   $ups_obj->Authenticate( "user", "pass" );
@@ -944,14 +944,14 @@ value of 'tie' useful, as in:
 
 =head1 CREDITS
 
-Developed with the kind support of A World Of Difference, Inc. 
+Developed with the kind support of A World Of Difference, Inc.
 <http://www.awod.com/>
 
 Many thanks to Ryan Jessen <rjessen@cyberpowersystems.com> at CyberPower 
 Systems for much-needed assistance.
 
 Thanks to Wayne Wylupski <wayne@connact.com> for the code to make 
-accessor methods for all supported vars. 
+accessor methods for all supported vars.
 
 =head1 LICENSE
 
