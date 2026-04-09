@@ -11,6 +11,10 @@
 # To speed up this practical developer-testing aspect, you can just
 # `make check-NIT-sandbox{,-devel}` (optionally with custom DEBUG_SLEEP).
 #
+# Also note that it can be used not only for in-tree checks, but for
+# development of other NUT clients against even a packaged installation,
+# for a practical example see https://github.com/networkupstools/jNut
+#
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
 # Caller can export envvars to impact the script behavior, e.g.:
