@@ -352,6 +352,8 @@ sub _initialize {
   $self->{vars} = $self->ListVar;
 
   unless ( defined $self->{vars} ) {
+    # FIXME: Can well be `ERR UNKNOWN-UPS` due to NAME=default
+    #  Better report that as such...
     $self->_debug($self->{err} = "Network error: $!");
     return undef;
   }

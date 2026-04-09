@@ -34,11 +34,17 @@ if (1) {
     my $nut;
     eval {
         $nut = UPS::Nut->new(
+            # A name is used right where we initialize the object,
+            # otherwise it falls back to "default". It should be
+            # registered in ups.conf; one UPS at a time per connection!
+            # We fiddle those for NIT script (dummy, UPS1, UPS2) below.
+            NAME => "dummy",
             HOST => $NUT_HOST,
             PORT => $NUT_PORT,
             USERNAME => $NUT_USER,
             PASSWORD => $NUT_PASS,
             DEBUG => $NUT_DEBUG,
+            # TRACKING => 'ON', # undef by default, enabled in certain tests below
             # STARTTLS related (passed via %arg to StartTLS in Nut.pm)
             CERTVERIFY => $NUT_CERTVERIFY,
             CAPATH => $NUT_CAPATH, # Nut.pm uses CAPATH for SSL_ca_file
@@ -68,14 +74,9 @@ if (1) {
     # driver = dummy-ups
     # desc = "Test device"
     # port = /src/nut/data/evolution500.seq
-    print "-" x 80 . "\nTesting 'ListVar' for 'dummy' (should be registered in upsd.conf) :\n";
-    $result = $nut->ListVar("dummy"); # Note: Nut.pm's ListVar uses $self->{name} by default, but we can't easily change name without re-init or reaching into internals.
-    # Actually, Nut.pm ListVar uses $self->{name}. Let's check if we can override it.
-    # In Nut.pm: sub ListVar { my $self = shift; my $vars = $self->_get_list("LIST VAR $self->{name}", 3, 2); ... }
-    # It does NOT take a UPS name as argument to override $self->{name}.
-    # We might need to set $nut->{name} = "dummy" or similar.
-    $nut->{name} = "dummy";
-    $result = $nut->ListVar();
+    print "-" x 80 . "\nTesting 'ListVar' for 'dummy' (should be registered in ups.conf) :\n";
+    # TOTHINK: Extend into a test for ListVar("bogus") - that it should fail?
+    $result = $nut->ListVar("dummy");
     printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', map { "$_ => $result->{$_}" } keys %$result) : "NULL" );
 
     print "-" x 80 . "\nTesting 'CheckUPSAvailable' (via ListUPS) :\n";
@@ -174,7 +175,7 @@ if (1) {
     printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? $result : "NULL" );
 
     # testing who has an upsmon-like log-in session to a device
-    print "-" x 80 . "\nTesting 'ListClient' for 'dummy' (should be registered in upsd.conf) before test client is connected :\n";
+    print "-" x 80 . "\nTesting 'ListClient' for 'dummy' (should be registered in ups.conf) before test client is connected :\n";
     eval {
         $result = $nut->ListClient("dummy");
     };
@@ -202,7 +203,7 @@ if (1) {
     printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? $result : "NULL" );
 
     my $loggedIntoDummy = 0;
-    print "-" x 80 . "\nTesting 'Login' (DeviceLogin) for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :\n";
+    print "-" x 80 . "\nTesting 'Login' (DeviceLogin) for 'dummy' (should be registered in ups.conf; current credentials should have an upsmon role in upsd.users) :\n";
     eval {
         $nut->{name} = "dummy";
         $result = $nut->Login($NUT_USER, $NUT_PASS);
