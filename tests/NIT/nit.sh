@@ -3247,10 +3247,38 @@ testgroup_sandbox_upsmon_master() {
 
 case "${NIT_CASE}" in
     isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
-    cppnit) testgroup_sandbox_cppnit ;;
-    python) testgroup_sandbox_python ;;
-    perl) testgroup_sandbox_perl ;;
-    nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
+    cppnit)
+        if isTestableCppNIT ; then
+            testgroup_sandbox_cppnit
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    python)
+        if isTestablePython && [ -n "${PYTHON}" ] ; then
+            testgroup_sandbox_python
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    perl)
+        if isTestablePerl && [ -n "${PERL}" ] ; then
+            testgroup_sandbox_perl
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    nutscanner|nut-scanner)
+        if isTestableNutScanner && [ -n "${PERL}" ] ; then
+            testgroup_sandbox_nutscanner
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
         log_warn "========================================================"
         log_warn "You asked to run just a specific testcase* or testgroup*"
