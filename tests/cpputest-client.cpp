@@ -526,9 +526,14 @@ void NutActiveClientTest::test_auth_user() {
 				usleep(100);
 			}
 			if (tres != SUCCESS) {
-				std::cerr << "[D] Failed to set device variable: "
+				std::cerr << "[D] Failed to confirm setting device variable: "
 					<< "tracking result is " << tres << std::endl;
-				noException = false;
+				if (c.isTrackingModeEnabled()) {
+					noException = false;
+				} else {
+					std::cerr << "[D] Tracking mode is NOT enabled in this session so far"
+						<< std::endl;
+				}
 			}
 			/* Check what we got after set */
 			/* Note that above we told the server to tell the driver
@@ -555,9 +560,14 @@ void NutActiveClientTest::test_auth_user() {
 				usleep(100);
 			}
 			if (tres != SUCCESS) {
-				std::cerr << "[D] Failed to set device variable: "
+				std::cerr << "[D] Failed to confirm setting device variable: "
 					<< "tracking result is " << tres << std::endl;
-				noException = false;
+				if (c.isTrackingModeEnabled()) {
+					noException = false;
+				} else {
+					std::cerr << "[D] Tracking mode is NOT enabled in this session so far"
+						<< std::endl;
+				}
 			}
 			std::string s3;
 			for (i = 0; i < 100 ; i++) {

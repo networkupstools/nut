@@ -565,7 +565,12 @@ public:
 	/**
 	 * Enable tracking mode once.
 	 */
-	virtual void enableTrackingModeOnce() = 0;
+	virtual void enableTrackingModeOnce(void) = 0;
+
+	/**
+	 * Check if tracking mode is enabled.
+	 */
+	virtual bool isTrackingModeEnabled(void) = 0;
 
 	/**
 	 * Wait for a tracking result.
@@ -584,6 +589,7 @@ public:
 
 protected:
 	Client();
+	std::string _tracking;
 };
 
 /**
@@ -734,7 +740,8 @@ public:
 	using Client::getTrackingResult;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
-	virtual void enableTrackingModeOnce() override;
+	virtual void enableTrackingModeOnce(void) override;
+	virtual bool isTrackingModeEnabled(void) override;
 	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) override;
 
 	/**

@@ -84,6 +84,7 @@ public:
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 	virtual void enableTrackingModeOnce(void) override;
+	virtual bool isTrackingModeEnabled(void) override;
 	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) override;
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;

@@ -255,6 +255,14 @@ void MemClientStub::enableTrackingModeOnce(void)
 	//return TrackingResult::SUCCESS;
 }
 
+bool MemClientStub::isTrackingModeEnabled(void) {
+	/* Hush warning: function 'enableTrackingModeOnce' could be declared with attribute 'noreturn' [-Wmissing-noreturn] */
+	int	id;
+	NUT_UNUSED_VARIABLE(id);
+	throw NutException("Not implemented");
+	//return false;
+}
+
 TrackingResult MemClientStub::waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount)
 {
 	NUT_UNUSED_VARIABLE(id);

@@ -2053,9 +2053,22 @@ TrackingResult TcpClient::getTrackingResult(const TrackingID& id)
 	}
 }
 
-void TcpClient::enableTrackingModeOnce()
+void TcpClient::enableTrackingModeOnce(void)
 {
-	setFeature(TRACKING, true);
+	if (_tracking != "ON")
+	{
+		setFeature(TRACKING, true);
+		_tracking = sendQuery("GET " + TRACKING);
+	}
+}
+
+bool TcpClient::isTrackingModeEnabled(void)
+{
+	if (_tracking != "ON")
+	{
+		_tracking = sendQuery("GET " + TRACKING);
+	}
+	return (_tracking == "ON");
 }
 
 TrackingResult TcpClient::waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount)
