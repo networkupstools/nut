@@ -97,7 +97,7 @@ if (1) {
         $nut->{name} = "UPS1";
         $result = $nut->InstCmd("test.panel.start");
         if (!defined($NUT_USER)) {
-            die "Secure operation should have failed due to lack of credentials, but did not";
+            die "Secure operation should have failed due to lack of credentials, but did not: $nut->{err}";
         }
     };
     if ($@) {
@@ -119,7 +119,7 @@ if (1) {
         $nut->{name} = "UPS1";
         $result = $nut->Set("ups.id", "test");
         if (!defined($NUT_USER)) {
-            die "Secure operation should have failed due to lack of credentials, but did not";
+            die "Secure operation should have failed due to lack of credentials, but did not: $nut->{err}";
         }
     };
     if ($@) {
@@ -150,7 +150,7 @@ if (1) {
         # Set with tracking
         my ($tid_res, $tid) = $nut->Set("driver.debug", "1", 1, 10);
         if (!defined($NUT_USER)) {
-            die "Secure operation should have failed due to lack of credentials, but did not";
+            die "Secure operation should have failed due to lack of credentials, but did not: $nut->{err}";
         }
 
         if (ref($tid) eq 'UPS::Nut::TrackingID') {
@@ -208,7 +208,7 @@ if (1) {
         $nut->{name} = "dummy";
         $result = $nut->Login($NUT_USER, $NUT_PASS);
         if (!defined($NUT_USER)) {
-            die "Secure operation should have failed due to lack of credentials, but did not";
+            die "Secure operation should have failed due to lack of credentials, but did not: $nut->{err}";
         }
         $loggedIntoDummy = 1;
     };
@@ -243,14 +243,14 @@ if (1) {
         $result = \%all_clients;
 
         if (ref($result) ne 'HASH') {
-            die "ListClient() did not return a hash ref";
+            die "ListClient() did not return a hash ref: $nut->{err}";
         } else {
             if ($loggedIntoDummy) {
                 if (!exists($result->{'dummy'})) {
-                    die "ListClient() result missing 'dummy' key";
+                    die "ListClient() result missing 'dummy' key: $nut->{err}";
                 }
                 if (scalar keys %{$result->{'dummy'}} < 1) {
-                    die "ListClient() returned an empty hash for 'dummy' where at least one client was expected";
+                    die "ListClient() returned an empty hash for 'dummy' where at least one client was expected: $nut->{err}";
                 }
             }
         }
