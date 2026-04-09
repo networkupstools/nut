@@ -518,13 +518,17 @@ public:
 	 * \return List of clients e.g. {'127.0.0.1', 'admin-workstation.local.domain'}
 	 */
 	virtual std::set<std::string> deviceGetClients(const std::string& dev) = 0;
-	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	/** NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
 	 * For the sake of old/new server/client interoperability,
 	 * practical implementations should try to use one and fall
 	 * back to the other, and only fail if both return "ERR".
 	 */
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	virtual void deviceMaster(const std::string& dev) = 0;
 	virtual void devicePrimary(const std::string& dev) = 0;
+	virtual void deviceSecondary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
 
 	/**
@@ -707,11 +711,12 @@ public:
 	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual void deviceLogin(const std::string& dev) override;
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
-	 */
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	virtual void deviceMaster(const std::string& dev) override;
 	virtual void devicePrimary(const std::string& dev) override;
+	virtual void deviceSecondary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
 	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
@@ -1011,11 +1016,14 @@ public:
 	 * Who did a login() to this dev?
 	 */
 	std::set<std::string> getClients();
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
-	 */
+
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	void master();
-	void primary();
+	void becomePrimary();
+	void becomeSecondary();
+
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -1282,11 +1290,9 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
 void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
+void nutclient_device_secondary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.

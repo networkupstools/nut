@@ -221,6 +221,12 @@ void MemClientStub::devicePrimary(const std::string& dev)
 	throw NutException("Not implemented");
 }
 
+void MemClientStub::deviceSecondary(const std::string& dev)
+{
+	NUT_UNUSED_VARIABLE(dev);
+	throw NutException("Not implemented");
+}
+
 void MemClientStub::deviceForcedShutdown(const std::string& dev)
 {
 	NUT_UNUSED_VARIABLE(dev);

@@ -1970,6 +1970,20 @@ void TcpClient::devicePrimary(const std::string& dev)
 	}
 }
 
+void TcpClient::deviceSecondary(const std::string& dev)
+{
+	try {
+		detectError(sendQuery("SECONDARY " + dev));
+	} catch (NutException &exOrig) {
+		try {
+			detectError(sendQuery("SLAVE " + dev));
+		} catch (NutException &exRetry) {
+			NUT_UNUSED_VARIABLE(exRetry);
+			throw exOrig;
+		}
+	}
+}
+
 void TcpClient::deviceForcedShutdown(const std::string& dev)
 {
 	detectError(sendQuery("FSD " + dev));
@@ -2593,10 +2607,16 @@ void Device::master()
 	getClient()->deviceMaster(getName());
 }
 
-void Device::primary()
+void Device::becomePrimary()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	getClient()->devicePrimary(getName());
+}
+
+void Device::becomeSecondary()
+{
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->deviceSecondary(getName());
 }
 
 void Device::forcedShutdown()
@@ -3419,6 +3439,21 @@ void nutclient_device_primary(NUTCLIENT_t client, const char* dev)
 	}
 }
 
+void nutclient_device_secondary(NUTCLIENT_t client, const char* dev)
+{
+	if(client)
+	{
+		nut::Client* cl = static_cast<nut::Client*>(client);
+		if(cl)
+		{
+			try
+			{
+				cl->deviceSecondary(dev);
+			}
+			catch(...){}
+		}
+	}
+}
 void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev)
 {
 	if(client)
