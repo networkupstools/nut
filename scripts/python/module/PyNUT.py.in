@@ -252,6 +252,17 @@ if something goes wrong.
                     self.__srv_handler,
                     server_hostname=self.__host
                 )
+
+                # Make sure handshake succeeded or abort early
+                # (there is currently no way for the server to
+                # report its fault to the client when connection
+                # is half-way secure):
+                if not self.isValidProtocolVersion():
+                    if self.__debug :
+                        print( "[DEBUG] STARTTLS setup claimed to succeed, but protocol version check in the secured session failed" )
+                    if self.__force_ssl:
+                        raise PyNUTError("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required")
+                    # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
             else :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS failed: %s" % result )

@@ -1499,7 +1499,21 @@ void TcpClient::connect()
 			_socket->setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _key_pass, _certstore_prefix, _certhost_name, _certident_name);
 		}
 
+		/* May throw in case of low-level problems */
 		_socket->startTLS();
+
+		/* Make sure handshake succeeded or abort early
+		 * (there is currently no way for the server to
+		 * report its fault to the client when connection
+		 * is half-way secure):
+		 */
+		if (!isValidProtocolVersion()) {
+			if (_force_ssl) {
+				disconnect();
+				throw nut::SSLException("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
+			}
+			/* TODO: Drop SSL context or restart the connection as plaintext if SSL is not required? */
+		}
 	}
 }
 
