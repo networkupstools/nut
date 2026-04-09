@@ -220,8 +220,10 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
   my $ans; # scalar to hold responses from upsd
 
   if (!($self->Authenticate($user, $pass))) {
+    if ($self->{err} !~ /ERR ALREADY-SET-USERNAME/) {
       $self->_debug("Authenticate before LOGIN failed.");
       return undef;
+    }
   }
 
   $ans = $self->_send( "LOGIN $ups" );
@@ -247,6 +249,11 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
   my $user = shift; # username
   my $pass = shift; # password
 
+  if ($self->{authenticated}) {
+    $self->_debug("Already authenticated, skip");
+    return 1;
+  }
+
   my $errmsg; # error message, sent to _debug and $self->{err}
   my $ans; # scalar to hold responses from upsd
 
@@ -256,7 +263,10 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
     if (defined $ans && $ans =~ /^OK/) { # username OK, send password
 
       $ans = $self->_send("PASSWORD $pass");
-      return 1 if (defined $ans && $ans =~ /^OK/);
+      if (defined $ans && $ans =~ /^OK/) {
+        $self->{authenticated} = 1;
+        return 1
+      }
     }
   } else {
     $self->_debug($self->{err} = "Authentication failed: username and/or password not provided, internal equivalent of USERNAME-REQUIRED");
@@ -272,7 +282,7 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
   return undef;
 }
 
-sub Logout { # logout of upsd
+sub Logout { # logout of upsd and close connection
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
@@ -281,6 +291,7 @@ sub Logout { # logout of upsd
     my $ans = $self->_send( "LOGOUT" );
     close ($self->{srvsock});
     delete ($self->{srvsock});
+    $self->{authenticated} = 0;
   }
 }
 
@@ -345,6 +356,7 @@ sub _initialize {
     }
   }
 
+  $self->{authenticated} = 0;
   if ($user and $pass) { # attempt login to upsd if that option is specified
     if ($login) { # attempt login to upsd if that option is specified
       $self->Login($user, $pass) or carp $self->{err};
