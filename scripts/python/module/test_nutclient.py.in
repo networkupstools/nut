@@ -53,7 +53,7 @@ if __name__ == "__main__" :
     # driver = dummy-ups
     # desc = "Test device"
     # port = /src/nut/data/evolution500.seq
-    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in upsd.conf) :")
+    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in ups.conf) :")
     result = nut.GetUPSVars( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
@@ -132,7 +132,7 @@ if __name__ == "__main__" :
     print( "\033[01;33m%s\033[0m\n" % result )
 
     # testing who has an upsmon-like log-in session to a device
-    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in upsd.conf) before test client is connected :")
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in ups.conf) before test client is connected :")
     try :
         result = nut.ListClients( "dummy" )
     except :
@@ -156,7 +156,7 @@ if __name__ == "__main__" :
     print( "\033[01;33m%s\033[0m\n" % result )
 
     loggedIntoDummy = False
-    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in ups.conf; current credentials should have an upsmon role in upsd.users) :")
     try :
         result = nut.DeviceLogin( "dummy" )
         if (NUT_USER is None):
