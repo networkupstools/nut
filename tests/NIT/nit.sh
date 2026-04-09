@@ -2782,6 +2782,131 @@ testcases_sandbox_python() {
 
 ####################################
 
+setenv_ssl_perl() {
+	setenv_ssl_python
+}
+
+PL_SHEBANG=""
+PL_RES=127
+isTestablePerl() {
+    # Currently we use any PERL on path and do not detect it in configure script:
+    case x"${PL_SHEBANG}" in
+        x"") ;; # Fall through to detection
+        *) return $PL_RES ;; # Probably resolved (if not a comment)?
+    esac
+
+    if [ x"${TOP_SRCDIR}" = x ] \
+    || [ ! -x "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl" ] \
+    ; then
+        return 1
+    fi
+
+    if [ ! -s "${TOP_SRCDIR}/scripts/perl/UPS/Nut.pm" ] \
+    ; then
+        return 1
+    fi
+
+    if [ x"${PERL}" != x ] ; then
+        PL_SHEBANG="#!${PERL}"
+        PL_RES=0
+        return 0
+    fi
+
+    PL_SHEBANG="`head -1 \"${TOP_SRCDIR}/scripts/perl/test_nutclient.pl\"`"
+    PL_RES=3
+    case x"${PL_SHEBANG}" in
+        x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PL_RES=0 ;; # Seems like a full path
+        x"#!no")   PL_RES=1 ;; # Explicitly skipped
+        x"#!@")    PL_RES=2 ;; # Unresolved
+        *)         PL_RES=3 ;; # Unexpected twist
+    esac
+    if [ x"${PL_RES}" = x0 ] ; then
+        log_debug "=======\nDetected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
+        # Currently we use any PERL on path and do not detect it in configure script,
+        # so the hard-coded value may be bogus:
+        PERL="`echo \"${PL_SHEBANG}\" | sed 's,^#!,,'`"
+        if [ -x "$PERL" ] ; then : ; else PERL="`command -v perl`" ; fi
+        if [ -n "$PERL" ] && [ -x "$PERL" ] ; then : ; else PL_RES=3 ; fi
+    else
+        log_error "[isTestablePerl] Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
+    fi
+    return $PL_RES
+}
+
+testcase_sandbox_perl_without_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || return 0
+
+    log_separator
+    log_info "[testcase_sandbox_perl_without_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) without login credentials"
+    if ( unset NUT_USER || true
+         unset NUT_PASS || true
+         setenv_ssl_perl
+         $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_without_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_without_credentials"
+    fi
+}
+
+testcase_sandbox_perl_with_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || return 0
+
+    # That script says it expects data/evolution500.seq (as the UPS1 dummy)
+    # but the dummy data does not currently let issue the commands and
+    # setvars tested from perl script.
+    log_separator
+    log_info "[testcase_sandbox_perl_with_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) with login credentials"
+    if (
+        NUT_USER='admin'
+        NUT_PASS="${TESTPASS_ADMIN}"
+        export NUT_USER NUT_PASS
+        setenv_ssl_perl
+        $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_with_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_credentials"
+    fi
+}
+
+testcase_sandbox_perl_with_upsmon_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || return 0
+
+    log_separator
+    log_info "[testcase_sandbox_perl_with_upsmon_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) with upsmon role login credentials"
+    if (
+        NUT_USER='dummy-admin'
+        NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
+        export NUT_USER NUT_PASS
+        setenv_ssl_perl
+        $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_with_upsmon_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_upsmon_credentials"
+    fi
+}
+
+testcases_sandbox_perl() {
+    isTestablePerl && [ -n "${PERL}" ] || return 0
+
+    testcase_sandbox_perl_without_credentials
+    testcase_sandbox_perl_with_credentials
+    testcase_sandbox_perl_with_upsmon_credentials
+}
+
+####################################
+
 isTestableCppNIT() {
     # We optionally make and here can run C++ client tests:
     if [ x"${TOP_BUILDDIR}" = x ] \
@@ -3056,6 +3181,7 @@ testgroup_sandbox() {
     testcase_sandbox_upsc_query_timer
     testcases_sandbox_python
     testcases_sandbox_cppnit
+    testcases_sandbox_perl
     testcases_sandbox_nutscanner
 
     log_separator
@@ -3066,6 +3192,15 @@ testgroup_sandbox_python() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_python
+
+    log_separator
+    sandbox_forget_configs
+}
+
+testgroup_sandbox_perl() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_perl
 
     log_separator
     sandbox_forget_configs
@@ -3114,6 +3249,7 @@ case "${NIT_CASE}" in
     isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
+    perl) testgroup_sandbox_perl ;;
     nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
         log_warn "========================================================"
