@@ -621,20 +621,27 @@ sub ListUPS {
 sub GetTrackingResult {
   my $self = shift;
   my $tid = shift;
+
   my $id = ref($tid) eq 'UPS::Nut::TrackingID' ? $tid->id : $tid;
   my $ans = $self->_send("GET TRACKING $id");
   unless (defined $ans) {
     $self->_debug($self->{err} = "Network error: $!");
     return undef;
   };
-  if ($ans =~ /^TRACKING/) {
-    my @fields = split(' ', $ans);
-    # SUCCESS, PENDING, ERR...
-    return $fields[2];
+
+  chomp $ans;
+  if ($ans eq 'SUCCESS') {
+    $self->_debug("Request with TRACKING ID $id has successfully completed");
+  } elsif ($ans =~ 'ERR') {
+    $self->_debug($self->{err} = "Request with TRACKING ID $id has completed with a failure: $ans");
+  } elsif ($ans eq 'PENDING') {
+    $self->_debug("Still waiting for TRACKING ID $id");
+  } else {
+    $self->_debug($self->{err} = "Got bogus reply while waiting for TRACKING ID $id: $ans");
+    return undef;
   }
 
-  $self->_debug($self->{err} = "Error: $ans");
-  return undef;
+  return $ans;
 }
 
 sub WaitTrackingResult {
@@ -652,16 +659,12 @@ sub WaitTrackingResult {
   do {
     my $value = $self->GetTrackingResult($tid);
     if (defined $value) {
+      # Note: debug messages are printed by GetTrackingResult() already
+      chomp $value;
       if ($value eq 'SUCCESS') {
-        $self->_debug("Request with TRACKING ID $id has successfully completed");
         return 1;
       } elsif ($value =~ 'ERR') {
-        $self->_debug("Request with TRACKING ID $id has completed with a failure: $value");
         return -1;
-      } elsif ($value eq 'PENDING') {
-        $self->_debug("Still waiting for TRACKING ID $id...");
-      } else {
-        $self->_debug("Got bogus reply while waiting for TRACKING ID $id: $value");
       }
     } else {
       # TOTHINK: Keep retrying? Here in case of network or explicit error...
