@@ -3141,7 +3141,9 @@ case "${NIT_CASE}" in
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE"
         fi
-        unset DEBUG_SLEEP
+        case "${NIT_CASE}" in
+            is*) unset DEBUG_SLEEP ;;
+        esac
         ;;
     "") # Default test groups:
         testgroup_upsd_invalid_configs
