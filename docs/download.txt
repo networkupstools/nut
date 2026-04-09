@@ -268,11 +268,11 @@ Java packages
 - The jNut package has been split into its own
   link:https://github.com/networkupstools/jNut[GitHub repository].
 
-- NUT Java support (client side, Beta)
-  link:https://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+- NUT Java support (client side, Beta): sources and JAR of the library and example client
+  link:https://www.networkupstools.org/package/java/jNut-1.1-SNAPSHOT.tar.gz[jNUT 1.1-SNAPSHOT]
 
-- NUT Java Web support (client side using REST, Beta)
-  link:https://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
+- NUT Java Web support (client side using REST, Beta): sources and WAR
+  link:https://www.networkupstools.org/package/java/jNutWebAPI-1.1-SNAPSHOT.tar.gz[jNutWebAPI 1.1-SNAPSHOT]
 
 Virtualization packages
 -----------------------
