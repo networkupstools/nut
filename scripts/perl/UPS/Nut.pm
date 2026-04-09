@@ -28,7 +28,7 @@ my $_eol = "\n";
 BEGIN {
     use Exporter ();
     use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = 1.61;
+    $VERSION     = 1.62;
     @ISA         = qw(Exporter IO::Socket::INET);
     @EXPORT      = qw();
     @EXPORT_OK   = qw();
@@ -90,18 +90,17 @@ sub SetTrackingMode {
   my $self = shift;
   my $value = shift;
   my $ans; # scalar to hold responses from upsd
-  my $errmsg; # error message, sent to _debug and $self->{err}
 
   # 'ON'/'OFF'/undef
   if (!(defined $value) || ($value ne 'ON' && $value ne 'OFF')) {
-      $self->{err} = "Invalid setting for TRACKING mode was requested";
-      return undef;
+    $self->_debug($self->{err} = "Invalid setting for TRACKING mode was requested");
+    return undef;
   }
 
   $ans = $self->_send("SET TRACKING $value");
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^OK/) {
@@ -110,7 +109,7 @@ sub SetTrackingMode {
   }
 
   $self->{tracking} = undef;
-  $self->{err} = "Error: $ans";
+  $self->_debug($self->{err} = "Error: $ans");
   return undef;
 }
 
@@ -164,7 +163,7 @@ sub StartTLS {
 
   eval { require IO::Socket::SSL; };
   if ($@) {
-    $self->{err} = "IO::Socket::SSL not available";
+    $self->_debug($self->{err} = "IO::Socket::SSL not available");
     return undef;
   }
 
@@ -178,13 +177,13 @@ sub StartTLS {
       SSL_ca_file => $arg{CAPATH},
       %arg
     ) or do {
-      $self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr();
+      $self->_debug($self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr());
       return undef;
     };
     return 1;
   }
 
-  $self->{err} = "STARTTLS failed: $ans";
+  $self->_debug($self->{err} = "STARTTLS failed: $ans");
   return undef;
 }
 
@@ -301,7 +300,7 @@ sub _initialize {
     );
 
   unless ( defined $srvsock) { # can't connect
-    $self->{err} = "Unable to connect via $proto to $host:$port: $!";
+    $self->_debug($self->{err} = "Unable to connect via $proto to $host:$port: $!");
     return undef;
   }
 
@@ -316,14 +315,15 @@ sub _initialize {
     # is half-way secure):
     if (!$self->isValidProtocolVersion()) {
       if ($arg{FORCESSL}) {
-        $self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required";
+        $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
         return undef;
       }
+      $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, but SSL is not required");
       # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
     }
   } else {
     if ($arg{FORCESSL}) {
-      $self->{err} = "SSL setup failed but it is required";
+      $self->_debug($self->{err} = "SSL setup failed but it is required");
       return undef;
     }
   }
@@ -342,7 +342,7 @@ sub _initialize {
   $self->{vars} = $self->ListVar;
 
   unless ( defined $self->{vars} ) {
-    $self->{err} = "Network error: $!";
+    $self->_debug($self->{err} = "Network error: $!");
     return undef;
   }
 
@@ -417,12 +417,12 @@ sub GetVar { # request a variable from the UPS
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^ERR/) {
-    $self->{err} = "Error: $ans.  Requested $var.";
+    $self->_debug($self->{err} = "Error: $ans.  Requested $var.");
     return undef;
   }
   elsif ($ans =~ /^VAR/) {
@@ -431,14 +431,14 @@ sub GetVar { # request a variable from the UPS
     (undef, undef, $checkvar, $retval) = split(' ', $ans, 4);
         # get checkvar and retval from the answer
     if ($checkvar ne $var) { # did not get expected var
-      $self->{err} = "requested $var, received $checkvar";
+      $self->_debug($self->{err} = "Requested $var, received $checkvar");
       return undef;
     }
     $retval =~ s/^"(.*)"$/$1/;
     return $retval; # return the requested value
   }
   else { # unrecognized response
-    $self->{err} = "Unrecognized response from upsd: $ans";
+    $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
     return undef;
   }
 }
@@ -465,12 +465,12 @@ sub Set {
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^ERR/) {
-    $self->{err} = "Error: $ans";
+    $self->_debug($self->{err} = "Error: $ans");
     return undef;
   }
   elsif ($ans =~ /^OK TRACKING /) { # command successful
@@ -494,7 +494,7 @@ sub Set {
     return $value;
   }
   else { # unrecognized response
-    $self->{err} = "Unrecognized response from upsd: $ans";
+    $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
     return undef;
   }
 }
@@ -509,12 +509,12 @@ sub FSD { # set forced shutdown flag
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^ERR/) { # can't set forced shutdown flag
-    $self->{err} = "Can't set FSD flag.  Upsd reports: $ans";
+    $self->_debug($self->{err} = "Can't set FSD flag.  Upsd reports: $ans");
     return undef;
   }
   elsif ($ans =~ /^OK FSD-SET/) { # forced shutdown flag set
@@ -522,7 +522,7 @@ sub FSD { # set forced shutdown flag
     return 1;
   }
   else {
-    $self->{err} = "Unrecognized response from upsd: $ans";
+    $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
     return undef;
   }
 }
@@ -547,12 +547,12 @@ sub InstCmd { # send instant command to ups
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^ERR/) { # error reported from upsd
-    $self->{err} = "Can't send instant command $cmd. Reason: $ans";
+    $self->_debug($self->{err} = "Can't send instant command $cmd. Reason: $ans");
     return undef;
   }
   elsif ($ans =~ /^OK TRACKING /) { # command successful
@@ -576,7 +576,7 @@ sub InstCmd { # send instant command to ups
     return 1;
   }
   else { # unrecognized response
-    $self->{err} = "Can't send instant command $cmd. Unrecognized response from upsd: $ans";
+    $self->_debug($self->{err} = "Can't send instant command $cmd. Unrecognized response from upsd: $ans");
     return undef;
   }
 }
@@ -592,15 +592,16 @@ sub GetTrackingResult {
   my $id = ref($tid) eq 'UPS::Nut::TrackingID' ? $tid->id : $tid;
   my $ans = $self->_send("GET TRACKING $id");
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
   if ($ans =~ /^TRACKING/) {
     my @fields = split(' ', $ans);
     # SUCCESS, PENDING, ERR...
     return $fields[2];
   }
-  $self->{err} = "Error: $ans";
+
+  $self->_debug($self->{err} = "Error: $ans");
   return undef;
 }
 
@@ -655,8 +656,8 @@ sub GetUPSDesc {
   my $ups = shift || $self->{name};
   my $ans = $self->_send("GET UPSDESC $ups");
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
   if ($ans =~ /^UPSDESC/) {
     my @fields = split(' ', $ans, 3);
@@ -664,7 +665,8 @@ sub GetUPSDesc {
     $desc =~ s/^"(.*)"$/$1/;
     return $desc;
   }
-  $self->{err} = "Error: $ans";
+
+  $self->_debug($self->{err} = "Error: $ans");
   return undef;
 }
 
@@ -698,12 +700,12 @@ sub ListRange {
 	my $ans = $self->_send($req);
 
 	unless (defined $ans) {
-		$self->{err} = "Network error: $!";
+		$self->_debug($self->{err} = "Network error: $!");
 		return undef;
 	};
 
 	if ($ans =~ /^ERR/) {
-		$self->{err} = "Error: $ans";
+		$self->_debug($self->{err} = "Error: $ans");
 		return undef;
 	}
 	elsif ($ans =~ /^BEGIN LIST RANGE/) {
@@ -719,7 +721,7 @@ sub ListRange {
 		return $retval;
 	}
 
-	$self->{err} = "Unrecognized response: $ans";
+	$self->_debug($self->{err} = "Unrecognized response: $ans");
 	return undef;
 }
 
@@ -729,12 +731,12 @@ sub _get_list {
 	my $ans = $self->_send($req);
 
 	unless (defined $ans) {
-		$self->{err} = "Network error: $!";
+		$self->_debug($self->{err} = "Network error: $!");
 		return undef;
 	};
 
 	if ($ans =~ /^ERR/) {
-		$self->{err} = "Error: $ans";
+		$self->_debug($self->{err} = "Error: $ans");
 		return undef;
 	}
 	elsif ($ans =~ /^BEGIN LIST/) { # command successful
@@ -752,14 +754,14 @@ sub _get_list {
 			}
 		}
 		unless ($line) {
-			$self->{err} = "Network error: $!";
+			$self->_debug($self->{err} = "Network error: $!");
 			return undef;
 		};
 		$self->_debug("$req command sent successfully.");
 		return $retval;
 	}
 	else { # unrecognized response
-		$self->{err} = "Can't send $req. Unrecognized response from upsd: $ans";
+		$self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
 		return undef;
 	}
 }
@@ -776,12 +778,12 @@ sub GetDesc {
     my $req = "GET DESC $self->{name} $var";
     my $ans = $self->_send( $req );
     unless (defined $ans) {
-        $self->{err} = "Network error: $!";
-        return undef;
+      $self->_debug($self->{err} = "Network error: $!");
+      return undef;
     };
 
     if ($ans =~ /^ERR/) {
-      $self->{err} = "Error: $ans";
+      $self->_debug($self->{err} = "Error: $ans");
       return undef;
     }
     elsif ($ans =~ /^DESC/) { # command successful
@@ -791,7 +793,7 @@ sub GetDesc {
       return $ans;
     }
     else { # unrecognized response
-      $self->{err} = "Can't send $req. Unrecognized response from upsd: $ans";
+      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
       return undef;
     }
 }
@@ -808,12 +810,12 @@ sub GetType {
     my $req = "GET TYPE $self->{name} $var";
     my $ans = $self->_send( $req );
     unless (defined $ans) {
-        $self->{err} = "Network error: $!";
-        return undef;
+      $self->_debug($self->{err} = "Network error: $!");
+      return undef;
     };
 
     if ($ans =~ /^ERR/) {
-      $self->{err} = "Error: $ans";
+      $self->_debug($self->{err} = "Error: $ans");
       return undef;
     }
     elsif ($ans =~ /^TYPE/) { # command successful
@@ -822,7 +824,7 @@ sub GetType {
       return $ans;
     }
     else { # unrecognized response
-      $self->{err} = "Can't send $req. Unrecognized response from upsd: $ans";
+      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
       return undef;
     }
 }
@@ -839,12 +841,12 @@ sub GetCmdDesc {
     my $req = "GET CMDDESC $self->{name} $cmd";
     my $ans = $self->_send( $req );
     unless (defined $ans) {
-        $self->{err} = "Network error: $!";
-        return undef;
+      $self->_debug($self->{err} = "Network error: $!");
+      return undef;
     };
 
     if ($ans =~ /^ERR/) {
-      $self->{err} = "Error: $ans";
+      $self->_debug($self->{err} = "Error: $ans");
       return undef;
     }
     elsif ($ans =~ /^DESC/) { # command successful
@@ -854,7 +856,7 @@ sub GetCmdDesc {
       return $ans;
     }
     else { # unrecognized response
-      $self->{err} = "Can't send $req. Unrecognized response from upsd: $ans";
+      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
       return undef;
     }
 }
@@ -910,8 +912,8 @@ sub Master { # check for MASTER level access
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^OK/) { # access granted
@@ -923,8 +925,8 @@ sub Master { # check for MASTER level access
   $req = "MASTER $self->{name}";
   $ans = $self->_send( $req );
   unless (defined $ans) {
-      $self->{err} = "Network error: $!";
-      return undef;
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
   };
 
   if ($ans =~ /^OK/) { # access granted
@@ -932,7 +934,7 @@ sub Master { # check for MASTER level access
     return 1;
   }
   else { # access denied, or unrecognized response
-    $self->{err} = "PRIMARY/MASTER level access denied.  Upsd responded: $ans";
+    $self->_debug($self->{err} = "PRIMARY/MASTER level access denied.  Upsd responded: $ans");
     return undef;
   }
 }
