@@ -68,7 +68,7 @@ if (1) {
 
     print "-" x 80 . "\nTesting 'ListUPS' :\n";
     my $result = $nut->ListUPS();
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', keys %$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'HASH') ? join(', ', keys %$result) : (defined($result) ? $result : "NULL") );
 
     # [dummy]
     # driver = dummy-ups
@@ -77,7 +77,7 @@ if (1) {
     print "-" x 80 . "\nTesting 'ListVar' for 'dummy' (should be registered in ups.conf) :\n";
     # TOTHINK: Extend into a test for ListVar("bogus") - that it should fail?
     $result = $nut->ListVar("dummy");
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', map { "$_ => $result->{$_}" } keys %$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'HASH') ? join(', ', map { "$_ => $result->{$_}" } keys %$result) : (defined($result) ? $result : "NULL") );
 
     print "-" x 80 . "\nTesting 'CheckUPSAvailable' (via ListUPS) :\n";
     my $ups_list = $nut->ListUPS();
@@ -86,11 +86,11 @@ if (1) {
 
     print "-" x 80 . "\nTesting 'ListCmd' :\n";
     $result = $nut->ListCmd();
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', @$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'ARRAY') ? join(', ', @$result) : (defined($result) ? $result : "NULL") );
 
     print "-" x 80 . "\nTesting 'ListRW' :\n";
     $result = $nut->ListRW();
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', keys %$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'HASH') ? join(', ', keys %$result) : (defined($result) ? $result : "NULL") );
 
     print "-" x 80 . "\nTesting 'InstCmd' (Test front panel) :\n";
     eval {
@@ -184,7 +184,7 @@ if (1) {
         $result = "EXCEPTION: $ex\nTEST-CASE FAILED";
         push @failed, 'ListClient-dummy-before';
     }
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', keys %$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'HASH') ? join(', ', keys %$result) : (defined($result) ? $result : "NULL") );
 
     print "-" x 80 . "\nTesting 'ListClient' for missing device (should raise an exception) :\n";
     eval {
@@ -260,7 +260,7 @@ if (1) {
         $result = "EXCEPTION: $ex\nTEST-CASE FAILED";
         push @failed, 'ListClient-all-after';
     }
-    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", defined($result) ? join(', ', map { "$_ => [" . join(', ', keys %{$result->{$_}}) . "]" } keys %$result) : "NULL" );
+    printf( color('bold yellow') . "%s" . color('reset') . "\n\n", (defined($result) && ref($result) eq 'HASH') ? join(', ', map { "$_ => [" . join(', ', keys %{$result->{$_}}) . "]" } keys %$result) : (defined($result) ? $result : "NULL") );
 
     print "-" x 80 . "\nTesting 'UPS::Nut' instance teardown (end of test script)\n";
 
