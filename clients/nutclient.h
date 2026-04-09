@@ -502,7 +502,10 @@ public:
 	 * \{
 	 */
 	/**
-	 * Log the current user (if authenticated) for a device.
+	 * Log the current user (if authenticated) for a device,
+	 * initially as equivalent to upsmon SECONDARY role for it.
+	 * We can further becomePrimary() if we are the system
+	 * which manages the device.
 	 * \param dev Device name.
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
@@ -528,7 +531,6 @@ public:
 #endif
 	virtual void deviceMaster(const std::string& dev) = 0;
 	virtual void devicePrimary(const std::string& dev) = 0;
-	virtual void deviceSecondary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
 
 	/**
@@ -716,7 +718,6 @@ public:
 #endif
 	virtual void deviceMaster(const std::string& dev) override;
 	virtual void devicePrimary(const std::string& dev) override;
-	virtual void deviceSecondary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
 	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
@@ -1022,8 +1023,6 @@ public:
 #endif
 	void master();
 	void becomePrimary();
-	void becomeSecondary();
-
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -1292,7 +1291,6 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
 void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
-void nutclient_device_secondary(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set the FSD flag for the device.
