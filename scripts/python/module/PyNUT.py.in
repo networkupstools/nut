@@ -680,11 +680,16 @@ Returns OK on success or raises an error
     def DeviceLogin( self, ups="") :
         """ Establish a login session with a device (like upsmon does)
 
+This assumes the upsmon SECONDARY role so we can be alerted and initiate a shutdown
+if someone else sends the FSD command to this UPS; we can further becomePrimary()
+if we are the system which manages it.
+
 Returns OK on success or raises an error
+
 USERNAME and PASSWORD must have been specified earlier in the session (once)
 and upsd.conf should permit that user with one of `upsmon` role types.
 
-Note there is no "device LOGOUT" in the protocol, just one for general end
+Note there is no "device LOGOUT" in the protocol, just one for a general end
 of connection.
         """
 
@@ -707,29 +712,42 @@ of connection.
         else :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-    def FSD( self, ups="") :
-        """ Send FSD command
+    def becomePrimary( self, ups="") :
+        """ Assume the upsmon PRIMARY role so we can send FSD command
 
 Returns OK on success or raises an error
 
 NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
-
         if self.__debug :
             print( "[DEBUG] PRIMARY called..." )
 
         self.__srv_handler.send( ("PRIMARY %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
-        if ( result != b"OK PRIMARY-GRANTED\n" ) :
-            if self.__debug :
-                print( "[DEBUG] Retrying: MASTER called..." )
-            self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
-            result = self.__read_until( b"\n" )
-            if ( result != b"OK MASTER-GRANTED\n" ) :
-                if self.__debug :
-                    print( "[DEBUG] Primary level functions are not available" )
-                raise PyNUTError( "ERR ACCESS-DENIED" )
+        if ( result == b"OK PRIMARY-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Retrying: MASTER called..." )
+        self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if ( result == b"OK MASTER-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Primary level functions are not available" )
+        raise PyNUTError( "ERR ACCESS-DENIED" )
+
+    def FSD( self, ups="", becomePrimaryFirst = True) :
+        """ Send FSD command
+
+Returns OK on success or raises an error
+        """
+
+        if becomePrimaryFirst:
+            # raises an error if not "OK", so not checking return value
+            self.becomePrimary(ups)
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
