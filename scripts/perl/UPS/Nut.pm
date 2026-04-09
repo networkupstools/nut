@@ -219,7 +219,11 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
   my $errmsg; # error message, sent to _debug and $self->{err}
   my $ans; # scalar to hold responses from upsd
 
-  $self->Authenticate($user, $pass) or return;
+  if (!($self->Authenticate($user, $pass))) {
+      $self->_debug("Authenticate before LOGIN failed.");
+      return undef;
+  }
+
   $ans = $self->_send( "LOGIN $ups" );
   if (defined $ans && $ans =~ /^OK/) { # Login successful.
     $self->_debug("LOGIN successful.");
@@ -254,6 +258,9 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
       $ans = $self->_send("PASSWORD $pass");
       return 1 if (defined $ans && $ans =~ /^OK/);
     }
+  } else {
+    $self->_debug($self->{err} = "Authentication failed: username and/or password not provided, internal equivalent of USERNAME-REQUIRED");
+    return undef;
   }
   if (defined $ans) {
       $errmsg = "Authentication failed. Last message from upsd: $ans";
