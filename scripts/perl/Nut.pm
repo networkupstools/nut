@@ -307,6 +307,27 @@ sub _initialize {
 
   $self->{select} = IO::Select->new( $srvsock );
 
+  # Always try to elevate, do not bother if this fails unless required by args
+  my $startedTLS = $self->StartTLS(%arg);
+  if (defined $startedTLS && $startedTLS) {
+    # Make sure handshake succeeded or abort early
+    # (there is currently no way for the server to
+    # report its fault to the client when connection
+    # is half-way secure):
+    if (!$self->isValidProtocolVersion()) {
+      if ($arg{FORCESSL}) {
+        $self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required";
+        return undef;
+      }
+      # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
+    }
+  } else {
+    if ($arg{FORCESSL}) {
+      $self->{err} = "SSL setup failed but it is required";
+      return undef;
+    }
+  }
+
   if ($user and $pass) { # attempt login to upsd if that option is specified
     if ($login) { # attempt login to upsd if that option is specified
       $self->Login($user, $pass) or carp $self->{err};
