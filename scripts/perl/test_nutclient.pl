@@ -210,6 +210,9 @@ if (1) {
         if (!defined($NUT_USER)) {
             die "Secure operation should have failed due to lack of credentials, but did not: $nut->{err}";
         }
+        if (!defined($result)) {
+            die "Failed to LOGIN: $nut->{err}"
+        }
         $loggedIntoDummy = 1;
     };
     if ($@) {
