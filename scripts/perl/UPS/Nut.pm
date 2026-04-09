@@ -400,6 +400,8 @@ sub _send
     my $socket = $self->{srvsock};
     my $select = $self->{select};
 
+    $self->{err} = "";
+
     @handles = IO::Select->select( undef, $select, $select, $self->{timeout} );
     return undef if ( !scalar $handles[1] );
 
