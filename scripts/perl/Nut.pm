@@ -840,7 +840,7 @@ sub Error { # what was the last thing that went bang?
   else { return "No error explanation available."; }
 }
 
-sub Primary { goto &Master; }
+sub becomePrimary { goto &Master; }
 
 sub Master { # check for MASTER level access
 # Author: Kit Peters
@@ -879,6 +879,47 @@ sub Master { # check for MASTER level access
   }
   else { # access denied, or unrecognized reponse
     $self->{err} = "PRIMARY/MASTER level access denied.  Upsd responded: $ans";
+    return undef;
+  }
+}
+
+sub becomeSecondary { # check for SLAVE level access
+  # Author: Kit Peters
+  # ### changelog: uses the new _send command
+  # ### changelog: 8/3/2002 - KP - Master() returns undef rather than 0 on
+  # ### failure.  this makes it consistent with other methods
+  #
+  # NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
+  # (and backwards-compatible alias handling)
+  my $self = shift;
+
+  my $req = "SECONDARY $self->{name}"; # build request
+  my $ans = $self->_send( $req );
+
+  unless (defined $ans) {
+    $self->{err} = "Network error: $!";
+    return undef;
+  };
+
+  if ($ans =~ /^OK/) { # access granted
+    $self->_debug("SECONDARY level access granted.  Upsd reports: $ans");
+    return 1;
+  }
+
+  # Retry with SLAVE if SECONDARY failed
+  $req = "SLAVE $self->{name}";
+  $ans = $self->_send( $req );
+  unless (defined $ans) {
+    $self->{err} = "Network error: $!";
+    return undef;
+  };
+
+  if ($ans =~ /^OK/) { # access granted
+    $self->_debug("SLAVE level access granted.  Upsd reports: $ans");
+    return 1;
+  }
+  else { # access denied, or unrecognized response
+    $self->{err} = "SECONDARY/SLAVE level access denied.  Upsd responded: $ans";
     return undef;
   }
 }
