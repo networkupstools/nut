@@ -15,15 +15,15 @@ if (1) {
     my $NUT_PORT = $ENV{'NUT_PORT'} || '3493';
     my $NUT_USER = $ENV{'NUT_USER'} || undef;
     my $NUT_PASS = $ENV{'NUT_PASS'} || undef;
-    my $NUT_SSL  = ($ENV{'NUT_SSL'} eq "true") ? 1 : 0;
-    my $NUT_FORCESSL = ($ENV{'NUT_FORCESSL'} eq "true" || $ENV{'NUT_FORCESSL'} eq "1") ? 1 : 0;
-    my $NUT_CERTVERIFY = ($ENV{'NUT_CERTVERIFY'} eq "true" || $ENV{'NUT_CERTVERIFY'} eq "1") ? 1 : 0;
+    my $NUT_SSL  = (($ENV{'NUT_SSL'} || "false") eq "true") ? 1 : 0;
+    my $NUT_FORCESSL = (($ENV{'NUT_FORCESSL'} || "false") eq "true" || ($ENV{'NUT_FORCESSL'} || "false") eq "1") ? 1 : 0;
+    my $NUT_CERTVERIFY = (($ENV{'NUT_CERTVERIFY'} || "false") eq "true" || ($ENV{'NUT_CERTVERIFY'} || "false") eq "1") ? 1 : 0;
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
     my $NUT_CAPATH = $ENV{'NUT_CAPATH'} || undef;
     # Note: Python's cert_file, key_file, key_pass are not directly supported by current Nut.pm STARTTLS as independent args,
     # but passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
 
-    my $NUT_DEBUG = ($ENV{'DEBUG'} eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
+    my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
