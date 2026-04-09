@@ -1720,6 +1720,31 @@ void TcpClient::logout()
 	_socket->disconnect();
 }
 
+bool TcpClient::isValidProtocolVersion(const std::string& version_re)
+{
+	std::string version;
+	try {
+		version = sendQuery("PROTVER");
+	} catch (NutException &ignored) {
+		NUT_UNUSED_VARIABLE(ignored);
+		/* Deprecated and hidden, but may be what ancient NUT servers say
+		 * May throw if the error is due to (non-)connection */
+		version = sendQuery("NETVER");
+	}
+
+	if (version_re.empty()) {
+		// Basic check for 1.0 through 1.3, as of NUT v2.8.2
+		if (version == "1.0" || version == "1.1" || version == "1.2" || version == "1.3") {
+			return true;
+		}
+	} else {
+		// TODO: Regex
+		return (version_re == version);
+	}
+
+	return false;
+}
+
 Device TcpClient::getDevice(const std::string& name)
 {
 	try

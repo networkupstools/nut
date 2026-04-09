@@ -361,6 +361,11 @@ public:
 	 */
 	virtual void logout() = 0;
 
+	/** Query the (already established) connection to UPSD for its version
+	 *  and check it against given expectations.
+	 */
+	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) = 0;
+
 	/**
 	 * Device manipulations.
 	 * \see nut::Device
@@ -694,6 +699,8 @@ public:
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
 	virtual void logout() override;
+
+	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;
 
 	virtual Device getDevice(const std::string& name) override;
 	virtual std::set<std::string> getDeviceNames() override;

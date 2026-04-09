@@ -2163,6 +2163,54 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	return 0;
 }
 
+int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re)
+{
+	char	version[UPSCLI_NETBUF_LEN];
+
+	if (!ups) {
+		return -1;
+	}
+
+	net_write(ups, "PROTVER\n", 8, 0);
+	memset(version, 0, sizeof(version));
+	if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+		if (!strncmp(version, "ERR", 3)) {
+			version[0] = '\0';
+		}
+	}
+
+	if (!version[0]) {
+		/* Deprecated and hidden, but may be what ancient NUT servers say
+		 * May throw if the error is due to (non-)connection */
+		net_write(ups, "NETVER\n", 8, 0);
+		memset(version, 0, sizeof(version));
+		if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+			if (!strncmp(version, "ERR", 3)) {
+				version[0] = '\0';
+			}
+		}
+	}
+
+	if (!version[0]) {
+		upsdebugx(3, "%s: PROTVER and NETVER queries returned an error, assuming disconnection or non-compliant NUT server", __func__);
+		return -1;
+	}
+
+	upsdebugx(3, "%s: PROTVER or NETVER returned '%s', matching against '%s'",
+		__func__, version, version_re);
+
+	if (!version_re) {
+		/* Basic check for 1.0 through 1.3, as of NUT v2.8.2 */
+		return (
+			!strcmp(version, "1.0") || !strcmp(version, "1.1") ||
+			!strcmp(version, "1.2") || !strcmp(version, "1.3")
+			);
+	}
+
+	// TODO: Regex
+	return (!strcmp(version_re, version));
+}
+
 int upscli_disconnect(UPSCONN_t *ups)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];

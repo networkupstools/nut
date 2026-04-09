@@ -129,6 +129,34 @@ sub EnableTrackingModeOnce {
   return undef;
 }
 
+sub isValidProtocolVersion {
+  # Sends a PROTVER/NETVER query using the active connection and
+  # returns True if the returned version string matches a valid
+  # NUT protocol version regex (defaults to an "X(.Y)" number aka
+  # "^\\d+(?:\\.\\d+)?$" if version_re is None).
+  my ($self, $version_re) = @_;
+
+  my $ans = $self->_send("PROTVER");
+  if (!defined $ans) {
+    # Deprecated and hidden, but may be what ancient NUT servers say
+    # May throw if the error is due to (non-)connection?
+    $ans = $self->_send("NETVER");
+  }
+
+  if (!defined $ans) {
+    return undef;
+  }
+  chomp $ans;
+
+  if (!defined $version_re) {
+    # Valid versions as of NUT 2.8.2: 1.0, 1.1, 1.2, 1.3
+    # Is it an X(.Y) number?
+    $version_re = qr/^\d+(\.\d+)?$/;
+  }
+
+  return ($ans =~ $version_re);
+}
+
 sub StartTLS {
   my $self = shift;
   my %arg = @_;

@@ -51,6 +51,8 @@ public:
 	}
 	virtual void logout() override {}
 
+	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;
+
 	virtual Device getDevice(const std::string& name) override;
 	virtual std::set<std::string> getDeviceNames() override;
 	virtual std::string getDeviceDescription(const std::string& name) override;

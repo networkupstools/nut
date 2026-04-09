@@ -187,6 +187,12 @@ TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std
 	throw NutException("Not implemented");
 }
 
+bool MemClientStub::isValidProtocolVersion(const std::string& version_re)
+{
+	NUT_UNUSED_VARIABLE(version_re);
+	throw NutException("Not implemented");
+}
+
 std::map<std::string, std::set<std::string>> MemClientStub::listDeviceClients(void)
 {
 	volatile bool not_implemented = true;
