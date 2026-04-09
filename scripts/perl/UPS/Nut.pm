@@ -206,11 +206,15 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
   my $self = shift; # myself
   my $user = shift; # username
   my $pass = shift; # password
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
+
   my $errmsg; # error message, sent to _debug and $self->{err}
   my $ans; # scalar to hold responses from upsd
 
   $self->Authenticate($user, $pass) or return;
-  $ans = $self->_send( "LOGIN $self->{name}" );
+  $ans = $self->_send( "LOGIN $ups" );
   if (defined $ans && $ans =~ /^OK/) { # Login successful.
     $self->_debug("LOGIN successful.");
     return 1;
@@ -413,7 +417,11 @@ sub GetVar { # request a variable from the UPS
 #
 # Modified by Gabor Kiss according to protocol version 1.5+
   my $var = shift;
-  my $req = "GET VAR $self->{name} $var"; # build request
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
+
+  my $req = "GET VAR $ups $var"; # build request
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -454,14 +462,18 @@ sub Set {
   # Optional TRACKING wait support:
   my $wait_interval_sec = shift || undef;
   my $wait_max_count = shift || undef;
-  my $do_wait = 0;
 
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
+
+  my $do_wait = 0;
   if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_interval_sec > 0) {
     $self->EnableTrackingModeOnce;
     $do_wait = 1;
   }
 
-  my $req = "SET VAR $self->{name} $var $value"; # build request
+  my $req = "SET VAR $ups $var $value"; # build request
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -504,8 +516,9 @@ sub FSD { # set forced shutdown flag
 # ### changelog: uses the new _send command
 #
   my $self = shift;
+  my $ups = shift || $self->{name};
 
-  my $req = "FSD $self->{name}"; # build request
+  my $req = "FSD $ups"; # build request
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -536,14 +549,18 @@ sub InstCmd { # send instant command to ups
   # Optional TRACKING wait support:
   my $wait_interval_sec = shift || undef;
   my $wait_max_count = shift || undef;
-  my $do_wait = 0;
 
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
+
+  my $do_wait = 0;
   if (defined $wait_interval_sec && defined $wait_max_count && $wait_max_count > 0 && $wait_interval_sec > 0) {
     $self->EnableTrackingModeOnce;
     $do_wait = 1;
   }
 
-  my $req = "INSTCMD $self->{name} $cmd";
+  my $req = "INSTCMD $ups $cmd";
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -648,12 +665,14 @@ sub WaitTrackingResult {
 sub ListClient {
   my $self = shift;
   my $ups = shift || $self->{name};
+
   return $self->_get_list("LIST CLIENT $ups", 2, 2);
 }
 
 sub GetUPSDesc {
   my $self = shift;
   my $ups = shift || $self->{name};
+
   my $ans = $self->_send("GET UPSDESC $ups");
   unless (defined $ans) {
     $self->_debug($self->{err} = "Network error: $!");
@@ -672,31 +691,45 @@ sub GetUPSDesc {
 
 sub ListVar {
 	my $self = shift;
-	my $vars = $self->_get_list("LIST VAR $self->{name}", 3, 2);
+	my $ups = shift || $self->{name};
+
+	my $vars = $self->_get_list("LIST VAR $ups", 3, 2);
 	return $vars unless @_;			# return all variables
 	return {map { $_ => $vars->{$_} } @_};	# return selected ones
 }
 
 sub ListRW {
 	my $self = shift;
-	return $self->_get_list("LIST RW $self->{name}", 3, 2);
+	my $ups = shift || $self->{name};
+
+	return $self->_get_list("LIST RW $ups", 3, 2);
 }
 
 sub ListCmd {
 	my $self = shift;
-	return $self->_get_list("LIST CMD $self->{name}", 2);
+	my $ups = shift || $self->{name};
+
+	return $self->_get_list("LIST CMD $ups", 2);
 }
 
 sub ListEnum {
 	my $self = shift;
 	my $var = shift;
-	return $self->_get_list("LIST ENUM $self->{name} $var", 3);
+	# NOTE: This clumsily goes after $var, to avoid breaking
+	#  API compatibility for older release consumers:
+	my $ups = shift || $self->{name};
+
+	return $self->_get_list("LIST ENUM $ups $var", 3);
 }
 
 sub ListRange {
 	my $self = shift;
 	my $var = shift;
-	my $req = "LIST RANGE $self->{name} $var";
+	# NOTE: This clumsily goes after other args above, to avoid
+	#  breaking API compatibility for older release consumers:
+	my $ups = shift || $self->{name};
+
+	my $req = "LIST RANGE $ups $var";
 	my $ans = $self->_send($req);
 
 	unless (defined $ans) {
@@ -774,9 +807,13 @@ sub GetDesc {
 # Modified by Gabor Kiss according to protocol version 1.5+
     my $self = shift;
     my $var = shift;
+	# NOTE: This clumsily goes after other args above, to avoid
+	#  breaking API compatibility for older release consumers:
+	my $ups = shift || $self->{name};
 
-    my $req = "GET DESC $self->{name} $var";
+    my $req = "GET DESC $ups $var";
     my $ans = $self->_send( $req );
+
     unless (defined $ans) {
       $self->_debug($self->{err} = "Network error: $!");
       return undef;
@@ -806,9 +843,13 @@ sub GetType {
 # Modified by Gabor Kiss according to protocol version 1.5+
     my $self = shift;
     my $var = shift;
+	# NOTE: This clumsily goes after other args above, to avoid
+	#  breaking API compatibility for older release consumers:
+	my $ups = shift || $self->{name};
 
-    my $req = "GET TYPE $self->{name} $var";
+    my $req = "GET TYPE $ups $var";
     my $ans = $self->_send( $req );
+
     unless (defined $ans) {
       $self->_debug($self->{err} = "Network error: $!");
       return undef;
@@ -837,9 +878,13 @@ sub GetCmdDesc {
 # Modified by Gabor Kiss according to protocol version 1.5+
     my $self = shift;
     my $cmd = shift;
+	# NOTE: This clumsily goes after other args above, to avoid
+	#  breaking API compatibility for older release consumers:
+	my $ups = shift || $self->{name};
 
-    my $req = "GET CMDDESC $self->{name} $cmd";
+    my $req = "GET CMDDESC $ups $cmd";
     my $ans = $self->_send( $req );
+
     unless (defined $ans) {
       $self->_debug($self->{err} = "Network error: $!");
       return undef;
@@ -907,8 +952,9 @@ sub Master { # check for MASTER level access
 # NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 # (and backwards-compatible alias handling)
   my $self = shift;
+  my $ups = shift || $self->{name};
 
-  my $req = "PRIMARY $self->{name}"; # build request
+  my $req = "PRIMARY $ups"; # build request
   my $ans = $self->_send( $req );
 
   unless (defined $ans) {
@@ -922,7 +968,7 @@ sub Master { # check for MASTER level access
   }
 
   # Retry with MASTER if PRIMARY failed
-  $req = "MASTER $self->{name}";
+  $req = "MASTER $ups";
   $ans = $self->_send( $req );
   unless (defined $ans) {
     $self->_debug($self->{err} = "Network error: $!");
