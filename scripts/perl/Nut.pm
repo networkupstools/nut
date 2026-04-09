@@ -639,8 +639,8 @@ sub AUTOLOAD {
 #
 # Example:
 #  tie %ups, 'UPS::Nut',
-#      NAME => "myups",
-#      HOST => "somemachine.somewhere.com",
+#      NAME => "my-ups",
+#      HOST => "some-machine.somewhere.com",
 #      ... # same options as new();
 #  ;
 #
@@ -703,8 +703,8 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
 
  use UPS::Nut;
 
- $ups = new UPS::Nut( NAME => "myups",
-                      HOST => "somemachine.somewhere.com",
+ $ups = new UPS::Nut( NAME => "my-ups",
+                      HOST => "some-machine.somewhere.com",
                       PORT => "3493",
                       USERNAME => "upsuser",
                       PASSWORD => "upspasswd",
@@ -717,8 +717,8 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
  }
 
  tie %other_ups, 'UPS::Nut',
-     NAME => "myups",
-     HOST => "somemachine.somewhere.com",
+     NAME => "my-ups",
+     HOST => "some-machine.somewhere.com",
      ... # same options as new();
  ;
 
@@ -730,7 +730,7 @@ This is an object-oriented (whoo!) interface between Perl and upsd from
 the Network UPS Tools package version 1.5 and above
 (https://www.networkupstools.org/).
 Note that it only talks to upsd for you in a Perl-ish way.
-It doesn't monitor the UPS continously.
+It does not monitor the UPS continuously.
 
 =head1 CONSTRUCTOR
 
@@ -757,7 +757,7 @@ Shown with defaults: new UPS::Nut( NAME => "default",
 This version of UPS::Nut is not compatible with version 0.04. It is totally
 rewritten in order to talk the new protocol of NUT 1.5+. You should not use
 this module as a drop-in replacement of previous version from 2002.
-Allmost all method has changed slightly.
+Almost all method has changed slightly.
 
 =head1 Methods
 
@@ -789,14 +789,14 @@ battery percentage for some reason. Same as GetVar('battery.charge').
 
 returns percentage of the load on the UPS. Returns undef if load 
 percentage is unavailable. $context is a selector of 3 phase systems.
-Possibled values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
+Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
 
 =item LineVoltage($context)
 
 returns input line (e.g. the outlet) voltage. Returns undef if line 
 voltage is unavailable. $context is a selector of 3 phase systems.
-Possibled values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
+Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
 
 =item Status()
@@ -852,7 +852,7 @@ This is an implementation of "LIST VAR" command.
 Returns a hash reference to selected variable names and values supported
 by the UPS. If no variables given it returns all.
 Returns undef if "LIST VAR" failed.
-(Note: This method significally differs from the old ListVars()
+(Note: This method significantly differs from the old ListVars()
 and ListRequest().)
 
 =item ListRW()
