@@ -877,7 +877,7 @@ sub Master { # check for MASTER level access
     $self->_debug("MASTER level access granted.  Upsd reports: $ans");
     return 1;
   }
-  else { # access denied, or unrecognized reponse
+  else { # access denied, or unrecognized response
     $self->{err} = "PRIMARY/MASTER level access denied.  Upsd responded: $ans";
     return undef;
   }
