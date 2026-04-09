@@ -11,6 +11,7 @@
 
 package UPS::Nut;
 use strict;
+use warnings FATAL => 'all';
 use Carp;
 use FileHandle;
 use IO::Socket;
