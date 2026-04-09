@@ -92,8 +92,13 @@ sub SetTrackingMode {
   my $ans; # scalar to hold responses from upsd
 
   # 'ON'/'OFF'/undef
-  if (!(defined $value) || ($value ne 'ON' && $value ne 'OFF')) {
-    $self->_debug($self->{err} = "Invalid setting for TRACKING mode was requested");
+  if (!(defined $value)) {
+    $self->_debug($self->{err} = "Invalid setting for TRACKING mode was requested: undef");
+    return undef;
+  }
+
+  if ($value ne 'ON' && $value ne 'OFF') {
+    $self->_debug($self->{err} = "Invalid setting for TRACKING mode was requested: '$value'");
     return undef;
   }
 
@@ -120,7 +125,8 @@ sub EnableTrackingModeOnce {
     return 1;
   }
 
-  if ($self->SetTrackingMode('ON') eq 'ON') {
+  my $actualMode = $self->SetTrackingMode('ON');
+  if (defined $actualMode && $actualMode eq 'ON') {
     return 1;
   }
 
