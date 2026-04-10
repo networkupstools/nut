@@ -183,7 +183,6 @@ sub StartTLS {
     }
     $self->_debug("STARTTLS args: SSL_verify_mode=>"
         . ($arg{CERTVERIFY} ? "SSL_VERIFY_PEER" : "SSL_VERIFY_NONE")
-        . " SSL_ca_path=>'$arg{CAPATH}' "
         . " Other args: " . $strarg
         );
 
@@ -191,7 +190,6 @@ sub StartTLS {
     IO::Socket::SSL->start_SSL(
       $self->{srvsock},
       SSL_verify_mode => $arg{CERTVERIFY} ? IO::Socket::SSL::SSL_VERIFY_PEER() : IO::Socket::SSL::SSL_VERIFY_NONE(),
-      SSL_ca_path => $arg{CAPATH},
       %arg
     ) or do {
       $self->_debug($self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr());

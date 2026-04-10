@@ -47,13 +47,13 @@ if (1) {
             # TRACKING => 'ON', # undef by default, enabled in certain tests below
             # STARTTLS related (passed via %arg to StartTLS in Nut.pm)
             CERTVERIFY => $NUT_CERTVERIFY,
-            CAPATH => $NUT_CAPATH, # Nut.pm uses CAPATH for SSL_ca_file
             FORCESSL => $NUT_FORCESSL,
             # In case PyNUT's cert_file, key_file are needed:
+            SSL_ca_file => $NUT_CAFILE,
+            SSL_ca_path => $NUT_CAPATH,
             SSL_cert_file => $ENV{'NUT_CERTFILE'},
             SSL_key_file => $ENV{'NUT_KEYFILE'},
-            SSL_key_pass => $ENV{'NUT_KEYPASS'},
-            SSL_ca_file => $NUT_CAFILE,
+            SSL_key_pass => $ENV{'NUT_KEYPASS'}
         );
     };
     if ($@ || !defined($nut)) {
