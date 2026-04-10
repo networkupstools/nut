@@ -343,26 +343,30 @@ sub _initialize {
 
   $self->{select} = IO::Select->new( $srvsock );
 
-  # Always try to elevate, do not bother if this fails unless required by args
-  my $startedTLS = $self->StartTLS(%arg);
-  if (defined $startedTLS && $startedTLS) {
-    # Make sure handshake succeeded or abort early
-    # (there is currently no way for the server to
-    # report its fault to the client when connection
-    # is half-way secure):
-    if (!$self->isValidProtocolVersion()) {
+  if ($arg{USESSL} || $arg{FORCESSL}) {
+    # Always try to elevate, do not bother if this fails unless required by args
+    my $startedTLS = $self->StartTLS(%arg);
+    if (defined $startedTLS && $startedTLS) {
+      # Make sure handshake succeeded or abort early
+      # (there is currently no way for the server to
+      # report its fault to the client when connection
+      # is half-way secure):
+      if (!$self->isValidProtocolVersion()) {
+        if ($arg{FORCESSL}) {
+          $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
+          return undef;
+        }
+        $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, but SSL is not required");
+        # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
+      }
+    } else {
       if ($arg{FORCESSL}) {
-        $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
+        $self->_debug($self->{err} = "SSL setup failed but it is required");
         return undef;
       }
-      $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, but SSL is not required");
-      # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
     }
   } else {
-    if ($arg{FORCESSL}) {
-      $self->_debug($self->{err} = "SSL setup failed but it is required");
-      return undef;
-    }
+    $self->_debug("SSL setup neither requested nor required");
   }
 
   $self->{authenticated} = 0;

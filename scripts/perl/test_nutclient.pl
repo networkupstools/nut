@@ -46,6 +46,7 @@ if (1) {
             DEBUG => $NUT_DEBUG,
             # TRACKING => 'ON', # undef by default, enabled in certain tests below
             # STARTTLS related (passed via %arg to StartTLS in Nut.pm)
+            USESSL => $NUT_SSL,
             CERTVERIFY => $NUT_CERTVERIFY,
             FORCESSL => $NUT_FORCESSL,
             # In case PyNUT's cert_file, key_file are needed:
