@@ -219,7 +219,7 @@ endif WITH_SSL
 # for the run-time dynamic linker resolution? For now the shared-library
 # builds are "exotic", but it makes sense to deprecate this export in a
 # future release.
-libupsclient_la_LDFLAGS = -version-info 8:0:1
+libupsclient_la_LDFLAGS = -version-info 9:0:2
 libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
 #|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'
 if HAVE_WINDOWS
