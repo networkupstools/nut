@@ -45,6 +45,20 @@ https://github.com/networkupstools/nut/milestone/13
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
 
+ - NUT client libraries:
+    * Complete support for actions documented in `docs/net-protocol.txt`
+      was implemented in C++, Python and PERL bindings in-tree, and for Java
+      in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
+      other things, all these libraries now support `STARTTLS` and `TRACKING`
+      to wait for server confirmation of a `SET VAR` or `INSTCMD` request,
+      and this is tested by the NIT script. [issues #656, #1348, #1349, #1350,
+      #1613, #1711, PR #3402]
+    * Enhanced client side of `STARTTLS` dialog to follow up by a simple
+      query (for protocol version) to verify that handshake succeeded.
+      This change impacted also the classic C `libupsclient` library.
+      [issue #3387, PR #3402]
+
+
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------
 
