@@ -170,7 +170,7 @@ sub StartTLS {
 
   eval { require IO::Socket::SSL; };
   if ($@) {
-    $self->_debug($self->{err} = "IO::Socket::SSL not available");
+    $self->_debug($self->{err} = "IO::Socket::SSL not available: FEATURE-NOT-SUPPORTED on client side");
     return undef;
   }
 
