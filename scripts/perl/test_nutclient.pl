@@ -15,7 +15,10 @@ if (1) {
     my $NUT_PORT = $ENV{'NUT_PORT'} || '3493';
     my $NUT_USER = $ENV{'NUT_USER'} || undef;
     my $NUT_PASS = $ENV{'NUT_PASS'} || undef;
-    my $NUT_SSL  = (($ENV{'NUT_SSL'} || "false") eq "true") ? 1 : 0;
+    my $NUT_SSL  = $ENV{'NUT_SSL'} || undef;
+    if (defined $NUT_SSL) {
+        $NUT_SSL = ($NUT_SSL eq "true" ? 1 : ($NUT_SSL eq "false" ? 0 : undef));
+    }
     my $NUT_FORCESSL = (($ENV{'NUT_FORCESSL'} || "false") eq "true" || ($ENV{'NUT_FORCESSL'} || "false") eq "1") ? 1 : 0;
     my $NUT_CERTVERIFY = (($ENV{'NUT_CERTVERIFY'} || "false") eq "true" || ($ENV{'NUT_CERTVERIFY'} || "false") eq "1") ? 1 : 0;
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
