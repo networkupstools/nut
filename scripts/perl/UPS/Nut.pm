@@ -353,20 +353,20 @@ sub _initialize {
       # is half-way secure):
       if (!$self->isValidProtocolVersion()) {
         if ($arg{FORCESSL}) {
-          $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
+          $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required: $self->{err}");
           return undef;
         }
-        $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, but SSL is not required");
+        $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, but SSL is not required: $self->{err}");
         # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
       }
     } else {
       if ($arg{FORCESSL}) {
-        $self->_debug($self->{err} = "SSL setup failed but it is required");
+        $self->_debug($self->{err} = "SSL setup failed but it is required: $self->{err}");
         return undef;
       }
     }
   } else {
-    $self->_debug("SSL setup neither requested nor required");
+    $self->_debug("SSL setup neither requested nor required, skipped StartTLS altogether");
   }
 
   $self->{authenticated} = 0;
