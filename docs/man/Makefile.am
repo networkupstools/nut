@@ -660,7 +660,7 @@ $(LIBNUTCLIENT_TCP_DEPS_FIRST): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
 
 $(LIBNUTCLIENT_TCP_DEPS_SUB): nutclient_tcp_create_client.$(MAN_SECTION_API)
-	@if [ x"`cat '$@'`" != x ] 2>/dev/null ; then \
+	@if ( [ x"`cat '$@'`" != x ] ) 2>/dev/null ; then \
 		touch '$@' ; \
 	 else \
 		cat nutclient_tcp_create_client.$(MAN_SECTION_API) > '$@' ; \
