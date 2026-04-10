@@ -8,6 +8,7 @@
 # ### changelog: Removed timeleft() function.
 # ### changelog: 1.60: JK 2026-04-08: Added basic STARTTLS, as well as TRACKING support, LIST CLIENT, LIST RANGE, GET UPSDESC and PRIMARY/MASTER aliasing.
 # ### changelog: 1.61: JK 2026-04-08: Make TrackingID a class, similar to C++.
+# ### changelog: 1.62: JK 2026-04-10: Added a testing script nearby; revised API and NUT protocol support, notably TRACKING and STARTTLS.
 
 package UPS::Nut;
 use strict;
@@ -180,7 +181,7 @@ sub StartTLS {
     IO::Socket::SSL->start_SSL(
       $self->{srvsock},
       SSL_verify_mode => $arg{CERTVERIFY} ? IO::Socket::SSL::SSL_VERIFY_PEER() : IO::Socket::SSL::SSL_VERIFY_NONE(),
-      SSL_ca_file => $arg{CAPATH},
+      SSL_ca_path => $arg{CAPATH},
       %arg
     ) or do {
       $self->_debug($self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr());
