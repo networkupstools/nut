@@ -27,13 +27,13 @@ use Dumpvalue; my $dumper = Dumpvalue->new;
 my $_eol = "\n";
 
 BEGIN {
-    use Exporter ();
-    use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    $VERSION     = 1.62;
-    @ISA         = qw(Exporter IO::Socket::INET);
-    @EXPORT      = qw();
-    @EXPORT_OK   = qw();
-    %EXPORT_TAGS = ();
+  use Exporter ();
+  use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+  $VERSION     = 1.62;
+  @ISA         = qw(Exporter IO::Socket::INET);
+  @EXPORT      = qw();
+  @EXPORT_OK   = qw();
+  %EXPORT_TAGS = ();
 }
 
 sub new {
@@ -54,31 +54,31 @@ sub new {
 # otherwise.
 
 sub BattPercent { # get battery percentage
-	return shift->GetVar('battery.charge');
+  return shift->GetVar('battery.charge');
 }
 
 sub LoadPercent { # get load percentage
-	my $self = shift;
-	my $context = shift;
-	$context = "L$context" if $context =~ /^[123]$/;
-	$context = ".$context" if $context;
-	return $self->GetVar("output$context.power.percent");
+  my $self = shift;
+  my $context = shift;
+  $context = "L$context" if $context =~ /^[123]$/;
+  $context = ".$context" if $context;
+  return $self->GetVar("output$context.power.percent");
 }
 
 sub LineVoltage { # get line voltage
-	my $self = shift;
-	my $context = shift;
-	$context = "L$context-N" if $context =~ /^[123]$/;
-	$context = ".$context" if $context;
-	return $self->GetVar("input$context.voltage");
+  my $self = shift;
+  my $context = shift;
+  $context = "L$context-N" if $context =~ /^[123]$/;
+  $context = ".$context" if $context;
+  return $self->GetVar("input$context.voltage");
 }
 
 sub Status { # get status of UPS
-	return shift->GetVar('ups.status');
+  return shift->GetVar('ups.status');
 }
 
 sub Temperature { # get the internal temperature of UPS
-	return shift->GetVar('battery.temperature');
+  return shift->GetVar('battery.temperature');
 }
 
 # control functions: they control our relationship to upsd, and send 
@@ -405,46 +405,46 @@ sub _initialize {
 sub _send
 {
 # Contributor: Wayne Wylupski
-    my $self = shift;
-    my $cmd = shift;
-    my @handles;
-    my $result;		# undef by default
+  my $self = shift;
+  my $cmd = shift;
+  my @handles;
+  my $result;		# undef by default
 
-    my $socket = $self->{srvsock};
-    my $select = $self->{select};
+  my $socket = $self->{srvsock};
+  my $select = $self->{select};
 
-    $self->{err} = "";
+  $self->{err} = "";
 
-    @handles = IO::Select->select( undef, $select, $select, $self->{timeout} );
-    return undef if ( !scalar $handles[1] );
+  @handles = IO::Select->select( undef, $select, $select, $self->{timeout} );
+  return undef if ( !scalar $handles[1] );
 
-    $socket->print( $cmd . $_eol );
+  $socket->print( $cmd . $_eol );
 
-    @handles = IO::Select->select( $select, undef, $select, $self->{timeout} );
-    return undef if ( !scalar  $handles[0]);
+  @handles = IO::Select->select( $select, undef, $select, $self->{timeout} );
+  return undef if ( !scalar  $handles[0]);
 
-    $result = $socket->getline;
-    return undef if ( !defined ( $result ) );
-    chomp $result;
+  $result = $socket->getline;
+  return undef if ( !defined ( $result ) );
+  chomp $result;
 
-    return $result;
+  return $result;
 }
 
 sub _getline
 {
 # Contributor: Wayne Wylupski
-    my $self = shift;
-    my $result;		# undef by default
+  my $self = shift;
+  my $result;		# undef by default
 
-    my $socket = $self->{srvsock};
-    my $select = $self->{select};
+  my $socket = $self->{srvsock};
+  my $select = $self->{select};
 
-    # Different versions of IO::Socket has different error detection routines.
-    return undef if ( $IO::Socket::{has_error} && $select->has_error(0) );
-    return undef if ( $IO::Socket::{has_exception} && $select->has_exception(0) );
+  # Different versions of IO::Socket has different error detection routines.
+  return undef if ( $IO::Socket::{has_error} && $select->has_error(0) );
+  return undef if ( $IO::Socket::{has_exception} && $select->has_exception(0) );
 
-    chomp ( $result = $socket->getline );
-    return $result;
+  chomp ( $result = $socket->getline );
+  return $result;
 }
 
 # Compatibility layer
@@ -641,8 +641,8 @@ sub InstCmd { # send instant command to ups
 }
 
 sub ListUPS {
-	my $self = shift;
-	return $self->_get_list("LIST UPS", 2, 1);
+  my $self = shift;
+  return $self->_get_list("LIST UPS", 2, 1);
 }
 
 sub GetTrackingResult {
@@ -735,113 +735,113 @@ sub GetUPSDesc {
 }
 
 sub ListVar {
-	my $self = shift;
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $ups = shift || $self->{name};
 
-	my $vars = $self->_get_list("LIST VAR $ups", 3, 2);
-	return $vars unless @_;			# return all variables
-	return {map { $_ => $vars->{$_} } @_};	# return selected ones
+  my $vars = $self->_get_list("LIST VAR $ups", 3, 2);
+  return $vars unless @_;			# return all variables
+  return {map { $_ => $vars->{$_} } @_};	# return selected ones
 }
 
 sub ListRW {
-	my $self = shift;
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $ups = shift || $self->{name};
 
-	return $self->_get_list("LIST RW $ups", 3, 2);
+  return $self->_get_list("LIST RW $ups", 3, 2);
 }
 
 sub ListCmd {
-	my $self = shift;
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $ups = shift || $self->{name};
 
-	return $self->_get_list("LIST CMD $ups", 2);
+  return $self->_get_list("LIST CMD $ups", 2);
 }
 
 sub ListEnum {
-	my $self = shift;
-	my $var = shift;
-	# NOTE: This clumsily goes after $var, to avoid breaking
-	#  API compatibility for older release consumers:
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $var = shift;
+  # NOTE: This clumsily goes after $var, to avoid breaking
+  #  API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
 
-	return $self->_get_list("LIST ENUM $ups $var", 3);
+  return $self->_get_list("LIST ENUM $ups $var", 3);
 }
 
 sub ListRange {
-	my $self = shift;
-	my $var = shift;
-	# NOTE: This clumsily goes after other args above, to avoid
-	#  breaking API compatibility for older release consumers:
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $var = shift;
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
 
-	my $req = "LIST RANGE $ups $var";
-	my $ans = $self->_send($req);
+  my $req = "LIST RANGE $ups $var";
+  my $ans = $self->_send($req);
 
-	unless (defined $ans) {
-		$self->_debug($self->{err} = "Network error: $!");
-		return undef;
-	};
+  unless (defined $ans) {
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
+  };
 
-	if ($ans =~ /^ERR/) {
-		$self->_debug($self->{err} = "Error: $ans");
-		return undef;
-	}
-	elsif ($ans =~ /^BEGIN LIST RANGE/) {
-		my $retval = [];
-		my $line;
-		while ($line = $self->_getline) {
-			last if $line =~ /^END LIST RANGE/;
-			# RANGE <ups> <var> "<min>" "<max>"
-			if ($line =~ /^RANGE \S+ \S+ "([^"]+)" "([^"]+)"/) {
-				push(@$retval, { min => $1, max => $2 });
-			}
-		}
-		return $retval;
-	}
+  if ($ans =~ /^ERR/) {
+    $self->_debug($self->{err} = "Error: $ans");
+    return undef;
+  }
+  elsif ($ans =~ /^BEGIN LIST RANGE/) {
+    my $retval = [];
+    my $line;
+    while ($line = $self->_getline) {
+      last if $line =~ /^END LIST RANGE/;
+      # RANGE <ups> <var> "<min>" "<max>"
+      if ($line =~ /^RANGE \S+ \S+ "([^"]+)" "([^"]+)"/) {
+        push(@$retval, { min => $1, max => $2 });
+      }
+    }
+    return $retval;
+  }
 
-	$self->_debug($self->{err} = "Unrecognized response: $ans");
-	return undef;
+  $self->_debug($self->{err} = "Unrecognized response: $ans");
+  return undef;
 }
 
 sub _get_list {
-	my $self = shift;
-	my ($req, $valueidx, $keyidx) = @_;
-	my $ans = $self->_send($req);
+  my $self = shift;
+  my ($req, $valueidx, $keyidx) = @_;
+  my $ans = $self->_send($req);
 
-	unless (defined $ans) {
-		$self->_debug($self->{err} = "Network error: $!");
-		return undef;
-	};
+  unless (defined $ans) {
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
+  };
 
-	if ($ans =~ /^ERR/) {
-		$self->_debug($self->{err} = "Error: $ans");
-		return undef;
-	}
-	elsif ($ans =~ /^BEGIN LIST/) { # command successful
-		my $retval = $keyidx ? {} : [];
-		my $line;
-		while ($line = $self->_getline) {
-			last if $line =~ /^END LIST/;
-			my @fields = split(' ', $line, $valueidx+1);
-			(my $value = $fields[$valueidx]) =~ s/^"(.*)"$/$1/;
-			if ($keyidx) {
-				$retval->{$fields[$keyidx]} = $value;
-			}
-			else {
-				push(@$retval, $value);
-			}
-		}
-		unless ($line) {
-			$self->_debug($self->{err} = "Network error: $!");
-			return undef;
-		};
-		$self->_debug("$req command sent successfully.");
-		return $retval;
-	}
-	else { # unrecognized response
-		$self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
-		return undef;
-	}
+  if ($ans =~ /^ERR/) {
+    $self->_debug($self->{err} = "Error: $ans");
+    return undef;
+  }
+  elsif ($ans =~ /^BEGIN LIST/) { # command successful
+    my $retval = $keyidx ? {} : [];
+    my $line;
+    while ($line = $self->_getline) {
+      last if $line =~ /^END LIST/;
+      my @fields = split(' ', $line, $valueidx+1);
+      (my $value = $fields[$valueidx]) =~ s/^"(.*)"$/$1/;
+      if ($keyidx) {
+        $retval->{$fields[$keyidx]} = $value;
+      }
+      else {
+        push(@$retval, $value);
+      }
+    }
+    unless ($line) {
+      $self->_debug($self->{err} = "Network error: $!");
+      return undef;
+    };
+    $self->_debug("$req command sent successfully.");
+    return $retval;
+  }
+  else { # unrecognized response
+    $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
+    return undef;
+  }
 }
 
 # Compatibility layer
@@ -850,34 +850,34 @@ sub VarDesc { goto &GetDesc; }
 sub GetDesc {
 # Contributor: Wayne Wylupski
 # Modified by Gabor Kiss according to protocol version 1.5+
-    my $self = shift;
-    my $var = shift;
-	# NOTE: This clumsily goes after other args above, to avoid
-	#  breaking API compatibility for older release consumers:
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $var = shift;
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
 
-    my $req = "GET DESC $ups $var";
-    my $ans = $self->_send( $req );
+  my $req = "GET DESC $ups $var";
+  my $ans = $self->_send( $req );
 
-    unless (defined $ans) {
-      $self->_debug($self->{err} = "Network error: $!");
-      return undef;
-    };
+  unless (defined $ans) {
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
+  };
 
-    if ($ans =~ /^ERR/) {
-      $self->_debug($self->{err} = "Error: $ans");
-      return undef;
-    }
-    elsif ($ans =~ /^DESC/) { # command successful
-      $self->_debug("$req command sent successfully.");
-      (undef, undef, undef, $ans) = split(' ', $ans, 4);
-      $ans =~ s/^"(.*)"$/$1/;
-      return $ans;
-    }
-    else { # unrecognized response
-      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
-      return undef;
-    }
+  if ($ans =~ /^ERR/) {
+    $self->_debug($self->{err} = "Error: $ans");
+    return undef;
+  }
+  elsif ($ans =~ /^DESC/) { # command successful
+    $self->_debug("$req command sent successfully.");
+    (undef, undef, undef, $ans) = split(' ', $ans, 4);
+    $ans =~ s/^"(.*)"$/$1/;
+    return $ans;
+  }
+  else { # unrecognized response
+    $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
+    return undef;
+  }
 }
 
 # Compatibility layer
@@ -886,33 +886,33 @@ sub VarType { goto &GetType; }
 sub GetType {
 # Contributor: Wayne Wylupski
 # Modified by Gabor Kiss according to protocol version 1.5+
-    my $self = shift;
-    my $var = shift;
-	# NOTE: This clumsily goes after other args above, to avoid
-	#  breaking API compatibility for older release consumers:
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $var = shift;
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
 
-    my $req = "GET TYPE $ups $var";
-    my $ans = $self->_send( $req );
+  my $req = "GET TYPE $ups $var";
+  my $ans = $self->_send( $req );
 
-    unless (defined $ans) {
-      $self->_debug($self->{err} = "Network error: $!");
-      return undef;
-    };
+  unless (defined $ans) {
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
+  };
 
-    if ($ans =~ /^ERR/) {
-      $self->_debug($self->{err} = "Error: $ans");
-      return undef;
-    }
-    elsif ($ans =~ /^TYPE/) { # command successful
-      $self->_debug("$req command sent successfully.");
-      (undef, undef, undef, $ans) = split(' ', $ans, 4);
-      return $ans;
-    }
-    else { # unrecognized response
-      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
-      return undef;
-    }
+  if ($ans =~ /^ERR/) {
+    $self->_debug($self->{err} = "Error: $ans");
+    return undef;
+  }
+  elsif ($ans =~ /^TYPE/) { # command successful
+    $self->_debug("$req command sent successfully.");
+    (undef, undef, undef, $ans) = split(' ', $ans, 4);
+    return $ans;
+  }
+  else { # unrecognized response
+    $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
+    return undef;
+  }
 }
 
 # Compatibility layer
@@ -921,34 +921,34 @@ sub InstCmdDesc { goto &GetCmdDesc; }
 sub GetCmdDesc {
 # Contributor: Wayne Wylupski
 # Modified by Gabor Kiss according to protocol version 1.5+
-    my $self = shift;
-    my $cmd = shift;
-	# NOTE: This clumsily goes after other args above, to avoid
-	#  breaking API compatibility for older release consumers:
-	my $ups = shift || $self->{name};
+  my $self = shift;
+  my $cmd = shift;
+  # NOTE: This clumsily goes after other args above, to avoid
+  #  breaking API compatibility for older release consumers:
+  my $ups = shift || $self->{name};
 
-    my $req = "GET CMDDESC $ups $cmd";
-    my $ans = $self->_send( $req );
+  my $req = "GET CMDDESC $ups $cmd";
+  my $ans = $self->_send( $req );
 
-    unless (defined $ans) {
-      $self->_debug($self->{err} = "Network error: $!");
-      return undef;
-    };
+  unless (defined $ans) {
+    $self->_debug($self->{err} = "Network error: $!");
+    return undef;
+  };
 
-    if ($ans =~ /^ERR/) {
-      $self->_debug($self->{err} = "Error: $ans");
-      return undef;
-    }
-    elsif ($ans =~ /^DESC/) { # command successful
-      $self->_debug("$req command sent successfully.");
-      (undef, undef, undef, $ans) = split(' ', $ans, 4);
-      $ans =~ s/^"(.*)"$/$1/;
-      return $ans;
-    }
-    else { # unrecognized response
-      $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
-      return undef;
-    }
+  if ($ans =~ /^ERR/) {
+    $self->_debug($self->{err} = "Error: $ans");
+    return undef;
+  }
+  elsif ($ans =~ /^DESC/) { # command successful
+    $self->_debug("$req command sent successfully.");
+    (undef, undef, undef, $ans) = split(' ', $ans, 4);
+    $ans =~ s/^"(.*)"$/$1/;
+    return $ans;
+  }
+  else { # unrecognized response
+    $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
+    return undef;
+  }
 }
 
 sub DESTROY { # destructor, all it does is call Logout
@@ -1032,18 +1032,18 @@ sub Master { # check for MASTER level access
 
 sub AUTOLOAD {
 # Contributor: Wayne Wylupski
-    my $self = shift;
-    my $name = $UPS::Nut::AUTOLOAD;
-    $name =~ s/^.*:://;
+  my $self = shift;
+  my $name = $UPS::Nut::AUTOLOAD;
+  $name =~ s/^.*:://;
 
-    # for a change we will only load cmds if needed.
-    if (!defined $self->{cmds} ) {
-        %{$self->{cmds}} = map{ $_ =>1 } @{$self->ListCmd};
-    }
+  # for a change we will only load cmds if needed.
+  if (!defined $self->{cmds} ) {
+      %{$self->{cmds}} = map{ $_ =>1 } @{$self->ListCmd};
+  }
 
-    croak "No such InstCmd: $name" if (! $self->{cmds}{$name} );
+  croak "No such InstCmd: $name" if (! $self->{cmds}{$name} );
 
-    return $self->InstCmd( $name );
+  return $self->InstCmd( $name );
 }
 
 #-------------------------------------------------------------------------
@@ -1064,50 +1064,50 @@ sub AUTOLOAD {
 #
 #-------------------------------------------------------------------------
 sub TIEHASH {
-    my $class = shift || 'UPS::Nut';
-    return $class->new( @_ );
+  my $class = shift || 'UPS::Nut';
+  return $class->new( @_ );
 }
 
 sub FETCH {
-    my $self = shift;
-    my $key = shift;
+  my $self = shift;
+  my $key = shift;
 
-    return $self->Request( $key );
+  return $self->Request( $key );
 }
 
 sub STORE {
-    my $self = shift;
-    my $key = shift;
-    my $value = shift;
+  my $self = shift;
+  my $key = shift;
+  my $value = shift;
 
-    return $self->Set( $key, $value );
+  return $self->Set( $key, $value );
 }
 
 sub DELETE {
-    croak "DELETE operation not supported";
+  croak "DELETE operation not supported";
 }
 
 sub CLEAR {
-    croak "CLEAR operation not supported";
+  croak "CLEAR operation not supported";
 }
 
 sub EXISTS {
-    exists shift->{vars}{shift};
+  exists shift->{vars}{shift};
 }
 
 sub FIRSTKEY {
-    my $self = shift;
-    my $a = keys %{$self->{vars}};
-    return scalar each %{$self->{vars}};
+  my $self = shift;
+  my $a = keys %{$self->{vars}};
+  return scalar each %{$self->{vars}};
 }
 
 sub NEXTKEY {
-    my $self = shift;
-    return scalar each %{$self->{vars}};
+  my $self = shift;
+  return scalar each %{$self->{vars}};
 }
 
 sub UNTIE {
-    $_[0]->Logout;
+  $_[0]->Logout;
 }
 
 =head1 NAME
