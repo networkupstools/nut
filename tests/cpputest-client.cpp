@@ -7,7 +7,7 @@
    in isolated-binary fashion.
 
    Copyright (C)
-	2022-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2022-2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,6 +70,13 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
+#ifndef _NUTCLIENTTEST_BUILD
+# define _NUTCLIENTTEST_BUILD 1
+#endif
+
+#include "../clients/nutclient.h"
+#include "../clients/nutclientmem.h"
+
 namespace nut {
 
 class NutActiveClientTest : public CppUnit::TestFixture
@@ -93,8 +100,27 @@ private:
 	std::string env_NUT_PRIMARY_DEVICE = "";
 	std::string env_NUT_SETVAR_DEVICE = "";
 
+	/* SSL options: shared */
+	bool env_NUT_SSL = false;
+	bool env_NUT_FORCESSL = false;
+	int env_NUT_CERTVERIFY = -1;
+	std::string env_NUT_KEYPASS = "";
+
+	/* SSL options: OpenSSL */
+	std::string env_NUT_CAFILE = "";
+	std::string env_NUT_CAPATH = "";
+	std::string env_NUT_CERTFILE = "";
+	std::string env_NUT_KEYFILE = "";
+
+	/* SSL options: NSS */
+	std::string env_NUT_CERTSTORE_PATH = "";
+	std::string env_NUT_CERTSTORE_PREFIX = "";
+	std::string env_NUT_CERTHOST_NAME = "";
+	std::string env_NUT_CERTIDENT_NAME = "";
+
 public:
 	void setUp() override;
+	void setupClientSSL(nut::TcpClient &c);
 	void tearDown() override;
 
 	void test_query_ver();
@@ -106,17 +132,6 @@ public:
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION( NutActiveClientTest );
-
-} // namespace nut {}
-
-#ifndef _NUTCLIENTTEST_BUILD
-# define _NUTCLIENTTEST_BUILD 1
-#endif
-
-#include "../clients/nutclient.h"
-#include "../clients/nutclientmem.h"
-
-namespace nut {
 
 extern "C" {
 strarr stringset_to_strarr(const std::set<std::string>& strset);
@@ -158,6 +173,149 @@ void NutActiveClientTest::setUp()
 	if (s) {
 		env_NUT_SETVAR_DEVICE = s;
 	} // else stays empty
+
+	s = std::getenv("NUT_SSL");
+	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
+		env_NUT_SSL = true;
+	}
+
+	s = std::getenv("NUT_FORCESSL");
+	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
+#ifdef WITH_SSL_CXX
+		env_NUT_FORCESSL = true;
+#else
+		std::cerr << "[D] Not built with WITH_SSL_CXX, ignoring NUT_FORCESSL=true" << std::endl;
+#endif
+	}
+
+	s = std::getenv("NUT_CERTVERIFY");
+	if (s) {
+		env_NUT_CERTVERIFY = atoi(s);
+	}
+
+	s = std::getenv("NUT_CAFILE");
+	if (s) {
+		env_NUT_CAFILE = s;
+	}
+
+	s = std::getenv("NUT_CAPATH");
+	if (s) {
+		env_NUT_CAPATH = s;
+	}
+
+	s = std::getenv("NUT_CERTFILE");
+	if (s) {
+		env_NUT_CERTFILE = s;
+	}
+
+	s = std::getenv("NUT_KEYFILE");
+	if (s) {
+		env_NUT_KEYFILE = s;
+	}
+
+	s = std::getenv("NUT_KEYPASS");
+	if (s) {
+		env_NUT_KEYPASS = s;
+	}
+
+	s = std::getenv("NUT_CERTSTORE_PATH");
+	if (s) {
+		env_NUT_CERTSTORE_PATH = s;
+	}
+
+	/* NOTE: What could be NUT_CERTSTORE_PASS is NUT_KEYPASS too */
+	s = std::getenv("NUT_CERTSTORE_PREFIX");
+	if (s) {
+		env_NUT_CERTSTORE_PREFIX = s;
+	}
+
+	s = std::getenv("NUT_CERTHOST_NAME");
+	if (s) {
+		env_NUT_CERTHOST_NAME = s;
+	}
+
+	s = std::getenv("NUT_CERTIDENT_NAME");
+	if (s) {
+		env_NUT_CERTIDENT_NAME = s;
+	}
+}
+
+void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
+{
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
+		c.setSSLConfig(SSLConfig_OpenSSL(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
+			env_NUT_CAPATH,
+			env_NUT_CAFILE,
+			env_NUT_CERTFILE,
+			env_NUT_KEYFILE,
+			env_NUT_KEYPASS
+			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(OpenSSL): " << ex.what() << std::endl;
+		}
+#endif
+	}
+
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CERTSTORE_PATH.empty()
+	 || !env_NUT_CERTSTORE_PREFIX.empty()
+	 || !env_NUT_CERTHOST_NAME.empty()
+	 || !env_NUT_CERTIDENT_NAME.empty()
+	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
+		c.setSSLConfig(SSLConfig_NSS(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
+			env_NUT_CERTSTORE_PATH,
+			env_NUT_KEYPASS,
+			env_NUT_CERTSTORE_PREFIX,
+			env_NUT_CERTHOST_NAME,
+			env_NUT_CERTIDENT_NAME
+			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(NSS): " << ex.what() << std::endl;
+		}
+#endif
+	}
+
+	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
+		// shared:
+		<< " NUT_SSL(try):" << c.getSslTry()
+		<< " NUT_FORCESSL:" << c.getSslForce()
+		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
+		<< " NUT_CAPATH:'" << c.getSslCAPath()
+		<< "' NUT_CAFILE:'" << c.getSslCAFile()
+		// OpenSSL-only:
+		<< "' NUT_CERTFILE:'" << c.getSslCertFile()
+		<< "' NUT_KEYFILE:'" << c.getSslKeyFile()
+		// shared:
+		<< "' NUT_KEYPASS:'" << c.getSslKeyPass()
+		// NSS-only:
+		<< "' NUT_CERTSTORE_PATH:'" << c.getSslCertstorePath()
+		<< "' NUT_CERTSTORE_PREFIX:'" << c.getSslCertstorePrefix()
+		<< "' NUT_CERTHOST_NAME:'" << c.getSslCertHostName()
+		<< "' NUT_CERTIDENT_NAME:'" << c.getSslCertIdentName()
+		<< "'" << std::endl;
 }
 
 void NutActiveClientTest::tearDown()
@@ -165,7 +323,11 @@ void NutActiveClientTest::tearDown()
 }
 
 void NutActiveClientTest::test_query_ver() {
-	nut::TcpClient c("localhost", env_NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	// This can crash if the server is not running, SSL mismatch, etc.
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::string s;
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
@@ -174,6 +336,9 @@ void NutActiveClientTest::test_query_ver() {
 	CPPUNIT_ASSERT_MESSAGE(
 		"TcpClient is not connected after constructor",
 		c.isConnected());
+
+	std::cerr << "[D] Channel protected by STARTTLS? "
+		<< (c.isSSL() ? "true" : "false") << std::endl;
 
 	/* Note: generic client code can not use protected methods
 	 * like low-level sendQuery(), list(), get() and some more,
@@ -219,7 +384,10 @@ void NutActiveClientTest::test_query_ver() {
 }
 
 void NutActiveClientTest::test_list_ups() {
-	nut::TcpClient c("localhost", env_NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::set<std::string> devs;
 	bool noException = true;
 
@@ -251,7 +419,10 @@ void NutActiveClientTest::test_list_ups() {
 }
 
 void NutActiveClientTest::test_list_ups_clients() {
-	nut::TcpClient c("localhost", env_NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::map<std::string, std::set<std::string>> deviceClients;
 	bool noException = true;
 
@@ -318,7 +489,10 @@ void NutActiveClientTest::test_auth_user() {
 		return;
 	}
 
-	nut::TcpClient c("localhost", env_NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
 		c.authenticate(env_NUT_USER, env_NUT_PASS);
@@ -439,7 +613,10 @@ void NutActiveClientTest::test_auth_primary() {
 		return;
 	}
 
-	nut::TcpClient c("localhost", env_NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
 		c.authenticate(env_NUT_USER, env_NUT_PASS);

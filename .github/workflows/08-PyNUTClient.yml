@@ -49,7 +49,7 @@ jobs:
             {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
             || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
             && test -n "${TAG_NAME}" \
-            || TAG_NAME="2.8.4-`TZ=UTC date +%s`" ;
+            || TAG_NAME="2.8.5-`TZ=UTC date +%s`" ;
         fi >&2 ;
         TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,' -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT

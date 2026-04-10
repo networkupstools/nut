@@ -74,6 +74,38 @@ linkman:ups.conf[5].  Just define it before any of your `[sections]`:
 		port = /dev/ttyS0
 ----
 
+Alternately, you can specify a `user=` in the driver section.
+
+NOTE: The driver program runs with the group account(s) associated with
+that user account in the system, and sets its group ID to the primary
+group of that account.  For serial port access, you may want to add
+your 'ups' or 'nut' role account to the 'dialout' group on most Linux
+and Unix systems. The `group=` setting in `ups.conf` is for something
+else: sharing access to socket files used for communications with
+the `upsd` data server, which may run as another different user account.
+
+*Answer 3*
+
+Some other programs that you start may steal the port, so the NUT driver
+loses a connection (or can never establish one).  Revise your device
+file system node permissions for corresponding USB or serial ports,
+and group membership for NUT driver daemons and other programs in your
+system.  USB and serial ports might change ownership as the logged-in
+console user sessions (physically attached virtual terminals) are
+switched on some OS distributions.
+
+Investigate `udev` or similar framework to assign access permissions
+to certain devices on your system, and if you find an offending program
+that enumerates all ports thus "stealing" them from NUT and other
+consumers, find a way to configure it with a specific port list that
+it should use, or to run as a user account that has no access to the
+ports you want dedicated to NUT.
+
+One user report dealt with WINE emulator used for modem programs, so
+it was deliberately picking serial port devices and was running as a
+member of the `dialout` group.  That was an interesting way to shoot
+oneself in the foot...
+
 == upsc, upsstats, and the other clients say 'access denied'.  The device communication port (serial, USB or network) permissions are fine, so what gives?
 
 In this case, "access denied" means the access to linkman:upsd[8], not the
@@ -363,6 +395,11 @@ For more details and a better integrated example, please see
 https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
 (a copy tailored for your OS distribution may be or not be included
 in NUT packages, if you installed from those).
+
+NOTE: The NUT-provided `nutshutdown` and its derivatives in packages
+provided by OS distributions are subject to proper NUT configuration,
+such as that you do not keep `MODE=none` in `nut.conf` (at which point
+the standard shutdown hook script would exit without doing anything).
 
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
@@ -1062,18 +1099,19 @@ in https://github.com/networkupstools/nut/issues/1899
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
 If you are not actively developing a driver, can you use a snapshot instead?
-The NUT instance of Buildbot generates tar files of the latest NUT source
-after each successful build, and these snapshots include a pre-built version
-of the `./configure` script.
-
-WARNING: There is an outstanding bug that after the shutdown of BuildBot,
-no regular distribution tarballs are in fact published.
+A NUT CI job generates tar files of the latest NUT source for pull requests and
+eventual increments of the `master` branch as part of each successful build,
+and these snapshots include a pre-built version of the `./configure` script.
+In GitHub build status for each such commit you can see status entries with
+a "GHA-01: Tarballs" prefix -- one of those would have an URL to a ZIP file
+with a standard source tarball, and another tarball with rendered documentation
+files.
 
 To build from Git, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
 list of the exact versions needed (which will quickly become out of date), we
-recommend you consult your distribution's dependency list for building a NUT
-package, and use that as a starting point.
+recommend you consult the dependency list in the recipes of your OS distribution
+for building their official NUT package, and use that as a starting point.
 
 That said, for the numerous systems running build agents of the NUT CI farm,
 their lists of dependency packages are available in `docs/config-prereqs.txt`

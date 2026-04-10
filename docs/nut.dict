@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3741 utf-8
+personal_ws-1.1 en 3779 utf-8
 AAC
 AAS
 ABI
@@ -441,6 +441,7 @@ GDBus
 GES
 GETADDRINFO
 GETPID
+GHA
 GID
 GIO
 GITREV
@@ -454,6 +455,7 @@ GPL
 GPLv
 GPSER
 GRs
+GS
 GTK
 GTS
 GUESSTIMATION
@@ -734,6 +736,7 @@ MLH
 MMM
 MNU
 MODENAME
+MOG
 MONITORed
 MOUNTPOINT
 MOXA
@@ -837,8 +840,10 @@ NOTIFYMSG
 NOTOFF
 NOTOTHER
 NOTOVER
+NOTRACKING
 NOTTRIM
 NQA
+NTFS
 NTP
 NTU
 NTU's
@@ -968,6 +973,7 @@ PPP
 PR
 PR'ed
 PRIuSIZE
+PROCNAME
 PROGRA
 PROGS
 PROTVER
@@ -1121,6 +1127,7 @@ RPC
 RPMdrake
 RPT
 RRR
+RS
 RSA
 RSM
 RST
@@ -1219,6 +1226,7 @@ SOCKADDR
 SOCKLEN
 SOCOMECUPS
 SOFF
+SOG
 SOLA
 SOMECO
 SOURCEMODE
@@ -1227,9 +1235,13 @@ SPARC
 SPC
 SPECs
 SPLY
+SPM
+SPRM
 SPS
 SRC
+SRVS
 SSD
+SSLContext
 SSSS
 STARTTLS
 STATUSCOLOR
@@ -1397,6 +1409,7 @@ TrippLite
 Tru
 Tx
 TxD
+UAC
 UB
 UBD
 UBR
@@ -1800,8 +1813,10 @@ bypassOn
 cStandard
 cablepower
 cachefile
+cafile
 calc
 calloc
+capath
 cb
 cbe
 cbi
@@ -1816,9 +1831,12 @@ celsius
 centos
 cerr
 certfile
+certhost
+certident
 certname
 certpasswd
 certpath
+certstore
 certutil
 certverify
 cfg
@@ -1880,6 +1898,7 @@ committer
 comms
 compareprocnames
 compat
+compilation's
 compilerPath
 conf
 confargs
@@ -2121,6 +2140,7 @@ ep
 epdu
 eq
 errno
+es
 esac
 essmode
 esupssmart
@@ -2153,6 +2173,7 @@ failover
 fallthrough
 fasttrack
 fatalx
+favicon
 fbbf
 fc
 fcb
@@ -2237,6 +2258,7 @@ gethostbyname
 getopt
 getproctag
 getter
+getters
 gettext
 gettextize
 getval
@@ -2428,6 +2450,7 @@ isbmex
 ish
 iso
 isolator
+isystem
 iter
 ivp
 ivtscd
@@ -2455,8 +2478,10 @@ kde
 kex
 kext
 keychain
+keyfile
 keygen
 keyout
+keypass
 keyring
 keyrings
 keyserver
@@ -2465,6 +2490,7 @@ killpower
 kludgy
 kr
 krauler
+ks
 ksh
 ktrace
 kvm
@@ -2522,6 +2548,7 @@ libnutclientstub
 libnutclientsub
 libnutconf
 libnutconfig
+libnutprivate
 libnutscan
 libpcre
 libpng
@@ -2592,6 +2619,7 @@ lowbatt
 lowbattery
 lr
 lregex
+ls
 lsd
 lst
 lsusb
@@ -2695,6 +2723,7 @@ monuser
 morbo
 mortem
 mozilla
+ms
 msec
 msg
 msgfmt
@@ -2738,6 +2767,7 @@ nano
 nanosleep
 nashkaminski
 natively
+nativestrict
 nb
 nbproject
 nbr
@@ -2921,6 +2951,7 @@ peasy
 peername
 pem
 perc
+percents
 perl
 permalinks
 pfSense
@@ -3007,6 +3038,7 @@ prjconf
 problemMatcher
 probu
 proc
+procname
 productid
 prog
 progname
@@ -3127,6 +3159,7 @@ rpc
 rpool
 rq
 rqt
+rs
 rsa
 rsd
 rsync
@@ -3151,6 +3184,7 @@ scanopts
 scd
 sched
 schemas
+schuko
 scm
 screenshot
 screenshots
@@ -3198,6 +3232,7 @@ setfsd
 setgid
 setinfo
 setpci
+setprocname
 setproctag
 setq
 setuid
@@ -3440,6 +3475,7 @@ tripplite
 tripplitesu
 troff
 tryconnect
+ts
 tsa
 tsd
 tty
@@ -3662,6 +3698,7 @@ winhid
 wininit
 winnutclient
 winpthreads
+winsymlinks
 wix
 wmNUT
 wmnut
@@ -3726,6 +3763,7 @@ youruid
 yyy
 zaac
 zakx
+zeroes
 zfs
 zinto
 zlib

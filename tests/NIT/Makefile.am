@@ -27,10 +27,19 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.
 # Developers can run the script directly or override the make variable.
+#   no          Avoid the SSL test setup even if possible
+#   required-conditional    Require that the SSL tests are set up (NSS/OpenSSL
+#               tools are available and succeed to generate certificate stores)
+#               if NUT was built with SSL support
+#   required    Require that the SSL tests are set up always (e.g. fail if NUT
+#               was built without SSL support)
+# Default: try to set up crypto if possible (tools available, NUT built with
+# SSL support) and run the tests in resulting conditions.
 ### if WITH_OPENSSL
-### WITHOUT_SSL_TESTS = true
+### WITH_SSL_TESTS = no
 ### else !WITH_OPENSSL
-WITHOUT_SSL_TESTS = false
+### WITH_SSL_TESTS = required-conditional
+WITH_SSL_TESTS = yes
 ### endif !WITH_OPENSSL
 
 # Run in builddir, use script from srcdir
@@ -42,7 +51,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
 	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
-	WITHOUT_SSL_TESTS='$(WITHOUT_SSL_TESTS)' \
+	WITH_SSL_TESTS='$(WITH_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
 # Make sure pre-requisites for NIT are fresh as we iterate
@@ -67,7 +76,7 @@ check-NIT-sandbox: $(abs_srcdir)/nit.sh
 	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
 	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
 	EXEEXT='$(EXEEXT)' \
-	WITHOUT_SSL_TESTS='$(WITHOUT_SSL_TESTS)' \
+	WITH_SSL_TESTS='$(WITH_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
 check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh @dotMAKE@

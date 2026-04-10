@@ -95,22 +95,46 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 
 #all all-recursive all-am-local all-local: all-fanout-maybe
 all-recursive: all-fanout-maybe
-check-recursive install-recursive: generated-headers-with-a-touch
 
-all check install: all-fanout-cleanup
+# Make sure automake-defined check/install goals begin with our hack for
+# touch-files for generated headers (so each depending sub-directory does
+# not re-evaluate those rules in whole); note that these goals may end up
+# also calling all-fanout-maybe (as they depend on "all"):
+check-recursive install-recursive: generated-sources-with-a-touch
 
-generated-headers-with-a-touch: @dotMAKE@
-	$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h
-	$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
-	$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
-	$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
+# NOTE: Beside dependency above, also called from some code paths in
+# the all-fanout-maybe implementation:
+generated-sources-with-a-touch: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_VERSION_H_GENERATED=false nut_version.h
+	+$(MAKE) $(AM_MAKEFLAGS) touch-include-all-nut_version-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) libupsclient-version.h
+	+$(MAKE) $(AM_MAKEFLAGS) touch-clients-all-libupsclient_version-generated.timestamp
+	+$(MAKE) $(AM_MAKEFLAGS) NUT_LINKMAN_GENERATED=false prep-linkman-generated
+	+$(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated.timestamp
+
+# After completing the automake-defined goals, clean up:
+all: all-fanout-cleanup
+check: check-fanout-cleanup
+install: install-fanout-cleanup
 
 # Run as part of "all", but after the autotools-standard "all-recursive"
 # where we quiesce nut_version.h regeneration attempts for each subdir
-all-fanout-cleanup: all-recursive
+# which automake recipes iterate; similarly for "check" and "install":
+cleanup-touchfiles-for-generated-headers:
 	@rm -f include/.all.nut_version-generated.timestamp \
+	       docs/man/.all.nut_linkman-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 
+all-fanout-cleanup: all-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+check-fanout-cleanup: check-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+install-fanout-cleanup: install-recursive @dotMAKE@
+	+@$(MAKE) $(AM_MAKEFLAGS) cleanup-touchfiles-for-generated-headers
+
+# Called from generated-sources-with-a-touch:
 touch-include-all-nut_version-generated.timestamp:
 	@[ -s include/nut_version.h ]
 	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
@@ -123,39 +147,70 @@ touch-clients-all-libupsclient_version-generated.timestamp:
 	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch clients/.all.libupsclient_version-generated.timestamp
 
+touch-docs-man-all-linkman-generated.timestamp:
+	@[ -s docs/man/linkman-driver-names.txt ] && [ -s docs/man/linkman-drivertool-names.txt ]
+	@if test -n "`find docs/man/linkman-driver-names.txt -newer docs/man/linkman-drivertool-names.txt`" ; then \
+	    touch -r docs/man/linkman-drivertool-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 else \
+	    touch -r docs/man/linkman-driver-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 fi ; \
+	 touch -d '1970-01-01' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 touch docs/man/.all.nut_linkman-generated.timestamp
+
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
 # to 0 or 1 in some rules below)
 SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
-CLEANFILES += include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
-all-fanout-maybe: @dotMAKE@
+CLEANFILES += .libs-dev-PATH include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
+all-fanout-maybe: .libs-dev-PATH @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
 	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+			echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
-		$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
+		$(MAKE) $(AM_MAKEFLAGS) generated-sources-with-a-touch || exit ; \
 		exit 0 ; \
 	  fi ; \
 	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
 		*-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+				echo "  SUBDIR-MAKE	LAUNCH  	$@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
 			fi ; \
 			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs || exit ; \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
+				echo "  SUBDIR-MAKE	FINISH  	$@: optimization for parallel make as 'make all-fanout-subdirs' finished; now automake rules can follow up with default implementation of 'all-recursive' and/or 'all' (may try to regenerate some files again; should keep existing results though)" ; \
 			fi ;; \
 		*) \
 			if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-				echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
+				echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ; \
 			fi ; \
-			$(MAKE) $(AM_MAKEFLAGS) generated-headers-with-a-touch || exit ; \
+			$(MAKE) $(AM_MAKEFLAGS) generated-sources-with-a-touch || exit ; \
 			;; \
 	  esac
+
+.libs-dev-PATH: Makefile
+	echo '# Sourcable script for developers to run built progs with their shared libs:' > '$@'
+	echo 'for D in common clients drivers tools/nut-scanner ; do \
+	    for S in "" "/.libs" ; do \
+	        DN="$(abs_top_builddir)/$${D}$${S}" ; \
+	        case "$${PATH}" in \
+	            "$${DN}"|*:"$${DN}}"|"$${DN}":*|*:"$${DN}":*) ;; \
+	            "") PATH="$${DN}" ;; \
+	            *)  PATH="$${DN}:$${PATH}" ;; \
+	        esac ; \
+	        case "$${LD_LIBRARY_PATH}" in \
+	            "$${DN}"|*:"$${DN}}"|"$${DN}":*|*:"$${DN}":*) ;; \
+	            "") LD_LIBRARY_PATH="$${DN}" ;; \
+	            *)  LD_LIBRARY_PATH="$${DN}:$${LD_LIBRARY_PATH}" ;; \
+	        esac ; \
+	    done ; \
+	done ; \
+	export PATH ; \
+	export LD_LIBRARY_PATH ; \
+	' >> '$@'
 
 # We start with a pass to `make all` in `common` dir because our wild recipes
 # (with other subdirs ensuring the libraries they need have been built) can
@@ -175,7 +230,7 @@ all-fanout-staged: @dotMAKE@
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
-all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
+all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL) .libs-dev-PATH
 
 #all all-am-local all-local: @dotMAKE@
 #	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
@@ -235,12 +290,12 @@ SUBDIR_TGT_RULE = ( \
 	[ x"$${TGT-}" != x ] || TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	[ x"$${DIR-}" != x ] || DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	STARTING $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
+		echo "  SUBDIR-MAKE	STARTING	$@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR ..." ; \
 	fi ; \
 	cd "$(abs_builddir)/$${DIR}" && \
 	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE	FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-		echo "  SUBDIR-MAKE	SUCCESS  $@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
+		echo "  SUBDIR-MAKE	SUCCESS 	$@: 'make $${SUBDIR_TGT_MAKEFLAGS-} $$TGT' in $$DIR" ; \
 	fi ; \
 	)
 
@@ -344,16 +399,30 @@ all/include: all-libs-local/include @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs/man: @dotMAKE@
-	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3'; export SUBDIR_TGT_MAKEFLAGS; \
+# Quickly bail out if somehow recursed into this goal from a dependency
+# (looking at all/docs with its several sub-make calls):
+prep-linkman-generated/docs/man: @dotMAKE@
+	+@if [ x"$(NUT_LINKMAN_GENERATED)" = xtrue ] || [ x"$${NUT_LINKMAN_GENERATED}" = xtrue ] ; then exit 0 ; fi ; \
+	  SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=false'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=false; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE) || exit ; \
+	  $(MAKE) $(AM_MAKEFLAGS) touch-docs-man-all-linkman-generated.timestamp
+
+prep-src-docs/docs/man: prep-linkman-generated/docs/man @dotMAKE@
+	+@SUBDIR_TGT_MAKEFLAGS='MAINTAINER_DOCS_PREP_MAN_DELAY=3 NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
-prep-src-docs/docs: @dotMAKE@
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+prep-src-docs/docs: prep-linkman-generated/docs/man @dotMAKE@
+	+@SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  DOCS_NO_MAN=true; export DOCS_NO_MAN; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
 all/docs/man: prep-src-docs/docs/man @dotMAKE@
-	+@$(SUBDIR_TGT_RULE)
+	+@SUBDIR_TGT_MAKEFLAGS='NUT_LINKMAN_GENERATED=true'; export SUBDIR_TGT_MAKEFLAGS; \
+	  NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
 # pre-processed for html/pdf renders (if any are requested), so they surely
@@ -362,7 +431,8 @@ all/docs/man: prep-src-docs/docs/man @dotMAKE@
 # types are enabled.
 MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
 all/docs: prep-src-docs/docs/man @dotMAKE@
-	+@case "@DOC_BUILD_LIST@" in \
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
 			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
@@ -372,11 +442,14 @@ all/docs: prep-src-docs/docs/man @dotMAKE@
 			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ : SUCCESS" ;; \
 		*) ;; \
 	  esac
-	+@$(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
-	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(MAKE) $(AM_MAKEFLAGS) prep-src-docs/docs
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all-recursive/docs: all/docs all/docs/man @dotMAKE@
-	+@$(SUBDIR_TGT_RULE)
+	+@NUT_LINKMAN_GENERATED=true; export NUT_LINKMAN_GENERATED; \
+	  $(SUBDIR_TGT_RULE)
 
 # Dependencies below are dictated by who needs whose library from another dir
 # (generated by a sub-make there, so we pre-emptively ensure it exists to avoid
@@ -867,7 +940,7 @@ spellcheck spellcheck-interactive: @dotMAKE@
 	  if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		RES=0 ; \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
-			echo "  SUBDIR-MAKE	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
+			echo "  SUBDIR-MAKE	SKIP    	$@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; \
 		fi ; \
 		(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 		(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -k -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
@@ -887,8 +960,9 @@ spellcheck spellcheck-interactive: @dotMAKE@
 	  fi ; \
 	  export SUBDIR_MAKE_VERBOSE ; \
 	  ( $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
-	  echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
-	  $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) ) || exit ; \
+	    echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
+	    $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) \
+	  ) || exit ; \
 	  if [ x'$@' = xspellcheck-interactive ] ; then \
 		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
 		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
@@ -908,9 +982,21 @@ SET_PARMAKES_OPT = \
 		;; \
 	  esac
 
+all-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} all
+
+install-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} install
+
+check-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
+
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
-	  $(MAKE) $(AM_MAKEFLAGS) -k -s ${PARMAKES_OPT} spellcheck
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick: @dotMAKE@
@@ -1192,6 +1278,10 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 
 ChangeLog.adoc: ChangeLog @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
+
+prep-linkman-generated: @dotMAKE@
+	@rm -f docs/man/.all.nut_linkman-generated.timestamp
+	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) prep-linkman-generated
 
 nut_version.h include/nut_version.h: @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp

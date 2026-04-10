@@ -4,8 +4,9 @@
 # Everyone deserves credit, including those who haven't added any code.
 # Ideas, clues, and helping out on the mailing lists all count too.
 #
-# This is a blatant ripoff of the fields found in the Linux kernel's CREDITS
-# file.  If we need more data, those fields can always be added later.
+# This is a blatant ripoff of the fields found in the CREDITS file of
+# the Linux kernel. If we need more data, those fields can always be
+# added later.
 #
 # N = name, E = email, W = web address, D = description, P = PGP info,
 # S = snailmail address, etc.

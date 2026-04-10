@@ -50,7 +50,9 @@ IMAGE_FILES = \
 	images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
-	images/nut-logo.png \
+	images/nut-logo.svg \
+	images/nut-logo-60x60.png \
+	images/nut-logo-256x256.png \
 	images/note.png \
 	images/warning.png \
 	images/blue-arrow.png \
@@ -812,14 +814,24 @@ qa-guide.pdf: docinfo-since-v2.8.3.xml qa-guide-docinfo.xml
 	@$(GENERATE_PDF)
 
 # Used below for spellcheck and for .prep-src-docs
-SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
+# List most-frequently edited files first, to hit typos there sooner when
+# developing. Some files from sub-directories are spell-checked here and
+# not in their own makefiles, because they are included as chapters in
+# some larger documents anchored here.
+# Note that in builds with enabled parallel fanout mode (even if done
+# sequentially, e.g. without NUT_MAKE_SKIP_FANOUT=true explicitly),
+# files located in the current directory are processed first anyway,
+# as one (possibly parallelized) sub-make call.
+SPELLCHECK_SRC_DEFAULT = \
+	../NEWS.adoc ../UPGRADING.adoc \
 	asciidoc-vars.conf \
-	../ci_build.adoc ../README.adoc ../NEWS.adoc \
-	../INSTALL.nut.adoc ../UPGRADING.adoc \
+	../ci_build.adoc ../README.adoc \
+	../INSTALL.nut.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
-	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
+	$(ALL_TXT_SRC)
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -988,6 +1000,8 @@ spellcheck: @dotMAKE@
 		$(ASPELL) --help || true; \
 		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "SPELLCHECK_SRCDIR: $(SPELLCHECK_SRCDIR)" ; \
+		echo "SPELLCHECK_SRC: $(SPELLCHECK_SRC)" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
@@ -1000,14 +1014,22 @@ spellcheck: @dotMAKE@
 			|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 		done ; \
 	 else \
+		SPELLCHECK_NOEXT_DOCS_FIRST="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in ../NEWS.adoc|../UPGRADING.adoc) printf '%s ' \"$${docsrc}\" ;; *) ;; esac ; done`" ; \
 		SPELLCHECK_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in */*) ;; *.adoc|*.txt|*.in|*.conf|*.sample) printf '%s ' \"$${docsrc}-spellchecked-auto\" ;; esac ; done`" ; \
-		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in */*) printf '%s ' \"$${docsrc}\" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' \"$${docsrc}\" ;; esac ; done`" ; \
+		SPELLCHECK_NOEXT_DOCS="`for docsrc in $(SPELLCHECK_SRC); do case \"$${docsrc}\" in ../NEWS.adoc|../UPGRADING.adoc) ;; */*) printf '%s ' \"$${docsrc}\" ;; *.adoc|*.txt|*.in|*.conf|*.sample) ;; *) printf '%s ' \"$${docsrc}\" ;; esac ; done`" ; \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
-			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}' SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'" ; \
+			echo "ASPELL MAKEFILE DEBUG: from `pwd`: SPELLCHECK_NOEXT_DOCS_FIRST='$${SPELLCHECK_NOEXT_DOCS_FIRST}'    SPELLCHECK_AUTO_TGT='$${SPELLCHECK_AUTO_TGT}'    SPELLCHECK_NOEXT_DOCS='$${SPELLCHECK_NOEXT_DOCS}'" ; \
 		else true ; fi ; \
+		if [ x"$${SPELLCHECK_NOEXT_DOCS_FIRST}" != x ] ; then \
+			for docsrc in $${SPELLCHECK_NOEXT_DOCS_FIRST} ; do \
+				$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+				|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+			done ; \
+		fi ; \
 		if [ x"$${SPELLCHECK_AUTO_TGT}" != x ] ; then \
 			$(MAKE) $(AM_MAKEFLAGS) -k -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" VPATH="$(SPELLCHECK_SRCDIR):$(SPELLCHECK_BUILDDIR):$(VPATH)" $${SPELLCHECK_AUTO_TGT} ; \
-			FAILED="`for docsrc in $(SPELLCHECK_SRC); do if [ -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ] ; then printf '%s ' \"$(SPELLCHECK_SRCDIR)/$${docsrc}\" ; rm -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ; fi ; done`" ; \
+			FAILED_AUTO_TGT="`for docsrc in $(SPELLCHECK_SRC); do if [ -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ] ; then printf '%s ' \"$(SPELLCHECK_SRCDIR)/$${docsrc}\" ; rm -f \"$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked-auto.failed\" ; fi ; done`" ; \
+			if test -n "$$FAILED" ; then FAILED="$$FAILED $$FAILED_AUTO_TGT" ; else FAILED="$$FAILED_AUTO_TGT" ; fi ; \
 		fi ; \
 		if [ x"$${SPELLCHECK_NOEXT_DOCS}" != x ] ; then \
 			for docsrc in $${SPELLCHECK_NOEXT_DOCS} ; do \

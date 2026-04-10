@@ -185,12 +185,12 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
+		return 0;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
-		break;
+		upsdebugx(4, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
+		return 0;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
@@ -228,42 +228,96 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	return certpasswd ? PL_strdup(certpasswd) : NULL;
 }
 
+/** Detail the currently raised NSS error code if possible, and debug-log
+ *  it with caller-provided text (typically the calling function name). */
 static void nss_error(const char* text)
 {
-	char	buffer[SMALLBUF];
+	char	err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			PR_GetErrorText(buffer);
-			upsdebugx(1, "nss_error %ld in %s : %s", (long)err_num, text, buffer);
-		} else {
-			upsdebugx(1, "nss_error %ld in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, text, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		char	*buffer = (char *)calloc(err_len + 1, sizeof(char));
+		if (buffer) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				buffer);
+			free(buffer);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s : "
+				"Failed to allocate internal error buffer "
+				"for detailed error text, needs %ld bytes",
+				(long)err_num,
+				err_name_buf,
+				text,
+				(long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "nss_error %ld%s in %s : %s",
+				(long)err_num,
+				err_name_buf,
+				text,
+				err_text);
+		} else {
+			upsdebugx(1, "nss_error %ld%s in %s",
+				(long)err_num,
+				err_name_buf,
+				text);
+		}
 	}
 }
 
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
-	char	buffer[256];
+	char	buffer[256], err_name_buf[SMALLBUF];
 	PRErrorCode	err_num = PR_GetError();
+	const char	*err_name = PR_ErrorToName(err_num);
 	PRInt32	err_len = PR_GetErrorTextLength();
-	PRInt32	length;
 	NUT_UNUSED_VARIABLE(ssl);
 	NUT_UNUSED_VARIABLE(ret);
 
-	if (err_len > 0) {
-		if (err_len < SMALLBUF) {
-			length = PR_GetErrorText(buffer);
-			upsdebugx(1, "ssl_error %ld : %*s", (long)err_num, length, buffer);
-		} else {
-			upsdebugx(1, "ssl_error %ld : Internal error buffer too small, needs %ld bytes", (long)err_num, (long)err_len);
+	if (err_name) {
+		size_t	len = snprintf(err_name_buf, sizeof(err_name_buf), " (%s)", err_name);
+		if (len > sizeof(err_name_buf) - 2) {
+			err_name_buf[sizeof(err_name_buf) - 2] = ')';
+			err_name_buf[sizeof(err_name_buf) - 1] = '\0';
 		}
 	} else {
-		upsdebugx(1, "ssl_error %ld", (long)err_num);
+		err_name_buf[0] = '\0';
+	}
+
+	if (err_len > 0) {
+		if ((size_t)err_len < sizeof(buffer)) {
+			PRInt32	length = PR_GetErrorText(buffer);
+			upsdebugx(1, "ssl_error %ld%s : %*s", (long)err_num, err_name_buf, length, buffer);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s : Internal error buffer too small, needs %ld bytes", (long)err_num, err_name_buf, (long)err_len);
+		}
+	} else {
+		/* The code above may be obsolete or not ubiquitous, try another way */
+		const char	*err_text = PR_ErrorToString(err_num, PR_LANGUAGE_I_DEFAULT);
+		if (err_text && *err_text) {
+			upsdebugx(1, "ssl_error %ld%s : %s", (long)err_num, err_name_buf, err_text);
+		} else {
+			upsdebugx(1, "ssl_error %ld%s", (long)err_num, err_name_buf);
+		}
 	}
 
 	return -1;
@@ -325,6 +379,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	NUT_UNUSED_VARIABLE(arg);
 
 	if (client->ssl) {
+		upsdebugx(2, "%s: NUT_ERR_ALREADY_SSL_MODE because this connection is already initialized as SSL",
+			__func__);
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
 		return;
 	}
@@ -332,6 +388,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	client->ssl_connected = 0;
 
 	if ((!certfile) || (!ssl_initialized)) {
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to certfile='%s' ssl_initialized=%d",
+			__func__, NUT_STRARG(certfile), ssl_initialized);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		return;
 	}
@@ -342,12 +400,20 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	if (!NSS_IsInitialized())
 # endif	/* WITH_OPENSSL | WITH_NSS */
 	{
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to lack of initialized context",
+			__func__);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		ssl_initialized = 0;
 		return;
 	}
 
+	/* Note that after this message, the client assumes that communications
+	 * are encrypted (no more plaintext, even if we wanted to report that
+	 * some further SSL setup failed, e.g. due to untrusted certificates
+	 * as seen during handshake).
+	 */
 	if (!sendback(client, "OK STARTTLS\n")) {
+		upsdebug_with_errno(2, "%s: could not confirm the beginning of SSL ritual to prospective SSL client", __func__);
 		return;
 	}
 
@@ -391,13 +457,14 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		int	ssl_retries = 0;
 		/* Cap retries to avoid spinning forever on a broken socket.
 		 * 250 * 20 ms = 5 s maximum wait, which is generous for a
-		 * local handshake while being safe for CI timeouts.        */
-		const int	SSL_ACCEPT_MAX_RETRIES = 250;
+		 * local handshake while being safe for CI timeouts.
+		 */
+		const int	SSL_IO_MAX_RETRIES = 250;
 		fd_set	fds;
 		struct timeval	tv;
 
 		ret = -1;
-		while (ssl_retries < SSL_ACCEPT_MAX_RETRIES) {
+		while (ssl_retries < SSL_IO_MAX_RETRIES) {
 			ret = SSL_accept(client->ssl);
 
 			if (ret == 1) {
@@ -426,7 +493,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 					(ssl_err == SSL_ERROR_WANT_READ)
 						? "READ" : "WRITE",
 					ssl_retries + 1,
-					SSL_ACCEPT_MAX_RETRIES);
+					SSL_IO_MAX_RETRIES);
 
 				if (select(client->sock_fd + 1,
 					(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
@@ -436,6 +503,9 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 					upslog_with_errno(LOG_ERR,
 						"%s: select() failed during SSL_accept",
 						__func__);
+					/* Returns 0 on non-fatal WANT_READ/WRITE;
+					 * we stop retrying even if non-fatal because
+					 * select() itself failed. */
 					ssl_error(client->ssl, ret);
 					return;
 				}
@@ -459,7 +529,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 			return;
 		}
 
-		if (ssl_retries >= SSL_ACCEPT_MAX_RETRIES) {
+		if (ssl_retries >= SSL_IO_MAX_RETRIES) {
 			upslogx(LOG_ERR,
 				"%s: SSL_accept timed out after %d retries"
 				" (non-blocking handshake never completed)",
@@ -471,6 +541,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 
+	upsdebugx(4, "%s: calling PR_ImportTCPSocket()", __func__);
 	socket = PR_ImportTCPSocket(client->sock_fd);
 	if (socket == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -478,6 +549,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ImportFD()", __func__);
 	client->ssl = SSL_ImportFD(NULL, socket);
 	if (client->ssl == NULL) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -485,6 +557,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_SetPKCS11PinArg()", __func__);
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
@@ -498,6 +571,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
+	upsdebugx(4, "%s: calling SSL_AuthCertificateHook()", __func__);
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -505,6 +579,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_BadCertHook()", __func__);
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -512,6 +587,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_HandshakeCallback()", __func__);
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -519,6 +595,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+	upsdebugx(4, "%s: calling SSL_ConfigSecureServer()", __func__);
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -529,6 +606,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 #pragma GCC diagnostic pop
 #endif
 
+	upsdebugx(4, "%s: calling SSL_ResetHandshake()", __func__);
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL connection");
@@ -538,7 +616,22 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	/* Note: this call can generate memory leaks not resolvable
 	 * by any release function.
-	 * Probably SSL session key object allocation. */
+	 * Probably SSL session key object allocation.
+	 *
+	 * It also seems to block indefinitely (tested a minute),
+	 * until it decides that the handshake succeeded or failed.
+	 * A malicious or broken client could DoS the server here.
+	 * TOTHINK: Maybe we want to set an alarm and time-limit
+	 *  this attempt?
+	 * TOTHINK: Process such connections or generally dialogs
+	 *  in threads?
+	 *
+	 * In case of certificate expectation mismatches, it can
+	 * also block the server until the caller closes the socket
+	 * (we rely on the client continuing the crypto-dialog
+	 * after receiving OK STARTTLS posted above) :-\
+	 */
+	upsdebugx(4, "%s: calling SSL_ForceHandshake()", __func__);
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
 		PRErrorCode code = PR_GetError();
@@ -577,6 +670,7 @@ void ssl_init(void)
 # endif /* WITH_NSS */
 
 	if (!certfile) {
+		upsdebugx(2, "%s: no certfile", __func__);
 		return;
 	}
 
@@ -640,6 +734,7 @@ void ssl_init(void)
 
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
+	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
@@ -774,6 +869,7 @@ void ssl_init(void)
 		return;
 	}
 
+	upsdebugx(2, "%s: initialized with NSS and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
 # else /* not (WITH_OPENSSL | WITH_NSS) */
 	/* Looking at ifdefs, we should not get here. But just in case... */
@@ -793,12 +889,24 @@ void ssl_init(void)
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+
 # ifdef WITH_OPENSSL
-	int	iret;
-# endif
+	int iret, ssl_err, ssl_retries = 0;
+	/* Cap retries to avoid spinning forever on a broken socket.
+	 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+	 * local handshake while being safe for CI timeouts.
+	 */
+	const int	SSL_IO_MAX_RETRIES = 250;
+	fd_set	fds;
+	struct timeval	tv;
+# endif	/* WITH_OPENSSL */
 
 	if (!client->ssl_connected) {
 		return -1;
+	}
+
+	if (buflen == 0) {
+		return 0;
 	}
 
 # ifdef WITH_OPENSSL
@@ -808,9 +916,52 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	iret = SSL_read(client->ssl, buf, (int)buflen);
-	assert(iret <= SSIZE_MAX);
-	ret = (ssize_t)iret;
+
+	while (ssl_retries < SSL_IO_MAX_RETRIES) {
+		iret = SSL_read(client->ssl, buf, (int)buflen);
+
+		if (iret > 0) {
+			ret = (ssize_t)iret;
+			break;
+		}
+
+		if (iret == 0) {
+			/* Orderly shutdown or actual EOF */
+			ret = 0;
+			break;
+		}
+
+		ssl_err = SSL_get_error(client->ssl, iret);
+		if (ssl_err == SSL_ERROR_WANT_READ
+		 || ssl_err == SSL_ERROR_WANT_WRITE
+		) {
+			FD_ZERO(&fds);
+			FD_SET(client->sock_fd, &fds);
+			tv.tv_sec  = 0;
+			tv.tv_usec = 20000;	/* 20 ms */
+
+			if (select(client->sock_fd + 1,
+				(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+				(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+				NULL, &tv) < 0
+			) {
+				/* select failure is fatal enough to stop retrying */
+				ssl_error(client->ssl, (ssize_t)iret);
+				return -1;
+			}
+			ssl_retries++;
+			continue;
+		}
+
+		/* Other errors are fatal */
+		ssl_error(client->ssl, (ssize_t)iret);
+		return -1;
+	}
+
+	if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+		upslogx(LOG_ERR, "%s: SSL_read timed out after %d retries", __func__, ssl_retries);
+		return -1;
+	}
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -829,12 +980,24 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+
 # ifdef WITH_OPENSSL
-	int	iret;
-# endif
+	int	iret, ssl_err, ssl_retries = 0;
+	/* Cap retries to avoid spinning forever on a broken socket.
+	 * 250 * 20 ms = 5 s maximum wait, which is generous for a
+	 * local handshake while being safe for CI timeouts.
+	 */
+	const int	SSL_IO_MAX_RETRIES = 250;
+	fd_set	fds;
+	struct timeval	tv;
+# endif	/* WITH_OPENSSL */
 
 	if (!client->ssl_connected) {
 		return -1;
+	}
+
+	if (buflen == 0) {
+		return 0;
 	}
 
 # ifdef WITH_OPENSSL
@@ -844,9 +1007,46 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	iret = SSL_write(client->ssl, buf, (int)buflen);
-	assert(iret <= SSIZE_MAX);
-	ret = (ssize_t)iret;
+
+	while (ssl_retries < SSL_IO_MAX_RETRIES) {
+		iret = SSL_write(client->ssl, buf, (int)buflen);
+
+		if (iret > 0) {
+			ret = (ssize_t)iret;
+			break;
+		}
+
+		ssl_err = SSL_get_error(client->ssl, iret);
+		if (ssl_err == SSL_ERROR_WANT_READ
+		 || ssl_err == SSL_ERROR_WANT_WRITE
+		) {
+			FD_ZERO(&fds);
+			FD_SET(client->sock_fd, &fds);
+			tv.tv_sec  = 0;
+			tv.tv_usec = 20000;	/* 20 ms */
+
+			if (select(client->sock_fd + 1,
+				(ssl_err == SSL_ERROR_WANT_READ)  ? &fds : NULL,
+				(ssl_err == SSL_ERROR_WANT_WRITE) ? &fds : NULL,
+				NULL, &tv) < 0
+			) {
+				/* select failure is fatal enough to stop retrying */
+				ssl_error(client->ssl, (ssize_t)iret);
+				return -1;
+			}
+			ssl_retries++;
+			continue;
+		}
+
+		/* Other errors (including iret=0) are fatal */
+		ssl_error(client->ssl, (ssize_t)iret);
+		return -1;
+	}
+
+	if (ssl_retries >= SSL_IO_MAX_RETRIES) {
+		upslogx(LOG_ERR, "%s: SSL_write timed out after %d retries", __func__, ssl_retries);
+		return -1;
+	}
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 	/* PR_* routines deal in PRInt32 type
 	 * We might need to window our I/O if we exceed 2GB :) */
@@ -895,6 +1095,7 @@ void ssl_cleanup(void)
 	PL_ArenaFinish();
 # endif	/* WITH_OPENSSL | WITH_NSS */
 	ssl_initialized = 0;
+	upsdebugx(2, "%s: SSL ability un-initialized", __func__);
 }
 
 #endif /* WITH_SSL */

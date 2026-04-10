@@ -17,35 +17,20 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
-PLANNED: Release notes for NUT 2.8.5 - what's new since 2.8.4
--------------------------------------------------------------
+
+Release notes for NUT 2.8.5 - what's new since 2.8.4
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/12
-
- - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
-   the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly (porting from 42ITy project)
-
- - (expected) Porting of reference packaging from 42ITy project
-
- - (expected) Porting of patches suggested by different distribution packages
-
- - (expected) C code clean-up/consistency (string format security, work with
-   Boolean values, string to number conversions, etc. in the same manner)
-
- - (expected) clean-up of libusb API variants support [#300 and follow-ups]
-
- - (expected) CI automation for coding style
-
- - (expected) CI automation for driver flags and variables to be certainly
-   documented, handled in augeas lenses, nutconf classes, etc.
-
- - (expected) CI automation for use of data points in drivers that conform
-   to patterns defined in link:docs/nut-names.txt[]
 
  - common code:
    * Introduced `setproctag()` and `getproctag()` (see examples in `upsmon`)
      to help track the log messages from massively-forking NUT daemons. [#3084]
+   * Introduced `NUT_DEBUG_PROCNAME` environment variable support to optionally
+     log also the process name (or however the program chose to identify itself).
+     This may be useful when multiple NUT daemons log into the same file or
+     console, without syslog to prefix the name into each line (e.g. in tests,
+     single init script systems like Home Assistant, etc.) [PR 3368]
    * Extended with plural `checkprocnames()` and `compareprocnames()`,
      as well as `sendsignalpidaliases()` and `sendsignalfnaliases()`, for
      binaries that expect to have one of several names at the moment (e.g.
@@ -86,6 +71,10 @@ https://github.com/networkupstools/nut/milestone/12
      not-requested (e.g. do not start `upsd` in `MODE=netclient`), even though
      the unit is nominally enabled; this should make packaging and providing
      service pre-sets more simple. [issue #837, PR #3233]
++
+In a way, this should also fix fallout of a change delivered in NUT v2.8.4
+release, where `upsmon` could have started with `MODE=none` in `nut.conf`,
+but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Fixed thread-safety of IP address printout in `libupsclient` method
      `upscli_tryconnect()` (practical bug seen in `nut-scanner` parallel scans).
      [issue #3234]
@@ -122,6 +111,18 @@ https://github.com/networkupstools/nut/milestone/12
    * Revised OpenSSL handshake to support retries requested by the library,
      so it at least works reliably on different platforms within the scope
      it has now. [issue #3331, PR #3344]
+   * Extended `PyNUTClient` to support `STARTTLS` and optional server/self
+     identification, added NIT tests for that ability. [issues #1711, #3329,
+     #1600, PR #3352].
+   * Ported C client library `libupsclient` support logic for SSL connections
+     into C++ client library `libnutclient` and added tests for it. [issues
+     #1599, #1711, PR #3353]
+   * Added support for command-line debugging with `-D` option into `upsc`,
+     `upscmd` and `upsrw` command-line clients, and the `nutconf` tool.
+     Revised handling of `-D` and/or `NUT_DEBUG_LEVEL` environment variable
+     in other programs. Extended public API of libupsclient and libnutscan
+     to diligently arrange debug-logging when at run-time those libraries
+     actually have different copies of the methods and data involved. [#3378]
 
  - NUT for Windows specific updates:
    * Revised detection of (relative) paths to program and configuration files
@@ -153,9 +154,22 @@ https://github.com/networkupstools/nut/milestone/12
      would focus on preparing communications, and `upsdrv_initinfo()` would
      actually talk to the device and set initial critical data values. [#1962]
 
+ - `apcsmart` driver updates:
+   * Add support for dual-byte command for APC SPM series (and potentially
+     SPRM SRVS series). [PR #3327]
+
  - `apcupsd-ups` driver updates:
    * Abandoned use of obsolete `gethostbyname()` in favour of `getaddrinfo()`.
      Extended to be IPv6-capable along the way. [#1209]
+
+ - `apc_modbus` driver updates:
+   * Fixed register range in a logging string.
+   * Add outlet group timers.
+   * Fixed outlet group command handling to dynamically detect available groups
+     (MOG, SOG0 - SOG2) in the device. Commands and variables are now only
+     exposed for outlet groups actually present on the UPS. Global `load.*` and
+     `shutdown.*` commands now correctly target all available outlet groups.
+     [PR #3395]
 
  - Introduced a new NUT driver named `meanwell_ntu` which provides support for
    the Mean Well NTU series hybrid inverter and UPS units. [PR #3206]
@@ -321,7 +335,7 @@ https://github.com/networkupstools/nut/milestone/12
 
  - `upsd` data server updates:
    * Sometimes "Data for UPS [X] is stale" and "UPS [X] data is no longer
-     stale" messages were logged in the same second, especially no busy
+     stale" messages were logged in the same second, especially on busy
      systems. Now we allow one more second on top of `MAXAGE` setting to
      declare the device dead, just in case fractional/whole second rounding
      comes into play and breaks things. [issue #661]
@@ -331,7 +345,10 @@ https://github.com/networkupstools/nut/milestone/12
      operating system allows, by only waiting for that amount of Unix sockets
      or Windows `HANDLE`'s at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
-     environment variable (e.g. in tests). [#3302]
+     environment variable (e.g. in tests). For the other side of the coin, the
+     NIT script now supports an optional `DUMMY_UPS_SWARM_COUNT` environment
+     variable which can specify the amount of additional drivers to spawn for
+     the sake of stress-testing, and `UPSLOG_SWARM_COUNT` for clients. [#3302]
    * Extended processing of `CERTREQUEST` setting to handle numeric or specific
      string values, to match both ways of reading ambiguous documentation.
      Added `configure --with-ssl-client-validation` toggle to expose the
@@ -358,6 +375,7 @@ https://github.com/networkupstools/nut/milestone/12
      long delays did not happen in practice. [issues #2133 and #3084, PR #3086]
    * Make use of `setproctag()` and `getproctag()` to report parent/child
      process names. [#3084]
+   * Clarify the warning about lack of `POWERDOWNFLAG` in configuration. [#3391]
    * Introduced a `SHUTDOWN_HOSTSYNC` notification message, to report that
      the primary `upsmon` initiated the shutdown and has some secondaries
      to wait for first. [#3084]
@@ -377,7 +395,13 @@ several `FSD` notifications into one executed action. [PR #3097]
 
  - `upsc` has now optional JSON output [issue #3172, PR #3178]
 
- - `upsset` should now recognize `RANGE NUMBER` and `NUMBER` types. [#3164]
+ - `upscmd` and `upsrw` clients would now report that the "OK" response only
+   means that the server accepted the query, if wait mode ("TRACKING") was
+   not specified, and what users could do about it (e.g. use the `-w` option
+   or `export NUT_QUIET_OK_NOTRACKING=true` to hide the warning). [issue #3383]
+
+ - `upsset` CGI tool should now recognize `RANGE NUMBER` and `NUMBER` types.
+   [#3164]
 
  - `upsstats` CGI tool updates:
    * Now has JSON output mode via `?json` (or `&json`) CGI query parameter.
@@ -496,6 +520,8 @@ several `FSD` notifications into one executed action. [PR #3097]
    * Added an option to (primarily) `--disable-threading` for systems with
      detected but broken `libpthread` support, or to test alternate code
      paths during development or in CI. [#3300]
+   * Adjusted C++ header search path on Termux when `-isystem` is involved,
+     as noted with NSS builds. [issues #1599, #1711, PR #3353]
 
  - Recipes, CI and helper script updates not classified above:
    * Fixed CI recipes for PyPI publication of PyNUT(Client) module to also
@@ -520,6 +546,9 @@ several `FSD` notifications into one executed action. [PR #3097]
      which should now not re-check source texts that were okay with the previous
      dictionary contents, in case some new terms have to be added. [PRs #3186,
      #2871]
+   * Added `make .libs-dev-PATH` recipe to generate a file which developers
+     or CI scripts can source to prefer freshly built NUT libraries and some
+     tools in their `LD_LIBRARY_PATH` and `PATH`. [#3379]
    * Introduced `make distcheck-completeness` goal to verify that our
      distribution archives can exactly reproduce themselves. [#2829]
    * Added a GitHub Actions CI job to generate, upload and recycle `make dist`
@@ -678,8 +707,8 @@ Release notes for NUT 2.8.4 - what's new since 2.8.3
 
  - `upsdrvquery` API updates [#2969]:
    * Added `upsdrvquery_oneshot_conn()` for issuing one-shot queries using an
-     existing `udq_pipe_conn_t *` connection. The caller manages the
-     connection's lifecycle, and the function includes a best-effort call to
+     existing `udq_pipe_conn_t *` connection. The caller manages the lifecycle
+     of the socket connection, and the function includes a best-effort call to
      restore broadcast mode after the query to return the connection as it was.
    * Added `upsdrvquery_oneshot_sockfn()` for initiating one-shot queries using
      a socket filename. Shares internal logic with the existing

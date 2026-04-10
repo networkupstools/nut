@@ -49,6 +49,10 @@
 
 #define MAX_CGI_STRLEN 64
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
@@ -613,6 +617,13 @@ static int get_var(const char *var, char *buf, size_t buflen)
 	return 1;
 }
 
+static void clean_exit(void)
+{
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 int main(int argc, char **argv)
 {
 	char	str[SMALLBUF], *s;
@@ -634,8 +645,9 @@ int main(int argc, char **argv)
 	setmode(STDOUT_FILENO, O_BINARY);
 #endif
 
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsimage(CGI)");
 
 	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
 	 * and NUT methods called from it. This line aims to just initialize
@@ -645,7 +657,7 @@ int main(int argc, char **argv)
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &i, 10) && i > 0) {
 		nut_debug_level = i;
-		upscli_set_debug_level(nut_debug_level);
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 	}
 
 #ifdef NUT_CGI_DEBUG_UPSIMAGE
@@ -655,7 +667,7 @@ int main(int argc, char **argv)
 # endif
 	/* Un-comment via make flags when developer-troubleshooting: */
 	nut_debug_level = NUT_CGI_DEBUG_UPSIMAGE;
-	upscli_set_debug_level(nut_debug_level);
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
 	if (nut_debug_level > 0) {
@@ -669,6 +681,7 @@ int main(int argc, char **argv)
 	extractcgiargs();
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))

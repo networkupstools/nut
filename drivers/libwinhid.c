@@ -1892,7 +1892,7 @@ static int winhid_build_descriptor_from_caps(
 	const win_hidp_value_caps_t *feat_vals, size_t feat_vals_n,
 	const win_hidp_button_caps_t *feat_btns, size_t feat_btns_n,
 	const win_hidp_link_collection_node_t *link_nodes, size_t link_nodes_n,
-	unsigned char *out_buf,
+	usb_ctrl_charbuf out_buf,
 	size_t out_buf_size,
 	usb_ctrl_charbufsize *out_len)
 {
@@ -1961,7 +1961,7 @@ static int winhid_build_descriptor_from_caps(
 static int winhid_collect_caps_and_optional_descriptor(
 	HANDLE handle,
 	winhid_dev_ctx_t *ctx,
-	unsigned char *rdbuf,
+	usb_ctrl_charbuf rdbuf,
 	size_t rdbuf_size,
 	usb_ctrl_charbufsize *rdlen)
 {
@@ -2221,7 +2221,7 @@ static int nut_winhid_open(
 		ctx->use_overlapped_io = opened_overlapped;
 
 		if (callback) {
-			unsigned char rdbuf[WINHID_MAX_REPORT_SIZE];
+			usb_ctrl_char rdbuf[WINHID_MAX_REPORT_SIZE];
 			usb_ctrl_charbufsize rdlen = 0;
 			int cbret;
 

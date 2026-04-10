@@ -3,6 +3,7 @@
    Copyright (C)
      2000  Russell Kroll <rkroll@exploits.org>
      2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,6 +36,10 @@
 #include "nut_stdint.h"
 #include "upsclient.h"
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
@@ -48,7 +53,10 @@ struct list_t {
 	struct list_t	*next;
 };
 
-static void usage(const char *prog)
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+Dlhu:p:t:wVW:";
+
+static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT administration client program to initiate instant commands on UPS hardware.\n");
@@ -71,6 +79,7 @@ static void usage(const char *prog)
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
 		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -D         - raise debugging level\n");
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
@@ -202,11 +211,22 @@ static void do_cmd(char **argv, const int argc)
 		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
 		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
 	) {
+		char	*e = getenv("NUT_QUIET_OK_NOTRACKING");
+		int	lvl = 0;	/* Visible by default */
+
+		if (e && !strcmp(e, "true"))
+			lvl = 1;	/* Hide into debuging if asked to */
+
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
-		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
-			"but as we did not wait for result, we do not know if it was handled in fact.",
-			__func__);
+		upsdebugx(lvl, "%s: 'OK' only means the NUT data server accepted\n"
+			"the request as valid, but as we did not wait for result,\n"
+			"we do not know if it was handled in fact.%s",
+			lvl ? __func__ : "WARNING",
+			lvl ? "" :
+			"\nYou can export NUT_QUIET_OK_NOTRACKING=true to hide this message,\n"
+			"or use -w [-t SEC] option(s) to track the actual outcome."
+			);
 		return;
 	}
 
@@ -286,38 +306,75 @@ static void clean_exit(void)
 	free(upsname);
 	free(hostname);
 	free(ups);
+
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 
 int main(int argc, char **argv)
 {
-	int	i;
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	int	opt_ret = 0;
 	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *s = NULL;
-	const char	*prog = xbasename(argv[0]);
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upscmd");
 	const char	*net_connect_timeout = NULL;
 
-	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
-	 * and NUT methods called from it. This line aims to just initialize
-	 * the subsystem, and set initial timestamp. Debugging the client is
-	 * primarily of use to developers, so is not exposed via `-D` args.
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
 	 */
-	s = getenv("NUT_DEBUG_LEVEL");
-	if (s && str_to_int(s, &i, 10) && i > 0) {
-		nut_debug_level = i;
-		upscli_set_debug_level(nut_debug_level);
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
 	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	setproctag(prog);
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
 #if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 	callback_upsconf_args = do_upsconf_args;
 #endif
 
-	while ((i = getopt(argc, argv, "+lhu:p:t:wVW:")) != -1) {
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
 
-		switch (i)
+		switch (opt_ret)
 		{
+		case 'D': break;	/* See nut_debug_level handled above */
 		case 'l':
 			cmdlist = 1;
 			break;
@@ -354,7 +411,7 @@ int main(int argc, char **argv)
 
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
@@ -364,11 +421,13 @@ int main(int argc, char **argv)
 			net_connect_timeout);
 	}
 
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
 	if (argc < 1) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -378,6 +437,7 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
@@ -391,7 +451,7 @@ int main(int argc, char **argv)
 	}
 
 	if (argc < 2) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -490,6 +550,8 @@ int main(int argc, char **argv)
 
 	do_cmd(&argv[1], argc - 1);
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 

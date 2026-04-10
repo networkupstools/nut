@@ -6,7 +6,36 @@ NAME
 
 libnutclient_tcp, nutclient_tcp_create_client, nutclient_tcp_is_connected,
 nutclient_tcp_disconnect, nutclient_tcp_reconnect,
-nutclient_tcp_set_timeout, nutclient_tcp_get_timeout -
+nutclient_tcp_set_timeout, nutclient_tcp_get_timeout,
+nutclient_tcp_get_ssl_caps, nutclient_tcp_is_ssl,
+nutclient_tcp_create_client_ssl_OpenSSL,
+nutclient_tcp_set_ssl_config_OpenSSL,
+nutclient_tcp_create_client_ssl_NSS,
+nutclient_tcp_set_ssl_config_NSS,
+nutclient_tcp_set_ssl_try,
+nutclient_tcp_get_ssl_try,
+nutclient_tcp_set_ssl_force,
+nutclient_tcp_get_ssl_force,
+nutclient_tcp_set_ssl_certverify,
+nutclient_tcp_get_ssl_certverify,
+nutclient_tcp_set_ssl_capath,
+nutclient_tcp_get_ssl_capath,
+nutclient_tcp_set_ssl_cafile,
+nutclient_tcp_get_ssl_cafile,
+nutclient_tcp_set_ssl_certfile,
+nutclient_tcp_get_ssl_certfile,
+nutclient_tcp_set_ssl_keyfile,
+nutclient_tcp_get_ssl_keyfile,
+nutclient_tcp_set_ssl_keypass,
+nutclient_tcp_get_ssl_keypass,
+nutclient_tcp_set_ssl_certstore_path,
+nutclient_tcp_get_ssl_certstore_path,
+nutclient_tcp_set_ssl_certstore_prefix,
+nutclient_tcp_get_ssl_certstore_prefix,
+nutclient_tcp_set_ssl_certident_name,
+nutclient_tcp_get_ssl_certident_name,
+nutclient_tcp_set_ssl_certhost_name,
+nutclient_tcp_get_ssl_certhost_name -
 TCP protocol related function for Network UPS Tools high-level client
 access library
 
@@ -32,6 +61,91 @@ SYNOPSIS
 	void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
 
 	time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+
+	/* SSL (NUT STARTTLS) support, behavior may be build-dependent
+	 * (none/OpenSSL/NSS): */
+
+	/* Capabilities of this build, bitmask: */
+	#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+	#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
+	#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+	int nutclient_tcp_get_ssl_caps(void);
+
+	/* Is the specified client currently connected in SSL mode? */
+	int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
+
+	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
+		const char* host, uint16_t port, int try_ssl,
+		int force_ssl, int certverify,
+		const char *ca_path, const char *ca_file,
+		const char *cert_file, const char *key_file, const char *key_pass);
+
+	void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
+		int force_ssl, int certverify,
+		const char *ca_path, const char *ca_file,
+		const char *cert_file, const char *key_file, const char *key_pass);
+
+	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
+		const char* host, uint16_t port, int try_ssl,
+		int force_ssl, int certverify,
+		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix,
+		const char *certhost_name,
+		const char *certident_name);
+
+	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
+		int force_ssl, int certverify,
+		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix,
+		const char *certhost_name,
+		const char *certident_name);
+
+	/* Individual SSL option getters/setters: */
+
+	void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl);
+	int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl);
+	int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify);
+	int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client);
+
+	/* OpenSSL (PEM): Trusted CA directory: */
+	void nutclient_tcp_set_ssl_capath(NUTCLIENT_TCP_t client, const char* ca_path);
+	const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client);
+
+	/* Trusted CA file: */
+	void nutclient_tcp_set_ssl_cafile(NUTCLIENT_TCP_t client, const char* ca_file);
+	const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client);
+
+	/* Client certificate (public): */
+	void nutclient_tcp_set_ssl_certfile(NUTCLIENT_TCP_t client, const char* cert_file);
+	const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client);
+
+	/* Client key (private): */
+	void nutclient_tcp_set_ssl_keyfile(NUTCLIENT_TCP_t client, const char* key_file);
+	const char* nutclient_tcp_get_ssl_keyfile(NUTCLIENT_TCP_t client);
+
+	/* OpenSSL and NSS: Client key (private): */
+	void nutclient_tcp_set_ssl_keypass(NUTCLIENT_TCP_t client, const char* key_pass);
+	const char* nutclient_tcp_get_ssl_keypass(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certstore_path(NUTCLIENT_TCP_t client,
+		const char* certstore_path);
+	const char* nutclient_tcp_get_ssl_certstore_path(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certstore_prefix(NUTCLIENT_TCP_t client,
+		const char* certstore_prefix);
+	const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client,
+		const char* certident_name);
+	const char* nutclient_tcp_get_ssl_certident_name(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certhost_name(NUTCLIENT_TCP_t client,
+		const char* certhost_name);
+	const char* nutclient_tcp_get_ssl_certhost_name(NUTCLIENT_TCP_t client);
 ------
 
 DESCRIPTION
