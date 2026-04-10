@@ -248,10 +248,26 @@ if something goes wrong.
                     print( "[DEBUG] STARTTLS accepted, wrapping socket" )
                 if self.__ssl_context is None :
                     self.__ssl_context = ssl.create_default_context()
-                self.__srv_handler = self.__ssl_context.wrap_socket(
-                    self.__srv_handler,
-                    server_hostname=self.__host
-                )
+
+                # Not sure if we can enter this river twice (e.g. if the server
+                # side of the handshake would still be listening), but we can try:
+                for i in range(5, 0, -1):
+                    try:
+                        self.__srv_handler = self.__ssl_context.wrap_socket(
+                            self.__srv_handler,
+                            server_hostname=self.__host
+                        )
+                        break
+                    except TimeoutError as te:
+                        if self.__debug:
+                            print( "[DEBUG] STARTTLS handshake timed out%s: %s" %(
+                                ("" if (i < 1) else (", retrying (%d)" % i)),
+                                str(te)) )
+
+                        if (i > 1):
+                            sleep(1)
+                        else:
+                            raise te
 
                 # Make sure handshake succeeded or abort early
                 # (there is currently no way for the server to
