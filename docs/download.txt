@@ -265,14 +265,14 @@ enable compression on the folder where you have unpacked a NUT tarball.
 Java packages
 -------------
 
-- The jNut package has been split into its own
+- The jNut package (client side, Beta) has been split into its own
   link:https://github.com/networkupstools/jNut[GitHub repository].
 
-- NUT Java support (client side, Beta): sources and JAR of the library and example client
-  link:https://www.networkupstools.org/package/java/jNut-1.1-SNAPSHOT.tar.gz[jNUT 1.1-SNAPSHOT]
+- NUT Java support: sources and JAR of the library and example client
+  link:https://www.networkupstools.org/package/java/jNut-1.1.tar.gz[jNUT 1.1]
 
-- NUT Java Web support (client side using REST, Beta): sources and WAR
-  link:https://www.networkupstools.org/package/java/jNutWebAPI-1.1-SNAPSHOT.tar.gz[jNutWebAPI 1.1-SNAPSHOT]
+- NUT Java Web support (NUT client side to provide REST API as a server): sources and WAR
+  link:https://www.networkupstools.org/package/java/jNutWebAPI-1.1.tar.gz[jNutWebAPI 1.1]
 
 Virtualization packages
 -----------------------
