@@ -343,7 +343,19 @@ sub _initialize {
 
   $self->{select} = IO::Select->new( $srvsock );
 
-  if ($arg{USESSL} || $arg{FORCESSL}) {
+  my $can_ssl = 1;
+  eval "require IO::Socket::SSL";
+  if ($@) {
+    $can_ssl = 0;
+  }
+
+  my $use_ssl = $arg{USESSL};
+  if (!defined $use_ssl) {
+    $self->_debug("USESSL option was undef, flipping to IO::Socket::SSL module availability: $can_ssl");
+    $use_ssl = $can_ssl;
+  }
+
+  if ($use_ssl || $arg{FORCESSL}) {
     # Always try to elevate, do not bother if this fails unless required by args
     my $startedTLS = $self->StartTLS(%arg);
     if (defined $startedTLS && $startedTLS) {
