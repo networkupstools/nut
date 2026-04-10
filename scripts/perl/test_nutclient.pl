@@ -61,7 +61,7 @@ if (1) {
         );
     };
     if ($@ || !defined($nut)) {
-        my $ex = $@ || $nut->Error();
+        my $ex = $@ || (defined($nut) ? $nut->Error() : "N/A: \$nut object already discarded, can not retrieve its Error()");
         print "EXCEPTION during initialization: $ex\n";
         if ($NUT_SSL && ($ex =~ /FEATURE-NOT-CONFIGURED/ || $ex =~ /FEATURE-NOT-SUPPORTED/)) {
             print "(anticipated error: server does not support STARTTLS)\n";
