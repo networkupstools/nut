@@ -177,6 +177,16 @@ sub StartTLS {
   $ans = $self->_send("STARTTLS");
   if (defined $ans && $ans =~ /^OK STARTTLS/) {
     $self->_debug("STARTTLS accepted, upgrading socket.");
+    my $strarg = "[" . scalar(%arg) . "]";
+    for (keys %arg) {
+        $strarg .= " $_=>" . ($arg{$_}//"undef");
+    }
+    $self->_debug("STARTTLS args: SSL_verify_mode=>"
+        . ($arg{CERTVERIFY} ? "SSL_VERIFY_PEER" : "SSL_VERIFY_NONE")
+        . " SSL_ca_path=>'$arg{CAPATH}' "
+        . " Other args: " . $strarg
+        );
+
     # NOTE: Currently nothing fancy like client's own certificate databases...
     IO::Socket::SSL->start_SSL(
       $self->{srvsock},
