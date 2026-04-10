@@ -402,15 +402,19 @@ if something goes wrong.
             self.__srv_handler.send( ("NETVER\n").encode('ascii') )
             result = self.__read_until( b"\n" )
 
+        # print ( "[DEBUG] isValidProtocolVersion: version_re='%s' result='%s'" % (str(version_re), str(result)))
+
         if result is None:
             return False
+
+        result = result.replace( b"\n", b"" ).decode('ascii')
 
         if version_re is None:
             # Currently supported: 1.0, 1.1, 1.2, 1.3 => r'^1\.[0-3]$'
             # Is it an X(.Y) number?
-            version_re = r'^\d+(?:\.\d+)?$'
+            version_re = r'^\d+(\.\d+)?$'
 
-        if re.match(version_re, str(result)):
+        if re.match(version_re, result):
             return True
 
         return False
