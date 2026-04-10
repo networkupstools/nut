@@ -2787,7 +2787,17 @@ testcases_sandbox_python() {
 ####################################
 
 setenv_ssl_perl() {
-	setenv_ssl_python
+    setenv_ssl_python
+
+    if isTestablePerl && [ -n "${PERL}" ] ; then
+        $PERL -e "use IO::Socket::SSL;" || {
+            log_warn "The perl interpreter '$PERL' can not use IO::Socket::SSL module, so we will not FORCESSL in the test"
+            NUT_FORCESSL=0
+            export NUT_FORCESSL
+            # Let the test script and eventually module auto-detect undef => can_ssl
+            unset NUT_SSL
+        }
+    fi
 }
 
 PL_SHEBANG=""
