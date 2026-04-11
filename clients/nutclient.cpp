@@ -2642,7 +2642,15 @@ void Device::login()
 void Device::master()
 {
 	if (!isOk()) throw NutException("Invalid device");
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 	getClient()->deviceMaster(getName());
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#pragma GCC diagnostic pop
+#endif
 }
 
 void Device::becomePrimary()
@@ -3448,7 +3456,14 @@ void nutclient_device_master(NUTCLIENT_t client, const char* dev)
 		{
 			try
 			{
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 				cl->deviceMaster(dev);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#pragma GCC diagnostic pop
+#endif
 			}
 			catch(...){}
 		}
