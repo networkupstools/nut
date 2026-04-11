@@ -1,0 +1,131 @@
+APCMICROLINK(8)
+===============
+
+NAME
+----
+
+apcmicrolink - Driver for APC Smart-UPS units using the Microlink serial protocol
+
+SYNOPSIS
+--------
+
+*apcmicrolink* -h
+
+*apcmicrolink* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page documents the hardware-specific features of the
+*apcmicrolink* driver. For general information about NUT drivers, see
+linkman:nutupsdrv[8].
+
+
+DESCRIPTION
+-----------
+
+The *apcmicrolink* driver talks the APC Microlink protocol used by newer
+serial-connected Smart-UPS families such as SMT and SMX units with the
+Microlink RJ45 serial port.
+
+This driver is currently experimental. It discovers most values from the
+device descriptor blob at runtime and maps supported Microlink objects onto
+standard NUT variables where possible. Unknown descriptor fields can also be
+published for debugging and reverse-engineering.
+
+
+SUPPORTED HARDWARE
+------------------
+
+This driver is intended for APC Smart-UPS models that expose the Microlink
+serial protocol, notably SMT and SMX units with the vendor Microlink serial
+cable.
+
+Tested support currently targets:
+
+* APC Smart-UPS SMT/SMX Microlink models
+
+Other APC Microlink devices may work if they expose a compatible descriptor
+layout.
+
+
+CONFIGURATION
+-------------
+
+The driver is configured via linkman:ups.conf[5].
+
+A minimal configuration:
+
+----
+[apc-microlink]
+    driver = apcmicrolink
+    port = /dev/ttyUSB0
+----
+
+Optional settings
+~~~~~~~~~~~~~~~~~
+
+*baudrate*='num'::
+Set the serial line speed. The default is `9600`.
+
+*showinternals*='yes|no'::
+Publish additional internal Microlink runtime values. By default this follows
+the driver debug level and is enabled automatically when debug logging is on.
+
+*showunmapped*='yes|no'::
+Publish descriptor values that do not currently map to a standard NUT variable.
+By default this follows the driver debug level and is enabled automatically
+when debug logging is on.
+
+
+IMPLEMENTED FEATURES
+--------------------
+
+The driver publishes standard identity, status, runtime and outlet-group data
+when these objects are present in the Microlink descriptor.
+
+Writable descriptor-backed variables are exposed as read-write NUT variables
+when the device reports them as modifiable. Depending on the connected model,
+this can include values such as:
+
+* `ups.id`
+* `battery.testinterval`
+* `outlet.group.N.oncountdown`
+* `outlet.group.N.offcountdown`
+* `outlet.group.N.stayoffcountdown`
+* `outlet.group.N.minimumreturnruntime`
+* `outlet.group.N.lowruntimewarning`
+
+Supported instant commands currently include:
+
+* `test.battery.start`
+* `test.battery.stop`
+* `test.panel.start`
+* `test.panel.stop`
+
+Driver-assisted shutdown is not yet implemented.
+
+
+CABLING
+-------
+
+Use the APC Microlink serial cable appropriate for the UPS. USB-to-serial
+adapters can work if they present a standard TTY device to the operating
+system.
+
+
+AUTHORS
+-------
+
+* Lukas Schmid <lukas.schmid@netcube.li>
+
+
+SEE ALSO
+--------
+
+The core driver
+~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8], linkman:ups.conf[5]
+
+Internet resources
+~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

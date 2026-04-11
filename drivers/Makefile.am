@@ -147,7 +147,7 @@ endif HAVE_LIBREGEX
 NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
 NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
  clone clone-outlet failover apcupsd-ups skel
-SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
+SERIAL_DRIVERLIST = al175 apcmicrolink bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
@@ -234,6 +234,7 @@ upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
+apcmicrolink_SOURCES = apcmicrolink.c apcmicrolink-maps.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
 apcsmart_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
