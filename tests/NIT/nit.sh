@@ -2844,6 +2844,18 @@ isTestablePerl() {
     else
         log_error "[isTestablePerl] Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
     fi
+
+    PERL_OPTS_INC="-I${TOP_SRCDIR}/scripts/perl"
+    PERL_OPTS_DEBUG=''
+    if [ x"$NIT_DEBUG_PERL" = xtrue ] ; then
+        if [ -d "${HOME}/perl5/lib/perl5" ] ; then
+            PERL_OPTS_DEBUG="-I${HOME}/perl5/lib/perl5"
+        fi
+        $PERL $PERL_OPTS_DEBUG -e 'use Devel::DumpTrace;' && PERL_OPTS_DEBUG="$PERL_OPTS_DEBUG -d:DumpTrace" \
+        || { $PERL $PERL_OPTS_DEBUG -e 'use Devel::Trace;' && PERL_OPTS_DEBUG="$PERL_OPTS_DEBUG -d:Trace" ; } \
+        || { log_warn "Could not find Devel::DumpTrace nor Devel::Trace" ; unset PERL_OPTS_DEBUG ; }
+    fi
+
     return $PL_RES
 }
 
@@ -2855,7 +2867,7 @@ testcase_sandbox_perl_without_credentials() {
     if ( unset NUT_USER || true
          unset NUT_PASS || true
          setenv_ssl_perl
-         $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2879,7 +2891,7 @@ testcase_sandbox_perl_with_credentials() {
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
-        $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2900,7 +2912,7 @@ testcase_sandbox_perl_with_upsmon_credentials() {
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
-        $PERL -I"${TOP_SRCDIR}/scripts/perl" "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
