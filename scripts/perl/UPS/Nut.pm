@@ -194,6 +194,11 @@ sub StartTLS {
         . " Other args: " . $strarg
         );
 
+    if (!defined($argdef{SSL_hostname}) && defined($argdef{HOST})) {
+      # If specified, allows cert validation for host names *and* IP addresses
+      $argdef{SSL_hostname} = $argdef{HOST};
+    }
+
     if ($self->{debug}) {
       $dumper->dumpValue(\%argdef);
     }
