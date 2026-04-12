@@ -265,22 +265,33 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-#ifdef WITH_OPENSSL
-	/* CERTFILE <dir> */
+#if defined(WITH_SSL)
+# ifdef WITH_OPENSSL
+	/* CERTFILE <dir>
+	 * Specific PEM file with server/CA[...]/private-key
+	 * chain used to identify this server
+	 */
 	if (!strcmp(arg[0], "CERTFILE")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
 
-	if (!strcmp(arg[0], "CERTREQUEST") || !strcmp(arg[0], "CERTPATH") || !strcmp(arg[0], "CERTIDENT")) {
+	/* FIXME: CERTIDENT can now be doable with OpenSSL */
+	/* FIXME: CERTPATH may be needed to know the CA for client validation
+	 *  (if a different one issued those certs than the one used by server?)
+	 * Directory with CA PEM files, hash-encoded (originally or as symlinks).
+	 */
+	if (!strcmp(arg[0], "CERTPATH") || !strcmp(arg[0], "CERTIDENT")) {
 		upsdebugx(1, "%s is not supported in this SSL build: --without-nss", arg[0]);
 		return 0;
 	}
 
-#elif (defined WITH_NSS) /* WITH_OPENSSL */
+# elif (defined WITH_NSS) /* WITH_OPENSSL */
 
-	/* CERTPATH <dir> */
+	/* CERTPATH <dir>
+	 * NSS database files live here, storing both server, CA and client info as needed
+	 */
 	if (!strcmp(arg[0], "CERTPATH")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
@@ -292,7 +303,11 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 0;
 	}
 
-	/* See below for NSS handling of `CERTIDENT <name> <passwd>` with 2 arguments */
+# endif	/* WITH_OPENSSL || WITH_NSS */
+
+	/* Options with one argument that are common for both SSL backends follow.
+	 * See below for [NSS] handling of `CERTIDENT <name> <passwd>` with 2 arguments.
+	 */
 
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
@@ -318,14 +333,23 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 0;
 		}
 	}
-# else	/* WITH_NSS && !WITH_CLIENT_CERTIFICATE_VALIDATION */
+# else	/* !WITH_CLIENT_CERTIFICATE_VALIDATION */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		upslogx(LOG_ERR, "CERTREQUEST is not supported in this SSL build: --with-nss --without-ssl-client-validation");
+		upslogx(LOG_ERR, "CERTREQUEST is not supported in this SSL build: --without-ssl-client-validation");
 		return 0;
 	}
 # endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
-#else	/* Neither WITH_OPENSSL nor WITH_NSS: */
+	/* DISABLE_WEAK_SSL <bool> */
+	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
+		if (parse_boolean(arg[1], &disable_weak_ssl))
+			return 1;
+
+		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
+		return 0;
+	}
+
+#else	/* !WITH_SSL */
 
 	if (!strcmp(arg[0], "CERTREQUEST") || !strcmp(arg[0], "CERTPATH")
 	 || !strcmp(arg[0], "CERTIDENT") || !strcmp(arg[0], "CERTFILE")
@@ -335,18 +359,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 0;
 	}
 
-#endif	/* WITH_OPENSSL | WITH_NSS */
-
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
-	/* DISABLE_WEAK_SSL <bool> */
-	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
-		if (parse_boolean(arg[1], &disable_weak_ssl))
-			return 1;
-
-		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
-		return 0;
-	}
-#endif /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_SSL */
 
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
