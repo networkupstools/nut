@@ -2798,6 +2798,15 @@ setenv_ssl_perl() {
             unset NUT_SSL
         }
     fi
+
+    # Numeric result of equality (1) inverted vs shell success code (0), so `ne`:
+    if $PERL -e 'exit ( $^O ne "darwin" );' ; then
+        # TODO: Fix https://github.com/networkupstools/nut/issues/3404
+        log_warn "Disabling CERTVERIFY on darwin platform"
+        NUT_CERTVERIFY=0
+        export NUT_CERTVERIFY
+        #unset NUT_CERTVERIFY
+    fi
 }
 
 PL_SHEBANG=""
