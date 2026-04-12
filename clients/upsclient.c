@@ -1180,6 +1180,10 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		HOST_CERT_t	*cert = upscli_find_host_cert(ups->host);
 
 		if (cert != NULL && cert->certname != NULL) {
+			/* We have a setting like upsmon CERTHOST - to pin the certificate
+			 * and other security properties for a host, e.g.:
+			 * CERTHOST <hostname> <certificate name> <certverify> <forcessl>
+			 */
 # if OPENSSL_VERSION_NUMBER >= 0x10100000L
 			/* hostname verification - OpenSSL 1.1.0+ */
 			const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
@@ -1190,11 +1194,17 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			upslogx(LOG_INFO, "Connecting in SSL to '%s' and looking at certificate called '%s'",
 				ups->host, cert->certname);
 # else
-			upslogx(LOG_ERR, "Connecting in SSL to '%s' was asked and look at certificate "
+			upslogx(cert->certverify ? LOG_ERR : LOG_WARNING,
+				"Connecting in SSL to '%s' and was asked to look at certificate "
 				"called '%s', but the OpenSSL library in this build is too old for that. "
-				"Please disable the CERTHOST setting or update the library used by NUT.",
-				ups->host, cert->certname);
-			return -1;
+				"Please disable the CERTHOST setting or update the library used by NUT. %s",
+				ups->host, cert->certname,
+				cert->certverify
+				? "Refusing connection attempt now because certificate verification was required."
+				: "Proceeding without certificate verification as it was not required.");
+
+			if (cert->certverify)
+				return -1;
 # endif
 		} else {
 			upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
@@ -1368,7 +1378,15 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	if (cert != NULL && cert->certname != NULL) {
 		upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
 			ups->host, cert->certname);
+
 		status = SSL_SetURL(ups->ssl, cert->certname);
+		if (status != SECSuccess) {
+			if (!(cert->certverify)) {
+				nss_error("upscli_sslinit / SSL_SetURL");
+				upslogx(LOG_ERR, "Certificate verification failed for '%s', but was not required, proceeding", ups->host);
+				status = SSL_SetURL(ups->ssl, ups->host);
+			}
+		}
 	} else {
 		upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
 		status = SSL_SetURL(ups->ssl, ups->host);
