@@ -744,7 +744,21 @@ void ssl_init(void)
 		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list failed");
 	}
 
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	if (certrequest < NETSSL_CERTREQ_NO || certrequest > NETSSL_CERTREQ_REQUIRE) {
+		fatalx(EXIT_FAILURE, "Invalid certificate requirement");
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUEST || certrequest == NETSSL_CERTREQ_REQUIRE) {
+		SSL_CTX_set_verify(ssl_ctx,
+			(certrequest == NETSSL_CERTREQ_REQUIRE ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_PEER),
+			NULL);
+	} else {
+		SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+	}
+# else
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+# endif
 
 	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
