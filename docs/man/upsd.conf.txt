@@ -156,6 +156,10 @@ or handles that can be polled in one operation, the server would then poll
 several smaller groups until it handles all the connections it tracks.
 With a large amount of connections this may however impact the delays between
 processing loops, and time before an incoming message is seen and processed.
++
+NOTE: Consider increasing constraints like `ulimit` for file descriptors on POSIX
+systems (in the init script or service method) if you need to increase this
+value significantly.
 
 *CERTFILE 'certificate file'*::
 
