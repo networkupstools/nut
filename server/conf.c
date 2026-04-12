@@ -277,25 +277,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-	/* FIXME: CERTPATH may be needed to know the CA for client validation
-	 *  (if a different one issued those certs than the one used by server?)
-	 * Directory with CA PEM files, hash-encoded (originally or as symlinks).
-	 */
-	if (!strcmp(arg[0], "CERTPATH")) {
-		upsdebugx(1, "%s is not supported in this SSL build: --without-nss", arg[0]);
-		return 0;
-	}
-
 # elif (defined WITH_NSS) /* WITH_OPENSSL */
-
-	/* CERTPATH <dir>
-	 * NSS database files live here, storing both server, CA and client info as needed
-	 */
-	if (!strcmp(arg[0], "CERTPATH")) {
-		free(certfile);
-		certfile = xstrdup(arg[1]);
-		return 1;
-	}
 
 	if (!strcmp(arg[0], "CERTFILE")) {
 		upsdebugx(1, "%s is not supported in this SSL build: --without-openssl", arg[0]);
@@ -307,6 +289,19 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* Options with one argument that are common for both SSL backends follow.
 	 * See below for [NSS] handling of `CERTIDENT <name> <passwd>` with 2 arguments.
 	 */
+
+	/* CERTPATH <dir>
+	 * NSS: database files live here, storing both server, CA and client info
+	 *   as needed.
+	 * OpenSSL: CERTPATH may be needed to know the CA(s) for client validation
+	 *   (if a different one issued those certs than the one used by server?)
+	 *   Directory with CA PEM files, hash-encoded (originally or as symlinks).
+	 */
+	if (!strcmp(arg[0], "CERTPATH")) {
+		free(certpath);
+		certpath = xstrdup(arg[1]);
+		return 1;
+	}
 
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */

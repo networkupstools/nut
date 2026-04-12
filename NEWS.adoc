@@ -80,7 +80,13 @@ https://github.com/networkupstools/nut/milestone/13
       connection attempt if that number is '0'). [issue #3331]
     * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
       (optional validation of clients identified by a certificate) also
-      when built with OpenSSL. [#3331]
+      when built with OpenSSL, optionally using the `CERTPATH` with a
+      collection of CA certificates.
+      Also support `CERTIDENT` to provide a private key password and ensure
+      that the certificate in `CERTFILE` has an expected subject name as an
+      exact string, or that its CN or SAN match the provided string as a
+      standard expression of host name (section 3.5 of RFC 1034) or IP address.
+      [issue #3331]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

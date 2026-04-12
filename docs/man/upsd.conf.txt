@@ -164,7 +164,8 @@ value significantly.
 *CERTFILE 'certificate file'*::
 
 When compiled with SSL support with OpenSSL backend, you can enter the
-certificate file here. No-op in NSS builds which use `CERTPATH` instead.
+server's own certificate file here. No-op in NSS builds which use `CERTPATH`
+instead for all purposes.
 +
 The certificates must be in PEM format and must be sorted starting with
 the subject's certificate (server certificate), followed by intermediate
@@ -175,15 +176,19 @@ User manual, for more information on the SSL support in NUT.
 
 *CERTPATH 'certificate database'*::
 
-When compiled with SSL support with NSS backend, you can enter the
-certificate path here.
+When compiled with SSL support, you can enter the certificate database
+path here.
 +
-Certificates are stored in a dedicated database (data split in 3 files).
-Specify the path of this database directory.
+For NSS backend, CA and individual certificates and private key(s) are
+stored in a dedicated database (split into 3 files).
 +
 NOTE: NSS also provides for a "prefix", so multiple databases may be
 maintained in the same directory, but NUT does not currently support
 this.
++
+For OpenSSL backend, CA certificates are typically stored in a single
+PEM file each, with a name (or symlink) based on the certificate subject
+name hash. (For private key and server certificate, see `CERTFILE` above.)
 
 *CERTIDENT 'certificate name' 'database password'*::
 

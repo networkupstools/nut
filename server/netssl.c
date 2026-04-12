@@ -41,6 +41,10 @@
 #include "netssl.h"
 #include "nut_stdint.h"
 
+#ifdef WITH_OPENSSL
+# include <openssl/x509v3.h>
+#endif
+
 #ifdef WITH_NSS
 #	include <pk11pub.h>
 #	include <prinit.h>
@@ -60,6 +64,7 @@
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
+char	*certpath = NULL;
 
 /* Warning: in this release of NUT, this feature is disabled by default
  * in order to retain compatibility with "least surprise" for earlier
@@ -416,9 +421,18 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	client->ssl_connected = 0;
 
-	if ((!certfile) || (!ssl_initialized)) {
-		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to certfile='%s' ssl_initialized=%d",
-			__func__, NUT_STRARG(certfile), ssl_initialized);
+	if (
+# ifdef WITH_OPENSSL
+		(!certfile) ||
+# elif defined(WITH_NSS)	/* not WITH_OPENSSL */
+		(!certpath) ||
+# endif
+		(!ssl_initialized)
+	) {
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to one or more of: "
+			"certfile='%s' certpath='%s' certname='%s' ssl_initialized=%d",
+			__func__, NUT_STRARG(certfile), NUT_STRARG(certpath),
+			NUT_STRARG(certname), ssl_initialized);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		return;
 	}
@@ -698,12 +712,23 @@ void ssl_init(void)
 #  endif
 # endif /* WITH_NSS */
 
+# ifdef WITH_OPENSSL
 	if (!certfile) {
-		upsdebugx(2, "%s: no certfile", __func__);
+		upsdebugx(2, "%s: OPENSSL: no certfile", __func__);
 		return;
 	}
-
 	check_perms(certfile);
+# elif defined WITH_NSS
+	if (!certpath) {
+		upsdebugx(2, "%s: NSS: no certpath", __func__);
+		return;
+	}
+	check_perms(certpath);
+# else
+	upsdebugx(2, "%s: Non-SSL build: should not have gotten here", __func__);
+	return;
+# endif
+
 	if (!disable_weak_ssl)
 		upslogx(LOG_WARNING, "Warning: DISABLE_WEAK_SSL is not enabled. Please consider enabling to improve network security.");
 
@@ -765,16 +790,25 @@ void ssl_init(void)
 		X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
 		if (x509) {
 			/* Check if certname matches the host (CN or SAN) */
-			if (X509_check_host(x509, certname, 0, 0, NULL) != 1) {
+			if (X509_check_host(x509, (const char *)certname, 0, 0, NULL) != 1
+			 && X509_check_ip_asc(x509, (const char *)certname, 0) != 1
+			) {
 				char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
-				upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
-					subject ? subject : "unknown", certname);
-				if (subject) {
-					OPENSSL_free(subject);
+
+				/* Check if certname matches the CN subject as a string */
+				if (strcmp(subject, certname) != 0) {
+					/* This way or that, the names differ */
+					upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+						subject ? subject : "unknown", certname);
+					if (subject) {
+						OPENSSL_free(subject);
+					}
+					fatalx(EXIT_FAILURE, "Unexpected certificate provided");
+				} else {
+					upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", certname);
 				}
-				fatalx(EXIT_FAILURE, "Unexpected certificate provided");
 			} else {
-				upsdebugx(2, "Certificate subject verified against CERTIDENT name (%s)", certname);
+				upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", certname);
 			}
 		}
 #  else
@@ -792,6 +826,13 @@ void ssl_init(void)
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	if (certrequest < NETSSL_CERTREQ_NO || certrequest > NETSSL_CERTREQ_REQUIRE) {
 		fatalx(EXIT_FAILURE, "Invalid certificate requirement");
+	}
+
+	if (certpath) {
+		if (SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath) != 1) {
+			ssl_debug();
+			upslogx(LOG_ERR, "SSL_CTX_load_verify_locations(NULL, %s) failed", certpath);
+		}
 	}
 
 	if (certrequest == NETSSL_CERTREQ_REQUEST || certrequest == NETSSL_CERTREQ_REQUIRE) {
@@ -822,7 +863,7 @@ void ssl_init(void)
 	 * by any release function.
 	 * Probably NSS key module object allocation and
 	 * probably NSS key db object allocation too. */
-	status = NSS_Init(certfile);
+	status = NSS_Init(certpath);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		nss_error("ssl_init / NSS_Init");
@@ -926,20 +967,20 @@ void ssl_init(void)
 #  endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 	cert = PK11_FindCertFromNickname(certname, NULL);
-	if (cert == NULL)	{
+	if (cert == NULL) {
 		upslogx(LOG_ERR, "Can not find server certificate");
 		nss_error("ssl_init / PK11_FindCertFromNickname");
 		return;
 	}
 
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
-	if (privKey == NULL){
+	if (privKey == NULL) {
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
 		nss_error("ssl_init / PK11_FindKeyByAnyCert");
 		return;
 	}
 
-	upsdebugx(2, "%s: initialized with NSS and certfile='%s'", __func__, certfile);
+	upsdebugx(2, "%s: initialized with NSS and certpath='%s'", __func__, certpath);
 	ssl_initialized = 1;
 # else /* not (WITH_OPENSSL | WITH_NSS) */
 	/* Looking at ifdefs, we should not get here. But just in case... */
