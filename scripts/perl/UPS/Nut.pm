@@ -171,9 +171,9 @@ sub StartTLS {
   if (defined $self->{debugssl} && $self->{debugssl} > 0) {
     # FIXME: Pass as numeric level "debug<num>":
     $self->_debug("debugssl = $self->{debugssl}");
-    eval { use IO::Socket::SSL qw(debug6); };
+    eval "use IO::Socket::SSL qw(debug6); 1;";
   } else {
-    eval { require IO::Socket::SSL; };
+    eval "require IO::Socket::SSL; 1;";
   }
   if ($@) {
     $self->_debug($self->{err} = "IO::Socket::SSL not available: FEATURE-NOT-SUPPORTED on client side");
@@ -364,7 +364,7 @@ sub _initialize {
   $self->{select} = IO::Select->new( $srvsock );
 
   my $can_ssl = 1;
-  eval "require IO::Socket::SSL";
+  eval "require IO::Socket::SSL; 1";
   if ($@) {
     $can_ssl = 0;
   }
