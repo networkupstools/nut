@@ -1176,18 +1176,30 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
 	}
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	{
+	{	/* scoping */
 		HOST_CERT_t	*cert = upscli_find_host_cert(ups->host);
-		const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
 
-		/* hostname verification - OpenSSL 1.1.0+ */
-		X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
+		if (cert != NULL && cert->certname != NULL) {
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			/* hostname verification - OpenSSL 1.1.0+ */
+			const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
+			X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
 
-		X509_VERIFY_PARAM_set1_host(vpm, verif_host, 0);
-		upsdebugx(3, "%s: Connecting in SSL to '%s' (verifying as '%s')", __func__, ups->host, verif_host);
-	}
+			X509_VERIFY_PARAM_set1_host(vpm, verif_host, 0);
+
+			upslogx(LOG_INFO, "Connecting in SSL to '%s' and looking at certificate called '%s'",
+				ups->host, cert->certname);
+# else
+			upslogx(LOG_ERR, "Connecting in SSL to '%s' was asked and look at certificate "
+				"called '%s', but the OpenSSL library in this build is too old for that. "
+				"Please disable the CERTHOST setting or update the library used by NUT.",
+				ups->host, cert->certname);
+			return -1;
 # endif
+		} else {
+			upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
+		}
+	}
 
 	/* SSL_connect() on a non-blocking socket requires a retry loop.
 	 * When SSL_connect() returns -1 with SSL_ERROR_WANT_READ or
