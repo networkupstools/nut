@@ -27,6 +27,9 @@ if (1) {
     # but passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
 
     my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
+    # Numeric if set, values defined by SSL.pm module
+    # (actual value is for now ignored by the UPS::Nut module though):
+    my $NUT_DEBUG_SSL = $ENV{'NUT_DEBUG_SSL_PERL'} ; #(($ENV{'NUT_DEBUG_SSL_PERL'} || "") eq "" ? undef : $ENV{'NUT_DEBUG_SSL_PERL'};
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
@@ -47,6 +50,7 @@ if (1) {
             USERNAME => $NUT_USER,
             PASSWORD => $NUT_PASS,
             DEBUG => $NUT_DEBUG,
+            DEBUGSSL => $NUT_DEBUG_SSL,
             # TRACKING => 'ON', # undef by default, enabled in certain tests below
             # STARTTLS related (passed via %arg to StartTLS in Nut.pm)
             USESSL => $NUT_SSL,

@@ -168,7 +168,9 @@ sub StartTLS {
   my %arg = @_;
   my $ans;
 
-  if ($self->{debugssl}) {
+  if (defined $self->{debugssl} && $self->{debugssl} > 0) {
+    # FIXME: Pass as numeric level "debug<num>":
+    $self->_debug("debugssl = $self->{debugssl}");
     eval { use IO::Socket::SSL qw(debug6); };
   } else {
     eval { require IO::Socket::SSL; };
@@ -344,7 +346,7 @@ sub _initialize {
   $self->{name} = $arg{NAME} || 'default'; # UPS name in etc/ups.conf on $host
   $self->{timeout} = $arg{TIMEOUT} || 30; # timeout
   $self->{debug} = $arg{DEBUG} || 0; # debugging?
-  $self->{debugssl} = $arg{DEBUGSSL} || $self->{debug}; # debugging IO::Socket::SSL upon use?
+  $self->{debugssl} = defined $arg{DEBUGSSL} ? $arg{DEBUGSSL} : $self->{debug}; # debugging IO::Socket::SSL upon use?
   $self->{debugout} = $arg{DEBUGOUT} || undef; # where to send debug messages
 
   my $srvsock = $self->{srvsock} = # establish connection to upsd

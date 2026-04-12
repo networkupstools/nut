@@ -2807,6 +2807,12 @@ setenv_ssl_perl() {
         export NUT_CERTVERIFY
         #unset NUT_CERTVERIFY
     fi
+
+    if [ x"${NUT_DEBUG_SSL_PERL}" = x ] ; then
+        log_info "Neutering NUT_DEBUG_SSL_PERL to make less noise by default"
+        NUT_DEBUG_SSL_PERL=-1
+        export NUT_DEBUG_SSL_PERL
+    fi
 }
 
 PL_SHEBANG=""
