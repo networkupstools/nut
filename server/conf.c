@@ -277,12 +277,11 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-	/* FIXME: CERTIDENT can now be doable with OpenSSL */
 	/* FIXME: CERTPATH may be needed to know the CA for client validation
 	 *  (if a different one issued those certs than the one used by server?)
 	 * Directory with CA PEM files, hash-encoded (originally or as symlinks).
 	 */
-	if (!strcmp(arg[0], "CERTPATH") || !strcmp(arg[0], "CERTIDENT")) {
+	if (!strcmp(arg[0], "CERTPATH")) {
 		upsdebugx(1, "%s is not supported in this SSL build: --without-nss", arg[0]);
 		return 0;
 	}
@@ -392,9 +391,9 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-#ifdef WITH_NSS
+#if defined(WITH_NSS) || defined(WITH_OPENSSL)
 	/* CERTIDENT <name> <passwd> */
-	/* Note: warning logs about rejection of the keyword for non-NSS builds is handled above */
+	/* Note: warning logs about rejection of the keyword for non-SSL builds is handled above */
 	if (!strcmp(arg[0], "CERTIDENT")) {
 		free(certname);
 		certname = xstrdup(arg[1]);
@@ -402,7 +401,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		certpasswd = xstrdup(arg[2]);
 		return 1;
 	}
-#endif /* WITH_NSS */
+#endif /* WITH_NSS || WITH_OPENSSL */
 
 	/* not recognized */
 	return 0;

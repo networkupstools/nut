@@ -161,6 +161,23 @@ void ssl_cleanup(void)
 
 static SSL_CTX	*ssl_ctx = NULL;
 
+static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
+{
+	NUT_UNUSED_VARIABLE(rwflag);
+	NUT_UNUSED_VARIABLE(userdata);
+
+	if (!certpasswd || !buf || size < 0) {
+		return 0;
+	}
+
+	if (strlen(certpasswd) >= (size_t)size) {
+		return 0;
+	}
+
+	strncpy(buf, certpasswd, (size_t)size);
+	return (int)strlen(buf);
+}
+
 static void ssl_debug(void)
 {
 	unsigned long	e;
@@ -724,6 +741,10 @@ void ssl_init(void)
 	}
 #  endif	/* OPENSSL_VERSION_NUMBER */
 
+	if (certpasswd) {
+		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+	}
+
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
@@ -738,6 +759,30 @@ void ssl_init(void)
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_check_private_key(%s) failed", certfile);
 	}
+
+	if (certname && certname[0] != '\0') {
+#  if OPENSSL_VERSION_NUMBER >= 0x10002000L
+		X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
+		if (x509) {
+			/* Check if certname matches the host (CN or SAN) */
+			if (X509_check_host(x509, certname, 0, 0, NULL) != 1) {
+				char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+				upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+					subject ? subject : "unknown", certname);
+				if (subject) {
+					OPENSSL_free(subject);
+				}
+				fatalx(EXIT_FAILURE, "Unexpected certificate provided");
+			} else {
+				upsdebugx(2, "Certificate subject verified against CERTIDENT name (%s)", certname);
+			}
+		}
+#  else
+		fatalx(EXIT_FAILURE, "CERTIDENT name verification is not supported in this OpenSSL build (too old)");
+#  endif
+	}
+
+	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
 		ssl_debug();
@@ -760,7 +805,6 @@ void ssl_init(void)
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 # endif
 
-	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 	ssl_initialized = 1;
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */

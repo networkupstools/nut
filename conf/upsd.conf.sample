@@ -163,10 +163,14 @@
 # CERTIDENT <certificate name> <database password>
 # CERTIDENT "my nut server" "MyPasSw0rD"
 #
-# When compiled with SSL support with NSS backend,
-# you can specify the certificate name to retrieve from database to
-# authenticate itself and the password
-# required to access certificate related private key.
+# When compiled with SSL support, you can specify the certificate name
+# to retrieve the from database to authenticate itself, and the password
+# required to access the private key related to this certificate.
+#
+# Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+# Now this feature is supported with both OpenSSL (fully with 1.0.2
+# newer, just for private key password with older library and an empty
+# "certificate name") and NSS backends.
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
