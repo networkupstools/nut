@@ -2094,7 +2094,13 @@ TrackingResult TcpClient::waitTrackingResult(const TrackingID& id, int waitInter
 
 		if (waitIntervalSec > 0)
 		{
+			// https://stackoverflow.com/questions/37358856/does-mingw-w64-support-stdthread-out-of-the-box-when-using-the-win32-threading
+			// Does not work on some, not all, mingw versions (headers lack threads):
+#ifndef WIN32
 			std::this_thread::sleep_for(std::chrono::seconds(waitIntervalSec));
+#else
+			Sleep(waitIntervalSec * 1000L);
+#endif
 		}
 		else
 		{
