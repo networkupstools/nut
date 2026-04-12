@@ -3,6 +3,7 @@
 
 # This source code is provided for testing/debugging purpose ;)
 # This script is a Perl equivalent of scripts/python/module/test_nutclient.py.in
+# Copyright (C) 2026- Jim Klimov <jimklimov+nut@gmail.com>
 
 use strict;
 use warnings;
@@ -23,12 +24,12 @@ if (1) {
     my $NUT_CERTVERIFY = (($ENV{'NUT_CERTVERIFY'} || "false") eq "true" || ($ENV{'NUT_CERTVERIFY'} || "false") eq "1") ? 1 : 0;
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
     my $NUT_CAPATH = $ENV{'NUT_CAPATH'} || undef;
-    # Note: Python's cert_file, key_file, key_pass are not directly supported by current Nut.pm STARTTLS as independent args,
-    # but passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
+    # Note: Python's cert_file, key_file, key_pass are not directly
+    # supported by current Nut.pm STARTTLS as independent args, but
+    # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
 
     my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
-    # Numeric if set, values defined by SSL.pm module
-    # (actual value is for now ignored by the UPS::Nut module though):
+    # Numeric if set, values defined by SSL.pm module:
     my $NUT_DEBUG_SSL = $ENV{'NUT_DEBUG_SSL_PERL'} ; #(($ENV{'NUT_DEBUG_SSL_PERL'} || "") eq "" ? undef : $ENV{'NUT_DEBUG_SSL_PERL'};
 
     # Account "unexpected" failures (more due to coding than circumstances)

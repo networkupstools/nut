@@ -169,9 +169,9 @@ sub StartTLS {
   my $ans;
 
   if (defined $self->{debugssl} && $self->{debugssl} > 0) {
-    # FIXME: Pass as numeric level "debug<num>":
+    # Pass to SSL lib as numeric level "debug<num>":
     $self->_debug("debugssl = $self->{debugssl}");
-    eval "use IO::Socket::SSL qw(debug6); 1;";
+    eval "use IO::Socket::SSL qw(debug$self->{debugssl}); 1;";
   } else {
     eval "require IO::Socket::SSL; 1;";
   }
