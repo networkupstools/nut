@@ -375,7 +375,7 @@ sub _initialize {
     $use_ssl = $can_ssl;
   }
 
-  if ($use_ssl || $arg{FORCESSL}) {
+  if (($can_ssl && $use_ssl) || $arg{FORCESSL}) {
     # Always try to elevate, do not bother if this fails unless required by args
     my $startedTLS = $self->StartTLS(%arg);
     if (defined $startedTLS && $startedTLS) {
