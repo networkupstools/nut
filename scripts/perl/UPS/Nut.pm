@@ -205,6 +205,11 @@ sub StartTLS {
       $dumper->dumpValue(\%argdef);
     }
 
+    if ($arg{CERTVERIFY} && ($argdef{SSL_ca_file} || $argdef{SSL_ca_path}) && ($^O eq "darwin" )) {
+        # https://github.com/networkupstools/nut/issues/3404
+        print STDERR "WARNING: Custom CA certificate verification may fail on $^O platform, in that case unset CERTVERIFY in your client configuration";
+    }
+
     # NOTE: Currently nothing fancy like client's own certificate databases...
     IO::Socket::SSL->start_SSL(
       $self->{srvsock},
