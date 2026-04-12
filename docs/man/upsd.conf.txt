@@ -164,14 +164,14 @@ value significantly.
 *CERTFILE 'certificate file'*::
 
 When compiled with SSL support with OpenSSL backend, you can enter the
-certificate file here.
+certificate file here. No-op in NSS builds which use `CERTPATH` instead.
 +
 The certificates must be in PEM format and must be sorted starting with
 the subject's certificate (server certificate), followed by intermediate
-CA certificates (if applicable) and the highest level (root) CA. It should
-end with the server key. See `docs/security.txt` in NUT sources, or the
-Security chapter of NUT user manual, for more information on the SSL
-support in NUT.
+CA certificates (if applicable) and the highest level (root) CA.
+It should end with the server's private key corresponding to the certificate.
+See `docs/security.txt` in NUT sources, or the Security chapter of the NUT
+User manual, for more information on the SSL support in NUT.
 
 *CERTPATH 'certificate database'*::
 
@@ -179,7 +179,11 @@ When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
 +
 Certificates are stored in a dedicated database (data split in 3 files).
-Specify the path of the database directory.
+Specify the path of this database directory.
++
+NOTE: NSS also provides for a "prefix", so multiple databases may be
+maintained in the same directory, but NUT does not currently support
+this.
 
 *CERTIDENT 'certificate name' 'database password'*::
 
@@ -192,9 +196,12 @@ are using a value with spaces in it.
 
 *CERTREQUEST 'certificate request level'*::
 
-When compiled with SSL support with NSS backend *and* client certificate
-validation (disabled by default, see `docs/security.txt` in NUT sources),
-you can specify whether `upsd` requests or requires clients' certificates.
+When compiled with SSL support *and* client certificate validation (disabled
+by default, see `docs/security.txt` in NUT sources), you can specify whether
+`upsd` basically ignores, requests, or requires the clients' certificates.
++
+Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+Now this feature is supported with both OpenSSL and NSS backends.
 +
 WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
 #3329] is solved, not all stock NUT clients may even have a way to present

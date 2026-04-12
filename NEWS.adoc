@@ -72,6 +72,15 @@ https://github.com/networkupstools/nut/milestone/13
       query (for protocol version) to verify that handshake succeeded.
       This change impacted also the classic C `libupsclient` library.
       [issue #3387, PR #3402]
+    * Updated OpenSSL code paths in the `libupsclient` C library to support
+      features earlier only available with NSS builds, like specifying the
+      client certificate+key, optionally with password, and pinning expected
+      server certificates. For both backends such pinning should now honour
+      the 'certverify' setting of the `CERTHOST` entry (e.g. not abort the
+      connection attempt if that number is '0'). [issue #3331]
+    * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
+      (optional validation of clients identified by a certificate) also
+      when built with OpenSSL. [#3331]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
