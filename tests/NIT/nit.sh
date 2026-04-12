@@ -3263,6 +3263,8 @@ case "${NIT_CASE}" in
     isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
     cppnit)
         if isTestableCppNIT ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_cppnit"
             testgroup_sandbox_cppnit
         else
             FAILED="`expr $FAILED + 1`"
@@ -3271,6 +3273,8 @@ case "${NIT_CASE}" in
         ;;
     python)
         if isTestablePython && [ -n "${PYTHON}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_python"
             testgroup_sandbox_python
         else
             FAILED="`expr $FAILED + 1`"
@@ -3279,6 +3283,8 @@ case "${NIT_CASE}" in
         ;;
     perl)
         if isTestablePerl && [ -n "${PERL}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_perl"
             testgroup_sandbox_perl
         else
             FAILED="`expr $FAILED + 1`"
@@ -3287,6 +3293,8 @@ case "${NIT_CASE}" in
         ;;
     nutscanner|nut-scanner)
         if isTestableNutScanner && [ -n "${PERL}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_nutscanner"
             testgroup_sandbox_nutscanner
         else
             FAILED="`expr $FAILED + 1`"
@@ -3301,6 +3309,7 @@ case "${NIT_CASE}" in
         log_warn "========================================================"
         # NOTE: Not quoted, can have further arguments
         # e.g. NIT_CASE="testgroup_sandbox_upsmon_master 1"
+        log_info "Running NIT_CASE='$NIT_CASE'"
         eval ${NIT_CASE}
         ;;
     generatecfg_*|is*)
@@ -3312,6 +3321,7 @@ case "${NIT_CASE}" in
         log_warn "Notably, NUT_CONFPATH='$NUT_CONFPATH' now"
         log_warn "========================================================"
         # NOTE: Not quoted, can have further arguments
+        log_info "Running NIT_CASE='$NIT_CASE'"
         eval ${NIT_CASE}
         if [ $? = 0 ] ; then
             PASSED="`expr $PASSED + 1`"
