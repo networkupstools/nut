@@ -593,7 +593,7 @@ int upscli_init(int certverify, const char *certpath,
 
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
-#ifdef WITH_NSS
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
 	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
@@ -607,13 +607,13 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(forcessl);
 
-	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
 #endif /* WITH_NSS */
 }
 
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 {
-#ifdef WITH_NSS
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = first_host_cert;
 	if (hostname != NULL) {
 		while (cert != NULL) {
@@ -626,8 +626,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 #else
 	NUT_UNUSED_VARIABLE(hostname);
 
-	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
-#endif /* WITH_NSS */
+	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
+#endif /* WITH_OPENSSL | WITH_NSS */
 	return NULL;
 }
 
@@ -1174,6 +1174,20 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, NULL);
 	} else {
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
+	}
+
+	{
+		HOST_CERT_t	*cert = upscli_find_host_cert(ups->host);
+		const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
+
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		/* hostname verification - OpenSSL 1.1.0+ */
+		X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
+
+		X509_VERIFY_PARAM_set1_host(vpm, verif_host, 0);
+# endif
+
+		upsdebugx(3, "%s: Connecting in SSL to '%s' (verifying as '%s')", __func__, ups->host, verif_host);
 	}
 
 	/* SSL_connect() on a non-blocking socket requires a retry loop.
