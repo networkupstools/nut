@@ -1176,19 +1176,18 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
 	}
 
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	{
 		HOST_CERT_t	*cert = upscli_find_host_cert(ups->host);
 		const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		/* hostname verification - OpenSSL 1.1.0+ */
 		X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
 
 		X509_VERIFY_PARAM_set1_host(vpm, verif_host, 0);
-# endif
-
 		upsdebugx(3, "%s: Connecting in SSL to '%s' (verifying as '%s')", __func__, ups->host, verif_host);
 	}
+# endif
 
 	/* SSL_connect() on a non-blocking socket requires a retry loop.
 	 * When SSL_connect() returns -1 with SSL_ERROR_WANT_READ or
