@@ -170,12 +170,14 @@ static int upscli_default_connect_timeout_initialized = 0;
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
-#elif defined(WITH_NSS) /* WITH_OPENSLL */
+#endif	/* WITH_OPENSSL */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 static int verify_certificate = 1;
 static HOST_CERT_t *first_host_cert = NULL;
-static char* nsscertname = NULL;
-static char* nsscertpasswd = NULL;
-#endif /* WITH_OPENSSL | WITH_NSS */
+static char* sslcertname = NULL;
+static char* sslcertpasswd = NULL;
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 
 #ifdef WITH_OPENSSL
@@ -236,8 +238,8 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	NUT_UNUSED_VARIABLE(arg);
 
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
-		PK11_GetSlotName(slot), PK11_GetTokenName(slot), nsscertpasswd?"":"not ");
-	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
+		PK11_GetSlotName(slot), PK11_GetTokenName(slot), sslcertpasswd?"":"not ");
+	return sslcertpasswd ? PL_strdup(sslcertpasswd) : NULL;
 }
 
 /** Detail the currently raised NSS error code if possible, and debug-log
@@ -349,8 +351,8 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 	SECKEYPrivateKey *privKey;
 	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
 	if (status == SECFailure) {
-		if (nsscertname != NULL) {
-			cert = PK11_FindCertFromNickname(nsscertname, NULL);
+		if (sslcertname != NULL) {
+			cert = PK11_FindCertFromNickname(sslcertname, NULL);
 			if(cert==NULL)	{
 				upslogx(LOG_ERR, "Can not find self-certificate");
 				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
@@ -383,6 +385,26 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+#ifdef WITH_OPENSSL
+static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
+{
+	/* FIXME: C++ may already have more code, with work for these args too? */
+	NUT_UNUSED_VARIABLE(rwflag);
+	NUT_UNUSED_VARIABLE(userdata);
+
+	if (!buf || !sslcertpasswd || size < 0) {
+		return 0;
+	}
+
+	if (strlen(sslcertpasswd) >= (size_t)size) {
+		return 0;
+	}
+
+	strncpy(buf, sslcertpasswd, (size_t)size);
+	return (int)strlen(buf);
+}
+#endif
+
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
@@ -390,14 +412,17 @@ int upscli_init(int certverify, const char *certpath,
 #ifdef WITH_OPENSSL
 	long	ret;
 	int	ssl_mode = SSL_VERIFY_NONE;
-	/* Now these are technically "used" below for the log messaging.
-	 * Keeping macros here to remind devs that these arguments are
-	 * not really used by library code in this variant of the build.
-	 */
-	NUT_UNUSED_VARIABLE(certname);
-	NUT_UNUSED_VARIABLE(certpasswd);
 #elif defined(WITH_NSS)	/* WITH_OPENSSL */
 	SECStatus	status;
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	if (certname) {
+		sslcertname = xstrdup(certname);
+	}
+	if (certpasswd) {
+		sslcertpasswd = xstrdup(certpasswd);
+	}
 #else	/* neither backend: */
 	/* See comment above */
 	NUT_UNUSED_VARIABLE(certverify);
@@ -431,10 +456,6 @@ int upscli_init(int certverify, const char *certpath,
 	}
 
 #ifdef WITH_OPENSSL
-
-	if (certname || certpasswd) {
-		upslogx(LOG_ERR, "upscli_init called with 'certname' and/or 'certpasswd' but OpenSSL backend does not use them");
-	}
 
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
@@ -484,6 +505,21 @@ int upscli_init(int certverify, const char *certpath,
 		}
 
 		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
+	}
+
+	if (sslcertpasswd) {
+		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+	}
+
+	if (sslcertname) {
+		if (SSL_CTX_use_certificate_chain_file(ssl_ctx, sslcertname) != 1) {
+			upslogx(LOG_ERR, "Failed to load client certificate from %s", sslcertname);
+			return -1;
+		}
+		if (SSL_CTX_use_PrivateKey_file(ssl_ctx, sslcertname, SSL_FILETYPE_PEM) != 1) {
+			upslogx(LOG_ERR, "Failed to load client private key from %s", sslcertname);
+			return -1;
+		}
 	}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
@@ -537,12 +573,6 @@ int upscli_init(int certverify, const char *certpath,
 		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
 		return -1;
-	}
-	if (certname) {
-		nsscertname = xstrdup(certname);
-	}
-	if (certpasswd) {
-		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
 #else
