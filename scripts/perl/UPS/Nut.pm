@@ -168,7 +168,11 @@ sub StartTLS {
   my %arg = @_;
   my $ans;
 
-  eval { require IO::Socket::SSL; };
+  if ($self->{debugssl}) {
+    eval { use IO::Socket::SSL qw(debug6); };
+  } else {
+    eval { require IO::Socket::SSL; };
+  }
   if ($@) {
     $self->_debug($self->{err} = "IO::Socket::SSL not available: FEATURE-NOT-SUPPORTED on client side");
     return undef;
@@ -327,6 +331,7 @@ sub _initialize {
   $self->{name} = $arg{NAME} || 'default'; # UPS name in etc/ups.conf on $host
   $self->{timeout} = $arg{TIMEOUT} || 30; # timeout
   $self->{debug} = $arg{DEBUG} || 0; # debugging?
+  $self->{debugssl} = $arg{DEBUGSSL} || $self->{debug}; # debugging IO::Socket::SSL upon use?
   $self->{debugout} = $arg{DEBUGOUT} || undef; # where to send debug messages
 
   my $srvsock = $self->{srvsock} = # establish connection to upsd
