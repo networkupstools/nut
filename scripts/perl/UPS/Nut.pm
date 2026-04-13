@@ -244,6 +244,26 @@ sub StartTLS {
       $self->_debug($self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr());
       return undef;
     };
+
+    # CERTIDENT: verify the LOADED client certificate as a hit/match
+    # between certificate subject name and expected string.
+    # TOTHINK: Check somehow CN/SAN host/IP address? Of the client?..
+    if (defined $arg{CERTIDENT} && defined $arg{CERTFILE}) {
+      my $cert = $self->{srvsock}->get_certificate();
+      if ($cert) {
+        my $subject = $cert->subject_name();
+        $self->_debug("CERTIDENT: validating loaded client certificate subject: $subject against $arg{CERTIDENT}");
+        # subject_name() typically returns something like "/C=US/ST=.../CN=..."
+        if ($subject != $arg{CERTIDENT} && $subject !~ /\/CN=\Q$arg{CERTIDENT}\E(\/|$)/ && $subject !~ /CN\s*=\s*\Q$arg{CERTIDENT}\E/) {
+           $self->_debug($self->{err} = "CERTIDENT mismatch: expected $arg{CERTIDENT}, found $subject");
+           return undef;
+        }
+        $self->_debug("CERTIDENT match: $arg{CERTIDENT} found in $subject");
+      } else {
+        $self->_debug("CERTIDENT: Could not retrieve loaded client certificate for validation");
+      }
+    }
+
     return 1;
   }
 

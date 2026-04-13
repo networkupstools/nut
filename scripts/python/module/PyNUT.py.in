@@ -130,7 +130,7 @@ class PyNUTClient :
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
-                  cert_file=None, key_file=None, key_pass=None, force_ssl=False, certhost=None ) :
+                  cert_file=None, key_file=None, key_pass=None, force_ssl=False, cert_ident=None, certhost=None ) :
         """ Class initialization method
 
 host        : Host to connect (default to localhost)
@@ -149,6 +149,7 @@ cert_file   : Path to client certificate file (PEM format)
 key_file    : Path to client private key file (PEM format)
 key_pass    : Password for client private key file (default to None)
 force_ssl   : Boolean, if True, the connection must be secure (default to False)
+cert_ident  : Optional string, expected Common Name (CN) or Subject Alternative Name (SAN) of the *loaded client certificate*
 certhost    : Optional dict or list of dict/lists: {hostname: [certname, certverify, forcessl]}
                 or [{hostname: [certname, certverify, forcessl]}, ...]
                 or [[hostname, certname, certverify, forcessl], ...]
@@ -184,6 +185,7 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                         self.__certhost[entry[0]] = [entry[1], int(entry[2]), int(entry[3])]
 
         # If current host is in CERTHOST, override defaults
+        self.__cert_ident = cert_ident
         if self.__host in self.__certhost:
             ch_certname, ch_verify, ch_force = self.__certhost[self.__host]
             if self.__debug:
@@ -213,6 +215,50 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                     self.__ssl_context.verify_mode = ssl.CERT_REQUIRED if cert_verify else ssl.CERT_NONE
                 if cert_file:
                     self.__ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file, password=key_pass)
+
+                    # CERTIDENT: verify the LOADED client certificate as a hit/match
+                    # between certificate subject name and expected string.
+                    # TOTHINK: Check somehow CN/SAN host/IP address? Of the client?..
+                    if self.__cert_ident:
+                        if self.__debug:
+                            print( "[DEBUG] CERTIDENT specified: %s (validating loaded cert %s)" % (self.__cert_ident, cert_file) )
+
+                        try:
+                            # Python's ssl module doesn't expose the loaded chain
+                            # easily until a connection is made, so we can either
+                            # use a temporary context and load the certificate there,
+                            # and then find a way to verify it, or just load the
+                            # PEM file ourselves and check it.
+                            # Without extra dependencies, we can use the fact that
+                            # the CN is often after "/CN=":
+                            with open(cert_file, 'rb') as f:
+                                cert_data = f.read().decode('utf-8', errors='ignore')
+                                match = re.search(r'Subject:.*?/CN=([^/\n\s]+)', cert_data)
+                                if not match:
+                                    # Fallback for some formats
+                                    match = re.search(r'commonName\s*=\s*([^/\n\s]+)', cert_data)
+                                if not match:
+                                    # Fallback to full subject string provided by caller
+                                    match = re.search(r'Subject:\s*([^\n]+)', cert_data)
+
+                                if match:
+                                    loaded_cn = match.group(1).strip()
+                                    if self.__cert_ident != loaded_cn:
+                                        msg = "CERTIDENT mismatch: expected %s, found CN %s in %s" % (self.__cert_ident, loaded_cn, cert_file)
+                                        if self.__debug:
+                                            print( "[DEBUG] %s" % msg )
+                                        if self.__force_ssl:
+                                            raise PyNUTError(msg)
+                                    else:
+                                        if self.__debug:
+                                            print( "[DEBUG] CERTIDENT match: %s found in %s" % (loaded_cn, cert_file) )
+                                else:
+                                    if self.__debug:
+                                        print( "[DEBUG] Could not extract CN from %s for CERTIDENT validation" % cert_file )
+                        except Exception as e:
+                            if self.__debug:
+                                print( "[DEBUG] Could not verify CERTIDENT before connection: %s" % str(e) )
+
                 if self.__debug:
                     print( "[DEBUG] SSL context created")
         else:
