@@ -913,6 +913,8 @@ TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
+# For a good summary of OpenSSL options and decent example config see e.g.
+# https://www.ibm.com/docs/en/hpvs/1.2.x?topic=server-creating-openssl-certificates-secure-build-virtual
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *OpenSSL*|*NSS*)
         ( # Sub-shelling here to keep soft failure cases handled once,
@@ -1191,13 +1193,11 @@ EOF
 
             mkdir -p "${TESTCERT_PATH_CLIENT}"
             (   cd "${TESTCERT_PATH_CLIENT}" || exit
+                log_info "SSL: Preparing test client certificate..."
+                echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}" in
                     NSS)
-                        log_info "SSL: Preparing test client certificate..."
-                        # Also create 3-file database of client key+cert store
-                        echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
-
-                        # Create the certificate database:
+                        # Create the certificate database of client key+cert store:
                         certutil -N -d . -f .pwfile \
                         || die "Could not init NSS Client database in `pwd`"
 
@@ -1287,6 +1287,37 @@ EOF
                         || die "Could not list NSS Client DB files"
                         ;;
                     OpenSSL)
+                        # Create a client certificate request:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -new -nodes -out client.req -newkey rsa:4096 -passout file:.pwfile -keyout client.key -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        || die "Could not create a OpenSSL Client certificate request"
+                        cat > client.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = clientAuth
+nsCertType = client
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.3 = 127.0.0.1
+DNS.4 = ::1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_CLIENT}/client.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
+                        ) || die "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
+
+                        cat client.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem client.key > upsmon.pem \
+                        || die "Could not combine an upsmon.pem"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}"/upsmon.pem \
+                        || die "Could not list an upsmon.pem"
+
                         # NOTE: No special keys for an OpenSSL client so far,
                         # it only checks/trusts a server (public data in a PEM file)
                         log_info "SSL: Exporting public data of server certificate for client use..."
