@@ -1306,7 +1306,7 @@ modbus_t *modbus_new(const char *port)
 		if (mb == NULL) {
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context");
 		}
-	} else if ((sp = strchr(port, ':')) != NULL) {
+	} else if ((sp = (char*)strchr(port, ':')) != NULL) {
 		char	*tcp_port = (char*)xmalloc(sizeof(sp));
 		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';

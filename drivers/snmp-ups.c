@@ -2523,7 +2523,7 @@ void set_delays(void)
 static bool_t is_multiple_template(const char *OID_template)
 {
 	bool_t retCode = FALSE;
-	char *format_char = NULL;
+	const char *format_char = NULL;
 
 	if (OID_template) {
 		format_char = strchr(OID_template, '%');
