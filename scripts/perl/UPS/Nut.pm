@@ -196,6 +196,24 @@ sub StartTLS {
         . " Other args: " . $strarg
         );
 
+    # Translation for some common NUT SSL argument names to IO::Socket::SSL:
+    if (!defined($argdef{SSL_ca_file}) && defined($argdef{CAFILE})) {
+      $argdef{SSL_ca_file} = $argdef{CAFILE};
+    }
+    if (!defined($argdef{SSL_ca_path}) && defined($argdef{CAPATH})) {
+      $argdef{SSL_ca_path} = $argdef{CAPATH};
+    }
+    if (!defined($argdef{SSL_cert_file}) && defined($argdef{CERTFILE})) {
+      $argdef{SSL_cert_file} = $argdef{CERTFILE};
+    }
+    if (!defined($argdef{SSL_key_file}) && defined($argdef{KEYFILE})) {
+      $argdef{SSL_key_file} = $argdef{KEYFILE};
+    }
+    if (!defined($argdef{SSL_passwd_cb}) && defined($argdef{CERTPASS})) {
+      # Use a sub to return the password (simplest for IO::Socket::SSL)
+      $argdef{SSL_passwd_cb} = sub { return $argdef{CERTPASS}; };
+    }
+
     if (!defined($argdef{SSL_hostname}) && defined($argdef{HOST})) {
       # If specified, allows cert validation for host names *and* IP addresses
       $argdef{SSL_hostname} = $argdef{HOST};
