@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3734 utf-8
+personal_ws-1.1 en 3736 utf-8
 AAC
 AAS
 ABI
@@ -1113,6 +1113,7 @@ RISC
 RK
 RMCARD
 RMCPplus
+RMI
 RMXL
 RNF
 RNG
@@ -1640,6 +1641,7 @@ apc
 apcc
 apcd
 apcevilhack
+apcmicrolink
 apcsmart
 apctest
 apcupsd
