@@ -590,9 +590,19 @@ int upscli_init2(int certverify, const char *certpath,
 				 && X509_check_ip_asc(x509, (const char *)sslcertname, 0) != 1
 				) {
 					char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+					char	*subject_CN = (subject ? (char*)strstr(subject, "CN=") + 3 : NULL);
+					size_t	sslcertname_len = strlen(sslcertname);
 
-					/* Check if sslcertname matches the CN subject as a string */
-					if (strcmp(subject, sslcertname) != 0) {
+					upsdebugx(4, "%s: My certificate subject: '%s'; CN: '%s'; CERTIDENT: [%" PRIuSIZE "]'%s'",
+						__func__, NUT_STRARG(subject), NUT_STRARG(subject_CN),
+						sslcertname_len, NUT_STRARG(sslcertname));
+
+					/* Check if sslcertname matches the whole subject or just .../CN=.../ part as a string */
+					if (!subject || !(
+						strcmp(subject, sslcertname) == 0
+						|| (subject_CN && !strncmp(subject_CN, sslcertname, sslcertname_len)
+							&& (subject_CN[sslcertname_len] == '\0' || subject_CN[sslcertname_len] == '/') )
+					)) {
 						/* This way or that, the names differ */
 						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
 							subject ? subject : "unknown", sslcertname);
