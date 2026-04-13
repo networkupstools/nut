@@ -130,7 +130,7 @@ class PyNUTClient :
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
-                  cert_file=None, key_file=None, key_pass=None, force_ssl=False ) :
+                  cert_file=None, key_file=None, key_pass=None, force_ssl=False, certhost=None ) :
         """ Class initialization method
 
 host        : Host to connect (default to localhost)
@@ -149,6 +149,9 @@ cert_file   : Path to client certificate file (PEM format)
 key_file    : Path to client private key file (PEM format)
 key_pass    : Password for client private key file (default to None)
 force_ssl   : Boolean, if True, the connection must be secure (default to False)
+certhost    : Optional dict or list of dict/lists: {hostname: [certname, certverify, forcessl]}
+                or [{hostname: [certname, certverify, forcessl]}, ...]
+                or [[hostname, certname, certverify, forcessl], ...]
         """
         self.__debug = debug
 
@@ -166,6 +169,33 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
         # might upset other scripts that use PyNUTClient, and/or
         # their imposed timeouts might confuse NUT expectations:
         self.__timeout     = NUT_DEFAULT_CONNECT_TIMEOUT if (timeout is None or type(timeout) not in [float, int] or timeout < 0.0) else timeout
+
+        # CERTHOST handling: if provided as a list, convert to a dictionary
+        self.__certhost = {}
+        if certhost:
+            if isinstance(certhost, dict):
+                self.__certhost = certhost
+            elif isinstance(certhost, (list, tuple)):
+                for entry in certhost:
+                    if isinstance(entry, dict):
+                        self.__certhost.update(entry)
+                    elif isinstance(entry, (list, tuple)) and len(entry) >= 4:
+                        # CERTHOST <hostname> <certificate name> <certverify> <forcessl>
+                        self.__certhost[entry[0]] = [entry[1], int(entry[2]), int(entry[3])]
+
+        # If current host is in CERTHOST, override defaults
+        if self.__host in self.__certhost:
+            ch_certname, ch_verify, ch_force = self.__certhost[self.__host]
+            if self.__debug:
+                print( "[DEBUG]  -> CERTHOST match for %s: certname=%s verify=%s force=%s" % (self.__host, ch_certname, ch_verify, ch_force) )
+            # In CERTHOST context, 'certificate name' refers to what the server should present
+            # We'll use this for server_hostname in wrap_socket if it's not None
+            self.__expected_server_certname = ch_certname
+            if cert_verify is None:
+                cert_verify = (ch_verify == 1)
+            use_ssl = use_ssl or (ch_force == 1)
+            force_ssl = force_ssl or (ch_force == 1)
+
         if ssl_available:
             self.__use_ssl     = use_ssl or force_ssl
             self.__force_ssl   = force_ssl
@@ -251,11 +281,15 @@ if something goes wrong.
 
                 # Not sure if we can enter this river twice (e.g. if the server
                 # side of the handshake would still be listening), but we can try:
+                wrap_server_hostname = self.__host
+                if hasattr(self, "__expected_server_certname") and self.__expected_server_certname:
+                    wrap_server_hostname = self.__expected_server_certname
+
                 for i in range(5, 0, -1):
                     try:
                         self.__srv_handler = self.__ssl_context.wrap_socket(
                             self.__srv_handler,
-                            server_hostname=self.__host
+                            server_hostname=wrap_server_hostname
                         )
                         break
                     except TimeoutError as te:
