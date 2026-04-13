@@ -1839,6 +1839,45 @@ void upsdrv_updateinfo(void)
 			status_set("OVER");
 		}
 
+		/* PowerSystemError_BF, 2 registers */
+		_apc_modbus_to_uint64(&regbuf[20], 2, &value);
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_OVERLOAD) {
+			alarm_set("Power system - Output overload");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_SHORT_CIRCUIT) {
+			alarm_set("Power system - Output short circuit");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_OVERVOLTAGE) {
+			alarm_set("Power system - Output overvoltage");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OVERTEMPERATURE) {
+			alarm_set("Power system - Overtemperature");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_BACKFEED_RELAY) {
+			alarm_set("Power system - Backfeed relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_AVR_RELAY) {
+			alarm_set("Power system - AVR relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_PFC_INPUT_RELAY) {
+			alarm_set("Power system - PFC input relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_RELAY) {
+			alarm_set("Power system - Output relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_BYPASS_RELAY) {
+			alarm_set("Power system - Bypass relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_PFC) {
+			alarm_set("Power system - PFC fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_DC_BUS_OVERVOLTAGE) {
+			alarm_set("Power system - DC bus overvoltage");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_INVERTER) {
+			alarm_set("Power system - Inverter fault");
+		}
+
 		/* OutletStatus_BF */
 		for (i = 0; i < SIZEOF_ARRAY(apc_modbus_outlet_group_info); i++) {
 			if (apc_modbus_outlet_group_info[i].present == 0) {
