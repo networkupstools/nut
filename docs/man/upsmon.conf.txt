@@ -581,9 +581,10 @@ or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
 and exiting the daemon. Zero means immediate exit (default), negative
 values mean never exiting on its own accord.
 
-*CERTPATH* 'certificate file or database'::
+*CERTPATH* 'certificate database'::
 
-When compiled with SSL support, you can enter the certificate path here.
+When compiled with SSL support, you can enter the certificate database
+path here.
 +
   With NSS:;;
     Certificates are stored in a dedicated database (data split in 3 files).
@@ -593,6 +594,19 @@ When compiled with SSL support, you can enter the certificate path here.
     the server certificate presented by the upsd server. The files each
     contain one CA certificate. The files are looked up by the CA subject
     name hash value, which must hence be available.
+
+*CERTFILE 'certificate file'*::
+
+When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
+you can enter the client certificate file here. No-op in NSS builds
+which use `CERTPATH` for all purposes.
++
+The certificates must be in PEM format and must be sorted starting with
+the subject's certificate (server certificate), followed by intermediate
+CA certificates (if applicable) and the highest level (root) CA.
+It should end with the server's private key corresponding to the certificate.
+See `docs/security.txt` in NUT sources, or the Security chapter of the NUT
+User manual, for more information on the SSL support in NUT.
 
 *CERTIDENT* 'certificate name' 'database password'::
 

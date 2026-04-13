@@ -87,6 +87,12 @@ https://github.com/networkupstools/nut/milestone/13
       exact string, or that its CN or SAN match the provided string as a
       standard expression of host name (section 3.5 of RFC 1034) or IP address.
       [issue #3331]
+    * The `libupsclient` API was extended with a `upscli_init2()` method which
+      allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
+
+ - `upsmon` client updates:
+    * Introduced support for `CERTFILE` option, so the client can identify
+      itself to the data server also in OpenSSL builds. [issue #3331]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

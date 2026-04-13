@@ -136,9 +136,10 @@ static	int	overdurationtime = -1;
 static	char	*run_as_user = NULL;
 
 	/* SSL details - where to find certs, whether to use them */
-static	char	*certpath = NULL;
-static	char	*certname = NULL;
-static	char	*certpasswd = NULL;
+static	char	*certpath = NULL;	/* NSS database or OpenSSL CA collection, a directory */
+static	char	*certname = NULL;	/* Client cert subject name (optionally validate that we got the right one) */
+static	char	*certpasswd = NULL;	/* Private key password */
+static	char	*certfile = NULL;	/* OpenSSL client cert, a PEM file */
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
@@ -2476,10 +2477,17 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
-	/* CERTPATH <path> */
+	/* CERTPATH <path-to-dir> */
 	if (!strcmp(arg[0], "CERTPATH")) {
 		free(certpath);
 		certpath = xstrdup(arg[1]);
+		return 1;
+	}
+
+	/* CERTFILE <path-to-PEM-file> */
+	if (!strcmp(arg[0], "CERTFILE")) {
+		free(certfile);
+		certfile = xstrdup(arg[1]);
 		return 1;
 	}
 
@@ -4179,8 +4187,8 @@ int main(int argc, char *argv[])
 		writepid(prog);
 	}
 
-	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
-		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init()");
+	if (upscli_init2(certverify, certpath, certname, certpasswd, certfile) < 0) {
+		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init2()");
 		exit(EXIT_FAILURE);
 	}
 

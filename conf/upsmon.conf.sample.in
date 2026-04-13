@@ -582,7 +582,8 @@ ALARMCRITICAL 1
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)
 #
-# When compiled with SSL support, you can enter the certificate path here.
+# When compiled with SSL support, you can enter the certificate database
+# path here.
 #
 # With NSS:
 # Certificates are stored in a dedicated database (split into 3 files).
@@ -597,6 +598,23 @@ ALARMCRITICAL 1
 # name hash value, which must hence be available.
 #
 # CERTPATH /usr/ssl/certs
+#
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTFILE <certificate file>
+# CERTFILE /usr/local/ups/etc/upsd.pem
+#
+# When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
+# you can enter the client certificate file here. No-op in NSS builds
+# which use `CERTPATH` for all purposes.
+#
+# The certificates must be in PEM format and must be sorted starting with
+# the subject's certificate (server certificate), followed by intermediate
+# CA certificates (if applicable) and the highest level (root) CA. It should
+# end with the server key. See 'docs/security.txt' or the Security chapter of
+# NUT user manual for more information on the SSL support in NUT.
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
