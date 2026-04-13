@@ -833,6 +833,7 @@ NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
 	nutscan_upslog_setproctag.$(MAN_SECTION_API)
 
 $(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS): nutscan_upslog_set_debug_level.$(MAN_SECTION_API)
+	touch $@
 
 INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
