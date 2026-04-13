@@ -320,10 +320,25 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 
 /*static*/ int Socket::openssl_password_callback(char *buf, int size, int rwflag, void *userdata)	/* pem_passwd_cb, 1.1.0+ */
 {
+	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
+	/* is callback used for reading/decryption (rwflag=0) or writing/encryption (rwflag=1)? */
 	NUT_UNUSED_VARIABLE(rwflag);
+	/* "userdata" is generally the user-provided password, possibly cached
+	 * from an earlier loop (e.g. to check interactively typing it twice,
+	 * or to probe several items in a loop). */
 
-	if (size < 1 || !userdata || !*(static_cast<char *>(userdata))) {
+	if (!buf || size < 1) {
+		/* Can not even set buf[0] */
+		return 0;
+	}
+
+	if (!userdata || !*(static_cast<char *>(userdata))) {
 		buf[0] = '\0';
+		return 0;
+	}
+
+	if (strlen((char*)userdata) >= (size_t)size) {
+		/* Do not return truncated trash, just say we could not do it */
 		return 0;
 	}
 
@@ -990,6 +1005,15 @@ void Socket::startTLS()
 		}
 		if (!_key_pass.empty()) {
 #  if OPENSSL_VERSION_NUMBER < 0x10100000L
+			/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
+			 * the `SSL_CTX*` variants were added in 1.1.
+			 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
+			 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
+			 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
+			 *
+			 * But to use those, we would need to get that SSL* (maybe from socket FD?);
+			 * that would also unlock us using the ssl_error() elsewhere.
+			 */
 			throw nut::SSLException_OpenSSL("Private key password support not implemented for OpenSSL < 1.1 yet");
 #  else
 			/* OpenSSL 1.1.0+

@@ -395,19 +395,34 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 #ifdef WITH_OPENSSL
 static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
 {
-	/* FIXME: C++ may already have more code, with work for these args too? */
+	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
+	/* is callback used for reading/decryption (rwflag=0) or writing/encryption (rwflag=1)? */
 	NUT_UNUSED_VARIABLE(rwflag);
-	NUT_UNUSED_VARIABLE(userdata);
+	/* "userdata" is generally the user-provided password, possibly cached
+	 * from an earlier loop (e.g. to check interactively typing it twice,
+	 * or to probe several items in a loop). For us, it should be sslcertpasswd
+	 * via SSL_CTX_set_default_passwd_cb_userdata(), but most programs out
+	 * there do not have just one variable with one password to think about. */
 
-	if (!buf || !sslcertpasswd || size < 0) {
+	if (!buf || size < 1) {
+		/* Can not even set buf[0] */
 		return 0;
 	}
 
-	if (strlen(sslcertpasswd) >= (size_t)size) {
+	if (!userdata || !*((char*)userdata)) {
+		/* Use what we were told to use (or not), do not surprise
+		 * anyone by some hard-coded fallback to sslcertpasswd here! */
+		buf[0] = '\0';
 		return 0;
 	}
 
-	strncpy(buf, sslcertpasswd, (size_t)size);
+	if (strlen((char*)userdata) >= (size_t)size) {
+		/* Do not return truncated trash, just say we could not do it */
+		return 0;
+	}
+
+	strncpy(buf, (char*)userdata, (size_t)size);
+	buf[size - 1] = '\0';
 	return (int)strlen(buf);
 }
 #endif
@@ -526,7 +541,24 @@ int upscli_init2(int certverify, const char *certpath,
 	}
 
 	if (sslcertpasswd) {
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
+		 * the `SSL_CTX*` variants were added in 1.1.
+		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
+		 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
+		 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
+		 *
+		 * But to use those, we would need to get that SSL* (connection-oriented,
+		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
+		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
+		 */
+		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < 1.1 yet");
+		return -1;
+#  else
+		/* OpenSSL 1.1.0+ */
 		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)sslcertpasswd);
+#  endif
 	}
 
 	if (certfile) {
