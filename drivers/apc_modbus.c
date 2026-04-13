@@ -96,6 +96,7 @@ static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
 static int64_t last_send_time = 0;
+static int modbus_retries = 3;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
@@ -1122,16 +1123,26 @@ static void _apc_modbus_handle_error(modbus_t *ctx)
 
 static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
-	_apc_modbus_interframe_delay();
+	int res;
+	int retries = modbus_retries;
 
-	if (modbus_read_registers(ctx, addr, nb, dest) > 0) {
+	while (retries-- > 0) {
+		_apc_modbus_interframe_delay();
+
+		res = modbus_read_registers(ctx, addr, nb, dest);
 		_apc_modbus_interframe_delay_reset();
-		return 1;
-	} else {
-		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(ctx);
-		return 0;
+		if (res > 0) {
+			return 1;
+		}
+
+		if (errno != ETIMEDOUT){
+			break;
+		}
 	}
+
+	upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+	_apc_modbus_handle_error(ctx);
+	return 0;
 }
 
 static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint16_t *regs, const size_t regs_len)
@@ -2309,6 +2320,15 @@ void upsdrv_initups(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+	}
+
+	val = getval("modbus_retries");
+	if (val != NULL) {
+		modbus_retries = atoi(val);
+		if (modbus_retries < 1) {
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "modbus_retries needs to be at least 1");
+		}
 	}
 
 	if (modbus_connect(modbus_ctx) == -1) {
