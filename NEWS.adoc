@@ -47,6 +47,8 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
+    * Decode `RunTimeCalibrationStatus_BF` into
+      `experimental.ups.calibration.result` [PR #3416]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`

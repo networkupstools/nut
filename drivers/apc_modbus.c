@@ -772,6 +772,69 @@ static int _apc_modbus_battery_test_status_to_nut(const apc_modbus_value_t *valu
 
 static apc_modbus_converter_t _apc_modbus_battery_test_status_conversion = { _apc_modbus_battery_test_status_to_nut, NULL };
 
+static int _apc_modbus_runtime_calibration_status_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
+{
+	const char *result, *source, *modifier;
+	const char *values[3];
+
+	if (value == NULL || output == NULL || output_len == 0) {
+		/* Invalid parameters */
+		return 0;
+	}
+
+	if (value->type != APC_VT_UINT) {
+		return 0;
+	}
+
+	result = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PENDING)) {
+		result = "Pending";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_INPROGRESS)) {
+		result = "InProgress";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PASSED)) {
+		result = "Passed";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_FAILED)) {
+		result = "Failed";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_REFUSED)) {
+		result = "Refused";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_ABORTED)) {
+		result = "Aborted";
+	}
+
+	source = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_PROTOCOL)) {
+		source = "Source: Protocol";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_LOCALUI)) {
+		source = "Source: LocalUI";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_INTERNAL)) {
+		source = "Source: Internal";
+	}
+
+	modifier = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INVALIDSTATE)) {
+		modifier = "Modifier: InvalidState";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INTERNALFAULT)) {
+		modifier = "Modifier: InternalFault";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE)) {
+		modifier = "Modifier: StateOfChargeNotAcceptable";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADCHANGE)) {
+		modifier = "Modifier: LoadChange";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_ACINPUTNOTACCEPTABLE)) {
+		modifier = "Modifier: ACInputNotAcceptable";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADTOOLOW)) {
+		modifier = "Modifier: LoadTooLow";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_OVERCHARGEINPROGRESS)) {
+		modifier = "Modifier: OverChargeInProgress";
+	}
+
+	values[0] = result;
+	values[1] = source;
+	values[2] = modifier;
+	return _apc_modbus_string_join(values, SIZEOF_ARRAY(values), ", ", output, output_len);
+}
+
+static apc_modbus_converter_t _apc_modbus_runtime_calibration_status_conversion = { _apc_modbus_runtime_calibration_status_to_nut, NULL };
+
 static const time_t apc_date_start_offset = 946684800; /* 2000-01-01 00:00 */
 
 static int _apc_modbus_date_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
@@ -890,6 +953,7 @@ static apc_modbus_register_t apc_modbus_register_map_inventory[] = {
 static apc_modbus_register_t apc_modbus_register_map_status[] = {
 	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_status_change_cause_conversion,    NULL,       0,  NULL    },
 	{ "ups.test.result",                23,     1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_battery_test_status_conversion,    NULL,       0,  NULL    },
+	{ "experimental.ups.calibration.result", 24, 1, APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_runtime_calibration_status_conversion,    NULL,       0,  NULL    },
 	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
