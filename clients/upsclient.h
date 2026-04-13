@@ -172,6 +172,10 @@ int upscli_disconnect(UPSCONN_t *ups);
 int upscli_fd(UPSCONN_t *ups);
 int upscli_upserror(UPSCONN_t *ups);
 
+/** Query the (already established) connection to UPSD for its version
+ *  and check it against given expectations. */
+int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re);
+
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
 
