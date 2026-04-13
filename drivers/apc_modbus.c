@@ -96,6 +96,7 @@ static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
 static int64_t last_send_time = 0;
+static int modbus_retries = 3;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
@@ -988,6 +989,7 @@ static apc_modbus_register_t* _apc_modbus_find_register_variable(const char *nut
 static void _apc_modbus_close(int free_modbus)
 {
 	if (modbus_ctx != NULL) {
+		upslogx(LOG_INFO, "%s: Closing connection", __func__);
 		modbus_close(modbus_ctx);
 		if (free_modbus) {
 			modbus_free(modbus_ctx);
@@ -1080,58 +1082,32 @@ interframe_delay_exit:
 	last_send_time = current_time;
 }
 
-static void _apc_modbus_handle_error(modbus_t *ctx)
-{
-	static int flush_retries = 0;
-	int flush = 0;
-#ifdef WIN32
-	int wsa_error;
-#endif /* WIN32 */
-
-	/*
-	 * We could enable MODBUS_ERROR_RECOVERY_LINK but that would just get stuck
-	 * in libmodbus until recovery. The only indication of this is that the
-	 * program is stuck and debug prints by libmodbus, which we don't want to
-	 * enable on release.
-	 *
-	 * Instead we detect timout errors and do a sleep + flush, on every other
-	 * error or when flush didn't work we do a reconnect.
-	 */
-
-#ifdef WIN32
-	wsa_error = WSAGetLastError();
-	if (wsa_error == WSAETIMEDOUT) {
-		flush = 1;
-	}
-#else	/* !WIN32 */
-	if (errno == ETIMEDOUT) {
-		flush = 1;
-	}
-#endif /* !WIN32 */
-
-	if (flush > 0 && flush_retries++ < 5) {
-		usleep(1000000);
-		modbus_flush(ctx);
-	} else {
-		flush_retries = 0;
-		upslogx(LOG_ERR, "%s: Closing connection", __func__);
-		/* Close without free, will retry connection on next update */
-		_apc_modbus_close(0);
-	}
-}
-
 static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
-	_apc_modbus_interframe_delay();
+	int res;
+	int retries = modbus_retries;
+	int saved_errno;
 
-	if (modbus_read_registers(ctx, addr, nb, dest) > 0) {
+	while (retries-- > 0) {
+		_apc_modbus_interframe_delay();
+
+		res = modbus_read_registers(ctx, addr, nb, dest);
+		saved_errno = errno;
 		_apc_modbus_interframe_delay_reset();
-		return 1;
-	} else {
-		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(ctx);
-		return 0;
+		if (res > 0) {
+			return 1;
+		}
+
+		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(saved_errno), device_path);
+
+		if (saved_errno != ETIMEDOUT){
+			break;
+		}
 	}
+
+	_apc_modbus_close(0);
+
+	return 0;
 }
 
 static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint16_t *regs, const size_t regs_len)
@@ -1499,7 +1475,7 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of outlet command failed: %s (%s)",
 			__func__, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		*result = STAT_INSTCMD_FAILED;
 		return 1;
 	}
@@ -1681,7 +1657,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_SET_FAILED;
 	}
 
@@ -1760,7 +1736,7 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1801,6 +1777,7 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 			return;
 		}
+		upslogx(LOG_INFO, "Opened modbus successfully");
 	}
 
 	alarm_init();
@@ -2309,6 +2286,15 @@ void upsdrv_initups(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+	}
+
+	val = getval("modbus_retries");
+	if (val != NULL) {
+		modbus_retries = atoi(val);
+		if (modbus_retries < 1) {
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "modbus_retries needs to be at least 1");
+		}
 	}
 
 	if (modbus_connect(modbus_ctx) == -1) {
