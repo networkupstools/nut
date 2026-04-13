@@ -189,6 +189,11 @@ this.
 For OpenSSL backend, CA certificates are typically stored in a single
 PEM file each, with a name (or symlink) based on the certificate subject
 name hash. (For private key and server certificate, see `CERTFILE` above.)
++
+Alternatively, with OpenSSL the `CERTPATH` can specify a particular
+PEM file with a collection of multiple CA certificates, e.g.
++
+  CERTPATH /etc/ssl/certs/ca-certificates.crt
 
 *CERTIDENT 'certificate name' 'database password'*::
 

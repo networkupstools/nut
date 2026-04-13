@@ -594,6 +594,11 @@ path here.
     the server certificate presented by the upsd server. The files each
     contain one CA certificate. The files are looked up by the CA subject
     name hash value, which must hence be available.
++
+Alternatively, with OpenSSL the `CERTPATH` can specify a particular
+    PEM file with a collection of multiple CA certificates, e.g.
++
+  CERTPATH /etc/ssl/certs/ca-certificates.crt
 
 *CERTFILE 'certificate file'*::
 

@@ -162,6 +162,11 @@
 #
 # Specify the path of the database directory.
 #
+# Alternatively, with OpenSSL the CERTPATH can specify a particular
+# PEM file with a collection of multiple CA certificates.
+#
+# CERTPATH /etc/ssl/certs/ca-certificates.crt
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 

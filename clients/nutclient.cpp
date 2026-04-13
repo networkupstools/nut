@@ -995,7 +995,12 @@ void Socket::startTLS()
 
 	if (!_ca_file.empty() || !_ca_path.empty()) {
 		if (SSL_CTX_load_verify_locations(_ssl_ctx, _ca_file.empty() ? nullptr : _ca_file.c_str(), _ca_path.empty() ? nullptr : _ca_path.c_str()) != 1) {
-			throw nut::SSLException_OpenSSL("Failed to load CA verify locations");
+			if (!(_ca_file.empty() && !_ca_path.empty()
+				/* Retry in case CERTPATH pointed to PEM file */
+				&& SSL_CTX_load_verify_locations(_ssl_ctx, _ca_path.c_str(), nullptr) == 1)
+			) {
+				throw nut::SSLException_OpenSSL("Failed to load CA verify locations");
+			}
 		}
 	}
 	if (_certverify != -1) {

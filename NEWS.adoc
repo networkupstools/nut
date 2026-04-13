@@ -81,7 +81,7 @@ https://github.com/networkupstools/nut/milestone/13
     * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
       (optional validation of clients identified by a certificate) also
       when built with OpenSSL, optionally using the `CERTPATH` with a
-      collection of CA certificates.
+      collection of CA certificates (directory or a big PEM file).
       Also support `CERTIDENT` to provide a private key password and ensure
       that the certificate in `CERTFILE` has an expected subject name as an
       exact string, or that its CN or SAN match the provided string as a

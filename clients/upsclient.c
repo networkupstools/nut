@@ -533,8 +533,19 @@ int upscli_init2(int certverify, const char *certpath,
 
 		ret = SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath);
 		if (ret != 1) {
-			upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory %s", certpath);
-			return -1;
+			ssl_debug();
+			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
+
+			/* Can it be a specific PEM file? */
+			if ((ret = SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL)) != 1) {
+				ssl_debug();
+				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				return -1;
+			} else {
+				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
+			}
+		} else {
+			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
 		}
 
 		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
