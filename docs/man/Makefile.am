@@ -1157,6 +1157,7 @@ INST_HTML_SERIAL_MANS = \
 	upscode2.html	\
 	ve-direct.html	\
 	victronups.html	\
+	apcmicrolink.html \
 	apcupsd-ups.html
 
 if HAVE_LINUX_SERIAL_H
