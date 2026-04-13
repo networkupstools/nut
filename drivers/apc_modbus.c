@@ -1864,9 +1864,28 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* BatterySystemError_BF, 1 register */
-		_apc_modbus_to_uint64(&regbuf[18], 1, &value);
-		if (value & (1 << 1)) { /* NeedsReplacement */
+		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_DISCONNECTED) {
+			alarm_set("Battery system - Disconnected");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_OVER_VOLTAGE) {
+			alarm_set("Battery system - Over voltage");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_NEEDS_REPLACEMENT) {
 			status_set("RB");
+			alarm_set("Battery system - Needs replacement");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_OVER_TEMPERATURE_CRITICAL) {
+			alarm_set("Battery system - Over temperature");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_CHARGER) {
+			alarm_set("Battery system - Charger fault");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_TEMPERATURE_SENSOR) {
+			alarm_set("Battery system - Temperature sensor fault");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_BUS_SOFT_START) {
+			alarm_set("Battery system - Bus soft start fault");
 		}
 
 		/* RunTimeCalibrationStatus_BF, 1 register */
