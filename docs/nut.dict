@@ -708,6 +708,7 @@ LogMin
 LowBatt
 Loyer
 Luca
+Lukas
 Luxeon
 Lygre
 Lynge
@@ -1271,6 +1272,7 @@ Salvia
 Santinoli
 Savia
 Sawatzky
+Schmid
 Schmier
 Schoch
 Schonefeld
@@ -3225,6 +3227,8 @@ sha
 shellcheck
 shellenv
 shm
+showinternals
+showunmapped
 shutdownArguments
 shutdowncmd
 shutdowndelay
@@ -3413,6 +3417,7 @@ tempmax
 tempmin
 termios
 testime
+testinterval
 testtime
 testuser
 testvar
