@@ -132,8 +132,11 @@ const char *upscli_upslog_getproctag(void);
  */
 struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 
-/* NOTE: effectively only runs once; re-runs quickly skip out */
+/* NOTE: init effectively only runs once; re-runs quickly skip out */
+/* Legacy init function, prefer upscli_init2() with support for OpenSSL
+ * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
+int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);

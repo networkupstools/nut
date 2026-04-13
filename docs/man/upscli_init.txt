@@ -4,7 +4,7 @@ UPSCLI_INIT(3)
 NAME
 ----
 
-upscli_init - Initialize upsclient module specifying security properties.
+upscli_init, upscli_init2 - Initialize upsclient module specifying security properties.
 
 SYNOPSIS
 --------
@@ -12,11 +12,20 @@ SYNOPSIS
 ------
 	#include <upsclient.h>
 
+	/* Legacy API, without support for client's
+	 * own certificate in OpenSSL builds */
 	int upscli_init(
 		int certverify,
 		const char *certpath,
 		const char *certname,
 		const char *certpasswd);
+
+	int upscli_init2(
+		int certverify,
+		const char *certpath,
+		const char *certname,
+		const char *certpasswd,
+		const char *certfile);
 ------
 
 DESCRIPTION
@@ -26,6 +35,7 @@ The *upscli_init()* function initializes upsclient module and sets many
 TLS/SSL-related properties: 'certverify' to 1 makes certificate verification
 required for all SSL connections and 'certpath' is the location of
 certificate database.
+It is equivalent to the newer *upscli_init2()* with 'certfile' set to 'NULL'.
 
 `certverify`::
 
@@ -35,7 +45,7 @@ and abort the `STARTTLS` attempt if it is not.
 Specify a zero value to ignore any results of such a check (e.g. only log
 the situation), or not do it at all.
 
-`certpath`::
+`certpath` and `certfile`::
 
 * If compiled with OpenSSL, 'certpath' refers to directory containing
   certificates where the certificates must be named according to their
@@ -51,12 +61,17 @@ the situation), or not do it at all.
 Alternatively, the `c_rehash` utility (provided by e.g. `openssl-perl`
   package) can take a directory and iterate it to link all certificates
   found in that directory, in the manner described above.
++
+The 'certfile' may be used to refer to a PEM file with the client certificate
+  and corresponding private key.
 
 * If compiled with NSS, the 'certpath' refers to a directory containing its
   database files.
++
+The 'certfile' is currently not used for NSS: all needed information is in
+  the database.
 
 `certname` and `certpasswd`::
-
 If using SSL, you can specify 'certname' with the subject name
 of the certificate to send to `upsd`, and 'certpasswd' with the password used
 to decrypt certificate private key.
@@ -64,7 +79,10 @@ to decrypt certificate private key.
 * If compiled with NSS, this allows to choose one of many certificates that
   may be stored in the database.
 
-Notably, the 'certname' (if not empty) can be used to verify that the
+* If compiled with OpenSSL, the 'certfile' is expected to hold one set of
+  certificate and key data.
+
+In both cases, the 'certname' (if not empty) can be used to verify that the
 specified file provides a certificate with expected subject name, or possibly
 matches the expected host name or IP address.
 

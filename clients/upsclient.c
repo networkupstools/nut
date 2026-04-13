@@ -78,6 +78,10 @@
 #	define AIX_NBCONNECT_0(status) (0)
 #endif	/* end of AIX WA for non-blocking connect */
 
+#ifdef WITH_OPENSSL
+# include <openssl/x509v3.h>
+#endif
+
 #ifdef WITH_NSS
 #	include <prerror.h>
 #	include <prinit.h>
@@ -172,8 +176,11 @@ static int upscli_default_connect_timeout_initialized = 0;
 static SSL_CTX	*ssl_ctx;
 #endif	/* WITH_OPENSSL */
 
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+#ifdef WITH_NSS
 static int verify_certificate = 1;
+#endif	/* WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 static HOST_CERT_t *first_host_cert = NULL;
 static char* sslcertname = NULL;
 static char* sslcertpasswd = NULL;
@@ -405,8 +412,16 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 }
 #endif
 
+/* Legacy API, without support for client's own certificate in OpenSSL builds */
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
+{
+	return upscli_init2(certverify, certpath, certname, certpasswd, NULL);
+}
+
+int upscli_init2(int certverify, const char *certpath,
+					const char *certname, const char *certpasswd,
+					const char *certfile)
 {
 	const char	*quiet_init_ssl;
 #ifdef WITH_OPENSSL
@@ -429,6 +444,7 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
+	NUT_UNUSED_VARIABLE(certfile);
 #endif	/* WITH_OPENSSL | WITH_NSS */
 
 	if (upscli_initialized == 1) {
@@ -484,8 +500,10 @@ int upscli_init(int certverify, const char *certpath,
 
 	if (!certpath) {
 		if (certverify == 1) {
-			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
-			return -1;	/* Failed : cert is mandatory but no certfile */
+			upslogx(LOG_ERR, "Can not verify certificate if any is specified: no CERTPATH was given");
+			/* Failed: checking the server cert is mandatory, but no
+			 * collection of trusted CA/server cert files was given */
+			return -1;
 		}
 	} else {
 		switch(certverify) {
@@ -500,7 +518,7 @@ int upscli_init(int certverify, const char *certpath,
 
 		ret = SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath);
 		if (ret != 1) {
-			upslogx(LOG_ERR, "Failed to load certificate from pemfile %s", certpath);
+			upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory %s", certpath);
 			return -1;
 		}
 
@@ -511,20 +529,74 @@ int upscli_init(int certverify, const char *certpath,
 		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
 	}
 
-	if (sslcertname) {
-		if (SSL_CTX_use_certificate_chain_file(ssl_ctx, sslcertname) != 1) {
-			upslogx(LOG_ERR, "Failed to load client certificate from %s", sslcertname);
+	if (certfile) {
+		/* Note: same certfile PEM for cert and private key,
+		 * which is optionally protected by sslcertpasswd */
+		int	ssl_ret;
+		if ((ssl_ret = SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client certificate from %s", certfile);
+			ssl_debug();
 			return -1;
 		}
-		if (SSL_CTX_use_PrivateKey_file(ssl_ctx, sslcertname, SSL_FILETYPE_PEM) != 1) {
-			upslogx(LOG_ERR, "Failed to load client private key from %s", sslcertname);
+		if ((ssl_ret = SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client private key from %s", certfile);
+			ssl_debug();
+			return -1;
+		}
+		if ((ssl_ret = SSL_CTX_check_private_key(ssl_ctx)) != 1) {
+			upslogx(LOG_ERR, "Failed to check client private key from %s", certfile);
+			ssl_debug();
+			return -1;
+		}
+
+		if (sslcertname && *sslcertname) {
+#  if OPENSSL_VERSION_NUMBER >= 0x10002000L
+			X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
+			if (x509) {
+				/* Check if sslcertname matches the host (CN or SAN) */
+				if (X509_check_host(x509, (const char *)sslcertname, 0, 0, NULL) != 1
+				 && X509_check_ip_asc(x509, (const char *)sslcertname, 0) != 1
+				) {
+					char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+
+					/* Check if sslcertname matches the CN subject as a string */
+					if (strcmp(subject, sslcertname) != 0) {
+						/* This way or that, the names differ */
+						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+							subject ? subject : "unknown", sslcertname);
+						if (subject) {
+							OPENSSL_free(subject);
+						}
+						upslogx(LOG_ERR, "Unexpected certificate provided");
+						return -1;
+					} else {
+						upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", sslcertname);
+					}
+				} else {
+					upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", sslcertname);
+				}
+			}
+#  else
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", sslcertname);
+			return -1;
+#  endif
+		}
+	} else {
+		if (sslcertname && *sslcertname) {
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", sslcertname);
 			return -1;
 		}
 	}
+
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
+
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 
 	PK11_SetPasswordFunc(nss_password_callback);
+
+	if (certfile) {
+		upsdebugx(1, "%s: certfile is not used for NSS init, ignored", __func__);
+	}
 
 	if (certpath) {
 		if (quiet_init_ssl != NULL) {
@@ -580,7 +652,7 @@ int upscli_init(int certverify, const char *certpath,
 	 * and nowadays have the default timeout handling etc.,
 	 * just fall through to below and treat as initialized.
 	 */
-	if (certverify || certpath || certname || certpasswd) {
+	if (certverify || certpath || certname || certpasswd || certfile) {
 		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 	}
 #endif /* WITH_OPENSSL | WITH_NSS */
