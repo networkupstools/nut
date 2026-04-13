@@ -1421,6 +1421,9 @@ generatecfg_upsd_add_SSL() {
 # OpenSSL CERTFILE: PEM file with data server cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
 CERTFILE "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}upsd.pem"
+# OpenSSL CERTPATH: Directory with CA certificates (named by hash)
+# to check trusted clients
+CERTPATH "${TESTCERT_PATH_ROOTCA}"
 EOF
             } >> "$NUT_CONFPATH/upsd.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
@@ -1430,22 +1433,29 @@ EOF
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_SERVER}"
-CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
 EOF
-
-              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue -a x"${WITH_SSL_CLIENT}" = xNSS ]; then
-                cat << EOF
-#  - 0 to not request clients to provide any certificate
-#  - 1 to require all clients to present some certificate
-#  - 2 to require all clients to present a valid certificate
-#      (trusted by server database)
-CERTREQUEST 2
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsd.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
             ;;
     esac
+
+    # Shared features for both SSL backends:
+    { cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
+EOF
+
+      if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
+        cat << EOF
+#  - 0 to not request clients to provide any certificate
+#  - 1 to require all clients to present some certificate
+#  - 2 to require all clients to present a valid certificate
+#      (trusted by server database or CA collection)
+CERTREQUEST 2
+EOF
+      fi
+    } >> "$NUT_CONFPATH/upsd.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
     # FIXME: Check for old/new OS and libs to toggle this?
     # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
@@ -1630,23 +1640,15 @@ generatecfg_upsmon_add_SSL() {
         OpenSSL)
             log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
             { cat << EOF
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
 # OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
 #  CA subject name hash value (which must include our NUT server).
 #  Here we just use the path for PEM file that should be populated
 #  by the generatecfg_upsd_add_SSL() method.
-# We only support CERTPATH (to recognize servers), FORCESSL and
-# CERTVERIFY in OpenSSL builds.
 CERTPATH "${TESTCERT_PATH_ROOTCA}"
 EOF
-
-              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
-                cat << EOF
-# With OpenSSL this is the only way to configure these behaviors,
-# no CERTHOST setting here so far:
-FORCESSL 1
-CERTVERIFY 1
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
@@ -1655,35 +1657,28 @@ EOF
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_CLIENT}"
-CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
 EOF
-
-              case "${WITH_SSL_SERVER}" in
-                none) ;;
-                NSS)
-                    cat << EOF
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
-EOF
-                ;;
-                *)  # OpenSSL
-                    cat << EOF
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 0 0
-EOF
-                ;;
-              esac
-
-              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
-                cat << EOF
-# Defaults that NSS CERTHOST may override per-server, but
-# note that this impacts also the general upsmon behavior:
-FORCESSL 1
-CERTVERIFY 1
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
     esac
+
+    # Shared features for both SSL backends:
+    { cat << EOF
+CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+EOF
+
+      if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+        cat << EOF
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+# Defaults that CERTHOST may override per-server, but
+# note that this impacts also the general upsmon behavior:
+FORCESSL 1
+CERTVERIFY 1
+EOF
+      fi
+    } >> "$NUT_CONFPATH/upsmon.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     NUT_QUIET_INIT_SSL=false
     export NUT_QUIET_INIT_SSL
@@ -2696,6 +2691,11 @@ setenv_ssl_cppnit() {
                         NUT_CERTVERIFY=1
                         export NUT_CAFILE NUT_CERTVERIFY
                     fi ; fi
+
+                    NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
+                    NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    export NUT_KEYPASS NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
                     ;;
                 NSS)
                     NUT_CERTVERIFY=1
