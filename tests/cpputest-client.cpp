@@ -248,6 +248,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CAPATH.empty()
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
+	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
 #ifndef WITH_SSL_CXX
 		try {
@@ -259,7 +260,8 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CAFILE,
 			env_NUT_CERTFILE,
 			env_NUT_KEYFILE,
-			env_NUT_KEYPASS
+			env_NUT_KEYPASS,
+			env_NUT_CERTIDENT_NAME
 			));
 #ifndef WITH_SSL_CXX
 		}

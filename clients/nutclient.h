@@ -109,22 +109,25 @@ public:
 	SSLConfig_OpenSSL(bool force_ssl = false, int certverify = -1,
 		const std::string& ca_path = "", const std::string& ca_file = "",
 		const std::string& cert_file = "", const std::string& key_file = "",
-		const std::string& key_pass = "")
+		const std::string& key_pass = "", const std::string& certident_name = "")
 		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
+		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass),
+		  _certident_name(certident_name) {}
 
 	SSLConfig_OpenSSL(bool force_ssl, int certverify,
 		const char *ca_path, const char *ca_file,
 		const char *cert_file, const char *key_file,
-		const char *key_pass)
+		const char *key_pass, const char *certident_name = nullptr)
 		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
+		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass),
+		  _certident_name(certident_name) {}
 
 	const std::string& getCAPath() const { return _ca_path; }
 	const std::string& getCAFile() const { return _ca_file; }
 	const std::string& getCertFile() const { return _cert_file; }
 	const std::string& getKeyFile() const { return _key_file; }
 	const std::string& getKeyPass() const { return _key_pass; }
+	const std::string& getCertIdentName() const { return _certident_name; }
 
 	virtual void apply(TcpClient& client) const override;
 
@@ -134,6 +137,7 @@ private:
 	std::string _cert_file;
 	std::string _key_file;
 	std::string _key_pass;
+	std::string _certident_name;
 };
 
 /**
@@ -826,8 +830,9 @@ protected:
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
 	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass);
+	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr);
 
 	/**
 	 * Set SSL configuration for OpenSSL.
@@ -838,8 +843,9 @@ protected:
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
 	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
+	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "");
 
 	/**
 	 * Set SSL configuration for Mozilla NSS
@@ -1486,11 +1492,13 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
 	const char* host, uint16_t port, int try_ssl,
 	int force_ssl, int certverify,
 	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file, const char *key_pass);
+	const char *cert_file, const char *key_file,
+	const char *key_pass, const char *certident_name);
 void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
 	int force_ssl, int certverify,
 	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file, const char *key_pass);
+	const char *cert_file, const char *key_file,
+	const char *key_pass, const char *certident_name);
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 	const char* host, uint16_t port, int try_ssl,
