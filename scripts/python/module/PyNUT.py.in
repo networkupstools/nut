@@ -70,6 +70,8 @@
 #            NUT STARTTLS protocol action.
 
 import socket
+import time
+import re
 
 ssl_available = False
 try:
@@ -77,6 +79,27 @@ try:
     ssl_available = True
 except:
     pass
+
+class TrackingID:
+    """ Cookie given when performing async action, used to redeem result at a later date. """
+    def __init__(self, tracking_id):
+        self.__id = tracking_id
+        self.__created = time.time()
+
+    def id(self):
+        return self.__id
+
+    def created(self):
+        return self.__created
+
+    def age(self):
+        return time.time() - self.__created
+
+    def __str__(self):
+        return self.__id
+
+    def isValid(self):
+        return self.__id is not None and self.__id != ""
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
@@ -97,15 +120,15 @@ class PyNUTClient :
     __use_ssl     = False
     __ssl_context = None
 
-    __version     = "1.9.0"
-    __release     = "2026-03-16"
+    __version     = "1.10.0"
+    __release     = "2026-04-08"
 
     try:
         NUT_DEFAULT_CONNECT_TIMEOUT = float(os.getenv("NUT_DEFAULT_CONNECT_TIMEOUT", "5.0"))
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
                   cert_file=None, key_file=None, key_pass=None, force_ssl=False ) :
         """ Class initialization method
@@ -116,6 +139,7 @@ login       : Login used to connect to NUT server (default to None for no authen
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
 timeout     : Timeout used to wait for network response
+tracking    : Boolean or 'ON'/'OFF', try to enable TRACKING support right away
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
@@ -173,6 +197,8 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
 
         self.__connect()
 
+        self.__tracking = self.SetTrackingMode(tracking)
+
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
         """ Class destructor method """
@@ -222,10 +248,37 @@ if something goes wrong.
                     print( "[DEBUG] STARTTLS accepted, wrapping socket" )
                 if self.__ssl_context is None :
                     self.__ssl_context = ssl.create_default_context()
-                self.__srv_handler = self.__ssl_context.wrap_socket(
-                    self.__srv_handler,
-                    server_hostname=self.__host
-                )
+
+                # Not sure if we can enter this river twice (e.g. if the server
+                # side of the handshake would still be listening), but we can try:
+                for i in range(5, 0, -1):
+                    try:
+                        self.__srv_handler = self.__ssl_context.wrap_socket(
+                            self.__srv_handler,
+                            server_hostname=self.__host
+                        )
+                        break
+                    except TimeoutError as te:
+                        if self.__debug:
+                            print( "[DEBUG] STARTTLS handshake timed out%s: %s" %(
+                                ("" if (i < 1) else (", retrying (%d)" % i)),
+                                str(te)) )
+
+                        if (i > 1):
+                            sleep(1)
+                        else:
+                            raise te
+
+                # Make sure handshake succeeded or abort early
+                # (there is currently no way for the server to
+                # report its fault to the client when connection
+                # is half-way secure):
+                if not self.isValidProtocolVersion():
+                    if self.__debug :
+                        print( "[DEBUG] STARTTLS setup claimed to succeed, but protocol version check in the secured session failed" )
+                    if self.__force_ssl:
+                        raise PyNUTError("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required")
+                    # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
             else :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS failed: %s" % result )
@@ -255,6 +308,220 @@ if something goes wrong.
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def SetTrackingMode( self, value="" ) :
+        """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
+
+            Remember in $self.__tracking if we could set it with this upsd
+            version, and then to which value?
+        """
+        if value is None or str(value).strip() == "":
+            return None
+
+        if str(value) == 'False':
+            value = 'OFF'
+
+        if str(value) == 'True':
+            value = 'ON'
+
+        if value not in ['ON', 'OFF']:
+            if self.__debug :
+                print( "[DEBUG] Invalid setting for TRACKING mode was requested" )
+            # TOTHINK # raise PyNUTError( "Invalid setting for TRACKING mode was requested" )
+            return None
+
+        self.__srv_handler.send( ("SET TRACKING %s\n" % value).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result == b"OK\n" :
+            self.__tracking = value
+            return value
+
+        if self.__debug :
+            print( "[DEBUG] Failed to set TRACKING mode: %s" % result.replace( b"\n", b"" ).decode('ascii') )
+
+        self.__tracking = None
+        return None
+
+    def EnableTrackingModeOnce( self ) :
+        if self.__tracking is not None and self.__tracking == 'ON':
+            return True
+
+        if self.SetTrackingMode('ON') == 'ON':
+            return True
+
+        return False
+
+    def GetTrackingResult( self, tracking_id="" ) :
+        """ Returns the result of an asynchronous command execution
+        """
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
+        if self.__debug :
+            print( "[DEBUG] GetTrackingResult for %s" % tracking_id )
+
+        self.__srv_handler.send( ("GET TRACKING %s\n" % tracking_id).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result in [b"PENDING\n", b"SUCCESS\n"]:
+            return result.replace( b"\n", b"" ).decode('ascii')
+        else :
+            # ERR...
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def WaitTrackingResult( self, tracking_id="", wait_interval_sec = 1, wait_max_count = 10) :
+        tid = tracking_id
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
+        if tracking_id is None or str(tracking_id).strip() == "" or \
+                wait_interval_sec is None or wait_interval_sec < 1 or \
+                wait_max_count is None or wait_max_count < 1 :
+            # Non-fatal skip; TOTHINK: raise a special exception for bad args?
+            return None
+
+        while wait_max_count > 0:
+            value = self.GetTrackingResult(tid)
+
+            if value == 'SUCCESS':
+                if self.__debug :
+                    print( "[DEBUG] Request with TRACKING ID %s has successfully completed" % tracking_id )
+                return True
+
+            if value == 'PENDING':
+                if self.__debug :
+                    print( "[DEBUG] Still waiting for TRACKING ID %s..." % tracking_id )
+            else:
+                if self.__debug:
+                    print( "[DEBUG] Got bogus reply while waiting for TRACKING ID %s: %s" % (tracking_id, str(value)) )
+
+            time.sleep(wait_interval_sec)
+            wait_max_count = wait_max_count - 1
+
+        if self.__debug :
+            print( "[DEBUG] Timed out waiting for TRACKING ID %s" % tracking_id )
+
+        return False
+
+    def isValidProtocolVersion(self, version_re = None):
+        """ Sends a PROTVER/NETVER query using the active connection and
+            returns True if the returned version string matches a valid
+            NUT protocol version regex (defaults to an "X(.Y)" number aka
+            "^\\d+(?:\\.\\d+)?$" if version_re is None).
+        """
+        result = None
+        try:
+            self.__srv_handler.send( ("PROTVER\n").encode('ascii') )
+            result = self.__read_until( b"\n" )
+        except PyNUTError as ignored:
+            # Deprecated and hidden, but may be what ancient NUT servers say
+            # May throw if the error is due to (non-)connection
+            self.__srv_handler.send( ("NETVER\n").encode('ascii') )
+            result = self.__read_until( b"\n" )
+
+        # print ( "[DEBUG] isValidProtocolVersion: version_re='%s' result='%s'" % (str(version_re), str(result)))
+
+        if result is None:
+            return False
+
+        result = result.replace( b"\n", b"" ).decode('ascii')
+
+        if version_re is None:
+            # Currently supported: 1.0, 1.1, 1.2, 1.3 => r'^1\.[0-3]$'
+            # Is it an X(.Y) number?
+            version_re = r'^\d+(\.\d+)?$'
+
+        if re.match(version_re, result):
+            return True
+
+        return False
+
+    def GetVariableType( self, ups="", var="" ) :
+        """ Returns the type of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableType for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("GET TYPE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"TYPE" :
+            # TYPE <ups> <var> <type>
+            off = len( ("TYPE %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetVariableDescription( self, ups="", var="" ) :
+        """ Returns the description of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableDescription for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("GET DESC %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"DESC" :
+            # DESC <ups> <var> "<description>"
+            off = len( ("DESC %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].split(b'"')[1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetEnumList( self, ups="", var="" ) :
+        """ Returns the list of possible values for an ENUM variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetEnumList for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        enum_list = []
+        result = self.__read_until( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("ENUM %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            enum_list.append( current[offset:].split( b'"' )[1].decode('ascii') )
+
+        return enum_list
+
+    def GetRangeList( self, ups="", var="" ) :
+        """ Returns the list of possible ranges for a RANGE variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetRangeList for %s / %s" % ( ups, var ) )
+
+        self.__srv_handler.send( ("LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        range_list = []
+        result = self.__read_until( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("RANGE %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            # RANGE <ups> <var> "<min>" "<max>"
+            ranges = current[offset:].split( b'"' )
+            range_list.append( { 'min' : ranges[1].decode('ascii'), 'max' : ranges[3].decode('ascii') } )
+
+        return range_list
+
+    def GetDeviceNumLogins( self, ups="" ) :
+        """ Returns the number of connected clients for the specified UPS
+        """
+        if self.__debug :
+            print( "[DEBUG] GetDeviceNumLogins for %s" % ups )
+
+        self.__srv_handler.send( ("GET NUMLOGINS %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:9] == b"NUMLOGINS" :
+            # NUMLOGINS <ups> <value>
+            return int( result.replace( b"\n", b"" ).split(b' ')[2] )
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
@@ -409,21 +676,37 @@ The result is presented as a dictionary containing 'key->val' pairs
 
         return( rw_vars )
 
-    def SetRWVar( self, ups="", var="", value="" ):
+    def SetRWVar( self, ups="", var="", value="", wait_interval_sec = None, wait_max_count = None ):
         """ Set a variable to the specified value on selected UPS
 
 The variable must be a writable value (cf GetRWVars) and you must have the proper
 rights to set it (maybe login/password).
         """
 
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
         self.__srv_handler.send( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
-        else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+        else:
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Variable setting %s %s sent successfully, got tracking ID '%s'" % (var, value, tracking_id) )
 
-    def RunUPSCommand( self, ups="", command="" ) :
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tid )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def RunUPSCommand( self, ups="", command="", wait_interval_sec = None, wait_max_count = None ) :
         """ Send a command to the specified UPS
 
 Returns OK on success or raises an error
@@ -432,21 +715,42 @@ Returns OK on success or raises an error
         if self.__debug :
             print( "[DEBUG] RunUPSCommand called..." )
 
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
         self.__srv_handler.send( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Instant command %s sent successfully, got tracking ID '%s'" % (command, tracking_id) )
+
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tid )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def DeviceLogin( self, ups="") :
         """ Establish a login session with a device (like upsmon does)
 
+This assumes the upsmon SECONDARY role so we can be alerted and initiate a shutdown
+if someone else sends the FSD command to this UPS; we can further becomePrimary()
+if we are the system which manages it.
+
 Returns OK on success or raises an error
+
 USERNAME and PASSWORD must have been specified earlier in the session (once)
 and upsd.conf should permit that user with one of `upsmon` role types.
 
-Note there is no "device LOGOUT" in the protocol, just one for general end
+Note there is no "device LOGOUT" in the protocol, just one for a general end
 of connection.
         """
 
@@ -469,29 +773,42 @@ of connection.
         else :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-    def FSD( self, ups="") :
-        """ Send FSD command
+    def becomePrimary( self, ups="") :
+        """ Assume the upsmon PRIMARY role so we can send FSD command
 
 Returns OK on success or raises an error
 
 NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
-
         if self.__debug :
             print( "[DEBUG] PRIMARY called..." )
 
         self.__srv_handler.send( ("PRIMARY %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
-        if ( result != b"OK PRIMARY-GRANTED\n" ) :
-            if self.__debug :
-                print( "[DEBUG] Retrying: MASTER called..." )
-            self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
-            result = self.__read_until( b"\n" )
-            if ( result != b"OK MASTER-GRANTED\n" ) :
-                if self.__debug :
-                    print( "[DEBUG] Primary level functions are not available" )
-                raise PyNUTError( "ERR ACCESS-DENIED" )
+        if ( result == b"OK PRIMARY-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Retrying: MASTER called..." )
+        self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if ( result == b"OK MASTER-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Primary level functions are not available" )
+        raise PyNUTError( "ERR ACCESS-DENIED" )
+
+    def FSD( self, ups="", becomePrimaryFirst = True) :
+        """ Send FSD command
+
+Returns OK on success or raises an error
+        """
+
+        if becomePrimaryFirst:
+            # raises an error if not "OK", so not checking return value
+            self.becomePrimary(ups)
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )

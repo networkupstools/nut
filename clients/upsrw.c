@@ -271,7 +271,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	}
 
 	/* Check if varname is in VAR=VALUE form */
-	if ((ptr = strchr(varname, '=')) != NULL) {
+	if ((ptr = (char*)strchr(varname, '=')) != NULL) {
 		*ptr++ = 0;
 		snprintf(newval, sizeof(newval), "%s", ptr);
 	} else {

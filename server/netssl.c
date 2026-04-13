@@ -375,8 +375,20 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	PRFileDesc	*socket;
 # endif	/* WITH_OPENSSL | WITH_NSS */
 
+	static char	msg_id_ssl[] =
+# ifdef WITH_OPENSSL
+		" OpenSSL"
+# elif defined(WITH_NSS)	/* WITH_OPENSSL */
+		" NSS"
+# else	/* neither */
+		"out"
+# endif	/* WITH_OPENSSL | WITH_NSS */
+		;
+
 	NUT_UNUSED_VARIABLE(numarg);
 	NUT_UNUSED_VARIABLE(arg);
+
+	upsdebugx(2, "%s: handling a connection upgrade request, server side built with%s SSL support", __func__, msg_id_ssl);
 
 	if (client->ssl) {
 		upsdebugx(2, "%s: NUT_ERR_ALREADY_SSL_MODE because this connection is already initialized as SSL",

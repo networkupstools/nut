@@ -1619,7 +1619,7 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 	/* Best-effort (size-wise) for logging in the end: */
 	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
 #ifdef NUT_PLATFORM_LINUX
-	char	*s = NULL;
+	const char	*s = NULL;
 #endif
 	const char	**pprogname = NULL;
 	size_t	total_prognames = 0, i = 0;
@@ -2622,7 +2622,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
  */
 int	str_contains_token(const char *string, const char *token)
 {
-	char	*s = NULL;
+	const char	*s = NULL;
 	size_t	offset = 0, toklen = 0;
 
 	if (!token || !*token || !string || !*string)
@@ -2869,7 +2869,7 @@ char *xbasename_no_ext(const char *file)
 			 *  One implementation is currently tucked away in
 			 *  libusb0.c because net-snmp may provide another...
 			 */
-			char	*s = strstr(cs, exeext);
+			const char	*s = strstr(cs, exeext);
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
 				 * this character is what we already do not want */

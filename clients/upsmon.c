@@ -413,7 +413,7 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (notifylist[i].type == ntype) {
 			const char	*msgfmt = (notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg);
-			char	*s = strstr(msgfmt, "%s");
+			const char	*s = strstr(msgfmt, "%s");
 
 			upsdebugx(2, "%s: ntype 0x%04x (%s)",
 				__func__, ntype,

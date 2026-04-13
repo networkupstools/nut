@@ -1253,8 +1253,6 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	upsdebugx(3, "%s: Succeeded to STARTTLS (OpenSSL)", __func__);
 
-	return 1;
-
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(ups->fd);
@@ -1344,9 +1342,22 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	upsdebugx(3, "%s: Succeeded to STARTTLS (NSS)", __func__);
 
-	return 1;
-
 # endif /* WITH_OPENSSL | WITH_NSS */
+
+	/* Make sure handshake succeeded or abort early
+	 * (there is currently no way for the server to
+	 * report its fault to the client when connection
+	 * is half-way secure):
+	 */
+	if (!upscli_is_valid_protocol_version(ups, NULL)) {
+		upslogx(LOG_WARNING, "%s: STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required", __func__);
+		ups->ssl = NULL;
+		/* Reaction to forceSSL etc. is up to the caller */
+		/* TODO: Should caller drop SSL context or restart the connection as plaintext if SSL is not required? */
+		return -2;
+	}
+
+	return 1;
 #endif /* WITH_SSL */
 }
 
@@ -1584,7 +1595,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
-		} else if (tryssl && ret == -1) {
+		} else if (tryssl && ret < 0) {
+			/* TODO: (ret == -2) Drop SSL context or restart the connection as plaintext if SSL is not required? */
 			upslogx(LOG_NOTICE, "Error while connecting to NUT server %s, disconnect", host);
 			upscli_disconnect(ups);
 			return -1;
@@ -2161,6 +2173,60 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	*port = (uint16_t)l;
 
 	return 0;
+}
+
+int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re)
+{
+	char	version[UPSCLI_NETBUF_LEN];
+	size_t	len;
+
+	if (!ups) {
+		return -1;
+	}
+
+	net_write(ups, "PROTVER\n", 8, 0);
+	memset(version, 0, sizeof(version));
+	if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+		if (!strncmp(version, "ERR", 3)) {
+			version[0] = '\0';
+		}
+	}
+
+	if (!version[0]) {
+		/* Deprecated and hidden, but may be what ancient NUT servers say
+		 * May throw if the error is due to (non-)connection */
+		net_write(ups, "NETVER\n", 8, 0);
+		memset(version, 0, sizeof(version));
+		if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+			if (!strncmp(version, "ERR", 3)) {
+				version[0] = '\0';
+			}
+		}
+	}
+
+	if (!version[0]) {
+		upsdebugx(3, "%s: PROTVER and NETVER queries returned an error, assuming disconnection or non-compliant NUT server", __func__);
+		return -1;
+	}
+
+	len = strlen(version);
+	if (len > 0 && version[len-1] == '\n') {
+		version[len-1] = '\0';
+	}
+
+	upsdebugx(3, "%s: PROTVER or NETVER returned '%s', matching against '%s'",
+		__func__, version, NUT_STRARG(version_re));
+
+	if (!version_re) {
+		/* Basic check for 1.0 through 1.3, as of NUT v2.8.2 */
+		return (
+			!strcmp(version, "1.0") || !strcmp(version, "1.1") ||
+			!strcmp(version, "1.2") || !strcmp(version, "1.3")
+			);
+	}
+
+	// TODO: Regex
+	return (!strcmp(version_re, version));
 }
 
 int upscli_disconnect(UPSCONN_t *ups)

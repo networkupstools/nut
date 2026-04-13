@@ -68,6 +68,7 @@ char *getpass(const char *prompt)
 {
 	HANDLE	hStdin;
 	DWORD	mode;
+	size_t	len;
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if (hStdin == INVALID_HANDLE_VALUE) {
@@ -86,8 +87,9 @@ char *getpass(const char *prompt)
 	}
 
 	/* deal with that pesky newline */
-	if (strlen(wincompat_password) > 1) {
-		wincompat_password[strlen(wincompat_password) - 1] = '\0';
+	len = strlen(wincompat_password);
+	if (len > 1) {
+		wincompat_password[len - 1] = '\0';
 	}
 
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -407,6 +409,7 @@ int win_system(const char * command)
 	si.cb = sizeof(si);
 	memset(&pi, 0, sizeof(pi));
 
+	upsdebugx(4, "%s: calling CreateProcess: %s", __func__, NUT_STRARG(command));
 	res = CreateProcess(NULL, (char *)command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
 	if (res != 0) {
@@ -417,20 +420,22 @@ int win_system(const char * command)
 }
 
 /* the " character is forbiden in Windows files , so we filter this character
-in data file paths to be coherent with command line which require " to
-distinguish the command from its parameter. This avoid complicated
-explanation in the documentation */
+ * in data file paths to be coherent with command line which require " to
+ * distinguish the command from its parameter. This avoid complicated
+ * explanation in the documentation */
 char * filter_path(const char * source)
 {
 	char	*res;
 	unsigned int	i, j;
+	size_t	len;
 
 	if (source == NULL) {
 		return NULL;
 	}
 
-	res = xmalloc(strlen(source) + 1);
-	for (i=0, j=0; i <= strlen(source); i++) {
+	len = strlen(source);
+	res = xmalloc(len + 1);
+	for (i=0, j=0; i <= len; i++) {
 		if (source[i] != '"') {
 			res[j] = source[i];
 			j++;
@@ -474,6 +479,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* then comes the message */
 	memcpy(buf1 + sizeof(DWORD), buf2, sizeof(buf2));
 
+	upsdebugx(6, "%s: posting to event log NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
 		pipe_full_name,	/* pipe name */
 		GENERIC_WRITE,
@@ -484,6 +490,10 @@ void syslog(int priority, const char *fmt, ...)
 		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing event log NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return;
 	}
 
@@ -492,6 +502,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* testing result is useless. If we have an error and try to report it,
 	 * this will probably lead to a call to this function and an infinite
 	 * loop */
+	upsdebugx(6, "%s: closing event log NAMED_PIPE", __func__);
 	CloseHandle(pipe);
 }
 
@@ -526,6 +537,7 @@ void pipe_create(const char * pipe_name)
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
+	upsdebugx(2, "%s: creating NAMED_PIPE (listener): '%s'", __func__, pipe_full_name);
 	pipe_connection_handle = CreateNamedPipe(
 		pipe_full_name,
 		PIPE_ACCESS_INBOUND	/* to server only */
@@ -560,7 +572,7 @@ void pipe_create(const char * pipe_name)
 	/* Wait for a connection */
 	ret = ConnectNamedPipe(pipe_connection_handle, &pipe_connection_overlapped);
 	if (ret == 0 && GetLastError() != ERROR_IO_PENDING) {
-		upslogx(LOG_ERR, "ConnectNamedPipe error");
+		upslog_with_errno(LOG_ERR, "ConnectNamedPipe error");
 	}
 }
 
@@ -569,6 +581,12 @@ void pipe_connect()
 	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
 	pipe_conn_t	*conn;
 
+	/* TOTHINK: Here we seem to have assumptions about a general connection
+	 * via overlapped I/O being the signal to daemon (via named_pipe_name)...
+	 * might this conflict with other I/Os (driver/server sockets, dummy-ups
+	 * files, etc.)?
+	 */
+	upsdebugx(3, "%s: handle incoming connection on NAMED PIPE", __func__);
 	conn = xcalloc(1, sizeof(*conn));
 	conn->handle = pipe_connection_handle;
 
@@ -587,7 +605,7 @@ void pipe_connect()
 	);
 	if (conn->overlapped.hEvent == NULL) {
 		/* FIXME: Is this (still) about event log only? */
-		upslogx(LOG_ERR, "Can't create event for reading event log");
+		upslog_with_errno(LOG_ERR, "Can't create event for reading event log");
 		return;
 	}
 
@@ -605,17 +623,20 @@ void pipe_connect()
 
 void pipe_disconnect(pipe_conn_t *conn)
 {
+	upsdebugx(3, "%s: starting", __func__);
+
 	if (conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: calling CloseHandle() for conn->overlapped.hEvent", __func__);
 		CloseHandle(conn->overlapped.hEvent);
 		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
 
 	if (conn->handle != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: calling DisconnectNamedPipe() for not-yet-invalid conn->handle", __func__);
 		if (DisconnectNamedPipe(conn->handle) == 0) {
-			upslogx(LOG_ERR,
-				"DisconnectNamedPipe error : %d",
-				(int)GetLastError());
+			upslog_with_errno(LOG_ERR, "DisconnectNamedPipe failed");
 		}
+		upsdebugx(4, "%s: calling CloseHandle() for conn->handle", __func__);
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;
 	}
@@ -642,7 +663,7 @@ int pipe_ready(pipe_conn_t *conn)
 
 	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
 	if (res == 0) {
-		upslogx(LOG_ERR, "Pipe read error");
+		upslog_with_errno(LOG_ERR, "Pipe read error");
 		pipe_disconnect(conn);
 		return 0;
 	}
@@ -657,9 +678,11 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	BOOL	result = FALSE;
 	DWORD	bytesWritten = 0;
 	char	pipe_full_name[NUT_PATH_MAX + 1];
+	size_t	len;
 
 	snprintf(pipe_full_name, sizeof(pipe_full_name), "\\\\.\\pipe\\%s", pipe_name);
 
+	upsdebugx(6, "%s: posting to NAMED_PIPE: '%s'", __func__, pipe_full_name);
 	pipe = CreateFile(
 		pipe_full_name,
 		GENERIC_WRITE,
@@ -670,16 +693,23 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
+		upsdebug_with_errno(1,
+			"%s: SKIP: can't open existing NAMED_PIPE: '%s'",
+			__func__, pipe_full_name);
+
 		return 1;
 	}
 
-	result = WriteFile(pipe, data, strlen(data) + 1, &bytesWritten, NULL);
+	len = strlen(data);
+	result = WriteFile(pipe, data, len + 1, &bytesWritten, NULL);
 
-	if (result == 0 || bytesWritten != strlen(data) + 1) {
+	if (result == 0 || bytesWritten != len + 1) {
+		upsdebug_with_errno(6, "%s: closing event log NAMED_PIPE, did not write as much as expected to", __func__);
 		CloseHandle(pipe);
 		return 1;
 	}
 
+	upsdebugx(6, "%s: closing event log NAMED_PIPE", __func__);
 	CloseHandle(pipe);
 	return 0;
 }
@@ -955,7 +985,7 @@ serial_handler_t * w32_serial_open(const char *name, int flags)
 		0);
 
 	if (sh->handle == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR, "could not open %s", name);
+		upslog_with_errno(LOG_ERR, "could not open %s", name);
 		errno = EPERM;
 		return NULL;
 	}
@@ -994,7 +1024,7 @@ serial_handler_t * w32_serial_open(const char *name, int flags)
 	state.fAbortOnError = TRUE;
 
 	if (!SetCommState(sh->handle, &state)) {
-		upslogx(LOG_ERR,
+		upslog_with_errno(LOG_ERR,
 			"couldn't set initial state for %s",
 			name);
 	}
@@ -1125,7 +1155,7 @@ int tcflush(serial_handler_t *sh, int queue)
 	if (queue == TCOFLUSH || queue == TCIOFLUSH)
 		PurgeComm(sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
 
-	if ((queue == TCIFLUSH) | (queue == TCIOFLUSH))
+	if ((queue == TCIFLUSH) || (queue == TCIOFLUSH))
 	{
 		/* Input flushing by polling until nothing turns up
 		 * (we stop after 1000 chars anyway) */
@@ -1469,7 +1499,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	res = SetCommTimeouts(sh->handle, &to);
 	if (!res)
 	{
-		upslogx(LOG_ERR, "SetCommTimeout failed");
+		upslog_with_errno(LOG_ERR, "SetCommTimeout failed");
 		errno = EIO;
 		return -1;
 	}
