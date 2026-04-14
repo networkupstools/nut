@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3734 utf-8
+personal_ws-1.1 en 3741 utf-8
 AAC
 AAS
 ABI
@@ -705,6 +705,7 @@ LogMin
 LowBatt
 Loyer
 Luca
+Lukas
 Luxeon
 Lygre
 Lynge
@@ -1113,6 +1114,7 @@ RISC
 RK
 RMCARD
 RMCPplus
+RMI
 RMXL
 RNF
 RNG
@@ -1265,6 +1267,7 @@ Salvia
 Santinoli
 Savia
 Sawatzky
+Schmid
 Schmier
 Schoch
 Schonefeld
@@ -1640,6 +1643,7 @@ apc
 apcc
 apcd
 apcevilhack
+apcmicrolink
 apcsmart
 apctest
 apcupsd
@@ -3209,6 +3213,8 @@ sha
 shellcheck
 shellenv
 shm
+showinternals
+showunmapped
 shutdownArguments
 shutdowncmd
 shutdowndelay
@@ -3397,6 +3403,7 @@ tempmax
 tempmin
 termios
 testime
+testinterval
 testtime
 testuser
 testvar
