@@ -15,6 +15,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <strings.h>
 
 #include "serial.h"
@@ -78,7 +79,7 @@ static unsigned int parsed_frames = 0;
 static unsigned int consecutive_timeouts = 0;
 static int poll_primed = 0;
 static int authentication_sent = 0;
-static microlink_page0_state_t page0 = { 0 };
+static microlink_page0_state_t page0;
 static int descriptor_ready = 0;
 static size_t descriptor_usage_count = 0;
 static size_t descriptor_blob_len = 0;
@@ -1893,7 +1894,7 @@ static int microlink_start_session(void)
 	rxbuf_len = 0;
 	poll_primed = 0;
 	authentication_sent = 0;
-	page0 = (microlink_page0_state_t){ 0 };
+	memset(&page0, 0, sizeof(page0));
 	descriptor_ready = 0;
 	descriptor_usage_count = 0;
 	descriptor_blob_len = 0;
@@ -2106,7 +2107,7 @@ void upsdrv_initinfo(void)
 	consecutive_timeouts = 0;
 	poll_primed = 0;
 	authentication_sent = 0;
-	page0 = (microlink_page0_state_t){ 0 };
+	memset(&page0, 0, sizeof(page0));
 	descriptor_ready = 0;
 	poll_interval = 0;
 	if (!microlink_start_session()) {
