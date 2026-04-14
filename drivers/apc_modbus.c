@@ -1845,6 +1845,7 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 			return;
 		}
+		upslogx(LOG_INFO, "Opened modbus successfully");
 	}
 
 	alarm_init();
