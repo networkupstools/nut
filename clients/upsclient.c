@@ -393,6 +393,7 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 #ifdef WITH_OPENSSL
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
 static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
 {
 	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
@@ -425,6 +426,7 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 	buf[size - 1] = '\0';
 	return (int)strlen(buf);
 }
+# endif
 #endif
 
 /* Legacy API, without support for client's own certificate in OpenSSL builds */
