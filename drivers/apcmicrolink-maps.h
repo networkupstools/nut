@@ -71,7 +71,6 @@ typedef struct microlink_desc_command_map_s {
 	const char *path;
 	const char *cmd_name;
 	microlink_desc_write_type_t write_type;
-	unsigned int bit_index;
 	uint64_t bit_mask;
 	const char *value;
 	const char *presence_path;

@@ -2043,9 +2043,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		switch (entry->write_type) {
 		case MLINK_DESC_WRITE_BITMASK:
-			ret = microlink_send_descriptor_mask_value(
-				entry->path,
-				entry->bit_mask ? entry->bit_mask : ((uint64_t)1U << entry->bit_index))
+			ret = microlink_send_descriptor_mask_value(entry->path,	entry->bit_mask)
 				? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 			break;
 		case MLINK_DESC_WRITE_TYPED:
