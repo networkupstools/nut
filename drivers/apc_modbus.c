@@ -1145,44 +1145,11 @@ interframe_delay_exit:
 	last_send_time = current_time;
 }
 
-static void _apc_modbus_handle_error(modbus_t *ctx)
+static void _apc_modbus_close_connection(modbus_t *ctx)
 {
-	static int flush_retries = 0;
-	int flush = 0;
-#ifdef WIN32
-	int wsa_error;
-#endif /* WIN32 */
-
-	/*
-	 * We could enable MODBUS_ERROR_RECOVERY_LINK but that would just get stuck
-	 * in libmodbus until recovery. The only indication of this is that the
-	 * program is stuck and debug prints by libmodbus, which we don't want to
-	 * enable on release.
-	 *
-	 * Instead we detect timout errors and do a sleep + flush, on every other
-	 * error or when flush didn't work we do a reconnect.
-	 */
-
-#ifdef WIN32
-	wsa_error = WSAGetLastError();
-	if (wsa_error == WSAETIMEDOUT) {
-		flush = 1;
-	}
-#else	/* !WIN32 */
-	if (errno == ETIMEDOUT) {
-		flush = 1;
-	}
-#endif /* !WIN32 */
-
-	if (flush > 0 && flush_retries++ < 5) {
-		usleep(1000000);
-		modbus_flush(ctx);
-	} else {
-		flush_retries = 0;
-		upslogx(LOG_ERR, "%s: Closing connection", __func__);
-		/* Close without free, will retry connection on next update */
-		_apc_modbus_close(0);
-	}
+	upslogx(LOG_ERR, "%s: Closing connection", __func__);
+	/* Close without free, will retry connection on next update */
+	_apc_modbus_close(0);
 }
 
 static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
@@ -1199,13 +1166,15 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 			return 1;
 		}
 
+		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
+
 		if (errno != ETIMEDOUT){
 			break;
 		}
 	}
 
-	upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-	_apc_modbus_handle_error(ctx);
+	_apc_modbus_close_connection(ctx);
+
 	return 0;
 }
 
@@ -1574,7 +1543,7 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of outlet command failed: %s (%s)",
 			__func__, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close_connection(modbus_ctx);
 		*result = STAT_INSTCMD_FAILED;
 		return 1;
 	}
@@ -1756,7 +1725,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close_connection(modbus_ctx);
 		return STAT_SET_FAILED;
 	}
 
@@ -1835,7 +1804,7 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close_connection(modbus_ctx);
 		return STAT_INSTCMD_FAILED;
 	}
 
