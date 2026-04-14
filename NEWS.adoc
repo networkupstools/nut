@@ -45,6 +45,9 @@ https://github.com/networkupstools/nut/milestone/13
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
 
+ - `apc_modbus` driver updates:
+    * Fixed string join not doing zero termination. [PR #3413]
+
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java

@@ -695,6 +695,7 @@ static int _apc_modbus_string_join(const char *values[], size_t values_len, cons
 	}
 
 	output_idx = 0;
+	output[0] = 0; /* Always zero terminate */
 
 	for (i = 0; i < values_len && output_idx < output_len; i++) {
 		if (values[i] == NULL)
