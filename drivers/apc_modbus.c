@@ -1053,6 +1053,7 @@ static apc_modbus_register_t* _apc_modbus_find_register_variable(const char *nut
 static void _apc_modbus_close(int free_modbus)
 {
 	if (modbus_ctx != NULL) {
+		upslogx(LOG_INFO, "%s: Closing connection", __func__);
 		modbus_close(modbus_ctx);
 		if (free_modbus) {
 			modbus_free(modbus_ctx);
@@ -1145,13 +1146,6 @@ interframe_delay_exit:
 	last_send_time = current_time;
 }
 
-static void _apc_modbus_close_connection(modbus_t *ctx)
-{
-	upslogx(LOG_ERR, "%s: Closing connection", __func__);
-	/* Close without free, will retry connection on next update */
-	_apc_modbus_close(0);
-}
-
 static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
 	int res;
@@ -1173,7 +1167,7 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 		}
 	}
 
-	_apc_modbus_close_connection(ctx);
+	_apc_modbus_close(0);
 
 	return 0;
 }
@@ -1543,7 +1537,7 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of outlet command failed: %s (%s)",
 			__func__, modbus_strerror(errno), device_path);
-		_apc_modbus_close_connection(modbus_ctx);
+		_apc_modbus_close(0);
 		*result = STAT_INSTCMD_FAILED;
 		return 1;
 	}
@@ -1725,7 +1719,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
-		_apc_modbus_close_connection(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_SET_FAILED;
 	}
 
@@ -1804,7 +1798,7 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_close_connection(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_INSTCMD_FAILED;
 	}
 
