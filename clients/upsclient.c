@@ -245,7 +245,8 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	NUT_UNUSED_VARIABLE(arg);
 
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
-		PK11_GetSlotName(slot), PK11_GetTokenName(slot), sslcertpasswd?"":"not ");
+		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		sslcertpasswd ? "" : "not ");
 	return sslcertpasswd ? PL_strdup(sslcertpasswd) : NULL;
 }
 
