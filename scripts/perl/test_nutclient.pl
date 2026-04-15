@@ -6,7 +6,8 @@
 # Copyright (C) 2026- Jim Klimov <jimklimov+nut@gmail.com>
 
 use strict;
-use warnings;
+# Absent on antique versions like perl-5.005 (Solaris 8)
+eval "use warnings;"; ### FATAL => 'all';";
 use UPS::Nut;
 use Term::ANSIColor;
 
