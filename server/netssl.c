@@ -166,7 +166,7 @@ void ssl_cleanup(void)
 
 static SSL_CTX	*ssl_ctx = NULL;
 
-#  if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
 static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
 {
 	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
@@ -184,10 +184,14 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 	}
 
 	if (!userdata || !*((char*)userdata)) {
+#   if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA)
 		/* Use what we were told to use (or not), do not surprise
 		 * anyone by some hard-coded fallback to certpasswd here! */
 		buf[0] = '\0';
 		return 0;
+#   else
+		userdata = (void*)certpasswd;
+#   endif
 	}
 
 	if (strlen((char*)userdata) >= (size_t)size) {
@@ -199,7 +203,7 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 	buf[size - 1] = '\0';
 	return (int)strlen(buf);
 }
-#  endif	/* OPENSSL_VERSION_NUMBER */
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
 
 static void ssl_debug(void)
 {
@@ -785,7 +789,13 @@ void ssl_init(void)
 #  endif	/* OPENSSL_VERSION_NUMBER */
 
 	if (certpasswd) {
-#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+#  if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
+		/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros */
+		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)certpasswd);
+#   endif	/* else callback uses global variable */
+#  else	/* Not SSL_CTX_* methods */
 		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
 		 * the `SSL_CTX*` variants were added in 1.1.
 		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
@@ -795,14 +805,26 @@ void ssl_init(void)
 		 * But to use those, we would need to get that SSL* (connection-oriented,
 		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
 		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
+		 *
+		 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
 		 */
-		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < 1.1 yet");
+#   if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
+		/* Theoretical solution - didn't find a build system where such methods
+		 * would actually be available, so this could be tested and used */
+		SSL	*ssl_tmp = SSL_new(ssl_ctx);
+		/* OpenSSL 0.9.6+ at least? */
+		SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
+#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_set_default_passwd_cb_userdata(ssl_tmp, (void*)certpasswd);
+#    endif
+		SSL_free(ssl_tmp);
+
+#   else	/* Not SSL_* methods either */
+
+		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
 		return;
-#  else
-		/* OpenSSL 1.1.0+ */
-		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
-		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)certpasswd);
-#  endif
+#   endif
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
 	}
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
@@ -821,7 +843,8 @@ void ssl_init(void)
 	}
 
 	if (certname && certname[0] != '\0') {
-#  if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+		/* Roughly OpenSSL 1.0.2+ */
 		X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
 		if (x509) {
 			/* Check if certname matches the host (CN or SAN) */
@@ -856,9 +879,9 @@ void ssl_init(void)
 				upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", certname);
 			}
 		}
-#  else
+#  else	/* Missing X509 methods wanted above */
 		fatalx(EXIT_FAILURE, "CERTIDENT name verification is not supported in this OpenSSL build (too old)");
-#  endif
+#  endif	/* Got ways to check CERTIDENT? */
 	}
 
 	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);

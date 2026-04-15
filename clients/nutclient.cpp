@@ -318,14 +318,18 @@ private:
 # ifdef WITH_OPENSSL
 SSL_CTX* Socket::_ssl_ctx = nullptr;
 
-/*static*/ int Socket::openssl_password_callback(char *buf, int size, int rwflag, void *userdata)	/* pem_passwd_cb, 1.1.0+ */
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+/* Note: availability of these methods seems to predate C++11, but still... */
+/*static*/ int Socket::openssl_password_callback(char *buf, int size, int rwflag, void *userdata)	/* pem_passwd_cb, cca OpenSSL 1.1.0+ */
 {
 	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
 	/* is callback used for reading/decryption (rwflag=0) or writing/encryption (rwflag=1)? */
 	NUT_UNUSED_VARIABLE(rwflag);
 	/* "userdata" is generally the user-provided password, possibly cached
 	 * from an earlier loop (e.g. to check interactively typing it twice,
-	 * or to probe several items in a loop). */
+	 * or to probe several items in a loop). For us, it should be this->_key_pass
+	 * via SSL_CTX_set_default_passwd_cb_userdata(), but most programs out
+	 * there do not have just one variable with one password to think about. */
 
 	if (!buf || size < 1) {
 		/* Can not even set buf[0] */
@@ -333,11 +337,17 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 	}
 
 	if (!userdata || !*(static_cast<char *>(userdata))) {
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA)
+		/* Use what we were told to use (or not), do not surprise
+		 * anyone by some hard-coded fallback to _key_pass here! */
 		buf[0] = '\0';
 		return 0;
+#  else
+		userdata = static_cast<void *>(this->_key_pass.c_str());
+#  endif
 	}
 
-	if (strlen((char*)userdata) >= (size_t)size) {
+	if (strlen(static_cast<char *>(userdata)) >= (size_t)size) {
 		/* Do not return truncated trash, just say we could not do it */
 		return 0;
 	}
@@ -346,6 +356,7 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 	buf[size - 1] = '\0';
 	return static_cast<int>(strlen(buf));
 }
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
 # endif	/* WITH_OPENSSL */
 
 # ifdef WITH_NSS
@@ -1003,15 +1014,29 @@ void Socket::startTLS()
 			}
 		}
 	}
+
 	if (_certverify != -1) {
 		SSL_CTX_set_verify(_ssl_ctx, _certverify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, nullptr);
 	}
+
 	if (!_cert_file.empty()) {
 		if (SSL_CTX_use_certificate_chain_file(_ssl_ctx, _cert_file.c_str()) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load client certificate file");
 		}
+
 		if (!_key_pass.empty()) {
-#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+			/* Note: availability of these methods seems to predate C++11, but still... */
+#  if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
+			/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros
+			 * https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb/#return-values
+			 */
+			/* 1. Set the callback function */
+			SSL_CTX_set_default_passwd_cb(_ssl_ctx, openssl_password_callback);
+#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
+			/* 2. Set the userdata to the password string */
+			SSL_CTX_set_default_passwd_cb_userdata(_ssl_ctx, const_cast<void *>(static_cast<const void *>(_key_pass.c_str())));
+#   endif	/* else callback uses class instance field */
+#  else	/* Not SSL_CTX_* methods */
 			/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
 			 * the `SSL_CTX*` variants were added in 1.1.
 			 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
@@ -1020,24 +1045,34 @@ void Socket::startTLS()
 			 *
 			 * But to use those, we would need to get that SSL* (maybe from socket FD?);
 			 * that would also unlock us using the ssl_error() elsewhere.
+			 *
+			 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
 			 */
+#   if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
+			/* Theoretical solution - didn't find a build system where such methods
+			 * would actually be available, so this could be tested and used */
+			SSL	*ssl_tmp = SSL_new(ssl_ctx);
+			/* OpenSSL 0.9.6+ at least? */
+			SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
+#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
+			SSL_set_default_passwd_cb_userdata(ssl_tmp, const_cast<void *>(static_cast<const void *>(_key_pass.c_str())));
+#    endif
+			SSL_free(ssl_tmp);
+
+#   else	/* Not SSL_* methods either */
+
 			throw nut::SSLException_OpenSSL("Private key password support not implemented for OpenSSL < 1.1 yet");
-#  else
-			/* OpenSSL 1.1.0+
-			 * https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb/#return-values
-			 */
-			/* 1. Set the callback function */
-			SSL_CTX_set_default_passwd_cb(_ssl_ctx, openssl_password_callback);
-			/* 2. Set the userdata to the password string */
-			SSL_CTX_set_default_passwd_cb_userdata(_ssl_ctx, const_cast<void *>(static_cast<const void *>(_key_pass.c_str())));
-#  endif
+#   endif
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
 		}
+
 		if (SSL_CTX_use_PrivateKey_file(_ssl_ctx, _key_file.empty() ? _cert_file.c_str() : _key_file.c_str(), SSL_FILETYPE_PEM) != 1) {
 			throw nut::SSLException_OpenSSL("Failed to load client private key file");
 		}
 
 		if (!_certident_name.empty()) {
-#  if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+			/* Roughly OpenSSL 1.0.2+ */
 			X509	*x509 = SSL_CTX_get0_certificate(_ssl_ctx);
 			if (x509) {
 				/* Check if _certident_name matches the host (CN or SAN) */
@@ -1080,9 +1115,9 @@ void Socket::startTLS()
 						std::endl << std::flush;
 				}
 			}
-#  else
+#  else	/* Missing X509 methods wanted above */
 			throw nut::SSLException_OpenSSL("Can not verify CERTIDENT '" + _certident_name + "': not supported in this OpenSSL build (too old)");
-#  endif
+#  endif	/* Got ways to check CERTIDENT? */
 		}
 	} else {
 		if (!_certident_name.empty()) {
