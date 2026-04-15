@@ -470,30 +470,36 @@ if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM
 fi
 
 [ -n "${WITH_SSL_CLIENT}" ] || { WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none" ; }
+[ -n "${WITH_SSL_CLIENT_CERTIDENT}" ] || WITH_SSL_CLIENT_CERTIDENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
 # SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
 case "${WITH_SSL_CLIENT}" in
     *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
-    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ;;
-    *NSS*) WITH_SSL_CLIENT="NSS" ;;
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_CLIENT="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;; # TODO: Differentiate ability further?
+    *NSS*) WITH_SSL_CLIENT="NSS" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
 esac
 log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
+log_info "Tested clienr binaries own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
 
 [ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
 [ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
+[ -n "${WITH_SSL_SERVER_CERTIDENT}" ] || WITH_SSL_SERVER_CERTIDENT="none"
 case "${WITH_SSL_SERVER}" in
     *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
     *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
 esac
 case "${WITH_SSL_SERVER}" in
     *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
-    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ;;
-    *NSS*) WITH_SSL_SERVER="NSS" ;;
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_SERVER="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;; # TODO: Differentiate ability further?
+    *NSS*) WITH_SSL_SERVER="NSS" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
 esac
 log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries own certificate validation with CERTIDENT: ${WITH_SSL_SERVER_CERTIDENT}"
 log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
 if [ x"${WITH_SSL_TESTS}" = xno ] ; then
@@ -1471,10 +1477,24 @@ EOF
     esac
 
     # Shared features for both SSL backends:
-    { cat << EOF
+    { case x"${WITH_SSL_SERVER_CERTIDENT}" in
+        x"name+pass") cat << EOF
 # Who am I?
 CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
 EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_SERVER_PASS}"
+EOF
+            ;;
+      esac
 
       if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
         cat << EOF
@@ -1695,9 +1715,24 @@ EOF
     esac
 
     # Shared features for both SSL backends:
-    { cat << EOF
+    { case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        x"name+pass") cat << EOF
+# Who am I?
 CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
 EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_CLIENT_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+      esac
 
       if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
         cat << EOF
