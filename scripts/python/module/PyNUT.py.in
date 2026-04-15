@@ -355,7 +355,7 @@ if something goes wrong.
                                 str(te)) )
 
                         if (i > 1):
-                            sleep(1)
+                            time.sleep(1)
                         else:
                             raise te
 
