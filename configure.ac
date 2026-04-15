@@ -37,6 +37,15 @@ AC_PROG_EGREP
 export GREP
 export EGREP
 
+dnl Work around ancient autotools:
+AS_IF([test x"${PACKAGE_URL-}" = x], [
+    _dirname0="`dirname \"$0\"`/tools/gitlog2version.sh"
+    PACKAGE_URL="`NUT_VERSION_QUERY=URL \"_dirname0\"/tools/gitlog2version.sh`" 2>/dev/null
+    unset _dirname0
+    AC_SUBST([PACKAGE_URL])
+    AC_DEFINE_UNQUOTED([PACKAGE_URL], "${PACKAGE_URL}", [Define to the home page for this package.])
+])
+
 dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
 dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
 dnl snapshots further set in stone. Either way, there should be a slash and
