@@ -2718,7 +2718,7 @@ setenv_ssl_common() {
             export NUT_SSL NUT_FORCESSL
 
             if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
-                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
                     NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
                     NUT_CERTVERIFY=1
                     export NUT_CAPATH NUT_CERTVERIFY
