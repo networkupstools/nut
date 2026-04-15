@@ -2743,11 +2743,11 @@ try:
     with ssl.create_default_context(cafile="x", capath="y") as tmp:
         pass
 except AttributeError as ae:
-    print ae
-    exit (1)
+    print(ae)
+    exit(1)
 except ImportError as me:
-    print me
-    exit (1)
+    print(me)
+    exit(1)
 except IOError as ioe:
     pass
 EOF
