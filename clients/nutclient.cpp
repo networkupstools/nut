@@ -904,6 +904,16 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 	_certident_name = certident_name;
 
 	_ssl_configured |= UPSCLI_SSL_CAPS_OPENSSL;
+
+# if ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	/* Got something to check, and ability to do so */
+	if (!(_key_pass.empty() || _key_file.empty())
+	 && !(_cert_file.empty() || _certident_name.empty())
+	) {
+		_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT;
+	}
+# endif
+
 #else
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(ca_path);
@@ -914,6 +924,7 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 	NUT_UNUSED_VARIABLE(certident_name);
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_OPENSSL;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT;
 #endif
 }
 
@@ -933,6 +944,13 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 	_certident_name = certident_name;
 
 	_ssl_configured |= UPSCLI_SSL_CAPS_NSS;
+
+	/* Got something to check, and ability to do so */
+	if (!(_key_pass.empty() || _key_file.empty())
+	 && !(_cert_file.empty() || _certident_name.empty())
+	) {
+		_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT;
+	}
 #else
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(certstore_path);
@@ -942,6 +960,7 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 	NUT_UNUSED_VARIABLE(certident_name);
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_NSS;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT;
 #endif
 }
 

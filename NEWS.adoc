@@ -89,6 +89,8 @@ https://github.com/networkupstools/nut/milestone/13
       [issue #3331]
     * The `libupsclient` API was extended with a `upscli_init2()` method which
       allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
+    * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
+      report the ability to check `CERTIDENT` information. [#3331]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify

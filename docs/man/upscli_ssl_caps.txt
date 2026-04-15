@@ -17,6 +17,9 @@ SYNOPSIS
 	 * UPSCLI_SSL_CAPS_NONE   	- No ability to use SSL
 	 * UPSCLI_SSL_CAPS_OPENSSL	- Can use OpenSSL-specific setup
 	 * UPSCLI_SSL_CAPS_NSS    	- Can use Mozilla NSS-specific setup
+	 * UPSCLI_SSL_CAPS_CERTIDENT	- Can do CERTIDENT (name check and/or
+	 *                          	  private key password) - either backend,
+	 *                          	  except antique OpenSSL APIs
 	 */
 
 	int upscli_ssl_caps(void);
