@@ -88,10 +88,14 @@ const char *net_ssl_caps_descr(void)
 		"out SSL support";
 #else
 		" SSL support: "
+
 # ifdef WITH_OPENSSL
 		"OpenSSL"
+#  if !( ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT"
+#  endif
 #  ifdef WITH_NSS
-	/* Not likely we'd get here, but... */
+		/* Not likely we'd get here, but... */
 		" and "
 #  endif
 # endif
@@ -101,6 +105,7 @@ const char *net_ssl_caps_descr(void)
 # if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
 		"oddly undefined"
 # endif
+
 		"; with"
 # ifndef WITH_CLIENT_CERTIFICATE_VALIDATION
 		"out"
