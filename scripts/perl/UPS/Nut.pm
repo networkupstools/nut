@@ -12,7 +12,8 @@
 
 package UPS::Nut;
 use strict;
-use warnings FATAL => 'all';
+# Absent on antique versions like perl-5.005 (Solaris 8)
+eval "use warnings FATAL => 'all';";
 use Carp;
 use FileHandle;
 use IO::Socket;
