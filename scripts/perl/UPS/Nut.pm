@@ -187,7 +187,7 @@ sub StartTLS {
     my %argdef = ();
     my $strarg = "[" . scalar(%arg) . "]";
     for (keys %arg) {
-        $strarg .= " $_=>" . ($arg{$_}//"undef");
+        $strarg .= " $_=>" . ($arg{$_}||"undef");
         if (defined $arg{$_}) {
           $argdef{$_} = $arg{$_};
         }
