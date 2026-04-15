@@ -166,6 +166,7 @@ void ssl_cleanup(void)
 
 static SSL_CTX	*ssl_ctx = NULL;
 
+#  if OPENSSL_VERSION_NUMBER >= 0x10100000L
 static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
 {
 	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
@@ -198,6 +199,7 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 	buf[size - 1] = '\0';
 	return (int)strlen(buf);
 }
+#  endif	/* OPENSSL_VERSION_NUMBER */
 
 static void ssl_debug(void)
 {
