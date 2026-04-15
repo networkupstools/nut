@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3737 utf-8
+personal_ws-1.1 en 3744 utf-8
 AAC
 AAS
 ABI
@@ -478,6 +478,7 @@ GetUPSNames
 GetUPSVars
 Ghali
 Giese
+Gigabit
 GitHub
 GitHub's
 Gnomovision
@@ -1764,6 +1765,8 @@ bitmapped
 bitmask
 bitness
 bitnesses
+blog
+blogs
 bmake
 bn
 bool
@@ -1902,6 +1905,7 @@ configureaz
 configureaza
 confpath
 conn
+connectable
 const
 contrib
 cooldown
@@ -2947,6 +2951,7 @@ pkgin
 pkgsrc
 plaintext
 plugin
+plugins
 pluma
 pmset
 pmu
@@ -2996,7 +3001,9 @@ preprocessor
 prerelease
 prereqs
 pretentiousVariableNamingSchemes
+prev
 prgshut
+primary's
 printf
 prio
 priv
