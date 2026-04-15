@@ -63,8 +63,9 @@
 #define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
 #define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
 #define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
-#define UPSCLI_SSL_CAPS_CERTIDENT (1 << 2)	/* Can use CERTIDENT (verify cert */
-						/* name, private key password)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS (1 << 2)	/* Can use CERTIDENT (verify private key password)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME (1 << 3)	/* Can use CERTIDENT (verify cert name)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT (UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
 
 
 namespace nut

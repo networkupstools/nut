@@ -476,8 +476,10 @@ fi
 # SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
 case "${WITH_SSL_CLIENT}" in
     *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name" ;; # Not probable, but...
     *"OpenSSL sans CERTIDENT"*) WITH_SSL_CLIENT="OpenSSL" ;;
-    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;; # TODO: Differentiate ability further?
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
     *NSS*) WITH_SSL_CLIENT="NSS" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
 esac
@@ -493,8 +495,10 @@ case "${WITH_SSL_SERVER}" in
 esac
 case "${WITH_SSL_SERVER}" in
     *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name" ;; # Not probable, but...
     *"OpenSSL sans CERTIDENT"*) WITH_SSL_SERVER="OpenSSL" ;;
-    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;; # TODO: Differentiate ability further?
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
     *NSS*) WITH_SSL_SERVER="NSS" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
 esac

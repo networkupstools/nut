@@ -93,6 +93,13 @@ const char *net_ssl_caps_descr(void)
 		"OpenSSL"
 #  if !( ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
 		" sans CERTIDENT"
+#  else
+#   if !( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) )
+		" sans CERTIDENT(pass)"
+#   endif
+#   if !( (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT(name)"
+#   endif
 #  endif
 #  ifdef WITH_NSS
 		/* Not likely we'd get here, but... */
@@ -830,7 +837,7 @@ void ssl_init(void)
 		return;
 #   endif
 #  endif	/* ...SET_DEFAULT_PASSWD_CB */
-	}
+	}	/* else: CERTIDENT did not pass a password, nothing to check */
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();
@@ -887,7 +894,7 @@ void ssl_init(void)
 #  else	/* Missing X509 methods wanted above */
 		fatalx(EXIT_FAILURE, "CERTIDENT name verification is not supported in this OpenSSL build (too old)");
 #  endif	/* Got ways to check CERTIDENT? */
-	}
+	}/* else: CERTIDENT did not pass a name, nothing to check */
 
 	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 

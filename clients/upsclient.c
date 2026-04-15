@@ -595,7 +595,7 @@ int upscli_init2(int certverify, const char *certpath,
 		return -1;
 #   endif
 #  endif	/* ...SET_DEFAULT_PASSWD_CB */
-	}
+	}	/* else: CERTIDENT did not pass a password, nothing to check */
 
 	if (certfile) {
 		/* Note: same certfile PEM for cert and private key,
@@ -659,7 +659,7 @@ int upscli_init2(int certverify, const char *certpath,
 			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", sslcertname);
 			return -1;
 #  endif	/* Got ways to check CERTIDENT? */
-		}
+		}	/* else: CERTIDENT did not pass a name, nothing to check */
 	} else {
 		if (sslcertname && *sslcertname) {
 			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", sslcertname);
@@ -2569,13 +2569,17 @@ int upscli_ssl_caps(void)
 #ifdef WITH_SSL
 # ifdef WITH_OPENSSL
 	ret |= UPSCLI_SSL_CAPS_OPENSSL;
-#  if ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
-	ret |= UPSCLI_SSL_CAPS_CERTIDENT;
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
+#  endif
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
 #  endif
 # endif
 # ifdef WITH_NSS
 	ret |= UPSCLI_SSL_CAPS_NSS;
-	ret |= UPSCLI_SSL_CAPS_CERTIDENT;
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
 # endif
 #endif	/* WITH_SSL */
 
@@ -2595,6 +2599,13 @@ const char *upscli_ssl_caps_descr(void)
 		"OpenSSL"
 #  if !( ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
 		" sans CERTIDENT"
+#  else
+#   if !( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) )
+		" sans CERTIDENT(pass)"
+#   endif
+#   if !( (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT(name)"
+#   endif
 #  endif
 #  ifdef WITH_NSS
 		/* Not likely we'd get here, but... */

@@ -185,7 +185,9 @@ int upscli_ssl(UPSCONN_t *ups);
 #define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
 #define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
 #define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
-#define UPSCLI_SSL_CAPS_CERTIDENT	(1 << 2)	/* Can do CERTIDENT (name check and/or private key password) - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS	(1 << 2)	/* Can do CERTIDENT private key password */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME	(1 << 3)	/* Can do CERTIDENT name check - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTIDENT	(UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
 
 /* Return a bitmap of the above for the current libupsclient build */
 int upscli_ssl_caps(void);
