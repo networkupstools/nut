@@ -77,6 +77,16 @@ ssl_available = False
 try:
     import ssl
     ssl_available = True
+    try:
+        with ssl.create_default_context(cafile="x", capath="y") as tmp:
+            pass
+    except AttributeError as ignored:
+        # Too old, module has no such symbol (since Python 3.4)
+        # TODO: Use the older code patterns as fallback?
+        ssl_available = False
+    except:
+        # Missing file, etc.
+        pass
 except:
     pass
 
