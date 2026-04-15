@@ -874,7 +874,8 @@ SET_PARMAKES_OPT = \
 			fi ; \
 			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
 		;; \
-	esac
+	esac ; \
+	if [ x"$${V}$(V)" = x ]; then PARMAKES_OPT="$${PARMAKES_OPT} V=0" ; fi
 
 all-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
