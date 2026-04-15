@@ -2687,9 +2687,9 @@ isTestablePython() {
     return $PY_RES
 }
 
-# Executed in subshell context of test cases below
-# Same vars are also used for C++ (cppnit) tests
-setenv_ssl_python() {
+setenv_ssl_common() {
+    # arg1 = language (perl, python...)
+
     # Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
     # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
     # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
@@ -2707,7 +2707,7 @@ setenv_ssl_python() {
             export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
             ;;
         OpenSSL|NSS)
-            log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+            log_info "Adding client-side (Open)SSL config to $1 env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
             NUT_SSL=true
             NUT_FORCESSL=1
@@ -2726,6 +2726,34 @@ setenv_ssl_python() {
             fi
             ;;
     esac
+}
+
+# Executed in subshell context of test cases below
+# Same vars are also used for C++ (cppnit) tests
+setenv_ssl_python() {
+    setenv_ssl_common "python"
+
+    $PYTHON << EOF
+try:
+    import ssl
+    with ssl.create_default_context(cafile="x", capath="y") as tmp:
+        pass
+except AttributeError as ae:
+    print ae
+    exit (1)
+except ImportError as me:
+    print me
+    exit (1)
+except IOError as ioe:
+    pass
+EOF
+
+    if [ "$?" != 0 ] ; then
+        log_warn "The python interpreter '$PYTHON' can not use ssl module, so we will not FORCESSL in the test"
+        NUT_FORCESSL=0
+        export NUT_FORCESSL
+        unset NUT_SSL
+    fi
 }
 
 # Executed in subshell context of test cases below
@@ -2871,7 +2899,7 @@ testcases_sandbox_python() {
 ####################################
 
 setenv_ssl_perl() {
-    setenv_ssl_python
+    setenv_ssl_common "perl"
 
     if isTestablePerl && [ -n "${PERL}" ] ; then
         $PERL -e "use IO::Socket::SSL;" || {
