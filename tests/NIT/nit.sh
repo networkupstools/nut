@@ -1839,6 +1839,8 @@ arePidsAlive() {
 
 FAILED=0
 FAILED_FUNCS=""
+SKIPPED=0
+SKIPPED_FUNCS=""
 PASSED=0
 
 testcase_upsd_no_configs_at_all() {
@@ -2713,7 +2715,11 @@ setenv_ssl_cppnit() {
 }
 
 testcase_sandbox_python_without_credentials() {
-    isTestablePython && [ -n "${PYTHON}" ] || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_without_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
@@ -2732,7 +2738,11 @@ testcase_sandbox_python_without_credentials() {
 }
 
 testcase_sandbox_python_with_credentials() {
-    isTestablePython && [ -n "${PYTHON}" ] || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_with_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
@@ -2756,7 +2766,11 @@ testcase_sandbox_python_with_credentials() {
 }
 
 testcase_sandbox_python_with_upsmon_credentials() {
-    isTestablePython && [ -n "${PYTHON}" ] || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_python_with_upsmon_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
@@ -2777,7 +2791,11 @@ testcase_sandbox_python_with_upsmon_credentials() {
 }
 
 testcases_sandbox_python() {
-    isTestablePython && [ -n "${PYTHON}" ] || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_without_credentials testcase_sandbox_python_with_credentials testcase_sandbox_python_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 3`"
+        return 0
+    }
 
     testcase_sandbox_python_without_credentials
     testcase_sandbox_python_with_credentials
@@ -2875,7 +2893,11 @@ isTestablePerl() {
 }
 
 testcase_sandbox_perl_without_credentials() {
-    isTestablePerl && [ -n "${PERL}" ] || return 0
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_without_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_perl_without_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) without login credentials"
@@ -2894,7 +2916,11 @@ testcase_sandbox_perl_without_credentials() {
 }
 
 testcase_sandbox_perl_with_credentials() {
-    isTestablePerl && [ -n "${PERL}" ] || return 0
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_with_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
@@ -2918,7 +2944,11 @@ testcase_sandbox_perl_with_credentials() {
 }
 
 testcase_sandbox_perl_with_upsmon_credentials() {
-    isTestablePerl && [ -n "${PERL}" ] || return 0
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_perl_with_upsmon_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) with upsmon role login credentials"
@@ -2939,7 +2969,11 @@ testcase_sandbox_perl_with_upsmon_credentials() {
 }
 
 testcases_sandbox_perl() {
-    isTestablePerl && [ -n "${PERL}" ] || return 0
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_without_credentials testcase_sandbox_perl_with_credentials testcase_sandbox_perl_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 3`"
+        return 0
+    }
 
     testcase_sandbox_perl_without_credentials
     testcase_sandbox_perl_with_credentials
@@ -2960,7 +2994,11 @@ isTestableCppNIT() {
 }
 
 testcase_sandbox_cppnit_without_creds() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_without_creds"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_without_creds] Call libnutclient test suite: cppnit without login credentials"
@@ -2979,7 +3017,11 @@ testcase_sandbox_cppnit_without_creds() {
 }
 
 testcase_sandbox_cppnit_simple_admin() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_simple_admin"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_simple_admin] Call libnutclient test suite: cppnit with login credentials: simple admin"
@@ -3008,7 +3050,11 @@ testcase_sandbox_cppnit_simple_admin() {
 }
 
 testcase_sandbox_cppnit_upsmon_primary() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_upsmon_primary"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_upsmon_primary] Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
@@ -3031,7 +3077,11 @@ testcase_sandbox_cppnit_upsmon_primary() {
 }
 
 testcase_sandbox_cppnit_upsmon_master() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_upsmon_master"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_upsmon_master] Call libnutclient test suite: cppnit with login credentials: upsmon-master"
@@ -3054,7 +3104,12 @@ testcase_sandbox_cppnit_upsmon_master() {
 }
 
 testcases_sandbox_cppnit() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_without_creds testcase_sandbox_cppnit_upsmon_primary testcase_sandbox_cppnit_upsmon_master testcase_sandbox_cppnit_simple_admin"
+        SKIPPED="`expr ${SKIPPED} + 4`"
+        return 0
+    }
+
     testcase_sandbox_cppnit_without_creds
     testcase_sandbox_cppnit_upsmon_primary
     testcase_sandbox_cppnit_upsmon_master
@@ -3076,7 +3131,11 @@ isTestableNutScanner() {
 }
 
 testcase_sandbox_nutscanner_list() {
-    isTestableNutScanner || return 0
+    isTestableNutScanner || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_nutscanner_list"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_nutscanner_list] Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
@@ -3159,7 +3218,12 @@ testcase_sandbox_nutscanner_list() {
 }
 
 testcases_sandbox_nutscanner() {
-    isTestableNutScanner || return 0
+    isTestableNutScanner || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_nutscanner_list"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
     testcase_sandbox_nutscanner_list
 }
 
@@ -3369,9 +3433,12 @@ case "${NIT_CASE}" in
 esac
 
 log_separator
-log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
+log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED SKIPPED=$SKIPPED"
 if [ -n "$FAILED_FUNCS" ]; then
-    for F in $FAILED_FUNCS ; do echo "$F" ; done | sort | uniq -c
+    for F in $FAILED_FUNCS ; do echo "[F] $F" ; done | sort | uniq -c
+fi
+if [ -n "$SKIPPED_FUNCS" ]; then
+    for F in $SKIPPED_FUNCS ; do echo "[S] $F" ; done | sort | uniq -c
 fi
 
 # Allow to leave the sandbox daemons running for a while,
