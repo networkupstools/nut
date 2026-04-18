@@ -470,6 +470,24 @@ static const microlink_descriptor_usage_t *microlink_find_descriptor_usage(const
 	return NULL;
 }
 
+static const microlink_descriptor_usage_t *microlink_find_descriptor_usage_validated(const char *path)
+{
+	const microlink_descriptor_usage_t *usage;
+
+	if (!descriptor_ready) {
+		upsdebugx(1, "descriptor not ready!");
+		return NULL;
+	}
+
+	usage = microlink_find_descriptor_usage(path);
+	if (usage == NULL || usage->skipped ||
+		usage->data_offset + usage->size > descriptor_blob_len) {
+		return NULL;
+	}
+
+	return usage;
+}
+
 static const microlink_desc_value_map_t *microlink_find_desc_value_by_path(const char *path,
 	unsigned int *index)
 {
@@ -1685,6 +1703,47 @@ static int microlink_send_simple(unsigned char byte)
 	return ser_send_buf(upsfd, &byte, 1) == 1;
 }
 
+static int microlink_try_extract_frame_at(unsigned char *frame, size_t *framelen,
+	const unsigned char *const sourcebuf, const size_t sourcebuf_len)
+{
+	size_t current_framelen = 0;
+
+	*framelen = 0;
+
+	if (!microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
+		/* If page0 not already seen, get page0.width manually */
+		if (sourcebuf_len < 3) {
+			return 0;
+		}
+
+		if (sourcebuf[0] != 0x00) {
+			return 0;
+		}
+
+		current_framelen = sourcebuf[2] + 3;
+	} else {
+		/* Else, use page0 */
+		current_framelen = page0.width + 3;
+	}
+
+	if (sourcebuf_len < current_framelen) {
+		return 0;
+	}
+
+	if (current_framelen > MLINK_MAX_FRAME) {
+		return 0;
+	}
+
+	if (!microlink_checksum_valid(sourcebuf, current_framelen)) {
+		return 0;
+	}
+
+	memcpy(frame, sourcebuf, current_framelen);
+	*framelen = current_framelen;
+
+	return 1;
+}
+
 static int microlink_try_extract_frame(unsigned char *frame, size_t *framelen)
 {
 	size_t start;
@@ -1700,8 +1759,7 @@ static int microlink_try_extract_frame(unsigned char *frame, size_t *framelen)
 			continue;
 		}
 
-		if (rxbuf_len - start >= MLINK_RECORD_LEN
-		 && microlink_checksum_valid(rxbuf + start, MLINK_RECORD_LEN)) {
+		if (microlink_try_extract_frame_at(frame, framelen, rxbuf + start, rxbuf_len - start)) {
 			if (start > 0) {
 				upsdebugx(2, "microlink: skipped %u stray byte(s) before record 0x%02X",
 					(unsigned int)start, rxbuf[start]);
@@ -1709,15 +1767,13 @@ static int microlink_try_extract_frame(unsigned char *frame, size_t *framelen)
 				rxbuf_len -= start;
 			}
 
-			memcpy(frame, rxbuf, MLINK_RECORD_LEN);
-			*framelen = MLINK_RECORD_LEN;
-			memmove(rxbuf, rxbuf + MLINK_RECORD_LEN, rxbuf_len - MLINK_RECORD_LEN);
-			rxbuf_len -= MLINK_RECORD_LEN;
-			microlink_trace_frame(2, "RX record", frame, MLINK_RECORD_LEN);
+			memmove(rxbuf, rxbuf + *framelen, rxbuf_len - *framelen);
+			rxbuf_len -= *framelen;
+			microlink_trace_frame(2, "RX record", frame, *framelen);
 			return 1;
 		}
 	}
-
+	
 	if (rxbuf_len >= sizeof(rxbuf)) {
 		upsdebugx(1, "microlink: dropping %u bytes while resynchronizing",
 			(unsigned int)(rxbuf_len - (MLINK_RECORD_LEN - 1)));
@@ -1760,7 +1816,7 @@ static void microlink_auth_update(unsigned char *s0, unsigned char *s1,
 static int microlink_authenticate(void)
 {
 	const microlink_object_t *protocol = microlink_get_object(MLINK_OBJ_PROTOCOL);
-	const unsigned char *serial;
+	const microlink_descriptor_usage_t *serial_usage = NULL;
 	const unsigned char *master_password;
 	unsigned char s0, s1;
 	unsigned char payload[4];
@@ -1770,10 +1826,10 @@ static int microlink_authenticate(void)
 		return 0;
 	}
 
-	serial = microlink_get_descriptor_data(MLINK_DESC_SERIALNUMBER, 16);
+	serial_usage = microlink_find_descriptor_usage_validated(MLINK_DESC_SERIALNUMBER);
 	master_password = microlink_get_descriptor_data(MLINK_DESC_MASTER_PASSWORD, 4);
 
-	if (serial == NULL || master_password == NULL) {
+	if (serial_usage == NULL || master_password == NULL) {
 		upsdebugx(1, "microlink: authentication requested before required descriptors were cached");
 		return 0;
 	}
@@ -1782,7 +1838,7 @@ static int microlink_authenticate(void)
 	s1 = protocol->data[3];
 
 	microlink_auth_update(&s0, &s1, protocol->data, 8);
-	microlink_auth_update(&s0, &s1, serial, 16);
+	microlink_auth_update(&s0, &s1, descriptor_blob + serial_usage->data_offset, serial_usage->size);
 	microlink_auth_update(&s0, &s1, master_password, 2);
 
 	payload[0] = 0x00;
