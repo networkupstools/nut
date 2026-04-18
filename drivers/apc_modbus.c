@@ -1100,7 +1100,7 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 
 		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(saved_errno), device_path);
 
-		if (saved_errno != ETIMEDOUT){
+		if (saved_errno != ETIMEDOUT) {
 			break;
 		}
 	}
@@ -1939,6 +1939,7 @@ void upsdrv_makevartable(void)
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");
 	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds");
+	addvar(VAR_VALUE, "modbus_retries", "Number of retries for Modbus register reads on timeout errors (default=3)");
 
 	/* Serial RTU parameters */
 	addvar(VAR_VALUE, "baudrate", "Modbus serial RTU communication speed in baud (default=9600)");
