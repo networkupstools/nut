@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3735 utf-8
+personal_ws-1.1 en 3737 utf-8
 AAC
 AAS
 ABI
@@ -125,6 +125,7 @@ Balker
 Bartek
 BatteryA
 BatteryB
+BatterySystemError
 Baulé
 BayTech
 Belkin's
@@ -1040,6 +1041,7 @@ PowerShare
 PowerShell
 PowerShield
 PowerSure
+PowerSystemError
 PowerTech
 PowerTrust
 PowerVS
