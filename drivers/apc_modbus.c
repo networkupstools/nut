@@ -1938,7 +1938,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, default=serial)");
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");
-	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds");
+	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds (default=500, 2000 for TCP)");
 	addvar(VAR_VALUE, "modbus_retries", "Number of retries for Modbus register reads on timeout errors (default=3)");
 
 	/* Serial RTU parameters */
@@ -2159,7 +2159,7 @@ void upsdrv_initups(void)
 	int rtu_databits;
 	int rtu_stopbits;
 	int slaveid;
-	uint32_t response_timeout_ms;
+	uint32_t response_timeout_ms = 500;
 	char tcp_host[256];
 	char tcp_port[6];
 
@@ -2234,6 +2234,12 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "failed to parse host/port");
 		}
 
+		/*
+		 * Increase the default for TCP
+		 * See https://github.com/networkupstools/nut/pull/3414#issuecomment-4243889805
+		 */
+		response_timeout_ms = 2000;
+
 		modbus_ctx = modbus_new_tcp_pi(tcp_host, tcp_port);
 	} else if (!strcasecmp(val, "serial")) {
 		val = getval("baudrate");
@@ -2270,13 +2276,18 @@ void upsdrv_initups(void)
 	val = getval("response_timeout_ms");
 	if (val != NULL) {
 		response_timeout_ms = (uint32_t)strtoul(val, NULL, 0);
+	}
+
+	if (response_timeout_ms < 100) {
+		upslogx(LOG_WARNING, "response_timeout_ms value %u ms is very low and may cause communication problems; consider increasing it", response_timeout_ms);
+	}
 
 #if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
-		r = modbus_set_response_timeout(modbus_ctx, response_timeout_ms / 1000, (response_timeout_ms % 1000) * 1000);
-		if (r < 0) {
-			modbus_free(modbus_ctx);
-			fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-		}
+	r = modbus_set_response_timeout(modbus_ctx, response_timeout_ms / 1000, (response_timeout_ms % 1000) * 1000);
+	if (r < 0) {
+		modbus_free(modbus_ctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
 #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
 	{	/* see comments above */
 		struct timeval to;
@@ -2287,7 +2298,6 @@ void upsdrv_initups(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
-	}
 
 	val = getval("modbus_retries");
 	if (val != NULL) {
