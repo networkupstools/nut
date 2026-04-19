@@ -50,6 +50,10 @@
 #include <stdio.h>
 
 #ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
+#  include <openssl/x509v3.h>
+# endif
+
 # ifdef WITH_NSS
 #  include <prerror.h>
 #  include <prinit.h>
