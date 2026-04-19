@@ -55,6 +55,11 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+ - `nutdrv_qx` driver updates:
+    * Only claim a USB device as "supported" during discovery out of the box
+      if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
+      USB chips not only in UPSes). [issue #3410]
+
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java

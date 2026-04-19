@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.49"
+#define DRIVER_VERSION	"0.50"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2567,7 +2567,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(UNITEK_VENDORID,	0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
+	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* NOTE: VID:PID may be used by non-UPS devices with CH340/341 chips! But also Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
 	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
@@ -2611,7 +2611,8 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 		if (usbdev->fun != NULL)
 			(*usbdev->fun)(device);
 
-		return SUPPORTED;
+		if (subdriver_command)
+			return SUPPORTED;
 
 	}
 
