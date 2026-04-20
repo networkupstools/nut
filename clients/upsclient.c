@@ -486,7 +486,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 						ok = 1;
 					} else {
 						/* TOTHINK: Wildcard certs, with respect to TLD constraints
-						 *  (do not accept *.com) etc.? */
+						 *  (do not accept *.com) etc. if we !HAVE_X509_CHECK_HOST ? */
 						upsdebugx(5, "%s: %s: [DNS]\t%s\t: DID NOT MATCH '%s'",
 							__func__, label, utf8, NUT_STRARG(hostname));
 					}
@@ -556,7 +556,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 						ip_addr_buf, hostname);
 					ok = 1;
 				} else {
-					/* TOTHINK: invert the check as commented above, if we lack the new methods? */
+					/* TOTHINK: invert the check as commented above, if we !HAVE_X509_CHECK_IP_ASC ? */
 					upsdebugx(5, "%s: %s: [%s]\t%s\t: DID NOT MATCH '%s'",
 						__func__, label,
 						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
@@ -570,6 +570,19 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 			}
 		}
 	} while (0);
+
+	if (!ok && hostname && *hostname && (0
+# if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
+	 || (X509_check_host(cert, (const char *)hostname, 0, 0, NULL) == 1)
+# endif
+# if (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC)
+	 || (X509_check_ip_asc(cert, (const char *)hostname, 0) == 1)
+# endif
+	)) {
+		upsdebugx(5, "%s: %s: MATCHED '%s' using OpenSSL-provided methods",
+			__func__, label, hostname);
+		ok = 1;
+	}
 
 	if (names)
 		GENERAL_NAMES_free(names);
