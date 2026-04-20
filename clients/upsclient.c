@@ -432,6 +432,168 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 	return (int)strlen(buf);
 }
 # endif	/* ...SET_DEFAULT_PASSWD_CB */
+
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+typedef struct {
+	int	verbose_mode;
+	int	verify_depth;
+	int	always_continue;
+} openssl_cert_verify_data_t;
+static int	openssl_cert_verify_data_index;
+static int	verify_depth = 9;	/* openssl default */
+
+/* Adapted from https://stackoverflow.com/a/42477707 with references to
+ * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL */
+static void print_san_name(const char* label, X509* const cert)
+{
+	int	success = 0;
+	GENERAL_NAMES*	names = NULL;
+	unsigned char*	utf8 = NULL;
+
+	do
+	{
+		int	i, count;
+
+		if (!cert) break; /* failed */
+
+		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
+		if (!names) break;
+
+		count = sk_GENERAL_NAME_num(names);
+		if (!count) break; /* failed */
+
+		for (i = 0; i < count; ++i) {
+			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
+			if (!entry) continue;
+
+			if (GEN_DNS == entry->type) {
+				int	len1 = 0, len2 = -1;
+
+				len1 = ASN1_STRING_to_UTF8(&utf8, entry->d.dNSName);
+				if (utf8) {
+					len2 = (int)strlen((const char*)utf8);
+				}
+
+				if (len1 != len2) {
+					upsdebugx(5, "%s: %s: strlen and ASN1_STRING size "
+						"do not match (embedded null?): %d vs %d",
+						__func__, label, len2, len1);
+				}
+
+				/* If there's a problem with string lengths, then
+				 * we skip the candidate and move on to the next.
+				 * Another policy would be to fail, since it probably
+				 * indicates the client is under attack by a corrupt
+				 * server.
+				 */
+				if (utf8 && len1 && len2 && (len1 == len2)) {
+					upsdebugx(5, "%s: %s: [%s]\t%s",
+						__func__, label,
+						(GEN_DNS == entry->type ? "DNS" : "Unknown")),
+						utf8);
+					success = 1;
+				}
+
+				if (utf8) {
+					OPENSSL_free(utf8);
+					utf8 = NULL;
+				}
+			}
+			else
+			{
+				/* GEN_URI, RID, email, etc. - not something we
+				 * care about for network server/client certs */
+				upsdebugx(5, "%s: Unknown GENERAL_NAME type: %d", __func__, entry->type);
+			}
+		}
+	} while (0);
+
+	if (names)
+		GENERAL_NAMES_free(names);
+
+	if (utf8)
+		OPENSSL_free(utf8);
+
+	if (!success)
+		upsdebugx(4, "%s: %s: <not available>", __func__, label);
+}
+
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	char	buf[SMALLBUF];
+	X509	*err_cert;
+	int	err, depth;
+	SSL	*ssl;
+	mydata_t	*mydata;
+
+	err_cert = X509_STORE_CTX_get_current_cert(ctx);
+	err = X509_STORE_CTX_get_error(ctx);
+	depth = X509_STORE_CTX_get_error_depth(ctx);
+
+	/* Retrieve the pointer to the SSL of the connection currently treated
+	 * and the application-specific data stored into the SSL object.
+	 */
+	ssl = (SSL *)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	mydata = (mydata_t *)SSL_get_ex_data(ssl, mydata_index);
+
+	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
+
+	/* Sanity-check */
+	if (!mydata) {
+		upsdebugx(4, "%s: mydata settings not passed, return ok=%d provided by caller: %s",
+			__func__, preverify_ok, buf);
+		return preverify_ok;
+	}
+
+	if (!depth) {
+		print_san_name(buf, err_cert);
+	}
+
+	/* Catch a too long certificate chain. The depth limit set using
+	 * SSL_CTX_set_verify_depth() is by purpose set to "limit+1" so
+	 * that whenever the "depth>verify_depth" condition is met, we
+	 * have violated the limit and want to log this error condition.
+	 * We must do it here, because the CHAIN_TOO_LONG error would not
+	 * be found explicitly; only errors introduced by cutting off the
+	 * additional certificates would be logged.
+	 */
+	if (depth > mydata->verify_depth) {
+		preverify_ok = 0;
+		err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
+		X509_STORE_CTX_set_error(ctx, err);
+	}
+
+	if (!preverify_ok) {
+		upsdebugx(5, "%s: called with verify error:num=%d:%s:depth=%d:%s",
+			__func__, err,
+			X509_verify_cert_error_string(err),
+			depth, buf);
+	}
+	else if (mydata->verbose_mode)
+	{
+		upsdebugx(5, "%s: called with depth=%d: %s", __func__, depth, buf);
+	}
+
+	/* At this point, err contains the last verification error.
+	 * We can use it for something special, like a report: */
+	if (!preverify_ok && (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT))
+	{
+		char	bufCA[SMALLBUF];
+		/* In older versions maybe: X509_NAME_oneline(X509_get_issuer_name(ctx->current_cert), buf, sizeof(buf)); */
+		X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get_current_cert(ctx)), bufCA, sizeof(bufCA));
+		upsdebugx(5, "%s: issuer=%s", __func__, bufCA);
+	}
+
+	if (mydata->always_continue) {
+		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): %s", __func__, preverify_ok, buf);
+		return 1;
+	}
+
+	upsdebugx(4, "%s: return ok=%d provided by caller: %s", __func__, preverify_ok, buf);
+	return preverify_ok;
+}
+
 #endif
 
 /* Legacy API, without support for client's own certificate in OpenSSL builds */
@@ -555,7 +717,14 @@ int upscli_init2(int certverify, const char *certpath,
 			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
 		}
 
-		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+		mydata_index = SSL_get_ex_new_index(0, "mydata index", NULL, NULL, NULL);
+
+		SSL_CTX_set_verify(ssl_ctx, ssl_mode, openssl_cert_verify_callback);
+
+		/* Let the openssl_cert_verify_callback catch the verify_depth error so that we get
+		 * an appropriate error in the logfile; see more around SSL_connect(). */
+		SSL_CTX_set_verify_depth(ssl_ctx, verify_depth + 1);
 	}
 
 	if (sslcertpasswd) {
@@ -1322,7 +1491,15 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	if (verifycert != 0) {
-		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, NULL);
+		mydata_t	mydata;
+
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
+		 * Set up the SSL specific data into "mydata" and store it into the SSL
+		 * structure. */
+		mydata.verify_depth = verify_depth;
+		SSL_set_ex_data(ups->ssl, mydata_index, &mydata);
+
+		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, openssl_cert_verify_callback);
 	} else {
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
 	}
@@ -1399,6 +1576,17 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			if (res == 1) {
 				upsdebugx(3, "%s: SSL connected (%s)",
 					__func__, SSL_get_version(ups->ssl));
+
+				/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+				if (SSL_get_peer_certificate(ups->ssl)) {
+					if (SSL_get_verify_result(ups->ssl) == X509_V_OK) {
+						upsdebugx(3, "%s: The server sent a certificate which verified OK", __func__);
+					} else {
+						upsdebugx(3, "%s: The server sent a certificate which did not verify OK", __func__);
+					}
+				} else {
+					upsdebugx(3, "%s: Odd, the server did not send a certificate", __func__);
+				}
 				break;
 			}
 
