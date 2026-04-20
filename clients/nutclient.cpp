@@ -1122,7 +1122,7 @@ void Socket::startTLS()
 					if (!subject || !(
 						strcmp(subject, _certident_name.c_str()) == 0
 						|| (subject_CN && !strncmp(subject_CN, _certident_name.c_str(), certident_len)
-							&& (subject_CN[certident_len] == '\0' || subject_CN[certident_len] == '/') )
+							&& (subject_CN[certident_len] == '\0' || subject_CN[certident_len] == '/' || subject_CN[certident_len] == ',') )
 					)) {
 						/* This way or that, the names differ */
 						std::string err = "Certificate subject (" + std::string(subject ? subject : "unknown") + ") does not match CERTIDENT name (" + _certident_name + ")";

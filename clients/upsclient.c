@@ -638,7 +638,7 @@ int upscli_init2(int certverify, const char *certpath,
 					if (!subject || !(
 						strcmp(subject, sslcertname) == 0
 						|| (subject_CN && !strncmp(subject_CN, sslcertname, sslcertname_len)
-							&& (subject_CN[sslcertname_len] == '\0' || subject_CN[sslcertname_len] == '/') )
+							&& (subject_CN[sslcertname_len] == '\0' || subject_CN[sslcertname_len] == '/' || subject_CN[sslcertname_len] == ',') )
 					)) {
 						/* This way or that, the names differ */
 						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
