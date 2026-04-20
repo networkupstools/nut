@@ -1108,7 +1108,7 @@ EOF
                             --extKeyUsage "serverAuth" \
                             --nsCertType sslServer \
                             --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
-                            --extSAN "dns:localhost,dns:localhost6,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1" \
+                            --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
                         || die "Could not create a NSS Server certificate request"
 
                         # Sign a certificate request with the CA certificate:
@@ -1181,11 +1181,13 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+DNS.3 = nut-server-$$.localdomain
 # Cater to older Python SSL parser that only looks for DNS:
-DNS.3 = 127.0.0.1
-DNS.4 = ::1
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
@@ -1311,11 +1313,13 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+DNS.3 = nut-client-$$.localdomain
 # Cater to older Python SSL parser that only looks for DNS:
-DNS.3 = 127.0.0.1
-DNS.4 = ::1
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
