@@ -351,7 +351,7 @@ SSL_CTX* Socket::_ssl_ctx = nullptr;
 #  endif
 	}
 
-	if (strlen(static_cast<char *>(userdata)) >= (size_t)size) {
+	if (strlen(static_cast<char *>(userdata)) >= static_cast<size_t>(size)) {
 		/* Do not return truncated trash, just say we could not do it */
 		return 0;
 	}
