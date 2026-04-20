@@ -444,7 +444,7 @@ static int	verify_depth = 9;	/* openssl default */
 
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
  * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL */
-static void print_san_name(const char* label, X509* const cert)
+static void openssl_cert_print_san_name(const char* label, X509* const cert)
 {
 	int	success = 0;
 	GENERAL_NAMES*	names = NULL;
@@ -519,13 +519,13 @@ static void print_san_name(const char* label, X509* const cert)
 }
 
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
-static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	char	buf[SMALLBUF];
 	X509	*err_cert;
 	int	err, depth;
 	SSL	*ssl;
-	mydata_t	*mydata;
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
 
 	err_cert = X509_STORE_CTX_get_current_cert(ctx);
 	err = X509_STORE_CTX_get_error(ctx);
@@ -535,19 +535,19 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	 * and the application-specific data stored into the SSL object.
 	 */
 	ssl = (SSL *)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
-	mydata = (mydata_t *)SSL_get_ex_data(ssl, mydata_index);
+	openssl_cert_verify_data = (openssl_cert_verify_data_t *)SSL_get_ex_data(ssl, openssl_cert_verify_data_index);
 
 	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
 
 	/* Sanity-check */
-	if (!mydata) {
-		upsdebugx(4, "%s: mydata settings not passed, return ok=%d provided by caller: %s",
+	if (!openssl_cert_verify_data) {
+		upsdebugx(4, "%s: openssl_cert_verify_data settings not passed, return ok=%d provided by caller: %s",
 			__func__, preverify_ok, buf);
 		return preverify_ok;
 	}
 
 	if (!depth) {
-		print_san_name(buf, err_cert);
+		openssl_cert_print_san_name(buf, err_cert);
 	}
 
 	/* Catch a too long certificate chain. The depth limit set using
@@ -558,7 +558,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	 * be found explicitly; only errors introduced by cutting off the
 	 * additional certificates would be logged.
 	 */
-	if (depth > mydata->verify_depth) {
+	if (depth > openssl_cert_verify_data->verify_depth) {
 		preverify_ok = 0;
 		err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
 		X509_STORE_CTX_set_error(ctx, err);
@@ -570,7 +570,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 			X509_verify_cert_error_string(err),
 			depth, buf);
 	}
-	else if (mydata->verbose_mode)
+	else if (openssl_cert_verify_data->verbose_mode)
 	{
 		upsdebugx(5, "%s: called with depth=%d: %s", __func__, depth, buf);
 	}
@@ -585,7 +585,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		upsdebugx(5, "%s: issuer=%s", __func__, bufCA);
 	}
 
-	if (mydata->always_continue) {
+	if (openssl_cert_verify_data->always_continue) {
 		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): %s", __func__, preverify_ok, buf);
 		return 1;
 	}
@@ -718,7 +718,7 @@ int upscli_init2(int certverify, const char *certpath,
 		}
 
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
-		mydata_index = SSL_get_ex_new_index(0, "mydata index", NULL, NULL, NULL);
+		openssl_cert_verify_data_index = SSL_get_ex_new_index(0, "openssl_cert_verify_data index", NULL, NULL, NULL);
 
 		SSL_CTX_set_verify(ssl_ctx, ssl_mode, openssl_cert_verify_callback);
 
@@ -1491,13 +1491,13 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	if (verifycert != 0) {
-		mydata_t	mydata;
+		openssl_cert_verify_data_t	openssl_cert_verify_data;
 
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
-		 * Set up the SSL specific data into "mydata" and store it into the SSL
-		 * structure. */
-		mydata.verify_depth = verify_depth;
-		SSL_set_ex_data(ups->ssl, mydata_index, &mydata);
+		 * Set up the SSL specific data into "openssl_cert_verify_data"
+		 * and store it into the SSL structure. */
+		openssl_cert_verify_data.verify_depth = verify_depth;
+		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, &openssl_cert_verify_data);
 
 		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, openssl_cert_verify_callback);
 	} else {
