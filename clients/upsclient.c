@@ -528,8 +528,8 @@ int upscli_init2(int certverify, const char *certpath,
 			return -1;
 		}
 	} else {
-		switch(certverify) {
-
+		switch (certverify)
+		{
 		case 0:
 			ssl_mode = SSL_VERIFY_NONE;
 			break;
@@ -829,8 +829,8 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return "Invalid error number";
 	}
 
-	switch (upscli_errlist[ups->upserror].flags) {
-
+	switch (upscli_errlist[ups->upserror].flags)
+	{
 	case 0:		/* simple error */
 		return upscli_errlist[ups->upserror].str;
 
