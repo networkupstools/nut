@@ -615,8 +615,8 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
 	/* Sanity-check */
 	if (!openssl_cert_verify_data) {
-		upsdebugx(4, "%s: openssl_cert_verify_data settings not passed, return ok=%d provided by caller: %s",
-			__func__, preverify_ok, buf);
+		upsdebugx(4, "%s: openssl_cert_verify_data settings not passed, return ok=%d provided by caller: depth=%d:%s",
+			__func__, preverify_ok, depth, buf);
 		return preverify_ok;
 	}
 
@@ -660,7 +660,7 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 	else if (openssl_cert_verify_data->verbose_mode)
 	{
-		upsdebugx(5, "%s: called with depth=%d: %s", __func__, depth, buf);
+		upsdebugx(5, "%s: called with depth=%d:%s", __func__, depth, buf);
 	}
 
 	/* At this point, err contains the last verification error.
@@ -674,11 +674,11 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 
 	if (openssl_cert_verify_data->always_continue) {
-		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): %s", __func__, preverify_ok, buf);
+		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): depth=%d:%s", __func__, preverify_ok, depth, buf);
 		return 1;
 	}
 
-	upsdebugx(4, "%s: return ok=%d provided by caller: %s", __func__, preverify_ok, buf);
+	upsdebugx(4, "%s: return ok=%d provided by caller: depth=%d:%s", __func__, preverify_ok, depth, buf);
 	return preverify_ok;
 }
 
