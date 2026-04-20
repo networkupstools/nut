@@ -374,11 +374,13 @@ static void nss_error(const char* text)
 	PRInt32	err_len = PR_GetErrorTextLength();
 
 	if (err_name) {
-		err_name_buf << " (" << err_name << ")";
+		err_name_buf  = " (";
+		err_name_buf += err_name;
+		err_name_buf += ")";
 	}
 
 	if (err_len > 0) {
-		char	*buffer = (char *)calloc(err_len + 1, sizeof(char));
+		char	*buffer = static_cast<char *>(calloc(static_cast<size_t>(err_len) + 1, sizeof(char)));
 		if (buffer) {
 			PR_GetErrorText(buffer);
 			std::cerr << "nss_error "
