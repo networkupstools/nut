@@ -79,7 +79,7 @@ typedef struct {
 
 	/* In this context, hostname is by default a pointer to ups->host, which
 	 * should not be freed or changed (otherwise set hostname_allocated!=0) */
-	const char *hostname;
+	const char	*hostname;
 	int	hostname_allocated;
 } openssl_cert_verify_data_t;
 #endif
@@ -101,9 +101,9 @@ typedef struct {
 	SSL	*ssl;
 	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	PRFileDesc *ssl;
+	PRFileDesc	*ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
-	void *ssl;
+	void	*ssl;
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	char	readbuf[64];
