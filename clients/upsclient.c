@@ -443,7 +443,8 @@ static int	openssl_cert_verify_data_index;
 static int	verify_depth = 9;	/* openssl default */
 
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
- * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL */
+ * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL,
+ * and https://www.zedwood.com/article/c-openssl-parse-x509-certificate-pem */
 static void openssl_cert_print_san_name(const char* label, X509* const cert)
 {
 	int	success = 0;
@@ -487,19 +488,73 @@ static void openssl_cert_print_san_name(const char* label, X509* const cert)
 				 * server.
 				 */
 				if (utf8 && len1 && len2 && (len1 == len2)) {
-					upsdebugx(5, "%s: %s: [%s]\t%s",
-						__func__, label,
-						(GEN_DNS == entry->type ? "DNS" : "Unknown")),
-						utf8);
+					upsdebugx(5, "%s: %s: [DNS]\t%s",
+						__func__, label, utf8);
 					success = 1;
+				} else {
+					upsdebugx(4, "%s: WARNING: there is some mismatch about "
+						"a SAN entry in %s: [DNS]\t%s (len1=%d len2=%d)",
+						__func__, label, NUT_STRARG((char*)utf8), len1, len2);
 				}
 
 				if (utf8) {
 					OPENSSL_free(utf8);
 					utf8 = NULL;
 				}
-			}
-			else
+			} else if (GEN_IPADD == entry->type) {
+				/* https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6:
+				 * When the subjectAltName extension contains an iPAddress,
+				 * the address MUST be stored in the octet string in "network
+				 * byte order", as specified in [RFC791].  The least significant
+				 * bit (LSB) of each octet is the LSB of the corresponding byte
+				 * in the network address.  For IP version 4, as specified in
+				 * [RFC791], the octet string MUST contain exactly four octets.
+				 * For IP version 6, as specified in [RFC2460], the octet string
+				 * MUST contain exactly sixteen octets.
+				 */
+				char	ip_addr_buf[128], *p = ip_addr_buf;
+				const unsigned char	*ip_addr_raw = ASN1_STRING_get0_data(entry->d.iPAddress);
+				int	ip_addr_raw_len = ASN1_STRING_length(entry->d.iPAddress), j;
+
+				memset(ip_addr_buf, 0, sizeof(ip_addr_buf));
+				switch (ip_addr_raw_len) {
+					case 4:
+						for (j = 0; j < ip_addr_raw_len; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%u%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ".");
+						}
+						break;
+
+					case 16:
+						/* TOTHINK: There are many ways to print an IPv6 address;
+						 *  maybe we should rather convert the expected address
+						 *  into an array of 16 chars and compare that?
+						 *  For reporting, however, this is good enough, even if
+						 *  a bit wasteful. */
+						for (j = 0; j < ip_addr_raw_len; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%02x%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ":");
+						}
+						break;
+
+					default:
+						upsdebugx(5, "%s: %s: invalid IP address length: %d",
+							__func__, label, ip_addr_raw_len);
+						continue;
+				}
+
+				upsdebugx(5, "%s: %s: [%s]\t%s",
+					__func__, label,
+					(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+					ip_addr_buf);
+				success = 1;
+			} else
 			{
 				/* GEN_URI, RID, email, etc. - not something we
 				 * care about for network server/client certs */
