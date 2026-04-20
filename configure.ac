@@ -7089,8 +7089,10 @@ dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
 
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
 nut_with_ssl_cxx=no
-AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
-    AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
+AS_IF([test "${have_cxx11}" = yes], [
+  AS_IF([test x"${LIBSSL_CXXFLAGS}" = x],
+   [nut_with_ssl_cxx=yes],
+   [AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
     my_CFLAGS="${CFLAGS}"
     my_CPPFLAGS="${CPPFLAGS}"
@@ -7193,14 +7195,15 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
                     ]
                 )
             ])
+        ])
 
-        AS_IF([test "$my_FIXED" = true],
-            [nut_with_ssl_cxx=yes],
-            [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
-             dnl We disable just SSL support in the C++ library
-            ])
-        ]
-	)
+    dnl Revise if we fixed the support (or it just worked):
+    AS_IF([test "$my_FIXED" = true],
+        [nut_with_ssl_cxx=yes],
+        [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
+         dnl We disable just SSL support in the C++ library
+         nut_with_ssl_cxx=no
+        ])
 
     CFLAGS="${my_CFLAGS}"
     CPPFLAGS="${my_CPPFLAGS}"
@@ -7212,6 +7215,7 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     unset my_FIXED
     unset my_INCLUDEDIR_C
     unset my_INCLUDEDIR_CXX
+  ])
 ])
 
 AC_SUBST(LIBSSL_CXXFLAGS)
