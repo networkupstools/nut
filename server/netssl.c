@@ -1178,7 +1178,10 @@ void ssl_init(void)
 				if (!subject || !(
 				    strcmp(subject, certname) == 0
 				    || (subject_CN && !strncmp(subject_CN, certname, certname_len)
-				        && (subject_CN[certname_len] == '\0' || subject_CN[certname_len] == '/' || subject_CN[certname_len] == ',') )
+						&& (subject_CN[certname_len] == '\0'
+							|| subject_CN[certname_len] == '/'
+							|| subject_CN[certname_len] == ','
+							|| (subject_CN[certname_len] == '\\' && subject_CN[certname_len + 1] == '/')) )
 				)) {
 					/* This way or that, the names differ */
 					upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
