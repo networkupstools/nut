@@ -433,21 +433,12 @@ static int openssl_password_callback(char *buf, int size, int rwflag, void *user
 }
 # endif	/* ...SET_DEFAULT_PASSWD_CB */
 
-/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
-typedef struct {
-	int	verbose_mode;
-	int	verify_depth;
-	int	always_continue;
-} openssl_cert_verify_data_t;
-static int	openssl_cert_verify_data_index;
-static int	verify_depth = 9;	/* openssl default */
-
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
  * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL,
  * and https://www.zedwood.com/article/c-openssl-parse-x509-certificate-pem */
-static void openssl_cert_print_san_name(const char* label, X509* const cert)
+static int openssl_cert_verify_san_name(const char* label, X509* const cert, const char *hostname)
 {
-	int	success = 0;
+	int	san_seen = 0, ok = 0;
 	GENERAL_NAMES*	names = NULL;
 	unsigned char*	utf8 = NULL;
 
@@ -488,9 +479,17 @@ static void openssl_cert_print_san_name(const char* label, X509* const cert)
 				 * server.
 				 */
 				if (utf8 && len1 && len2 && (len1 == len2)) {
-					upsdebugx(5, "%s: %s: [DNS]\t%s",
-						__func__, label, utf8);
-					success = 1;
+					san_seen = 1;
+					if (hostname && *hostname && !strcasecmp((const char*)utf8, hostname)) {
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: MATCHED '%s'",
+							__func__, label, utf8, hostname);
+						ok = 1;
+					} else {
+						/* TOTHINK: Wildcard certs, with respect to TLD constraints
+						 *  (do not accept *.com) etc.? */
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: DID NOT MATCH '%s'",
+							__func__, label, utf8, NUT_STRARG(hostname));
+					}
 				} else {
 					upsdebugx(4, "%s: WARNING: there is some mismatch about "
 						"a SAN entry in %s: [DNS]\t%s (len1=%d len2=%d)",
@@ -549,16 +548,25 @@ static void openssl_cert_print_san_name(const char* label, X509* const cert)
 						continue;
 				}
 
-				upsdebugx(5, "%s: %s: [%s]\t%s",
-					__func__, label,
-					(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
-					ip_addr_buf);
-				success = 1;
+				san_seen = 1;
+				if (hostname && *hostname && !strcasecmp((const char*)ip_addr_buf, hostname)) {
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: MATCHED '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, hostname);
+					ok = 1;
+				} else {
+					/* TOTHINK: invert the check as commented above, if we lack the new methods? */
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: DID NOT MATCH '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, NUT_STRARG(hostname));
+				}
 			} else
 			{
 				/* GEN_URI, RID, email, etc. - not something we
 				 * care about for network server/client certs */
-				upsdebugx(5, "%s: Unknown GENERAL_NAME type: %d", __func__, entry->type);
+				upsdebugx(5, "%s: Unknown GENERAL_NAME type, or irrelevant for certificate vs. hostname validation: %d", __func__, entry->type);
 			}
 		}
 	} while (0);
@@ -569,11 +577,22 @@ static void openssl_cert_print_san_name(const char* label, X509* const cert)
 	if (utf8)
 		OPENSSL_free(utf8);
 
-	if (!success)
-		upsdebugx(4, "%s: %s: <not available>", __func__, label);
+	if (!san_seen) {
+		upsdebugx(4, "%s: %s: subjAltNames not available", __func__, label);
+	} else {
+		if (!ok) {
+			upsdebugx(4, "%s: %s: subjAltNames available, but did not match '%s'", __func__, label, hostname);
+		} else {
+			upsdebugx(4, "%s: %s: subjAltNames available and at least one matched '%s'", __func__, label, hostname);
+		}
+	}
+
+	return ok;
 }
 
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+static int	openssl_cert_verify_data_index;
+static int	verify_depth = 9;	/* openssl default */
 static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	char	buf[SMALLBUF];
@@ -601,8 +620,22 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		return preverify_ok;
 	}
 
-	if (!depth) {
-		openssl_cert_print_san_name(buf, err_cert);
+	/* This is the counterpart's own cert */
+	if (depth == 0) {
+		/* Call this in any case, to print debug logs about
+		 *  presence and value(s) of subjAltNames in that cert */
+		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
+		if (!preverify_ok && san_ok && err == X509_V_ERR_HOSTNAME_MISMATCH) {
+			/* Caller had some problem with it, did SAN match fix it? */
+			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
+				"probably by CN, but SAN matched - reporting ok=%d and clearing error state",
+				__func__, err,
+				X509_verify_cert_error_string(err),
+				depth, buf, san_ok);
+			err = 0;
+			X509_STORE_CTX_set_error(ctx, err);
+			return san_ok;
+		}
 	}
 
 	/* Catch a too long certificate chain. The depth limit set using
@@ -1546,13 +1579,16 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	if (verifycert != 0) {
-		openssl_cert_verify_data_t	openssl_cert_verify_data;
-
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
 		 * Set up the SSL specific data into "openssl_cert_verify_data"
 		 * and store it into the SSL structure. */
-		openssl_cert_verify_data.verify_depth = verify_depth;
-		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, &openssl_cert_verify_data);
+		if (ups->openssl_cert_verify_data.hostname_allocated && ups->openssl_cert_verify_data.hostname)
+			free((void *)ups->openssl_cert_verify_data.hostname);
+		memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+
+		ups->openssl_cert_verify_data.verify_depth = verify_depth;
+		ups->openssl_cert_verify_data.hostname = ups->host;	/* not allocated, not to be freed with the structure */
+		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, &(ups->openssl_cert_verify_data));
 
 		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, openssl_cert_verify_callback);
 	} else {
@@ -1568,7 +1604,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			 * CERTHOST <hostname> <certificate name> <certverify> <forcessl>
 			 */
 # if OPENSSL_VERSION_NUMBER >= 0x10100000L
-			/* hostname verification - OpenSSL 1.1.0+ */
+			/* hostname verification - OpenSSL 1.1.0+
+			 * NOTE: Until OpenSSL 4.x this does not handle SAN, hence our openssl_cert_verify_callback()
+			 */
 			const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
 			X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
 
@@ -2712,6 +2750,13 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	free(ups->host);
 	ups->host = NULL;
+
+#ifdef WITH_OPENSSL
+	if (ups->openssl_cert_verify_data.hostname_allocated && ups->openssl_cert_verify_data.hostname) {
+		free((void *)ups->openssl_cert_verify_data.hostname);
+		ups->openssl_cert_verify_data.hostname = NULL;
+	}
+#endif
 
 	if (ups->fd < 0) {
 		return 0;

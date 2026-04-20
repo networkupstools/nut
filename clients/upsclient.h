@@ -70,6 +70,20 @@ extern "C" {
 
 #include "parseconf.h"
 
+#ifdef WITH_OPENSSL
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+typedef struct {
+	int	verbose_mode;
+	int	verify_depth;
+	int	always_continue;
+
+	/* In this context, hostname is by default a pointer to ups->host, which
+	 * should not be freed or changed (otherwise set hostname_allocated!=0) */
+	const char *hostname;
+	int	hostname_allocated;
+} openssl_cert_verify_data_t;
+#endif
+
 typedef struct {
 	char	*host;
 	uint16_t	port;
@@ -85,6 +99,7 @@ typedef struct {
 
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
+	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PRFileDesc *ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
