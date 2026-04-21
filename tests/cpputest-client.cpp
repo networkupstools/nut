@@ -302,22 +302,30 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 
 	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
 		// shared:
-		<< " NUT_SSL(try):" << c.getSslTry()
-		<< " NUT_FORCESSL:" << c.getSslForce()
-		<< " NUT_CERTVERIFY:" << c.getSslCertVerify()
-		<< " NUT_CAPATH:'" << c.getSslCAPath()
-		<< "' NUT_CAFILE:'" << c.getSslCAFile()
+		<< " (try?)NUT_SSL=" << c.getSslTry()
+		<< " NUT_FORCESSL=" << c.getSslForce()
+		<< " NUT_CERTVERIFY=" << c.getSslCertVerify()
+		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
+		<< "' NUT_CERTIDENT_NAME='" << c.getSslCertIdentName()
+		<< " NUT_CAPATH='" << c.getSslCAPath()
 		// OpenSSL-only:
-		<< "' NUT_CERTFILE:'" << c.getSslCertFile()
-		<< "' NUT_KEYFILE:'" << c.getSslKeyFile()
+		<< "' NUT_CAFILE='" << c.getSslCAFile()
+		<< "' NUT_CERTFILE='" << c.getSslCertFile()
+		<< "' NUT_KEYFILE='" << c.getSslKeyFile()
 		// shared:
-		<< "' NUT_KEYPASS:'" << c.getSslKeyPass()
+		<< "' NUT_KEYPASS='" << c.getSslKeyPass()
 		// NSS-only:
-		<< "' NUT_CERTSTORE_PATH:'" << c.getSslCertstorePath()
-		<< "' NUT_CERTSTORE_PREFIX:'" << c.getSslCertstorePrefix()
-		<< "' NUT_CERTHOST_NAME:'" << c.getSslCertHostName()
-		<< "' NUT_CERTIDENT_NAME:'" << c.getSslCertIdentName()
+		<< "' NUT_CERTSTORE_PATH='" << c.getSslCertstorePath()
+		<< "' NUT_CERTSTORE_PREFIX='" << c.getSslCertstorePrefix()
 		<< "'" << std::endl;
+
+	std::cerr << "[D] TcpClient configured for SSL caps? "
+		<< (c.getSslCaps() ? "true" : "false")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_OPENSSL ? "[OpenSSL]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_NSS ? "[NSS]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_PASS ? "[CERTIDENT-pass]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_NAME ? "[CERTIDENT-name]" : "")
+		<< std::endl;
 }
 
 void NutActiveClientTest::tearDown()
@@ -340,7 +348,8 @@ void NutActiveClientTest::test_query_ver() {
 		c.isConnected());
 
 	std::cerr << "[D] Channel protected by STARTTLS? "
-		<< (c.isSSL() ? "true" : "false") << std::endl;
+		<< (c.isSSL() ? "true" : "false")
+		<< std::endl;
 
 	/* Note: generic client code can not use protected methods
 	 * like low-level sendQuery(), list(), get() and some more,
