@@ -1991,9 +1991,12 @@ void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
 	if (_try_ssl || _force_ssl) {
+		/* We can actually set both types of config, most points
+		 *  are shared and the rest depends on build abilities */
 		if (!_ca_path.empty() || !_ca_file.empty() || !_cert_file.empty() || !_key_file.empty() || !_certident_name.empty()) {
 			_socket->setSSLConfig_OpenSSL(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
-		} else if (!_certstore_path.empty() || !_certstore_prefix.empty() || !_certhost_name.empty() || !_certident_name.empty()) {
+		}
+		if (!_certstore_path.empty() || !_certstore_prefix.empty() || !_certhost_name.empty() || !_certident_name.empty()) {
 			_socket->setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _key_pass, _certstore_prefix, _certhost_name, _certident_name);
 		}
 
