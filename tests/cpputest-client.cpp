@@ -94,6 +94,7 @@ class NutActiveClientTest : public CppUnit::TestFixture
 
 private:
 	/* Fed by caller via envvars: */
+	int env_NUT_DEBUG_LEVEL = 0;
 	uint16_t env_NUT_PORT = 0;
 	std::string env_NUT_USER = "";
 	std::string env_NUT_PASS = "";
@@ -142,6 +143,11 @@ void NutActiveClientTest::setUp()
 {
 	/* NUT_PORT etc. env vars are provided by external test suite driver */
 	char * s;
+
+	s = std::getenv("NUT_DEBUG_LEVEL");
+	if (s) {
+		env_NUT_DEBUG_LEVEL = atoi(s);
+	}
 
 	s = std::getenv("NUT_PORT");
 	if (s) {
@@ -242,6 +248,10 @@ void NutActiveClientTest::setUp()
 
 void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 {
+	// NOTE: Currently this is a boolean toggle, not a numeric verbosity level
+	if (env_NUT_DEBUG_LEVEL > 0)
+		c.setDebugConnect(true);
+
 	if (env_NUT_CERTVERIFY != -1
 	 || env_NUT_FORCESSL
 	 || !env_NUT_CAFILE.empty()
