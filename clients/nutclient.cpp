@@ -1221,6 +1221,9 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 	_key_pass = key_pass;
 	_certident_name = certident_name;
 
+	if (_debugConnect) std::cerr <<
+		"[D2] config OpenSSL" << std::endl;
+
 	_ssl_configured |= UPSCLI_SSL_CAPS_OPENSSL;
 
 	/* Got something to check, and ability to do so */
@@ -1244,6 +1247,9 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 	NUT_UNUSED_VARIABLE(key_pass);
 	NUT_UNUSED_VARIABLE(certident_name);
 
+	if (_debugConnect) std::cerr <<
+		"[D2] NOT config OpenSSL" << std::endl;
+
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_OPENSSL;
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_PASS;
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_NAME;
@@ -1265,6 +1271,9 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 	_certhost_name = certhost_name;
 	_certident_name = certident_name;
 
+	if (_debugConnect) std::cerr <<
+		"[D2] config NSS" << std::endl;
+
 	_ssl_configured |= UPSCLI_SSL_CAPS_NSS;
 
 	/* Got something to check, and ability to do so */
@@ -1281,6 +1290,9 @@ void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string&
 	NUT_UNUSED_VARIABLE(certstore_prefix);
 	NUT_UNUSED_VARIABLE(certhost_name);
 	NUT_UNUSED_VARIABLE(certident_name);
+
+	if (_debugConnect) std::cerr <<
+		"[D2] NOT config NSS" << std::endl;
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_NSS;
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_PASS;
