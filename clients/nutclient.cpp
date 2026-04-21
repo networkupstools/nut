@@ -300,18 +300,34 @@ private:
 	int _force_ssl;	/* Always known, so even non-SSL builds can fail if security is required */
 #ifdef WITH_SSL_CXX
 # if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* Shared by both backends */
 	int _certverify;
-	/* OpenSSL specific */
-	std::string _ca_path;
-	std::string _ca_file;
-	std::string _cert_file;
-	std::string _key_file;
-	std::string _key_pass;	/* aka certstore_pass for NSS */
-	/* NSS specific */
-	std::string _certstore_path;
-	std::string _certstore_prefix;
+
+	/** Private key file password, if used (serves as "certstore_pass" for NSS) */
+	std::string _key_pass;
+
+	/** if CERTIDENT "subj" "passwd" is used: who we identify as
+	 * (can be used to double-check the subj of loaded cert) */
 	std::string _certident_name;
+
+	/** if CERTHOST pinning is used: hostname */
 	std::string _certhost_name;
+
+	/* OpenSSL specific */
+	/** OpenSSL: dir for OpenSSL CA trust */
+	std::string _ca_path;
+	/** OpenSSL: single or collective PEM for OpenSSL CA trust */
+	std::string _ca_file;
+	/** OpenSSL: cert we identify as */
+	std::string _cert_file;
+	/** OpenSSL: private key corresponding to our cert (if in a separate file) */
+	std::string _key_file;
+
+	/* NSS specific */
+	/** NSS: dir with a trust database for everything (CA, cert, key, counterparts) */
+	std::string _certstore_path;
+	/** NSS: allow co-locating many NSS DBs in one dir (currently not used by us) */
+	std::string _certstore_prefix;
 # endif
 
 # if defined(WITH_OPENSSL)
