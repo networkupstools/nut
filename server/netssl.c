@@ -259,14 +259,14 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 				 * For IP version 6, as specified in [RFC2460], the octet string
 				 * MUST contain exactly sixteen octets.
 				 */
-				char	ip_addr_buf[128], *p = ip_addr_buf;
+				char	ip_addr_buf[128], *p = ip_addr_buf, *pMax = ip_addr_buf + sizeof(ip_addr_buf) - 5;
 				const unsigned char	*ip_addr_raw = ASN1_STRING_get0_data(entry->d.iPAddress);
 				int	ip_addr_raw_len = ASN1_STRING_length(entry->d.iPAddress), j;
 
 				memset(ip_addr_buf, 0, sizeof(ip_addr_buf));
 				switch (ip_addr_raw_len) {
 					case 4:
-						for (j = 0; j < ip_addr_raw_len; j++) {
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
 								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
 								"%u%s",
@@ -281,7 +281,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 						 *  into an array of 16 chars and compare that?
 						 *  For reporting, however, this is good enough, even if
 						 *  a bit wasteful. */
-						for (j = 0; j < ip_addr_raw_len; j++) {
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
 								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
 								"%02x%s",
