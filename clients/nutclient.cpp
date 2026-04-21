@@ -1608,11 +1608,13 @@ void Socket::startTLS()
 #pragma GCC diagnostic pop
 #endif
 
+	const char	*ssl_url = NULL;
 	if (!_certhost_name.empty()) {
-		SSL_SetURL(_ssl, _certhost_name.c_str());
+		ssl_url = _certhost_name.c_str();
 	} else {
-		SSL_SetURL(_ssl, _host.c_str());
+		ssl_url = _host.c_str();
 	}
+	SSL_SetURL(_ssl, ssl_url);
 
 	if (SSL_ResetHandshake(_ssl, PR_FALSE) != SECSuccess
 	 || SSL_ForceHandshake(_ssl) != SECSuccess
@@ -1620,7 +1622,7 @@ void Socket::startTLS()
 		PR_Close(_ssl);
 		_ssl = nullptr;
 		disconnect();
-		throw nut::SSLException_NSS("Handshake failed");
+		throw nut::SSLException_NSS((std::string("Handshake failed for ") + ssl_url).c_str());
 	}
 # endif	/* WITH_NSS */
 #else
