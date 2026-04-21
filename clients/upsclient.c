@@ -309,14 +309,17 @@ static void nss_error(const char* text)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
-	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	UPSCONN_t	*ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+
 	upslogx(LOG_INFO, "Intend to authenticate server %s : %s",
 		ups?ups->host:"<unnamed>",
 		status==SECSuccess?"SUCCESS":"FAILED");
+
 	if (status != SECSuccess) {
-		nss_error("SSL_AuthCertificate");
+		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
 	}
+
 	return status;
 }
 

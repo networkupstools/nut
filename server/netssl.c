@@ -649,12 +649,16 @@ static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	nut_ctype_t	*client  = (nut_ctype_t *)SSL_RevealPinArg(fd);
-	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	nut_ctype_t	*client = (nut_ctype_t *)SSL_RevealPinArg(fd);
+	SECStatus	status  = SSL_AuthCertificate(arg, fd, checksig, isServer);
 
 	upslogx(LOG_INFO, "Intend to authenticate client %s : %s.",
-		client?client->addr:"(unnamed)",
+		client?client->addr:"<unnamed>",
 		status==SECSuccess?"SUCCESS":"FAILED");
+
+	if (status != SECSuccess) {
+		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
+	}
 
 	return status;
 }

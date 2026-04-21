@@ -738,11 +738,20 @@ static void nss_error(const char* text)
 /*static*/ SECStatus Socket::AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	//Socket *sock = static_cast<Socket*>(SSL_RevealPinArg(fd));
-	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
-	if (status != SECSuccess) {
-		nss_error("SSL_AuthCertificate");
+	Socket	*sock = static_cast<Socket*>(SSL_RevealPinArg(fd));
+	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+
+	if (sock && sock->_debugConnect) {
+		std::cerr << "Intend to authenticate server "
+            << (sock->_host.empty() ? "<unnamed>" : sock->_host)
+            << " : " << (status==SECSuccess ? "SUCCESS" : "FAILED")
+            << std::endl;
 	}
+
+	if (status != SECSuccess) {
+		nss_error((std::string("SSL_AuthCertificate") + (isServer ? "(server)" : "(client)")).c_str());
+	}
+
 	return status;
 }
 
