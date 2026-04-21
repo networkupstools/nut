@@ -178,6 +178,7 @@ void ssl_cleanup(void)
 
 static SSL_CTX	*ssl_ctx = NULL;
 
+#  ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
  * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL,
  * and https://www.zedwood.com/article/c-openssl-parse-x509-certificate-pem
@@ -444,6 +445,7 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	upsdebugx(4, "%s: return ok=%d provided by caller: depth=%d:%s", __func__, preverify_ok, depth, buf);
 	return preverify_ok;
 }
+#  endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 #  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
 static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)

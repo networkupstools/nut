@@ -381,7 +381,7 @@ int Socket::_openssl_cert_verify_data_index = 0;
 
 		if (!cert) break; /* failed */
 
-		names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0));
+		names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
 		if (!names) break;
 
 		count = sk_GENERAL_NAME_num(names);
@@ -453,7 +453,7 @@ int Socket::_openssl_cert_verify_data_index = 0;
 					case 4:
 						for (j = 0; j < ip_addr_raw_len; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - static_cast<size_t>(p - ip_addr_buf) - 1,
 								"%u%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ".");
@@ -468,7 +468,7 @@ int Socket::_openssl_cert_verify_data_index = 0;
 						 *  a bit wasteful. */
 						for (j = 0; j < ip_addr_raw_len; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - static_cast<size_t>(p - ip_addr_buf) - 1,
 								"%02x%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ":");
