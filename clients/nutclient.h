@@ -141,6 +141,7 @@ private:
 	std::string _key_file;
 	std::string _key_pass;
 	std::string _certident_name;
+	// FIXME: Can we do CERTHOST checks now?
 };
 
 /**
@@ -151,23 +152,28 @@ class SSLConfig_NSS : public SSLConfig
 public:
 	SSLConfig_NSS(bool forcessl = false, int certverify = -1,
 		const std::string& certstore_path = "", const std::string& certstore_pass = "",
-		const std::string& certstore_prefix = "", const std::string& certhost_name = "",
+		const std::string& certstore_prefix = "",
+		const std::string& certhost_addr = "", const std::string& certhost_name = "",
 		const std::string& certident_name = "")
 		: SSLConfig(forcessl, certverify), _certstore_path(certstore_path),
 		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
-		  _certhost_name(certhost_name), _certident_name(certident_name) {}
+		  _certhost_addr(certhost_addr), _certhost_name(certhost_name),
+		  _certident_name(certident_name) {}
 
 	SSLConfig_NSS(bool forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
-		const char *certstore_prefix, const char *certhost_name,
+		const char *certstore_prefix,
+		const char *certhost_addr, const char *certhost_name,
 		const char *certident_name)
 		: SSLConfig(forcessl, certverify), _certstore_path(certstore_path),
 		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
-		  _certhost_name(certhost_name), _certident_name(certident_name) {}
+		  _certhost_addr(certhost_addr), _certhost_name(certhost_name),
+		  _certident_name(certident_name) {}
 
 	const std::string& getCertStorePath() const { return _certstore_path; }
 	const std::string& getCertStorePass() const { return _certstore_pass; }
 	const std::string& getCertStorePrefix() const { return _certstore_prefix; }
+	const std::string& getCertHostAddr() const { return _certhost_addr; }
 	const std::string& getCertHostName() const { return _certhost_name; }
 	const std::string& getCertIdentName() const { return _certident_name; }
 
@@ -177,6 +183,7 @@ private:
 	std::string _certstore_path;
 	std::string _certstore_pass;
 	std::string _certstore_prefix;
+	std::string _certhost_addr;
 	std::string _certhost_name;
 	std::string _certident_name;
 };
@@ -796,13 +803,17 @@ public:
 	virtual void setSslCertstorePrefix(const char* certstore_prefix);
 	virtual void setSslCertstorePrefix(const std::string& certstore_prefix);
 
-	virtual const std::string& getSslCertIdentName() const;
-	virtual void setSslCertIdentName(const char* certident_name);
-	virtual void setSslCertIdentName(const std::string& certident_name);
+	virtual const std::string& getSslCertHostAddr() const;
+	virtual void setSslCertHostAddr(const char* certhost_addr);
+	virtual void setSslCertHostAddr(const std::string& certhost_addr);
 
 	virtual const std::string& getSslCertHostName() const;
 	virtual void setSslCertHostName(const char* certhost_name);
 	virtual void setSslCertHostName(const std::string& certhost_name);
+
+	virtual const std::string& getSslCertIdentName() const;
+	virtual void setSslCertIdentName(const char* certident_name);
+	virtual void setSslCertIdentName(const std::string& certident_name);
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
@@ -858,10 +869,11 @@ protected:
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name);
+	void setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name);
 
 	/**
 	 * Set SSL configuration for Mozilla NSS.
@@ -870,10 +882,11 @@ protected:
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
+	void setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name);
 
 private:
 	std::string _host;
@@ -893,6 +906,7 @@ private:
 	std::string _certstore_path;
 	std::string _certstore_prefix;
 	std::string _certident_name;
+	std::string _certhost_addr;
 	std::string _certhost_name;
 	/* general info */
 	time_t _timeout;
@@ -1508,12 +1522,14 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 	int forcessl, int certverify,
 	const char *certstore_path, const char *certstore_pass,
 	const char *certstore_prefix,
+	const char *certhost_addr,
 	const char *certhost_name,
 	const char *certident_name);
 void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
 	int forcessl, int certverify,
 	const char *certstore_path, const char *certstore_pass,
 	const char *certstore_prefix,
+	const char *certhost_addr,
 	const char *certhost_name,
 	const char *certident_name);
 
@@ -1570,6 +1586,9 @@ const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client);
 
 void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client, const char* certident_name);
 const char* nutclient_tcp_get_ssl_certident_name(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certhost_addr(NUTCLIENT_TCP_t client, const char* certhost_addr);
+const char* nutclient_tcp_get_ssl_certhost_addr(NUTCLIENT_TCP_t client);
 
 void nutclient_tcp_set_ssl_certhost_name(NUTCLIENT_TCP_t client, const char* certhost_name);
 const char* nutclient_tcp_get_ssl_certhost_name(NUTCLIENT_TCP_t client);

@@ -34,6 +34,8 @@ nutclient_tcp_set_ssl_certstore_prefix,
 nutclient_tcp_get_ssl_certstore_prefix,
 nutclient_tcp_set_ssl_certident_name,
 nutclient_tcp_get_ssl_certident_name,
+nutclient_tcp_set_ssl_certhost_addr,
+nutclient_tcp_get_ssl_certhost_addr,
 nutclient_tcp_set_ssl_certhost_name,
 nutclient_tcp_get_ssl_certhost_name -
 TCP protocol related function for Network UPS Tools high-level client
@@ -93,6 +95,7 @@ SYNOPSIS
 		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
+		const char *certhost_addr,
 		const char *certhost_name,
 		const char *certident_name);
 
@@ -100,6 +103,7 @@ SYNOPSIS
 		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
+		const char *certhost_addr,
 		const char *certhost_name,
 		const char *certident_name);
 
@@ -145,6 +149,10 @@ SYNOPSIS
 	void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client,
 		const char* certident_name);
 	const char* nutclient_tcp_get_ssl_certident_name(NUTCLIENT_TCP_t client);
+
+	void nutclient_tcp_set_ssl_certhost_addr(NUTCLIENT_TCP_t client,
+		const char* certhost_addr);
+	const char* nutclient_tcp_get_ssl_certhost_addr(NUTCLIENT_TCP_t client);
 
 	void nutclient_tcp_set_ssl_certhost_name(NUTCLIENT_TCP_t client,
 		const char* certhost_name);

@@ -2794,11 +2794,12 @@ setenv_ssl_cppnit() {
                         export NUT_CAFILE NUT_CERTVERIFY
                     fi ; fi
 
+                    NUT_CERTHOST_ADDR="localhost"
                     NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
                     NUT_CERTFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
                     NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
-                    export NUT_CERTFILE NUT_KEYPASS NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    export NUT_CERTFILE NUT_KEYPASS NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
 
                     # Should not be required when appended to NUT_CERTFILE:
                     #NUT_KEYFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
@@ -2811,9 +2812,10 @@ setenv_ssl_cppnit() {
                     NUT_CERTSTORE_PATH="${TESTCERT_PATH_CLIENT}"
                     NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
                     NUT_CERTSTORE_PREFIX=""
+                    NUT_CERTHOST_ADDR="localhost"
                     NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
-                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
                     ;;
                 esac
             fi

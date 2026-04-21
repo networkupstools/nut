@@ -116,6 +116,7 @@ private:
 	/* SSL options: NSS */
 	std::string env_NUT_CERTSTORE_PATH = "";
 	std::string env_NUT_CERTSTORE_PREFIX = "";
+	std::string env_NUT_CERTHOST_ADDR = "";
 	std::string env_NUT_CERTHOST_NAME = "";
 	std::string env_NUT_CERTIDENT_NAME = "";
 
@@ -235,6 +236,11 @@ void NutActiveClientTest::setUp()
 		env_NUT_CERTSTORE_PREFIX = s;
 	}
 
+	s = std::getenv("NUT_CERTHOST_ADDR");
+	if (s) {
+		env_NUT_CERTHOST_ADDR = s;
+	}
+
 	s = std::getenv("NUT_CERTHOST_NAME");
 	if (s) {
 		env_NUT_CERTHOST_NAME = s;
@@ -286,6 +292,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || env_NUT_FORCESSL
 	 || !env_NUT_CERTSTORE_PATH.empty()
 	 || !env_NUT_CERTSTORE_PREFIX.empty()
+	 || !env_NUT_CERTHOST_ADDR.empty()
 	 || !env_NUT_CERTHOST_NAME.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
@@ -298,6 +305,12 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTSTORE_PATH,
 			env_NUT_KEYPASS,
 			env_NUT_CERTSTORE_PREFIX,
+
+			// host name to check for CERTHOST
+			/*env_NUT_CERTHOST_ADDR.empty()
+			? (env_NUT_CERTHOST_NAME.empty() ? std::string() : "localhost")
+			: */ env_NUT_CERTHOST_ADDR,
+
 			env_NUT_CERTHOST_NAME,
 			env_NUT_CERTIDENT_NAME
 			));
@@ -315,7 +328,6 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< " (try?)NUT_SSL=" << c.getSslTry()
 		<< " NUT_FORCESSL=" << c.getSslForce()
 		<< " NUT_CERTVERIFY=" << c.getSslCertVerify()
-		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
 		<< "' NUT_CERTIDENT_NAME='" << c.getSslCertIdentName()
 		<< " NUT_CAPATH='" << c.getSslCAPath()
 		// OpenSSL-only:
@@ -324,6 +336,9 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< "' NUT_KEYFILE='" << c.getSslKeyFile()
 		// shared:
 		<< "' NUT_KEYPASS='" << c.getSslKeyPass()
+		// should be shared, but so far NSS-only (FIXME):
+		<< "' NUT_CERTHOST_ADDR='" << c.getSslCertHostAddr()
+		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
 		// NSS-only:
 		<< "' NUT_CERTSTORE_PATH='" << c.getSslCertstorePath()
 		<< "' NUT_CERTSTORE_PREFIX='" << c.getSslCertstorePrefix()
