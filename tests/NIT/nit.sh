@@ -2830,10 +2830,14 @@ testcase_sandbox_python_without_credentials() {
 
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
-    if ( unset NUT_USER || true
-         unset NUT_PASS || true
-         setenv_ssl_python
-         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -2861,6 +2865,9 @@ testcase_sandbox_python_with_credentials() {
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
@@ -2886,6 +2893,9 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
         setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
@@ -3008,10 +3018,14 @@ testcase_sandbox_perl_without_credentials() {
 
     log_separator
     log_info "[testcase_sandbox_perl_without_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) without login credentials"
-    if ( unset NUT_USER || true
-         unset NUT_PASS || true
-         setenv_ssl_perl
-         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -3039,6 +3053,9 @@ testcase_sandbox_perl_with_credentials() {
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
@@ -3064,6 +3081,9 @@ testcase_sandbox_perl_with_upsmon_credentials() {
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
@@ -3112,6 +3132,9 @@ testcase_sandbox_cppnit_without_creds() {
     if ( unset NUT_USER || true
          unset NUT_PASS || true
          setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
          "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
@@ -3145,6 +3168,9 @@ testcase_sandbox_cppnit_simple_admin() {
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
@@ -3172,6 +3198,9 @@ testcase_sandbox_cppnit_upsmon_primary() {
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
@@ -3199,6 +3228,9 @@ testcase_sandbox_cppnit_upsmon_master() {
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
@@ -3251,6 +3283,10 @@ testcase_sandbox_nutscanner_list() {
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
     export LD_LIBRARY_PATH
+
+    if [ -n "${NUT_DEBUG_LEVEL_NUTSCAN-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUTSCAN}"
+    fi
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
@@ -3322,6 +3358,8 @@ testcase_sandbox_nutscanner_list() {
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
     fi
+
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcases_sandbox_nutscanner() {
