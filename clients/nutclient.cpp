@@ -262,8 +262,8 @@ public:
 	bool isConnected()const;
 	void setDebugConnect(bool d);
 
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name);
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
+	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name);
+	void setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
 
 	void startTLS();
 	bool isSSL()const;
@@ -297,7 +297,7 @@ private:
 	std::string _host;
 	uint16_t _port;
 	int _ssl_configured;
-	int _force_ssl;	/* Always known, so even non-SSL builds can fail if security is required */
+	int _forcessl;	/* Always known, so even non-SSL builds can fail if security is required */
 #ifdef WITH_SSL_CXX
 # if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	/* Shared by both backends */
@@ -833,7 +833,7 @@ _verify_depth(9),	/* openssl default */
 _debugConnect(false),
 _tv(),
 _port(NUT_PORT),
-_force_ssl(0)
+_forcessl(0)
 #ifdef WITH_SSL_CXX
 # if defined(WITH_OPENSSL) || defined(WITH_NSS)
 ,_certverify(-1)
@@ -1214,9 +1214,9 @@ bool Socket::isSSL()const
 #endif
 }
 
-void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name)
+void Socket::setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 
 #if defined(WITH_SSL_CXX) && defined(WITH_OPENSSL)
 	_certverify = certverify;
@@ -1265,9 +1265,9 @@ void Socket::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::str
 #endif
 }
 
-void Socket::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
+void Socket::setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 
 #if defined(WITH_SSL_CXX) && defined(WITH_NSS)
 	_certverify = certverify;
@@ -1320,9 +1320,9 @@ void Socket::startTLS()
 	if (!(_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) {
 		if (_debugConnect) std::cerr <<
 			"[D2] Socket::startTLS(): Not configured for OpenSSL" <<
-			" and force_ssl is " << _force_ssl <<
+			" and forcessl is " << _forcessl <<
 			std::endl << std::flush;
-		if (_force_ssl) {
+		if (_forcessl) {
 			disconnect();
 			throw nut::SSLException_OpenSSL("Not configured for OpenSSL");
 		}
@@ -1332,9 +1332,9 @@ void Socket::startTLS()
 	if (!(_ssl_configured & UPSCLI_SSL_CAPS_NSS)) {
 		if (_debugConnect) std::cerr <<
 			"[D2] Socket::startTLS(): Not configured for NSS" <<
-			" and force_ssl is " << _force_ssl <<
+			" and forcessl is " << _forcessl <<
 			std::endl << std::flush;
-		if (_force_ssl) {
+		if (_forcessl) {
 			disconnect();
 			throw nut::SSLException_NSS("Not configured for NSS");
 		}
@@ -1346,7 +1346,7 @@ void Socket::startTLS()
 	write("STARTTLS");
 	std::string res = read();
 	if (res.substr(0, 11) != "OK STARTTLS") {
-		if (_force_ssl) {
+		if (_forcessl) {
 			disconnect();
 			throw nut::SSLException("STARTTLS failed: " + res);
 		}
@@ -1637,9 +1637,9 @@ void Socket::startTLS()
 #else
 	if (_debugConnect) std::cerr <<
 		"[D2] Socket::startTLS(): SSL support not compiled in" <<
-		" and force_ssl is " << _force_ssl <<
+		" and forcessl is " << _forcessl <<
 		std::endl << std::flush;
-	if (_force_ssl) {
+	if (_forcessl) {
 		disconnect();
 		throw nut::SSLException("SSL support not compiled in");
 	}
@@ -1896,8 +1896,8 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(NUT_PORT),
-_try_ssl(false),
-_force_ssl(false),
+_tryssl(false),
+_forcessl(false),
 _certverify(-1),
 _timeout(0),
 _socket(new internal::Socket)
@@ -1906,14 +1906,14 @@ _socket(new internal::Socket)
 }
 
 TcpClient::TcpClient(const std::string& host, uint16_t port)
-	: Client(), _host(host), _port(port), _try_ssl(true), _force_ssl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
+	: Client(), _host(host), _port(port), _tryssl(true), _forcessl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
 {
 	// No SSL settings, so just plaintext protocol
 	connect();
 }
 
 TcpClient::TcpClient(const std::string& host, uint16_t port, const SSLConfig& config)
-	: Client(), _host(host), _port(port), _try_ssl(true), _force_ssl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
+	: Client(), _host(host), _port(port), _tryssl(true), _forcessl(false), _certverify(-1), _ca_path(""), _ca_file(""), _cert_file(""), _key_file(""), _key_pass(""), _certstore_path(""), _certstore_prefix(""), _certident_name(""), _certhost_name(""), _timeout(-1), _socket(new internal::Socket)
 {
 	setSSLConfig(config);
 	connect();
@@ -1948,18 +1948,18 @@ SSLConfig::~SSLConfig()
 
 void SSLConfig::apply(TcpClient& client) const
 {
-	client.setSslForce(_force_ssl);
+	client.setSslForce(_forcessl);
 	client.setSslCertVerify(_certverify);
 }
 
 void SSLConfig_OpenSSL::apply(TcpClient& client) const
 {
-	client.setSSLConfig_OpenSSL(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
+	client.setSSLConfig_OpenSSL(_forcessl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
 }
 
 void SSLConfig_NSS::apply(TcpClient& client) const
 {
-	client.setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _certstore_pass, _certstore_prefix, _certhost_name, _certident_name);
+	client.setSSLConfig_NSS(_forcessl, _certverify, _certstore_path, _certstore_pass, _certstore_prefix, _certhost_name, _certident_name);
 }
 
 void TcpClient::setSSLConfig(const SSLConfig& config)
@@ -1967,9 +1967,9 @@ void TcpClient::setSSLConfig(const SSLConfig& config)
 	config.apply(*this);
 }
 
-void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
+void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 	_certverify = certverify;
 	if (ca_path) _ca_path = ca_path;
 	if (ca_file) _ca_file = ca_file;
@@ -1979,9 +1979,9 @@ void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char 
 	if (certident_name) _certident_name = certident_name;
 }
 
-void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name)
+void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 	_certverify = certverify;
 	_ca_path = ca_path;
 	_ca_file = ca_file;
@@ -1991,9 +1991,9 @@ void TcpClient::setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::
 	_certident_name = certident_name;
 }
 
-void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
+void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 	_certverify = certverify;
 	if (certstore_path) _certstore_path = certstore_path;
 	if (certstore_pass) _key_pass = certstore_pass;	/* Note: another name, same concept */
@@ -2002,9 +2002,9 @@ void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const char *cer
 	if (certident_name) _certident_name = certident_name;
 }
 
-void TcpClient::setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
+void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 	_certverify = certverify;
 	_certstore_path = certstore_path;
 	_key_pass = certstore_pass;	/* Note: another name, same concept */
@@ -2020,23 +2020,23 @@ void TcpClient::connect(const std::string& host, uint16_t port)
 	connect();
 }
 
-void TcpClient::connect(const std::string& host, uint16_t port, bool try_ssl)
+void TcpClient::connect(const std::string& host, uint16_t port, bool tryssl)
 {
-	_try_ssl = try_ssl;
+	_tryssl = tryssl;
 	connect(host, port);
 }
 
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
-	if (_try_ssl || _force_ssl) {
+	if (_tryssl || _forcessl) {
 		/* We can actually set both types of config, most points
 		 *  are shared and the rest depends on build abilities */
 		if (!_ca_path.empty() || !_ca_file.empty() || !_cert_file.empty() || !_key_file.empty() || !_certident_name.empty()) {
-			_socket->setSSLConfig_OpenSSL(_force_ssl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
+			_socket->setSSLConfig_OpenSSL(_forcessl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
 		}
 		if (!_certstore_path.empty() || !_certstore_prefix.empty() || !_certhost_name.empty() || !_certident_name.empty()) {
-			_socket->setSSLConfig_NSS(_force_ssl, _certverify, _certstore_path, _key_pass, _certstore_prefix, _certhost_name, _certident_name);
+			_socket->setSSLConfig_NSS(_forcessl, _certverify, _certstore_path, _key_pass, _certstore_prefix, _certhost_name, _certident_name);
 		}
 
 		/* May throw in case of low-level problems */
@@ -2048,7 +2048,7 @@ void TcpClient::connect()
 		 * is half-way secure):
 		 */
 		if (!isValidProtocolVersion()) {
-			if (_force_ssl) {
+			if (_forcessl) {
 				disconnect();
 				throw nut::SSLException("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required");
 			}
@@ -2064,22 +2064,22 @@ bool TcpClient::isSSL() const
 
 bool TcpClient::getSslTry() const
 {
-	return _try_ssl;
+	return _tryssl;
 }
 
-void TcpClient::setSslTry(bool try_ssl)
+void TcpClient::setSslTry(bool tryssl)
 {
-	_try_ssl = try_ssl;
+	_tryssl = tryssl;
 }
 
 bool TcpClient::getSslForce() const
 {
-	return _force_ssl;
+	return _forcessl;
 }
 
-void TcpClient::setSslForce(bool force_ssl)
+void TcpClient::setSslForce(bool forcessl)
 {
-	_force_ssl = force_ssl;
+	_forcessl = forcessl;
 }
 
 int TcpClient::getSslCertVerify() const
@@ -3471,15 +3471,15 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port)
 
 int nutclient_tcp_get_ssl_caps(void) { return nut::TcpClient::getSslCaps(); }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(const char* host, uint16_t port, int tryssl, int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
 		client->setSSLConfig(nut::SSLConfig_OpenSSL(
-			(force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name
+			(forcessl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name
 		));
-		client->connect(host, port, try_ssl != 0);
+		client->connect(host, port, tryssl != 0);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
 	catch(nut::NutException& ex)
@@ -3490,7 +3490,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(const char* host, uint16
 	}
 }
 
-void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
+void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client, int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name)
 {
 	if(client)
 	{
@@ -3498,21 +3498,21 @@ void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client, int force_ssl,
 		if(cl)
 		{
 			cl->setSSLConfig(nut::SSLConfig_OpenSSL((
-				force_ssl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name
+				forcessl > 0), certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name
 			));
 		}
 	}
 }
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t port, int try_ssl, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t port, int tryssl, int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
 	nut::TcpClient* client = new nut::TcpClient;
 	try
 	{
 		client->setSSLConfig(nut::SSLConfig_NSS(
-			(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
+			(forcessl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
 		));
-		client->connect(host, port, try_ssl != 0);
+		client->connect(host, port, tryssl != 0);
 		return static_cast<NUTCLIENT_TCP_t>(client);
 	}
 	catch(nut::NutException& ex)
@@ -3523,7 +3523,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(const char* host, uint16_t p
 	}
 }
 
-void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
+void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name)
 {
 	if(client)
 	{
@@ -3531,7 +3531,7 @@ void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client, int force_ssl, int
 		if(cl)
 		{
 			cl->setSSLConfig(nut::SSLConfig_NSS(
-				(force_ssl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
+				(forcessl > 0), certverify, certstore_path, certstore_pass, certstore_prefix, certhost_name, certident_name
 			));
 		}
 	}
@@ -3601,14 +3601,14 @@ int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
-void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl)
+void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int tryssl)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSslTry(try_ssl ? true : false);
+			cl->setSslTry(tryssl ? true : false);
 		}
 	}
 }
@@ -3626,14 +3626,14 @@ int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client)
 	return 0;
 }
 
-void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl)
+void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int forcessl)
 {
 	if(client)
 	{
 		nut::TcpClient* cl = dynamic_cast<nut::TcpClient*>(static_cast<nut::Client*>(client));
 		if(cl)
 		{
-			cl->setSslForce(force_ssl ? true : false);
+			cl->setSslForce(forcessl ? true : false);
 		}
 	}
 }

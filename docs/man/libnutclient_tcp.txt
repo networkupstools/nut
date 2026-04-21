@@ -79,25 +79,25 @@ SYNOPSIS
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
 		const char* host, uint16_t port, int try_ssl,
-		int force_ssl, int certverify,
+		int forcessl, int certverify,
 		const char *ca_path, const char *ca_file,
 		const char *cert_file, const char *key_file, const char *key_pass);
 
 	void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
-		int force_ssl, int certverify,
+		int forcessl, int certverify,
 		const char *ca_path, const char *ca_file,
 		const char *cert_file, const char *key_file, const char *key_pass);
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 		const char* host, uint16_t port, int try_ssl,
-		int force_ssl, int certverify,
+		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
 		const char *certhost_name,
 		const char *certident_name);
 
 	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
-		int force_ssl, int certverify,
+		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
 		const char *certhost_name,
@@ -108,7 +108,7 @@ SYNOPSIS
 	void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl);
 	int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
 
-	void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl);
+	void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int forcessl);
 	int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
 
 	void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify);
