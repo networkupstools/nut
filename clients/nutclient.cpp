@@ -1994,7 +1994,10 @@ void SSLConfig_OpenSSL::apply(TcpClient& client) const
 
 void SSLConfig_NSS::apply(TcpClient& client) const
 {
-	client.setSSLConfig_NSS(_forcessl, _certverify, _certstore_path, _certstore_pass, _certstore_prefix, _certhost_addr, _certhost_name, _certident_name);
+	client.setSSLConfig_NSS(getForceSsl(), getCertVerify(),
+		getCertStorePath(), getCertStorePass(), getCertStorePrefix(),
+		getCertHostAddr(), getCertHostName(),
+		getCertIdentName());
 }
 
 void TcpClient::setSSLConfig(const SSLConfig& config)
