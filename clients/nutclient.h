@@ -551,6 +551,8 @@ protected:
 
 	/** We can have many of those */
 	std::set<SSLConfig_CERTHOST>	_certhosts;
+
+	static const std::string _empty_str;
 };
 
 /**
@@ -568,13 +570,10 @@ public:
 		const std::string& key_file = "",
 		const std::string& key_pass = "",
 		const std::string& certident_name = "")
-		: SSLConfig(forcessl, certverify),
-		  _ca_path(ca_path),
-		  _ca_file(ca_file),
-		  _cert_file(cert_file),
-		  _key_file(key_file),
-		  _key_pass(key_pass),
-		  _certident_name(certident_name) {}
+		: SSLConfig(
+			SSLConfig_CERTSTORE_OpenSSL(ca_path, ca_file),
+			SSLConfig_CERTIDENT_OpenSSL(certident_name, key_pass, cert_file, key_file),
+			forcessl, certverify) {}
 
 	SSLConfig_OpenSSL(
 		bool forcessl,
@@ -585,31 +584,30 @@ public:
 		const char *key_file,
 		const char *key_pass,
 		const char *certident_name = nullptr)
-		: SSLConfig(forcessl, certverify),
-		  _ca_path(ca_path),
-		  _ca_file(ca_file),
-		  _cert_file(cert_file),
-		  _key_file(key_file),
-		  _key_pass(key_pass),
-		  _certident_name(certident_name) {}
+		: SSLConfig(
+			SSLConfig_CERTSTORE_OpenSSL(ca_path, ca_file),
+			SSLConfig_CERTIDENT_OpenSSL(certident_name, key_pass, cert_file, key_file),
+			forcessl, certverify) {}
 
-	const std::string& getCAPath() const { return _ca_path; }
-	const std::string& getCAFile() const { return _ca_file; }
-	const std::string& getCertFile() const { return _cert_file; }
-	const std::string& getKeyFile() const { return _key_file; }
-	const std::string& getKeyPass() const { return _key_pass; }
-	const std::string& getCertIdentName() const { return _certident_name; }
+	const std::string& getCAPath() const { const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore()); if (cs) return cs->getCAPath(); return _empty_str; }
+	const char *getCAPath_c_str() const { const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore()); if (cs) return cs->getCAPath_c_str(); return nullptr; }
+
+	const std::string& getCAFile() const { const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore()); if (cs) return cs->getCAFile(); return _empty_str; }
+	const char *getCAFile_c_str() const { const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore()); if (cs) return cs->getCAFile_c_str(); return nullptr; }
+
+	const std::string& getCertFile() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getCertFile(); return _empty_str; }
+	const char *getCertFile_c_str() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getCertFile_c_str(); return nullptr; }
+
+	const std::string& getKeyFile() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getKeyFile(); return _empty_str; }
+	const char *getKeyFile_c_str() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getKeyFile_c_str(); return nullptr; }
+
+	const std::string& getKeyPass() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getKeyPass(); return _empty_str; }
+	const char *getKeyPass_c_str() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getKeyPass_c_str(); return nullptr; }
+
+	const std::string& getCertIdentName() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getCertSubj(); return _empty_str; }
+	const char *getCertIdentName_c_str() const { const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent()); if (ci) return ci->getCertSubj_c_str(); return nullptr; }
 
 	virtual void apply(TcpClient& client) const override;
-
-private:
-	std::string	_ca_path;
-	std::string	_ca_file;
-	std::string	_cert_file;
-	std::string	_key_file;
-	std::string	_key_pass;
-	std::string	_certident_name;
-	// FIXME: Can we do CERTHOST checks now?
 };
 
 /**

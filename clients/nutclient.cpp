@@ -1976,6 +1976,8 @@ SSLConfig::~SSLConfig()
 {
 }
 
+const std::string SSLConfig::_empty_str = "";
+
 void SSLConfig::apply(TcpClient& client) const
 {
 	client.setSslForce(_forcessl);
@@ -1984,7 +1986,10 @@ void SSLConfig::apply(TcpClient& client) const
 
 void SSLConfig_OpenSSL::apply(TcpClient& client) const
 {
-	client.setSSLConfig_OpenSSL(_forcessl, _certverify, _ca_path, _ca_file, _cert_file, _key_file, _key_pass, _certident_name);
+	client.setSSLConfig_OpenSSL(getForceSsl(), getCertVerify(),
+		getCAPath(), getCAFile(),
+		getCertFile(), getKeyFile(), getKeyPass(),
+		getCertIdentName());
 }
 
 void SSLConfig_NSS::apply(TcpClient& client) const
