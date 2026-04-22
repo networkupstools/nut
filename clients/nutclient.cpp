@@ -1955,10 +1955,26 @@ TcpClient::~TcpClient()
 	return ret;
 }
 
-SSLConfig::~SSLConfig()
+/* Some destructors compiled below to avoid "empty vtable" warnings */
+SSLConfig_CERTSTORE::~SSLConfig_CERTSTORE()
 {
 }
 
+SSLConfig_CERTSTORE_OpenSSL::~SSLConfig_CERTSTORE_OpenSSL()
+{
+}
+
+SSLConfig_CERTSTORE_NSS::~SSLConfig_CERTSTORE_NSS()
+{
+}
+
+SSLConfig_CERTHOST::~SSLConfig_CERTHOST()
+{
+}
+
+SSLConfig::~SSLConfig()
+{
+}
 
 void SSLConfig::apply(TcpClient& client) const
 {
