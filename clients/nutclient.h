@@ -89,8 +89,12 @@ class Command;
 class SSLConfig
 {
 public:
-	SSLConfig(bool forcessl = false, int certverify = -1)
-		: _forcessl(forcessl), _certverify(certverify) {}
+	SSLConfig(
+		bool forcessl = false,
+		int certverify = -1)
+		: _forcessl(forcessl),
+		  _certverify(certverify) {}
+
 	virtual ~SSLConfig();
 
 	bool getForceSsl() const { return _forcessl; }
@@ -109,20 +113,38 @@ protected:
 class SSLConfig_OpenSSL : public SSLConfig
 {
 public:
-	SSLConfig_OpenSSL(bool forcessl = false, int certverify = -1,
-		const std::string& ca_path = "", const std::string& ca_file = "",
-		const std::string& cert_file = "", const std::string& key_file = "",
-		const std::string& key_pass = "", const std::string& certident_name = "")
-		: SSLConfig(forcessl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass),
+	SSLConfig_OpenSSL(
+		bool forcessl = false,
+		int certverify = -1,
+		const std::string& ca_path = "",
+		const std::string& ca_file = "",
+		const std::string& cert_file = "",
+		const std::string& key_file = "",
+		const std::string& key_pass = "",
+		const std::string& certident_name = "")
+		: SSLConfig(forcessl, certverify),
+		  _ca_path(ca_path),
+		  _ca_file(ca_file),
+		  _cert_file(cert_file),
+		  _key_file(key_file),
+		  _key_pass(key_pass),
 		  _certident_name(certident_name) {}
 
-	SSLConfig_OpenSSL(bool forcessl, int certverify,
-		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file,
-		const char *key_pass, const char *certident_name = nullptr)
-		: SSLConfig(forcessl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass),
+	SSLConfig_OpenSSL(
+		bool forcessl,
+		int certverify,
+		const char *ca_path,
+		const char *ca_file,
+		const char *cert_file,
+		const char *key_file,
+		const char *key_pass,
+		const char *certident_name = nullptr)
+		: SSLConfig(forcessl, certverify),
+		  _ca_path(ca_path),
+		  _ca_file(ca_file),
+		  _cert_file(cert_file),
+		  _key_file(key_file),
+		  _key_pass(key_pass),
 		  _certident_name(certident_name) {}
 
 	const std::string& getCAPath() const { return _ca_path; }
@@ -135,12 +157,12 @@ public:
 	virtual void apply(TcpClient& client) const override;
 
 private:
-	std::string _ca_path;
-	std::string _ca_file;
-	std::string _cert_file;
-	std::string _key_file;
-	std::string _key_pass;
-	std::string _certident_name;
+	std::string	_ca_path;
+	std::string	_ca_file;
+	std::string	_cert_file;
+	std::string	_key_file;
+	std::string	_key_pass;
+	std::string	_certident_name;
 	// FIXME: Can we do CERTHOST checks now?
 };
 
@@ -180,12 +202,12 @@ public:
 	virtual void apply(TcpClient& client) const override;
 
 private:
-	std::string _certstore_path;
-	std::string _certstore_pass;
-	std::string _certstore_prefix;
-	std::string _certhost_addr;
-	std::string _certhost_name;
-	std::string _certident_name;
+	std::string	_certstore_path;
+	std::string	_certstore_pass;
+	std::string	_certstore_prefix;
+	std::string	_certhost_addr;
+	std::string	_certhost_name;
+	std::string	_certident_name;
 };
 
 /**
