@@ -857,6 +857,12 @@ _forcessl(0)
 	}
 
 	_tv.tv_usec = 0;
+
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
+	memset(&openssl_cert_verify_data, 0, sizeof(openssl_cert_verify_data));
+# endif	/* WITH_OPENSSL */
+#endif	/* WITH_SSL_CXX */
 }
 
 Socket::~Socket()
