@@ -1955,8 +1955,52 @@ TcpClient::~TcpClient()
 	return ret;
 }
 
+SSLConfig_CERTSTORE::SSLConfig_CERTSTORE()
+{
+}
+
+bool SSLConfig_CERTSTORE::hasCALocation() const
+{
+	return false;
+}
+
+bool SSLConfig_CERTSTORE::hasCertIdentity() const
+{
+	return false;
+}
+
+bool SSLConfig_CERTSTORE::operator < (const SSLConfig_CERTSTORE& other) const
+{
+	NUT_UNUSED_VARIABLE(other);
+	return true;
+}
+
 /* Some destructors compiled below to avoid "empty vtable" warnings */
 SSLConfig_CERTSTORE::~SSLConfig_CERTSTORE()
+{
+}
+
+SSLConfig_CERTSTORE_OpenSSL::SSLConfig_CERTSTORE_OpenSSL(
+	const std::string& ca_path,
+	const std::string& ca_file,
+	const std::string& cert_file,
+	const std::string& key_file)
+	: _ca_path(ca_path),
+	  _ca_file(ca_file),
+	  _cert_file(cert_file),
+	  _key_file(key_file)
+{
+}
+
+SSLConfig_CERTSTORE_OpenSSL::SSLConfig_CERTSTORE_OpenSSL(
+	const char *ca_path,
+	const char *ca_file,
+	const char *cert_file,
+	const char *key_file)
+	: _ca_path(ca_path ? ca_path : ""),
+	  _ca_file(ca_file ? ca_file : ""),
+	  _cert_file(cert_file ? cert_file : ""),
+	  _key_file(key_file ? key_file : "")
 {
 }
 
@@ -1964,7 +2008,380 @@ SSLConfig_CERTSTORE_OpenSSL::~SSLConfig_CERTSTORE_OpenSSL()
 {
 }
 
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getCAFile() const
+{
+	return _ca_file;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getCAFile_c_str() const
+{
+	return _ca_file.empty() ? nullptr : _ca_file.c_str();
+}
+
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getCAPath() const
+{
+	return _ca_path;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getCAPath_c_str() const
+{
+	return _ca_path.empty() ? nullptr : _ca_path.c_str();
+}
+
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getCALocation() const
+{
+	if (_ca_path.empty()) return _ca_file;
+	return _ca_file;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getCALocation_c_str() const
+{
+	if (_ca_path.empty()) return _ca_file.empty() ? nullptr : _ca_file.c_str();
+	return _ca_file.c_str();
+}
+
+bool SSLConfig_CERTSTORE_OpenSSL::hasCALocation() const
+{
+	return !_ca_path.empty() || !_ca_file.empty();
+}
+
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getCertFile() const
+{
+	return _cert_file;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getCertFile_c_str() const
+{
+	return _cert_file.empty() ? nullptr : _cert_file.c_str();
+}
+
+bool SSLConfig_CERTSTORE_OpenSSL::hasCertIdentity() const
+{
+	return !_cert_file.empty();
+}
+
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getKeyFile() const
+{
+	return _key_file;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getKeyFile_c_str() const
+{
+	return _key_file.empty() ? nullptr : _key_file.c_str();
+}
+
+const std::string& SSLConfig_CERTSTORE_OpenSSL::getKeyOrCertFile() const
+{
+	return _key_file.empty() ? _cert_file : _key_file;
+}
+
+const char *SSLConfig_CERTSTORE_OpenSSL::getKeyOrCertFile_c_str() const
+{
+	return getKeyOrCertFile().empty() ? nullptr : getKeyOrCertFile().c_str();
+}
+
+bool SSLConfig_CERTSTORE_OpenSSL::operator < (const SSLConfig_CERTSTORE_OpenSSL& other) const
+{
+	if (!_cert_file.empty() && !other._cert_file.empty()) return _cert_file < other._cert_file;
+	if (!_ca_path.empty() && !other._ca_path.empty()) return _ca_path < other._ca_path;
+	if (!_ca_file.empty() && !other._ca_file.empty()) return _ca_file < other._ca_file;
+	return true;	/* Nothing set, this object is not more useful than the other */
+}
+
+bool SSLConfig_CERTSTORE_OpenSSL::operator < (const SSLConfig_CERTSTORE& other) const
+{
+	NUT_UNUSED_VARIABLE(other);
+	return false;	/* we are better than arbitrary sibling/parent class instance */
+}
+
+SSLConfig_CERTSTORE_NSS::SSLConfig_CERTSTORE_NSS(
+	const std::string& certstore_path,
+	const std::string& certstore_pass,
+	const std::string& certstore_prefix)
+	: _certstore_path(certstore_path),
+	  _certstore_pass(certstore_pass),
+	  _certstore_prefix(certstore_prefix)
+{
+}
+
+SSLConfig_CERTSTORE_NSS::SSLConfig_CERTSTORE_NSS(
+	const char *certstore_path,
+	const char *certstore_pass,
+	const char *certstore_prefix)
+	: _certstore_path(certstore_path ? certstore_path : ""),
+	  _certstore_pass(certstore_pass ? certstore_pass : ""),
+	  _certstore_prefix(certstore_prefix ? certstore_prefix : "")
+{
+}
+
 SSLConfig_CERTSTORE_NSS::~SSLConfig_CERTSTORE_NSS()
+{
+}
+
+const std::string& SSLConfig_CERTSTORE_NSS::getCertStorePath() const
+{
+	return _certstore_path;
+}
+
+const char *SSLConfig_CERTSTORE_NSS::getCertStorePath_c_str() const
+{
+	return _certstore_path.empty() ? nullptr : _certstore_path.c_str();
+}
+
+const std::string& SSLConfig_CERTSTORE_NSS::getCertStorePass() const
+{
+	return _certstore_pass;
+}
+
+const char *SSLConfig_CERTSTORE_NSS::getCertStorePass_c_str() const
+{
+	return _certstore_pass.empty() ? nullptr : _certstore_pass.c_str();
+}
+
+const std::string& SSLConfig_CERTSTORE_NSS::getCertStorePrefix() const
+{
+	return _certstore_prefix;
+}
+
+const char *SSLConfig_CERTSTORE_NSS::getCertStorePrefix_c_str() const
+{
+	return _certstore_prefix.empty() ? nullptr : _certstore_prefix.c_str();
+}
+
+bool SSLConfig_CERTSTORE_NSS::hasCALocation() const
+{
+	return !_certstore_path.empty();
+}
+
+bool SSLConfig_CERTSTORE_NSS::hasCertIdentity() const
+{
+	return !_certstore_path.empty();
+}
+
+bool SSLConfig_CERTSTORE_NSS::operator < (const SSLConfig_CERTSTORE_NSS& other) const
+{
+	if (!_certstore_prefix.empty() && !other._certstore_prefix.empty()
+	 && !_certstore_path.empty() && !other._certstore_path.empty())
+		return _certstore_path + _certstore_prefix < other._certstore_path + other._certstore_prefix;
+
+	if (!_certstore_path.empty() && !other._certstore_path.empty()) return _certstore_path < other._certstore_path;
+	if (!_certstore_prefix.empty() && !other._certstore_prefix.empty()) return _certstore_prefix < other._certstore_prefix;
+
+	return true;	/* Nothing set, this object is not more useful than the other */
+}
+
+bool SSLConfig_CERTSTORE_NSS::operator < (const SSLConfig_CERTSTORE& other) const
+{
+	NUT_UNUSED_VARIABLE(other);
+	return false;	/* we are better than arbitrary sibling/parent class instance */
+}
+
+SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
+	const std::string& cert_subj,
+	const std::string& key_pass)
+	: _cert_subj(cert_subj),
+	  _key_pass(key_pass),
+	  _certstore()
+{
+}
+
+SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
+	const std::string& cert_subj,
+	const std::string& key_pass,
+	const SSLConfig_CERTSTORE& certstore)
+	: _cert_subj(cert_subj),
+	  _key_pass(key_pass),
+	  _certstore(certstore)
+{
+}
+
+SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
+	const char *cert_subj,
+	const char *key_pass)
+	: _cert_subj(cert_subj ? cert_subj : ""),
+	  _key_pass(key_pass ? key_pass : ""),
+	  _certstore()
+{
+}
+
+SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
+	const char *cert_subj,
+	const char *key_pass,
+	const SSLConfig_CERTSTORE& certstore)
+	: _cert_subj(cert_subj ? cert_subj : ""),
+	  _key_pass(key_pass ? key_pass : ""),
+	  _certstore(certstore)
+{
+}
+
+SSLConfig_CERTIDENT::~SSLConfig_CERTIDENT()
+{
+}
+
+const std::string& SSLConfig_CERTIDENT::getCertSubj() const
+{
+	return _cert_subj;
+}
+
+const char *SSLConfig_CERTIDENT::getCertSubj_c_str() const
+{
+	return _cert_subj.empty() ? nullptr : _cert_subj.c_str();
+}
+
+const std::string& SSLConfig_CERTIDENT::getKeyPass() const
+{
+	return _key_pass;
+}
+
+const char *SSLConfig_CERTIDENT::getKeyPass_c_str() const
+{
+	return _key_pass.empty() ? nullptr : _key_pass.c_str();
+}
+
+const SSLConfig_CERTSTORE& SSLConfig_CERTIDENT::getCertstore() const
+{
+	return _certstore;
+}
+
+bool SSLConfig_CERTIDENT::operator < (const SSLConfig_CERTIDENT& other) const
+{
+	if (_cert_subj.empty() && other._cert_subj.empty()) return _key_pass < other._key_pass;
+	return _cert_subj < other._cert_subj;
+}
+
+SSLConfig_CERTIDENT_OpenSSL::SSLConfig_CERTIDENT_OpenSSL(
+	const std::string& cert_subj,
+	const std::string& key_pass,
+	const std::string& cert_file,
+	const std::string& key_file)
+	: SSLConfig_CERTIDENT(cert_subj, key_pass,
+		SSLConfig_CERTSTORE_OpenSSL("", "", cert_file, key_file))
+{
+}
+
+SSLConfig_CERTIDENT_OpenSSL::SSLConfig_CERTIDENT_OpenSSL(
+	const char *cert_subj,
+	const char *key_pass,
+	const char *cert_file,
+	const char *key_file)
+	: SSLConfig_CERTIDENT(cert_subj ? cert_subj : "", key_pass ? key_pass : "",
+		SSLConfig_CERTSTORE_OpenSSL("", "", cert_file ? cert_file : "", key_file ? key_file : ""))
+{
+}
+
+SSLConfig_CERTIDENT_OpenSSL::~SSLConfig_CERTIDENT_OpenSSL()
+{
+}
+
+const std::string& SSLConfig_CERTIDENT_OpenSSL::getCertFile() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getCertFile();
+}
+
+const char *SSLConfig_CERTIDENT_OpenSSL::getCertFile_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getCertFile_c_str();
+}
+
+const std::string& SSLConfig_CERTIDENT_OpenSSL::getKeyFile() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyFile();
+}
+
+const char *SSLConfig_CERTIDENT_OpenSSL::getKeyFile_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyFile_c_str();
+}
+
+const std::string& SSLConfig_CERTIDENT_OpenSSL::getKeyOrCertFile() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyOrCertFile();
+}
+
+const char *SSLConfig_CERTIDENT_OpenSSL::getKeyOrCertFile_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyOrCertFile_c_str();
+}
+
+SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
+	const std::string& cert_subj,
+	const std::string& key_pass,
+	const std::string& certstore_path,
+	const std::string& certstore_pass,
+	const std::string& certstore_prefix)
+	: SSLConfig_CERTIDENT(cert_subj, key_pass,
+		SSLConfig_CERTSTORE_NSS(certstore_path, certstore_pass, certstore_prefix))
+{
+}
+
+SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
+	const char *cert_subj,
+	const char *key_pass,
+	const char *certstore_path,
+	const char *certstore_pass,
+	const char *certstore_prefix)
+	: SSLConfig_CERTIDENT(cert_subj ? cert_subj : "", key_pass ? key_pass : "",
+		SSLConfig_CERTSTORE_NSS(certstore_path ? certstore_path : "",
+			certstore_pass ? certstore_pass : "",
+			certstore_prefix ? certstore_prefix : ""))
+{
+}
+
+SSLConfig_CERTIDENT_NSS::~SSLConfig_CERTIDENT_NSS()
+{
+}
+
+const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePath() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePath();
+}
+
+const char *SSLConfig_CERTIDENT_NSS::getCertStorePath_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePath_c_str();
+}
+
+const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePass() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePass();
+}
+
+const char *SSLConfig_CERTIDENT_NSS::getCertStorePass_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePass_c_str();
+}
+
+const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePrefix() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePrefix();
+}
+
+const char *SSLConfig_CERTIDENT_NSS::getCertStorePrefix_c_str() const
+{
+	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePrefix_c_str();
+}
+
+SSLConfig_CERTHOST::SSLConfig_CERTHOST(
+	const std::string& host_addr,
+	const std::string& cert_subj,
+	int forcessl,
+	int certverify)
+	: _host_addr(host_addr),
+	  _cert_subj(cert_subj),
+	  _forcessl(forcessl),
+	  _certverify(certverify)
+{
+}
+
+SSLConfig_CERTHOST::SSLConfig_CERTHOST(
+	const char *host_addr,
+	const char *cert_subj,
+	int forcessl,
+	int certverify)
+	: _host_addr(host_addr ? host_addr : ""),
+	  _cert_subj(cert_subj ? cert_subj : ""),
+	  _forcessl(forcessl),
+	  _certverify(certverify)
 {
 }
 
@@ -1972,8 +2389,143 @@ SSLConfig_CERTHOST::~SSLConfig_CERTHOST()
 {
 }
 
+const std::string& SSLConfig_CERTHOST::getHostAddr() const
+{
+	return _host_addr;
+}
+
+const char *SSLConfig_CERTHOST::getHostAddr_c_str() const
+{
+	return _host_addr.empty() ? nullptr : _host_addr.c_str();
+}
+
+const std::string& SSLConfig_CERTHOST::getCertSubj() const
+{
+	return _cert_subj;
+}
+
+const char *SSLConfig_CERTHOST::getCertSubj_c_str() const
+{
+	return _cert_subj.empty() ? nullptr : _cert_subj.c_str();
+}
+
+bool SSLConfig_CERTHOST::getForceSsl() const
+{
+	return _forcessl;
+}
+
+int SSLConfig_CERTHOST::getCertVerify() const
+{
+	return _certverify;
+}
+
+bool SSLConfig_CERTHOST::operator < (const SSLConfig_CERTHOST& other) const
+{
+	if (_cert_subj.empty() && other._cert_subj.empty()) return _host_addr < other._host_addr;
+	return _cert_subj < other._cert_subj;
+}
+
+SSLConfig::SSLConfig(
+	bool forcessl,
+	int certverify)
+	: _forcessl(forcessl),
+	  _certverify(certverify)
+{
+}
+
+SSLConfig::SSLConfig(
+	const SSLConfig_CERTIDENT& certident,
+	bool forcessl,
+	int certverify)
+	: _forcessl(forcessl),
+	  _certverify(certverify)
+{
+	setCertIdent(certident);
+}
+
+SSLConfig::SSLConfig(
+	const SSLConfig_CERTSTORE& certstore,
+	bool forcessl,
+	int certverify)
+	: _forcessl(forcessl),
+	  _certverify(certverify)
+{
+	setCertStore(certstore);
+}
+
+SSLConfig::SSLConfig(
+	const SSLConfig_CERTSTORE& certstore,
+	const SSLConfig_CERTIDENT& certident,
+	bool forcessl,
+	int certverify)
+	: _forcessl(forcessl),
+	  _certverify(certverify)
+{
+	setCertStore(certstore);
+	setCertIdent(certident);
+}
+
 SSLConfig::~SSLConfig()
 {
+}
+
+bool SSLConfig::getForceSsl() const
+{
+	return _forcessl;
+}
+
+int SSLConfig::getCertVerify() const
+{
+	return _certverify;
+}
+
+void SSLConfig::setCertIdent(const SSLConfig_CERTIDENT& certident)
+{
+	_certidents.clear();
+	_certidents.insert(certident);
+}
+
+void SSLConfig::unsetCertIdent()
+{
+	_certidents.clear();
+}
+
+const SSLConfig_CERTIDENT* SSLConfig::getCertIdent() const
+{
+	if (_certidents.empty()) return nullptr;
+	return &(*(_certidents.begin()));
+}
+
+void SSLConfig::setCertStore(const SSLConfig_CERTSTORE& certident)
+{
+	_certstores.clear();
+	_certstores.insert(certident);
+}
+
+void SSLConfig::unsetCertStore()
+{
+	_certstores.clear();
+}
+
+const SSLConfig_CERTSTORE* SSLConfig::getCertStore() const
+{
+	if (_certstores.empty()) return nullptr;
+	return &(*(_certstores.begin()));
+}
+
+void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
+{
+	_certhosts.insert(certhost);
+}
+
+const std::set<SSLConfig_CERTHOST> SSLConfig::getCertHosts() const
+{
+	return _certhosts;
+}
+
+const SSLConfig_CERTHOST *SSLConfig::getFirstCertHost() const
+{
+	return _certhosts.empty() ? nullptr : &(*(_certhosts.begin()));
 }
 
 const std::string SSLConfig::_empty_str = "";
@@ -1984,12 +2536,242 @@ void SSLConfig::apply(TcpClient& client) const
 	client.setSslCertVerify(_certverify);
 }
 
+SSLConfig_OpenSSL::SSLConfig_OpenSSL(
+	bool forcessl,
+	int certverify,
+	const std::string& ca_path,
+	const std::string& ca_file,
+	const std::string& cert_file,
+	const std::string& key_file,
+	const std::string& key_pass,
+	const std::string& certident_name)
+	: SSLConfig(
+		SSLConfig_CERTSTORE_OpenSSL(ca_path, ca_file),
+		SSLConfig_CERTIDENT_OpenSSL(certident_name, key_pass, cert_file, key_file),
+		forcessl, certverify)
+{
+}
+
+SSLConfig_OpenSSL::SSLConfig_OpenSSL(
+	bool forcessl,
+	int certverify,
+	const char *ca_path,
+	const char *ca_file,
+	const char *cert_file,
+	const char *key_file,
+	const char *key_pass,
+	const char *certident_name)
+	: SSLConfig(
+		SSLConfig_CERTSTORE_OpenSSL(ca_path ? ca_path : "", ca_file ? ca_file : ""),
+		SSLConfig_CERTIDENT_OpenSSL(certident_name ? certident_name : "",
+			key_pass ? key_pass : "",
+			cert_file ? cert_file : "",
+			key_file ? key_file : ""),
+		forcessl, certverify)
+{
+}
+
+const std::string& SSLConfig_OpenSSL::getCAPath() const
+{
+	const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore());
+	if (cs) return cs->getCAPath();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getCAPath_c_str() const
+{
+	const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore());
+	if (cs) return cs->getCAPath_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_OpenSSL::getCAFile() const
+{
+	const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore());
+	if (cs) return cs->getCAFile();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getCAFile_c_str() const
+{
+	const SSLConfig_CERTSTORE_OpenSSL *cs = static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(getCertStore());
+	if (cs) return cs->getCAFile_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_OpenSSL::getCertFile() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getCertFile();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getCertFile_c_str() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getCertFile_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_OpenSSL::getKeyFile() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getKeyFile();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getKeyFile_c_str() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getKeyFile_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_OpenSSL::getKeyPass() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getKeyPass();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getKeyPass_c_str() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getKeyPass_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_OpenSSL::getCertIdentName() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getCertSubj();
+	return _empty_str;
+}
+
+const char *SSLConfig_OpenSSL::getCertIdentName_c_str() const
+{
+	const SSLConfig_CERTIDENT_OpenSSL *ci = static_cast<const SSLConfig_CERTIDENT_OpenSSL*>(getCertIdent());
+	if (ci) return ci->getCertSubj_c_str();
+	return nullptr;
+}
+
 void SSLConfig_OpenSSL::apply(TcpClient& client) const
 {
 	client.setSSLConfig_OpenSSL(getForceSsl(), getCertVerify(),
 		getCAPath(), getCAFile(),
 		getCertFile(), getKeyFile(), getKeyPass(),
 		getCertIdentName());
+}
+
+SSLConfig_NSS::SSLConfig_NSS(bool forcessl, int certverify,
+	const std::string& certstore_path, const std::string& certstore_pass,
+	const std::string& certstore_prefix,
+	const std::string& certhost_addr, const std::string& certhost_name,
+	const std::string& certident_name)
+	: SSLConfig(
+		SSLConfig_CERTIDENT_NSS(certident_name, "", certstore_path, certstore_pass, certstore_prefix),
+		forcessl, certverify)
+{
+	addCertHost(SSLConfig_CERTHOST(certhost_addr, certhost_name));
+}
+
+SSLConfig_NSS::SSLConfig_NSS(bool forcessl, int certverify,
+	const char *certstore_path, const char *certstore_pass,
+	const char *certstore_prefix,
+	const char *certhost_addr, const char *certhost_name,
+	const char *certident_name)
+	: SSLConfig(
+		SSLConfig_CERTIDENT_NSS(certident_name ? certident_name : "", "",
+			certstore_path ? certstore_path : "",
+			certstore_pass ? certstore_pass : "",
+			certstore_prefix ? certstore_prefix : ""),
+		forcessl, certverify)
+{
+	addCertHost(SSLConfig_CERTHOST(certhost_addr ? certhost_addr : "", certhost_name ? certhost_name : ""));
+}
+
+const std::string& SSLConfig_NSS::getCertStorePath() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePath();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertStorePath_c_str() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePath_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_NSS::getCertStorePass() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePass();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertStorePass_c_str() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePass_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_NSS::getCertStorePrefix() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePrefix();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertStorePrefix_c_str() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertStorePrefix_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_NSS::getCertIdentName() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertSubj();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertIdentName_c_str() const
+{
+	const SSLConfig_CERTIDENT_NSS *ci = static_cast<const SSLConfig_CERTIDENT_NSS*>(getCertIdent());
+	if (ci) return ci->getCertSubj_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_NSS::getCertHostAddr() const
+{
+	const SSLConfig_CERTHOST *ch = getFirstCertHost();
+	if (ch) return ch->getHostAddr();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertHostAddr_c_str() const
+{
+	const SSLConfig_CERTHOST *ch = getFirstCertHost();
+	if (ch) return ch->getHostAddr_c_str();
+	return nullptr;
+}
+
+const std::string& SSLConfig_NSS::getCertHostName() const
+{
+	const SSLConfig_CERTHOST *ch = getFirstCertHost();
+	if (ch) return ch->getCertSubj();
+	return _empty_str;
+}
+
+const char *SSLConfig_NSS::getCertHostName_c_str() const
+{
+	const SSLConfig_CERTHOST *ch = getFirstCertHost();
+	if (ch) return ch->getCertSubj_c_str();
+	return nullptr;
 }
 
 void SSLConfig_NSS::apply(TcpClient& client) const
