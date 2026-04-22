@@ -473,6 +473,7 @@ protected:
 
 /**
  * Base class of SSL configuration for NUT connections.
+ * Can keep track of CERTSTORE, CERTIDENT (single) and/or CERTHOST (multiple).
  */
 class SSLConfig
 {
@@ -483,16 +484,73 @@ public:
 		: _forcessl(forcessl),
 		  _certverify(certverify) {}
 
+	SSLConfig(
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1)
+		: _forcessl(forcessl),
+		  _certverify(certverify) {setCertIdent(certident);}
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		bool forcessl = false,
+		int certverify = -1)
+		: _forcessl(forcessl),
+		  _certverify(certverify) {setCertStore(certstore);}
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1)
+		: _forcessl(forcessl),
+		  _certverify(certverify) {setCertStore(certstore); setCertIdent(certident);}
+
 	virtual ~SSLConfig();
 
 	bool getForceSsl() const { return _forcessl; }
 	int getCertVerify() const { return _certverify; }
 
+	/** We only expect to have at most one CERTIDENT value
+	 *  to represent this server/client, replaced if needed */
+	void setCertIdent(const SSLConfig_CERTIDENT& certident) { _certidents.clear(); _certidents.insert(certident); }
+	void unsetCertIdent() { _certidents.clear(); }
+	const SSLConfig_CERTIDENT* getCertIdent() const { if (_certidents.empty()) return nullptr; return &(*(_certidents.begin())); }
+
+	/** We only expect to have at most one CERTSTORE value
+	 *  per connection to trust others, replaced if needed */
+	void setCertStore(const SSLConfig_CERTSTORE& certident) { _certstores.clear(); _certstores.insert(certident); }
+	void unsetCertStore() { _certstores.clear(); }
+	const SSLConfig_CERTSTORE* getCertStore() const { if (_certstores.empty()) return nullptr; return &(*(_certstores.begin())); }
+
+	void addCertHost(const SSLConfig_CERTHOST& certhost) { _certhosts.insert(certhost); }
+	const std::set<SSLConfig_CERTHOST> getCertHosts() const { return _certhosts; }
+	/** Simplify workflow for single-server connections */
+	const SSLConfig_CERTHOST *getFirstCertHost() const { return _certhosts.empty() ? nullptr : &(*(_certhosts.begin())); }
+
+	/** Callback to apply this configuration into a TcpClient instance
+	 * (and further propagate into a Socket instance used by it).
+	 * @param client TcpClient instance to apply configuration to
+	 */
 	virtual void apply(TcpClient& client) const;
 
 protected:
-	bool _forcessl;
-	int _certverify;
+	bool	_forcessl;
+	int	_certverify;
+
+	/** NOTE: We only expect to have one value to represent
+	 *  this server/client, replaced if needed; here using
+	 *  a set simplifies constructor and the set-later logic */
+	std::set<SSLConfig_CERTIDENT>	_certidents;
+
+	/** Probably we could have many of those, eventually;
+	 *  however, it does not make sense with both libraries
+	 *  using some one store per connection => config
+	 */
+	std::set<SSLConfig_CERTSTORE>	_certstores;
+
+	/** We can have many of those */
+	std::set<SSLConfig_CERTHOST>	_certhosts;
 };
 
 /**
