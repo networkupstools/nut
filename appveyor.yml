@@ -202,6 +202,7 @@ artifacts:
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
 cache:
+  - C:\projects\nut\config.cache
   - C:\projects\.cache\nut-ci
   - C:\msys64\home\appveyor\nut-win-deps
   - C:\msys64\home\appveyor\.cache\nut-ci

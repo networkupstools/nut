@@ -73,6 +73,9 @@ https://github.com/networkupstools/nut/milestone/13
       This change impacted also the classic C `libupsclient` library.
       [issue #3387, PR #3402]
 
+ - Introduced `ci_build.sh` settings and respective CI workflow settings
+   to optionally re-use a `config.cache` file from older runs. [#3108]
+
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------
@@ -687,9 +690,6 @@ several `FSD` notifications into one executed action. [PR #3097]
  - Revised use of NUT macros for USB Vendor IDs listed in different drivers,
    so the names would be better exposed in generated `udev.rules` and similar
    files. [PR #3139]
-
- - Introduced `ci_build.sh` settings and respective CI workflow settings
-   to optionally re-use a `config.cache` file from older runs. [#3108]
 
 
 Release notes for NUT 2.8.4 - what's new since 2.8.3
