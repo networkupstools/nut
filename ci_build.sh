@@ -1218,6 +1218,9 @@ configure_nut() {
             else
                 echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
             fi
+
+            # NOTE: the configure script touches it as empty first,
+            # then (quickly, I hope atomically) populates in the end.
             CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
         fi
     fi
