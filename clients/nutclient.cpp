@@ -1975,7 +1975,12 @@ bool SSLConfig_CERTSTORE::operator < (const SSLConfig_CERTSTORE& other) const
 	return true;
 }
 
-/* Some destructors compiled below to avoid "empty vtable" warnings */
+SSLConfig_CERTSTORE* SSLConfig_CERTSTORE::clone() const
+{
+	return new SSLConfig_CERTSTORE(*this);
+}
+
+/* Some destructors compiled below to avoid "empty vtable" warnings when all the simple code was inlined to header */
 SSLConfig_CERTSTORE::~SSLConfig_CERTSTORE()
 {
 }
@@ -2002,6 +2007,11 @@ SSLConfig_CERTSTORE_OpenSSL::SSLConfig_CERTSTORE_OpenSSL(
 	  _cert_file(cert_file ? cert_file : ""),
 	  _key_file(key_file ? key_file : "")
 {
+}
+
+SSLConfig_CERTSTORE_OpenSSL* SSLConfig_CERTSTORE_OpenSSL::clone() const
+{
+	return new SSLConfig_CERTSTORE_OpenSSL(*this);
 }
 
 SSLConfig_CERTSTORE_OpenSSL::~SSLConfig_CERTSTORE_OpenSSL()
@@ -2114,6 +2124,11 @@ SSLConfig_CERTSTORE_NSS::SSLConfig_CERTSTORE_NSS(
 {
 }
 
+SSLConfig_CERTSTORE_NSS* SSLConfig_CERTSTORE_NSS::clone() const
+{
+	return new SSLConfig_CERTSTORE_NSS(*this);
+}
+
 SSLConfig_CERTSTORE_NSS::~SSLConfig_CERTSTORE_NSS()
 {
 }
@@ -2214,6 +2229,11 @@ SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
 {
 }
 
+SSLConfig_CERTIDENT* SSLConfig_CERTIDENT::clone() const
+{
+	return new SSLConfig_CERTIDENT(*this);
+}
+
 SSLConfig_CERTIDENT::~SSLConfig_CERTIDENT()
 {
 }
@@ -2267,6 +2287,11 @@ SSLConfig_CERTIDENT_OpenSSL::SSLConfig_CERTIDENT_OpenSSL(
 	: SSLConfig_CERTIDENT(cert_subj ? cert_subj : "", key_pass ? key_pass : "",
 		SSLConfig_CERTSTORE_OpenSSL("", "", cert_file ? cert_file : "", key_file ? key_file : ""))
 {
+}
+
+SSLConfig_CERTIDENT_OpenSSL* SSLConfig_CERTIDENT_OpenSSL::clone() const
+{
+	return new SSLConfig_CERTIDENT_OpenSSL(*this);
 }
 
 SSLConfig_CERTIDENT_OpenSSL::~SSLConfig_CERTIDENT_OpenSSL()
@@ -2327,6 +2352,11 @@ SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
 {
 }
 
+SSLConfig_CERTIDENT_NSS* SSLConfig_CERTIDENT_NSS::clone() const
+{
+	return new SSLConfig_CERTIDENT_NSS(*this);
+}
+
 SSLConfig_CERTIDENT_NSS::~SSLConfig_CERTIDENT_NSS()
 {
 }
@@ -2383,6 +2413,11 @@ SSLConfig_CERTHOST::SSLConfig_CERTHOST(
 	  _forcessl(forcessl),
 	  _certverify(certverify)
 {
+}
+
+SSLConfig_CERTHOST* SSLConfig_CERTHOST::clone() const
+{
+	return new SSLConfig_CERTHOST(*this);
 }
 
 SSLConfig_CERTHOST::~SSLConfig_CERTHOST()
@@ -2467,6 +2502,9 @@ SSLConfig::SSLConfig(
 
 SSLConfig::~SSLConfig()
 {
+	unsetCertIdent();
+	unsetCertStore();
+	unsetCertHost();
 }
 
 bool SSLConfig::getForceSsl() const
@@ -2481,12 +2519,15 @@ int SSLConfig::getCertVerify() const
 
 void SSLConfig::setCertIdent(const SSLConfig_CERTIDENT& certident)
 {
-	_certidents.clear();
-	_certidents.insert(&certident);
+	unsetCertIdent();
+	_certidents.insert(certident.clone());
 }
 
 void SSLConfig::unsetCertIdent()
 {
+	for (auto* item : _certidents) {
+		delete item;
+	}
 	_certidents.clear();
 }
 
@@ -2498,12 +2539,15 @@ const SSLConfig_CERTIDENT* SSLConfig::getCertIdent() const
 
 void SSLConfig::setCertStore(const SSLConfig_CERTSTORE& certident)
 {
-	_certstores.clear();
-	_certstores.insert(&certident);
+	unsetCertStore();
+	_certstores.insert(certident.clone());
 }
 
 void SSLConfig::unsetCertStore()
 {
+	for (auto* item : _certstores) {
+		delete item;
+	}
 	_certstores.clear();
 }
 
@@ -2516,7 +2560,15 @@ void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
 {
 	if (certhost.getHostAddr().empty()) return;
 	if (certhost.getCertSubj().empty()) return;
-	_certhosts.insert(&certhost);
+	_certhosts.insert(certhost.clone());
+}
+
+void SSLConfig::unsetCertHost()
+{
+	for (auto* item : _certhosts) {
+		delete item;
+	}
+	_certhosts.clear();
 }
 
 const std::set<const SSLConfig_CERTHOST*> SSLConfig::getCertHosts() const

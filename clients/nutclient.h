@@ -91,8 +91,11 @@ class SSLConfig_CERTSTORE
 {
 public:
 	SSLConfig_CERTSTORE();
+
 	SSLConfig_CERTSTORE& operator=(const SSLConfig_CERTSTORE&) = default;
 	SSLConfig_CERTSTORE(const SSLConfig_CERTSTORE&) = default;
+
+	virtual SSLConfig_CERTSTORE* clone() const;
 	virtual ~SSLConfig_CERTSTORE();
 
 	virtual bool hasCALocation() const;
@@ -126,6 +129,10 @@ public:
 		const char *cert_file = nullptr,
 		const char *key_file = nullptr);
 
+	SSLConfig_CERTSTORE_OpenSSL& operator=(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+	SSLConfig_CERTSTORE_OpenSSL(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTSTORE_OpenSSL* clone() const override;
 	virtual ~SSLConfig_CERTSTORE_OpenSSL() override;
 
 	const std::string& getCAFile() const;
@@ -196,6 +203,10 @@ public:
 		const char *certstore_pass = nullptr,
 		const char *certstore_prefix = nullptr);
 
+	SSLConfig_CERTSTORE_NSS& operator=(const SSLConfig_CERTSTORE_NSS&) = default;
+	SSLConfig_CERTSTORE_NSS(const SSLConfig_CERTSTORE_NSS&) = default;
+
+	virtual SSLConfig_CERTSTORE_NSS* clone() const override;
 	virtual ~SSLConfig_CERTSTORE_NSS() override;
 
 	/** Location of the certificate/key store database files */
@@ -253,6 +264,8 @@ public:
 	SSLConfig_CERTIDENT& operator=(const SSLConfig_CERTIDENT&) = default;
 	SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT&) = default;
 
+	virtual SSLConfig_CERTIDENT* clone() const;
+
 	virtual ~SSLConfig_CERTIDENT();
 
 	const std::string& getCertSubj() const;
@@ -293,6 +306,11 @@ public:
 		const char *key_pass,
 		const char *cert_file,
 		const char *key_file = nullptr);
+
+	SSLConfig_CERTIDENT_OpenSSL& operator=(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+	SSLConfig_CERTIDENT_OpenSSL(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTIDENT_OpenSSL* clone() const override;
 
 	virtual ~SSLConfig_CERTIDENT_OpenSSL() override;
 
@@ -344,6 +362,11 @@ public:
 		const char *certstore_pass = nullptr,
 		const char *certstore_prefix = nullptr);
 
+	SSLConfig_CERTIDENT_NSS& operator=(const SSLConfig_CERTIDENT_NSS&) = default;
+	SSLConfig_CERTIDENT_NSS(const SSLConfig_CERTIDENT_NSS&) = default;
+
+	virtual SSLConfig_CERTIDENT_NSS* clone() const override;
+
 	virtual ~SSLConfig_CERTIDENT_NSS() override;
 
 	/** Location of the certificate/key store database files */
@@ -387,6 +410,8 @@ public:
 
 	SSLConfig_CERTHOST& operator=(const SSLConfig_CERTHOST&) = default;
 	SSLConfig_CERTHOST(const SSLConfig_CERTHOST&) = default;
+
+	virtual SSLConfig_CERTHOST* clone() const;
 
 	virtual ~SSLConfig_CERTHOST();
 
@@ -483,6 +508,9 @@ protected:
 
 	/** We can have many of those */
 	std::set<const SSLConfig_CERTHOST*>	_certhosts;
+
+	/** Not exposed; used for consistency in destructor */
+	void unsetCertHost();
 
 	static const std::string _empty_str;
 };
