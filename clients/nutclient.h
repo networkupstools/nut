@@ -467,7 +467,9 @@ public:
 	virtual ~SSLConfig();
 
 	bool getForceSsl() const;
+	void setForceSsl(bool forcessl);
 	int getCertVerify() const;
+	void setCertVerify(int certverify);
 
 	/** We only expect to have at most one CERTIDENT value
 	 *  to represent this server/client, replaced if needed */
@@ -1319,21 +1321,9 @@ private:
 	uint16_t _port;
 	/* SSL shared */
 	bool _tryssl;
-	bool _forcessl;
-	int _certverify;
-	/* OpenSSL specific */
-	std::string _ca_path;
-	std::string _ca_file;
-	std::string _cert_file;
-	std::string _key_file;
-	/* SSL shared */
-	std::string _key_pass;	/* aka certstore_pass for NSS */
-	/* NSS specific */
-	std::string _certstore_path;
-	std::string _certstore_prefix;
-	std::string _certident_name;
-	std::string _certhost_addr;
-	std::string _certhost_name;
+	/* SSL config pointers */
+	SSLConfig_OpenSSL* _ssl_config_openssl;
+	SSLConfig_NSS* _ssl_config_nss;
 	/* general info */
 	time_t _timeout;
 	internal::Socket* _socket;
