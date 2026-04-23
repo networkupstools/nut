@@ -823,7 +823,9 @@ Socket::Socket():
 	_port(NUT_PORT),
 	_forcessl(0)
 #ifdef WITH_SSL_CXX
+# if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	,_ssl_config(nullptr)
+# endif
 #endif
 {
 	/* Initialize timeout from envvar NUT_DEFAULT_CONNECT_TIMEOUT if present */
