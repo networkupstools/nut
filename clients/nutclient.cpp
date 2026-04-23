@@ -2773,6 +2773,20 @@ const char *SSLConfig_OpenSSL::getCertIdentName_c_str() const
 
 void SSLConfig_OpenSSL::apply(TcpClient& client) const
 {
+#ifdef DEBUG
+	/* Line by line, so we know which accessor crashes, if any */
+	std::cerr << "SSLConfig_OpenSSL::apply(): ";
+	std::cerr << "forceSSL=" << getForceSsl();
+	std::cerr << ", certVerify=" << getCertVerify();
+	std::cerr << ", getCAPath='" << getCAPath();
+	std::cerr << "', getCAFile='" << getCAFile();
+	std::cerr << "', getCertFile='" << getCertFile();
+	std::cerr << "', getKeyFile='" << getKeyFile();
+	std::cerr << "', getKeyPass='" << getKeyPass();
+	std::cerr << "', certIdentName='" << getCertIdentName() << "'";
+	std::cerr << std::endl;
+#endif
+
 	client.setSSLConfig_OpenSSL(getForceSsl(), getCertVerify(),
 		getCAPath(), getCAFile(),
 		getCertFile(), getKeyFile(), getKeyPass(),
@@ -2898,6 +2912,20 @@ const char *SSLConfig_NSS::getCertHostName_c_str() const
 
 void SSLConfig_NSS::apply(TcpClient& client) const
 {
+#ifdef DEBUG
+	/* Line by line, so we know which accessor crashes, if any */
+	std::cerr << "SSLConfig_NSS::apply(): ";
+	std::cerr << "forceSSL=" << getForceSsl();
+	std::cerr << ", certVerify=" << getCertVerify();
+	std::cerr << ", certStorePath='" << getCertStorePath();
+	std::cerr << "', certStorePass='" << getCertStorePass();
+	std::cerr << "', certStorePrefix='" << getCertStorePrefix();
+	std::cerr << "', certHostAddr='" << getCertHostAddr();
+	std::cerr << "', certHostName='" << getCertHostName();
+	std::cerr << "', certIdentName='" << getCertIdentName() << "'";
+	std::cerr << std::endl;
+#endif
+
 	client.setSSLConfig_NSS(getForceSsl(), getCertVerify(),
 		getCertStorePath(), getCertStorePass(), getCertStorePrefix(),
 		getCertHostAddr(), getCertHostName(),
