@@ -456,7 +456,7 @@ public:
 	/** Add a non-trivial CERTHOST to the list (host address
 	 *  and certificate nickname must be populated) */
 	void addCertHost(const SSLConfig_CERTHOST& certhost);
-	const std::set<SSLConfig_CERTHOST> getCertHosts() const;
+	const std::set<const SSLConfig_CERTHOST*> getCertHosts() const;
 	/** Simplify workflow for single-server connections */
 	const SSLConfig_CERTHOST *getFirstCertHost() const;
 
@@ -473,16 +473,16 @@ protected:
 	/** NOTE: We only expect to have one value to represent
 	 *  this server/client, replaced if needed; here using
 	 *  a set simplifies constructor and the set-later logic */
-	std::set<SSLConfig_CERTIDENT>	_certidents;
+	std::set<const SSLConfig_CERTIDENT*>	_certidents;
 
 	/** Probably we could have many of those, eventually;
 	 *  however, it does not make sense with both libraries
 	 *  using some one store per connection => config
 	 */
-	std::set<SSLConfig_CERTSTORE>	_certstores;
+	std::set<const SSLConfig_CERTSTORE*>	_certstores;
 
 	/** We can have many of those */
-	std::set<SSLConfig_CERTHOST>	_certhosts;
+	std::set<const SSLConfig_CERTHOST*>	_certhosts;
 
 	static const std::string _empty_str;
 };

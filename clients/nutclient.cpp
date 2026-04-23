@@ -2482,7 +2482,7 @@ int SSLConfig::getCertVerify() const
 void SSLConfig::setCertIdent(const SSLConfig_CERTIDENT& certident)
 {
 	_certidents.clear();
-	_certidents.insert(certident);
+	_certidents.insert(&certident);
 }
 
 void SSLConfig::unsetCertIdent()
@@ -2493,13 +2493,13 @@ void SSLConfig::unsetCertIdent()
 const SSLConfig_CERTIDENT* SSLConfig::getCertIdent() const
 {
 	if (_certidents.empty()) return nullptr;
-	return &(*(_certidents.begin()));
+	return *(_certidents.begin());
 }
 
 void SSLConfig::setCertStore(const SSLConfig_CERTSTORE& certident)
 {
 	_certstores.clear();
-	_certstores.insert(certident);
+	_certstores.insert(&certident);
 }
 
 void SSLConfig::unsetCertStore()
@@ -2509,25 +2509,24 @@ void SSLConfig::unsetCertStore()
 
 const SSLConfig_CERTSTORE* SSLConfig::getCertStore() const
 {
-	if (_certstores.empty()) return nullptr;
-	return &(*(_certstores.begin()));
+	return _certstores.empty() ? nullptr : *(_certstores.begin());
 }
 
 void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
 {
 	if (certhost.getHostAddr().empty()) return;
 	if (certhost.getCertSubj().empty()) return;
-	_certhosts.insert(certhost);
+	_certhosts.insert(&certhost);
 }
 
-const std::set<SSLConfig_CERTHOST> SSLConfig::getCertHosts() const
+const std::set<const SSLConfig_CERTHOST*> SSLConfig::getCertHosts() const
 {
 	return _certhosts;
 }
 
 const SSLConfig_CERTHOST *SSLConfig::getFirstCertHost() const
 {
-	return _certhosts.empty() ? nullptr : &(*(_certhosts.begin()));
+	return _certhosts.empty() ? nullptr : *(_certhosts.begin());
 }
 
 const std::string SSLConfig::_empty_str = "";
