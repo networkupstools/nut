@@ -488,6 +488,10 @@ public:
 	/** Simplify workflow for single-server connections */
 	const SSLConfig_CERTHOST *getFirstCertHost() const;
 
+	const SSLConfig_CERTHOST *getCertHostByAddr(std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostBySubj(std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(std::string &s) const;
+
 	/** Callback to apply this configuration into a TcpClient instance
 	 * (and further propagate into a Socket instance used by it).
 	 * @param client TcpClient instance to apply configuration to

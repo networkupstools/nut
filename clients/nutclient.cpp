@@ -2642,6 +2642,36 @@ const SSLConfig_CERTHOST *SSLConfig::getFirstCertHost() const
 	return _certhosts.empty() ? nullptr : *(_certhosts.begin());
 }
 
+const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddr(std::string &s) const
+{
+	for (const auto* item : _certhosts) {
+		if (item->getHostAddr() == s) {
+			return item;
+		}
+	}
+	return nullptr;
+}
+
+const SSLConfig_CERTHOST *SSLConfig::getCertHostBySubj(std::string &s) const
+{
+	for (const auto* item : _certhosts) {
+		if (item->getCertSubj() == s) {
+			return item;
+		}
+	}
+	return nullptr;
+}
+
+const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddrOrSubj(std::string &s) const
+{
+	for (const auto* item : _certhosts) {
+		if (item->getHostAddr() == s || item->getCertSubj() == s) {
+			return item;
+		}
+	}
+	return nullptr;
+}
+
 const std::string SSLConfig::_empty_str = "";
 
 void SSLConfig::apply(TcpClient& client) const
