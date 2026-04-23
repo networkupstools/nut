@@ -19,7 +19,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#set -x
+# Set this to enable verbose tracing
+[ -n "${CI_TRACE-}" ] || CI_TRACE="no"
+case "$CI_TRACE" in
+	[Nn][Oo]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee])
+		set +x ;;
+	[Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
+		set -x ;;
+esac
 
 SCRIPTDIR="`dirname \"$0\"`"
 SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
