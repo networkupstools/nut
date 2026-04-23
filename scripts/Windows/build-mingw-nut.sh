@@ -121,6 +121,35 @@ if [ -z "$INSTALL_WIN_BUNDLE" ]; then
 	echo "recipe for DLL co-bundling (default: false to use logic maintained in $0"
 fi >&2
 
+configure_nut() {
+	USE_AUTOCONF_CACHE_FLAG=""
+	unset CI_CACHE_NUT_HASHDIR_CFG
+
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
+		USE_AUTOCONF_CACHE_FLAG="-C"
+
+		# Dedicated location may be passed by caller:
+		if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+			CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$* CC='$CC' CXX='$CXX' CPP='$CPP'\" | md5sum | awk '{print $1}'`" \
+			|| CI_CACHE_NUT_HASHDIR_CFG=''
+			if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+				if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+					mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+					echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+					echo "$* CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+				else
+					echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+				fi
+				USE_AUTOCONF_CACHE_FLAG="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+			fi
+		fi
+	fi
+
+	$CONFIGURE_SCRIPT \
+		$USE_AUTOCONF_CACHE_FLAG \
+		"$@"
+}
+
 do_build_mingw_nut() {
 	cd "$BUILD_DIR" || exit
 
@@ -148,11 +177,6 @@ do_build_mingw_nut() {
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
 	# envvar toggles below may be passed from NUT ci_build.sh or other callers:
-	USE_AUTOCONF_CACHE_FLAG=""
-	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
-		USE_AUTOCONF_CACHE_FLAG="-C"
-	fi
-
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
 	if [ x"${KEEP_NUT_REPORT_FEATURE-}" = xtrue ]; then
 		KEEP_NUT_REPORT_FEATURE_FLAG="--enable-keep_nut_report_feature"
@@ -184,8 +208,10 @@ do_build_mingw_nut() {
 	# Currently "/run" location is not relevant (writepid() is a stub)
 	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
 	RES_CFG=0
-	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
-	    $USE_AUTOCONF_CACHE_FLAG \
+	configure_nut \
+	    $HOST_FLAG \
+	    $BUILD_FLAG \
+	    --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    $WITH_SSL_FLAG \

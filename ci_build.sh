@@ -3202,7 +3202,9 @@ cross-windows-mingw*)
         fi
     fi
 
-    ./autogen.sh || exit
+    ###./autogen.sh || exit
+    # Also populate CI_CACHE_NUT_HASHDIR if appropriate
+    autogen_get_CONFIGURE_SCRIPT || exit
     cd scripts/Windows || exit
 
     cmd="" # default soup of the day, as defined in the called script
@@ -3236,6 +3238,11 @@ cross-windows-mingw*)
 
     export NUT_SSL_VARIANTS
 
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        export CI_CACHE_NUT_HASHDIR
+    fi
+
+    DO_USE_AUTOCONF_CACHE="${DO_USE_AUTOCONF_CACHE}" \
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
