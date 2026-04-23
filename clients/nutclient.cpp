@@ -412,8 +412,22 @@ int Socket::_openssl_cert_verify_data_index = 0;
 				 * MUST contain exactly sixteen octets.
 				 */
 				char	ip_addr_buf[128], *p = ip_addr_buf, *pMax = ip_addr_buf + sizeof(ip_addr_buf) - 5;
-				const unsigned char	*ip_addr_raw = ASN1_STRING_get0_data(entry->d.iPAddress);
-				int	ip_addr_raw_len = ASN1_STRING_length(entry->d.iPAddress), j;
+				const unsigned char	*ip_addr_raw =
+# ifdef HAVE_ASN1_STRING_GET0_DATA
+					ASN1_STRING_get0_data(entry->d.iPAddress)
+# elif defined(HAVE_ASN1_STRING_DATA)
+					ASN1_STRING_data(entry->d.iPAddress)
+# else
+					static_cast<const unsigned char *>(entry->d.iPAddress->data)
+# endif
+					;
+				int	ip_addr_raw_len =
+# ifdef HAVE_ASN1_STRING_LENGTH
+					ASN1_STRING_length(entry->d.iPAddress)
+# else
+					static_cast<int>(entry->d.iPAddress->length)
+# endif
+					, j;
 
 				memset(ip_addr_buf, 0, sizeof(ip_addr_buf));
 				switch (ip_addr_raw_len) {

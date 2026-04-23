@@ -87,7 +87,7 @@ if test -z "${nut_have_libopenssl_seen}"; then
 		AC_DEFINE(WITH_OPENSSL, 1, [Define to enable SSL support using OpenSSL])
 
 		dnl # Variants for compilation choices (not fatal if absent):
-		AC_CHECK_FUNCS(SSL_set_default_passwd_cb SSL_set_default_passwd_cb_userdata SSL_CTX_set_default_passwd_cb SSL_CTX_set_default_passwd_cb_userdata SSL_CTX_get0_certificate X509_check_host X509_check_ip_asc X509_NAME_oneline, [], [])
+		AC_CHECK_FUNCS(SSL_set_default_passwd_cb SSL_set_default_passwd_cb_userdata SSL_CTX_set_default_passwd_cb SSL_CTX_set_default_passwd_cb_userdata SSL_CTX_get0_certificate X509_check_host X509_check_ip_asc X509_NAME_oneline ASN1_STRING_get0_data ASN1_STRING_data ASN1_STRING_length, [], [])
 
 		dnl # Repeat some tricks from nut_compiler_family.m4
 		AS_IF([test "x$cross_compiling" != xyes], [
