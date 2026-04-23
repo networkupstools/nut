@@ -3087,7 +3087,7 @@ bindings)
     fi
 
     #$MAKE all || \
-    $MAKE $PARMAKE_FLAGS all || exit
+    $MAKE $PARMAKE_FLAGS all-quick || exit
     build_to_only_catch_errors_check
     ### if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
 
