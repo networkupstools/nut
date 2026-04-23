@@ -453,6 +453,8 @@ public:
 	void unsetCertStore();
 	const SSLConfig_CERTSTORE* getCertStore() const;
 
+	/** Add a non-trivial CERTHOST to the list (host address
+	 *  and certificate nickname must be populated) */
 	void addCertHost(const SSLConfig_CERTHOST& certhost);
 	const std::set<SSLConfig_CERTHOST> getCertHosts() const;
 	/** Simplify workflow for single-server connections */

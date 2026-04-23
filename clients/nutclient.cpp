@@ -2515,6 +2515,8 @@ const SSLConfig_CERTSTORE* SSLConfig::getCertStore() const
 
 void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
 {
+	if (certhost.getHostAddr().empty()) return;
+	if (certhost.getCertSubj().empty()) return;
 	_certhosts.insert(certhost);
 }
 
