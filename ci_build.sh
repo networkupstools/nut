@@ -1098,7 +1098,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
 CONFIGURE_SCRIPT=""
-autogen_get_CONFIGURE_SCRIPT() {
+do_autogen_get_CONFIGURE_SCRIPT() {
     # Autogen once (delete the file if some scenario ever requires to re-autogen)
     if [ -n "${CONFIGURE_SCRIPT}" -a -s "${CONFIGURE_SCRIPT}" ] ; then return 0 ; fi
 
@@ -1131,6 +1131,54 @@ autogen_get_CONFIGURE_SCRIPT() {
     popd || exit
 }
 
+# If it is non-trivial later, we use it
+unset CI_CACHE_NUT_HASHDIR || true
+autogen_get_CONFIGURE_SCRIPT() {
+    do_autogen_get_CONFIGURE_SCRIPT
+
+    unset CI_CACHE_NUT_HASHDIR || true
+    # Allow regular runners dedicate a persistent cache to re-run same configs
+    # more quickly. Opt-in, not applicable to all scenarios.
+    # FIXME: consider locking (one creator at least)?
+    [ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
+    if [ x"$DO_USE_AUTOCONF_CACHE" = xyes ] && [ -n "$CI_CACHE_NUT_BASEDIR" ] ; then
+        # FIXME later: any hash would do to detect changes
+        # Paths below assume SCRIPTDIR (of ci_build.sh) is the source root
+        AUTOCONF_FILES="`ls -1 \"${SCRIPTDIR}\"/configure.ac \"${SCRIPTDIR}\"/m4/*.m4 | sort`"
+        command -v md5sum && \
+        AUTOCONF_HASH="$({ cat ${AUTOCONF_FILES} ; uname -a ; } | md5sum | awk '{print $1}')" \
+        || AUTOCONF_HASH=''
+
+        if [ -n "${AUTOCONF_HASH}" ]; then
+            CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/${AUTOCONF_HASH}"
+            if [ x"$DO_CLEAN_AUTOCONF_CACHE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' but was asked to remove it first" >&2
+                rm -rf "${CI_CACHE_NUT_HASHDIR}" || true
+            fi
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if mkdir -p "${CI_CACHE_NUT_HASHDIR}" ; then
+                    # Just for info (so far):
+                    uname -a > "${CI_CACHE_NUT_HASHDIR}/ci_uname.txt"
+                    ls -lad ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_listing.txt"
+                    md5sum  ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_hashes.txt"
+                else
+                    echo "=== FAILED to mkdir, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if [ ! -w "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                    echo "=== ...but it seems to not be writeable, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            fi
+        else
+            echo "=== FAILED to determine an AUTOCONF_HASH to support DO_USE_AUTOCONF_CACHE logic" >&2
+        fi
+    fi
+}
+
 configure_CI_BUILDDIR() {
     autogen_get_CONFIGURE_SCRIPT
 
@@ -1157,11 +1205,31 @@ configure_nut() {
 
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
+
+    unset CI_CACHE_NUT_HASHDIR_CFG
+    CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'\" | md5sum | awk '{print $1}'`" \
+        || CI_CACHE_NUT_HASHDIR_CFG=''
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+                mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+                echo "${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+            fi
+            CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+        fi
+    fi
+
+    CI_CACHE_NUT_RETRIED=false
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
-      if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -s config.cache ]; then
+      if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
         echo "$0: using existing config.cache" >&2
       else
         if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ]; then
@@ -1171,11 +1239,28 @@ configure_nut() {
         fi; fi
       fi
 
-      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      $CI_TIME $CONFIGURE_SCRIPT \
+          ${CI_CACHE_NUT_HASHDIR_CFG_OPT} \
+          "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
       && return 0 \
       || { RES_CFG=$?
         echo "$0: configure phase complete ($RES_CFG)" >&2
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+            if ${EGREP} "run 'make distclean' and/or 'rm .*config.cache" config.log ; then
+                if [ x"$CI_CACHE_NUT_RETRIED" = xfalse ] ; then
+                    echo "=== RETRY with a new config.cache file" >&2
+                    rm -f "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+                    CI_CACHE_NUT_RETRIED=true
+                    continue
+                fi
+
+                echo "=== RETRY without a config.cache file (forfeit DO_USE_AUTOCONF_CACHE logic)" >&2
+                CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+                CI_CACHE_NUT_RETRIED=2
+                continue
+            fi
+        fi
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -1606,7 +1691,7 @@ export DO_CLEAN_AUTOCONF_CACHE
 
 if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
-        #default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
+        # FIXME later # default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
         *) DO_USE_AUTOCONF_CACHE="no" ;;
     esac
 fi
@@ -1679,10 +1764,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
     EXTRA_CXXFLAGS=""
 
     detect_platform_CANBUILD_LIBGD_CGI
-
-    if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
-        CONFIG_OPTS+=("-C")
-    fi
 
     # Prepend or use this build's preferred artifacts, if any
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
@@ -2925,8 +3006,6 @@ bindings)
         echo "=== Finished initial clean-up"
     fi
 
-    configure_CI_BUILDDIR
-
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
     # Below we aim for really fast iterations of C/C++ development so
@@ -2941,10 +3020,6 @@ bindings)
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
-
-    if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
-        CONFIG_OPTS+=("-C")
-    fi
 
     case x"${BUILD_TYPE}" in
         xdoc*) CONFIG_OPTS+=("--with-${BUILD_TYPE}") ;;
@@ -3069,16 +3144,13 @@ bindings)
     PATH="`echo \"${PATH}\" | normalize_path`"
     CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
-    RES_CFG=0
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
-    || RES_CFG=$?
-    echo "$0: configure phase complete ($RES_CFG)" >&2
-    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
+    # NOTE: Exits if fails
+    configure_nut
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    echo "Configuration finished, starting make" >&2
+    echo "Configuration finished, starting make in `pwd`" >&2
     if [ -n "$PARMAKE_FLAGS" ]; then
         echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
     fi
