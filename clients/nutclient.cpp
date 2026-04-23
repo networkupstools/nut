@@ -2312,26 +2312,24 @@ const char *SSLConfig_CERTIDENT_OpenSSL::getKeyOrCertFile_c_str() const
 
 SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
 	const std::string& cert_subj,
-	const std::string& key_pass,
+	const std::string& key_pass,	/* For NSS this is the private key database password, shared by all keys in it */
 	const std::string& certstore_path,
-	const std::string& certstore_pass,
 	const std::string& certstore_prefix)
 	: SSLConfig_CERTIDENT(cert_subj, key_pass,
-		SSLConfig_CERTSTORE_NSS(certstore_path, certstore_pass, certstore_prefix))
+		SSLConfig_CERTSTORE_NSS(certstore_path, key_pass, certstore_prefix))
 {
 }
 
 SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
 	const char *cert_subj,
-	const char *key_pass,
+	const char *key_pass,	/* For NSS this is the private key database password, shared by all keys in it */
 	const char *certstore_path,
-	const char *certstore_pass,
 	const char *certstore_prefix)
 	: SSLConfig_CERTIDENT(
 		cert_subj ? cert_subj : SSLConfig::_empty_str,
 		key_pass ? key_pass : SSLConfig::_empty_str,
 		SSLConfig_CERTSTORE_NSS(certstore_path ? certstore_path : SSLConfig::_empty_str,
-			certstore_pass ? certstore_pass : SSLConfig::_empty_str,
+			key_pass ? key_pass : SSLConfig::_empty_str,
 			certstore_prefix ? certstore_prefix : SSLConfig::_empty_str))
 {
 }
@@ -2798,7 +2796,7 @@ SSLConfig_NSS::SSLConfig_NSS(bool forcessl, int certverify,
 	const std::string& certhost_addr, const std::string& certhost_name,
 	const std::string& certident_name)
 	: SSLConfig(
-		SSLConfig_CERTIDENT_NSS(certident_name, SSLConfig::_empty_str, certstore_path, certstore_pass, certstore_prefix),
+		SSLConfig_CERTIDENT_NSS(certident_name, certstore_pass, certstore_path, certstore_prefix),
 		forcessl, certverify)
 {
 	if (!(certhost_addr.empty()) && !(certhost_name.empty())) {
@@ -2814,9 +2812,8 @@ SSLConfig_NSS::SSLConfig_NSS(bool forcessl, int certverify,
 	: SSLConfig(
 		SSLConfig_CERTIDENT_NSS(
 			certident_name ? certident_name : SSLConfig::_empty_str,
-			SSLConfig::_empty_str,
-			certstore_path ? certstore_path : SSLConfig::_empty_str,
 			certstore_pass ? certstore_pass : SSLConfig::_empty_str,
+			certstore_path ? certstore_path : SSLConfig::_empty_str,
 			certstore_prefix ? certstore_prefix : SSLConfig::_empty_str),
 		forcessl, certverify)
 {

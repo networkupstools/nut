@@ -188,7 +188,12 @@ protected:
  * Helper class for Mozilla NSS-specific certificate store location information:
  * location of the certificate/key store database files, optionally a prefix
  * for co-location of multiple databases in one directory, and the optional
- * pass-phrase to open the database itself (maybe for writes only?)
+ * pass-phrase to open the private key database itself. Note that NSS (unlike
+ * JKS) databases do not have a passphrase to protect the database itself
+ * (e.g. to limit the addition of trusted CA certificates). The private key
+ * password is the same for all keys in the database (that is actually known
+ * as the "NSS database password" or "master password"); for logical
+ * consistency a copy may be stored in SSLConfig_CERTIDENT.
  */
 class SSLConfig_CERTSTORE_NSS : public SSLConfig_CERTSTORE
 {
@@ -213,7 +218,7 @@ public:
 	const std::string& getCertStorePath() const;
 	const char *getCertStorePath_c_str() const;
 
-	/** Pass-phrase to open the database itself (maybe for writes only?) */
+	/** Pass-phrase to open the private key database */
 	const std::string& getCertStorePass() const;
 	const char *getCertStorePass_c_str() const;
 
@@ -340,10 +345,9 @@ public:
 
 /**
  * Helper class for Mozilla NSS-specific self-identification of a server or client:
- * subject of certificate and corresponding private key pass phrase, as well
- * as location of the certificate/key store database files, optionally a prefix
- * for co-location of multiple databases in one directory, and the optional
- * pass-phrase to open the database itself (maybe for writes only?)
+ * subject of certificate and corresponding private key pass phrase, as well as
+ * location of the certificate/key store database files, and optionally a prefix
+ * for co-location of multiple databases in one directory.
  */
 class SSLConfig_CERTIDENT_NSS : public SSLConfig_CERTIDENT
 {
@@ -352,14 +356,12 @@ public:
 		const std::string& cert_subj,
 		const std::string& key_pass,
 		const std::string& certstore_path = "",
-		const std::string& certstore_pass = "",
 		const std::string& certstore_prefix = "");
 
 	SSLConfig_CERTIDENT_NSS(
 		const char *cert_subj,
 		const char *key_pass,
 		const char *certstore_path = nullptr,
-		const char *certstore_pass = nullptr,
 		const char *certstore_prefix = nullptr);
 
 	SSLConfig_CERTIDENT_NSS& operator=(const SSLConfig_CERTIDENT_NSS&) = default;
@@ -373,7 +375,7 @@ public:
 	const std::string& getCertStorePath() const;
 	const char *getCertStorePath_c_str() const;
 
-	/** Pass-phrase to open the database itself (maybe for writes only?) */
+	/** Pass-phrase to open the private key database (should be same as getKeyPass() value) */
 	const std::string& getCertStorePass() const;
 	const char *getCertStorePass_c_str() const;
 
