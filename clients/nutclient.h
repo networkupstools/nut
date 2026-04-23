@@ -491,6 +491,9 @@ public:
 	 */
 	virtual void apply(TcpClient& client) const;
 
+	/** Just to be sure to have a pre-created immortal empty string object */
+	static const std::string _empty_str;
+
 protected:
 	bool	_forcessl;
 	int	_certverify;
@@ -511,8 +514,6 @@ protected:
 
 	/** Not exposed; used for consistency in destructor */
 	void unsetCertHost();
-
-	static const std::string _empty_str;
 };
 
 /**
