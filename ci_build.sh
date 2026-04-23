@@ -1140,7 +1140,6 @@ autogen_get_CONFIGURE_SCRIPT() {
     # Allow regular runners dedicate a persistent cache to re-run same configs
     # more quickly. Opt-in, not applicable to all scenarios.
     # FIXME: consider locking (one creator at least)?
-    [ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
     if [ x"$DO_USE_AUTOCONF_CACHE" = xyes ] && [ -n "$CI_CACHE_NUT_BASEDIR" ] ; then
         # FIXME later: any hash would do to detect changes
         # Paths below assume SCRIPTDIR (of ci_build.sh) is the source root
@@ -1681,21 +1680,23 @@ fi
 [ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="$DO_CLEAN_AUTOCONF_CACHE"
 [ -n "$DO_CLEAN_AUTOCONF_CACHE_FINAL" ] || DO_CLEAN_AUTOCONF_CACHE_FINAL="$DO_CLEAN_AUTOCONF_CACHE"
 
-if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xauto ]; then
-    case "$BUILD_TYPE" in
-        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE="no" ;;
-        *) DO_CLEAN_AUTOCONF_CACHE="yes" ;;
-    esac
-fi
-export DO_CLEAN_AUTOCONF_CACHE
-
 if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
         # FIXME later # default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
-        *) DO_USE_AUTOCONF_CACHE="no" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_USE_AUTOCONF_CACHE="yes" ; else DO_USE_AUTOCONF_CACHE="no" ; fi ;;
     esac
 fi
 export DO_USE_AUTOCONF_CACHE
+
+[ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
+
+if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xauto ]; then
+    case "$BUILD_TYPE" in
+        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE="no" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_CLEAN_AUTOCONF_CACHE="no" ; else DO_CLEAN_AUTOCONF_CACHE="yes" ; fi ;;
+    esac
+fi
+export DO_CLEAN_AUTOCONF_CACHE
 
 if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xauto ]; then
     DO_CLEAN_AUTOCONF_CACHE_BEFORE="yes"
