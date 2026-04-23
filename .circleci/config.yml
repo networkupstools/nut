@@ -215,7 +215,7 @@ jobs:
       - save_cache:
           name: Save config.cache for later runs
           paths:
-            - config.cache
+            - ~/.cache/nut-ci
           key: config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
       - store_artifacts:

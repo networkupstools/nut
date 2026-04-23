@@ -202,8 +202,9 @@ artifacts:
 # Example optional cache (depends on file change):
 # - C:\msys64 -> appveyor.yml
 cache:
-  - C:\projects\nut\config.cache
+  - C:\projects\.cache\nut-ci
   - C:\msys64\home\appveyor\nut-win-deps
+  - C:\msys64\home\appveyor\.cache\nut-ci
   - C:\msys64\home\appveyor\.ccache
   - C:\msys64\home\appveyor\ccache # likely missing, no problem - but the name is reported in ccache status
   - C:\Users\appveyor\AppData\Local\ccache # may be default in newer versions
