@@ -261,8 +261,8 @@ public:
 		const char *key_pass,
 		const SSLConfig_CERTSTORE& certstore);
 
-	SSLConfig_CERTIDENT& operator=(const SSLConfig_CERTIDENT&) = default;
-	SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT&) = default;
+	SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT&);
+	SSLConfig_CERTIDENT& operator=(const SSLConfig_CERTIDENT&);
 
 	virtual SSLConfig_CERTIDENT* clone() const;
 
@@ -283,7 +283,7 @@ protected:
 	std::string	_cert_subj;
 	std::string	_key_pass;
 
-	SSLConfig_CERTSTORE	_certstore;
+	SSLConfig_CERTSTORE*	_certstore;
 };
 
 /**
@@ -460,6 +460,9 @@ public:
 		const SSLConfig_CERTIDENT& certident,
 		bool forcessl = false,
 		int certverify = -1);
+
+	SSLConfig(const SSLConfig&);
+	SSLConfig& operator=(const SSLConfig&);
 
 	virtual ~SSLConfig();
 

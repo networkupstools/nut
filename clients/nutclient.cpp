@@ -2196,7 +2196,7 @@ SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
 	const std::string& key_pass)
 	: _cert_subj(cert_subj),
 	  _key_pass(key_pass),
-	  _certstore()
+	  _certstore(new SSLConfig_CERTSTORE())
 {
 }
 
@@ -2206,7 +2206,7 @@ SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
 	const SSLConfig_CERTSTORE& certstore)
 	: _cert_subj(cert_subj),
 	  _key_pass(key_pass),
-	  _certstore(certstore)
+	  _certstore(certstore.clone())
 {
 }
 
@@ -2215,7 +2215,7 @@ SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
 	const char *key_pass)
 	: _cert_subj(cert_subj ? cert_subj : ""),
 	  _key_pass(key_pass ? key_pass : ""),
-	  _certstore()
+	  _certstore(new SSLConfig_CERTSTORE())
 {
 }
 
@@ -2225,8 +2225,26 @@ SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(
 	const SSLConfig_CERTSTORE& certstore)
 	: _cert_subj(cert_subj ? cert_subj : ""),
 	  _key_pass(key_pass ? key_pass : ""),
-	  _certstore(certstore)
+	  _certstore(certstore.clone())
 {
+}
+
+SSLConfig_CERTIDENT::SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT& other)
+	: _cert_subj(other._cert_subj),
+	  _key_pass(other._key_pass),
+	  _certstore(other._certstore ? other._certstore->clone() : nullptr)
+{
+}
+
+SSLConfig_CERTIDENT& SSLConfig_CERTIDENT::operator=(const SSLConfig_CERTIDENT& other)
+{
+	if (this != &other) {
+		_cert_subj = other._cert_subj;
+		_key_pass = other._key_pass;
+		delete _certstore;
+		_certstore = other._certstore ? other._certstore->clone() : nullptr;
+	}
+	return *this;
 }
 
 SSLConfig_CERTIDENT* SSLConfig_CERTIDENT::clone() const
@@ -2236,6 +2254,7 @@ SSLConfig_CERTIDENT* SSLConfig_CERTIDENT::clone() const
 
 SSLConfig_CERTIDENT::~SSLConfig_CERTIDENT()
 {
+	delete _certstore;
 }
 
 const std::string& SSLConfig_CERTIDENT::getCertSubj() const
@@ -2260,7 +2279,7 @@ const char *SSLConfig_CERTIDENT::getKeyPass_c_str() const
 
 const SSLConfig_CERTSTORE& SSLConfig_CERTIDENT::getCertstore() const
 {
-	return _certstore;
+	return *_certstore;
 }
 
 bool SSLConfig_CERTIDENT::operator < (const SSLConfig_CERTIDENT& other) const
@@ -2304,32 +2323,32 @@ SSLConfig_CERTIDENT_OpenSSL::~SSLConfig_CERTIDENT_OpenSSL()
 
 const std::string& SSLConfig_CERTIDENT_OpenSSL::getCertFile() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getCertFile();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getCertFile();
 }
 
 const char *SSLConfig_CERTIDENT_OpenSSL::getCertFile_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getCertFile_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getCertFile_c_str();
 }
 
 const std::string& SSLConfig_CERTIDENT_OpenSSL::getKeyFile() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyFile();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getKeyFile();
 }
 
 const char *SSLConfig_CERTIDENT_OpenSSL::getKeyFile_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyFile_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getKeyFile_c_str();
 }
 
 const std::string& SSLConfig_CERTIDENT_OpenSSL::getKeyOrCertFile() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyOrCertFile();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getKeyOrCertFile();
 }
 
 const char *SSLConfig_CERTIDENT_OpenSSL::getKeyOrCertFile_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_OpenSSL&>(_certstore).getKeyOrCertFile_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_OpenSSL*>(_certstore)->getKeyOrCertFile_c_str();
 }
 
 SSLConfig_CERTIDENT_NSS::SSLConfig_CERTIDENT_NSS(
@@ -2369,32 +2388,32 @@ SSLConfig_CERTIDENT_NSS::~SSLConfig_CERTIDENT_NSS()
 
 const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePath() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePath();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePath();
 }
 
 const char *SSLConfig_CERTIDENT_NSS::getCertStorePath_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePath_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePath_c_str();
 }
 
 const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePass() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePass();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePass();
 }
 
 const char *SSLConfig_CERTIDENT_NSS::getCertStorePass_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePass_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePass_c_str();
 }
 
 const std::string& SSLConfig_CERTIDENT_NSS::getCertStorePrefix() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePrefix();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePrefix();
 }
 
 const char *SSLConfig_CERTIDENT_NSS::getCertStorePrefix_c_str() const
 {
-	return static_cast<const SSLConfig_CERTSTORE_NSS&>(_certstore).getCertStorePrefix_c_str();
+	return static_cast<const SSLConfig_CERTSTORE_NSS*>(_certstore)->getCertStorePrefix_c_str();
 }
 
 SSLConfig_CERTHOST::SSLConfig_CERTHOST(
@@ -2504,6 +2523,42 @@ SSLConfig::SSLConfig(
 {
 	setCertStore(certstore);
 	setCertIdent(certident);
+}
+
+SSLConfig::SSLConfig(const SSLConfig& other)
+	: _forcessl(other._forcessl),
+	  _certverify(other._certverify)
+{
+	for (auto* item : other._certidents) {
+		_certidents.insert(item->clone());
+	}
+	for (auto* item : other._certstores) {
+		_certstores.insert(item->clone());
+	}
+	for (auto* item : other._certhosts) {
+		_certhosts.insert(item->clone());
+	}
+}
+
+SSLConfig& SSLConfig::operator=(const SSLConfig& other)
+{
+	if (this != &other) {
+		_forcessl = other._forcessl;
+		_certverify = other._certverify;
+		unsetCertIdent();
+		unsetCertStore();
+		unsetCertHost();
+		for (auto* item : other._certidents) {
+			_certidents.insert(item->clone());
+		}
+		for (auto* item : other._certstores) {
+			_certstores.insert(item->clone());
+		}
+		for (auto* item : other._certhosts) {
+			_certhosts.insert(item->clone());
+		}
+	}
+	return *this;
 }
 
 SSLConfig::~SSLConfig()
