@@ -541,7 +541,9 @@ public:
 		const std::string& cert_file = "",
 		const std::string& key_file = "",
 		const std::string& key_pass = "",
-		const std::string& certident_name = "");
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "",
+		const std::string& certhost_name = "");
 
 	SSLConfig_OpenSSL(
 		bool forcessl,
@@ -551,7 +553,9 @@ public:
 		const char *cert_file,
 		const char *key_file,
 		const char *key_pass,
-		const char *certident_name = nullptr);
+		const char *certident_name = nullptr,
+		const char *certhost_addr = nullptr,
+		const char *certhost_name = nullptr);
 
 	const std::string& getCAPath() const;
 	const char *getCAPath_c_str() const;
@@ -570,6 +574,12 @@ public:
 
 	const std::string& getCertIdentName() const;
 	const char *getCertIdentName_c_str() const;
+
+	const std::string& getCertHostAddr() const;
+	const char *getCertHostAddr_c_str() const;
+
+	const std::string& getCertHostName() const;
+	const char *getCertHostName_c_str() const;
 
 	virtual void apply(TcpClient& client) const override;
 };
@@ -1275,8 +1285,10 @@ protected:
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
 	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr);
+	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr, const char *certhost_addr = nullptr, const char *certhost_name = nullptr);
 
 	/**
 	 * Set SSL configuration for OpenSSL.
@@ -1288,8 +1300,10 @@ protected:
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
 	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "");
+	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "", const std::string& certhost_addr = "", const std::string& certhost_name = "");
 
 	/**
 	 * Set SSL configuration for Mozilla NSS
@@ -1923,17 +1937,21 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 int nutclient_tcp_get_ssl_caps(void);
 
-NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
+	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
 	const char* host, uint16_t port, int tryssl,
 	int forcessl, int certverify,
 	const char *ca_path, const char *ca_file,
 	const char *cert_file, const char *key_file,
-	const char *key_pass, const char *certident_name);
+	const char *key_pass, const char *certident_name,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
 	int forcessl, int certverify,
 	const char *ca_path, const char *ca_file,
 	const char *cert_file, const char *key_file,
-	const char *key_pass, const char *certident_name);
+	const char *key_pass, const char *certident_name,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 	const char* host, uint16_t port, int tryssl,

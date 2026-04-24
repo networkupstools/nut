@@ -35,7 +35,7 @@ SYNOPSIS
 	void nutclient_execute_device_command(
 		NUTCLIENT_t client,
 		const char* dev, const char* cmd,
-		const char* param="");
+		const char* param = "");
 ------
 
 DESCRIPTION

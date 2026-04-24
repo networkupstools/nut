@@ -83,29 +83,35 @@ SYNOPSIS
 		const char* host, uint16_t port, int try_ssl,
 		int forcessl, int certverify,
 		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file, const char *key_pass);
+		const char *cert_file, const char *key_file,
+		const char *key_pass, const char *certident_name,
+		const char *certhost_addr = NULL,
+		const char *certhost_name = NULL);
 
 	void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
 		int forcessl, int certverify,
 		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file, const char *key_pass);
+		const char *cert_file, const char *key_file,
+		const char *key_pass, const char *certident_name,
+		const char *certhost_addr = NULL,
+		const char *certhost_name = NULL);
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 		const char* host, uint16_t port, int try_ssl,
 		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
-		const char *certhost_addr,
-		const char *certhost_name,
-		const char *certident_name);
+		const char *certhost_addr = NULL,
+		const char *certhost_name = NULL,
+		const char *certident_name = NULL);
 
 	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
 		int forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
-		const char *certhost_addr,
-		const char *certhost_name,
-		const char *certident_name);
+		const char *certhost_addr = NULL,
+		const char *certhost_name = NULL,
+		const char *certident_name = NULL);
 
 	/* Individual SSL option getters/setters: */
 
