@@ -1050,13 +1050,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         certutil -N -d . -f .pwfile \
                         || die "Could not init NSS CA database in `pwd`"
 
-                        # Generate a certificate for CA:
-                        # HACK NOTE: The first "yes" is for "Is this a CA certificate [y/N]?" question,
-                        # others default (empty) for possible other questions, e.g.
-                        #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
-                        #   Is this a critical extension [y/N]? :
-                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
-                        # but generally we do not know how many questions are asked:
+                        # Generate a certificate for CA
                         cscmd() {
                             certutil -S -x \
                                 -d . -f .pwfile \
