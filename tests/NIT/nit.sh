@@ -911,6 +911,10 @@ TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
 # should they use same or different cryptostore?..
 TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
+# 20 years should be enough for CI? Also beyond 2038 starting now...
+TESTCERT_VALIDITY_DAYS=7305
+TESTCERT_VALIDITY_MONTHS=240
+
 prepare_NIT_certs() {
 # Handling of optional caller-provided mock certificates path (dist tarball?)
 if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
@@ -1064,6 +1068,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                                 -z .random \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1155,7 +1160,8 @@ EOF
                         MSYS_NO_PATHCONV=1 \
                         openssl req -x509 -new -nodes -key rootca.key \
                             -passin file:.pwfile -sha256 \
-                            -days 1826 -out rootca.pem \
+                            -days "${TESTCERT_VALIDITY_DAYS}" \
+                            -out rootca.pem \
                             -config rootca.req.conf \
                         || {
                             log_info "Retry ROOTCA without authorityKeyIdentifier extension"
@@ -1163,7 +1169,8 @@ EOF
                             sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
                             && openssl req -x509 -new -nodes -key rootca.key \
                                 -passin file:.pwfile -sha256 \
-                                -days 1826 -out rootca.pem \
+                                -days "${TESTCERT_VALIDITY_DAYS}" \
+                                -out rootca.pem \
                                 -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
                         ;;
@@ -1233,6 +1240,7 @@ EOF
                                 -m 2 \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1346,7 +1354,7 @@ EOF
                                 -CA rootca.pem -CAkey rootca.key \
                                 -CAcreateserial \
                                 -out "${TESTCERT_PATH_SERVER}/server.crt" \
-                                -days 730 -sha256 \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
                                 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
                         ) || die "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
 
@@ -1435,6 +1443,7 @@ EOF
                                 -m 3 \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
