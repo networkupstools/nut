@@ -1101,6 +1101,23 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Extract the CA certificate to be able to use or import it later:
                         certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
                         || die "Could not extract the NSS CA certificate to PEM"
+
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Extract the CA private key
+                            # (and certificate) to a PKCS#12 file, then
+                            # to PEM for use by OpenSSL-based builds:
+                            pk12cmd() {
+                                pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            if pk12cmd >/dev/null 2>&1 ; then
+                                openssl pkcs12 -in rootca.p12 -out rootca.key -nodes -nocerts -passin file:.pwfile \
+                                && log_info "Exported NSS CA key to OpenSSL PEM"
+                            fi
+                        fi
+
                         # Use this later for signing, move on to server/client requests...
 
                         ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
@@ -1256,6 +1273,46 @@ EOF
                             -a -i server.crt -t ",," \
                         || die "Could not import the signed NSS Server certificate into server database"
 
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Add PEM and Java JKS (trust store) for good
+                            # measure, but only if we prepare the cache:
+                            # JKS is not used in-tree now, but e.g. for
+                            # jNut tests; PEM is used in the other type
+                            # of build.
+
+                            pk12cmd() {
+                                pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            # Export private key to PEM for OpenSSL builds;
+                            # server.crt is already PEM (from signing step)
+                            if pk12cmd >/dev/null 2>&1 ; then
+                                openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile \
+                                && log_info "Exported NSS Server key to OpenSSL PEM"
+                            fi
+                            cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
+
+                            # Bonus program: Java JKS (if caching)
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Use server.p12 as source if we have it
+                                if [ -f server.p12 ] ; then
+                                    keytool -importkeystore \
+                                        -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeystore upsd.jks \
+                                        -srckeystore server.p12 \
+                                        -srcstoretype PKCS12 \
+                                        -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                        -alias "${TESTCERT_SERVER_NAME}" \
+                                        -noprompt \
+                                    && log_info "Generated Java JKS for Server"
+                                fi
+                            fi
+                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                        fi
+
                         ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
                         || die "Could not list NSS Server DB files"
                         ;;
@@ -1298,6 +1355,30 @@ EOF
 
                         ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
                         || die "Could not list an upsd.pem"
+
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v keytool >/dev/null 2>&1 \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Java JKS (if caching)
+                            openssl pkcs12 -export -out server.p12 \
+                                -inkey server.key -in server.crt \
+                                -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                -name "${TESTCERT_SERVER_NAME}" \
+                                -passout file:.pwfile \
+                            && keytool -importkeystore \
+                                -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                -destkeystore upsd.jks \
+                                -srckeystore server.p12 \
+                                -srcstoretype PKCS12 \
+                                -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                -alias "${TESTCERT_SERVER_NAME}" \
+                                -noprompt \
+                            && log_info "Generated Java JKS for Server (from OpenSSL)"
+                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                        fi
                         ;;
                 esac
             ) || die "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
@@ -1394,6 +1475,32 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v keytool >/dev/null 2>&1 \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Java JKS (if caching)
+                            pk12cmd() {
+                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                   keytool -importkeystore \
+                                       -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                       -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                       -destkeystore upsmon.jks \
+                                       -srckeystore client.p12 \
+                                       -srcstoretype PKCS12 \
+                                       -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                       -alias "${TESTCERT_CLIENT_NAME}" \
+                                       -noprompt \
+                                    && log_info "Generated Java JKS for Client"
+                                fi
+                            fi
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
+                        fi
+
                         ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
                         || die "Could not list NSS Client DB files"
                         ;;
@@ -1434,6 +1541,27 @@ EOF
                         log_info "SSL: Exporting public data of server certificate for client use..."
                         cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem \
                         || die "Could not combine a upsd-public.pem"
+
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v keytool >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Java JKS (if caching)
+                            keytool -importcert \
+                                -file "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                -alias "${TESTCERT_ROOTCA_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && keytool -importcert \
+                                -file "${TESTCERT_PATH_SERVER}"/server.crt \
+                                -alias "${TESTCERT_SERVER_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && log_info "Generated Java JKS truststore for Client (OpenSSL)"
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
+                        fi
 
                         ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
                         || die "Could not list a upsd-public.pem"
