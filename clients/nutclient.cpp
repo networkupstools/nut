@@ -1931,6 +1931,7 @@ _port(NUT_PORT),
 _tryssl(false),
 _ssl_config_openssl(nullptr),
 _ssl_config_nss(nullptr),
+_ssl_configured(UPSCLI_SSL_CAPS_NONE),
 _timeout(0),
 _socket(new internal::Socket)
 {
@@ -1938,14 +1939,14 @@ _socket(new internal::Socket)
 }
 
 TcpClient::TcpClient(const std::string& host, uint16_t port)
-	: Client(), _host(host), _port(port), _tryssl(true), _ssl_config_openssl(nullptr), _ssl_config_nss(nullptr), _timeout(-1), _socket(new internal::Socket)
+	: Client(), _host(host), _port(port), _tryssl(true), _ssl_config_openssl(nullptr), _ssl_config_nss(nullptr), _ssl_configured(UPSCLI_SSL_CAPS_NONE), _timeout(-1), _socket(new internal::Socket)
 {
 	// No SSL settings, so just plaintext protocol
 	connect();
 }
 
 TcpClient::TcpClient(const std::string& host, uint16_t port, const SSLConfig& config)
-	: Client(), _host(host), _port(port), _tryssl(true), _ssl_config_openssl(nullptr), _ssl_config_nss(nullptr), _timeout(-1), _socket(new internal::Socket)
+	: Client(), _host(host), _port(port), _tryssl(true), _ssl_config_openssl(nullptr), _ssl_config_nss(nullptr), _ssl_configured(UPSCLI_SSL_CAPS_NONE), _timeout(-1), _socket(new internal::Socket)
 {
 	setSSLConfig(config);
 	connect();
@@ -1973,6 +1974,49 @@ TcpClient::~TcpClient()
 #endif	/* WITH_SSL_CXX */
 
 	return ret;
+}
+
+int TcpClient::getSslConfigured() const
+{
+	return _ssl_configured;
+}
+
+void TcpClient::updateSslConfigured()
+{
+	_ssl_configured = UPSCLI_SSL_CAPS_NONE;
+
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
+	if (_ssl_config_openssl) {
+		_ssl_configured |= UPSCLI_SSL_CAPS_OPENSSL;
+
+		/* Got something to check, and ability to do so */
+		if (!(_ssl_config_openssl->getKeyPass().empty() || _ssl_config_openssl->getKeyFile().empty())
+		 && !(_ssl_config_openssl->getCertFile().empty() || _ssl_config_openssl->getCertIdentName().empty())
+		) {
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+			_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
+#  endif
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+			_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+#  endif
+		}
+	}
+# endif
+# ifdef WITH_NSS
+	if (_ssl_config_nss) {
+		_ssl_configured |= UPSCLI_SSL_CAPS_NSS;
+
+		/* Got something to check, and ability to do so */
+		if (!(_ssl_config_nss->getCertStorePass().empty() || _ssl_config_nss->getCertStorePath().empty())
+		 && !(_ssl_config_nss->getCertIdentName().empty())
+		) {
+			_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
+			_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+		}
+	}
+# endif
+#endif /* WITH_SSL_CXX */
 }
 
 SSLConfig_CERTSTORE::SSLConfig_CERTSTORE()
@@ -3039,24 +3083,28 @@ void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *
 {
 	delete _ssl_config_openssl;
 	_ssl_config_openssl = new SSLConfig_OpenSSL(forcessl, certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name, certhost_addr, certhost_name);
+	updateSslConfigured();
 }
 
 void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name)
 {
 	delete _ssl_config_openssl;
 	_ssl_config_openssl = new SSLConfig_OpenSSL(forcessl, certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name, certhost_addr, certhost_name);
+	updateSslConfigured();
 }
 
 void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name)
 {
 	delete _ssl_config_nss;
 	_ssl_config_nss = new SSLConfig_NSS(forcessl, certverify, certstore_path, certstore_pass, certstore_prefix, certhost_addr, certhost_name, certident_name);
+	updateSslConfigured();
 }
 
 void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name)
 {
 	delete _ssl_config_nss;
 	_ssl_config_nss = new SSLConfig_NSS(forcessl, certverify, certstore_path, certstore_pass, certstore_prefix, certhost_addr, certhost_name, certident_name);
+	updateSslConfigured();
 }
 
 void TcpClient::connect(const std::string& host, uint16_t port)
@@ -3149,7 +3197,7 @@ void TcpClient::setSslCertVerify(int certverify)
 
 const std::string& TcpClient::getSslCAPath() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCAPath();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCAPath();
 	return SSLConfig::_empty_str;
 }
 
@@ -3171,7 +3219,7 @@ void TcpClient::setSslCAPath(const char* ca_path)
 
 const std::string& TcpClient::getSslCAFile() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCAFile();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCAFile();
 	return SSLConfig::_empty_str;
 }
 
@@ -3189,7 +3237,7 @@ void TcpClient::setSslCAFile(const char* ca_file)
 
 const std::string& TcpClient::getSslCertFile() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCertFile();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCertFile();
 	return SSLConfig::_empty_str;
 }
 
@@ -3207,7 +3255,7 @@ void TcpClient::setSslCertFile(const char* cert_file)
 
 const std::string& TcpClient::getSslKeyFile() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getKeyFile();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getKeyFile();
 	return SSLConfig::_empty_str;
 }
 
@@ -3225,8 +3273,8 @@ void TcpClient::setSslKeyFile(const char* key_file)
 
 const std::string& TcpClient::getSslKeyPass() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getKeyPass();
-	if (_ssl_config_nss) return _ssl_config_nss->getCertStorePass();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getKeyPass();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertStorePass();
 	return SSLConfig::_empty_str;
 }
 
@@ -3247,7 +3295,7 @@ void TcpClient::setSslKeyPass(const char* key_pass)
 
 const std::string& TcpClient::getSslCertstorePath() const
 {
-	if (_ssl_config_nss) return _ssl_config_nss->getCertStorePath();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertStorePath();
 	return SSLConfig::_empty_str;
 }
 
@@ -3265,7 +3313,7 @@ void TcpClient::setSslCertstorePath(const char* certstore_path)
 
 const std::string& TcpClient::getSslCertstorePrefix() const
 {
-	if (_ssl_config_nss) return _ssl_config_nss->getCertStorePrefix();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertStorePrefix();
 	return SSLConfig::_empty_str;
 }
 
@@ -3283,8 +3331,8 @@ void TcpClient::setSslCertstorePrefix(const char* certstore_prefix)
 
 const std::string& TcpClient::getSslCertIdentName() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCertIdentName();
-	if (_ssl_config_nss) return _ssl_config_nss->getCertIdentName();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCertIdentName();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertIdentName();
 	return SSLConfig::_empty_str;
 }
 
@@ -3305,8 +3353,8 @@ void TcpClient::setSslCertIdentName(const char* certident_name)
 
 const std::string& TcpClient::getSslCertHostAddr() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCertHostAddr();
-	if (_ssl_config_nss) return _ssl_config_nss->getCertHostAddr();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCertHostAddr();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertHostAddr();
 	return SSLConfig::_empty_str;
 }
 
@@ -3327,8 +3375,8 @@ void TcpClient::setSslCertHostAddr(const char* certhost_addr)
 
 const std::string& TcpClient::getSslCertHostName() const
 {
-	if (_ssl_config_openssl) return _ssl_config_openssl->getCertHostName();
-	if (_ssl_config_nss) return _ssl_config_nss->getCertHostName();
+	if (_ssl_config_openssl && (_ssl_configured & UPSCLI_SSL_CAPS_OPENSSL)) return _ssl_config_openssl->getCertHostName();
+	if (_ssl_config_nss && (_ssl_configured & UPSCLI_SSL_CAPS_NSS)) return _ssl_config_nss->getCertHostName();
 	return SSLConfig::_empty_str;
 }
 

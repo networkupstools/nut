@@ -1201,8 +1201,26 @@ public:
 	/**
 	 * Return a bitmask of SSL capabilities supported by this build of
 	 * libnutclient, see UPSCLI_SSL_CAPS_NONE, UPSCLI_SSL_CAPS_OPENSSL,
-	 * UPSCLI_SSL_CAPS_NSS. */
+	 * UPSCLI_SSL_CAPS_NSS.
+	 * @see	getSslConfigured
+	 */
 	static int getSslCaps();
+
+	/**
+	 * Return a bitmask of SSL capabilities practically configured and
+	 * available for this instance of libnutclient, see UPSCLI_SSL_CAPS_NONE,
+	 * UPSCLI_SSL_CAPS_OPENSSL, UPSCLI_SSL_CAPS_NSS, and the more nuanced
+	 * values which depend on the currently applied SSLConfig (the value
+	 * is updated with each call to setSSLConfig* methods).
+	 *
+	 * Note that while we may have set both NSS and OpenSSL configurations
+	 * into the TcpClient class instance, one (or even both) may be irrelevant
+	 * due to build configuration or run-time dependency circumstances and
+	 * thus a practical (in-)ability to use that backend.
+	 *
+	 * @see getSslCaps
+	 */
+	virtual int getSslConfigured() const;
 
 	virtual bool isSSL() const;
 
@@ -1259,6 +1277,12 @@ public:
 	virtual void setFeature(const Feature& feature, bool status) override;
 
 protected:
+	/**
+	 * Refresh the value of _ssl_configured bitmask based on available
+	 * SSL configuration and build capabilities.
+	 */
+	virtual void updateSslConfigured();
+
 	std::string sendQuery(const std::string& req);
 	void sendAsyncQueries(const std::vector<std::string>& req);
 	static void detectError(const std::string& req);
@@ -1340,6 +1364,7 @@ private:
 	/* SSL config pointers */
 	SSLConfig_OpenSSL* _ssl_config_openssl;
 	SSLConfig_NSS* _ssl_config_nss;
+	int _ssl_configured;
 	/* general info */
 	time_t _timeout;
 	internal::Socket* _socket;
