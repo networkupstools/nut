@@ -1112,7 +1112,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # Generate an AES encrypted private key:
-                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 \
+                        openssl genrsa -aes256 -out rootca.key \
+                            -passout file:.pwfile 4096 \
                         || die "Could not generate an AES encrypted private key for OpenSSL CA"
                         # Generate a certificate for CA using that key;
                         # note that not all "openssl" versions have the
@@ -1135,11 +1136,18 @@ keyUsage=critical,digitalSignature,cRLSign,keyCertSign
 subjectKeyIdentifier=hash
 EOF
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf || {
+                        openssl req -x509 -new -nodes -key rootca.key \
+                            -passin file:.pwfile -sha256 \
+                            -days 1826 -out rootca.pem \
+                            -config rootca.req.conf \
+                        || {
                             log_info "Retry ROOTCA without authorityKeyIdentifier extension"
                             # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
                             sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
-                            && openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf
+                            && openssl req -x509 -new -nodes -key rootca.key \
+                                -passin file:.pwfile -sha256 \
+                                -days 1826 -out rootca.pem \
+                                -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
                         ;;
                 esac
@@ -1254,7 +1262,10 @@ EOF
                     OpenSSL)
                         # Create a server certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        openssl req -new -nodes -out server.req \
+                            -newkey rsa:4096 -passout file:.pwfile \
+                            -keyout server.key \
+                            -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
                         || die "Could not create a OpenSSL Server certificate request"
                         cat > server.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
@@ -1272,7 +1283,14 @@ IP.2 = ::1
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
-                            openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
+                            openssl x509 -req \
+                                -in "${TESTCERT_PATH_SERVER}/server.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key \
+                                -CAcreateserial \
+                                -out "${TESTCERT_PATH_SERVER}/server.crt" \
+                                -days 730 -sha256 \
+                                -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
                         ) || die "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
 
                         cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem \
