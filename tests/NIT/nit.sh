@@ -911,6 +911,69 @@ TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
 # should they use same or different cryptostore?..
 TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
+prepare_NIT_certs() {
+# Handling of optional caller-provided mock certificates path (dist tarball?)
+if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
+    log_info "Using provided mock certificates from ${TESTCERT_MOCK_PATH}"
+    # If there is a setup script there, source it to get variables
+    if [ -f "${TESTCERT_MOCK_PATH}/TESTCERT_VARS.sh" ]; then
+        . "${TESTCERT_MOCK_PATH}/TESTCERT_VARS.sh"
+    fi
+
+    # Use them if they exist (note the config might point us to
+    # a new TESTCERT_MOCK_PATH location based on whatever logic:
+    if [ -d "${TESTCERT_MOCK_PATH}/rootca" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}/upsd" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}/upsmon" ] \
+    ; then
+        mkdir -p "${TESTCERT_PATH_BASE}"
+        cp -PR "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}/"
+        log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
+        return 0
+    fi
+fi
+
+# Caching logic
+# Follow precedent and variables from ci_build.sh with CI_CACHE_NUT_HASHDIR
+# (here CI_CACHE_NIT_HASHDIR based on hash of nit.sh) under provided or
+# defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_AUTOCONF_CACHE=yes
+# (reusing this toggle as a general 'cache' toggle)
+
+unset CI_CACHE_NIT_HASHDIR
+if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] ; then
+    [ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
+        if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
+            CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci"
+        fi
+    }
+    if [ -n "${CI_CACHE_NUT_BASEDIR}" ] ; then
+        mkdir -p "${CI_CACHE_NUT_BASEDIR}" || CI_CACHE_NUT_BASEDIR=""
+    fi
+
+    if [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
+        # Calculate hash of nit.sh to decide about re-generation
+        NIT_HASH="`cat \"$0\" | md5sum | awk '{print $1}'`"
+        CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
+
+        if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+            log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
+            mkdir -p "${TESTCERT_PATH_BASE}"
+            cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+
+            # If there is a setup script there, source it to get variables
+            if [ -f "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.sh" ]; then
+                BACKUP_TESTCERT_PATH_BASE="${TESTCERT_PATH_BASE}"
+                log_info "Sourcing '${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.sh' ..."
+                . "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.sh"
+                TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
+            fi
+            return 0
+        else
+            log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates"
+        fi
+    fi
+fi
+
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
 # For a good summary of OpenSSL options and decent example config see e.g.
@@ -935,6 +998,36 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
             esac
 
             SKID="0x1234567890abcdef1234"
+
+            # Simple locking mechanism for certificate generation
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                LOCKFILE="${CI_CACHE_NIT_HASHDIR}.lock"
+                # Wait up to 300 seconds (5 minutes)
+                WAIT=0
+                while [ -e "${LOCKFILE}" ] ; do
+                    log_info "Waiting for other process to finish generating certificates (lock: ${LOCKFILE})..."
+                    sleep 5
+                    WAIT="`expr $WAIT + 5`"
+                    if [ $WAIT -gt 300 ] ; then
+                        log_warn "Lock timeout reached, proceeding anyway..."
+                        rm -f "${LOCKFILE}"
+                    fi
+                done
+
+                # Create lock
+                touch "${LOCKFILE}"
+                # If another process finished while we were waiting, we might find it in cache now
+                if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
+                    mkdir -p "${TESTCERT_PATH_BASE}"
+                    cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+                    rm -f "${LOCKFILE}"
+                    return 0
+                fi
+                # if [ -n "${BASH_VERSION-}" ]; then
+                trap 'rm -f "${LOCKFILE}"' RETURN || true
+                # fi
+            fi
 
             mkdir -p "${TESTCERT_PATH_ROOTCA}" || die "Could not mkdir TESTCERT_PATH_ROOTCA"
             (   cd "${TESTCERT_PATH_ROOTCA}" || exit
@@ -1331,7 +1424,20 @@ EOF
             ) || die "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
         ) && {
             log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+
+            # Populate cache if enabled
+            if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
+                    mkdir -p "${CI_CACHE_NIT_HASHDIR}"
+                    cp -PR "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}/"
+                fi
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
         } || {
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
             if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
                 die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
             fi
@@ -1351,6 +1457,9 @@ esac
 #    SSL_CERT_FILE="${TESTCERT_PATH_ROOTCA}/rootca.pem"
 #    export SSL_CERT_FILE
 #fi
+}
+
+prepare_NIT_certs
 
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
