@@ -28,6 +28,8 @@ to the 'hostname'. All connections to this host use this rule.
 The rule is composed of the certificate name 'certname' expected for
 the host, 'certverify' if the certificate must be validated for the host
 and 'forcessl' if a secured connection must be used to connect to the host.
+For both of these integer values, `1` means required, `0` means not required,
+and `-1` (the default) means use the global configuration.
 
 NOTE: This call currently only functions if `libupsclient` has been compiled
 with NSS support. If instead it was compiled with OpenSSL support, this method

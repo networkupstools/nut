@@ -1212,6 +1212,14 @@ void Socket::setSSLConfig_OpenSSL(const SSLConfig_OpenSSL& config)
 {
 	_forcessl = config.getForceSsl();
 
+	/* CERTHOST can override the global setting for this connection */
+	const SSLConfig_CERTHOST *ch = config.getCertHostByAddrOrSubj(_host);
+	if (ch) {
+		if (ch->getForceSsl() != -1) {
+			_forcessl = ch->getForceSsl();
+		}
+	}
+
 #if defined(WITH_SSL_CXX) && defined(WITH_OPENSSL)
 	_ssl_config = &config;
 
@@ -1246,6 +1254,14 @@ void Socket::setSSLConfig_OpenSSL(const SSLConfig_OpenSSL& config)
 void Socket::setSSLConfig_NSS(const SSLConfig_NSS& config)
 {
 	_forcessl = config.getForceSsl();
+
+	/* CERTHOST can override the global setting for this connection */
+	const SSLConfig_CERTHOST *ch = config.getCertHostByAddrOrSubj(_host);
+	if (ch) {
+		if (ch->getForceSsl() != -1) {
+			_forcessl = ch->getForceSsl();
+		}
+	}
 
 #if defined(WITH_SSL_CXX) && defined(WITH_NSS)
 	_ssl_config = &config;
@@ -1349,6 +1365,14 @@ void Socket::startTLS()
 	}
 
 	int certverify = _ssl_config->getCertVerify();
+	/* CERTHOST can override the global setting for this connection */
+	const SSLConfig_CERTHOST *ch = _ssl_config->getCertHostByAddrOrSubj(_host);
+	if (ch) {
+		if (ch->getCertVerify() != -1) {
+			certverify = ch->getCertVerify();
+		}
+	}
+
 	if (certverify != -1) {
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
 		_openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
@@ -1627,6 +1651,14 @@ void Socket::startTLS()
 #endif
 	if (_ssl_config) {
 		int certverify = _ssl_config->getCertVerify();
+		/* CERTHOST can override the global setting for this connection */
+		const SSLConfig_CERTHOST *ch = _ssl_config->getCertHostByAddrOrSubj(_host);
+		if (ch) {
+			if (ch->getCertVerify() != -1) {
+				certverify = ch->getCertVerify();
+			}
+		}
+
 		if (certverify != -1) {
 			if (certverify) {
 				SSL_AuthCertificateHook(_ssl, reinterpret_cast<SSLAuthCertificate>(AuthCertificate), CERT_GetDefaultCertDB());
@@ -2531,7 +2563,7 @@ const char *SSLConfig_CERTHOST::getCertSubj_c_str() const
 	return _cert_subj.empty() ? nullptr : _cert_subj.c_str();
 }
 
-bool SSLConfig_CERTHOST::getForceSsl() const
+int SSLConfig_CERTHOST::getForceSsl() const
 {
 	return _forcessl;
 }
@@ -3079,28 +3111,28 @@ void TcpClient::setSSLConfig(const SSLConfig& config)
 	config.apply(*this);
 }
 
-void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name, const char *certhost_addr, const char *certhost_name)
+void TcpClient::setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name, const char *certhost_addr, const char *certhost_name)
 {
 	delete _ssl_config_openssl;
 	_ssl_config_openssl = new SSLConfig_OpenSSL(forcessl, certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name, certhost_addr, certhost_name);
 	updateSslConfigured();
 }
 
-void TcpClient::setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name)
+void TcpClient::setSSLConfig_OpenSSL(int forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name)
 {
 	delete _ssl_config_openssl;
 	_ssl_config_openssl = new SSLConfig_OpenSSL(forcessl, certverify, ca_path, ca_file, cert_file, key_file, key_pass, certident_name, certhost_addr, certhost_name);
 	updateSslConfigured();
 }
 
-void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name)
+void TcpClient::setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name)
 {
 	delete _ssl_config_nss;
 	_ssl_config_nss = new SSLConfig_NSS(forcessl, certverify, certstore_path, certstore_pass, certstore_prefix, certhost_addr, certhost_name, certident_name);
 	updateSslConfigured();
 }
 
-void TcpClient::setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name)
+void TcpClient::setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name)
 {
 	delete _ssl_config_nss;
 	_ssl_config_nss = new SSLConfig_NSS(forcessl, certverify, certstore_path, certstore_pass, certstore_prefix, certhost_addr, certhost_name, certident_name);

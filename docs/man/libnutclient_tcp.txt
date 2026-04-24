@@ -80,35 +80,35 @@ SYNOPSIS
 	int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
-		const char* host, uint16_t port, int try_ssl,
-		int forcessl, int certverify,
-		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file,
-		const char *key_pass, const char *certident_name,
+		const char* host, uint16_t port, int try_ssl = 0,
+		int forcessl = -1, int certverify = -1,
+		const char *ca_path = NULL, const char *ca_file = NULL,
+		const char *cert_file = NULL, const char *key_file = NULL,
+		const char *key_pass = NULL, const char *certident_name = NULL,
 		const char *certhost_addr = NULL,
 		const char *certhost_name = NULL);
 
 	void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
-		int forcessl, int certverify,
-		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file,
-		const char *key_pass, const char *certident_name,
+		int forcessl = -1, int certverify = -1,
+		const char *ca_path = NULL, const char *ca_file = NULL,
+		const char *cert_file = NULL, const char *key_file = NULL,
+		const char *key_pass = NULL, const char *certident_name = NULL,
 		const char *certhost_addr = NULL,
 		const char *certhost_name = NULL);
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
-		const char* host, uint16_t port, int try_ssl,
-		int forcessl, int certverify,
-		const char *certstore_path, const char *certstore_pass,
-		const char *certstore_prefix,
+		const char* host, uint16_t port, int try_ssl = 0,
+		int forcessl = -1, int certverify = -1,
+		const char *certstore_path = NULL, const char *certstore_pass = NULL,
+		const char *certstore_prefix = NULL,
 		const char *certhost_addr = NULL,
 		const char *certhost_name = NULL,
 		const char *certident_name = NULL);
 
 	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
-		int forcessl, int certverify,
-		const char *certstore_path, const char *certstore_pass,
-		const char *certstore_prefix,
+		int forcessl = -1, int certverify = -1,
+		const char *certstore_path = NULL, const char *certstore_pass = NULL,
+		const char *certstore_prefix = NULL,
 		const char *certhost_addr = NULL,
 		const char *certhost_name = NULL,
 		const char *certident_name = NULL);
@@ -196,6 +196,11 @@ The context must be freed by 'nutclient_destroy()'.
   for I/O operations.
 +
 'timeout' values are specified in seconds, use negative values for blocking.
+
+For `forcessl` and `certverify` integer values, `1` means required, `0` means
+not required, and `-1` (the default) means use the global configuration.
+For `certhost_addr` and `certhost_name`, the default `NULL` means use the
+global configuration or connection host address.
 
 SEE ALSO
 --------

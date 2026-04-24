@@ -423,7 +423,7 @@ public:
 	const std::string& getCertSubj() const;
 	const char *getCertSubj_c_str() const;
 
-	bool getForceSsl() const;
+	int getForceSsl() const;
 	int getCertVerify() const;
 
 	/** Wanted for insertion into a set below */
@@ -1312,7 +1312,7 @@ protected:
 	 * \param certhost_addr Remote host name or IP address to match in the certificate.
 	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr, const char *certhost_addr = nullptr, const char *certhost_name = nullptr);
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr, const char *certhost_addr = nullptr, const char *certhost_name = nullptr);
 
 	/**
 	 * Set SSL configuration for OpenSSL.
@@ -1327,7 +1327,7 @@ protected:
 	 * \param certhost_addr Remote host name or IP address to match in the certificate.
 	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "", const std::string& certhost_addr = "", const std::string& certhost_name = "");
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "", const std::string& certhost_addr = "", const std::string& certhost_name = "");
 
 	/**
 	 * Set SSL configuration for Mozilla NSS
@@ -1341,7 +1341,7 @@ protected:
 	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
 	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name);
 
 	/**
 	 * Set SSL configuration for Mozilla NSS.
@@ -1354,7 +1354,7 @@ protected:
 	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
 	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name);
 
 private:
 	std::string _host;
@@ -1963,36 +1963,36 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 int nutclient_tcp_get_ssl_caps(void);
 
 	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
-	const char* host, uint16_t port, int tryssl,
-	int forcessl, int certverify,
-	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file,
-	const char *key_pass, const char *certident_name,
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
 	const char *certhost_addr = nullptr,
 	const char *certhost_name = nullptr);
 void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
-	int forcessl, int certverify,
-	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file,
-	const char *key_pass, const char *certident_name,
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
 	const char *certhost_addr = nullptr,
 	const char *certhost_name = nullptr);
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
-	const char* host, uint16_t port, int tryssl,
-	int forcessl, int certverify,
-	const char *certstore_path, const char *certstore_pass,
-	const char *certstore_prefix,
-	const char *certhost_addr,
-	const char *certhost_name,
-	const char *certident_name);
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr,
+	const char *certident_name = nullptr);
 void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
-	int forcessl, int certverify,
-	const char *certstore_path, const char *certstore_pass,
-	const char *certstore_prefix,
-	const char *certhost_addr,
-	const char *certhost_name,
-	const char *certident_name);
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr,
+	const char *certident_name = nullptr);
 
 /**
  * Test if a nut TCP client is connected.

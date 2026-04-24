@@ -653,6 +653,8 @@ ALARMCRITICAL 1
 # indicating if the server certificate must be "verified" (should the secure
 # connection attempt be aborted upon mismatch or inability to verify?), and if
 # the connection must be "secured" (should there be no fallback to plain-text?)
+# For both of these integer values, `1` means required, `0` means not required,
+# and `-1` means to use the global configuration.
 #
 # Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
 # Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.

@@ -2122,8 +2122,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 	if (hostcert != NULL) {
 		/* An host security rule is specified. */
-		certverify	= hostcert->certverify;
-		forcessl	= hostcert->forcessl;
+		certverify	= (hostcert->certverify != -1) ? hostcert->certverify : ((flags & UPSCLI_CONN_CERTVERIF) != 0 ? 1 : 0);
+		forcessl	= (hostcert->forcessl != -1) ? hostcert->forcessl : ((flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0);
 	} else {
 		certverify	= (flags & UPSCLI_CONN_CERTVERIF) != 0 ? 1 : 0;
 		forcessl	= (flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0;

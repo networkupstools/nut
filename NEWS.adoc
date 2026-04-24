@@ -77,7 +77,8 @@ https://github.com/networkupstools/nut/milestone/13
       client certificate+key, optionally with password, and pinning expected
       server certificates. For both backends such pinning should now honour
       the 'certverify' setting of the `CERTHOST` entry (e.g. not abort the
-      connection attempt if that number is '0'). [issue #3331]
+      connection attempt if that number is '0'). Also, the `-1` value is
+      now supported to mean "use global default setting". [issue #3331]
     * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
       (optional validation of clients identified by a certificate) also
       when built with OpenSSL, optionally using the `CERTPATH` with a
