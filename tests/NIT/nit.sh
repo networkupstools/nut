@@ -973,7 +973,7 @@ if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] ; then
             fi
             return 0
         else
-            log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates"
+            log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
         fi
     fi
 fi
@@ -1167,26 +1167,79 @@ EOF
                                 -out rootca.pem \
                                 -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
+
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        && command -v certutil >/dev/null 2>&1 \
+                        && [ -s rootca.pem ] && [ -s rootca.key ] \
+                        ; then
+                            log_info "SSL: Populating NSS CA database from existing PEM files..."
+                            # Create the certificate database:
+                            certutil -N -d . -f .pwfile \
+                            || die "Could not init NSS CA database from PEM in `pwd`"
+
+                            # Import the CA certificate and key:
+                            # First package to PKCS#12
+                            openssl pkcs12 -export \
+                                -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                -passin file:.pwfile \
+                                -name "${TESTCERT_ROOTCA_NAME}" \
+                                -passout file:.pwfile \
+                            || {
+                                log_warn "Could not package CA to PKCS#12 for NSS import, trying another way"
+                                (cat .pwfile; echo '') > .pwfile-eol
+                                openssl pkcs12 -export \
+                                    -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                    -passin file:.pwfile-eol \
+                                    -name "${TESTCERT_ROOTCA_NAME}" \
+                                    -passout file:.pwfile \
+                                || die "Could not package CA to PKCS#12 for NSS import"
+                            }
+
+                            # Then import to NSS
+                            pk12util -i rootca.p12 -d . -k .pwfile -w .pwfile \
+                            || die "Could not import CA PKCS#12 to NSS"
+
+                            # Trust it
+                            certutil -M -d . -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f .pwfile \
+                            || die "Could not set trust on imported NSS CA"
+
+                            ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
+                            || die "Could not list NSS CA DB files"
+                        fi
                         ;;
                 esac
 
+                openssl_hash_CAdir() {
+                    # OpenSSL CA trust "database" should include hashes
+                    # of CA PEM certificates as symlinks to actual files:
+                    CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
+                    && [ -n "${CERTHASH}" ] \
+                    || die "Could not determine OpenSSL certificate hash for Root CA files"
+
+                    # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
+                    ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
+                    ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                    ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* \
+                    || die "Could not list OpenSSL CA PEM file and hash links"
+                }
+
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
-                        # OpenSSL CA trust "database" should include hashes
-                        # of CA PEM certificates as symlinks to actual files:
-                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
-                        && [ -n "${CERTHASH}" ] \
-                        || die "Could not determine OpenSSL certificate hash for Root CA files"
-
-                        # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
-                        ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
-                        ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* \
-                        || die "Could not list OpenSSL CA PEM file and hash links"
+                        openssl_hash_CAdir
                         ;;
                     *)
                         ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                         || die "Could not list OpenSSL CA PEM file (exported from NSS)"
+
+                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            openssl_hash_CAdir
+                        fi
+
                         ;;
                 esac
             ) || die "Could not prepare Root CA in '${TESTCERT_PATH_ROOTCA}'"
@@ -1360,26 +1413,51 @@ EOF
 
                         if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
-                        && command -v keytool >/dev/null 2>&1 \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
-                            # Bonus program: Java JKS (if caching)
-                            openssl pkcs12 -export -out server.p12 \
-                                -inkey server.key -in server.crt \
-                                -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
-                                -name "${TESTCERT_SERVER_NAME}" \
-                                -passout file:.pwfile \
-                            && keytool -importkeystore \
-                                -deststorepass "${TESTCERT_SERVER_PASS}" \
-                                -destkeypass "${TESTCERT_SERVER_PASS}" \
-                                -destkeystore upsd.jks \
-                                -srckeystore server.p12 \
-                                -srcstoretype PKCS12 \
-                                -srcstorepass "${TESTCERT_SERVER_PASS}" \
-                                -alias "${TESTCERT_SERVER_NAME}" \
-                                -noprompt \
-                            && log_info "Generated Java JKS for Server (from OpenSSL)"
-                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Server database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die "Could not init NSS Server database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "TC,," \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                || die "Could not import the CA certificate to NSS Server database"
+
+                                # Import Server certificate and key
+                                openssl pkcs12 -export -out server.p12 -inkey server.key -in server.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_SERVER_NAME}" -passout file:.pwfile \
+                                || die "Could not package Server cert to PKCS#12 for NSS import"
+
+                                pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
+                                || die "Could not import Server PKCS#12 to NSS"
+
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
+                                || die "Could not list NSS Server DB files"
+                            fi
+
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Bonus program: Java JKS (if caching)
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
+                                && keytool -importkeystore \
+                                    -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeystore upsd.jks \
+                                    -srckeystore server.p12 \
+                                    -srcstoretype PKCS12 \
+                                    -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                    -alias "${TESTCERT_SERVER_NAME}" \
+                                    -noprompt \
+                                && log_info "Generated Java JKS for Server (from OpenSSL)"
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                            fi
                         fi
                         ;;
                 esac
@@ -1480,25 +1558,58 @@ EOF
 
                         if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
-                        && command -v keytool >/dev/null 2>&1 \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
-                            # Bonus program: Java JKS (if caching)
-                            pk12cmd() {
-                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
-                            }
+
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Client database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die "Could not init NSS Client database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "TC,," \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                || die "Could not import the CA certificate to NSS Client database"
+
+                                # Import server cert into client database so we can trust it (CERTHOST directive):
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_SERVER_NAME}" \
+                                    -a -i "${TESTCERT_PATH_SERVER}/server.crt" \
+                                    -t ",," \
+                                || die "Could not import the Server certificate to NSS Client database"
+
+                                # Import Client certificate and key
+                                openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
+                                || die "Could not package Client cert to PKCS#12 for NSS import"
+
+                                pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
+                                || die "Could not import Client PKCS#12 to NSS"
+
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
+                                || die "Could not list NSS Server DB files"
+                            fi
+
                             if command -v keytool >/dev/null 2>&1 ; then
-                                if pk12cmd >/dev/null 2>&1 ; then
-                                   keytool -importkeystore \
-                                       -deststorepass "${TESTCERT_CLIENT_PASS}" \
-                                       -destkeypass "${TESTCERT_CLIENT_PASS}" \
-                                       -destkeystore upsmon.jks \
-                                       -srckeystore client.p12 \
-                                       -srcstoretype PKCS12 \
-                                       -srcstorepass "${TESTCERT_CLIENT_PASS}" \
-                                       -alias "${TESTCERT_CLIENT_NAME}" \
-                                       -noprompt \
-                                    && log_info "Generated Java JKS for Client"
+                                # Bonus program: Java JKS (if caching)
+                                pk12cmd() {
+                                    pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                                }
+                                if command -v keytool >/dev/null 2>&1 ; then
+                                    if pk12cmd >/dev/null 2>&1 ; then
+                                        keytool -importkeystore \
+                                            -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeystore upsmon.jks \
+                                            -srckeystore client.p12 \
+                                            -srcstoretype PKCS12 \
+                                            -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -alias "${TESTCERT_CLIENT_NAME}" \
+                                            -noprompt \
+                                        && log_info "Generated Java JKS for Client"
+                                    fi
                                 fi
                             fi
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
