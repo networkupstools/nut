@@ -94,3 +94,24 @@ another shell at least for the system call-outs, with options like these:
     :; SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
        ./ci_build.sh
 
+Caching!
+--------
+
+The `ci_build.sh` can make use of a persistent cache directory, e.g. to speed
+up repetitive runs of the `configure` script on developer or CI machines when
+our `*.m4` and `*.ac` script sources and the machine remain the same.
+
+It can be stored outside of the build area(s), under `${CI_CACHE_NUT_BASEDIR}`
+(default: `${HOME}/.cache/nut-ci`) if `DO_USE_NUTCI_CACHE=yes` as provided
+by caller (e.g. via `~/.profile` of a developer) or guessed from environment
+variables typical for CI runs.
+
+If something acts up, or the build environment changes invisibly to the
+script, an `export DO_CLEAN_NUTCI_CACHE_BEFORE=yes` (or a more targeted
+`DO_CLEAN_AUTOCONF_CACHE_BEFORE`, since NIT uses similar logic and general
+toggle to retain generated test certificates) should fix that.
+
+You can also always nuke the `${CI_CACHE_NUT_BASEDIR}` directory, or the
+`AUTOCONF_*` subdirectories and stale lock files under it.
+It would likely be needed from time to time anyway, as there is now
+no automated clean-up of no longer relevant caches.
