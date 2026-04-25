@@ -505,6 +505,7 @@ fi
 case "${WITH_SSL_TESTS}" in
     require) WITH_SSL_TESTS=required ;;
     require-conditional) WITH_SSL_TESTS=required-conditional ;;
+    yes|best-effort|default) WITH_SSL_TESTS=best-effort ;; # go with the flow
 esac
 
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
