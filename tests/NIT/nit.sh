@@ -1345,16 +1345,18 @@ EOF
                             }
                             # Export private key to PEM for OpenSSL builds;
                             # server.crt is already PEM (from signing step)
-                            if pk12cmd >/dev/null 2>&1 ; then
-                                openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile \
-                                && log_info "Exported NSS Server key to OpenSSL PEM"
-                            fi
-                            cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
+                            mkpk12key() {
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                    openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile "$@" \
+                                    && log_info "Exported NSS Server key to OpenSSL PEM"
+                                fi
+                            }
+                            mkpk12key
 
                             # Bonus program: Java JKS (if caching)
-                            if command -v keytool >/dev/null 2>&1 ; then
+                            if command -v keytool >/dev/null 2>&1 && [ -f server.p12 ] ; then
                                 # Use server.p12 as source if we have it
-                                if [ -f server.p12 ] ; then
+                                mkjks() {
                                     keytool -importkeystore \
                                         -deststorepass "${TESTCERT_SERVER_PASS}" \
                                         -destkeypass "${TESTCERT_SERVER_PASS}" \
@@ -1365,9 +1367,17 @@ EOF
                                         -alias "${TESTCERT_SERVER_NAME}" \
                                         -noprompt \
                                     && log_info "Generated Java JKS for Server"
-                                fi
+                                    # else openssl -legacy
+                                    # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
+                                }
+
+                                mkjks || {
+                                    mkpk12key -legacy && mkjks
+                                }
                             fi
                             ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+
+                            cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
                         fi
 
                         ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
