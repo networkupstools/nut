@@ -962,18 +962,22 @@ if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] ; then
         CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
 
         if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
-            log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
-            mkdir -p "${TESTCERT_PATH_BASE}"
-            cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+            if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xyes ] ; then
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}, but asked to remake them"
+            else
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
+                mkdir -p "${TESTCERT_PATH_BASE}"
+                cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
 
-            # If there is a setup script there, source it to get variables
-            if [ -f "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env" ]; then
-                BACKUP_TESTCERT_PATH_BASE="${TESTCERT_PATH_BASE}"
-                log_info "Sourcing '${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env' ..."
-                . "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
-                TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
+                # If there is a setup script there, source it to get variables
+                if [ -f "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env" ]; then
+                    BACKUP_TESTCERT_PATH_BASE="${TESTCERT_PATH_BASE}"
+                    log_info "Sourcing '${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env' ..."
+                    . "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
+                    TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
+                fi
+                return 0
             fi
-            return 0
         else
             log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
         fi
@@ -1022,7 +1026,13 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
 
                 # Create lock
                 touch "${LOCKFILE}"
-                # If another process finished while we were waiting, we might find it in cache now
+
+                if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xyes ] ; then
+                    rm -rf "${CI_CACHE_NIT_HASHDIR}"
+                fi
+
+                # If another process finished while we were waiting,
+                # and we dit not "clean", we might find it in cache now
                 if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
                     mkdir -p "${TESTCERT_PATH_BASE}"
@@ -1030,6 +1040,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     rm -f "${LOCKFILE}"
                     return 0
                 fi
+
                 # if [ -n "${BASH_VERSION-}" ]; then
                 trap 'rm -f "${LOCKFILE}"' RETURN || true
                 # fi
@@ -1635,7 +1646,6 @@ EOF
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
-
                             if command -v certutil >/dev/null 2>&1 ; then
                                 log_info "SSL: Populating NSS Client database from existing PEM files..."
                                 # Create the certificate database:
@@ -1656,12 +1666,15 @@ EOF
                                     -t ",," \
                                 || die "Could not import the Server certificate to NSS Client database"
 
-                                # Import Client certificate and key
-                                openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
-                                || die "Could not package Client cert to PKCS#12 for NSS import"
+                                if [ -f client.key ] ; then
+                                    # TODO After #3331 merge:
+                                    # Import Client certificate and key
+                                    openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
+                                    || die "Could not package Client cert to PKCS#12 for NSS import"
 
-                                pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
-                                || die "Could not import Client PKCS#12 to NSS"
+                                    pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
+                                    || die "Could not import Client PKCS#12 to NSS"
+                                fi
 
                                 ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
                                 || die "Could not list NSS Server DB files"
