@@ -1447,10 +1447,13 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
+    # NOTE: With out-of-tree builds, Makefile.in should get generated at the source,
+    # not in build dir, hence the `|| true` to avoid false-positive failures there.
     if ( [ -s Makefile ] && (
             [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
         ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.in -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
-        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in`" ] ) ) \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${SCRIPTDIR}\"/Makefile.in || true`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in || true`" ] ) ) \
     || ( [ -s configure ] && (
             [ -n "`find \"${SCRIPTDIR}\" -name configure.ac -newer \"${CI_BUILDDIR}\"/configure`" ] \
         ||  [ -n "`find \"${SCRIPTDIR}\" -name '*.m4' -newer \"${CI_BUILDDIR}\"/configure`" ] ) ) \
@@ -1477,6 +1480,8 @@ consider_cleanup_shortcut() {
         fi
     fi
 
+    # FIXME? With out-of-tree builds, there may be no "${CI_BUILDDIR}"/configure
+    #  and a "${SCRIPTDIR}"/Makefile.in may remain obsolete compared to Makefile.am...
     if $DO_REGENERATE ; then
         rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure "${CI_BUILDDIR}"/include/config.h "${CI_BUILDDIR}"/include/config.h.in "${CI_BUILDDIR}"'/include/config.h.in~'
     fi
