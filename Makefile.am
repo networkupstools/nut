@@ -607,8 +607,12 @@ DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
-# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
+# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time, which
+# may be passed down from caller and/or one of distcheck-* rules below.
+# The CI_CACHE_NUT_HASHDIR_CFG_OPT can also be passed down (by ci_build.sh
+# as generated for each specific build circumstance).
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ ${CI_CACHE_NUT_HASHDIR_CFG_OPT}			\
  PKG_CONFIG_PATH='@PKG_CONFIG_PATH@'			\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \

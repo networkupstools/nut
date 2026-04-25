@@ -1519,16 +1519,18 @@ optional_maintainer_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
         get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='maintainer-clean'"
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
         case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
             ;;
         *)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
         esac
 
         if [ x"$MAKE_RES" != x0 ]; then
@@ -1561,11 +1563,13 @@ optional_dist_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
         get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='distclean'"
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
 
         if [ x"$MAKE_RES" != x0 ]; then
             return $MAKE_RES
@@ -2139,13 +2143,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
 
+            # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+            # handlers in the stack of calls via Makefile.am should hear it
             get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$BUILD_TGT'"
 
             # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
             #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
             MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS "$BUILD_TGT"
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS "$BUILD_TGT"
 
             # Can be noisy if regen is needed (DMF branch)
             #GIT_DIFF_SHOW=false \
@@ -2874,15 +2880,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
         # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
-        # that include DISTCHECK_FLAGS if provided
+        # that include DISTCHECK_FLAGS if provided, but I am not convinced they
+        # would be honoured for distcheck-ci etc. goald which may impose their own.
         DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
         get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$DISTCHECK_TGT'"
 
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS ${DISTCHECK_TGT}
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS ${DISTCHECK_TGT}
 
         #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "${DISTCHECK_TGT}" || exit
