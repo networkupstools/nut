@@ -1178,6 +1178,28 @@ autogen_get_CONFIGURE_SCRIPT() {
     fi
 }
 
+get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
+    unset CI_CACHE_NUT_HASHDIR_CFG
+    CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$*\" | md5sum | awk '{print $1}'`" \
+        || CI_CACHE_NUT_HASHDIR_CFG=''
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+                mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+                echo "$*" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+            fi
+
+            # NOTE: the configure script touches it as empty first,
+            # then (quickly, I hope atomically) populates in the end.
+            CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+        fi
+    fi
+}
+
 configure_CI_BUILDDIR() {
     autogen_get_CONFIGURE_SCRIPT
 
@@ -1205,25 +1227,7 @@ configure_nut() {
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
 
-    unset CI_CACHE_NUT_HASHDIR_CFG
-    CI_CACHE_NUT_HASHDIR_CFG_OPT=""
-    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
-        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'\" | md5sum | awk '{print $1}'`" \
-        || CI_CACHE_NUT_HASHDIR_CFG=''
-        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
-            if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
-                mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
-                echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
-                echo "${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
-            else
-                echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
-            fi
-
-            # NOTE: the configure script touches it as empty first,
-            # then (quickly, I hope atomically) populates in the end.
-            CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
-        fi
-    fi
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'"
 
     CI_CACHE_NUT_RETRIED=false
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
@@ -1510,14 +1514,16 @@ optional_maintainer_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='maintainer-clean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
         case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
             ;;
         *)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
         esac
 
         if [ x"$MAKE_RES" != x0 ]; then
@@ -1550,9 +1556,11 @@ optional_dist_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='distclean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
 
         if [ x"$MAKE_RES" != x0 ]; then
             return $MAKE_RES
@@ -2126,11 +2134,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
 
+            get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$BUILD_TGT'"
+
             # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
             #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
             MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS "$BUILD_TGT"
 
             # Can be noisy if regen is needed (DMF branch)
             #GIT_DIFF_SHOW=false \
@@ -2863,9 +2873,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
 
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$DISTCHECK_TGT'"
+
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS ${DISTCHECK_TGT}
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS $CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS ${DISTCHECK_TGT}
 
         #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "${DISTCHECK_TGT}" || exit
