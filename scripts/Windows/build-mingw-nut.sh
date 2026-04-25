@@ -132,6 +132,7 @@ configure_nut() {
 	USE_AUTOCONF_CACHE_FLAG=""
 	unset CI_CACHE_NUT_HASHDIR_CFG
 
+	# Option passed by caller like ci_build.sh:
 	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
 		USE_AUTOCONF_CACHE_FLAG="-C"
 

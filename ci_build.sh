@@ -1149,7 +1149,7 @@ autogen_get_CONFIGURE_SCRIPT() {
         || AUTOCONF_HASH=''
 
         if [ -n "${AUTOCONF_HASH}" ]; then
-            CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/${AUTOCONF_HASH}"
+            CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/AUTOCONF_${AUTOCONF_HASH}"
             if [ x"$DO_CLEAN_AUTOCONF_CACHE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
                 echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' but was asked to remove it first" >&2
                 rm -rf "${CI_CACHE_NUT_HASHDIR}" || true
