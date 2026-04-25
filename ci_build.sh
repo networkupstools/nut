@@ -1150,7 +1150,7 @@ autogen_get_CONFIGURE_SCRIPT() {
 
         if [ -n "${AUTOCONF_HASH}" ]; then
             CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/AUTOCONF_${AUTOCONF_HASH}"
-            if [ x"$DO_CLEAN_AUTOCONF_CACHE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+            if [ x"$DO_CLEAN_AUTOCONF_CACHE_BEFORE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
                 echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' but was asked to remove it first" >&2
                 rm -rf "${CI_CACHE_NUT_HASHDIR}" || true
             fi
@@ -1232,12 +1232,12 @@ configure_nut() {
 
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
-        echo "$0: using existing config.cache" >&2
+        echo "$0: using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" >&2
       else
         if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ]; then
-          echo "$0: NOT using config.cache because it did not exist" >&2
+          echo "$0: NOT using ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because it did not exist (yet)" >&2
         else if [ -s config.cache ]; then
-          echo "$0: NOT using existing config.cache because DO_USE_AUTOCONF_CACHE=$DO_USE_AUTOCONF_CACHE" >&2
+          echo "$0: NOT using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because DO_USE_AUTOCONF_CACHE=$DO_USE_AUTOCONF_CACHE" >&2
         fi; fi
       fi
 
@@ -1390,9 +1390,6 @@ check_gitignore() {
     [ -n "${FILE_GLOB-}" ] || FILE_GLOB="'*'"
     # Always filter these names away:
     FILE_GLOB_EXCLUDE="':!.ci*.log*' ':!VERSION_DEFAULT' ':!VERSION_FORCED*'"
-    if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] ; then
-        FILE_GLOB_EXCLUDE="$FILE_GLOB_EXCLUDE ':!config.cache*'"
-    fi
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
     # Display contents of the diff?
     # (Helps copy-paste from CI logs to source to amend quickly)
@@ -1459,10 +1456,6 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
-    if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xyes ]; then
-        rm -f config.cache*
-    fi
-
     # When iterating configure.ac or m4 sources, we can end up with an
     # existing but useless script file - nuke it and restart from scratch!
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
@@ -1517,12 +1510,6 @@ optional_maintainer_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
-        rm -f config.cache.tmp || true
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
-            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
-            cp -f config.cache config.cache.tmp
-        fi
-
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
         case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
@@ -1532,10 +1519,6 @@ optional_maintainer_clean_check() {
         *)
             $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
         esac
-
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
-            mv -f config.cache.tmp config.cache || true
-        fi
 
         if [ x"$MAKE_RES" != x0 ]; then
             return $MAKE_RES
@@ -1567,19 +1550,9 @@ optional_dist_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
-        rm -f config.cache.tmp || true
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
-            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
-            cp -f config.cache config.cache.tmp
-        fi
-
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
         $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
-
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
-            mv -f config.cache.tmp config.cache || true
-        fi
 
         if [ x"$MAKE_RES" != x0 ]; then
             return $MAKE_RES
@@ -1666,22 +1639,16 @@ fi
 [ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck"
 
 # https://www.gnu.org/software/autoconf/manual/autoconf-2.67/html_node/Cache-Files.html
-# By default, we clean up the config.cache between jobs (before start,
-# after finish), but do want to use (and retain) it between loop runs
-# of BUILD_TYPE="default-all-errors*".
-# FIXME: Currently disabled for the loops; we want to only cache the
-#  common system findings but forget the details we vary (implementations
-#  of libusb, ssl...) because this knowledge about "lack" of some methods
-#  breaks those very re-runs. The approach can still be used for runs of
-#  same configurations from one iteration to another on CI systems though.
 # Note that autotools automatically removes such file name during the
-# "make distclean" and stronger goals, so on our side we can only
-# stash and restore the file around such operations.
-[ -n "$DO_CLEAN_AUTOCONF_CACHE" ] || DO_CLEAN_AUTOCONF_CACHE="auto"
-[ -n "$DO_USE_AUTOCONF_CACHE" ] || DO_USE_AUTOCONF_CACHE="auto"
-# What about after tests (e.g. loops?)
-[ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="$DO_CLEAN_AUTOCONF_CACHE"
-[ -n "$DO_CLEAN_AUTOCONF_CACHE_FINAL" ] || DO_CLEAN_AUTOCONF_CACHE_FINAL="$DO_CLEAN_AUTOCONF_CACHE"
+# "make distclean" and stronger goals, so on our side we can only stash
+# and restore the file around such operations if stored in build area.
+# Better yet, this may use a persisted location outsude the build area,
+# e.g. a CI_CACHE_NUT_BASEDIR=~/.cache/nut-ci
+# There is also DO_USE_NIT_TESTCERT_CACHE and DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="auto"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
+[ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_AUTOCONF_CACHE" ] || DO_USE_AUTOCONF_CACHE="${DO_USE_NUTCI_CACHE}"
 
 if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
@@ -1693,36 +1660,13 @@ export DO_USE_AUTOCONF_CACHE
 
 [ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
 
-if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xauto ]; then
+if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xauto ]; then
     case "$BUILD_TYPE" in
-        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE="no" ;;
-        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_CLEAN_AUTOCONF_CACHE="no" ; else DO_CLEAN_AUTOCONF_CACHE="yes" ; fi ;;
+        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ; else DO_CLEAN_AUTOCONF_CACHE_BEFORE="yes" ; fi ;;
     esac
 fi
-export DO_CLEAN_AUTOCONF_CACHE
-
-if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xauto ]; then
-    DO_CLEAN_AUTOCONF_CACHE_BEFORE="yes"
-fi
-if [ x"${DO_CLEAN_AUTOCONF_CACHE_FINAL}" = xauto ]; then
-    DO_CLEAN_AUTOCONF_CACHE_FINAL="yes"
-fi
 export DO_CLEAN_AUTOCONF_CACHE_BEFORE
-export DO_CLEAN_AUTOCONF_CACHE_FINAL
-
-if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xyes ]; then
-    rm -f config.cache*
-fi
-
-cleanup_exit() {
-    FINAL_RES=$?
-    if [ x"${DO_CLEAN_AUTOCONF_CACHE_FINAL}" = xyes ]; then
-        rm -f config.cache*
-    fi
-    return $FINAL_RES
-}
-
-trap 'cleanup_exit' 2 3 15
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
@@ -2118,11 +2062,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure include/config.h* ; $0 $SCRIPT_ARGS"' 2
 
         echo "=== Starting initial clean-up (from old build products)"
-        rm -f config.cache.tmp || true
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
-            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
-            cp -f config.cache config.cache.tmp
-        fi
+
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
 
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
@@ -2135,13 +2077,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
         || true
         echo "=== Finished initial clean-up"
-
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
-            mv -f config.cache.tmp config.cache || true
-        fi
-
-        trap - 2
-        trap 'cleanup_exit' 2 3 15
     fi
 
     # Just prepare `configure` script; we run it at different points
@@ -2841,18 +2776,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     echo "=== Completed sandbox cleanup-check after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        rm -f config.cache.tmp || true
-                        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
-                            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
-                            cp -f config.cache config.cache.tmp
-                        fi
-
                         $MAKE distclean $MAKE_FLAGS_CLEAN -k \
                         || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
-
-                        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
-                            mv -f config.cache.tmp config.cache || true
-                        fi
 
                         echo "=== Completed sandbox cleanup after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
                     else
@@ -2995,17 +2920,10 @@ bindings)
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
 
-        rm -f config.cache.tmp || true
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache ]; then
-            echo "=== Keeping old config.cache as asked by BUILD_TYPE default or caller request"
-            cp -f config.cache config.cache.tmp
-        fi
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
 
         ${MAKE} realclean -k || true
-
-        if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xno ] && [ -s config.cache.tmp ]; then
-            mv -f config.cache.tmp config.cache || true
-        fi
 
         echo "=== Finished initial clean-up"
     fi

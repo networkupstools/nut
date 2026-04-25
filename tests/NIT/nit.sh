@@ -942,11 +942,14 @@ fi
 # Caching logic
 # Follow precedent and variables from ci_build.sh with CI_CACHE_NUT_HASHDIR
 # (here CI_CACHE_NIT_HASHDIR based on hash of nit.sh) under provided or
-# defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_AUTOCONF_CACHE=yes
-# (reusing this toggle as a general 'cache' toggle)
+# defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_NIT_TESTCERT_CACHE=yes
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="no"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="no"
+[ -n "$DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE" ] || DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_NIT_TESTCERT_CACHE" ] || DO_USE_NIT_TESTCERT_CACHE="${DO_USE_NUTCI_CACHE}"
 
 unset CI_CACHE_NIT_HASHDIR
-if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] ; then
+if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
     [ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
         if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
             CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci"
@@ -962,7 +965,7 @@ if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] ; then
         CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
 
         if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
-            if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xyes ] ; then
+            if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}, but asked to remake them"
             else
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
@@ -1027,7 +1030,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 # Create lock
                 touch "${LOCKFILE}"
 
-                if [ x"${DO_CLEAN_AUTOCONF_CACHE}" = xyes ] ; then
+                if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
                     rm -rf "${CI_CACHE_NIT_HASHDIR}"
                 fi
 
@@ -1114,7 +1117,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
                         || die "Could not extract the NSS CA certificate to PEM"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
@@ -1181,7 +1184,7 @@ EOF
                                 -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         && command -v certutil >/dev/null 2>&1 \
@@ -1246,7 +1249,7 @@ EOF
                         ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                         || die "Could not list OpenSSL CA PEM file (exported from NSS)"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v openssl >/dev/null 2>&1 \
                         ; then
@@ -1341,7 +1344,7 @@ EOF
                             -a -i server.crt -t ",," \
                         || die "Could not import the signed NSS Server certificate into server database"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
@@ -1434,7 +1437,7 @@ EOF
                         ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
                         || die "Could not list an upsd.pem"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
@@ -1621,7 +1624,7 @@ EOF
                         ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
                         || die "Could not list a upsd-public.pem"
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v keytool >/dev/null 2>&1 \
                         ; then
@@ -1642,7 +1645,7 @@ EOF
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
                         fi
 
-                        if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] \
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
                         ; then
@@ -1709,7 +1712,7 @@ EOF
             log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
 
             # Populate cache if enabled
-            if [ x"${DO_USE_AUTOCONF_CACHE-}" = xyes ] && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
                 if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
                     mkdir -p "${CI_CACHE_NIT_HASHDIR}"
