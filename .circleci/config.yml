@@ -53,10 +53,10 @@ jobs:
         #type: string
         #default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
         #default: "/usr/local" # was when CircleCI builders had x86
-      DO_CLEAN_AUTOCONF_CACHE:
+      DO_CLEAN_NUTCI_CACHE:
         type: string
         default: "no"
-      DO_USE_AUTOCONF_CACHE:
+      DO_USE_NUTCI_CACHE:
         type: string
         default: "yes"
 
@@ -70,8 +70,8 @@ jobs:
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
       #HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
-      DO_CLEAN_AUTOCONF_CACHE: << parameters.DO_CLEAN_AUTOCONF_CACHE >>
-      DO_USE_AUTOCONF_CACHE: << parameters.DO_USE_AUTOCONF_CACHE >>
+      DO_CLEAN_NUTCI_CACHE: << parameters.DO_CLEAN_NUTCI_CACHE >>
+      DO_USE_NUTCI_CACHE: << parameters.DO_USE_NUTCI_CACHE >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor

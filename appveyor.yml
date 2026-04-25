@@ -27,8 +27,8 @@ environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
   CCACHE_DIR: /home/appveyor/.ccache
-  DO_CLEAN_AUTOCONF_CACHE: no
-  DO_USE_AUTOCONF_CACHE: yes
+  DO_CLEAN_NUTCI_CACHE: no
+  DO_USE_NUTCI_CACHE: yes
 
 # Customize GH notification message template
 # TODO: for repetitive commits in a PR consider a clean-up GHA like
