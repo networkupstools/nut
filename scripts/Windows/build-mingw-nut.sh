@@ -5,6 +5,10 @@
 # script to cross compile NUT for Windows from Linux using MinGW-w64
 # http://mingw-w64.sourceforge.net/
 #
+# Copyright (C)
+#	2012		Arnaud Quette <arnaud.quette@free.fr>
+#	2022-2026	Jim Klimov <jimklimov+nut@gmail.com>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
