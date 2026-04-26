@@ -149,6 +149,9 @@ configure_nut() {
 					mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
 					echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
 					echo "$* CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+					# To be filled after the configuration succeeds:
+					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
+					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
 				else
 					echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
 				fi
@@ -157,9 +160,21 @@ configure_nut() {
 		fi
 	fi
 
+	CFG_RES=0
 	$CONFIGURE_SCRIPT \
 		$USE_AUTOCONF_CACHE_FLAG \
-		"$@"
+		"$@" \
+	|| CFG_RES=$?
+
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${USE_AUTOCONF_CACHE_FLAG}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+		if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+			# Populate on first run:
+			cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+			cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+		fi
+	fi
+
+	return $CFG_RES
 }
 
 do_build_mingw_nut() {
