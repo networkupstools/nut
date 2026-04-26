@@ -1131,6 +1131,44 @@ do_autogen_get_CONFIGURE_SCRIPT() {
     popd || exit
 }
 
+discover_somehash_filter() {
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}'
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}'
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size?
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
 # If it is non-trivial later, we use it
 unset CI_CACHE_NUT_HASHDIR || true
 autogen_get_CONFIGURE_SCRIPT() {
@@ -1144,8 +1182,7 @@ autogen_get_CONFIGURE_SCRIPT() {
         # FIXME later: any hash would do to detect changes
         # Paths below assume SCRIPTDIR (of ci_build.sh) is the source root
         AUTOCONF_FILES="`ls -1 \"${SCRIPTDIR}\"/configure.ac \"${SCRIPTDIR}\"/m4/*.m4 | sort`"
-        command -v md5sum && \
-        AUTOCONF_HASH="$({ cat ${AUTOCONF_FILES} ; uname -a ; } | md5sum | awk '{print $1}')" \
+        AUTOCONF_HASH="$({ cat ${AUTOCONF_FILES} ; uname -a ; } | somehash_filter)" \
         || AUTOCONF_HASH=''
 
         if [ -n "${AUTOCONF_HASH}" ]; then
@@ -1160,7 +1197,7 @@ autogen_get_CONFIGURE_SCRIPT() {
                     # Just for info (so far):
                     uname -a > "${CI_CACHE_NUT_HASHDIR}/ci_uname.txt"
                     ls -lad ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_listing.txt"
-                    md5sum  ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_hashes.txt"
+                    somehash_files ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_hashes.txt"
                 else
                     echo "=== FAILED to mkdir, disabling cache mode" >&2
                     CI_CACHE_NUT_HASHDIR=""
@@ -1182,7 +1219,7 @@ get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
     unset CI_CACHE_NUT_HASHDIR_CFG
     CI_CACHE_NUT_HASHDIR_CFG_OPT=""
     if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
-        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$*\" | md5sum | awk '{print $1}'`" \
+        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$*\" | somehash_filter`" \
         || CI_CACHE_NUT_HASHDIR_CFG=''
         if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
             if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
