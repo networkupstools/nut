@@ -339,8 +339,8 @@ int Socket::_openssl_cert_verify_data_index = 0;
 /*static*/ int Socket::openssl_cert_verify_san_name(const char* label, X509* const cert, const char *hostname)
 {
 	int	san_seen = 0, ok = 0;
-	GENERAL_NAMES*	names = NULL;
-	unsigned char*	utf8 = NULL;
+	GENERAL_NAMES*	names = nullptr;
+	unsigned char*	utf8 = nullptr;
 
 	do
 	{
@@ -398,7 +398,7 @@ int Socket::_openssl_cert_verify_data_index = 0;
 
 				if (utf8) {
 					OPENSSL_free(utf8);
-					utf8 = NULL;
+					utf8 = nullptr;
 				}
 			} else if (GEN_IPADD == entry->type) {
 				/* https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6:
@@ -487,7 +487,7 @@ int Socket::_openssl_cert_verify_data_index = 0;
 
 	if (!ok && hostname && *hostname && (0
 #  if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
-	 || (X509_check_host(cert, static_cast<const char *>(hostname), 0, 0, NULL) == 1)
+	 || (X509_check_host(cert, static_cast<const char *>(hostname), 0, 0, nullptr) == 1)
 #  endif
 #  if (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC)
 	 || (X509_check_ip_asc(cert, static_cast<const char *>(hostname), 0) == 1)
@@ -1183,7 +1183,7 @@ void Socket::disconnect()
 	 && openssl_cert_verify_data.hostname
 	) {
 		free(const_cast<void *>(static_cast<const void *>((openssl_cert_verify_data.hostname))));
-		openssl_cert_verify_data.hostname = NULL;
+		openssl_cert_verify_data.hostname = nullptr;
 	}
 
 	memset(&openssl_cert_verify_data, 0, sizeof(openssl_cert_verify_data));
@@ -1377,7 +1377,7 @@ void Socket::startTLS()
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
 		_openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
 			const_cast<void*>(static_cast<const void *>("openssl_cert_verify_data index (client)")),
-			NULL, NULL, NULL);
+			nullptr, nullptr, nullptr);
 
 		SSL_CTX_set_verify(_ssl_ctx,
 			certverify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
@@ -1680,7 +1680,7 @@ void Socket::startTLS()
 #pragma GCC diagnostic pop
 #endif
 
-	const char	*ssl_url = NULL;
+	const char	*ssl_url = nullptr;
 	const std::string& certhost_addr = _ssl_config->getCertHostAddr();
 	if (certhost_addr.empty()) {
 		ssl_url = _host.c_str();
