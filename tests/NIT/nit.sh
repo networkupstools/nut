@@ -3079,6 +3079,7 @@ isTestablePython() {
     PY_RES=3
     case x"${PY_SHEBANG}" in
         x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
+        x"#!"*"/env /"*)   PY_RES=0 ;; # Via /usr/bin/env or similar (macos may have a space before first slash which is beside the standard but oh well)
         x"#!no")   PY_RES=1 ;; # Explicitly skipped
         x"#!@")    PY_RES=2 ;; # Unresolved
         *)         PY_RES=3 ;; # Unexpected twist
