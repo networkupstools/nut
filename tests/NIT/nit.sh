@@ -916,6 +916,44 @@ TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 TESTCERT_VALIDITY_DAYS=7305
 TESTCERT_VALIDITY_MONTHS=240
 
+discover_somehash_filter() {
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}'
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}'
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size?
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
 prepare_NIT_certs() {
 # Handling of optional caller-provided mock certificates path (dist tarball?)
 if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
@@ -961,7 +999,7 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
 
     if [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
         # Calculate hash of nit.sh to decide about re-generation
-        NIT_HASH="`cat \"$0\" | md5sum | awk '{print $1}'`"
+        NIT_HASH="`somehash_filter < \"$0\"`"
         CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
 
         if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
