@@ -157,6 +157,8 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 					AC_CHECK_FUNCS(init_snmp, [
 						nut_have_libnetsnmp=yes
 						nut_have_libnetsnmp_static=yes
+						dnl Get into this code path upon re-runs even with config.cache:
+						AS_UNSET([ac_cv_func_init_snmp])
 					])
 				]
 			)
