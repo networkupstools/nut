@@ -136,9 +136,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
-            - config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-
 
       # Help SEMVER look right (optionally)
       - run:
@@ -210,13 +210,13 @@ jobs:
           name: Save .ccache for later runs
           paths:
             - ~/.ccache
-          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
 
       - save_cache:
-          name: Save config.cache for later runs
+          name: Save Autoconf cache and NIT certs for later runs
           paths:
             - ~/.cache/nut-ci
-          key: config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
 
       - store_artifacts:
           path: config.log
