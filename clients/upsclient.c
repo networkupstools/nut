@@ -454,12 +454,27 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
 		if (!names) break;
 
+		/* OpenSSL macros may have an unreachable effect like this */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		count = sk_GENERAL_NAME_num(names);
 		if (!count) break; /* failed */
 
 		for (i = 0; i < count; ++i) {
 			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
 			if (!entry) continue;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 			if (GEN_DNS == entry->type) {
 				int	len1 = 0, len2 = -1;
@@ -588,6 +603,15 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 		}
 	} while (0);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!ok && hostname && *hostname && (0
 # if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
 	 || (X509_check_host(cert, (const char *)hostname, 0, 0, NULL) == 1)
@@ -600,6 +624,12 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 			__func__, label, hostname);
 		ok = 1;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 	if (names)
 		GENERAL_NAMES_free(names);
