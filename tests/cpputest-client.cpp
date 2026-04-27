@@ -342,7 +342,9 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		// NSS-only:
 		<< "' NUT_CERTSTORE_PATH='" << c.getSslCertstorePath()
 		<< "' NUT_CERTSTORE_PREFIX='" << c.getSslCertstorePrefix()
-		<< "'" << std::endl;
+		<< "'"
+		<< " NUT_PORT=" << env_NUT_PORT
+		<< std::endl;
 
 	std::cerr << "[D] TcpClient configured for SSL caps? "
 		<< (c.getSslCaps() ? "true" : "false")
