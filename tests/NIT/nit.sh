@@ -3277,9 +3277,9 @@ setenv_ssl_perl() {
     case "${NUT_CAPATH}" in
         ?":\\"*|?":/"*)
             # Perl uses a platform-dependent PATH separator,
-            # however in mingw/msys2 is uses ":" which clashes
+            # however in mingw/msys2 it uses ":" which clashes
             # with "C:\..." that Python insists on in this var.
-            _NUT_CAPATH="`realpath \"${NUT_CAPATH}\"`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+	    _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
             ;;
     esac
 
