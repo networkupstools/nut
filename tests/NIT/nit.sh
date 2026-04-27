@@ -971,7 +971,7 @@ if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
     && [ -d "${TESTCERT_MOCK_PATH}/upsmon" ] \
     ; then
         mkdir -p "${TESTCERT_PATH_BASE}"
-        cp -PR "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}/"
+        cp -pr "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}/"
         log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
         return 0
     fi
@@ -1008,7 +1008,7 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
             else
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
                 mkdir -p "${TESTCERT_PATH_BASE}"
-                cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+                cp -pr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
 
                 # If there is a setup script there, source it to get variables
                 if [ -f "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env" ]; then
@@ -1077,7 +1077,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
                     mkdir -p "${TESTCERT_PATH_BASE}"
-                    cp -PR "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+                    cp -pr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
                     rm -f "${LOCKFILE}"
                     return 0
                 fi
@@ -1754,7 +1754,7 @@ EOF
                 if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
                     mkdir -p "${CI_CACHE_NIT_HASHDIR}"
-                    cp -PR "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}/"
+                    cp -pr "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}/"
                     set | ${EGREP} '^TESTCERT[^ ]*=' | grep -v PATH \
                     > "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
                 fi
