@@ -685,7 +685,13 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		/* Call this in any err case, to print debug logs about
 		 *  presence and value(s) of subjAltNames in that cert */
 		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
-		if (san_ok && err == X509_V_ERR_HOSTNAME_MISMATCH) {
+		if (san_ok
+# ifdef X509_V_ERR_HOSTNAME_MISMATCH
+			&& err == X509_V_ERR_HOSTNAME_MISMATCH
+# else
+			&& err != 0
+# endif
+		) {
 			/* Caller had some problem with it, did SAN match fix it? */
 			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
 				"probably by CN, but SAN matched - reporting ok=%d and clearing error state",
