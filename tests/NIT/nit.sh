@@ -3275,7 +3275,7 @@ setenv_ssl_perl() {
     setenv_ssl_python
 
     case "${NUT_CAPATH}" in
-        ?":\\"*)
+        ?":\\"*|?":/"*)
             # Perl uses a platform-dependent PATH separator,
             # however in mingw/msys2 is uses ":" which clashes
             # with "C:\..." that Python insists on in this var.
