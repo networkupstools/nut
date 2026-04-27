@@ -1226,9 +1226,11 @@ get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
                 mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
                 echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
                 echo "$*" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
-                # To be filled after the configuration succeeds:
-                touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
-                touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
+                if [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ]; then
+                    # To be filled after the configuration succeeds:
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
+                fi
             else
                 echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
             fi
@@ -1290,9 +1292,11 @@ configure_nut() {
           "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
       && {
-        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
             if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
-                # Populate on first run:
+                # Stash a copy to track evolution:
+                cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
+                # Populate on first run (may cost 1-2Mb):
                 cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
                 cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
             fi
@@ -1712,8 +1716,10 @@ fi
 # There is also DO_USE_NIT_TESTCERT_CACHE and DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE
 [ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="auto"
 [ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
+[ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
 [ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
 [ -n "$DO_USE_AUTOCONF_CACHE" ] || DO_USE_AUTOCONF_CACHE="${DO_USE_NUTCI_CACHE}"
+[ -n "$DO_USE_AUTOCONF_CACHE_DEBUG" ] || DO_USE_AUTOCONF_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
 
 if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
     case "$BUILD_TYPE" in
@@ -2121,8 +2127,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
     consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
-        # Let initial clean-up be at default verbosity
-
         # Handle Ctrl+C with helpful suggestions:
         trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure include/config.h* ; $0 $SCRIPT_ARGS"' 2
 
@@ -2131,6 +2135,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         # This should not be in workdir anyway
         rm -f config.cache* || true
 
+        # Let initial clean-up be at default verbosity
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
             ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
