@@ -1834,14 +1834,15 @@ AC_CACHE_CHECK([for BSD KVM process info libs],
 /* we hope the code above fails if type is not defined or range is not sufficient */
 ]])],
         [ac_cv_lib_bsd_kvm_proc=yes
-        BSDKVMPROCLIBS="-lkvm"
+         AC_CACHE_VAL([ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS], [ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS="-lkvm"])
         ], [ac_cv_lib_bsd_kvm_proc=no]
     )])
 LIBS="$myLIBS"
 
 AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
-    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
-    )
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])
+     BSDKVMPROCLIBS="${ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS}"
+    ])
 
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
