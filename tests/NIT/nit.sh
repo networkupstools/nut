@@ -954,6 +954,70 @@ somehash_files() (
     done
 )
 
+check_NIT_certs() {
+    # Intended for loading cached/provided certificates and keys,
+    # the generator code has its own similar logic in more detail
+    log_info "Verifying that expected certificate files for testing the current SSL build are available"
+
+    ( # Sub-shelling here to keep soft failure cases handled once
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*)
+            ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
+            || die "Could not list NSS CA DB files"
+
+            ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
+            || die "Could not list NSS Server DB files"
+
+            ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
+            || die "Could not list NSS Client DB files"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *OpenSSL*)
+            ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/"*.? \
+            || die "Could not list OpenSSL CA PEM file and hash links"
+
+            ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
+            || die "Could not list an upsd.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}"/upsmon.pem \
+            || die "Could not list an upsmon.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
+            || die "Could not list a upsd-public.pem"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*|*OpenSSL*)
+            test -n "${TESTCERT_ROOTCA_PASS}" || die "TESTCERT_ROOTCA_PASS is not set"
+            test -n "${TESTCERT_SERVER_PASS}" || die "TESTCERT_SERVER_PASS is not set"
+            test -n "${TESTCERT_CLIENT_PASS}" || die "TESTCERT_CLIENT_PASS is not set"
+
+            test -n "${TESTCERT_ROOTCA_NAME}" || die "TESTCERT_ROOTCA_NAME is not set"
+            test -n "${TESTCERT_SERVER_NAME}" || die "TESTCERT_SERVER_NAME is not set"
+            test -n "${TESTCERT_CLIENT_NAME}" || die "TESTCERT_CLIENT_NAME is not set"
+            ;;
+        *)  log_info "NO-OP: Neither client nor server claim SSL capability"
+            ;;
+    esac
+    ) && {
+        log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+        return 0
+    } || {
+        if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+            die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
+        fi
+        log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+        if [ x"$1" = xset-none-on-fail ] ; then
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        fi
+        return 1
+    }
+}
+
 prepare_NIT_certs() {
 # Handling of optional caller-provided mock certificates path (dist tarball?)
 if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
@@ -973,6 +1037,12 @@ if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
         mkdir -p "${TESTCERT_PATH_BASE}"
         cp -pr "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}/"
         log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
+
+        check_NIT_certs set-none-on-fail || {
+            log_warn "FAILED check_NIT_certs with caller-provided data, may skip SSL part of the tests"
+            return 1
+        }
+
         return 0
     fi
 fi
@@ -1019,7 +1089,11 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                     . "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
                     TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
                 fi
-                return 0
+
+                check_NIT_certs && return
+                log_warn "FAILED check_NIT_certs with cached data, will generate anew"
+                rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
             fi
         else
             log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
@@ -1080,8 +1154,15 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
                     mkdir -p "${TESTCERT_PATH_BASE}"
                     cp -pr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
-                    rm -f "${LOCKFILE}"
-                    return 0
+
+                    if check_NIT_certs ; then
+                        rm -f "${LOCKFILE}"
+                        return 0
+                    fi
+
+                    log_warn "FAILED check_NIT_certs with cached data, will generate anew"
+                    rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                    mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
                 fi
 
                 # if [ -n "${BASH_VERSION-}" ]; then
