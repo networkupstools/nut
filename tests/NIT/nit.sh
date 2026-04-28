@@ -1256,7 +1256,10 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
 
                         # Use this later for signing, move on to server/client requests...
 
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
+                        # Older: cert8.db key3.db secmod.db
+                        # Newer: cert9.db key4.db pkcs11.txt
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
+                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db \
                         || die "Could not list NSS CA DB files"
                         ;;
                 esac
@@ -1515,7 +1518,10 @@ EOF
                             cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
                         fi
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
+                        # Older: cert8.db key3.db secmod.db
+                        # Newer: cert9.db key4.db pkcs11.txt
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.txt || true
+                        ls -l "${TESTCERT_PATH_SERVER}"/*.db \
                         || die "Could not list NSS Server DB files"
                         ;;
                     OpenSSL)
@@ -1703,7 +1709,10 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
+                        # Older: cert8.db key3.db secmod.db
+                        # Newer: cert9.db key4.db pkcs11.txt
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.txt || true
+                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db \
                         || die "Could not list NSS Client DB files"
                         ;;
                     OpenSSL)
