@@ -921,6 +921,35 @@ TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
 # should they use same or different cryptostore?..
 TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
+check_NIT_certs_NSS() {
+    # $1 = title for msg
+    # $2 = path
+    # $3 = prefix (unused now)
+
+    log_info "=== Verifying NSS ${1} DB files:"
+    (   # Older: cert8.db key3.db secmod.db
+        if [ -e "${2}/${3}cert8.db" ] ; then
+            ls -l "${2}/${3}cert8.db" "${2}/${3}key3.db" "${2}/${3}secmod.db" || exit
+            for F in cert8.db key3.db secmod.db ; do
+                test -s "${2}/${3}${F}" || die "File '${2}/${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        # Newer: cert9.db key4.db pkcs11.txt
+        if [ -e "${2}/${3}cert9.db" ] ; then
+            ls -l "${2}/${3}cert9.db" "${2}/${3}key4.db" "${2}/${3}pkcs11.txt" || exit
+            for F in cert9.db key4.db pkcs11.txt ; do
+                test -s "${2}/${3}${F}" || die "File '${2}/${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
+        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db || exit
+    )   || die "Could not list NSS ${1} DB files"
+}
+
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
 # For a good summary of OpenSSL options and decent example config see e.g.
