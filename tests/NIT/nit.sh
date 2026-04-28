@@ -1049,11 +1049,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         || die "Could not extract the NSS CA certificate to PEM"
                         # Use this later for signing, move on to server/client requests...
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db \
-                        || die "Could not list NSS CA DB files"
+                        check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
                         ;;
                 esac
 
@@ -1197,11 +1193,7 @@ EOF
                             -a -i server.crt -t ",," \
                         || die "Could not import the signed NSS Server certificate into server database"
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db \
-                        || die "Could not list NSS Server DB files"
+                        check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
@@ -1330,11 +1322,7 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db \
-                        || die "Could not list NSS Client DB files"
+                        check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
                         ;;
                     OpenSSL)
                         # Create a client certificate request:
