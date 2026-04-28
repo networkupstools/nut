@@ -483,8 +483,8 @@ case "${WITH_SSL_CLIENT}" in
     *NSS*) WITH_SSL_CLIENT="NSS" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
 esac
-log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
-log_info "Tested clienr binaries own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
+log_info "Tested client binaries offer SSL support: ${WITH_SSL_CLIENT}"
+log_info "Tested client binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
 
 [ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
 [ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
@@ -502,9 +502,9 @@ case "${WITH_SSL_SERVER}" in
     *NSS*) WITH_SSL_SERVER="NSS" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
 esac
-log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
-log_info "Tested server binaries own certificate validation with CERTIDENT: ${WITH_SSL_SERVER_CERTIDENT}"
-log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
+log_info "Tested server binaries offer SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_SERVER_CERTIDENT}"
+log_info "Tested server binaries offer client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
 if [ x"${WITH_SSL_TESTS}" = xno ] ; then
     log_info "Disabling SSL tests (even if they are possible) due to WITH_SSL_TESTS='${WITH_SSL_TESTS}'"
