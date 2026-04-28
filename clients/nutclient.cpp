@@ -2760,7 +2760,15 @@ const SSLConfig_CERTSTORE* SSLConfig::getCertStore() const
 void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
 {
 	if (certhost.getHostAddr().empty()) return;
+
+	/* We can forfeit checks for certhost nickname if openssl is too old;
+	 * can still check that address (DNS/IP) corresponds though */
+# ifdef WITH_OPENSSL
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
 	if (certhost.getCertSubj().empty()) return;
+#  endif
+# endif
+
 	_certhosts.insert(certhost.clone());
 }
 
@@ -2836,7 +2844,13 @@ SSLConfig_OpenSSL::SSLConfig_OpenSSL(
 		SSLConfig_CERTIDENT_OpenSSL(certident_name, key_pass, cert_file, key_file),
 		forcessl, certverify)
 {
-	if (!(certhost_addr.empty()) && !(certhost_name.empty())) {
+	/* We can forfeit checks for certhost nickname if openssl is too old;
+	 * can still check that address (DNS/IP) corresponds though */
+	if (!(certhost_addr.empty())
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	 && !(certhost_name.empty())
+#  endif
+	) {
 		addCertHost(SSLConfig_CERTHOST(certhost_addr, certhost_name));
 	}
 }
@@ -2862,7 +2876,13 @@ SSLConfig_OpenSSL::SSLConfig_OpenSSL(
 			key_file ? key_file : SSLConfig::_empty_str),
 		forcessl, certverify)
 {
-	if (certhost_addr && *certhost_addr && certhost_name && *certhost_name) {
+	/* We can forfeit checks for certhost nickname if openssl is too old;
+	 * can still check that address (DNS/IP) corresponds though */
+	if ((certhost_addr && *certhost_addr)
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	 && (certhost_name && *certhost_name)
+#  endif
+	) {
 		addCertHost(SSLConfig_CERTHOST(certhost_addr, certhost_name));
 	}
 }
