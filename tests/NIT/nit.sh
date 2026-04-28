@@ -991,14 +991,9 @@ check_NIT_certs() {
     ( # Sub-shelling here to keep soft failure cases handled once
     case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         *NSS*)
-            ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
-            || die "Could not list NSS CA DB files"
-
-            ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
-            || die "Could not list NSS Server DB files"
-
-            ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
-            || die "Could not list NSS Client DB files"
+            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+            check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+            check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
             ;;
     esac
 
@@ -1284,12 +1279,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         fi
 
                         # Use this later for signing, move on to server/client requests...
+                        check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db \
-                        || die "Could not list NSS CA DB files"
                         ;;
                 esac
 
@@ -1374,8 +1365,7 @@ EOF
                             certutil -M -d . -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f .pwfile \
                             || die "Could not set trust on imported NSS CA"
 
-                            ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
-                            || die "Could not list NSS CA DB files"
+                            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
                         fi
                         ;;
                 esac
@@ -1547,11 +1537,7 @@ EOF
                             cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
                         fi
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db \
-                        || die "Could not list NSS Server DB files"
+                        check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
@@ -1617,8 +1603,7 @@ EOF
                                 pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
                                 || die "Could not import Server PKCS#12 to NSS"
 
-                                ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
-                                || die "Could not list NSS Server DB files"
+                                check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
                             fi
 
                             if command -v keytool >/dev/null 2>&1 ; then
@@ -1738,11 +1723,7 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
-                        # Older: cert8.db key3.db secmod.db
-                        # Newer: cert9.db key4.db pkcs11.txt
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.txt || true
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db \
-                        || die "Could not list NSS Client DB files"
+                        check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
                         ;;
                     OpenSSL)
                         # Create a client certificate request:
@@ -1838,8 +1819,7 @@ EOF
                                     || die "Could not import Client PKCS#12 to NSS"
                                 fi
 
-                                ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
-                                || die "Could not list NSS Server DB files"
+                                check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
                             fi
 
                             if command -v keytool >/dev/null 2>&1 ; then
