@@ -1753,12 +1753,25 @@ EOF
 
       if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
         cat << EOF
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
 # Defaults that CERTHOST may override per-server, but
 # note that this impacts also the general upsmon behavior:
 FORCESSL 1
-CERTVERIFY 1
 EOF
+
+        case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        x"none") cat << EOF
+CERTVERIFY 0
+# Custom settings for a specific remote server:
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 0
+EOF
+            ;;
+        *) cat << EOF
+CERTVERIFY 1
+# Custom settings for a specific remote server:
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+EOF
+            ;;
+        esac
       fi
     } >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
@@ -2809,7 +2822,8 @@ setenv_ssl_cppnit() {
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
                     NUT_CERTFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
                     NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
-                    export NUT_CERTFILE NUT_KEYPASS NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    export NUT_CERTFILE NUT_KEYPASS
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
 
                     # Should not be required when appended to NUT_CERTFILE:
                     #NUT_KEYFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
@@ -2825,9 +2839,20 @@ setenv_ssl_cppnit() {
                     NUT_CERTHOST_ADDR="localhost"
                     NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
-                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
                     ;;
                 esac
+
+                # e.g. OpenSSL too old for us to check certs with current code
+                if [ x"${WITH_SSL_CLIENT_CERTIDENT}" = x"none" ] ; then
+                    log_warn "Not checking for CERTIDENT and CERTHOST nicknames, ability not built into binaries"
+                    # and certificate verification
+                    #NUT_CERTVERIFY=0
+                    NUT_CERTIDENT_NAME=""
+                    NUT_CERTHOST_NAME=""
+                    # NOTE: NUT_CERTHOST_ADDR is ignored when the other part is NULL
+                fi
             fi
             ;;
     esac
