@@ -64,9 +64,9 @@ NUTPKG_WITH_DMF := $(shell test -d scripts/DMF && echo 1 || echo 0)
 runbasedir := $(shell test -d /run && echo /run || echo /var/run)
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
-# Something like `git grep 'version-info' '*.am'` ?
+# Something like `git grep 'version-info' '*.am'` (note: here we use "$MAJOR - $AGE")?
 SO_MAJOR_LIBUPSCLIENT=7
-SO_MAJOR_LIBNUTCLIENT=2
+SO_MAJOR_LIBNUTCLIENT=4
 SO_MAJOR_LIBNUTCLIENTSTUB=1
 SO_MAJOR_LIBNUTSCAN=4
 SO_MAJOR_LIBNUTCONF=0
