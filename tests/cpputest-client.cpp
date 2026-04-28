@@ -265,6 +265,8 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || !env_NUT_CERTFILE.empty()
 	 || !env_NUT_KEYFILE.empty()
 	 || !env_NUT_CERTIDENT_NAME.empty()
+	 || !env_NUT_CERTHOST_ADDR.empty()
+	 || !env_NUT_CERTHOST_NAME.empty()
 	) {
 #ifndef WITH_SSL_CXX
 		try {
@@ -277,7 +279,15 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTFILE,
 			env_NUT_KEYFILE,
 			env_NUT_KEYPASS,
-			env_NUT_CERTIDENT_NAME
+			env_NUT_CERTIDENT_NAME,
+
+			// host name to check for CERTHOST
+			/*env_NUT_CERTHOST_ADDR.empty()
+			? (env_NUT_CERTHOST_NAME.empty() ? std::string() : "localhost")
+			: */
+			env_NUT_CERTHOST_ADDR,
+
+			env_NUT_CERTHOST_NAME
 			));
 #ifndef WITH_SSL_CXX
 		}
@@ -292,9 +302,9 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	 || env_NUT_FORCESSL
 	 || !env_NUT_CERTSTORE_PATH.empty()
 	 || !env_NUT_CERTSTORE_PREFIX.empty()
+	 || !env_NUT_CERTIDENT_NAME.empty()
 	 || !env_NUT_CERTHOST_ADDR.empty()
 	 || !env_NUT_CERTHOST_NAME.empty()
-	 || !env_NUT_CERTIDENT_NAME.empty()
 	) {
 #ifndef WITH_SSL_CXX
 		try {
@@ -305,14 +315,15 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 			env_NUT_CERTSTORE_PATH,
 			env_NUT_KEYPASS,
 			env_NUT_CERTSTORE_PREFIX,
+			env_NUT_CERTIDENT_NAME,
 
 			// host name to check for CERTHOST
 			/*env_NUT_CERTHOST_ADDR.empty()
 			? (env_NUT_CERTHOST_NAME.empty() ? std::string() : "localhost")
-			: */ env_NUT_CERTHOST_ADDR,
+			: */
+			env_NUT_CERTHOST_ADDR,
 
-			env_NUT_CERTHOST_NAME,
-			env_NUT_CERTIDENT_NAME
+			env_NUT_CERTHOST_NAME
 			));
 #ifndef WITH_SSL_CXX
 		}
