@@ -1613,9 +1613,6 @@ void Socket::startTLS()
 				std::endl << std::flush;
 		}
 	}
-	/* FIXME: port further upsclient/upsmon features like
-	 *  upscli_find_host_cert() and respective CERTHOST-like
-	 *  server expected hostname (double-checking) validation? */
 
 	if (SSL_connect(_ssl) != 1) {
 		unsigned long err = ERR_get_error();
@@ -1642,7 +1639,7 @@ void Socket::startTLS()
 	/* NSS implementation following upsclient.c logic */
 	static bool nss_initialized = false;
 
-	// FIXME: Support several NSS databases, use prefix parameters?
+	/* FIXME: Support several NSS databases, use prefix parameters? */
 	if (!nss_initialized) {
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 		PK11_SetPasswordFunc(nss_password_callback);
@@ -1655,7 +1652,7 @@ void Socket::startTLS()
 		if (certstore_path) {
 			if (certstore_prefix)
 				throw nut::SSLException_NSS("NSS database prefix support not implemented yet");
-			// FIXME: Use certstore_prefix
+			/* FIXME: Use certstore_prefix */
 			status = NSS_Init(certstore_path);
 		} else {
 			status = NSS_NoDB_Init(nullptr);
