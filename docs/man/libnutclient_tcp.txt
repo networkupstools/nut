@@ -101,17 +101,17 @@ SYNOPSIS
 		int forcessl = -1, int certverify = -1,
 		const char *certstore_path = NULL, const char *certstore_pass = NULL,
 		const char *certstore_prefix = NULL,
+		const char *certident_name = NULL,
 		const char *certhost_addr = NULL,
-		const char *certhost_name = NULL,
-		const char *certident_name = NULL);
+		const char *certhost_name = NULL);
 
 	void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
 		int forcessl = -1, int certverify = -1,
 		const char *certstore_path = NULL, const char *certstore_pass = NULL,
 		const char *certstore_prefix = NULL,
+		const char *certident_name = NULL,
 		const char *certhost_addr = NULL,
-		const char *certhost_name = NULL,
-		const char *certident_name = NULL);
+		const char *certhost_name = NULL);
 
 	/* Individual SSL option getters/setters: */
 

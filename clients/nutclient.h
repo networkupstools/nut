@@ -593,14 +593,14 @@ public:
 	SSLConfig_NSS(bool forcessl = false, int certverify = -1,
 		const std::string& certstore_path = "", const std::string& certstore_pass = "",
 		const std::string& certstore_prefix = "",
-		const std::string& certhost_addr = "", const std::string& certhost_name = "",
-		const std::string& certident_name = "");
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "", const std::string& certhost_name = "");
 
 	SSLConfig_NSS(bool forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
 		const char *certstore_prefix,
-		const char *certhost_addr, const char *certhost_name,
-		const char *certident_name);
+		const char *certident_name,
+		const char *certhost_addr, const char *certhost_name);
 
 /*	// No extra trust store for NSS so far - we assume its DB to hold all we need at this time
 	const std::string& getCAFile() const;
@@ -1337,11 +1337,11 @@ protected:
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
 	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
-	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_addr, const char *certhost_name, const char *certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certident_name, const char *certhost_addr, const char *certhost_name);
 
 	/**
 	 * Set SSL configuration for Mozilla NSS.
@@ -1350,11 +1350,11 @@ protected:
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
 	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
-	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_addr, const std::string& certhost_name, const std::string& certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name);
 
 private:
 	std::string _host;
@@ -1962,7 +1962,7 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 int nutclient_tcp_get_ssl_caps(void);
 
-	NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
 	const char* host, uint16_t port, int tryssl = 0,
 	int forcessl = -1, int certverify = -1,
 	const char *ca_path = nullptr, const char *ca_file = nullptr,
@@ -1983,16 +1983,16 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
 	int forcessl = -1, int certverify = -1,
 	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
 	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
 	const char *certhost_addr = nullptr,
-	const char *certhost_name = nullptr,
-	const char *certident_name = nullptr);
+	const char *certhost_name = nullptr);
 void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
 	int forcessl = -1, int certverify = -1,
 	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
 	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
 	const char *certhost_addr = nullptr,
-	const char *certhost_name = nullptr,
-	const char *certident_name = nullptr);
+	const char *certhost_name = nullptr);
 
 /**
  * Test if a nut TCP client is connected.
