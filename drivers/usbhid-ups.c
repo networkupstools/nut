@@ -262,6 +262,8 @@ static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
+
+
 static int callback(hid_dev_handle_t argudev, HIDDevice_t *arghd,
 					usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
 #ifdef DEBUG
