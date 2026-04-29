@@ -471,9 +471,14 @@ fi
 
 [ -n "${WITH_SSL_CLIENT}" ] || { WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none" ; }
 [ -n "${WITH_SSL_CLIENT_CERTIDENT}" ] || WITH_SSL_CLIENT_CERTIDENT="none"
+[ -n "${WITH_SSL_CLIENT_CERTHOST}" ] || WITH_SSL_CLIENT_CERTHOST="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
 # SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
+case "${WITH_SSL_CLIENT}" in
+    *OpenSSL*" sans CERTHOST(name)"*) WITH_SSL_CLIENT_CERTHOST="addr" ;;
+    *OpenSSL*|*NSS*) WITH_SSL_CLIENT_CERTHOST="name+addr" ;;
+esac
 case "${WITH_SSL_CLIENT}" in
     *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
     *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="pass" ;;
@@ -485,6 +490,7 @@ case "${WITH_SSL_CLIENT}" in
 esac
 log_info "Tested client binaries offer SSL support: ${WITH_SSL_CLIENT}"
 log_info "Tested client binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
+log_info "Tested client binaries offer server certificate validation with CERTHOST: ${WITH_SSL_CLIENT_CERTHOST}"
 
 [ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
 [ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
@@ -2284,11 +2290,17 @@ EOF
 FORCESSL 1
 EOF
 
-        case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        case x"${WITH_SSL_CLIENT_CERTHOST}" in
         x"none") cat << EOF
 CERTVERIFY 0
 # Custom settings for a specific remote server:
 CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 0
+EOF
+            ;;
+        x"addr") cat << EOF
+CERTVERIFY 1
+# Custom settings for a specific remote server without verifying the host cert for nickname '${TESTCERT_SERVER_NAME}':
+CERTHOST localhost "" 1 1
 EOF
             ;;
         *) cat << EOF
@@ -3372,12 +3384,15 @@ setenv_ssl_cppnit() {
 
                 # e.g. OpenSSL too old for us to check certs with current code
                 if [ x"${WITH_SSL_CLIENT_CERTIDENT}" = x"none" ] ; then
-                    log_warn "Not checking for CERTIDENT and CERTHOST nicknames, ability not built into binaries"
+                    log_warn "Not checking for CERTIDENT nickname, ability not built into binaries"
+                    NUT_CERTIDENT_NAME=""
+                fi
+
+                if [ x"${WITH_SSL_CLIENT_CERTHOST}" = x"none" ] || [ x"${WITH_SSL_CLIENT_CERTHOST}" = x"addr" ] ; then
+                    log_warn "Not checking for CERTHOST nickname, ability not built into binaries"
                     # and certificate verification
                     #NUT_CERTVERIFY=0
-                    NUT_CERTIDENT_NAME=""
                     NUT_CERTHOST_NAME=""
-                    # NOTE: NUT_CERTHOST_ADDR is ignored when the other part is NULL
                 fi
             fi
             ;;
