@@ -6,7 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
- *   2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
+ *   2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.71"
+#define DRIVER_VERSION	"0.72"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -2566,10 +2566,12 @@ static int reconnect_ups(void)
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
 	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
+		upsdebugx(0, "Device has been reconnected");
+		dstate_setinfo("driver.state", "quiet");
 		return 1;
 	}
 
-	dstate_setinfo("driver.state", "quiet");
+	upsdebugx(1, "Device has not been reconnected");
 	return 0;
 }
 

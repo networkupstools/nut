@@ -137,13 +137,13 @@ install-fanout-cleanup: install-recursive @dotMAKE@
 touch-include-all-nut_version-generated.timestamp:
 	@[ -s include/nut_version.h ]
 	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
-	 touch -d '1970-01-01' include/.all.nut_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01T00:00:00' include/.all.nut_version-generated.timestamp && exit ; \
 	 touch include/.all.nut_version-generated.timestamp
 
 touch-clients-all-libupsclient_version-generated.timestamp:
 	@[ -s clients/libupsclient-version.h ]
 	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
-	 touch -d '1970-01-01' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	 touch -d '1970-01-01T00:00:00' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch clients/.all.libupsclient_version-generated.timestamp
 
 touch-docs-man-all-linkman-generated.timestamp:
@@ -153,7 +153,7 @@ touch-docs-man-all-linkman-generated.timestamp:
 	 else \
 	    touch -r docs/man/linkman-driver-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
 	 fi ; \
-	 touch -d '1970-01-01' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	 touch -d '1970-01-01T00:00:00' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
 	 touch docs/man/.all.nut_linkman-generated.timestamp
 
 # Verbosity for fanout rule tracing; 0/1 (or "default" that may auto-set
@@ -209,6 +209,14 @@ all-fanout-maybe: .libs-dev-PATH @dotMAKE@
 	done ; \
 	export PATH ; \
 	export LD_LIBRARY_PATH ; \
+	if uname -a | grep -i darwin >/dev/null; then \
+		if [ -n "$${DYLD_FALLBACK_LIBRARY_PATH}" ] ; then \
+			DYLD_FALLBACK_LIBRARY_PATH="$${LD_LIBRARY_PATH}:$${DYLD_FALLBACK_LIBRARY_PATH}" ; \
+		else \
+			DYLD_FALLBACK_LIBRARY_PATH="$${LD_LIBRARY_PATH}" ; \
+		fi ; \
+		export DYLD_FALLBACK_LIBRARY_PATH ; \
+	fi ; \
 	' >> '$@'
 
 # We start with a pass to `make all` in `common` dir because our wild recipes
@@ -607,8 +615,12 @@ DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
-# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
+# Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time, which
+# may be passed down from caller and/or one of distcheck-* rules below.
+# The CI_CACHE_NUT_HASHDIR_CFG_OPT can also be passed down (by ci_build.sh
+# as generated for each specific build circumstance).
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ ${CI_CACHE_NUT_HASHDIR_CFG_OPT}			\
  PKG_CONFIG_PATH='@PKG_CONFIG_PATH@'			\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
@@ -874,7 +886,8 @@ SET_PARMAKES_OPT = \
 			fi ; \
 			PARMAKES_OPT="-j $${MAXPARMAKES}" ; \
 		;; \
-	esac
+	esac ; \
+	if [ x"$${V}$(V)" = x ]; then PARMAKES_OPT="$${PARMAKES_OPT} V=0" ; fi
 
 all-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \

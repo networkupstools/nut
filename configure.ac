@@ -37,6 +37,15 @@ AC_PROG_EGREP
 export GREP
 export EGREP
 
+dnl Work around ancient autotools:
+AS_IF([test x"${PACKAGE_URL-}" = x], [
+    _dirname0="`dirname \"$0\"`/tools/gitlog2version.sh"
+    PACKAGE_URL="`NUT_VERSION_QUERY=URL \"_dirname0\"/tools/gitlog2version.sh`" 2>/dev/null
+    unset _dirname0
+    AC_SUBST([PACKAGE_URL])
+    AC_DEFINE_UNQUOTED([PACKAGE_URL], "${PACKAGE_URL}", [Define to the home page for this package.])
+])
+
 dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
 dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
 dnl snapshots further set in stone. Either way, there should be a slash and
@@ -1825,14 +1834,15 @@ AC_CACHE_CHECK([for BSD KVM process info libs],
 /* we hope the code above fails if type is not defined or range is not sufficient */
 ]])],
         [ac_cv_lib_bsd_kvm_proc=yes
-        BSDKVMPROCLIBS="-lkvm"
+         AC_CACHE_VAL([ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS], [ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS="-lkvm"])
         ], [ac_cv_lib_bsd_kvm_proc=no]
     )])
 LIBS="$myLIBS"
 
 AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
-    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
-    )
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])
+     BSDKVMPROCLIBS="${ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS}"
+    ])
 
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
@@ -2143,7 +2153,9 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     ]
     )
 
-NETLIBS_GETADDRS=""
+dnl May be cached or not
+NETLIBS_GETADDRS="${nut_cv_var_NETLIBS_GETADDRS}"
+
 dnl For `nut-scanner -m auto` modes, see also:
 dnl https://stackoverflow.com/a/41151132/4715872
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
@@ -2190,7 +2202,7 @@ printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, 
                     dnl e.g. add "-lws2_32" for mingw builds, maybe "-liphlpapi"
                     dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
                     SAVED_LIBS="$LIBS"
-                    LIBS="$LIBS $NETLIBS"
+                    LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
                     AX_RUN_OR_LINK_IFELSE(
                         [AC_LANG_PROGRAM(
                             [${myIPHLPAPI_TEST_HEADERS}],
@@ -2283,7 +2295,7 @@ printf("%ld ", GetAdaptersInfo(buf, &bufsz))
     )]
 )
 AC_SUBST([NETLIBS_GETADDRS])
-
+AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
 dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
@@ -6569,18 +6581,21 @@ dnl #    with hints about _Nullable vs. _Nonnull pointers. The general idea
 dnl #    is respectable for memory safety and could be addressed for true old
 dnl #    C99 toolkits and current language spec e.g. with macros... later.
 dnl #    Currently it is more like whack-a-mole as distros update headers.
+dnl # -Wno-c11-extensions -- clang-21 on Ubuntu 26.04 at least complains a lot
+dnl #    about system headers (string.h, cdefs.h, etc.) using __glibc_const_generic
+dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -7077,8 +7092,10 @@ dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
 
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
 nut_with_ssl_cxx=no
-AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
-    AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
+AS_IF([test "${have_cxx11}" = yes], [
+  AS_IF([test x"${LIBSSL_CXXFLAGS}" = x],
+   [nut_with_ssl_cxx=yes],
+   [AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
     my_CFLAGS="${CFLAGS}"
     my_CPPFLAGS="${CPPFLAGS}"
@@ -7181,14 +7198,15 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
                     ]
                 )
             ])
+        ])
 
-        AS_IF([test "$my_FIXED" = true],
-            [nut_with_ssl_cxx=yes],
-            [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
-             dnl We disable just SSL support in the C++ library
-            ])
-        ]
-	)
+    dnl Revise if we fixed the support (or it just worked):
+    AS_IF([test "$my_FIXED" = true],
+        [nut_with_ssl_cxx=yes],
+        [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
+         dnl We disable just SSL support in the C++ library
+         nut_with_ssl_cxx=no
+        ])
 
     CFLAGS="${my_CFLAGS}"
     CPPFLAGS="${my_CPPFLAGS}"
@@ -7200,6 +7218,7 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     unset my_FIXED
     unset my_INCLUDEDIR_C
     unset my_INCLUDEDIR_CXX
+  ])
 ])
 
 AC_SUBST(LIBSSL_CXXFLAGS)

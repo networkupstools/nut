@@ -44,7 +44,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -96,6 +96,7 @@ static int is_open = 0;
 static double power_nominal;
 static double realpower_nominal;
 static int64_t last_send_time = 0;
+static int modbus_retries = 3;
 
 /* Function declarations */
 static int _apc_modbus_read_inventory(void);
@@ -695,6 +696,7 @@ static int _apc_modbus_string_join(const char *values[], size_t values_len, cons
 	}
 
 	output_idx = 0;
+	output[0] = 0; /* Always zero terminate */
 
 	for (i = 0; i < values_len && output_idx < output_len; i++) {
 		if (values[i] == NULL)
@@ -770,6 +772,69 @@ static int _apc_modbus_battery_test_status_to_nut(const apc_modbus_value_t *valu
 }
 
 static apc_modbus_converter_t _apc_modbus_battery_test_status_conversion = { _apc_modbus_battery_test_status_to_nut, NULL };
+
+static int _apc_modbus_runtime_calibration_status_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
+{
+	const char *result, *source, *modifier;
+	const char *values[3];
+
+	if (value == NULL || output == NULL || output_len == 0) {
+		/* Invalid parameters */
+		return 0;
+	}
+
+	if (value->type != APC_VT_UINT) {
+		return 0;
+	}
+
+	result = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PENDING)) {
+		result = "Pending";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_INPROGRESS)) {
+		result = "InProgress";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PASSED)) {
+		result = "Passed";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_FAILED)) {
+		result = "Failed";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_REFUSED)) {
+		result = "Refused";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_ABORTED)) {
+		result = "Aborted";
+	}
+
+	source = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_PROTOCOL)) {
+		source = "Source: Protocol";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_LOCALUI)) {
+		source = "Source: LocalUI";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_INTERNAL)) {
+		source = "Source: Internal";
+	}
+
+	modifier = NULL;
+	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INVALIDSTATE)) {
+		modifier = "Modifier: InvalidState";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INTERNALFAULT)) {
+		modifier = "Modifier: InternalFault";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE)) {
+		modifier = "Modifier: StateOfChargeNotAcceptable";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADCHANGE)) {
+		modifier = "Modifier: LoadChange";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_ACINPUTNOTACCEPTABLE)) {
+		modifier = "Modifier: ACInputNotAcceptable";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADTOOLOW)) {
+		modifier = "Modifier: LoadTooLow";
+	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_OVERCHARGEINPROGRESS)) {
+		modifier = "Modifier: OverChargeInProgress";
+	}
+
+	values[0] = result;
+	values[1] = source;
+	values[2] = modifier;
+	return _apc_modbus_string_join(values, SIZEOF_ARRAY(values), ", ", output, output_len);
+}
+
+static apc_modbus_converter_t _apc_modbus_runtime_calibration_status_conversion = { _apc_modbus_runtime_calibration_status_to_nut, NULL };
 
 static const time_t apc_date_start_offset = 946684800; /* 2000-01-01 00:00 */
 
@@ -889,6 +954,7 @@ static apc_modbus_register_t apc_modbus_register_map_inventory[] = {
 static apc_modbus_register_t apc_modbus_register_map_status[] = {
 	{ "input.transfer.reason",          2,      1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_status_change_cause_conversion,    NULL,       0,  NULL    },
 	{ "ups.test.result",                23,     1,  APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_battery_test_status_conversion,    NULL,       0,  NULL    },
+	{ "experimental.ups.calibration.result", 24, 1, APC_VT_UINT,     APC_VF_NONE,         &_apc_modbus_runtime_calibration_status_conversion,    NULL,       0,  NULL    },
 	{ NULL, 0, 0, APC_VT_INT, APC_VF_NONE, NULL, NULL, 0.0f, NULL }
 };
 
@@ -987,6 +1053,7 @@ static apc_modbus_register_t* _apc_modbus_find_register_variable(const char *nut
 static void _apc_modbus_close(int free_modbus)
 {
 	if (modbus_ctx != NULL) {
+		upslogx(LOG_INFO, "%s: Closing connection", __func__);
 		modbus_close(modbus_ctx);
 		if (free_modbus) {
 			modbus_free(modbus_ctx);
@@ -1079,58 +1146,32 @@ interframe_delay_exit:
 	last_send_time = current_time;
 }
 
-static void _apc_modbus_handle_error(modbus_t *ctx)
-{
-	static int flush_retries = 0;
-	int flush = 0;
-#ifdef WIN32
-	int wsa_error;
-#endif /* WIN32 */
-
-	/*
-	 * We could enable MODBUS_ERROR_RECOVERY_LINK but that would just get stuck
-	 * in libmodbus until recovery. The only indication of this is that the
-	 * program is stuck and debug prints by libmodbus, which we don't want to
-	 * enable on release.
-	 *
-	 * Instead we detect timout errors and do a sleep + flush, on every other
-	 * error or when flush didn't work we do a reconnect.
-	 */
-
-#ifdef WIN32
-	wsa_error = WSAGetLastError();
-	if (wsa_error == WSAETIMEDOUT) {
-		flush = 1;
-	}
-#else	/* !WIN32 */
-	if (errno == ETIMEDOUT) {
-		flush = 1;
-	}
-#endif /* !WIN32 */
-
-	if (flush > 0 && flush_retries++ < 5) {
-		usleep(1000000);
-		modbus_flush(ctx);
-	} else {
-		flush_retries = 0;
-		upslogx(LOG_ERR, "%s: Closing connection", __func__);
-		/* Close without free, will retry connection on next update */
-		_apc_modbus_close(0);
-	}
-}
-
 static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
 {
-	_apc_modbus_interframe_delay();
+	int res;
+	int retries = modbus_retries;
+	int saved_errno;
 
-	if (modbus_read_registers(ctx, addr, nb, dest) > 0) {
+	while (retries-- > 0) {
+		_apc_modbus_interframe_delay();
+
+		res = modbus_read_registers(ctx, addr, nb, dest);
+		saved_errno = errno;
 		_apc_modbus_interframe_delay_reset();
-		return 1;
-	} else {
-		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(ctx);
-		return 0;
+		if (res > 0) {
+			return 1;
+		}
+
+		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(saved_errno), device_path);
+
+		if (saved_errno != ETIMEDOUT) {
+			break;
+		}
 	}
+
+	_apc_modbus_close(0);
+
+	return 0;
 }
 
 static int _apc_modbus_update_value(apc_modbus_register_t *regs_info, const uint16_t *regs, const size_t regs_len)
@@ -1498,7 +1539,7 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	if (modbus_write_registers(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, 2, value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of outlet command failed: %s (%s)",
 			__func__, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		*result = STAT_INSTCMD_FAILED;
 		return 1;
 	}
@@ -1680,7 +1721,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	nb = apc_value->modbus_len;
 	if (modbus_write_registers(modbus_ctx, addr, nb, reg_value) < 0) {
 		upslogx(LOG_ERR, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb - 1, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_SET_FAILED;
 	}
 
@@ -1759,7 +1800,7 @@ static int _apc_modbus_instcmd(const char *nut_cmdname, const char *extra)
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 	if (modbus_write_registers(modbus_ctx, addr, nb, value) < 0) {
 		upslogx(LOG_INSTCMD_FAILED, "%s: Write of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(errno), device_path);
-		_apc_modbus_handle_error(modbus_ctx);
+		_apc_modbus_close(0);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1800,6 +1841,7 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 			return;
 		}
+		upslogx(LOG_INFO, "Opened modbus successfully");
 	}
 
 	alarm_init();
@@ -1838,6 +1880,45 @@ void upsdrv_updateinfo(void)
 			status_set("OVER");
 		}
 
+		/* PowerSystemError_BF, 2 registers */
+		_apc_modbus_to_uint64(&regbuf[20], 2, &value);
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_OVERLOAD) {
+			alarm_set("Power system - Output overload");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_SHORT_CIRCUIT) {
+			alarm_set("Power system - Output short circuit");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_OVERVOLTAGE) {
+			alarm_set("Power system - Output overvoltage");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OVERTEMPERATURE) {
+			alarm_set("Power system - Overtemperature");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_BACKFEED_RELAY) {
+			alarm_set("Power system - Backfeed relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_AVR_RELAY) {
+			alarm_set("Power system - AVR relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_PFC_INPUT_RELAY) {
+			alarm_set("Power system - PFC input relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_OUTPUT_RELAY) {
+			alarm_set("Power system - Output relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_BYPASS_RELAY) {
+			alarm_set("Power system - Bypass relay fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_PFC) {
+			alarm_set("Power system - PFC fault");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_DC_BUS_OVERVOLTAGE) {
+			alarm_set("Power system - DC bus overvoltage");
+		}
+		if (value & APC_MODBUS_POWERSYSTEMERROR_BF_INVERTER) {
+			alarm_set("Power system - Inverter fault");
+		}
+
 		/* OutletStatus_BF */
 		for (i = 0; i < SIZEOF_ARRAY(apc_modbus_outlet_group_info); i++) {
 			if (apc_modbus_outlet_group_info[i].present == 0) {
@@ -1863,9 +1944,28 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* BatterySystemError_BF, 1 register */
-		_apc_modbus_to_uint64(&regbuf[18], 1, &value);
-		if (value & (1 << 1)) { /* NeedsReplacement */
+		_apc_modbus_to_uint64(&regbuf[22], 1, &value);
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_DISCONNECTED) {
+			alarm_set("Battery system - Disconnected");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_OVER_VOLTAGE) {
+			alarm_set("Battery system - Over voltage");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_NEEDS_REPLACEMENT) {
 			status_set("RB");
+			alarm_set("Battery system - Needs replacement");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_OVER_TEMPERATURE_CRITICAL) {
+			alarm_set("Battery system - Over temperature");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_CHARGER) {
+			alarm_set("Battery system - Charger fault");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_TEMPERATURE_SENSOR) {
+			alarm_set("Battery system - Temperature sensor fault");
+		}
+		if (value & APC_MODBUS_BATTERYSYSTEMERROR_BF_BUS_SOFT_START) {
+			alarm_set("Battery system - Bus soft start fault");
 		}
 
 		/* RunTimeCalibrationStatus_BF, 1 register */
@@ -1960,7 +2060,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, default=serial)");
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");
-	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds");
+	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds (default=500, 2000 for TCP)");
+	addvar(VAR_VALUE, "modbus_retries", "Number of retries for Modbus register reads on timeout errors (default=3)");
 
 	/* Serial RTU parameters */
 	addvar(VAR_VALUE, "baudrate", "Modbus serial RTU communication speed in baud (default=9600)");
@@ -2180,7 +2281,7 @@ void upsdrv_initups(void)
 	int rtu_databits;
 	int rtu_stopbits;
 	int slaveid;
-	uint32_t response_timeout_ms;
+	uint32_t response_timeout_ms = 500;
 	char tcp_host[256];
 	char tcp_port[6];
 
@@ -2255,6 +2356,12 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "failed to parse host/port");
 		}
 
+		/*
+		 * Increase the default for TCP
+		 * See https://github.com/networkupstools/nut/pull/3414#issuecomment-4243889805
+		 */
+		response_timeout_ms = 2000;
+
 		modbus_ctx = modbus_new_tcp_pi(tcp_host, tcp_port);
 	} else if (!strcasecmp(val, "serial")) {
 		val = getval("baudrate");
@@ -2291,13 +2398,18 @@ void upsdrv_initups(void)
 	val = getval("response_timeout_ms");
 	if (val != NULL) {
 		response_timeout_ms = (uint32_t)strtoul(val, NULL, 0);
+	}
+
+	if (response_timeout_ms < 100) {
+		upslogx(LOG_WARNING, "response_timeout_ms value %u ms is very low and may cause communication problems; consider increasing it", response_timeout_ms);
+	}
 
 #if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
-		r = modbus_set_response_timeout(modbus_ctx, response_timeout_ms / 1000, (response_timeout_ms % 1000) * 1000);
-		if (r < 0) {
-			modbus_free(modbus_ctx);
-			fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-		}
+	r = modbus_set_response_timeout(modbus_ctx, response_timeout_ms / 1000, (response_timeout_ms % 1000) * 1000);
+	if (r < 0) {
+		modbus_free(modbus_ctx);
+		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
+	}
 #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
 	{	/* see comments above */
 		struct timeval to;
@@ -2308,6 +2420,14 @@ void upsdrv_initups(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	val = getval("modbus_retries");
+	if (val != NULL) {
+		modbus_retries = atoi(val);
+		if (modbus_retries < 1) {
+			modbus_free(modbus_ctx);
+			fatalx(EXIT_FAILURE, "modbus_retries needs to be at least 1");
+		}
 	}
 
 	if (modbus_connect(modbus_ctx) == -1) {

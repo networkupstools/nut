@@ -219,7 +219,9 @@ endif WITH_SSL
 # for the run-time dynamic linker resolution? For now the shared-library
 # builds are "exotic", but it makes sense to deprecate this export in a
 # future release.
-libupsclient_la_LDFLAGS = -version-info 8:0:1
+### WARNING: Do not forget to update SO_MAJOR_LIBUPSCLIENT under scripts/obs,
+### especially when bumping "age" into loss of compatibility with old releases!
+libupsclient_la_LDFLAGS = -version-info 9:0:2
 libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
 #|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'
 if HAVE_WINDOWS
@@ -292,7 +294,9 @@ libupsclient-version.h: libupsclient.la
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 3:0:1
+### WARNING: Do not forget to update SO_MAJOR_LIBNUTCLIENT under scripts/obs,
+### especially when bumping "age" into loss of compatibility with old releases!
+libnutclient_la_LDFLAGS = -version-info 4:0:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 if ENABLE_SHARED_PRIVATE_LIBS
@@ -319,6 +323,8 @@ endif !HAVE_CXX11
 if HAVE_CXX11
 # libnutclientstub version information and build
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
+### WARNING: Do not forget to update SO_MAJOR_LIBNUTCLIENTSTUB under scripts/obs,
+### especially when bumping "age" into loss of compatibility with old releases!
 libnutclientstub_la_LDFLAGS = -version-info 1:1:0
 libnutclientstub_la_LIBADD = libnutclient.la
 if HAVE_WINDOWS

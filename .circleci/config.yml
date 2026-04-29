@@ -53,6 +53,12 @@ jobs:
         #type: string
         #default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
         #default: "/usr/local" # was when CircleCI builders had x86
+      DO_CLEAN_NUTCI_CACHE:
+        type: string
+        default: "no"
+      DO_USE_NUTCI_CACHE:
+        type: string
+        default: "yes"
 
     environment:
       CC: << parameters.CC >>
@@ -64,6 +70,8 @@ jobs:
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
       #HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
+      DO_CLEAN_NUTCI_CACHE: << parameters.DO_CLEAN_NUTCI_CACHE >>
+      DO_USE_NUTCI_CACHE: << parameters.DO_USE_NUTCI_CACHE >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -128,8 +136,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+            - config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-
 
       # Help SEMVER look right (optionally)
       - run:
@@ -198,9 +207,16 @@ jobs:
       # be beneficial to instead share the cache between jobs; more so
       # while we are on free CircleCI tier and run them sequentially.
       - save_cache:
+          name: Save .ccache for later runs
           paths:
             - ~/.ccache
-          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+
+      - save_cache:
+          name: Save Autoconf cache and NIT certs for later runs
+          paths:
+            - ~/.cache/nut-ci
+          key: config-cache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
 
       - store_artifacts:
           path: config.log

@@ -61,6 +61,11 @@ Stable tree: {tree_version}
 - link:https://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
 - link:https://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
 
+For a set of pre-rendered documentation files (man pages for Linux/BSD
+common section layout, HTML and PDF) please see:
+
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}-docs.tar.gz[nut-{revision}-docs.tar.gz]
+
 You can also browse the link:https://www.networkupstools.org/source/{tree_version}/[stable source directory].
 
 Development tree:
@@ -248,11 +253,11 @@ The automatically generated binary build archive of the latest release is
 available here:
       link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
 +
-------
 [NOTE]
+======
 Windows binaries may be quite large but sparse, so it may be useful to
 enable compression on the folder where you have unpacked a NUT tarball.
-------
+======
 
     * link:https://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[(OBSOLETE) Windows MSI installer 2.6.5-6]
 
@@ -260,14 +265,14 @@ enable compression on the folder where you have unpacked a NUT tarball.
 Java packages
 -------------
 
-- The jNut package has been split into its own
+- The jNut package (client side, Beta) has been split into its own
   link:https://github.com/networkupstools/jNut[GitHub repository].
 
-- NUT Java support (client side, Beta)
-  link:https://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+- NUT Java support: sources and JAR of the library and example client
+  link:https://www.networkupstools.org/package/java/jNut-1.1.tar.gz[jNUT 1.1]
 
-- NUT Java Web support (client side using REST, Beta)
-  link:https://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
+- NUT Java Web support (NUT client side to provide REST API as a server): sources and WAR
+  link:https://www.networkupstools.org/package/java/jNutWebAPI-1.1.tar.gz[jNutWebAPI 1.1]
 
 Virtualization packages
 -----------------------

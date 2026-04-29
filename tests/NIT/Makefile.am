@@ -33,13 +33,15 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 #               if NUT was built with SSL support
 #   required    Require that the SSL tests are set up always (e.g. fail if NUT
 #               was built without SSL support)
-# Default: try to set up crypto if possible (tools available, NUT built with
-# SSL support) and run the tests in resulting conditions.
+#   best-effort(yes): Default: try to set up crypto if possible (tools are
+#               available, NUT built with SSL support) and run the tests in
+#               resulting conditions; skip if crypto setup fails (tools absent,
+#               rejected our commands/passwords, etc.). Tests still must pass.
 ### if WITH_OPENSSL
 ### WITH_SSL_TESTS = no
 ### else !WITH_OPENSSL
 ### WITH_SSL_TESTS = required-conditional
-WITH_SSL_TESTS = yes
+WITH_SSL_TESTS = best-effort
 ### endif !WITH_OPENSSL
 
 # Run in builddir, use script from srcdir

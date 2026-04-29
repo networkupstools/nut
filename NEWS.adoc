@@ -18,6 +18,98 @@ ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
 
+PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
+-------------------------------------------------------------
+
+https://github.com/networkupstools/nut/milestone/13
+
+ - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
+   the driver binaries to be built once and data mappings to be loaded
+   and modernized on the fly (porting from 42ITy project)
+
+ - (expected) Porting of patches suggested by different distribution packages
+
+ - (expected) C code clean-up/consistency (string format security, work with
+   Boolean values, string to number conversions, etc. in the same manner)
+
+ - (expected) clean-up of libusb API variants support [#300 and follow-ups]
+
+ - (expected) CI automation for coding style
+
+ - (expected) CI automation for driver flags and variables to be certainly
+   documented, handled in augeas lenses, nutconf classes, etc.
+
+ - (expected) CI automation for use of data points in drivers that conform
+   to patterns defined in link:docs/nut-names.txt[]
+
+ - Second-level bullet points listed in this file will now use 4 spaces
+   (not 3 like before) for easier initial indentation of new entries.
+
+ - `apc_modbus` driver updates:
+    * Fixed string join not doing zero termination. [PR #3413]
+    * Decode `RunTimeCalibrationStatus_BF` into
+      `experimental.ups.calibration.result` [PR #3416]
+    * Decode `BatterySystemError_BF` as alarms. [PR #3415]
+    * Decode `PowerSystemError_BF` as alarms. [PR #3415]
+    * Added `modbus_retries` option to configure the number of read retry
+      attempts on timeout errors, simplifying error recovery. [PR #3414]
+    * Increased default TCP response timeout to 2000 ms. [PR #3418]
+
+ - `nutdrv_qx` driver updates:
+    * Only claim a USB device as "supported" during discovery out of the box
+      if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
+      USB chips not only in UPSes). [issue #3410]
+
+ - `usbhid-ups` driver updates:
+    * When reconnecting, report success more visibly (not only in debug), and
+      do not reset driver state to "quiet" when it will loop trying. [PR #3423]
+
+ - NUT client libraries:
+    * Complete support for actions documented in `docs/net-protocol.txt`
+      was implemented in C++, Python and PERL bindings in-tree, and for Java
+      in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
+      other things, all these libraries now support `STARTTLS` and `TRACKING`
+      to wait for server confirmation of a `SET VAR` or `INSTCMD` request,
+      and this is tested by the NIT script. [issues #656, #1348, #1349, #1350,
+      #1613, #1711, PR #3402]
+    * Enhanced client side of `STARTTLS` dialog to follow up by a simple
+      query (for protocol version) to verify that handshake succeeded.
+      This change impacted also the classic C `libupsclient` library.
+      [issue #3387, PR #3402]
+    * Updated OpenSSL code paths in the `libupsclient` C library to support
+      features earlier only available with NSS builds, like specifying the
+      client certificate+key, optionally with password, and pinning expected
+      server certificates. For both backends such pinning should now honour
+      the 'certverify' setting of the `CERTHOST` entry (e.g. not abort the
+      connection attempt if that number is '0'). Also, the `-1` value is
+      now supported to mean "use global default setting". [issue #3331]
+    * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
+      (optional validation of clients identified by a certificate) also
+      when built with OpenSSL, optionally using the `CERTPATH` with a
+      collection of CA certificates (directory or a big PEM file).
+      Also support `CERTIDENT` to provide a private key password and ensure
+      that the certificate in `CERTFILE` has an expected subject name as an
+      exact string, or that its CN or SAN match the provided string as a
+      standard expression of host name (section 3.5 of RFC 1034) or IP address.
+      [issue #3331]
+    * The `libupsclient` API was extended with a `upscli_init2()` method which
+      allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
+    * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
+      report the ability to check `CERTIDENT` information. [#3331]
+
+ - `upsmon` client updates:
+    * Introduced support for `CERTFILE` option, so the client can identify
+      itself to the data server also in OpenSSL builds. [issue #3331]
+
+ - Introduced `ci_build.sh` settings and respective CI workflow settings
+   to optionally re-use a `config.cache` file from older runs, and similar
+   logic for NIT `nit.sh` to re-use generated certificate and private key
+   files. Both can be enabled by `export DO_USE_NUTCI_CACHE=yes` and would
+   store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
+   `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
+   [issues #3108, #3390, #1711, PR #3109]
+
+
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------
 

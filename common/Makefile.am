@@ -41,6 +41,8 @@ if ENABLE_SHARED_PRIVATE_LIBS
 ### far apart (e.g. custom rebuilds of new programs
 ### tucked into an existing deployment); see libtool
 ### docs about current:revision:age interface numbering.
+### WARNING: Maybe that would lead to SO_MAJOR_LIBNUTPRIVATE_* updates under scripts/obs,
+### especially when bumping "age" into loss of compatibility with old releases!
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS = -version-info 1:0:0
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS = -version-info 1:0:0
 
@@ -212,6 +214,8 @@ if WITH_DEV_LIBNUTCONF
   # libnutconf version information and build
   # currently considered a highly experimental and so unstable API at least
   # (at least, headers contain a lot of data/code, not sure they should)
+  ### WARNING: Do not forget to update SO_MAJOR_LIBNUTCONF under scripts/obs,
+  ### especially when bumping "age" into loss of compatibility with old releases!
   libnutconf_la_LDFLAGS = -version-info 0:1:0
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this

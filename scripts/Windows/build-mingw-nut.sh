@@ -5,6 +5,10 @@
 # script to cross compile NUT for Windows from Linux using MinGW-w64
 # http://mingw-w64.sourceforge.net/
 #
+# Copyright (C)
+#	2012		Arnaud Quette <arnaud.quette@free.fr>
+#	2022-2026	Jim Klimov <jimklimov+nut@gmail.com>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -19,7 +23,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#set -x
+# Set this to enable verbose tracing
+[ -n "${CI_TRACE-}" ] || CI_TRACE="no"
+case "$CI_TRACE" in
+	[Nn][Oo]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee])
+		set +x ;;
+	[Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
+		set -x ;;
+esac
 
 SCRIPTDIR="`dirname \"$0\"`"
 SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
@@ -121,6 +132,51 @@ if [ -z "$INSTALL_WIN_BUNDLE" ]; then
 	echo "recipe for DLL co-bundling (default: false to use logic maintained in $0"
 fi >&2
 
+configure_nut() {
+	USE_AUTOCONF_CACHE_FLAG=""
+	unset CI_CACHE_NUT_HASHDIR_CFG
+
+	# Option passed by caller like ci_build.sh:
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] ; then
+		USE_AUTOCONF_CACHE_FLAG="-C"
+
+		# Dedicated location may be passed by caller:
+		if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+			CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$* CC='$CC' CXX='$CXX' CPP='$CPP'\" | md5sum | awk '{print $1}'`" \
+			|| CI_CACHE_NUT_HASHDIR_CFG=''
+			if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+				if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+					mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+					echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+					echo "$* CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+					# To be filled after the configuration succeeds:
+					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
+					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
+				else
+					echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+				fi
+				USE_AUTOCONF_CACHE_FLAG="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+			fi
+		fi
+	fi
+
+	CFG_RES=0
+	$CONFIGURE_SCRIPT \
+		$USE_AUTOCONF_CACHE_FLAG \
+		"$@" \
+	|| CFG_RES=$?
+
+	if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${USE_AUTOCONF_CACHE_FLAG}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+		if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+			# Populate on first run:
+			cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+			cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+		fi
+	fi
+
+	return $CFG_RES
+}
+
 do_build_mingw_nut() {
 	cd "$BUILD_DIR" || exit
 
@@ -179,7 +235,10 @@ do_build_mingw_nut() {
 	# Currently "/run" location is not relevant (writepid() is a stub)
 	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
 	RES_CFG=0
-	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
+	configure_nut \
+	    $HOST_FLAG \
+	    $BUILD_FLAG \
+	    --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    $WITH_SSL_FLAG \

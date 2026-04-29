@@ -84,6 +84,11 @@ Set the Modbus slave id. The default slave id is 1.
 Set the Modbus response timeout. The default timeout is set by libmodbus. It can
 be good to set a higher timeout on TCP connections with high latency.
 
+*modbus_retries*='num'::
+Set the number of retries for Modbus register reads on timeout errors.
+The default is 3 retries. After exhausting retries (or on non-timeout errors),
+the connection is closed and will be re-established on the next update cycle.
+
 BUGS
 ----
 

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3734 utf-8
+personal_ws-1.1 en 3746 utf-8
 AAC
 AAS
 ABI
@@ -84,6 +84,7 @@ Avocent
 Axel
 Axpert
 Axxium
+BASEDIR
 BATGNn
 BATNn
 BATTDATE
@@ -125,6 +126,7 @@ Balker
 Bartek
 BatteryA
 BatteryB
+BatterySystemError
 Baulé
 BayTech
 Belkin's
@@ -477,6 +479,7 @@ GetUPSNames
 GetUPSVars
 Ghali
 Giese
+Gigabit
 GitHub
 GitHub's
 Gnomovision
@@ -1040,6 +1043,7 @@ PowerShare
 PowerShell
 PowerShield
 PowerSure
+PowerSystemError
 PowerTech
 PowerTrust
 PowerVS
@@ -1160,6 +1164,7 @@ Rouben
 Rozman
 Rucelf
 RunAs
+RunTimeCalibrationStatus
 RunUPSCommand
 RxD
 Ryabov
@@ -1351,6 +1356,7 @@ TCIOFLUSH
 TCSANOW
 TEMPC
 TEMPF
+TESTCERT
 TESTPASS
 TEoQ
 TGS
@@ -1761,6 +1767,8 @@ bitmapped
 bitmask
 bitness
 bitnesses
+blog
+blogs
 bmake
 bn
 bool
@@ -1899,6 +1907,7 @@ configureaz
 configureaza
 confpath
 conn
+connectable
 const
 contrib
 cooldown
@@ -2944,6 +2953,7 @@ pkgin
 pkgsrc
 plaintext
 plugin
+plugins
 pluma
 pmset
 pmu
@@ -2993,7 +3003,9 @@ preprocessor
 prerelease
 prereqs
 pretentiousVariableNamingSchemes
+prev
 prgshut
+primary's
 printf
 prio
 priv
