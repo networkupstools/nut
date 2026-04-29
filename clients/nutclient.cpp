@@ -1277,13 +1277,20 @@ void Socket::setSSLConfig_OpenSSL(const SSLConfig_OpenSSL& config)
 # endif
 	}
 
+	/* Might be tempted to check by getFirstCertHost() nullness, but
+	 * these data can be added later - unlike those in constructor */
+	_ssl_configured |= UPSCLI_SSL_CAPS_CERTHOST_ADDR;
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	_ssl_configured |= UPSCLI_SSL_CAPS_CERTHOST_NAME;
+# endif
+
 #else
 	if (_debugConnect) std::cerr <<
 		"[D2] NOT config OpenSSL" << std::endl;
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_OPENSSL;
-	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_PASS;
-	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTHOST;
 #endif
 }
 
@@ -1315,13 +1322,15 @@ void Socket::setSSLConfig_NSS(const SSLConfig_NSS& config)
 		_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
 		_ssl_configured |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
 	}
+
+	_ssl_configured |= UPSCLI_SSL_CAPS_CERTHOST;
 #else
 	if (_debugConnect) std::cerr <<
 		"[D2] NOT config NSS" << std::endl;
 
 	_ssl_configured &= ~UPSCLI_SSL_CAPS_NSS;
-	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_PASS;
-	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTIDENT;
+	_ssl_configured &= ~UPSCLI_SSL_CAPS_CERTHOST;
 #endif
 }
 
@@ -2032,9 +2041,24 @@ TcpClient::~TcpClient()
 #ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
 	ret |= UPSCLI_SSL_CAPS_OPENSSL;
+
+# if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
+# endif
+# if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+# endif
+
+	ret |= UPSCLI_SSL_CAPS_CERTHOST_ADDR;
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	ret |= UPSCLI_SSL_CAPS_CERTHOST_NAME;
+# endif
+
 # endif
 # ifdef WITH_NSS
 	ret |= UPSCLI_SSL_CAPS_NSS;
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT;
+	ret |= UPSCLI_SSL_CAPS_CERTHOST;
 # endif
 #endif	/* WITH_SSL_CXX */
 

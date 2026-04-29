@@ -18,8 +18,14 @@ SYNOPSIS
 	 * UPSCLI_SSL_CAPS_OPENSSL	- Can use OpenSSL-specific setup
 	 * UPSCLI_SSL_CAPS_NSS    	- Can use Mozilla NSS-specific setup
 	 * UPSCLI_SSL_CAPS_CERTIDENT_PASS - Can do CERTIDENT private key password
-	 * UPSCLI_SSL_CAPS_CERTIDENT_NAME - Can do CERTIDENT name check
+	 * UPSCLI_SSL_CAPS_CERTIDENT_NAME - Can do CERTIDENT nickname check
 	 * UPSCLI_SSL_CAPS_CERTIDENT	 - both of the above: either backend,
+	 *                          	  except antique OpenSSL APIs
+	 * UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER	- Can do CERTHOST IP address check
+	 * UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT	- Can do CERTHOST hostname check
+	 * UPSCLI_SSL_CAPS_CERTHOST_ADDR	- Can do CERTHOST IP address or hostname check
+	 * UPSCLI_SSL_CAPS_CERTHOST_NAME	- Can do CERTHOST nickname check
+	 * UPSCLI_SSL_CAPS_CERTHOST	 - both of the above: either backend,
 	 *                          	  except antique OpenSSL APIs
 	 */
 
