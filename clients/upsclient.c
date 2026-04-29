@@ -2972,6 +2972,9 @@ const char *upscli_ssl_caps_descr(void)
 		" sans CERTIDENT(name)"
 #   endif
 #  endif
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+		" sans CERTHOST(name)"
+#  endif
 #  ifdef WITH_NSS
 		/* Not likely we'd get here, but... */
 		" and "
