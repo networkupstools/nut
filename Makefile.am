@@ -209,7 +209,7 @@ all-fanout-maybe: .libs-dev-PATH @dotMAKE@
 	done ; \
 	export PATH ; \
 	export LD_LIBRARY_PATH ; \
-	if `uname -a` | grep -i darwin >/dev/null; then \
+	if uname -a | grep -i darwin >/dev/null; then \
 		if [ -n "$${DYLD_FALLBACK_LIBRARY_PATH}" ] ; then \
 			DYLD_FALLBACK_LIBRARY_PATH="$${LD_LIBRARY_PATH}:$${DYLD_FALLBACK_LIBRARY_PATH}" ; \
 		else \
