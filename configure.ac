@@ -1834,14 +1834,15 @@ AC_CACHE_CHECK([for BSD KVM process info libs],
 /* we hope the code above fails if type is not defined or range is not sufficient */
 ]])],
         [ac_cv_lib_bsd_kvm_proc=yes
-        BSDKVMPROCLIBS="-lkvm"
+         AC_CACHE_VAL([ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS], [ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS="-lkvm"])
         ], [ac_cv_lib_bsd_kvm_proc=no]
     )])
 LIBS="$myLIBS"
 
 AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
-    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
-    )
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])
+     BSDKVMPROCLIBS="${ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS}"
+    ])
 
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
@@ -2152,7 +2153,9 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     ]
     )
 
-NETLIBS_GETADDRS=""
+dnl May be cached or not
+NETLIBS_GETADDRS="${nut_cv_var_NETLIBS_GETADDRS}"
+
 dnl For `nut-scanner -m auto` modes, see also:
 dnl https://stackoverflow.com/a/41151132/4715872
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
@@ -2199,7 +2202,7 @@ printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, 
                     dnl e.g. add "-lws2_32" for mingw builds, maybe "-liphlpapi"
                     dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
                     SAVED_LIBS="$LIBS"
-                    LIBS="$LIBS $NETLIBS"
+                    LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
                     AX_RUN_OR_LINK_IFELSE(
                         [AC_LANG_PROGRAM(
                             [${myIPHLPAPI_TEST_HEADERS}],
@@ -2292,7 +2295,7 @@ printf("%ld ", GetAdaptersInfo(buf, &bufsz))
     )]
 )
 AC_SUBST([NETLIBS_GETADDRS])
-
+AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
 dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?

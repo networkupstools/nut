@@ -53,6 +53,8 @@ if test -z "${nut_have_libltdl_seen}"; then
 			AS_UNSET([ac_cv_header_ltdl_h])
 			CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 			AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
+			dnl Get into this code path upon re-runs even with config.cache:
+			AS_UNSET([ac_cv_header_ltdl_h])
 			],[nut_have_libltdl=no]
 		)], [AC_INCLUDES_DEFAULT])
 	AS_IF([test x"$nut_have_libltdl" = xyes], [
