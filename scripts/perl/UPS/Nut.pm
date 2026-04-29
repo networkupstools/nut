@@ -12,7 +12,8 @@
 
 package UPS::Nut;
 use strict;
-use warnings FATAL => 'all';
+# Absent on antique versions like perl-5.005 (Solaris 8)
+eval "use warnings FATAL => 'all';";
 use Carp;
 use FileHandle;
 use IO::Socket;
@@ -186,7 +187,7 @@ sub StartTLS {
     my %argdef = ();
     my $strarg = "[" . scalar(%arg) . "]";
     for (keys %arg) {
-        $strarg .= " $_=>" . ($arg{$_}//"undef");
+        $strarg .= " $_=>" . ($arg{$_}||"undef");
         if (defined $arg{$_}) {
           $argdef{$_} = $arg{$_};
         }
@@ -196,9 +197,34 @@ sub StartTLS {
         . " Other args: " . $strarg
         );
 
-    if (!defined($argdef{SSL_hostname}) && defined($argdef{HOST})) {
+    # Translation for some common NUT SSL argument names to IO::Socket::SSL:
+    if (!defined($argdef{SSL_ca_file}) && defined($argdef{CAFILE})) {
+      $argdef{SSL_ca_file} = $argdef{CAFILE};
+    }
+    if (!defined($argdef{SSL_ca_path}) && defined($argdef{CAPATH})) {
+      $argdef{SSL_ca_path} = $argdef{CAPATH};
+    }
+    if (!defined($argdef{SSL_cert_file}) && defined($argdef{CERTFILE})) {
+      $argdef{SSL_cert_file} = $argdef{CERTFILE};
+    }
+    if (!defined($argdef{SSL_key_file}) && defined($argdef{KEYFILE})) {
+      $argdef{SSL_key_file} = $argdef{KEYFILE};
+    }
+    if (!defined($argdef{SSL_passwd_cb}) && defined($argdef{CERTPASS})) {
+      # Use a sub to return the password (simplest for IO::Socket::SSL)
+      $argdef{SSL_passwd_cb} = sub { return $argdef{CERTPASS}; };
+    }
+
+    if (!defined($argdef{SSL_hostname}) && (
+        defined($argdef{HOST}) || defined($self->{expected_server_certname})
+    )) {
       # If specified, allows cert validation for host names *and* IP addresses
-      $argdef{SSL_hostname} = $argdef{HOST};
+      $argdef{SSL_hostname} = $self->{expected_server_certname} || $argdef{HOST};
+    }
+
+    if (defined $self->{expected_server_certname}) {
+      # IO::Socket::SSL uses SSL_verifycn_name for CN verification
+      $argdef{SSL_verifycn_name} = $self->{expected_server_certname};
     }
 
     if ($self->{debug}) {
@@ -219,6 +245,26 @@ sub StartTLS {
       $self->_debug($self->{err} = "SSL upgrade failed: " . IO::Socket::SSL->errstr());
       return undef;
     };
+
+    # CERTIDENT: verify the LOADED client certificate as a hit/match
+    # between certificate subject name and expected string.
+    # TOTHINK: Check somehow CN/SAN host/IP address? Of the client?..
+    if (defined $arg{CERTIDENT} && defined $arg{CERTFILE}) {
+      my $cert = $self->{srvsock}->get_certificate();
+      if ($cert) {
+        my $subject = $cert->subject_name();
+        $self->_debug("CERTIDENT: validating loaded client certificate subject: $subject against $arg{CERTIDENT}");
+        # subject_name() typically returns something like "/C=US/ST=.../CN=..."
+        if ($subject != $arg{CERTIDENT} && $subject !~ /\/CN=\Q$arg{CERTIDENT}\E(\/|$)/ && $subject !~ /CN\s*=\s*\Q$arg{CERTIDENT}\E/) {
+           $self->_debug($self->{err} = "CERTIDENT mismatch: expected $arg{CERTIDENT}, found $subject");
+           return undef;
+        }
+        $self->_debug("CERTIDENT match: $arg{CERTIDENT} found in $subject");
+      } else {
+        $self->_debug("CERTIDENT: Could not retrieve loaded client certificate for validation");
+      }
+    }
+
     return 1;
   }
 
@@ -374,22 +420,63 @@ sub _initialize {
     $can_ssl = 0;
   }
 
+  # CERTHOST <hostname> <certificate name> <certverify> <forcessl>
+  # If specified as a hash: { host => [certname, certverify, forcessl], ... }
+  # If specified as a list of lists: [ [host, certname, certverify, forcessl], ... ]
+  # If specified as a list of hashes: [ { host => [certname, certverify, forcessl] }, ... ]
+  $self->{certhost} = {};
+  if (defined $arg{CERTHOST}) {
+    if (ref($arg{CERTHOST}) eq 'HASH') {
+      $self->{certhost} = $arg{CERTHOST};
+    } elsif (ref($arg{CERTHOST}) eq 'ARRAY') {
+      foreach my $entry (@{$arg{CERTHOST}}) {
+        if (ref($entry) eq 'HASH') {
+          foreach my $h (keys %$entry) {
+            $self->{certhost}->{$h} = $entry->{$h};
+          }
+        } elsif (ref($entry) eq 'ARRAY' && scalar(@$entry) >= 4) {
+          $self->{certhost}->{$entry->[0]} = [$entry->[1], $entry->[2], $entry->[3]];
+        }
+      }
+    }
+  }
+
   my $use_ssl = $arg{USESSL};
+  my $force_ssl = $arg{FORCESSL} || 0;
+  my $cert_verify = $arg{CERTVERIFY};
+
+  # If current host is in CERTHOST, override defaults
+  if (defined $self->{certhost}->{$host}) {
+    my ($ch_certname, $ch_verify, $ch_force) = @{$self->{certhost}->{$host}};
+    $self->_debug("CERTHOST match for $host: certname=$ch_certname verify=$ch_verify force=$ch_force");
+    $self->{expected_server_certname} = $ch_certname;
+    if (!defined $cert_verify) {
+      $cert_verify = ($ch_verify == 1);
+    }
+    $use_ssl = 1 if ($ch_force == 1);
+    $force_ssl = 1 if ($ch_force == 1);
+  }
+
   if (!defined $use_ssl) {
     $self->_debug("USESSL option was undef, flipping to IO::Socket::SSL module availability: $can_ssl");
     $use_ssl = $can_ssl;
   }
 
-  if (($can_ssl && $use_ssl) || $arg{FORCESSL}) {
+  if (($can_ssl && $use_ssl) || $force_ssl) {
     # Always try to elevate, do not bother if this fails unless required by args
-    my $startedTLS = $self->StartTLS(%arg);
+    my %tls_args = %arg;
+    $tls_args{CERTVERIFY} = $cert_verify if defined $cert_verify;
+    $tls_args{FORCESSL} = $force_ssl;
+    $tls_args{HOST} = $host;
+
+    my $startedTLS = $self->StartTLS(%tls_args);
     if (defined $startedTLS && $startedTLS) {
       # Make sure handshake succeeded or abort early
       # (there is currently no way for the server to
       # report its fault to the client when connection
       # is half-way secure):
       if (!$self->isValidProtocolVersion()) {
-        if ($arg{FORCESSL}) {
+        if ($force_ssl) {
           $self->_debug($self->{err} = "STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required: $self->{err}");
           return undef;
         }
@@ -397,7 +484,7 @@ sub _initialize {
         # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
       }
     } else {
-      if ($arg{FORCESSL}) {
+      if ($force_ssl) {
         $self->_debug($self->{err} = "SSL setup failed but it is required: $self->{err}");
         return undef;
       }

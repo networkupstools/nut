@@ -645,6 +645,8 @@ LIBNUTCLIENT_TCP_DEPS_SUB = \
 	nutclient_tcp_get_ssl_certstore_prefix.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certident_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certhost_addr.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certhost_addr.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
 
@@ -726,6 +728,7 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_fd.$(MAN_SECTION_API) \
 	upscli_get.$(MAN_SECTION_API) \
 	upscli_init.$(MAN_SECTION_API) \
+	$(UPSCLI_INIT_DEPS) \
 	upscli_set_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_get_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_init_default_connect_timeout.$(MAN_SECTION_API) \
@@ -794,6 +797,10 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
+UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API)
+$(UPSCLI_INIT_DEPS): upscli_init.$(MAN_SECTION_API)
+	touch $@
+
 upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 	touch $@
 

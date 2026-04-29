@@ -70,6 +70,20 @@ extern "C" {
 
 #include "parseconf.h"
 
+#ifdef WITH_OPENSSL
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+typedef struct {
+	int	verbose_mode;
+	int	verify_depth;
+	int	always_continue;
+
+	/* In this context, hostname is by default a pointer to ups->host, which
+	 * should not be freed or changed (otherwise set hostname_allocated!=0) */
+	const char	*hostname;
+	int	hostname_allocated;
+} openssl_cert_verify_data_t;
+#endif
+
 typedef struct {
 	char	*host;
 	uint16_t	port;
@@ -85,10 +99,11 @@ typedef struct {
 
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
+	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	PRFileDesc *ssl;
+	PRFileDesc	*ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
-	void *ssl;
+	void	*ssl;
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	char	readbuf[64];
@@ -132,8 +147,11 @@ const char *upscli_upslog_getproctag(void);
  */
 struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 
-/* NOTE: effectively only runs once; re-runs quickly skip out */
+/* NOTE: init effectively only runs once; re-runs quickly skip out */
+/* Legacy init function, prefer upscli_init2() with support for OpenSSL
+ * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
+int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
@@ -180,8 +198,11 @@ int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re);
 int upscli_ssl(UPSCONN_t *ups);
 
 #define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
-#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
-#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS	(1 << 2)	/* Can do CERTIDENT private key password */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME	(1 << 3)	/* Can do CERTIDENT name check - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTIDENT	(UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
 
 /* Return a bitmap of the above for the current libupsclient build */
 int upscli_ssl_caps(void);

@@ -35,7 +35,9 @@ environment:
 #  https://github.com/marketplace/actions/delete-pr-comments-during-subsequent-ci
 notifications:
   - provider: GitHubPullRequest
-    on_build_status_changed: true
+    on_build_success: true
+    on_build_failure: true
+    on_build_status_changed: false
     template: |
       {{#passed}}:white_check_mark:{{/passed}}{{#failed}}:x:{{/failed}} [Build {{&projectName}} {{buildVersion}} {{status}}]({{buildUrl}}) (commit {{commitUrl}} by @{{&commitAuthorUsername}})
       * [artifacts{{#failed}} (if any){{/failed}}]({{buildurl}}/artifacts)

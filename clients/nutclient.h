@@ -61,8 +61,11 @@
 #endif
 
 #define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
-#define UPSCLI_SSL_CAPS_OPENSSL	1	/* Can use OpenSSL-specific setup */
-#define UPSCLI_SSL_CAPS_NSS	2	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS (1 << 2)	/* Can use CERTIDENT (verify private key password)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME (1 << 3)	/* Can use CERTIDENT (verify cert name)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT (UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
 
 
 namespace nut
@@ -81,23 +84,447 @@ class Variable;
 class Command;
 
 /**
+ * Base class for certificate store location information
+ * (where to find the files and how to open them).
+ */
+class SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE();
+
+	SSLConfig_CERTSTORE& operator=(const SSLConfig_CERTSTORE&) = default;
+	SSLConfig_CERTSTORE(const SSLConfig_CERTSTORE&) = default;
+
+	virtual SSLConfig_CERTSTORE* clone() const;
+	virtual ~SSLConfig_CERTSTORE();
+
+	virtual bool hasCALocation() const;
+
+	/** We do not look inside the file here, so this is a check of configuration
+	 * settings (file may be absent). Note that key may be not in it but nearby. */
+	virtual bool hasCertIdentity() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const;
+};
+
+/**
+ * Helper class for OpenSSL-specific certificate store location information:
+ * file (as a single PEM) or directory (with hash-named files) for CA trust,
+ * file paths for its certificate chain as a single PEM and optionally the
+ * corresponding private key location (if stored in a separate file).
+ */
+class SSLConfig_CERTSTORE_OpenSSL : public SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE_OpenSSL(
+		const std::string& ca_path,
+		const std::string& ca_file = "",
+		const std::string& cert_file = "",
+		const std::string& key_file = "");
+
+	SSLConfig_CERTSTORE_OpenSSL(
+		const char *ca_path,
+		const char *ca_file = nullptr,
+		const char *cert_file = nullptr,
+		const char *key_file = nullptr);
+
+	SSLConfig_CERTSTORE_OpenSSL& operator=(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+	SSLConfig_CERTSTORE_OpenSSL(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTSTORE_OpenSSL* clone() const override;
+	virtual ~SSLConfig_CERTSTORE_OpenSSL() override;
+
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+
+	const std::string& getCAPath() const;
+	const char *getCAPath_c_str() const;
+
+	const std::string& getCALocation() const;
+	const char *getCALocation_c_str() const;
+
+	bool hasCALocation() const override;
+
+	/** Return certificate chain file: PEM starting with the subject's
+	 *  server or client certificate, followed by the chain of intermediate
+	 *  CA certificates (if applicable) and the highest level (root) CA.
+	 *  It should end with the private key of the subject, or one should
+	 *  be provided by another option (currently not provided for in the
+	 *  NUT config file syntax).
+	 */
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	/** We do not look inside the file here, so this is a check of configuration
+	 * settings (file may be absent). Note that key may be not in it but nearby. */
+	bool hasCertIdentity() const override;
+
+	/** Return the private key corresponding to the subject's certificate.
+	 *  May be empty if not provided to constructor.
+	 *  \see getKeyOrCertFile()
+	 */
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	/** If no separate private key file was provided to the constructor,
+	 *  return the certificate file path -- presuming the key is there.
+	 */
+	const std::string& getKeyOrCertFile() const;
+	const char *getKeyOrCertFile_c_str() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE_OpenSSL& other) const;
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const override;
+
+protected:
+	std::string	_ca_path;
+	std::string	_ca_file;
+	std::string	_cert_file;
+	std::string	_key_file;
+};
+
+/**
+ * Helper class for Mozilla NSS-specific certificate store location information:
+ * location of the certificate/key store database files, optionally a prefix
+ * for co-location of multiple databases in one directory, and the optional
+ * pass-phrase to open the private key database itself. Note that NSS (unlike
+ * JKS) databases do not have a passphrase to protect the database itself
+ * (e.g. to limit the addition of trusted CA certificates). The private key
+ * password is the same for all keys in the database (that is actually known
+ * as the "NSS database password" or "master password"); for logical
+ * consistency a copy may be stored in SSLConfig_CERTIDENT.
+ */
+class SSLConfig_CERTSTORE_NSS : public SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE_NSS(
+		const std::string& certstore_path,
+		const std::string& certstore_pass = "",
+		const std::string& certstore_prefix = "");
+
+	SSLConfig_CERTSTORE_NSS(
+		const char *certstore_path,
+		const char *certstore_pass = nullptr,
+		const char *certstore_prefix = nullptr);
+
+	SSLConfig_CERTSTORE_NSS& operator=(const SSLConfig_CERTSTORE_NSS&) = default;
+	SSLConfig_CERTSTORE_NSS(const SSLConfig_CERTSTORE_NSS&) = default;
+
+	virtual SSLConfig_CERTSTORE_NSS* clone() const override;
+	virtual ~SSLConfig_CERTSTORE_NSS() override;
+
+	/** Location of the certificate/key store database files */
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	/** Pass-phrase to open the private key database */
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	/** Optional prefix for co-location of multiple databases in one directory */
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+
+	bool hasCALocation() const override;
+	bool hasCertIdentity() const override;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE_NSS& other) const;
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const override;
+
+protected:
+	std::string	_certstore_path;
+	std::string	_certstore_pass;
+	std::string	_certstore_prefix;
+};
+
+/**
+ * Helper class for basic self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase,
+ * as specified in the CERTIDENT directive in the NUT client or server
+ * configuration files.
+ */
+class SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT(
+		const std::string& cert_subj,
+		const std::string& key_pass);
+
+	SSLConfig_CERTIDENT(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const SSLConfig_CERTSTORE& certstore);
+
+	SSLConfig_CERTIDENT(
+		const char *cert_subj,
+		const char *key_pass);
+
+	SSLConfig_CERTIDENT(
+		const char *cert_subj,
+		const char *key_pass,
+		const SSLConfig_CERTSTORE& certstore);
+
+	SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT&);
+	SSLConfig_CERTIDENT& operator=(const SSLConfig_CERTIDENT&);
+
+	virtual SSLConfig_CERTIDENT* clone() const;
+
+	virtual ~SSLConfig_CERTIDENT();
+
+	const std::string& getCertSubj() const;
+	const char *getCertSubj_c_str() const;
+
+	const std::string& getKeyPass() const;
+	const char *getKeyPass_c_str() const;
+
+	const SSLConfig_CERTSTORE& getCertstore() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTIDENT& other) const;
+
+protected:
+	std::string	_cert_subj;
+	std::string	_key_pass;
+
+	SSLConfig_CERTSTORE*	_certstore;
+};
+
+/**
+ * Helper class for OpenSSL-specific self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase, as well
+ * as file paths for its certificate chain as PEM and optionally the corresponding
+ * private key location (if stored in a separate file).
+ */
+class SSLConfig_CERTIDENT_OpenSSL : public SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT_OpenSSL(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const std::string& cert_file,
+		const std::string& key_file = "");
+
+	SSLConfig_CERTIDENT_OpenSSL(
+		const char *cert_subj,
+		const char *key_pass,
+		const char *cert_file,
+		const char *key_file = nullptr);
+
+	SSLConfig_CERTIDENT_OpenSSL& operator=(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+	SSLConfig_CERTIDENT_OpenSSL(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTIDENT_OpenSSL* clone() const override;
+
+	virtual ~SSLConfig_CERTIDENT_OpenSSL() override;
+
+	/** Return certificate chain file: PEM starting with the subject's
+	 *  server or client certificate, followed by the chain of intermediate
+	 *  CA certificates (if applicable) and the highest level (root) CA.
+	 *  It should end with the private key of the subject, or one should
+	 *  be provided by another option (currently not provided for in the
+	 *  NUT config file syntax).
+	 */
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	/** Return the private key corresponding to the subject's certificate.
+	 *  May be empty if not provided to constructor.
+	 *  \see getKeyOrCertFile()
+	 */
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	/** If no separate private key file was provided to the constructor,
+	 *  return the certificate file path -- presuming the key is there.
+	 */
+	const std::string& getKeyOrCertFile() const;
+	const char *getKeyOrCertFile_c_str() const;
+};
+
+/**
+ * Helper class for Mozilla NSS-specific self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase, as well as
+ * location of the certificate/key store database files, and optionally a prefix
+ * for co-location of multiple databases in one directory.
+ */
+class SSLConfig_CERTIDENT_NSS : public SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT_NSS(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const std::string& certstore_path = "",
+		const std::string& certstore_prefix = "");
+
+	SSLConfig_CERTIDENT_NSS(
+		const char *cert_subj,
+		const char *key_pass,
+		const char *certstore_path = nullptr,
+		const char *certstore_prefix = nullptr);
+
+	SSLConfig_CERTIDENT_NSS& operator=(const SSLConfig_CERTIDENT_NSS&) = default;
+	SSLConfig_CERTIDENT_NSS(const SSLConfig_CERTIDENT_NSS&) = default;
+
+	virtual SSLConfig_CERTIDENT_NSS* clone() const override;
+
+	virtual ~SSLConfig_CERTIDENT_NSS() override;
+
+	/** Location of the certificate/key store database files */
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	/** Pass-phrase to open the private key database (should be same as getKeyPass() value) */
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	/** Optional prefix for co-location of multiple databases in one directory */
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+};
+
+/**
+ * Helper class for tuned counterpart security pinning, as
+ * specified by the CERTHOST directives (maybe multiple) in
+ * the NUT client configuration files.
+ *
+ * If FORCESSL or CERTVERIFY are not set for this host (remain -1),
+ * the Socket class would use global config values as defaults.
+ *
+ * Trust to certificates issued by a certain authority is based
+ * on the SSLConfig used by the particular Socket instance.
+ */
+class SSLConfig_CERTHOST
+{
+public:
+	SSLConfig_CERTHOST(
+		const std::string& host_addr,
+		const std::string& cert_subj,
+		int forcessl = -1,
+		int certverify = -1);
+
+	SSLConfig_CERTHOST(
+		const char *host_addr,
+		const char *cert_subj,
+		int forcessl = -1,
+		int certverify = -1);
+
+	SSLConfig_CERTHOST& operator=(const SSLConfig_CERTHOST&) = default;
+	SSLConfig_CERTHOST(const SSLConfig_CERTHOST&) = default;
+
+	virtual SSLConfig_CERTHOST* clone() const;
+
+	virtual ~SSLConfig_CERTHOST();
+
+	const std::string& getHostAddr() const;
+	const char *getHostAddr_c_str() const;
+
+	const std::string& getCertSubj() const;
+	const char *getCertSubj_c_str() const;
+
+	int getForceSsl() const;
+	int getCertVerify() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTHOST& other) const;
+
+protected:
+	std::string	_host_addr;
+	std::string	_cert_subj;
+	int	_forcessl;
+	int	_certverify;
+};
+
+/**
  * Base class of SSL configuration for NUT connections.
+ * Can keep track of CERTSTORE, CERTIDENT (single) and/or CERTHOST (multiple).
  */
 class SSLConfig
 {
 public:
-	SSLConfig(bool force_ssl = false, int certverify = -1)
-		: _force_ssl(force_ssl), _certverify(certverify) {}
+	SSLConfig(
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(const SSLConfig&);
+	SSLConfig& operator=(const SSLConfig&);
+
 	virtual ~SSLConfig();
 
-	bool getForceSsl() const { return _force_ssl; }
-	int getCertVerify() const { return _certverify; }
+	bool getForceSsl() const;
+	void setForceSsl(bool forcessl);
+	int getCertVerify() const;
+	void setCertVerify(int certverify);
 
+	/** We only expect to have at most one CERTIDENT value
+	 *  to represent this server/client, replaced if needed */
+	void setCertIdent(const SSLConfig_CERTIDENT& certident);
+	void unsetCertIdent();
+	const SSLConfig_CERTIDENT* getCertIdent() const;
+
+	/** We only expect to have at most one CERTSTORE value
+	 *  per connection to trust others, replaced if needed */
+	void setCertStore(const SSLConfig_CERTSTORE& certident);
+	void unsetCertStore();
+	const SSLConfig_CERTSTORE* getCertStore() const;
+
+	/** Add a non-trivial CERTHOST to the list (host address
+	 *  and certificate nickname must be populated) */
+	void addCertHost(const SSLConfig_CERTHOST& certhost);
+	const std::set<const SSLConfig_CERTHOST*> getCertHosts() const;
+	/** Simplify workflow for single-server connections */
+	const SSLConfig_CERTHOST *getFirstCertHost() const;
+
+	const SSLConfig_CERTHOST *getCertHostByAddr(std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostBySubj(std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(std::string &s) const;
+
+	/** Callback to apply this configuration into a TcpClient instance
+	 * (and further propagate into a Socket instance used by it).
+	 * @param client TcpClient instance to apply configuration to
+	 */
 	virtual void apply(TcpClient& client) const;
 
+	/** Just to be sure to have a pre-created immortal empty string object */
+	static const std::string _empty_str;
+
 protected:
-	bool _force_ssl;
-	int _certverify;
+	bool	_forcessl;
+	int	_certverify;
+
+	/** NOTE: We only expect to have one value to represent
+	 *  this server/client, replaced if needed; here using
+	 *  a set simplifies constructor and the set-later logic */
+	std::set<const SSLConfig_CERTIDENT*>	_certidents;
+
+	/** Probably we could have many of those, eventually;
+	 *  however, it does not make sense with both libraries
+	 *  using some one store per connection => config
+	 */
+	std::set<const SSLConfig_CERTSTORE*>	_certstores;
+
+	/** We can have many of those */
+	std::set<const SSLConfig_CERTHOST*>	_certhosts;
+
+	/** Not exposed; used for consistency in destructor */
+	void unsetCertHost();
 };
 
 /**
@@ -106,34 +533,55 @@ protected:
 class SSLConfig_OpenSSL : public SSLConfig
 {
 public:
-	SSLConfig_OpenSSL(bool force_ssl = false, int certverify = -1,
-		const std::string& ca_path = "", const std::string& ca_file = "",
-		const std::string& cert_file = "", const std::string& key_file = "",
-		const std::string& key_pass = "")
-		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
+	SSLConfig_OpenSSL(
+		bool forcessl = false,
+		int certverify = -1,
+		const std::string& ca_path = "",
+		const std::string& ca_file = "",
+		const std::string& cert_file = "",
+		const std::string& key_file = "",
+		const std::string& key_pass = "",
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "",
+		const std::string& certhost_name = "");
 
-	SSLConfig_OpenSSL(bool force_ssl, int certverify,
-		const char *ca_path, const char *ca_file,
-		const char *cert_file, const char *key_file,
-		const char *key_pass)
-		: SSLConfig(force_ssl, certverify), _ca_path(ca_path), _ca_file(ca_file),
-		  _cert_file(cert_file), _key_file(key_file), _key_pass(key_pass) {}
+	SSLConfig_OpenSSL(
+		bool forcessl,
+		int certverify,
+		const char *ca_path,
+		const char *ca_file,
+		const char *cert_file,
+		const char *key_file,
+		const char *key_pass,
+		const char *certident_name = nullptr,
+		const char *certhost_addr = nullptr,
+		const char *certhost_name = nullptr);
 
-	const std::string& getCAPath() const { return _ca_path; }
-	const std::string& getCAFile() const { return _ca_file; }
-	const std::string& getCertFile() const { return _cert_file; }
-	const std::string& getKeyFile() const { return _key_file; }
-	const std::string& getKeyPass() const { return _key_pass; }
+	const std::string& getCAPath() const;
+	const char *getCAPath_c_str() const;
+
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	const std::string& getKeyPass() const;
+	const char *getKeyPass_c_str() const;
+
+	const std::string& getCertIdentName() const;
+	const char *getCertIdentName_c_str() const;
+
+	const std::string& getCertHostAddr() const;
+	const char *getCertHostAddr_c_str() const;
+
+	const std::string& getCertHostName() const;
+	const char *getCertHostName_c_str() const;
 
 	virtual void apply(TcpClient& client) const override;
-
-private:
-	std::string _ca_path;
-	std::string _ca_file;
-	std::string _cert_file;
-	std::string _key_file;
-	std::string _key_pass;
 };
 
 /**
@@ -142,36 +590,42 @@ private:
 class SSLConfig_NSS : public SSLConfig
 {
 public:
-	SSLConfig_NSS(bool force_ssl = false, int certverify = -1,
+	SSLConfig_NSS(bool forcessl = false, int certverify = -1,
 		const std::string& certstore_path = "", const std::string& certstore_pass = "",
-		const std::string& certstore_prefix = "", const std::string& certhost_name = "",
-		const std::string& certident_name = "")
-		: SSLConfig(force_ssl, certverify), _certstore_path(certstore_path),
-		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
-		  _certhost_name(certhost_name), _certident_name(certident_name) {}
+		const std::string& certstore_prefix = "",
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "", const std::string& certhost_name = "");
 
-	SSLConfig_NSS(bool force_ssl, int certverify,
+	SSLConfig_NSS(bool forcessl, int certverify,
 		const char *certstore_path, const char *certstore_pass,
-		const char *certstore_prefix, const char *certhost_name,
-		const char *certident_name)
-		: SSLConfig(force_ssl, certverify), _certstore_path(certstore_path),
-		  _certstore_pass(certstore_pass), _certstore_prefix(certstore_prefix),
-		  _certhost_name(certhost_name), _certident_name(certident_name) {}
+		const char *certstore_prefix,
+		const char *certident_name,
+		const char *certhost_addr, const char *certhost_name);
 
-	const std::string& getCertStorePath() const { return _certstore_path; }
-	const std::string& getCertStorePass() const { return _certstore_pass; }
-	const std::string& getCertStorePrefix() const { return _certstore_prefix; }
-	const std::string& getCertHostName() const { return _certhost_name; }
-	const std::string& getCertIdentName() const { return _certident_name; }
+/*	// No extra trust store for NSS so far - we assume its DB to hold all we need at this time
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+*/
+
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+
+	const std::string& getCertIdentName() const;
+	const char *getCertIdentName_c_str() const;
+
+	const std::string& getCertHostAddr() const;
+	const char *getCertHostAddr_c_str() const;
+
+	const std::string& getCertHostName() const;
+	const char *getCertHostName_c_str() const;
 
 	virtual void apply(TcpClient& client) const override;
-
-private:
-	std::string _certstore_path;
-	std::string _certstore_pass;
-	std::string _certstore_prefix;
-	std::string _certhost_name;
-	std::string _certident_name;
 };
 
 /**
@@ -653,10 +1107,10 @@ public:
 	 * to allow (or not) use of SSL/TLS.
 	 * \param host Server host name.
 	 * \param port Server port.
-	 * \param try_ssl Use SSL/TLS for the connection (may be
-	                  overridden by force_ssl if set to true earlier).
+	 * \param tryssl Use SSL/TLS for the connection (may be
+	                  overridden by forcessl if set to true earlier).
 	 */
-	void connect(const std::string& host, uint16_t port, bool try_ssl);
+	void connect(const std::string& host, uint16_t port, bool tryssl);
 
 	/**
 	 * Connect to the server.
@@ -747,16 +1201,34 @@ public:
 	/**
 	 * Return a bitmask of SSL capabilities supported by this build of
 	 * libnutclient, see UPSCLI_SSL_CAPS_NONE, UPSCLI_SSL_CAPS_OPENSSL,
-	 * UPSCLI_SSL_CAPS_NSS. */
+	 * UPSCLI_SSL_CAPS_NSS.
+	 * @see	getSslConfigured
+	 */
 	static int getSslCaps();
+
+	/**
+	 * Return a bitmask of SSL capabilities practically configured and
+	 * available for this instance of libnutclient, see UPSCLI_SSL_CAPS_NONE,
+	 * UPSCLI_SSL_CAPS_OPENSSL, UPSCLI_SSL_CAPS_NSS, and the more nuanced
+	 * values which depend on the currently applied SSLConfig (the value
+	 * is updated with each call to setSSLConfig* methods).
+	 *
+	 * Note that while we may have set both NSS and OpenSSL configurations
+	 * into the TcpClient class instance, one (or even both) may be irrelevant
+	 * due to build configuration or run-time dependency circumstances and
+	 * thus a practical (in-)ability to use that backend.
+	 *
+	 * @see getSslCaps
+	 */
+	virtual int getSslConfigured() const;
 
 	virtual bool isSSL() const;
 
 	virtual bool getSslTry() const;
-	virtual void setSslTry(bool try_ssl);
+	virtual void setSslTry(bool tryssl);
 
 	virtual bool getSslForce() const;
-	virtual void setSslForce(bool force_ssl);
+	virtual void setSslForce(bool forcessl);
 
 	virtual int getSslCertVerify() const;
 	virtual void setSslCertVerify(int certverify);
@@ -789,18 +1261,28 @@ public:
 	virtual void setSslCertstorePrefix(const char* certstore_prefix);
 	virtual void setSslCertstorePrefix(const std::string& certstore_prefix);
 
-	virtual const std::string& getSslCertIdentName() const;
-	virtual void setSslCertIdentName(const char* certident_name);
-	virtual void setSslCertIdentName(const std::string& certident_name);
+	virtual const std::string& getSslCertHostAddr() const;
+	virtual void setSslCertHostAddr(const char* certhost_addr);
+	virtual void setSslCertHostAddr(const std::string& certhost_addr);
 
 	virtual const std::string& getSslCertHostName() const;
 	virtual void setSslCertHostName(const char* certhost_name);
 	virtual void setSslCertHostName(const std::string& certhost_name);
 
+	virtual const std::string& getSslCertIdentName() const;
+	virtual void setSslCertIdentName(const char* certident_name);
+	virtual void setSslCertIdentName(const std::string& certident_name);
+
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
 
 protected:
+	/**
+	 * Refresh the value of _ssl_configured bitmask based on available
+	 * SSL configuration and build capabilities.
+	 */
+	virtual void updateSslConfigured();
+
 	std::string sendQuery(const std::string& req);
 	void sendAsyncQueries(const std::vector<std::string>& req);
 	static void detectError(const std::string& req);
@@ -819,72 +1301,70 @@ protected:
 	 * Set SSL configuration for OpenSSL
 	 * (with C-style string arguments for SSL-related file paths).
 	 * Primarily exposed for C API bridges
-	 * \param force_ssl Whether to require SSL connection.
+	 * \param forcessl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
 	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass);
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr, const char *certhost_addr = nullptr, const char *certhost_name = nullptr);
 
 	/**
 	 * Set SSL configuration for OpenSSL.
-	 * \param force_ssl Whether to require SSL connection.
+	 * \param forcessl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
 	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
 	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
 	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
 	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
 	 */
-	void setSSLConfig_OpenSSL(bool force_ssl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass);
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "", const std::string& certhost_addr = "", const std::string& certhost_name = "");
 
 	/**
 	 * Set SSL configuration for Mozilla NSS
 	 * (with C-style string arguments for SSL-related file paths).
-	 * \param force_ssl Whether to require SSL connection.
+	 * \param forcessl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certhost_name, const char *certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certident_name, const char *certhost_addr, const char *certhost_name);
 
 	/**
 	 * Set SSL configuration for Mozilla NSS.
-	 * \param force_ssl Whether to require SSL connection.
+	 * \param forcessl Whether to require SSL connection.
 	 * \param certverify Whether to verify the server certificate.
 	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
 	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
 	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
-	 * \param certhost_name Remote host name to match in the certificate (NSS database).
-	 * \param certident_name Client nickname to match in the certificate (NSS database).
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
 	 */
-	void setSSLConfig_NSS(bool force_ssl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certhost_name, const std::string& certident_name);
+	void setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name);
 
 private:
 	std::string _host;
 	uint16_t _port;
 	/* SSL shared */
-	bool _try_ssl;
-	bool _force_ssl;
-	int _certverify;
-	/* OpenSSL specific */
-	std::string _ca_path;
-	std::string _ca_file;
-	std::string _cert_file;
-	std::string _key_file;
-	/* SSL shared */
-	std::string _key_pass;	/* aka certstore_pass for NSS */
-	/* NSS specific */
-	std::string _certstore_path;
-	std::string _certstore_prefix;
-	std::string _certident_name;
-	std::string _certhost_name;
+	bool _tryssl;
+	/* SSL config pointers */
+	SSLConfig_OpenSSL* _ssl_config_openssl;
+	SSLConfig_NSS* _ssl_config_nss;
+	int _ssl_configured;
 	/* general info */
 	time_t _timeout;
 	internal::Socket* _socket;
@@ -1474,8 +1954,8 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * Create a client to NUTD using a TCP connection.
  * \param host Host name to connect to.
  * \param port Host port.
- * \param try_ssl Try to use SSL/TLS for the connection.
- * \param force_ssl Fail if SSL/TLS is not available or handshake fails.
+ * \param tryssl Try to use SSL/TLS for the connection.
+ * \param forcessl Fail if SSL/TLS is not available or handshake fails.
  * \param certverify Whether to verify the server certificate.
  * \return New client or nullptr if failed.
  */
@@ -1483,28 +1963,36 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
 int nutclient_tcp_get_ssl_caps(void);
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
-	const char* host, uint16_t port, int try_ssl,
-	int force_ssl, int certverify,
-	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file, const char *key_pass);
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
-	int force_ssl, int certverify,
-	const char *ca_path, const char *ca_file,
-	const char *cert_file, const char *key_file, const char *key_pass);
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 
 NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
-	const char* host, uint16_t port, int try_ssl,
-	int force_ssl, int certverify,
-	const char *certstore_path, const char *certstore_pass,
-	const char *certstore_prefix,
-	const char *certhost_name,
-	const char *certident_name);
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
-	int force_ssl, int certverify,
-	const char *certstore_path, const char *certstore_pass,
-	const char *certstore_prefix,
-	const char *certhost_name,
-	const char *certident_name);
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
 
 /**
  * Test if a nut TCP client is connected.
@@ -1526,10 +2014,10 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
 int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
 
-void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int try_ssl);
+void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int tryssl);
 int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
 
-void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int force_ssl);
+void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int forcessl);
 int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
 
 void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify);
@@ -1559,6 +2047,9 @@ const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client);
 
 void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client, const char* certident_name);
 const char* nutclient_tcp_get_ssl_certident_name(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certhost_addr(NUTCLIENT_TCP_t client, const char* certhost_addr);
+const char* nutclient_tcp_get_ssl_certhost_addr(NUTCLIENT_TCP_t client);
 
 void nutclient_tcp_set_ssl_certhost_name(NUTCLIENT_TCP_t client, const char* certhost_name);
 const char* nutclient_tcp_get_ssl_certhost_name(NUTCLIENT_TCP_t client);

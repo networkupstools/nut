@@ -6583,6 +6583,7 @@ dnl #    C99 toolkits and current language spec e.g. with macros... later.
 dnl #    Currently it is more like whack-a-mole as distros update headers.
 dnl # -Wno-c11-extensions -- clang-21 on Ubuntu 26.04 at least complains a lot
 dnl #    about system headers (string.h, cdefs.h, etc.) using __glibc_const_generic
+dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -6593,8 +6594,8 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -7091,8 +7092,10 @@ dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
 
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
 nut_with_ssl_cxx=no
-AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
-    AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
+AS_IF([test "${have_cxx11}" = yes], [
+  AS_IF([test x"${LIBSSL_CXXFLAGS}" = x],
+   [nut_with_ssl_cxx=yes],
+   [AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
     my_CFLAGS="${CFLAGS}"
     my_CPPFLAGS="${CPPFLAGS}"
@@ -7195,14 +7198,15 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
                     ]
                 )
             ])
+        ])
 
-        AS_IF([test "$my_FIXED" = true],
-            [nut_with_ssl_cxx=yes],
-            [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
-             dnl We disable just SSL support in the C++ library
-            ])
-        ]
-	)
+    dnl Revise if we fixed the support (or it just worked):
+    AS_IF([test "$my_FIXED" = true],
+        [nut_with_ssl_cxx=yes],
+        [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
+         dnl We disable just SSL support in the C++ library
+         nut_with_ssl_cxx=no
+        ])
 
     CFLAGS="${my_CFLAGS}"
     CPPFLAGS="${my_CPPFLAGS}"
@@ -7214,6 +7218,7 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     unset my_FIXED
     unset my_INCLUDEDIR_C
     unset my_INCLUDEDIR_CXX
+  ])
 ])
 
 AC_SUBST(LIBSSL_CXXFLAGS)

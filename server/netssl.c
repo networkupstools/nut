@@ -41,6 +41,10 @@
 #include "netssl.h"
 #include "nut_stdint.h"
 
+#ifdef WITH_OPENSSL
+# include <openssl/x509v3.h>
+#endif
+
 #ifdef WITH_NSS
 #	include <pk11pub.h>
 #	include <prinit.h>
@@ -60,6 +64,7 @@
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
+char	*certpath = NULL;
 
 /* Warning: in this release of NUT, this feature is disabled by default
  * in order to retain compatibility with "least surprise" for earlier
@@ -83,10 +88,21 @@ const char *net_ssl_caps_descr(void)
 		"out SSL support";
 #else
 		" SSL support: "
+
 # ifdef WITH_OPENSSL
 		"OpenSSL"
+#  if !( ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT"
+#  else
+#   if !( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) )
+		" sans CERTIDENT(pass)"
+#   endif
+#   if !( (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT(name)"
+#   endif
+#  endif
 #  ifdef WITH_NSS
-	/* Not likely we'd get here, but... */
+		/* Not likely we'd get here, but... */
 		" and "
 #  endif
 # endif
@@ -96,6 +112,7 @@ const char *net_ssl_caps_descr(void)
 # if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
 		"oddly undefined"
 # endif
+
 		"; with"
 # ifndef WITH_CLIENT_CERTIFICATE_VALIDATION
 		"out"
@@ -160,6 +177,328 @@ void ssl_cleanup(void)
 # ifdef WITH_OPENSSL
 
 static SSL_CTX	*ssl_ctx = NULL;
+
+#  ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+/* Adapted from https://stackoverflow.com/a/42477707 with references to
+ * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL,
+ * and https://www.zedwood.com/article/c-openssl-parse-x509-certificate-pem
+ * FIXME: dedup something with upsclient.c and nutclient.cpp?
+ */
+static int openssl_cert_verify_san_name(const char* label, X509* const cert, const char *hostname)
+{
+	int	san_seen = 0, ok = 0;
+	GENERAL_NAMES*	names = NULL;
+	unsigned char*	utf8 = NULL;
+
+	do
+	{
+		int	i, count;
+
+		if (!cert) break; /* failed */
+
+		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
+		if (!names) break;
+
+		count = sk_GENERAL_NAME_num(names);
+		if (!count) break; /* failed */
+
+		for (i = 0; i < count; ++i) {
+			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
+			if (!entry) continue;
+
+			if (GEN_DNS == entry->type) {
+				int	len1 = 0, len2 = -1;
+
+				len1 = ASN1_STRING_to_UTF8(&utf8, entry->d.dNSName);
+				if (utf8) {
+					len2 = (int)strlen((const char*)utf8);
+				}
+
+				if (len1 != len2) {
+					upsdebugx(5, "%s: %s: strlen and ASN1_STRING size "
+						"do not match (embedded null?): %d vs %d",
+						__func__, label, len2, len1);
+				}
+
+				/* If there's a problem with string lengths, then
+				 * we skip the candidate and move on to the next.
+				 * Another policy would be to fail, since it probably
+				 * indicates the server is under attack by a corrupt
+				 * client. Or "just" a loosely configured one?
+				 */
+				if (utf8 && len1 && len2 && (len1 == len2)) {
+					san_seen = 1;
+					if (hostname && *hostname && !strcasecmp((const char*)utf8, hostname)) {
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: MATCHED '%s'",
+							__func__, label, utf8, hostname);
+						ok = 1;
+					} else {
+						/* TOTHINK: Wildcard certs, with respect to TLD constraints
+						 *  (do not accept *.com) etc. if we !HAVE_X509_CHECK_HOST ? */
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: DID NOT MATCH '%s'",
+							__func__, label, utf8, NUT_STRARG(hostname));
+					}
+				} else {
+					upsdebugx(4, "%s: WARNING: there is some mismatch about "
+						"a SAN entry in %s: [DNS]\t%s (len1=%d len2=%d)",
+						__func__, label, NUT_STRARG((char*)utf8), len1, len2);
+				}
+
+				if (utf8) {
+					OPENSSL_free(utf8);
+					utf8 = NULL;
+				}
+			} else if (GEN_IPADD == entry->type) {
+				/* https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6:
+				 * When the subjectAltName extension contains an iPAddress,
+				 * the address MUST be stored in the octet string in "network
+				 * byte order", as specified in [RFC791].  The least significant
+				 * bit (LSB) of each octet is the LSB of the corresponding byte
+				 * in the network address.  For IP version 4, as specified in
+				 * [RFC791], the octet string MUST contain exactly four octets.
+				 * For IP version 6, as specified in [RFC2460], the octet string
+				 * MUST contain exactly sixteen octets.
+				 */
+				char	ip_addr_buf[128], *p = ip_addr_buf, *pMax = ip_addr_buf + sizeof(ip_addr_buf) - 5;
+				const unsigned char	*ip_addr_raw =
+# ifdef HAVE_ASN1_STRING_GET0_DATA
+					ASN1_STRING_get0_data(entry->d.iPAddress)
+# elif defined(HAVE_ASN1_STRING_DATA)
+					ASN1_STRING_data(entry->d.iPAddress)
+# else
+					(const unsigned char *)entry->d.iPAddress->data
+# endif
+					;
+				int	ip_addr_raw_len =
+# ifdef HAVE_ASN1_STRING_LENGTH
+					ASN1_STRING_length(entry->d.iPAddress)
+# else
+					(int)entry->d.iPAddress->length
+# endif
+					, j;
+
+				memset(ip_addr_buf, 0, sizeof(ip_addr_buf));
+				switch (ip_addr_raw_len) {
+					case 4:
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%u%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ".");
+						}
+						break;
+
+					case 16:
+						/* TOTHINK: There are many ways to print an IPv6 address;
+						 *  maybe we should rather convert the expected address
+						 *  into an array of 16 chars and compare that?
+						 *  For reporting, however, this is good enough, even if
+						 *  a bit wasteful. */
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%02x%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ":");
+						}
+						break;
+
+					default:
+						upsdebugx(5, "%s: %s: invalid IP address length: %d",
+							__func__, label, ip_addr_raw_len);
+						continue;
+				}
+
+				san_seen = 1;
+				if (hostname && *hostname && !strcasecmp((const char*)ip_addr_buf, hostname)) {
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: MATCHED '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, hostname);
+					ok = 1;
+				} else {
+					/* TOTHINK: invert the check as commented above, if we !HAVE_X509_CHECK_IP_ASC ? */
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: DID NOT MATCH '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, NUT_STRARG(hostname));
+				}
+			} else
+			{
+				/* GEN_URI, RID, email, etc. - not something we
+				 * care about for network server/client certs */
+				upsdebugx(5, "%s: Unknown GENERAL_NAME type, or irrelevant for certificate vs. hostname validation: %d", __func__, entry->type);
+			}
+		}
+	} while (0);
+
+	if (!ok && hostname && *hostname && (0
+# if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
+	 || (X509_check_host(cert, (const char *)hostname, 0, 0, NULL) == 1)
+# endif
+# if (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC)
+	 || (X509_check_ip_asc(cert, (const char *)hostname, 0) == 1)
+# endif
+	)) {
+		upsdebugx(5, "%s: %s: MATCHED '%s' using OpenSSL-provided methods",
+			__func__, label, hostname);
+		ok = 1;
+	}
+
+	if (names)
+		GENERAL_NAMES_free(names);
+
+	if (utf8)
+		OPENSSL_free(utf8);
+
+	if (!san_seen) {
+		upsdebugx(4, "%s: %s: subjAltNames not available", __func__, label);
+	} else {
+		if (!ok) {
+			upsdebugx(4, "%s: %s: subjAltNames available, but did not match '%s'", __func__, label, hostname);
+		} else {
+			upsdebugx(4, "%s: %s: subjAltNames available and at least one matched '%s'", __func__, label, hostname);
+		}
+	}
+
+	return ok;
+}
+
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example
+ * FIXME: dedup something with upsclient.c and nutclient.cpp?
+ */
+static int	openssl_cert_verify_data_index;
+static int	verify_depth = 9;	/* openssl default */
+
+static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	char	buf[SMALLBUF];
+	X509	*err_cert;
+	int	err, depth;
+	SSL	*ssl;
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
+
+	err_cert = X509_STORE_CTX_get_current_cert(ctx);
+	err = X509_STORE_CTX_get_error(ctx);
+	depth = X509_STORE_CTX_get_error_depth(ctx);
+
+	/* Retrieve the pointer to the SSL of the connection currently treated
+	 * and the application-specific data stored into the SSL object.
+	 */
+	ssl = (SSL *)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	openssl_cert_verify_data = (openssl_cert_verify_data_t *)SSL_get_ex_data(ssl, openssl_cert_verify_data_index);
+
+	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
+
+	/* Sanity-check */
+	if (!openssl_cert_verify_data) {
+		upsdebugx(4, "%s: openssl_cert_verify_data settings not passed, return ok=%d provided by caller: depth=%d:%s",
+			__func__, preverify_ok, depth, buf);
+		return preverify_ok;
+	}
+
+	/* This is the counterpart's own cert */
+	if (depth == 0 && !preverify_ok) {
+		/* Call this in any err case, to print debug logs about
+		 *  presence and value(s) of subjAltNames in that cert */
+		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
+		if (san_ok && err == X509_V_ERR_HOSTNAME_MISMATCH) {
+			/* Caller had some problem with it, did SAN match fix it? */
+			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
+				"probably by CN, but SAN matched - reporting ok=%d and clearing error state",
+				__func__, err,
+				X509_verify_cert_error_string(err),
+				depth, buf, san_ok);
+			err = 0;
+			X509_STORE_CTX_set_error(ctx, err);
+			return san_ok;
+		}
+	}
+
+	/* Catch a too long certificate chain. The depth limit set using
+	 * SSL_CTX_set_verify_depth() is by purpose set to "limit+1" so
+	 * that whenever the "depth>verify_depth" condition is met, we
+	 * have violated the limit and want to log this error condition.
+	 * We must do it here, because the CHAIN_TOO_LONG error would not
+	 * be found explicitly; only errors introduced by cutting off the
+	 * additional certificates would be logged.
+	 */
+	if (depth > openssl_cert_verify_data->verify_depth) {
+		preverify_ok = 0;
+		err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
+		X509_STORE_CTX_set_error(ctx, err);
+	}
+
+	if (!preverify_ok) {
+		upsdebugx(5, "%s: called with verify error:num=%d:%s:depth=%d:%s",
+			__func__, err,
+			X509_verify_cert_error_string(err),
+			depth, buf);
+	}
+	else if (openssl_cert_verify_data->verbose_mode)
+	{
+		upsdebugx(5, "%s: called with depth=%d:%s", __func__, depth, buf);
+	}
+
+	/* At this point, err contains the last verification error.
+	 * We can use it for something special, like a report: */
+	if (!preverify_ok && (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT))
+	{
+		char	bufCA[SMALLBUF];
+		/* In older versions maybe: X509_NAME_oneline(X509_get_issuer_name(ctx->current_cert), buf, sizeof(buf)); */
+		X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get_current_cert(ctx)), bufCA, sizeof(bufCA));
+		upsdebugx(5, "%s: issuer=%s", __func__, bufCA);
+	}
+
+	if (openssl_cert_verify_data->always_continue) {
+		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): depth=%d:%s", __func__, preverify_ok, depth, buf);
+		return 1;
+	}
+
+	upsdebugx(4, "%s: return ok=%d provided by caller: depth=%d:%s", __func__, preverify_ok, depth, buf);
+	return preverify_ok;
+}
+#  endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
+
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
+{
+	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
+	/* is callback used for reading/decryption (rwflag=0) or writing/encryption (rwflag=1)? */
+	NUT_UNUSED_VARIABLE(rwflag);
+	/* "userdata" is generally the user-provided password, possibly cached
+	 * from an earlier loop (e.g. to check interactively typing it twice,
+	 * or to probe several items in a loop). For us, it should be certpasswd
+	 * via SSL_CTX_set_default_passwd_cb_userdata(), but most programs out
+	 * there do not have just one variable with one password to think about. */
+
+	if (!buf || size < 1) {
+		/* Can not even set buf[0] */
+		return 0;
+	}
+
+	if (!userdata || !*((char*)userdata)) {
+#   if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA)
+		/* Use what we were told to use (or not), do not surprise
+		 * anyone by some hard-coded fallback to certpasswd here! */
+		buf[0] = '\0';
+		return 0;
+#   else
+		userdata = (void*)certpasswd;
+#   endif
+	}
+
+	if (strlen((char*)userdata) >= (size_t)size) {
+		/* Do not return truncated trash, just say we could not do it */
+		return 0;
+	}
+
+	strncpy(buf, (char*)userdata, (size_t)size);
+	buf[size - 1] = '\0';
+	return (int)strlen(buf);
+}
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
 
 static void ssl_debug(void)
 {
@@ -326,12 +665,16 @@ static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	nut_ctype_t	*client  = (nut_ctype_t *)SSL_RevealPinArg(fd);
-	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	nut_ctype_t	*client = (nut_ctype_t *)SSL_RevealPinArg(fd);
+	SECStatus	status  = SSL_AuthCertificate(arg, fd, checksig, isServer);
 
 	upslogx(LOG_INFO, "Intend to authenticate client %s : %s.",
-		client?client->addr:"(unnamed)",
+		client?client->addr:"<unnamed>",
 		status==SECSuccess?"SUCCESS":"FAILED");
+
+	if (status != SECSuccess) {
+		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
+	}
 
 	return status;
 }
@@ -399,9 +742,18 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	client->ssl_connected = 0;
 
-	if ((!certfile) || (!ssl_initialized)) {
-		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to certfile='%s' ssl_initialized=%d",
-			__func__, NUT_STRARG(certfile), ssl_initialized);
+	if (
+# ifdef WITH_OPENSSL
+		(!certfile) ||
+# elif defined(WITH_NSS)	/* not WITH_OPENSSL */
+		(!certpath) ||
+# endif
+		(!ssl_initialized)
+	) {
+		upsdebugx(2, "%s: NUT_ERR_FEATURE_NOT_CONFIGURED due to one or more of: "
+			"certfile='%s' certpath='%s' certname='%s' ssl_initialized=%d",
+			__func__, NUT_STRARG(certfile), NUT_STRARG(certpath),
+			NUT_STRARG(certname), ssl_initialized);
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		return;
 	}
@@ -445,6 +797,31 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	upsdebugx(4, "%s: certrequest=%d", __func__, certrequest);
+	if (certrequest == NETSSL_CERTREQ_REQUEST
+	 || certrequest == NETSSL_CERTREQ_REQUIRE
+	) {
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
+		 * Set up the SSL specific data into "openssl_cert_verify_data"
+		 * and store it into the SSL structure. */
+		if (client->openssl_cert_verify_data.hostname_allocated
+		 && client->openssl_cert_verify_data.hostname)
+			free((void *)client->openssl_cert_verify_data.hostname);
+		memset(&(client->openssl_cert_verify_data), 0, sizeof(client->openssl_cert_verify_data));
+
+		client->openssl_cert_verify_data.verify_depth = verify_depth;
+		client->openssl_cert_verify_data.hostname = client->addr;	/* not allocated, not to be freed with the structure */
+		SSL_set_ex_data(client->ssl, openssl_cert_verify_data_index, &(client->openssl_cert_verify_data));
+
+		SSL_set_verify(client->ssl,
+			(certrequest == NETSSL_CERTREQ_REQUIRE
+				? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+				: SSL_VERIFY_PEER),
+			openssl_cert_verify_callback);
+	}
+# endif
+
 	/* SSL_accept() on a non-blocking socket (which upsd uses) requires a
 	 * retry loop. When SSL_accept() returns -1 with SSL_ERROR_WANT_READ or
 	 * SSL_ERROR_WANT_WRITE it is signalling a non-fatal "not done yet"
@@ -483,6 +860,17 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 				client->ssl_connected = 1;
 				upsdebugx(3, "SSL_accept succeeded (%s)",
 					SSL_get_version(client->ssl));
+
+				/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+				if (SSL_get_peer_certificate(client->ssl)) {
+					if (SSL_get_verify_result(client->ssl) == X509_V_OK) {
+						upsdebugx(3, "%s: The client sent a certificate which verified OK", __func__);
+					} else {
+						upsdebugx(3, "%s: The client sent a certificate which did not verify OK", __func__);
+					}
+				} else {
+					upsdebugx(3, "%s: The client did not send a certificate", __func__);
+				}
 				break;
 			}
 
@@ -681,12 +1069,23 @@ void ssl_init(void)
 #  endif
 # endif /* WITH_NSS */
 
+# ifdef WITH_OPENSSL
 	if (!certfile) {
-		upsdebugx(2, "%s: no certfile", __func__);
+		upsdebugx(2, "%s: OPENSSL: no certfile", __func__);
 		return;
 	}
-
 	check_perms(certfile);
+# elif defined WITH_NSS
+	if (!certpath) {
+		upsdebugx(2, "%s: NSS: no certpath", __func__);
+		return;
+	}
+	check_perms(certpath);
+# else
+	upsdebugx(2, "%s: Non-SSL build: should not have gotten here", __func__);
+	return;
+# endif
+
 	if (!disable_weak_ssl)
 		upslogx(LOG_WARNING, "Warning: DISABLE_WEAK_SSL is not enabled. Please consider enabling to improve network security.");
 
@@ -724,6 +1123,45 @@ void ssl_init(void)
 	}
 #  endif	/* OPENSSL_VERSION_NUMBER */
 
+	if (certpasswd) {
+#  if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
+		/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros */
+		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)certpasswd);
+#   endif	/* else callback uses global variable */
+#  else	/* Not SSL_CTX_* methods */
+		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
+		 * the `SSL_CTX*` variants were added in 1.1.
+		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
+		 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
+		 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
+		 *
+		 * But to use those, we would need to get that SSL* (connection-oriented,
+		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
+		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
+		 *
+		 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
+		 */
+#   if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
+		/* Theoretical solution - didn't find a build system where such methods
+		 * would actually be available, so this could be tested and used */
+		SSL	*ssl_tmp = SSL_new(ssl_ctx);
+		/* OpenSSL 0.9.6+ at least? */
+		SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
+#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_set_default_passwd_cb_userdata(ssl_tmp, (void*)certpasswd);
+#    endif
+		SSL_free(ssl_tmp);
+
+#   else	/* Not SSL_* methods either */
+
+		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
+		return;
+#   endif
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
+	}	/* else: CERTIDENT did not pass a password, nothing to check */
+
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
@@ -739,14 +1177,106 @@ void ssl_init(void)
 		fatalx(EXIT_FAILURE, "SSL_CTX_check_private_key(%s) failed", certfile);
 	}
 
+	if (certname && certname[0] != '\0') {
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+		/* Roughly OpenSSL 1.0.2+ */
+		X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
+		if (x509) {
+			/* Check if certname matches the host (CN or SAN) */
+			if (X509_check_host(x509, (const char *)certname, 0, 0, NULL) != 1
+			 && X509_check_ip_asc(x509, (const char *)certname, 0) != 1
+			) {
+				char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+				char	*subject_CN = (subject ? (char*)strstr(subject, "CN=") + 3 : NULL);
+				size_t	certname_len = strlen(certname);
+
+				upsdebugx(4, "%s: My certificate subject: '%s'; CN: '%s'; CERTIDENT: [%" PRIuSIZE "]'%s'",
+					__func__, NUT_STRARG(subject), NUT_STRARG(subject_CN),
+					certname_len, NUT_STRARG(certname));
+
+				/* Check if certname matches the whole subject or just .../CN=.../ part as a string */
+				if (!subject || !(
+				    strcmp(subject, certname) == 0
+				    || (subject_CN && !strncmp(subject_CN, certname, certname_len)
+						&& (subject_CN[certname_len] == '\0'
+							|| subject_CN[certname_len] == '/'
+							|| subject_CN[certname_len] == ','
+							|| (subject_CN[certname_len] == '\\' && subject_CN[certname_len + 1] == '/')) )
+				)) {
+					/* This way or that, the names differ */
+					upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+						subject ? subject : "unknown", certname);
+					if (subject) {
+						OPENSSL_free(subject);
+					}
+					fatalx(EXIT_FAILURE, "Unexpected certificate provided");
+				} else {
+					upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", certname);
+				}
+			} else {
+				upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", certname);
+			}
+		}
+#  else	/* Missing X509 methods wanted above */
+		fatalx(EXIT_FAILURE, "CERTIDENT name verification is not supported in this OpenSSL build (too old)");
+#  endif	/* Got ways to check CERTIDENT? */
+	}/* else: CERTIDENT did not pass a name, nothing to check */
+
+	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
+
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list failed");
 	}
 
-	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	if (certrequest < NETSSL_CERTREQ_NO || certrequest > NETSSL_CERTREQ_REQUIRE) {
+		fatalx(EXIT_FAILURE, "Invalid certificate requirement");
+	}
 
-	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
+	if (certpath) {
+		if (SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath) != 1) {
+			ssl_debug();
+			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
+
+			/* Can it be a specific PEM file? */
+			if (SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL) != 1) {
+				ssl_debug();
+				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				/* return? fatal? */
+			} else {
+				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
+			}
+		} else {
+			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
+		}
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUEST
+	 || certrequest == NETSSL_CERTREQ_REQUIRE
+	) {
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+		openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
+			"openssl_cert_verify_data index (server)",
+			NULL, NULL, NULL);
+
+		SSL_CTX_set_verify(ssl_ctx,
+			(certrequest == NETSSL_CERTREQ_REQUIRE
+				? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+				: SSL_VERIFY_PEER),
+			openssl_cert_verify_callback);
+
+		/* Let the openssl_cert_verify_callback() catch any verify_depth
+		 * error, so that we get an appropriate error in the logfile;
+		 * see more around SSL_accept(). */
+		SSL_CTX_set_verify_depth(ssl_ctx, verify_depth + 1);
+	} else {
+		SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+	}
+# else
+	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+# endif
+
 	ssl_initialized = 1;
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
@@ -764,7 +1294,7 @@ void ssl_init(void)
 	 * by any release function.
 	 * Probably NSS key module object allocation and
 	 * probably NSS key db object allocation too. */
-	status = NSS_Init(certfile);
+	status = NSS_Init(certpath);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		nss_error("ssl_init / NSS_Init");
@@ -868,20 +1398,20 @@ void ssl_init(void)
 #  endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 	cert = PK11_FindCertFromNickname(certname, NULL);
-	if (cert == NULL)	{
+	if (cert == NULL) {
 		upslogx(LOG_ERR, "Can not find server certificate");
 		nss_error("ssl_init / PK11_FindCertFromNickname");
 		return;
 	}
 
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
-	if (privKey == NULL){
+	if (privKey == NULL) {
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
 		nss_error("ssl_init / PK11_FindKeyByAnyCert");
 		return;
 	}
 
-	upsdebugx(2, "%s: initialized with NSS and certfile='%s'", __func__, certfile);
+	upsdebugx(2, "%s: initialized with NSS and certpath='%s'", __func__, certpath);
 	ssl_initialized = 1;
 # else /* not (WITH_OPENSSL | WITH_NSS) */
 	/* Looking at ifdefs, we should not get here. But just in case... */
@@ -1079,6 +1609,15 @@ void ssl_finish(nut_ctype_t *client)
 	if (client->ssl) {
 # ifdef WITH_OPENSSL
 		SSL_free(client->ssl);
+
+		if (client->openssl_cert_verify_data.hostname_allocated
+		 && client->openssl_cert_verify_data.hostname
+		) {
+			free((void *)client->openssl_cert_verify_data.hostname);
+			client->openssl_cert_verify_data.hostname = NULL;
+		}
+
+		memset(&(client->openssl_cert_verify_data), 0, sizeof(client->openssl_cert_verify_data));
 # elif defined(WITH_NSS)
 		PR_Shutdown(client->ssl, PR_SHUTDOWN_BOTH);
 		PR_Close(client->ssl);

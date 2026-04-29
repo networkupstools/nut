@@ -72,6 +72,30 @@ https://github.com/networkupstools/nut/milestone/13
       query (for protocol version) to verify that handshake succeeded.
       This change impacted also the classic C `libupsclient` library.
       [issue #3387, PR #3402]
+    * Updated OpenSSL code paths in the `libupsclient` C library to support
+      features earlier only available with NSS builds, like specifying the
+      client certificate+key, optionally with password, and pinning expected
+      server certificates. For both backends such pinning should now honour
+      the 'certverify' setting of the `CERTHOST` entry (e.g. not abort the
+      connection attempt if that number is '0'). Also, the `-1` value is
+      now supported to mean "use global default setting". [issue #3331]
+    * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
+      (optional validation of clients identified by a certificate) also
+      when built with OpenSSL, optionally using the `CERTPATH` with a
+      collection of CA certificates (directory or a big PEM file).
+      Also support `CERTIDENT` to provide a private key password and ensure
+      that the certificate in `CERTFILE` has an expected subject name as an
+      exact string, or that its CN or SAN match the provided string as a
+      standard expression of host name (section 3.5 of RFC 1034) or IP address.
+      [issue #3331]
+    * The `libupsclient` API was extended with a `upscli_init2()` method which
+      allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
+    * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
+      report the ability to check `CERTIDENT` information. [#3331]
+
+ - `upsmon` client updates:
+    * Introduced support for `CERTFILE` option, so the client can identify
+      itself to the data server also in OpenSSL builds. [issue #3331]
 
  - Introduced `ci_build.sh` settings and respective CI workflow settings
    to optionally re-use a `config.cache` file from older runs, and similar

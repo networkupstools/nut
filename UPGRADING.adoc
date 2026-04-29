@@ -33,6 +33,13 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Potentially a breaking change for C++ clients that rushed to use the new
+  SSL support options in `libnutclient`: for Mozilla NSS setup, the way to
+  provide an expected `CERTHOST` address was missing.  Now the API is fixed
+  in this regard, at the cost of adding arguments to methods introduced in
+  the previous release. [issue #3331, PR #3408]
+
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 

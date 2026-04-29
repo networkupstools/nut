@@ -470,31 +470,41 @@ if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM
 fi
 
 [ -n "${WITH_SSL_CLIENT}" ] || { WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none" ; }
+[ -n "${WITH_SSL_CLIENT_CERTIDENT}" ] || WITH_SSL_CLIENT_CERTIDENT="none"
 # NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
 # Interesting idea: build and test server with one and clients with the other...
 # SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
 case "${WITH_SSL_CLIENT}" in
     *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
-    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ;;
-    *NSS*) WITH_SSL_CLIENT="NSS" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name" ;; # Not probable, but...
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_CLIENT="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
+    *NSS*) WITH_SSL_CLIENT="NSS" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
 esac
-log_info "Tested client binaries SSL support: ${WITH_SSL_CLIENT}"
+log_info "Tested client binaries offer SSL support: ${WITH_SSL_CLIENT}"
+log_info "Tested client binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
 
 [ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
 [ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
+[ -n "${WITH_SSL_SERVER_CERTIDENT}" ] || WITH_SSL_SERVER_CERTIDENT="none"
 case "${WITH_SSL_SERVER}" in
     *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
     *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
 esac
 case "${WITH_SSL_SERVER}" in
     *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
-    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ;;
-    *NSS*) WITH_SSL_SERVER="NSS" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name" ;; # Not probable, but...
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_SERVER="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
+    *NSS*) WITH_SSL_SERVER="NSS" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
     *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
 esac
-log_info "Tested server binaries SSL support: ${WITH_SSL_SERVER}"
-log_info "Tested server binaries client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
+log_info "Tested server binaries offer SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_SERVER_CERTIDENT}"
+log_info "Tested server binaries offer client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
 
 if [ x"${WITH_SSL_TESTS}" = xno ] ; then
     log_info "Disabling SSL tests (even if they are possible) due to WITH_SSL_TESTS='${WITH_SSL_TESTS}'"
@@ -1280,7 +1290,6 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
 
                         # Use this later for signing, move on to server/client requests...
                         check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
-
                         ;;
                 esac
 
@@ -1429,7 +1438,7 @@ EOF
                             --extKeyUsage "serverAuth" \
                             --nsCertType sslServer \
                             --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
-                            --extSAN "dns:localhost,dns:localhost6,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1" \
+                            --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
                         || die "Could not create a NSS Server certificate request"
 
                         # Sign a certificate request with the CA certificate:
@@ -1555,11 +1564,13 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+DNS.3 = nut-server-$$.localdomain
 # Cater to older Python SSL parser that only looks for DNS:
-DNS.3 = 127.0.0.1
-DNS.4 = ::1
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
@@ -1740,11 +1751,13 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
 DNS.2 = localhost6
+DNS.3 = nut-client-$$.localdomain
 # Cater to older Python SSL parser that only looks for DNS:
-DNS.3 = 127.0.0.1
-DNS.4 = ::1
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
@@ -1988,6 +2001,9 @@ generatecfg_upsd_add_SSL() {
 # OpenSSL CERTFILE: PEM file with data server cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
 CERTFILE "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}upsd.pem"
+# OpenSSL CERTPATH: Directory with CA certificates (named by hash)
+# to check trusted clients
+CERTPATH "${TESTCERT_PATH_ROOTCA}"
 EOF
             } >> "$NUT_CONFPATH/upsd.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
@@ -1997,22 +2013,43 @@ EOF
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_SERVER}"
-CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
 EOF
-
-              if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue -a x"${WITH_SSL_CLIENT}" = xNSS ]; then
-                cat << EOF
-#  - 0 to not request clients to provide any certificate
-#  - 1 to require all clients to present some certificate
-#  - 2 to require all clients to present a valid certificate
-#      (trusted by server database)
-CERTREQUEST 2
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsd.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
             ;;
     esac
+
+    # Shared features for both SSL backends:
+    { case x"${WITH_SSL_SERVER_CERTIDENT}" in
+        x"name+pass") cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
+EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_SERVER_PASS}"
+EOF
+            ;;
+      esac
+
+      if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
+        cat << EOF
+#  - 0 to not request clients to provide any certificate
+#  - 1 to require all clients to present some certificate
+#  - 2 to require all clients to present a valid certificate
+#      (trusted by server database or CA collection)
+CERTREQUEST 2
+EOF
+      fi
+    } >> "$NUT_CONFPATH/upsd.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
     # FIXME: Check for old/new OS and libs to toggle this?
     # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
@@ -2197,23 +2234,15 @@ generatecfg_upsmon_add_SSL() {
         OpenSSL)
             log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
             { cat << EOF
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
 # OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
 #  CA subject name hash value (which must include our NUT server).
 #  Here we just use the path for PEM file that should be populated
 #  by the generatecfg_upsd_add_SSL() method.
-# We only support CERTPATH (to recognize servers), FORCESSL and
-# CERTVERIFY in OpenSSL builds.
 CERTPATH "${TESTCERT_PATH_ROOTCA}"
 EOF
-
-              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
-                cat << EOF
-# With OpenSSL this is the only way to configure these behaviors,
-# no CERTHOST setting here so far:
-FORCESSL 1
-CERTVERIFY 1
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
@@ -2222,35 +2251,56 @@ EOF
             { cat << EOF
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH "${TESTCERT_PATH_CLIENT}"
-CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
 EOF
-
-              case "${WITH_SSL_SERVER}" in
-                none) ;;
-                NSS)
-                    cat << EOF
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
-EOF
-                ;;
-                *)  # OpenSSL
-                    cat << EOF
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 0 0
-EOF
-                ;;
-              esac
-
-              if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
-                cat << EOF
-# Defaults that NSS CERTHOST may override per-server, but
-# note that this impacts also the general upsmon behavior:
-FORCESSL 1
-CERTVERIFY 1
-EOF
-              fi
             } >> "$NUT_CONFPATH/upsmon.conf" \
             || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
             ;;
     esac
+
+    # Shared features for both SSL backends:
+    { case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        x"name+pass") cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_CLIENT_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+      esac
+
+      if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+        cat << EOF
+# Defaults that CERTHOST may override per-server, but
+# note that this impacts also the general upsmon behavior:
+FORCESSL 1
+EOF
+
+        case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        x"none") cat << EOF
+CERTVERIFY 0
+# Custom settings for a specific remote server:
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 0
+EOF
+            ;;
+        *) cat << EOF
+CERTVERIFY 1
+# Custom settings for a specific remote server:
+CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+EOF
+            ;;
+        esac
+      fi
+    } >> "$NUT_CONFPATH/upsmon.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     NUT_QUIET_INIT_SSL=false
     export NUT_QUIET_INIT_SSL
@@ -3194,9 +3244,9 @@ isTestablePython() {
     return $PY_RES
 }
 
-# Executed in subshell context of test cases below
-# Same vars are also used for C++ (cppnit) tests
-setenv_ssl_python() {
+setenv_ssl_common() {
+    # arg1 = language (perl, python...)
+
     # Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
     # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
     # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
@@ -3214,14 +3264,14 @@ setenv_ssl_python() {
             export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
             ;;
         OpenSSL|NSS)
-            log_info "Adding client-side (Open)SSL config to python env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+            log_info "Adding client-side (Open)SSL config to $1 env to talk to our ${WITH_SSL_SERVER}-capable upsd"
 
             NUT_SSL=true
             NUT_FORCESSL=1
             export NUT_SSL NUT_FORCESSL
 
             if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
-                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
                     NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
                     NUT_CERTVERIFY=1
                     export NUT_CAPATH NUT_CERTVERIFY
@@ -3233,6 +3283,34 @@ setenv_ssl_python() {
             fi
             ;;
     esac
+}
+
+# Executed in subshell context of test cases below
+# Same vars are also used for C++ (cppnit) tests
+setenv_ssl_python() {
+    setenv_ssl_common "python"
+
+    $PYTHON << EOF
+try:
+    import ssl
+    with ssl.create_default_context(cafile="x", capath="y") as tmp:
+        pass
+except AttributeError as ae:
+    print(ae)
+    exit(1)
+except ImportError as me:
+    print(me)
+    exit(1)
+except IOError as ioe:
+    pass
+EOF
+
+    if [ "$?" != 0 ] ; then
+        log_warn "The python interpreter '$PYTHON' can not use ssl module, so we will not FORCESSL in the test"
+        NUT_FORCESSL=0
+        export NUT_FORCESSL
+        unset NUT_SSL
+    fi
 }
 
 # Executed in subshell context of test cases below
@@ -3255,7 +3333,7 @@ setenv_ssl_cppnit() {
             if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
                 case "${WITH_SSL_CLIENT}" in
                 OpenSSL)
-                    if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0`" ; } >/dev/null 2>/dev/null ; then
+                    if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
                         NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
                         NUT_CERTVERIFY=1
                         export NUT_CAPATH NUT_CERTVERIFY
@@ -3264,6 +3342,18 @@ setenv_ssl_cppnit() {
                         NUT_CERTVERIFY=1
                         export NUT_CAFILE NUT_CERTVERIFY
                     fi ; fi
+
+                    NUT_CERTHOST_ADDR="localhost"
+                    NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
+                    NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
+                    NUT_CERTFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    export NUT_CERTFILE NUT_KEYPASS
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+
+                    # Should not be required when appended to NUT_CERTFILE:
+                    #NUT_KEYFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
+                    #export NUT_KEYFILE
                     ;;
                 NSS)
                     NUT_CERTVERIFY=1
@@ -3272,11 +3362,23 @@ setenv_ssl_cppnit() {
                     NUT_CERTSTORE_PATH="${TESTCERT_PATH_CLIENT}"
                     NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
                     NUT_CERTSTORE_PREFIX=""
+                    NUT_CERTHOST_ADDR="localhost"
                     NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
                     NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
-                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
                     ;;
                 esac
+
+                # e.g. OpenSSL too old for us to check certs with current code
+                if [ x"${WITH_SSL_CLIENT_CERTIDENT}" = x"none" ] ; then
+                    log_warn "Not checking for CERTIDENT and CERTHOST nicknames, ability not built into binaries"
+                    # and certificate verification
+                    #NUT_CERTVERIFY=0
+                    NUT_CERTIDENT_NAME=""
+                    NUT_CERTHOST_NAME=""
+                    # NOTE: NUT_CERTHOST_ADDR is ignored when the other part is NULL
+                fi
             fi
             ;;
     esac
@@ -3291,10 +3393,14 @@ testcase_sandbox_python_without_credentials() {
 
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
-    if ( unset NUT_USER || true
-         unset NUT_PASS || true
-         setenv_ssl_python
-         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -3322,6 +3428,9 @@ testcase_sandbox_python_with_credentials() {
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
@@ -3347,6 +3456,9 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
         setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
         $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
@@ -3373,7 +3485,16 @@ testcases_sandbox_python() {
 ####################################
 
 setenv_ssl_perl() {
-    setenv_ssl_python
+    setenv_ssl_common "perl"
+
+    case "${NUT_CAPATH}" in
+        ?":\\"*|?":/"*)
+            # Perl uses a platform-dependent PATH separator,
+            # however in mingw/msys2 is uses ":" which clashes
+            # with "C:\..." that Python insists on in this var.
+            _NUT_CAPATH="`realpath \"${NUT_CAPATH}\"`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+            ;;
+    esac
 
     case "${NUT_CAPATH}" in
         ?":\\"*|?":/"*)
@@ -3478,10 +3599,14 @@ testcase_sandbox_perl_without_credentials() {
 
     log_separator
     log_info "[testcase_sandbox_perl_without_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) without login credentials"
-    if ( unset NUT_USER || true
-         unset NUT_PASS || true
-         setenv_ssl_perl
-         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -3509,6 +3634,9 @@ testcase_sandbox_perl_with_credentials() {
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
@@ -3534,6 +3662,9 @@ testcase_sandbox_perl_with_upsmon_credentials() {
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
         setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
         $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
     ) ; then
         log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
@@ -3582,6 +3713,9 @@ testcase_sandbox_cppnit_without_creds() {
     if ( unset NUT_USER || true
          unset NUT_PASS || true
          setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
          "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
@@ -3615,6 +3749,9 @@ testcase_sandbox_cppnit_simple_admin() {
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
@@ -3642,6 +3779,9 @@ testcase_sandbox_cppnit_upsmon_primary() {
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
@@ -3669,6 +3809,9 @@ testcase_sandbox_cppnit_upsmon_master() {
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
@@ -3721,6 +3864,10 @@ testcase_sandbox_nutscanner_list() {
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
     export LD_LIBRARY_PATH
+
+    if [ -n "${NUT_DEBUG_LEVEL_NUTSCAN-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUTSCAN}"
+    fi
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
@@ -3792,6 +3939,8 @@ testcase_sandbox_nutscanner_list() {
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
     fi
+
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcases_sandbox_nutscanner() {
