@@ -361,8 +361,11 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< (c.getSslCaps() ? "true" : "false")
 		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_OPENSSL ? "[OpenSSL]" : "")
 		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_NSS ? "[NSS]" : "")
-		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_PASS ? "[CERTIDENT-pass]" : "")
-		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_NAME ? "[CERTIDENT-name]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_PASS ? "[CERTIDENT-pass]" : "<!CERTIDENT-pass!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_NAME ? "[CERTIDENT-name]" : "<!CERTIDENT-name!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER ? "[CERTHOST-addr-number]" : "<!CERTHOST-addr-number!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT ? "[CERTHOST-addr-text]" : "<!CERTHOST-addr-text!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_NAME ? "[CERTHOST-name]" : "<!CERTHOST-name!>")
 		<< std::endl;
 }
 
