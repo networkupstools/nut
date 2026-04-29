@@ -1098,7 +1098,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
 CONFIGURE_SCRIPT=""
-autogen_get_CONFIGURE_SCRIPT() {
+do_autogen_get_CONFIGURE_SCRIPT() {
     # Autogen once (delete the file if some scenario ever requires to re-autogen)
     if [ -n "${CONFIGURE_SCRIPT}" -a -s "${CONFIGURE_SCRIPT}" ] ; then return 0 ; fi
 
@@ -1131,6 +1131,117 @@ autogen_get_CONFIGURE_SCRIPT() {
     popd || exit
 }
 
+discover_somehash_filter() {
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}'
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}'
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size?
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
+# If it is non-trivial later, we use it
+unset CI_CACHE_NUT_HASHDIR || true
+autogen_get_CONFIGURE_SCRIPT() {
+    do_autogen_get_CONFIGURE_SCRIPT
+
+    unset CI_CACHE_NUT_HASHDIR || true
+    # Allow regular runners dedicate a persistent cache to re-run same configs
+    # more quickly. Opt-in, not applicable to all scenarios.
+    # FIXME: consider locking (one creator at least)?
+    if [ x"$DO_USE_AUTOCONF_CACHE" = xyes ] && [ -n "$CI_CACHE_NUT_BASEDIR" ] ; then
+        # FIXME later: any hash would do to detect changes
+        # Paths below assume SCRIPTDIR (of ci_build.sh) is the source root
+        AUTOCONF_FILES="`ls -1 \"${SCRIPTDIR}\"/configure.ac \"${SCRIPTDIR}\"/m4/*.m4 | sort`"
+        AUTOCONF_HASH="$({ cat ${AUTOCONF_FILES} ; uname -a ; } | somehash_filter)" \
+        || AUTOCONF_HASH=''
+
+        if [ -n "${AUTOCONF_HASH}" ]; then
+            CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/AUTOCONF_${AUTOCONF_HASH}"
+            if [ x"$DO_CLEAN_AUTOCONF_CACHE_BEFORE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' but was asked to remove it first" >&2
+                rm -rf "${CI_CACHE_NUT_HASHDIR}" || true
+            fi
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if mkdir -p "${CI_CACHE_NUT_HASHDIR}" ; then
+                    # Just for info (so far):
+                    uname -a > "${CI_CACHE_NUT_HASHDIR}/ci_uname.txt"
+                    ls -lad ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_listing.txt"
+                    somehash_files ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_hashes.txt"
+                else
+                    echo "=== FAILED to mkdir, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if [ ! -w "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                    echo "=== ...but it seems to not be writeable, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            fi
+        else
+            echo "=== FAILED to determine an AUTOCONF_HASH to support DO_USE_AUTOCONF_CACHE logic" >&2
+        fi
+    fi
+}
+
+get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
+    unset CI_CACHE_NUT_HASHDIR_CFG
+    CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$*\" | somehash_filter`" \
+        || CI_CACHE_NUT_HASHDIR_CFG=''
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+                mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+                echo "$*" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+                if [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ]; then
+                    # To be filled after the configuration succeeds:
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
+                fi
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+            fi
+
+            # NOTE: the configure script touches it as empty first,
+            # then (quickly, I hope atomically) populates in the end.
+            CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+        fi
+    fi
+}
+
 configure_CI_BUILDDIR() {
     autogen_get_CONFIGURE_SCRIPT
 
@@ -1157,15 +1268,57 @@ configure_nut() {
 
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
+
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'"
+
+    CI_CACHE_NUT_RETRIED=false
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
-      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+        echo "$0: using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" >&2
+      else
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ]; then
+          echo "$0: NOT using ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because it did not exist (yet)" >&2
+        else if [ -s config.cache ]; then
+          echo "$0: NOT using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because DO_USE_AUTOCONF_CACHE=$DO_USE_AUTOCONF_CACHE" >&2
+        fi; fi
+      fi
+
+      $CI_TIME $CONFIGURE_SCRIPT \
+          ${CI_CACHE_NUT_HASHDIR_CFG_OPT} \
+          "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
-      && return 0 \
+      && {
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+            if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+                # Stash a copy to track evolution:
+                cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
+                # Populate on first run (may cost 1-2Mb):
+                cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+            fi
+        fi
+      } && return 0 \
       || { RES_CFG=$?
         echo "$0: configure phase complete ($RES_CFG)" >&2
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+            if ${EGREP} "run 'make distclean' and/or 'rm .*config.cache" config.log ; then
+                if [ x"$CI_CACHE_NUT_RETRIED" = xfalse ] ; then
+                    echo "=== RETRY with a new config.cache file" >&2
+                    rm -f "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+                    CI_CACHE_NUT_RETRIED=true
+                    continue
+                fi
+
+                echo "=== RETRY without a config.cache file (forfeit DO_USE_AUTOCONF_CACHE logic)" >&2
+                CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+                CI_CACHE_NUT_RETRIED=2
+                continue
+            fi
+        fi
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -1346,10 +1499,13 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
+    # NOTE: With out-of-tree builds, Makefile.in should get generated at the source,
+    # not in build dir, hence the `|| true` to avoid false-positive failures there.
     if ( [ -s Makefile ] && (
             [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
         ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.in -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
-        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in`" ] ) ) \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${SCRIPTDIR}\"/Makefile.in || true`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in || true`" ] ) ) \
     || ( [ -s configure ] && (
             [ -n "`find \"${SCRIPTDIR}\" -name configure.ac -newer \"${CI_BUILDDIR}\"/configure`" ] \
         ||  [ -n "`find \"${SCRIPTDIR}\" -name '*.m4' -newer \"${CI_BUILDDIR}\"/configure`" ] ) ) \
@@ -1376,6 +1532,8 @@ consider_cleanup_shortcut() {
         fi
     fi
 
+    # FIXME? With out-of-tree builds, there may be no "${CI_BUILDDIR}"/configure
+    #  and a "${SCRIPTDIR}"/Makefile.in may remain obsolete compared to Makefile.am...
     if $DO_REGENERATE ; then
         rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure "${CI_BUILDDIR}"/include/config.h "${CI_BUILDDIR}"/include/config.h.in "${CI_BUILDDIR}"'/include/config.h.in~'
     fi
@@ -1413,14 +1571,23 @@ optional_maintainer_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='maintainer-clean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        MAKE_RES=0
         case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || return
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
             ;;
         *)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
         esac
+
+        if [ x"$MAKE_RES" != x0 ]; then
+            return $MAKE_RES
+        fi
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
@@ -1448,8 +1615,17 @@ optional_dist_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='distclean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || return
+        MAKE_RES=0
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
+
+        if [ x"$MAKE_RES" != x0 ]; then
+            return $MAKE_RES
+        fi
 
         check_gitignore "distclean" || return
     fi
@@ -1530,6 +1706,38 @@ fi
 
 # Default follows autotools:
 [ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck"
+
+# https://www.gnu.org/software/autoconf/manual/autoconf-2.67/html_node/Cache-Files.html
+# Note that autotools automatically removes such file name during the
+# "make distclean" and stronger goals, so on our side we can only stash
+# and restore the file around such operations if stored in build area.
+# Better yet, this may use a persisted location outsude the build area,
+# e.g. a CI_CACHE_NUT_BASEDIR=~/.cache/nut-ci
+# There is also DO_USE_NIT_TESTCERT_CACHE and DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="auto"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
+[ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
+[ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_AUTOCONF_CACHE" ] || DO_USE_AUTOCONF_CACHE="${DO_USE_NUTCI_CACHE}"
+[ -n "$DO_USE_AUTOCONF_CACHE_DEBUG" ] || DO_USE_AUTOCONF_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
+
+if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
+    case "$BUILD_TYPE" in
+        # FIXME later # default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_USE_AUTOCONF_CACHE="yes" ; else DO_USE_AUTOCONF_CACHE="no" ; fi ;;
+    esac
+fi
+export DO_USE_AUTOCONF_CACHE
+
+[ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
+
+if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xauto ]; then
+    case "$BUILD_TYPE" in
+        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ; else DO_CLEAN_AUTOCONF_CACHE_BEFORE="yes" ; fi ;;
+    esac
+fi
+export DO_CLEAN_AUTOCONF_CACHE_BEFORE
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
@@ -1919,12 +2127,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
     consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
-        # Let initial clean-up be at default verbosity
-
         # Handle Ctrl+C with helpful suggestions:
         trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure include/config.h* ; $0 $SCRIPT_ARGS"' 2
 
         echo "=== Starting initial clean-up (from old build products)"
+
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
+
+        # Let initial clean-up be at default verbosity
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
             ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
@@ -1936,8 +2147,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
         || true
         echo "=== Finished initial clean-up"
-
-        trap - 2
     fi
 
     # Just prepare `configure` script; we run it at different points
@@ -1987,11 +2196,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
 
+            # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+            # handlers in the stack of calls via Makefile.am should hear it
+            get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$BUILD_TGT'"
+
             # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
             #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
             MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS "$BUILD_TGT"
 
             # Can be noisy if regen is needed (DMF branch)
             #GIT_DIFF_SHOW=false \
@@ -2639,6 +2852,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                         $MAKE distclean $MAKE_FLAGS_CLEAN -k \
                         || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+
                         echo "=== Completed sandbox cleanup after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -2719,13 +2933,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
         # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
-        # that include DISTCHECK_FLAGS if provided
+        # that include DISTCHECK_FLAGS if provided, but I am not convinced they
+        # would be honoured for distcheck-ci etc. goald which may impose their own.
         DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$DISTCHECK_TGT'"
+
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS ${DISTCHECK_TGT}
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS ${DISTCHECK_TGT}
 
         #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "${DISTCHECK_TGT}" || exit
@@ -2779,11 +2998,14 @@ bindings)
         # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
+
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
+
         ${MAKE} realclean -k || true
+
         echo "=== Finished initial clean-up"
     fi
-
-    configure_CI_BUILDDIR
 
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
@@ -2923,16 +3145,13 @@ bindings)
     PATH="`echo \"${PATH}\" | normalize_path`"
     CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
-    RES_CFG=0
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
-    || RES_CFG=$?
-    echo "$0: configure phase complete ($RES_CFG)" >&2
-    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
+    # NOTE: Exits if fails
+    configure_nut
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    echo "Configuration finished, starting make" >&2
+    echo "Configuration finished, starting make in `pwd`" >&2
     if [ -n "$PARMAKE_FLAGS" ]; then
         echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
     fi
@@ -2941,7 +3160,7 @@ bindings)
     fi
 
     #$MAKE all || \
-    $MAKE $PARMAKE_FLAGS all || exit
+    $MAKE $PARMAKE_FLAGS all-quick || exit
     build_to_only_catch_errors_check
     ### if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
 
@@ -2984,7 +3203,9 @@ cross-windows-mingw*)
         fi
     fi
 
-    ./autogen.sh || exit
+    ###./autogen.sh || exit
+    # Also populate CI_CACHE_NUT_HASHDIR if appropriate
+    autogen_get_CONFIGURE_SCRIPT || exit
     cd scripts/Windows || exit
 
     cmd="" # default soup of the day, as defined in the called script
@@ -3018,6 +3239,11 @@ cross-windows-mingw*)
 
     export NUT_SSL_VARIANTS
 
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        export CI_CACHE_NUT_HASHDIR
+    fi
+
+    DO_USE_AUTOCONF_CACHE="${DO_USE_AUTOCONF_CACHE}" \
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \

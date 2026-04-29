@@ -505,6 +505,7 @@ fi
 case "${WITH_SSL_TESTS}" in
     require) WITH_SSL_TESTS=required ;;
     require-conditional) WITH_SSL_TESTS=required-conditional ;;
+    yes|best-effort|default) WITH_SSL_TESTS=best-effort ;; # go with the flow
 esac
 
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
@@ -911,8 +912,223 @@ TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
 # should they use same or different cryptostore?..
 TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
 
+# 20 years should be enough for CI? Also beyond 2038 starting now...
+TESTCERT_VALIDITY_DAYS=7305
+TESTCERT_VALIDITY_MONTHS=240
+
+discover_somehash_filter() {
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}'
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}'
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size?
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
+check_NIT_certs_NSS() {
+    # $1 = title for msg
+    # $2 = path
+    # $3 = prefix (unused now)
+
+    log_info "=== Verifying NSS ${1} DB files:"
+    (   # Older: cert8.db key3.db secmod.db
+        if [ -e "${2}/${3}cert8.db" ] ; then
+            ls -l "${2}/${3}cert8.db" "${2}/${3}key3.db" "${2}/${3}secmod.db" || exit
+            for F in cert8.db key3.db secmod.db ; do
+                test -s "${2}/${3}${F}" || die "File '${2}/${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        # Newer: cert9.db key4.db pkcs11.txt
+        if [ -e "${2}/${3}cert9.db" ] ; then
+            ls -l "${2}/${3}cert9.db" "${2}/${3}key4.db" "${2}/${3}pkcs11.txt" || exit
+            for F in cert9.db key4.db pkcs11.txt ; do
+                test -s "${2}/${3}${F}" || die "File '${2}/${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
+        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db || exit
+    )   || die "Could not list NSS ${1} DB files"
+}
+
+check_NIT_certs() {
+    # Intended for loading cached/provided certificates and keys,
+    # the generator code has its own similar logic in more detail
+    log_info "Verifying that expected certificate files for testing the current SSL build are available"
+
+    ( # Sub-shelling here to keep soft failure cases handled once
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*)
+            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+            check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+            check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *OpenSSL*)
+            ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/"*.? \
+            || die "Could not list OpenSSL CA PEM file and hash links"
+
+            ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
+            || die "Could not list an upsd.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}"/upsmon.pem \
+            || die "Could not list an upsmon.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
+            || die "Could not list a upsd-public.pem"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*|*OpenSSL*)
+            test -n "${TESTCERT_ROOTCA_PASS}" || die "TESTCERT_ROOTCA_PASS is not set"
+            test -n "${TESTCERT_SERVER_PASS}" || die "TESTCERT_SERVER_PASS is not set"
+            test -n "${TESTCERT_CLIENT_PASS}" || die "TESTCERT_CLIENT_PASS is not set"
+
+            test -n "${TESTCERT_ROOTCA_NAME}" || die "TESTCERT_ROOTCA_NAME is not set"
+            test -n "${TESTCERT_SERVER_NAME}" || die "TESTCERT_SERVER_NAME is not set"
+            test -n "${TESTCERT_CLIENT_NAME}" || die "TESTCERT_CLIENT_NAME is not set"
+            ;;
+        *)  log_info "NO-OP: Neither client nor server claim SSL capability"
+            ;;
+    esac
+    ) && {
+        log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+        return 0
+    } || {
+        if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+            die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
+        fi
+        log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+        if [ x"$1" = xset-none-on-fail ] ; then
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        fi
+        return 1
+    }
+}
+
+prepare_NIT_certs() {
+# Handling of optional caller-provided mock certificates path (dist tarball?)
+if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
+    log_info "Using provided mock certificates from ${TESTCERT_MOCK_PATH}"
+    # If there is a setup script there, source it to get variables
+    if [ -f "${TESTCERT_MOCK_PATH}/TESTCERT_VARS.env" ]; then
+        . "${TESTCERT_MOCK_PATH}/TESTCERT_VARS.env"
+    fi
+
+    # Use them if they exist (note the config might point us to
+    # a new TESTCERT_MOCK_PATH location based on whatever logic,
+    # but at least files generated by this script should not):
+    if [ -d "${TESTCERT_MOCK_PATH}/rootca" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}/upsd" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}/upsmon" ] \
+    ; then
+        mkdir -p "${TESTCERT_PATH_BASE}"
+        cp -pr "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}/"
+        log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
+
+        check_NIT_certs set-none-on-fail || {
+            log_warn "FAILED check_NIT_certs with caller-provided data, may skip SSL part of the tests"
+            return 1
+        }
+
+        return 0
+    fi
+fi
+
+# Caching logic
+# Follow precedent and variables from ci_build.sh with CI_CACHE_NUT_HASHDIR
+# (here CI_CACHE_NIT_HASHDIR based on hash of nit.sh) under provided or
+# defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_NIT_TESTCERT_CACHE=yes
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="no"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="no"
+[ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
+[ -n "$DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE" ] || DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_NIT_TESTCERT_CACHE" ] || DO_USE_NIT_TESTCERT_CACHE="${DO_USE_NUTCI_CACHE}"
+[ -n "$DO_USE_NIT_TESTCERT_CACHE_DEBUG" ] || DO_USE_NIT_TESTCERT_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
+
+unset CI_CACHE_NIT_HASHDIR
+if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
+    [ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
+        if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
+            CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci"
+        fi
+    }
+    if [ -n "${CI_CACHE_NUT_BASEDIR}" ] ; then
+        mkdir -p "${CI_CACHE_NUT_BASEDIR}" || CI_CACHE_NUT_BASEDIR=""
+    fi
+
+    if [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
+        # Calculate hash of nit.sh to decide about re-generation
+        NIT_HASH="`somehash_filter < \"$0\"`"
+        CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
+
+        if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+            if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}, but asked to remake them"
+            else
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
+                mkdir -p "${TESTCERT_PATH_BASE}"
+                cp -pr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+
+                # If there is a setup script there, source it to get variables
+                if [ -f "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env" ]; then
+                    BACKUP_TESTCERT_PATH_BASE="${TESTCERT_PATH_BASE}"
+                    log_info "Sourcing '${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env' ..."
+                    . "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
+                    TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
+                fi
+
+                check_NIT_certs && return
+                log_warn "FAILED check_NIT_certs with cached data, will generate anew"
+                rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+            fi
+        else
+            log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
+        fi
+    fi
+fi
+
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
+# For a good summary of OpenSSL options and decent example config see e.g.
+# https://www.ibm.com/docs/en/hpvs/1.2.x?topic=server-creating-openssl-certificates-secure-build-virtual
 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
     *OpenSSL*|*NSS*)
         ( # Sub-shelling here to keep soft failure cases handled once,
@@ -934,6 +1150,50 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
 
             SKID="0x1234567890abcdef1234"
 
+            # Simple locking mechanism for certificate generation
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                LOCKFILE="${CI_CACHE_NIT_HASHDIR}.lock"
+                # Wait up to 300 seconds (5 minutes)
+                WAIT=0
+                while [ -e "${LOCKFILE}" ] ; do
+                    log_info "Waiting for other process to finish generating certificates (lock: ${LOCKFILE})..."
+                    sleep 5
+                    WAIT="`expr $WAIT + 5`"
+                    if [ $WAIT -gt 300 ] ; then
+                        log_warn "Lock timeout reached, proceeding anyway..."
+                        rm -f "${LOCKFILE}"
+                    fi
+                done
+
+                # Create lock
+                touch "${LOCKFILE}"
+
+                if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
+                    rm -rf "${CI_CACHE_NIT_HASHDIR}"
+                fi
+
+                # If another process finished while we were waiting,
+                # and we dit not "clean", we might find it in cache now
+                if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
+                    mkdir -p "${TESTCERT_PATH_BASE}"
+                    cp -pr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}/"
+
+                    if check_NIT_certs ; then
+                        rm -f "${LOCKFILE}"
+                        return 0
+                    fi
+
+                    log_warn "FAILED check_NIT_certs with cached data, will generate anew"
+                    rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                    mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+                fi
+
+                # if [ -n "${BASH_VERSION-}" ]; then
+                trap 'rm -f "${LOCKFILE}"' RETURN || true
+                # fi
+            fi
+
             mkdir -p "${TESTCERT_PATH_ROOTCA}" || die "Could not mkdir TESTCERT_PATH_ROOTCA"
             (   cd "${TESTCERT_PATH_ROOTCA}" || exit
                 log_info "SSL: Preparing test Root CA..."
@@ -951,13 +1211,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         certutil -N -d . -f .pwfile \
                         || die "Could not init NSS CA database in `pwd`"
 
-                        # Generate a certificate for CA:
-                        # HACK NOTE: The first "yes" is for "Is this a CA certificate [y/N]?" question,
-                        # others default (empty) for possible other questions, e.g.
-                        #   Enter the path length constraint, enter to skip [<0 for unlimited path]: >
-                        #   Is this a critical extension [y/N]? :
-                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
-                        # but generally we do not know how many questions are asked:
+                        # Generate a certificate for CA
                         cscmd() {
                             certutil -S -x \
                                 -d . -f .pwfile \
@@ -969,6 +1223,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                                 -z .random \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1006,10 +1261,26 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Extract the CA certificate to be able to use or import it later:
                         certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
                         || die "Could not extract the NSS CA certificate to PEM"
-                        # Use this later for signing, move on to server/client requests...
 
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db "${TESTCERT_PATH_ROOTCA}"/*.txt \
-                        || die "Could not list NSS CA DB files"
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Extract the CA private key
+                            # (and certificate) to a PKCS#12 file, then
+                            # to PEM for use by OpenSSL-based builds:
+                            pk12cmd() {
+                                pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            if pk12cmd >/dev/null 2>&1 ; then
+                                openssl pkcs12 -in rootca.p12 -out rootca.key -nodes -nocerts -passin file:.pwfile \
+                                && log_info "Exported NSS CA key to OpenSSL PEM"
+                            fi
+                        fi
+
+                        # Use this later for signing, move on to server/client requests...
+                        check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+
                         ;;
                 esac
 
@@ -1017,7 +1288,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
                         # Generate an AES encrypted private key:
-                        openssl genrsa -aes256 -out rootca.key -passout file:.pwfile 4096 \
+                        openssl genrsa -aes256 -out rootca.key \
+                            -passout file:.pwfile 4096 \
                         || die "Could not generate an AES encrypted private key for OpenSSL CA"
                         # Generate a certificate for CA using that key;
                         # note that not all "openssl" versions have the
@@ -1040,32 +1312,93 @@ keyUsage=critical,digitalSignature,cRLSign,keyCertSign
 subjectKeyIdentifier=hash
 EOF
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf || {
+                        openssl req -x509 -new -nodes -key rootca.key \
+                            -passin file:.pwfile -sha256 \
+                            -days "${TESTCERT_VALIDITY_DAYS}" \
+                            -out rootca.pem \
+                            -config rootca.req.conf \
+                        || {
                             log_info "Retry ROOTCA without authorityKeyIdentifier extension"
                             # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
                             sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
-                            && openssl req -x509 -new -nodes -key rootca.key -passin file:.pwfile -sha256 -days 1826 -out rootca.pem -config rootca.req.conf
+                            && openssl req -x509 -new -nodes -key rootca.key \
+                                -passin file:.pwfile -sha256 \
+                                -days "${TESTCERT_VALIDITY_DAYS}" \
+                                -out rootca.pem \
+                                -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        && command -v certutil >/dev/null 2>&1 \
+                        && [ -s rootca.pem ] && [ -s rootca.key ] \
+                        ; then
+                            log_info "SSL: Populating NSS CA database from existing PEM files..."
+                            # Create the certificate database:
+                            certutil -N -d . -f .pwfile \
+                            || die "Could not init NSS CA database from PEM in `pwd`"
+
+                            # Import the CA certificate and key:
+                            # First package to PKCS#12
+                            openssl pkcs12 -export \
+                                -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                -passin file:.pwfile \
+                                -name "${TESTCERT_ROOTCA_NAME}" \
+                                -passout file:.pwfile \
+                            || {
+                                log_warn "Could not package CA to PKCS#12 for NSS import, trying another way"
+                                (cat .pwfile; echo '') > .pwfile-eol
+                                openssl pkcs12 -export \
+                                    -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                    -passin file:.pwfile-eol \
+                                    -name "${TESTCERT_ROOTCA_NAME}" \
+                                    -passout file:.pwfile \
+                                || die "Could not package CA to PKCS#12 for NSS import"
+                            }
+
+                            # Then import to NSS
+                            pk12util -i rootca.p12 -d . -k .pwfile -w .pwfile \
+                            || die "Could not import CA PKCS#12 to NSS"
+
+                            # Trust it
+                            certutil -M -d . -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f .pwfile \
+                            || die "Could not set trust on imported NSS CA"
+
+                            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+                        fi
                         ;;
                 esac
 
+                openssl_hash_CAdir() {
+                    # OpenSSL CA trust "database" should include hashes
+                    # of CA PEM certificates as symlinks to actual files:
+                    CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
+                    && [ -n "${CERTHASH}" ] \
+                    || die "Could not determine OpenSSL certificate hash for Root CA files"
+
+                    # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
+                    ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
+                    ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                    ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* \
+                    || die "Could not list OpenSSL CA PEM file and hash links"
+                }
+
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *OpenSSL*)
-                        # OpenSSL CA trust "database" should include hashes
-                        # of CA PEM certificates as symlinks to actual files:
-                        CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
-                        && [ -n "${CERTHASH}" ] \
-                        || die "Could not determine OpenSSL certificate hash for Root CA files"
-
-                        # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
-                        ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
-                        ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
-                        ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem "${TESTCERT_PATH_ROOTCA}/${CERTHASH}"* \
-                        || die "Could not list OpenSSL CA PEM file and hash links"
+                        openssl_hash_CAdir
                         ;;
                     *)
                         ls -l "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                         || die "Could not list OpenSSL CA PEM file (exported from NSS)"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            openssl_hash_CAdir
+                        fi
+
                         ;;
                 esac
             ) || die "Could not prepare Root CA in '${TESTCERT_PATH_ROOTCA}'"
@@ -1113,6 +1446,7 @@ EOF
                                 -m 2 \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1153,13 +1487,65 @@ EOF
                             -a -i server.crt -t ",," \
                         || die "Could not import the signed NSS Server certificate into server database"
 
-                        ls -l "${TESTCERT_PATH_SERVER}"/*.db "${TESTCERT_PATH_SERVER}"/*.txt \
-                        || die "Could not list NSS Server DB files"
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Add PEM and Java JKS (trust store) for good
+                            # measure, but only if we prepare the cache:
+                            # JKS is not used in-tree now, but e.g. for
+                            # jNut tests; PEM is used in the other type
+                            # of build.
+
+                            pk12cmd() {
+                                pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            # Export private key to PEM for OpenSSL builds;
+                            # server.crt is already PEM (from signing step)
+                            mkpk12key() {
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                    openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile "$@" \
+                                    && log_info "Exported NSS Server key to OpenSSL PEM"
+                                fi
+                            }
+                            mkpk12key
+
+                            # Bonus program: Java JKS (if caching)
+                            if command -v keytool >/dev/null 2>&1 && [ -f server.p12 ] ; then
+                                # Use server.p12 as source if we have it
+                                mkjks() {
+                                    keytool -importkeystore \
+                                        -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeystore upsd.jks \
+                                        -srckeystore server.p12 \
+                                        -srcstoretype PKCS12 \
+                                        -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                        -alias "${TESTCERT_SERVER_NAME}" \
+                                        -noprompt \
+                                    && log_info "Generated Java JKS for Server"
+                                    # else openssl -legacy
+                                    # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
+                                }
+
+                                mkjks || {
+                                    mkpk12key -legacy && mkjks
+                                }
+                            fi
+                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+
+                            cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem 2>/dev/null || true
+                        fi
+
+                        check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
                         ;;
                     OpenSSL)
                         # Create a server certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out server.req -newkey rsa:4096 -passout file:.pwfile -keyout server.key -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        openssl req -new -nodes -out server.req \
+                            -newkey rsa:4096 -passout file:.pwfile \
+                            -keyout server.key \
+                            -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
                         || die "Could not create a OpenSSL Server certificate request"
                         cat > server.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
@@ -1177,7 +1563,14 @@ IP.2 = ::1
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
-                            openssl x509 -req -in "${TESTCERT_PATH_SERVER}/server.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_SERVER}/server.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
+                            openssl x509 -req \
+                                -in "${TESTCERT_PATH_SERVER}/server.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key \
+                                -CAcreateserial \
+                                -out "${TESTCERT_PATH_SERVER}/server.crt" \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
+                                -extfile "${TESTCERT_PATH_SERVER}/server.v3.ext"
                         ) || die "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
 
                         cat server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem server.key > upsd.pem \
@@ -1185,19 +1578,65 @@ EOF
 
                         ls -l "${TESTCERT_PATH_SERVER}"/upsd.pem \
                         || die "Could not list an upsd.pem"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Server database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die "Could not init NSS Server database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "TC,," \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                || die "Could not import the CA certificate to NSS Server database"
+
+                                # Import Server certificate and key
+                                openssl pkcs12 -export -out server.p12 -inkey server.key -in server.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_SERVER_NAME}" -passout file:.pwfile \
+                                || die "Could not package Server cert to PKCS#12 for NSS import"
+
+                                pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
+                                || die "Could not import Server PKCS#12 to NSS"
+
+                                check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+                            fi
+
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Bonus program: Java JKS (if caching)
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
+                                && keytool -importkeystore \
+                                    -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeystore upsd.jks \
+                                    -srckeystore server.p12 \
+                                    -srcstoretype PKCS12 \
+                                    -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                    -alias "${TESTCERT_SERVER_NAME}" \
+                                    -noprompt \
+                                && log_info "Generated Java JKS for Server (from OpenSSL)"
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                            fi
+                        fi
                         ;;
                 esac
             ) || die "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
 
             mkdir -p "${TESTCERT_PATH_CLIENT}"
             (   cd "${TESTCERT_PATH_CLIENT}" || exit
+                log_info "SSL: Preparing test client certificate..."
+                echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}" in
                     NSS)
-                        log_info "SSL: Preparing test client certificate..."
-                        # Also create 3-file database of client key+cert store
-                        echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
-
-                        # Create the certificate database:
+                        # Create the certificate database of client key+cert store:
                         certutil -N -d . -f .pwfile \
                         || die "Could not init NSS Client database in `pwd`"
 
@@ -1243,6 +1682,7 @@ EOF
                                 -m 3 \
                                 -2 \
                                 -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1283,24 +1723,148 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
-                        ls -l "${TESTCERT_PATH_CLIENT}"/*.db "${TESTCERT_PATH_CLIENT}"/*.txt \
-                        || die "Could not list NSS Client DB files"
+                        check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
                         ;;
                     OpenSSL)
-                        # NOTE: No special keys for an OpenSSL client so far,
-                        # it only checks/trusts a server (public data in a PEM file)
+                        # Create a client certificate request:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -new -nodes -out client.req -newkey rsa:4096 -passout file:.pwfile -keyout client.key -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        || die "Could not create a OpenSSL Client certificate request"
+                        cat > client.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = clientAuth
+nsCertType = client
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.3 = 127.0.0.1
+DNS.4 = ::1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_CLIENT}/client.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
+                        ) || die "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
+
+                        cat client.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem client.key > upsmon.pem \
+                        || die "Could not combine an upsmon.pem"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}"/upsmon.pem \
+                        || die "Could not list an upsmon.pem"
+
                         log_info "SSL: Exporting public data of server certificate for client use..."
                         cat "${TESTCERT_PATH_SERVER}"/server.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem > upsd-public.pem \
                         || die "Could not combine a upsd-public.pem"
 
                         ls -l "${TESTCERT_PATH_CLIENT}/upsd-public.pem" \
                         || die "Could not list a upsd-public.pem"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v keytool >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Java JKS (if caching)
+                            keytool -importcert \
+                                -file "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                -alias "${TESTCERT_ROOTCA_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && keytool -importcert \
+                                -file "${TESTCERT_PATH_SERVER}"/server.crt \
+                                -alias "${TESTCERT_SERVER_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && log_info "Generated Java JKS truststore for Client (OpenSSL)"
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
+                        fi
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Client database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die "Could not init NSS Client database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "TC,," \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                || die "Could not import the CA certificate to NSS Client database"
+
+                                # Import server cert into client database so we can trust it (CERTHOST directive):
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_SERVER_NAME}" \
+                                    -a -i "${TESTCERT_PATH_SERVER}/server.crt" \
+                                    -t ",," \
+                                || die "Could not import the Server certificate to NSS Client database"
+
+                                if [ -f client.key ] ; then
+                                    # TODO After #3331 merge:
+                                    # Import Client certificate and key
+                                    openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
+                                    || die "Could not package Client cert to PKCS#12 for NSS import"
+
+                                    pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
+                                    || die "Could not import Client PKCS#12 to NSS"
+                                fi
+
+                                check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
+                            fi
+
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Bonus program: Java JKS (if caching)
+                                pk12cmd() {
+                                    pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                                }
+                                if command -v keytool >/dev/null 2>&1 ; then
+                                    if pk12cmd >/dev/null 2>&1 ; then
+                                        keytool -importkeystore \
+                                            -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeystore upsmon.jks \
+                                            -srckeystore client.p12 \
+                                            -srcstoretype PKCS12 \
+                                            -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -alias "${TESTCERT_CLIENT_NAME}" \
+                                            -noprompt \
+                                        && log_info "Generated Java JKS for Client"
+                                    fi
+                                fi
+                            fi
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
+                        fi
                         ;;
                 esac
             ) || die "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
         ) && {
             log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+
+            # Populate cache if enabled
+            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
+                    mkdir -p "${CI_CACHE_NIT_HASHDIR}"
+                    cp -pr "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}/"
+                    set | ${EGREP} '^TESTCERT[^ ]*=' | grep -v PATH \
+                    > "${CI_CACHE_NIT_HASHDIR}/TESTCERT_VARS.env"
+                fi
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
         } || {
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
             if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
                 die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
             fi
@@ -1320,6 +1884,9 @@ esac
 #    SSL_CERT_FILE="${TESTCERT_PATH_ROOTCA}/rootca.pem"
 #    export SSL_CERT_FILE
 #fi
+}
+
+prepare_NIT_certs
 
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
@@ -2613,6 +3180,7 @@ isTestablePython() {
     PY_RES=3
     case x"${PY_SHEBANG}" in
         x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
+        x"#!"*"/env /"*)   PY_RES=0 ;; # Via /usr/bin/env or similar (macos may have a space before first slash which is beside the standard but oh well)
         x"#!no")   PY_RES=1 ;; # Explicitly skipped
         x"#!@")    PY_RES=2 ;; # Unresolved
         *)         PY_RES=3 ;; # Unexpected twist
@@ -2806,6 +3374,15 @@ testcases_sandbox_python() {
 
 setenv_ssl_perl() {
     setenv_ssl_python
+
+    case "${NUT_CAPATH}" in
+        ?":\\"*|?":/"*)
+            # Perl uses a platform-dependent PATH separator,
+            # however in mingw/msys2 it uses ":" which clashes
+            # with "C:\..." that Python insists on in this var.
+	    _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+            ;;
+    esac
 
     if isTestablePerl && [ -n "${PERL}" ] ; then
         $PERL -e "use IO::Socket::SSL;" || {

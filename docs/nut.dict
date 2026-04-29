@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3744 utf-8
+personal_ws-1.1 en 3746 utf-8
 AAC
 AAS
 ABI
@@ -84,6 +84,7 @@ Avocent
 Axel
 Axpert
 Axxium
+BASEDIR
 BATGNn
 BATNn
 BATTDATE
@@ -1355,6 +1356,7 @@ TCIOFLUSH
 TCSANOW
 TEMPC
 TEMPF
+TESTCERT
 TESTPASS
 TEoQ
 TGS
