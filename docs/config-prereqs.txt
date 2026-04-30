@@ -185,10 +185,16 @@ metadata about recently published package revisions:
     ccache time \
     git perl curl \
     make autoconf automake libltdl-dev libtool binutils \
-    valgrind \
     cppcheck \
     pkg-config \
     gcc g++ clang
+
+# To trace memory, file descriptor and other resources usage/leakage
+# the valgrind tool is highly recommended. Its availability is however
+# very much CPU-dependent, so it may not be present in all distributions:
+:; apt-get install \
+    valgrind \
+    || true
 
 # To debug eventual core dump files, or trace programs with an IDE like
 # NetBeans (perhaps remotely), you may want the GNU Debugger program:
@@ -197,9 +203,11 @@ metadata about recently published package revisions:
 
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
-    libtool-bin
+    libtool-bin \
+    || true
 
 # See comments below, python version and package naming depends on distro
+# (e.g. newer ones only offer "python3" explicitly)
 :; apt-get install \
     python
 
@@ -216,7 +224,8 @@ metadata about recently published package revisions:
 #   :; apt-get install gettext
 #
 # To install the Python NUT-Monitor app, you may need some modules.
-# Ideally, they would be packaged, named according to major Python version:
+# Ideally, they would be packaged, named according to major Python version
+# (note this may pull in parts of X11, fonts, etc. as is reasonable for a GUI):
 #   :; apt-get install python3-pyqt5
 # or on newer (2025+) releases,
 #   :; apt-get install python3-pyqt6 pyqt6-dev-tools
@@ -232,10 +241,13 @@ metadata about recently published package revisions:
 :; apt-get install \
     aspell aspell-en
 
-# For other doc types (man-page, PDF, HTML) generation - massive packages
-# (TEX, X11):
+# For relatively light-weight docs (man-page, maybe HTML):
 :; apt-get install \
-    asciidoc source-highlight python3-pygments dblatex
+    asciidoc
+
+# For other doc types (PDF, HTML) generation - massive packages (TEX, X11):
+:; apt-get install \
+    source-highlight python3-pygments dblatex
 
 # For CGI graph generation - massive packages (X11):
 :; apt-get install \
