@@ -653,6 +653,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 	size_t	len;
 	char	ans[NUT_NET_ANSWER_MAX+1];
 	va_list	ap;
+	const char	*op = NULL;
 
 	if (!client) {
 		return 0;
@@ -671,20 +672,28 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 #ifdef WITH_SSL
 	if (client->ssl) {
+		op = "ssl_write";
 		res = ssl_write(client, ans, len);
 	} else
 #endif /* WITH_SSL */
 	{
+		op = "write";
 		res = write(client->sock_fd, ans, len);
 	}
 
 	{ /* scoping */
-		char * s = str_rtrim(ans, '\n');
-		upsdebugx(2, "write: [destfd=%d] [len=%" PRIuSIZE "] [%s]", client->sock_fd, len, s);
+		char	*s = str_rtrim(ans, '\n');
+
+		upsdebugx(2, "%s: %s(): [destfd=%d] [len=%" PRIuSIZE "] ans=[%s]",
+			__func__, op, client->sock_fd, len, s);
 	}
 
 	if (res < 0 || len != (size_t)res) {
-		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
+		upslog_with_errno(LOG_NOTICE, "%s() failed for %s", op, client->addr);
+		upsdebugx(2, "%s: %s() failed for %s "
+			"(res=%" PRIiSIZE ", len=%" PRIuSIZE "), "
+			"setting client->last_heard=0",
+			__func__, op, client->addr, res, len);
 		client->last_heard = 0;
 		return 0;	/* failed */
 	}
@@ -702,6 +711,22 @@ int send_err(nut_ctype_t *client, const char *errtype)
 	upsdebugx(4, "Sending error [%s] to client %s", errtype, client->addr);
 
 	return sendback(client, "ERR %s\n", errtype);
+}
+
+int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra)
+{
+	/* TOTHINK: Skip also empty `!*extra` strings? */
+	if (!extra) {
+		return send_err(client, errtype);
+	}
+
+	if (!client) {
+		return -1;
+	}
+
+	upsdebugx(4, "Sending error [%s] [%s] to client %s", errtype, extra, client->addr);
+
+	return sendback(client, "ERR %s %s\n", errtype, extra);
 }
 
 /* disconnect anyone logged into this UPS */
