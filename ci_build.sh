@@ -1292,14 +1292,33 @@ configure_nut() {
           "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
       && {
-        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
-            if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
-                # Stash a copy to track evolution:
-                cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
-                # Populate on first run (may cost 1-2Mb):
-                cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
-                cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
-            fi
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] \
+        && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] \
+        && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] \
+        ; then
+            case x"${DO_USE_AUTOCONF_CACHE_DEBUG}" in
+                xyes|xfirst)
+                    if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+                        # Stash a copy to track evolution:
+                        cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
+                        # Populate on first run (may cost 1-2Mb):
+                        cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                        cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                    fi
+                    ;;
+                xeach)
+                    TS="`date '+%s'`" && [ -n "$TS" ] && [ "$TS" -gt 0 ] \
+                    || { TS="`date | tr -d ':' | tr -d ' '`" && [ -n "$TS" ] ; } \
+                    || TS=$$
+
+                    for F in \
+                        "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" \
+                        config.log include/config.h \
+                    ; do
+                        cp -pf "$F" "${CI_CACHE_NUT_HASHDIR_CFG}/`basename \"$F\"`.$TS"
+                    done
+                    ;;
+            esac
         fi
       } && return 0 \
       || { RES_CFG=$?
