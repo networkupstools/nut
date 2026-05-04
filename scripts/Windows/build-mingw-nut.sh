@@ -234,6 +234,13 @@ do_build_mingw_nut() {
 	# FIXME: Implement support for --without-pkg-config in m4 and use it.
 	# Currently "/run" location is not relevant (writepid() is a stub)
 	# and "/var/state/ups" is utterly unused (Windows named pipes instead).
+	# Note about CCACHE_* settings: we try to not let autoconf-cached
+	# re-runs (re-running the configure script due to a `make` with changed
+	# *.m4/*.am sources) complain that CCACHE_* vars were not previously set.
+	# This hassle comes with use of AC_ARG_VAR to mark "precious" arguments:
+	# Even if not exported by caller, we still have them declared; the
+	# configure script will probably parse them as empty/undefined and
+	# re-evaluate if situation warrants that:
 	RES_CFG=0
 	configure_nut \
 	    $HOST_FLAG \
@@ -242,6 +249,10 @@ do_build_mingw_nut() {
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    $ENABLE_NUT_SHARED_PRIVATE_LIBS_FLAG \
 	    $WITH_SSL_FLAG \
+	    CCACHE_NAMESPACE="${CCACHE_NAMESPACE}" \
+	    CCACHE_BASEDIR="${CCACHE_BASEDIR}" \
+	    CCACHE_DIR="${CCACHE_DIR}" \
+	    CCACHE_PATH="${CCACHE_PATH}" \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
 	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \

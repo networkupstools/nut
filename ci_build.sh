@@ -2106,6 +2106,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # Build and check this project; note that zprojects always have an autogen.sh
@@ -3130,6 +3146,22 @@ bindings)
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # If detect_platform_PKG_CONFIG_PATH_and_FLAGS() customized anything here,
