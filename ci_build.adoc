@@ -115,10 +115,14 @@ every run (primarily to help determine if re-runs do modify some detection
 results due to mis-interpretation of cached data -- i.e. to help fix the `m4`
 scripts and/or `configure.ac` source file).
 
+WARNING: It is up to the caller (developer, CI) to ensure that third-party
+dependencies and tools (and their flags delivered by `pkg-config`, or module
+paths for interpreted languages, etc.) remain the same between cached runs.
+
 If something acts up, or the build environment changes invisibly to the
 script, an `export DO_CLEAN_NUTCI_CACHE_BEFORE=yes` (or a more targeted
-`DO_CLEAN_AUTOCONF_CACHE_BEFORE`, since NIT uses similar logic and general
-toggle to retain generated test certificates) should fix that.
+`export DO_CLEAN_AUTOCONF_CACHE_BEFORE=yes`, since NIT uses similar logic
+and general toggle to retain generated test certificates) should fix that.
 
 You can also always nuke the `${CI_CACHE_NUT_BASEDIR}` directory, or the
 `AUTOCONF_*` subdirectories and stale lock files under it.
