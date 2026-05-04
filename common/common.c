@@ -3183,11 +3183,16 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	 * a reload action for Type=notify-reload; for more details see
 	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
 	 */
-	struct timespec monoclock_ts;
-	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+	struct timespec	monoclock_ts;
+	int	got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
 #  endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 # endif	/* HAVE_SD_NOTIFY */
 #endif	/* WITH_LIBSYSTEMD */
+
+	/* Some code paths (build configurations/goals) do not involve these,
+	 * but easier to make-believe that we do than pepper code with ifdefs */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
 
 	/* Were we asked to be quiet on the console? */
 	if (upsnotify_report_verbosity < 0) {
@@ -3258,8 +3263,6 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
-	NUT_UNUSED_VARIABLE(buf);
-	NUT_UNUSED_VARIABLE(msglen);
 	if (!upsnotify_reported_disabled_systemd) {
 		upsdebugx(upsnotify_report_verbosity,
 			"%s: notify about state %s with libsystemd: "
