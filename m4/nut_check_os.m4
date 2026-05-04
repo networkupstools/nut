@@ -1,6 +1,6 @@
 dnl Check for the exact system name and type. This is only used at the moment
 dnl to determine the packaging rule to be used through the OS_NAME variable.
-dnl Derived from dist.m4 - OpenSS7 (Ditributed under the GNU GPL v2)
+dnl Derived from dist.m4 - OpenSS7 (Distributed under the GNU GPL v2)
 dnl  Copyright (c) 2001-2006  OpenSS7 Corporation <http://www.openss7.com/>
 dnl  Copyright (c) 1997-2000  Brian F. G. Bidulock <bidulock@openss7.org>
 
