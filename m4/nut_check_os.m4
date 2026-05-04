@@ -130,13 +130,13 @@ AC_DEFUN([NUT_CHECK_OS],
 	if test -z "$dist_cv_build_flavor" ; then
 	    dist_cv_build_flavor=$(os_get_name "$(${CC-cc} $CFLAGS -v 2>&1 | ${GREP} 'gcc version')")
 	fi
+    ])
 
-	# save the result
+	# save the result (maybe cached)
 	if test -n "$dist_cv_build_flavor" ; then
 		OS_NAME=$dist_cv_build_flavor
 		PKG_TARGET=$(os_get_target "$dist_cv_build_flavor")
 	fi
-    ])
 ])# NUT_CHECK_OS
 
 
