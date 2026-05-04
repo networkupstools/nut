@@ -5,6 +5,7 @@ dnl do the checking only once.
 
 AC_DEFUN([NUT_CHECK_LIBPOWERMAN],
 [
+dnl Have we been here in this run?
 if test -z "${nut_have_libpowerman_seen}"; then
 	nut_have_libpowerman_seen=yes
 	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
