@@ -106,9 +106,10 @@ It can be stored outside of the build area(s), under `${CI_CACHE_NUT_BASEDIR}`
 by caller (e.g. via `~/.profile` of a developer) or guessed from environment
 variables typical for CI runs.
 
-Note there is also a separate `DO_USE_NUTCI_CACHE_DEBUG=yes` toggle, which
-aims to keep a copy of not only the `config.cache`, but also of `config.log`
-and `config.h` files from a first run with new cache hash for troubleshooting.
+Note there is also a separate `DO_USE_NUTCI_CACHE_DEBUG=yes` (or `...=first`)
+toggle, which aims to keep a copy of not only the `config.cache`, but also of
+`config.log` and `config.h` files, as well as a copy of the help text from
+`configure` script, from a first run with new cache hash for troubleshooting.
 
 A further `DO_USE_NUTCI_CACHE_DEBUG=each` keeps such files time-stamped, from
 every run (primarily to help determine if re-runs do modify some detection

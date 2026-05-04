@@ -1305,6 +1305,9 @@ configure_nut() {
                         cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
                         cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
                     fi
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help" 2>&1
                     ;;
                 xeach)
                     TS="`date '+%s'`" && [ -n "$TS" ] && [ "$TS" -gt 0 ] \
@@ -1317,6 +1320,9 @@ configure_nut() {
                     ; do
                         cp -pf "$F" "${CI_CACHE_NUT_HASHDIR_CFG}/`basename \"$F\"`.$TS"
                     done
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help.$TS" 2>&1
                     ;;
             esac
         fi
