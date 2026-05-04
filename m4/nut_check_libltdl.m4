@@ -2,12 +2,19 @@ dnl Check for LIBLTDL compiler flags. On success, set nut_have_libltdl="yes"
 dnl and set LIBLTDL_CFLAGS and LIBLTDL_LIBS. On failure, set
 dnl nut_have_libltdl="no". This macro can be run multiple times, but will
 dnl do the checking only once.
+dnl It can use autoconf cache to speed up re-runs, assuming unmodified system
+dnl environment and same configuration script arguments.
 
 AC_DEFUN([NUT_CHECK_LIBLTDL],
 [
+dnl Have we been here in this run?
 if test -z "${nut_have_libltdl_seen}"; then
 	nut_have_libltdl_seen=yes
 	dnl No NUT_CHECK_PKGCONFIG here: (lib)ltdl.pc was not seen on any OS
+
+	nut_noncv_checked_libltdl_now=no
+	AC_CACHE_VAL([nut_cv_checked_libltdl], [
+	nut_noncv_checked_libltdl_now=yes
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -53,8 +60,6 @@ if test -z "${nut_have_libltdl_seen}"; then
 			AS_UNSET([ac_cv_header_ltdl_h])
 			CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 			AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
-			dnl Get into this code path upon re-runs even with config.cache:
-			AS_UNSET([ac_cv_header_ltdl_h])
 			],[nut_have_libltdl=no]
 		)], [AC_INCLUDES_DEFAULT])
 	AS_IF([test x"$nut_have_libltdl" = xyes], [
@@ -78,11 +83,23 @@ if test -z "${nut_have_libltdl_seen}"; then
 		])
 	])
 
+	dnl Make sure the values cached/updated are the ones we discovered now:
+	nut_cv_have_libltdl="${nut_have_libltdl}"
 	AS_IF([test "${nut_have_libltdl}" = "yes"], [
-		AC_DEFINE(HAVE_LIBLTDL, 1, [Define to enable libltdl support])
-		LIBLTDL_CFLAGS="${depCFLAGS}"
-		LIBLTDL_LIBS="${depLIBS}"
+		nut_cv_LIBLTDL_CFLAGS="${depCFLAGS}"
+		nut_cv_LIBLTDL_LIBS="${depLIBS}"
+	], [
+		nut_cv_LIBLTDL_CFLAGS=""
+		nut_cv_LIBLTDL_LIBS=""
 	])
+	nut_cv_LIBLTDL_CFLAGS_SOURCE="${depCFLAGS_SOURCE}"
+	nut_cv_LIBLTDL_LIBS_SOURCE="${depLIBS_SOURCE}"
+
+	AC_CACHE_VAL([nut_cv_have_libltdl], [])
+	AC_CACHE_VAL([nut_cv_LIBLTDL_CFLAGS], [])
+	AC_CACHE_VAL([nut_cv_LIBLTDL_LIBS], [])
+	AC_CACHE_VAL([nut_cv_LIBLTDL_CFLAGS_SOURCE], [])
+	AC_CACHE_VAL([nut_cv_LIBLTDL_LIBS_SOURCE], [])
 
 	unset myCFLAGS
 	unset depCFLAGS
@@ -93,5 +110,38 @@ if test -z "${nut_have_libltdl_seen}"; then
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
+
+	unset CFLAGS_ORIG
+	unset LIBS_ORIG
+
+	dnl Complete the cache ritual
+	nut_cv_checked_libltdl="yes"
+	])
+
+	dnl May be cached from earlier build with same args (in NUTCI_AUTOCONF_CACHE case)
+	AS_IF([test x"${nut_cv_checked_libltdl}" = xyes], [
+		nut_have_libltdl="${nut_cv_have_libltdl}"
+
+		AS_IF([test "${nut_noncv_checked_libltdl_now}" = no], [
+			CFLAGS_ORIG="${CFLAGS}"
+			CFLAGS="${nut_cv_LIBLTDL_CFLAGS}"
+			dnl Should restore the cached value and be done with it
+			AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no])
+			CFLAGS="${CFLAGS_ORIG}"
+			unset CFLAGS_ORIG
+		])
+
+		AS_IF([test "${nut_have_libltdl}" = "yes"], [
+			AC_DEFINE(HAVE_LIBLTDL, 1, [Define to enable libltdl support])
+		])
+
+		LIBLTDL_CFLAGS="${nut_cv_LIBLTDL_CFLAGS}"
+		LIBLTDL_LIBS="${nut_cv_LIBLTDL_LIBS}"
+
+		# For troubleshooting of re-runs, mostly:
+		LIBLTDL_CFLAGS_SOURCE="${nut_cv_LIBLTDL_CFLAGS_SOURCE}"
+		LIBLTDL_LIBS_SOURCE="${nut_cv_LIBLTDL_LIBS_SOURCE}"
+	])
 fi
+
 ])
