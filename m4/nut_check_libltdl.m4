@@ -142,9 +142,17 @@ AC_DEFUN([NUT_CHECK_LIBLTDL],
             LIBLTDL_CFLAGS="${nut_cv_LIBLTDL_CFLAGS}"
             LIBLTDL_LIBS="${nut_cv_LIBLTDL_LIBS}"
 
-            # For troubleshooting of re-runs, mostly:
+            dnl For troubleshooting of re-runs, mostly:
             LIBLTDL_CFLAGS_SOURCE="${nut_cv_LIBLTDL_CFLAGS_SOURCE}"
             LIBLTDL_LIBS_SOURCE="${nut_cv_LIBLTDL_LIBS_SOURCE}"
+
+            dnl Summary for re-runs:
+            AS_IF([test "${nut_noncv_checked_libltdl_now}" = no], [
+                AC_MSG_NOTICE([libltdl (cached): ${nut_have_libltdl}])
+                AC_MSG_NOTICE([libltdl (cached): cflags_source='${LIBLTDL_CFLAGS_SOURCE}' libs_source='${LIBLTDL_LIBS_SOURCE}'])
+                AC_MSG_NOTICE([libltdl (cached): LIBLTDL_CFLAGS='${LIBLTDL_CFLAGS}'])
+                AC_MSG_NOTICE([libltdl (cached): LIBLTDL_LIBS='${LIBLTDL_LIBS}'])
+            ])
         ])
     ])
 ])
