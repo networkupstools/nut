@@ -13,124 +13,123 @@ dnl in ways more intimate to NUT (using its tracked docs).
 
 AC_DEFUN([NUT_CHECK_ASCIIDOC],
 [
-if test -z "${nut_have_asciidoc_seen}"; then
-	nut_have_asciidoc_seen=yes
-	dnl # Note: this is typically same for both asciidoc and a2x:
-	dnl # most systems nowadays (2023) have both at 8.6.3 or newer.
-	dnl # Slackware 15 has asciidoc-8.1.0 and a2x-1.0.0 served in
-	dnl # a side-project repository...
-	ASCIIDOC_MIN_VERSION="8.1.0"
-	A2X_MIN_VERSION="1.0.0"
-	dnl # Note: this is checked in the configure script if PDF is of interest at all
-	DBLATEX_MIN_VERSION="0.2.5"
+    dnl Have we been here in this run?
+    AS_IF([test -z "${nut_have_asciidoc_seen}"], [
+        nut_have_asciidoc_seen=yes
+        dnl # Note: this is typically same for both asciidoc and a2x:
+        dnl # most systems nowadays (2023) have both at 8.6.3 or newer.
+        dnl # Slackware 15 has asciidoc-8.1.0 and a2x-1.0.0 served in
+        dnl # a side-project repository...
+        ASCIIDOC_MIN_VERSION="8.1.0"
+        A2X_MIN_VERSION="1.0.0"
+        dnl # Note: this is checked in the configure script if PDF is of interest at all
+        DBLATEX_MIN_VERSION="0.2.5"
 
-	AC_PATH_PROGS([ASCIIDOC], [asciidoc])
-	if test -n "${ASCIIDOC}"; then
-		AC_MSG_CHECKING([for asciiDoc version])
-		ASCIIDOC_VERSION="`${ASCIIDOC} --version 2>/dev/null`"
-		dnl strip 'asciidoc ' from version string
-		ASCIIDOC_VERSION="${ASCIIDOC_VERSION##* }"
-		AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
-	fi
-	AM_CONDITIONAL([MANUALUPDATE], [test -n "${ASCIIDOC}"])
+        AC_PATH_PROGS([ASCIIDOC], [asciidoc])
+        AS_IF([test -n "${ASCIIDOC}"], [
+            AC_MSG_CHECKING([for asciiDoc version])
+            ASCIIDOC_VERSION="`${ASCIIDOC} --version 2>/dev/null`"
+            dnl strip 'asciidoc ' from version string
+            ASCIIDOC_VERSION="${ASCIIDOC_VERSION##* }"
+            AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
+        ])
+        AM_CONDITIONAL([MANUALUPDATE], [test -n "${ASCIIDOC}"])
 
-	AC_PATH_PROGS([A2X], [a2x])
-	if test -n "${A2X}"; then
-		AC_MSG_CHECKING([for a2x version])
-		A2X_VERSION="`${A2X} --version 2>/dev/null`"
-		dnl strip 'a2x ' from version string
-		A2X_VERSION="${A2X_VERSION##* }"
-		AC_MSG_RESULT(${A2X_VERSION} found)
-	fi
+        AC_PATH_PROGS([A2X], [a2x])
+        AS_IF([test -n "${A2X}"], [
+            AC_MSG_CHECKING([for a2x version])
+            A2X_VERSION="`${A2X} --version 2>/dev/null`"
+            dnl strip 'a2x ' from version string
+            A2X_VERSION="${A2X_VERSION##* }"
+            AC_MSG_RESULT(${A2X_VERSION} found)
+        ])
 
-	AC_PATH_PROGS([DBLATEX], [dblatex])
-	if test -n "${DBLATEX}"; then
-		AC_MSG_CHECKING([for dblatex version])
-		DBLATEX_VERSION="`${DBLATEX} --version 2>/dev/null`"
-		dnl strip 'dblatex version ' from version string
-		DBLATEX_VERSION="${DBLATEX_VERSION##* }"
-		AC_MSG_RESULT(${DBLATEX_VERSION} found)
-	fi
+        AC_PATH_PROGS([DBLATEX], [dblatex])
+        AS_IF([test -n "${DBLATEX}"], [
+            AC_MSG_CHECKING([for dblatex version])
+            DBLATEX_VERSION="`${DBLATEX} --version 2>/dev/null`"
+            dnl strip 'dblatex version ' from version string
+            DBLATEX_VERSION="${DBLATEX_VERSION##* }"
+            AC_MSG_RESULT(${DBLATEX_VERSION} found)
+        ])
 
-	AC_PATH_PROGS([XSLTPROC], [xsltproc])
-	if test -n "${XSLTPROC}"; then
-		AC_MSG_CHECKING([for xsltproc version])
-		XSLTPROC_VERSION="`${XSLTPROC} --version 2>/dev/null`"
-		dnl strip 'xsltproc version ' from version string
-		XSLTPROC_VERSION="${XSLTPROC_VERSION##* }"
-		AC_MSG_RESULT(${XSLTPROC_VERSION} found)
-	fi
+        AC_PATH_PROGS([XSLTPROC], [xsltproc])
+        AS_IF([test -n "${XSLTPROC}"], [
+            AC_MSG_CHECKING([for xsltproc version])
+            XSLTPROC_VERSION="`${XSLTPROC} --version 2>/dev/null`"
+            dnl strip 'xsltproc version ' from version string
+            XSLTPROC_VERSION="${XSLTPROC_VERSION##* }"
+            AC_MSG_RESULT(${XSLTPROC_VERSION} found)
+        ])
 
-	AC_PATH_PROGS([XMLLINT], [xmllint])
-	if test -n "${XMLLINT}"; then
-		AC_MSG_CHECKING([for xmllint version])
-		XMLLINT_VERSION="`${XMLLINT} --version 2>/dev/null`"
-		dnl strip 'xmllint version ' from version string
-		XMLLINT_VERSION="${XMLLINT_VERSION##* }"
-		if test -z "${XMLLINT_VERSION}" ; then
-			dnl Some releases also report what flags they were compiled with as
-			dnl part of the version info, so the last-line match finds nothing.
-			dnl Also some builds return version data to stderr.
-			XMLLINT_VERSION="`${XMLLINT} --version 2>&1 | ${GREP} version`"
-			XMLLINT_VERSION="${XMLLINT_VERSION##* }"
-		fi
-		AC_MSG_RESULT(${XMLLINT_VERSION} found)
-	fi
+        AC_PATH_PROGS([XMLLINT], [xmllint])
+        AS_IF([test -n "${XMLLINT}"], [
+            AC_MSG_CHECKING([for xmllint version])
+            XMLLINT_VERSION="`${XMLLINT} --version 2>/dev/null`"
+            dnl strip 'xmllint version ' from version string
+            XMLLINT_VERSION="${XMLLINT_VERSION##* }"
+            AS_IF([test -z "${XMLLINT_VERSION}"], [
+                dnl Some releases also report what flags they were compiled with as
+                dnl part of the version info, so the last-line match finds nothing.
+                dnl Also some builds return version data to stderr.
+                XMLLINT_VERSION="`${XMLLINT} --version 2>&1 | ${GREP} version`"
+                XMLLINT_VERSION="${XMLLINT_VERSION##* }"
+            ])
+            AC_MSG_RESULT(${XMLLINT_VERSION} found)
+        ])
 
-	AC_PATH_PROGS([SOURCE_HIGHLIGHT], [source-highlight])
-	AM_CONDITIONAL([HAVE_SOURCE_HIGHLIGHT], [test -n "$SOURCE_HIGHLIGHT"])
+        AC_PATH_PROGS([SOURCE_HIGHLIGHT], [source-highlight])
+        AM_CONDITIONAL([HAVE_SOURCE_HIGHLIGHT], [test -n "$SOURCE_HIGHLIGHT"])
 
-	dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
-	dnl that we have several tools needed for the documentation generation
-	dnl TODO? Rename the script variable and makefile flags to reflect this?
-	AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required ${ASCIIDOC_MIN_VERSION})])
-	AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
-		AC_MSG_RESULT(yes)
-		nut_have_asciidoc="yes"
-	], [
-		AC_MSG_RESULT(no)
-		nut_have_asciidoc="no"
-	])
+        dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
+        dnl that we have several tools needed for the documentation generation
+        dnl TODO? Rename the script variable and makefile flags to reflect this?
+        AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required ${ASCIIDOC_MIN_VERSION})])
+        AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
+            AC_MSG_RESULT(yes)
+            nut_have_asciidoc="yes"
+        ], [
+            AC_MSG_RESULT(no)
+            nut_have_asciidoc="no"
+        ])
 
-	AC_MSG_CHECKING([if a2x version can build manpages (minimum required ${A2X_MIN_VERSION})])
-	AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
-		AC_MSG_RESULT(yes)
-	], [
-		AC_MSG_RESULT(no)
-		nut_have_asciidoc="no"
-	])
+        AC_MSG_CHECKING([if a2x version can build manpages (minimum required ${A2X_MIN_VERSION})])
+        AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
+            AC_MSG_RESULT(yes)
+        ], [
+            AC_MSG_RESULT(no)
+            nut_have_asciidoc="no"
+        ])
 
-	dnl TODO: test for docbook-xsl files (maybe build a test man page?)
-	dnl https://github.com/networkupstools/nut/issues/162
-	AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
-	if test -n "${XSLTPROC}"; then
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-		nut_have_asciidoc="no"
-	fi
+        dnl TODO: test for docbook-xsl files (maybe build a test man page?)
+        dnl https://github.com/networkupstools/nut/issues/162
+        AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
+        AS_IF([test -n "${XSLTPROC}"], [
+            AC_MSG_RESULT(yes)
+        ], [
+            AC_MSG_RESULT(no)
+            nut_have_asciidoc="no"
+        ])
 
-	AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
-	if test -n "${XMLLINT}"; then
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-		nut_have_asciidoc="no"
-	fi
+        AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
+        AS_IF([test -n "${XMLLINT}"], [
+            AC_MSG_RESULT(yes)
+        ], [
+            AC_MSG_RESULT(no)
+            nut_have_asciidoc="no"
+        ])
 
-	dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
-	dnl building
-	AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
+        dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
+        dnl building
+        AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 
-	AC_MSG_CHECKING([if we have all the tools mandatory for man page regeneration])
-	AC_MSG_RESULT([${nut_have_asciidoc}])
+        AC_MSG_CHECKING([if we have all the tools mandatory for man page regeneration])
+        AC_MSG_RESULT([${nut_have_asciidoc}])
 
-	AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
-	if test -n "${SOURCE_HIGHLIGHT}"; then
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
-
-fi
+        AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
+        AS_IF([test -n "${SOURCE_HIGHLIGHT}"],
+            [AC_MSG_RESULT(yes)],
+            [AC_MSG_RESULT(no)]
+        )
+    ])
 ])
