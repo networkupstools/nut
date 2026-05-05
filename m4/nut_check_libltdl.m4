@@ -53,25 +53,25 @@ AC_DEFUN([NUT_CHECK_LIBLTDL],
 
             CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
             LIBS="${LIBS_ORIG} ${depLIBS}"
-            AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [
+            AC_CHECK_HEADERS(ltdl.h, [nut_cv_have_libltdl=yes], [
                 dnl Double-check if we stashed include paths to try above
                 AS_IF([test -n "$myCFLAGS"], [
                     depCFLAGS="$myCFLAGS"
                     AS_UNSET([ac_cv_header_ltdl_h])
                     CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
-                    AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
-                    ],[nut_have_libltdl=no]
+                    AC_CHECK_HEADERS(ltdl.h, [nut_cv_have_libltdl=yes], [nut_cv_have_libltdl=no], [AC_INCLUDES_DEFAULT])
+                    ],[nut_cv_have_libltdl=no]
                 )], [AC_INCLUDES_DEFAULT])
-            AS_IF([test x"$nut_have_libltdl" = xyes], [
+            AS_IF([test x"${nut_cv_have_libltdl}" = xyes], [
                 dnl ltdl-number may help find it for MingW DLLs naming
                 AC_SEARCH_LIBS(lt_dlinit, ltdl ltdl-7, [], [
-                    nut_have_libltdl=no
+                    nut_cv_have_libltdl=no
                     AS_IF([test -n "$myCFLAGS" -a x"$myCFLAGS" != x"$CFLAGS"], [
                         depCFLAGS="$myCFLAGS"
                         dnl No ltdl-7 here, this codepath is unlikely on Windows where that matters:
                         CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
                         unset ac_cv_search_lt_dlinit
-                        AC_SEARCH_LIBS(lt_dlinit, ltdl, [nut_have_libltdl=yes], [])
+                        AC_SEARCH_LIBS(lt_dlinit, ltdl, [nut_cv_have_libltdl=yes], [])
                     ])
                 ])
             ])
@@ -84,13 +84,11 @@ AC_DEFUN([NUT_CHECK_LIBLTDL],
             ])
 
             dnl Make sure the values cached/updated are the ones we discovered now:
-            nut_cv_have_libltdl="${nut_have_libltdl}"
-            AS_IF([test "${nut_have_libltdl}" = "yes"], [
+            nut_cv_LIBLTDL_CFLAGS=""
+            nut_cv_LIBLTDL_LIBS=""
+            AS_IF([test "${nut_cv_have_libltdl}" = "yes"], [
                 nut_cv_LIBLTDL_CFLAGS="${depCFLAGS}"
                 nut_cv_LIBLTDL_LIBS="${depLIBS}"
-            ], [
-                nut_cv_LIBLTDL_CFLAGS=""
-                nut_cv_LIBLTDL_LIBS=""
             ])
             nut_cv_LIBLTDL_CFLAGS_SOURCE="${depCFLAGS_SOURCE}"
             nut_cv_LIBLTDL_LIBS_SOURCE="${depLIBS_SOURCE}"
