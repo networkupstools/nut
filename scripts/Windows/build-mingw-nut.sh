@@ -142,13 +142,13 @@ configure_nut() {
 
 		# Dedicated location may be passed by caller:
 		if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
-			CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$* CC='$CC' CXX='$CXX' CPP='$CPP'\" | md5sum | awk '{print $1}'`" \
+			CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$* CC='$CC' CXX='$CXX' CPP='$CPP' MAKE='$MAKE' SHELL='$SHELL' CONFIG_SHELL='$CONFIG_SHELL' PATH='$PATH' LD_LIBRARY_PATH='$LD_LIBRARY_PATH' PKG_CONFIG_PATH='$PKG_CONFIG_PATH' ARCH='$ARCH' BITS='$BITS' CFLAGS='$CFLAGS' CXXFLAGS='$CXXFLAGS' CPPFLAGS='$CPPFLAGS' LDFLAGS='$LDFLAGS'\" | md5sum | awk '{print $1}'`" \
 			|| CI_CACHE_NUT_HASHDIR_CFG=''
 			if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
 				if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
 					mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
 					echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
-					echo "$* CC='$CC' CXX='$CXX' CPP='$CPP'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+					echo "$* CC='$CC' CXX='$CXX' CPP='$CPP' MAKE='$MAKE' SHELL='$SHELL' CONFIG_SHELL='$CONFIG_SHELL'" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
 					# To be filled after the configuration succeeds:
 					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
 					touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
