@@ -4188,8 +4188,12 @@ int main(int argc, char *argv[])
 	}
 
 	if (upscli_init2(certverify, certpath, certname, certpasswd, certfile) < 0) {
-		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init2()");
-		exit(EXIT_FAILURE);
+		if (certverify || certpath || certname || certpasswd || certfile) {
+			upslogx(LOG_WARNING, "Failed upscli_init2() while SSL was required");
+			upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init2() while SSL was required");
+			exit(EXIT_FAILURE);
+		}
+		upslogx(LOG_WARNING, "Failed upscli_init2() but SSL ability was not required");
 	}
 
 	/* prep our signal handlers */
