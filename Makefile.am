@@ -136,22 +136,22 @@ install-fanout-cleanup: install-recursive @dotMAKE@
 # Called from generated-sources-with-a-touch:
 touch-include-all-nut_version-generated.timestamp:
 	@[ -s include/nut_version.h ]
-	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp && exit ; \
+	@touch -r include/nut_version.h -d '-10 seconds' include/.all.nut_version-generated.timestamp 2>/dev/null && exit ; \
 	 touch -d '1970-01-01T00:00:00' include/.all.nut_version-generated.timestamp && exit ; \
 	 touch include/.all.nut_version-generated.timestamp
 
 touch-clients-all-libupsclient_version-generated.timestamp:
 	@[ -s clients/libupsclient-version.h ]
-	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp && exit ; \
+	@touch -r clients/libupsclient-version.h -d '-10 seconds' clients/.all.libupsclient_version-generated.timestamp 2>/dev/null && exit ; \
 	 touch -d '1970-01-01T00:00:00' clients/.all.libupsclient_version-generated.timestamp && exit ; \
 	 touch clients/.all.libupsclient_version-generated.timestamp
 
 touch-docs-man-all-linkman-generated.timestamp:
 	@[ -s docs/man/linkman-driver-names.txt ] && [ -s docs/man/linkman-drivertool-names.txt ]
 	@if test -n "`find docs/man/linkman-driver-names.txt -newer docs/man/linkman-drivertool-names.txt`" ; then \
-	    touch -r docs/man/linkman-drivertool-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	    touch -r docs/man/linkman-drivertool-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp 2>/dev/null && exit ; \
 	 else \
-	    touch -r docs/man/linkman-driver-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
+	    touch -r docs/man/linkman-driver-names.txt -d '-10 seconds' docs/man/.all.nut_linkman-generated.timestamp 2>/dev/null && exit ; \
 	 fi ; \
 	 touch -d '1970-01-01T00:00:00' docs/man/.all.nut_linkman-generated.timestamp && exit ; \
 	 touch docs/man/.all.nut_linkman-generated.timestamp

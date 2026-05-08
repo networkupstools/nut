@@ -1242,6 +1242,13 @@ get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
     fi
 }
 
+get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV() {
+    # Hash environment variables which we commonly use and that can impact
+    # the decisions of configure script as something that requires separate
+    # cache files, just in case.
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT "$* CC='$CC' CXX='$CXX' CPP='$CPP' MAKE='$MAKE' SHELL='$SHELL' CONFIG_SHELL='$CONFIG_SHELL' PATH='$PATH' LD_LIBRARY_PATH='$LD_LIBRARY_PATH' PKG_CONFIG_PATH='$PKG_CONFIG_PATH' ARCH='$ARCH' BITS='$BITS' CFLAGS='$CFLAGS' CXXFLAGS='$CXXFLAGS' CPPFLAGS='$CPPFLAGS' LDFLAGS='$LDFLAGS'"
+}
+
 configure_CI_BUILDDIR() {
     autogen_get_CONFIGURE_SCRIPT
 
@@ -1269,7 +1276,7 @@ configure_nut() {
     # Help copy-pasting build setups from CI logs to terminal:
     local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
 
-    get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${CONFIG_OPTS_STR} CC='$CC' CXX='$CXX' CPP='$CPP'"
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${CONFIG_OPTS_STR}"
 
     CI_CACHE_NUT_RETRIED=false
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
@@ -1292,14 +1299,39 @@ configure_nut() {
           "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
       && {
-        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
-            if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
-                # Stash a copy to track evolution:
-                cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
-                # Populate on first run (may cost 1-2Mb):
-                cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
-                cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
-            fi
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] \
+        && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] \
+        && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] \
+        ; then
+            case x"${DO_USE_AUTOCONF_CACHE_DEBUG}" in
+                xyes|xfirst)
+                    if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+                        # Stash a copy to track evolution:
+                        cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
+                        # Populate on first run (may cost 1-2Mb):
+                        cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                        cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                    fi
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help" 2>&1
+                    ;;
+                xeach)
+                    TS="`date '+%s'`" && [ -n "$TS" ] && [ "$TS" -gt 0 ] \
+                    || { TS="`date | tr -d ':' | tr -d ' '`" && [ -n "$TS" ] ; } \
+                    || TS=$$
+
+                    for F in \
+                        "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" \
+                        config.log include/config.h \
+                    ; do
+                        cp -pf "$F" "${CI_CACHE_NUT_HASHDIR_CFG}/`basename \"$F\"`.$TS"
+                    done
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help.$TS" 2>&1
+                    ;;
+            esac
         fi
       } && return 0 \
       || { RES_CFG=$?
@@ -1573,7 +1605,7 @@ optional_maintainer_clean_check() {
 
         # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
         # handlers in the stack of calls via Makefile.am should hear it
-        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='maintainer-clean'"
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='maintainer-clean'"
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
@@ -1617,7 +1649,7 @@ optional_dist_clean_check() {
 
         # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
         # handlers in the stack of calls via Makefile.am should hear it
-        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='distclean'"
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='distclean'"
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
         MAKE_RES=0
@@ -2087,6 +2119,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # Build and check this project; note that zprojects always have an autogen.sh
@@ -2198,7 +2246,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
             # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
             # handlers in the stack of calls via Makefile.am should hear it
-            get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$BUILD_TGT'"
+            get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='$BUILD_TGT'"
 
             # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
@@ -2940,7 +2988,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
         # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
         # handlers in the stack of calls via Makefile.am should hear it
-        get_CI_CACHE_NUT_HASHDIR_CFG_OPT "${DISTCHECK_FLAGS} CC='$CC' CXX='$CXX' CPP='$CPP' DISTCHECK_TGT='$DISTCHECK_TGT'"
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='$DISTCHECK_TGT'"
 
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
@@ -3111,6 +3159,22 @@ bindings)
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # If detect_platform_PKG_CONFIG_PATH_and_FLAGS() customized anything here,

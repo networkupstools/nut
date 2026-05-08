@@ -106,10 +106,24 @@ It can be stored outside of the build area(s), under `${CI_CACHE_NUT_BASEDIR}`
 by caller (e.g. via `~/.profile` of a developer) or guessed from environment
 variables typical for CI runs.
 
+Note there is also a separate `DO_USE_NUTCI_CACHE_DEBUG=yes` (or `...=first`)
+toggle, which aims to keep a copy of not only the `config.cache`, but also of
+`config.log` and `config.h` files, as well as a copy of the help text from
+`configure` script, from a first run with new cache hash for troubleshooting.
+
+A further `DO_USE_NUTCI_CACHE_DEBUG=each` keeps such files time-stamped, from
+every run (primarily to help determine if re-runs do modify some detection
+results due to mis-interpretation of cached data -- i.e. to help fix the `m4`
+scripts and/or `configure.ac` source file).
+
+WARNING: It is up to the caller (developer, CI) to ensure that third-party
+dependencies and tools (and their flags delivered by `pkg-config`, or module
+paths for interpreted languages, etc.) remain the same between cached runs.
+
 If something acts up, or the build environment changes invisibly to the
 script, an `export DO_CLEAN_NUTCI_CACHE_BEFORE=yes` (or a more targeted
-`DO_CLEAN_AUTOCONF_CACHE_BEFORE`, since NIT uses similar logic and general
-toggle to retain generated test certificates) should fix that.
+`export DO_CLEAN_AUTOCONF_CACHE_BEFORE=yes`, since NIT uses similar logic
+and general toggle to retain generated test certificates) should fix that.
 
 You can also always nuke the `${CI_CACHE_NUT_BASEDIR}` directory, or the
 `AUTOCONF_*` subdirectories and stale lock files under it.

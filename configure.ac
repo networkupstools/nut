@@ -2854,6 +2854,33 @@ NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation ability (currently requires NSS, beware issue #3329)], [auto])
 
+dnl Optionally reset/initialize the cache values shared by several backends
+dnl if the check methods below never ran for all active code paths (one or more):
+AS_CASE([x${nut_cv_checked_libopenssl}${nut_cv_checked_libnss}x],
+    [xyesx], [],
+    [xyesyesx], [],
+        [
+        dnl Magic-format string to hold chosen SSL library version and its config-source
+        nut_cv_ssl_lib=""
+
+        nut_cv_LIBSSL_CFLAGS=""
+        nut_cv_LIBSSL_LIBS=""
+        nut_cv_LIBSSL_REQUIRES=""
+        nut_cv_LIBSSL_LDFLAGS_RPATH=""
+        nut_cv_LIBSSL_REQUIRES_SOURCE=""
+        nut_cv_LIBSSL_CFLAGS_SOURCE=""
+        nut_cv_LIBSSL_LIBS_SOURCE=""
+
+        dnl Start with what the build args said:
+        nut_cv_with_ssl="${nut_with_ssl}"
+
+        dnl Ensure re-evaluation if need be:
+        AS_UNSET([nut_cv_checked_libopenssl])
+        AS_UNSET([nut_noncv_checked_libopenssl_now])
+        AS_UNSET([nut_cv_checked_libnss])
+        AS_UNSET([nut_noncv_checked_libnss_now])
+    ])
+
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
@@ -2888,6 +2915,17 @@ if test "${nut_with_ssl}" != "no"; then
       fi
    fi
 fi
+
+dnl Summary for re-runs:
+AS_IF([test "${nut_noncv_checked_libopenssl_now}" = no || test "${nut_noncv_checked_libnss_now}" = no], [
+    AC_MSG_NOTICE([Some LIBSSL (cached): ${nut_with_ssl} (${nut_ssl_lib})])
+    AC_MSG_NOTICE([Some LIBSSL (cached): cflags_source=${LIBSSL_CFLAGS_SOURCE} libs_source=${LIBSSL_LIBS_SOURCE}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_CFLAGS=${LIBSSL_CFLAGS}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_LIBS=${LIBSSL_LIBS}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_LDFLAGS_RPATH=${LIBSSL_LDFLAGS_RPATH}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): requires_source=${LIBSSL_REQUIRES_SOURCE} LIBSSL_REQUIRES=${LIBSSL_REQUIRES}])
+])
+
 
 AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
 AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
@@ -6331,6 +6369,10 @@ AC_SUBST(LIBSSL_LDFLAGS_RPATH)
 AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
+AC_SUBST(LIBGLIB_CFLAGS)
+AC_SUBST(LIBGLIB_LIBS)
+AC_SUBST(LIBGIO_CFLAGS)
+AC_SUBST(LIBGIO_LIBS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LIBS)
 AC_SUBST(LIBREGEX_LIBS)
