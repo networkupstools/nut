@@ -103,6 +103,16 @@ except Exception as ignored:
 os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
 # print(os.getcwd())
 
+def plain_status_text( text ) :
+    document = QTextDocument()
+    document.setHtml( text )
+    return document.toPlainText()
+
+def tooltip_value( value, unit="" ) :
+    if isinstance( value, bytes ) :
+        value = value.decode( 'ascii' )
+    return "%s%s" % ( value, unit )
+
 class interface :
 
     DESIRED_FAVORITES_DIRECTORY_MODE = 0o700
@@ -886,7 +896,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         self.__widgets["ups_infos"].hide()
         self.__widgets["ups_params_box"].setEnabled( True )
         self.__widgets["menu_favorites_root"].setEnabled( True )
-        self.__widgets["status_icon"].setToolTip( _("<i>Not connected</i>") )
+        self.__widgets["status_icon"].setToolTip( _("Not connected") )
         self.__widgets["ups_params_box"].show()
 
         # Try to resize the main window...
@@ -927,16 +937,16 @@ class gui_updater :
         ups    = self.__parent_class._interface__current_ups
 
         # Define a dict containing different UPS status
-        status_mapper = { b"LB"     : "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"),
-                          b"RB"     : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"),
-                          b"ALARM"  : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"),
-                          b"BYPASS" : "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"),
-                          b"ECO"    : _("In ECO mode (as defined by vendor)"),
-                          b"CAL"    : _("Performing runtime calibration"),
-                          b"OFF"    : "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ),
-                          b"OVER"   : "<font color=\"#BB0000\">%s</font> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ),
-                          b"TRIM"   : _("Triming <i>(UPS is triming incoming voltage)</i>"),
-                          b"BOOST"  : _("Boost <i>(UPS is boosting incoming voltage)</i>")
+        status_mapper = { b"LB"     : ( "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"), _("Low batteries") ),
+                          b"RB"     : ( "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"), _("Replace batteries !") ),
+                          b"ALARM"  : ( "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"), _("Active alarms !") ),
+                          b"BYPASS" : ( "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"), "%s %s" % ( _("Bypass"), _("(no battery protection)") ) ),
+                          b"ECO"    : ( _("In ECO mode (as defined by vendor)"), _("In ECO mode (as defined by vendor)") ),
+                          b"CAL"    : ( _("Performing runtime calibration"), _("Performing runtime calibration") ),
+                          b"OFF"    : ( "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ), "%s (%s)" % ( _("Offline"), _("not providing power to the load") ) ),
+                          b"OVER"   : ( "<font color=\"#BB0000\">%s</font> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ), "%s (%s)" % ( _("Overloaded !"), _("there is too much load for device") ) ),
+                          b"TRIM"   : ( _("Triming <i>(UPS is triming incoming voltage)</i>"), plain_status_text( _("Triming <i>(UPS is triming incoming voltage)</i>") ) ),
+                          b"BOOST"  : ( _("Boost <i>(UPS is boosting incoming voltage)</i>"), plain_status_text( _("Boost <i>(UPS is boosting incoming voltage)</i>") ) )
                         }
 
         if ups and not self.__stop_updater and not self.__parent_class._interface__quitting :
@@ -947,19 +957,23 @@ class gui_updater :
                 # Text displayed on the status frame
                 text_left   = ""
                 text_right  = ""
-                status_text = ""
+                status_parts = []
+                tooltip_status_parts = []
+                tooltip_lines = []
 
                 text_left  += "<b>%s</b><br>" % _("Device status :")
 
                 if ( vars.get(b"ups.status").find(b"OL") != -1 ) :
-                    text_right += "<font color=\"#009000\"><b>%s</b></font>" % _("Online")
+                    status_parts.append( "<font color=\"#009000\"><b>%s</b></font>" % _("Online") )
+                    tooltip_status_parts.append( _("Online") )
                     if self.__parent_class._interface__online is not True :
                         self.__parent_class.change_status_icon( "on_line", blink=False )
                         self.__parent_class.gui_status_notification( _("Device is online"), "on_line.png" )
                         self.__parent_class._interface__online = True
 
                 if ( vars.get(b"ups.status").find(b"OB") != -1 ) :
-                    text_right += "<font color=\"#900000\"><b>%s</b></font>" % _("On batteries")
+                    status_parts.append( "<font color=\"#900000\"><b>%s</b></font>" % _("On batteries") )
+                    tooltip_status_parts.append( _("On batteries") )
                     if self.__parent_class._interface__online is not False:
                         self.__parent_class.change_status_icon( "on_battery", blink=True )
                         self.__parent_class.gui_status_notification( _("Device is running on batteries"), "on_battery.png" )
@@ -968,18 +982,19 @@ class gui_updater :
                 # Check for additionnal information
                 for k,v in status_mapper.items() :
                     if vars.get(b"ups.status").find(k) != -1 :
-                        if ( text_right != "" ) :
-                            text_right += " - %s" % v
-                        else :
-                            text_right += "%s" % v
+                        status_parts.append( v[0] )
+                        tooltip_status_parts.append( v[1] )
 
                 # CHRG and DISCHRG cannot be trated with the previous loop ;)
                 if ( vars.get(b"ups.status").find(b"DISCHRG") != -1 ) :
-                    text_right += " - <i>%s</i>" % _("discharging")
+                    status_parts.append( "<i>%s</i>" % _("discharging") )
+                    tooltip_status_parts.append( _("discharging") )
                 elif ( vars.get(b"ups.status").find(b"CHRG") != -1 ) :
-                    text_right += " - <i>%s</i>" % _("charging")
+                    status_parts.append( "<i>%s</i>" % _("charging") )
+                    tooltip_status_parts.append( _("charging") )
 
-                status_text += text_right
+                text_right += " - ".join( status_parts )
+                tooltip_lines.append( "%s %s" % ( _("Device status :"), " - ".join( tooltip_status_parts ) ) )
                 text_right += "<br>"
 
                 if ( b"ups.mfr" in vars ) :
@@ -988,14 +1003,17 @@ class gui_updater :
                         vars.get(b"ups.mfr",b"").decode('ascii'),
                         vars.get(b"ups.model",b"").decode('ascii'),
                     )
+                    tooltip_lines.append( "%s %s %s" % ( _("Model :"), tooltip_value( vars.get(b"ups.mfr",b"") ), tooltip_value( vars.get(b"ups.model",b"") ) ) )
 
                 if ( b"ups.temperature" in vars ) :
                     text_left  += "<b>%s</b><br>" % _("Temperature :")
                     text_right += "%s<br>" % int( float( vars.get( b"ups.temperature", 0 ) ) )
+                    tooltip_lines.append( "%s %s" % ( _("Temperature :"), int( float( vars.get( b"ups.temperature", 0 ) ) ) ) )
 
                 if ( b"battery.voltage" in vars ) :
                     text_left  += "<b>%s</b><br>" % _("Battery voltage :")
                     text_right += "%sv<br>" % (vars.get( b"battery.voltage", 0 ).decode('ascii'),)
+                    tooltip_lines.append( "%s %s" % ( _("Battery voltage :"), tooltip_value( vars.get( b"battery.voltage", 0 ), "v" ) ) )
 
                 self.__parent_class._interface__widgets["ups_status_left"].setText( text_left[:-4] )
                 self.__parent_class._interface__widgets["ups_status_right"].setText( text_right[:-4] )
@@ -1006,7 +1024,7 @@ class gui_updater :
                     charge = vars.get( b"battery.charge", "0" )
                     self.__parent_class._interface__widgets["progress_battery_charge"].setValue( int( float( charge ) ) )
                     self.__parent_class._interface__widgets["progress_battery_charge"].resetFormat()
-                    status_text += "<br>%s %s%%" % ( _("Battery charge :"), int( float( charge ) ) )
+                    tooltip_lines.append( "%s %s%%" % ( _("Battery charge :"), int( float( charge ) ) ) )
                 else :
                     self.__parent_class._interface__widgets["progress_battery_charge"].setValue( 0 )
                     self.__parent_class._interface__widgets["progress_battery_charge"].setFormat( _("Not available") )
@@ -1017,7 +1035,7 @@ class gui_updater :
                     load = vars.get( b"ups.load", "0" )
                     self.__parent_class._interface__widgets["progress_battery_load"].setValue( int( float( load ) ) )
                     self.__parent_class._interface__widgets["progress_battery_load"].resetFormat()
-                    status_text += "<br>%s %s%%" % ( _("UPS load :"), int( float( load ) ) )
+                    tooltip_lines.append( "%s %s%%" % ( _("UPS load :"), int( float( load ) ) ) )
                 else :
                     self.__parent_class._interface__widgets["progress_battery_load"].setValue( 0 )
                     self.__parent_class._interface__widgets["progress_battery_load"].setFormat( _("Not available") )
@@ -1036,9 +1054,10 @@ class gui_updater :
                     info = _("Not available")
 
                 self.__parent_class._interface__widgets["ups_status_time"].setText( info )
+                tooltip_lines.append( "%s %s" % ( _("Autonomy :"), plain_status_text( info ) ) )
 
                 # Display UPS status as tooltip for tray icon
-                self.__parent_class._interface__widgets["status_icon"].setToolTip( status_text )
+                self.__parent_class._interface__widgets["status_icon"].setToolTip( "\n".join( tooltip_lines ) )
 
             except :
                 self.__parent_class._interface__online = None
