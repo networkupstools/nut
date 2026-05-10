@@ -64,7 +64,7 @@ discover_COMPILER_PATHS() {
 discover_COMPILER_PATHS
 
 filter_away_system_DLLs() {
-	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))\.dll$'
+	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|dnsapi|iphlpapi|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))\.dll$'
 }
 
 filter_away_NUT_DLLs() {
