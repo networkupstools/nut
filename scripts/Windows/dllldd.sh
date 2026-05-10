@@ -83,6 +83,27 @@ dllldd_with_tools() (
 	LC_ALL=C
 	export LANG LC_ALL
 
+	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
+	&& [ -n "$SEARCH_INPUT_PATH" ] \
+	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
+	|| SEARCH_INPUT_PATH=""
+
+	if [ -n "$SEARCH_INPUT_PATH" ] ; then
+		# Here add (our buld products) last in path,
+		# so as to not corrupt real programs' work
+		SEARCH_DLL_PATH="${SEARCH_DLL_PATH}:${SEARCH_INPUT_PATH}"
+	fi
+
+	# Consider the location of investigated input EXE/DLL(s) too:
+	PATH="${SEARCH_DLL_PATH}"
+	export PATH
+	if [ -n "${LD_LIBRARY_PATH}" ] ; then
+		LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${SEARCH_DLL_PATH}"
+	else
+		LD_LIBRARY_PATH="${SEARCH_DLL_PATH}"
+	fi
+	export LD_LIBRARY_PATH
+
 	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
 	SEEN=0
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
@@ -96,6 +117,14 @@ dllldd_with_tools() (
 				if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
 					OUT="`find \"$DESTDIR\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
+				fi
+				if [ -n "$SEARCH_INPUT_PATH" ] ; then
+					SEEN_INPUT=false
+					for D in `echo "${SEARCH_INPUT_PATH}" | tr ':' '\n'` ; do
+						OUT="`find \"$D\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
+						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN_INPUT=true ; break ; }
+					done
+					$SEEN_INPUT && { SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
 					OUT="`ls -1 \"/usr/${ARCH}/bin/$F\" \"/usr/${ARCH}/lib/$F\" 2>/dev/null || true`" \
@@ -161,6 +190,15 @@ dllldd() (
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
 	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
 	( # Subshell to sort results in the end
+	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
+	&& [ -n "$SEARCH_INPUT_PATH" ] \
+	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
+	|| SEARCH_INPUT_PATH=""
+
+	if [ -n "$SEARCH_INPUT_PATH" ] ; then
+		SEARCH_DLL_PATH="${SEARCH_INPUT_PATH}:${SEARCH_DLL_PATH}"
+	fi
+
 	if [ -n "${OUT_TOOLS}" ] ; then
 		echo "${OUT_TOOLS}"
 	fi
