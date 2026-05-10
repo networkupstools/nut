@@ -106,11 +106,12 @@ dllldd_with_tools() (
 
 	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
 	SEEN=0
+	NOTSEEN_OD=""
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i \"DLL Name:\" | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
+			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i 'DLL Name:' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
@@ -148,21 +149,31 @@ dllldd_with_tools() (
 				fi
 
 				echo "WARNING: '$F' was not found in searched locations (system paths) by tools matcher ($OD)!" >&2
+				NOTSEEN_OD="${NOTSEEN_OD} ${F}"
 			done
 		done
-		if [ "$SEEN" != 0 ] ; then
+		if [ "$SEEN" != 0 ] && [ -z "${NOTSEEN_OD}" ]; then
 			return 0
 		fi
+	else
+		NOTSEEN_OD="$*"
 	fi
 
 	# if `ldd` handles Windows PE (e.g. on MSYS2), we are lucky:
 	#         libiconv-2.dll => /mingw64/bin/libiconv-2.dll (0x7ffd26c90000)
 	# but it tends to say "not a dynamic executable"
 	# or that file type is not supported
-	OUT="`ldd \"$@\" 2>/dev/null | ${EGREP} -i '\.dll' | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i '\.dll$'`" \
-	&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
+	if [ -n "${NOTSEEN_OD}" ] ; then
+		# TOTHINK: Tack SEARCH_INPUT_PATH and/or "NOTSEEN"
+		#  into these investigations, for "not found" files
+		#  which may be our own libraries:
+		#    libnutprivate-2_8_5-common-all-1.dll => not found
+		#  Especially if we did not have/run an objdump above.
+		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i '\.dll' | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i '\.dll$'`" \
+		&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
+		echo "WARNING: no suitable DLLs were found in ${NOTSEEN_OD} by tools matcher (ldd)!" >&2
+	fi
 
-	echo "WARNING: no suitable DLLs were found in $@ by tools matcher (ldd)!" >&2
 	return 1
 )
 
