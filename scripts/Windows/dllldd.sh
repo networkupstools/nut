@@ -67,6 +67,12 @@ filter_away_system_DLLs() {
 	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))\.dll$'
 }
 
+filter_away_NUT_DLLs() {
+	# Only use this in search via `strings|grep` (and if coupled with
+	# a tools-based search)
+	${EGREP} -v -i '^(/.*/)?lib(nut|ups)[^ ]*\.dll$'
+}
+
 dllldd_with_tools() (
 	# Traverse an EXE or DLL file for DLLs it needs directly,
 	# which are provided in the cross-build env (not system ones).
@@ -153,7 +159,7 @@ dllldd() (
 	# Did at least one method not-fail and return something?
 	RES=0
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
-	OUT_STRINGS="`dllldd_with_strings \"$@\"`" && [ -n "${OUT_STRINGS}" ] && RES=0
+	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
 	( # Subshell to sort results in the end
 	if [ -n "${OUT_TOOLS}" ] ; then
 		echo "${OUT_TOOLS}"
