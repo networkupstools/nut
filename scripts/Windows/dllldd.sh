@@ -266,17 +266,26 @@ do_dlllddrec() (
 	done
 )
 
+TEMPFILE_REC=''
+TEMPFILE_REC_MADEBY=''
 dlllddrec() {
-	TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
-	if [ -n "$TEMPFILE_REC" ] ; then
-		trap 'rm -f "$TEMPFILE_REC"' 0 1 2 3 15
+	if [ -z "$TEMPFILE_REC" ] ; then
+		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
+		if [ -n "$TEMPFILE_REC" ] ; then
+			TEMPFILE_REC_MADEBY='dlllddrec'
+			trap 'rm -f "$TEMPFILE_REC"' 0 1 2 3 15
+			echo "=== Tracking visited files in '${TEMPFILE_REC}' made by '${TEMPFILE_REC_MADEBY}'" >&2
+		fi
 	fi
 
 	# Recurse to find the (mingw-provided) tree of dependencies for one file
+	SEARCH_DLL_PATH="${SEARCH_DLL_PATH}:`dirname \"$1\"`" \
 	do_dlllddrec "$1" | sort | uniq
 
-	rm -f "$TEMPFILE_REC"
-	trap - 0 1 2 3 15
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec' ]; then
+		rm -f "$TEMPFILE_REC"
+		trap - 0 1 2 3 15
+	fi
 }
 
 # Alas, can't rely on having BASH, and dash fails to parse its syntax
@@ -310,6 +319,15 @@ dllldddir() (
 		trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
 	#fi
 
+	if [ -z "$TEMPFILE_REC" ] ; then
+		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
+		if [ -n "$TEMPFILE_REC" ] ; then
+			TEMPFILE_REC_MADEBY='dllldddir'
+			trap "rm -f '$TEMPFILE_REC' '$TMP1' '$TMP2'" 0 1 2 3 15
+			echo "=== Tracking visited files in '${TEMPFILE_REC}' made by '${TEMPFILE_REC_MADEBY}'" >&2
+		fi
+	fi
+
 	NEXTDLLS="$SEENDLLS"
 	while [ -n "$NEXTDLLS" ] ; do
 		MOREDLLS="`dllldd $NEXTDLLS | sort | uniq`"
@@ -327,6 +345,10 @@ dllldddir() (
 			SEENDLLS="`( echo \"$SEENDLLS\" ; echo \"$NEXTDLLS\" ) | sort | uniq`"
 		fi
 	done
+
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ]; then
+		rm -f "$TEMPFILE_REC"
+	fi
 
 	if [ -z "$BASH_VERSION" ] ; then
 		rm -f "$TMP1" "$TMP2"
@@ -346,12 +368,26 @@ dllldddir_pedantic() (
 		return
 	fi
 
+	if [ -z "$TEMPFILE_REC" ] ; then
+		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
+		if [ -n "$TEMPFILE_REC" ] ; then
+			TEMPFILE_REC_MADEBY='dllldddir_pedantic'
+			trap "rm -f '$TEMPFILE_REC'" 0 1 2 3 15
+			echo "=== Tracking visited files in '${TEMPFILE_REC}' made by '${TEMPFILE_REC_MADEBY}'" >&2
+		fi
+	fi
+
 	# Two passes: one finds direct dependencies of all EXE/DLL under the
 	# specified location(s); then trims this list to be unique, and then
 	# the second pass recurses those libraries for their dependencies:
 	find "$@" -type f | ${EGREP} -i '\.(exe|dll)$' \
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
+
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec_pedantic' ]; then
+		rm -f "$TEMPFILE_REC"
+		trap - 0 1 2 3 15
+	fi
 )
 
 if [ x"${DLLLDD_SOURCED-}" != xtrue ] ; then
