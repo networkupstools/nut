@@ -178,8 +178,10 @@ dllldd_with_tools() (
 )
 
 dllldd_with_strings() (
-	strings "$@" | ${EGREP} -i '..*\.dll$' | sort | uniq | filter_away_system_DLLs | \
-	while read DLL ; do (
+	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
+	| ${EGREP} -i '..*\.dll$' | sort | uniq \
+	| filter_away_system_DLLs | ${EGREP} -vi '^%s\.dll$' \
+	| while read DLL ; do (
 		# Avoid looping on at least self-reference in a file
 		for S in "$@" ; do
 			# echo "=== Compare '$DLL' to '$S'" >&2
