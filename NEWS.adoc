@@ -99,6 +99,8 @@ https://github.com/networkupstools/nut/milestone/13
       allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
     * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
       report the ability to check `CERTIDENT` information. [#3331]
+    * Introduced support for "authconf" files to store and convey NUT client
+      authentication details. [issue #3329]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
