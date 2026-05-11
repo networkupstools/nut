@@ -2419,6 +2419,22 @@ void check_perms(const char *fn)
 #endif	/* WIN32 */
 }
 
+void close_oldest_client(void)
+{
+	nut_ctype_t	*client, *oldest = NULL;
+
+	for (client = firstclient; client; client = client->next) {
+		if (!oldest || client->last_heard < oldest->last_heard) {
+			oldest = client;
+		}
+	}
+
+	if (oldest) {
+		upslogx(LOG_INFO, "Closing oldest client connection from %s to free up file descriptors", oldest->addr);
+		client_disconnect(oldest);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int	opt_ret = 0, cmdret = 0, foreground = -1;

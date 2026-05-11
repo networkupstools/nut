@@ -27,6 +27,7 @@
 #include "netssl.h"
 #include "nut_stdint.h"
 #include <ctype.h>
+#include <errno.h>
 
 static ups_t	*upstable = NULL;
 int	num_ups = 0;
@@ -420,7 +421,12 @@ void load_upsdconf(int reloading)
 
 	pconf_init(&ctx, upsd_conf_err);
 
+retry:
 	if (!pconf_file_begin(&ctx, fn)) {
+		if (errno == EMFILE && reloading == 2) {
+			close_oldest_client();
+			goto retry;
+		}
 		pconf_finish(&ctx);
 
 		if (!reloading)
@@ -489,6 +495,24 @@ void load_upsdconf(int reloading)
 	}
 
 	pconf_finish(&ctx);
+}
+
+static int load_upsconf(int reloading) {
+	int	ret;
+
+	ret = read_upsconf(0);	/* 0 = do not abort fatally just yet */
+	if (ret == -1) {
+		if (errno == EMFILE && reloading == 2) {
+			upsdebugx(1, "%s: close an oldest client connection and try reading config again", __func__);
+			close_oldest_client();
+			ret = read_upsconf(1);	/* 1 = may abort upon fundamental errors */
+		} else {
+			/* Not fatalx(), the method above already reported the problem */
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return ret;
 }
 
 /* callback during parsing of ups.conf */
@@ -654,12 +678,19 @@ static int check_file(const char *fn)
 {
 	char	chkfn[NUT_PATH_MAX];
 	FILE	*f;
+	int	retries = 0;
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
 
+retry:
 	f = fopen(chkfn, "r");
 
 	if (!f) {
+		if (errno == EMFILE && retries < 10) {
+			close_oldest_client();
+			retries++;
+			goto retry;
+		}
 		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
 		return 0;	/* failed */
 	}
@@ -687,11 +718,11 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	read_upsconf(1);		/* 1 = may abort upon fundamental errors */
+	load_upsconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */
-	load_upsdconf(1);		/* 1 = reloading */
+	load_upsdconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
 
 	/* now delete all UPS entries that didn't get reloaded */
 

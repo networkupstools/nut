@@ -82,6 +82,9 @@ int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra);
 void server_load(void);
 void server_free(void);
 
+/* Can be called by configuration (re)loading logic to free up file descriptors */
+void close_oldest_client(void);
+
 void check_perms(const char *fn);
 
 /* return values for instcmd / setvar status tracking,

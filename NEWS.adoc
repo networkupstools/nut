@@ -114,6 +114,10 @@ https://github.com/networkupstools/nut/milestone/13
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
 
+ - `upsd` data server updates:
+    * If we hit "Too many open files" during configuration reload, close
+      the oldest client connection and retry. [issue #3365]
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `ci_build.sh` settings and respective CI workflow settings
       to optionally re-use a `config.cache` file from older runs, and similar
@@ -126,6 +130,7 @@ https://github.com/networkupstools/nut/milestone/13
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
       dependencies were not previously discovered and bundled). [issue #3420,
       PRs #3429, #3432]
+
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------
