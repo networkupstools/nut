@@ -1684,10 +1684,10 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    | while read D ; do \
 	        BD="`basename \"$$D\"`" ; \
 	        if test -e './$(bindir)/'"$$BD" && diff './$(bindir)/'"$$BD" "$$D" 2>/dev/null >/dev/null ; then \
-	            echo "   DLL->bin       $$D : skip (already installed there)" 2>&1 ; \
+	            echo "   DLL->bin	SKIP	$$D : skip (already installed there)" 2>&1 ; \
 	            continue ; \
 	        fi ; \
-	        echo "   DLL->bin       $$D" 2>&1 ; \
+	        echo "   DLL->bin	COPY	$$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
 	    done ; \
 	 ) || exit ; \
@@ -1696,7 +1696,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->sbin      $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->sbin	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1706,7 +1706,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->drv       $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->drv	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1718,7 +1718,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->cgi       $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->cgi	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1730,7 +1730,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->libexec   $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->libexec	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit
