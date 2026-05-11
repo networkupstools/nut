@@ -5,6 +5,8 @@
 # environment. It can do so recursively, to facilitate installation of NUT
 # for Windows, bundled with open-source dependencies.
 #
+# Assumes no whitespace in dir/file names, and forward slash as separator.
+#
 # Copyright (C)
 #   2022-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
@@ -14,6 +16,17 @@
 
 REGEX_WS="`printf '[\t ]'`"
 REGEX_NOT_WS="`printf '[^\t ]'`"
+
+# Case-insensitive
+# To test on non-Windows, e.g.:  export DLLEXT_REGEX='\.so(\..*)*'
+[ -n "${DLLEXT_REGEX}" ] || DLLEXT_REGEX='\.dll'
+[ -n "${DLLEXT_REGEX_EOL}" ] || DLLEXT_REGEX_EOL="${DLLEXT_REGEX}"'$'
+
+# If present, this file tracks DLL/EXE names we have already recursed into,
+# so we reduce work done and avoid potential infinite looping. Created and
+# later cleaned up by whatever call below happens to be first.
+TEMPFILE_REC=''
+TEMPFILE_REC_MADEBY=''
 
 cherrypick_MSYS_DLL_PATH() {
 	echo "${PATH}:${LD_LIBRARY_PATH}" | tr ':' '\n' | \
@@ -60,17 +73,22 @@ discover_COMPILER_PATHS() {
 			COMPILER_PATHS="`\"${ARCH}-g++\" --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`"
 		fi
 	fi
+
+	COMPILER_PATHS_MULTILINE=""
+	if [ -n "${COMPILER_PATHS}" ] ; then
+		COMPILER_PATHS_MULTILINE="`echo \"${COMPILER_PATHS}\" | tr ':' '\n'`"
+	fi
 }
 discover_COMPILER_PATHS
 
 filter_away_system_DLLs() {
-	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|dnsapi|iphlpapi|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))\.dll$'
+	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|dnsapi|dwrite|iphlpapi|kernelbase|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
 }
 
 filter_away_NUT_DLLs() {
 	# Only use this in search via `strings|grep` (and if coupled with
 	# a tools-based search)
-	${EGREP} -v -i '^(/.*/)?lib(nut|ups)[^ ]*\.dll$'
+	${EGREP} -v -i '^(/.*/)?lib(nut|ups)[^ ]*'"${DLLEXT_REGEX_EOL}"
 }
 
 dllldd_with_tools() (
@@ -83,10 +101,15 @@ dllldd_with_tools() (
 	LC_ALL=C
 	export LANG LC_ALL
 
-	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
-	&& [ -n "$SEARCH_INPUT_PATH" ] \
-	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
-	|| SEARCH_INPUT_PATH=""
+	# Assume forward-slash separated path components:
+	SEARCH_INPUT_PATH=""
+	SEARCH_INPUT_PATH_MULTILINE="`for F in \"$@\" ; do echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq`" \
+	&& [ -n "${SEARCH_INPUT_PATH_MULTILINE}" ] \
+	&& {
+		SEARCH_INPUT_PATH="`echo \"${SEARCH_INPUT_PATH_MULTILINE}\" | tr '\n' ':' | sed s',:*$,,'`" \
+		&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
+		|| SEARCH_INPUT_PATH=""
+	}
 
 	if [ -n "$SEARCH_INPUT_PATH" ] ; then
 		# Here add (our buld products) last in path,
@@ -104,14 +127,15 @@ dllldd_with_tools() (
 	fi
 	export LD_LIBRARY_PATH
 
-	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
+	# First try objdump, if ARCH is known (linux+mingw builds)
+	# or not (MSYS2 builds)
 	SEEN=0
 	NOTSEEN_OD=""
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i 'DLL Name:' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
+			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
@@ -121,7 +145,7 @@ dllldd_with_tools() (
 				fi
 				if [ -n "$SEARCH_INPUT_PATH" ] ; then
 					SEEN_INPUT=false
-					for D in `echo "${SEARCH_INPUT_PATH}" | tr ':' '\n'` ; do
+					for D in ${SEARCH_INPUT_PATH_MULTILINE} ; do
 						OUT="`find \"$D\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
 						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN_INPUT=true ; break ; }
 					done
@@ -140,9 +164,8 @@ dllldd_with_tools() (
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 
-				if [ -n "$COMPILER_PATHS" ] ; then
-					COMPILER_PATHS="`echo \"$COMPILER_PATHS\" | tr ':' '\n'`"
-					for P in $COMPILER_PATHS ; do
+				if [ -n "${COMPILER_PATHS_MULTILINE}" ] ; then
+					for P in ${COMPILER_PATHS_MULTILINE} ; do
 						OUT="`ls -1 \"${P}/$F\" 2>/dev/null || true`" \
 						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue 2 ; }
 					done
@@ -169,7 +192,7 @@ dllldd_with_tools() (
 		#  which may be our own libraries:
 		#    libnutprivate-2_8_5-common-all-1.dll => not found
 		#  Especially if we did not have/run an objdump above.
-		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i '\.dll' | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i '\.dll$'`" \
+		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i "${DLLEXT_REGEX}" | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)\(${REGEX_WS}.*\)*\$,\2,\" | sort | uniq | ${EGREP} -i "${DLLEXT_REGEX_EOL}"`" \
 		&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 		echo "WARNING: no suitable DLLs were found in ${NOTSEEN_OD} by tools matcher (ldd)!" >&2
 	fi
@@ -179,9 +202,25 @@ dllldd_with_tools() (
 
 dllldd_with_strings() (
 	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
-	| ${EGREP} -i '..*\.dll$' | sort | uniq \
-	| filter_away_system_DLLs | ${EGREP} -vi '^%s\.dll$' \
+	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
+	| filter_away_system_DLLs \
+	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
+		# Skip out if we already reported this file
+		# (The for/case loop below is surprisingly expensive on MSYS2)
+
+		if [ -n "${OUT_TOOLS}" ] && echo "${OUT_TOOLS}" | ${EGREP} '^(/[^ ]*/)*'"$DLL( .*)*$" >/dev/null 2>/dev/null ; then
+			# Skip dllldd_with_strings() findings already seen by dllldd_with_tools()
+			exit
+		fi
+
+		if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+		&& ${EGREP} '^(/.*/)*'"$DLL"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+		; then
+			# Skip older findings made in this process
+			exit
+		fi
+
 		# Avoid looping on at least self-reference in a file
 		for S in "$@" ; do
 			# echo "=== Compare '$DLL' to '$S'" >&2
@@ -192,6 +231,7 @@ dllldd_with_strings() (
 				*/"$DLL") exit ;;
 			esac
 		done
+
 		# echo "=== '$DLL' not in '$@'" >&2
 		echo "$DLL"
 	) ; done
@@ -201,9 +241,11 @@ dllldd() (
 	# Did at least one method not-fail and return something?
 	RES=0
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
+	export OUT_TOOLS
 	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
+
 	( # Subshell to sort results in the end
-	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
+	SEARCH_INPUT_PATH="`for F in \"$@\" ; do  echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
 	&& [ -n "$SEARCH_INPUT_PATH" ] \
 	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
 	|| SEARCH_INPUT_PATH=""
@@ -212,12 +254,19 @@ dllldd() (
 		SEARCH_DLL_PATH="${SEARCH_INPUT_PATH}:${SEARCH_DLL_PATH}"
 	fi
 
+	SEARCH_DLL_PATH_MULTILINE="`echo \"${SEARCH_DLL_PATH}\" | tr ':' '\n'`"
+
 	if [ -n "${OUT_TOOLS}" ] ; then
+		# Report (presumed fully-qualified) findings from objdump/ldd
 		echo "${OUT_TOOLS}"
 	fi
+
 	if [ -n "${OUT_STRINGS}" ] ; then
+		# NOTE: Strings built into binaries might have Windows back-slashes,
+		# so just in case - cater for them too here:
 		OUT_STRINGS_FULL="`echo \"${OUT_STRINGS}\" | ${EGREP} '[/\\]'`" || OUT_STRINGS_FULL=""
 		if [ -n "${OUT_STRINGS_FULL}" ] ; then
+			# Report full names right away, iterate only those that remain
 			echo "${OUT_STRINGS_FULL}"
 			OUT_STRINGS="`echo \"${OUT_STRINGS}\" | ${EGREP} -v '[/\\]'`"
 		fi
@@ -228,22 +277,41 @@ dllldd() (
 				continue
 			fi
 
+			# Skip out if we already reported this file
+			if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+			&& ${EGREP} '^(/.*/)*'"$S"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+			; then
+				continue
+			fi
+
 			# Something new (e.g. something listed for dynamic loading)...
 
 			# Is it simply in PATH (and deemed executable)?
 			# WARNING: Can return things in system path
 			# command -v "$S" && continue
 
-			echo "${SEARCH_DLL_PATH}" | tr ':' '\n' | {
-				while read D ; do
-					if [ -s "$D/$S" ]; then
-						echo "$D/$S"
-						exit
-					fi
-				done
+			SEEN_INPUT=false
+			for D in ${SEARCH_DLL_PATH_MULTILINE} ; do
+				if [ -s "$D/$S" ]; then
+					echo "$D/$S"
+					SEEN_INPUT=true
+					break
+				fi
+			done
 
-				echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
-			}
+			if $SEEN_INPUT ; then
+				continue
+			fi
+
+			echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
+
+			if [ -n "$TEMPFILE_REC" ] ; then
+				# Do not drill into this file name in vain, if seen again;
+				# only log failures at this point -- do not log successes,
+				# to not preclude iterating into them later if we are part
+				# of dlllddrec() or similar.
+				echo "$S" >> "$TEMPFILE_REC"
+			fi
 		done
 	fi
 	) | sort | uniq
@@ -252,10 +320,10 @@ dllldd() (
 
 do_dlllddrec() (
 	# Skip out if we already reported this file
-	if [ -n "$TEMPFILE_REC" ] ; then
-		if ${EGREP} '^'"$1"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
-			exit
-		fi
+	if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+	&& ${EGREP} '^'"$1"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+	; then
+		exit
 	fi
 
 	# Recurse to find the (mingw-provided) tree of dependencies - implem
@@ -268,8 +336,6 @@ do_dlllddrec() (
 	done
 )
 
-TEMPFILE_REC=''
-TEMPFILE_REC_MADEBY=''
 dlllddrec() {
 	if [ -z "$TEMPFILE_REC" ] ; then
 		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
@@ -284,7 +350,7 @@ dlllddrec() {
 	SEARCH_DLL_PATH="${SEARCH_DLL_PATH}:`dirname \"$1\"`" \
 	do_dlllddrec "$1" | sort | uniq
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 		trap - 0 1 2 3 15
 	fi
@@ -306,29 +372,38 @@ dllldddir() (
 	fi
 
 	# Assume no whitespace in built/MSYS/MinGW paths...
-	ORIGFILES="`find \"$@\" -type f | ${EGREP} -i '\.(exe|dll)$'`" || return
+	ORIGFILES="`find \"$@\" -type f | ${EGREP} -i '(\.exe|'"${DLLEXT_REGEX}"')$'`" || return
 
 	# Quick OK, nothing here?
 	[ -n "$ORIGFILES" ] || return 0
-
-	# Loop until we see nothing new:
-	SEENDLLS="`dllldd $ORIGFILES | sort | uniq`"
-	[ -n "$SEENDLLS" ] || return 0
-
-	#if [ -z "$BASH_VERSION" ] ; then
-		TMP1="`mktemp`"
-		TMP2="`mktemp`"
-		trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
-	#fi
 
 	if [ -z "$TEMPFILE_REC" ] ; then
 		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
 		if [ -n "$TEMPFILE_REC" ] ; then
 			TEMPFILE_REC_MADEBY='dllldddir'
-			trap "rm -f '$TEMPFILE_REC' '$TMP1' '$TMP2'" 0 1 2 3 15
+			trap "rm -f '$TEMPFILE_REC'" 0 1 2 3 15
 			echo "=== Tracking visited files in '${TEMPFILE_REC}' made by '${TEMPFILE_REC_MADEBY}'" >&2
 		fi
 	fi
+
+	# Loop until we see nothing new:
+	SEENDLLS="`dllldd $ORIGFILES | sort | uniq`"
+	[ -n "$SEENDLLS" ] || {
+		if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ] && [ -n "$TEMPFILE_REC" ] ; then
+			rm -f "$TEMPFILE_REC"
+		fi
+		return 0
+	}
+
+	#if [ -z "$BASH_VERSION" ] ; then
+		TMP1="`mktemp`"
+		TMP2="`mktemp`"
+		if [ -n "$TEMPFILE_REC" ] ; then
+			trap "rm -f '$TEMPFILE_REC' '$TMP1' '$TMP2'" 0 1 2 3 15
+		else
+			trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
+		fi
+	#fi
 
 	NEXTDLLS="$SEENDLLS"
 	while [ -n "$NEXTDLLS" ] ; do
@@ -348,7 +423,7 @@ dllldddir() (
 		fi
 	done
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 	fi
 
@@ -382,11 +457,11 @@ dllldddir_pedantic() (
 	# Two passes: one finds direct dependencies of all EXE/DLL under the
 	# specified location(s); then trims this list to be unique, and then
 	# the second pass recurses those libraries for their dependencies:
-	find "$@" -type f | ${EGREP} -i '\.(exe|dll)$' \
+	find "$@" -type f | ${EGREP} -i '(\.exe|'"${DLLEXT_REGEX}"')$' \
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec_pedantic' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec_pedantic' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 		trap - 0 1 2 3 15
 	fi
@@ -418,7 +493,12 @@ and list their set of required DLLs
 EOF
 			;;
 		dlllddrec|dllldd|dllldd_with_tools|dllldd_with_strings|dllldddir|dllldddir_pedantic) "$@" ;;
-		*) dlllddrec "$1" ;;
+		*)	if [ -d "$1" ] ; then
+				dllldddir "$1"
+			else
+				dlllddrec "$1"
+			fi
+			;;
 	esac
 
 	exit 0
