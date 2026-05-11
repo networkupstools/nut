@@ -1658,6 +1658,7 @@ static void mainloop(void)
 	if (reload_flag) {
 		upsnotify(NOTIFY_STATE_RELOADING, NULL);
 		conf_reload();
+		/* Among other things, re-detect sysmaxconn after loading config, because MAXCONN might have changed */
 		poll_reload();
 		reload_flag = 0;
 		upsnotify(NOTIFY_STATE_READY, NULL);
@@ -2788,6 +2789,9 @@ int main(int argc, char **argv)
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
+
+	/* Re-detect sysmaxconn after loading config, because MAXCONN might have changed */
+	update_sysmaxconn();
 
 	/* CLI debug level can not be smaller than debug_min specified
 	 * in upsd.conf. Note that non-zero debug_min does not impact
