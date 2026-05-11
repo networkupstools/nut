@@ -15,6 +15,11 @@
 REGEX_WS="`printf '[\t ]'`"
 REGEX_NOT_WS="`printf '[^\t ]'`"
 
+# Case-insensitive
+# To test on non-Windows, e.g.:  export DLLEXT_REGEX='\.so(\..*)*'
+[ -n "${DLLEXT_REGEX}" ] || DLLEXT_REGEX='\.dll'
+[ -n "${DLLEXT_REGEX_EOL}" ] || DLLEXT_REGEX_EOL="${DLLEXT_REGEX}"'$'
+
 cherrypick_MSYS_DLL_PATH() {
 	echo "${PATH}:${LD_LIBRARY_PATH}" | tr ':' '\n' | \
 	while read D ; do
@@ -64,13 +69,13 @@ discover_COMPILER_PATHS() {
 discover_COMPILER_PATHS
 
 filter_away_system_DLLs() {
-	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|dnsapi|iphlpapi|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))\.dll$'
+	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|dnsapi|iphlpapi|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
 }
 
 filter_away_NUT_DLLs() {
 	# Only use this in search via `strings|grep` (and if coupled with
 	# a tools-based search)
-	${EGREP} -v -i '^(/.*/)?lib(nut|ups)[^ ]*\.dll$'
+	${EGREP} -v -i '^(/.*/)?lib(nut|ups)[^ ]*'"${DLLEXT_REGEX_EOL}"
 }
 
 dllldd_with_tools() (
@@ -169,7 +174,7 @@ dllldd_with_tools() (
 		#  which may be our own libraries:
 		#    libnutprivate-2_8_5-common-all-1.dll => not found
 		#  Especially if we did not have/run an objdump above.
-		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i '\.dll' | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i '\.dll$'`" \
+		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i "${DLLEXT_REGEX}" | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i "${DLLEXT_REGEX_EOL}"`" \
 		&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 		echo "WARNING: no suitable DLLs were found in ${NOTSEEN_OD} by tools matcher (ldd)!" >&2
 	fi
@@ -179,8 +184,8 @@ dllldd_with_tools() (
 
 dllldd_with_strings() (
 	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
-	| ${EGREP} -i '..*\.dll$' | sort | uniq \
-	| filter_away_system_DLLs | ${EGREP} -vi '^%s\.dll$' \
+	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
+	| filter_away_system_DLLs | ${EGREP} -vi '^%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
 		# Avoid looping on at least self-reference in a file
 		for S in "$@" ; do
@@ -306,7 +311,7 @@ dllldddir() (
 	fi
 
 	# Assume no whitespace in built/MSYS/MinGW paths...
-	ORIGFILES="`find \"$@\" -type f | ${EGREP} -i '\.(exe|dll)$'`" || return
+	ORIGFILES="`find \"$@\" -type f | ${EGREP} -i '(\.exe|'"${DLLEXT_REGEX}"')$'`" || return
 
 	# Quick OK, nothing here?
 	[ -n "$ORIGFILES" ] || return 0
@@ -382,7 +387,7 @@ dllldddir_pedantic() (
 	# Two passes: one finds direct dependencies of all EXE/DLL under the
 	# specified location(s); then trims this list to be unique, and then
 	# the second pass recurses those libraries for their dependencies:
-	find "$@" -type f | ${EGREP} -i '\.(exe|dll)$' \
+	find "$@" -type f | ${EGREP} -i '(\.exe|'"${DLLEXT_REGEX}"')$' \
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
 
