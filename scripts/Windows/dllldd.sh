@@ -22,6 +22,12 @@ REGEX_NOT_WS="`printf '[^\t ]'`"
 [ -n "${DLLEXT_REGEX}" ] || DLLEXT_REGEX='\.dll'
 [ -n "${DLLEXT_REGEX_EOL}" ] || DLLEXT_REGEX_EOL="${DLLEXT_REGEX}"'$'
 
+# If present, this file tracks DLL/EXE names we have already recursed into,
+# so we reduce work done and avoid potential infinite looping. Created and
+# later cleaned up by whatever call below happens to be first.
+TEMPFILE_REC=''
+TEMPFILE_REC_MADEBY=''
+
 cherrypick_MSYS_DLL_PATH() {
 	echo "${PATH}:${LD_LIBRARY_PATH}" | tr ':' '\n' | \
 	while read D ; do
@@ -254,6 +260,11 @@ dllldd() (
 				continue
 			fi
 
+			# Skip out if we already reported this file
+			if [ -n "$TEMPFILE_REC" ] && ${EGREP} '^(/.*/)*'"$S"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
+				continue
+			fi
+
 			# Something new (e.g. something listed for dynamic loading)...
 
 			# Is it simply in PATH (and deemed executable)?
@@ -274,17 +285,17 @@ dllldd() (
 			fi
 
 			echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
+
+			if [ -n "$TEMPFILE_REC" ] ; then
+				# Do not drill into this file name in vain, if seen again:
+				echo "$S" >> "$TEMPFILE_REC"
+			fi
 		done
 	fi
 	) | sort | uniq
 	return $RES
 )
 
-# If present, this file tracks DLL/EXE names we have already recursed into,
-# so we reduce work done and avoid potential infinite looping. Created and
-# later cleaned up by whatever call below happens to be first.
-TEMPFILE_REC=''
-TEMPFILE_REC_MADEBY=''
 do_dlllddrec() (
 	# Skip out if we already reported this file
 	if [ -n "$TEMPFILE_REC" ] ; then
