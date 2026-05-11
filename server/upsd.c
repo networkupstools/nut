@@ -1337,6 +1337,15 @@ static void update_sysmaxconn(void)
 			l);
 	}
 
+	if (sysmaxconn_hard > 0 && sysmaxconn_hard < RESERVE_FD_COUNT_UPSD + 10) {
+		fatalx(EXIT_FAILURE,
+			"System reported an absurd value %ld (below the %ld reservation for\n"
+			"non-connection purposes and some 10 for driver/client/... connections)\n"
+			"as its hard maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n",
+			(long)sysmaxconn_hard, (long)RESERVE_FD_COUNT_UPSD);
+	}
+
 	/* Note this historically also serves as
 	 * the initial/default MAXCONN setting
 	 * (so site/platform-dependent).
