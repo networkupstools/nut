@@ -1,6 +1,14 @@
 /* upsd.h - support structures and other minor details
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	1999		Russell Kroll <rkroll@exploits.org>
+	2005 - 2019	Arnaud Quette <arnaud.quette@free.fr>
+	2006 - 2007	Peter Selinger <selinger@users.sourceforge.net>
+	2006 - 2007	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2010 - 2011	Frederic Bohe <fbohe-guest@alioth.debian.org>
+	2012		Charles Lepple <clepple+nut@gmail.com>
+	2013		Emilien Kia <kiae.dev@gmail.com>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,12 +87,12 @@ void check_perms(const char *fn);
 /* return values for instcmd / setvar status tracking,
  * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
 enum {
-   STAT_PENDING = -1,	/* not yet completed */
-   STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
-   STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
-   STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
-   STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
-   STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
+	STAT_PENDING = -1,	/* not yet completed */
+	STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
+	STAT_UNKNOWN,		/* unspecified error (NUT_ERR_UNKNOWN) */
+	STAT_INVALID,		/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
+	STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+	STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
 };
 
 /* Commands and settings status tracking functions */
@@ -107,23 +115,22 @@ extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
 #ifndef WIN32
-#define SIGCMD_STOP	SIGTERM
-#define SIGCMD_RELOAD	SIGHUP
+# define SIGCMD_STOP	SIGTERM
+# define SIGCMD_RELOAD	SIGHUP
 #else	/* WIN32 */
-#define SIGCMD_STOP    COMMAND_STOP
-#define SIGCMD_RELOAD  COMMAND_RELOAD
+# define SIGCMD_STOP	COMMAND_STOP
+# define SIGCMD_RELOAD	COMMAND_RELOAD
 #endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
-
 #define string_const_aux(x)	#x
 #define string_const(x)		string_const_aux(x)
 
 #ifdef SHUT_RDWR
-#define shutdown_how SHUT_RDWR
+# define shutdown_how	SHUT_RDWR
 #else
-#define shutdown_how 2
-#endif
+# define shutdown_how	2
+#endif	/* SHUT_RDWR */
 
 /* UUID v4 generation function
  * Note: 'dest' must be at least `UUID4_LEN` long */
