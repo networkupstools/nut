@@ -117,6 +117,12 @@ https://github.com/networkupstools/nut/milestone/13
  - `upsd` data server updates:
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]
+    * If the `MAXCONN` requested in the configuration file exceeds the OS
+      allowance on open file descriptors, fail early since the requested
+      configuration can not be guaranteed and can mis-fire unexpectedly
+      much later (tell the sysadmin to increase `ulimit` or set up a more
+      conservative `MAXCONN`). If there is a separate soft and hard limit,
+      and `MAXCONN` exceeds the soft limit, try to raise the bar. [issue #3365]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `ci_build.sh` settings and respective CI workflow settings

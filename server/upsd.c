@@ -45,6 +45,9 @@
 #  include <signal.h>
 /* #include <poll.h> */
 # endif
+# ifdef HAVE_SYS_RESOURCE_H
+#  include <sys/resource.h>	/* for getrlimit() and struct rlimit */
+# endif
 #else	/* WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
@@ -94,12 +97,14 @@ int allow_no_device = 0;
  */
 int allow_not_all_listeners = 0;
 
-/* preloaded to POSIX sysconf(_SC_OPEN_MAX) or WIN32 MAX_WAIT_OBJECTS in main
+/* Preloaded to POSIX sysconf(_SC_OPEN_MAX) or WIN32 MAX_WAIT_OBJECTS in main
  * and elsewhere, the run-time value can be overridden via upsd.conf `MAXCONN`
  * option (may cause partial waits chunk by chunk, if sysmaxconn is smaller).
+ * The sysmaxconn_hard is derived from getrlimit() (aka `ulimit` on allowed
+ * opened file descriptors) where available.
  */
 nfds_t	maxconn = 0;
-static nfds_t	sysmaxconn = 0;
+static nfds_t	sysmaxconn = 0, sysmaxconn_hard = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -1258,12 +1263,63 @@ static void update_sysmaxconn(void)
 	char	*s = getenv("NUT_SYSMAXCONN_LIMIT");
 
 #ifndef WIN32
+# ifdef HAVE_SYS_RESOURCE_H
+	struct rlimit	limit;
+# endif	/* HAVE_SYS_RESOURCE_H */
+
 	/* default to system limit (may be overridden in upsd.conf) */
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	l = sysconf(_SC_OPEN_MAX);
+
+# ifdef HAVE_SYS_RESOURCE_H
+	/* Try to use getrlimit/setrlimit to detect and possibly increase the limit */
+	if (getrlimit(RLIMIT_NOFILE, &limit) == 0) {
+		upsdebugx(2, "%s: System file descriptor limits: soft=%ld, hard=%ld",
+			__func__, (long)limit.rlim_cur, (long)limit.rlim_max);
+
+		/* If we requested a specific MAXCONN, try to ensure we have enough FDs */
+		if (maxconn > 0) {
+			rlim_t	needed = (rlim_t)maxconn + RESERVE_FD_COUNT_UPSD;
+
+			if (limit.rlim_cur < needed) {
+				if (needed <= limit.rlim_max) {
+					upslogx(LOG_INFO, "Increasing file descriptor limit to %ld", (long)needed);
+
+					limit.rlim_cur = needed;
+					if (setrlimit(RLIMIT_NOFILE, &limit) != 0) {
+						upslog_with_errno(LOG_WARNING, "setrlimit(RLIMIT_NOFILE) to %ld failed", (long)needed);
+					}
+				} else {
+					upslogx(LOG_WARNING, "Requested MAXCONN %" PRIdMAX " requires %ld FDs, but system hard limit is %ld",
+						(intmax_t)maxconn, (long)needed, (long)limit.rlim_max);
+
+					/* We might still try to bump to hard limit */
+					if (limit.rlim_cur < limit.rlim_max) {
+						limit.rlim_cur = limit.rlim_max;
+						setrlimit(RLIMIT_NOFILE, &limit);
+					}
+				}
+			}
+		}
+
+		/* Refresh limit after possible update */
+		getrlimit(RLIMIT_NOFILE, &limit);
+		sysmaxconn_hard = (long)limit.rlim_cur;
+	} else {
+# endif	/* HAVE_SYS_RESOURCE_H */
+		/* Fallback to sysconf if getrlimit fails or is absent */
+		/* TOTHINK: Any other reasonable fallback hard limit? */
+		sysmaxconn_hard = (nfds_t)l;
+# ifdef HAVE_SYS_RESOURCE_H
+	}
+# endif	/* HAVE_SYS_RESOURCE_H */
+
 #else	/* WIN32 */
 	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
 	l = (long)MAXIMUM_WAIT_OBJECTS;
+
+	/* No known limit, do not check */
+	sysmaxconn_hard = 0;
 #endif	/* WIN32 */
 
 	if (l < 1) {
@@ -1307,6 +1363,15 @@ static void poll_reload(void)
 
 	/* Not likely this would change, but refresh just in case */
 	update_sysmaxconn();
+
+	if (sysmaxconn_hard > 0 && (maxconn > sysmaxconn_hard - RESERVE_FD_COUNT_UPSD)) {
+		fatalx(EXIT_FAILURE,
+			"You requested %" PRIdMAX " as maximum number of connections,\n"
+			"but the system only allows %" PRIdMAX " and we need %d for ourselves.\n"
+			"The server won't start until this problem is resolved\n"
+			"(reduce MAXCONN or increase ulimit or similar settings).\n",
+			(intmax_t)maxconn, (intmax_t)sysmaxconn, RESERVE_FD_COUNT_UPSD);
+	}
 
 	if ((intmax_t)sysmaxconn < (intmax_t)maxconn) {
 		upslogx(LOG_WARNING,

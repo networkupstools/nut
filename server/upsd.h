@@ -85,6 +85,20 @@ void server_free(void);
 /* Can be called by configuration (re)loading logic to free up file descriptors */
 void close_oldest_client(void);
 
+/* Three usual stdin/stdout/stderr triplet FDs, new connection handler,
+ * work with config files (reload), maybe something else?..
+ * Keep about this many file descriptors off limits to the connection
+ * processing loop (comparing to `ulimit` if applicable). Note we can
+ * process existing connections in chunks (especially on Windows where
+ * a limited amount of handles may be polled in one go), but can not
+ * exceed the overall allowance (if any) on opened file descriptors.
+ *
+ * Note that the C Standard OPEN_MAX and the _POSIX_OPEN_MAX allow some
+ * 16-20 FDs that a process may always reasonably expect to be at its
+ * disposal.
+ */
+#define RESERVE_FD_COUNT_UPSD	8
+
 void check_perms(const char *fn);
 
 /* return values for instcmd / setvar status tracking,
