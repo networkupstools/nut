@@ -114,14 +114,18 @@ https://github.com/networkupstools/nut/milestone/13
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
 
- - Introduced `ci_build.sh` settings and respective CI workflow settings
-   to optionally re-use a `config.cache` file from older runs, and similar
-   logic for NIT `nit.sh` to re-use generated certificate and private key
-   files. Both can be enabled by `export DO_USE_NUTCI_CACHE=yes` and would
-   store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
-   `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
-   [issues #3108, #3390, #1711, PR #3109]
-
+ - Recipes, CI and helper script updates not classified above:
+    * Introduced `ci_build.sh` settings and respective CI workflow settings
+      to optionally re-use a `config.cache` file from older runs, and similar
+      logic for NIT `nit.sh` to re-use generated certificate and private key
+      files. Both can be enabled by `export DO_USE_NUTCI_CACHE=yes` and would
+      store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
+      `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
+      [issues #3108, #3390, #1711, PR #3109]
+    * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
+      names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
+      dependencies were not previously discovered and bundled). [issue #3420,
+      PRs #3429, #3432]
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------
