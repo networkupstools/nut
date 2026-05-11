@@ -109,6 +109,11 @@ https://github.com/networkupstools/nut/milestone/13
       tracked) should now not cause exit of the client if secure connection
       is not required by its configuration in the first place. [#3420]
 
+ - `NUT-Monitor` Python GUI client:
+    * Fixed Qt tray tooltips to render in plain text, not rich text which
+      ended up as literal HTML on KDE Plasma 6; now that rich text formatting
+      is only used for main window status labels. [PR #3430]
+
  - Introduced `ci_build.sh` settings and respective CI workflow settings
    to optionally re-use a `config.cache` file from older runs, and similar
    logic for NIT `nit.sh` to re-use generated certificate and private key
