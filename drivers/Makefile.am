@@ -234,7 +234,7 @@ upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
-apcmicrolink_SOURCES = apcmicrolink.c apcmicrolink-maps.c
+apcmicrolink_SOURCES = apcmicrolink.c apcmicrolink-maps.c apc_common.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
 apcsmart_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
@@ -460,7 +460,7 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 # APC Modbus driver (with support of modbus over different media)
 # Note that a version of libmodbus built with USB support is also needed
 # for USB connections. Legacy versions work for Serial and TCP links.
-apc_modbus_SOURCES = apc_modbus.c
+apc_modbus_SOURCES = apc_modbus.c apc_common.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 if WITH_MODBUS_USB
   apc_modbus_SOURCES += hidparser.c
