@@ -174,7 +174,7 @@ dllldd_with_tools() (
 		#  which may be our own libraries:
 		#    libnutprivate-2_8_5-common-all-1.dll => not found
 		#  Especially if we did not have/run an objdump above.
-		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i "${DLLEXT_REGEX}" | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}.*\$,\2,\" | sort | uniq | ${EGREP} -i "${DLLEXT_REGEX_EOL}"`" \
+		OUT="`ldd \"${NOTSEEN_OD}\" 2>/dev/null | ${EGREP} -i "${DLLEXT_REGEX}" | ${EGREP} '/(bin|lib)/' | sed \"s,^${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)${REGEX_WS}${REGEX_WS}*=>${REGEX_WS}${REGEX_WS}*\(${REGEX_NOT_WS}${REGEX_NOT_WS}*\)\(${REGEX_WS}.*\)*\$,\2,\" | sort | uniq | ${EGREP} -i "${DLLEXT_REGEX_EOL}"`" \
 		&& [ -n "$OUT" ] && { echo "$OUT" ; return 0 ; }
 		echo "WARNING: no suitable DLLs were found in ${NOTSEEN_OD} by tools matcher (ldd)!" >&2
 	fi
