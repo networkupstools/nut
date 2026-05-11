@@ -262,6 +262,11 @@ dllldd() (
 	return $RES
 )
 
+# If present, this file tracks DLL/EXE names we have already recursed into,
+# so we reduce work done and avoid potential infinite looping. Created and
+# later cleaned up by whatever call below happens to be first.
+TEMPFILE_REC=''
+TEMPFILE_REC_MADEBY=''
 do_dlllddrec() (
 	# Skip out if we already reported this file
 	if [ -n "$TEMPFILE_REC" ] ; then
@@ -280,8 +285,6 @@ do_dlllddrec() (
 	done
 )
 
-TEMPFILE_REC=''
-TEMPFILE_REC_MADEBY=''
 dlllddrec() {
 	if [ -z "$TEMPFILE_REC" ] ; then
 		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
