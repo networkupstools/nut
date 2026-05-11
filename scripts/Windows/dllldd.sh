@@ -328,7 +328,7 @@ dlllddrec() {
 	SEARCH_DLL_PATH="${SEARCH_DLL_PATH}:`dirname \"$1\"`" \
 	do_dlllddrec "$1" | sort | uniq
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 		trap - 0 1 2 3 15
 	fi
@@ -355,24 +355,33 @@ dllldddir() (
 	# Quick OK, nothing here?
 	[ -n "$ORIGFILES" ] || return 0
 
-	# Loop until we see nothing new:
-	SEENDLLS="`dllldd $ORIGFILES | sort | uniq`"
-	[ -n "$SEENDLLS" ] || return 0
-
-	#if [ -z "$BASH_VERSION" ] ; then
-		TMP1="`mktemp`"
-		TMP2="`mktemp`"
-		trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
-	#fi
-
 	if [ -z "$TEMPFILE_REC" ] ; then
 		TEMPFILE_REC="`mktemp`" || TEMPFILE_REC=""
 		if [ -n "$TEMPFILE_REC" ] ; then
 			TEMPFILE_REC_MADEBY='dllldddir'
-			trap "rm -f '$TEMPFILE_REC' '$TMP1' '$TMP2'" 0 1 2 3 15
+			trap "rm -f '$TEMPFILE_REC'" 0 1 2 3 15
 			echo "=== Tracking visited files in '${TEMPFILE_REC}' made by '${TEMPFILE_REC_MADEBY}'" >&2
 		fi
 	fi
+
+	# Loop until we see nothing new:
+	SEENDLLS="`dllldd $ORIGFILES | sort | uniq`"
+	[ -n "$SEENDLLS" ] || {
+		if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ] && [ -n "$TEMPFILE_REC" ] ; then
+			rm -f "$TEMPFILE_REC"
+		fi
+		return 0
+	}
+
+	#if [ -z "$BASH_VERSION" ] ; then
+		TMP1="`mktemp`"
+		TMP2="`mktemp`"
+		if [ -n "$TEMPFILE_REC" ] ; then
+			trap "rm -f '$TEMPFILE_REC' '$TMP1' '$TMP2'" 0 1 2 3 15
+		else
+			trap "rm -f '$TMP1' '$TMP2'" 0 1 2 3 15
+		fi
+	#fi
 
 	NEXTDLLS="$SEENDLLS"
 	while [ -n "$NEXTDLLS" ] ; do
@@ -392,7 +401,7 @@ dllldddir() (
 		fi
 	done
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dllldddir' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 	fi
 
@@ -430,7 +439,7 @@ dllldddir_pedantic() (
 	| while read E ; do dllldd "$E" ; done | sort | uniq \
 	| while read D ; do echo "$D"; dlllddrec "$D" ; done | sort | uniq
 
-	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec_pedantic' ]; then
+	if [ x"$TEMPFILE_REC_MADEBY" = x'dlllddrec_pedantic' ] && [ -n "$TEMPFILE_REC" ]; then
 		rm -f "$TEMPFILE_REC"
 		trap - 0 1 2 3 15
 	fi
