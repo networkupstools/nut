@@ -1350,7 +1350,22 @@ static void update_sysmaxconn(void)
 	 * the initial/default MAXCONN setting
 	 * (so site/platform-dependent).
 	 */
-	sysmaxconn = (nfds_t)l;
+	if (sysmaxconn_hard > 0) {
+		if (l < RESERVE_FD_COUNT_UPSD + 10) {
+			fatalx(EXIT_FAILURE,
+				"System reported an absurd value %ld (below the %ld reservation for\n"
+				"non-connection purposes and some 10 for driver/client/... connections)\n"
+				"as its sysconf maximum number of connections.\n"
+				"The server won't start until this problem is resolved.\n",
+				l, (long)RESERVE_FD_COUNT_UPSD);
+		}
+
+		sysmaxconn = (nfds_t)(l - RESERVE_FD_COUNT_UPSD);
+	} else {
+		/* No known limit on open FDs/handles, whether connections or files or other streams */
+		sysmaxconn = (nfds_t)l;
+	}
+
 	if (maxconn < 1) {
 		upsdebugx(1, "%s: defaulting maxconn to sysmaxconn: %ld",
 			__func__, l);
