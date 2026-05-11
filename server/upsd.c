@@ -1290,8 +1290,13 @@ static void update_sysmaxconn(void)
 						upslog_with_errno(LOG_WARNING, "setrlimit(RLIMIT_NOFILE) to %ld failed", (long)needed);
 					}
 				} else {
-					upslogx(LOG_WARNING, "Requested MAXCONN %" PRIdMAX " requires %ld FDs, but system hard limit is %ld",
-						(intmax_t)maxconn, (long)needed, (long)limit.rlim_max);
+					upslogx(LOG_WARNING, "WARNING: Requested MAXCONN %" PRIdMAX
+						" requires %ld FDs overall "
+						"(with %ld reserved for non-connection purposes), "
+						"but system hard limit is %ld",
+						(intmax_t)maxconn, (long)needed,
+						(long)RESERVE_FD_COUNT_UPSD,
+						(long)limit.rlim_max);
 
 					/* We might still try to bump to hard limit */
 					if (limit.rlim_cur < limit.rlim_max) {
