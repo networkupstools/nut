@@ -186,7 +186,8 @@ dllldd_with_tools() (
 dllldd_with_strings() (
 	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
 	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
-	| filter_away_system_DLLs | ${EGREP} -vi '^%s'"${DLLEXT_REGEX_EOL}" \
+	| filter_away_system_DLLs \
+	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
 		# Avoid looping on at least self-reference in a file
 		for S in "$@" ; do
