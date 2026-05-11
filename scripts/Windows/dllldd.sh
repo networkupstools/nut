@@ -214,8 +214,9 @@ dllldd_with_strings() (
 			exit
 		fi
 
-
-		if [ -n "$TEMPFILE_REC" ] && ${EGREP} '^(/.*/)*'"$DLL"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
+		if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+		&& ${EGREP} '^(/.*/)*'"$DLL"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+		; then
 			# Skip older findings made in this process
 			exit
 		fi
@@ -277,7 +278,9 @@ dllldd() (
 			fi
 
 			# Skip out if we already reported this file
-			if [ -n "$TEMPFILE_REC" ] && ${EGREP} '^(/.*/)*'"$S"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
+			if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+			&& ${EGREP} '^(/.*/)*'"$S"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+			; then
 				continue
 			fi
 
@@ -317,10 +320,10 @@ dllldd() (
 
 do_dlllddrec() (
 	# Skip out if we already reported this file
-	if [ -n "$TEMPFILE_REC" ] ; then
-		if ${EGREP} '^'"$1"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
-			exit
-		fi
+	if [ -n "$TEMPFILE_REC" ] && [ -s "$TEMPFILE_REC" ] \
+	&& ${EGREP} '^'"$1"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null \
+	; then
+		exit
 	fi
 
 	# Recurse to find the (mingw-provided) tree of dependencies - implem
