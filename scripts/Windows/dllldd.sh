@@ -208,7 +208,15 @@ dllldd_with_strings() (
 	| while read DLL ; do (
 		# Skip out if we already reported this file
 		# (The for/case loop below is surprisingly expensive on MSYS2)
+
+		if [ -n "${OUT_TOOLS}" ] && echo "${OUT_TOOLS}" | ${EGREP} '^(/[^ ]*/)*'"$DLL( .*)*$" >/dev/null 2>/dev/null ; then
+			# Skip dllldd_with_strings() findings already seen by dllldd_with_tools()
+			exit
+		fi
+
+
 		if [ -n "$TEMPFILE_REC" ] && ${EGREP} '^(/.*/)*'"$DLL"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
+			# Skip older findings made in this process
 			exit
 		fi
 
@@ -232,6 +240,7 @@ dllldd() (
 	# Did at least one method not-fail and return something?
 	RES=0
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
+	export OUT_TOOLS
 	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
 
 	( # Subshell to sort results in the end
@@ -294,7 +303,10 @@ dllldd() (
 			echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
 
 			if [ -n "$TEMPFILE_REC" ] ; then
-				# Do not drill into this file name in vain, if seen again:
+				# Do not drill into this file name in vain, if seen again;
+				# only log failures at this point -- do not log successes,
+				# to not preclude iterating into them later if we are part
+				# of dlllddrec() or similar.
 				echo "$S" >> "$TEMPFILE_REC"
 			fi
 		done
