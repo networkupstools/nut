@@ -110,7 +110,7 @@ endif HAVE_CXX11
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS = upsclient.h
+ include_HEADERS = upsclient.h authconf.h
 if HAVE_CXX11
  include_HEADERS += nutclient.h nutclientmem.h
 else !HAVE_CXX11
@@ -170,7 +170,7 @@ upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 # but it needs nut_version.h made before the rest of build,
 # to include it into upsclient.c (without an explicit link,
 # this target is sometimes missed in parallel builds):
-libupsclient_la_SOURCES = upsclient.c upsclient.h
+libupsclient_la_SOURCES = upsclient.c upsclient.h authconf.c authconf.h
 
 # See comments for similar trick in common/Makefile.am for common-nut_version.c
 if BUILDING_IN_TREE

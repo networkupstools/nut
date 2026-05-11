@@ -1,0 +1,57 @@
+UPSCLI_FIND_AUTHCONF(3)
+=======================
+
+NAME
+----
+
+upscli_find_authconf, upscli_free_authconf - Find and free authentication configuration items
+
+SYNOPSIS
+--------
+
+------
+	#include <authconf.h>
+
+	upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port);
+
+	upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_find_authconf()* function searches the internal list of
+authentication configurations for the best match for the given 'user',
+'host', and 'port'.
+
+The matching logic follows this priority:
+
+1. Exact match for `[user@host:port]`
+2. Match for `[@host:port]` (host default)
+3. Global default section (if 'user', 'host', and 'port' are all NULL)
+
+If a specific match is found, any missing fields in that section are
+inherited from the global defaults.
+
+The *upscli_free_authconf()* function frees the memory allocated for a single
+`upscli_authconf_t` node and returns its `next` pointer. This is useful for
+manually iterating and cleaning up copies of the list, although typically
+linkman:upscli_free_authconf_list[3] is used to clear the entire internal list.
+
+RETURN VALUE
+------------
+
+The *upscli_find_authconf()* function returns a pointer to a `upscli_authconf_t`
+structure containing the matched configuration, or NULL if no match is found.
+Note that the returned pointer refers to an item in the internal list managed
+by *libupsclient*; it should not be freed directly by the caller unless they
+are managing their own list.
+
+The *upscli_free_authconf()* function returns the last known value of the `next`
+pointer field from the node being freed.
+
+SEE ALSO
+--------
+
+linkman:upscli_read_authconf[3], linkman:upscli_get_authconf_list[3],
+linkman:upscli_free_authconf_list[3]
