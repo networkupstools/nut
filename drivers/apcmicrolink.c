@@ -87,6 +87,22 @@ static microlink_descriptor_usage_t descriptor_usages[MLINK_DESCRIPTOR_MAX_USAGE
 static unsigned char descriptor_blob[MLINK_DESCRIPTOR_MAX_BLOB];
 static int show_internals = -1;
 static int show_unmapped = -1;
+typedef enum microlink_command_source_e {
+	MLINK_CMD_SOURCE_RJ45 = 0,
+	MLINK_CMD_SOURCE_USB,
+	MLINK_CMD_SOURCE_USER,
+	MLINK_CMD_SOURCE_SMARTSLOT1,
+	MLINK_CMD_SOURCE_INTERNAL1
+} microlink_command_source_t;
+
+static microlink_command_source_t microlink_command_source = MLINK_CMD_SOURCE_RJ45;
+
+typedef enum microlink_command_domain_e {
+	MLINK_CMD_DOMAIN_OUTLET = 0,
+	MLINK_CMD_DOMAIN_BATTERY_TEST,
+	MLINK_CMD_DOMAIN_RUNTIME_CAL,
+	MLINK_CMD_DOMAIN_UPS
+} microlink_command_domain_t;
 
 static int microlink_send_simple(unsigned char byte);
 static int microlink_send_write(unsigned char id, unsigned char offset,
@@ -94,6 +110,8 @@ static int microlink_send_write(unsigned char id, unsigned char offset,
 static int microlink_update_blob(void);
 static int microlink_parse_descriptor(void);
 static int microlink_send_descriptor_mask_value(const char *path, uint64_t mask);
+static int microlink_send_command_descriptor_mask_value(const char *path, uint64_t mask);
+static int microlink_receive_once(void);
 static const microlink_object_t *microlink_get_object(unsigned int id);
 static microlink_object_t *microlink_get_object_mut(unsigned int id);
 static size_t microlink_parse_descriptor_block(const unsigned char *blob, size_t blob_len,
@@ -156,6 +174,91 @@ static int microlink_show_internals(void)
 	return (nut_debug_level > 0);
 }
 
+static int microlink_parse_command_source(const char *text, microlink_command_source_t *source)
+{
+	if (text == NULL || source == NULL) {
+		return 0;
+	}
+
+	if (!strcasecmp(text, "rj45")) {
+		*source = MLINK_CMD_SOURCE_RJ45;
+		return 1;
+	}
+
+	if (!strcasecmp(text, "usb")) {
+		*source = MLINK_CMD_SOURCE_USB;
+		return 1;
+	}
+
+	if (!strcasecmp(text, "localuser")) {
+		*source = MLINK_CMD_SOURCE_USER;
+		return 1;
+	}
+
+	if (!strcasecmp(text, "smartslot1")) {
+		*source = MLINK_CMD_SOURCE_SMARTSLOT1;
+		return 1;
+	}
+
+	if (!strcasecmp(text, "internalnetwork1")) {
+		*source = MLINK_CMD_SOURCE_INTERNAL1;
+		return 1;
+	}
+
+	return 0;
+}
+
+static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
+{
+	switch (domain) {
+	case MLINK_CMD_DOMAIN_OUTLET:
+		switch (microlink_command_source) {
+		case MLINK_CMD_SOURCE_RJ45:
+			return APC_OUTLET_CMD_SOURCE_RJ45_PORT;
+		case MLINK_CMD_SOURCE_USB:
+			return APC_OUTLET_CMD_SOURCE_USB_PORT;
+		case MLINK_CMD_SOURCE_USER:
+			return APC_OUTLET_CMD_SOURCE_LOCAL_USER;
+		case MLINK_CMD_SOURCE_SMARTSLOT1:
+			return APC_OUTLET_CMD_SOURCE_SMART_SLOT_1;
+		case MLINK_CMD_SOURCE_INTERNAL1:
+			return APC_OUTLET_CMD_SOURCE_INTERNAL_NETWORK_1;
+		}
+		break;
+	case MLINK_CMD_DOMAIN_BATTERY_TEST:
+	case MLINK_CMD_DOMAIN_RUNTIME_CAL:
+		switch (microlink_command_source) {
+		case MLINK_CMD_SOURCE_RJ45:
+			return (1ULL << 10);
+		case MLINK_CMD_SOURCE_USB:
+			return (1ULL << 8);
+		case MLINK_CMD_SOURCE_USER:
+			return (1ULL << 9);
+		case MLINK_CMD_SOURCE_SMARTSLOT1:
+			return (1ULL << 11);
+		case MLINK_CMD_SOURCE_INTERNAL1:
+			return (1ULL << 13);
+		}
+		break;
+	case MLINK_CMD_DOMAIN_UPS:
+		switch (microlink_command_source) {
+		case MLINK_CMD_SOURCE_RJ45:
+			return (1ULL << 27);
+		case MLINK_CMD_SOURCE_USB:
+			return (1ULL << 28);
+		case MLINK_CMD_SOURCE_USER:
+			return (1ULL << 29);
+		case MLINK_CMD_SOURCE_SMARTSLOT1:
+			return (1ULL << 30);
+		case MLINK_CMD_SOURCE_INTERNAL1:
+			return (1ULL << 31);
+		}
+		break;
+	}
+
+	return 0;
+}
+
 static void microlink_read_config(void)
 {
 	const char *value;
@@ -192,6 +295,16 @@ static void microlink_read_config(void)
 			show_internals = parsed;
 		} else {
 			fatalx(EXIT_FAILURE, "apcmicrolink: invalid showinternals value '%s'",
+				value);
+		}
+	}
+
+	if (testvar("cmdsrc")) {
+		value = getval("cmdsrc");
+		if (value == NULL) {
+			microlink_command_source = MLINK_CMD_SOURCE_RJ45;
+		} else if (!microlink_parse_command_source(value, &microlink_command_source)) {
+			fatalx(EXIT_FAILURE, "apcmicrolink: invalid cmdsrc value '%s'",
 				value);
 		}
 	}
@@ -632,7 +745,7 @@ static int microlink_set_descriptor_hex_info(const char *name, const char *path)
 	}
 
 	/* Keep fixed-size identity fields readable and comparable with Modbus. */
-	snprintf(text, sizeof(text), "0x%0*llX", (int)(usage->size * 2),
+	snprintf(text, sizeof(text), "%0*llx", (int)(usage->size * 2),
 		(unsigned long long)raw);
 	dstate_setinfo(name, "%s", text);
 	return 1;
@@ -877,8 +990,8 @@ static int microlink_handle_outlet_cmd(const char *nut_cmdname, const char *extr
 	}
 
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
-	if (!microlink_send_descriptor_mask_value("2:4.B5",
-		apc_build_outlet_command(cmd_type, target_bits) | APC_OUTLET_CMD_SOURCE_LOCAL_USER)) {
+	if (!microlink_send_command_descriptor_mask_value("2:4.B5",
+		apc_build_outlet_command(cmd_type, target_bits) | microlink_command_source_bit(MLINK_CMD_DOMAIN_OUTLET))) {
 		*result = STAT_INSTCMD_FAILED;
 		return 1;
 	}
@@ -896,21 +1009,21 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 	}
 
 	if (!strcasecmp(nut_cmdname, "test.battery.start")) {
-		value = APC_BATTERY_TEST_CMD_START | APC_BATTERY_TEST_CMD_LOCAL_USER;
+		value = APC_BATTERY_TEST_CMD_START;
 	} else if (!strcasecmp(nut_cmdname, "test.battery.stop")) {
-		value = APC_BATTERY_TEST_CMD_ABORT | APC_BATTERY_TEST_CMD_LOCAL_USER;
+		value = APC_BATTERY_TEST_CMD_ABORT;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
 		value = APC_USER_IF_CMD_SHORT_TEST;
 	} else if (!strcasecmp(nut_cmdname, "beeper.mute")) {
 		value = APC_USER_IF_CMD_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start")) {
-		value = APC_RUNTIME_CAL_CMD_START | APC_RUNTIME_CAL_CMD_LOCAL_USER;
+		value = APC_RUNTIME_CAL_CMD_START;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.stop")) {
-		value = APC_RUNTIME_CAL_CMD_ABORT | APC_RUNTIME_CAL_CMD_LOCAL_USER;
+		value = APC_RUNTIME_CAL_CMD_ABORT;
 	} else if (!strcasecmp(nut_cmdname, "bypass.start")) {
-		value = APC_UPS_CMD_OUTPUT_INTO_BYPASS | APC_UPS_CMD_LOCAL_USER;
+		value = APC_UPS_CMD_OUTPUT_INTO_BYPASS;
 	} else if (!strcasecmp(nut_cmdname, "bypass.stop")) {
-		value = APC_UPS_CMD_OUTPUT_OUT_OF_BYPASS | APC_UPS_CMD_LOCAL_USER;
+		value = APC_UPS_CMD_OUTPUT_OUT_OF_BYPASS;
 	} else {
 		return 0;
 	}
@@ -918,16 +1031,19 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 
 	if (!strcasecmp(nut_cmdname, "test.battery.start") || !strcasecmp(nut_cmdname, "test.battery.stop")) {
-		*result = microlink_send_descriptor_mask_value("2:10", value)
+		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_BATTERY_TEST);
+		*result = microlink_send_command_descriptor_mask_value("2:10", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start") || !strcasecmp(nut_cmdname, "beeper.mute")) {
-		*result = microlink_send_descriptor_mask_value("2:4.B.3B", value)
+		*result = microlink_send_command_descriptor_mask_value("2:4.B.3B", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start") || !strcasecmp(nut_cmdname, "calibrate.stop")) {
-		*result = microlink_send_descriptor_mask_value("2:12", value)
+		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_RUNTIME_CAL);
+		*result = microlink_send_command_descriptor_mask_value("2:12", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else {
-		*result = microlink_send_descriptor_mask_value("2:14", value)
+		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_UPS);
+		*result = microlink_send_command_descriptor_mask_value("2:14", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	}
 
@@ -1224,6 +1340,10 @@ static int microlink_send_descriptor_write(const char *path, const unsigned char
 		return 0;
 	}
 
+	/* Make the attempted descriptor write visible before the raw frame is sent. */
+	upsdebugx(2, "microlink: write %s page=%zu offset=%zu size=%zu",
+		path, page, offset, usage->size);
+
 	if (!microlink_send_write((unsigned char)page, (unsigned char)offset,
 		(unsigned char)usage->size, payload)) {
 		return 0;
@@ -1259,6 +1379,21 @@ static int microlink_send_descriptor_mask_value(const char *path, uint64_t mask)
 	}
 
 	return microlink_send_descriptor_write(path, payload, usage->size);
+}
+
+static int microlink_send_command_descriptor_mask_value(const char *path, uint64_t mask)
+{
+	/* Command writes should happen after the current poll turn has been consumed. */
+	if (poll_primed) {
+		upsdebugx(2, "microlink: draining in-flight poll before command write");
+		if (!microlink_receive_once()) {
+			return 0;
+		}
+		poll_primed = 0;
+		consecutive_timeouts = 0;
+	}
+
+	return microlink_send_descriptor_mask_value(path, mask);
 }
 
 static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_t *entry,
@@ -2140,7 +2275,8 @@ static int microlink_poll_once(void)
 
 	if (microlink_receive_once()) {
 		consecutive_timeouts = 0;
-		return microlink_prime_poll();
+		poll_primed = 0;
+		return 1;
 	}
 
 	poll_primed = 0;
@@ -2279,6 +2415,7 @@ static int setvar(const char *varname, const char *val)
 	if (entry != NULL && (entry->access & MLINK_DESC_RW)) {
 		microlink_format_name_template(entry->path, index,
 			MLINK_NAME_INDEX_ZERO_BASED, path, sizeof(path));
+		upsdebugx(2, "microlink: setvar %s -> %s via %s", varname, val, path);
 		if (microlink_send_descriptor_typed_value(entry, path, val)) {
 			microlink_publish_identity();
 			microlink_publish_runtime();
@@ -2460,6 +2597,8 @@ void upsdrv_makevartable(void)
 		"Show Microlink internal runtime values (yes/no, default follows debug mode)");
 	addvar(VAR_VALUE, "showunmapped",
 		"Show unmapped Microlink descriptor values (yes/no, default follows debug mode)");
+	addvar(VAR_VALUE, "cmdsrc",
+		"Microlink command source: rj45, usb, localuser, smartslot1, internalnetwork1 (default: rj45)");
 }
 
 void upsdrv_help(void)
