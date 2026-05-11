@@ -1,6 +1,9 @@
 #
 # Network UPS Tools: AppVeyor CI build recipe: NUT for Windows with MSYS2/MinGW x64
 #
+# Copyright (C) 2022-2026	Jim Klimov <jimklimov+nut@gmail.com>
+#
+# Inspired by docs:
 # https://www.msys2.org/docs/ci/
 # https://www.appveyor.com/docs/appveyor-yml/
 # https://www.appveyor.com/docs/build-configuration/
@@ -29,6 +32,7 @@ environment:
   CCACHE_DIR: /home/appveyor/.ccache
   DO_CLEAN_NUTCI_CACHE: no
   DO_USE_NUTCI_CACHE: yes
+  MSYS: "winsymlinks:nativestrict"
 
 # Customize GH notification message template
 # TODO: for repetitive commits in a PR consider a clean-up GHA like
@@ -172,7 +176,8 @@ after_test:
         C:\msys64\usr\bin\bash -lc 'date -u; set -e ; rm -rf ./.inst/NUT-for-Windows-x86_64-SNAPSHOT || true ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; )'
         C:\msys64\usr\bin\bash -lc 'date -u'
         cd .inst
-        7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
+        REM 7z -snh: hoping for a version that can save hardlinks as such, and in 7z format to boot:
+        7z a -snh ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
 
   # Consider APPVEYOR_PULL_REQUEST_HEAD_COMMIT (PR) vs APPVEYOR_REPO_COMMIT (target branch, or ephemeral)
   - ps: |
