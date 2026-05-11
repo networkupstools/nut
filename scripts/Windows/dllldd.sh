@@ -67,6 +67,11 @@ discover_COMPILER_PATHS() {
 			COMPILER_PATHS="`\"${ARCH}-g++\" --print-search-dirs | ${GREP} libraries: | sed 's,^libraries: *=/,/,'`"
 		fi
 	fi
+
+	COMPILER_PATHS_MULTILINE=""
+	if [ -n "${COMPILER_PATHS}" ] ; then
+		COMPILER_PATHS_MULTILINE="`echo \"${COMPILER_PATHS}\" | tr ':' '\n'`"
+	fi
 }
 discover_COMPILER_PATHS
 
@@ -91,10 +96,14 @@ dllldd_with_tools() (
 	export LANG LC_ALL
 
 	# Assume forward-slash separated path components:
-	SEARCH_INPUT_PATH="`for F in \"$@\" ; do echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
-	&& [ -n "$SEARCH_INPUT_PATH" ] \
-	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
-	|| SEARCH_INPUT_PATH=""
+	SEARCH_INPUT_PATH=""
+	SEARCH_INPUT_PATH_MULTILINE="`for F in \"$@\" ; do echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq`" \
+	&& [ -n "${SEARCH_INPUT_PATH_MULTILINE}" ] \
+	&& {
+		SEARCH_INPUT_PATH="`echo \"${SEARCH_INPUT_PATH_MULTILINE}\" | tr '\n' ':' | sed s',:*$,,'`" \
+		&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
+		|| SEARCH_INPUT_PATH=""
+	}
 
 	if [ -n "$SEARCH_INPUT_PATH" ] ; then
 		# Here add (our buld products) last in path,
@@ -130,7 +139,7 @@ dllldd_with_tools() (
 				fi
 				if [ -n "$SEARCH_INPUT_PATH" ] ; then
 					SEEN_INPUT=false
-					for D in `echo "${SEARCH_INPUT_PATH}" | tr ':' '\n'` ; do
+					for D in ${SEARCH_INPUT_PATH_MULTILINE} ; do
 						OUT="`find \"$D\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
 						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN_INPUT=true ; break ; }
 					done
@@ -149,9 +158,8 @@ dllldd_with_tools() (
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 
-				if [ -n "$COMPILER_PATHS" ] ; then
-					COMPILER_PATHS="`echo \"$COMPILER_PATHS\" | tr ':' '\n'`"
-					for P in $COMPILER_PATHS ; do
+				if [ -n "${COMPILER_PATHS_MULTILINE}" ] ; then
+					for P in ${COMPILER_PATHS_MULTILINE} ; do
 						OUT="`ls -1 \"${P}/$F\" 2>/dev/null || true`" \
 						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue 2 ; }
 					done
@@ -212,6 +220,7 @@ dllldd() (
 	RES=0
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
 	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
+
 	( # Subshell to sort results in the end
 	SEARCH_INPUT_PATH="`for F in \"$@\" ; do  echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
 	&& [ -n "$SEARCH_INPUT_PATH" ] \
@@ -222,14 +231,19 @@ dllldd() (
 		SEARCH_DLL_PATH="${SEARCH_INPUT_PATH}:${SEARCH_DLL_PATH}"
 	fi
 
+	SEARCH_DLL_PATH_MULTILINE="`echo \"${SEARCH_DLL_PATH}\" | tr ':' '\n'`"
+
 	if [ -n "${OUT_TOOLS}" ] ; then
+		# Report (presumed fully-qualified) findings from objdump/ldd
 		echo "${OUT_TOOLS}"
 	fi
+
 	if [ -n "${OUT_STRINGS}" ] ; then
 		# NOTE: Strings built into binaries might have Windows back-slashes,
 		# so just in case - cater for them too here:
 		OUT_STRINGS_FULL="`echo \"${OUT_STRINGS}\" | ${EGREP} '[/\\]'`" || OUT_STRINGS_FULL=""
 		if [ -n "${OUT_STRINGS_FULL}" ] ; then
+			# Report full names right away, iterate only those that remain
 			echo "${OUT_STRINGS_FULL}"
 			OUT_STRINGS="`echo \"${OUT_STRINGS}\" | ${EGREP} -v '[/\\]'`"
 		fi
@@ -246,16 +260,20 @@ dllldd() (
 			# WARNING: Can return things in system path
 			# command -v "$S" && continue
 
-			echo "${SEARCH_DLL_PATH}" | tr ':' '\n' | {
-				while read D ; do
-					if [ -s "$D/$S" ]; then
-						echo "$D/$S"
-						exit
-					fi
-				done
+			SEEN_INPUT=false
+			for D in ${SEARCH_DLL_PATH_MULTILINE} ; do
+				if [ -s "$D/$S" ]; then
+					echo "$D/$S"
+					SEEN_INPUT=true
+					break
+				fi
+			done
 
-				echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
-			}
+			if $SEEN_INPUT ; then
+				continue
+			fi
+
+			echo "WARNING: '$S' was not found in searched locations (system paths) by strings matcher!" >&2
 		done
 	fi
 	) | sort | uniq
