@@ -206,6 +206,12 @@ dllldd_with_strings() (
 	| filter_away_system_DLLs \
 	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
+		# Skip out if we already reported this file
+		# (The for/case loop below is surprisingly expensive on MSYS2)
+		if [ -n "$TEMPFILE_REC" ] && ${EGREP} '^(/.*/)*'"$DLL"'$' "$TEMPFILE_REC" >/dev/null 2>/dev/null ; then
+			exit
+		fi
+
 		# Avoid looping on at least self-reference in a file
 		for S in "$@" ; do
 			# echo "=== Compare '$DLL' to '$S'" >&2
@@ -216,6 +222,7 @@ dllldd_with_strings() (
 				*/"$DLL") exit ;;
 			esac
 		done
+
 		# echo "=== '$DLL' not in '$@'" >&2
 		echo "$DLL"
 	) ; done
