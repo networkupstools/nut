@@ -5,6 +5,8 @@
 # environment. It can do so recursively, to facilitate installation of NUT
 # for Windows, bundled with open-source dependencies.
 #
+# Assumes no whitespace in dir/file names, and forward slash as separator.
+#
 # Copyright (C)
 #   2022-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
@@ -88,7 +90,8 @@ dllldd_with_tools() (
 	LC_ALL=C
 	export LANG LC_ALL
 
-	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
+	# Assume forward-slash separated path components:
+	SEARCH_INPUT_PATH="`for F in \"$@\" ; do echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
 	&& [ -n "$SEARCH_INPUT_PATH" ] \
 	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
 	|| SEARCH_INPUT_PATH=""
@@ -210,7 +213,7 @@ dllldd() (
 	OUT_TOOLS="`dllldd_with_tools \"$@\"`" && [ -n "${OUT_TOOLS}" ] || RES=$?
 	OUT_STRINGS="`dllldd_with_strings \"$@\" | filter_away_NUT_DLLs`" && [ -n "${OUT_STRINGS}" ] && RES=0
 	( # Subshell to sort results in the end
-	SEARCH_INPUT_PATH="`for F in \"$@\" ; do dirname \"$F\" ; done | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
+	SEARCH_INPUT_PATH="`for F in \"$@\" ; do  echo \"$F\" ; done | sed -e 's,^\(.*\)/[^/]*$,\1,' | sort | uniq | tr '\n' ':' | sed s',:*$,,'`" \
 	&& [ -n "$SEARCH_INPUT_PATH" ] \
 	&& echo "$SEARCH_INPUT_PATH" | ${EGREP} '[^:]' >/dev/null \
 	|| SEARCH_INPUT_PATH=""
@@ -223,6 +226,8 @@ dllldd() (
 		echo "${OUT_TOOLS}"
 	fi
 	if [ -n "${OUT_STRINGS}" ] ; then
+		# NOTE: Strings built into binaries might have Windows back-slashes,
+		# so just in case - cater for them too here:
 		OUT_STRINGS_FULL="`echo \"${OUT_STRINGS}\" | ${EGREP} '[/\\]'`" || OUT_STRINGS_FULL=""
 		if [ -n "${OUT_STRINGS_FULL}" ] ; then
 			echo "${OUT_STRINGS_FULL}"
