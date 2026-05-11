@@ -423,7 +423,12 @@ and list their set of required DLLs
 EOF
 			;;
 		dlllddrec|dllldd|dllldd_with_tools|dllldd_with_strings|dllldddir|dllldddir_pedantic) "$@" ;;
-		*) dlllddrec "$1" ;;
+		*)	if [ -d "$1" ] ; then
+				dllldddir "$1"
+			else
+				dlllddrec "$1"
+			fi
+			;;
 	esac
 
 	exit 0
