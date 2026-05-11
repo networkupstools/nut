@@ -109,14 +109,15 @@ dllldd_with_tools() (
 	fi
 	export LD_LIBRARY_PATH
 
-	# Otherwise try objdump, if ARCH is known (linux+mingw builds) or not (MSYS2 builds)
+	# First try objdump, if ARCH is known (linux+mingw builds)
+	# or not (MSYS2 builds)
 	SEEN=0
 	NOTSEEN_OD=""
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i 'DLL Name:' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
+			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
