@@ -4,7 +4,8 @@ UPSCLI_FIND_AUTHCONF(3)
 NAME
 ----
 
-upscli_find_authconf, upscli_free_authconf - Find and free authentication configuration items
+upscli_find_authconf, upscli_split_auth_section, upscli_free_authconf - Find,
+parse name, and free authentication configuration items
 
 SYNOPSIS
 --------
@@ -13,6 +14,13 @@ SYNOPSIS
 	#include <authconf.h>
 
 	upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port);
+
+	int upscli_split_auth_section(const char *sect_name,
+		char **normalized_sect_name,
+		char **normalized_sect_user,
+		int    *out_fixed_sect_user,
+		char **normalized_sect_host,
+		char **normalized_sect_port);
 
 	upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
 ------
@@ -32,6 +40,18 @@ The matching logic follows this priority:
 
 If a specific match is found, any missing fields in that section are
 inherited from the global defaults.
+
+The "*upscli_split_auth_section()*" function splits a `sect_name` which may be
+from a user-typed configuration file into user, host and port sections, and
+normalizes the values (e.g. a `NULL` 'host' becomes `localhost`, a missing
+'port' is defaulted to `NUT_PORT` defined at build configuration time, e.g.
+'3493' by default, and a non-numeric string 'port' is resolved in the naming
+database of the current operating environment).  Resulting normalized values
+are returned to caller using pointers provided in the arguments (if not `NULL`).
+A 'normalized_sect_name' can be also constructed and returned, so that varying
+but ultimately identical definitions of the section titles (e.g. `[@localhost]`
+and `[@localhost:3493]` can be conflated when parsing configuration files or
+searching in the list.
 
 The *upscli_free_authconf()* function frees the memory allocated for a single
 `upscli_authconf_t` node and returns its `next` pointer. This is useful for

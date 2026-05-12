@@ -49,6 +49,18 @@ void upscli_free_authconf_list(void);
  */
 int upscli_read_authconf(const char *filename, int fatal_errors);
 
+/** Take raw sect_name as input (e.g. a user-written string from config files).
+ * Normalize it by splitting into user, host, and port components (populating absent values).
+ * Return normalized components and reconstructed section name in output parameters (if not NULL),
+ * and 0 for successful completion or -1 if any error happened along the way.
+ */
+int upscli_split_auth_section(const char *sect_name,
+	char **normalized_sect_name,
+	char **normalized_sect_user,
+	int    *out_fixed_sect_user,
+	char **normalized_sect_host,
+	char **normalized_sect_port);
+
 /** Find the best matching authconf for a given connection string;
  * if all args are NULL, return the global section or NULL if none such in the list.
  */

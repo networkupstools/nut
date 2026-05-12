@@ -287,6 +287,130 @@ static void authconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Error in parseconf(authconf): %s", errmsg);
 }
 
+int upscli_split_auth_section(const char *sect_name,
+	char **normalized_sect_name,
+	char **normalized_sect_user,
+	int    *out_fixed_sect_user,
+	char **normalized_sect_host,
+	char **normalized_sect_port)
+{
+	/* Take raw sect_name as input (e.g. a user-written string from config files).
+	 * Normalize it by splitting into user, host, and port components (populating absent values).
+	 * Return normalized components and reconstructed section name in output parameters (if not NULL).
+	 */
+	const char	*at = NULL, *colon = NULL;
+	char	*sect_user = NULL, *sect_host = NULL, *sect_port = NULL;
+	int	fixed_sect_user = 0;
+
+	if (!sect_name) {
+		upsdebugx(1, "%s: sect_name is NULL", __func__);
+		return -1;
+	}
+
+	at = strchr(sect_name, '@');
+	colon = strchr(sect_name, ':');
+	if (at && colon && colon < at) {
+		upsdebugx(1, "%s: Invalid section header: colon ':' before at '@': '%s'", __func__, sect_name);
+		return -1;
+	}
+
+	fixed_sect_user = (at && at != sect_name);
+	if (fixed_sect_user) {
+		/* If section matched user@host:port, ensure user is set to this user */
+		sect_user = xstrdup(sect_name);
+		if (!sect_user) goto failed;
+		sect_user[at - sect_name] = '\0';
+	}
+
+	if (at) {
+		if (at + 1 != colon) {
+			sect_host = xstrdup(at + 1);
+			if (!sect_host) goto failed;
+			if (colon) {
+				sect_host[colon - at - 1] = '\0';
+			}
+		}	/* else keep NULL */
+	} else {
+		if (sect_name + 1 != colon) {
+			sect_host = xstrdup(sect_name);
+			if (!sect_host) goto failed;
+			if (colon) {
+				sect_host[colon - sect_name] = '\0';
+			}
+		}	/* else keep NULL */
+	}
+
+	if (colon && colon[1]) {
+		/* FIXME: As port is a string, resolve it (if not a number,
+		 *  try to get one via "services" naming database) */
+		sect_port = xstrdup(colon + 1);
+		if (!sect_port) goto failed;
+	}
+
+	if (!sect_host || !*sect_host) {
+		free(sect_host);
+		sect_host = xstrdup("localhost");
+		if (!sect_host) goto failed;
+	}
+
+	if (!sect_port || !*sect_port) {
+		free(sect_port);
+		sect_port = xcalloc(6, sizeof(char));
+		if (!sect_port) goto failed;
+		if (snprintf(sect_port, 6, "%u", NUT_PORT) < 1) {
+			upsdebugx(1, "%s: Failed to construct default port number", __func__);
+			goto failed;
+		}
+	}
+
+	/* Only now that we (almost) do not expect failures, we can
+	 * consistently populate caller's output variables (if any) */
+	if (normalized_sect_name) {
+		char	normalized_sect_name_buf[LARGEBUF];
+
+		if (snprintf(normalized_sect_name_buf, sizeof(normalized_sect_name_buf), "%s@%s:%s",
+			sect_user ? sect_user : "",
+			sect_host,
+			sect_port) > 0
+		) {
+			*normalized_sect_name = xstrdup(normalized_sect_name_buf);
+		} else {
+			upsdebugx(1, "%s: Failed to reconstruct normalized section header from '%s'", __func__, sect_name);
+			goto failed;
+		}
+	}
+
+	if (out_fixed_sect_user)
+		*out_fixed_sect_user = fixed_sect_user;
+
+	if (normalized_sect_user) {
+		*normalized_sect_user = sect_user;
+	} else {
+		free(sect_user);
+	}
+
+	if (normalized_sect_host) {
+		*normalized_sect_host = sect_host;
+	} else {
+		free(sect_host);
+	}
+
+	if (normalized_sect_port) {
+		*normalized_sect_port = sect_port;
+	} else {
+		free(sect_port);
+	}
+
+	return 0;
+
+failed:
+	free(sect_user);
+	free(sect_host);
+	free(sect_port);
+
+	return -1;
+}
+
 static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope);
 
 static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
@@ -299,8 +423,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 
 	/* Section header [section] */
 	if (arg[0][0] == '[' && arg[0][strlen(arg[0])-1] == ']') {
-		char	*sect_name = NULL, *at = NULL, *colon = NULL, *sect_user = NULL, *sect_host = NULL, *sect_port = NULL;
-		char	normalized_sect_name[LARGEBUF];
+		char	*sect_name = NULL, *sect_user = NULL, *sect_host = NULL, *sect_port = NULL, *normalized_sect_name = NULL;
 		upscli_authconf_t	*tmp = NULL;
 
 		if (!global_scope) {
@@ -311,51 +434,12 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		sect_name = xstrdup(&arg[0][1]);	/* forget leading '[' */
 		sect_name[strlen(sect_name)-1] = '\0';	/* forget trailing ']' */
 
-		at = strchr(sect_name, '@');
-		colon = strchr(sect_name, ':');
-		if (at && colon && colon < at) {
-			fatalx(LOG_WARNING, "Invalid section header: colon ':' before at '@'");
+		if (upscli_split_auth_section(sect_name, &normalized_sect_name,
+			&sect_user, &current_section_with_fixed_username,
+			&sect_host, &sect_port) < 0
+		) {
+			fatalx(EXIT_FAILURE, "Invalid nutauth section header: %s", NUT_STRARG(sect_name));
 		}
-
-		current_section_with_fixed_username = (at && at != sect_name);
-		if (current_section_with_fixed_username) {
-			/* If section matched user@host:port, ensure user is set to this user */
-			sect_user = xstrdup(sect_name);
-			sect_user[at - sect_name] = '\0';
-		}
-
-		if (at) {
-			if (at + 1 != colon) {
-				sect_host = xstrdup(at + 1);
-				if (colon) {
-					sect_host[colon - at - 1] = '\0';
-				}
-			}	/* else keep NULL */
-		} else {
-			if (sect_name + 1 != colon) {
-				sect_host = xstrdup(sect_name);
-				if (colon) {
-					sect_host[colon - at - 1] = '\0';
-				}
-			}	/* else keep NULL */
-		}
-
-		if (colon && colon[1]) {
-			sect_port = xstrdup(colon + 1);
-		}
-
-		if (!sect_host || !*sect_host)
-			sect_host = xstrdup("localhost");
-
-		if (!sect_port || !*sect_port) {
-			sect_port = xcalloc(6, sizeof(char));
-			snprintf(sect_port, 6, "%u", NUT_PORT);
-		}
-
-		snprintf(normalized_sect_name, sizeof(normalized_sect_name), "%s@%s:%s",
-			sect_user ? sect_user : "",
-			sect_host,
-			sect_port);
 
 		/* Find if section already exists */
 		tmp = authconf_list;
@@ -390,6 +474,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			}
 		}
 
+		free(normalized_sect_name);
 		free(sect_name);
 		free(sect_user);
 		free(sect_host);
@@ -514,6 +599,7 @@ upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, cons
 		return NULL;
 	}
 
+	/* FIXME? Unite somehow with upscli_split_auth_section()? */
 	if (host && port && *host && *port) {
 		snprintf(target_host_port, sizeof(target_host_port), "@%s:%s", host, port);
 	} else if (host && *host) {
