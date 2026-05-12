@@ -22,6 +22,12 @@ The *upscli_read_authconf()* function reads the specified 'filename' (which
 is usually the path to *nutauth.conf*) and populates an internal list of
 authentication and SSL configurations.
 
+If 'filename' is `NULL`, the function tries to locate either a per-user
+`${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`, or a site
+default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first). Such a
+file may `INCLUDE` further configurations (e.g. hop from a per-user file
+to load server-wide defaults) if desired.
+
 The file structure is similar to *ups.conf*, with global defaults and
 per-server sections named like `[@localhost:12345]` for host defaults,
 or `[username@localhost:12345]` for specific account overrides.

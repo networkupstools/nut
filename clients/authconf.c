@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 static upscli_authconf_t	*authconf_list = NULL;
 static upscli_authconf_t	*current_section = NULL;
@@ -573,13 +574,55 @@ int upscli_read_authconf(const char *filename, int fatal_errors)
 {
 	char	fn[NUT_PATH_MAX + 1];
 
-	if (!filename) {
-		snprintf(fn, sizeof(fn), "%s/nutauth.conf", confpath());
-		filename = fn;
-	}
-
 	/* Ensure we start fresh if called multiple times */
 	upscli_free_authconf_list();
+
+	if (!filename) {
+		/* Select a starting point - whichever default expected file exists;
+		 * it may INCLUDE further files as wanted by user or site sysadmin.
+		 */
+		struct stat	st;
+		char	*s = NULL;
+
+		s = getenv("HOME");
+		if (s) {
+			if (snprintf(fn, sizeof(fn), "%s/.config/nut/nutauth.conf", s) > 0) {
+				if (stat(fn, &st) == 0) {
+					filename = fn;
+					goto found;
+				}
+				upsdebugx(5, "%s: tried to default '%s' but it was not there", __func__, fn);
+			}
+
+			if (snprintf(fn, sizeof(fn), "%s/.nutauth.conf", s) > 0) {
+				if (stat(fn, &st) == 0) {
+					filename = fn;
+					goto found;
+				}
+				upsdebugx(5, "%s: tried to default '%s' but it was not there", __func__, fn);
+			}
+		}
+
+		if (snprintf(fn, sizeof(fn), "%s/nutauth.conf", confpath()) > 0) {
+			if (stat(fn, &st) == 0) {
+				filename = fn;
+				goto found;
+			}
+			upsdebugx(5, "%s: tried to default '%s' but it was not there", __func__, fn);
+		}
+
+found:
+		if (filename) {
+			upsdebugx(1, "%s: defaulted to %s", __func__, filename);
+		} else {
+			if (fatal_errors) {
+				fatalx(EXIT_FAILURE, "Can't open a user/site-provided default nutauth.conf file");
+			} else {
+				upslogx(LOG_WARNING, "Can't open a user/site-provided default nutauth.conf file");
+				return -1;
+			}
+		}
+	}
 
 	return parse_authconf_file(filename, fatal_errors, 1);
 }

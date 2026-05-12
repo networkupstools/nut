@@ -45,7 +45,10 @@ upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
 void upscli_free_authconf_list(void);
 
 /** Read the authentication configuration file (usually nutauth.conf)
- * returns -1 on error, 1 on success
+ * If filename==NULL, tries to locate per-user ${HOME}/.config/nut/nutauth.conf
+ * and ${HOME}/.nutauth.conf, or site default ${nutconfdir}/nutauth.conf
+ * (whichever is found first); then one can follow `INCLUDE` trail if needed.
+ * Returns -1 on error, 1 on success
  */
 int upscli_read_authconf(const char *filename, int fatal_errors);
 
