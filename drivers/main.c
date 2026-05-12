@@ -2184,6 +2184,7 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	opt_ret = 0, do_forceshutdown = 0, i;
 	int	update_count = 0;
+	int	background_pipefd[2];
 
 # ifndef WIN32
 	int	cmd = 0;
@@ -2995,6 +2996,31 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
+	if (foreground == 0) {
+		/* start backgrounding */
+		int ret, pid;
+
+		ret = pipe(background_pipefd);
+		if (ret)
+			fatal_with_errno(EXIT_FAILURE, "pipe creation failed");
+
+		pid = background_fork();
+		if (pid > 0) {
+			/* parent: wait for child to send success or exit */
+			char ch;
+
+			close(background_pipefd[1]);
+			// Wait for child
+			ret = read(background_pipefd[0], &ch, 1);
+
+			close(background_pipefd[0]);
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			_exit(ret == 1 ? EXIT_SUCCESS : EXIT_FAILURE);
+		}
+	}
+
 	dstate_setinfo("driver.state", "init.device");
 	upsdrv_callbacks.upsdrv_initups();
 	dstate_setinfo("driver.state", "init.quiet");
@@ -3192,11 +3218,19 @@ sockname_ownership_finished:
 
 	switch (foreground) {
 		case 0:
-			background();
 			/* We had saved a PID before backgrounding, but
 			 * it changes when backgrounding - so save again
 			 */
 			writepid(pidfn);
+
+			/* close handles */
+			background_child();
+
+			/* notify parent of success */
+			i = write(background_pipefd[1], "G", 1);
+			if (i < 1)
+				upslogx(LOG_ERR, "Unable to call parent pipe for shutdown");
+			close(background_pipefd[1]);
 			break;
 
 		/* >0: Keep the initial PID; don't care about "!dump_data" here

@@ -797,29 +797,24 @@ void open_syslog(const char *progname)
 #endif	/* WIN32 */
 }
 
-/* close ttys and become a daemon */
-void background(void)
+int background_fork(void)
 {
-	/* Normally we enable SYSLOG and disable STDERR,
-	 * unless NUT_DEBUG_SYSLOG envvar interferes as
-	 * interpreted in syslog_is_disabled() method: */
-	int	syslog_disabled = syslog_is_disabled(),
-		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
+	int	pid = 0;
 
 #ifndef WIN32
-	int	pid;
-
 	if ((pid = fork()) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
 #endif	/* !WIN32 */
 
-	if (!syslog_disabled)
-		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
-		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
-	if (stderr_disabled)
-		/* NUT_DEBUG_SYSLOG="none" or unset/invalid */
-		xbit_clear(&upslog_flags, UPSLOG_STDERR);
+	return pid;
+}
 
+/* close ttys and become a daemon */
+void background(void)
+{
+	int	pid;
+
+	pid = background_fork();
 #ifndef WIN32
 	if (pid != 0) {
 		/* parent */
@@ -829,8 +824,26 @@ void background(void)
 		close(STDERR_FILENO);
 		_exit(EXIT_SUCCESS);
 	}
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
+	background_child();
+}
 
-	/* child */
+void background_child(void)
+{
+	/* Normally we enable SYSLOG and disable STDERR,
+	 * unless NUT_DEBUG_SYSLOG envvar interferes as
+	 * interpreted in syslog_is_disabled() method: */
+	int	syslog_disabled = syslog_is_disabled(),
+		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
+
+	if (!syslog_disabled)
+		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
+		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	if (stderr_disabled)
+		/* NUT_DEBUG_SYSLOG="none" or unset/invalid */
+		xbit_clear(&upslog_flags, UPSLOG_STDERR);
 
 	/* make fds 0-2 (typically) point somewhere defined */
 # ifdef HAVE_DUP2
@@ -887,9 +900,6 @@ void background(void)
 # ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 # endif
-#else	/* WIN32 */
-	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
-#endif	/* WIN32 */
 
 	upslogx(LOG_INFO, "Startup successful: %s", getmyprocbasename());
 }
