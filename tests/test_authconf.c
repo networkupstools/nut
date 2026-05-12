@@ -64,8 +64,14 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("=== Parsed configuration:\n");
-	num_sections = upscli_dump_authconf_list(NULL);
+	printf("=== Parsed configuration (production view):\n");
+	/* Not "for_debug", but how would this info look in a config file */
+	num_sections = upscli_dump_authconf_list(NULL, 0);
+	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
+
+	printf("=== Parsed configuration (debug view):\n");
+	/* With "for_debug", show all fields (highlight NULLs) */
+	num_sections = upscli_dump_authconf_list(NULL, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 
 	/* Test matching */
@@ -148,7 +154,7 @@ int main(int argc, char **argv)
 			printf("No bogus match OK: got global section\n");
 		} else {
 			printf("No bogus match FAILED: had a hit\n");
-			upscli_dump_authconf(NULL, ac);
+			upscli_dump_authconf(NULL, ac, 1);
 			return 1;
 		}
 	} else {

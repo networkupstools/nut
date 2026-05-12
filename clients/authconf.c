@@ -74,41 +74,144 @@ upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node)
 	return NULL;
 }
 
-int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node)
+static int upscli_dump_authconf_line_str(FILE *restrict stream, const char *var, const char *val, const char *indent, int for_debug)
 {
+	/* Assume sane inputs from upscli_dump_authconf(); val may be NULL */
+	int	res = 0;
+	if (!val) {
+		if (for_debug) {
+			res = fprintf(stream,
+				"%s%s = <null>\n",
+				indent, var
+				);
+		}
+		return 0;
+	} else {
+		if (for_debug == 1 && *val) {
+			char	enc[LARGEBUF];
+			res = fprintf(stream,
+				"%s%s = \"%s\"\n",
+				indent, var, pconf_encode(val, enc, sizeof(enc))
+				);
+		} else {
+			res = fprintf(stream,
+				"%s%s = \"%s\"\n",
+				indent, var, val
+				);
+		}
+	}
+
+	if (res < 0) {
+		upsdebugx(5, "%s: failed (%d) to effectively print %s='%s'", __func__, res, NUT_STRARG(var), NUT_STRARG(val));
+	}
+	return res;
+}
+
+static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var, int val, const char *indent, int for_debug)
+{
+	/* Assume sane inputs from upscli_dump_authconf(); val may be NULL */
+	int res;
+
+	/* TOTHINK: Print "-1" values when not running "for_debug"?
+	 *  We do parse them to hop over to a better preference... */
+	NUT_UNUSED_VARIABLE(for_debug);
+
+	res = fprintf(stream,
+		"%s%s = %d\n",
+		indent, var, (int)val
+		);
+
+	if (res < 0) {
+		upsdebugx(5, "%s: failed (%d) to effectively print %s=%d", __func__, res, NUT_STRARG(var), val);
+	}
+	return res;
+}
+
+int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug)
+{
+	char	*indent = NULL;
+	int	res = 0, ret = 0;
+
 	if (!node)
 		return -1;
 
 	if (!stream)
 		stream = stdout;
 
-	return fprintf(stream,
-		"[%s]\n\tUSER = \"%s\"\n\tPASS = \"%s\"\n"
-		"\tCERTPATH = \"%s\"\n\tCERTFILE = \"%s\"\n"
-		"\tCERTIDENT_NAME = \"%s\"\n\tCERTIDENT_PASS = \"%s\"\n"
-		"\tSSLBACKEND = \"%s\"\n"
-		"\tCERTVERIFY = %i\n\tFORCESSL = %i\n\n",
-		NUT_STRARG(node->section),
-		NUT_STRARG(node->user),
-		NUT_STRARG(node->pass),
-		NUT_STRARG(node->certpath),
-		NUT_STRARG(node->certfile),
-		NUT_STRARG(node->certident),
-		NUT_STRARG(node->certpasswd),
-		NUT_STRARG(node->ssl_backend),
-		node->certverify,
-		node->forcessl
-	);
+	if (node->section && *(node->section)) {
+		indent = "\t";
+		res = fprintf(stream, "[%s]\n", node->section);
+	} else {
+		/* Global section */
+		if (for_debug) {
+			indent = "\t";
+			res = fprintf(stream, "[<null>]\n");
+		} else {
+			indent = "";
+			res = 0;
+		}
+	}
+
+	if (res < 0)
+		return res;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "USER", node->user, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "PASS", node->pass, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "CERTPATH", node->certpath, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "CERTFILE", node->certfile, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "CERTIDENT_NAME", node->certident, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "CERTIDENT_PASS", node->certpasswd, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_str(stream, "SSLBACKEND", node->ssl_backend, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_int(stream, "CERTVERIFY", node->certverify, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	res = upscli_dump_authconf_line_int(stream, "FORCESSL", node->forcessl, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
+	return ret;
 }
 
-size_t upscli_dump_authconf_list(FILE *restrict stream)
+size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug)
 {
 	upscli_authconf_t	*node = authconf_list;
 	size_t	count = 0;
 
 	while (node) {
 		count++;
-		upscli_dump_authconf(stream, node);
+		upscli_dump_authconf(stream, node, for_debug);
 		node = node->next;
 	}
 
