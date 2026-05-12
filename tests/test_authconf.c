@@ -67,6 +67,12 @@ int main(int argc, char **argv)
 	fprintf(f, "  USER = otheruser\n");
 	fclose(f);
 
+#ifdef DEBUG
+	if (upscli_read_authconf(NULL, 0) != 1) {
+		fprintf(stderr, "INFO: Default read_authconf failed (no user/site-provided config found)\n");
+	}
+#endif
+
 	if (upscli_read_authconf(test_conf, 1) != 1) {
 		fprintf(stderr, "read_authconf failed\n");
 		return 1;
