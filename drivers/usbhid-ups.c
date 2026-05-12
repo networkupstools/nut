@@ -1971,9 +1971,13 @@ void upsdrv_cleanup(void)
 	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
+	pDesc = NULL;
+	reportbuf = NULL;
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+	exact_matcher = NULL;
+	regex_matcher = NULL;
 
 	free(curDevice.Vendor);
 	free(curDevice.Product);
@@ -1983,6 +1987,7 @@ void upsdrv_cleanup(void)
 # if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	free(curDevice.BusPort);
 # endif
+	memset(&curDevice, '\0', sizeof(curDevice));
 #endif	/* !SHUT_MODE => USB */
 }
 
