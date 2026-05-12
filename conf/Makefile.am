@@ -7,7 +7,7 @@ INSTALL_0600 = $(INSTALL) -m 0600
 # Note: ups.conf is a secured file, because for networked devices
 # it can contain SNMP, NetXML, IPMI or similar credentials
 SECFILES_STATIC = upsd.conf.sample upsd.users.sample ups.conf.sample
-SECFILES_GENERATED = upsmon.conf.sample
+SECFILES_GENERATED = upsmon.conf.sample nutauth.conf.sample
 PUBFILES_STATIC = nut.conf.sample
 PUBFILES_GENERATED = upssched.conf.sample
 CGIPUB_STATIC = hosts.conf.sample upsset.conf.sample
@@ -31,7 +31,7 @@ nodist_conf_examples_DATA = $(SECFILES_GENERATED) $(PUBFILES_GENERATED) \
  $(CGI_INSTALL_GENERATED)
 
 SPELLCHECK_SRC = $(dist_sysconf_DATA) \
- upssched.conf.sample.in upsmon.conf.sample.in \
+ nutauth.conf.sample.in upssched.conf.sample.in upsmon.conf.sample.in \
  upsstats-modern-list.html.sample.in upsstats-modern-single.html.sample.in \
  upsstats.html.sample.in upsstats-single.html.sample.in
 
@@ -55,6 +55,6 @@ SPELLCHECK_SRC = $(dist_sysconf_DATA) \
 spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-
+# WARNING: Do not clean away files generated from templates by configure script!
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 CLEANFILES = *.pdf *.html *-spellchecked

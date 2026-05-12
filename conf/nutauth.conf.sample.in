@@ -1,0 +1,43 @@
+# The `nutauth.conf` file conveys information needed for NUT clients to
+# authenticate themselves to a NUT data server, as well as to validate
+# that this is a server they want to trust (when SSL/TLS mode is used).
+#
+# By default, these files are located in either a per-user location like
+# `${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`, or a
+# site default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first).
+# Such a file may `INCLUDE` further configurations (e.g. hop from a
+# per-user file to load server-wide defaults) if desired.
+#
+# While it usually suffices to have one client certificate for all servers,
+# it may be that some remote system owned/managed by a different department
+# would insist on *themselves* issuing (and revoking) certificates for their
+# equipment. In this case, you can specify connection-specific settings.
+
+# Example contents:
+#
+# # Global section, inherited and overridden per line by others:
+# CERTPATH = @CONFPATH@/certs/client
+# # CERTFILE is only relevant for OpenSSL:
+# CERTFILE = @CONFPATH@/certs/client/nut-client-hostname.pem
+# CERTIDENT_NAME = "NUT Client"
+# CERTIDENT_PASS = "KeyP@$$phrase!"
+# CERTVERIFY = 1
+# FORCESSL = -1
+#
+# [@localhost]
+#       USER = "admin"
+#       PASS = "Adm1n!Pass"
+#
+# [upsmonuser@localhost]
+#       PASS = "monitor"
+#       # Note you can not override USER in this context,
+#       # where it is part of section name
+#
+# [@remote-host:34935]
+#       USER = "other-user"
+#       PASS = "other_pass"
+#       CERTPATH = @CONFPATH@/certs/client-for-remote-host
+#       CERTIDENT_NAME = "NUT Client for remote host"
+#       CERTIDENT_PASS = "C00lP@$$"
+#       CERTVERIFY = 1
+#       FORCESSL = 1
