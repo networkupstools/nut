@@ -18,6 +18,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <ctype.h>
+
+#ifndef WIN32
+# include <netdb.h>
+#else /* => WIN32 */
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+# include <ws2tcpip.h>
+# include <wspiapi.h>
+/* This override network system calls to adapt to Windows specificity */
+# define W32_NETWORK_CALL_OVERRIDE
+# include "wincompat.h"
+# undef W32_NETWORK_CALL_OVERRIDE
+#endif	/* WIN32 */
 
 static upscli_authconf_t	*authconf_list = NULL;
 static upscli_authconf_t	*current_section = NULL;
@@ -344,9 +358,34 @@ int upscli_split_auth_section(const char *sect_name,
 	}
 
 	if (colon && colon[1]) {
-		/* FIXME: As port is a string, resolve it (if not a number,
-		 *  try to get one via "services" naming database) */
-		sect_port = xstrdup(colon + 1);
+		/* As port is a string, resolve it (if not a number,
+		 * try to get one via "services" naming database) */
+		const char	*p = colon + 1;
+		int	is_numeric = 1;
+
+		while (*p) {
+			if (!isdigit((unsigned char)*p)) {
+				is_numeric = 0;
+				break;
+			}
+			p++;
+		}
+
+		if (is_numeric) {
+			sect_port = xstrdup(colon + 1);
+		} else {
+			struct servent	*se = getservbyname(colon + 1, "tcp");
+
+			if (se) {
+				char	portbuf[16];
+				snprintf(portbuf, sizeof(portbuf), "%u", ntohs(se->s_port));
+				sect_port = xstrdup(portbuf);
+			} else {
+				/* Resolution failed, fall back to original string */
+				sect_port = xstrdup(colon + 1);
+			}
+		}
+
 		if (!sect_port) goto failed;
 	}
 
