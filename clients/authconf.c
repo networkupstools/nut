@@ -324,6 +324,12 @@ int upscli_split_auth_section(const char *sect_name,
 		return -1;
 	}
 
+	if (!(*sect_name)) {
+		/* TOTHINK: Should this mean `localhost@NUT_PORT`? Or global? Probably neither. */
+		upsdebugx(1, "%s: sect_name is empty", __func__);
+		return -1;
+	}
+
 	at = strchr(sect_name, '@');
 	colon = strchr(sect_name, ':');
 	if (at && colon && colon < at) {
