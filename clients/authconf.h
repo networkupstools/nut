@@ -54,13 +54,20 @@ int upscli_read_authconf(const char *filename, int fatal_errors);
  */
 upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port);
 
-/** Print ultimate configuration to specified stream (stdout if NULL)
- * and return the number of nodes in the current authconf list */
-size_t upscli_dump_authconf_list(FILE *restrict stream);
+/** Print one node to the specified stream (stdout if NULL),
+ * return code similar to fprintf() - sum of printed characters.
+ *
+ * The for_debug value controls the verbosity of the output:
+ * 0 - do not print NULL strings, do not indent global section
+ * 1 - print <null> strings, indent global [<null>] section as any other
+ * 2 - like 1, but do not escape special characters in strings (only double-quote them).
+ *
+ * Used from upscli_dump_authconf_list() */
+int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
 
-/** Print one node to specified stream (stdout if NULL), return fprintf() return code;
- * used from upscli_dump_authconf_list() */
-int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node);
+/** Print ultimate configuration to the specified stream (stdout if NULL)
+ * and return the number of nodes in the current authconf list */
+size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug);
 
 #ifdef __cplusplus
 }

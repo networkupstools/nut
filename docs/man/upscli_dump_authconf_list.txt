@@ -12,9 +12,9 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	size_t upscli_dump_authconf_list(FILE *restrict stream);
+	size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug);
 
-	int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node);
+	int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
 ------
 
 DESCRIPTION
@@ -29,6 +29,21 @@ to the specified 'stream'.
 
 These functions are primarily intended for debugging purposes to verify the
 content of the parsed configuration.
+
+If 'for_debug' is '0', 'NULL' strings are not dumped, and the global section
+(a 'node' with 'NULL' or empty 'section' field) is not indented. String
+contents are printed in double-quotes with appropriate encoding to escape
+characters special for NUT configuration parser. Theoretically, this could
+be used to populate a conforming NUT auth configuration file.
+
+If 'for_debug' is '1', 'NULL' strings are dumped as unquoted `<null>`, and
+the global section is titled as `[<null>]` and indented like any other.
+String contents are also printed in double-quotes with appropriate encoding.
+
+If 'for_debug' is '2', behavior is like with '1' except that string contents
+are printed in double-quotes but otherwise as they were (result may be invalid
+for subsequent re-parsing, if there are unfortunate combinations of special
+characters).
 
 RETURN VALUE
 ------------
