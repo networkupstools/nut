@@ -23,6 +23,8 @@ static upscli_authconf_t	*current_section = NULL;
 static upscli_authconf_t	*global_defaults = NULL;
 static int	current_section_with_fixed_username = 0;
 
+static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope);
+
 upscli_authconf_t *upscli_get_authconf_list(void)
 {
 	return authconf_list;
@@ -411,8 +413,6 @@ failed:
 	return -1;
 }
 
-static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope);
-
 static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 {
 	/* Property: var = val */
@@ -537,6 +537,8 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope)
 {
 	PCONF_CTX_t	ctx;
+
+	check_perms(filename);
 
 	if (!pconf_init(&ctx, authconf_err)) {
 		if (fatal_errors) {
