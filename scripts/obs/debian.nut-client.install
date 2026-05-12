@@ -6,6 +6,7 @@ debian/tmp/sbin/upsmon
 debian/tmp/sbin/upssched
 debian/tmp/bin/upssched-cmd
 debian/tmp/etc/nut/nut.conf
+debian/tmp/etc/nut/nutauth.conf
 debian/tmp/etc/nut/upsmon.conf
 debian/tmp/etc/nut/upssched.conf
 debian/tmp/usr/share/augeas/lenses/dist/nuthostsconf.aug
