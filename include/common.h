@@ -286,6 +286,10 @@ void open_syslog(const char *progname);
 /* close ttys and become a daemon */
 void background(void);
 
+/* Support functions for backgrounding */
+int background_fork(void);
+void background_child(void);
+
 /* allow tagging the (forked) process in logs to ease debugging */
 const char *getproctag(void);
 /* save a copy of tag, or call with NULL to clean and free the internal buffer;
