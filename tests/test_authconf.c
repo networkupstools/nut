@@ -10,6 +10,7 @@
 
 #include "config.h"
 
+#include "common.h"
 #include "authconf.h"
 
 #include <unistd.h>
@@ -17,63 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-/* Mocks for functions usually provided by libcommon */
-void s_upsdebugx(int level, const char *fmt, ...) {
-	va_list	ap;
-
-	/*if (level > 1) return;*/
-	fprintf(stderr, "[D%d] ", level);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-}
-
-void s_upslogx(int priority, const char *fmt, ...) {
-	va_list	ap;
-
-	fprintf(stderr, "[PRIO:%d] ", priority);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-}
-
-void fatalx(int exitcode, const char *fmt, ...) {
-	va_list	ap;
-
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-	exit(exitcode);
-}
-
-void *xcalloc(size_t nmemb, size_t size) {
-	void	*p = calloc(nmemb, size);
-
-	if (!p) fatalx(EXIT_FAILURE, "out of memory");
-
-	return p;
-}
-
-char *xstrdup(const char *s) {
-	char	*p = strdup(s);
-
-	if (!p) fatalx(EXIT_FAILURE, "out of memory");
-
-	return p;
-}
-
-const char *confpath(void) {
-	return ".";
-}
-
-void set_close_on_exec(int fd) {
-	/* mock */
-	if (fd) return;
-}
 
 int main(int argc, char **argv)
 {
@@ -85,7 +29,7 @@ int main(int argc, char **argv)
 	char	buf[512];
 
 	if (argc > 1) {
-		s_upsdebugx(1, "Args ignored: '%s' etc.", argv[0]);
+		upsdebugx(1, "Args ignored: '%s' etc.", argv[0]);
 	}
 
 	/* Create dummy config files */
