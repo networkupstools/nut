@@ -865,6 +865,11 @@ SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+# Do not let it remove words it thinks are not needed (in interactive mode) --
+# default dictionaries differ from platform to platform, from decade to decade:
+ASPELL_NUT_COMMON_ARGS += --dont-validate-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-affixes
 # Note: If there is a need to use filter path (e.g. in mingw/msys2 builds),
 # it must be before --mode=tex (-t) option!
 ASPELL_NUT_TEXMODE_ARGS =
