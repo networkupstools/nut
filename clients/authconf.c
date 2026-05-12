@@ -744,11 +744,9 @@ found:
 
 upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port)
 {
-	char	target_user_host_port[LARGEBUF];
-	char	target_host_port[SMALLBUF];
-
 	if (!host && !port && !user) {
 		/* Global section only */
+		/* Should we just return global_defaults? */
 		upscli_authconf_t	*tmp = authconf_list;
 		while (tmp) {
 			if (!tmp->section || !*(tmp->section)) {
@@ -757,48 +755,61 @@ upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, cons
 			tmp = tmp->next;
 		}
 		return NULL;
-	}
-
-	/* FIXME? Unite somehow with upscli_split_auth_section()? */
-	if (host && port && *host && *port) {
-		snprintf(target_host_port, sizeof(target_host_port), "@%s:%s", host, port);
-	} else if (host && *host) {
-		snprintf(target_host_port, sizeof(target_host_port), "@%s:%u", host, (unsigned int)NUT_PORT);
-	} else if (port && *port) {
-		snprintf(target_host_port, sizeof(target_host_port), "@localhost:%s", port);
 	} else {
-		snprintf(target_host_port, sizeof(target_host_port), "@localhost:%u", (unsigned int)NUT_PORT);
-	}
+		char	*sect_user = (user ? xstrdup(user) : NULL),
+				*sect_host = (host ? xstrdup(host) : NULL),
+				*sect_port = (port ? xstrdup(port) : NULL),
+				*normalized_sect_name = NULL;
+		int	fixed_sect_user = 0;
+		upscli_authconf_t	*retval = global_defaults, *tmp = NULL;
 
-	snprintf(target_user_host_port, sizeof(target_user_host_port), "%s%s",
-		((user && *user) ? user : ""),
-		target_host_port	/* Note: includes the '@' */
-	);
+		if (upscli_normalize_auth_section_parts(
+			&normalized_sect_name,
+			&sect_user,
+			&fixed_sect_user,
+			&sect_host,
+			&sect_port) < 0)
+				goto finished;	/* return default */
 
-	/* 1. Try exact user@host:port */
-	if (target_user_host_port[0]) {
-		upscli_authconf_t	*tmp = authconf_list;
+		/* 1. Try exactly the best info we have: user@host:port (user may be or not be empty) */
+		tmp = authconf_list;
 		while (tmp) {
-			upsdebugx(2, "%s: matching '%s' against '%s'", __func__, target_user_host_port, NUT_STRARG(tmp->section));
-			if (tmp->section && !strcmp(tmp->section, target_user_host_port)) {
-				return tmp;
+			upsdebugx(2, "%s: matching '%s' against '%s'", __func__, normalized_sect_name, NUT_STRARG(tmp->section));
+			if (tmp->section && !strcmp(tmp->section, normalized_sect_name)) {
+				retval = tmp;
+				goto finished;
 			}
 			tmp = tmp->next;
 		}
-	}
 
-	/* 2. Try @host:port (host defaults) */
-	if (target_host_port[0]) {
-		upscli_authconf_t	*tmp = authconf_list;
-		while (tmp) {
-			upsdebugx(2, "%s: matching '%s' against '%s'", __func__, target_host_port, NUT_STRARG(tmp->section));
-			if (tmp->section && !strcmp(tmp->section, target_host_port)) {
-				return tmp;
+		/* 2. Retry @host:port (host defaults) if that can help? */
+		if (fixed_sect_user) {
+			const char	*target_host_port = strchr(normalized_sect_name, '@');
+
+			if (target_host_port[1]) {
+				target_host_port++;
+				upsdebugx(2, "%s: retry with shorter '@host:port' for host defaults (without the user part)", __func__);
+
+				tmp = authconf_list;
+				while (tmp) {
+					upsdebugx(2, "%s: matching '%s' against '%s'", __func__, target_host_port, NUT_STRARG(tmp->section));
+					if (tmp->section && !strcmp(tmp->section, target_host_port)) {
+						retval = tmp;
+						goto finished;
+					}
+					tmp = tmp->next;
+				}
 			}
-			tmp = tmp->next;
 		}
-	}
 
-	/* 3. Global defaults (section == NULL) */
-	return global_defaults;
+		/* 3. Global defaults (section == NULL) */
+		retval = global_defaults;
+
+finished:
+		free(sect_user);
+		free(sect_host);
+		free(sect_port);
+		free(normalized_sect_name);
+		return retval;
+	}
 }
