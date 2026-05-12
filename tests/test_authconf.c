@@ -140,7 +140,30 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* 4. Include match */
+	/* 4. Non-exact match */
+	printf("Checking non-exact match for 'somebody@localhost:12345'\n");
+	ac = upscli_find_authconf("somebody", "localhost", "12345");
+	if (ac) {
+		printf("Non-exact match: got user=%s pass=%s forcessl=%d\n",
+			ac->user ? ac->user : "NULL",
+			ac->pass ? ac->pass : "NULL",
+			ac->forcessl);
+
+		if (ac->user && strcmp(ac->user, "somebody") == 0
+		 && !ac->pass
+		 && ac->forcessl == 1
+		) {
+			printf("Non-exact match OK\n");
+		} else {
+			printf("Non-exact match FAILED (wrong values): expecting user='%s' pass=<null>\n", "somebody");
+			return 1;
+		}
+	} else {
+		printf("Non-exact match FAILED (no ac)\n");
+		return 1;
+	}
+
+	/* 5. Include match */
 	printf("Checking include match for '@otherhost'\n");
 	ac = upscli_find_authconf(NULL, "otherhost", NULL);
 	snprintf(buf, sizeof(buf), "@otherhost:%u", (unsigned int)NUT_PORT);
@@ -160,7 +183,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* 5. No bogus hits */
+	/* 6. No bogus hits */
 	printf("Checking NO match for '@otherhost:portnum' other than global section\n");
 	ac = upscli_find_authconf(NULL, "otherhost", "portnum");
 	if (ac) {
