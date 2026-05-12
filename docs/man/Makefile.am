@@ -812,7 +812,7 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
-UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API)
+UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API) upscli_init_authconf.$(MAN_SECTION_API)
 $(UPSCLI_INIT_DEPS): upscli_init.$(MAN_SECTION_API)
 	touch $@
 

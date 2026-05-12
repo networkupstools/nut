@@ -757,6 +757,21 @@ int upscli_init(int certverify, const char *certpath,
 	return upscli_init2(certverify, certpath, certname, certpasswd, NULL);
 }
 
+/* NOTE: Maybe eventually these two methods below will invert:
+ *  who is implementation of whom.
+ * TODO: Consider a method that parses our collection from
+ *  upscli_get_authconf_list() to upscli_add_host_cert() and
+ *  set up the one most applicable set of client identity data
+ *  for that [user@host:port] combo.
+ */
+int upscli_init_authconf(upscli_authconf_t *ac)
+{
+	if (!ac)
+		return -1;
+
+	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
+}
+
 int upscli_init2(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd,
 					const char *certfile)
