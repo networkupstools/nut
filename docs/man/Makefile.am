@@ -757,6 +757,7 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
 	upscli_get_authconf_list.$(MAN_SECTION_API) \
+	upscli_normalize_auth_section_parts.$(MAN_SECTION_API) \
 	upscli_split_auth_section.$(MAN_SECTION_API) \
 	upscli_free_authconf_list.$(MAN_SECTION_API) \
 	upscli_read_authconf.$(MAN_SECTION_API) \
@@ -829,6 +830,9 @@ upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN
 	touch $@
 
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
+	touch $@
+
+upscli_normalize_auth_section_parts.$(MAN_SECTION_API): upscli_get_authconf_list.$(MAN_SECTION_API)
 	touch $@
 
 upscli_split_auth_section.$(MAN_SECTION_API): upscli_get_authconf_list.$(MAN_SECTION_API)
@@ -986,6 +990,9 @@ upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_normalize_auth_section_parts.html: upscli_get_authconf_list.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_split_auth_section.html: upscli_get_authconf_list.html

@@ -4,7 +4,8 @@ UPSCLI_FIND_AUTHCONF(3)
 NAME
 ----
 
-upscli_find_authconf, upscli_split_auth_section, upscli_free_authconf - Find,
+upscli_find_authconf, upscli_normalize_auth_section_parts,
+upscli_split_auth_section, upscli_free_authconf - Find,
 parse name, and free authentication configuration items
 
 SYNOPSIS
@@ -13,7 +14,17 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port);
+	upscli_authconf_t *upscli_find_authconf(
+		const char *user,
+		const char *host,
+		const char *port);
+
+	int upscli_normalize_auth_section_parts(
+		char **out_normalized_sect_name,
+		char **p_sect_user,
+		int  *out_fixed_sect_user,
+		char **p_sect_host,
+		char **p_sect_port);
 
 	int upscli_split_auth_section(const char *sect_name,
 		char **normalized_sect_name,
@@ -43,11 +54,15 @@ inherited from the global defaults.
 
 The "*upscli_split_auth_section()*" function splits a `sect_name` which may be
 from a user-typed configuration file into user, host and port sections, and
-normalizes the values (e.g. a `NULL` 'host' becomes `localhost`, a missing
-'port' is defaulted to `NUT_PORT` defined at build configuration time, e.g.
-'3493' by default, and a non-numeric string 'port' is resolved in the naming
-database of the current operating environment).  Resulting normalized values
-are returned to caller using pointers provided in the arguments (if not `NULL`).
+with "*upscli_normalize_auth_section_parts()*" normalizes the values (e.g. a
+`NULL` 'host' becomes `localhost`, a missing 'port' is defaulted to `NUT_PORT`
+defined at build configuration time, e.g. '3493' by default, and a non-numeric
+string 'port' is resolved in the naming database of the current operating
+environment). The resulting normalized values are returned to caller using
+pointers provided in the arguments (if not `NULL` in case of
+"*upscli_split_auth_section()*", must be not `NULL` in case of
+"*upscli_normalize_auth_section_parts()*").
+
 A 'normalized_sect_name' can be also constructed and returned, so that varying
 but ultimately identical definitions of the section titles (e.g. `[@localhost]`
 and `[@localhost:3493]` can be conflated when parsing configuration files or

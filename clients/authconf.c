@@ -304,6 +304,118 @@ static void authconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Error in parseconf(authconf): %s", errmsg);
 }
 
+int upscli_normalize_auth_section_parts(
+	char **out_normalized_sect_name,
+	char **p_sect_user,
+	int  *out_fixed_sect_user,
+	char **p_sect_host,
+	char **p_sect_port)
+{
+	char	*sect_user = NULL, *sect_host = NULL, *sect_port = NULL;
+
+	/* All p_* args must be non-NULL pointers to `char *` string variables
+	 * which may be freed and re-allocated to return normalized values
+	 * (original strings may themselves be NULL).
+	 * The out_* values are optional and may be NULL if you do not want
+	 * those data points returned.
+	 */
+	if (!p_sect_user || !p_sect_host || !p_sect_port) {
+		upslogx(LOG_ERR, "upscli_normalize_auth_section_parts: NULL pointer-to-string argument provided");
+		return -1;
+	}
+
+	/* No changes imposed here */
+	sect_user = *p_sect_user;
+
+	sect_host = *p_sect_host;
+	if (!sect_host || !*sect_host) {
+		sect_host = xstrdup("localhost");
+		if (!sect_host) goto failed;
+	}
+
+	sect_port = *p_sect_port;
+	if (sect_port && *sect_port) {
+		/* As port is a string, resolve it (if not a number,
+		 * try to get one via "services" naming database) */
+		char	*p = sect_port;
+		int	is_numeric = 1;
+
+		while (*p) {
+			if (!isdigit((unsigned char)*p)) {
+				is_numeric = 0;
+				break;
+			}
+			p++;
+		}
+
+		if (!is_numeric) {
+			struct servent	*se = getservbyname(sect_port, "tcp");
+
+			if (se) {
+				char	portbuf[16];
+				if (snprintf(portbuf, sizeof(portbuf), "%u", ntohs(se->s_port) < 1)) {
+					upsdebugx(1, "%s: Failed to construct port number from service name", __func__);
+					goto failed;
+				}
+				sect_port = xstrdup(portbuf);
+				if (!sect_port) goto failed;
+			} else {
+				upslogx(LOG_WARNING, "%s: Failed to resolve port number from service name '%s', "
+					"keeping original string but it is likely useless", __func__, sect_port);
+			}
+		}
+	} else {
+		char	portbuf[16];
+		if (snprintf(portbuf, sizeof(portbuf), "%u", NUT_PORT) < 1) {
+			upsdebugx(1, "%s: Failed to construct default port number", __func__);
+			goto failed;
+		}
+		sect_port = xstrdup(portbuf);
+		if (!sect_port) goto failed;
+	}
+
+	/* Only now that we (almost) do not expect failures, we can
+	 * consistently populate caller's output variables (if any) */
+	if (out_normalized_sect_name) {
+		char	normalized_sect_name_buf[LARGEBUF];
+
+		if (snprintf(normalized_sect_name_buf, sizeof(normalized_sect_name_buf), "%s@%s:%s",
+			sect_user ? sect_user : "",
+			sect_host,
+			sect_port) > 0
+		) {
+			free(*out_normalized_sect_name);
+			*out_normalized_sect_name = xstrdup(normalized_sect_name_buf);
+		} else {
+			upsdebugx(1, "%s: Failed to reconstruct normalized section header", __func__);
+			goto failed;
+		}
+	}
+
+	if (out_fixed_sect_user)
+		*out_fixed_sect_user = (sect_user && *sect_user);
+
+	/* Different pointers? */
+	if (*p_sect_host != sect_host) {
+		free(*p_sect_host);
+		*p_sect_host = sect_host;
+	}
+
+	if (*p_sect_port != sect_port) {
+		free(*p_sect_port);
+		*p_sect_port = sect_port;
+	}
+
+	return 0;
+
+failed:
+	free(sect_user);
+	free(sect_host);
+	free(sect_port);
+
+	return -1;
+}
+
 int upscli_split_auth_section(const char *sect_name,
 	char **normalized_sect_name,
 	char **normalized_sect_user,
@@ -364,69 +476,16 @@ int upscli_split_auth_section(const char *sect_name,
 	}
 
 	if (colon && colon[1]) {
-		/* As port is a string, resolve it (if not a number,
-		 * try to get one via "services" naming database) */
-		const char	*p = colon + 1;
-		int	is_numeric = 1;
-
-		while (*p) {
-			if (!isdigit((unsigned char)*p)) {
-				is_numeric = 0;
-				break;
-			}
-			p++;
-		}
-
-		if (is_numeric) {
-			sect_port = xstrdup(colon + 1);
-		} else {
-			struct servent	*se = getservbyname(colon + 1, "tcp");
-
-			if (se) {
-				char	portbuf[16];
-				snprintf(portbuf, sizeof(portbuf), "%u", ntohs(se->s_port));
-				sect_port = xstrdup(portbuf);
-			} else {
-				/* Resolution failed, fall back to original string */
-				sect_port = xstrdup(colon + 1);
-			}
-		}
-
+		/* May get re-normalized below */
+		sect_port = xstrdup(colon + 1);
 		if (!sect_port) goto failed;
 	}
 
-	if (!sect_host || !*sect_host) {
-		free(sect_host);
-		sect_host = xstrdup("localhost");
-		if (!sect_host) goto failed;
-	}
-
-	if (!sect_port || !*sect_port) {
-		free(sect_port);
-		sect_port = xcalloc(6, sizeof(char));
-		if (!sect_port) goto failed;
-		if (snprintf(sect_port, 6, "%u", NUT_PORT) < 1) {
-			upsdebugx(1, "%s: Failed to construct default port number", __func__);
-			goto failed;
-		}
-	}
-
-	/* Only now that we (almost) do not expect failures, we can
-	 * consistently populate caller's output variables (if any) */
-	if (normalized_sect_name) {
-		char	normalized_sect_name_buf[LARGEBUF];
-
-		if (snprintf(normalized_sect_name_buf, sizeof(normalized_sect_name_buf), "%s@%s:%s",
-			sect_user ? sect_user : "",
-			sect_host,
-			sect_port) > 0
-		) {
-			*normalized_sect_name = xstrdup(normalized_sect_name_buf);
-		} else {
-			upsdebugx(1, "%s: Failed to reconstruct normalized section header from '%s'", __func__, sect_name);
-			goto failed;
-		}
-	}
+	if (upscli_normalize_auth_section_parts(
+			normalized_sect_name,
+			&sect_user, &fixed_sect_user,
+			&sect_host, &sect_port) < 0
+	) goto failed;
 
 	if (out_fixed_sect_user)
 		*out_fixed_sect_user = fixed_sect_user;
