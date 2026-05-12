@@ -52,6 +52,19 @@ void upscli_free_authconf_list(void);
  */
 int upscli_read_authconf(const char *filename, int fatal_errors);
 
+/** All p_* args must be non-NULL pointers to `char *` string variables
+ * which may be freed and re-allocated to return normalized values
+ * (original strings may themselves be NULL).
+ * The out_* values are optional and may be NULL if you do not want
+ * those data points returned.
+ */
+int upscli_normalize_auth_section_parts(
+	char **out_normalized_sect_name,
+	char **p_sect_user,
+	int  *out_fixed_sect_user,
+	char **p_sect_host,
+	char **p_sect_port);
+
 /** Take raw sect_name as input (e.g. a user-written string from config files).
  * Normalize it by splitting into user, host, and port components (populating absent values).
  * Return normalized components and reconstructed section name in output parameters (if not NULL),
