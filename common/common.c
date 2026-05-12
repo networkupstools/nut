@@ -5438,7 +5438,7 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
 				__func__, index, NUT_STRARG(dirname));
-                        index++;
+			index++;
 			continue;
 		}
 		index++;
