@@ -99,8 +99,6 @@ void close_oldest_client(void);
  */
 #define RESERVE_FD_COUNT_UPSD	8
 
-void check_perms(const char *fn);
-
 /* return values for instcmd / setvar status tracking,
  * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
 enum {
