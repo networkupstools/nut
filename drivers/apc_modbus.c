@@ -659,40 +659,6 @@ static int _apc_modbus_status_change_cause_to_nut(const apc_modbus_value_t *valu
 
 static apc_modbus_converter_t _apc_modbus_status_change_cause_conversion = { _apc_modbus_status_change_cause_to_nut, NULL };
 
-static int _apc_modbus_string_join(const char *values[], size_t values_len, const char *separator, char *output, size_t output_len)
-{
-	size_t i;
-	size_t output_idx;
-	int res;
-
-	if (values == NULL || values_len == 0 || separator == NULL || output == NULL || output_len == 0) {
-		/* Invalid parameters */
-		return 0;
-	}
-
-	output_idx = 0;
-	output[0] = 0; /* Always zero terminate */
-
-	for (i = 0; i < values_len && output_idx < output_len; i++) {
-		if (values[i] == NULL)
-			continue;
-
-		if (i == 0) {
-			res = snprintf(output + output_idx, output_len - output_idx, "%s", values[i]);
-		} else {
-			res = snprintf(output + output_idx, output_len - output_idx, "%s%s", separator, values[i]);
-		}
-
-		if (res < 0 || (size_t)res >= output_len) {
-			return 0;
-		}
-
-		output_idx += res;
-	}
-
-	return 1;
-}
-
 static const apc_value_map_t apc_modbus_battery_test_source_map[] = {
 	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_PROTOCOL, "Source: Protocol" },
 	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_LOCALUI, "Source: LocalUI" },
