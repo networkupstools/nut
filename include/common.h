@@ -423,6 +423,9 @@ int	str_add_unique_token(
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
+/* Check filesystem permissions for files/dirs we deem secretive */
+void check_perms(const char *fn);
+
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
