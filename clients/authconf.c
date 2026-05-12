@@ -470,6 +470,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 	/* Section header [section] */
 	if (arg[0][0] == '[' && arg[0][strlen(arg[0])-1] == ']') {
 		char	*sect_name = NULL, *sect_user = NULL, *sect_host = NULL, *sect_port = NULL, *normalized_sect_name = NULL;
+		const char	*end_bracket = NULL;
 		upscli_authconf_t	*tmp = NULL;
 
 		if (!global_scope) {
@@ -478,13 +479,23 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		}
 
 		sect_name = xstrdup(&arg[0][1]);	/* forget leading '[' */
-		sect_name[strlen(sect_name)-1] = '\0';	/* forget trailing ']' */
+		end_bracket = strchr(sect_name, ']');
+		if (!end_bracket) {
+			free(sect_name);
+			fatalx(EXIT_FAILURE, "%s: Invalid section header format: %s", __func__, arg[0]);
+		}
+		*(char *)(end_bracket) = '\0';	/* forget trailing ']' and any characters after it (comments etc.) */
 
 		if (upscli_split_auth_section(sect_name, &normalized_sect_name,
 			&sect_user, &current_section_with_fixed_username,
 			&sect_host, &sect_port) < 0
 		) {
-			fatalx(EXIT_FAILURE, "Invalid nutauth section header: %s", NUT_STRARG(sect_name));
+			free(normalized_sect_name);
+			free(sect_name);
+			free(sect_user);
+			free(sect_host);
+			free(sect_port);
+			fatalx(EXIT_FAILURE, "Invalid nutauth section header: %s", NUT_STRARG(arg[0]));
 		}
 
 		/* Find if section already exists */
