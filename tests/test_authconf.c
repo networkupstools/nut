@@ -26,7 +26,15 @@ int main(int argc, char **argv)
 	FILE	*f;
 	upscli_authconf_t	*ac;
 	size_t	num_sections;
-	char	buf[512];
+	char	buf[512], *s;
+	int	l;
+
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &l, 10) && l > 0) {
+		nut_debug_level = l;
+		upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+			"since none was requested by command-line options", l);
+	}
 
 	if (argc > 1) {
 		upsdebugx(1, "Args ignored: '%s' etc.", argv[0]);
