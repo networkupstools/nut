@@ -41,6 +41,12 @@ upscli_authconf_t *upscli_get_authconf_list(void);
 /** Create a one-off configuration item, upscli_free_authconf_item() it manually */
 upscli_authconf_t *upscli_create_authconf_item(const char *section);
 
+/** Create a one-off configuration item, upscli_free_authconf_item() it manually */
+upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const char *section);
+
+/** Merge contents of two existing configuration items, they may be or not be on the list */
+upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_authconf_t *target);
+
 /** Free an authentication configuration item (if not NULL) and return its "next" pointer */
 upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node);
 

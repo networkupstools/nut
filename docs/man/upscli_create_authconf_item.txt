@@ -4,8 +4,10 @@ UPSCLI_CREATE_AUTHCONF_ITEM(3)
 NAME
 ----
 
-upscli_create_authconf_item, upscli_free_authconf_item - Create or free an individual
-authentication configuration item which is not necessarily in the list
+upscli_create_authconf_item, upscli_clone_authconf_item,
+upscli_merge_authconf_item, upscli_free_authconf_item - Create
+or free an individual authentication configuration item,
+which is not necessarily in the globally tracked list
 
 SYNOPSIS
 --------
@@ -30,6 +32,10 @@ SYNOPSIS
 
 	upscli_authconf_t *upscli_create_authconf_item(const char *section);
 
+	upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const char *section);
+
+	upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_authconf_t *target);
+
 	upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node);
 ------
 
@@ -42,6 +48,28 @@ Other string pointers remain `NULL`, numeric flags are set to `-1`, and
 the `next` pointer is set to `NULL`. This item is not automatically added
 to the list.
 
+The *upscli_clone_authconf_item()* function allocates the memory for an
+`upscli_authconf_t` node and initializes it with the given section name
+(if not NULL) and clones the values from the source node to the new node
+by re-allocating strings with `xstrdup()` and copying the numeric flags.
+If the 'section' argument is provided and contains a `user@` component,
+the user field is (re-)set to that (or cleared and not cloned if empty
+in the section title, e.g. if it starts with the `@` character).
+The `next` pointer is set to `NULL`.
+
+The *upscli_merge_authconf_item()* function copies the values from the
+'source' node to the 'target' node, as long as the target node does not
+already have a value for the same field (non-NULL not-empty string, or
+a non-negative numeric flag). The `next` pointer is not modified.
+Like above, if the resulting section name in 'target' contains the `@`
+character, the 'user' name field would be (re-)set to that, or cleared
+and not cloned.
+
+Typically, the 'source' node when merging is the global configuration item
+(or a `host:port` when merging for a section with specific user value),
+and the 'target' node is a specific `host:port` or `user@host:port`
+configuration item.
+
 The *upscli_free_authconf_item()* function frees the memory allocated for
 a single `upscli_authconf_t` node and returns its `next` pointer. This is
 useful for manually iterating and cleaning up copies of the list, although
@@ -51,8 +79,12 @@ internal list.
 RETURN VALUE
 ------------
 
-The *upscli_create_authconf_item()* function returns a pointer to the new structure,
-or `NULL` if an error occurred.
+The *upscli_create_authconf_item()* and *upscli_clone_authconf_item()*
+functions returns a pointer to the new structure, or `NULL` if an error
+occurred.
+
+The *upscli_merge_authconf_item()* function returns a pointer to the merged
+'target' structure.
 
 The *upscli_free_authconf_item()* function returns a pointer to the next element
 of the `upscli_authconf_t` list, if known (and if it was part of the list).
