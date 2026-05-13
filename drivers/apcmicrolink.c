@@ -21,6 +21,7 @@
 #include "serial.h"
 #include "nut_stdint.h"
 
+#include "apc_common.h"
 #include "apcmicrolink.h"
 #include "apcmicrolink-maps.h"
 
@@ -40,6 +41,21 @@ upsdrv_info_t upsdrv_info = {
 #define MLINK_INIT_BYTE			0xFD
 #define MLINK_HANDSHAKE_RETRIES	3
 #define MLINK_READ_TIMEOUT_USEC	100000
+
+#define MLINK_DESC_OP_USAGE_SIZE	0xFC
+#define MLINK_DESC_OP_COLLECTION	0xFD
+#define MLINK_DESC_OP_CHILD_NEXT	0xFE
+#define MLINK_DESC_OP_BLOCK_END		0xFF
+#define MLINK_DESC_OP_SKIP_USAGE	0xFB
+#define MLINK_DESC_OP_DOUBLE_SKIP	0xFA
+#define MLINK_DESC_OP_SKIP_USAGE_ALT	0xF9
+#define MLINK_DESC_OP_ENTER_BLOCK	0xF8
+#define MLINK_DESC_OP_NOOP		0xF7
+#define MLINK_DESC_OP_EXIT_BLOCK	0xF6
+#define MLINK_DESC_OP_SKIP_NEXT		0xF5
+#define MLINK_DESC_OP_RECURSE		0xF4
+#define MLINK_DESC_OP_MIN		0xF4
+#define MLINK_DESC_USAGE_MAX		0xDF
 
 static const struct {
 	const char *value;
@@ -111,10 +127,44 @@ static int microlink_update_blob(void);
 static int microlink_parse_descriptor(void);
 static int microlink_send_descriptor_mask_value(const char *path, uint64_t mask);
 static int microlink_send_command_descriptor_mask_value(const char *path, uint64_t mask);
+static int microlink_parse_descriptor_string_value(const char *val, size_t size,
+	unsigned char *payload);
+static int microlink_parse_descriptor_fixed_point_value(const microlink_desc_value_map_t *entry,
+	const char *val, size_t size, unsigned char *payload);
+static int microlink_parse_descriptor_hex_value(const char *val, size_t size,
+	unsigned char *payload);
+static int microlink_parse_descriptor_fixed_point_map_value(
+	const microlink_desc_value_map_t *entry, const char *val, size_t size,
+	unsigned char *payload);
+static int microlink_parse_descriptor_date_value(const char *val, size_t size,
+	unsigned char *payload);
+static int microlink_parse_descriptor_time_value(const char *val, size_t size,
+	unsigned char *payload);
+static int microlink_parse_descriptor_map_value(const microlink_desc_value_map_t *entry,
+	const char *val, size_t size, unsigned char *payload);
+static const unsigned char *microlink_get_descriptor_data(const char *path, size_t size);
 static int microlink_receive_once(void);
 static const microlink_object_t *microlink_get_object(unsigned int id);
 static microlink_object_t *microlink_get_object_mut(unsigned int id);
 static size_t microlink_parse_descriptor_block(const unsigned char *blob, size_t blob_len,
+	size_t pos, size_t *data_offset, const char *path);
+static int microlink_set_descriptor_string_info(const char *name,
+	const unsigned char *data, size_t size);
+static int microlink_set_descriptor_hex_info(const char *name,
+	const unsigned char *data, size_t size);
+static int microlink_set_descriptor_fixed_point_info(const char *name,
+	const unsigned char *data, size_t size, microlink_desc_numeric_sign_t sign,
+	unsigned int bin_point);
+static int microlink_set_descriptor_fixed_point_map_info(const char *name,
+	const unsigned char *data, size_t size, microlink_desc_numeric_sign_t sign,
+	unsigned int bin_point, const microlink_value_map_t *map);
+static int microlink_set_descriptor_date_info(const char *name,
+	const unsigned char *data, size_t size);
+static int microlink_set_descriptor_time_info(const char *name,
+	const unsigned char *data, size_t size);
+static int microlink_publish_descriptor_entry(const char *name, const char *path,
+	const microlink_desc_value_map_t *entry);
+static size_t microlink_parse_descriptor_collection(const unsigned char *blob, size_t blob_len,
 	size_t pos, size_t *data_offset, const char *path);
 
 static int microlink_parse_baudrate(const char *text, speed_t *baudrate)
@@ -453,7 +503,7 @@ static microlink_object_t *microlink_get_object_mut(unsigned int id)
 
 static int microlink_is_descriptor_operator(unsigned char token)
 {
-	return token >= 0xF4;
+	return token >= MLINK_DESC_OP_MIN;
 }
 
 static int microlink_path_append(char *buf, size_t buflen, size_t *pos,
@@ -724,19 +774,16 @@ static uint64_t microlink_outlet_all_targets(size_t group_count)
 	return targets;
 }
 
-static int microlink_set_descriptor_string_info(const char *name, const char *path)
+static int microlink_set_descriptor_string_info(const char *name,
+	const unsigned char *data, size_t size)
 {
-	const microlink_descriptor_usage_t *usage;
 	char value[MLINK_MAX_PAYLOAD + 1];
 
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
+	if (data == NULL || size == 0 || size > MLINK_MAX_PAYLOAD) {
 		return 0;
 	}
 
-	microlink_format_ascii(descriptor_blob + usage->data_offset, usage->size,
-		value, sizeof(value));
+	microlink_format_ascii(data, size, value, sizeof(value));
 	if (value[0] == '\0') {
 		return 0;
 	}
@@ -745,29 +792,27 @@ static int microlink_set_descriptor_string_info(const char *name, const char *pa
 	return 1;
 }
 
-static int microlink_set_descriptor_hex_info(const char *name, const char *path)
+static int microlink_set_descriptor_hex_info(const char *name,
+	const unsigned char *data, size_t size)
 {
-	const microlink_descriptor_usage_t *usage;
 	uint64_t raw = 0;
 	size_t i;
 	char text[32];
 
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped || usage->size == 0
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
+	if (data == NULL || size == 0) {
 		return 0;
 	}
 
-	if (usage->size > sizeof(raw)) {
+	if (size > sizeof(raw)) {
 		return 0;
 	}
 
-	for (i = 0; i < usage->size; i++) {
-		raw = (raw << 8) | descriptor_blob[usage->data_offset + i];
+	for (i = 0; i < size; i++) {
+		raw = (raw << 8) | data[i];
 	}
 
 	/* Keep fixed-size identity fields readable and comparable with Modbus. */
-	snprintf(text, sizeof(text), "%0*llx", (int)(usage->size * 2),
+	snprintf(text, sizeof(text), "%0*llx", (int)(size * 2),
 		(unsigned long long)raw);
 	dstate_setinfo(name, "%s", text);
 	return 1;
@@ -778,30 +823,21 @@ typedef enum microlink_map_mode_e {
 	MLINK_MAP_VALUE
 } microlink_map_mode_t;
 
-static int microlink_set_descriptor_map_info(const char *name, const char *path,
-	const microlink_value_map_t *map, microlink_map_mode_t mode)
+static int microlink_set_descriptor_map_info(const char *name,
+	const unsigned char *data, size_t size, const microlink_value_map_t *map,
+	microlink_map_mode_t mode)
 {
-	const microlink_descriptor_usage_t *usage;
-	const unsigned char *data;
 	const char *zero_text = NULL;
 	uint32_t raw = 0;
 	int32_t value = 0;
 	char buf[128];
-	size_t i, size, used = 0;
+	size_t i, used = 0;
 	int matched = 0;
 
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped ||
-		usage->data_offset + usage->size > descriptor_blob_len) {
+	if (data == NULL || size == 0 || size > sizeof(raw)) {
 		return 0;
 	}
 
-	size = usage->size;
-	if (size == 0 || size > sizeof(raw)) {
-		return 0;
-	}
-
-	data = descriptor_blob + usage->data_offset;
 	for (i = 0; i < size; i++) {
 		raw = (raw << 8) | data[i];
 	}
@@ -877,25 +913,21 @@ static int microlink_set_descriptor_map_info(const char *name, const char *path,
 	return 1;
 }
 
-static int microlink_set_descriptor_fixed_point_map_info(const char *name, const char *path,
-	microlink_desc_numeric_sign_t sign, unsigned int bin_point, const microlink_value_map_t *map)
+static int microlink_set_descriptor_fixed_point_map_info(const char *name,
+	const unsigned char *data, size_t size, microlink_desc_numeric_sign_t sign,
+	unsigned int bin_point, const microlink_value_map_t *map)
 {
-	const microlink_descriptor_usage_t *usage;
-	const unsigned char *data;
 	uint32_t raw = 0;
 	int32_t signed_raw = 0;
 	double value;
 	char text[64];
-	size_t i, size;
 
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped || usage->size == 0
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
+	size_t i;
+
+	if (data == NULL || size == 0) {
 		return 0;
 	}
 
-	size = usage->size;
-	data = descriptor_blob + usage->data_offset;
 	for (i = 0; i < size; i++) {
 		raw = (raw << 8) | data[i];
 	}
@@ -1072,25 +1104,20 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 	return 1;
 }
 
-static int microlink_set_descriptor_fixed_point_info(const char *name, const char *path,
-	microlink_desc_numeric_sign_t sign, unsigned int bin_point)
+static int microlink_set_descriptor_fixed_point_info(const char *name,
+	const unsigned char *data, size_t size, microlink_desc_numeric_sign_t sign,
+	unsigned int bin_point)
 {
-	const microlink_descriptor_usage_t *usage;
-	const unsigned char *data;
 	uint32_t raw = 0;
 	int32_t signed_raw = 0;
 	double value;
 	char text[32];
-	size_t i, size;
+	size_t i;
 
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped || usage->size == 0
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
+	if (data == NULL || size == 0) {
 		return 0;
 	}
 
-	size = usage->size;
-	data = descriptor_blob + usage->data_offset;
 	for (i = 0; i < size; i++) {
 		raw = (raw << 8) | data[i];
 	}
@@ -1130,38 +1157,6 @@ static int microlink_set_descriptor_fixed_point_info(const char *name, const cha
 	}
 
 	dstate_setinfo(name, "%s", text);
-	return 1;
-}
-
-static int microlink_get_descriptor_integer(const char *path, size_t max_size,
-	uint64_t *raw_out, size_t *size_out)
-{
-	const microlink_descriptor_usage_t *usage;
-	const unsigned char *data;
-	uint64_t raw = 0;
-	size_t i;
-
-	if (raw_out == NULL) {
-		return 0;
-	}
-
-	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || usage->skipped || usage->size == 0
-	 || usage->size > max_size
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
-		return 0;
-	}
-
-	data = descriptor_blob + usage->data_offset;
-	for (i = 0; i < usage->size; i++) {
-		raw = (raw << 8) | data[i];
-	}
-
-	*raw_out = raw;
-	if (size_out != NULL) {
-		*size_out = usage->size;
-	}
-
 	return 1;
 }
 
@@ -1253,27 +1248,355 @@ static int microlink_lookup_value_map(const microlink_value_map_t *map, const ch
 	return 0;
 }
 
-static int microlink_set_descriptor_date_info(const char *name, const char *path)
+/* Pack a raw integer into a descriptor-sized big-endian payload and send it. */
+static int microlink_parse_descriptor_string_value(const char *val, size_t size,
+	unsigned char *payload)
+{
+	size_t i;
+
+	if (val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	memset(payload, 0, size);
+	for (i = 0; i < size && val[i] != '\0'; i++) {
+		payload[i] = (unsigned char)val[i];
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_fixed_point_value(const microlink_desc_value_map_t *entry,
+	const char *val, size_t size, unsigned char *payload)
+{
+	int64_t raw;
+	size_t i;
+
+	if (entry == NULL || val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	if (size == 0 || size > 8) {
+		return 0;
+	}
+
+	if (!microlink_parse_fixed_point_value(entry, val, &raw)
+	 || !microlink_value_fits_descriptor(raw, entry->sign, size)) {
+		return 0;
+	}
+
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_hex_value(const char *val, size_t size,
+	unsigned char *payload)
 {
 	uint64_t raw;
-	char text[16];
+	char *endptr = NULL;
+	size_t i;
 
-	if (!microlink_get_descriptor_integer(path, sizeof(uint32_t), &raw, NULL)) {
+	if (val == NULL || payload == NULL || size == 0 || size > 8) {
 		return 0;
+	}
+
+	errno = 0;
+	raw = strtoull(val, &endptr, 16);
+	if (endptr == val || *endptr != '\0' || errno > 0
+	 || raw > microlink_max_unsigned_for_size(size)) {
+		return 0;
+	}
+
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_fixed_point_map_value(
+	const microlink_desc_value_map_t *entry, const char *val, size_t size,
+	unsigned char *payload)
+{
+	int64_t raw;
+	size_t i;
+
+	if (entry == NULL || val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	if (size == 0 || size > 8) {
+		return 0;
+	}
+
+	/* Try the symbolic label first, then fall back to the fixed-point parser. */
+	if (!microlink_lookup_value_map(entry->map, val, &raw)) {
+		if (!microlink_parse_fixed_point_value(entry, val, &raw)) {
+			return 0;
+		}
+	}
+
+	if (!microlink_value_fits_descriptor(raw, entry->sign, size)) {
+		return 0;
+	}
+
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_date_value(const char *val, size_t size,
+	unsigned char *payload)
+{
+	uint64_t raw;
+	size_t i;
+
+	if (val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	if (size == 0 || size > 8) {
+		return 0;
+	}
+
+	if (!apc_parse_date_to_days_offset(val, &raw)
+	 || raw > microlink_max_unsigned_for_size(size)) {
+		return 0;
+	}
+
+	/* Date fields are packed as day counts in big-endian byte order. */
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_time_value(const char *val, size_t size,
+	unsigned char *payload)
+{
+	unsigned int hours, minutes, seconds;
+	uint64_t raw;
+	size_t i;
+
+	if (val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	if (size == 0 || size > 8) {
+		return 0;
+	}
+
+	if (sscanf(val, "%u:%u:%u", &hours, &minutes, &seconds) != 3) {
+		return 0;
+	}
+
+	if (minutes > 59U || seconds > 59U) {
+		return 0;
+	}
+
+	raw = ((uint64_t)hours * 3600U) + ((uint64_t)minutes * 60U) + (uint64_t)seconds;
+	if (raw > microlink_max_unsigned_for_size(size)) {
+		return 0;
+	}
+
+	/* Time fields are packed as elapsed seconds in big-endian byte order. */
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_parse_descriptor_map_value(const microlink_desc_value_map_t *entry,
+	const char *val, size_t size, unsigned char *payload)
+{
+	int64_t raw = 0;
+	char *endptr = NULL;
+	size_t i;
+
+	if (entry == NULL || val == NULL || payload == NULL) {
+		return 0;
+	}
+
+	if (!microlink_lookup_value_map(entry->map, val, &raw)) {
+		if (entry->type == MLINK_DESC_ENUM_MAP) {
+			raw = (int64_t)strtoll(val, &endptr, 0);
+		} else {
+			raw = (int64_t)strtoull(val, &endptr, 0);
+		}
+
+		if (endptr == val || *endptr != '\0') {
+			return 0;
+		}
+	}
+
+	if (!microlink_value_fits_descriptor(raw,
+		entry->type == MLINK_DESC_ENUM_MAP ? entry->sign : MLINK_DESC_UNSIGNED,
+		size)) {
+		return 0;
+	}
+
+	/* Enums and bitfields share the same width checks and packing. */
+	for (i = 0; i < size; i++) {
+		size_t shift = (size - 1U - i) * 8U;
+		payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
+	}
+
+	return 1;
+}
+
+static int microlink_publish_descriptor_entry(const char *name, const char *path,
+	const microlink_desc_value_map_t *entry)
+{
+	const microlink_descriptor_usage_t *usage;
+	const unsigned char *data;
+	size_t size;
+
+	usage = microlink_find_descriptor_usage(path);
+	if (usage == NULL || usage->skipped) {
+		return 0;
+	}
+
+	size = usage->size;
+	if (usage->data_offset + size > descriptor_blob_len) {
+		return 0;
+	}
+
+	data = microlink_get_descriptor_data(path, size);
+	if (data == NULL) {
+		return 0;
+	}
+
+	/* Keep the per-type export logic centralized but short. */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	switch (entry->type) {
+	case MLINK_DESC_STRING:
+		return microlink_set_descriptor_string_info(name, data, size);
+	case MLINK_DESC_HEX:
+		return microlink_set_descriptor_hex_info(name, data, size);
+	case MLINK_DESC_FIXED_POINT:
+		return microlink_set_descriptor_fixed_point_info(name, data, size,
+			entry->sign, entry->bin_point);
+	case MLINK_DESC_FIXED_POINT_MAP:
+		return microlink_set_descriptor_fixed_point_map_info(name, data, size,
+			entry->sign, entry->bin_point, entry->map);
+	case MLINK_DESC_DATE:
+		return microlink_set_descriptor_date_info(name, data, size);
+	case MLINK_DESC_TIME:
+		return microlink_set_descriptor_time_info(name, data, size);
+	case MLINK_DESC_BITFIELD_MAP:
+		return microlink_set_descriptor_map_info(name, data, size, entry->map,
+			MLINK_MAP_BITFIELD);
+	case MLINK_DESC_ENUM_MAP:
+		return microlink_set_descriptor_map_info(name, data, size, entry->map,
+			MLINK_MAP_VALUE);
+	case MLINK_DESC_NONE:
+	default:
+		return 0;
+	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+}
+
+static size_t microlink_parse_descriptor_collection(const unsigned char *blob, size_t blob_len,
+	size_t pos, size_t *data_offset, const char *path)
+{
+	unsigned char collection_id;
+	unsigned char count;
+	size_t block_start;
+	size_t block_end = 0;
+	unsigned int idx;
+
+	if (pos + 1 >= blob_len) {
+		return 0;
+	}
+
+	/* Collections reuse the same payload block for each indexed child entry. */
+	collection_id = blob[pos++];
+	count = blob[pos++];
+	block_start = pos;
+
+	for (idx = 0; idx < count; idx++) {
+		char child[64];
+		size_t sub_pos;
+
+		if (!microlink_build_collection_path(child, sizeof(child), path,
+			collection_id, idx)) {
+			return 0;
+		}
+
+		sub_pos = microlink_parse_descriptor_block(blob, blob_len, block_start, data_offset, child);
+		if (sub_pos == 0) {
+			return 0;
+		}
+
+		block_end = sub_pos;
+	}
+
+	return block_end;
+}
+
+static int microlink_set_descriptor_date_info(const char *name,
+	const unsigned char *data, size_t size)
+{
+	uint64_t raw = 0;
+	char text[16];
+	size_t i;
+
+	if (data == NULL || size == 0 || size > sizeof(raw)) {
+		return 0;
+	}
+
+	for (i = 0; i < size; i++) {
+		raw = (raw << 8) | data[i];
 	}
 
 	return apc_format_date_from_days_offset((int64_t)raw, text, sizeof(text)) &&
 		dstate_setinfo(name, "%s", text);
 }
 
-static int microlink_set_descriptor_time_info(const char *name, const char *path)
+static int microlink_set_descriptor_time_info(const char *name,
+	const unsigned char *data, size_t size)
 {
-	uint64_t raw;
+	uint64_t raw = 0;
 	unsigned int hours, minutes, seconds;
 	char text[16];
+	size_t i;
 
-	if (!microlink_get_descriptor_integer(path, sizeof(uint32_t), &raw, NULL)) {
+	if (data == NULL || size == 0 || size > sizeof(raw)) {
 		return 0;
+	}
+
+	for (i = 0; i < size; i++) {
+		raw = (raw << 8) | data[i];
 	}
 
 	hours = (unsigned int)(raw / 3600U);
@@ -1297,12 +1620,15 @@ static int microlink_get_descriptor_map_bits(const char *path, uint32_t *bits)
 
 	usage = microlink_find_descriptor_usage(path);
 	if (usage == NULL || usage->skipped || usage->size == 0
-	 || usage->size > sizeof(raw)
-	 || usage->data_offset + usage->size > descriptor_blob_len) {
+	 || usage->size > sizeof(raw)) {
 		return 0;
 	}
 
-	data = descriptor_blob + usage->data_offset;
+	data = microlink_get_descriptor_data(path, usage->size);
+	if (data == NULL) {
+		return 0;
+	}
+
 	for (i = 0; i < usage->size; i++) {
 		raw = (raw << 8) | data[i];
 	}
@@ -1451,12 +1777,32 @@ static int microlink_send_descriptor_write(const char *path, const unsigned char
 	}
 
 	memcpy(descriptor_blob + usage->data_offset, payload, usage->size);
-	if (page < 256U) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+	if (page <= (size_t)UCHAR_MAX) {
 		microlink_object_t *obj = microlink_get_object_mut((unsigned int)page);
 		if (obj->seen && obj->len >= offset + usage->size) {
 			memcpy(obj->data + offset, payload, usage->size);
 		}
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
 
 	return 1;
 }
@@ -1502,17 +1848,19 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 {
 	const microlink_descriptor_usage_t *usage;
 	unsigned char payload[MLINK_MAX_PAYLOAD];
-	size_t i;
+	size_t size = 0;
 
 	if (entry == NULL || path == NULL || val == NULL) {
 		return 0;
 	}
 
 	usage = microlink_find_descriptor_usage(path);
-	if (usage == NULL || !usage->valid || usage->skipped || usage->size == 0
+	if (usage == NULL || usage->skipped || !usage->valid || usage->size == 0
 	 || usage->size > sizeof(payload)) {
 		return 0;
 	}
+
+	size = usage->size;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -1534,182 +1882,42 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 	switch (entry->type) {
 	case MLINK_DESC_STRING:
 		/* Strings are written as fixed-width payloads. */
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size && val[i] != '\0'; i++) {
-			payload[i] = (unsigned char)val[i];
+		if (!microlink_parse_descriptor_string_value(val, size, payload)) {
+			return 0;
 		}
-		return microlink_send_descriptor_write(path, payload, usage->size);
-
+		break;
 	case MLINK_DESC_FIXED_POINT:
-	{
-		int64_t raw;
-
-		if (usage->size == 0 || usage->size > 8) {
-			return 0;
-		}
-
 		/* Fixed-point descriptors use the configured binary scale. */
-		if (!microlink_parse_fixed_point_value(entry, val, &raw)
-		 || !microlink_value_fits_descriptor(raw, entry->sign, usage->size)) {
+		if (!microlink_parse_descriptor_fixed_point_value(entry, val, size, payload)) {
 			return 0;
 		}
-
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
-
+		break;
 	case MLINK_DESC_HEX:
-	{
-		uint64_t raw;
-		char *endptr = NULL;
-
-		if (usage->size == 0 || usage->size > 8) {
+		if (!microlink_parse_descriptor_hex_value(val, size, payload)) {
 			return 0;
 		}
-
-		errno = 0;
-		raw = strtoull(val, &endptr, 16);
-		if (endptr == val || *endptr != '\0' || errno > 0
-		 || raw > microlink_max_unsigned_for_size(usage->size)) {
-			return 0;
-		}
-
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
-
+		break;
 	case MLINK_DESC_FIXED_POINT_MAP:
-	{
-		int64_t raw;
-
-		if (usage->size == 0 || usage->size > 8) {
+		if (!microlink_parse_descriptor_fixed_point_map_value(entry, val, size, payload)) {
 			return 0;
 		}
-
-		/* Try the symbolic label first, then fall back to the fixed-point parser. */
-		if (!microlink_lookup_value_map(entry->map, val, &raw)) {
-			if (!microlink_parse_fixed_point_value(entry, val, &raw)) {
-				return 0;
-			}
-		}
-
-		if (!microlink_value_fits_descriptor(raw, entry->sign, usage->size)) {
-			return 0;
-		}
-
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
+		break;
 	case MLINK_DESC_DATE:
-	{
-		uint64_t raw;
-
-		if (usage->size == 0 || usage->size > 8) {
+		if (!microlink_parse_descriptor_date_value(val, size, payload)) {
 			return 0;
 		}
-
-		if (!apc_parse_date_to_days_offset(val, &raw) ||
-			raw > microlink_max_unsigned_for_size(usage->size)) {
-			return 0;
-		}
-
-		/* Date fields are packed as day counts in big-endian byte order. */
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
-
+		break;
 	case MLINK_DESC_TIME:
-	{
-		unsigned int hours, minutes, seconds;
-		uint64_t raw;
-
-		if (usage->size == 0 || usage->size > 8) {
+		if (!microlink_parse_descriptor_time_value(val, size, payload)) {
 			return 0;
 		}
-
-		if (sscanf(val, "%u:%u:%u", &hours, &minutes, &seconds) != 3) {
-			return 0;
-		}
-
-		if (minutes > 59U || seconds > 59U) {
-			return 0;
-		}
-
-		raw = ((uint64_t)hours * 3600U) + ((uint64_t)minutes * 60U) + (uint64_t)seconds;
-		if (raw > microlink_max_unsigned_for_size(usage->size)) {
-			return 0;
-		}
-
-		/* Time fields are packed as elapsed seconds in big-endian byte order. */
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
-
+		break;
 	case MLINK_DESC_ENUM_MAP:
 	case MLINK_DESC_BITFIELD_MAP:
-	{
-		char *endptr = NULL;
-		int64_t raw = 0;
-
-		if (usage->size == 0 || usage->size > 8) {
+		if (!microlink_parse_descriptor_map_value(entry, val, size, payload)) {
 			return 0;
 		}
-
-		if (microlink_lookup_value_map(entry->map, val, &raw)) {
-			/* Matched a symbolic label. */
-		} else {
-			/* Fall back to numeric input if the label is not known. */
-			if (entry->type == MLINK_DESC_ENUM_MAP) {
-				raw = (int64_t)strtoll(val, &endptr, 0);
-			} else {
-				raw = (int64_t)strtoull(val, &endptr, 0);
-			}
-
-			if (endptr == val || *endptr != '\0') {
-				return 0;
-			}
-		}
-
-		if (!microlink_value_fits_descriptor(raw,
-			entry->type == MLINK_DESC_ENUM_MAP ? entry->sign : MLINK_DESC_UNSIGNED,
-			usage->size)) {
-			return 0;
-		}
-
-		/* Enums and bitfields share the same width checks and packing. */
-		memset(payload, 0, usage->size);
-		for (i = 0; i < usage->size; i++) {
-			size_t shift = (usage->size - 1U - i) * 8U;
-			payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
-		}
-
-		return microlink_send_descriptor_write(path, payload, usage->size);
-	}
+		break;
 	case MLINK_DESC_NONE:
 	default:
 		return 0;
@@ -1720,6 +1928,8 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
+
+	return microlink_send_descriptor_write(path, payload, size);
 }
 
 static int microlink_descriptor_value_is_printable(const unsigned char *buf, size_t len)
@@ -1775,37 +1985,7 @@ static void microlink_publish_descriptor_exports(void)
 			mapped = 1;
 			microlink_format_name_template(entry->upsd_name, index, entry->name_index,
 				name, sizeof(name));
-
-			switch (entry->type) {
-			case MLINK_DESC_STRING:
-				microlink_set_descriptor_string_info(name, usage->path);
-				break;
-			case MLINK_DESC_HEX:
-				microlink_set_descriptor_hex_info(name, usage->path);
-				break;
-			case MLINK_DESC_FIXED_POINT:
-				microlink_set_descriptor_fixed_point_info(name, usage->path,
-					entry->sign, entry->bin_point);
-				break;
-			case MLINK_DESC_FIXED_POINT_MAP:
-				microlink_set_descriptor_fixed_point_map_info(name, usage->path,
-					entry->sign, entry->bin_point, entry->map);
-				break;
-			case MLINK_DESC_DATE:
-				microlink_set_descriptor_date_info(name, usage->path);
-				break;
-			case MLINK_DESC_TIME:
-				microlink_set_descriptor_time_info(name, usage->path);
-				break;
-			case MLINK_DESC_BITFIELD_MAP:
-				microlink_set_descriptor_map_info(name, usage->path, entry->map, MLINK_MAP_BITFIELD);
-				break;
-			case MLINK_DESC_ENUM_MAP:
-				microlink_set_descriptor_map_info(name, usage->path, entry->map, MLINK_MAP_VALUE);
-				break;
-			case MLINK_DESC_NONE:
-				break;
-			}
+			microlink_publish_descriptor_entry(name, usage->path, entry);
 
 			if (entry->access & MLINK_DESC_RW) {
 				int flags = ST_FLAG_RW;
@@ -1859,7 +2039,7 @@ static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t
 	while (pos < blob_len) {
 		unsigned char token = blob[pos];
 
-		if (token == 0xFC) {
+		if (token == MLINK_DESC_OP_USAGE_SIZE) {
 			if (pos + 1 >= blob_len) {
 				return 0;
 			}
@@ -1868,7 +2048,7 @@ static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t
 			continue;
 		}
 
-		if (token == 0xFB || token == 0xF9) {
+		if (token == MLINK_DESC_OP_SKIP_USAGE || token == MLINK_DESC_OP_SKIP_USAGE_ALT) {
 			pos++;
 			if (pos + usage_size > blob_len) {
 				return 0;
@@ -1877,7 +2057,7 @@ static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t
 			continue;
 		}
 
-		if (token == 0xFA) {
+		if (token == MLINK_DESC_OP_DOUBLE_SKIP) {
 			pos++;
 			if (pos + (usage_size * 2U) > blob_len) {
 				return 0;
@@ -1903,21 +2083,21 @@ static size_t microlink_parse_descriptor_block(const unsigned char *blob, size_t
 		unsigned char token = blob[pos++];
 
 		switch (token) {
-		case 0xF4:
+		case MLINK_DESC_OP_RECURSE:
 			pos = microlink_parse_descriptor_block(blob, blob_len, pos, data_offset, path);
 			if (pos == 0) {
 				return 0;
 			}
 			break;
-		case 0xF5:
+		case MLINK_DESC_OP_SKIP_NEXT:
 			skip_next = 1;
 			break;
-		case 0xF6:
-		case 0xFF:
+		case MLINK_DESC_OP_EXIT_BLOCK:
+		case MLINK_DESC_OP_BLOCK_END:
 			return pos;
-		case 0xF7:
+		case MLINK_DESC_OP_NOOP:
 			break;
-		case 0xF8:
+		case MLINK_DESC_OP_ENTER_BLOCK:
 		{
 			char child[64];
 			if (pos >= blob_len) {
@@ -1932,7 +2112,7 @@ static size_t microlink_parse_descriptor_block(const unsigned char *blob, size_t
 			}
 			break;
 		}
-		case 0xFE:
+		case MLINK_DESC_OP_CHILD_NEXT:
 		{
 			char child[64];
 			if (pos >= blob_len) {
@@ -1947,42 +2127,16 @@ static size_t microlink_parse_descriptor_block(const unsigned char *blob, size_t
 			}
 			break;
 		}
-		case 0xFD:
+		case MLINK_DESC_OP_COLLECTION:
 		{
-			unsigned char collection_id;
-			unsigned char count;
-			size_t block_start;
-			size_t block_end = 0;
-			unsigned int idx;
-
-			if (pos + 1 >= blob_len) {
+			pos = microlink_parse_descriptor_collection(blob, blob_len, pos, data_offset, path);
+			if (pos == 0) {
 				return 0;
 			}
-
-			collection_id = blob[pos++];
-			count = blob[pos++];
-			block_start = pos;
-
-			for (idx = 0; idx < count; idx++) {
-				char child[64];
-				size_t sub_pos;
-
-				if (!microlink_build_collection_path(child, sizeof(child), path,
-					collection_id, idx)) {
-					return 0;
-				}
-				sub_pos = microlink_parse_descriptor_block(blob, blob_len, block_start, data_offset, child);
-				if (sub_pos == 0) {
-					return 0;
-				}
-				block_end = sub_pos;
-			}
-
-			pos = block_end;
 			break;
 		}
 		default:
-			if (token == 0x00 || microlink_is_descriptor_operator(token) || token > 0xDF) {
+			if (token == 0x00 || microlink_is_descriptor_operator(token) || token > MLINK_DESC_USAGE_MAX) {
 				return 0;
 			}
 

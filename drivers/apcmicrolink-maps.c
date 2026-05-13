@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "main.h"
+#include "apc_common.h"
 
 /* Descriptor names and enumerations were derived from Microlink descriptors
  * published by https://ulexplorer-07aa30.gitlab.io/

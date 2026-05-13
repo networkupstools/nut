@@ -11,8 +11,6 @@
 #ifndef APCMICROLINK_MAPS_H
 #define APCMICROLINK_MAPS_H
 
-#include "apc_common.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
