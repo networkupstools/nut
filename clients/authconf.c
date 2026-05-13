@@ -37,9 +37,20 @@
 #endif	/* WIN32 */
 
 static upscli_authconf_t	*authconf_list = NULL;
+/** Shortcut: link to the section in authconf_list whose lines we are currently
+ *  editing in the configuration reader; if NULL, we are editing global defaults */
 static upscli_authconf_t	*current_section = NULL;
+/** Shortcut: link to the (probably first) section in authconf_list with null
+ *  "section" name */
 static upscli_authconf_t	*global_defaults = NULL;
+/** Does the section title of current_section include a non-trivial "user"
+ *  name component (would we ignore a USER directive, if present)? */
 static int	current_section_with_fixed_username = 0;
+/** Is the section title of current_section ignored in the configuration reader
+ *  (e.g. ignored because of a section-scope directive and does not match the
+ *  name of current_section after normalization, or a reserved title for the
+ *  global section while not in its context)? */
+static int	current_section_ignored = 0;
 
 static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope);
 
@@ -465,7 +476,7 @@ int upscli_split_auth_section(const char *sect_name,
 		sect_user = xstrdup(sect_name);
 		if (!sect_user) goto failed;
 		sect_user[at - sect_name] = '\0';
-	}
+	}	/* else keep sect_user=NULL */
 
 	if (at) {
 		if (at + 1 != colon) {
@@ -474,15 +485,18 @@ int upscli_split_auth_section(const char *sect_name,
 			if (colon) {
 				sect_host[colon - at - 1] = '\0';
 			}
-		}	/* else keep NULL */
+		}	/* else keep sect_host=NULL */
 	} else {
+		/* No "user@" part, so just use sect_name as host -
+		 * just because this is more likely than this being
+		 * a specified sect_user at implicit "localhost" */
 		if (sect_name + 1 != colon) {
 			sect_host = xstrdup(sect_name);
 			if (!sect_host) goto failed;
 			if (colon) {
 				sect_host[colon - sect_name] = '\0';
 			}
-		}	/* else keep NULL */
+		}	/* else keep sect_host=NULL */
 	}
 
 	if (colon && colon[1]) {
@@ -542,17 +556,26 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		const char	*end_bracket = NULL;
 		upscli_authconf_t	*tmp = NULL;
 
-		if (!global_scope) {
-			upslogx(LOG_WARNING, "Section header ignored in included file with section-scope");
-			return;
-		}
+		current_section_ignored = 0;
 
 		sect_name = xstrdup(&arg[0][1]);	/* forget leading '[' */
 		end_bracket = strchr(sect_name, ']');
-		if (!end_bracket) {
+		if (!end_bracket || !strcmp(sect_name, "_global_defaults")) {
 			free(sect_name);
-			fatalx(EXIT_FAILURE, "%s: Invalid section header format: %s", __func__, arg[0]);
+
+			if (global_scope) {
+				/* Subsequent lines will (re-)populate global_defaults */
+				current_section = NULL;
+				return;
+			}
+
+			current_section_ignored = 1;
+			upslogx(LOG_WARNING, "%s: Invalid nutauth section header format "
+				"in a non-global context, section contents will be ignored: %s",
+				__func__, arg[0]);
+			return;
 		}
+
 		*(char *)(end_bracket) = '\0';	/* forget trailing ']' and any characters after it (comments etc.) */
 
 		if (upscli_split_auth_section(sect_name, &normalized_sect_name,
@@ -567,9 +590,21 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			fatalx(EXIT_FAILURE, "Invalid nutauth section header: %s", NUT_STRARG(arg[0]));
 		}
 
+		if (!global_scope && current_section
+		&& (!current_section->section || strcmp(current_section->section, normalized_sect_name))
+		) {
+			upslogx(LOG_WARNING, "Section header [%s] ignored in included file with "
+				"section-scope for [%s], section contents will be ignored",
+				normalized_sect_name, current_section->section);
+			current_section_ignored = 1;
+			return;
+		}
+
 		/* Find if section already exists */
-		tmp = authconf_list;
+		upsdebugx(4, "%s: Checking for existing section [%s] to import [%s]",
+			__func__, normalized_sect_name, sect_name);
 		current_section = NULL;
+		tmp = authconf_list;
 		while (tmp) {
 			if (tmp->section && !strcmp(tmp->section, normalized_sect_name)) {
 				current_section = tmp;
@@ -605,6 +640,10 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		free(sect_user);
 		free(sect_host);
 		free(sect_port);
+		return;
+	}
+
+	if (current_section_ignored) {
 		return;
 	}
 
@@ -647,7 +686,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 	if (current_section) {
 		set_authconf_val(current_section, var, val);
 	} else {
-		/* Modifying global defaults */
+		/* Creating/modifying global defaults */
 		if (!global_defaults) {
 			global_defaults = upscli_add_authconf(NULL);
 		}
@@ -690,6 +729,10 @@ static int parse_authconf_file(const char *filename, int fatal_errors, int globa
 		}
 		handle_authconf_args(ctx.numargs, ctx.arglist, global_scope);
 	}
+
+	/* A next included file may have a different section scope, even if it has no title.
+	 * TOTHINK: We should not reset the current_section pointer to NULL here, right? */
+	current_section_ignored = 0;
 
 	pconf_finish(&ctx);
 	return 1;
