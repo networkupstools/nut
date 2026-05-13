@@ -27,6 +27,11 @@
 #define MLINK_DESC_AUTH_STATUS     "2:4.8.9"
 #define MLINK_DESC_SERIALNUMBER    "2:4.9.40"
 
+#define MLINK_PAGE0_FLAG_AUTH_REQUIRED		(1U << 0)
+#define MLINK_PAGE0_FLAG_IMPLICIT_STUFFING	(1U << 1)
+#define MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT	(1U << 3)
+#define MLINK_PAGE0_FLAG_FIRMWARE_UPDATE_NEEDED	(1U << 4)
+
 typedef struct microlink_object_s {
 	int seen;
 	size_t len;
@@ -41,25 +46,13 @@ typedef struct microlink_descriptor_usage_s {
 	size_t size;
 } microlink_descriptor_usage_t;
 
-typedef union microlink_page0_flags_u {
-	unsigned char raw;
-	struct {
-		unsigned char auth_required : 1;
-		unsigned char implicit_stuffing : 1;
-		unsigned char reserved_2 : 1;
-		unsigned char descriptor_present : 1;
-		unsigned char firmware_update_needed : 1;
-		unsigned char reserved_5_7 : 3;
-	} bits;
-} microlink_page0_flags_t;
-
 typedef struct microlink_page0_state_s {
 	size_t width;
 	unsigned int count;
 	unsigned char version;
 	unsigned char series_data_version;
 	unsigned char descriptor_version;
-	microlink_page0_flags_t flags;
+	unsigned char flags;
 	uint16_t series_id;
 	uint16_t descriptor_ptr;
 } microlink_page0_state_t;

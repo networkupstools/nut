@@ -210,6 +210,22 @@ static int microlink_parse_command_source(const char *text, microlink_command_so
 
 static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
 {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
+#pragma clang diagnostic ignored "-Wunreachable-code-break"
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	switch (domain) {
 	case MLINK_CMD_DOMAIN_OUTLET:
 		switch (microlink_command_source) {
@@ -257,6 +273,12 @@ static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
 	}
 
 	return 0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 }
 
 static void microlink_read_config(void)
@@ -1152,6 +1174,85 @@ static uint64_t microlink_max_unsigned_for_size(size_t size)
 	return ((uint64_t)1 << (size * 8U)) - 1U;
 }
 
+static int microlink_value_fits_descriptor(int64_t raw, microlink_desc_numeric_sign_t sign,
+	size_t size)
+{
+	if (size == 0 || size > 8) {
+		return 0;
+	}
+
+	if (sign == MLINK_DESC_SIGNED) {
+		int64_t min_raw, max_raw;
+
+		if (size >= sizeof(int64_t)) {
+			min_raw = INT64_MIN;
+			max_raw = INT64_MAX;
+		} else {
+			uint64_t limit = 1ULL << ((size * 8U) - 1U);
+
+			min_raw = -(int64_t)limit;
+			max_raw = (int64_t)(limit - 1U);
+		}
+
+		return raw >= min_raw && raw <= max_raw;
+	}
+
+	return raw >= 0 && (uint64_t)raw <= microlink_max_unsigned_for_size(size);
+}
+
+static int microlink_parse_fixed_point_value(const microlink_desc_value_map_t *entry,
+	const char *val, int64_t *raw_out)
+{
+	char *endptr = NULL;
+	int64_t raw;
+
+	if (entry == NULL || val == NULL || raw_out == NULL) {
+		return 0;
+	}
+
+	if (entry->bin_point == 0U) {
+		long long parsed = strtoll(val, &endptr, 10);
+
+		if (endptr == val || *endptr != '\0') {
+			return 0;
+		}
+
+		raw = (int64_t)parsed;
+	} else {
+		double numeric = strtod(val, &endptr);
+		double scaled;
+
+		if (endptr == val || *endptr != '\0') {
+			return 0;
+		}
+
+		scaled = numeric * (double)(1U << entry->bin_point);
+		raw = (int64_t)((scaled >= 0.0) ? (scaled + 0.5) : (scaled - 0.5));
+	}
+
+	*raw_out = raw;
+	return 1;
+}
+
+static int microlink_lookup_value_map(const microlink_value_map_t *map, const char *val,
+	int64_t *raw_out)
+{
+	size_t j;
+
+	if (map == NULL || val == NULL || raw_out == NULL) {
+		return 0;
+	}
+
+	for (j = 0; map[j].text != NULL; j++) {
+		if (!strcasecmp(map[j].text, val)) {
+			*raw_out = map[j].value;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static int microlink_set_descriptor_date_info(const char *name, const char *path)
 {
 	uint64_t raw;
@@ -1227,12 +1328,12 @@ static int microlink_startup_ready(void)
 		return 0;
 	}
 
-	if ((page0.flags.bits.descriptor_present || page0.flags.bits.auth_required)
+	if ((page0.flags & (MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT | MLINK_PAGE0_FLAG_AUTH_REQUIRED)) != 0U
 	 && !descriptor_ready) {
 		return 0;
 	}
 
-	if (!page0.flags.bits.auth_required) {
+	if ((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) == 0U) {
 		return 1;
 	}
 
@@ -1419,12 +1520,14 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+# pragma GCC diagnostic ignored "-Wswitch-enum"
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 # pragma GCC diagnostic ignored "-Wunreachable-code"
 #endif
 /* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
 #ifdef __clang__
 # pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wswitch-enum"
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
@@ -1439,50 +1542,16 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 
 	case MLINK_DESC_FIXED_POINT:
 	{
-		char *endptr = NULL;
 		int64_t raw;
 
 		if (usage->size == 0 || usage->size > 8) {
 			return 0;
 		}
 
-		if (entry->bin_point == 0U) {
-			/* Integer-valued descriptors are parsed exactly. */
-			long long parsed = strtoll(val, &endptr, 10);
-
-			if (endptr == val || *endptr != '\0') {
-				return 0;
-			}
-
-			raw = (int64_t)parsed;
-		} else {
-			/* Fixed-point descriptors use the configured binary scale. */
-			double numeric = strtod(val, &endptr);
-			double scaled;
-
-			if (endptr == val || *endptr != '\0') {
-				return 0;
-			}
-
-			scaled = numeric * (double)(1U << entry->bin_point);
-			raw = (int64_t)((scaled >= 0.0) ? (scaled + 0.5) : (scaled - 0.5));
-		}
-
-		{
-			/* Bound the value to the descriptor width before packing it. */
-			int64_t min_raw, max_raw;
-
-			if (entry->sign == MLINK_DESC_SIGNED) {
-				max_raw = ((int64_t)1 << ((usage->size * 8U) - 1U)) - 1;
-				min_raw = -((int64_t)1 << ((usage->size * 8U) - 1U));
-			} else {
-				min_raw = 0;
-				max_raw = ((int64_t)1 << (usage->size * 8U)) - 1;
-			}
-
-			if (raw < min_raw || raw > max_raw) {
-				return 0;
-			}
+		/* Fixed-point descriptors use the configured binary scale. */
+		if (!microlink_parse_fixed_point_value(entry, val, &raw)
+		 || !microlink_value_fits_descriptor(raw, entry->sign, usage->size)) {
+			return 0;
 		}
 
 		memset(payload, 0, usage->size);
@@ -1494,6 +1563,58 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 		return microlink_send_descriptor_write(path, payload, usage->size);
 	}
 
+	case MLINK_DESC_HEX:
+	{
+		uint64_t raw;
+		char *endptr = NULL;
+
+		if (usage->size == 0 || usage->size > 8) {
+			return 0;
+		}
+
+		errno = 0;
+		raw = strtoull(val, &endptr, 16);
+		if (endptr == val || *endptr != '\0' || errno > 0
+		 || raw > microlink_max_unsigned_for_size(usage->size)) {
+			return 0;
+		}
+
+		memset(payload, 0, usage->size);
+		for (i = 0; i < usage->size; i++) {
+			size_t shift = (usage->size - 1U - i) * 8U;
+			payload[i] = (unsigned char)((raw >> shift) & 0xFFU);
+		}
+
+		return microlink_send_descriptor_write(path, payload, usage->size);
+	}
+
+	case MLINK_DESC_FIXED_POINT_MAP:
+	{
+		int64_t raw;
+
+		if (usage->size == 0 || usage->size > 8) {
+			return 0;
+		}
+
+		/* Try the symbolic label first, then fall back to the fixed-point parser. */
+		if (!microlink_lookup_value_map(entry->map, val, &raw)) {
+			if (!microlink_parse_fixed_point_value(entry, val, &raw)) {
+				return 0;
+			}
+		}
+
+		if (!microlink_value_fits_descriptor(raw, entry->sign, usage->size)) {
+			return 0;
+		}
+
+		memset(payload, 0, usage->size);
+		for (i = 0; i < usage->size; i++) {
+			size_t shift = (usage->size - 1U - i) * 8U;
+			payload[i] = (unsigned char)(((uint64_t)raw >> shift) & 0xFFU);
+		}
+
+		return microlink_send_descriptor_write(path, payload, usage->size);
+	}
 	case MLINK_DESC_DATE:
 	{
 		uint64_t raw;
@@ -1539,6 +1660,7 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 			return 0;
 		}
 
+		/* Time fields are packed as elapsed seconds in big-endian byte order. */
 		memset(payload, 0, usage->size);
 		for (i = 0; i < usage->size; i++) {
 			size_t shift = (usage->size - 1U - i) * 8U;
@@ -1553,51 +1675,33 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 	{
 		char *endptr = NULL;
 		int64_t raw = 0;
-		size_t j;
 
 		if (usage->size == 0 || usage->size > 8) {
 			return 0;
 		}
 
-		if (entry->map != NULL) {
-			for (j = 0; entry->map[j].text != NULL; j++) {
-				if (!strcasecmp(entry->map[j].text, val)) {
-					raw = entry->map[j].value;
-					break;
-				}
-			}
-
-			if (entry->map[j].text == NULL) {
-				/* Fall back to numeric input if the label is not known. */
-				if (entry->type == MLINK_DESC_ENUM_MAP) {
-					raw = (int64_t)strtoll(val, &endptr, 0);
-				} else {
-					raw = (int64_t)strtoull(val, &endptr, 0);
-				}
-
-				if (endptr == val || *endptr != '\0') {
-					return 0;
-				}
-			}
-		}
-
-		{
-			/* Enums and bitfields share the same width checks and packing. */
-			int64_t min_raw, max_raw;
-
-			if (entry->type == MLINK_DESC_ENUM_MAP && entry->sign == MLINK_DESC_SIGNED) {
-				max_raw = ((int64_t)1 << ((usage->size * 8U) - 1U)) - 1;
-				min_raw = -((int64_t)1 << ((usage->size * 8U) - 1U));
+		if (microlink_lookup_value_map(entry->map, val, &raw)) {
+			/* Matched a symbolic label. */
+		} else {
+			/* Fall back to numeric input if the label is not known. */
+			if (entry->type == MLINK_DESC_ENUM_MAP) {
+				raw = (int64_t)strtoll(val, &endptr, 0);
 			} else {
-				min_raw = 0;
-				max_raw = ((int64_t)1 << (usage->size * 8U)) - 1;
+				raw = (int64_t)strtoull(val, &endptr, 0);
 			}
 
-			if (raw < min_raw || raw > max_raw) {
+			if (endptr == val || *endptr != '\0') {
 				return 0;
 			}
 		}
 
+		if (!microlink_value_fits_descriptor(raw,
+			entry->type == MLINK_DESC_ENUM_MAP ? entry->sign : MLINK_DESC_UNSIGNED,
+			usage->size)) {
+			return 0;
+		}
+
+		/* Enums and bitfields share the same width checks and packing. */
 		memset(payload, 0, usage->size);
 		for (i = 0; i < usage->size; i++) {
 			size_t shift = (usage->size - 1U - i) * 8U;
@@ -1700,7 +1804,6 @@ static void microlink_publish_descriptor_exports(void)
 				microlink_set_descriptor_map_info(name, usage->path, entry->map, MLINK_MAP_VALUE);
 				break;
 			case MLINK_DESC_NONE:
-			default:
 				break;
 			}
 
@@ -1900,7 +2003,8 @@ static int microlink_update_blob(void)
 {
 	unsigned int row;
 
-	if (!page0.flags.bits.descriptor_present || page0.descriptor_version != 0x01U) {
+	if ((page0.flags & MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT) == 0U
+	 || page0.descriptor_version != 0x01U) {
 		return 0;
 	}
 
@@ -2000,7 +2104,7 @@ static void microlink_cache_object(const unsigned char *frame, size_t len)
 			? (uint16_t)(((uint16_t)obj->data[3] << 8) | (uint16_t)obj->data[4])
 			: 0;
 		page0.series_data_version = (obj->len >= 6) ? obj->data[5] : 0;
-		page0.flags.raw = (obj->len >= 7) ? obj->data[6] : 0;
+		page0.flags = (obj->len >= 7) ? obj->data[6] : 0;
 		page0.descriptor_version = (obj->len >= 9) ? obj->data[8] : 0;
 		page0.descriptor_ptr = (obj->len >= 12)
 			? (uint16_t)(((uint16_t)obj->data[10] << 8) | (uint16_t)obj->data[11])
@@ -2009,7 +2113,7 @@ static void microlink_cache_object(const unsigned char *frame, size_t len)
 			(unsigned int)page0.version,
 			(unsigned int)page0.width,
 			page0.count,
-			(unsigned int)page0.flags.raw);
+			(unsigned int)page0.flags);
 	}
 }
 
@@ -2207,7 +2311,7 @@ static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 	microlink_cache_object(frame, framelen);
 
 	if (page0.count > 0 && frame[0] == (unsigned char)(page0.count - 1U)) {
-		if (page0.flags.bits.descriptor_present) {
+		if ((page0.flags & MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT) != 0U) {
 			if (descriptor_ready) {
 				microlink_update_blob();
 			} else {
@@ -2215,7 +2319,8 @@ static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 			}
 		}
 
-		if (page0.flags.bits.auth_required && descriptor_ready && !authentication_sent) {
+		if ((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) != 0U
+		 && descriptor_ready && !authentication_sent) {
 			if (!microlink_authenticate()) {
 				ser_comm_fail("microlink: failed to authenticate");
 				return 0;
@@ -2369,19 +2474,20 @@ static void microlink_publish_runtime(void)
 		dstate_setinfo("microlink.series.id", "%u", (unsigned int)page0.series_id);
 		dstate_setinfo("microlink.series.data.version", "%u",
 			(unsigned int)page0.series_data_version);
-		snprintf(flags, sizeof(flags), "0x%02X", page0.flags.raw);
+		snprintf(flags, sizeof(flags), "0x%02X", page0.flags);
 		dstate_setinfo("microlink.flags", "%s", flags);
 		dstate_setinfo("microlink.flag.auth_required", "%u",
-			(unsigned int)page0.flags.bits.auth_required);
+			(unsigned int)((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) != 0U));
 		dstate_setinfo("microlink.flag.implicit_stuffing", "%u",
-			(unsigned int)page0.flags.bits.implicit_stuffing);
+			(unsigned int)((page0.flags & MLINK_PAGE0_FLAG_IMPLICIT_STUFFING) != 0U));
 		dstate_setinfo("microlink.flag.descriptor_present", "%u",
-			(unsigned int)page0.flags.bits.descriptor_present);
+			(unsigned int)((page0.flags & MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT) != 0U));
 		dstate_setinfo("microlink.flag.firmware_update_needed", "%u",
-			(unsigned int)page0.flags.bits.firmware_update_needed);
+			(unsigned int)((page0.flags & MLINK_PAGE0_FLAG_FIRMWARE_UPDATE_NEEDED) != 0U));
 	}
 
-	if (protocol->seen && protocol->len >= 12 && page0.flags.bits.descriptor_present) {
+	if (protocol->seen && protocol->len >= 12
+	 && (page0.flags & MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT) != 0U) {
 		dstate_setinfo("microlink.descriptor.version", "%u",
 			(unsigned int)page0.descriptor_version);
 		descriptor_ptr = page0.descriptor_ptr;
