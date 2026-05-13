@@ -834,9 +834,16 @@ upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
 	touch $@
 
-UPSCLI_CREATE_AUTHCONF_DEPS = upscli_free_authconf_item.$(MAN_SECTION_API)
+UPSCLI_CREATE_AUTHCONF_DEPS = \
+	upscli_clone_authconf_item.$(MAN_SECTION_API) \
+	upscli_merge_authconf_item.$(MAN_SECTION_API) \
+	upscli_free_authconf_item.$(MAN_SECTION_API)
+
 UPSCLI_DUMP_AUTHCONF_DEPS = upscli_dump_authconf_list.$(MAN_SECTION_API)
-UPSCLI_FIND_AUTHCONF_DEPS = upscli_normalize_authconf_section_parts.$(MAN_SECTION_API) upscli_split_authconf_section.$(MAN_SECTION_API)
+
+UPSCLI_FIND_AUTHCONF_DEPS = \
+	upscli_normalize_authconf_section_parts.$(MAN_SECTION_API) \
+	upscli_split_authconf_section.$(MAN_SECTION_API)
 
 $(UPSCLI_CREATE_AUTHCONF_DEPS): upscli_create_authconf_item.$(MAN_SECTION_API)
 	touch $@

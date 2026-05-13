@@ -63,8 +63,10 @@ upscli_authconf_t *upscli_create_authconf_item(const char *section)
 {
 	upscli_authconf_t	*node = (upscli_authconf_t *)calloc(1, sizeof(upscli_authconf_t));
 
-	if (!node)
+	if (!node) {
+		upsdebugx(1, "Failed to create nutauth configuration node for section '%s'", NUT_STRARG(section));
 		return NULL;
+	}
 
 	if (section) {
 		node->section = xstrdup(section);
@@ -75,12 +77,140 @@ upscli_authconf_t *upscli_create_authconf_item(const char *section)
 	return node;
 }
 
+upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const char *section)
+{
+	upscli_authconf_t	*node = upscli_create_authconf_item(section);
+
+	if (!node) {
+		upsdebugx(1, "Failed to create nutauth configuration node for section '%s'", NUT_STRARG(section));
+		return NULL;
+	}
+
+	if (source) {
+		const char	*at = NULL;
+
+		/* FIXME: normalize */
+		if (section)
+			node->section = xstrdup(section);
+		else
+			node->section = source->section ? xstrdup(source->section) : NULL;
+
+		if ((at = strchr(node->section, '@')) != NULL) {
+			if (at != node->section) {
+				node->user = (char*)xcalloc(at - node->section + 1, sizeof(char));
+				memcpy(node->user, node->section, at - node->section);
+			}	/* else keep explicitly not-set */
+		} else {
+			node->user = source->user ? xstrdup(source->user) : NULL;
+		}
+
+		node->pass = source->pass ? xstrdup(source->pass) : NULL;
+		node->certpath = source->certpath ? xstrdup(source->certpath) : NULL;
+		node->certfile = source->certfile ? xstrdup(source->certfile) : NULL;
+		node->certident = source->certident ? xstrdup(source->certident) : NULL;
+		node->certpasswd = source->certpasswd ? xstrdup(source->certpasswd) : NULL;
+		node->ssl_backend = source->ssl_backend ? xstrdup(source->ssl_backend) : NULL;
+
+		node->certverify = source->certverify;
+		node->forcessl = source->forcessl;
+	}
+
+	return node;
+}
+
+/** Merge contents of two existing configuration items, they may be or not be on the list */
+upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_authconf_t *target)
+{
+	const char	*at = NULL;
+
+	if (!source)
+		return target;
+
+	/* TOTHINK: (re-)normalize? */
+	if ( (!(target->section) || !*(target->section) )
+	 &&  (source->section && *(source->section) )
+	) {
+		free(target->section);
+		target->section = xstrdup(source->section);
+	}
+
+	if ((at = strchr(target->section, '@')) != NULL) {
+		if (at != target->section) {
+			target->user = (char*)xcalloc(at - target->section + 1, sizeof(char));
+			memcpy(target->user, target->section, at - target->section);
+		} else {
+			/* keep explicitly not-set */
+			free(target->user);
+			target->user = NULL;
+		}
+	} else {
+		if ( (!(target->user) || !*(target->user) )
+		 &&  (source->user && *(source->user) )
+		) {
+			free(target->user);
+			target->user = xstrdup(source->user);
+		}
+	}
+
+	if ( (!(target->pass) || !*(target->pass) )
+	 &&  (source->pass && *(source->pass) )
+	) {
+		free(target->pass);
+		target->pass = xstrdup(source->pass);
+	}
+
+	if ( (!(target->certpath) || !*(target->certpath) )
+	 &&  (source->certpath && *(source->certpath) )
+	) {
+		free(target->certpath);
+		target->certpath = xstrdup(source->certpath);
+	}
+
+	if ( (!(target->certfile) || !*(target->certfile) )
+	 &&  (source->certfile && *(source->certfile) )
+	) {
+		free(target->certfile);
+		target->certfile = xstrdup(source->certfile);
+	}
+
+	if ( (!(target->certident) || !*(target->certident) )
+	 &&  (source->certident && *(source->certident) )
+	) {
+		free(target->certident);
+		target->certident = xstrdup(source->certident);
+	}
+
+	if ( (!(target->certpasswd) || !*(target->certpasswd) )
+	 &&  (source->certpasswd && *(source->certpasswd) )
+	) {
+		free(target->certpasswd);
+		target->certpasswd = xstrdup(source->certpasswd);
+	}
+
+	if ( (!(target->ssl_backend) || !*(target->ssl_backend) )
+	 &&  (source->ssl_backend && *(source->ssl_backend) )
+	) {
+		free(target->ssl_backend);
+		target->ssl_backend = xstrdup(source->ssl_backend);
+	}
+
+	if (target->certverify < 0 && source->certverify >= 0) {
+		target->certverify = source->certverify;
+	}
+
+	if (target->forcessl < 0 && source->forcessl >= 0) {
+		target->forcessl = source->forcessl;
+	}
+
+	return target;
+}
+
 static upscli_authconf_t *upscli_add_authconf(const char *section)
 {
 	upscli_authconf_t	*node = upscli_create_authconf_item(section);
 
 	if (!node) {
-		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s'", section);
+		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s' which should be added to the list", NUT_STRARG(section));
 	}
 
 	/* Append to list */

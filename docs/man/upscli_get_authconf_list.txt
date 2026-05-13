@@ -23,7 +23,7 @@ of authentication configurations parsed from the configuration file (usually
 *nutauth.conf*) via linkman:upscli_read_authconf_file[3].
 
 Each element in the list is of type `upscli_authconf_t` as detailed in
-linkman:upscli_create_authconf[3].
+linkman:upscli_create_authconf_item[3].
 
 RETURN VALUE
 ------------
