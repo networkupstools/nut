@@ -5,8 +5,9 @@ NAME
 ----
 
 upscli_find_authconf, upscli_normalize_auth_section_parts,
-upscli_split_auth_section, upscli_free_authconf - Find,
-parse name, and free authentication configuration items
+upscli_split_auth_section - Find authentication configuration
+items by their name components; help parse and normalize
+name components for authentication configuration items
 
 SYNOPSIS
 --------
@@ -32,8 +33,6 @@ SYNOPSIS
 		int    *out_fixed_sect_user,
 		char **normalized_sect_host,
 		char **normalized_sect_port);
-
-	upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
 ------
 
 DESCRIPTION
@@ -67,11 +66,6 @@ A 'normalized_sect_name' can be also constructed and returned, so that varying
 but ultimately identical definitions of the section titles (e.g. `[@localhost]`
 and `[@localhost:3493]` can be conflated when parsing configuration files or
 searching in the list.
-
-The *upscli_free_authconf()* function frees the memory allocated for a single
-`upscli_authconf_t` node and returns its `next` pointer. This is useful for
-manually iterating and cleaning up copies of the list, although typically
-linkman:upscli_free_authconf_list[3] is used to clear the entire internal list.
 
 RETURN VALUE
 ------------

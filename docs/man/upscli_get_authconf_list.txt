@@ -4,7 +4,7 @@ UPSCLI_GET_AUTHCONF_LIST(3)
 NAME
 ----
 
-upscli_get_authconf_list, upscli_free_authconf_list - Get and free the list of authentication configurations
+upscli_get_authconf_list - Get the list of known authentication configurations
 
 SYNOPSIS
 --------
@@ -13,8 +13,6 @@ SYNOPSIS
 	#include <authconf.h>
 
 	upscli_authconf_t *upscli_get_authconf_list(void);
-
-	void upscli_free_authconf_list(void);
 ------
 
 DESCRIPTION
@@ -24,28 +22,8 @@ The *upscli_get_authconf_list()* function returns a pointer to the internal list
 of authentication configurations parsed from the configuration file (usually
 *nutauth.conf*) via linkman:upscli_read_authconf[3].
 
-Each element in the list is of type `upscli_authconf_t`:
-
-[source,c]
-----------
-typedef struct upscli_authconf_s {
-	char	*section;	/* [@host:port] or [user@host:port], or NULL for global */
-	char	*user;
-	char	*pass;
-	char	*certpath;
-	char	*certfile;
-	char	*certident;
-	char	*certpasswd;	/* Password for key/cert storage */
-	char	*ssl_backend;	/* openssl/nss */
-	int	certverify;	/* -1 = unset, 0 = off, 1 = on */
-	int	forcessl;	/* -1 = unset, 0 = off, 1 = on */
-
-	struct upscli_authconf_s	*next;
-} upscli_authconf_t;
-----------
-
-The *upscli_free_authconf_list()* function frees the memory allocated for the
-entire list and resets the internal list pointer to NULL.
+Each element in the list is of type `upscli_authconf_t` as detailed in
+linkman:upscli_create_authconf[3].
 
 RETURN VALUE
 ------------
@@ -57,5 +35,6 @@ initialized by linkman:upscli_read_authconf[3].
 SEE ALSO
 --------
 
+linkman:upscli_create_authconf[3],
 linkman:upscli_read_authconf[3], linkman:upscli_find_authconf[3],
-linkman:upscli_free_authconf[3], linkman:upscli_dump_authconf_list[3]
+linkman:upscli_free_authconf_list[3], linkman:upscli_dump_authconf_list[3]
