@@ -1,11 +1,11 @@
-UPSCLI_FIND_AUTHCONF(3)
-=======================
+UPSCLI_FIND_AUTHCONF_ITEM(3)
+============================
 
 NAME
 ----
 
-upscli_find_authconf, upscli_normalize_auth_section_parts,
-upscli_split_auth_section - Find authentication configuration
+upscli_find_authconf_item, upscli_normalize_authconf_section_parts,
+upscli_split_authconf_section - Find authentication configuration
 items by their name components; help parse and normalize
 name components for authentication configuration items
 
@@ -15,19 +15,19 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	upscli_authconf_t *upscli_find_authconf(
+	upscli_authconf_t *upscli_find_authconf_item(
 		const char *user,
 		const char *host,
 		const char *port);
 
-	int upscli_normalize_auth_section_parts(
+	int upscli_normalize_authconf_section_parts(
 		char **out_normalized_sect_name,
 		char **p_sect_user,
 		int  *out_fixed_sect_user,
 		char **p_sect_host,
 		char **p_sect_port);
 
-	int upscli_split_auth_section(const char *sect_name,
+	int upscli_split_authconf_section(const char *sect_name,
 		char **normalized_sect_name,
 		char **normalized_sect_user,
 		int    *out_fixed_sect_user,
@@ -38,7 +38,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *upscli_find_authconf()* function searches the internal list of
+The *upscli_find_authconf_item()* function searches the internal list of
 authentication configurations for the best match for the given 'user',
 'host', and 'port'.
 
@@ -51,16 +51,16 @@ The matching logic follows this priority:
 If a specific match is found, any missing fields in that section are
 inherited from the global defaults.
 
-The "*upscli_split_auth_section()*" function splits a `sect_name` which may be
+The "*upscli_split_authconf_section()*" function splits a `sect_name` which may be
 from a user-typed configuration file into user, host and port sections, and
-with "*upscli_normalize_auth_section_parts()*" normalizes the values (e.g. a
+with "*upscli_normalize_authconf_section_parts()*" normalizes the values (e.g. a
 `NULL` 'host' becomes `localhost`, a missing 'port' is defaulted to `NUT_PORT`
 defined at build configuration time, e.g. '3493' by default, and a non-numeric
 string 'port' is resolved in the naming database of the current operating
 environment). The resulting normalized values are returned to caller using
 pointers provided in the arguments (if not `NULL` in case of
-"*upscli_split_auth_section()*", must be not `NULL` in case of
-"*upscli_normalize_auth_section_parts()*").
+"*upscli_split_authconf_section()*", must be not `NULL` in case of
+"*upscli_normalize_authconf_section_parts()*").
 
 A 'normalized_sect_name' can be also constructed and returned, so that varying
 but ultimately identical definitions of the section titles (e.g. `[@localhost]`
@@ -70,17 +70,17 @@ searching in the list.
 RETURN VALUE
 ------------
 
-The *upscli_find_authconf()* function returns a pointer to a `upscli_authconf_t`
+The *upscli_find_authconf_item()* function returns a pointer to a `upscli_authconf_t`
 structure containing the matched configuration, or NULL if no match is found.
 Note that the returned pointer refers to an item in the internal list managed
 by *libupsclient*; it should not be freed directly by the caller unless they
 are managing their own list.
 
-The *upscli_free_authconf()* function returns the last known value of the `next`
+The *upscli_free_authconf_item()* function returns the last known value of the `next`
 pointer field from the node being freed.
 
 SEE ALSO
 --------
 
-linkman:upscli_read_authconf[3], linkman:upscli_get_authconf_list[3],
+linkman:upscli_read_authconf_file[3], linkman:upscli_get_authconf_list[3],
 linkman:upscli_free_authconf_list[3]

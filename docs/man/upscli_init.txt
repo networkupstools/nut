@@ -90,7 +90,7 @@ specified file provides a certificate with expected subject name, or possibly
 matches the expected host name or IP address.
 
 The *upscli_init_authconf()* function uses the `upscli_authconf_t` structure
-populated by linkman:upscli_read_authconf[3] to pass equivalent information
+populated by linkman:upscli_read_authconf_file[3] to pass equivalent information
 from linkman:nutauth.conf[5] file(s).
 
 Other nuances
