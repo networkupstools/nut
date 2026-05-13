@@ -1,0 +1,65 @@
+UPSCLI_CREATE_AUTHCONF(3)
+=========================
+
+NAME
+----
+
+upscli_create_authconf, upscli_free_authconf - Create or free an individual
+authentication configuration item which is not necessarily in the list
+
+SYNOPSIS
+--------
+
+------
+	#include <authconf.h>
+
+	typedef struct upscli_authconf_s {
+		char	*section;	/* [@host:port] or [user@host:port], or NULL for global */
+		char	*user;
+		char	*pass;
+		char	*certpath;
+		char	*certfile;
+		char	*certident;
+		char	*certpasswd;	/* Password for key/cert storage */
+		char	*ssl_backend;	/* openssl/nss */
+		int	certverify;	/* -1 = unset, 0 = off, 1 = on */
+		int	forcessl;	/* -1 = unset, 0 = off, 1 = on */
+
+		struct upscli_authconf_s	*next;
+	} upscli_authconf_t;
+
+	upscli_authconf_t *upscli_create_authconf(const char *section);
+
+	upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_create_authconf()* function allocates the memory for an
+`upscli_authconf_t` node and initializes it with the given section name.
+Other string pointers remain `NULL`, numeric flags are set to `-1`, and
+the `next` pointer is set to `NULL`. This item is not automatically added
+to the list.
+
+The *upscli_free_authconf()* function frees the memory allocated for
+a single `upscli_authconf_t` node and returns its `next` pointer. This is
+useful for manually iterating and cleaning up copies of the list, although
+typically linkman:upscli_free_authconf_list[3] is used to clear the entire
+internal list.
+
+RETURN VALUE
+------------
+
+The *upscli_create_authconf()* function returns a pointer to the new structure,
+or `NULL` if an error occurred.
+
+The *upscli_free_authconf()* function returns a pointer to the next element
+of the `upscli_authconf_t` list, if known (and if it was part of the list).
+
+SEE ALSO
+--------
+
+linkman:upscli_dump_authconf[3],
+linkman:upscli_read_authconf[3], linkman:upscli_find_authconf[3],
+linkman:upscli_get_authconf_list[3], linkman:upscli_dump_authconf_list[3]
