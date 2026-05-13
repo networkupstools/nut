@@ -35,8 +35,11 @@ typedef struct upscli_authconf_s {
 	struct upscli_authconf_s	*next;
 } upscli_authconf_t;
 
-/** Get the list of all parsed authentication configurations */
+/** Get the one global list of all parsed authentication configurations */
 upscli_authconf_t *upscli_get_authconf_list(void);
+
+/** Create a one-off configuration item, upscli_free_authconf() it manually */
+upscli_authconf_t *upscli_create_authconf(const char *section);
 
 /** Free an authentication configuration item (if not NULL) and return its "next" pointer */
 upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
