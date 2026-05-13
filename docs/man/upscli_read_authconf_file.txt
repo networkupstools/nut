@@ -1,10 +1,10 @@
-UPSCLI_READ_AUTHCONF(3)
-=======================
+UPSCLI_READ_AUTHCONF_FILE(3)
+============================
 
 NAME
 ----
 
-upscli_read_authconf - Read the authentication configuration file
+upscli_read_authconf_file - Read the authentication configuration file
 
 SYNOPSIS
 --------
@@ -12,13 +12,13 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	int upscli_read_authconf(const char *filename, int fatal_errors);
+	int upscli_read_authconf_file(const char *filename, int fatal_errors);
 ------
 
 DESCRIPTION
 -----------
 
-The *upscli_read_authconf()* function reads the specified 'filename' (which
+The *upscli_read_authconf_file()* function reads the specified 'filename' (which
 is usually the path to *nutauth.conf*) and populates an internal list of
 authentication and SSL configurations.
 
@@ -54,11 +54,11 @@ within that section.
 RETURN VALUE
 ------------
 
-The *upscli_read_authconf()* function returns '1' on success, or '-1' if an
+The *upscli_read_authconf_file()* function returns '1' on success, or '-1' if an
 error occurs (and 'fatal_errors' was zero).
 
 SEE ALSO
 --------
 
-linkman:upscli_get_authconf_list[3], linkman:upscli_find_authconf[3],
+linkman:upscli_get_authconf_list[3], linkman:upscli_find_authconf_item[3],
 linkman:upscli_dump_authconf_list[3], linkman:nutauth.conf[5]

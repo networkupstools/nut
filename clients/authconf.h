@@ -38,11 +38,11 @@ typedef struct upscli_authconf_s {
 /** Get the one global list of all parsed authentication configurations */
 upscli_authconf_t *upscli_get_authconf_list(void);
 
-/** Create a one-off configuration item, upscli_free_authconf() it manually */
-upscli_authconf_t *upscli_create_authconf(const char *section);
+/** Create a one-off configuration item, upscli_free_authconf_item() it manually */
+upscli_authconf_t *upscli_create_authconf_item(const char *section);
 
 /** Free an authentication configuration item (if not NULL) and return its "next" pointer */
-upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node);
+upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node);
 
 /** Free the list of authentication configurations */
 void upscli_free_authconf_list(void);
@@ -53,7 +53,7 @@ void upscli_free_authconf_list(void);
  * (whichever is found first); then one can follow `INCLUDE` trail if needed.
  * Returns -1 on error, 1 on success
  */
-int upscli_read_authconf(const char *filename, int fatal_errors);
+int upscli_read_authconf_file(const char *filename, int fatal_errors);
 
 /** All p_* args must be non-NULL pointers to `char *` string variables
  * which may be freed and re-allocated to return normalized values
@@ -61,7 +61,7 @@ int upscli_read_authconf(const char *filename, int fatal_errors);
  * The out_* values are optional and may be NULL if you do not want
  * those data points returned.
  */
-int upscli_normalize_auth_section_parts(
+int upscli_normalize_authconf_section_parts(
 	char **out_normalized_sect_name,
 	char **p_sect_user,
 	int  *out_fixed_sect_user,
@@ -73,7 +73,7 @@ int upscli_normalize_auth_section_parts(
  * Return normalized components and reconstructed section name in output parameters (if not NULL),
  * and 0 for successful completion or -1 if any error happened along the way.
  */
-int upscli_split_auth_section(const char *sect_name,
+int upscli_split_authconf_section(const char *sect_name,
 	char **normalized_sect_name,
 	char **normalized_sect_user,
 	int    *out_fixed_sect_user,
@@ -83,7 +83,7 @@ int upscli_split_auth_section(const char *sect_name,
 /** Find the best matching authconf for a given connection string;
  * if all args are NULL, return the global section or NULL if none such in the list.
  */
-upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port);
+upscli_authconf_t *upscli_find_authconf_item(const char *user, const char *host, const char *port);
 
 /** Print one node to the specified stream (stdout if NULL),
  * return code similar to fprintf() - sum of printed characters.
@@ -94,7 +94,7 @@ upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, cons
  * 2 - like 1, but do not escape special characters in strings (only double-quote them).
  *
  * Used from upscli_dump_authconf_list() */
-int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
+int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
 
 /** Print ultimate configuration to the specified stream (stdout if NULL)
  * and return the number of nodes in the current authconf list */

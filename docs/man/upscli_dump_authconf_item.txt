@@ -1,10 +1,10 @@
-UPSCLI_DUMP_AUTHCONF(3)
+UPSCLI_DUMP_AUTHCONF_ITEM(3)
 ============================
 
 NAME
 ----
 
-upscli_dump_authconf, upscli_dump_authconf_list - Print authentication configuration node or list
+upscli_dump_authconf_item, upscli_dump_authconf_list - Print authentication configuration node or list
 
 SYNOPSIS
 --------
@@ -12,7 +12,7 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
+	int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
 
 	size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug);
 ------
@@ -20,7 +20,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *upscli_dump_authconf()* function prints a single configuration 'node'
+The *upscli_dump_authconf_item()* function prints a single configuration 'node'
 to the specified 'stream'. If 'stream' is NULL, it defaults to `stdout`.
 
 The *upscli_dump_authconf_list()* function prints the entire internal list of
@@ -47,7 +47,7 @@ characters).
 RETURN VALUE
 ------------
 
-The *upscli_dump_authconf()* function returns the return value of the
+The *upscli_dump_authconf_item()* function returns the return value of the
 underlying linkman:fprintf[3] call, or -1 if 'node' is NULL.
 
 The *upscli_dump_authconf_list()* function returns the number of nodes
@@ -56,5 +56,5 @@ seen in the list (and likely printed).
 SEE ALSO
 --------
 
-linkman:upscli_create_authconf[3],
-linkman:upscli_read_authconf[3], linkman:upscli_get_authconf_list[3]
+linkman:upscli_create_authconf_item[3],
+linkman:upscli_read_authconf_file[3], linkman:upscli_get_authconf_list[3]

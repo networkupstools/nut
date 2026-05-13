@@ -59,7 +59,7 @@ upscli_authconf_t *upscli_get_authconf_list(void)
 	return authconf_list;
 }
 
-upscli_authconf_t *upscli_create_authconf(const char *section)
+upscli_authconf_t *upscli_create_authconf_item(const char *section)
 {
 	upscli_authconf_t	*node = (upscli_authconf_t *)calloc(1, sizeof(upscli_authconf_t));
 
@@ -77,7 +77,7 @@ upscli_authconf_t *upscli_create_authconf(const char *section)
 
 static upscli_authconf_t *upscli_add_authconf(const char *section)
 {
-	upscli_authconf_t	*node = upscli_create_authconf(section);
+	upscli_authconf_t	*node = upscli_create_authconf_item(section);
 
 	if (!node) {
 		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s'", section);
@@ -97,7 +97,7 @@ static upscli_authconf_t *upscli_add_authconf(const char *section)
 	return node;
 }
 
-upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node)
+upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node)
 {
 	if (node) {
 		upscli_authconf_t	*next = node->next;
@@ -121,7 +121,7 @@ upscli_authconf_t *upscli_free_authconf(upscli_authconf_t *node)
 
 static int upscli_dump_authconf_line_str(FILE *restrict stream, const char *var, const char *val, const char *indent, int for_debug)
 {
-	/* Assume sane inputs from upscli_dump_authconf(); val may be NULL */
+	/* Assume sane inputs from upscli_dump_authconf_item(); val may be NULL */
 	int	res = 0;
 	if (!val) {
 		if (for_debug) {
@@ -154,7 +154,7 @@ static int upscli_dump_authconf_line_str(FILE *restrict stream, const char *var,
 
 static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var, int val, const char *indent, int for_debug)
 {
-	/* Assume sane inputs from upscli_dump_authconf(); val may be NULL */
+	/* Assume sane inputs from upscli_dump_authconf_item(); val may be NULL */
 	int res;
 
 	/* TOTHINK: Print "-1" values when not running "for_debug"?
@@ -172,7 +172,7 @@ static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var,
 	return res;
 }
 
-int upscli_dump_authconf(FILE *restrict stream, upscli_authconf_t *node, int for_debug)
+int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug)
 {
 	char	*indent = NULL;
 	int	res = 0, ret = 0;
@@ -256,7 +256,7 @@ size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug)
 
 	while (node) {
 		count++;
-		upscli_dump_authconf(stream, node, for_debug);
+		upscli_dump_authconf_item(stream, node, for_debug);
 		node = node->next;
 	}
 
@@ -268,7 +268,7 @@ void upscli_free_authconf_list(void)
 	upscli_authconf_t	*node = authconf_list;
 
 	while (node) {
-		node = upscli_free_authconf(node);
+		node = upscli_free_authconf_item(node);
 	}
 
 	authconf_list = NULL;
@@ -332,7 +332,7 @@ static void authconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Error in parseconf(authconf): %s", errmsg);
 }
 
-int upscli_normalize_auth_section_parts(
+int upscli_normalize_authconf_section_parts(
 	char **out_normalized_sect_name,
 	char **p_sect_user,
 	int  *out_fixed_sect_user,
@@ -348,7 +348,7 @@ int upscli_normalize_auth_section_parts(
 	 * those data points returned.
 	 */
 	if (!p_sect_user || !p_sect_host || !p_sect_port) {
-		upslogx(LOG_ERR, "upscli_normalize_auth_section_parts: NULL pointer-to-string argument provided");
+		upslogx(LOG_ERR, "upscli_normalize_authconf_section_parts: NULL pointer-to-string argument provided");
 		return -1;
 	}
 
@@ -444,7 +444,7 @@ failed:
 	return -1;
 }
 
-int upscli_split_auth_section(const char *sect_name,
+int upscli_split_authconf_section(const char *sect_name,
 	char **normalized_sect_name,
 	char **normalized_sect_user,
 	int    *out_fixed_sect_user,
@@ -512,7 +512,7 @@ int upscli_split_auth_section(const char *sect_name,
 		if (!sect_port) goto failed;
 	}
 
-	if (upscli_normalize_auth_section_parts(
+	if (upscli_normalize_authconf_section_parts(
 			normalized_sect_name,
 			&sect_user, &fixed_sect_user,
 			&sect_host, &sect_port) < 0
@@ -585,7 +585,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 
 		*(char *)(end_bracket) = '\0';	/* forget trailing ']' and any characters after it (comments etc.) */
 
-		if (upscli_split_auth_section(sect_name, &normalized_sect_name,
+		if (upscli_split_authconf_section(sect_name, &normalized_sect_name,
 			&sect_user, &current_section_with_fixed_username,
 			&sect_host, &sect_port) < 0
 		) {
@@ -745,7 +745,7 @@ static int parse_authconf_file(const char *filename, int fatal_errors, int globa
 	return 1;
 }
 
-int upscli_read_authconf(const char *filename, int fatal_errors)
+int upscli_read_authconf_file(const char *filename, int fatal_errors)
 {
 	char	fn[NUT_PATH_MAX + 1];
 
@@ -802,7 +802,7 @@ found:
 	return parse_authconf_file(filename, fatal_errors, 1);
 }
 
-upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, const char *port)
+upscli_authconf_t *upscli_find_authconf_item(const char *user, const char *host, const char *port)
 {
 	upsdebugx(2, "%s: starting for [%s]@[%s]:[%s]", __func__, NUT_STRARG(user), NUT_STRARG(host), NUT_STRARG(port));
 
@@ -825,14 +825,14 @@ upscli_authconf_t *upscli_find_authconf(const char *user, const char *host, cons
 		int	fixed_sect_user = 0;
 		upscli_authconf_t	*retval = global_defaults, *tmp = NULL;
 
-		if (upscli_normalize_auth_section_parts(
+		if (upscli_normalize_authconf_section_parts(
 				&normalized_sect_name,
 				&sect_user,
 				&fixed_sect_user,
 				&sect_host,
 				&sect_port) < 0
 		) {
-			upsdebugx(2, "%s: returning global defaults: could not upscli_normalize_auth_section_parts()", __func__);
+			upsdebugx(2, "%s: returning global defaults: could not upscli_normalize_authconf_section_parts()", __func__);
 			goto finished;	/* return default */
 		}
 

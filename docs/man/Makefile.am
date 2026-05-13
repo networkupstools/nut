@@ -556,12 +556,12 @@ SRC_DEV_PAGES = \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	upscli_upslog_set_debug_level.txt \
-	upscli_create_authconf.txt \
-	upscli_dump_authconf_list.txt \
-	upscli_find_authconf.txt \
+	upscli_create_authconf_item.txt \
+	upscli_dump_authconf_item.txt \
+	upscli_find_authconf_item.txt \
 	upscli_free_authconf_list.txt \
 	upscli_get_authconf_list.txt \
-	upscli_read_authconf.txt \
+	upscli_read_authconf_file.txt \
 	upscli_str_add_unique_token.txt \
 	upscli_str_contains_token.txt \
 	libnutclient.txt \
@@ -758,15 +758,15 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
-	upscli_create_authconf.$(MAN_SECTION_API) \
+	upscli_create_authconf_item.$(MAN_SECTION_API) \
 	$(UPSCLI_CREATE_AUTHCONF_DEPS) \
-	upscli_dump_authconf.$(MAN_SECTION_API) \
+	upscli_dump_authconf_item.$(MAN_SECTION_API) \
 	$(UPSCLI_DUMP_AUTHCONF_DEPS) \
-	upscli_find_authconf.$(MAN_SECTION_API) \
+	upscli_find_authconf_item.$(MAN_SECTION_API) \
 	$(UPSCLI_FIND_AUTHCONF_DEPS) \
 	upscli_free_authconf_list.$(MAN_SECTION_API) \
 	upscli_get_authconf_list.$(MAN_SECTION_API) \
-	upscli_read_authconf.$(MAN_SECTION_API) \
+	upscli_read_authconf_file.$(MAN_SECTION_API) \
 	$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
 	upscli_str_contains_token.$(MAN_SECTION_API) \
@@ -834,17 +834,17 @@ upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
 	touch $@
 
-UPSCLI_CREATE_AUTHCONF_DEPS = upscli_free_authconf.$(MAN_SECTION_API)
+UPSCLI_CREATE_AUTHCONF_DEPS = upscli_free_authconf_item.$(MAN_SECTION_API)
 UPSCLI_DUMP_AUTHCONF_DEPS = upscli_dump_authconf_list.$(MAN_SECTION_API)
-UPSCLI_FIND_AUTHCONF_DEPS = upscli_normalize_auth_section_parts.$(MAN_SECTION_API) upscli_split_auth_section.$(MAN_SECTION_API)
+UPSCLI_FIND_AUTHCONF_DEPS = upscli_normalize_authconf_section_parts.$(MAN_SECTION_API) upscli_split_authconf_section.$(MAN_SECTION_API)
 
-$(UPSCLI_CREATE_AUTHCONF_DEPS): upscli_create_authconf.$(MAN_SECTION_API)
+$(UPSCLI_CREATE_AUTHCONF_DEPS): upscli_create_authconf_item.$(MAN_SECTION_API)
 	touch $@
 
-$(UPSCLI_DUMP_AUTHCONF_DEPS): upscli_dump_authconf.$(MAN_SECTION_API)
+$(UPSCLI_DUMP_AUTHCONF_DEPS): upscli_dump_authconf_item.$(MAN_SECTION_API)
 	touch $@
 
-$(UPSCLI_FIND_AUTHCONF_DEPS): upscli_find_authconf.$(MAN_SECTION_API)
+$(UPSCLI_FIND_AUTHCONF_DEPS): upscli_find_authconf_item.$(MAN_SECTION_API)
 	touch $@
 
 nutscan_scan_ip_range_snmp.$(MAN_SECTION_API): nutscan_scan_snmp.$(MAN_SECTION_API)
@@ -921,12 +921,12 @@ INST_HTML_DEV_MANS = \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	upscli_upslog_set_debug_level.html \
-	upscli_create_authconf.html \
-	upscli_dump_authconf.html \
-	upscli_find_authconf.html \
+	upscli_create_authconf_item.html \
+	upscli_dump_authconf_item.html \
+	upscli_find_authconf_item.html \
 	upscli_free_authconf_list.html \
 	upscli_get_authconf_list.html \
-	upscli_read_authconf.html \
+	upscli_read_authconf_file.html \
 	upscli_str_add_unique_token.html \
 	upscli_str_contains_token.html \
 	libnutclient.html \
@@ -994,19 +994,19 @@ upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli
 upscli_tryconnect.html: upscli_connect.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_normalize_auth_section_parts.html: upscli_find_authconf.html
+upscli_normalize_authconf_section_parts.html: upscli_find_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_split_auth_section.html: upscli_find_authconf.html
+upscli_split_authconf_section.html: upscli_find_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_free_authconf_list.html: upscli_free_authconf.html
+upscli_free_authconf_list.html: upscli_free_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_free_authconf.html: upscli_create_authconf.html
+upscli_free_authconf_item.html: upscli_create_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_dump_authconf_list.html: upscli_dump_authconf.html
+upscli_dump_authconf_list.html: upscli_dump_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
