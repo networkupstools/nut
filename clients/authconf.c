@@ -22,6 +22,9 @@
 
 #ifndef WIN32
 # include <netdb.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <sys/ioctl.h>
 #else /* => WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
@@ -353,7 +356,7 @@ int upscli_normalize_auth_section_parts(
 
 			if (se) {
 				char	portbuf[16];
-				if (snprintf(portbuf, sizeof(portbuf), "%u", ntohs(se->s_port) < 1)) {
+				if (snprintf(portbuf, sizeof(portbuf), "%u", (unsigned int)ntohs(se->s_port)) < 1) {
 					upsdebugx(1, "%s: Failed to construct port number from service name", __func__);
 					goto failed;
 				}
@@ -366,7 +369,7 @@ int upscli_normalize_auth_section_parts(
 		}
 	} else {
 		char	portbuf[16];
-		if (snprintf(portbuf, sizeof(portbuf), "%u", NUT_PORT) < 1) {
+		if (snprintf(portbuf, sizeof(portbuf), "%u", (unsigned int)NUT_PORT) < 1) {
 			upsdebugx(1, "%s: Failed to construct default port number", __func__);
 			goto failed;
 		}
