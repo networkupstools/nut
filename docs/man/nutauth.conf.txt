@@ -21,6 +21,9 @@ This file begins with optional global directives which can provide defaults
 for all connections. Per-server or per-account sections can then be defined
 to override these defaults.
 
+SECTION TITLES
+~~~~~~~~~~~~~~
+
 A section begins with a name in brackets. Sections are matched against the
 server being contacted. Supported section formats are:
 
@@ -33,18 +36,49 @@ server being contacted. Supported section formats are:
 
 *[user@host:port]*::
     Defines credentials and settings for a specific user on a specific
-    host and port.
+    host and port. The `USER` directive would be ignored in this entry.
 
 *[user@host]*::
     Defines credentials and settings for a specific user on a specific
     host (uses the default NUT port).
 
-An empty 'host' component value is interpreted as `localhost`, e.g. in `[@:port]`.
+*[host]*::
+    A section title without an `@` character effectively defines defaults
+    for a specific host and default NUT port, just because this is more
+    likely than such a string being a specified "user" at an implicit
+    "localhost".
++
+Consequently, titles with a colon `:` without an `@` are interpreted
+    as *[host:port]* (or *[:port]* with an implicit "localhost").
+
+Section titles are normalized when parsing the `nutauth.conf` file(s),
+so the inclusion order (nesting) and run-time search for best-match
+configuration can be deterministic.
+
+For example:
+
+* an empty 'host' component value is interpreted as `localhost`, e.g.
+  in `[@:port]` spelling;
+* a non-numeric 'port' string would be resolved in the OS service naming
+  database, if possible, e.g. in `[@localhost:nut]` spelling;
+* an empty or absent 'port' component is understood as using the default
+  NUT port (as detailed above for `[@host]` spelling).
 
 A section continues until the next section header or until EOF.
 
-The special name `[default]` is reserved and should not be used as a section
-header; use the global scope (before any section header) for default settings.
+The special names `[]` and `[_global_defaults]` are reserved and should
+not normally be used as a section header; just use the global scope (lines
+before any section header) for default settings. These reserved explicit
+names can however be helpful to maintain order in nested files that you
+can `INCLUDE` in your top-level `nutauth.conf`.
+
+Note that lines which seem like the global scope in an included configuration
+(not preceded by any section title) would modify the parent section; however
+lines after an explicit section title -- even the `[_global_defaults]`
+one -- would not.
+
+OTHER FORMAT CONSIDERATIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Configuration directives are specified as `KEY = VALUE` pairs; simple string
 values may be passed "as is", but those with spaces or other special characters
@@ -129,7 +163,11 @@ Global-scope includes may modify global default items, as well as define
 new sections or overlay items in existing sections.
 
 Section-scope includes (nested within a section) can only modify data
-within that section.
+within that section. They do not require a section title (effectively the
+global section of the included file modifies the section of the parent
+file it was included into), but if these files do have any section title(s),
+then contents of sections that after normalization do not match the section
+title of the parent file would be skipped.
 
 Example:
 
