@@ -61,7 +61,10 @@ upscli_authconf_t *upscli_get_authconf_list(void)
 
 upscli_authconf_t *upscli_create_authconf(const char *section)
 {
-	upscli_authconf_t	*node = (upscli_authconf_t *)xcalloc(1, sizeof(upscli_authconf_t));
+	upscli_authconf_t	*node = (upscli_authconf_t *)calloc(1, sizeof(upscli_authconf_t));
+
+	if (!node)
+		return NULL;
 
 	if (section) {
 		node->section = xstrdup(section);
@@ -75,6 +78,10 @@ upscli_authconf_t *upscli_create_authconf(const char *section)
 static upscli_authconf_t *upscli_add_authconf(const char *section)
 {
 	upscli_authconf_t	*node = upscli_create_authconf(section);
+
+	if (!node) {
+		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s'", section);
+	}
 
 	/* Append to list */
 	if (!authconf_list) {
