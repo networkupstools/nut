@@ -4,7 +4,8 @@ UPSCLI_FIND_AUTHCONF_ITEM(3)
 NAME
 ----
 
-upscli_find_authconf_item, upscli_normalize_authconf_section_parts,
+upscli_find_authconf_item, upscli_get_authconf_item,
+upscli_normalize_authconf_section_parts,
 upscli_split_authconf_section - Find authentication configuration
 items by their name components; help parse and normalize
 name components for authentication configuration items
@@ -15,10 +16,18 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
+	/* Item as it is on list, may be incomplete */
 	upscli_authconf_t *upscli_find_authconf_item(
 		const char *user,
 		const char *host,
 		const char *port);
+
+	/* Merge exact/host/global layers for a unique item */
+	upscli_authconf_t *upscli_get_authconf_item(
+		const char *user,
+		const char *host,
+		const char *port,
+		int add_to_list);
 
 	int upscli_normalize_authconf_section_parts(
 		char **out_normalized_sect_name,
@@ -40,19 +49,42 @@ DESCRIPTION
 
 The *upscli_find_authconf_item()* function searches the internal list of
 authentication configurations for the best match for the given 'user',
-'host', and 'port'.
+'host', and 'port', and returns that list entry "as is" (the way it was
+originally spelled in configuration files, adjusted just for section
+title normalization). This function is primarily a stepping stone for
+*upscli_get_authconf_item()* to do its work.
 
 The matching logic follows this priority:
 
 1. Exact match for `[user@host:port]`
 2. Match for `[@host:port]` (host default)
-3. Global default section (if 'user', 'host', and 'port' are all NULL)
+3. Global default section (if 'user', 'host', and 'port' are all NULL,
+   or if there was no exact or host default match)
 
-If a specific match is found, any missing fields in that section are
-inherited from the global defaults.
+The *upscli_get_authconf_item()* function goes a bit further and finds "parent"
+entries (from exact match, to host defaults, to global defaults) to merge any
+missing fields in that section to be inherited from the higher-level defaults.
+If a specific `user` value was requested and only a non-exact match was found,
+that fixed `USER=...` directive will be assumed and injected into the output.
 
-The "*upscli_split_authconf_section()*" function splits a `sect_name` which may be
-from a user-typed configuration file into user, host and port sections, and
+If `add_to_list` is '0', this function would return a new instance of the
+`upscli_authconf_t` structure, which owns a separate copy of any strings
+involved, and can be safely discarded with linkman:upscli_free_authconf_item[3]
+(and MUST be discarded by caller, it is not added into the list). Each call
+with same arguments returns a new instance, even with same data (or different,
+if e.g. global defaults were changed for fields not populated in the original
+item on the list).
+
+If `add_to_list` is '1', this function would return a new instance of the
+structure and add it into the list, or would edit an existing item already
+on the list by filling in the missing points inherited from higher levels.
+On one hand, the caller does not have to manage freeing of this structure
+and repetitive calls do not increase memory usage; on another, this precludes
+adaptation to changing higher-level defaults (which is a reasonable approach
+when configuration is loaded once).
+
+The "*upscli_split_authconf_section()*" function splits a `sect_name` which may
+be from a user-typed configuration file into user, host and port sections, and
 with "*upscli_normalize_authconf_section_parts()*" normalizes the values (e.g. a
 `NULL` 'host' becomes `localhost`, a missing 'port' is defaulted to `NUT_PORT`
 defined at build configuration time, e.g. '3493' by default, and a non-numeric
@@ -82,5 +114,9 @@ pointer field from the node being freed.
 SEE ALSO
 --------
 
-linkman:upscli_read_authconf_file[3], linkman:upscli_get_authconf_list[3],
-linkman:upscli_free_authconf_list[3]
+linkman:upscli_read_authconf_file[3],
+linkman:upscli_get_authconf_list[3],
+linkman:upscli_free_authconf_list[3],
+linkman:upscli_clone_authconf_item[3],
+linkman:upscli_merge_authconf_item[3],
+linkman:upscli_free_authconf_item[3]

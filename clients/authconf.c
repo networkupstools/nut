@@ -69,6 +69,7 @@ upscli_authconf_t *upscli_create_authconf_item(const char *section)
 	}
 
 	if (section) {
+		/* FIXME: normalize section */
 		node->section = xstrdup(section);
 	}
 	node->certverify = -1;
@@ -89,10 +90,7 @@ upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const c
 	if (source) {
 		const char	*at = NULL;
 
-		/* FIXME: normalize */
-		if (section)
-			node->section = xstrdup(section);
-		else
+		if (!section)
 			node->section = source->section ? xstrdup(source->section) : NULL;
 
 		if ( ((at = strchr(node->section, '@')) != NULL)
@@ -743,22 +741,19 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			current_section = upscli_add_authconf_item(normalized_sect_name);
 
 			if (current_section_with_fixed_username && sect_user && *sect_user) {
-				/* If section matched user@host:port, ensure user is set to this user */
+				/* If section matched user@host:port, ensure
+				 * that user field is set to this non-trivial
+				 * value and is not modified later. */
 				current_section->user = xstrdup(sect_user);
 			}
 
-			/* Copy global defaults to new section */
-			if (global_defaults) {
-				if (!(current_section->user) && global_defaults->user) current_section->user = xstrdup(global_defaults->user);
-				if (global_defaults->pass) current_section->pass = xstrdup(global_defaults->pass);
-				if (global_defaults->certpath) current_section->certpath = xstrdup(global_defaults->certpath);
-				if (global_defaults->certfile) current_section->certfile = xstrdup(global_defaults->certfile);
-				if (global_defaults->certident) current_section->certident = xstrdup(global_defaults->certident);
-				if (global_defaults->certpasswd) current_section->certpasswd = xstrdup(global_defaults->certpasswd);
-				if (global_defaults->ssl_backend) current_section->ssl_backend = xstrdup(global_defaults->ssl_backend);
-				current_section->certverify = global_defaults->certverify;
-				current_section->forcessl = global_defaults->forcessl;
-			}
+			/* Subsequent calls will parse lines to populate fields
+			 * in this new section, if any; keep NULL's otherwise.
+			 * To copy global defaults (or host defaults into an
+			 * exact-match) to fill in the missing points, see
+			 * upscli_get_authconf_item() for an effective complete
+			 * momentary final configuration needed for a connection.
+			 */
 		}
 
 		free(normalized_sect_name);
@@ -1012,4 +1007,159 @@ finished:
 		free(normalized_sect_name);
 		return retval;
 	}
+}
+
+upscli_authconf_t *upscli_get_authconf_item(const char *user, const char *host, const char *port, int add_to_list)
+{
+	upscli_authconf_t	*retval = global_defaults, *retval_user = NULL, *retval_host = NULL;
+	char	*sect_user = (user ? xstrdup(user) : NULL),
+		*sect_host = (host ? xstrdup(host) : NULL),
+		*sect_port = (port ? xstrdup(port) : NULL),
+		*normalized_sect_name = NULL;
+	int	fixed_sect_user = 0, created_item = 0;
+
+	upsdebugx(2, "%s: starting for [%s]@[%s]:[%s]", __func__, NUT_STRARG(user), NUT_STRARG(host), NUT_STRARG(port));
+
+	/* We want this parsed always, so we can know if there
+	 * is a fixed user, or assign the section name, at least */
+	if (upscli_normalize_authconf_section_parts(
+			&normalized_sect_name,
+			&sect_user,
+			&fixed_sect_user,
+			&sect_host,
+			&sect_port) < 0
+	) {
+		upsdebugx(2, "%s: could not upscli_normalize_authconf_section_parts()", __func__);
+	}
+	upsdebugx(4, "%s: after normalization, proceeding for [%s]@[%s]:[%s] => '%s' (with%s fixed USER part)",
+		__func__, NUT_STRARG(sect_user), NUT_STRARG(sect_host), NUT_STRARG(sect_port),
+		NUT_STRARG(normalized_sect_name), fixed_sect_user ? "" : "out");
+
+	if (!authconf_list) {
+		upsdebugx(4, "%s: best match is %s: no list yet",
+			__func__, global_defaults ? "global defaults" : "NULL");
+		goto found;
+	}
+
+	if (!host && !port && !user) {
+		/* Global section only */
+		if (global_defaults) {
+			upsdebugx(4, "%s: best match is global defaults: got no specific request", __func__);
+			goto found;
+		} else {
+			/* Should not really get here AND succeed,
+			 * fallback just in case */
+			upscli_authconf_t	*tmp = authconf_list;
+			while (tmp) {
+				if (!tmp->section || !*(tmp->section)) {
+					upsdebugx(4, "%s: best match is the section with NULL/empty name: got no specific request", __func__);
+					goto found;
+				}
+				tmp = tmp->next;
+			}
+		}
+		upsdebugx(4, "%s: best match is NULL: no global defaults were found, nor section with NULL name: got no specific request", __func__);
+		goto found;
+	} else {
+		const char	*at = (fixed_sect_user ? strchr(normalized_sect_name, '@') : NULL);
+		upscli_authconf_t	*tmp = authconf_list;
+
+		while (tmp) {
+			upsdebugx(4, "%s: matching '%s' against '%s'", __func__, normalized_sect_name, NUT_STRARG(tmp->section));
+			if (tmp->section) {
+				if (!strcmp(tmp->section, normalized_sect_name)) {
+					if (fixed_sect_user) {
+						/* normalized_sect_name is user@host:port */
+						retval_user = tmp;
+						upsdebugx(2, "%s: got exact user+host+port hit of '%s' against '%s'",
+							__func__, normalized_sect_name, NUT_STRARG(tmp->section));
+						if (retval_host)
+							break;
+					} else {
+						/* normalized_sect_name is @host:port */
+						retval_host = tmp;
+						upsdebugx(2, "%s: got host+port hit of '%s' against '%s'",
+							__func__, normalized_sect_name, NUT_STRARG(tmp->section));
+						break;
+					}
+				} else
+				if (fixed_sect_user && !strcmp(tmp->section, at)) {
+					/* normalized_sect_name is user@host:port and we match '@host:port' */
+					retval_host = tmp;
+					upsdebugx(2, "%s: got host+port hit of '%s' against '%s'",
+						__func__, at, NUT_STRARG(tmp->section));
+				}
+			}
+			tmp = tmp->next;
+		}
+
+		if (retval_user) {
+			retval = retval_user;
+		} else
+		if (retval_host) {
+			if (fixed_sect_user)
+				upsdebugx(4, "%s: did not find an exact user+host+port match in the list, only host+port", __func__);
+			retval = retval_host;
+		} else {
+			/* keep global_defaults or NULL, handle below */
+			upsdebugx(4, "%s: did not find a match in the list", __func__);
+		}
+	}
+
+found:
+	if (!retval || retval == global_defaults) {
+		upsdebugx(2, "%s: best match from the list is %s",
+			__func__, global_defaults ? "global defaults" : "NULL");
+		if (!global_defaults) {
+			upsdebugx(3, "%s: create new item for section '%s'",
+				__func__, normalized_sect_name);
+			retval = upscli_create_authconf_item(normalized_sect_name);
+			created_item = 1;
+		} else {
+			upsdebugx(3, "%s: clone new item for section '%s' from global_defaults",
+				__func__, normalized_sect_name);
+			retval = upscli_clone_authconf_item(global_defaults, normalized_sect_name);
+			created_item = 1;
+		}
+	} else {
+		if (!add_to_list || (!retval_user && fixed_sect_user)) {
+			upsdebugx(3, "%s: clone new item for section '%s' from '%s'",
+				__func__, normalized_sect_name, NUT_STRARG(retval->section));
+			retval = upscli_clone_authconf_item(retval, normalized_sect_name);
+			created_item = 1;
+		}
+	}
+
+	if (fixed_sect_user) {
+		free(retval->user);
+		retval->user = xstrdup(user);
+	}
+
+	if (retval_user && retval_host) {
+		/* our retval is (maybe a clone of) retval_user */
+		upscli_merge_authconf_item(retval_host, retval);
+	}
+
+	if ((retval_user || retval_host) && global_defaults) {
+		/* our retval is (maybe a clone of) retval_user or retval_host */
+		upscli_merge_authconf_item(global_defaults, retval);
+	}
+
+	if (add_to_list) {
+		if (created_item) {
+			upsdebugx(4, "%s: adding result to list", __func__);
+			upscli_add_authconf(retval);
+		} else {
+			upsdebugx(4, "%s: not adding result to list: edited existing item in-place", __func__);
+		}
+	} else {
+		upsdebugx(4, "%s: not adding result to list, caller must free it eventually", __func__);
+	}
+
+	free(sect_user);
+	free(sect_host);
+	free(sect_port);
+	free(normalized_sect_name);
+
+	return retval;
 }

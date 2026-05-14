@@ -842,6 +842,7 @@ UPSCLI_CREATE_AUTHCONF_DEPS = \
 UPSCLI_DUMP_AUTHCONF_DEPS = upscli_dump_authconf_list.$(MAN_SECTION_API)
 
 UPSCLI_FIND_AUTHCONF_DEPS = \
+	upscli_get_authconf_item.$(MAN_SECTION_API) \
 	upscli_normalize_authconf_section_parts.$(MAN_SECTION_API) \
 	upscli_split_authconf_section.$(MAN_SECTION_API)
 
@@ -999,6 +1000,9 @@ upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_get_authconf_item.html: upscli_find_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_normalize_authconf_section_parts.html: upscli_find_authconf_item.html
