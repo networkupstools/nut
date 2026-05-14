@@ -936,16 +936,30 @@ upscli_authconf_t *upscli_find_authconf_item(const char *user, const char *host,
 {
 	upsdebugx(2, "%s: starting for [%s]@[%s]:[%s]", __func__, NUT_STRARG(user), NUT_STRARG(host), NUT_STRARG(port));
 
+	if (!authconf_list) {
+		upsdebugx(2, "%s: returning %s: no list yet",
+			__func__, global_defaults ? "global defaults" : "NULL");
+		return global_defaults;
+	}
+
 	if (!host && !port && !user) {
 		/* Global section only */
-		/* Should we just return global_defaults? */
-		upscli_authconf_t	*tmp = authconf_list;
-		while (tmp) {
-			if (!tmp->section || !*(tmp->section)) {
-				return tmp;
+		if (global_defaults) {
+			upsdebugx(2, "%s: returning global defaults: got no specific request", __func__);
+			return global_defaults;
+		} else {
+			/* Should not really get here AND succeed,
+			 * fallback just in case */
+			upscli_authconf_t	*tmp = authconf_list;
+			while (tmp) {
+				if (!tmp->section || !*(tmp->section)) {
+					upsdebugx(2, "%s: returning the section with NULL/empty name: got no specific request", __func__);
+					return tmp;
+				}
+				tmp = tmp->next;
 			}
-			tmp = tmp->next;
 		}
+		upsdebugx(2, "%s: returning NULL: no global defaults were found, nor section with NULL name: got no specific request", __func__);
 		return NULL;
 	} else {
 		char	*sect_user = (user ? xstrdup(user) : NULL),
