@@ -86,10 +86,20 @@ int upscli_split_authconf_section(const char *sect_name,
 	char **normalized_sect_host,
 	char **normalized_sect_port);
 
-/** Find the best matching authconf for a given connection string;
+/** Find the best matching authconf for a given connection string in the list;
  * if all args are NULL, return the global section or NULL if none such in the list.
  */
 upscli_authconf_t *upscli_find_authconf_item(const char *user, const char *host, const char *port);
+
+/** Find the best matching authconf for a given connection string, and fill in
+ * the missing points from higher levels (exact match => host defaults => global).
+ * Based on `add_to_list` flag, the returned item is always new and unique and
+ * not on the list (can adapt to changes in higher levels but must be freed by
+ * caller), or will be edited on or added to the list (subsequent calls would
+ * likely not add anything new, but memory management is easier, data is cached).
+ * if all args are NULL, return the global section or NULL if none such in the list.
+ */
+upscli_authconf_t *upscli_get_authconf_item(const char *user, const char *host, const char *port, int add_to_list);
 
 /** Print one node to the specified stream (stdout if NULL),
  * return code similar to fprintf() - sum of printed characters.

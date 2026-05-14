@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
 	/* 1. Global match (no specific section for this host) */
 	printf("Checking global match for '@somehost:port'...\n");
-	ac = upscli_find_authconf_item(NULL, "somehost", "port");
+	ac = upscli_get_authconf_item(NULL, "somehost", "port", 1);
 	if (ac) {
 		printf("Global match got user=%s\n", ac->user ? ac->user : "NULL");
 		if (ac->user && strcmp(ac->user, "globaluser") == 0) {
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
 	/* 2. Host default match */
 	printf("Checking host default match for '@localhost:12345'\n");
-	ac = upscli_find_authconf_item(NULL, "localhost", "12345");
+	ac = upscli_get_authconf_item(NULL, "localhost", "12345", 1);
 	if (ac && strcmp(ac->user, "hostuser") == 0 && ac->forcessl == 1 && ac->certverify == 1) {
 		printf("Host default match OK\n");
 	} else {
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 
 	/* 3. Exact match */
 	printf("Checking exact match for 'admin@localhost:12345'\n");
-	ac = upscli_find_authconf_item("admin", "localhost", "12345");
+	ac = upscli_get_authconf_item("admin", "localhost", "12345", 1);
 	if (ac) {
 		printf("Exact match: got user=%s pass=%s forcessl=%d\n",
 			ac->user ? ac->user : "NULL",
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 
 	/* 4. Non-exact match */
 	printf("Checking non-exact match for 'somebody@localhost:12345'\n");
-	ac = upscli_find_authconf_item("somebody", "localhost", "12345");
+	ac = upscli_get_authconf_item("somebody", "localhost", "12345", 0);
 	if (ac) {
 		printf("Non-exact match: got user=%s pass=%s forcessl=%d\n",
 			ac->user ? ac->user : "NULL",
@@ -158,6 +158,7 @@ int main(int argc, char **argv)
 			printf("Non-exact match FAILED (wrong values): expecting user='%s' pass=<null>\n", "somebody");
 			return 1;
 		}
+		upscli_free_authconf_item(ac);
 	} else {
 		printf("Non-exact match FAILED (no ac)\n");
 		return 1;
@@ -165,7 +166,7 @@ int main(int argc, char **argv)
 
 	/* 5. Include match */
 	printf("Checking include match for '@otherhost'\n");
-	ac = upscli_find_authconf_item(NULL, "otherhost", NULL);
+	ac = upscli_get_authconf_item(NULL, "otherhost", NULL, 1);
 	snprintf(buf, sizeof(buf), "@otherhost:%u", (unsigned int)NUT_PORT);
 	if (ac
 	 && ac->section && strcmp(ac->section, buf) == 0
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
 
 	/* 6. No bogus hits */
 	printf("Checking NO match for '@otherhost:portnum' other than global section\n");
-	ac = upscli_find_authconf_item(NULL, "otherhost", "portnum");
+	ac = upscli_get_authconf_item(NULL, "otherhost", "portnum", 1);
 	if (ac) {
 		if (!(ac->section) || !*(ac->section)) {
 			printf("No bogus match OK: got global section\n");
@@ -197,6 +198,11 @@ int main(int argc, char **argv)
 	} else {
 		printf("No bogus match kind of OK: got no ac\n");
 	}
+
+	printf("=== Parsed configuration (production view) after several 'get' operations with results caching:\n");
+	/* Not "for_debug", but how would this info look in a config file */
+	num_sections = upscli_dump_authconf_list(NULL, 0);
+	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 
 	upscli_free_authconf_list();
 	unlink(test_conf);
