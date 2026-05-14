@@ -95,12 +95,14 @@ upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const c
 		else
 			node->section = source->section ? xstrdup(source->section) : NULL;
 
-		if ((at = strchr(node->section, '@')) != NULL) {
-			if (at != node->section) {
-				node->user = (char*)xcalloc(at - node->section + 1, sizeof(char));
-				memcpy(node->user, node->section, at - node->section);
-			}	/* else keep explicitly not-set */
+		if ( ((at = strchr(node->section, '@')) != NULL)
+		 &&   at != node->section
+		) {
+			/* New section title strictly defines a user name */
+			node->user = (char*)xcalloc(at - node->section + 1, sizeof(char));
+			memcpy(node->user, node->section, at - node->section);
 		} else {
+			/* No '@' or no username chars before it */
 			node->user = source->user ? xstrdup(source->user) : NULL;
 		}
 
@@ -127,68 +129,67 @@ upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_
 		return target;
 
 	/* TOTHINK: (re-)normalize? */
-	if ( (!(target->section) || !*(target->section) )
-	 &&  (source->section && *(source->section) )
+	if ( (!(target->section) || !*(target->section))
+	 &&  (source->section && *(source->section))
 	) {
 		free(target->section);
 		target->section = xstrdup(source->section);
 	}
 
-	if ((at = strchr(target->section, '@')) != NULL) {
-		if (at != target->section) {
-			target->user = (char*)xcalloc(at - target->section + 1, sizeof(char));
-			memcpy(target->user, target->section, at - target->section);
-		} else {
-			/* keep explicitly not-set */
-			free(target->user);
-			target->user = NULL;
-		}
+	if ( ((at = strchr(target->section, '@')) != NULL)
+	 &&    at != target->section
+	) {
+		/* Target section title strictly defines a user name */
+		free(target->user);
+		target->user = (char*)xcalloc(at - target->section + 1, sizeof(char));
+		memcpy(target->user, target->section, at - target->section);
 	} else {
-		if ( (!(target->user) || !*(target->user) )
-		 &&  (source->user && *(source->user) )
+		/* No '@' or no username chars before it in target section title */
+		if ( (!(target->user) || !*(target->user))
+		 &&  (source->user && *(source->user))
 		) {
 			free(target->user);
 			target->user = xstrdup(source->user);
-		}
+		}	/* else keep what was there */
 	}
 
-	if ( (!(target->pass) || !*(target->pass) )
-	 &&  (source->pass && *(source->pass) )
+	if ( (!(target->pass) || !*(target->pass))
+	 &&  (source->pass && *(source->pass))
 	) {
 		free(target->pass);
 		target->pass = xstrdup(source->pass);
 	}
 
-	if ( (!(target->certpath) || !*(target->certpath) )
-	 &&  (source->certpath && *(source->certpath) )
+	if ( (!(target->certpath) || !*(target->certpath))
+	 &&  (source->certpath && *(source->certpath))
 	) {
 		free(target->certpath);
 		target->certpath = xstrdup(source->certpath);
 	}
 
-	if ( (!(target->certfile) || !*(target->certfile) )
-	 &&  (source->certfile && *(source->certfile) )
+	if ( (!(target->certfile) || !*(target->certfile))
+	 &&  (source->certfile && *(source->certfile))
 	) {
 		free(target->certfile);
 		target->certfile = xstrdup(source->certfile);
 	}
 
-	if ( (!(target->certident) || !*(target->certident) )
-	 &&  (source->certident && *(source->certident) )
+	if ( (!(target->certident) || !*(target->certident))
+	 &&  (source->certident && *(source->certident))
 	) {
 		free(target->certident);
 		target->certident = xstrdup(source->certident);
 	}
 
-	if ( (!(target->certpasswd) || !*(target->certpasswd) )
-	 &&  (source->certpasswd && *(source->certpasswd) )
+	if ( (!(target->certpasswd) || !*(target->certpasswd))
+	 &&  (source->certpasswd && *(source->certpasswd))
 	) {
 		free(target->certpasswd);
 		target->certpasswd = xstrdup(source->certpasswd);
 	}
 
-	if ( (!(target->ssl_backend) || !*(target->ssl_backend) )
-	 &&  (source->ssl_backend && *(source->ssl_backend) )
+	if ( (!(target->ssl_backend) || !*(target->ssl_backend))
+	 &&  (source->ssl_backend && *(source->ssl_backend))
 	) {
 		free(target->ssl_backend);
 		target->ssl_backend = xstrdup(source->ssl_backend);

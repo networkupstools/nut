@@ -52,9 +52,8 @@ The *upscli_clone_authconf_item()* function allocates the memory for an
 `upscli_authconf_t` node and initializes it with the given section name
 (if not NULL) and clones the values from the source node to the new node
 by re-allocating strings with `xstrdup()` and copying the numeric flags.
-If the 'section' argument is provided and contains a `user@` component,
-the user field is (re-)set to that (or cleared and not cloned if empty
-in the section title, e.g. if it starts with the `@` character).
+If the 'section' argument is provided and contains a non-trivial `user@`
+component, the 'user' field if the structure is (re-)set to that value.
 The `next` pointer is set to `NULL`.
 
 The *upscli_merge_authconf_item()* function copies the values from the
@@ -62,8 +61,8 @@ The *upscli_merge_authconf_item()* function copies the values from the
 already have a value for the same field (non-NULL not-empty string, or
 a non-negative numeric flag). The `next` pointer is not modified.
 Like above, if the resulting section name in 'target' contains the `@`
-character, the 'user' name field would be (re-)set to that, or cleared
-and not cloned.
+character and some before it, the 'user' name field would be (re-)set
+to that value and not cloned.
 
 Typically, the 'source' node when merging is the global configuration item
 (or a `host:port` when merging for a section with specific user value),
