@@ -1137,13 +1137,25 @@ found:
 
 	if (retval_user && retval_host) {
 		/* our retval is (maybe a clone of) retval_user */
+#ifdef DEBUG
+		upsdebugx(1, "merge user="); upscli_dump_authconf_item(NULL, retval, 1);
+		upsdebugx(1, "...and host="); upscli_dump_authconf_item(NULL, retval_host, 1);
+#endif
 		upscli_merge_authconf_item(retval_host, retval);
 	}
 
 	if ((retval_user || retval_host) && global_defaults) {
 		/* our retval is (maybe a clone of) retval_user or retval_host */
+#ifdef DEBUG
+		upsdebugx(1, "merge user/host="); upscli_dump_authconf_item(NULL, retval, 1);
+		upsdebugx(1, "...and globaldef="); upscli_dump_authconf_item(NULL, global_defaults, 1);
+#endif
 		upscli_merge_authconf_item(global_defaults, retval);
 	}
+
+#ifdef DEBUG
+	upsdebugx(1, "final state ="); upscli_dump_authconf_item(NULL, retval, 1);
+#endif
 
 	if (add_to_list) {
 		if (created_item) {
