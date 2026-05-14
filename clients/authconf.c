@@ -111,6 +111,7 @@ upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const c
 		node->certpasswd = source->certpasswd ? xstrdup(source->certpasswd) : NULL;
 		node->ssl_backend = source->ssl_backend ? xstrdup(source->ssl_backend) : NULL;
 
+		node->certhost = source->certhost ? xstrdup(source->certhost) : NULL;
 		node->certverify = source->certverify;
 		node->forcessl = source->forcessl;
 	}
@@ -173,6 +174,10 @@ upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_
 		target->ssl_backend = xstrdup(source->ssl_backend);
 	}
 
+	if (!(target->certhost) && source->certhost) {
+		target->certhost = xstrdup(source->certhost);
+	}
+
 	if (target->certverify < 0 && source->certverify >= 0) {
 		target->certverify = source->certverify;
 	}
@@ -227,6 +232,7 @@ upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node)
 		free(node->certident);
 		free(node->certpasswd);
 		free(node->ssl_backend);
+		free(node->certhost);
 
 		free(node);
 
@@ -353,6 +359,11 @@ int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, in
 		return ret;
 	ret += res;
 
+	res = upscli_dump_authconf_line_str(stream, "CERTHOST", node->certhost, indent, for_debug);
+	if (res < 0)
+		return ret;
+	ret += res;
+
 	res = upscli_dump_authconf_line_int(stream, "CERTVERIFY", node->certverify, indent, for_debug);
 	if (res < 0)
 		return ret;
@@ -425,6 +436,9 @@ static void set_authconf_val(upscli_authconf_t *conf, const char *var, const cha
 	} else if (!strcmp(var, "SSLBACKEND")) {
 		free(conf->ssl_backend);
 		conf->ssl_backend = val ? xstrdup(val) : NULL;
+	} else if (!strcmp(var, "CERTHOST")) {
+		free(conf->certhost);
+		conf->certhost = val ? xstrdup(val) : NULL;
 	} else if (!strcmp(var, "CERTVERIFY")) {
 		if (val) {
 			if (!strcasecmp(val, "on") || !strcasecmp(val, "yes") || !strcmp(val, "1"))

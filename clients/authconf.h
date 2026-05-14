@@ -29,6 +29,7 @@ typedef struct upscli_authconf_s {
 	char	*certident;
 	char	*certpasswd;	/* Password for key/cert storage */
 	char	*ssl_backend;	/* openssl/nss */
+	char	*certhost;
 	int	certverify;	/* -1 = unset, 0 = off, 1 = on */
 	int	forcessl;	/* -1 = unset, 0 = off, 1 = on */
 
