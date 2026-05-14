@@ -205,15 +205,12 @@ upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_
 	return target;
 }
 
-static upscli_authconf_t *upscli_add_authconf(const char *section)
+static upscli_authconf_t *upscli_add_authconf(upscli_authconf_t* node)
 {
-	upscli_authconf_t	*node = upscli_create_authconf_item(section);
+	if (!node)
+		return NULL;
 
-	if (!node) {
-		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s' which should be added to the list", NUT_STRARG(section));
-	}
-
-	/* Append to list */
+	/* Append to end of list */
 	if (!authconf_list) {
 		authconf_list = node;
 	} else {
@@ -225,6 +222,17 @@ static upscli_authconf_t *upscli_add_authconf(const char *section)
 	}
 
 	return node;
+}
+
+static upscli_authconf_t *upscli_add_authconf_item(const char *section)
+{
+	upscli_authconf_t	*node = upscli_create_authconf_item(section);
+
+	if (!node) {
+		fatalx(EXIT_FAILURE, "Failed to create nutauth configuration node for section '%s' which should be added to the list", NUT_STRARG(section));
+	}
+
+	return upscli_add_authconf(node);
 }
 
 upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node)
@@ -751,7 +759,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		}
 
 		if (!current_section) {
-			current_section = upscli_add_authconf(normalized_sect_name);
+			current_section = upscli_add_authconf_item(normalized_sect_name);
 
 			if (current_section_with_fixed_username && sect_user && *sect_user) {
 				/* If section matched user@host:port, ensure user is set to this user */
@@ -825,7 +833,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 	} else {
 		/* Creating/modifying global defaults */
 		if (!global_defaults) {
-			global_defaults = upscli_add_authconf(NULL);
+			global_defaults = upscli_add_authconf_item(NULL);
 		}
 
 		set_authconf_val(global_defaults, var, val);
