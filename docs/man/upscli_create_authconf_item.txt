@@ -51,15 +51,15 @@ to the list.
 The *upscli_clone_authconf_item()* function allocates the memory for an
 `upscli_authconf_t` node and initializes it with the given section name
 (if not NULL) and clones the values from the source node to the new node
-by re-allocating strings with `xstrdup()` and copying the numeric flags.
-If the 'section' argument is provided and contains a non-trivial `user@`
-component, the 'user' field if the structure is (re-)set to that value.
-The `next` pointer is set to `NULL`.
+by re-allocating non-NULL strings with `xstrdup()` and copying the numeric
+flags. If the 'section' argument is provided and contains a non-trivial
+`user@` component, the 'user' field if the structure is (re-)set to that
+value. The `next` pointer is set to `NULL`.
 
 The *upscli_merge_authconf_item()* function copies the values from the
 'source' node to the 'target' node, as long as the target node does not
-already have a value for the same field (non-NULL not-empty string, or
-a non-negative numeric flag). The `next` pointer is not modified.
+already have a value for the same field (non-NULL possibly empty string,
+or a non-negative numeric flag). The `next` pointer is not modified.
 Like above, if the resulting section name in 'target' contains the `@`
 character and some before it, the 'user' name field would be (re-)set
 to that value and not cloned.
