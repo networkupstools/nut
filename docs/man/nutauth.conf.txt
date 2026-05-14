@@ -144,6 +144,12 @@ The following keywords are supported in both global scope and within sections:
     Optional. Specify the SSL/TLS backend to use (e.g., `openssl` or `nss`),
     if the default is not suitable.
 
+*CERTHOST*::
+    Optional. Specify the expected certificate subject (common name) of that
+    server's certificate; alternately the IP address or host name used in
+    the section title should match that in the common name (CN) or subject
+    alternate names (SAN).
+
 *CERTVERIFY*::
     Optional. Enable or disable server certificate verification.
     Accepted values: `on`, `yes`, `1` (enable) or `off`, `no`, `0` (disable).
