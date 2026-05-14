@@ -1007,9 +1007,6 @@ upscli_normalize_authconf_section_parts.html: upscli_find_authconf_item.html
 upscli_split_authconf_section.html: upscli_find_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
-upscli_free_authconf_list.html: upscli_free_authconf_item.html
-	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
-
 upscli_free_authconf_item.html: upscli_create_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
