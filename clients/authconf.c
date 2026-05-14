@@ -145,53 +145,33 @@ upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_
 		memcpy(target->user, target->section, at - target->section);
 	} else {
 		/* No '@' or no username chars before it in target section title */
-		if ( (!(target->user) || !*(target->user))
-		 &&  (source->user && *(source->user))
-		) {
-			free(target->user);
+		if (!(target->user) && source->user) {
 			target->user = xstrdup(source->user);
 		}	/* else keep what was there */
 	}
 
-	if ( (!(target->pass) || !*(target->pass))
-	 &&  (source->pass && *(source->pass))
-	) {
-		free(target->pass);
+	/* Replace only NULL strings; keep existing ones even if empty */
+	if (!(target->pass) && source->pass) {
 		target->pass = xstrdup(source->pass);
 	}
 
-	if ( (!(target->certpath) || !*(target->certpath))
-	 &&  (source->certpath && *(source->certpath))
-	) {
-		free(target->certpath);
+	if (!(target->certpath) && source->certpath) {
 		target->certpath = xstrdup(source->certpath);
 	}
 
-	if ( (!(target->certfile) || !*(target->certfile))
-	 &&  (source->certfile && *(source->certfile))
-	) {
-		free(target->certfile);
+	if (!(target->certfile) && source->certfile) {
 		target->certfile = xstrdup(source->certfile);
 	}
 
-	if ( (!(target->certident) || !*(target->certident))
-	 &&  (source->certident && *(source->certident))
-	) {
-		free(target->certident);
+	if (!(target->certident) && source->certident) {
 		target->certident = xstrdup(source->certident);
 	}
 
-	if ( (!(target->certpasswd) || !*(target->certpasswd))
-	 &&  (source->certpasswd && *(source->certpasswd))
-	) {
-		free(target->certpasswd);
+	if (!(target->certpasswd) && source->certpasswd) {
 		target->certpasswd = xstrdup(source->certpasswd);
 	}
 
-	if ( (!(target->ssl_backend) || !*(target->ssl_backend))
-	 &&  (source->ssl_backend && *(source->ssl_backend))
-	) {
-		free(target->ssl_backend);
+	if (!(target->ssl_backend) && source->ssl_backend) {
 		target->ssl_backend = xstrdup(source->ssl_backend);
 	}
 
