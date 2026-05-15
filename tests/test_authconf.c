@@ -65,6 +65,7 @@ int main(int argc, char **argv)
 	}
 	fprintf(f, "[@otherhost]\n");
 	fprintf(f, "  USER = otheruser\n");
+	fprintf(f, "  CERTHOST = \"Other Server\"\n");
 	fclose(f);
 
 #ifdef DEBUG
@@ -276,6 +277,7 @@ int main(int argc, char **argv)
 	if (ac
 	 && ac->section && strcmp(ac->section, buf) == 0
 	 && ac->user && strcmp(ac->user, "otheruser") == 0
+	 && ac->certhost && strcmp(ac->certhost, "Other Server") == 0
 	) {
 		printf("ok %d - Include match OK\n", ++testnum);
 	} else {

@@ -13,6 +13,7 @@
 
 #include "authconf.h"
 #include "parseconf.h"
+#include "upsclient.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -693,6 +694,28 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		char	*sect_name = NULL, *sect_user = NULL, *sect_host = NULL, *sect_port = NULL, *normalized_sect_name = NULL;
 		const char	*end_bracket = NULL;
 		upscli_authconf_t	*tmp = NULL;
+
+		if (current_section) {
+			upsdebugx(3, "%s: finished handling section %s", __func__, NUT_STRARG(current_section->section));
+			if (current_section->section
+			 && current_section->certhost
+			 && *(current_section->certhost)
+			 && upscli_split_authconf_section(
+				current_section->section,
+				&normalized_sect_name,
+				&sect_user,
+				&current_section_with_fixed_username,
+				&sect_host, &sect_port) >= 0
+			 && sect_host && *sect_host
+			 && sect_port && *sect_port
+			) {
+				upscli_add_host_cert(
+					sect_host,
+					current_section->certhost,
+					current_section->certverify,
+					current_section->forcessl);
+			}
+		}
 
 		current_section_ignored = 0;
 
