@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3751 utf-8
+personal_ws-1.1 en 3761 utf-8
 AAC
 AAS
 ABI
@@ -1767,6 +1767,7 @@ bigups
 bindir
 binfmt
 binutils
+bitfield
 bitmapped
 bitmask
 bitness
@@ -1886,6 +1887,7 @@ cmdline
 cmdname
 cmdparam
 cmds
+cmdsrc
 cmdvartab
 cnf
 codebase
@@ -2404,6 +2406,7 @@ integrations
 intel
 intelliSenseMode
 intercharacter
+internalnetwork
 internet
 interoperability
 interoperate
@@ -2593,6 +2596,7 @@ localhost
 localip
 localport
 localtime
+localuser
 lockf
 logfacility
 logfile
@@ -3253,6 +3257,7 @@ slaveid
 slavesync
 slibtool
 sm
+smartslot
 smartups
 smbus
 sms

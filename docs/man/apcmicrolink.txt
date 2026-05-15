@@ -74,24 +74,40 @@ Publish descriptor values that do not currently map to a standard NUT variable.
 By default this follows the driver debug level and is enabled automatically
 when debug logging is on.
 
+*cmdsrc*='rj45|usb|localuser|smartslot1|internalnetwork1'::
+Select the Microlink command source used for outgoing command writes. The
+default is `rj45`.
+
 
 IMPLEMENTED FEATURES
 --------------------
 
 The driver publishes standard identity, status, runtime and outlet-group data
-when these objects are present in the Microlink descriptor.
+when these objects are present in the Microlink descriptor. Descriptor-backed
+values are interpreted as strings, hex identifiers, dates, times, fixed-point
+numbers, and enum or bitfield maps depending on the Microlink type reported by
+the device.
 
 Writable descriptor-backed variables are exposed as read-write NUT variables
 when the device reports them as modifiable. Depending on the connected model,
 this can include values such as:
 
 * `ups.id`
-* `battery.testinterval`
-* `outlet.group.N.oncountdown`
-* `outlet.group.N.offcountdown`
-* `outlet.group.N.stayoffcountdown`
+* `ups.display.language`
+* `ups.test.interval`
+* `battery.date`
+* `input.transfer.delay`
+* `input.transfer.high`
+* `input.transfer.low`
+* `outlet.group.N.timer.shutdown`
+* `outlet.group.N.timer.reboot`
+* `outlet.group.N.timer.start`
+* `outlet.group.N.delay.shutdown`
+* `outlet.group.N.delay.reboot`
+* `outlet.group.N.delay.start`
 * `outlet.group.N.minimumreturnruntime`
 * `outlet.group.N.lowruntimewarning`
+* `outlet.group.N.name`
 
 Supported instant commands currently include:
 

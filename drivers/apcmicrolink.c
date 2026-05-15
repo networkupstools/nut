@@ -1248,7 +1248,7 @@ static int microlink_lookup_value_map(const microlink_value_map_t *map, const ch
 	return 0;
 }
 
-/* Pack a raw integer into a descriptor-sized big-endian payload and send it. */
+/* Strings are copied into fixed-width payloads and zero-padded if needed. */
 static int microlink_parse_descriptor_string_value(const char *val, size_t size,
 	unsigned char *payload)
 {
