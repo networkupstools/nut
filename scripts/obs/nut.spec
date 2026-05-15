@@ -573,8 +573,8 @@ bin/chown -R %{NUT_USER} %{STATEPATH} || echo "WARNING: Could not secure state p
 bin/chgrp -R %{NUT_GROUP} %{STATEPATH} || echo "WARNING: Could not secure state path '%{STATEPATH}'" >&2
 # Be sure that all files are owned by a dedicated user.
 bin/chown %{NUT_USER} %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
-bin/chgrp root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
-bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
+bin/chgrp root %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users %{CONFPATH}/nutauth.conf || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
+bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.users %{CONFPATH}/nutauth.conf || echo "WARNING: Could not secure config files in path '%{CONFPATH}'" >&2
 # And finally trigger udev to set permissions according to newly installed rules files.
 if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device ; fi
 %if "x%{?systemdtmpfilesdir}" == "x"
@@ -691,6 +691,7 @@ if [ -x /sbin/udevadm ] ; then /sbin/udevadm trigger --subsystem-match=usb --pro
 ### FIXME: if under /etc ### % config(noreplace) % {UDEVRULEPATH}/rules.d/*.rules
 %{UDEVRULEPATH}/rules.d/*.rules
 %config(noreplace) %{CONFPATH}/hosts.conf
+%config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/nutauth.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.conf
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsd.users
 %config(noreplace) %attr(600,%{NUT_USER},root) %{CONFPATH}/upsmon.conf

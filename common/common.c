@@ -43,9 +43,7 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_DECL_REALPATH
-# include <sys/stat.h>
-#endif
+#include <sys/stat.h>
 
 /* Just yield a unique value - e.g. address of a statically allocated variable
  * which would be different if several copies of NUT-common object code are
@@ -613,6 +611,28 @@ pid_t get_max_pid_t(void)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic pop
 #endif
+}
+
+void check_perms(const char *fn)
+{
+#ifndef WIN32
+	int	ret;
+	struct stat	st;
+
+	ret = stat(fn, &st);
+
+	if (ret != 0) {
+		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
+	}
+
+	/* include the x bit here in case we check a directory */
+	if (st.st_mode & (S_IROTH | S_IXOTH)) {
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
+	}
+#else   /* WIN32 */
+	NUT_UNUSED_VARIABLE(fn);
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif  /* WIN32 */
 }
 
 	/* Normally sendsignalfn(), sendsignalpid() and related methods call
@@ -5418,7 +5438,7 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
 				__func__, index, NUT_STRARG(dirname));
-                        index++;
+			index++;
 			continue;
 		}
 		index++;

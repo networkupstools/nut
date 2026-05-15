@@ -69,6 +69,7 @@ extern "C" {
 #define UPSCLI_NETBUF_LEN	512	/* network i/o buffer */
 
 #include "parseconf.h"
+#include "authconf.h"
 
 #ifdef WITH_OPENSSL
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
@@ -152,12 +153,15 @@ struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
  * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
+int upscli_init_authconf(upscli_authconf_t *ac);
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl);
+/* hostname may be a host:port */
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
 
 /* --- functions that only use the new names --- */

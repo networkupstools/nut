@@ -157,13 +157,17 @@ static struct {
 
 typedef struct HOST_CERT_s {
 	const char	*host;
+	uint16_t	port;
 	const char	*certname;
 	int			certverify;
 	int			forcessl;
 
 	struct HOST_CERT_s	*next;
 }	HOST_CERT_t;
+#if 0
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
+#endif
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port);
 
 /* Flag for SSL init */
 static int upscli_initialized = 0;
@@ -341,15 +345,16 @@ static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 	HOST_CERT_t* cert;
 	NUT_UNUSED_VARIABLE(fd);
 
-	upslogx(LOG_WARNING, "Certificate validation failed for %s",
-		(arg&&arg->host)?arg->host:"<unnamed>");
+	upslogx(LOG_WARNING, "Certificate validation failed for %s:%" PRIu16,
+		(arg&&arg->host)?arg->host:"<unnamed>",
+		(arg ? arg->port : NUT_PORT));
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
 	 */
-	cert = upscli_find_host_cert(arg->host);
+	cert = arg ? upscli_find_host_port_cert(arg->host, arg->port) : NULL;
 	if (cert != NULL) {
-		return cert->certverify==0 ?  SECSuccess : SECFailure;
+		return cert->certverify==0 ? SECSuccess : SECFailure;
 	} else {
 		return verify_certificate==0 ? SECSuccess : SECFailure;
 	}
@@ -757,6 +762,21 @@ int upscli_init(int certverify, const char *certpath,
 	return upscli_init2(certverify, certpath, certname, certpasswd, NULL);
 }
 
+/* NOTE: Maybe eventually these two methods below will invert:
+ *  who is implementation of whom.
+ * TODO: Consider a method that parses our collection from
+ *  upscli_get_authconf_list() to upscli_add_host_port_cert() and
+ *  set up the one most applicable set of client identity data
+ *  for that [user@host:port] combo.
+ */
+int upscli_init_authconf(upscli_authconf_t *ac)
+{
+	if (!ac)
+		return -1;
+
+	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
+}
+
 int upscli_init2(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd,
 					const char *certfile)
@@ -1073,16 +1093,78 @@ int upscli_init2(int certverify, const char *certpath,
 
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
+	const char	*s_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (s_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
+			"%s", hostname);
+		if (s_port[1]) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+			long	l = atol(s_port+1);
+
+			if (l > 0 && l <= UINT16_MAX) {
+				port = (uint16_t)l;
+			} else {
+				struct servent	*se = getservbyname(s_port + 1, "tcp");
+				if (se && se->s_port > 0 && se->s_port <= UINT16_MAX) {
+					port = se->s_port;
+				}
+			}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+		}
+	}
+
+	upscli_add_host_port_cert(
+		s_port ? host : hostname,
+		port, certname, certverify, forcessl);
+}
+
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl)
+{
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
 	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
+	cert->port = port ? port : NUT_PORT;
 	cert->certname = xstrdup(certname);
 	cert->certverify = certverify;
 	cert->forcessl = forcessl;
 	first_host_cert = cert;
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(forcessl);
@@ -1091,13 +1173,16 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 #endif /* WITH_NSS */
 }
 
-static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port)
 {
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = first_host_cert;
 	if (hostname != NULL) {
 		while (cert != NULL) {
-			if (cert->host != NULL && strcmp(cert->host, hostname)==0 ) {
+			if (cert->host != NULL
+			 && strcmp(cert->host, hostname) == 0
+			 && cert->port == port
+			) {
 				return cert;
 			}
 			cert = cert->next;
@@ -1105,11 +1190,43 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 	}
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
 
 	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
 #endif /* WITH_OPENSSL | WITH_NSS */
 	return NULL;
 }
+
+#if 0
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+{
+	const char	*s_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (s_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
+			"%s", hostname);
+		if (s_port[1]) {
+			long	l = atol(s_port+1);
+
+			if (l > 0 && l <= UINT16_MAX) {
+				port = (uint16_t)l;
+			} else {
+				struct servent	*se = getservbyname(s_port + 1, "tcp");
+				if (se && se->s_port > 0 && se->s_port <= UINT16_MAX) {
+					port = se->s_port;
+				}
+			}
+		}
+	}
+
+	return upscli_find_host_port_cert(
+		s_port ? host : hostname,
+		port);
+}
+#endif
 
 int upscli_cleanup(void)
 {
@@ -1669,7 +1786,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	{	/* scoping */
-		HOST_CERT_t	*cert = upscli_find_host_cert(ups->host);
+		HOST_CERT_t	*cert = upscli_find_host_port_cert(ups->host, ups->port);
 
 		if (cert != NULL && cert->certname != NULL) {
 			/* We have a setting like upsmon CERTHOST - to pin the certificate
@@ -1879,7 +1996,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #pragma GCC diagnostic pop
 #endif
 
-	cert = upscli_find_host_cert(ups->host);
+	cert = upscli_find_host_port_cert(ups->host, ups->port);
 	if (cert != NULL && cert->certname != NULL) {
 		upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
 			ups->host, cert->certname);
@@ -2154,7 +2271,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 	ups->port = port;
 
-	hostcert = upscli_find_host_cert(host);
+	hostcert = upscli_find_host_port_cert(host, port);
 
 	if (hostcert != NULL) {
 		/* An host security rule is specified. */

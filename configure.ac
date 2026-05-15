@@ -7282,6 +7282,7 @@ AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
+ conf/nutauth.conf.sample
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
  conf/upsstats.html.sample

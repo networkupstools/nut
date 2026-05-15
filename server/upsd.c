@@ -2397,28 +2397,6 @@ static void setup_signals(void)
 #endif	/* WIN32 */
 }
 
-void check_perms(const char *fn)
-{
-#ifndef WIN32
-	int	ret;
-	struct stat	st;
-
-	ret = stat(fn, &st);
-
-	if (ret != 0) {
-		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
-	}
-
-	/* include the x bit here in case we check a directory */
-	if (st.st_mode & (S_IROTH | S_IXOTH)) {
-		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
-	}
-#else	/* WIN32 */
-	NUT_UNUSED_VARIABLE(fn);
-	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
-#endif	/* WIN32 */
-}
-
 int main(int argc, char **argv)
 {
 	int	opt_ret = 0, cmdret = 0, foreground = -1;

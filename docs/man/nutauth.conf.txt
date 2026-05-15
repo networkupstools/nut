@@ -1,0 +1,196 @@
+NUTAUTH.CONF(5)
+===============
+
+NAME
+----
+
+nutauth.conf - Authentication and SSL configuration for NUT clients
+
+DESCRIPTION
+-----------
+
+This file is read by the NUT client library linkman:libupsclient[3] via
+linkman:upscli_read_authconf_file[3]. It allows users to define default and
+per-server authentication credentials (username and password) and SSL/TLS
+settings (certificates, verification, etc.) for use by NUT clients like
+linkman:upsc[8], linkman:upsrw[8], linkman:upscmd[8], and others.
+Note that there is a dedicated linkman:upsmon.conf[5] configuration file
+for the linkman:upsmon[8] client.
+
+This file begins with optional global directives which can provide defaults
+for all connections. Per-server or per-account sections can then be defined
+to override these defaults.
+
+SECTION TITLES
+~~~~~~~~~~~~~~
+
+A section begins with a name in brackets. Sections are matched against the
+server being contacted. Supported section formats are:
+
+*[@host:port]*::
+    Defines defaults for a specific host and port.
+
+*[@host]*::
+    Defines defaults for a specific host (uses the default NUT port
+    as defined at build configuration time, implicit default is `3493`).
+
+*[user@host:port]*::
+    Defines credentials and settings for a specific user on a specific
+    host and port. The `USER` directive would be ignored in this entry.
+
+*[user@host]*::
+    Defines credentials and settings for a specific user on a specific
+    host (uses the default NUT port).
+
+*[host]*::
+    A section title without an `@` character effectively defines defaults
+    for a specific host and default NUT port, just because this is more
+    likely than such a string being a specified "user" at an implicit
+    "localhost".
++
+Consequently, titles with a colon `:` without an `@` are interpreted
+    as *[host:port]* (or *[:port]* with an implicit "localhost").
+
+Section titles are normalized when parsing the `nutauth.conf` file(s),
+so the inclusion order (nesting) and run-time search for best-match
+configuration can be deterministic.
+
+For example:
+
+* an empty 'host' component value is interpreted as `localhost`, e.g.
+  in `[@:port]` spelling;
+* a non-numeric 'port' string would be resolved in the OS service naming
+  database, if possible, e.g. in `[@localhost:nut]` spelling;
+* an empty or absent 'port' component is understood as using the default
+  NUT port (as detailed above for `[@host]` spelling).
+
+A section continues until the next section header or until EOF.
+
+The special names `[]` and `[_global_defaults]` are reserved and should
+not normally be used as a section header; just use the global scope (lines
+before any section header) for default settings. These reserved explicit
+names can however be helpful to maintain order in nested files that you
+can `INCLUDE` in your top-level `nutauth.conf`.
+
+Note that lines which seem like the global scope in an included configuration
+(not preceded by any section title) would modify the parent section; however
+lines after an explicit section title -- even the `[_global_defaults]`
+one -- would not.
+
+OTHER FORMAT CONSIDERATIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Configuration directives are specified as `KEY = VALUE` pairs; simple string
+values may be passed "as is", but those with spaces or other special characters
+should be double-quoted and/or use escape sequences, like in other NUT files.
+
+Blank lines and characters after an un-quoted hash (`#`) are ignored.
+
+Example:
+
+	# Global defaults
+	CERTVERIFY = on
+	FORCESSL = on
+
+	# Host defaults for a local server
+	[@localhost]
+		PASS = "password1"
+
+	# Specific account on a remote server
+	[admin@remoteserver:3493]
+		PASS = "secret2"
+		CERTVERIFY = off
+
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII.
+* Permissions should be restricted (e.g., `chmod 600`) since this file
+  contains passwords.
+
+GLOBAL AND SECTION DIRECTIVES
+-----------------------------
+
+The following keywords are supported in both global scope and within sections:
+
+*user* (case-insensitive token)::
+    Optional. Specify the NUT username for authentication (as defined by
+    linkman:upsd.users[5] on the data server side). If the section header
+    already specified a user (e.g., `[user@host]`), this keyword is ignored
+    within that section.
+
+*pass* or *password* (case-insensitive token)::
+    Optional. Specify the NUT password for authentication.
+
+*CERTPATH*::
+    Optional. Specify the path to trusted CA certificates (e.g., for
+    verifying the server's certificate), otherwise the system default
+    CA certificate store is used. In case of NSS, this is the path to
+    location of the NSS DB files used for all purposes.
+
+*CERTFILE*::
+    Optional (OpenSSL only). Specify the client certificate file for
+    client-side authentication to the server. The PEM file should start
+    with the individual certificate, followed by the chain of certificates
+    of authorities that issued it, and finished by the private key.
+
+*CERTIDENT_NAME*::
+    Optional. Specify the client certificate identity (nickname, alias).
+
+*CERTIDENT_PASS*::
+    Optional. Specify the password to decrypt the client's private key.
+
+*SSLBACKEND*::
+    Optional. Specify the SSL/TLS backend to use (e.g., `openssl` or `nss`),
+    if the default is not suitable.
+
+*CERTHOST*::
+    Optional. Specify the expected certificate subject (common name) of that
+    server's certificate; alternately the IP address or host name used in
+    the section title should match that in the common name (CN) or subject
+    alternate names (SAN).
+
+*CERTVERIFY*::
+    Optional. Enable or disable server certificate verification.
+    Accepted values: `on`, `yes`, `1` (enable) or `off`, `no`, `0` (disable).
+
+*FORCESSL*::
+    Optional. Require SSL/TLS for the connection.
+    Accepted values: `on`, `yes`, `1` (enable) or `off`, `no`, `0` (disable).
+
+NESTING (INCLUDE FILES)
+-----------------------
+
+Included files are supported via the `INCLUDE` directive for optionally
+present files, and `INCLUDE_REQUIRED` for files that must be there
+(otherwise the program exits with a fatal error).
+
+Global-scope includes may modify global default items, as well as define
+new sections or overlay items in existing sections.
+
+Section-scope includes (nested within a section) can only modify data
+within that section. They do not require a section title (effectively the
+global section of the included file modifies the section of the parent
+file it was included into), but if these files do have any section title(s),
+then contents of sections that after normalization do not match the section
+title of the parent file would be skipped.
+
+Example:
+
+	INCLUDE_REQUIRED /etc/nut/nutauth-defaults.conf
+
+	[@localhost]
+		INCLUDE /etc/nut/nutauth-local.conf
+
+SEE ALSO
+--------
+
+linkman:upscli_read_authconf_file[3], linkman:upscli_find_authconf_item[3],
+linkman:upsc[8], linkman:upsrw[8], linkman:upscmd[8],
+linkman:upsd.users[5],
+linkman:upsmon.conf[5], linkman:upsmon[8]
+
+Internet resources
+~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

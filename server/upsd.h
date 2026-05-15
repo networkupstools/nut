@@ -74,8 +74,6 @@ int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra);
 void server_load(void);
 void server_free(void);
 
-void check_perms(const char *fn);
-
 /* return values for instcmd / setvar status tracking,
  * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
 enum {

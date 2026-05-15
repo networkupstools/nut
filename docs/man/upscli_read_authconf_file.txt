@@ -1,0 +1,64 @@
+UPSCLI_READ_AUTHCONF_FILE(3)
+============================
+
+NAME
+----
+
+upscli_read_authconf_file - Read the authentication configuration file
+
+SYNOPSIS
+--------
+
+------
+	#include <authconf.h>
+
+	int upscli_read_authconf_file(const char *filename, int fatal_errors);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_read_authconf_file()* function reads the specified 'filename' (which
+is usually the path to *nutauth.conf*) and populates an internal list of
+authentication and SSL configurations.
+
+If 'filename' is `NULL`, the function tries to locate either a per-user
+`${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`, or a site
+default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first). Such a
+file may `INCLUDE` further configurations (e.g. hop from a per-user file
+to load server-wide defaults) if desired.
+
+The file structure is similar to *ups.conf*, with global defaults and
+per-server sections named like `[@localhost:12345]` for host defaults,
+or `[username@localhost:12345]` for specific account overrides.
+
+If 'fatal_errors' is non-zero, the function may call abort the program on
+critical failures (like memory allocation errors or if the file cannot
+be opened).
+
+See the linkman:nutauth.conf[5] manual page for supported configuration
+keywords.
+
+NESTING (INCLUDE FILES)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Included files are supported via the `INCLUDE` directive for optionally
+present files, and `INCLUDE_REQUIRED` for files that must be there
+(otherwise the program exits with a fatal error).
+
+Global-scope includes may modify global default items and define new sections.
+
+Section-scope includes (nested within a section) can only modify data
+within that section.
+
+RETURN VALUE
+------------
+
+The *upscli_read_authconf_file()* function returns '1' on success, or '-1' if an
+error occurs (and 'fatal_errors' was zero).
+
+SEE ALSO
+--------
+
+linkman:upscli_get_authconf_list[3], linkman:upscli_find_authconf_item[3],
+linkman:upscli_dump_authconf_list[3], linkman:nutauth.conf[5]
