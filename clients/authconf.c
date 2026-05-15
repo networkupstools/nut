@@ -913,6 +913,31 @@ int upscli_read_authconf_file(const char *filename, int fatal_errors)
 		struct stat	st;
 		char	*s = NULL;
 
+		/* If a location is specified by envvar, try only that */
+		s = getenv("NUT_AUTHCONF_FILE");
+		if (s) {
+			if (stat(s, &st) == 0) {
+				filename = s;
+				goto found;
+			}
+			upsdebugx(5, "%s: tried to use requested '%s' but it was not there", __func__, s);
+			goto found;
+		}
+
+		s = getenv("NUT_AUTHCONF_PATH");
+		if (s) {
+			if (snprintf(fn, sizeof(fn), "%s/nutauth.conf", s) > 0) {
+				if (stat(fn, &st) == 0) {
+					filename = fn;
+					goto found;
+				}
+				upsdebugx(5, "%s: tried to use requested '%s' but it was not there", __func__, fn);
+			} else {
+				upsdebugx(5, "%s: tried to use requested file under '%s' but could not construct the string", __func__, s);
+			}
+			goto found;
+		}
+
 		s = getenv("HOME");
 		if (s) {
 			if (snprintf(fn, sizeof(fn), "%s/.config/nut/nutauth.conf", s) > 0) {

@@ -18,15 +18,18 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *upscli_read_authconf_file()* function reads the specified 'filename' (which
-is usually the path to *nutauth.conf*) and populates an internal list of
-authentication and SSL configurations.
+The *upscli_read_authconf_file()* function reads the specified 'filename'
+(which is usually the path to *nutauth.conf*) and populates an internal
+list of authentication and SSL configurations.
 
-If 'filename' is `NULL`, the function tries to locate either a per-user
-`${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`, or a site
-default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first). Such a
-file may `INCLUDE` further configurations (e.g. hop from a per-user file
-to load server-wide defaults) if desired.
+If 'filename' is `NULL`, the function first tries to locate either a file
+whose path and name is fully provided in `${NUT_AUTHCONF_FILE}` environment
+variable, or a `${NUT_AUTHCONF_PATH}/nutauth.conf`, and would not try any
+other locations IFF these environment variables are provided. Otherwise it
+tries per-user `${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`,
+or a site default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first).
+Such a file may `INCLUDE` further configurations (e.g. hop from a per-user
+file to load server-wide defaults), if desired.
 
 The file structure is similar to *ups.conf*, with global defaults and
 per-server sections named like `[@localhost:12345]` for host defaults,
