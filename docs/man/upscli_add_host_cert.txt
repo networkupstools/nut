@@ -4,7 +4,8 @@ UPSCLI_ADD_HOST_CERT(3)
 NAME
 ----
 
-upscli_add_host_cert - Register a security rule for an host.
+upscli_add_host_cert, upscli_add_host_port_cert - Register
+a security rule for a host.
 
 SYNOPSIS
 --------
@@ -17,13 +18,23 @@ SYNOPSIS
 		const char* certname,
 		int certverify,
 		int forcessl);
+
+	void upscli_add_host_port_cert(
+		const char* hostname,
+		uint16_t port, =
+		const char* certname,
+		int certverify,
+		int forcessl)
 ------
 
 DESCRIPTION
 -----------
 
 The *upscli_add_host_cert()* function registers a security rule associated
-to the 'hostname'. All connections to this host use this rule.
+to the 'hostname' (may spell out a `host:port` in fact).
+The *upscli_add_host_port_cert()* function registers a security rule
+associated to the exact 'hostname' and 'port' number.
+All connections to this host use this rule.
 
 The rule is composed of the certificate name 'certname' expected for
 the host, 'certverify' if the certificate must be validated for the host
