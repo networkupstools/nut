@@ -147,7 +147,7 @@ endif HAVE_LIBREGEX
 NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups$(EXEEXT)
 NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
  clone clone-outlet failover apcupsd-ups skel
-SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
+SERIAL_DRIVERLIST = al175 apcmicrolink bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
@@ -234,6 +234,7 @@ upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
+apcmicrolink_SOURCES = apcmicrolink.c apcmicrolink-maps.c apc_common.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
 apcsmart_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
@@ -459,7 +460,7 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 # APC Modbus driver (with support of modbus over different media)
 # Note that a version of libmodbus built with USB support is also needed
 # for USB connections. Legacy versions work for Serial and TCP links.
-apc_modbus_SOURCES = apc_modbus.c
+apc_modbus_SOURCES = apc_modbus.c apc_common.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 if WITH_MODBUS_USB
   apc_modbus_SOURCES += hidparser.c
@@ -539,7 +540,7 @@ dist_noinst_HEADERS = \
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
- apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
+ apc_common.h apcmicrolink-maps.h apcmicrolink.h apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
  nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_innovatae.h	\
  nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
