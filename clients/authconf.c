@@ -709,8 +709,9 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			 && sect_host && *sect_host
 			 && sect_port && *sect_port
 			) {
-				upscli_add_host_cert(
+				upscli_add_host_port_cert(
 					sect_host,
+					(uint16_t)atol(sect_port),
 					current_section->certhost,
 					current_section->certverify,
 					current_section->forcessl);

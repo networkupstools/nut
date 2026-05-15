@@ -160,6 +160,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl);
+/* hostname may be a host:port */
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
 
 /* --- functions that only use the new names --- */

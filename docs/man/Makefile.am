@@ -730,6 +730,7 @@ $(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS): upscli_upslog_set_debug_level.$(MAN_SECTI
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
+	$(UPSCLI_ADD_HOST_CERT_DEPS) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
 	upscli_tryconnect.$(MAN_SECTION_API) \
@@ -817,6 +818,10 @@ INST_MAN_DEV_API_PAGES = \
 # Alias page for one text describing two commands:
 UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API) upscli_init_authconf.$(MAN_SECTION_API)
 $(UPSCLI_INIT_DEPS): upscli_init.$(MAN_SECTION_API)
+	touch $@
+
+UPSCLI_ADD_HOST_CERT_DEPS = upscli_add_host_port_cert.$(MAN_SECTION_API)
+$(UPSCLI_ADD_HOST_CERT_DEPS): upscli_add_host_cert.$(MAN_SECTION_API)
 	touch $@
 
 upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
