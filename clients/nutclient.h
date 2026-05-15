@@ -402,17 +402,20 @@ public:
 class SSLConfig_CERTHOST
 {
 public:
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
 	SSLConfig_CERTHOST(
 		const std::string& host_addr,
 		const std::string& cert_subj,
 		int forcessl = -1,
-		int certverify = -1);
+		int certverify = -1,
+		uint16_t port = 0);
 
 	SSLConfig_CERTHOST(
 		const char *host_addr,
 		const char *cert_subj,
 		int forcessl = -1,
-		int certverify = -1);
+		int certverify = -1,
+		uint16_t port = 0);
 
 	SSLConfig_CERTHOST& operator=(const SSLConfig_CERTHOST&) = default;
 	SSLConfig_CERTHOST(const SSLConfig_CERTHOST&) = default;
@@ -423,6 +426,8 @@ public:
 
 	const std::string& getHostAddr() const;
 	const char *getHostAddr_c_str() const;
+
+	uint16_t getPort() const;
 
 	const std::string& getCertSubj() const;
 	const char *getCertSubj_c_str() const;
@@ -438,6 +443,7 @@ protected:
 	std::string	_cert_subj;
 	int	_forcessl;
 	int	_certverify;
+	uint16_t	_port;
 };
 
 /**
@@ -496,9 +502,10 @@ public:
 	/** Simplify workflow for single-server connections */
 	const SSLConfig_CERTHOST *getFirstCertHost() const;
 
-	const SSLConfig_CERTHOST *getCertHostByAddr(std::string &s) const;
-	const SSLConfig_CERTHOST *getCertHostBySubj(std::string &s) const;
-	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(std::string &s) const;
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
+	const SSLConfig_CERTHOST *getCertHostByAddr(const std::string &s, uint16_t port = 0) const;
+	const SSLConfig_CERTHOST *getCertHostBySubj(const std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(const std::string &s, uint16_t port = 0) const;
 
 	/** Callback to apply this configuration into a TcpClient instance
 	 * (and further propagate into a Socket instance used by it).

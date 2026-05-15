@@ -2571,23 +2571,28 @@ SSLConfig_CERTHOST::SSLConfig_CERTHOST(
 	const std::string& host_addr,
 	const std::string& cert_subj,
 	int forcessl,
-	int certverify)
+	int certverify,
+	uint16_t port)
 	: _host_addr(host_addr),
 	  _cert_subj(cert_subj),
 	  _forcessl(forcessl),
-	  _certverify(certverify)
+	  _certverify(certverify),
+	  _port(port)
 {
+	// TODO: Parse apart possible "host:port" spelling, involve getservbyname()
 }
 
 SSLConfig_CERTHOST::SSLConfig_CERTHOST(
 	const char *host_addr,
 	const char *cert_subj,
 	int forcessl,
-	int certverify)
+	int certverify,
+	uint16_t port)
 	: _host_addr(host_addr ? host_addr : ""),
 	  _cert_subj(cert_subj ? cert_subj : ""),
 	  _forcessl(forcessl),
-	  _certverify(certverify)
+	  _certverify(certverify),
+	  _port(port)
 {
 }
 
@@ -2608,6 +2613,11 @@ const std::string& SSLConfig_CERTHOST::getHostAddr() const
 const char *SSLConfig_CERTHOST::getHostAddr_c_str() const
 {
 	return _host_addr.empty() ? nullptr : _host_addr.c_str();
+}
+
+uint16_t SSLConfig_CERTHOST::getPort() const
+{
+	return _port;
 }
 
 const std::string& SSLConfig_CERTHOST::getCertSubj() const
@@ -2632,7 +2642,10 @@ int SSLConfig_CERTHOST::getCertVerify() const
 
 bool SSLConfig_CERTHOST::operator < (const SSLConfig_CERTHOST& other) const
 {
-	if (_cert_subj.empty() && other._cert_subj.empty()) return _host_addr < other._host_addr;
+	if (_cert_subj.empty() && other._cert_subj.empty()) {
+		if (_host_addr == other._host_addr) return _port < other._port;
+		return _host_addr < other._host_addr;
+	}
 	return _cert_subj < other._cert_subj;
 }
 
@@ -2811,17 +2824,17 @@ const SSLConfig_CERTHOST *SSLConfig::getFirstCertHost() const
 	return _certhosts.empty() ? nullptr : *(_certhosts.begin());
 }
 
-const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddr(std::string &s) const
+const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddr(const std::string &s, uint16_t port) const
 {
 	for (const auto* item : _certhosts) {
-		if (item->getHostAddr() == s) {
+		if (item->getHostAddr() == s && (port == 0 || item->getPort() == 0 || item->getPort() == port)) {
 			return item;
 		}
 	}
 	return nullptr;
 }
 
-const SSLConfig_CERTHOST *SSLConfig::getCertHostBySubj(std::string &s) const
+const SSLConfig_CERTHOST *SSLConfig::getCertHostBySubj(const std::string &s) const
 {
 	for (const auto* item : _certhosts) {
 		if (item->getCertSubj() == s) {
@@ -2831,10 +2844,10 @@ const SSLConfig_CERTHOST *SSLConfig::getCertHostBySubj(std::string &s) const
 	return nullptr;
 }
 
-const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddrOrSubj(std::string &s) const
+const SSLConfig_CERTHOST *SSLConfig::getCertHostByAddrOrSubj(const std::string &s, uint16_t port) const
 {
 	for (const auto* item : _certhosts) {
-		if (item->getHostAddr() == s || item->getCertSubj() == s) {
+		if ((item->getHostAddr() == s && (port == 0 || item->getPort() == 0 || item->getPort() == port)) || item->getCertSubj() == s) {
 			return item;
 		}
 	}
