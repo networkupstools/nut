@@ -2242,6 +2242,7 @@ getenv
 gethostbyname
 getopt
 getproctag
+getrlimit
 getter
 getters
 gettext
