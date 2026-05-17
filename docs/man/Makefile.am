@@ -1023,6 +1023,7 @@ SRC_SERIAL_PAGES = \
 	powercom.txt 	\
 	powerpanel.txt	\
 	powervar_cx_ser.txt	\
+	ragtech.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
 	sms_ser.txt \
@@ -1075,6 +1076,7 @@ INST_MAN_SERIAL_PAGES = \
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
 	powervar_cx_ser.$(MAN_SECTION_CMD_SYS)	\
+	ragtech.$(MAN_SECTION_CMD_SYS)	\
 	rhino.$(MAN_SECTION_CMD_SYS)		\
 	riello_ser.$(MAN_SECTION_CMD_SYS)	\
 	sms_ser.$(MAN_SECTION_CMD_SYS) \
@@ -1145,6 +1147,7 @@ INST_HTML_SERIAL_MANS = \
 	powercom.html 	\
 	powerpanel.html	\
 	powervar_cx_ser.html	\
+	ragtech.html	\
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \

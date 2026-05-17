@@ -152,7 +152,8 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct meanwell_ntu
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct meanwell_ntu \
+ ragtech
 if HAVE_LINUX_SERIAL_H
 # Temporary, until ported to more OSes
 SERIAL_DRIVERLIST += nhs_ser
@@ -245,6 +246,8 @@ bestfcom_SOURCES = bestfcom.c
 bestfortress_SOURCES = bestfortress.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
+ragtech_SOURCES = ragtech.c
+ragtech_LDADD = $(LDADD_DRIVERS_SERIAL)
 blazer_ser_SOURCES = blazer.c blazer_ser.c
 blazer_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 etapro_SOURCES = etapro.c
