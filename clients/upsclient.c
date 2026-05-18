@@ -1107,17 +1107,11 @@ int upscli_init2(int certverify, const char *certpath,
 	return 1;
 }
 
-void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
+static uint16_t get_port_from_string(const char *str_port)
 {
-	const char	*s_port = strchr(hostname, ':');
-	uint16_t	port = NUT_PORT;
-	char	host[LARGEBUF];
+	uint16_t	retval = 0;
 
-	if (s_port) {
-		snprintf(host,
-			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
-			"%s", hostname);
-		if (s_port[1]) {
+	if (str_port && *str_port) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -1143,22 +1137,47 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
-			long	l = atol(s_port+1);
+		long	l = atol(str_port);
 
-			if (l > 0 && l <= UINT16_MAX) {
-				port = (uint16_t)l;
-			} else {
-				struct servent	*se = getservbyname(s_port + 1, "tcp");
-				if (se && se->s_port > 0 && se->s_port <= UINT16_MAX) {
-					port = se->s_port;
-				}
+		if (l > 0 && (uintmax_t)l <= (uintmax_t)UINT16_MAX) {
+			retval = (uint16_t)l;
+		} else {
+			struct servent	*se = getservbyname(str_port, "tcp");
+			if (se && se->s_port > 0 && (uintmax_t)(se->s_port) <= (uintmax_t)UINT16_MAX) {
+				retval = se->s_port;
 			}
+		}
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
+	}
+
+	return retval;
+}
+
+void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
+{
+	const char	*s_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (s_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
+			"%s", hostname);
+
+		if (s_port[1]) {
+			port = get_port_from_string(s_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, s_port + 1);
+				port = NUT_PORT;
+			}
 		}
 	}
 
@@ -1224,16 +1243,15 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 		snprintf(host,
 			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
 			"%s", hostname);
-		if (s_port[1]) {
-			long	l = atol(s_port+1);
 
-			if (l > 0 && l <= UINT16_MAX) {
-				port = (uint16_t)l;
-			} else {
-				struct servent	*se = getservbyname(s_port + 1, "tcp");
-				if (se && se->s_port > 0 && se->s_port <= UINT16_MAX) {
-					port = se->s_port;
-				}
+		if (s_port[1]) {
+			port = get_port_from_string(s_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, s_port + 1);
+				port = NUT_PORT;
 			}
 		}
 	}
