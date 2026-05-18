@@ -46,6 +46,17 @@ Changes from 2.8.5 to 2.8.6
   if the requested value is larger than what is allowed (minus some reserve
   for configuration files and other use-cases). [issue #3365]
 
+- Enabled support for `nutauth.conf` files to provide credentials and/or
+  SSL settings in clients which previously only did best-effort attempts at
+  secure communications without an individual certificate, and only anonymously
+  for reading like `upsc`.
++
+The new `-A filename` option defaults to trying to use a `nutauth.conf` file
+  (if found in one of the default locations) but not failing if one is not
+  usable; specific values can require use of such a file or to not even try
+  reading one ('none' as the legacy default). See the updated manual pages
+  for more details. [issues #3329, #3411]
+
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------
