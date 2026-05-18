@@ -68,13 +68,20 @@ int main(int argc, char **argv)
 	fprintf(f, "  CERTHOST = \"Other Server\"\n");
 	fclose(f);
 
-#ifdef DEBUG
-	if (upscli_read_authconf_file(NULL, 0) != 1) {
-		fprintf(stderr, "INFO: Default read_authconf failed (no user/site-provided config found)\n");
+	if ((s = getenv("NUT_AUTHCONF_FILE"))) {
+		printf("=== FYI: Trying NUT_AUTHCONF_FILE='%s' just for kicks\n", s);
+		if (upscli_read_authconf_file(NULL, 0) != 1) {
+			fprintf(stderr, "INFO: Default read_authconf failed (user-provided config parsing failed)\n");
+		} else {
+			printf("=== Parsed user configuration (debug view):\n");
+			/* With "for_debug", show all fields (highlight NULLs) */
+			num_sections = upscli_dump_authconf_list(NULL, 1);
+			printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
+		}
 	}
-#endif
 
 	/* 1. Expected file read */
+	printf("=== Reading '%s' generated for this test\n", test_conf);
 	if (upscli_read_authconf_file(test_conf, 1) != 1) {
 		fprintf(stderr, "not ok %d - read_authconf failed\n", ++testnum);
 		return 1;
