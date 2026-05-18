@@ -793,8 +793,15 @@ int upscli_init(int certverify, const char *certpath,
  */
 int upscli_init_authconf(upscli_authconf_t *ac)
 {
-	if (!ac)
+	if (!ac) {
+		upsdebugx(1, "%s: SKIP: NULL authconf pointer", __func__);
 		return -1;
+	}
+
+	upsdebugx(5, "%s: got an authconf pointer", __func__);
+	if (nut_debug_level > 5) {
+		upscli_dump_authconf_item(stderr, ac, 1, 0);
+	}
 
 	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
 }
