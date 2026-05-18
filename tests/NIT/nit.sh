@@ -815,7 +815,11 @@ NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
-export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
+# Leave no ambiguity as to which nutauth.conf should be read by default:
+# "${NUT_CONFPATH}/nutauth.conf" (e.g. not fall back to user or site configs).
+# Only apply it after (re-)generating via generatecfg_nutauth() though:
+NUT_AUTHCONF_FILE="none"
+export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH NUT_AUTHCONF_FILE
 
 if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
     log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
@@ -2198,6 +2202,7 @@ EOF
 ### upsd.users: ##################################################
 
 TESTPASS_ADMIN='mypass'
+TESTPASS_READER='public'
 TESTPASS_TESTER='pass words'
 TESTPASS_UPSMON_PRIMARY='P@ssW0rdAdm'
 TESTPASS_UPSMON_SECONDARY='P@ssW0rd'
@@ -2208,6 +2213,10 @@ generatecfg_upsdusers_trivial() {
     password = $TESTPASS_ADMIN
     actions = SET
     instcmds = ALL
+
+[reader]
+    password = $TESTPASS_READER
+    # No actions nor instcmds allowed
 
 [tester]
     password = "${TESTPASS_TESTER}"
@@ -2446,6 +2455,163 @@ EOF
 
     NUT_QUIET_INIT_SSL=false
     export NUT_QUIET_INIT_SSL
+}
+
+### nutauth.conf: #############################################
+
+generatecfg_nutauth() {
+    # NOTE: Tools will by default read from whatever "${NUT_AUTHCONF_FILE}"
+    #  resolves to, but here we populate the tests' instance (not overwrite
+    #  some user configuration file, if that is somehow supplied)!
+    {   cat << EOF
+# Global section for nutauth.conf, inherited and overridden per line by others
+EOF
+
+        case "${WITH_SSL_CLIENT}" in
+            none) ;;
+            OpenSSL)
+                log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
+                cat << EOF
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH = "${TESTCERT_PATH_ROOTCA}"
+EOF
+                ;;
+            NSS)
+                log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
+                cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH = "${TESTCERT_PATH_CLIENT}"
+EOF
+                ;;
+        esac
+
+        # Shared features for both SSL backends:
+        case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+            x"name+pass")
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+            x"name") # Really unlikely
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+# A really unlikely case: this backend does not support passphrases?..
+CERTIDENT_PASS = ""
+EOF
+            ;;
+            x"pass")
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+# This SSL backend can not check cert subject...
+CERTIDENT_NAME = ""
+# ...but at least can do private key passwords:
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+                ;;
+        esac
+
+        case "${WITH_SSL_CLIENT}" in
+            none)
+                cat << EOF
+# SSL not enabled: do not check server certs, do not require STARTTLS success:
+CERTVERIFY = 0
+FORCESSL = 0
+
+[@localhost:${NUT_PORT}]
+EOF
+                ;;
+            OpenSSL|NSS)
+                cat << EOF
+# Defaults that CERTHOST may override per-server, but note
+# that this impacts also the general NUT client behavior.
+# 0 for OK to fail => proceed in plaintext (should be overridden
+# by the specific localhost definition below):
+FORCESSL = 0
+
+# -1 for inheriting a better value elsewhere, e.g. in host
+#  definition below, or effectively 0 if never defined exactly:
+CERTVERIFY = -1
+
+[@localhost:${NUT_PORT}] # We also try different indentation and comment styles here
+EOF
+
+                if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                    case x"${WITH_SSL_CLIENT_CERTHOST}" in
+                        x"none") cat << EOF
+    # Custom settings for a specific remote server:
+    CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 0
+EOF
+                            ;;
+                        x"addr") cat << EOF
+    # Custom settings for a specific remote server without verifying
+    # the host cert for nickname '${TESTCERT_SERVER_NAME}':
+    # CERTHOST = ""
+# Just verify the CA matches what we trust:
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                        *) cat << EOF
+# Custom settings for a specific remote server:
+CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                    esac
+                fi
+                ;;
+      esac
+
+      # Previous clauses end somewhere in the [@localhost:${NUT_PORT}] section
+      # Keep credentials in sync with generatecfg_upsdusers_trivial()
+      cat << EOF
+    # Default credentials for access to this server
+    USER = reader
+    PASS = "$TESTPASS_READER"
+
+[admin@:${NUT_PORT}]
+    # Empty host should resolve to "localhost"
+    # Unquoted password, no special characters here:
+    PASS = $TESTPASS_ADMIN
+
+[tester@localhost:${NUT_PORT}]
+	password = "${TESTPASS_TESTER}"
+
+[dummy-admin-m@localhost:${NUT_PORT}]
+    pass = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-admin@localhost:${NUT_PORT}]
+    PASSWORD = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-user-s@localhost:${NUT_PORT}]
+password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[dummy-user@localhost:${NUT_PORT}]
+    password = "${TESTPASS_UPSMON_SECONDARY}"
+EOF
+
+    } > "${NUT_CONFPATH}/nutauth.conf" \
+    && chmod 640 "${NUT_CONFPATH}/nutauth.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: nutauth.conf"
+
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
+
+    NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth.conf"
+    export NUT_AUTHCONF_FILE
 }
 
 ### ups.conf: ##################################################
@@ -2731,6 +2897,7 @@ testcase_upsd_allow_no_device() {
     generatecfg_upsd_nodev
     generatecfg_upsdusers_trivial
     generatecfg_ups_trivial
+    WITH_SSL_CLIENT=none WITH_SSL_SERVER=none generatecfg_nutauth
     if shouldDebug ; then
         ls -la "$NUT_CONFPATH/" || true
     fi
@@ -2837,6 +3004,7 @@ generatecfg_sandbox() {
     generatecfg_upsd_nodev
     generatecfg_upsd_add_SSL
     generatecfg_upsdusers_trivial
+    generatecfg_nutauth
     generatecfg_ups_dummy
 }
 
