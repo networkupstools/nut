@@ -1292,11 +1292,14 @@ static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t po
 			 && strcmp(cert->host, hostname) == 0
 			 && cert->port == port
 			) {
+				upsdebugx(4, "%s: found '%s' for '%s':'%u'",
+					__func__, NUT_STRARG(cert->certname), hostname, (unsigned int)port);
 				return cert;
 			}
 			cert = cert->next;
 		}
 	}
+	upsdebugx(4, "%s: nothing found for '%s':'%u'", __func__, hostname, (unsigned int)port);
 #else
 	NUT_UNUSED_VARIABLE(hostname);
 	NUT_UNUSED_VARIABLE(port);
