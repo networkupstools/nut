@@ -755,19 +755,41 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
 #endif
 
-/* Legacy API, without support for client's own certificate in OpenSSL builds */
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * Legacy API, without support for client's own certificate in OpenSSL builds.
+ *
+ * @see upscli_init_authconf()
+ * @see upscli_init2()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
+ */
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
 	return upscli_init2(certverify, certpath, certname, certpasswd, NULL);
 }
 
-/* NOTE: Maybe eventually these two methods below will invert:
- *  who is implementation of whom.
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * NOTE: Maybe eventually the upscli_init2()/upscli_init_authconf() methods
+ *  will invert who is implementation of whom (the other being a wrapper).
+ *
  * TODO: Consider a method that parses our collection from
  *  upscli_get_authconf_list() to upscli_add_host_port_cert() and
  *  set up the one most applicable set of client identity data
  *  for that [user@host:port] combo.
+ *
+ * @see upscli_init2()
+ * @see upscli_init()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
  */
 int upscli_init_authconf(upscli_authconf_t *ac)
 {
@@ -777,6 +799,22 @@ int upscli_init_authconf(upscli_authconf_t *ac)
 	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
 }
 
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * Unlike legacy upscli_init() this method allows support for client's own
+ * certificate in OpenSSL builds (as well as NSS builds available before it).
+ *
+ * NOTE: Maybe eventually the upscli_init2()/upscli_init_authconf() methods
+ *  will invert who is implementation of whom (the other being a wrapper).
+ *
+ * @see upscli_init_authconf()
+ * @see upscli_init()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
+ */
 int upscli_init2(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd,
 					const char *certfile)
@@ -1719,10 +1757,15 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 # pragma GCC diagnostic pop
 #endif
 
-/*
- * 1  : OK
- * -1 : ERROR
- * 0  : SSL NOT SUPPORTED (whether by library or by server)
+/** Initialize STARTTLS on the specified "ups" connection.
+ *
+ *  For specific security requirements, you should call a
+ *  method from the upscli_init() family in advance.
+ *
+ * Returns:
+ * -  1  : OK
+ * - -1  : ERROR
+ * -  0  : SSL NOT SUPPORTED (whether by library or by server)
  */
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
