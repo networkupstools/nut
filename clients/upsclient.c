@@ -803,6 +803,18 @@ int upscli_init_authconf(upscli_authconf_t *ac)
 		upscli_dump_authconf_item(stderr, ac, 1, 0);
 	}
 
+	if (ac->certhost && ac->section) {
+		const char	*host_port = strchr(ac->section, '@');
+
+		if (!host_port) {
+			host_port = ac->section;
+		} else {
+			host_port++;
+		}
+
+		upscli_add_host_cert(host_port, ac->certhost, ac->certverify, ac->forcessl);
+	}
+
 	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
 }
 
@@ -1235,6 +1247,10 @@ void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* 
 {
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
+
+	upsdebugx(1, "%s: adding CERTHOST: host '%s' port '%u' certname '%s' certverify %d forcessl %d",
+		__func__, hostname, (unsigned int)port, certname, certverify, forcessl);
+
 	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
 	cert->port = port ? port : NUT_PORT;
