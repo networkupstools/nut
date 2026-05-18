@@ -836,10 +836,20 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 	 * they were not variable names - and so were not called that. */
 	var = arg[0];
 	if (numargs >= 3 && !strcmp(arg[1], "=")) {
+		upsdebugx(6, "%s: handling line with directive '%s' = '%s'",
+			__func__, NUT_STRARG(arg[0]),
+			strcasestr(arg[0], "pass") ? "<redacted>" : NUT_STRARG(arg[2]));
 		val = arg[2];
 	} else if (numargs == 1) {
 		/* Flag property? */
+		upsdebugx(5, "%s: line with only directive '%s' did not contain '=  ...', "
+			"assuming this is a numeric flag set to \"1\".",
+			__func__, NUT_STRARG(arg[0]));
 		val = "1";
+	} else {
+		upslogx(LOG_WARNING, "Malformed line starting with directive '%s' and %"
+			PRIuSIZE " tokens overall, assuming NULL value assignment",
+			NUT_STRARG(arg[0]), numargs);
 	}
 
 	if (current_section) {
