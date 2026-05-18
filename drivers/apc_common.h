@@ -1,5 +1,6 @@
 /* apc_common.h - Shared APC driver helpers
  *
+ * Copyright (C) 2023 Axel Gembe <axel@gembe.net>
  * Copyright (C) 2026 Lukas Schmid <lukas.schmid@netcube.li>
  *
  * This program is free software; you can redistribute it and/or modify
