@@ -273,7 +273,6 @@ static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wswitch-default"
-#pragma clang diagnostic ignored "-Wunreachable-code-break"
 #pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
 	switch (domain) {
