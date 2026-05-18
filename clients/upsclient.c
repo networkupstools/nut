@@ -881,7 +881,10 @@ int upscli_init2(int certverify, const char *certpath,
 			&&  strncmp(quiet_init_ssl, "TRUE", 4)
 			&&  strncmp(quiet_init_ssl, "1", 1) )
 		) {
-			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+			if (strncmp(quiet_init_ssl, "false", 5)
+			&&  strncmp(quiet_init_ssl, "FALSE", 5)
+			&&  strncmp(quiet_init_ssl, "0", 1) )
+				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
 			quiet_init_ssl = NULL;
 		}
 	}
