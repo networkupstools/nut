@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 		} else {
 			printf("=== Parsed user configuration (debug view):\n");
 			/* With "for_debug", show all fields (highlight NULLs) */
-			num_sections = upscli_dump_authconf_list(NULL, 1);
+			num_sections = upscli_dump_authconf_list(NULL, 1, 1);
 			printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 		}
 	}
@@ -91,14 +91,14 @@ int main(int argc, char **argv)
 	/* 2. Expected printout 1 */
 	printf("=== Parsed configuration (production view):\n");
 	/* Not "for_debug", but how would this info look in a config file */
-	num_sections = upscli_dump_authconf_list(NULL, 0);
+	num_sections = upscli_dump_authconf_list(NULL, 0, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 	printf("%sok %d - parsed 4 sections\n", num_sections == 4 ? "" : "not ", ++testnum);
 
 	/* 3. Expected printout 2 */
 	printf("=== Parsed configuration (debug view):\n");
 	/* With "for_debug", show all fields (highlight NULLs) */
-	num_sections = upscli_dump_authconf_list(NULL, 1);
+	num_sections = upscli_dump_authconf_list(NULL, 1, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 	printf("%sok %d - parsed 4 sections\n", num_sections == 4 ? "" : "not ", ++testnum);
 
@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 			printf("ok %d - No bogus match OK: got global section\n", ++testnum);
 		} else {
 			printf("not ok %d - No bogus match FAILED: had a hit\n", ++testnum);
-			upscli_dump_authconf_item(NULL, ac, 1);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
 			return 1;
 		}
 	} else {
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
 	/* 16. Expected printout 3 */
 	printf("=== Parsed configuration (production view) after several 'get' operations with results caching:\n");
 	/* Not "for_debug", but how would this info look in a config file */
-	num_sections = upscli_dump_authconf_list(NULL, 0);
+	num_sections = upscli_dump_authconf_list(NULL, 0, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 	/* Added '@somehost:port' and 'somebody@...' */
 	printf("%sok %d - parsed 6 sections\n", num_sections == 6 ? "" : "not ", ++testnum);

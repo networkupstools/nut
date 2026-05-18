@@ -296,7 +296,7 @@ static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var,
 	return res;
 }
 
-int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug)
+int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug, int show_pass)
 {
 	char	*indent = NULL;
 	int	res = 0, ret = 0;
@@ -330,7 +330,7 @@ int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, in
 		return ret;
 	ret += res;
 
-	res = upscli_dump_authconf_line_str(stream, "PASS", node->pass, indent, for_debug);
+	res = upscli_dump_authconf_line_str(stream, "PASS", show_pass || !(node->pass) ? node->pass : "<redacted>", indent, for_debug);
 	if (res < 0)
 		return ret;
 	ret += res;
@@ -350,7 +350,7 @@ int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, in
 		return ret;
 	ret += res;
 
-	res = upscli_dump_authconf_line_str(stream, "CERTIDENT_PASS", node->certpasswd, indent, for_debug);
+	res = upscli_dump_authconf_line_str(stream, "CERTIDENT_PASS", show_pass || !(node->certpasswd) ? node->certpasswd : "<redacted>", indent, for_debug);
 	if (res < 0)
 		return ret;
 	ret += res;
@@ -378,14 +378,14 @@ int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, in
 	return ret;
 }
 
-size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug)
+size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug, int show_pass)
 {
 	upscli_authconf_t	*node = authconf_list;
 	size_t	count = 0;
 
 	while (node) {
 		count++;
-		upscli_dump_authconf_item(stream, node, for_debug);
+		upscli_dump_authconf_item(stream, node, for_debug, show_pass);
 		node = node->next;
 	}
 

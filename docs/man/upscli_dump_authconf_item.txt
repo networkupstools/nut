@@ -12,9 +12,11 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug);
+	int upscli_dump_authconf_item(FILE *restrict stream,
+        upscli_authconf_t *node, int for_debug, int show_pass);
 
-	size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug);
+	size_t upscli_dump_authconf_list(FILE *restrict stream,
+        int for_debug, int show_pass);
 ------
 
 DESCRIPTION
@@ -29,20 +31,26 @@ authentication configurations to the specified 'stream'.
 These functions are primarily intended for debugging purposes to verify the
 content of the parsed configuration.
 
+*for_debug*::
 If 'for_debug' is '0', 'NULL' strings are not dumped, and the global section
 (a 'node' with 'NULL' or empty 'section' field) is not indented. String
 contents are printed in double-quotes with appropriate encoding to escape
 characters special for NUT configuration parser. Theoretically, this could
 be used to populate a conforming NUT auth configuration file.
-
++
 If 'for_debug' is '1', 'NULL' strings are dumped as unquoted `<null>`, and
 the global section is titled as `[<null>]` and indented like any other.
 String contents are also printed in double-quotes with appropriate encoding.
-
++
 If 'for_debug' is '2', behavior is like with '1' except that string contents
 are printed in double-quotes but otherwise as they were (result may be invalid
 for subsequent re-parsing, if there are unfortunate combinations of special
 characters).
+
+*show_pass*::
+If 'show_pass' is '0', `<redacted>` would be shown in case of non-NULL strings
+for user and private key passwords. Set it to '1' to show such sensitive data
+(ideally just in test programs, not in regular clients).
 
 RETURN VALUE
 ------------
