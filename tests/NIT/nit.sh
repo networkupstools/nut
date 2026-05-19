@@ -1431,7 +1431,7 @@ EOF
                         # Import the CA certificate, so users of this DB trust it:
                         certutil -A -d . -f .pwfile \
                             -n "${TESTCERT_ROOTCA_NAME}" \
-                            -t "TC,," \
+                            -t "CT,C,C" \
                             -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                         || die "Could not import the CA certificate to NSS Server database"
 
@@ -1609,7 +1609,7 @@ EOF
                                 # Import the CA certificate, so users of this DB trust it:
                                 certutil -A -d . -f .pwfile \
                                     -n "${TESTCERT_ROOTCA_NAME}" \
-                                    -t "TC,," \
+                                    -t "CT,C,C" \
                                     -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                                 || die "Could not import the CA certificate to NSS Server database"
 
