@@ -1459,6 +1459,7 @@ int upscli_cleanup(void)
 	PL_ArenaFinish();
 #endif /* WITH_NSS */
 
+	upscli_free_authconf_list();
 	upscli_initialized = 0;
 	return 1;
 }
