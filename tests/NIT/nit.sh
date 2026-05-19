@@ -1462,6 +1462,7 @@ EOF
                                 -2 \
                                 -3 \
                                 -v "${TESTCERT_VALIDITY_MONTHS}" \
+                                -t "u,u,u" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1499,7 +1500,7 @@ EOF
                         # Import the signed certificate into server database:
                         certutil -A -d . -f .pwfile \
                             -n "${TESTCERT_SERVER_NAME}" \
-                            -a -i server.crt -t ",," \
+                            -a -i server.crt -t "u,u,u" \
                         || die "Could not import the signed NSS Server certificate into server database"
 
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
