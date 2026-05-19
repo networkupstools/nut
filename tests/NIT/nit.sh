@@ -2433,19 +2433,19 @@ EOF
         x"none") cat << EOF
 CERTVERIFY 0
 # Custom settings for a specific remote server:
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 0
+CERTHOST "localhost:${NUT_PORT}" "${TESTCERT_SERVER_NAME}" 1 0
 EOF
             ;;
         x"addr") cat << EOF
 CERTVERIFY 1
 # Custom settings for a specific remote server without verifying the host cert for nickname '${TESTCERT_SERVER_NAME}':
-CERTHOST localhost "" 1 1
+CERTHOST "localhost:${NUT_PORT}" "" 1 1
 EOF
             ;;
         *) cat << EOF
 CERTVERIFY 1
 # Custom settings for a specific remote server:
-CERTHOST localhost "${TESTCERT_SERVER_NAME}" 1 1
+CERTHOST "localhost:${NUT_PORT}" "${TESTCERT_SERVER_NAME}" 1 1
 EOF
             ;;
         esac
