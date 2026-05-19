@@ -410,7 +410,7 @@ static void set_authconf_val(upscli_authconf_t *conf, const char *var, const cha
 	if (!conf || !var)
 		return;
 
-	if (!strcasecmp(var, "user")) {
+	if (!strcasecmp(var, "user") || !strcasecmp(var, "username")) {
 		if (current_section_with_fixed_username && conf->user
 		 && (!val || (val && strcmp(conf->user, val)))
 		) {

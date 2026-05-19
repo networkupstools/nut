@@ -113,7 +113,7 @@ GLOBAL AND SECTION DIRECTIVES
 
 The following keywords are supported in both global scope and within sections:
 
-*user* (case-insensitive token)::
+*user* or *username* (case-insensitive token)::
     Optional. Specify the NUT username for authentication (as defined by
     linkman:upsd.users[5] on the data server side). If the section header
     already specified a user (e.g., `[user@host]`), this keyword is ignored
