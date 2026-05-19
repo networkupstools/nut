@@ -347,7 +347,7 @@ static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 
 	upslogx(LOG_WARNING, "Certificate validation failed for %s:%" PRIu16,
 		(arg&&arg->host)?arg->host:"<unnamed>",
-		(arg ? arg->port : NUT_PORT));
+		(uint16_t)(arg ? arg->port : NUT_PORT));
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
