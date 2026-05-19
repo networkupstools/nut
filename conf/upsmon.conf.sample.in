@@ -661,6 +661,9 @@ ALARMCRITICAL 1
 #
 # CERTHOST localhost "My nut server" 1 1
 #
+# For a data server with non-default port, it should be specified, e.g.
+# CERTHOST "localhost:34930" "My nut server" 1 1
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 

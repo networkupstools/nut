@@ -640,6 +640,13 @@ the connection must be "secured" (should there be no fallback to plain-text?)
 Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
 Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.
 +
+For a data server with non-default port, it should be specified as a
+colon-separated part of 'hostname', e.g.
++
+------
+CERTHOST "localhost:34930" "My nut server" 1 1
+------
++
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.
 
