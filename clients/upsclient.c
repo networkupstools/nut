@@ -167,7 +167,7 @@ typedef struct HOST_CERT_s {
 #if 0
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
 #endif
-static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port);
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port, int verbose);
 
 /* Flag for SSL init */
 static int upscli_initialized = 0;
@@ -334,7 +334,7 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	if (peer && ups) {
 		HOST_CERT_t	*cert;
 
-		cert = upscli_find_host_port_cert(ups->host, ups->port);
+		cert = upscli_find_host_port_cert(ups->host, ups->port, 1);
 		if (cert != NULL && cert->certname != NULL) {
 			upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
 				ups->host, cert->certname);
@@ -428,7 +428,7 @@ static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
 	 */
-	cert = arg ? upscli_find_host_port_cert(arg->host, arg->port) : NULL;
+	cert = arg ? upscli_find_host_port_cert(arg->host, arg->port, 1) : NULL;
 	if (cert != NULL) {
 		return cert->certverify==0 ? SECSuccess : SECFailure;
 	} else {
@@ -1345,7 +1345,15 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl)
 {
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
-	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
+	HOST_CERT_t* cert = upscli_find_host_port_cert(hostname, port, 0);
+
+	if (cert) {
+		upsdebugx(5, "%s: SKIP: found existing CERTHOST with same data (host '%s' and port '%u')",
+			__func__, hostname, (unsigned int)port);
+		return;
+	}
+
+	cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
 
 	upsdebugx(1, "%s: adding CERTHOST: host '%s' port '%u' certname '%s' certverify %d forcessl %d",
 		__func__, hostname, (unsigned int)port, certname, certverify, forcessl);
@@ -1368,7 +1376,7 @@ void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* 
 #endif /* WITH_NSS */
 }
 
-static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port)
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port, int verbose)
 {
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = first_host_cert;
@@ -1378,25 +1386,28 @@ static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t po
 			 && strcmp(cert->host, hostname) == 0
 			 && cert->port == port
 			) {
-				upsdebugx(4, "%s: found '%s' for '%s':'%u'",
-					__func__, NUT_STRARG(cert->certname), hostname, (unsigned int)port);
+				if (verbose)
+					upsdebugx(4, "%s: found '%s' for '%s':'%u'",
+						__func__, NUT_STRARG(cert->certname), hostname, (unsigned int)port);
 				return cert;
 			}
 			cert = cert->next;
 		}
 	}
-	upsdebugx(4, "%s: nothing found for '%s':'%u'", __func__, hostname, (unsigned int)port);
+	if (verbose)
+		upsdebugx(4, "%s: nothing found for '%s':'%u'", __func__, hostname, (unsigned int)port);
 #else
 	NUT_UNUSED_VARIABLE(hostname);
 	NUT_UNUSED_VARIABLE(port);
 
-	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
+	if (verbose)
+		upsdebugx(4, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
 #endif /* WITH_OPENSSL | WITH_NSS */
 	return NULL;
 }
 
 #if 0
-static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname, int verbose)
 {
 	const char	*substr_port = strchr(hostname, ':');
 	uint16_t	port = NUT_PORT;
@@ -1421,7 +1432,7 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 
 	return upscli_find_host_port_cert(
 		substr_port ? host : hostname,
-		port);
+		port, verbose);
 }
 #endif
 
@@ -1986,7 +1997,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	{	/* scoping */
-		HOST_CERT_t	*cert = upscli_find_host_port_cert(ups->host, ups->port);
+		HOST_CERT_t	*cert = upscli_find_host_port_cert(ups->host, ups->port, 1);
 
 		if (cert != NULL && cert->certname != NULL) {
 			/* We have a setting like upsmon CERTHOST - to pin the certificate
@@ -2460,7 +2471,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 	ups->port = port;
 
-	hostcert = upscli_find_host_port_cert(host, port);
+	hostcert = upscli_find_host_port_cert(host, port, 1);
 
 	if (hostcert != NULL) {
 		/* An host security rule is specified. */
