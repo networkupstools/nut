@@ -1441,8 +1441,8 @@ EOF
                             -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
                             -a -o server.req \
                             -z "${TESTCERT_PATH_ROOTCA}"/.random \
-                            --extKeyUsage "serverAuth" \
-                            --nsCertType sslServer \
+                            --extKeyUsage "serverAuth,critical" \
+                            --nsCertType sslServer,critical \
                             --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
                             --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
                         || die "Could not create a NSS Server certificate request"
@@ -1456,8 +1456,8 @@ EOF
                                 -f "${TESTCERT_PATH_ROOTCA}"/.pwfile \
                                 -c "${TESTCERT_ROOTCA_NAME}" \
                                 -a -i server.req -o server.crt \
-                                --extKeyUsage "serverAuth" \
-                                --nsCertType sslServer \
+                                --extKeyUsage "serverAuth,critical" \
+                                --nsCertType sslServer,critical \
                                 -m 2 \
                                 -2 \
                                 -3 \
