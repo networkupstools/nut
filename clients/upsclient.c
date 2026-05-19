@@ -1863,29 +1863,34 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #endif
 	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
-			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
+			(SSLAuthCertificate)AuthCertificate,
+			CERT_GetDefaultCertDB());
 	} else {
 		status = SSL_AuthCertificateHook(ups->ssl,
-			(SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
+			(SSLAuthCertificate)AuthCertificateDontVerify,
+			CERT_GetDefaultCertDB());
 	}
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_AuthCertificateHook");
 		return -1;
 	}
 
-	status = SSL_BadCertHook(ups->ssl, (SSLBadCertHandler)BadCertHandler, ups);
+	status = SSL_BadCertHook(ups->ssl,
+		(SSLBadCertHandler)BadCertHandler, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_BadCertHook");
 		return -1;
 	}
 
-	status = SSL_GetClientAuthDataHook(ups->ssl, (SSLGetClientAuthData)GetClientAuthData, ups);
+	status = SSL_GetClientAuthDataHook(ups->ssl,
+		(SSLGetClientAuthData)GetClientAuthData, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_GetClientAuthDataHook");
 		return -1;
 	}
 
-	status = SSL_HandshakeCallback(ups->ssl, (SSLHandshakeCallback)HandshakeCallback, ups);
+	status = SSL_HandshakeCallback(ups->ssl,
+		(SSLHandshakeCallback)HandshakeCallback, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_HandshakeCallback");
 		return -1;
