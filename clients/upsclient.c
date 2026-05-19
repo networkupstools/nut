@@ -1303,28 +1303,28 @@ static uint16_t get_port_from_string(const char *str_port)
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
 	/* Support parsing apart authconf section names */
-	const char	*s_port = strchr(hostname, ':'), *s_host = strchr(hostname, '@');
+	const char	*substr_port = strchr(hostname, ':'), *substr_host = strchr(hostname, '@');
 	uint16_t	port = NUT_PORT;
 	char	host[LARGEBUF];
 
-	if (s_host) {
-		s_host++;
+	if (substr_host) {
+		substr_host++;
 	} else {
-		s_host = hostname;
+		substr_host = hostname;
 	}
 
-	if (s_port) {
+	if (substr_port) {
 		snprintf(host,
-			MIN(sizeof(host) - 1, (size_t)(s_port - s_host + 1)),
-			"%s", s_host);
+			MIN(sizeof(host) - 1, (size_t)(substr_port - substr_host + 1)),
+			"%s", substr_host);
 
-		if (s_port[1]) {
-			port = get_port_from_string(s_port + 1);
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
 			if (port == 0) {
 				upsdebugx(1, "%s: could not resolve port component '%s' "
 					"in [user@]hostname:port spec '%s' into a number, "
 					"falling back to standard NUT port",
-					__func__, hostname, s_port + 1);
+					__func__, hostname, substr_port + 1);
 				port = NUT_PORT;
 			}
 		}
@@ -1334,11 +1334,11 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 
 	upsdebugx(4, "%s: split '%s' into hostname '%s' port '%u'",
 		__func__, hostname,
-		s_port ? host : s_host,
+		substr_port ? host : substr_host,
 		(unsigned int)port);
 
 	upscli_add_host_port_cert(
-		s_port ? host : s_host,
+		substr_port ? host : substr_host,
 		port, certname, certverify, forcessl);
 }
 
@@ -1398,29 +1398,29 @@ static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t po
 #if 0
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 {
-	const char	*s_port = strchr(hostname, ':');
+	const char	*substr_port = strchr(hostname, ':');
 	uint16_t	port = NUT_PORT;
 	char	host[LARGEBUF];
 
-	if (s_port) {
+	if (substr_port) {
 		snprintf(host,
-			MIN(sizeof(host) - 1, (size_t)(s_port - hostname)),
+			MIN(sizeof(host) - 1, (size_t)(substr_port - hostname)),
 			"%s", hostname);
 
-		if (s_port[1]) {
-			port = get_port_from_string(s_port + 1);
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
 			if (port == 0) {
 				upsdebugx(1, "%s: could not resolve port component '%s' "
 					"in hostname:port spec '%s' into a number, "
 					"falling back to standard NUT port",
-					__func__, hostname, s_port + 1);
+					__func__, hostname, substr_port + 1);
 				port = NUT_PORT;
 			}
 		}
 	}
 
 	return upscli_find_host_port_cert(
-		s_port ? host : hostname,
+		substr_port ? host : hostname,
 		port);
 }
 #endif
