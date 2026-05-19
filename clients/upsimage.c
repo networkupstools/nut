@@ -668,8 +668,8 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	char	str[SMALLBUF], *s;
-	int	i;
+	char	str[SMALLBUF], *s, str_port[16];
+	int	flags_ssl = UPSCLI_CONN_TRYSSL, i;
 	double	min, nom, max;
 	double	var = 0;
 
@@ -723,8 +723,24 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
+
+	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		if (ac_default) {
+			if (ac_default->certverify) {
+				flags_ssl |= UPSCLI_CONN_CERTVERIF;
+			}
+			if (ac_default->forcessl) {
+				flags_ssl ^= UPSCLI_CONN_TRYSSL;
+				flags_ssl |= UPSCLI_CONN_REQSSL;
+			}
+		}
+	}
 
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))
@@ -742,7 +758,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
 #ifndef HAVE___ATTRIBUTE__NORETURN

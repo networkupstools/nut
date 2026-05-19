@@ -195,7 +195,7 @@ static void help(const char *prog)
 	__attribute__((noreturn));
 
 /* For getopt loops; should match usage documented below: */
-static const char	optstring[] = "+hDs:l:i:d:Nf:u:Vp:FBm:W:";
+static const char	optstring[] = "+hDs:l:i:d:Nf:u:Vp:FBm:W:A:";
 
 static void help(const char *prog)
 {
@@ -233,6 +233,9 @@ static void help(const char *prog)
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
 		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
@@ -526,6 +529,9 @@ int main(int argc, char **argv)
 	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
+	char	*nutauth = NULL, str_port[16];
+	upscli_authconf_t	*ac_default = NULL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
@@ -582,6 +588,11 @@ int main(int argc, char **argv)
 		switch (opt_ret)
 		{
 			case 'D': break;	/* See nut_debug_level handled above */
+
+			case 'A':
+				nutauth = optarg;
+				break;
+
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -621,6 +632,7 @@ int main(int argc, char **argv)
 					free(s);
 				} /* var scope */
 				break;
+
 			case 's':
 				monhost = optarg;
 				break;
@@ -703,6 +715,23 @@ int main(int argc, char **argv)
 					(char)opt_ret);
 
 		}
+	}
+
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				upscli_read_authconf_file(NULL, 1);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				upscli_read_authconf_file(nutauth, 1);
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -797,12 +826,15 @@ int main(int argc, char **argv)
 	if (!monhost_len)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
+	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 	/* Split the system specs in a common fashion for tuples and legacy args */
 	for (
 		monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
 		monhost_ups_current != NULL;
 		monhost_ups_current = monhost_ups_current->next
 	) {
+		upscli_authconf_t	*ac_current;
+
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
@@ -813,6 +845,26 @@ int main(int argc, char **argv)
 			NUT_STRARG(monhost_ups_current->hostname),
 			monhost_ups_current->port
 			);
+
+		/* FIXME: Currently libupsclient allows for one SSL context shared
+		 *  by all connections, specifically the CERTIDENT of the client.
+		 *  We can have multiple CERTHOST certificates (and/or reading
+		 *  users/passwords) though. */
+		ac_current = upscli_get_authconf_item(NULL, monhost_ups_current->hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, monhost_ups_current->port) > 0 ? str_port : NULL, 1);
+		/* Always call this, to register possible CERTHOSTs etc. */
+		if (upscli_init_authconf(ac_current) > 0) {
+			if (ac_default) {
+				if (ac_default->certverify) {
+					flags_ssl |= UPSCLI_CONN_CERTVERIF;
+				}
+				if (ac_default->forcessl) {
+					flags_ssl ^= UPSCLI_CONN_TRYSSL;
+					flags_ssl |= UPSCLI_CONN_REQSSL;
+				}
+				// Do not call on the next loop cycle, if any
+				ac_default = NULL;
+			}
+		}
 
 		/* Revise the list if some UPS name was an asterisk
 		 * (query the data server) */
@@ -834,7 +886,7 @@ int main(int argc, char **argv)
 
 			conn = (UPSCONN_t *)xmalloc(sizeof(*conn));
 
-			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
+			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
 
@@ -954,7 +1006,7 @@ int main(int argc, char **argv)
 
 		monhost_ups_current->ups = (UPSCONN_t *)xmalloc(sizeof(UPSCONN_t));
 
-		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
+		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
@@ -1039,7 +1091,7 @@ int main(int argc, char **argv)
 					monhost_ups_current->ups,
 					monhost_ups_current->hostname,
 					monhost_ups_current->port,
-					UPSCLI_CONN_TRYSSL);
+					flags_ssl);
 			}
 
 			run_flist(monhost_ups_current);

@@ -97,6 +97,27 @@ Set the timeout for initial network connections (by default they are
 indefinitely non-blocking, or until the system interrupts the attempt).
 Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 
+*-A* '/path/to/nutauth.conf'::
+
+  Require use of the specified linkman:nutauth.conf[5] file (fail if absent,
+  not accessible, or has content errors when parsed).
++
+By silent default, the client tries best-effort (non-fatal) detection of a
+  configuration file in per-user locations `${HOME}/.config/nut/nutauth.conf`
+  or `${HOME}/.nutauth.conf`, or site default `${NUT_CONFPATH}/nutauth.conf`.
++
+NOTE: If the `NUT_AUTHCONF_FILE` environment variable is exported, only that
+  exact full (relative or absolute) file path and name would be tried as the
+  default; otherwise, if the `NUT_AUTHCONF_PATH` environment variable is
+  exported, only a `nutauth.conf` file in that directory would be tried as the
+  default (instead of looking at hard-coded default locations listed above).
++
+Special values:
+
+* `default`: require a default file in one of the locations found per rules
+  listed above;
+* `none`: do not even try to find and load any such file (legacy default).
+
 UNATTENDED MODE
 ---------------
 
@@ -144,7 +165,8 @@ confusing.
 SEE ALSO
 --------
 
-linkman:upsd[8], linkman:upscmd[8]
+linkman:upsd[8], linkman:upscmd[8],
+linkman:nutauth.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

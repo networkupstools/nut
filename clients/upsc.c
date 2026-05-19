@@ -562,6 +562,7 @@ int main(int argc, char **argv)
 				flags_ssl |= UPSCLI_CONN_CERTVERIF;
 			}
 			if (ac_default->forcessl) {
+				flags_ssl ^= UPSCLI_CONN_TRYSSL;
 				flags_ssl |= UPSCLI_CONN_REQSSL;
 			}
 		}

@@ -54,7 +54,7 @@ struct list_t {
 };
 
 /* For getopt loops; should match usage documented below: */
-static const char	optstring[] = "+Dlhu:p:t:wVW:";
+static const char	optstring[] = "+Dlhu:p:t:wVW:A:";
 
 static void help(const char *prog)
 {
@@ -79,6 +79,9 @@ static void help(const char *prog)
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
 		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
 	printf("  -D         - raise debugging level\n");
 	printf("  -h         - display this help text\n");
 
@@ -328,7 +331,8 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *nutauth = NULL, str_port[16];
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upscmd");
 	const char	*net_connect_timeout = NULL;
 
@@ -380,6 +384,11 @@ int main(int argc, char **argv)
 		switch (opt_ret)
 		{
 		case 'D': break;	/* See nut_debug_level handled above */
+
+		case 'A':
+			nutauth = optarg;
+			break;
+
 		case 'l':
 			cmdlist = 1;
 			break;
@@ -421,6 +430,23 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				upscli_read_authconf_file(NULL, 1);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				upscli_read_authconf_file(nutauth, 1);
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0);
+	}
+
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
 			net_connect_timeout);
@@ -444,9 +470,22 @@ int main(int argc, char **argv)
 	}
 	setproctag(argv[0]);	/* ups[@host[:port]] */
 
+	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		if (ac_default) {
+			if (ac_default->certverify) {
+				flags_ssl |= UPSCLI_CONN_CERTVERIF;
+			}
+			if (ac_default->forcessl) {
+				flags_ssl ^= UPSCLI_CONN_TRYSSL;
+				flags_ssl |= UPSCLI_CONN_REQSSL;
+			}
+		}
+	}
+
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
-	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(ups, hostname, port, flags_ssl) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 

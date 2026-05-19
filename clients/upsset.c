@@ -52,6 +52,8 @@ struct list_t {
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
+static int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
 static char	*monups, *username, *password, *function, *upscommand;
 
 /* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
@@ -371,7 +373,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -1129,8 +1131,8 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	char *s;
-	int i;
+	char *s, str_port[16];
+	int	i;
 
 #ifdef WIN32
 	/* Required ritual before calling any socket functions */
@@ -1188,10 +1190,26 @@ int main(int argc, char **argv)
 	/* see if the magic string is present in the config file */
 	check_conf();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
 
 	extractpostargs();
+
+	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		if (ac_default) {
+			if (ac_default->certverify) {
+				flags_ssl |= UPSCLI_CONN_CERTVERIF;
+			}
+			if (ac_default->forcessl) {
+				flags_ssl ^= UPSCLI_CONN_TRYSSL;
+				flags_ssl |= UPSCLI_CONN_REQSSL;
+			}
+		}
+	}
 
 	/* Nothing POSTed (or parsed correctly)? */
 	if ((!username) || (!password) || (!function))

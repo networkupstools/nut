@@ -196,7 +196,8 @@ web server, don't blame me.
 SEE ALSO
 --------
 
-linkman:upsset.cgi[8]
+linkman:upsset.cgi[8],
+linkman:nutauth.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

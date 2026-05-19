@@ -179,14 +179,28 @@ https://github.com/networkupstools/nut/milestone/13
     * Adjust scaling for small (single-digit) value ranges to avoid division
       by zero and not rendering anything. [issue #3469]
 
- - `upsc` client updates:
+ - `upsc`, `upscmd`, `upsrw` command-line client updates:
     * Enabled support for `nutauth.conf` files to provide credentials and/or
       SSL settings in the client which previously only did best-effort attempts
       at secure communications without an individual certificate, and only
       anonymously for reading. The new `-A filename` option defaults to trying
       to use a `nutauth.conf` file (if found in one of the default locations)
       but not failing if one is not usable; specific values can require use of
-      such a file or to not even try reading one. [issues #3329, #3411]
+      such a file (`default`) or to not even try reading one (`none`).
+      [issues #3329, #3411]
+
+ - `upslog` client/tool updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations or via `-A` option, as described above. Since this client
+      can establish multiple connections, keep in mind that currently it
+      can only identify itself with some one (first seen) client certificate,
+      if `CERTIDENT` settings are used. Multiple `CERTHOST` directives for
+      specially trusted servers can be used. [#3329]
+
+ - `upsstats`, `upsset`, `upsimage` CGI client updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations described above (no way to choose the location, other than
+      by web-server environment variables for CGI calls). [#3329]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify

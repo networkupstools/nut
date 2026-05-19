@@ -183,6 +183,7 @@ SEE ALSO
 
 linkman:upslog[8],
 linkman:ups.conf[5],
+linkman:nutauth.conf[5],
 linkman:upsd[8]
 
 Internet resources:
