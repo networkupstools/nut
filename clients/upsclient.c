@@ -314,16 +314,87 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
 	UPSCONN_t	*ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	CERTCertificate	*peer  = SSL_PeerCertificate(fd);
 	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
 
-	upslogx(LOG_INFO, "Intend to authenticate %s %s:%u : %s",
+	upsdebugx(2, "%s: checking peer cert '%s' for NSS connection to URL '%s'",
+		__func__,
+		peer ? NUT_STRARG(peer->subjectName) : "<null>",
+		NUT_STRARG(SSL_RevealURL(fd)));
+
+	if (status != SECSuccess) {
+		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
+	}
+
+	/* Check CERTHOST setting anticipated for host:port, if any
+	 * Note that we keep "status" value as good or bad as the check above
+	 * returned it, unless we make it worse by failing the test (or better
+	 * once if we are told to ignore certverify results).
+	 */
+	if (peer && ups) {
+		HOST_CERT_t	*cert;
+
+		cert = upscli_find_host_port_cert(ups->host, ups->port);
+		if (cert != NULL && cert->certname != NULL) {
+			upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
+				ups->host, cert->certname);
+
+			/* Note: CERT_VerifyCertName() is not necessarily
+			 * what we want here, it focuses on domain names/URLs
+			 * and we checked that for ups->host with generic
+			 * SSL_AuthCertificate() above */
+			upsdebugx(4, "%s: check if expected cert name matches peer by hostname rules", __func__);
+			if (CERT_VerifyCertName(peer, cert->certname) != SECSuccess) {
+				char	*peer_subject_CN = (peer->subjectName ? (char*)strstr(peer->subjectName, "CN=") + 3 : NULL);
+				size_t	certname_len = strlen(cert->certname);
+
+				upsdebugx(4, "%s: check if expected cert name matches peer CN", __func__);
+
+				/* Check if cert->certname matches the whole subject or just .../CN=.../ part as a string */
+				if (!peer->subjectName || !(
+					strcmp(peer->subjectName, cert->certname) == 0
+					|| (peer_subject_CN && !strncmp(peer_subject_CN, cert->certname, certname_len)
+					    && (peer_subject_CN[certname_len] == '\0'
+						|| peer_subject_CN[certname_len] == '/'
+						|| peer_subject_CN[certname_len] == ','
+						|| (peer_subject_CN[certname_len] == '\\' && peer_subject_CN[certname_len + 1] == '/')) )
+				)) {
+					/* This way or that, the names differ */
+					upslogx(LOG_ERR, "Peer certificate subject (%s) does not match CERTHOST name (%s)",
+						peer->subjectName ? peer->subjectName : "unknown", cert->certname);
+
+					if (nut_debug_level > 4)
+						nss_error(isServer ? "CERT_VerifyCertName(server)" : "CERT_VerifyCertName(client)");
+
+					status = SECFailure;
+				} else {
+					upsdebugx(2, "Peer certificate subject verified against CERTHOST subject name (%s)", cert->certname);
+				}
+			} else {
+				upsdebugx(2, "Peer certificate subject verified against CERTHOST host name (%s)", cert->certname);
+			}
+
+			if (status != SECSuccess) {
+				if (cert->certverify < 1) {
+					upslogx(LOG_ERR, "Peer certificate verification failed for '%s', but was not required, proceeding", ups->host);
+					status = SECSuccess;
+				}
+			}
+		} else {
+			upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
+		}
+	} else {
+		upsdebugx(1, "%s: WARNING: 'ups' pin arg and/or peer cert was NULL, who are we connecting to?", __func__);
+	}
+
+	upslogx(LOG_INFO, "Intended to authenticate %s %s:%u : %s",
 		isServer ? "client" : "server",
 		ups ? ups->host : "<unnamed>",
 		(unsigned int)(ups ? ups->port : NUT_PORT),
 		status==SECSuccess ? "SUCCESS" : "FAILED");
 
-	if (status != SECSuccess) {
-		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
+	if (peer) {
+		CERT_DestroyCertificate(peer);
 	}
 
 	return status;
@@ -748,6 +819,12 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get_current_cert(ctx)), bufCA, sizeof(bufCA));
 		upsdebugx(5, "%s: issuer=%s", __func__, bufCA);
 	}
+
+/* TOTHINK: Match by CN=...? (Here we are after clearing other error cases) :
+	// This is the counterpart's own cert :
+	if (depth == 0 && !preverify_ok) {
+	}
+*/
 
 	if (openssl_cert_verify_data->always_continue) {
 		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): depth=%d:%s", __func__, preverify_ok, depth, buf);
@@ -1832,7 +1909,6 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 	PRFileDesc	*socket;
-	HOST_CERT_t *cert;
 # endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
@@ -2125,23 +2201,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #pragma GCC diagnostic pop
 #endif
 
-	cert = upscli_find_host_port_cert(ups->host, ups->port);
-	if (cert != NULL && cert->certname != NULL) {
-		upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
-			ups->host, cert->certname);
-
-		status = SSL_SetURL(ups->ssl, cert->certname);
-		if (status != SECSuccess) {
-			if (!(cert->certverify)) {
-				nss_error("upscli_sslinit / SSL_SetURL");
-				upslogx(LOG_ERR, "Certificate verification failed for '%s', but was not required, proceeding", ups->host);
-				status = SSL_SetURL(ups->ssl, ups->host);
-			}
-		}
-	} else {
-		upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
-		status = SSL_SetURL(ups->ssl, ups->host);
-	}
+	status = SSL_SetURL(ups->ssl, ups->host);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_SetURL");
 		return -1;
