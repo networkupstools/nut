@@ -37,6 +37,8 @@
 # undef W32_NETWORK_CALL_OVERRIDE
 #endif	/* WIN32 */
 
+#include "strcasestr-static.h"
+
 static upscli_authconf_t	*authconf_list = NULL;
 /** Shortcut: link to the section in authconf_list whose lines we are currently
  *  editing in the configuration reader; if NULL, we are editing global defaults */
