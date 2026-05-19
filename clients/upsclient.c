@@ -1246,10 +1246,14 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 				port = NUT_PORT;
 			}
 		}
+	} else {
+		host[0] = '\0';
 	}
 
 	upsdebugx(4, "%s: split '%s' into hostname '%s' port '%u'",
-		__func__, hostname, host, (unsigned int)port);
+		__func__, hostname,
+		s_port ? host : s_host,
+		(unsigned int)port);
 
 	upscli_add_host_port_cert(
 		s_port ? host : s_host,
