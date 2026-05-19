@@ -316,9 +316,11 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	UPSCONN_t	*ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
 	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
 
-	upslogx(LOG_INFO, "Intend to authenticate server %s : %s",
-		ups?ups->host:"<unnamed>",
-		status==SECSuccess?"SUCCESS":"FAILED");
+	upslogx(LOG_INFO, "Intend to authenticate %s %s:%u : %s",
+		isServer ? "client" : "server",
+		ups ? ups->host : "<unnamed>",
+		(unsigned int)(ups ? ups->port : NUT_PORT),
+		status==SECSuccess ? "SUCCESS" : "FAILED");
 
 	if (status != SECSuccess) {
 		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
@@ -335,8 +337,11 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 	NUT_UNUSED_VARIABLE(checksig);
 	NUT_UNUSED_VARIABLE(isServer);
 
-	upslogx(LOG_INFO, "Do not intend to authenticate server %s",
-		ups?ups->host:"<unnamed>");
+	upslogx(LOG_INFO, "Do not intend to authenticate %s %s:%u",
+		isServer ? "client" : "server",
+		ups ? ups->host : "<unnamed>",
+		(unsigned int)(ups ? ups->port : NUT_PORT));
+
 	return SECSuccess;
 }
 
