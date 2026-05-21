@@ -120,7 +120,14 @@ nutbooltest_SOURCES = nutbooltest.c
 TESTS += test_authconf
 test_authconf_SOURCES = test_authconf.c
 test_authconf_LDADD = $(top_builddir)/clients/libupsclient.la $(NUT_LIBCOMMON)
+test_authconf_LDFLAGS = $(AM_LDFLAGS)
 test_authconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+if WITH_SSL
+# This is more for libupsclient that may be linked to NSS than for the test itself
+test_authconf_LDADD += $(LIBSSL_LIBS)
+test_authconf_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
