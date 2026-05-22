@@ -12,10 +12,10 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	int upscli_dump_authconf_item(FILE *restrict stream,
+	int upscli_dump_authconf_item(FILE *stream,
         upscli_authconf_t *node, int for_debug, int show_pass);
 
-	size_t upscli_dump_authconf_list(FILE *restrict stream,
+	size_t upscli_dump_authconf_list(FILE *stream,
         int for_debug, int show_pass);
 ------
 

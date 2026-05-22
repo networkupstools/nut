@@ -245,7 +245,7 @@ upscli_authconf_t *upscli_free_authconf_item(upscli_authconf_t *node)
 	return NULL;
 }
 
-static int upscli_dump_authconf_line_str(FILE *restrict stream, const char *var, const char *val, const char *indent, int for_debug)
+static int upscli_dump_authconf_line_str(FILE *stream, const char *var, const char *val, const char *indent, int for_debug)
 {
 	/* Assume sane inputs from upscli_dump_authconf_item(); val may be NULL */
 	int	res = 0;
@@ -278,7 +278,7 @@ static int upscli_dump_authconf_line_str(FILE *restrict stream, const char *var,
 	return res;
 }
 
-static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var, int val, const char *indent, int for_debug)
+static int upscli_dump_authconf_line_int(FILE *stream, const char *var, int val, const char *indent, int for_debug)
 {
 	/* Assume sane inputs from upscli_dump_authconf_item(); val may be NULL */
 	int res;
@@ -298,7 +298,7 @@ static int upscli_dump_authconf_line_int(FILE *restrict stream, const char *var,
 	return res;
 }
 
-int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug, int show_pass)
+int upscli_dump_authconf_item(FILE *stream, upscli_authconf_t *node, int for_debug, int show_pass)
 {
 	char	*indent = NULL;
 	int	res = 0, ret = 0;
@@ -380,7 +380,7 @@ int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, in
 	return ret;
 }
 
-size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug, int show_pass)
+size_t upscli_dump_authconf_list(FILE *stream, int for_debug, int show_pass)
 {
 	upscli_authconf_t	*node = authconf_list;
 	size_t	count = 0;

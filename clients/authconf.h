@@ -111,11 +111,11 @@ upscli_authconf_t *upscli_get_authconf_item(const char *user, const char *host, 
  * 2 - like 1, but do not escape special characters in strings (only double-quote them).
  *
  * Used from upscli_dump_authconf_list() */
-int upscli_dump_authconf_item(FILE *restrict stream, upscli_authconf_t *node, int for_debug, int show_pass);
+int upscli_dump_authconf_item(FILE *stream, upscli_authconf_t *node, int for_debug, int show_pass);
 
 /** Print ultimate configuration to the specified stream (stdout if NULL)
  * and return the number of nodes in the current authconf list */
-size_t upscli_dump_authconf_list(FILE *restrict stream, int for_debug, int show_pass);
+size_t upscli_dump_authconf_list(FILE *stream, int for_debug, int show_pass);
 
 #ifdef __cplusplus
 }
