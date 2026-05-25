@@ -24,7 +24,6 @@
 # include "hidparser.h"
 #endif /* defined NUT_MODBUS_HAS_USB */
 
-#include "timehead.h"
 #include "nut_stdint.h"
 #include "apc_modbus.h"
 
@@ -510,7 +509,7 @@ static apc_modbus_converter_t _apc_modbus_voltage_conversion = { _apc_modbus_vol
 
 static int _apc_modbus_efficiency_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	char *cause;
+	const char *cause;
 	int res;
 
 	if (value == NULL || output == NULL || output_len == 0) {
@@ -522,32 +521,8 @@ static int _apc_modbus_efficiency_to_nut(const apc_modbus_value_t *value, char *
 		return 0;
 	}
 
-	switch (value->data.int_value) {
-	case -1:
-		cause = "NotAvailable";
-		break;
-	case -2:
-		cause = "LoadTooLow";
-		break;
-	case -3:
-		cause = "OutputOff";
-		break;
-	case -4:
-		cause = "OnBattery";
-		break;
-	case -5:
-		cause = "InBypass";
-		break;
-	case -6:
-		cause = "BatteryCharging";
-		break;
-	case -7:
-		cause = "PoorACInput";
-		break;
-	case -8:
-		cause = "BatteryDisconnected";
-		break;
-	default:
+	cause = apc_lookup_value_map_text(apc_efficiency_map, value->data.int_value);
+	if (cause == NULL) {
 		return _apc_modbus_double_to_nut(value, output, output_len);
 	}
 
@@ -684,45 +659,22 @@ static int _apc_modbus_status_change_cause_to_nut(const apc_modbus_value_t *valu
 
 static apc_modbus_converter_t _apc_modbus_status_change_cause_conversion = { _apc_modbus_status_change_cause_to_nut, NULL };
 
-static int _apc_modbus_string_join(const char *values[], size_t values_len, const char *separator, char *output, size_t output_len)
-{
-	size_t i;
-	size_t output_idx;
-	int res;
+static const apc_value_map_t apc_modbus_battery_test_source_map[] = {
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_PROTOCOL, "Source: Protocol" },
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_LOCALUI, "Source: LocalUI" },
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_INTERNAL, "Source: Internal" },
+	{ 0, NULL }
+};
 
-	if (values == NULL || values_len == 0 || separator == NULL || output == NULL || output_len == 0) {
-		/* Invalid parameters */
-		return 0;
-	}
-
-	output_idx = 0;
-	output[0] = 0; /* Always zero terminate */
-
-	for (i = 0; i < values_len && output_idx < output_len; i++) {
-		if (values[i] == NULL)
-			continue;
-
-		if (i == 0) {
-			res = snprintf(output + output_idx, output_len - output_idx, "%s", values[i]);
-		} else {
-			res = snprintf(output + output_idx, output_len - output_idx, "%s%s", separator, values[i]);
-		}
-
-		if (res < 0 || (size_t)res >= output_len) {
-			return 0;
-		}
-
-		output_idx += res;
-	}
-
-	return 1;
-}
+static const apc_value_map_t apc_modbus_battery_test_modifier_map[] = {
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_INVALIDSTATE, "Modifier: InvalidState" },
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_INTERNALFAULT, "Modifier: InternalFault" },
+	{ APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE, "Modifier: StateOfChargeNotAcceptable" },
+	{ 0, NULL }
+};
 
 static int _apc_modbus_battery_test_status_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	const char *result, *source, *modifier;
-	const char *values[3];
-
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
 		return 0;
@@ -732,52 +684,43 @@ static int _apc_modbus_battery_test_status_to_nut(const apc_modbus_value_t *valu
 		return 0;
 	}
 
-	result = NULL;
-	if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_PENDING)) {
-		result = "Pending";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_INPROGRESS)) {
-		result = "InProgress";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_PASSED)) {
-		result = "Passed";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_FAILED)) {
-		result = "Failed";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_REFUSED)) {
-		result = "Refused";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_ABORTED)) {
-		result = "Aborted";
-	}
-
-	source = NULL;
-	if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_PROTOCOL)) {
-		source = "Source: Protocol";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_LOCALUI)) {
-		source = "Source: LocalUI";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_SOURCE_INTERNAL)) {
-		source = "Source: Internal";
-	}
-
-	modifier = NULL;
-	if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_INVALIDSTATE)) {
-		modifier = "Modifier: InvalidState";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_INTERNALFAULT)) {
-		modifier = "Modifier: InternalFault";
-	} else if ((value->data.uint_value & APC_MODBUS_REPLACEBATTERYTESTSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE)) {
-		modifier = "Modifier: StateOfChargeNotAcceptable";
-	}
-
-	values[0] = result;
-	values[1] = source;
-	values[2] = modifier;
-	return _apc_modbus_string_join(values, SIZEOF_ARRAY(values), ", ", output, output_len);
+	return apc_format_test_status_value(apc_test_status_map,
+		apc_modbus_battery_test_source_map, apc_modbus_battery_test_modifier_map,
+		value->data.uint_value, output, output_len);
 }
 
 static apc_modbus_converter_t _apc_modbus_battery_test_status_conversion = { _apc_modbus_battery_test_status_to_nut, NULL };
 
+static const apc_value_map_t apc_modbus_runtime_calibration_status_result_map[] = {
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PENDING, "Pending" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_INPROGRESS, "InProgress" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PASSED, "Passed" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_FAILED, "Failed" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_REFUSED, "Refused" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_ABORTED, "Aborted" },
+	{ 0, NULL }
+};
+
+static const apc_value_map_t apc_modbus_runtime_calibration_status_source_map[] = {
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_PROTOCOL, "Source: Protocol" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_LOCALUI, "Source: LocalUI" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_INTERNAL, "Source: Internal" },
+	{ 0, NULL }
+};
+
+static const apc_value_map_t apc_modbus_runtime_calibration_status_modifier_map[] = {
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INVALIDSTATE, "Modifier: InvalidState" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INTERNALFAULT, "Modifier: InternalFault" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE, "Modifier: StateOfChargeNotAcceptable" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADCHANGE, "Modifier: LoadChange" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_ACINPUTNOTACCEPTABLE, "Modifier: ACInputNotAcceptable" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADTOOLOW, "Modifier: LoadTooLow" },
+	{ APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_OVERCHARGEINPROGRESS, "Modifier: OverChargeInProgress" },
+	{ 0, NULL }
+};
+
 static int _apc_modbus_runtime_calibration_status_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	const char *result, *source, *modifier;
-	const char *values[3];
-
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
 		return 0;
@@ -787,62 +730,15 @@ static int _apc_modbus_runtime_calibration_status_to_nut(const apc_modbus_value_
 		return 0;
 	}
 
-	result = NULL;
-	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PENDING)) {
-		result = "Pending";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_INPROGRESS)) {
-		result = "InProgress";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_PASSED)) {
-		result = "Passed";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_FAILED)) {
-		result = "Failed";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_REFUSED)) {
-		result = "Refused";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_ABORTED)) {
-		result = "Aborted";
-	}
-
-	source = NULL;
-	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_PROTOCOL)) {
-		source = "Source: Protocol";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_LOCALUI)) {
-		source = "Source: LocalUI";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_SOURCE_INTERNAL)) {
-		source = "Source: Internal";
-	}
-
-	modifier = NULL;
-	if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INVALIDSTATE)) {
-		modifier = "Modifier: InvalidState";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_INTERNALFAULT)) {
-		modifier = "Modifier: InternalFault";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_STATEOFCHARGENOTACCEPTABLE)) {
-		modifier = "Modifier: StateOfChargeNotAcceptable";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADCHANGE)) {
-		modifier = "Modifier: LoadChange";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_ACINPUTNOTACCEPTABLE)) {
-		modifier = "Modifier: ACInputNotAcceptable";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_LOADTOOLOW)) {
-		modifier = "Modifier: LoadTooLow";
-	} else if ((value->data.uint_value & APC_MODBUS_RUNTIMECALIBRATIONSTATUS_BF_MOD_OVERCHARGEINPROGRESS)) {
-		modifier = "Modifier: OverChargeInProgress";
-	}
-
-	values[0] = result;
-	values[1] = source;
-	values[2] = modifier;
-	return _apc_modbus_string_join(values, SIZEOF_ARRAY(values), ", ", output, output_len);
+	return apc_format_test_status_value(apc_modbus_runtime_calibration_status_result_map,
+		apc_modbus_runtime_calibration_status_source_map, apc_modbus_runtime_calibration_status_modifier_map,
+		value->data.uint_value, output, output_len);
 }
 
 static apc_modbus_converter_t _apc_modbus_runtime_calibration_status_conversion = { _apc_modbus_runtime_calibration_status_to_nut, NULL };
 
-static const time_t apc_date_start_offset = 946684800; /* 2000-01-01 00:00 */
-
 static int _apc_modbus_date_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	struct tm tm_info;
-	time_t time_stamp;
-
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
 		return 0;
@@ -852,17 +748,11 @@ static int _apc_modbus_date_to_nut(const apc_modbus_value_t *value, char *output
 		return 0;
 	}
 
-	time_stamp = ((int64_t)value->data.uint_value * 86400) + apc_date_start_offset;
-	gmtime_r(&time_stamp, &tm_info);
-	strftime(output, output_len, "%Y-%m-%d", &tm_info);
-
-	return 1;
+	return apc_format_date_from_days_offset((int64_t)value->data.uint_value, output, output_len);
 }
 
 static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t output_len)
 {
-	struct tm tm_struct;
-	time_t epoch_time;
 	uint64_t uint_value;
 
 	if (value == NULL || output == NULL || output_len == 0) {
@@ -870,16 +760,9 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
 		return 0;
 	}
 
-	memset(&tm_struct, 0, sizeof(tm_struct));
-	if (strptime(value, "%Y-%m-%d", &tm_struct) == NULL) {
+	if (!apc_parse_date_to_days_offset(value, &uint_value)) {
 		return 0;
 	}
-
-	if ((epoch_time = timegm(&tm_struct)) == -1) {
-		return 0;
-	}
-
-	uint_value = (epoch_time - apc_date_start_offset) / 86400;
 
 	return _apc_modbus_from_uint64(uint_value, output, output_len);
 }
@@ -894,8 +777,6 @@ static apc_modbus_converter_t _apc_modbus_date_conversion = { _apc_modbus_date_t
  */
 static int _apc_modbus_timer_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	int res;
-
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
 		return 0;
@@ -905,19 +786,7 @@ static int _apc_modbus_timer_to_nut(const apc_modbus_value_t *value, char *outpu
 		return 0;
 	}
 
-	if (value->data.int_value == -1) {
-		res = snprintf(output, output_len, "NotActive");
-	} else if (value->data.int_value == 0) {
-		res = snprintf(output, output_len, "CountdownExpired");
-	} else {
-		res = snprintf(output, output_len, "%" PRIi64, value->data.int_value);
-	}
-
-	if (res < 0 || (size_t)res >= output_len) {
-		return 0;
-	}
-
-	return 1;
+	return apc_format_countdown_value(value->data.int_value, output, output_len);
 }
 
 static apc_modbus_converter_t _apc_modbus_timer_conversion = { _apc_modbus_timer_to_nut, NULL };
@@ -1329,101 +1198,6 @@ static apc_modbus_outlet_group_info_t apc_modbus_outlet_group_info[] = {
 	{ "SOG2",	"Group 3",	APC_MODBUS_SOGRELAYCONFIGSETTING_BF_SOG_2_PRESENT,	APC_MODBUS_OUTLETCOMMAND_BF_TARGET_SWITCHED_OUTLET_GROUP_2,	0 },
 };
 
-/* Outlet command types for dynamic handling */
-typedef enum {
-	APC_OC_NULL = 0,
-	APC_OC_LOAD_OFF,
-	APC_OC_LOAD_ON,
-	APC_OC_LOAD_CYCLE,
-	APC_OC_LOAD_OFF_DELAY,
-	APC_OC_LOAD_ON_DELAY,
-	APC_OC_SHUTDOWN_RETURN,
-	APC_OC_SHUTDOWN_STAYOFF,
-	APC_OC_SHUTDOWN_REBOOT,
-	APC_OC_SHUTDOWN_REBOOT_GRACEFUL
-} apc_modbus_outlet_cmd_type_t;
-
-typedef struct {
-	const char *suffix;
-	apc_modbus_outlet_cmd_type_t type;
-} apc_modbus_outlet_cmd_suffix_t;
-
-static apc_modbus_outlet_cmd_suffix_t apc_modbus_outlet_cmd_suffixes[] = {
-	{ "load.off",                   APC_OC_LOAD_OFF                 },
-	{ "load.on",                    APC_OC_LOAD_ON                  },
-	{ "load.cycle",                 APC_OC_LOAD_CYCLE               },
-	{ "load.off.delay",             APC_OC_LOAD_OFF_DELAY           },
-	{ "load.on.delay",              APC_OC_LOAD_ON_DELAY            },
-	{ "shutdown.return",            APC_OC_SHUTDOWN_RETURN          },
-	{ "shutdown.stayoff",           APC_OC_SHUTDOWN_STAYOFF         },
-	{ "shutdown.reboot",            APC_OC_SHUTDOWN_REBOOT          },
-	{ "shutdown.reboot.graceful",   APC_OC_SHUTDOWN_REBOOT_GRACEFUL },
-	{ NULL, APC_OC_NULL }
-};
-
-/* Build outlet command value from command type and target bits */
-static uint64_t _apc_modbus_build_outlet_cmd(apc_modbus_outlet_cmd_type_t type, uint64_t target_bits)
-{
-	uint64_t cmd = target_bits;
-
-	switch (type) {
-	case APC_OC_LOAD_OFF:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF;
-		break;
-	case APC_OC_LOAD_ON:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON;
-		break;
-	case APC_OC_LOAD_CYCLE:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT;
-		break;
-	case APC_OC_LOAD_OFF_DELAY:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
-		break;
-	case APC_OC_LOAD_ON_DELAY:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_ON | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_ON_DELAY;
-		break;
-	case APC_OC_SHUTDOWN_RETURN:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
-		break;
-	case APC_OC_SHUTDOWN_STAYOFF:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_OFF | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
-		break;
-	case APC_OC_SHUTDOWN_REBOOT:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT;
-		break;
-	case APC_OC_SHUTDOWN_REBOOT_GRACEFUL:
-		cmd |= APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_REBOOT | APC_MODBUS_OUTLETCOMMAND_BF_MOD_USE_OFF_DELAY;
-		break;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
-# pragma GCC diagnostic ignored "-Wcovered-switch-default"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunreachable-code"
-# pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
-	case APC_OC_NULL:
-	default:
-		/* Must not occur. */
-		break;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic pop
-#endif
-	}
-
-	return cmd;
-}
-
 /* Get combined target bits for MOG and all available SOGs (for global commands) */
 static uint64_t _apc_modbus_get_all_outlet_targets(void)
 {
@@ -1452,7 +1226,7 @@ static uint64_t _apc_modbus_get_all_outlet_targets(void)
 static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *extra, int *result)
 {
 	size_t i, group_idx = 0;
-	apc_modbus_outlet_cmd_type_t cmd_type = APC_OC_LOAD_OFF;
+	apc_outlet_command_type_t cmd_type = APC_OUTLET_OP_LOAD_OFF;
 	uint64_t target_bits = 0;
 	uint64_t cmd_value;
 	uint16_t value[2];
@@ -1514,9 +1288,9 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	}
 
 	/* Look up command suffix in table */
-	for (i = 0; apc_modbus_outlet_cmd_suffixes[i].suffix; i++) {
-		if (strcmp(suffix, apc_modbus_outlet_cmd_suffixes[i].suffix) == 0) {
-			cmd_type = apc_modbus_outlet_cmd_suffixes[i].type;
+	for (i = 0; apc_outlet_command_suffixes[i].suffix; i++) {
+		if (strcmp(suffix, apc_outlet_command_suffixes[i].suffix) == 0) {
+			cmd_type = apc_outlet_command_suffixes[i].type;
 			found_suffix = 1;
 			break;
 		}
@@ -1527,7 +1301,7 @@ static int _apc_modbus_handle_outlet_cmd(const char *nut_cmdname, const char *ex
 	}
 
 	/* Build and send the command */
-	cmd_value = _apc_modbus_build_outlet_cmd(cmd_type, target_bits);
+	cmd_value = apc_build_outlet_command(cmd_type, target_bits);
 
 	if (!_apc_modbus_from_uint64(cmd_value, value, 2)) {
 		upslogx(LOG_ERR, "%s: Failed to convert command value for [%s]", __func__, nut_cmdname);
@@ -1576,9 +1350,9 @@ static int _apc_modbus_read_inventory(void)
 				dstate_setinfo(var_name, "%s", apc_modbus_outlet_group_info[i].designator);
 
 				/* Add all outlet.group commands for available groups */
-				for (j = 0; apc_modbus_outlet_cmd_suffixes[j].suffix; j++) {
+				for (j = 0; apc_outlet_command_suffixes[j].suffix; j++) {
 					snprintf(var_name, sizeof(var_name), "outlet.group.%" PRIuPTR ".%s",
-						i, apc_modbus_outlet_cmd_suffixes[j].suffix);
+						i, apc_outlet_command_suffixes[j].suffix);
 					dstate_addcmd(var_name);
 				}
 			} else {

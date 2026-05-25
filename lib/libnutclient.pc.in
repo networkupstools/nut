@@ -11,3 +11,4 @@ Description: UPS monitoring with Network UPS Tools
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} @LDFLAGS_NUT_RPATH_CXX@ -lnutclient
 Cflags: -I${includedir}
+Requires: @LIBSSL_REQUIRES@

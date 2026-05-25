@@ -21,7 +21,7 @@ libexecdir="@libexecdir@"
 libdir="@libdir@"
 includedir="@includedir@"
 confdir="@CONFPATH@"
-Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LIBS@"
+Libs="-L@libdir@ @LDFLAGS_NUT_RPATH@ -lupsclient @LIBSSL_LDFLAGS_RPATH@ @LIBSSL_LIBS@"
 Cflags="-I@includedir@ @LIBSSL_CFLAGS@"
 ConfigFlags='@CONFIG_FLAGS@'
 
