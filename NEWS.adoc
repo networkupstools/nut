@@ -225,6 +225,9 @@ https://github.com/networkupstools/nut/milestone/13
       much later (tell the sysadmin to increase `ulimit` or set up a more
       conservative `MAXCONN`). If there is a separate soft and hard limit,
       and `MAXCONN` exceeds the soft limit, try to raise the bar. [issue #3365]
+    * If SSL configuration was provided, but the server failed to apply some
+      aspect of that, it should now abort with an explanation (and not proceed
+      with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `ci_build.sh` settings and respective CI workflow settings

@@ -46,6 +46,11 @@ Changes from 2.8.5 to 2.8.6
   if the requested value is larger than what is allowed (minus some reserve
   for configuration files and other use-cases). [issue #3365]
 
+- `upsd` data server updates:
+    * If SSL configuration was provided, but the server failed to apply some
+      aspect of that, it should now abort with an explanation (and not proceed
+      with insecure start-up like it could do before). [issue #3331, PR #3435]
+
 - Enabled support for `nutauth.conf` files to provide credentials and/or
   SSL settings in clients which previously only did best-effort attempts at
   secure communications without an individual certificate, and only anonymously
