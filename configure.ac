@@ -6626,18 +6626,19 @@ dnl #    Currently it is more like whack-a-mole as distros update headers.
 dnl # -Wno-c11-extensions -- clang-21 on Ubuntu 26.04 at least complains a lot
 dnl #    about system headers (string.h, cdefs.h, etc.) using __glibc_const_generic
 dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
+dnl # -Wno-thread-safety-negative -- clang bug, it seems (https://reviews.llvm.org/D84604)
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
