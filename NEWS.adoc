@@ -44,6 +44,10 @@ https://github.com/networkupstools/nut/milestone/13
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
 
+ - Introduced an experimental `apcmicrolink` driver for devices with
+   the APC Microlink protocol on serial port connections. Tested against
+   APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
+
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
     * Decode `RunTimeCalibrationStatus_BF` into
@@ -58,6 +62,13 @@ https://github.com/networkupstools/nut/milestone/13
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
+    * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
+      (when a device returns all-spaces in that part of the `I` query response)
+      out of the box and not ignore the device as unsupported, by adding the
+      `QX_FLAG_ABSENT` in the mapping table. The practical effect should be
+      similar to specifying `novendor` in the `ups.conf` (except that the
+      option bypasses the check altogether, so driver instances handling well
+      behaved devices would also not show their manufacturer). [issue #3436]
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
@@ -114,6 +125,16 @@ https://github.com/networkupstools/nut/milestone/13
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
 
+ - `upsd` data server updates:
+    * If we hit "Too many open files" during configuration reload, close
+      the oldest client connection and retry. [issue #3365]
+    * If the `MAXCONN` requested in the configuration file exceeds the OS
+      allowance on open file descriptors, fail early since the requested
+      configuration can not be guaranteed and can mis-fire unexpectedly
+      much later (tell the sysadmin to increase `ulimit` or set up a more
+      conservative `MAXCONN`). If there is a separate soft and hard limit,
+      and `MAXCONN` exceeds the soft limit, try to raise the bar. [issue #3365]
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `ci_build.sh` settings and respective CI workflow settings
       to optionally re-use a `config.cache` file from older runs, and similar
@@ -126,6 +147,7 @@ https://github.com/networkupstools/nut/milestone/13
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
       dependencies were not previously discovered and bundled). [issue #3420,
       PRs #3429, #3432]
+
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------

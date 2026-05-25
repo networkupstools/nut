@@ -983,6 +983,7 @@ endif
 # (--with-serial)
 SRC_SERIAL_PAGES = \
 	al175.txt	\
+	apcmicrolink.txt	\
 	apcsmart.txt	\
 	apcsmart-old.txt	\
 	bcmxcp.txt 	\
@@ -1038,6 +1039,7 @@ SRC_SERIAL_PAGES = \
 
 INST_MAN_SERIAL_PAGES = \
 	al175.$(MAN_SECTION_CMD_SYS)	\
+	apcmicrolink.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart-old.$(MAN_SECTION_CMD_SYS)	\
 	bcmxcp.$(MAN_SECTION_CMD_SYS) 	\
@@ -1158,6 +1160,7 @@ INST_HTML_SERIAL_MANS = \
 	upscode2.html	\
 	ve-direct.html	\
 	victronups.html	\
+	apcmicrolink.html \
 	apcupsd-ups.html
 
 if HAVE_LINUX_SERIAL_H

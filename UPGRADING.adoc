@@ -39,6 +39,13 @@ Changes from 2.8.5 to 2.8.6
   in this regard, at the cost of adding arguments to methods introduced in
   the previous release. [issue #3331, PR #3408]
 
+- Potentially a breaking change for existing deployments with a (large)
+  `MAXCONN` setting in `upsd.conf`: now this value is checked against the
+  `getrlimit()` (e.g. `ulimit -n`) setting of the operating system for this
+  daemon, where available, and the `upsd` data server would refuse to start
+  if the requested value is larger than what is allowed (minus some reserve
+  for configuration files and other use-cases). [issue #3365]
+
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------
