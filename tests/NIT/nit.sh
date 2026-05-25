@@ -1364,7 +1364,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                                 pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
                             }
                             if pk12cmd >/dev/null 2>&1 ; then
-                                openssl pkcs12 -in rootca.p12 -out rootca.key -nodes -nocerts -passin file:.pwfile \
+                                openssl pkcs12 -in rootca.p12 \
+                                    -out rootca.key -nodes -nocerts \
+                                    -passin file:.pwfile \
                                 && log_info "Exported NSS CA key to OpenSSL PEM"
                             fi
                         fi
@@ -1595,7 +1597,10 @@ EOF
                             # server.crt is already PEM (from signing step)
                             mkpk12key() {
                                 if pk12cmd >/dev/null 2>&1 ; then
-                                    openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile "$@" \
+                                    openssl pkcs12 -in server.p12 \
+                                        -out server.key \
+                                        -nodes -nocerts \
+                                        -passin file:.pwfile "$@" \
                                     && log_info "Exported NSS Server key to OpenSSL PEM"
                                 fi
                             }
@@ -1690,7 +1695,11 @@ EOF
                                 || die "Could not import the CA certificate to NSS Server database"
 
                                 # Import Server certificate and key
-                                openssl pkcs12 -export -out server.p12 -inkey server.key -in server.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_SERVER_NAME}" -passout file:.pwfile \
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
                                 || die "Could not package Server cert to PKCS#12 for NSS import"
 
                                 pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
@@ -1821,7 +1830,11 @@ EOF
                     OpenSSL)
                         # Create a client certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out client.req -newkey rsa:4096 -passout file:.pwfile -keyout client.key -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        openssl req -new -nodes \
+                            -out client.req -newkey rsa:4096 \
+                            -passout file:.pwfile \
+                            -keyout client.key \
+                            -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
                         || die "Could not create a OpenSSL Client certificate request"
                         cat > client.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
@@ -1843,7 +1856,12 @@ IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
-                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_CLIENT}/client.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
+                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key -CAcreateserial \
+                                -out "${TESTCERT_PATH_CLIENT}/client.crt" \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
+                                -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
                         ) || die "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
 
                         cat client.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem client.key > upsmon.pem \
@@ -1905,9 +1923,12 @@ EOF
                                 || die "Could not import the Server certificate to NSS Client database"
 
                                 if [ -f client.key ] ; then
-                                    # TODO After #3331 merge:
                                     # Import Client certificate and key
-                                    openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
+                                    openssl pkcs12 -export -out client.p12 \
+                                        -inkey client.key -in client.crt \
+                                        -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                        -name "${TESTCERT_CLIENT_NAME}" \
+                                        -passout file:.pwfile \
                                     || die "Could not package Client cert to PKCS#12 for NSS import"
 
                                     pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
