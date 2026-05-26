@@ -4263,7 +4263,6 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	esac
 done
-rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:            '${DOC_BUILD_LIST}'])
@@ -4271,6 +4270,11 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:        '${DOC_SKIPBUILD_LIST}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_DISTED_MANS:   '${DOC_INSTALL_DISTED_MANS}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_SELECTED_MANS: '${DOC_INSTALL_SELECTED_MANS}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) This script's DOCTESTDIR:  '${DOCTESTDIR}'])
+],[
+	dnl If we are debugging, and doc generation fails, we want the directory
+	dnl else remove it later (after confirming success) below
+	rm -rf "${DOCTESTDIR}"
 ])
 
 case "${nut_with_doc}" in
@@ -4314,6 +4318,11 @@ AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_tit
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST} ${DOC_INSTALL_SELECTED_MANS}],
 					[WITH_DOCS], [Define to enable overall documentation generation], [-])
+
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+	dnl Delayed clean-up after success of desired doc types:
+	rm -rf "${DOCTESTDIR}"
+])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
