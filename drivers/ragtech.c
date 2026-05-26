@@ -461,10 +461,11 @@ void upsdrv_initinfo(void)
 	{
 		double v_in_now = reply[OFF_V_VINPUT - 1] * 1.0600;
 		dstate_setinfo("input.voltage.nominal", "%u",
-			v_in_now > 150.0 ? 220 : 115);
+			(unsigned int)(v_in_now > 150.0 ? 220 : 115));
 	}
 	dstate_setinfo("output.voltage.nominal", "%u", model->vout_nominal);
-	dstate_setinfo("battery.voltage.nominal", "%u", model->bmult > 0.1 ? 24 : 12);
+	dstate_setinfo("battery.voltage.nominal", "%u",
+		(unsigned int)(model->bmult > 0.1 ? 24 : 12));
 	dstate_setinfo("ups.firmware", "%.1f", reply[OFF_V_VERSION - 1] * 0.1);
 
 	if (ragtech_read(0x00F3, 1, &calib) == 1 && calib > 0) {
