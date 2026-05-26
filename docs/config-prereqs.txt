@@ -874,16 +874,17 @@ tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 ----
 ======
 
-FreeBSD 12.2
-~~~~~~~~~~~~
+FreeBSD 12.2 - 15.0
+~~~~~~~~~~~~~~~~~~~
 
-NOTE: As of 2024, this version is way beyond EOL -- packages have been
-removed from mirrors. A discussion at
+NOTE: As of 2024, the originally described OS version 12.2 is way beyond
+EOL -- its packages have been removed from mirrors. A discussion at
 https://forums.freebsd.org/threads/easy-upgrading-from-12-2-rel-in-2024.92695/
 touches on upgrades in such situation. An alternate mirror (that worked to
 bump the system to `openjdk17`, as of this writing in Nov 2024) can be found
 at https://mirror.sg.gs/freebsd-pkg/FreeBSD:12:amd64/quarterly/ and written
 into `/etc/pkg/FreeBSD.conf` similarly to existing `url` entry.
+That deployment on NUT CI farm survived `freebsd-update` up to 15.0 however.
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
 
@@ -929,6 +930,9 @@ below.
 # (TEX, X11):
 :; pkg install \
     asciidoc source-highlight textproc/py-pygments dblatex
+
+# If PDF refuses to build, e.g. a simple `echo '\bye' | pdftex` fails, try:
+# :; mktexlsr && fmtutil-sys --all
 
 # For CGI graph generation - massive packages (X11):
 :; pkg install \
