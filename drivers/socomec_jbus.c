@@ -6,8 +6,8 @@
  * Based on documentation found freely on
  * https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
  * but with dubious legal license. The document itself states:
- * ``CAUTION : “This is a product for restricted sales distribution to informed partners. 
- *   Installation restrictions or additional measures may be needed to prevent disturbances''
+ *   CAUTION : "This is a product for restricted sales distribution to informed partners.
+ *   Installation restrictions or additional measures may be needed to prevent disturbances"
  * YMMV
  *
  *  This program is free software; you can redistribute it and/or modify

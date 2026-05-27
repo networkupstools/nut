@@ -77,24 +77,24 @@
 #define GETVAL_U16(name, fallback) (dstate_getinfo(name) ? (uint16_t)atoi(dstate_getinfo(name)) : (fallback))
 
 /* Time [s] after entering battery mode before shutdown signal (bit 15) is triggered */
-#define REG_PC_SHUTDOWN_DELAY        0x105A  /* default: 60s, range: 1–65535 */
+#define REG_PC_SHUTDOWN_DELAY        0x105A  /* default: 60s, range: 1-65535 */
 
 /* Time [s] allowed for PC to shut down before output turns off */
-#define REG_PC_SHUTDOWN_TIME         0x105D  /* default: 120s, range: 1–3600 */
+#define REG_PC_SHUTDOWN_TIME         0x105D  /* default: 120s, range: 1-3600 */
 
 /* Time [s] output is off after PC shutdown before reboot */
-#define REG_PC_RESET_TIME            0x105E  /* default: 10s, range: 0–60 */
+#define REG_PC_RESET_TIME            0x105E  /* default: 10s, range: 0-60 */
 
 /* Time [s] input voltage must be above threshold to return to mains*/
 #define REG_MAINS_RETURN_DELAY       0x1058  /* default: 10s */
 
 /* Selector mode switch: PC-Mode = 9 */
-#define REG_MODE_SELECTOR_SWITCH     0x1074  /* default: 0–9 */
+#define REG_MODE_SELECTOR_SWITCH     0x1074  /* default: 0-9 */
 
 /* --- Battery Monitoring --- */
 
 /* SOH warning threshold [%] */
-#define REG_WARNING_SOH_THRESHOLD    0x1071  /* default: 0 (disabled), range: 1–100 */
+#define REG_WARNING_SOH_THRESHOLD    0x1071  /* default: 0 (disabled), range: 1-100 */
 
 /* Switch to battery mode if below this input voltage [mV] */
 #define REG_VOLTAGE_BELOW_BATTERY    0x1056  /* example: 21000 */
