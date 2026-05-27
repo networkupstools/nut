@@ -2321,6 +2321,22 @@ AC_SUBST([NETLIBS_GETADDRS])
 AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
 dnl ----------------------------------------------------------------------
+dnl Simple check that it exists and can be executed
+AC_PATH_PROGS([PERL], perl, [none])
+AS_IF([test x"${PERL}" != xnone], [
+    AC_MSG_CHECKING([whether PERL interpreter is basically usable: '${PERL}'])
+    AS_IF([${PERL} -e 1 >/dev/null], [
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+        PERL=none
+    ])
+])
+
+AC_SUBST([PERL])
+AM_CONDITIONAL([HAVE_PERL], [test x"$PERL" != xnone])
+
+dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
 NUT_ARG_WITH([python-modules-dir], [install the PyNUT module files under specified path for default Python interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
 NUT_ARG_WITH([python2-modules-dir], [install the PyNUT module files under specified path for Python2 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
