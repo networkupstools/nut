@@ -1791,6 +1791,8 @@ export DO_CLEAN_AUTOCONF_CACHE_BEFORE
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
+PATH="`echo \"${PATH}\" | normalize_path`"
+
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
 set | ${EGREP} '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' | sed 's,\(.\)$,\1 \\,' || true
