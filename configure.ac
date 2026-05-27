@@ -148,6 +148,19 @@ AC_MSG_RESULT([${CONFIG_FLAGS}])
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["${CONFIG_FLAGS}"],[Flags passed to configure script])
 AC_SUBST(CONFIG_FLAGS)
 
+dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl and this breaks "checking for C compiler version" in a standard step below
+AS_IF([set | ${EGREP} '^CCACHE_DIR(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Unsetting a provided but empty CCACHE_DIR environment variable])
+    AS_UNSET([CCACHE_DIR])
+])
+
+AS_IF([set | ${EGREP} '^CCACHE_PATH(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Resetting a provided but empty CCACHE_PATH environment variable to current PATH])
+    CCACHE_PATH="${PATH}"
+])
+
 AC_CHECK_PROGS([MKTEMP], [mktemp], [])
 AS_IF([test x"${MKTEMP}" = x], [
 dnl # Have a simple (unsafe, unfeatured) fallback implementation:
@@ -7037,8 +7050,9 @@ AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
 dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
-dnl Avoid exporting them if not set at the configure time (assuming ci_build.sh
-dnl integration or user's shell profile sets them persistently)
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl Avoid exporting them if NOT set at the configure time (assuming ci_build.sh
+dnl integration or user's shell profile sets them persistently... or empty)
 AS_IF([test x"${CCACHE_NAMESPACE-}" = x], [NUT_AM_EXPORT_CCACHE_NAMESPACE="#"], [NUT_AM_EXPORT_CCACHE_NAMESPACE=""])
 AC_SUBST(NUT_AM_EXPORT_CCACHE_NAMESPACE)
 AS_IF([test x"${CCACHE_BASEDIR-}" = x], [NUT_AM_EXPORT_CCACHE_BASEDIR="#"], [NUT_AM_EXPORT_CCACHE_BASEDIR=""])
