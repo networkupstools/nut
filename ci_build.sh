@@ -215,7 +215,11 @@ fi
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
-normalize_path() {
+normalize_path_perl() {
+    perl -e 'my %PATH; while (<>) { foreach my $D (split(/:/, $_)) { if (length($D) > 0 && !defined($PATH{$D})) { $PATH{$D} = scalar(%PATH); } } } ; my $joined = join ":", sort { $PATH{$a} <=> $PATH{$b} } keys %PATH; print "$joined";'
+}
+
+normalize_path_shell() {
     # STDIN->STDOUT: strip duplicate "/" and extra ":" if present,
     # leave first copy of duplicates in (preferred) place
     sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,' -e 's,///*,/,g' \
@@ -235,6 +239,19 @@ normalize_path() {
         done
         echo "${P}"
       )
+}
+
+HAVE_PERL=false
+if perl -e 1 2>/dev/null; then
+    HAVE_PERL=true
+fi
+
+normalize_path() {
+    if $HAVE_PERL ; then
+        normalize_path_perl "$@"
+    else
+        normalize_path_shell "$@"
+    fi
 }
 
 propose_CI_CCACHE_SYMLINKDIR() {
