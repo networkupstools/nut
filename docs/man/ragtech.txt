@@ -22,14 +22,14 @@ SUPPORTED HARDWARE
 ------------------
 
 Targets Ragtech UPSes that expose a USB CDC-ACM serial interface
-(USB VID 0x04D8, PID 0x000A — Microchip PIC with CDC firmware).
+(USB VID 0x04D8, PID 0x000A -- Microchip PIC with CDC firmware).
 The device shows up under Linux as `/dev/ttyACM*`.
 
 Validated end-to-end against the Ragtech Easy 2000 TI (model id 16 in
-the family-10 device table). The other 19 models in the same table —
+the family-10 device table). The other 19 models in the same table --
 Easy 600/700/900/1200/1300/1400/1600/1800/2000/2200 in both TI (115 V)
 and M2 (220 V) variants, also sold under the NEP, TORO, INNERGIE and
-OneUP brands in Brazil — share the same wire protocol and register
+OneUP brands in Brazil -- share the same wire protocol and register
 layout and are expected to work; please report results.
 
 This driver is *experimental*. Polling, status decoding and the
@@ -68,7 +68,7 @@ CAVEATS
 
 The serial control lines DTR and RTS are forced low by the driver
 immediately after opening the port. Non-zero levels on either line
-are interpreted by the UPS as a remote shutdown signal — never run
+are interpreted by the UPS as a remote shutdown signal -- never run
 this driver alongside other software that toggles those lines on the
 same device node.
 
@@ -92,7 +92,7 @@ linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 
-Reverse-engineering reference:
-https://github.com/antunesls/UPS_ESP32_tinySrv
+* Reverse-engineering reference:
+  https://github.com/antunesls/UPS_ESP32_tinySrv
