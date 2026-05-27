@@ -1,30 +1,30 @@
-/* ragtech.c - driver for Ragtech UPSes (Easy Pro family — NEP/TORO/INNERGIE/OneUP)
+/* ragtech.c - driver for Ragtech UPSes (Easy Pro family -- NEP/TORO/INNERGIE/OneUP)
  *
  * Target devices: Ragtech UPSes exposing a USB CDC-ACM serial interface
  * (PIC firmware, USB VID 0x04D8, PID 0x000A). Connected as /dev/ttyACM*.
  *
- * Protocol notes (derived from Ragtech's OEM devices.xml — family 10 — and
+ * Protocol notes (derived from Ragtech's OEM devices.xml -- family 10 -- and
  * cross-checked against UPS_ESP32_tinySrv, https://github.com/antunesls/UPS_ESP32_tinySrv).
  *
  *   Line config: 8N1 (the CDC-ACM endpoint ignores baud, but the OEM client
- *   sets it to 2560). DTR=0 and RTS=0 MUST be asserted right after opening —
+ *   sets it to 2560). DTR=0 and RTS=0 MUST be asserted right after opening --
  *   non-zero levels are interpreted by some Ragtech families as a remote
  *   shutdown signal.
  *
  *   The UPS exposes a flat register address space; the client reads contiguous
  *   ranges of bytes by address. Family 10 advertises five ranges (devices.xml):
  *
- *     0x0080..0x009D   30 bytes — main status range, polled every cycle
- *     0x00F3..0x00F3    1 byte  — V_IOUTCALIB (per-unit current calibration)
- *     0x0136..0x0136    1 byte  — V_CAPBATNEW (replacement battery capacity)
- *     0x0171..0x0174    4 bytes — RGB LED + random
- *     0x0202..0x0203    2 bytes — V_OSC53 / V_OSC57 (frequency calibration)
+ *     0x0080..0x009D   30 bytes -- main status range, polled every cycle
+ *     0x00F3..0x00F3    1 byte  -- V_IOUTCALIB (per-unit current calibration)
+ *     0x0136..0x0136    1 byte  -- V_CAPBATNEW (replacement battery capacity)
+ *     0x0171..0x0174    4 bytes -- RGB LED + random
+ *     0x0202..0x0203    2 bytes -- V_OSC53 / V_OSC57 (frequency calibration)
  *
  *   Read command (6 bytes):
  *     0xAA 0x04 ADDR_HI ADDR_LO COUNT CHECKSUM
  *     where CHECKSUM = (ADDR_HI + ADDR_LO + COUNT) & 0xFF.
  *
- *   Reply: 1 + COUNT bytes — SOF=0xAA followed by COUNT raw register bytes.
+ *   Reply: 1 + COUNT bytes -- SOF=0xAA followed by COUNT raw register bytes.
  *   No checksum in the reply; we resynchronise on SOF.
  *
  *   Write command (6 bytes):
@@ -33,8 +33,8 @@
  *
  *   Four opcodes mapped:
  *     0x01   write byte (reg = VALUE)
- *     0x02   AND mask   (reg = reg & VALUE)   — atomic bit-clear
- *     0x03   OR  mask   (reg = reg | VALUE)   — atomic bit-set
+ *     0x02   AND mask   (reg = reg & VALUE)   -- atomic bit-clear
+ *     0x03   OR  mask   (reg = reg | VALUE)   -- atomic bit-set
  *     0x04   read range (with VALUE = byte count)
  *
  *   The 0x02/0x03 atomic forms are required for any operation that has
@@ -54,7 +54,7 @@
  *     buf[12]  0x8B  V_VINPUT        input.voltage       = raw * 1.0600
  *     buf[13]  0x8C  V_IOUTPUT       output.current      = raw * model_imult / iout_calib
  *     buf[14]  0x8D  V_POUTPUT       firmware load %, integer; floors to 0
- *                                   below ~1%. Not used — ups.load is
+ *                                   below ~1%. Not used -- ups.load is
  *                                   computed as (V_out * I_out) / VA * 100.
  *     buf[15]  0x8E  V_TEMPER        ups.temperature     = raw (°C)
  *     buf[17]  0x90  F_NOBAT(0) F_OLDBAT(1) F_OPCHECKUP(2) F_NOVINPUT(3)
@@ -185,7 +185,7 @@ struct ragtech_model {
 				 * assumed shared across family 10 until per-model data arrives) */
 };
 
-/* family 10 — order matches V_MODEL ids */
+/* family 10 -- order matches V_MODEL ids */
 static const struct ragtech_model ragtech_models[] = {
 	{  0, "Easy 600 TI",   600,  3.2000, 0.5550, 0.0670, 115, 115, 0.7 },
 	{  1, "Easy 600 M2",   600,  1.7000, 1.0300, 0.0670, 220, 220, 0.7 },
@@ -248,7 +248,7 @@ static ssize_t ragtech_read(uint16_t addr, uint8_t count, uint8_t *out)
 	cmd[4] = count;
 	cmd[5] = (cmd[2] + cmd[3] + cmd[4]) & 0xFF;
 
-	/* tcflush() — ser_flush_in() does a select+read loop that misses
+	/* tcflush() -- ser_flush_in() does a select+read loop that misses
 	 * bytes still queued inside the USB CDC layer under O_NONBLOCK */
 	ser_flush_io(upsfd);
 	upsdebug_hex(4, "TX", cmd, sizeof(cmd));
@@ -444,7 +444,7 @@ void upsdrv_initinfo(void)
 	usleep(RAGTECH_INTER_CMD_MS * 1000);
 
 	if (ragtech_read(RAGTECH_MAIN_BASE, RAGTECH_MAIN_LEN, reply) < 0)
-		fatalx(EXIT_FAILURE, "no reply to initial status poll — is the UPS connected and not held by another program (e.g. Ragtech supsvc)?");
+		fatalx(EXIT_FAILURE, "no reply to initial status poll -- is the UPS connected and not held by another program (e.g. Ragtech supsvc)?");
 
 	model = find_model(reply[OFF_V_MODEL - 1]);
 	if (!model) {
@@ -572,7 +572,7 @@ void upsdrv_shutdown(void)
 	if (!shutdown_enabled) {
 		upslogx(LOG_ERR,
 			"upsdrv_shutdown invoked but 'allow_shutdown' is not set "
-			"in ups.conf — refusing. This firmware does not auto-restart "
+			"in ups.conf -- refusing. This firmware does not auto-restart "
 			"after shutdown; a coordinated shutdown would leave the UPS "
 			"off until manual power-on.");
 		set_exit_flag(EF_EXIT_FAILURE);
@@ -610,7 +610,7 @@ void upsdrv_initups(void)
 	/* CDC-ACM only: NEVER call tcsetattr (it pulses DTR on Linux and the
 	 * UPS interprets that as a shutdown signal on some Ragtech families).
 	 * Leave the port at whatever line settings the kernel set on enumeration
-	 * — CDC-ACM ignores baud at the wire anyway. */
+	 * -- CDC-ACM ignores baud at the wire anyway. */
 	upsfd = ser_open(device_path);
 	usleep(RAGTECH_POST_OPEN_MS * 1000);
 
