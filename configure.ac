@@ -273,7 +273,14 @@ dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+    dnl Find and report the location of attempted compiler
+    dnl (maybe wrapped with something like ccache, distcc, etc.)
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG)        PATH='${PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CCACHE_PATH='${CCACHE_PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CC:  '${CC}' => '`command -v ${CC}`'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CXX: '${CXX}' => '`command -v ${CXX}`'])
 ])
+
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -291,6 +298,9 @@ dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
 dnl Note that NUT does not support building with C89 anyway
 dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
+dnl NOTE: The AM macro below wraps its AC name-sake to perform
+dnl  additional tricks needed for automake. There seems to not be
+dnl  a CXX variant of that however, or at least not ubiquitoisly.
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
