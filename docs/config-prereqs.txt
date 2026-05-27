@@ -327,7 +327,7 @@ complete environments):
 ------
 
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
-(or `apt-get install openjdk-17-jdk-headless` on Debian 12 and older).
+(or use alternate PPA sources or third-party builds on Debian 12 and older).
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
@@ -554,7 +554,7 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 
 [NOTE]
 ======
-For Jenkins agents, also need to install JDK 17 or newer, which is not
+For Jenkins agents, also need to install JDK 21 or newer, which is not
 available for CentOS 6 nor 7 directly (in distribution packaging).
 
 In Fedora e.g.:
@@ -674,7 +674,7 @@ clang version 14.0.6
     done; done)
 ------
 
-Also for CI build agents, a Java environment (JDK17+ since autumn 2024) is
+Also for CI build agents, a Java environment (JDK21+ since spring 2026) is
 required:
 ------
 # Search for available Java versions:
@@ -682,7 +682,7 @@ required:
 
 # Pick one:
 :; pacman -S --needed \
-    jre17-openjdk-headless
+    jre21-openjdk-headless
 
 # If needed to change default implementation, consult:
 :; archlinux-java help
@@ -814,7 +814,7 @@ Other common NUT dependencies absent from primary Slackware repositories
 can be found and downloaded (seek `*.txz` package files, although a few
 are named `*.tgz`) from here, and passed to `installpkg`:
 
-* http://www.slackware.com/~alien/slackbuilds/openjdk17/
+* http://www.slackware.com/~alien/slackbuilds/openjdk25/
 * http://www.slackware.com/~alien/slackbuilds/asciidoc/
 * http://www.slackware.com/~alien/slackbuilds/cppunit/
 * http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
@@ -850,9 +850,9 @@ Note that some packages are further separated by Slackware version, e.g. with
 sub-directories for `15.0` and `current`:
 ----
 :; wget -r -l1 -nd -R gif,css,jpg,html,htm --remove-listing \
-    http://www.slackware.com/~alien/slackbuilds/openjdk17/pkg64/15.0/
+    http://www.slackware.com/~alien/slackbuilds/openjdk25/pkg64/15.0/
 
-:; installpkg openjdk17-17.0.12_7-x86_64-1alien.txz
+:; installpkg openjdk25-25.0.3_9-x86_64-1alien.txz
 ----
 
 Upon community members' recommendations, Sotirov's SlackPack is also considered
@@ -877,14 +877,19 @@ tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 FreeBSD 12.2 - 15.0
 ~~~~~~~~~~~~~~~~~~~
 
-NOTE: As of 2024, the originally described OS version 12.2 is way beyond
-EOL -- its packages have been removed from mirrors. A discussion at
+[NOTE]
+======
+As of 2024, the originally described OS version 12.2 is way beyond EOL -- its
+packages have been removed from mirrors. A discussion at
 https://forums.freebsd.org/threads/easy-upgrading-from-12-2-rel-in-2024.92695/
 touches on upgrades in such situation. An alternate mirror (that worked to
-bump the system to `openjdk17`, as of this writing in Nov 2024) can be found
-at https://mirror.sg.gs/freebsd-pkg/FreeBSD:12:amd64/quarterly/ and written
-into `/etc/pkg/FreeBSD.conf` similarly to existing `url` entry.
-That deployment on NUT CI farm survived `freebsd-update` up to 15.0 however.
+bump that system to `openjdk17` in Nov 2024) can be found
+at https://mirror.sg.gs/freebsd-pkg/FreeBSD:12:amd64/quarterly/ and it was
+written into `/etc/pkg/FreeBSD.conf` similarly to existing `url` entry.
+
+That described deployment on NUT CI farm survived `freebsd-update` up to 15.0
+however, and ultimate update to newer `openjdk25` as needed by the CI farm.
+======
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
 
@@ -978,9 +983,9 @@ For compatibility with common setups on other operating systems, can symlink
 suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
 by package).
 
-NOTE: For Jenkins agents, also need to `pkg install openjdk11` (17 or 21
-required since autumn 2024) -- and do note its further OS configuration
-suggestions for special filesystem mounts.
+NOTE: For Jenkins agents, also need to `pkg install openjdk21` (21+ required
+since spring 2026) -- and do note its further OS configuration suggestions
+for special filesystem mounts.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
@@ -1011,13 +1016,20 @@ below.
 OpenBSD delivers many versions of numerous packages, you should specify
 your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
 
-NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
-requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
+[NOTE]
+======
+For the purposes of builds with Jenkins CI agents, since summer 2022 the NUT CI
+farm required JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
 used OpenBSD 6.4 and version nuances in this document may still reflect that.
 
-FIXME: Since autumn 2024, JDK17+ is required. Maybe time to EOL OpenBSD 6.x
+UPDATE: Since autumn 2024, JDK17+ was required. Maybe time to EOL OpenBSD 6.x
 workers, or to SSH into them from a nearby machine's Java agent?.. Alternately,
 consider https://github.com/adoptium/jdk17/blob/master/doc/building.md
+
+UPDATE: Since spring 2026, JDK21+ is required by Jenkins.  Tricks using SSH and
+NFS with a nearby builder that has newer Java running are explored to keep the
+older platform afloat for non-regression testing.
+======
 
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
@@ -1165,7 +1177,7 @@ dash-number suffixed symlinks to compiler tools (e.g. `gcc-4.2.1` beside
 `gcc` installed by package) into `/usr/lib/ccache`.
 
 NOTE: For Jenkins agents, also need to `pkg_add jdk` (if asked, pick version
-11 or 17); can request `pkg_add jdk%11`. You would likely have to update
+21 or 25); can request `pkg_add jdk%21`. You would likely have to update
 the trusted CA store to connect to NUT CI, see e.g. (raw!) download from
 https://gist.github.com/galan/ec8b5f92dd325a97e2f66e524d28aaf8
 but ensure that you run it with `bash` and it does `wget` the certificates
@@ -1568,12 +1580,12 @@ No pre-packaged `cppcheck` was found, either.
 
 [NOTE]
 ======
-For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
-for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
-autumn 2024. If updating from older releases, you may need to update default
-implementation, e.g.:
+For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
+for JRE/JDK 21. Java 21 or 25 is required to run Jenkins agents after
+spring 2026. If updating from older releases, you may need to update
+the reference to default implementation, e.g.:
 ----
-:; pkg set-mediator -V 17 java
+:; pkg set-mediator -V 21 java
 ----
 ======
 
@@ -1701,9 +1713,9 @@ whatever they need to happen.
 [NOTE]
 ======
 For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
-for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
-autumn 2024. If updating from older releases, you may need to update default
-implementation, e.g.:
+for JRE/JDK 21. Java 21 or 25 is required to run Jenkins agents after
+spring 2026. If updating from older releases, you may need to update
+the reference to default implementation, e.g.:
 ----
 :; pkg set-mediator -V 21 java
 ----
@@ -1866,8 +1878,8 @@ Alternatively, to prepare building sessions with `ci_build.sh` you can:
 ----
 
 NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
-for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
-after summer 2024.
+for JRE/JDK 21. Java 21 or 25 (an LTS) is required to run Jenkins agents
+after spring 2026.
 
 The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
 in a GUI terminal, and a pop-up will appear offering to install it.
