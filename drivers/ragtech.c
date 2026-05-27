@@ -239,7 +239,7 @@ static ssize_t ragtech_read(uint16_t addr, uint8_t count, uint8_t *out)
 	size_t total = 0;
 	int got_sof = 0;
 	int attempts = 0;
-	ssize_t n;
+	ssize_t i, n;
 
 	cmd[0] = RAGTECH_SOF;
 	cmd[1] = RAGTECH_CMD_READ;
@@ -269,7 +269,7 @@ static ssize_t ragtech_read(uint16_t addr, uint8_t count, uint8_t *out)
 			break;
 		upsdebug_hex(4, "RX chunk", scratch, (size_t)n);
 
-		for (ssize_t i = 0; i < n; i++) {
+		for (i = 0; i < n; i++) {
 			if (!got_sof) {
 				if (scratch[i] == RAGTECH_SOF)
 					got_sof = 1;
