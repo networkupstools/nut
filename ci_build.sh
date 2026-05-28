@@ -216,7 +216,7 @@ fi
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
 normalize_path_perl() {
-    perl -e 'my %PATH; while (<>) { foreach my $D (split(/:/, $_)) { if (length($D) > 0 && !defined($PATH{$D})) { $PATH{$D} = scalar(%PATH); } } } ; my $joined = join ":", sort { $PATH{$a} <=> $PATH{$b} } keys %PATH; print "$joined";'
+    perl -e 'my %PATH; while (<>) { foreach my $D (split(/[:\r\n]/, $_)) { if (length($D) > 0 && !defined($PATH{$D})) { $PATH{$D} = scalar keys %PATH; } } } ; my $joined = join ":", sort { $PATH{$a} <=> $PATH{$b} } keys %PATH; print "$joined";'
 }
 
 normalize_path_shell() {
