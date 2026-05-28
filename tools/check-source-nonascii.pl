@@ -23,9 +23,10 @@ while (<>) {
     if (eof) { close ARGV; }
 }
 
-if (scalar(%hits) > 0) {
+my $hitCount = scalar keys %hits;
+if ($hitCount > 0) {
     die("FAILED: found Unicode characters in " .
-        scalar(%hits) . " ASCII source" .
-        (scalar(%hits) > 1 ? "s" : "" ) .
+        $hitCount . " ASCII source" .
+        ($hitCount > 1 ? "s" : "" ) .
         ": " . (join ", ", keys %hits) ."\n");
 }
