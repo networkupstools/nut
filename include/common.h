@@ -67,6 +67,7 @@
 
 #ifndef WIN32
 # include <syslog.h>
+# include <sys/un.h>
 #else	/* WIN32 */
 # include <winsock2.h>
 # include <windows.h>
@@ -754,6 +755,7 @@ int match_regex_hex(const regex_t *preg, const int n);
 
 /* Note: different method signatures instead of TYPE_FD_SER due to "const" */
 #ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #else	/* WIN32 */
