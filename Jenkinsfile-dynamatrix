@@ -1371,6 +1371,7 @@ set | sort -n """
         def summary = null
         try {
             summary = dynamatrix.toStringStageCountDump()
+            summary += "\n\n" + dynamatrix.toStringStageCountPerNodeDump()
         } catch (Throwable t) {}
 
         if (summary == null || summary == "") {
