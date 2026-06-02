@@ -28,7 +28,7 @@ on:
 
 permissions:
   checks: write
-  contents: write
+  actions: write
   issues: write
   pull-requests: write
 
@@ -244,6 +244,7 @@ jobs:
         make -s -j 8 dist-docs
 
     # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
+    # This is the part which needs "actions: write" permission.
     # Note that the code below wipes everything matched by the filter!
     # We may want another script block (after this cleanup of obsolete data)
     # to iterate clearing the way build by build until there's X MB available
