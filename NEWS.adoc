@@ -143,6 +143,7 @@ https://github.com/networkupstools/nut/milestone/13
       store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
       `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
       [issues #3108, #3390, #1711, PR #3109]
+    * Rearranged the GHA job to prepare Dist and Docs Tarballs. [PR #3460]
     * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
       dependencies were not previously discovered and bundled). [issue #3420,
