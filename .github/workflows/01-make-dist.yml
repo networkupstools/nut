@@ -58,6 +58,10 @@ jobs:
         " ": _
         "/": _
 
+    - name: Define Artifact Name
+      id: set-artifact-name
+      run: echo "artifact_name=NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}" >> "$GITHUB_OUTPUT"
+
     - name: Debug PR/branch identification
       run: |
         echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
@@ -90,7 +94,7 @@ jobs:
       with:
         workflow: "GHA-01: Tarballs Build Worker"
         token: ${{ secrets.GITHUB_TOKEN }}
-        inputs: '{ "ref": "${{ github.event.pull_request.number > 0 && github.event.pull_request.head.sha || github.sha }}", "artifact_name": "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}" }'
+        inputs: '{ "ref": "${{ github.event.pull_request.number > 0 && github.event.pull_request.head.sha || github.sha }}", "artifact_name": "${{ steps.set-artifact-name.outputs.artifact_name }}" }'
         wait-timeout-seconds: 3600
         wait-for-completion: true
         sync-status: true
@@ -114,7 +118,7 @@ jobs:
           })
 
           res.data.artifacts
-            .filter(({ name }) => name === 'NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}')
+            .filter(({ name }) => name === '${{ steps.set-artifact-name.outputs.artifact_name }}')
             .forEach(({ id }) => {
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
@@ -134,7 +138,7 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
           })
-          const artifactName = 'NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}';
+          const artifactName = '${{ steps.set-artifact-name.outputs.artifact_name }}';
           // Find the most recent artifact with this name
           const artifacts = res.data.artifacts
             .filter(a => a.name === artifactName)
@@ -153,7 +157,7 @@ jobs:
       if: github.event.pull_request.number > 0
       continue-on-error: true
       env:
-        artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
         artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -173,7 +177,7 @@ jobs:
       if: always()
       continue-on-error: true
       env:
-        artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
         artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -192,7 +196,7 @@ jobs:
     #  if: always()
     #  continue-on-error: true
     #  env:
-    #    artifact_name: "NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}.zip"
+    #    artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
     #    artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
     #    ref: ${{ github.event.pull_request.head.sha || github.sha }}
     #  with:
