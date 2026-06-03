@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
     # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
     - if: matrix.language == 'cpp' && matrix.os == 'ubuntu-latest'
