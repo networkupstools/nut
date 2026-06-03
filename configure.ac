@@ -6677,6 +6677,8 @@ dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
 dnl # -Wno-thread-safety-negative -- clang bug, it seems (https://reviews.llvm.org/D84604)
 dnl # -Wno-unused-command-line-argument -- avoid the likes of (clang++)
 dnl #    error: argument unused during compilation: '-pthread'
+dnl #  (apparently in FreeBSD 15 builds something gets into the wrong *FLAGS,
+dnl #  maybe via pkg-config... or it was just the first one to notice and yell)
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -6685,10 +6687,12 @@ AS_CASE(["${nut_enable_warnings}"],
     [clang-hard], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-medium], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
