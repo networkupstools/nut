@@ -104,7 +104,7 @@ jobs:
     # We need to find the artifact URL and report it below.
     - name: Get Artifact URL
       id: get_artifact_url
-      uses: actions/github-script@v6
+      uses: actions/github-script@v9
       with:
           script: |
               const res = await github.rest.actions.listArtifactsForRepo({
@@ -136,7 +136,7 @@ jobs:
     # (at least 12MB as of Nov 2025).
     - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
       name: Delete Old Artifacts for this feature branch/PR
-      uses: actions/github-script@v6
+      uses: actions/github-script@v9
       id: delete_old_artifact_for_pr
       continue-on-error: true
       with:
