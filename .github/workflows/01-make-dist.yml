@@ -100,6 +100,34 @@ jobs:
         wait-for-completion: true
         sync-status: true
 
+    # The artifact was already uploaded by the "Worker" job.
+    # We need to find the artifact URL and report it below.
+    - name: Get Artifact URL
+      id: get_artifact_url
+      uses: actions/github-script@v6
+      with:
+          script: |
+              const res = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              })
+              const artifactName = '${{ steps.set-artifact-name.outputs.artifact_name }}';
+              // Find the most recent artifact with this name
+              const artifacts = res.data.artifacts
+                .filter(a => a.name === artifactName)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              if (artifacts.length > 0) {
+                const artifact = artifacts[0];
+                var workflowRunId = artifact.workflow_run_id || ${{ steps.launch_worker.outputs.runId }};
+                core.setOutput('artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
+                core.setOutput('real_artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
+                core.setOutput('artifact_id', `${artifact.id}`);
+                console.log(`Detected newest artifact ${artifact.id} from workflow run ${workflowRunId}`);
+              } else {
+                core.setFailed(`Artifact ${artifactName} not found`);
+              }
+
     # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
     # This is the part which needs "actions: write" permission.
     # Note that the code below wipes everything matched by the filter!
@@ -118,41 +146,19 @@ jobs:
             repo: context.repo.repo,
           })
 
+          const artifact_id = '${{ steps.get_artifact_url.outputs.artifact_id }}';
+
           res.data.artifacts
             .filter(({ name }) => name === '${{ steps.set-artifact-name.outputs.artifact_name }}')
             .forEach(({ id }) => {
+              if (id == artifact_id) return;
+              console.log(`Deleting artifact ${id}`);
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 artifact_id: id,
               })
             })
-
-    # The artifact was already uploaded by the "Worker" job.
-    # We need to find the artifact URL and report it below.
-    - name: Get Artifact URL
-      id: get_artifact_url
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const res = await github.rest.actions.listArtifactsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          })
-          const artifactName = '${{ steps.set-artifact-name.outputs.artifact_name }}';
-          // Find the most recent artifact with this name
-          const artifacts = res.data.artifacts
-            .filter(a => a.name === artifactName)
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-          if (artifacts.length > 0) {
-            const artifact = artifacts[0];
-            var workflowRunId = artifact.workflow_run_id || ${{ steps.launch_worker.outputs.runId }};
-            core.setOutput('artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
-            core.setOutput('real_artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
-          } else {
-            core.setFailed(`Artifact ${artifactName} not found`);
-          }
 
     - name: "GHA-01: Create/update new GH PR comment with link"
       if: github.event.pull_request.number > 0
