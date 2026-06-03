@@ -180,6 +180,15 @@ jobs:
     # new one. Also calls authenticated with "github-actions" GH App may
     # not set "details_url" freely...
     # https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28
+    # FIXME: Construct the URL to commit ID (may be on PR source repo?)
+    # FIXME: The details_url seems to be ignored, and a click leads not to
+    #  the artifact download right away, but rather to the build page of
+    #  the workflow (which then has a message and link to the ZIP file).
+    # FIXME: The resulting Checks entry tends to use a random prefix
+    #  (e.g. "GHA-05: CodeQL / URL for ...") and not necessarily the
+    #  same as this workflow name ("GHA-01: Tarballs / URL for ...")
+    #  There gotta be a parameter to set it in the JSON below, right?
+    #  Maybe a pointer to the workflow/run ID?..
     - name: "GHA-01: Create new GH Check report - shell/cURL"
       if: always()
       continue-on-error: true
