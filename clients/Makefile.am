@@ -314,7 +314,7 @@ if HAVE_WINDOWS
   libnutclient_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 if WITH_SSL_CXX
-  libnutclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
+  libnutclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS_CXX)
 endif WITH_SSL_CXX
 else !HAVE_CXX11
 EXTRA_DIST += nutclient.h nutclient.cpp

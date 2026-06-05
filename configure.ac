@@ -7323,6 +7323,21 @@ AC_SUBST(LIBSSL_CXXFLAGS)
 NUT_REPORT_FEATURE([enable SSL support in C++ client library], [${nut_with_ssl_cxx}], [${nut_ssl_lib}],
 					[WITH_SSL_CXX], [Define to enable SSL in libnutclient])
 
+dnl At least FreeBSD clang complains about NSS builds with
+dnl   error: argument unused during compilation: '-pthread'
+dnl which pops up in LDFLAGS/LIBS and is kept as "compiler"
+dnl flag when calling the linker.
+dnl Does not hurt plain C builds though.
+LIBSSL_LIBS_CXX="${LIBSSL_LIBS}"
+AS_IF([test "$nut_with_ssl_cxx" = "yes"],
+    [AS_CASE([$LIBSSL_LIBS_CXX],
+        [*" -pthread "*|"-pthread "*|*" -pthread"|-pthread], [
+            AC_MSG_NOTICE([Remove -pthread from LIBSSL_LIBS for C++ builds])
+            LIBSSL_LIBS_CXX="`echo \"${LIBSSL_LIBS}\" | sed 's, *-pthread *, ,'`"
+        ])
+    ])
+AC_SUBST(LIBSSL_LIBS_CXX)
+
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)
 
