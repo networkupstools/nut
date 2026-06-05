@@ -830,7 +830,10 @@ SPELLCHECK_SRC_DEFAULT = \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
+	../SECURITY.md \
 	$(ALL_TXT_SRC)
+
+# TOTHINK: Fit SECURITY.md policy into the main asciidoc trail?
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.

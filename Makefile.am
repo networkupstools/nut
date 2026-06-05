@@ -267,6 +267,9 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # to list them:
 EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
 
+# Imposed by GitHub somewhat:
+EXTRA_DIST += SECURITY.md
+
 # The document is now part of qa-guide; the script might be a bit git-oriented,
 # but can be useful in builds from tarball, probably. Anyhow, having the doc
 # without the tool which it documents is odd.
@@ -1285,6 +1288,9 @@ dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 # Helper to have all built docs (config-dependent) neatly aligned
 # NOT part of standard tarball, though
 EXTRA_DIST_DOCS = VERSION_* *.adoc-parsed
+
+# Let end-users now how to report any troubles they see
+EXTRA_DIST_DOCS += SECURITY.md
 
 if WITH_CHANGELOG_TEXT
 EXTRA_DIST_DOCS += ChangeLog
