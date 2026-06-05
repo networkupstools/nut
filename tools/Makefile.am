@@ -26,7 +26,7 @@ PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
   gitlog2changelog.py.in gitlog2version.sh semver-compare.sh \
-  nut-snmpinfo.py.in driver-list-format.sh
+  nut-snmpinfo.py.in driver-list-format.sh check-source-nonascii.pl
 
 # These files are generated for nut-scanner builds (and cleaned as any others),
 # and can change as respective SNMP/USB subdriver sources are iterated by a
@@ -116,6 +116,7 @@ $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	 fi
 	@touch '$@'
 
+# FIXME: Make use of @PERL[@] substitution and HAVE_PERL conditional?
 $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \

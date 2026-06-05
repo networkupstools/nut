@@ -1000,6 +1000,14 @@ SPELLCHECK_AUTO_ONE = ( \
 .conf.conf-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
+# If we can, make sure the documentation is ASCII (with maybe
+# single-byte accented characters here and there, they seem okay):
+if HAVE_PERL
+SOURCE_CHECK_UNICODE = echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRC)"; @PERL@ $(top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) || exit
+else !HAVE_PERL
+SOURCE_CHECK_UNICODE = true
+endif !HAVE_PERL
+
 spellcheck: @dotMAKE@
 	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
@@ -1059,6 +1067,7 @@ spellcheck: @dotMAKE@
 		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
+	@$(SOURCE_CHECK_UNICODE)
 
 # Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).

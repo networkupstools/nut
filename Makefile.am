@@ -1782,10 +1782,27 @@ git-realclean-check:
 # separately from the probably slower/louder stages for test programs like
 # check-NIT:
 CHECK_FILES_QUICK_TARGETS = check-man
+
 if WITH_SPELLCHECK
 CHECK_FILES_QUICK_TARGETS += spellcheck-quick
 endif WITH_SPELLCHECK
+
+if HAVE_PERL
+CHECK_FILES_QUICK_TARGETS += check-source-nonascii
+endif HAVE_PERL
+
 check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
+
+# Style check of sorts, except that some older systems may refuse to handle
+# source files with wide/multi-byte characters (have yet to see complaints
+# about single-byte non-ASCII). So far not listing C++ here as its tools are
+# more modern (we mostly care about C++11 and newer).
+check-source-nonascii:
+	@echo "  CHECK-SOURCE-NONASCII	**/*.c **/*.h"
+	@ @PERL@ $(top_srcdir)/tools/check-source-nonascii.pl $(top_srcdir)/*/*.c $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.c $(top_srcdir)/*/*/*.h
+
+# TBD: clang-format, etc?
+stylecheck: check-source-nonascii
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick

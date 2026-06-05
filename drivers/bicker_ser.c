@@ -696,7 +696,7 @@ static int bicker_setvar(const char *varname, const char *val)
 	/* This should not be needed because when `bicker_write()` is
 	 * successful the `parameter` struct is populated but gcc seems
 	 * not to be smart enough to realize that and errors out with
-	 * "error: ‘parameter...’ may be used uninitialized in this function"
+	 * "error: 'parameter...' may be used uninitialized in this function"
 	 */
 	parameter.id = 0;
 	parameter.min = 0;
