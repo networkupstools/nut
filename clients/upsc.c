@@ -413,6 +413,7 @@ int main(int argc, char **argv)
 	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	int	opt_ret = 0;
 	uint16_t	port;
+	upscli_authconf_t	*ac_conn = NULL;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsc");
 	const char	*net_connect_timeout = NULL;
@@ -555,7 +556,8 @@ int main(int argc, char **argv)
 	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
-	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 		if (ac_default) {
 			if (ac_default->certverify) {
@@ -573,6 +575,10 @@ int main(int argc, char **argv)
 	if (upscli_connect(ups, hostname, port, flags_ssl) < 0) {
 		fatalx_error_json_simple(0, upscli_strerror(ups));
 	}
+
+	/* Best-effort login (if present in the file) */
+	if (ac_conn && ac_conn->user && ac_conn->pass)
+		upscli_authenticate_authconf(ups, ac_conn);
 
 	if (varlist) {
 		upsdebugx(1, "Calling list_upses()");
