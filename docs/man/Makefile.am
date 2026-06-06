@@ -535,6 +535,7 @@ HTML_CGI_MANS = $(INST_HTML_CGI_MANS)
 SRC_DEV_PAGES = \
 	upsclient.txt \
 	upscli_add_host_cert.txt \
+	upscli_authenticate.txt \
 	upscli_cleanup.txt \
 	upscli_connect.txt \
 	upscli_disconnect.txt \
@@ -731,6 +732,8 @@ INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
 	$(UPSCLI_ADD_HOST_CERT_DEPS) \
+	upscli_authenticate.$(MAN_SECTION_API) \
+	$(UPSCLI_AUTHENTICATE_DEPS) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
 	upscli_tryconnect.$(MAN_SECTION_API) \
@@ -818,6 +821,10 @@ INST_MAN_DEV_API_PAGES = \
 # Alias page for one text describing two commands:
 UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API) upscli_init_authconf.$(MAN_SECTION_API)
 $(UPSCLI_INIT_DEPS): upscli_init.$(MAN_SECTION_API)
+	touch $@
+
+UPSCLI_AUTHENTICATE_DEPS = upscli_authenticate_authconf.$(MAN_SECTION_API)
+$(UPSCLI_AUTHENTICATE_DEPS): upscli_authenticate.$(MAN_SECTION_API)
 	touch $@
 
 UPSCLI_ADD_HOST_CERT_DEPS = upscli_add_host_port_cert.$(MAN_SECTION_API)
@@ -913,6 +920,7 @@ endif WITH_DEV
 INST_HTML_DEV_MANS = \
 	upsclient.html \
 	upscli_add_host_cert.html \
+	upscli_authenticate.html \
 	upscli_cleanup.html \
 	upscli_connect.html \
 	upscli_disconnect.html \
@@ -997,6 +1005,9 @@ HTML_DEV_MANS_FICTION = \
 	nutscan_scan_ip_range_nut.html \
 	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
+
+upscli_authenticate_authconf.html: upscli_authenticate.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_readline_timeout.html upscli_readline_timeout_may_disconnect.html: upscli_readline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@

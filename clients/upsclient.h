@@ -198,6 +198,40 @@ int upscli_upserror(UPSCONN_t *ups);
  *  and check it against given expectations. */
 int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re);
 
+/** Common method to supply USERNAME and PASSWORD during the server dialog,
+ *  whether pre-defined (CLI, authconf) or optionally queried interactively,
+ *  for access to non-anonymous commands, variable settings, or data reads.
+ *  Note that per NUT protocol, such authentication is only expected
+ *  at most once per connection.
+ *
+ *  Note this is separate from (but a prerequisite of) the LOGIN operation
+ *  which allows a client like upsmon to gain a special role for a specific
+ *  device, and perhaps further become a PRIMARY monitoring client for it.
+ *
+ * \param ups connection state
+ * \param username if NULL, we can optionally detect the username from the OS and query/confirm interactively
+ * \param password if NULL, we can optionally query for the password interactively
+ * \param check_os_user if 1, and username is NULL, try to get OS user name
+ * \param ask_password if 1, and password is NULL, try to ask for it on stdin
+ *
+ * \return 0 on success, -1 on argument error (failed to get fallback username
+ *         and/or password), -2 on protocol error (failed when trying to use
+ *         those values); check upscli_upserror() for details
+ */
+int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
+	int check_os_user, int ask_password);
+
+/** Equivalent (wrapper) for upscli_authenticate() with upscli_authconf_t
+ *  which should convey definite "user" and "pass" field values
+ *  (no interactive fallbacks here).
+ *
+ * \param ups connection state
+ * \param ac authentication configuration (user and pass fields are used)
+ *
+ * \return 0 on success, or -1 on error
+ */
+int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac);
+
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
 

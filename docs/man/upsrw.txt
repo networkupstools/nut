@@ -13,7 +13,7 @@ SYNOPSIS
 
 *upsrw* -h
 
-*upsrw* -s 'variable' [-u 'username'] [-p 'password'] [-w] [-t <timeout>] 'ups'
+*upsrw* -s 'variable' [-A 'authconf'] [-u 'username'] [-p 'password'] [-w] [-t <timeout>] 'ups'
 
 DESCRIPTION
 -----------
@@ -35,8 +35,8 @@ OPTIONS
 Specify the variable to be changed inside the UPS.  For unattended
 mode such as in shell scripts, use the format VAR=VALUE to specify both
 the variable and the value, for example:
-
- -s input.transfer.high=129
++
+	-s input.transfer.high=129
 +
 Without this argument, upsrw will just display the list of the variables
 and their possible values.
@@ -54,13 +54,19 @@ with other tools.
 
 *-u* 'username'::
 Set the NUT username for the connection to the server.  This is optional,
-and you will be prompted for this when using the -s option if you don't
-specify -u on the command line. NUT usernames are defined in
-linkman:upsd.users[5], and are not linked to system usernames.
+a value from 'authconf' file would be used (if it resolves both a username
+and a password for the host and port involved), otherwise you will be
+prompted for this when using the -s option if you don't specify '-u' on
+the command line.
++
+NUT usernames are defined in linkman:upsd.users[5] on the server side,
+and are not linked to system usernames (although if a system user name can
+be resolved, it would be the default proposed value for interactive mode).
 
 *-p* 'password'::
 Set the password to authenticate to the server.  This is also optional
-like -u, and you will be prompted for it if necessary.
+like '-u', and will be used from 'authconf' or you will be prompted for
+it if necessary.
 
 *-w*::
 Wait for the completion of setting execution by the driver and return its
@@ -100,7 +106,8 @@ Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
 *-A* '/path/to/nutauth.conf'::
 
   Require use of the specified linkman:nutauth.conf[5] file (fail if absent,
-  not accessible, or has content errors when parsed).
+  not accessible, or has content errors when parsed) to specify connection
+  security settings and/or credentials for this run.
 +
 By silent default, the client tries best-effort (non-fatal) detection of a
   configuration file in per-user locations `${HOME}/.config/nut/nutauth.conf`

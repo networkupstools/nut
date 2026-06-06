@@ -26,6 +26,8 @@
 #include "nut_platform.h"
 
 #ifndef WIN32
+# include <pwd.h>
+# include <sys/types.h>
 # ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
@@ -2595,7 +2597,8 @@ static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 	/* look it up in the table */
 	for (i = 0; upsd_errlist[i].text != NULL; i++) {
 		if (!strncmp(&buf[4], upsd_errlist[i].text,
-			strlen(upsd_errlist[i].text))) {
+			strlen(upsd_errlist[i].text))
+		) {
 			ups->upserror = upsd_errlist[i].errnum;
 			return -1;
 		}
@@ -3223,6 +3226,140 @@ int upscli_upserror(UPSCONN_t *ups)
 	}
 
 	return ups->upserror;
+}
+
+int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
+	int check_os_user, int ask_password)
+{
+	char	buf[UPSCLI_NETBUF_LEN], user[SMALLBUF], pass[SMALLBUF];
+	const char	*user_ptr = username;
+	const char	*pass_ptr = password;
+	size_t	len;
+
+	if (!ups) {
+		return -1;
+	}
+
+	if (!user_ptr && check_os_user) {
+		struct passwd	*pw = getpwuid(getuid());
+
+		if (pw) {
+			printf("Username (%s): ", pw->pw_name);
+		} else {
+			printf("Username: ");
+		}
+
+		memset(user, '\0', sizeof(user));
+		if (!fgets(user, sizeof(user), stdin)) {
+			upslog_with_errno(LOG_ERR, "Error reading from stdin!");
+			ups->upserror = UPSCLI_ERR_INVUSERNAME;
+			return -1;
+		}
+
+		/* deal with that pesky newline from fgets() */
+		len = strlen(user);
+		while (len > 1) {
+			if (user[len - 1] == '\n' || user[len - 1] == '\r') {
+				user[len - 1] = '\0';
+				len--;
+				continue;
+			}
+			break;
+		}
+
+		if (!len) {
+			/* blank-line input */
+			if (!pw) {
+				upslogx(LOG_ERR, "No username available - even tried getpwuid");
+				ups->upserror = UPSCLI_ERR_USERREQUIRED;
+				return -1;
+			}
+			/* User accepted the proposed default from pw */
+			snprintf(user, sizeof(user), "%s", pw->pw_name);
+		}
+		user_ptr = user;
+	}
+
+	if (!pass_ptr && ask_password) {
+		/* NOTE: getpass leaks slightly - use -p when testing in valgrind.
+		 * Generally using getpass() or getpass_r() might not be a
+		 * good idea here (marked obsolete in POSIX) so we macro
+		 * between the available options (also getpassphrase etc).
+		 */
+		char	*pwtmp = GETPASS("Password: ");
+		if (!pwtmp) {
+			upslog_with_errno(LOG_ERR, "getpass failed");
+			ups->upserror = UPSCLI_ERR_INVPASSWORD;
+			return -1;
+		}
+		snprintf(pass, sizeof(pass), "%s", pwtmp);
+		pass_ptr = pass;
+	}
+
+	if (!user_ptr || !pass_ptr) {
+		upslogx(LOG_ERR, "Got this far without a username or password, this should not have happened");
+		return -1;
+	}
+
+	/* We have enough strings to try and log in */
+	snprintf(buf, sizeof(buf), "USERNAME %s\n", user_ptr);
+	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+		upslogx(LOG_ERR, "Can't set username: %s", upscli_strerror(ups));
+		return -2;
+	}
+
+	if (upscli_readline(ups, buf, sizeof(buf)) < 0 || upscli_errcheck(ups, buf) < 0) {
+		if (upscli_upserror(ups) != UPSCLI_ERR_UNKCOMMAND) {
+			upslogx(LOG_ERR, "Set username failed: %s", upscli_strerror(ups));
+		} else {
+			upslogx(LOG_ERR,
+				"Set username failed due to an unknown command.\n"
+				"You probably need to upgrade upsd.");
+		}
+		return -2;
+	}
+
+	/* catch insanity from the server - not ERR and not OK either */
+	if (strncmp(buf, "OK", 2) != 0) {
+		upslogx(LOG_ERR, "Set username failed with unexpected protocol response: %s", buf);
+		ups->upserror = UPSCLI_ERR_PROTOCOL;
+		return -2;
+	}
+
+	snprintf(buf, sizeof(buf), "PASSWORD %s\n", pass_ptr);
+	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+		upslogx(LOG_ERR, "Can't set password: %s", upscli_strerror(ups));
+		return -2;
+	}
+
+	if (upscli_readline(ups, buf, sizeof(buf)) < 0 || upscli_errcheck(ups, buf) < 0) {
+		if (upscli_upserror(ups) != UPSCLI_ERR_UNKCOMMAND) {
+			upslogx(LOG_ERR, "Set password failed: %s", upscli_strerror(ups));
+		} else {
+			upslogx(LOG_ERR,
+				"Set password failed due to an unknown command.\n"
+				"You probably need to upgrade upsd.");
+		}
+		return -2;
+	}
+
+	/* catch insanity from the server - not ERR and not OK either */
+	if (strncmp(buf, "OK", 2) != 0) {
+		upslogx(LOG_ERR, "Set password failed with unexpected protocol response: %s", buf);
+		ups->upserror = UPSCLI_ERR_PROTOCOL;
+		return -2;
+	}
+
+	return 0;
+}
+
+int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac)
+{
+	if (!ac) {
+		ups->upserror = UPSCLI_ERR_INVALIDARG;
+		return -1;
+	}
+	return upscli_authenticate(ups, ac->user, ac->pass, 0, 0);
 }
 
 int upscli_ssl(UPSCONN_t *ups)

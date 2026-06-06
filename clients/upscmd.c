@@ -24,7 +24,6 @@
 #include "nut_platform.h"
 
 #ifndef WIN32
-#include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -329,7 +328,7 @@ int main(int argc, char **argv)
 	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	int	opt_ret = 0;
 	uint16_t	port;
-	ssize_t	ret;
+	upscli_authconf_t	*ac_conn = NULL;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF], *nutauth = NULL, str_port[16];
 	int	flags_ssl = UPSCLI_CONN_TRYSSL;
@@ -470,7 +469,8 @@ int main(int argc, char **argv)
 	}
 	setproctag(argv[0]);	/* ups[@host[:port]] */
 
-	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 		if (ac_default) {
 			if (ac_default->certverify) {
@@ -504,73 +504,16 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: old command names are not supported");
 	}
 
-	if (!have_un) {
-		struct passwd	*pw;
-
-		memset(username, '\0', sizeof(username));
-		pw = getpwuid(getuid());
-
-		if (pw) {
-			printf("Username (%s): ", pw->pw_name);
-		} else {
-			printf("Username: ");
+	if (ac_conn && ac_conn->user && !have_un && ac_conn->pass && !have_pw) {
+		upsdebugx(1, "Using authentication from configuration file");
+		if (upscli_authenticate_authconf(ups, ac_conn)) {
+			fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
 		}
-
-		if (!fgets(username, sizeof(username), stdin)) {
-			fatalx(EXIT_FAILURE, "Error reading from stdin!");
+	} else {
+		upsdebugx(1, "Using authentication from CLI or interactive session");
+		if (upscli_authenticate(ups, username, password, 1, 1) < 0) {
+			fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
 		}
-
-		/* deal with that pesky newline */
-		if (strlen(username) > 1) {
-			username[strlen(username) - 1] = '\0';
-		} else {
-			if (!pw) {
-				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
-			}
-
-			snprintf(username, sizeof(username), "%s", pw->pw_name);
-		}
-	}
-
-	/* getpass leaks slightly - use -p when testing in valgrind */
-	if (!have_pw) {
-		/* using getpass or getpass_r might not be a
-		 * good idea here (marked obsolete in POSIX) */
-		char	*pwtmp = GETPASS("Password: ");
-
-		if (!pwtmp) {
-			fatalx(EXIT_FAILURE, "getpass failed: %s", strerror(errno));
-		}
-
-		snprintf(password, sizeof(password), "%s", pwtmp);
-	}
-
-	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);
-
-	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set username: %s", upscli_strerror(ups));
-	}
-
-	ret = upscli_readline(ups, buf, sizeof(buf));
-
-	if (ret < 0) {
-		if (upscli_upserror(ups) != UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Set username failed: %s", upscli_strerror(ups));
-		}
-
-		fatalx(EXIT_FAILURE,
-			"Set username failed due to an unknown command.\n"
-			"You probably need to upgrade upsd.");
-	}
-
-	snprintf(buf, sizeof(buf), "PASSWORD %s\n", password);
-
-	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set password: %s", upscli_strerror(ups));
-	}
-
-	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
-		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
 
 	/* enable status tracking ID */
