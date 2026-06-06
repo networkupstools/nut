@@ -548,6 +548,7 @@ static void ups_connect(void)
 		NULL, hostname,
 		snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL,
 		1);
+
 	/* Always call this, to register possible CERTHOSTs etc. */
 	if (upscli_init_authconf(ac_current) > 0) {
 		if (ac_default) {
@@ -563,10 +564,19 @@ static void ups_connect(void)
 		}
 	}
 
-	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0)
+	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
 			upscli_strerror(&ups));
+	} else {
+		/* TOTHINK #3411: Consider autologin via ac_conn->user/pass fields?
+		 *  Probably no, not for a web client anyone can interact with...
+		 *  This one is for a read-only listing, but could something be abused?
+		 *  If it comes to that, better fall back to requiring query/form args
+		 *  like in upsset.c
+		 *  //upscli_authenticate_authconf(&ups, ac_current);
+		 */
+	}
 
 	lastups = currups;
 	upsdebug_call_finished2(": pick first device on newly connected data server [%s]",

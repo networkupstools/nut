@@ -670,6 +670,7 @@ int main(int argc, char **argv)
 {
 	char	str[SMALLBUF], *s, str_port[16];
 	int	flags_ssl = UPSCLI_CONN_TRYSSL, i;
+	upscli_authconf_t	*ac_conn = NULL;
 	double	min, nom, max;
 	double	var = 0;
 
@@ -729,7 +730,8 @@ int main(int argc, char **argv)
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
 
-	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 		if (ac_default) {
 			if (ac_default->certverify) {
@@ -765,6 +767,14 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif
 	}
+
+	/* TOTHINK #3411: Consider autologin via ac_conn->user/pass fields?
+	 *  Probably no, not for a web client anyone can interact with...
+	 *  This one is for a read-only listing, but could something be abused?
+	 *  If it comes to that, better fall back to requiring query/form args
+	 *  like in upsset.c
+	 *  //upscli_authenticate_authconf(&ups, ac_conn);
+	 */
 
 	for (i = 0; imgvar[i].name; i++)
 		if (!strcmp(cmd, imgvar[i].name)) {

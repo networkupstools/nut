@@ -1132,6 +1132,7 @@ static void clean_exit(void)
 int main(int argc, char **argv)
 {
 	char *s, str_port[16];
+	upscli_authconf_t	*ac_conn = NULL;
 	int	i;
 
 #ifdef WIN32
@@ -1198,7 +1199,8 @@ int main(int argc, char **argv)
 
 	extractpostargs();
 
-	if (upscli_init_authconf(upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1)) > 0) {
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 		if (ac_default) {
 			if (ac_default->certverify) {
@@ -1211,7 +1213,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Nothing POSTed (or parsed correctly)? */
+	/* Nothing POSTed (or parsed correctly)?
+	 * TOTHINK: Consider autologin via ac_conn->user/pass fields?
+	 *  Probably no, not for a web client anyone can interact with...
+	 *  //upscli_authenticate_authconf(&ups, ac_conn); after a connect()
+	 */
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 
