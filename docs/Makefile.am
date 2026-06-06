@@ -1003,7 +1003,11 @@ SPELLCHECK_AUTO_ONE = ( \
 # If we can, make sure the documentation is ASCII (with maybe
 # single-byte accented characters here and there, they seem okay):
 if HAVE_PERL
-SOURCE_CHECK_UNICODE = echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRC)"; @PERL@ $(top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) || exit
+SOURCE_CHECK_UNICODE = { \
+	echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	( cd $(SPELLCHECK_SRCDIR) && @PERL@ $(abs_top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) ) || exit ; \
+	}
+
 else !HAVE_PERL
 SOURCE_CHECK_UNICODE = true
 endif !HAVE_PERL
