@@ -1,0 +1,221 @@
+# Separated from 01-make-dist.yml to touch untrusted sources
+# in a separate job without particular permissions to anything.
+# Triggered by a step in that job.
+#
+# See also:
+#   https://github.com/actions/upload-artifact
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
+
+name: "GHA-01: Tarballs Build Worker"
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      artifact_name:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      ref:
+        required: true
+        type: string
+      artifact_name:
+        required: true
+        type: string
+
+# This untrusted part of the job may only read Git
+# (and upload artifacts, that's allowed by default)
+permissions:
+  contents: read
+
+jobs:
+  make-dist-tarballs:
+    name: "Make Dist and Docs Tarballs, see workflow page for links"
+     # FIXME: Prepare/maintain a container image with pre-installed
+     #  NUT build/tooling prereqs (save about 3 minutes per run!)
+     #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
+     #  => https://github.com/addnab/docker-run-action can help
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        # NOTE: This is the unprivileged part of the GHA-01-tarballs ritual,
+        #  running potentially untrusted shell code from the PR source branch.
+        #  We are still dealing with the upstream repository (not a forked
+        #  repo), and in case of pull requests - fetch a separate scheme of
+        #  ephemerally provided refs for PR "merge" or "head" commits.
+        #
+        # 0 => all commit history for the PR
+        fetch-depth: 0
+        # Get the git tags to construct NUT SEMVER version strings.
+        fetch-tags: true
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+
+    # Make build identification more useful (so we use no fallbacks in script)
+    - name: Try to get more Git metadata
+      run: |
+        git describe || {
+          git remote -v || true
+          git branch -a || true
+          for R in `git remote` ; do git fetch $R master ; done || true
+          git fetch --tags
+          pwd ; ls -la
+          echo "=== Known commits in history:"
+          git log --oneline | wc -l
+          echo "=== Recent commits in history:"
+          git log -2 || true
+          echo "=== Known tags:"
+          git tag || true
+          echo "=== Try to ensure 'git describe' works:"
+          git describe || {
+            git fetch --all && for R in `git remote` ; do for T in `git tag` ; do git fetch $R $T ; done ; done
+            git describe || {
+              TEST_REF="`git symbolic-ref --short HEAD 2>/dev/null || cat .git/HEAD`" && [ -n "${TEST_REF}" ] && git checkout master && git pull --all && git checkout "${TEST_REF}"
+              git describe || true
+            }
+          }
+        }
+
+    # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
+    # and our own docs/config-prereqs.txt
+    # NOTE: Currently installing the MAX prerequisite footprint,
+    # which for building just the docs may be a bit of an overkill.
+    - name: NUT CI Prerequisite packages (Ubuntu, GCC)
+      run: |
+        echo "set man-db/auto-update false" | sudo debconf-communicate
+        sudo dpkg-reconfigure man-db
+        sudo apt update
+        sudo apt install \
+            gcc g++ clang \
+            ccache time \
+            git perl curl \
+            make autoconf automake libltdl-dev libtool binutils \
+            valgrind \
+            cppcheck \
+            pkg-config \
+            libtool-bin \
+            python3 gettext python3-pyqt6 pyqt6-dev-tools \
+            aspell aspell-en \
+            asciidoc source-highlight python3-pygments dblatex \
+            libgd-dev \
+            systemd-dev \
+            libsystemd-dev \
+            libcppunit-dev \
+            libssl-dev libnss3-dev \
+            augeas-tools libaugeas-dev augeas-lenses \
+            libusb-dev libusb-1.0-0-dev \
+            libi2c-dev \
+            libmodbus-dev \
+            libsnmp-dev \
+            libpowerman0-dev \
+            libfreeipmi-dev libipmimonitoring-dev \
+            libavahi-common-dev libavahi-core-dev libavahi-client-dev \
+            libgpiod-dev \
+            libglib2.0-dev \
+            bash dash ksh busybox \
+            libneon27-gnutls-dev \
+            build-essential git-core libi2c-dev i2c-tools lm-sensors \
+        || exit
+        date > .timestamp-init
+
+    - name: Prepare ccache
+      # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
+      id: cache-ccache
+      uses: actions/cache@v5
+      env:
+        compiler: 'CC=gcc CXX=g++'
+        cache-name: cache-ccache-${{ env.compiler }}
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.timestamp-init') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: CCache stats before build
+      run: |
+        ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+        rm -f .timestamp-init
+
+    - name: Debug gitlog2version processing
+      run: bash -x ./tools/gitlog2version.sh || true
+
+    - name: NUT CI Build Configuration
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        ./autogen.sh && \
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all --with-dev --with-docs --enable-docs-changelog ${{env.compiler}}
+
+    # NOTE: In this scenario we do not build actually NUT in the main
+    # checkout directory, at least not explicitly (recipe may generate
+    # some files like man pages to fulfill the "dist" requirements;
+    # for now this may generate some libs to figure out their IDs).
+    # We do `make docs` to provide them as a separate tarball just
+    # in case, later.
+    # DO NOT `make dist-files` here as it includes `dist-sig` and
+    # needs a GPG keychain with maintainers' secrets deployed locally.
+    - name: NUT CI Build to create "dist" tarball and related files
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 dist dist-hash
+
+    - name: NUT CI Build to verify "dist" tarball build
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 distcheck
+
+    - name: NUT CI Build to verify "dist" tarball build self-reproducibility
+      env:
+        compiler: 'CC=gcc CXX=g++'
+      run: |
+        PATH="/usr/lib/ccache:$PATH" ; export PATH
+        CCACHE_COMPRESS=true; export CCACHE_COMPRESS
+        ccache --version || true
+        ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
+        make -s -j 8 distcheck-completeness
+
+    - name: CCache stats after distcheck
+      run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: NUT CI Build to package complex docs (not part of dist tarball)
+      run: |
+        make -s -j 8 dist-docs
+
+    # NOTE: A `.zip` is added to the base `$name` automatically
+    - name: Upload tarball and its checksum artifacts
+      uses: actions/upload-artifact@v4
+      id: upload_artifact
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: |
+          nut-*.tar*
+        compression-level: 0
+        overwrite: true
+
+    # FINISH: Pass control back to the main pipeline

@@ -3,13 +3,13 @@
  *  Copyright (C)
  *    2021 Thanos Chatziathanassiou <tchatzi@arx.net>
  *
- * Based on documentation found freely on 
+ * Based on documentation found freely on
  * https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
  * but with dubious legal license. The document itself states:
- * ``CAUTION : “This is a product for restricted sales distribution to informed partners. 
- *   Installation restrictions or additional measures may be needed to prevent disturbances''
+ *   CAUTION : "This is a product for restricted sales distribution to informed partners.
+ *   Installation restrictions or additional measures may be needed to prevent disturbances"
  * YMMV
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -59,7 +59,7 @@ void upsdrv_initinfo(void)
 {
 	uint16_t tab_reg[12];
 	int r;
-	
+
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "socomec jbus");
@@ -67,7 +67,7 @@ void upsdrv_initinfo(void)
 
 	upsdebugx(2, "initial read");
 
-	/* 
+	/*
 		this is a neat trick, but not really helpful right now
 		https://stackoverflow.com/questions/25811662/spliting-an-hex-into-2-hex-values/41733170#41733170
 		uint8_t *lowbyte;
@@ -79,7 +79,7 @@ void upsdrv_initinfo(void)
 	if (r == -1) {
 		fatalx(EXIT_FAILURE, "failed to read UPS code from JBUS. r is %d error %s", r, modbus_strerror(errno));
 	}
-	
+
 	upsdebugx(2, "read UPS Code %d", tab_reg[0]);
 
 	if (tab_reg[1]) {
@@ -92,11 +92,11 @@ void upsdrv_initinfo(void)
 		case 130:
 			dstate_setinfo("ups.model", "%s", "DIGYS");
 			break;
-		
+
 		case 515:
 			dstate_setinfo("ups.model", "%s", "DELPHYS MX");
 			break;
-		
+
 		case 516:
 			dstate_setinfo("ups.model", "%s", "DELPHYS MX elite");
 			break;
@@ -123,7 +123,7 @@ void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
 	int r;
-	
+
 	upsdebugx(2, "upsdrv_updateinfo");
 
 	status_init();
@@ -144,7 +144,7 @@ void upsdrv_updateinfo(void)
 
 	upsdebugx(2, "battery capacity (Ah * 10) %u", tab_reg[8]);
 	upsdebugx(2, "battery elements %u", tab_reg[9]);
-	
+
 	/* time and date */
 	r = mrir(modbus_ctx, 0x1360, 4, tab_reg);
 	if (r == -1) {
@@ -156,10 +156,10 @@ void upsdrv_updateinfo(void)
 
 	/* ups status */
 	r = mrir(modbus_ctx, 0x1020, 6, tab_reg);
-	
+
 	if (r == -1) {
 		upsdebugx(2, "Did not receive any data from the UPS at 0x1020 ! Ignoring ? r is %d error %s", r, modbus_strerror(errno));
-		/* 
+		/*
 		dstate_datastale();
 		return;
 		*/
@@ -197,7 +197,7 @@ void upsdrv_updateinfo(void)
 		upsdebugx(2, "Battery charging");
 	if (CHECK_BIT(tab_reg[1], 12))
 		upsdebugx(2, "Bypass input frequency out of tolerance");
-	
+
 	if (CHECK_BIT(tab_reg[2], 0))
 		upsdebugx(2, "Unit operating");
 
@@ -223,7 +223,7 @@ void upsdrv_updateinfo(void)
 
 	/* alarms */
 	r = mrir(modbus_ctx, 0x1040, 4, tab_reg);
-	
+
 	alarm_init();
 
 	if (r == -1) {
@@ -270,7 +270,7 @@ void upsdrv_updateinfo(void)
 		upsdebugx(2, "Battery charger fault");
 		alarm_set("Battery charger fault.");
 	}
-	
+
 	if (CHECK_BIT(tab_reg[1], 1))
 		upsdebugx(2, "Improper condition of use");
 	if (CHECK_BIT(tab_reg[1], 2))
@@ -312,7 +312,7 @@ void upsdrv_updateinfo(void)
 	if (CHECK_BIT(tab_reg[3], 3))
 		upsdebugx(2, "Synoptic alarm");
 	if (CHECK_BIT(tab_reg[3], 4)) {
-		upsdebugx(2, "Critical Rectifier fault"); 
+		upsdebugx(2, "Critical Rectifier fault");
 		alarm_set("Critical Rectifier fault.");
 	}
 	if (CHECK_BIT(tab_reg[3], 6)) {
@@ -373,7 +373,7 @@ void upsdrv_updateinfo(void)
 
 		if (tab_reg[15] != 0xFFFF)
 			dstate_setinfo("output.L1.current", "%u", tab_reg[15] );
-		
+
 		if (tab_reg[16] != 0xFFFF)
 		dstate_setinfo("output.L2.current", "%u", tab_reg[16] );
 
@@ -411,7 +411,7 @@ void upsdrv_updateinfo(void)
 	--essential
 	ups.status TRIM/BOOST/OVER
 	ups.alarm
-	
+
 	--dangerous
 	ups.shutdown
 	shutdown.return
@@ -489,7 +489,7 @@ void upsdrv_cleanup(void)
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest)
 {
 	int r, i;
-	
+
 	/* zero out the thing, because we might have reused it */
 	for (i=0; i<nb; i++) {
 		dest[i] = 0;

@@ -58,10 +58,12 @@ check-NIT: $(abs_srcdir)/nit.sh
 
 # Make sure pre-requisites for NIT are fresh as we iterate
 check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s generated-sources-with-a-touch
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
 	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s cleanup-touchfiles-for-generated-headers
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 
 # Allow to override with make/env vars; provide sensible defaults (see nit.sh):

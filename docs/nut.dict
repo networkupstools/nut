@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3775 utf-8
+personal_ws-1.1 en 3779 utf-8
 AAC
 AAS
 ABI
@@ -2191,6 +2191,7 @@ firewalling
 firmwares
 fixNSS
 fmt
+fmtutil
 fno
 fontconfig
 fopen
@@ -2700,6 +2701,7 @@ mk
 mkdb
 mkdir
 mkstr
+mktexlsr
 mmZ
 mmap
 mn
@@ -2810,6 +2812,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nonascii
 noncommercially
 noout
 nooutstats
@@ -2933,6 +2936,7 @@ pconf
 pcre
 pcs
 pdf
+pdftex
 pdu
 pe
 peasy
