@@ -3231,7 +3231,7 @@ int upscli_upserror(UPSCONN_t *ups)
 int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
 	int check_os_user, int ask_password)
 {
-	char	buf[UPSCLI_NETBUF_LEN], user[SMALLBUF], pass[SMALLBUF];
+	char	buf[UPSCLI_NETBUF_LEN], user[UPSCLI_NETBUF_LEN - 12], pass[UPSCLI_NETBUF_LEN - 12];
 	const char	*user_ptr = username;
 	const char	*pass_ptr = password;
 	size_t	len;
