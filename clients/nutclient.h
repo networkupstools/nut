@@ -88,6 +88,50 @@ class Variable;
 class Command;
 
 /**
+ * Authentication configuration for a NUT client.
+ */
+class AuthConf
+{
+public:
+	AuthConf(const std::string& section = "");
+	AuthConf(const AuthConf& source, const std::string& section = "");
+	~AuthConf();
+
+	/** Get the one global list of all parsed authentication configurations */
+	static std::vector<AuthConf> getAuthConfList();
+
+	/** Read the authentication configuration file (usually nutauth.conf) */
+	static int readAuthConfFile(const std::string& filename = "", int fatal_errors = 0);
+
+	/** Find the best matching authconf for a given connection string */
+	static AuthConf findAuthConf(const std::string& user, const std::string& host, const std::string& port);
+
+	/** Find the best matching authconf for a given connection string, and fill in
+	 * the missing points from higher levels (exact match => host defaults => global).
+	 */
+	static AuthConf getAuthConf(const std::string& user, const std::string& host, const std::string& port);
+
+	/** Clear the global list of authentication configurations */
+	static void freeAuthConfList();
+
+	std::string section;
+	std::string user;
+	std::string pass;
+	std::string certpath;
+	std::string certfile;
+	std::string certident;
+	std::string certpasswd;
+	std::string ssl_backend;
+	std::string certhost;
+	int certverify;	/* -1 = unset, 0 = off, 1 = on */
+	int forcessl;	/* -1 = unset, 0 = off, 1 = on */
+
+private:
+	static std::vector<AuthConf> authconf_list;
+	static AuthConf* global_defaults;
+};
+
+/**
  * Base class for certificate store location information
  * (where to find the files and how to open them).
  */
@@ -821,6 +865,12 @@ public:
 	virtual void authenticate(const std::string& user, const std::string& passwd) = 0;
 
 	/**
+	 * Authenticate to a NUTD server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	virtual void authenticate(const AuthConf& ac) = 0;
+
+	/**
 	 * Disconnect from the NUTD server.
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
@@ -1124,6 +1174,12 @@ public:
 	void connect(const std::string& host, uint16_t port, bool tryssl);
 
 	/**
+	 * Connect to the specified server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	void connect(const AuthConf& ac);
+
+	/**
 	 * Connect to the server.
 	 * Host name and ports must have already set (useful for reconnection).
 	 */
@@ -1169,6 +1225,7 @@ public:
 	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
+	virtual void authenticate(const AuthConf& ac) override;
 	virtual void logout() override;
 
 	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;

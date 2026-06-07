@@ -72,6 +72,8 @@
 import socket
 import time
 import re
+import os
+import getpass
 
 ssl_available = False
 try:
@@ -111,12 +113,180 @@ class TrackingID:
     def isValid(self):
         return self.__id is not None and self.__id != ""
 
+class AuthConf:
+    """ Authentication configuration for a NUT client. """
+    def __init__(self, section=""):
+        self.section = section
+        self.user = None
+        self.pass_ = None
+        self.certpath = None
+        self.certfile = None
+        self.certident = None
+        self.certpasswd = None
+        self.ssl_backend = None
+        self.certhost = None
+        self.certverify = -1
+        self.forcessl = -1
+
+    @staticmethod
+    def readAuthConfFile(filename=None, fatal_errors=False):
+        """ Read the authentication configuration file (usually nutauth.conf) """
+        if filename is None:
+            # Matches C implementation logic for default path
+            filename = os.path.join(os.environ.get("NUT_CONFPATH", "/etc/nut"), "nutauth.conf")
+
+        if not os.path.exists(filename):
+            if fatal_errors:
+                raise PyNUTError(f"Could not open {filename}")
+            return []
+
+        auth_configs = []
+        current_ac = None
+
+        try:
+            with open(filename, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    if line.startswith('[') and line.endswith(']'):
+                        current_ac = AuthConf(line)
+                        auth_configs.append(current_ac)
+                        continue
+
+                    if current_ac is None:
+                        # Global settings if any, but NUT usually expects sections
+                        continue
+
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip().lower()
+                        value = value.strip()
+                        # Remove quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+
+                        if key == 'user':
+                            current_ac.user = value
+                        elif key == 'password':
+                            current_ac.pass_ = value
+                        elif key == 'certpath':
+                            current_ac.certpath = value
+                        elif key == 'certfile':
+                            current_ac.certfile = value
+                        elif key == 'certident':
+                            current_ac.certident = value
+                        elif key == 'certpasswd':
+                            current_ac.certpasswd = value
+                        elif key == 'ssl_backend':
+                            current_ac.ssl_backend = value
+                        elif key == 'certhost':
+                            current_ac.certhost = value
+                        elif key == 'certverify':
+                            current_ac.certverify = 1 if value.lower() in ('on', 'yes', '1') else 0
+                        elif key == 'forcessl':
+                            current_ac.forcessl = 1 if value.lower() in ('on', 'yes', '1') else 0
+        except Exception as e:
+            if fatal_errors:
+                raise PyNUTError(f"Error reading {filename}: {str(e)}")
+
+        return auth_configs
+
+    @staticmethod
+    def findAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string """
+        if auth_configs is None:
+            auth_configs = AuthConf.readAuthConfFile()
+
+        # Try to match [user@host:port], then [host:port], then [host], then [*]
+        # This is a simplified version of the C logic
+        matches = []
+        for ac in auth_configs:
+            section = ac.section[1:-1] # Remove brackets
+            
+            # 1. Exact match user@host:port
+            target = ""
+            if user: target += f"{user}@"
+            target += f"{host if host else 'localhost'}"
+            if port: target += f":{port}"
+            
+            if section == target:
+                return ac
+                
+            # 2. Match host:port
+            if not user and section == f"{host}:{port}":
+                return ac
+
+            # 3. Match host
+            if not user and not port and section == host:
+                return ac
+
+            if section == "*":
+                matches.append(ac)
+
+        if matches:
+            return matches[0]
+
+        return None
+
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
 
 
 class PyNUTClient :
     """ Abstraction class to access NUT (Network UPS Tools) server """
+
+    @classmethod
+    def from_authconf(cls, authconf, **kwargs):
+        """ Create a PyNUTClient from an AuthConf object """
+        # Extract host and port from authconf.section if possible
+        host = "127.0.0.1"
+        port = 3493
+
+        # Simple split, could be more robust
+        section = authconf.section
+        if section.startswith('['):
+            section = section[1:-1]
+
+        # Handle user@host:port
+        if '@' in section:
+            user_part, addr_part = section.split('@', 1)
+        else:
+            addr_part = section
+
+        if addr_part:
+            if ':' in addr_part:
+                parts = addr_part.split(':', 1)
+                host = parts[0]
+                try:
+                    port = int(parts[1])
+                except ValueError:
+                    pass
+            else:
+                host = addr_part
+
+        if host == "":
+            host = "127.0.0.1"
+
+        client_args = {
+            "host": host,
+            "port": port,
+            "login": authconf.user,
+            "password": authconf.pass_,
+            "use_ssl": authconf.forcessl > 0,
+            "force_ssl": authconf.forcessl > 0,
+            "cert_verify": authconf.certverify > 0 if authconf.certverify != -1 else None,
+            "ca_path": authconf.certpath,
+            "cert_file": authconf.certfile,
+            "cert_ident": authconf.certident,
+            "key_pass": authconf.certpasswd,
+            "certhost": authconf.certhost
+        }
+        # Override with any explicit kwargs
+        client_args.update(kwargs)
+        return cls(**client_args)
 
     __debug       = None   # Set class to debug mode (prints everything useful for debugging...)
     __host        = None

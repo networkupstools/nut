@@ -41,7 +41,13 @@ sub new {
 # Author: Kit Peters
   my $proto = shift;
   my $class = ref($proto) || $proto;
-  my %arg = @_; # hash of arguments
+  my %arg;
+  if (scalar(@_) == 1 && ref($_[0]) eq 'UPS::Nut::AuthConf') {
+    my $ac = shift;
+    %arg = $ac->to_nut_args();
+  } else {
+    %arg = @_; # hash of arguments
+  }
   my $self = {};	# _initialize will fill it later
   bless $self, $class;
   unless ($self->_initialize(%arg)) { # can't initialize
@@ -1497,6 +1503,155 @@ accessor methods for all supported vars.
 This module is distributed under the same license as Perl itself.
 
 =cut
+
+package UPS::Nut::AuthConf;
+
+sub new {
+    my $class = shift;
+    my $section = shift || "";
+    my $self = {
+        section     => $section,
+        user        => undef,
+        pass        => undef,
+        certpath    => undef,
+        certfile    => undef,
+        certident   => undef,
+        certpasswd  => undef,
+        ssl_backend => undef,
+        certhost    => undef,
+        certverify  => -1,
+        forcessl    => -1,
+    };
+    bless $self, $class;
+    return $self;
+}
+
+sub readAuthConfFile {
+    my $class = shift;
+    my $filename = shift;
+    my $fatal_errors = shift || 0;
+
+    if (!defined $filename) {
+        my $confpath = $ENV{NUT_CONFPATH} || "/etc/nut";
+        $filename = "$confpath/nutauth.conf";
+    }
+
+    if (!-e $filename) {
+        die "Could not open $filename" if $fatal_errors;
+        return ();
+    }
+
+    if (!open(my $fh, '<', $filename)) {
+        die "Error opening $filename: $!" if $fatal_errors;
+        return ();
+    }
+
+    my @auth_configs;
+    my $current_ac;
+
+    while (my $line = <$fh>) {
+        chomp $line;
+        $line =~ s/^\s+|\s+$//g;
+        next if !$line || $line =~ /^#/;
+
+        if ($line =~ /^\[(.*)\]$/) {
+            $current_ac = UPS::Nut::AuthConf->new($line);
+            push @auth_configs, $current_ac;
+            next;
+        }
+
+        next if !$current_ac;
+
+        if ($line =~ /^([^=]+)=(.*)$/) {
+            my ($key, $value) = ($1, $2);
+            $key =~ s/^\s+|\s+$//g;
+            $key = lc($key);
+            $value =~ s/^\s+|\s+$//g;
+            $value =~ s/^["']|["']$//g;
+
+            if ($key eq 'user') { $current_ac->{user} = $value; }
+            elsif ($key eq 'password') { $current_ac->{pass} = $value; }
+            elsif ($key eq 'certpath') { $current_ac->{certpath} = $value; }
+            elsif ($key eq 'certfile') { $current_ac->{certfile} = $value; }
+            elsif ($key eq 'certident') { $current_ac->{certident} = $value; }
+            elsif ($key eq 'certpasswd') { $current_ac->{certpasswd} = $value; }
+            elsif ($key eq 'ssl_backend') { $current_ac->{ssl_backend} = $value; }
+            elsif ($key eq 'certhost') { $current_ac->{certhost} = $value; }
+            elsif ($key eq 'certverify') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            elsif ($key eq 'forcessl') { $current_ac->{forcessl} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+        }
+    }
+    close($fh);
+    return @auth_configs;
+}
+
+sub findAuthConf {
+    my $class = shift;
+    my ($user, $host, $port, $auth_configs_ref) = @_;
+    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : $class->readAuthConfFile();
+
+    my $star_match;
+    foreach my $ac (@auth_configs) {
+        my $section = $ac->{section};
+        $section =~ s/^\[//;
+        $section =~ s/\]$//;
+
+        my $target = "";
+        $target .= "$user\@" if defined $user;
+        $target .= $host || 'localhost';
+        $target .= ":$port" if defined $port;
+
+        return $ac if $section eq $target;
+        
+        # fallback matches
+        if (!defined $user && defined $host && defined $port && $section eq "$host:$port") {
+            return $ac;
+        }
+        if (!defined $user && !defined $port && defined $host && $section eq $host) {
+            return $ac;
+        }
+
+        $star_match = $ac if $section eq '*';
+    }
+
+    return $star_match if defined $star_match;
+    return undef;
+}
+
+sub to_nut_args {
+    my $self = shift;
+    my %args;
+    
+    # Extract HOST and PORT from section
+    my $host = 'localhost';
+    my $port = '3493';
+    my $sect = $self->{section};
+    $sect =~ s/^\[//;
+    $sect =~ s/\]$//;
+    if ($sect =~ /@/) {
+        $sect =~ s/^[^@]*@//;
+    }
+    if ($sect =~ /:/) {
+        ($host, $port) = split(/:/, $sect, 2);
+    } elsif ($sect ne "") {
+        $host = $sect;
+    }
+    
+    $args{HOST} = $host;
+    $args{PORT} = $port;
+    $args{USERNAME} = $self->{user} if defined $self->{user};
+    $args{PASSWORD} = $self->{pass} if defined $self->{pass};
+    $args{LOGIN} = 1 if defined $self->{user};
+    $args{USESSL} = 1 if $self->{forcessl} > 0;
+    $args{FORCESSL} = 1 if $self->{forcessl} > 0;
+    $args{CERTVERIFY} = ($self->{certverify} > 0) if $self->{certverify} != -1;
+    $args{CERTPATH} = $self->{certpath} if defined $self->{certpath};
+    $args{CERTFILE} = $self->{certfile} if defined $self->{certfile};
+    $args{CERTIDENT} = $self->{certident} if defined $self->{certident};
+    $args{CERTPASSWD} = $self->{certpasswd} if defined $self->{certpasswd};
+    
+    return %args;
+}
 
 package UPS::Nut::TrackingID;
 use strict;

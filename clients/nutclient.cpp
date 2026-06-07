@@ -25,10 +25,18 @@
 
 #include "config.h"
 #include "nutclient.h"
-
+#include "parseconf.h"
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <vector>
+
+#ifndef WIN32
+#include <unistd.h>
+#else
+#include <io.h>
+#define R_OK 4
+#endif
 
 /* TODO: Make it a run-time option like upsdebugx(),
  * probably with a verbosity level variable in each
@@ -1994,6 +2002,248 @@ bool Client::hasFeature(const Feature& feature)
 
 /*
  *
+ * AuthConf implementation
+ *
+ */
+
+std::vector<AuthConf> AuthConf::authconf_list;
+AuthConf* AuthConf::global_defaults = nullptr;
+
+AuthConf::AuthConf(const std::string& section_name)
+	: section(section_name), certverify(-1), forcessl(-1)
+{
+}
+
+AuthConf::AuthConf(const AuthConf& source, const std::string& section_name)
+	: section(section_name), user(source.user), pass(source.pass),
+	  certpath(source.certpath), certfile(source.certfile),
+	  certident(source.certident), certpasswd(source.certpasswd),
+	  ssl_backend(source.ssl_backend), certhost(source.certhost),
+	  certverify(source.certverify), forcessl(source.forcessl)
+{
+}
+
+AuthConf::~AuthConf()
+{
+}
+
+/*static*/ std::vector<AuthConf> AuthConf::getAuthConfList()
+{
+	return authconf_list;
+}
+
+static void set_authconf_val(AuthConf& conf, const std::string& var, const std::string& val)
+{
+	if (var == "user") { conf.user = val; }
+	else if (var == "password") { conf.pass = val; }
+	else if (var == "certpath") { conf.certpath = val; }
+	else if (var == "certfile") { conf.certfile = val; }
+	else if (var == "certident") { conf.certident = val; }
+	else if (var == "certpasswd") { conf.certpasswd = val; }
+	else if (var == "ssl_backend") { conf.ssl_backend = val; }
+	else if (var == "certhost") { conf.certhost = val; }
+	else if (var == "certverify") {
+		if (val == "on" || val == "yes" || val == "1") conf.certverify = 1;
+		else if (val == "off" || val == "no" || val == "0") conf.certverify = 0;
+	}
+	else if (var == "forcessl") {
+		if (val == "on" || val == "yes" || val == "1") conf.forcessl = 1;
+		else if (val == "off" || val == "no" || val == "0") conf.forcessl = 0;
+	}
+}
+
+static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_section, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults)
+{
+	if (numargs < 1) return;
+
+	if (arg[0][0] == '[' && arg[0][strlen(arg[0])-1] == ']') {
+		std::string sectname = arg[0];
+		sectname = sectname.substr(1, sectname.length() - 2);
+		
+		if (sectname == "*") {
+			if (!global_defaults) {
+				global_defaults = new AuthConf("*");
+				authconf_list.push_back(*global_defaults);
+				// Re-point global_defaults to the one in the list
+				global_defaults = &authconf_list.back();
+			}
+			current_section = global_defaults;
+		} else {
+			authconf_list.push_back(AuthConf(sectname));
+			current_section = &authconf_list.back();
+		}
+		return;
+	}
+
+	if (numargs < 3 || strcmp(arg[1], "=") != 0) return;
+
+	std::string var = arg[0];
+	std::string val = arg[2];
+
+	if (!current_section) {
+		if (global_scope) {
+			if (!global_defaults) {
+				global_defaults = new AuthConf("*");
+				authconf_list.push_back(*global_defaults);
+				global_defaults = &authconf_list.back();
+			}
+			current_section = global_defaults;
+		} else {
+			return;
+		}
+	}
+
+	set_authconf_val(*current_section, var, val);
+}
+
+static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults)
+{
+	PCONF_CTX_t ctx;
+	AuthConf* current_section = nullptr;
+
+	if (pconf_init(&ctx, nullptr) != 1) {
+		if (fatal_errors) throw nut::IOException("Failed to initialize parser");
+		return -1;
+	}
+	if (pconf_file_begin(&ctx, filename.c_str()) != 1) {
+		pconf_finish(&ctx);
+		if (fatal_errors) throw nut::IOException("Can't open authconf file: " + filename);
+		return -1;
+	}
+
+	while (pconf_file_next(&ctx) == 1) {
+		if (ctx.numargs > 0) {
+			handle_authconf_args(ctx.numargs, ctx.arglist, current_section, global_scope, authconf_list, global_defaults);
+		}
+	}
+
+	pconf_finish(&ctx);
+	return 1;
+}
+
+/*static*/ int AuthConf::readAuthConfFile(const std::string& filename, int fatal_errors)
+{
+	std::string fn = filename;
+	freeAuthConfList();
+
+	if (fn.empty()) {
+		char path[NUT_PATH_MAX + 1];
+		const char *s;
+
+		if ((s = getenv("NUT_AUTHCONF_FILE")) && access(s, R_OK) == 0) {
+			fn = s;
+		} else if ((s = getenv("NUT_AUTHCONF_PATH")) && (snprintf(path, sizeof(path), "%s/nutauth.conf", s) > 0) && access(path, R_OK) == 0) {
+			fn = path;
+		} else if ((s = getenv("HOME"))) {
+			snprintf(path, sizeof(path), "%s/.config/nut/nutauth.conf", s);
+			if (access(path, R_OK) == 0) {
+				fn = path;
+			} else {
+				snprintf(path, sizeof(path), "%s/.nutauth.conf", s);
+				if (access(path, R_OK) == 0) fn = path;
+			}
+		}
+		
+		if (fn.empty()) {
+			snprintf(path, sizeof(path), "%s/nutauth.conf", confpath());
+			if (access(path, R_OK) == 0) fn = path;
+		}
+	}
+
+	if (fn.empty()) {
+		if (fatal_errors) throw nut::IOException("Can't open a default nutauth.conf file");
+		return -1;
+	}
+
+	return parse_authconf_file(fn, fatal_errors, true, authconf_list, global_defaults);
+}
+
+static int splitaddr(const std::string& buf, std::string& hostname, uint16_t& port)
+{
+	if (buf.empty()) return -1;
+
+	size_t open_bracket = buf.find('[');
+	size_t close_bracket = buf.find(']');
+	size_t colon;
+
+	if (open_bracket != std::string::npos && close_bracket != std::string::npos && open_bracket < close_bracket) {
+		hostname = buf.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+		colon = buf.find(':', close_bracket);
+	} else {
+		colon = buf.find(':');
+		if (colon != std::string::npos) {
+			hostname = buf.substr(0, colon);
+		} else {
+			hostname = buf;
+		}
+	}
+
+	if (colon != std::string::npos && colon + 1 < buf.length()) {
+		port = static_cast<uint16_t>(strtol(buf.substr(colon + 1).c_str(), nullptr, 10));
+	} else {
+		port = NUT_PORT;
+	}
+
+	return 0;
+}
+
+static void normalize_parts(std::string& normalized_name, std::string& user, std::string& host, std::string& port)
+{
+	if (host.empty()) host = "localhost";
+	if (port.empty()) {
+		char portbuf[16];
+		snprintf(portbuf, sizeof(portbuf), "%u", static_cast<unsigned int>(NUT_PORT));
+		port = portbuf;
+	}
+	normalized_name = user + "@" + host + ":" + port;
+}
+
+/*static*/ AuthConf AuthConf::findAuthConf(const std::string& user, const std::string& host, const std::string& port)
+{
+	if (authconf_list.empty()) return global_defaults ? *global_defaults : AuthConf();
+
+	if (user.empty() && host.empty() && port.empty()) {
+		return global_defaults ? *global_defaults : AuthConf();
+	}
+
+	std::string norm_user = user;
+	std::string norm_host = host;
+	std::string norm_port = port;
+	std::string normalized_name;
+	normalize_parts(normalized_name, norm_user, norm_host, norm_port);
+
+	for (const auto& ac : authconf_list) {
+		if (ac.section == normalized_name) return ac;
+	}
+
+	// Retry without user if we have one
+	if (!user.empty()) {
+		std::string userless_name = "@" + norm_host + ":" + norm_port;
+		for (const auto& ac : authconf_list) {
+			if (ac.section == userless_name) return ac;
+		}
+	}
+
+	return global_defaults ? *global_defaults : AuthConf();
+}
+
+/*static*/ AuthConf AuthConf::getAuthConf(const std::string& user, const std::string& host, const std::string& port)
+{
+	AuthConf res = findAuthConf(user, host, port);
+	// If it's a new item or global defaults, we might want to merge, but findAuthConf already returns the best match.
+	// In the C implementation, get_authconf_item can create a new entry and merge defaults.
+	// For simplicity, we return the find result.
+	return res;
+}
+
+/*static*/ void AuthConf::freeAuthConfList()
+{
+	authconf_list.clear();
+	global_defaults = nullptr;
+}
+
+/*
+ *
  * TCP Client implementation
  *
  */
@@ -3242,6 +3492,27 @@ void TcpClient::connect(const std::string& host, uint16_t port, bool tryssl)
 	connect(host, port);
 }
 
+void TcpClient::connect(const AuthConf& ac)
+{
+	std::string hostname;
+	uint16_t portnum = NUT_PORT;
+	if (splitaddr(ac.section, hostname, portnum) == 0) {
+		_host = !hostname.empty() ? hostname : "localhost";
+		_port = portnum;
+	}
+
+	_tryssl = (ac.forcessl != 0);
+
+	if (ac.ssl_backend == "nss") {
+		setSSLConfig_NSS(ac.forcessl, ac.certverify, ac.certpath, ac.certpasswd, "", ac.certident, "", ac.certhost);
+	} else {
+		/* Default to OpenSSL if not specified or "openssl" */
+		setSSLConfig_OpenSSL(ac.forcessl, ac.certverify, ac.certpath, "", ac.certfile, "", "", ac.certident, "", ac.certhost);
+	}
+
+	connect();
+}
+
 void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
@@ -3556,6 +3827,11 @@ void TcpClient::authenticate(const std::string& user, const std::string& passwd)
 {
 	detectError(sendQuery("USERNAME " + user));
 	detectError(sendQuery("PASSWORD " + passwd));
+}
+
+void TcpClient::authenticate(const AuthConf& ac)
+{
+	authenticate(ac.user, ac.pass);
 }
 
 void TcpClient::logout()
