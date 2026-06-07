@@ -2391,6 +2391,69 @@ public:
 
 };  // end of class UpsdUsersConfiguration
 
+
+/** nutauth.conf configuration */
+class NutAuthConfiguration : public GenericConfiguration
+{
+public:
+	NutAuthConfiguration();
+
+	// Required to allow NutAuthConfigParser::onParseDirective() access to set()
+	friend class NutAuthConfigParser;
+
+	/** Section-specific configuration attributes getters and setters \{ */
+
+	inline std::string getUser(const std::string & section) const { return getStr(section, "user"); }
+	inline std::string getPassword(const std::string & section) const { return getStr(section, "password"); }
+	inline std::string getCertPath(const std::string & section) const { return getStr(section, "certpath"); }
+	inline std::string getCertFile(const std::string & section) const { return getStr(section, "certfile"); }
+	inline std::string getCertIdent(const std::string & section) const { return getStr(section, "certident"); }
+	inline std::string getCertPasswd(const std::string & section) const { return getStr(section, "certpasswd"); }
+	inline std::string getSslBackend(const std::string & section) const { return getStr(section, "ssl_backend"); }
+	inline std::string getCertHost(const std::string & section) const { return getStr(section, "certhost"); }
+	inline BoolInt getCertVerify(const std::string & section) const { return getBoolInt(section, "certverify", BoolInt(-1)); }
+	inline BoolInt getForceSsl(const std::string & section) const { return getBoolInt(section, "forcessl", BoolInt(-1)); }
+
+	inline void setUser(const std::string & section, const std::string & val) { setStr(section, "user", val); }
+	inline void setPassword(const std::string & section, const std::string & val) { setStr(section, "password", val); }
+	inline void setCertPath(const std::string & section, const std::string & val) { setStr(section, "certpath", val); }
+	inline void setCertFile(const std::string & section, const std::string & val) { setStr(section, "certfile", val); }
+	inline void setCertIdent(const std::string & section, const std::string & val) { setStr(section, "certident", val); }
+	inline void setCertPasswd(const std::string & section, const std::string & val) { setStr(section, "certpasswd", val); }
+	inline void setSslBackend(const std::string & section, const std::string & val) { setStr(section, "ssl_backend", val); }
+	inline void setCertHost(const std::string & section, const std::string & val) { setStr(section, "certhost", val); }
+	inline void setCertVerify(const std::string & section, BoolInt val) { setBoolInt(section, "certverify", val); }
+	inline void setForceSsl(const std::string & section, BoolInt val) { setBoolInt(section, "forcessl", val); }
+
+	/** \} */
+
+	/** Serialisable interface implementation overload \{ */
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
+	/** \} */
+
+};  // end of class NutAuthConfiguration
+
+
+class NutAuthConfigParser : public NutConfigParser
+{
+public:
+	NutAuthConfigParser(const char* buffer = nullptr);
+	NutAuthConfigParser(const std::string& buffer);
+
+	void parseNutAuthConfig(NutAuthConfiguration* config);
+protected:
+	virtual void onParseBegin() override;
+	virtual void onParseComment(const std::string& comment) override;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "") override;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "") override;
+	virtual void onParseEnd() override;
+
+	NutAuthConfiguration* _config;
+	std::string _currentSection;
+};
+
+
 } /* namespace nut */
 #endif /* __cplusplus */
 #endif	/* NUTCONF_H_SEEN */

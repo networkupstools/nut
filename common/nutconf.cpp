@@ -2112,4 +2112,75 @@ bool UpsdUsersConfiguration::writeTo(NutStream & ostream) const
 	return NutWriter::NUTW_OK == writer.writeConfig(*this);
 }
 
+
+NutAuthConfiguration::NutAuthConfiguration()
+	: GenericConfiguration()
+{
+}
+
+bool NutAuthConfiguration::parseFrom(NutStream &istream)
+{
+	return GenericConfiguration::parseFrom(istream);
+}
+
+bool NutAuthConfiguration::writeTo(NutStream &ostream) const
+{
+	return GenericConfiguration::writeTo(ostream);
+}
+
+
+NutAuthConfigParser::NutAuthConfigParser(const char *buffer)
+	: NutConfigParser(buffer), _config(nullptr), _currentSection("")
+{
+}
+
+NutAuthConfigParser::NutAuthConfigParser(const std::string &buffer)
+	: NutConfigParser(buffer), _config(nullptr), _currentSection("")
+{
+}
+
+void NutAuthConfigParser::parseNutAuthConfig(NutAuthConfiguration *config)
+{
+	_config = config;
+	parseConfig(config);
+}
+
+void NutAuthConfigParser::onParseBegin()
+{
+	_currentSection = "";
+}
+
+void NutAuthConfigParser::onParseComment(const std::string &)
+{
+}
+
+void NutAuthConfigParser::onParseSectionName(const std::string &sectionName, const std::string &)
+{
+	_currentSection = sectionName;
+}
+
+void NutAuthConfigParser::onParseDirective(const std::string &directiveName, char, const ConfigParamList &values, const std::string &)
+{
+	if (!_config) {
+		return;
+	}
+
+	if (values.empty()) {
+		return;
+	}
+
+	std::string section = _currentSection;
+	if (section.empty()) {
+		section = "*";
+	}
+
+	_config->set(section, directiveName, values);
+}
+
+void NutAuthConfigParser::onParseEnd()
+{
+	_config = nullptr;
+}
+
+
 } /* namespace nut */
