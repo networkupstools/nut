@@ -51,7 +51,7 @@ sub new {
   return $self;
 }
 
-# accessor functions.  Return a value if successful, return undef 
+# accessor functions.  Return a value if successful, return undef
 # otherwise.
 
 sub BattPercent { # get battery percentage
@@ -82,7 +82,7 @@ sub Temperature { # get the internal temperature of UPS
   return shift->GetVar('battery.temperature');
 }
 
-# control functions: they control our relationship to upsd, and send 
+# control functions: they control our relationship to upsd, and send
 # commands to upsd.
 
 sub SetTrackingMode {
@@ -272,8 +272,8 @@ sub StartTLS {
   return undef;
 }
 
-sub Login { # login to upsd, so that it won't shutdown unless we say we're 
-            # ok.  This should only be used if you're actually connected 
+sub Login { # login to upsd, so that it won't shutdown unless we say we're
+            # ok.  This should only be used if you're actually connected
             # to the ups that upsd is monitoring.
             # This assumes the upsmon SECONDARY role so we can be alerted
             # and initiate a shutdown if someone else sends the FSD command
@@ -281,8 +281,8 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
             # system which manages it.
 
 # Author: Kit Peters
-# ### changelog: modified login logic a bit.  Now it doesn't check to see 
-# ### changelog: if we got OK, ERR, or something else from upsd.  It 
+# ### changelog: modified login logic a bit.  Now it doesn't check to see
+# ### changelog: if we got OK, ERR, or something else from upsd.  It
 # ### changelog: simply checks for a response beginning with OK from upsd.
 # ### changelog: Anything else is an error.
 #
@@ -320,7 +320,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
   return undef;
 }
 
-sub Authenticate { # Announce to the UPS who we are to set up the proper 
+sub Authenticate { # Announce to the UPS who we are to set up the proper
                    # management level.  See upsd.conf man page for details.
 
 # Contributor: Wayne Wylupski
@@ -374,8 +374,8 @@ sub Logout { # logout of upsd and close connection
   }
 }
 
-# internal functions.  These are only used by UPS::Nut internally, so 
-# please don't use them otherwise.  If you really think an internal 
+# internal functions.  These are only used by UPS::Nut internally, so
+# please don't use them otherwise.  If you really think an internal
 # function should be externalized, let me know.
 
 sub _initialize {
@@ -503,7 +503,7 @@ sub _initialize {
     }
   }
 
-  # get a hash of vars for both the TIE functions as well as for 
+  # get a hash of vars for both the TIE functions as well as for
   # expanding vars.
   $self->{vars} = $self->ListVar;
 
@@ -524,7 +524,7 @@ sub _initialize {
 # _send
 #
 # Sends a command to the server and retrieves the results.
-# If there was a network error, return undef; $! will contain the 
+# If there was a network error, return undef; $! will contain the
 # error.
 sub _send
 {
@@ -578,7 +578,7 @@ sub GetVar { # request a variable from the UPS
 # Author: Kit Peters
   my $self = shift;
 # ### changelog: 8/3/2002 - KP - Request() now returns undef if not
-# ### changelog: connected to upsd via $srvsock 
+# ### changelog: connected to upsd via $srvsock
 # ### changelog: uses the new _send command
 #
 # Modified by Gabor Kiss according to protocol version 1.5+
@@ -1265,7 +1265,7 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
 
 =head1 DESCRIPTION
 
-This is an object-oriented (whoo!) interface between Perl and upsd from 
+This is an object-oriented (whoo!) interface between Perl and upsd from
 the Network UPS Tools package version 1.5 and above
 (https://www.networkupstools.org/).
 Note that it only talks to upsd for you in a Perl-ish way.
@@ -1284,11 +1284,11 @@ Shown with defaults: new UPS::Nut( NAME => "default",
 * NAME is the name of the UPS to monitor, as specified in ups.conf
 * HOST is the host running upsd
 * PORT is the port that upsd is running on
-* USERNAME and PASSWORD are those that you use to login to upsd.  This 
+* USERNAME and PASSWORD are those that you use to login to upsd.  This
   gives you the right to do certain things, as specified in upsd.conf.
 * DEBUG turns on debugging output, set to 1 or 0
-* DEBUGOUT is de thing you do when de s*** hits the fan.  Actually, it's 
-  the filename where you want debugging output to go.  If it's not 
+* DEBUGOUT is de thing you do when de s*** hits the fan.  Actually, it's
+  the filename where you want debugging output to go.  If it's not
   specified, debugging output comes to standard output.
 
 =head1 Important notice
@@ -1309,31 +1309,31 @@ single reference or undef.
 
 =item Getvar($varname)
 
-returns value of the specified variable. Returns undef if variable 
+returns value of the specified variable. Returns undef if variable
 unsupported.
 Old method named Request() is also supported for compatibility.
 
 =item Set($varname, $value)
 
-sets the value of the specified variable. Returns undef if variable 
+sets the value of the specified variable. Returns undef if variable
 unsupported, or if variable cannot be set for some other reason. See
 Authenticate() if you wish to use this function.
 
 =item BattPercent()
 
-returns percentage of battery left. Returns undef if we can't get 
+returns percentage of battery left. Returns undef if we can't get
 battery percentage for some reason. Same as GetVar('battery.charge').
 
 =item LoadPercent($context)
 
-returns percentage of the load on the UPS. Returns undef if load 
+returns percentage of the load on the UPS. Returns undef if load
 percentage is unavailable. $context is a selector of 3 phase systems.
 Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
 
 =item LineVoltage($context)
 
-returns input line (e.g. the outlet) voltage. Returns undef if line 
+returns input line (e.g. the outlet) voltage. Returns undef if line
 voltage is unavailable. $context is a selector of 3 phase systems.
 Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
@@ -1341,9 +1341,9 @@ in case of single phase UPS.
 =item Status()
 
 returns UPS status, one of OL or OB. OL or OB may be followed by LB,
-which signifies low battery state. OL or OB may also be followed by 
-FSD, which denotes that the forced shutdown state 
-( see UPS::Nut->FSD() ) has been set on upsd. Returns undef if status 
+which signifies low battery state. OL or OB may also be followed by
+FSD, which denotes that the forced shutdown state
+( see UPS::Nut->FSD() ) has been set on upsd. Returns undef if status
 unavailable. Same as GetVar('ups.status').
 
 =item Temperature()
@@ -1355,14 +1355,14 @@ temperature unavailable. Same as GetVar('battery.temperature').
 
 =head2 Other methods
 
-These all operate on the UPS specified in the NAME argument to the 
+These all operate on the UPS specified in the NAME argument to the
 constructor.
 
 =over 4
 
 =item Authenticate($username, $password)
 
-With NUT certain operations are only available if the user has the 
+With NUT certain operations are only available if the user has the
 privilege. The program has to authenticate with one of the accounts
 defined in upsd.conf.
 
@@ -1412,20 +1412,20 @@ This method replaces the old ListInstCmds().
 
 =item InstCmd($command)
 
-Send an instant command to the UPS. Returns 1 on success. Returns 
+Send an instant command to the UPS. Returns 1 on success. Returns
 undef if the command can't be completed.
 
 =item FSD()
 
-Set the FSD (forced shutdown) flag for the UPS. This means that we're 
-planning on shutting down the UPS very soon, so the attached load should 
+Set the FSD (forced shutdown) flag for the UPS. This means that we're
+planning on shutting down the UPS very soon, so the attached load should
 be shut down as well. Returns 1 on success, returns undef on failure.
 This cannot be unset, so don't set it unless you mean it.
 
 =item Error()
 
-why did the previous operation fail? The answer is here. It will 
-return a concise, well-written, and brilliantly insightful few words as 
+why did the previous operation fail? The answer is here. It will
+return a concise, well-written, and brilliantly insightful few words as
 to why whatever you just did went bang.
 
 =item GetDesc($variable)
@@ -1475,7 +1475,7 @@ value of 'tie' useful, as in:
 
 =head1 AUTHOR
 
-  Original version made by Kit Peters 
+  Original version made by Kit Peters
   perl@clownswilleatyou.com
   http://www.awod.com/staff/kpeters/perl/
 
@@ -1486,10 +1486,10 @@ value of 'tie' useful, as in:
 Developed with the kind support of A World Of Difference, Inc.
 <http://www.awod.com/>
 
-Many thanks to Ryan Jessen <rjessen@cyberpowersystems.com> at CyberPower 
+Many thanks to Ryan Jessen <rjessen@cyberpowersystems.com> at CyberPower
 Systems for much-needed assistance.
 
-Thanks to Wayne Wylupski <wayne@connact.com> for the code to make 
+Thanks to Wayne Wylupski <wayne@connact.com> for the code to make
 accessor methods for all supported vars.
 
 =head1 LICENSE
