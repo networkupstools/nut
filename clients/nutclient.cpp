@@ -26,16 +26,17 @@
 #include "config.h"
 #include "nutclient.h"
 #include "parseconf.h"
+
 #include <sstream>
 #include <chrono>
 #include <thread>
 #include <vector>
 
 #ifndef WIN32
-#include <unistd.h>
+# include <unistd.h>
 #else
-#include <io.h>
-#define R_OK 4
+# include <io.h>
+# define R_OK 4
 #endif
 
 /* TODO: Make it a run-time option like upsdebugx(),
@@ -245,7 +246,7 @@ typedef struct {
 	int	verbose_mode;
 	int	verify_depth;
 	int	always_continue;
-	
+
 	/* In this context, hostname is by default a copy of Socket->_host.c_str(),
 	 * which should be freed (we should set hostname_allocated!=0) */
 	const char	*hostname;
@@ -2052,26 +2053,54 @@ static void set_authconf_val(AuthConf& conf, const std::string& var, const std::
 	}
 }
 
+static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults);
+
 static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_section, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults)
 {
 	if (numargs < 1) return;
 
+	/* Section header [section] */
 	if (arg[0][0] == '[' && arg[0][strlen(arg[0])-1] == ']') {
 		std::string sectname = arg[0];
 		sectname = sectname.substr(1, sectname.length() - 2);
-		
-		if (sectname == "*") {
+
+		if (sectname == "_global_defaults" || sectname.empty()) {
 			if (!global_defaults) {
-				global_defaults = new AuthConf("*");
+				global_defaults = new AuthConf("");
 				authconf_list.push_back(*global_defaults);
 				// Re-point global_defaults to the one in the list
 				global_defaults = &authconf_list.back();
 			}
 			current_section = global_defaults;
 		} else {
-			authconf_list.push_back(AuthConf(sectname));
-			current_section = &authconf_list.back();
+			/* Check if section already exists */
+			current_section = nullptr;
+			for (auto& ac : authconf_list) {
+				if (ac.section == sectname) {
+					current_section = &ac;
+					break;
+				}
+			}
+			if (!current_section) {
+				authconf_list.push_back(AuthConf(sectname));
+				current_section = &authconf_list.back();
+			}
 		}
+		return;
+	}
+
+	/* INCLUDE support */
+	if (!strcasecmp(arg[0], "INCLUDE_REQUIRED")) {
+		if (numargs < 2) {
+			throw nut::IOException("INCLUDE_REQUIRED missing filename");
+		}
+		parse_authconf_file(arg[1], 1, (current_section == nullptr), authconf_list, global_defaults);
+		return;
+	}
+
+	if (!strcasecmp(arg[0], "INCLUDE")) {
+		if (numargs < 2) return;
+		parse_authconf_file(arg[1], 0, (current_section == nullptr), authconf_list, global_defaults);
 		return;
 	}
 
@@ -2083,7 +2112,7 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 	if (!current_section) {
 		if (global_scope) {
 			if (!global_defaults) {
-				global_defaults = new AuthConf("*");
+				global_defaults = new AuthConf("");
 				authconf_list.push_back(*global_defaults);
 				global_defaults = &authconf_list.back();
 			}
@@ -2143,7 +2172,7 @@ static int parse_authconf_file(const std::string& filename, int fatal_errors, bo
 				if (access(path, R_OK) == 0) fn = path;
 			}
 		}
-		
+
 		if (fn.empty()) {
 			snprintf(path, sizeof(path), "%s/nutauth.conf", confpath());
 			if (access(path, R_OK) == 0) fn = path;
@@ -2151,7 +2180,9 @@ static int parse_authconf_file(const std::string& filename, int fatal_errors, bo
 	}
 
 	if (fn.empty()) {
-		if (fatal_errors) throw nut::IOException("Can't open a default nutauth.conf file");
+		if (fatal_errors) {
+			throw nut::IOException("Can't open a user/site-provided default nutauth.conf file");
+		}
 		return -1;
 	}
 
@@ -2198,12 +2229,62 @@ static void normalize_parts(std::string& normalized_name, std::string& user, std
 	normalized_name = user + "@" + host + ":" + port;
 }
 
+void AuthConf::merge(const AuthConf& source)
+{
+	if (section.empty() && !source.section.empty()) {
+		section = source.section;
+	}
+
+	size_t at = section.find('@');
+	if (at != std::string::npos && at > 0) {
+		/* Section title strictly defines a user name */
+		user = section.substr(0, at);
+	} else {
+		/* No '@' or no username chars before it in target section title */
+		if (user.empty() && !source.user.empty()) {
+			user = source.user;
+		}
+	}
+
+	if (pass.empty() && !source.pass.empty()) {
+		pass = source.pass;
+	}
+	if (certpath.empty() && !source.certpath.empty()) {
+		certpath = source.certpath;
+	}
+	if (certfile.empty() && !source.certfile.empty()) {
+		certfile = source.certfile;
+	}
+	if (certident.empty() && !source.certident.empty()) {
+		certident = source.certident;
+	}
+	if (certpasswd.empty() && !source.certpasswd.empty()) {
+		certpasswd = source.certpasswd;
+	}
+	if (ssl_backend.empty() && !source.ssl_backend.empty()) {
+		ssl_backend = source.ssl_backend;
+	}
+	if (certhost.empty() && !source.certhost.empty()) {
+		certhost = source.certhost;
+	}
+	if (certverify < 0 && source.certverify >= 0) {
+		certverify = source.certverify;
+	}
+	if (forcessl < 0 && source.forcessl >= 0) {
+		forcessl = source.forcessl;
+	}
+}
+
 /*static*/ AuthConf AuthConf::findAuthConf(const std::string& user, const std::string& host, const std::string& port)
 {
 	if (authconf_list.empty()) return global_defaults ? *global_defaults : AuthConf();
 
 	if (user.empty() && host.empty() && port.empty()) {
-		return global_defaults ? *global_defaults : AuthConf();
+		if (global_defaults) return *global_defaults;
+		for (const auto& ac : authconf_list) {
+			if (ac.section.empty()) return ac;
+		}
+		return AuthConf();
 	}
 
 	std::string norm_user = user;
@@ -2216,23 +2297,85 @@ static void normalize_parts(std::string& normalized_name, std::string& user, std
 		if (ac.section == normalized_name) return ac;
 	}
 
-	// Retry without user if we have one
-	if (!user.empty()) {
-		std::string userless_name = "@" + norm_host + ":" + norm_port;
-		for (const auto& ac : authconf_list) {
-			if (ac.section == userless_name) return ac;
+	// Retry without user if we have one (host defaults)
+	size_t at = normalized_name.find('@');
+	if (at != std::string::npos) {
+		std::string userless_name = normalized_name.substr(at);
+		if (userless_name.length() > 1) { // more than just '@'
+			for (const auto& ac : authconf_list) {
+				if (ac.section == userless_name) return ac;
+			}
 		}
 	}
 
 	return global_defaults ? *global_defaults : AuthConf();
 }
 
-/*static*/ AuthConf AuthConf::getAuthConf(const std::string& user, const std::string& host, const std::string& port)
+/*static*/ AuthConf AuthConf::getAuthConf(const std::string& user, const std::string& host, const std::string& port, bool add_to_list)
 {
-	AuthConf res = findAuthConf(user, host, port);
-	// If it's a new item or global defaults, we might want to merge, but findAuthConf already returns the best match.
-	// In the C implementation, get_authconf_item can create a new entry and merge defaults.
-	// For simplicity, we return the find result.
+	std::string norm_user = user;
+	std::string norm_host = host;
+	std::string norm_port = port;
+	std::string normalized_name;
+	normalize_parts(normalized_name, norm_user, norm_host, norm_port);
+
+	AuthConf* retval_user = nullptr;
+	AuthConf* retval_host = nullptr;
+
+	for (auto& ac : authconf_list) {
+		if (ac.section == normalized_name) {
+			retval_user = &ac;
+			break;
+		}
+	}
+
+	size_t at = normalized_name.find('@');
+	if (at != std::string::npos) {
+		std::string userless_name = normalized_name.substr(at);
+		for (auto& ac : authconf_list) {
+			if (ac.section == userless_name) {
+				retval_host = &ac;
+				break;
+			}
+		}
+	}
+
+	if (add_to_list) {
+		if (!retval_user) {
+			authconf_list.push_back(AuthConf(normalized_name));
+			retval_user = &authconf_list.back();
+		}
+
+		if (retval_host) {
+			retval_user->merge(*retval_host);
+		}
+		if (global_defaults) {
+			retval_user->merge(*global_defaults);
+		}
+		if (!user.empty()) {
+			retval_user->user = user;
+		}
+		return *retval_user;
+	}
+
+	AuthConf res(normalized_name);
+	if (retval_user) {
+		res.merge(*retval_user);
+	}
+
+	if (retval_host) {
+		res.merge(*retval_host);
+	}
+
+	if (global_defaults) {
+		res.merge(*global_defaults);
+	}
+
+	// Ensure the user we requested is set if it was a fixed user
+	if (!user.empty()) {
+		res.user = user;
+	}
+
 	return res;
 }
 

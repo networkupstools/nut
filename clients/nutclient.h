@@ -108,20 +108,49 @@ public:
 
 	/** Find the best matching authconf for a given connection string, and fill in
 	 * the missing points from higher levels (exact match => host defaults => global).
+	 * Based on `add_to_list` flag, the returned item is always new and unique and
+	 * not on the list (can adapt to changes in higher levels but must be freed by
+	 * caller), or will be edited on or added to the list (subsequent calls would
+	 * likely not add anything new, but memory management is easier, data is cached).
+	 * if all args are empty, return the global section or empty if none such in the list.
 	 */
-	static AuthConf getAuthConf(const std::string& user, const std::string& host, const std::string& port);
+	static AuthConf getAuthConf(const std::string& user, const std::string& host, const std::string& port, bool add_to_list = false);
+
+	/** Merge contents of another configuration item into this one.
+	 *  Follows C upscli_merge_authconf_item() logic.
+	 */
+	void merge(const AuthConf& source);
 
 	/** Clear the global list of authentication configurations */
 	static void freeAuthConfList();
 
+	/** [@host:port] or [user@host:port], or empty for global defaults */
 	std::string section;
+
 	std::string user;
 	std::string pass;
+
+	/** Path to trusted CA certificates;
+	 * in case of NSS, this is the path to location
+	 * of the NSS DB files used for all purposes */
 	std::string certpath;
+
+	/** (OpenSSL only) Client certificate file for authentication to the server */
 	std::string certfile;
+
+	/** Client certificate identity (nickname, alias) */
 	std::string certident;
+
+	/** Password for key/cert storage */
 	std::string certpasswd;
+
+	/** "openssl"/"nss" */
 	std::string ssl_backend;
+
+	/** Expected certificate subject (common name) of that
+	 * server's certificate; alternately the IP address or
+	 * host name used in the section title should match that
+	 * in the common name (CN) or subject alternate names (SAN) */
 	std::string certhost;
 	int certverify;	/* -1 = unset, 0 = off, 1 = on */
 	int forcessl;	/* -1 = unset, 0 = off, 1 = on */

@@ -1506,6 +1506,18 @@ This module is distributed under the same license as Perl itself.
 
 package UPS::Nut::AuthConf;
 
+my @authconf_list;
+my $global_defaults_ref;
+
+sub getAuthConfList {
+    return @authconf_list;
+}
+
+sub freeAuthConfList {
+    @authconf_list = ();
+    $global_defaults_ref = undef;
+}
+
 sub new {
     my $class = shift;
     my $section = shift || "";
@@ -1530,24 +1542,48 @@ sub readAuthConfFile {
     my $class = shift;
     my $filename = shift;
     my $fatal_errors = shift || 0;
+    my $global_scope = shift;
+    $global_scope = 1 if !defined $global_scope;
 
     if (!defined $filename) {
-        my $confpath = $ENV{NUT_CONFPATH} || "/etc/nut";
-        $filename = "$confpath/nutauth.conf";
+        my $s;
+        if (($s = $ENV{NUT_AUTHCONF_FILE}) && -r $s) {
+            $filename = $s;
+        } elsif (($s = $ENV{NUT_AUTHCONF_PATH}) && -r "$s/nutauth.conf") {
+            $filename = "$s/nutauth.conf";
+        } elsif ($s = $ENV{HOME}) {
+            if (-r "$s/.config/nut/nutauth.conf") {
+                $filename = "$s/.config/nut/nutauth.conf";
+            } elsif (-r "$s/.nutauth.conf") {
+                $filename = "$s/.nutauth.conf";
+            }
+        }
+
+        if (!defined $filename) {
+            my $confpath = $ENV{NUT_CONFPATH} || "/etc/nut";
+            if (-r "$confpath/nutauth.conf") {
+                $filename = "$confpath/nutauth.conf";
+            }
+        }
     }
 
-    if (!-e $filename) {
-        die "Could not open $filename" if $fatal_errors;
+    if (!defined $filename || !-e $filename) {
+        if ($fatal_errors) {
+            die "Can't open a user/site-provided default nutauth.conf file" if !defined $filename;
+            die "Could not open $filename";
+        }
         return ();
     }
 
-    if (!open(my $fh, '<', $filename)) {
+    my $fh;
+    if (!open($fh, '<', $filename)) {
         die "Error opening $filename: $!" if $fatal_errors;
         return ();
     }
 
-    my @auth_configs;
     my $current_ac;
+    # If we are in global scope (no section yet), we might be re-populating global_defaults
+    $current_ac = $global_defaults_ref if $global_scope;
 
     while (my $line = <$fh>) {
         chomp $line;
@@ -1555,12 +1591,41 @@ sub readAuthConfFile {
         next if !$line || $line =~ /^#/;
 
         if ($line =~ /^\[(.*)\]$/) {
-            $current_ac = UPS::Nut::AuthConf->new($line);
-            push @auth_configs, $current_ac;
+            my $sectname = $1;
+            if ($sectname eq "_global_defaults" || $sectname eq "") {
+                if (!defined $global_defaults_ref) {
+                    $global_defaults_ref = UPS::Nut::AuthConf->new("");
+                    push @authconf_list, $global_defaults_ref;
+                }
+                $current_ac = $global_defaults_ref;
+            } else {
+                # Check if section already exists
+                $current_ac = undef;
+                foreach my $ac (@authconf_list) {
+                    my $ac_sect = $ac->{section};
+                    $ac_sect =~ s/^\[//;
+                    $ac_sect =~ s/\]$//;
+                    if ($ac_sect eq $sectname) {
+                        $current_ac = $ac;
+                        last;
+                    }
+                }
+                if (!defined $current_ac) {
+                    $current_ac = UPS::Nut::AuthConf->new("[$sectname]");
+                    push @authconf_list, $current_ac;
+                }
+            }
             next;
         }
 
-        next if !$current_ac;
+        # INCLUDE support
+        if ($line =~ /^INCLUDE(?:_REQUIRED)?\s+(.*)$/i) {
+            my $inc_file = $1;
+            $inc_file =~ s/^["']|["']$//g;
+            my $is_required = ($line =~ /^INCLUDE_REQUIRED/i);
+            $class->readAuthConfFile($inc_file, $is_required, (!defined $current_ac || $current_ac == $global_defaults_ref));
+            next;
+        }
 
         if ($line =~ /^([^=]+)=(.*)$/) {
             my ($key, $value) = ($1, $2);
@@ -1568,6 +1633,18 @@ sub readAuthConfFile {
             $key = lc($key);
             $value =~ s/^\s+|\s+$//g;
             $value =~ s/^["']|["']$//g;
+
+            if (!defined $current_ac) {
+                if ($global_scope) {
+                    if (!defined $global_defaults_ref) {
+                        $global_defaults_ref = UPS::Nut::AuthConf->new("");
+                        push @authconf_list, $global_defaults_ref;
+                    }
+                    $current_ac = $global_defaults_ref;
+                } else {
+                    next;
+                }
+            }
 
             if ($key eq 'user') { $current_ac->{user} = $value; }
             elsif ($key eq 'password') { $current_ac->{pass} = $value; }
@@ -1582,13 +1659,84 @@ sub readAuthConfFile {
         }
     }
     close($fh);
-    return @auth_configs;
+    return @authconf_list;
+}
+
+sub merge {
+    my ($self, $source) = @_;
+    return if !defined $source;
+
+    my $sect = $self->{section};
+    $sect =~ s/^\[//;
+    $sect =~ s/\]$//;
+
+    if ($sect =~ /^([^@]+)@/) {
+        $self->{user} = $1 if !defined $self->{user};
+    } else {
+        $self->{user} = $source->{user} if !defined $self->{user} && defined $source->{user};
+    }
+
+    $self->{pass} = $source->{pass} if !defined $self->{pass} && defined $source->{pass};
+    $self->{certpath} = $source->{certpath} if !defined $self->{certpath} && defined $source->{certpath};
+    $self->{certfile} = $source->{certfile} if !defined $self->{certfile} && defined $source->{certfile};
+    $self->{certident} = $source->{certident} if !defined $self->{certident} && defined $source->{certident};
+    $self->{certpasswd} = $source->{certpasswd} if !defined $self->{certpasswd} && defined $source->{certpasswd};
+    $self->{ssl_backend} = $source->{ssl_backend} if !defined $self->{ssl_backend} && defined $source->{ssl_backend};
+    $self->{certhost} = $source->{certhost} if !defined $self->{certhost} && defined $source->{certhost};
+    $self->{certverify} = $source->{certverify} if $self->{certverify} == -1 && $source->{certverify} != -1;
+    $self->{forcessl} = $source->{forcessl} if $self->{forcessl} == -1 && $source->{forcessl} != -1;
+}
+
+sub getAuthConf {
+    my $class = shift;
+    my ($user, $host, $port, $auth_configs_ref) = @_;
+    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : ( @authconf_list ? @authconf_list : $class->readAuthConfFile() );
+
+    my $norm_host = $host || 'localhost';
+    my $norm_port = $port; # may be undef
+
+    my $target_user_host_port = "";
+    $target_user_host_port .= "$user\@" if defined $user;
+    $target_user_host_port .= $norm_host;
+    $target_user_host_port .= ":$norm_port" if defined $norm_port;
+
+    my $target_host_port = "\@$norm_host";
+    $target_host_port .= ":$norm_port" if defined $norm_port;
+
+    my $res = UPS::Nut::AuthConf->new("[$target_user_host_port]");
+
+    my ($retval_user, $retval_host, $global_defaults);
+
+    foreach my $ac (@auth_configs) {
+        my $sect = $ac->{section};
+        $sect =~ s/^\[//;
+        $sect =~ s/\]$//;
+
+        if ($sect eq $target_user_host_port) {
+            $retval_user = $ac;
+        }
+        if ($sect eq $target_host_port) {
+            $retval_host = $ac;
+        }
+        if ($sect eq "" || $sect eq "_global_defaults") {
+            $global_defaults = $ac;
+        }
+    }
+
+    $res->merge($retval_user) if defined $retval_user;
+    $res->merge($retval_host) if defined $retval_host;
+    $res->merge($global_defaults) if defined $global_defaults;
+
+    # Final enforcement of user if requested
+    $res->{user} = $user if defined $user;
+
+    return $res;
 }
 
 sub findAuthConf {
     my $class = shift;
     my ($user, $host, $port, $auth_configs_ref) = @_;
-    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : $class->readAuthConfFile();
+    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : ( @authconf_list ? @authconf_list : $class->readAuthConfFile() );
 
     my $star_match;
     foreach my $ac (@auth_configs) {
@@ -1602,7 +1750,7 @@ sub findAuthConf {
         $target .= ":$port" if defined $port;
 
         return $ac if $section eq $target;
-        
+
         # fallback matches
         if (!defined $user && defined $host && defined $port && $section eq "$host:$port") {
             return $ac;
@@ -1621,7 +1769,7 @@ sub findAuthConf {
 sub to_nut_args {
     my $self = shift;
     my %args;
-    
+
     # Extract HOST and PORT from section
     my $host = 'localhost';
     my $port = '3493';
@@ -1636,7 +1784,7 @@ sub to_nut_args {
     } elsif ($sect ne "") {
         $host = $sect;
     }
-    
+
     $args{HOST} = $host;
     $args{PORT} = $port;
     $args{USERNAME} = $self->{user} if defined $self->{user};
@@ -1649,7 +1797,7 @@ sub to_nut_args {
     $args{CERTFILE} = $self->{certfile} if defined $self->{certfile};
     $args{CERTIDENT} = $self->{certident} if defined $self->{certident};
     $args{CERTPASSWD} = $self->{certpasswd} if defined $self->{certpasswd};
-    
+
     return %args;
 }
 

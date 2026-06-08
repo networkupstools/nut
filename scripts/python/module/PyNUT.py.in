@@ -115,6 +115,20 @@ class TrackingID:
 
 class AuthConf:
     """ Authentication configuration for a NUT client. """
+    __authconf_list = []
+    __global_defaults = None
+
+    @staticmethod
+    def getAuthConfList():
+        """ Get the one global list of all parsed authentication configurations """
+        return AuthConf.__authconf_list
+
+    @staticmethod
+    def freeAuthConfList():
+        """ Clear the global list of authentication configurations """
+        AuthConf.__authconf_list = []
+        AuthConf.__global_defaults = None
+
     def __init__(self, section=""):
         self.section = section
         self.user = None
@@ -129,19 +143,37 @@ class AuthConf:
         self.forcessl = -1
 
     @staticmethod
-    def readAuthConfFile(filename=None, fatal_errors=False):
+    def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
         """ Read the authentication configuration file (usually nutauth.conf) """
         if filename is None:
             # Matches C implementation logic for default path
-            filename = os.path.join(os.environ.get("NUT_CONFPATH", "/etc/nut"), "nutauth.conf")
+            s = os.environ.get("NUT_AUTHCONF_FILE")
+            if s and os.path.exists(s):
+                filename = s
+            else:
+                s = os.environ.get("NUT_AUTHCONF_PATH")
+                if s and os.path.exists(os.path.join(s, "nutauth.conf")):
+                    filename = os.path.join(s, "nutauth.conf")
+                else:
+                    s = os.environ.get("HOME")
+                    if s:
+                        p = os.path.join(s, ".config", "nut", "nutauth.conf")
+                        if os.path.exists(p):
+                            filename = p
+                        else:
+                            p = os.path.join(s, ".nutauth.conf")
+                            if os.path.exists(p):
+                                filename = p
+
+            if filename is None:
+                filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
 
         if not os.path.exists(filename):
             if fatal_errors:
-                raise PyNUTError(f"Could not open {filename}")
-            return []
+                raise PyNUTError(f"Can't open a user/site-provided default nutauth.conf file" if filename is None else f"Could not open {filename}")
+            return AuthConf.__authconf_list
 
-        auth_configs = []
-        current_ac = None
+        current_ac = AuthConf.__global_defaults if global_scope else None
 
         try:
             with open(filename, 'r') as f:
@@ -151,12 +183,38 @@ class AuthConf:
                         continue
 
                     if line.startswith('[') and line.endswith(']'):
-                        current_ac = AuthConf(line)
-                        auth_configs.append(current_ac)
+                        sectname = line[1:-1]
+                        if sectname in ("_global_defaults", ""):
+                            if AuthConf.__global_defaults is None:
+                                AuthConf.__global_defaults = AuthConf("")
+                                AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                            current_ac = AuthConf.__global_defaults
+                        else:
+                            # Check if section already exists
+                            current_ac = None
+                            for ac in AuthConf.__authconf_list:
+                                ac_sect = ac.section
+                                if ac_sect.startswith('[') and ac_sect.endswith(']'):
+                                    ac_sect = ac_sect[1:-1]
+                                if ac_sect == sectname:
+                                    current_ac = ac
+                                    break
+                            if current_ac is None:
+                                current_ac = AuthConf(line)
+                                AuthConf.__authconf_list.append(current_ac)
                         continue
 
-                    if current_ac is None:
-                        # Global settings if any, but NUT usually expects sections
+                    # INCLUDE support
+                    m = re.match(r'^(INCLUDE(?:_REQUIRED)?)\s+(.*)$', line, re.I)
+                    if m:
+                        inc_type = m.group(1).upper()
+                        inc_file = m.group(2).strip()
+                        if (inc_file.startswith('"') and inc_file.endswith('"')) or \
+                           (inc_file.startswith("'") and inc_file.endswith("'")):
+                            inc_file = inc_file[1:-1]
+
+                        is_required = (inc_type == "INCLUDE_REQUIRED")
+                        AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
                         continue
 
                     if '=' in line:
@@ -167,6 +225,15 @@ class AuthConf:
                         if (value.startswith('"') and value.endswith('"')) or \
                            (value.startswith("'") and value.endswith("'")):
                             value = value[1:-1]
+
+                        if current_ac is None:
+                            if global_scope:
+                                if AuthConf.__global_defaults is None:
+                                    AuthConf.__global_defaults = AuthConf("")
+                                    AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                                current_ac = AuthConf.__global_defaults
+                            else:
+                                continue
 
                         if key == 'user':
                             current_ac.user = value
@@ -192,29 +259,103 @@ class AuthConf:
             if fatal_errors:
                 raise PyNUTError(f"Error reading {filename}: {str(e)}")
 
-        return auth_configs
+        return AuthConf.__authconf_list
+
+    def merge(self, source):
+        """ Merge contents of another configuration item into this one. """
+        if source is None:
+            return
+
+        sect = self.section
+        if sect.startswith('[') and sect.endswith(']'):
+            sect = sect[1:-1]
+
+        if '@' in sect and sect.find('@') > 0:
+            self.user = sect.split('@')[0]
+        else:
+            if self.user is None and source.user is not None:
+                self.user = source.user
+
+        if self.pass_ is None and source.pass_ is not None:
+            self.pass_ = source.pass_
+        if self.certpath is None and source.certpath is not None:
+            self.certpath = source.certpath
+        if self.certfile is None and source.certfile is not None:
+            self.certfile = source.certfile
+        if self.certident is None and source.certident is not None:
+            self.certident = source.certident
+        if self.certpasswd is None and source.certpasswd is not None:
+            self.certpasswd = source.certpasswd
+        if self.ssl_backend is None and source.ssl_backend is not None:
+            self.ssl_backend = source.ssl_backend
+        if self.certhost is None and source.certhost is not None:
+            self.certhost = source.certhost
+        if self.certverify == -1 and source.certverify != -1:
+            self.certverify = source.certverify
+        if self.forcessl == -1 and source.forcessl != -1:
+            self.forcessl = source.forcessl
+
+    @staticmethod
+    def getAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string, and fill in
+            the missing points from higher levels (exact match => host defaults => global).
+        """
+        if auth_configs is None:
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
+
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        target_user_host_port = ""
+        if user: target_user_host_port += f"{user}@"
+        target_user_host_port += f"{norm_host}"
+        if norm_port: target_user_host_port += f":{norm_port}"
+
+        target_host_port = f"@{norm_host}"
+        if norm_port: target_host_port += f":{norm_port}"
+
+        res = AuthConf(f"[{target_user_host_port}]")
+
+        retval_user = None
+        retval_host = None
+
+        for ac in auth_configs:
+            sect = ac.section[1:-1]
+            if sect == target_user_host_port:
+                retval_user = ac
+            elif sect == target_host_port:
+                retval_host = ac
+
+        if retval_user: res.merge(retval_user)
+        if retval_host: res.merge(retval_host)
+        if AuthConf.__global_defaults: res.merge(AuthConf.__global_defaults)
+
+        # Final enforcement of user if requested
+        if user:
+            res.user = user
+
+        return res
 
     @staticmethod
     def findAuthConf(user=None, host=None, port=None, auth_configs=None):
         """ Find the best matching authconf for a given connection string """
         if auth_configs is None:
-            auth_configs = AuthConf.readAuthConfFile()
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
 
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
-        matches = []
         for ac in auth_configs:
             section = ac.section[1:-1] # Remove brackets
-            
+
             # 1. Exact match user@host:port
             target = ""
             if user: target += f"{user}@"
             target += f"{host if host else 'localhost'}"
             if port: target += f":{port}"
-            
+
             if section == target:
                 return ac
-                
+
             # 2. Match host:port
             if not user and section == f"{host}:{port}":
                 return ac
@@ -223,13 +364,7 @@ class AuthConf:
             if not user and not port and section == host:
                 return ac
 
-            if section == "*":
-                matches.append(ac)
-
-        if matches:
-            return matches[0]
-
-        return None
+        return AuthConf.__global_defaults
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
