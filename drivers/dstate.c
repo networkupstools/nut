@@ -66,6 +66,23 @@
 	double			previous_battery_charge_value = -1.0;
 	st_tree_timespec_t	previous_battery_charge_timestamp;
 
+#ifdef WIN32
+static void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd)
+{
+	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
+		fatal_with_errno(EXIT_FAILURE, "InitializeSecurityDescriptor failed");
+	}
+
+	if (!SetSecurityDescriptorDacl(sd, TRUE, NULL, FALSE)) {
+		fatal_with_errno(EXIT_FAILURE, "SetSecurityDescriptorDacl failed");
+	}
+
+	sa->nLength = sizeof(*sa);
+	sa->lpSecurityDescriptor = sd;
+	sa->bInheritHandle = FALSE;
+}
+#endif	/* WIN32 */
+
 #ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
 static void sock_fail(const char *fn)
@@ -193,6 +210,10 @@ static TYPE_FD sock_open(const char *fn)
 		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
 		__func__, fn);
@@ -207,7 +228,7 @@ static TYPE_FD sock_open(const char *fn)
 		ST_SOCK_BUF_LEN,	/* output buffer size */
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
-		NULL);			/* FIXME: default security attribute */
+		&pipe_sa);
 
 	if (INVALID_FD(fd)) {
 		upsdebugx(1, "%s: Can't create a state socket "
@@ -640,6 +661,10 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = fd;
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	/* We have detected a connection on the opened pipe.
 	 * So we start by saving its handle and creating
@@ -661,7 +686,7 @@ static void sock_connect(TYPE_FD sock)
 		ST_SOCK_BUF_LEN,	/* output buffer size */
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
-		NULL);			/* FIXME: default security attribute */
+		&pipe_sa);
 
 	if (INVALID_FD(sockfd)) {
 		upsdebugx(1, "%s: Can't open state socket "
