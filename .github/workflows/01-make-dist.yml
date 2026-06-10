@@ -51,7 +51,7 @@ jobs:
     # Note it warns about "unexpected input(s)" with replacement tokens below,
     # as they are by design not predefined, as far as actions API is concerned.
     # They still work for substitutions though.
-    - uses: bluwy/substitute-string-action@v3
+    - uses: bluwy/substitute-string-action@v4
       id: subst-github-ref-name
       with:
         _input-text: "${{ github.event.pull_request.number > 0 && format('PR-{0}', github.event.pull_request.number) || github.head_ref || github.ref_name }}"
