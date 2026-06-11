@@ -38,6 +38,14 @@
   quality and content of the change, and is presumed to have the right to
   post that code to be published further under the project's license terms.
 
+- [ ] Especially with involvement of AI, including modern IDE coding aid,
+  please be sure to revise that proposed code and documentation changes
+  follow NUT code style guide -- this helps portability across the decades
+  worth of supported systems. Notably, avoid Unicode characters where ASCII
+  text is expected (C sources and headers, manual pages and other `acsiidoc`
+  inputs). Particularly AI is keen on adding `mdash` characters instead of
+  plain ASCII double-dash (which renders into the long dash where applicable).
+
 - [ ] Please star NUT on GitHub, this helps with sponsorships! ;)
 
 ## Frequent "underwater rocks" for driver addition/update PRs

@@ -121,6 +121,25 @@ Portability
 Avoid things that will break on other systems.  All the world is not an
 x86 Linux box.
 
+ASCII vs. Unicode
+~~~~~~~~~~~~~~~~~
+
+Some systems that NUT can still be built on pre-date the sprawl of Unicode
+support, whether in compilers or in documentation management tooling.
+
+To err on the safe side, please avoid the multi-byte characters where
+plain-text ASCII suffices.  This is especially notable with computer-aided
+software development, whether with AI agents or IDE code completion,
+or when copying text from web sites or specifications, where all sorts of
+typographical "quote" and "dash" characters pop up.
+
+Keep it simple, use the ASCII minuses, single or double quotes, or back-tick
+characters as appropriate for your comments in C sources and headers, or in
+the Asciidoc sources (e.g. man pages).
+
+See the `tools/check-source-nonascii.pl` (also called from NUT `Makefile.am`
+recipes) for a simple check about this.
+
 C comments
 ~~~~~~~~~~
 
