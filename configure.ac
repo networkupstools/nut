@@ -148,6 +148,19 @@ AC_MSG_RESULT([${CONFIG_FLAGS}])
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["${CONFIG_FLAGS}"],[Flags passed to configure script])
 AC_SUBST(CONFIG_FLAGS)
 
+dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl and this breaks "checking for C compiler version" in a standard step below
+AS_IF([set | ${EGREP} '^CCACHE_DIR(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Unsetting a provided but empty CCACHE_DIR environment variable])
+    AS_UNSET([CCACHE_DIR])
+])
+
+AS_IF([set | ${EGREP} '^CCACHE_PATH(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Resetting a provided but empty CCACHE_PATH environment variable to current PATH])
+    CCACHE_PATH="${PATH}"
+])
+
 AC_CHECK_PROGS([MKTEMP], [mktemp], [])
 AS_IF([test x"${MKTEMP}" = x], [
 dnl # Have a simple (unsafe, unfeatured) fallback implementation:
@@ -260,7 +273,14 @@ dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+    dnl Find and report the location of attempted compiler
+    dnl (maybe wrapped with something like ccache, distcc, etc.)
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG)        PATH='${PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CCACHE_PATH='${CCACHE_PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CC:  '${CC}' => '`command -v ${CC}`'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CXX: '${CXX}' => '`command -v ${CXX}`'])
 ])
+
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -278,6 +298,9 @@ dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
 dnl Note that NUT does not support building with C89 anyway
 dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
+dnl NOTE: The AM macro below wraps its AC name-sake to perform
+dnl  additional tricks needed for automake. There seems to not be
+dnl  a CXX variant of that however, or at least not ubiquitoisly.
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
@@ -2298,6 +2321,22 @@ AC_SUBST([NETLIBS_GETADDRS])
 AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
 dnl ----------------------------------------------------------------------
+dnl Simple check that it exists and can be executed
+AC_PATH_PROGS([PERL], perl, [none])
+AS_IF([test x"${PERL}" != xnone], [
+    AC_MSG_CHECKING([whether PERL interpreter is basically usable: '${PERL}'])
+    AS_IF([${PERL} -e 1 >/dev/null], [
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+        PERL=none
+    ])
+])
+
+AC_SUBST([PERL])
+AM_CONDITIONAL([HAVE_PERL], [test x"$PERL" != xnone])
+
+dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
 NUT_ARG_WITH([python-modules-dir], [install the PyNUT module files under specified path for default Python interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
 NUT_ARG_WITH([python2-modules-dir], [install the PyNUT module files under specified path for Python2 interpreter (auto for its reported site-packages location, if not with UI app)], [auto])
@@ -4263,7 +4302,6 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	esac
 done
-rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:            '${DOC_BUILD_LIST}'])
@@ -4271,6 +4309,11 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:        '${DOC_SKIPBUILD_LIST}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_DISTED_MANS:   '${DOC_INSTALL_DISTED_MANS}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_SELECTED_MANS: '${DOC_INSTALL_SELECTED_MANS}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) This script's DOCTESTDIR:  '${DOCTESTDIR}'])
+],[
+	dnl If we are debugging, and doc generation fails, we want the directory
+	dnl else remove it later (after confirming success) below
+	rm -rf "${DOCTESTDIR}"
 ])
 
 case "${nut_with_doc}" in
@@ -4314,6 +4357,11 @@ AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_tit
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST} ${DOC_INSTALL_SELECTED_MANS}],
 					[WITH_DOCS], [Define to enable overall documentation generation], [-])
+
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+	dnl Delayed clean-up after success of desired doc types:
+	rm -rf "${DOCTESTDIR}"
+])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
@@ -6626,18 +6674,25 @@ dnl #    Currently it is more like whack-a-mole as distros update headers.
 dnl # -Wno-c11-extensions -- clang-21 on Ubuntu 26.04 at least complains a lot
 dnl #    about system headers (string.h, cdefs.h, etc.) using __glibc_const_generic
 dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
+dnl # -Wno-thread-safety-negative -- clang bug, it seems (https://reviews.llvm.org/D84604)
+dnl # -Wno-unused-command-line-argument -- avoid the likes of (clang++)
+dnl #    error: argument unused during compilation: '-pthread'
+dnl #  (apparently in FreeBSD 15 builds something gets into the wrong *FLAGS,
+dnl #  maybe via pkg-config... or it was just the first one to notice and yell)
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -7027,8 +7082,9 @@ AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
 dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
-dnl Avoid exporting them if not set at the configure time (assuming ci_build.sh
-dnl integration or user's shell profile sets them persistently)
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl Avoid exporting them if NOT set at the configure time (assuming ci_build.sh
+dnl integration or user's shell profile sets them persistently... or empty)
 AS_IF([test x"${CCACHE_NAMESPACE-}" = x], [NUT_AM_EXPORT_CCACHE_NAMESPACE="#"], [NUT_AM_EXPORT_CCACHE_NAMESPACE=""])
 AC_SUBST(NUT_AM_EXPORT_CCACHE_NAMESPACE)
 AS_IF([test x"${CCACHE_BASEDIR-}" = x], [NUT_AM_EXPORT_CCACHE_BASEDIR="#"], [NUT_AM_EXPORT_CCACHE_BASEDIR=""])
@@ -7266,6 +7322,21 @@ AS_IF([test "${have_cxx11}" = yes], [
 AC_SUBST(LIBSSL_CXXFLAGS)
 NUT_REPORT_FEATURE([enable SSL support in C++ client library], [${nut_with_ssl_cxx}], [${nut_ssl_lib}],
 					[WITH_SSL_CXX], [Define to enable SSL in libnutclient])
+
+dnl At least FreeBSD clang complains about NSS builds with
+dnl   error: argument unused during compilation: '-pthread'
+dnl which pops up in LDFLAGS/LIBS and is kept as "compiler"
+dnl flag when calling the linker.
+dnl Does not hurt plain C builds though.
+LIBSSL_LIBS_CXX="${LIBSSL_LIBS}"
+AS_IF([test "$nut_with_ssl_cxx" = "yes"],
+    [AS_CASE([$LIBSSL_LIBS_CXX],
+        [*" -pthread "*|"-pthread "*|*" -pthread"|-pthread], [
+            AC_MSG_NOTICE([Remove -pthread from LIBSSL_LIBS for C++ builds])
+            LIBSSL_LIBS_CXX="`echo \"${LIBSSL_LIBS}\" | sed 's, *-pthread *, ,'`"
+        ])
+    ])
+AC_SUBST(LIBSSL_LIBS_CXX)
 
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)

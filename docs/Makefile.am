@@ -830,7 +830,10 @@ SPELLCHECK_SRC_DEFAULT = \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
+	../SECURITY.md \
 	$(ALL_TXT_SRC)
+
+# TOTHINK: Fit SECURITY.md policy into the main asciidoc trail?
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -865,6 +868,11 @@ SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+# Do not let it remove words it thinks are not needed (in interactive mode) --
+# default dictionaries differ from platform to platform, from decade to decade:
+ASPELL_NUT_COMMON_ARGS += --dont-validate-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-affixes
 # Note: If there is a need to use filter path (e.g. in mingw/msys2 builds),
 # it must be before --mode=tex (-t) option!
 ASPELL_NUT_TEXMODE_ARGS =
@@ -992,6 +1000,14 @@ SPELLCHECK_AUTO_ONE = ( \
 .conf.conf-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
+# If we can, make sure the documentation is ASCII (with maybe
+# single-byte accented characters here and there, they seem okay):
+if HAVE_PERL
+SOURCE_CHECK_UNICODE = echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRC)"; @PERL@ $(top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) || exit
+else !HAVE_PERL
+SOURCE_CHECK_UNICODE = true
+endif !HAVE_PERL
+
 spellcheck: @dotMAKE@
 	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
@@ -1051,6 +1067,7 @@ spellcheck: @dotMAKE@
 		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
+	@$(SOURCE_CHECK_UNICODE)
 
 # Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).

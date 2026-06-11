@@ -251,7 +251,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 +
 The automatically generated binary build archive of the latest release is
 available here:
-      link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}.7z[NUT-for-Windows-x86_64-RELEASE-{revision}.7z]
+      link:https://www.networkupstools.org/package/windows/NUT-for-Windows-x86_64-RELEASE-{revision}-1-fixNSS.7z[NUT-for-Windows-x86_64-RELEASE-{revision}-1-fixNSS.7z]
 +
 [NOTE]
 ======

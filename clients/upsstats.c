@@ -536,10 +536,13 @@ static void ups_connect(void)
 	}
 
 	if (currups && upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
+		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
+			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
+			upscli_strerror(&ups));
 
 	lastups = currups;
-	upsdebug_call_finished2(": pick first device on newly connected data server [%s]", NUT_STRARG(currups->sys));
+	upsdebug_call_finished2(": pick first device on newly connected data server [%s]",
+		currups ? NUT_STRARG(currups->sys) : "<currups=null>");
 }
 
 static void do_hostlink(void)

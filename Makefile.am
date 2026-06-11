@@ -267,6 +267,9 @@ EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 # to list them:
 EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
 
+# Imposed by GitHub somewhat:
+EXTRA_DIST += SECURITY.md
+
 # The document is now part of qa-guide; the script might be a bit git-oriented,
 # but can be useful in builds from tarball, probably. Anyhow, having the doc
 # without the tool which it documents is odd.
@@ -1286,6 +1289,9 @@ dist-hash: nut-@PACKAGE_VERSION@.tar.gz
 # NOT part of standard tarball, though
 EXTRA_DIST_DOCS = VERSION_* *.adoc-parsed
 
+# Let end-users now how to report any troubles they see
+EXTRA_DIST_DOCS += SECURITY.md
+
 if WITH_CHANGELOG_TEXT
 EXTRA_DIST_DOCS += ChangeLog
 endif WITH_CHANGELOG_TEXT
@@ -1684,10 +1690,10 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    | while read D ; do \
 	        BD="`basename \"$$D\"`" ; \
 	        if test -e './$(bindir)/'"$$BD" && diff './$(bindir)/'"$$BD" "$$D" 2>/dev/null >/dev/null ; then \
-	            echo "   DLL->bin       $$D : skip (already installed there)" 2>&1 ; \
+	            echo "   DLL->bin	SKIP	$$D : skip (already installed there)" 2>&1 ; \
 	            continue ; \
 	        fi ; \
-	        echo "   DLL->bin       $$D" 2>&1 ; \
+	        echo "   DLL->bin	COPY	$$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
 	    done ; \
 	 ) || exit ; \
@@ -1696,7 +1702,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->sbin      $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->sbin	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1706,7 +1712,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->drv       $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->drv	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1718,7 +1724,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->cgi       $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->cgi	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -1730,7 +1736,7 @@ install-win-bundle-thirdparty: @dotMAKE@
 	    GREP='$(GREP)' EGREP='$(EGREP)' \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->libexec   $$D (symlink from bindir)" 2>&1 ; \
+	        echo "   DLL->libexec	LINK	$$D (symlink from bindir)" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename \"$$D\"`" ./ ; \
 	    done ; \
 	 ) || exit
@@ -1776,10 +1782,27 @@ git-realclean-check:
 # separately from the probably slower/louder stages for test programs like
 # check-NIT:
 CHECK_FILES_QUICK_TARGETS = check-man
+
 if WITH_SPELLCHECK
 CHECK_FILES_QUICK_TARGETS += spellcheck-quick
 endif WITH_SPELLCHECK
+
+if HAVE_PERL
+CHECK_FILES_QUICK_TARGETS += check-source-nonascii
+endif HAVE_PERL
+
 check-files-quick: $(CHECK_FILES_QUICK_TARGETS)
+
+# Style check of sorts, except that some older systems may refuse to handle
+# source files with wide/multi-byte characters (have yet to see complaints
+# about single-byte non-ASCII). So far not listing C++ here as its tools are
+# more modern (we mostly care about C++11 and newer).
+check-source-nonascii:
+	@echo "  CHECK-SOURCE-NONASCII	**/*.c **/*.h"
+	@ @PERL@ $(top_srcdir)/tools/check-source-nonascii.pl $(top_srcdir)/*/*.c $(top_srcdir)/*/*.h $(top_srcdir)/*/*/*.c $(top_srcdir)/*/*/*.h
+
+# TBD: clang-format, etc?
+stylecheck: check-source-nonascii
 
 # Autotools hook: run the quick checks before recursing for defaults:
 check-recursive: check-files-quick

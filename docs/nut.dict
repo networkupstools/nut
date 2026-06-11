@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3746 utf-8
+personal_ws-1.1 en 3768 utf-8
 AAC
 AAS
 ABI
@@ -708,6 +708,7 @@ LogMin
 LowBatt
 Loyer
 Luca
+Lukas
 Luxeon
 Lygre
 Lynge
@@ -1117,6 +1118,7 @@ RISC
 RK
 RMCARD
 RMCPplus
+RMI
 RMXL
 RNF
 RNG
@@ -1270,6 +1272,7 @@ Salvia
 Santinoli
 Savia
 Sawatzky
+Schmid
 Schmier
 Schoch
 Schonefeld
@@ -1646,6 +1649,7 @@ apc
 apcc
 apcd
 apcevilhack
+apcmicrolink
 apcsmart
 apctest
 apcupsd
@@ -1763,6 +1767,7 @@ bigups
 bindir
 binfmt
 binutils
+bitfield
 bitmapped
 bitmask
 bitness
@@ -1882,6 +1887,7 @@ cmdline
 cmdname
 cmdparam
 cmds
+cmdsrc
 cmdvartab
 cnf
 codebase
@@ -2037,6 +2043,7 @@ distros
 dl
 dladm
 dll
+dllldd
 dlopen
 dmake
 dmesg
@@ -2182,7 +2189,9 @@ filesystem
 filesystems
 firewalling
 firmwares
+fixNSS
 fmt
+fmtutil
 fno
 fontconfig
 fopen
@@ -2240,6 +2249,7 @@ getenv
 gethostbyname
 getopt
 getproctag
+getrlimit
 getter
 getters
 gettext
@@ -2398,6 +2408,7 @@ integrations
 intel
 intelliSenseMode
 intercharacter
+internalnetwork
 internet
 interoperability
 interoperate
@@ -2587,6 +2598,7 @@ localhost
 localip
 localport
 localtime
+localuser
 lockf
 logfacility
 logfile
@@ -2689,6 +2701,7 @@ mk
 mkdb
 mkdir
 mkstr
+mktexlsr
 mmZ
 mmap
 mn
@@ -2799,6 +2812,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nonascii
 noncommercially
 noout
 nooutstats
@@ -2872,6 +2886,8 @@ onlinedischarge
 ont
 onwards
 ooce
+opcode
+opcodes
 openSUSE
 openSUSEBuildService
 opencollective
@@ -2920,6 +2936,7 @@ pconf
 pcre
 pcs
 pdf
+pdftex
 pdu
 pe
 peasy
@@ -3221,6 +3238,8 @@ sha
 shellcheck
 shellenv
 shm
+showinternals
+showunmapped
 shutdownArguments
 shutdowncmd
 shutdowndelay
@@ -3245,6 +3264,7 @@ slaveid
 slavesync
 slibtool
 sm
+smartslot
 smartups
 smbus
 sms
@@ -3409,6 +3429,7 @@ tempmax
 tempmin
 termios
 testime
+testinterval
 testtime
 testuser
 testvar
@@ -3437,6 +3458,7 @@ tmux
 toolchain
 toolkits
 toolset
+tooltips
 topFrame
 topbot
 tport

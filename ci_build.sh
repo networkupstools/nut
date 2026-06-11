@@ -215,7 +215,11 @@ fi
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
-normalize_path() {
+normalize_path_perl() {
+    perl -e 'my %PATH; while (<>) { foreach my $D (split(/[:\r\n]/, $_)) { if (length($D) > 0 && !defined($PATH{$D})) { $PATH{$D} = scalar keys %PATH; } } } ; my $joined = join ":", sort { $PATH{$a} <=> $PATH{$b} } keys %PATH; print "$joined";'
+}
+
+normalize_path_shell() {
     # STDIN->STDOUT: strip duplicate "/" and extra ":" if present,
     # leave first copy of duplicates in (preferred) place
     sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,' -e 's,///*,/,g' \
@@ -235,6 +239,19 @@ normalize_path() {
         done
         echo "${P}"
       )
+}
+
+HAVE_PERL=false
+if perl -e 1 2>/dev/null; then
+    HAVE_PERL=true
+fi
+
+normalize_path() {
+    if $HAVE_PERL ; then
+        normalize_path_perl "$@"
+    else
+        normalize_path_shell "$@"
+    fi
 }
 
 propose_CI_CCACHE_SYMLINKDIR() {
@@ -1282,6 +1299,7 @@ configure_nut() {
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+      echo "=== PATH='$PATH'"
 
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
@@ -1772,6 +1790,8 @@ fi
 export DO_CLEAN_AUTOCONF_CACHE_BEFORE
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
+
+PATH="`echo \"${PATH}\" | normalize_path`"
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"

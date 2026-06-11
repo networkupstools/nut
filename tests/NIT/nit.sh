@@ -994,9 +994,84 @@ check_NIT_certs_NSS() {
             exit 0
         fi
 
-        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
-        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db || exit
+        ls -l "${2}/${3}"*.txt || true
+        ls -l "${2}/${3}"*.db || exit
     )   || die "Could not list NSS ${1} DB files"
+
+    # NSS certutil error handling is complicated: anything unexpected means
+    # SEC_ERROR_LEGACY_DATABASE, whether that is a really old database, or
+    # insufficient permissions, or a missing directory we point to... and
+    # this mess includes the case that we have a set of files with the *NEW*
+    # database format in the specified directory (cert9.db not cert8.db)
+    # with the old (~2014) library and tool versions! (New NSS from 2020's
+    # is okay with both of these formats).
+    # NOTE: This error also shows up and is confusing in SSL init attempts
+    # of the server and client programs. It primarily bites on CI systems
+    # where the same cache is used by multiple OS releases (e.g. shared build
+    # agent home directories for Linux containers from different decades):
+    #   SEC_ERROR_LEGACY_DATABASE: The certificate/key database is in an old, unsupported format
+
+    # TBD: Consider `-P "$3"` prefix eventually
+    OUT="`certutil -d \"$2\" -L 2>&1`"
+    if [ "$?" != 0 ] ; then
+        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' && [ -e "${2}/${3}cert9.db" ] && [ ! -e "${2}/${3}cert8.db" ] ; then
+            log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
+
+            if ls -l "${2}"/*.p12 "${2}"/.pwfile && (command -v pk12util) ; then
+                log_info "Will try to create older-format DB from P12 files"
+            else
+                # Assume we do not have tools for new NSS DB format files,
+                # use PEM and generate P12 instead:
+                (command -v pk12util) && (command -v openssl) && \
+                case "$1" in
+                    CA) ls -l "${2}"/*.crt || true ; ls -l "${2}"/*.pem "${2}"/*.key "${2}"/.pwfile ;;
+                    Server|Client)
+                        ls -l "${2}"/*.pem || true ; ls -l "${2}"/*.crt "${2}"/*.key "${2}"/.pwfile ;;
+                    *)  die "Unexpected cert store type, no idea how to fix that one: '$1'" ;;
+                esac || die "Can not recreate NSS DB from PEM files: some of them are missing"
+
+                # Should not get here with usual persistent cache, so port
+                # (ideally reuse) code from below in the script if/when it
+                # really bites someone!
+                die "Can not recreate NSS DB from PEM files: code transplant needed, but is incomplete."
+            fi
+
+            certutil -N -d "${2}" -f "${2}/.pwfile" \
+            || die "Could not init NSS $1 database in $2"
+
+            case "$1" in
+                Server|Client)
+                    # Import the CA certificate, so users of this DB trust it:
+                    certutil -A -d "${2}" -f "${2}/.pwfile" \
+                        -n "${TESTCERT_ROOTCA_NAME}" \
+                        -t "TC,," \
+                        -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                    || die "Could not import the CA certificate to NSS $1 database in $2"
+                    ;;
+            esac
+
+            # TOTHINK: Cross-import server/client cert to the other's database?
+            #  Should not be needed when issued by trusted CA (may be needed for
+            #  self-signed ones, not the case in this test suite)
+
+            # Import the payload relevant for this directory
+            # Assume one P12 file in the cache dir for this type of info
+            pk12util -i "${2}"/*.p12 -d "${2}" -k "${2}"/.pwfile -w "${2}"/.pwfile \
+            || die "Could not import $1 PKCS#12 to NSS in $2"
+
+            case "$1" in
+                CA) # Trust it as a CA in NSS DB in the CA directory
+                    certutil -M -d "${2}" -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f "${2}/.pwfile" \
+                    || die "Could not set trust on imported NSS CA"
+                    ;;
+            esac
+
+            certutil -d "$2" -L || \
+            die "Could not parse NSS ${1} DB files in $2 after attempted re-import"
+        else
+            die "Could not parse NSS ${1} DB files in $2"
+        fi
+    fi
 }
 
 check_NIT_certs() {
@@ -1289,7 +1364,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                                 pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
                             }
                             if pk12cmd >/dev/null 2>&1 ; then
-                                openssl pkcs12 -in rootca.p12 -out rootca.key -nodes -nocerts -passin file:.pwfile \
+                                openssl pkcs12 -in rootca.p12 \
+                                    -out rootca.key -nodes -nocerts \
+                                    -passin file:.pwfile \
                                 && log_info "Exported NSS CA key to OpenSSL PEM"
                             fi
                         fi
@@ -1431,7 +1508,7 @@ EOF
                         # Import the CA certificate, so users of this DB trust it:
                         certutil -A -d . -f .pwfile \
                             -n "${TESTCERT_ROOTCA_NAME}" \
-                            -t "TC,," \
+                            -t "CT,C,C" \
                             -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                         || die "Could not import the CA certificate to NSS Server database"
 
@@ -1441,8 +1518,8 @@ EOF
                             -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
                             -a -o server.req \
                             -z "${TESTCERT_PATH_ROOTCA}"/.random \
-                            --extKeyUsage "serverAuth" \
-                            --nsCertType sslServer \
+                            --extKeyUsage "serverAuth,critical" \
+                            --nsCertType sslServer,critical \
                             --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
                             --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
                         || die "Could not create a NSS Server certificate request"
@@ -1456,12 +1533,13 @@ EOF
                                 -f "${TESTCERT_PATH_ROOTCA}"/.pwfile \
                                 -c "${TESTCERT_ROOTCA_NAME}" \
                                 -a -i server.req -o server.crt \
-                                --extKeyUsage "serverAuth" \
-                                --nsCertType sslServer \
+                                --extKeyUsage "serverAuth,critical" \
+                                --nsCertType sslServer,critical \
                                 -m 2 \
                                 -2 \
                                 -3 \
                                 -v "${TESTCERT_VALIDITY_MONTHS}" \
+                                -t "u,u,u" \
                                 --extSKID
                         }
                         if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
@@ -1499,7 +1577,7 @@ EOF
                         # Import the signed certificate into server database:
                         certutil -A -d . -f .pwfile \
                             -n "${TESTCERT_SERVER_NAME}" \
-                            -a -i server.crt -t ",," \
+                            -a -i server.crt -t "u,u,u" \
                         || die "Could not import the signed NSS Server certificate into server database"
 
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
@@ -1519,7 +1597,10 @@ EOF
                             # server.crt is already PEM (from signing step)
                             mkpk12key() {
                                 if pk12cmd >/dev/null 2>&1 ; then
-                                    openssl pkcs12 -in server.p12 -out server.key -nodes -nocerts -passin file:.pwfile "$@" \
+                                    openssl pkcs12 -in server.p12 \
+                                        -out server.key \
+                                        -nodes -nocerts \
+                                        -passin file:.pwfile "$@" \
                                     && log_info "Exported NSS Server key to OpenSSL PEM"
                                 fi
                             }
@@ -1609,12 +1690,16 @@ EOF
                                 # Import the CA certificate, so users of this DB trust it:
                                 certutil -A -d . -f .pwfile \
                                     -n "${TESTCERT_ROOTCA_NAME}" \
-                                    -t "TC,," \
+                                    -t "CT,C,C" \
                                     -a -i "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
                                 || die "Could not import the CA certificate to NSS Server database"
 
                                 # Import Server certificate and key
-                                openssl pkcs12 -export -out server.p12 -inkey server.key -in server.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_SERVER_NAME}" -passout file:.pwfile \
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
                                 || die "Could not package Server cert to PKCS#12 for NSS import"
 
                                 pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
@@ -1745,7 +1830,11 @@ EOF
                     OpenSSL)
                         # Create a client certificate request:
                         MSYS_NO_PATHCONV=1 \
-                        openssl req -new -nodes -out client.req -newkey rsa:4096 -passout file:.pwfile -keyout client.key -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        openssl req -new -nodes \
+                            -out client.req -newkey rsa:4096 \
+                            -passout file:.pwfile \
+                            -keyout client.key \
+                            -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
                         || die "Could not create a OpenSSL Client certificate request"
                         cat > client.v3.ext << EOF
 authorityKeyIdentifier=keyid,issuer
@@ -1767,7 +1856,12 @@ IP.3 = 127.1.2.`expr $$ % 200`
 EOF
                         # Sign a certificate request with the CA certificate:
                         (   cd "${TESTCERT_PATH_ROOTCA}"
-                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" -passin file:.pwfile -CA rootca.pem -CAkey rootca.key -CAcreateserial -out "${TESTCERT_PATH_CLIENT}/client.crt" -days 730 -sha256 -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
+                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}/client.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key -CAcreateserial \
+                                -out "${TESTCERT_PATH_CLIENT}/client.crt" \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
+                                -extfile "${TESTCERT_PATH_CLIENT}/client.v3.ext"
                         ) || die "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
 
                         cat client.crt "${TESTCERT_PATH_ROOTCA}"/rootca.pem client.key > upsmon.pem \
@@ -1829,9 +1923,12 @@ EOF
                                 || die "Could not import the Server certificate to NSS Client database"
 
                                 if [ -f client.key ] ; then
-                                    # TODO After #3331 merge:
                                     # Import Client certificate and key
-                                    openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem -name "${TESTCERT_CLIENT_NAME}" -passout file:.pwfile \
+                                    openssl pkcs12 -export -out client.p12 \
+                                        -inkey client.key -in client.crt \
+                                        -certfile "${TESTCERT_PATH_ROOTCA}"/rootca.pem \
+                                        -name "${TESTCERT_CLIENT_NAME}" \
+                                        -passout file:.pwfile \
                                     || die "Could not package Client cert to PKCS#12 for NSS import"
 
                                     pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
