@@ -70,6 +70,10 @@ https://github.com/networkupstools/nut/milestone/13
       option bypasses the check altogether, so driver instances handling well
       behaved devices would also not show their manufacturer). [issue #3436]
 
+ - `richcomm_usb` driver updates:
+    * Completed support for NUT standard USB configuration options, and fixed
+      some problems possible when iterating devices. [issue #1768, PR #3477]
+
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
