@@ -994,8 +994,8 @@ check_NIT_certs_NSS() {
             exit 0
         fi
 
-        ls -l "${TESTCERT_PATH_ROOTCA}"/*.txt || true
-        ls -l "${TESTCERT_PATH_ROOTCA}"/*.db || exit
+        ls -l "${2}/${3}"*.txt || true
+        ls -l "${2}/${3}"*.db || exit
     )   || die "Could not list NSS ${1} DB files"
 
     # NSS certutil error handling is complicated: anything unexpected means

@@ -1355,10 +1355,46 @@ set | sort -n """
             summary = dynamatrix.toStringStageCountDump()
         } catch (Throwable t) {}
 
+        try {
+            // TRY: Implementation below requires https://plugins.jenkins.io/ircbot (+ setup)
+            if (summary == null || summary == "") {
+                ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+            } else {
+                ircNotify (notificationStrategy:'FAILURE_AND_FIXED', customMessage: summary)
+            }
+        } catch (Throwable t) {
+            echo "Failed to ircNotify() a notification: ${t}"
+        }
+    }
+
+    dynacfgPipeline.notifyHandlerAlert = { String msg ->
+        def summary = null
+        try {
+            summary = dynamatrix.toStringStageCountDump()
+            summary += "\n\n" + dynamatrix.toStringStageCountPerNodeDump()
+        } catch (Throwable t) {}
+
         if (summary == null || summary == "") {
-            ircNotify (notificationStrategy:'FAILURE_AND_FIXED')
+            summary = "Got some alert about Jenkins-Dynamatrix run ${BUILD_URL}"
         } else {
-            ircNotify (notificationStrategy:'FAILURE_AND_FIXED', customMessage: summary)
+            summary = "Got an alert about Jenkins-Dynamatrix run ${BUILD_URL} : ${summary}"
+        }
+        if (msg != null && msg != "") {
+            summary += "\n\n${msg}"
+        }
+
+        try {
+            // TRY: Implementation below requires https://plugins.jenkins.io/email-ext
+
+            // NOTE: If someone adapts this pipeline to their repository,
+            //  be sure to change these settings (currently NUT-specific):
+            emailext (attachLog: false,
+                to: "nutci-alerts@networkupstools.org",
+                subject: "Alert from NUT CI farm job ${JOB_NAME} build ${BUILD_ID}",
+                body: summary
+            )
+        } catch (Throwable t) {
+            echo "Failed to emailext() a notification: ${t}"
         }
     }
 
@@ -1383,7 +1419,7 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
 {
     dynamatrixGlobalState.enableDebugTrace = true
-	//dynamatrixGlobalState.enableDebugTraceResolver = true
+    //dynamatrixGlobalState.enableDebugTraceResolver = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true

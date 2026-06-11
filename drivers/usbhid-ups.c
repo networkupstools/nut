@@ -536,7 +536,7 @@ static const char *date_conversion_fun(double value)
 	 * 4.2.6 Battery Settings -> ManufacturerDate
 	 *   The date the pack was manufactured in a packed integer.
 	 *   The date is packed in the following fashion:
-	 *   (year – 1980)*512 + month*32 + day.
+	 *   (year - 1980)*512 + month*32 + day.
 	 */
 	static char buf[32];
 	long year, month, day;
