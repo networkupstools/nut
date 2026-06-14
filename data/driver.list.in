@@ -1408,6 +1408,8 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
+"SVC"	"ups"	"2"	"VP-1250-LCD 1250VA"	"(USB ID 0925:1234, armac subdriver, megatec protocol)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/pull/3485
+
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 "SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
