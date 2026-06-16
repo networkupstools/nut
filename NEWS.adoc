@@ -73,7 +73,7 @@ https://github.com/networkupstools/nut/milestone/13
       8 bytes per read instead of strictly requiring 6 bytes. This resolves
       an initialization failure with certain UPS models (e.g., SVC
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
-      allowing the Megatec payload to be successfully reconstructed.
+      allowing the Megatec payload to be successfully reconstructed. [PR #3485]
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
