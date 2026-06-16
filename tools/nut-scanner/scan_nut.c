@@ -38,6 +38,10 @@ int nutscan_unload_upsclient_library(void);
 
 #define SCAN_NUT_DRIVERNAME "dummy-ups"
 
+/* TODO: Align with what upsc et al do, this being a string (arg/envvar)
+ *  and upscli_init_default_connect_timeout() calling the shots */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT 10
+
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
@@ -426,13 +430,29 @@ end:
 
 nutscan_device_t * nutscan_scan_nut(const char* start_ip, const char* stop_ip, const char* port, useconds_t usec_timeout)
 {
+	nutscan_nut_authconf_t sec;
+	sec.usec_timeout = usec_timeout;
+	sec.port_string = port;
+
+	/* Best-effort use of a user- or system- provided file, okay if absent */
+	sec.authconf_file = NULL;
+
+	/* UNUSED so far: */
+	sec.peername = NULL;
+	sec.port_number = 0;	/* we pass the port strings in args, to be resolved later */
+
+	return nutscan_scan_nut_authconf(start_ip, stop_ip, &sec);
+}
+
+nutscan_device_t * nutscan_scan_nut_authconf(const char* start_ip, const char* stop_ip, nutscan_nut_authconf_t *sec)
+{
 	nutscan_device_t	*ndret;
 	nutscan_ip_range_list_t irl;
 
 	nutscan_init_ip_ranges(&irl);
 	nutscan_add_ip_range(&irl, (char *)start_ip, (char *)stop_ip);
 
-	ndret = nutscan_scan_ip_range_nut(&irl, port, usec_timeout);
+	ndret = nutscan_scan_ip_range_nut_authconf(&irl, sec);
 
 	/* Avoid nuking caller's strings here */
 	irl.ip_ranges->start_ip = NULL;
@@ -443,6 +463,22 @@ nutscan_device_t * nutscan_scan_nut(const char* start_ip, const char* stop_ip, c
 }
 
 nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char* port, useconds_t usec_timeout)
+{
+	nutscan_nut_authconf_t sec;
+	sec.usec_timeout = usec_timeout;
+	sec.port_string = port;
+
+	/* Best-effort use of a user- or system- provided file, okay if absent */
+	sec.authconf_file = NULL;
+
+	/* UNUSED so far: */
+	sec.peername = NULL;
+	sec.port_number = 0;	/* we pass the port strings in args, to be resolved later */
+
+	return nutscan_scan_ip_range_nut_authconf(irl, &sec);
+}
+
+nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * irl, nutscan_nut_authconf_t *sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_ip_range_list_iter_t ip;
@@ -674,12 +710,12 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 #endif   /* HAVE_PTHREAD */
 
 		if (pass) {
-			if (port) {
+			if (sec && sec->port_string && *(sec->port_string)) {
 				if (ip.curr_ip_iter.type == IPv4) {
-					snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+					snprintf(buf, sizeof(buf), "%s:%s", ip_str, sec->port_string);
 				}
 				else {
-					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, sec->port_string);
 				}
 
 				ip_dest = strdup(buf);
@@ -694,7 +730,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				break;
 			}
 
-			nut_arg->timeout = usec_timeout;
+			nut_arg->timeout = sec ? sec->usec_timeout : UPSCLI_DEFAULT_CONNECT_TIMEOUT;
 			nut_arg->hostname = ip_dest;
 
 #ifdef HAVE_PTHREAD
