@@ -557,6 +557,7 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNERGIE
 INNO
 INSTCMDDESC
 INTERNETOFFICE
@@ -807,6 +808,7 @@ NAS
 NBF
 NConfigs
 NDE
+NEP
 NETVER
 NETVERSION
 NFS
@@ -917,6 +919,7 @@ OmniSmart
 OnLine
 OnTime
 OneAC
+OneUP
 OpenBSD
 OpenIPMI
 OpenIndiana
@@ -1139,6 +1142,7 @@ RUPS
 RWD
 Rackmount
 Radek
+Ragtech
 RatedVA
 RealSmart
 RedHat
@@ -1370,6 +1374,7 @@ TIOCMBIS
 TLS
 TLSv
 TODO
+TORO
 TRACKINGDELAY
 TREELINK
 TRYSSL
@@ -1816,6 +1821,7 @@ cablepower
 cachefile
 cafile
 calc
+calib
 calloc
 capath
 cb
@@ -2426,6 +2432,7 @@ ioLogikE
 ioLogikR
 iocage
 iostream
+iout
 ip
 ipE
 ipF
@@ -2464,6 +2471,7 @@ jq
 jre
 js
 json
+juslex
 kVA
 kadets
 kaminski
@@ -3075,6 +3083,7 @@ qx
 qx's
 qxflags
 rD
+ragtech
 raritan
 rb
 rc
@@ -3706,9 +3715,11 @@ writepid
 writeups
 ws
 wwwroot
+xAA
 xAAAA
 xCC
 xD
+xF
 xFF
 xXXXX
 xYYYY
@@ -3768,14 +3779,3 @@ zwfa
 zzz
 Åstrand
 Ørpetveit
-INNERGIE
-NEP
-OneUP
-Ragtech
-TORO
-calib
-iout
-juslex
-ragtech
-xAA
-xF
