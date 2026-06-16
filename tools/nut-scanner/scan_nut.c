@@ -61,6 +61,16 @@ static void (*nut_upscli_upslog_setproctag)(const char *tag, const void *cookie)
 static void (*nut_upscli_upslog_setprocname)(const char *tag, const void *cookie);
 static struct timeval *(*nut_upscli_upslog_start_sync)(struct timeval *tv, const void *cookie);
 static void (*nut_upscli_report_build_details)(void);
+static int (*nut_upscli_init_default_connect_timeout)(const char *cli_secs,
+					const char *config_secs, const char *default_secs);
+static upscli_authconf_t *(*nut_upscli_get_authconf_item)(const char *user,
+					const char *host, const char *port, int add_to_list);
+static int (*nut_upscli_init_authconf)(upscli_authconf_t *ac);
+static upscli_authconf_t *(*nut_upscli_find_authconf_item)(const char *user,
+					const char *host, const char *port);
+static int (*nut_upscli_read_authconf_file)(const char *filename, int fatal_errors);
+static int (*nut_upscli_authenticate_authconf)(UPSCONN_t *ups, upscli_authconf_t *ac);
+static void (*nut_upscli_get_default_connect_timeout)(struct timeval *ptv);
 
 /* This variable collects device(s) from a sequential or parallel scan,
  * is returned to caller, and cleared to allow subsequent independent scans */
@@ -258,6 +268,62 @@ int nutscan_load_upsclient_library(const char *libname_path)
 			__func__, symbol);
 	} else {
 		(*nut_upscli_report_build_details)();
+	}
+
+	*(void **) (&nut_upscli_init_default_connect_timeout) = lt_dlsym(dl_handle,
+		symbol = "upscli_init_default_connect_timeout");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_init_default_connect_timeout = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_get_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_get_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_get_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_init_authconf) = lt_dlsym(dl_handle,
+		symbol = "upscli_init_authconf");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_init_authconf = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_find_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_find_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_find_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_read_authconf_file) = lt_dlsym(dl_handle,
+		symbol = "upscli_read_authconf_file");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_read_authconf_file = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_authenticate_authconf) = lt_dlsym(dl_handle,
+		symbol = "upscli_authenticate_authconf");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_authenticate_authconf = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_get_default_connect_timeout) = lt_dlsym(dl_handle,
+		symbol = "upscli_get_default_connect_timeout");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_get_default_connect_timeout = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
 	}
 
 	/* Passed final lt_dlsym() */
