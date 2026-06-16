@@ -84,10 +84,12 @@ https://github.com/networkupstools/nut/milestone/13
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
 
  - common code:
-   * Revised 'dstate' machinery to track socket connections closed mid-way
-     through a call, to avoid access after `free()`. [#3302]
-   * Windows driver state named pipes now use explicit security attributes
-     instead of relying on default settings from the launch context. [PR #3479]
+    * Revised 'dstate' machinery to track socket connections closed mid-way
+      through a call, to avoid access after `free()`. [#3302]
+    * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
+      `connect()` to ensure a timeout if something does not respond. [PR #3456]
+    * Windows driver state named pipes now use explicit security attributes
+      instead of relying on default settings from the launch context. [PR #3479]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
