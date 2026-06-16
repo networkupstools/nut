@@ -5174,6 +5174,53 @@ char *xstrdup(const char *string)
 	return p;
 }
 
+/* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
+#ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+{
+	int rc;
+	int err = 0;
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	rc = connect(fd, (const struct sockaddr *)addr, addrlen);
+	if (rc == -1 && errno != EINPROGRESS) {
+		err = errno;
+	} else if (rc == -1) {
+		fd_set w_fds;
+		fd_set e_fds;
+		struct timeval tv;
+
+		FD_ZERO(&w_fds);
+		FD_SET(fd, &w_fds);
+		FD_ZERO(&e_fds);
+		FD_SET(fd, &e_fds);
+
+		tv.tv_sec = d_sec;
+		tv.tv_usec = d_usec;
+
+		rc = select(fd + 1, NULL, &w_fds, &e_fds, &tv);
+
+		if (rc < 0) {
+			err = errno;
+		} else if (rc == 0) {
+			err = ETIMEDOUT;
+		} else {
+			socklen_t len = sizeof(err);
+			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+		}
+	}
+
+	fcntl(fd, F_SETFL, flags);
+
+	if (err != 0) {
+		errno = err;
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */

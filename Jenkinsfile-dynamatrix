@@ -1419,6 +1419,7 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
 {
     dynamatrixGlobalState.enableDebugTrace = true
+    // WARNING: Too verbose for common debugging needs:
     //dynamatrixGlobalState.enableDebugTraceResolver = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
@@ -1431,6 +1432,7 @@ if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
 if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ )
 {
     dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+    dynamatrixGlobalState.enableDebugTraceBadge = true
 }
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)

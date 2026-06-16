@@ -40,9 +40,14 @@
 #include "usb-common.h"
 #include "nut_libusb.h"
 #include "nut_stdint.h"
+#include "nut_bool.h"
+
+#ifndef WIN32
+# include <signal.h>	/* sigaction(), SIGALRM for the atexit watchdog */
+#endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.53"
+#define USB_DRIVER_VERSION	"0.54"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -54,6 +59,77 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
+
+/* Explicit libusb context, initialized once on the first call to
+ * nut_libusb_open() and released exactly once at process shutdown via
+ * the atexit handler below.
+ *
+ * Background: the original code called libusb_init(NULL) on every open and
+ * libusb_exit(NULL) on every close, bumping/decrementing the default
+ * context's refcount. That pattern violates the documented contract for
+ * libusb_exit (which "should be called after closing all open devices and
+ * before your application terminates"), and on certain firmware can wedge
+ * indefinitely: when libusb_exit hits the 1->0 transition it tears the
+ * context down, which waits on its internal sync primitives for URBs to
+ * drain -- but URBs orphaned by libusb_reset_device or by an unexpected
+ * USB device disconnect never drain, so the wait never returns. That
+ * deadlock has been observed on the 0665:5161 Cypress USB-serial bridge
+ * family (Salicru SPS, Ippon, ViewPower, various Voltronic Power UPSes;
+ * see NUT issues #598, #993, #2453) but the underlying bug class is
+ * generic and reachable via any reconnect path.
+ *
+ * The fix is to use an explicit context that we own end-to-end:
+ * initialize it once at first open, never call libusb_exit during runtime
+ * (close_dev no longer does), and release it exactly once at process
+ * shutdown via atexit. A SIGALRM-bounded timeout on the atexit libusb_exit
+ * keeps a deadlock-prone teardown from wedging supervisor shutdowns
+ * (e.g. systemctl stop) if it ever happens at exit time. Generalizes the
+ * 2018 partial fix in commit 4f84b7f92 ("don't libusb_exit() when closing
+ * a previously opened device").
+ */
+static libusb_context	*nut_usb_ctx = NULL;
+static nut_bool_t	 nut_usb_ctx_initialized = false;
+
+#ifndef WIN32
+__attribute__((noreturn))
+static void nut_libusb_cleanup_alarm(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+	/* libusb_exit is taking too long, almost certainly waiting on URBs
+	 * orphaned by a recent device reset / disconnect that will never
+	 * drain. Force the process down so supervisor shutdown isn't blocked.
+	 */
+	_exit(0);
+}
+#endif	/* !WIN32 */
+
+/* Release the libusb context that nut_libusb_open() initialized.
+ * Bounded by a SIGALRM (POSIX) so deadlock-prone teardown can't wedge
+ * process shutdown indefinitely.
+ */
+static void nut_libusb_cleanup_atexit(void)
+{
+	if (!nut_usb_ctx_initialized || !nut_usb_ctx) {
+		return;
+	}
+#ifndef WIN32
+	{
+		struct sigaction	sa, prev;
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_handler = nut_libusb_cleanup_alarm;
+		sigemptyset(&sa.sa_mask);
+		sigaction(SIGALRM, &sa, &prev);
+		alarm(2);	/* sub-ms on healthy context; 2s is generous */
+		libusb_exit(nut_usb_ctx);
+		alarm(0);
+		sigaction(SIGALRM, &prev, NULL);
+	}
+#else	/* WIN32 */
+	libusb_exit(nut_usb_ctx);
+#endif	/* !WIN32 */
+	nut_usb_ctx = NULL;
+	nut_usb_ctx_initialized = false;
+}
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
@@ -291,10 +367,18 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		usb_hid_number_opts_parsed = 1;
 	}
 
-	/* libusb base init */
-	if (libusb_init(NULL) < 0) {
-		libusb_exit(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+	/* libusb base init: initialize our explicit context on the first call
+	 * here, and register the matching one-shot teardown via atexit. See the
+	 * comment near the file-scope declaration of nut_usb_ctx for the design
+	 * rationale (avoids the libusb_exit-per-reconnect misuse and the
+	 * teardown-deadlock it enables on some firmware).
+	 */
+	if (!nut_usb_ctx_initialized) {
+		if (libusb_init(&nut_usb_ctx) < 0) {
+			fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		}
+		nut_usb_ctx_initialized = true;
+		atexit(nut_libusb_cleanup_atexit);
 	}
 
 /* TODO: Find a place for this, from Windows branch made for libusb0.c */
@@ -312,7 +396,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		libusb_close(*udevp);
 #endif
 
-	devcount = libusb_get_device_list(NULL, &devlist);
+	devcount = libusb_get_device_list(nut_usb_ctx, &devlist);
 
 	/* devcount may be < 0, loop will get skipped;
 	 * its SSIZE_MAX < SIZE_MAX for devnum */
@@ -1166,7 +1250,12 @@ static void nut_libusb_close(libusb_device_handle *udev)
 	 */
 	/* libusb_release_interface(udev, usb_subdriver.hid_rep_index); */
 	libusb_close(udev);
-	libusb_exit(NULL);
+	/* libusb_exit() is no longer called here. The libusb context is owned
+	 * by nut_libusb_open() and released exactly once at process shutdown
+	 * via the atexit handler; calling it per-close was a longstanding
+	 * misuse that deadlocked on orphaned URBs after a device reset or
+	 * disconnect (NUT #598). See the comment near nut_usb_ctx above.
+	 */
 }
 
 usb_communication_subdriver_t usb_subdriver = {

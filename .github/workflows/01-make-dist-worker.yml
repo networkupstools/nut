@@ -209,7 +209,7 @@ jobs:
 
     # NOTE: A `.zip` is added to the base `$name` automatically
     - name: Upload tarball and its checksum artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       id: upload_artifact
       with:
         name: ${{ inputs.artifact_name }}

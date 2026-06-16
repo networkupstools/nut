@@ -81,7 +81,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 		return NULL;
 	}
 
-	if (connect(conn->sockfd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
+	if (select_connect(conn->sockfd, &sa, sizeof(sa), 1, 0) < 0) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
 			upslog_with_errno(LOG_ERR, "connect to driver socket at %s", sockfn);
 		close(conn->sockfd);

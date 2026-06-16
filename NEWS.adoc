@@ -69,14 +69,30 @@ https://github.com/networkupstools/nut/milestone/13
       similar to specifying `novendor` in the `ups.conf` (except that the
       option bypasses the check altogether, so driver instances handling well
       behaved devices would also not show their manufacturer). [issue #3436]
+    * Modified `armac` subdriver's USB interrupt read logic to request up to
+      8 bytes per read instead of strictly requiring 6 bytes. This resolves
+      an initialization failure with certain UPS models (e.g., SVC
+      VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
+      allowing the Megatec payload to be successfully reconstructed. [PR #3485]
+
+ - `richcomm_usb` driver updates:
+    * Completed support for NUT standard USB configuration options, and fixed
+      some problems possible when iterating devices. [issue #1768, PR #3477]
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
 
  - common code:
-   * Revised 'dstate' machinery to track socket connections closed mid-way
-     through a call, to avoid access after `free()`. [#3302]
+    * Revised 'dstate' machinery to track socket connections closed mid-way
+      through a call, to avoid access after `free()`. [#3302]
+    * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
+      `connect()` to ensure a timeout if something does not respond. [PR #3456]
+    * Windows driver state named pipes now use explicit security attributes
+      instead of relying on default settings from the launch context. [PR #3479]
+    * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
+      to fix per-close `libusb_exit()` deadlock, and escalate a persistent
+      `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
