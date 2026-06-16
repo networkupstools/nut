@@ -215,9 +215,10 @@ TYPE_FD sstate_connect(upstype_t *ups)
 		return ERROR_FD;
 	}
 
-	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+	ret = select_connect(fd, &sa, sizeof(sa), 1, 0);
 
 	if (ret < 0) {
+		int err = errno;
 		time_t	now;
 
 		if (strstr(sa.sun_path, "/")) {
@@ -237,6 +238,8 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			return ERROR_FD;
 
 		ups->last_connfail = now;
+		/* restore errno for logging */
+		errno = err;
 		if (strstr(ups->fn, "/")) {
 			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 				ups->name, ups->fn);
