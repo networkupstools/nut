@@ -75,6 +75,10 @@ https://github.com/networkupstools/nut/milestone/13
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
 
+ - `richcomm_usb` driver updates:
+    * Completed support for NUT standard USB configuration options, and fixed
+      some problems possible when iterating devices. [issue #1768, PR #3477]
+
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]

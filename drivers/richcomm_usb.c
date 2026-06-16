@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -67,7 +67,12 @@ static usb_device_id_t richcomm_usb_id[] = {
 
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
+static USBDeviceMatcher_t *reopen_matcher = NULL;
+static USBDeviceMatcher_t *regex_matcher = NULL;
 static unsigned int	comm_failures = 0;
+#if WITH_LIBUSB_1_0
+static int		libusb_inited = 0;
+#endif
 
 /* Forward decls */
 static int instcmd(const char *cmdname, const char *extra);
@@ -305,7 +310,6 @@ static int usb_device_close(usb_dev_handle *handle)
 
 #if WITH_LIBUSB_1_0
 		libusb_close(handle);
-		libusb_exit(NULL);
 #else
 		ret = usb_close(handle);
 #endif
@@ -321,10 +325,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
-	libusb_device_handle *handle;
+	libusb_device_handle *handle = NULL;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus_num;
-	/* TODO: consider device_addr */
+	uint8_t bus_num, device_addr;
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	uint8_t bus_port;
+#endif
 	int i;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_bus	*bus;
@@ -332,9 +338,11 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 	/* libusb base init */
 #if WITH_LIBUSB_1_0
-	if (libusb_init(NULL) < 0) {
-		libusb_exit(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+	if (!libusb_inited) {
+		if (libusb_init(NULL) < 0) {
+			fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		}
+		libusb_inited = 1;
 	}
 #else  /* => WITH_LIBUSB_0_1 */
 	usb_init();
@@ -358,7 +366,21 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 		USBDeviceMatcher_t	*m;
 		libusb_device *dev = devlist[i];
+		USBDevice_t descriptor_device;
 		libusb_get_device_descriptor(dev, &dev_desc);
+
+		memset(&descriptor_device, 0, sizeof(descriptor_device));
+		descriptor_device.VendorID = dev_desc.idVendor;
+		descriptor_device.ProductID = dev_desc.idProduct;
+		descriptor_device.bcdDevice = dev_desc.bcdDevice;
+
+		if (is_usb_device_supported(richcomm_usb_id, &descriptor_device) != SUPPORTED) {
+			upsdebugx(4, "Device [%04x:%04x] is not supported by this driver - skipping open",
+				dev_desc.idVendor, dev_desc.idProduct);
+			continue;
+		}
+
+		handle = NULL;
 		ret = libusb_open(dev, &handle);
 		*handlep = handle;
 #else  /* => WITH_LIBUSB_0_1 */
@@ -371,13 +393,23 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			int	i;
 			USBDeviceMatcher_t	*m;
+			USBDevice_t descriptor_device;
 
 			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)",
 				dev->descriptor.idVendor,
 				dev->descriptor.idProduct,
 				bus->dirname, dev->filename);
 
-			/* supported vendors are now checked by the supplied matcher */
+			memset(&descriptor_device, 0, sizeof(descriptor_device));
+			descriptor_device.VendorID = dev->descriptor.idVendor;
+			descriptor_device.ProductID = dev->descriptor.idProduct;
+			descriptor_device.bcdDevice = dev->descriptor.bcdDevice;
+
+			if (is_usb_device_supported(richcomm_usb_id, &descriptor_device) != SUPPORTED) {
+				upsdebugx(4, "Device [%04x:%04x] is not supported by this driver - skipping open",
+					dev->descriptor.idVendor, dev->descriptor.idProduct);
+				continue;
+			}
 
 			/* open the device */
 			*handlep = handle = usb_open(dev);
@@ -398,12 +430,18 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			free(device->Product);
 			free(device->Serial);
 			free(device->Bus);
+			free(device->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			free(device->BusPort);
+#endif
 
 			memset(device, 0, sizeof(*device));
 
 #if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
+			device->bcdDevice = dev_desc.bcdDevice;
+
 			bus_num = libusb_get_bus_number(dev);
 			device->Bus = (char *)malloc(4);
 			if (device->Bus == NULL) {
@@ -411,13 +449,56 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
 			snprintf(device->Bus, 4, "%03d", bus_num);
+
+			device_addr = libusb_get_device_address(dev);
+			device->Device = (char *)malloc(4);
+			if (device->Device == NULL) {
+				libusb_free_device_list(devlist, 1);
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			if (device_addr > 0) {
+				snprintf(device->Device, 4, "%03d", device_addr);
+			} else {
+				upsdebugx(1, "%s: invalid libusb device address %i",
+					__func__, device_addr);
+				free(device->Device);
+				device->Device = NULL;
+			}
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			bus_port = libusb_get_port_number(dev);
+			device->BusPort = (char *)malloc(4);
+			if (device->BusPort == NULL) {
+				libusb_free_device_list(devlist, 1);
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			if (bus_port > 0) {
+				snprintf(device->BusPort, 4, "%03d", bus_port);
+			} else {
+				upsdebugx(1, "%s: invalid libusb bus port %i",
+					__func__, bus_port);
+				free(device->BusPort);
+				device->BusPort = NULL;
+			}
+#endif
+
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
 #else  /* => WITH_LIBUSB_0_1 */
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
+			device->bcdDevice = dev->descriptor.bcdDevice;
 			device->Bus = xstrdup(bus->dirname);
+			device->Device = xstrdup(dev->filename);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			device->BusPort = (char *)malloc(4);
+			if (device->BusPort == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
+			snprintf(device->BusPort, 4, "%03d", 0);
+#endif
 			iManufacturer = dev->descriptor.iManufacturer;
 			iProduct = dev->descriptor.iProduct;
 			iSerialNumber = dev->descriptor.iSerialNumber;
@@ -474,6 +555,11 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Product      : %s", device->Product ? device->Product : "unknown");
 			upsdebugx(4, "- Serial Number: %s", device->Serial ? device->Serial : "unknown");
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
+			upsdebugx(4, "- Device       : %s", device->Device ? device->Device : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			upsdebugx(4, "- Bus Port     : %s", device->BusPort ? device->BusPort : "unknown");
+#endif
+			upsdebugx(4, "- Device release number: %04x", device->bcdDevice);
 
 			for (m = matcher; m; m = m->next) {
 
@@ -590,11 +676,41 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 void upsdrv_initups(void)
 {
 	char	reply[REPLY_PACKETSIZE];
-	int	i;
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
+	int	i, ret;
 
 	warn_if_bad_usb_port_filename(device_path);
 
-	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
+	regex_array[0] = getval("vendorid");
+	regex_array[1] = getval("productid");
+	regex_array[2] = getval("vendor");
+	regex_array[3] = getval("product");
+	regex_array[4] = getval("serial");
+	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
+
+	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	switch (ret)
+	{
+	case -1:
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
+	case 0:
+		break;	/* all is well */
+	default:
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret - 1]);
+	}
+
+	/* Apply user USB filters first, then confirm the device is supported. */
+	regex_matcher->next = &device_matcher;
+
+	for (i = 0; usb_device_open(&udev, &usbdevice, regex_matcher, &driver_callback) < 0; i++) {
 
 #ifndef WIN32
 		if ((i < 32) && (sleep(5) == 0)) {
@@ -618,6 +734,13 @@ void upsdrv_initups(void)
 			"Fatal error: unusable configuration");
 	}
 
+	ret = USBNewExactMatcher(&reopen_matcher, &usbdevice);
+	if (ret) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
+	}
+
+	reopen_matcher->next = regex_matcher;
+
 	/*
 	 * Read rubbish data a few times; the UPS doesn't seem to respond properly
 	 * the first few times after connecting
@@ -631,11 +754,24 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	usb_device_close(udev);
+	USBFreeExactMatcher(reopen_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
+	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+#endif
+
+#if WITH_LIBUSB_1_0
+	if (libusb_inited) {
+		libusb_exit(NULL);
+		libusb_inited = 0;
+	}
+#endif
 }
 
 void upsdrv_initinfo(void)
@@ -664,7 +800,7 @@ void upsdrv_updateinfo(void)
 
 	if (!udev) {
 		dstate_setinfo("driver.state", "reconnect.trying");
-		ret = usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback);
+		ret = usb_device_open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		if (ret < 0) {
 			return;
@@ -808,8 +944,5 @@ void upsdrv_tweak_prognames(void)
 void upsdrv_makevartable(void)
 {
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	/* TODO: Uncomment while addressing https://github.com/networkupstools/nut/issues/1768
-	 * When fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
-	 * nut_usb_addvars();
-	*/
+	nut_usb_addvars();
 }
