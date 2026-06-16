@@ -3887,10 +3887,23 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
+/* Consecutive LIBUSB_ERROR_OVERFLOW results on the interrupt-IN endpoint
+ * tolerated before escalating from "retry on the next poll" to a USB-level
+ * device reset. A one-off oversized frame is transient; a sustained run means
+ * the bridge firmware has wedged the endpoint and only re-enumeration clears
+ * it (e.g. the 0665:5161 Cypress USB-serial family: Salicru SPS, Ippon,
+ * ViewPower, various Voltronic Power). See NUT issue #598. */
+#define QX_USB_OVERFLOW_RESET_TRIES	3
+
 static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 #ifndef TESTING
 	ssize_t	ret = -1;
+# ifdef QX_USB
+	/* Persists across calls; only consecutive overflows accumulate (any clean
+	 * read zeroes it, see the switch on `ret` below). */
+	static int	overflow_tries = 0;
+# endif
 #endif
 
 /* NOTE: Could not find in which ifdef-ed codepath, but clang complained
@@ -3924,6 +3937,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		ret = (*subdriver_command)(cmd, cmdlen, buf, buflen);
 
 		if (ret >= 0) {
+			overflow_tries = 0;	/* clean read: forget any overflow streak */
 			return ret;
 		}
 
@@ -3985,8 +3999,26 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			udev = NULL;
 			break;
 
+		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type:
+						 * an oversized interrupt-IN frame. A one-off is
+						 * transient (retry on the next poll); a sustained
+						 * run means the bridge firmware has wedged the
+						 * endpoint and only a USB-level reset recovers it.
+						 * See NUT issue #598. */
+			if (++overflow_tries < QX_USB_OVERFLOW_RESET_TRIES) {
+				upsdebugx(2, "Got OVERFLOW on EP 0x81 (%d/%d), retrying on next poll",
+					overflow_tries, QX_USB_OVERFLOW_RESET_TRIES);
+				break;
+			}
+			upsdebugx(1, "OVERFLOW on EP 0x81 persisted for %d polls; resetting device",
+				overflow_tries);
+			overflow_tries = 0;
+			if (usb_reset(udev) == 0) {
+				upsdebugx(1, "Device reset handled");
+			}
+			goto fallthrough_case_reconnect;
+
 		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
-		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type */
 #if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
 #endif
