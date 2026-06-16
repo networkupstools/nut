@@ -386,6 +386,16 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      subdriver definition then). For consistency, these pointers are now
      assigned. [#1962]
 
+ - Introduced a new NUT driver named `ragtech` which provides support for the
+   Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
+   the NEP, TORO, INNERGIE and OneUP brands in Brazil). Devices present a USB
+   CDC-ACM serial interface (VID `0x04D8`, PID `0x000A`) and speak a proprietary
+   6-byte register-access protocol with read/write/AND/OR opcodes; the driver
+   covers the 20 models in the family-10 device table and was validated
+   end-to-end against an Easy 2000 TI. Shutdown-related instant commands are
+   opt-in via the `allow_shutdown` flag because the firmware does not
+   auto-restart on mains return. [PR #3447]
+
  - `riello_ser` and `riello_usb` driver updates:
    * Since the beginning, these drivers fenced availability of *either*
      `load.*` *or* `shutdown.return` instant commands based on current
