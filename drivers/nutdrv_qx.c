@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.50"
+#define DRIVER_VERSION	"0.51"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2200,8 +2200,14 @@ static void load_armac_endpoint_cache(void)
  * software, which doesn't seem to be Armac specific. The banner is: "2004
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
+ *
+ * NOTE: ARMAC_READ_SIZE_FOR_CONTROL is set to 8. While some Armac devices
+ * return exactly 6 bytes per interrupt read (1 control byte + 5 data bytes),
+ * others return 7 bytes (1 control byte + 6 data bytes). Requesting 8 bytes
+ * safely accommodates these variations (up to endpoint MaxPacketSize) without
+ * dropping trailing bytes or timing out.
  */
-#define ARMAC_READ_SIZE_FOR_CONTROL 6
+#define ARMAC_READ_SIZE_FOR_CONTROL 8
 #define ARMAC_READ_SIZE_FOR_INTERRUPT 64
 static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
@@ -2282,8 +2288,8 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		/* Cleanup buffer before sending a new command */
 		for (i = 0; i < 10; i++) {
 			ret = usb_interrupt_read(udev, 0x81,
-				(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE_FOR_CONTROL, 100);
-			if (ret != ARMAC_READ_SIZE_FOR_CONTROL) {
+				(usb_ctrl_charbuf)tmpbuf, read_size, 100);
+			if (ret <= 0) {
 				/* Timeout - buffer is clean. */
 				break;
 			}
@@ -2322,14 +2328,14 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	while (bufpos + read_size + 1 < buflen) {
 		size_t bytes_available;
 
-		/* Read data in 6-byte chunks */
+		/* Read data in chunks (read_size handles both 8-byte control and 64-byte interrupt cases) */
 		ret = usb_interrupt_read(udev, use_interrupt ? armac_endpoint_cache.in_endpoint_address : 0x81,
 			(usb_ctrl_charbuf)tmpbuf, read_size, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
 		 * to the UPS) */
-		if (ret != read_size) {
+		if (ret <= 0) {
 			/* NOTE: If end condition is invalid for particular UPS we might make one
 			 * request more and get this error. If bufpos > (say) 10 this could be ignored
 			 * and the reply correctly read. */
@@ -2360,9 +2366,9 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 			break;
 		}
 
-		if (bytes_available > (unsigned)read_size - 1) {
-			/* Single interrupt transfer has 1 control + 5 data bytes */
-			bytes_available = read_size - 1;
+		if (bytes_available > (unsigned)ret - 1) {
+			/* Do not read past what we actually received */
+			bytes_available = ret - 1;
 		}
 
 		/* Copy bytes into the final buffer while detecting end of line - \r */
