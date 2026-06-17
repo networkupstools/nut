@@ -35,6 +35,7 @@
 #include "nut_stdint.h"
 #include "upsclient.h"
 #include "extstate.h"
+#include "common-clients.h"
 
 /* name-swap in libupsclient consumer to simplify the look of code base */
 #define builtin_setproctag(x)	setproctag(x)
@@ -229,7 +230,7 @@ static void do_set(const char *varname, const char *newval)
 
 static void do_setvar(const char *varname, char *uin, const char *pass)
 {
-	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], *ptr;
+	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], pass_buf[512], *ptr;
 	struct passwd	*pw;
 
 	if (uin) {
@@ -261,12 +262,11 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 		}
 	}
 
-	/* leaks - use -p when running in valgrind */
 	if (!pass) {
-		pass = GETPASS("Password: " );
+		pass = read_password(pass_buf, sizeof(pass_buf));
 
 		if (!pass) {
-			fatal_with_errno(EXIT_FAILURE, "getpass failed");
+			fatal_with_errno(EXIT_FAILURE, "Failure reading password");
 		}
 	}
 

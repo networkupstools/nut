@@ -125,9 +125,9 @@ endif WITH_CGI
 upsc_SOURCES = upsc.c upsclient.h
 upsc_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 
-upscmd_SOURCES = upscmd.c upsclient.h
+upscmd_SOURCES = upscmd.c upsclient.h common-clients.c common-clients.h
 
-upsrw_SOURCES = upsrw.c upsclient.h
+upsrw_SOURCES = upsrw.c upsclient.h common-clients.c common-clients.h
 
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upslog_LDADD = $(LDADD_FULL)

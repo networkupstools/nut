@@ -35,6 +35,7 @@
 
 #include "nut_stdint.h"
 #include "upsclient.h"
+#include "common-clients.h"
 
 /* name-swap in libupsclient consumer to simplify the look of code base */
 #define builtin_setproctag(x)	setproctag(x)
@@ -488,17 +489,10 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* getpass leaks slightly - use -p when testing in valgrind */
 	if (!have_pw) {
-		/* using getpass or getpass_r might not be a
-		 * good idea here (marked obsolete in POSIX) */
-		char	*pwtmp = GETPASS("Password: ");
-
-		if (!pwtmp) {
-			fatalx(EXIT_FAILURE, "getpass failed: %s", strerror(errno));
+		if (!read_password(password, sizeof(password))) {
+			fatalx(EXIT_FAILURE, "Failure reading password: %s", strerror(errno));
 		}
-
-		snprintf(password, sizeof(password), "%s", pwtmp);
 	}
 
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);

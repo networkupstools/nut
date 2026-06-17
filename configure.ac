@@ -1454,6 +1454,9 @@ AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
+AC_SEARCH_LIBS([readpassphrase], [bsd])
+AC_CHECK_HEADERS([bsd/readpassphrase.h readpassphrase.h])
+
 dnl These common routines are not available in strict C standard library
 dnl compilation modes (not part of ANSI or later standard), only in GNU,
 dnl POSIX or other extension modes. Note that on modern systems they are
