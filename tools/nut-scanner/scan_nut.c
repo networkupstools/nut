@@ -38,9 +38,10 @@ int nutscan_unload_upsclient_library(void);
 
 #define SCAN_NUT_DRIVERNAME "dummy-ups"
 
-/* TODO: Align with what upsc et al do, this being a string (arg/envvar)
- *  and upscli_init_default_connect_timeout() calling the shots */
-#define UPSCLI_DEFAULT_CONNECT_TIMEOUT 10
+/* Same default timeout as in upsc and other clients, but numeric.
+ * Handled via nut_upscli_init_default_connect_timeout() if detected,
+ * or as the fallback default if not (and none passed by C caller). */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC 10
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -559,7 +560,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-	sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = NULL;
 #  if (defined HAVE_SEMAPHORE_UNNAMED)
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
@@ -573,6 +574,41 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
+
+	/* Technically speaking, this variable should hold values
+	 * up to 1000000, but in practice would be at least 31-bit.
+	 * If no spec from caller, apply the default we have. */
+	useconds_t usec_timeout = sec ? sec->usec_timeout : (useconds_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC * (1000*1000);;
+
+	if (nut_upscli_init_default_connect_timeout
+	 && nut_upscli_get_default_connect_timeout
+	) {
+		/* If the method is present, let the library know what timeout we want */
+		char buf2[SMALLBUF];
+
+		if (sec)
+			snprintf(buf, sizeof(buf), "%g", (double)sec->usec_timeout / 1000000);
+		snprintf(buf2, sizeof(buf2), "%" PRIuMAX, (uintmax_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC);
+
+		if ((*nut_upscli_init_default_connect_timeout)(
+			sec ? buf : NULL,
+			NULL, buf2) >= 0
+		) {
+			struct timeval tv;
+			(*nut_upscli_get_default_connect_timeout)(&tv);
+			usec_timeout = tv.tv_sec * (1000*1000) + tv.tv_usec;
+		} else {
+			upsdebugx(1, "%s: upscli_init_default_connect_timeout() failed: "
+				"invalid network timeout was requested, using initial default: %"
+				PRIuMAX "usec", __func__, (uintmax_t)usec_timeout);
+		}
+	}
+
+#ifdef HAVE_PTHREAD
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+	semaphore = nutscan_semaphore();
+# endif
+#endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 
@@ -796,7 +832,10 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 				break;
 			}
 
-			nut_arg->timeout = sec ? sec->usec_timeout : UPSCLI_DEFAULT_CONNECT_TIMEOUT;
+			/* NOTE: Above we defer to nut_upscli_init_default_connect_timeout()
+			 *  when present and may fall back to envvars like other NUT clients,
+			 *  if no value was passed by C API caller */
+			nut_arg->timeout = usec_timeout;
 			nut_arg->hostname = ip_dest;
 
 #ifdef HAVE_PTHREAD
