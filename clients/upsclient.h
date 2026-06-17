@@ -253,14 +253,16 @@ int upscli_ssl_caps(void);
 const char *upscli_ssl_caps_descr(void);
 void upscli_report_build_details(void);
 
-/* Assign default upscli_connect() from string; return 0 if OK, or
+/** Assign default upscli_connect() timeout from string (value
+ * in seconds, may be a fractional number); return 0 if OK, or
  * return -1 if parsing failed and current value was kept  */
 int upscli_set_default_connect_timeout(const char *secs);
-/* If ptv!=NULL, populate it with a copy of last assigned internal timeout */
+/** If ptv!=NULL, populate it with a copy of last assigned internal timeout */
 void upscli_get_default_connect_timeout(struct timeval *ptv);
-/* Initialize default upscli_connect() timeout from a number of sources:
+/** Initialize default upscli_connect() timeout from a number of sources:
  * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
  * or specified strings (may be NULL) most-preferred first.
+ * Non-NULL values are in seconds, may be fractional.
  * Returns 0 if any provided value was valid and applied,
  * or if none were provided so the built-in default was applied;
  * returns -1 if all provided values were not valid (so the built-in
