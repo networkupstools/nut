@@ -575,6 +575,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
 
+	const char *nutauth = sec ? sec->authconf_file : NULL;
 	/* Technically speaking, this variable should hold values
 	 * up to 1000000, but in practice would be at least 31-bit.
 	 * If no spec from caller, apply the default we have. */
@@ -601,6 +602,48 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			upsdebugx(1, "%s: upscli_init_default_connect_timeout() failed: "
 				"invalid network timeout was requested, using initial default: %"
 				PRIuMAX "usec", __func__, (uintmax_t)usec_timeout);
+		}
+	}
+
+	if (nutauth && *nutauth && strcmp(nutauth, "none")) {
+		/* Non-trivial, not a skip */
+		if (!(
+			nut_upscli_authenticate_authconf &&
+			nut_upscli_read_authconf_file &&
+			nut_upscli_init_authconf &&
+			nut_upscli_find_authconf_item &&
+			nut_upscli_get_authconf_item
+		)) {
+			upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but needed methods are missing in loaded libupsclient", nutauth);
+			return NULL;
+		}
+	}
+
+	if (nutauth && *nutauth) {
+		/* If we are here, needed method pointers are non-NULL */
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "%s: Using nutauth='%s': skipping NUT auth config", __func__, nutauth);
+		} else {
+			/* Not passing fatal_errors=1 into the parser due to JSON support */
+			int	parsed = -1;
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "%s: Using nutauth='%s': require a user or system provided NUT auth config file", __func__, nutauth);
+				parsed = (*nut_upscli_read_authconf_file)(NULL, 0);
+			} else {
+				upsdebugx(1, "%s: Using nutauth='%s': require this NUT auth config file", __func__, nutauth);
+				parsed = (*nut_upscli_read_authconf_file)(nutauth, 0);
+			}
+			if (parsed < 0) {
+				upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but we failed to parse it", nutauth);
+				return NULL;
+			}
+		}
+	} else {
+		if (nut_upscli_read_authconf_file) {
+			upsdebugx(1, "%s: Using best-effort NUT auth config detection", __func__);
+			(*nut_upscli_read_authconf_file)(NULL, 0);
+		} else {
+			upsdebugx(1, "%s: NOT using best-effort NUT auth config detection: upscli_read_authconf_file() not available", __func__);
 		}
 	}
 
