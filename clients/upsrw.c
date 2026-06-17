@@ -55,7 +55,7 @@ struct list_t {
 };
 
 /* For getopt loops; should match usage documented below: */
-static const char	optstring[] = "+Dhls:p:t:u:wVW:";
+static const char	optstring[] = "+Dhls:p:P:t:u:wVW:";
 
 static void help(const char *prog)
 {
@@ -63,13 +63,14 @@ static void help(const char *prog)
 	printf("NUT administration client program to set variables within UPS hardware.\n");
 
 	printf("\nusage: %s [-h]\n", prog);
-	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups>\n\n", prog);
+	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-P <passfile>] [-w] [-t <timeout>] <ups>\n\n", prog);
 	printf("\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -l            show all possible read/write variables.\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
+	printf("  -P <passfile> read password for command authentication from file\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
 	printf("                and return its actual result from the device\n");
 	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
@@ -683,7 +684,7 @@ int main(int argc, char **argv)
 	uint16_t	port;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsrw");
 	const char	*net_connect_timeout = NULL;
-	char	*password = NULL, *username = NULL, *setvar = NULL;
+	char	*password = NULL, *username = NULL, *setvar = NULL, pass_buf[512];
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
 	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
@@ -744,6 +745,12 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			password = optarg;
+			break;
+		case 'P':
+			if (read_passwordfile(optarg, pass_buf, sizeof(pass_buf)))
+				password = pass_buf;
+			else
+				fatal_with_errno(EXIT_FAILURE, "Error: failed to read password from: %s", optarg);
 			break;
 		case 't':
 			if (!str_to_uint(optarg, &timeout, 10))

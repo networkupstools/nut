@@ -11,6 +11,7 @@ extern "C" {
 
 
 char * read_password(char *buffer, size_t buffer_size);
+char * read_passwordfile(const char *filename, char *buffer, size_t buffer_size);
 
 
 #ifdef __cplusplus

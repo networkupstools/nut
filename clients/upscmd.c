@@ -55,7 +55,7 @@ struct list_t {
 };
 
 /* For getopt loops; should match usage documented below: */
-static const char	optstring[] = "+Dlhu:p:t:wVW:";
+static const char	optstring[] = "+Dlhu:p:P:t:wVW:";
 
 static void help(const char *prog)
 {
@@ -64,11 +64,12 @@ static void help(const char *prog)
 
 	printf("\nusage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
+	printf("       %s [-u <username>] [-p <password>] [-P <passfile>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
+	printf("  -P <passfile>	read password for command authentication from file\n");
 	printf("  -w            wait for the completion of command by the driver\n");
 	printf("                and return its actual result from the device\n");
 	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
@@ -388,6 +389,13 @@ int main(int argc, char **argv)
 		case 'p':
 			snprintf(password, sizeof(password), "%s", optarg);
 			have_pw = 1;
+			break;
+
+		case 'P':
+			if (read_passwordfile(optarg, password, sizeof(password)))
+				have_pw = 1;
+			else
+				fatal_with_errno(EXIT_FAILURE, "Error: failed to read password from: %s", optarg);
 			break;
 
 		case 't':

@@ -45,6 +45,10 @@ you will be prompted for this when invoking a command if -u is not used.
 Set the password to authenticate to the server.  This is also optional
 like -u, and you will be prompted for it if necessary.
 
+*-P* 'pass-file'::
+Set the password from file to authenticate to the server.  This is also
+optional like -u, and you will be prompted for it if necessary.
+
 *-w*::
 Wait for the completion of command execution by the driver and return its
 actual result from the device. Note that this feature requires that both
