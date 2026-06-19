@@ -178,6 +178,40 @@ static int upscli_initialized = 0;
 static struct timeval upscli_default_connect_timeout = {0, 0};
 static int upscli_default_connect_timeout_initialized = 0;
 
+#ifndef WITH_THREADING
+# define WITH_THREADING 0
+#endif
+
+#if !WITH_THREADING
+/* Not detected or actively disabled in configure script */
+# ifdef HAVE_PTHREAD
+#  undef HAVE_PTHREAD
+# endif
+# ifdef HAVE_SEMAPHORE_UNNAMED
+#  undef HAVE_SEMAPHORE_UNNAMED
+# endif
+# ifdef HAVE_SEMAPHORE_NAMED
+#  undef HAVE_SEMAPHORE_NAMED
+# endif
+#endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+#  include <semaphore.h>
+# endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  ifdef HAVE_FCNTL_H
+#   include <fcntl.h>           /* For O_* constants with sem_open() */
+#  endif
+#  ifdef SYS_STAT_H
+#   include <sys/stat.h>        /* For mode constants */
+#  endif
+# endif
+#endif
+
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx = NULL;
 #endif	/* WITH_OPENSSL */
@@ -187,6 +221,10 @@ static int verify_certificate = 1;
 #endif	/* WITH_NSS */
 
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
+# ifdef HAVE_PTHREAD
+static pthread_mutex_t mutex_host_cert;
+# endif	/* HAVE_PTHREAD */
+
 static HOST_CERT_t *first_host_cert = NULL;
 static char* sslcertname = NULL;
 static char* sslcertpasswd = NULL;
@@ -1360,13 +1398,22 @@ void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* 
 	upsdebugx(1, "%s: adding CERTHOST: host '%s' port '%u' certname '%s' certverify %d forcessl %d",
 		__func__, hostname, (unsigned int)port, certname, certverify, forcessl);
 
-	cert->next = first_host_cert;
 	cert->host = xstrdup(hostname);
 	cert->port = port ? port : NUT_PORT;
 	cert->certname = xstrdup(certname);
 	cert->certverify = certverify;
 	cert->forcessl = forcessl;
+
+	/* Insert to head of list */
+# ifdef HAVE_PTHREAD
+	pthread_mutex_lock(&mutex_host_cert);
+# endif
+	cert->next = first_host_cert;
 	first_host_cert = cert;
+# ifdef HAVE_PTHREAD
+	pthread_mutex_unlock(&mutex_host_cert);
+# endif
+
 #else
 	NUT_UNUSED_VARIABLE(hostname);
 	NUT_UNUSED_VARIABLE(port);
@@ -1383,6 +1430,10 @@ static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t po
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = first_host_cert;
 	if (hostname != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
 		while (cert != NULL) {
 			if (cert->host != NULL
 			 && strcmp(cert->host, hostname) == 0
@@ -1391,10 +1442,17 @@ static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t po
 				if (verbose)
 					upsdebugx(4, "%s: found '%s' for '%s':'%u'",
 						__func__, NUT_STRARG(cert->certname), hostname, (unsigned int)port);
+# ifdef HAVE_PTHREAD
+				pthread_mutex_unlock(&mutex_host_cert);
+# endif
 				return cert;
 			}
 			cert = cert->next;
 		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
 	}
 	if (verbose)
 		upsdebugx(4, "%s: nothing found for '%s':'%u'", __func__, hostname, (unsigned int)port);
@@ -1438,6 +1496,115 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname, int verbose)
 }
 #endif
 
+void upscli_free_host_cert(const char* hostname, const char* certname)
+{
+	const char	*substr_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (substr_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(substr_port - hostname)),
+			"%s", hostname);
+
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, substr_port + 1);
+				port = NUT_PORT;
+			}
+		}
+	}
+
+	upscli_free_host_port_cert(
+		substr_port ? host : hostname,
+		port, certname);
+}
+
+static void upscli_free_host_port_cert_data(HOST_CERT_t* cert)
+{
+	if (!cert)
+		return;
+
+	free(cert->host);
+	free(cert->certname);
+
+	/* Don't let consumers with a copy get any funny ideas about memory we no longer own */
+	cert->host = NULL;
+	cert->certname = NULL;
+	cert->next = NULL;
+}
+
+void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	HOST_CERT_t* cert = first_host_cert, *next = NULL, *prev = NULL;
+
+	if (cert != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
+		while (cert != NULL) {
+			next = cert->next;
+
+			if (cert->host != NULL
+			 && strcmp(cert->host, hostname) == 0
+			 && cert->port == port
+			 && (!certname || strcmp(cert->certname, certname) == 0)
+			) {
+				if (prev)
+					prev->next = next;
+
+				upscli_free_host_port_cert_data(cert);
+				free(cert);
+
+				if (certname) {
+# ifdef HAVE_PTHREAD
+					pthread_mutex_unlock(&mutex_host_cert);
+# endif
+					return;
+				}
+			}
+
+			prev = cert;
+			cert = next;
+		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
+	}
+#endif /* ! SSL */
+}
+
+void upscli_free_host_cert_list(void)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	HOST_CERT_t* cert = first_host_cert, *next = NULL;
+
+	if (cert != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
+		while (cert != NULL) {
+			next = cert->next;
+			upscli_free_host_port_cert_data(cert);
+			free(cert);
+			cert = next;
+		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
+	}
+#endif /* ! SSL */
+}
+
 int upscli_cleanup(void)
 {
 #ifdef WITH_OPENSSL
@@ -1461,6 +1628,7 @@ int upscli_cleanup(void)
 	PL_ArenaFinish();
 #endif /* WITH_NSS */
 
+	upscli_free_host_cert_list();
 	upscli_free_authconf_list();
 	upscli_initialized = 0;
 	return 1;

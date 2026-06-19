@@ -164,6 +164,11 @@ void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* 
 /* hostname may be a host:port */
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
 
+/* hostname may be a host:port; if certname is NULL, all list items are iterated */
+void upscli_free_host_cert(const char* hostname, const char* certname);
+void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname);
+void upscli_free_host_cert_list(void);
+
 /* --- functions that only use the new names --- */
 
 int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
