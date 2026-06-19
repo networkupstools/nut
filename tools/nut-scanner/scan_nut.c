@@ -69,9 +69,12 @@ static upscli_authconf_t *(*nut_upscli_get_authconf_item)(const char *user,
 static int (*nut_upscli_init_authconf)(upscli_authconf_t *ac);
 static upscli_authconf_t *(*nut_upscli_find_authconf_item)(const char *user,
 					const char *host, const char *port);
+static void (*nut_upscli_free_authconf_item)(upscli_authconf_t *ac);
 static int (*nut_upscli_read_authconf_file)(const char *filename, int fatal_errors);
 static int (*nut_upscli_authenticate_authconf)(UPSCONN_t *ups, upscli_authconf_t *ac);
 static void (*nut_upscli_get_default_connect_timeout)(struct timeval *ptv);
+static void (*nut_upscli_free_host_cert)(const char *hostname, const char *certname);
+static void (*nut_upscli_free_host_port_cert)(const char *hostname, uint16_t port, const char *certname);
 
 /* This variable collects device(s) from a sequential or parallel scan,
  * is returned to caller, and cleared to allow subsequent independent scans */
@@ -92,6 +95,8 @@ struct scan_nut_arg {
 	 * address, and/or :port suffix (if customized so): */
 	char * hostname;
 	useconds_t timeout;
+	int flags_ssl;
+	upscli_authconf_t	*ac_current;
 };
 
 /* Return 0 on success, -1 on error e.g. "was not loaded";
@@ -303,6 +308,14 @@ int nutscan_load_upsclient_library(const char *libname_path)
 			__func__, symbol);
 	}
 
+	*(void **) (&nut_upscli_free_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
 	*(void **) (&nut_upscli_read_authconf_file) = lt_dlsym(dl_handle,
 		symbol = "upscli_read_authconf_file");
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -323,6 +336,22 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		symbol = "upscli_get_default_connect_timeout");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		nut_upscli_get_default_connect_timeout = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_free_host_cert) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_host_cert");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_host_cert = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_free_host_port_cert) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_host_port_cert");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_host_port_cert = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	}
@@ -393,7 +422,7 @@ static void * list_nut_devices_thready(void * arg)
 		goto end;
 	}
 
-	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if ((*nut_upscli_tryconnect)(ups, hostname, port, nut_arg->flags_ssl, &tv) < 0) {
 		/* Avoid disconnect from not connected ups */
 		upsdebugx(4, "%s: upscli_tryconnect() failed", __func__);
 		if (ups) {
@@ -403,6 +432,13 @@ static void * list_nut_devices_thready(void * arg)
 		}
 		ups = NULL;
 		goto end;
+	}
+
+	/* Best-effort login (if present in the file for that host, or default) */
+	if (nut_upscli_authenticate_authconf != NULL && nut_arg->ac_current != NULL
+	 && nut_arg->ac_current->user && nut_arg->ac_current->pass
+	) {
+		(*nut_upscli_authenticate_authconf)(ups, nut_arg->ac_current);
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
@@ -576,10 +612,22 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 # endif
 
 	const char *nutauth = sec ? sec->authconf_file : NULL;
+	upscli_authconf_t	*ac_default = NULL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
+	int have_nutauth_methods = (
+		nut_upscli_authenticate_authconf != NULL &&
+		nut_upscli_read_authconf_file != NULL &&
+		nut_upscli_init_authconf != NULL &&
+		nut_upscli_find_authconf_item != NULL &&
+		nut_upscli_get_authconf_item != NULL &&
+		nut_upscli_free_authconf_item != NULL
+	);
+
 	/* Technically speaking, this variable should hold values
 	 * up to 1000000, but in practice would be at least 31-bit.
 	 * If no spec from caller, apply the default we have. */
-	useconds_t usec_timeout = sec ? sec->usec_timeout : (useconds_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC * (1000*1000);;
+	useconds_t usec_timeout = sec ? sec->usec_timeout : (useconds_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC * (1000*1000);
 
 	if (nut_upscli_init_default_connect_timeout
 	 && nut_upscli_get_default_connect_timeout
@@ -607,13 +655,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 
 	if (nutauth && *nutauth && strcmp(nutauth, "none")) {
 		/* Non-trivial, not a skip */
-		if (!(
-			nut_upscli_authenticate_authconf &&
-			nut_upscli_read_authconf_file &&
-			nut_upscli_init_authconf &&
-			nut_upscli_find_authconf_item &&
-			nut_upscli_get_authconf_item
-		)) {
+		if (!have_nutauth_methods) {
 			upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but needed methods are missing in loaded libupsclient", nutauth);
 			return NULL;
 		}
@@ -738,6 +780,17 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 #endif	/* !WIN32 */
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
+
+	ac_default = (*nut_upscli_find_authconf_item)(NULL, NULL, NULL);
+	if (ac_default) {
+		if (ac_default->certverify > 0) {
+			flags_ssl |= UPSCLI_CONN_CERTVERIF;
+		}
+		if (ac_default->forcessl > 0) {
+			flags_ssl ^= UPSCLI_CONN_TRYSSL;
+			flags_ssl |= UPSCLI_CONN_REQSSL;
+		}
+	}
 
 	while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
@@ -880,6 +933,41 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			 *  if no value was passed by C API caller */
 			nut_arg->timeout = usec_timeout;
 			nut_arg->hostname = ip_dest;
+			nut_arg->flags_ssl = flags_ssl;
+
+			if (have_nutauth_methods) {
+				/* FIXME [#3494]: Currently libupsclient allows for *one* SSL context
+				 *  shared by all connections, specifically the CERTIDENT of the client.
+				 *  We can have multiple CERTHOST certificates (and/or reading
+				 *  users/passwords) though. */
+				/* NOTE: Unlike other clients, here we DO NOT add the item to list,
+				 *  so we can forget it soon without hassle */
+				nut_arg->ac_current = (*nut_upscli_get_authconf_item)(NULL, ip_str, sec ? sec->port_string : NULL, 0);
+				/* Always call upscli_init_authconf(), to register possible CERTHOSTs etc. */
+				if ((*nut_upscli_init_authconf)(nut_arg->ac_current) > 0 && nut_arg->ac_current != NULL) {
+					switch (nut_arg->ac_current->certverify) {
+						case 0: nut_arg->flags_ssl ^= UPSCLI_CONN_CERTVERIF; break;
+						case 1: nut_arg->flags_ssl |= UPSCLI_CONN_CERTVERIF; break;
+						case -1: break;
+						default: break;
+					}
+
+					switch (nut_arg->ac_current->forcessl) {
+						case 0:
+							nut_arg->flags_ssl ^= UPSCLI_CONN_TRYSSL;
+							nut_arg->flags_ssl ^= UPSCLI_CONN_REQSSL;
+							break;
+						case 1:
+							nut_arg->flags_ssl ^= UPSCLI_CONN_TRYSSL;
+							nut_arg->flags_ssl |= UPSCLI_CONN_REQSSL;
+							break;
+						case -1: break;
+						default: break;
+					}
+				}
+			} else {
+				nut_arg->ac_current = NULL;
+			}
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, list_nut_devices_thready, (void*)nut_arg) == 0) {
@@ -910,12 +998,22 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			list_nut_devices_thready(nut_arg);
 #endif /* if HAVE_PTHREAD */
 
+			/* NOTE: Work with host_cert list is
+			 *  mutex'ed in the upsclient library */
+			if (nut_upscli_free_host_cert) {
+				(*nut_upscli_free_host_cert)(ip_dest, NULL);
+			}
+
 			/* Prepare the next iteration; note that
 			 * nutscan_scan_ipmi_device_thready()
 			 * takes care of freeing "tmp_sec" and its
 			 * copy (note strdup!) of "ip_str" as
 			 * hostname, possibly suffixed with a port.
 			 */
+			if (nut_arg->ac_current && have_nutauth_methods) {
+				(*nut_upscli_free_authconf_item)(nut_arg->ac_current);
+				nut_arg->ac_current = NULL;
+			}
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
