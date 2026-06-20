@@ -525,6 +525,7 @@ AS_IF([test ! -d "${PIDPATH}" -o -h "${PIDPATH}" && test -d "/run" -a ! -h "/run
 
 AC_CHECK_PROGS([GETENT], [getent], [])
 AC_CHECK_PROGS([ID], [id], [])
+AC_CHECK_PROGS([LSGROUP], [lsgroup], [])
 
 PROBE_OS_USER="false"
 PROBE_OS_GROUP="false"
@@ -534,20 +535,24 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		AS_IF([test -r "/etc/groups"], [
-			dnl FIXME: For command prefix usage like used in this
-			dnl  script, we might be better off defining a shell
-			dnl  function and referring to it. Grep would catch
-			dnl  also user names that have a group as secondary!
-			PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+		AS_IF([test x"${LSGROUP}" != x], [
+			PROBE_OS_GROUP="${LSGROUP} "
 			], [
-			dnl This shows groups of a USER with specified name!
-			dnl But to probe for cases where string names are
-			dnl same (e.g. "nut" or "ups") this might be good
-			dnl enough.
-			PROBE_OS_GROUP="${ID} -g "
+			AS_IF([test -r "/etc/groups"], [
+				dnl FIXME: For command prefix usage like used in this
+				dnl  script, we might be better off defining a shell
+				dnl  function and referring to it. Grep would catch
+				dnl  also user names that have a group as secondary!
+				PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+				], [
+				dnl This shows groups of a USER with specified name!
+				dnl But to probe for cases where string names are
+				dnl same (e.g. "nut" or "ups") this might be good
+				dnl enough.
+				PROBE_OS_GROUP="${ID} -g "
+				])
+			AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 			])
-		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
