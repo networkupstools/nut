@@ -1910,7 +1910,7 @@ static void mainloop(void)
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
-			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %d] due to%s%s%s",
+			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %ld] due to%s%s%s",
 				__func__,
 				(handler[i].type==DRIVER ? "DRIVER" :
 				(handler[i].type==CLIENT ? "CLIENT" :
@@ -1921,7 +1921,7 @@ static void mainloop(void)
 				(handler[i].type==SERVER ? "" :
 				""))),
 				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
-				fds[i].fd,
+				(long int)fds[i].fd,
 				(fds[i].revents & POLLHUP ? " POLLHUP" : ""),
 				(fds[i].revents & POLLERR ? " POLLERR" : ""),
 				(fds[i].revents & POLLNVAL ? " POLLNVAL" : "")
@@ -1975,7 +1975,7 @@ static void mainloop(void)
 
 		if (fds[i].revents & POLLIN) {
 
-			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %d]",
+			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %ld]",
 				__func__,
 				(handler[i].type==SERVER ? "connection" : "data"),
 				(handler[i].type==DRIVER ? "DRIVER" :
@@ -1987,7 +1987,7 @@ static void mainloop(void)
 				(handler[i].type==SERVER ? "" :
 				""))),
 				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
-				fds[i].fd
+				(long int)fds[i].fd
 				);
 
 			switch(handler[i].type)
