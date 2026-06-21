@@ -83,6 +83,12 @@ https://github.com/networkupstools/nut/milestone/13
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
 
+ - `snmp-ups` driver updates:
+    * Extended the XPPC-MIB subdriver (enterprise 935) to expose
+      `battery.runtime`, `battery.voltage`, `input.frequency`,
+      `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
+      based UPS cards that already answer the rest of the subtree. [#2608]
+
  - common code:
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
