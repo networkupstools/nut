@@ -81,14 +81,14 @@ upload publish: @dotMAKE@
 			continue; \
 		fi; \
 		if test -s "$${B}" ; then \
-			cp -pf "$${B}" PyNUTClient/ || exit ; \
+			cp -f "$${B}" PyNUTClient/ || exit ; \
 			continue; \
 		fi ; \
 		sed -e "s,[@]PYTHON_DEFAULT[@],@PYTHON_DEFAULT@," < "$(srcdir)/$${B}.in" > "PyNUTClient/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
-	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
-	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
+	 cp -f "$(srcdir)/README.adoc" README.txt || exit ; \
+	 cp -f "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit
 	@touch '$@'
 
