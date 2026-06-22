@@ -173,7 +173,7 @@ static struct timeval upscli_default_connect_timeout = {0, 0};
 static int upscli_default_connect_timeout_initialized = 0;
 
 #ifdef WITH_OPENSSL
-static SSL_CTX	*ssl_ctx;
+static SSL_CTX	*ssl_ctx = NULL;
 #endif	/* WITH_OPENSSL */
 
 #ifdef WITH_NSS
