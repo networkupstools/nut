@@ -105,32 +105,71 @@ static OVERLAPPED connect_overlapped;
 
 static void exec_cmd(const char *cmd)
 {
-	int	err;
-	char	buf[LARGEBUF];
-
-	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
-
-	upsdebugx(4, "%s: calling: %s", __func__, buf);
-	err = system(buf);
-	upsdebugx(3, "%s(%s): returned %d", __func__, buf, err);
 #ifndef WIN32
-	if (WIFEXITED(err)) {
-		if (WEXITSTATUS(err)) {
-			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
+	int	waitstatus = 0;
+	pid_t	pid, waitret;
+#else
+	int	err = 0;
+#endif
+	char	*argv[3];
+
+	if (cmdscript == NULL) {
+		upslogx(LOG_ERR, "No CMDSCRIPT defined, cannot execute command: %s", NUT_STRARG(cmd));
+		return;
+	}
+
+	argv[0] = cmdscript;
+	argv[1] = (char *)cmd;
+	argv[2] = NULL;
+
+	upsdebugx(4, "%s: calling: %s %s", __func__, cmdscript, NUT_STRARG(cmd));
+
+#ifndef WIN32
+	pid = fork();
+	if (pid < 0) {
+		upslog_with_errno(LOG_ERR, "fork() failed in exec_cmd");
+		return;
+	}
+
+	if (pid == 0) {
+		/* child process */
+		execvp(cmdscript, argv);
+		/* execvp() only returns on error */
+		upslog_with_errno(LOG_ERR, "execvp(%s) failed", cmdscript);
+		exit(EXIT_FAILURE);
+	}
+
+	/* parent process - wait for child */
+	waitret = waitpid(pid, &waitstatus, 0);
+	if (waitret < 0) {
+		upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)pid);
+		return;
+	}
+
+	if (WIFEXITED(waitstatus)) {
+		if (WEXITSTATUS(waitstatus)) {
+			upslogx(LOG_INFO, "exec_cmd(%s %s) returned %d",
+				cmdscript, NUT_STRARG(cmd), WEXITSTATUS(waitstatus));
 		}
 	} else {
-		if (WIFSIGNALED(err)) {
-			upslogx(LOG_WARNING, "exec_cmd(%s) terminated with signal %d", buf, WTERMSIG(err));
+		if (WIFSIGNALED(waitstatus)) {
+			upslogx(LOG_WARNING, "exec_cmd(%s %s) terminated with signal %d",
+				cmdscript, NUT_STRARG(cmd), WTERMSIG(waitstatus));
 		} else {
-			upslogx(LOG_ERR, "Execute command failure: %s", buf);
+			upslogx(LOG_ERR, "Execute command failure: %s %s",
+				cmdscript, NUT_STRARG(cmd));
 		}
 	}
+
+	upsdebugx(3, "%s: returned status %d", __func__, waitstatus);
 #else	/* WIN32 */
-	if(err != -1) {
-		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
-	}
-	else {
-		upslogx(LOG_ERR, "Execute command failure : %s", buf);
+	/* Use _spawnvp for Windows */
+	err = _spawnvp(_P_WAIT, cmdscript, (const char * const *)argv);
+	if (err != -1) {
+		upslogx(LOG_INFO, "Execute command \"%s %s\" OK", cmdscript, NUT_STRARG(cmd));
+		upsdebugx(3, "%s: returned status %d", __func__, err);
+	} else {
+		upslog_with_errno(LOG_ERR, "Execute command \"%s %s\" failure", cmdscript, NUT_STRARG(cmd));
 	}
 #endif	/* WIN32 */
 

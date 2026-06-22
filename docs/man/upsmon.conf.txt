@@ -230,10 +230,13 @@ NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 Making this some sort of shell script might not be a bad idea.  For
 more information and ideas, see docs/scheduling.txt
 +
-Remember, this command also needs to be one element in the configuration file,
-so if your command has spaces, then wrap it in quotes.
+The value is interpreted as a complete path to an externally stored
+executable script (e.g. not an inline scriptlet) or program file without
+further arguments (this is a change from NUT v2.8.5 and older releases).
+Remember, this command also needs to be one element in the configuration
+file, so if your command path has spaces, then wrap it in quotes.
 +
-+NOTIFYCMD "/path/to/script --foo --bar"+
++NOTIFYCMD "/path to/script"+
 +
 This script is run in the background--that is, upsmon forks before it
 calls out to start it.  This means that your NOTIFYCMD may have multiple

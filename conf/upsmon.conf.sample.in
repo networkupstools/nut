@@ -210,6 +210,9 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # upsmon calls this to send messages when things happen
 #
+# The value is interpreted as a complete path to an externally stored
+# executable script (e.g. not an inline scriptlet) or program file without
+# further arguments (this is a change from NUT v2.8.5 and older releases).
 # This command is called with the full text of the message (from NOTIFYMSG)
 # as one argument.
 #

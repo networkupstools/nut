@@ -185,6 +185,14 @@ https://github.com/networkupstools/nut/milestone/13
       success of SSL initialization with both backends is more diligently
       tracked) should now not cause exit of the client if secure connection
       is not required by its configuration in the first place. [#3420]
+    * Potentially a breaking change for existing deployments with `upsmon` and
+      `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
+      revised to mean an exact program name (possibly with spaces in the value),
+      not a shell scriptlet. Documentation in earlier NUT releases implied that
+      arguments could be passed here -- this is no longer true. If you need to
+      pass special arguments to a notification program, please write a small
+      script to do so and specify its path here. The `SHUTDOWNCMD` is still
+      a scriptlet, as far as specifying command arguments is concerned. [#3499]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which

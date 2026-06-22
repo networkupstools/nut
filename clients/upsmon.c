@@ -238,25 +238,18 @@ static void wall(const char *text)
 	pclose(wf);
 #else	/* WIN32 */
 #	define MESSAGE_CMD "message.exe"
-	char	*command;
+	char	*argv[3];
+	int	ret;
 
-	/* first +1 is for the space between message and text
-	 * second +1 is for trailing 0
-	 * +2 is for ""
-	 */
-	size_t	commandsz = strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1;
+	argv[0] = MESSAGE_CMD;
+	argv[1] = (char *)text;
+	argv[2] = NULL;
 
-	command = malloc (commandsz);
-	if (command == NULL) {
-		upslog_with_errno(LOG_NOTICE, "Not enough memory for wall");
-		return;
+	upsdebugx(6, "%s: executing %s with message: %s", __func__, MESSAGE_CMD, NUT_STRARG(text));
+	ret = _spawnvp(_P_WAIT, MESSAGE_CMD, (const char * const *)argv);
+	if (ret != 0) {
+		upslog_with_errno(LOG_NOTICE, "Can't invoke wall (status: %d)", ret);
 	}
-
-	snprintf(command, commandsz, "%s \"%s\"", MESSAGE_CMD, text);
-	if (system(command) != 0) {
-		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
-	}
-	free(command);
 #endif	/* WIN32 */
 }
 
@@ -271,32 +264,37 @@ typedef struct async_notify_s {
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
-	char	exec[LARGEBUF];
-	char	notice[LARGEBUF];
+	char	*argv[3];
+	int	ret;
 
 	/* the following code is a copy of the content of the NOT WIN32 part of
-	"notify" function below */
+	 * "notify" function below */
 
 	async_notify_t *data = (async_notify_t *)param;
 
 	if (flag_isset(data->flags, NOTIFY_WALL)) {
-		snprintf(notice,LARGEBUF,"%s: %s", data->date, data->notice);
+		char	notice[LARGEBUF];
+
+		snprintf(notice, sizeof(notice), "%s: %s", data->date, data->notice);
 		wall(notice);
 	}
 
 	if (flag_isset(data->flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
-			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, data->notice);
-
-			upsdebugx(6, "%s: Calling NOTIFYCMD: %s", __func__, exec);
+			upsdebugx(6, "%s: Calling NOTIFYCMD: %s with notice: %s",
+				__func__, notifycmd, NUT_STRARG(data->notice));
 			if (data->upsname)
 				setenv("UPSNAME", data->upsname, 1);
 			else
 				setenv("UPSNAME", "", 1);
 
 			setenv("NOTIFYTYPE", data->ntype, 1);
-			if (system(exec) == -1) {
-				upslog_with_errno(LOG_ERR, "%s", __func__);
+			argv[0] = notifycmd;
+			argv[1] = data->notice;
+			argv[2] = NULL;
+			ret = _spawnvp(_P_WAIT, notifycmd, (const char * const *)argv);
+			if (ret == -1) {
+				upslog_with_errno(LOG_ERR, "%s: _spawnvp failed", __func__);
 			}
 		}
 	}
@@ -314,12 +312,11 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
 {
 #ifndef WIN32
-	char	exec[LARGEBUF];
 	int	ret;
 #endif	/* !WIN32 */
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
-		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
+		__func__, upsname ? upsname : "upsmon itself", ntype, flags, NUT_STRARG(notice));
 
 	if (flag_isset(flags, NOTIFY_IGNORE)) {
 		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
@@ -328,7 +325,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_SYSLOG)) {
 		upsdebugx(6, "%s: NOTIFY_SYSLOG (as LOG_NOTICE)", __func__);
-		upslogx(LOG_NOTICE, "%s", notice);
+		upslogx(LOG_NOTICE, "%s", NUT_STRARG(notice));
 	}
 
 #ifndef WIN32
@@ -357,10 +354,10 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
-			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
-				__func__, use_pipe ? "grand" : "", notifycmd, notice);
+			char	*argv[3];
 
-			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
+			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: calling NOTIFYCMD as '%s' with notice: '%s'",
+				__func__, use_pipe ? "grand" : "", notifycmd, NUT_STRARG(notice));
 
 			if (upsname)
 				setenv("UPSNAME", upsname, 1);
@@ -368,9 +365,13 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 				setenv("UPSNAME", "", 1);
 
 			setenv("NOTIFYTYPE", ntype, 1);
-			if (system(exec) == -1) {
-				upslog_with_errno(LOG_ERR, "%s", __func__);
-			}
+			argv[0] = (char *)notifycmd;
+			argv[1] = (char *)notice;
+			argv[2] = NULL;
+			execvp(notifycmd, argv);
+			/* execvp() only returns on error */
+			upslog_with_errno(LOG_ERR, "%s: execvp(%s) failed", __func__, notifycmd);
+			exit(EXIT_FAILURE);
 		} else {
 			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__, use_pipe ? "grand" : "");
 		}

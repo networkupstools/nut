@@ -258,7 +258,12 @@ Example:
  - `NOTIFYCMD "/usr/local/bin/notifyme"`
 
 Remember to wrap the path in "double quotes" if it contains any spaces.
-It should probably not rely on receiving any command-line arguments.
+It should not rely on receiving any command-line arguments: the value of
+this directive is interpreted as a complete path to an externally stored
+executable script (e.g. not an inline scriptlet) or program file without
+further arguments (this is a change from NUT v2.8.5 and older releases).
+If you need to pass special arguments to a notification program, please
+write a small script to do so and specify its path here.
 
 The program you run as your NOTIFYCMD can use the environment variables
 NOTIFYTYPE and UPSNAME to know what has happened and on which UPS.  It

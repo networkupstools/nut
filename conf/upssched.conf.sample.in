@@ -21,6 +21,9 @@
 # CMDSCRIPT <scriptname>
 #
 # This script gets called to invoke commands for timers that trigger.
+# The value is interpreted as a complete path to an externally stored
+# executable script (e.g. not an inline scriptlet) or program file without
+# further arguments (this is a change from NUT v2.8.5 and older releases).
 # It is given a single argument - the <timername> in your
 # AT ... START-TIMER defines.
 #
