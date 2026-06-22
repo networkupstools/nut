@@ -42,6 +42,7 @@
 #include "upsclient.h"
 #include "cgilib.h"
 #include <stdlib.h>
+#include <math.h>
 #include <gd.h>
 #include <gdfontmb.h>
 
@@ -152,7 +153,8 @@ static void drawscale(
 	int step, int step5, int step10,	/* steps for minor, submajor and major dashes */
 	int redlo1, int redhi1,			/* first red zone start and end */
 	int redlo2, int redhi2,			/* second red zone start and end */
-	int grnlo, int grnhi)			/* green zone start and end */
+	int grnlo, int grnhi,			/* green zone start and end */
+	int scale)				/* scaling factor for decimal precision */
 {
 	int	col1, col2, back_color, scale_num_color, ok_zone_maj_color,
 		ok_zone_min_color, neutral_zone_maj_color,
@@ -180,6 +182,11 @@ static void drawscale(
 	gdImageColorTransparent(im, back_color);
 
 	range = lvlhi - lvllo;
+	if (range <= 0) {
+		/* Prevent division by zero on collapsed ranges */
+		lvlhi = lvllo + step10;
+		range = step10;
+	}
 
 	/* draw scale to correspond with the values */
 	for (level = lvlhi; level >= lvllo; level -= step) {
@@ -214,7 +221,17 @@ static void drawscale(
 	for (level = lvlhi; level >= lvllo; level -= step) {
 		if (level % step10 == 0) {
 			y = scale_height * (lvlhi - level) / range;
-			snprintf(lbltxt, sizeof(lbltxt), "%d", level);
+			if (scale == 1) {
+				/* Whole-number scale */
+				snprintf(lbltxt, sizeof(lbltxt), "%d", level);
+			} else {
+				/* How many digits after the decimal point?.. */
+				int precision = 0, s;
+				for (s = scale; s > 1; s /= 10)
+					precision++;
+				snprintf(lbltxt, sizeof(lbltxt), "%.*f",
+					precision, level / (double) scale);
+			}
 			gdImageString(im, gdFontMediumBold,
 				width - (int)(strlen(lbltxt)) * gdFontMediumBold->w,
 				y, (unsigned char *) lbltxt, scale_num_color);
@@ -229,7 +246,9 @@ static void drawbar(
 	int redlo1, int redhi1,			/* first red zone start and end */
 	int redlo2, int redhi2,			/* second red zone start and end */
 	int grnlo, int grnhi,			/* green zone start and end */
-	double value, 				/* UPS variable value to draw */
+	int scale,					/* scaling factor for decimal precision */
+	double value, 				/* scaled UPS variable value to draw */
+	double display_value, 		/* unscaled value for text output */
 	const char *format			/* printf style format to be used when rendering summary text */
 )
 	__attribute__((noreturn));
@@ -240,13 +259,16 @@ static void drawbar(
 	int redlo1, int redhi1,			/* first red zone start and end */
 	int redlo2, int redhi2,			/* second red zone start and end */
 	int grnlo, int grnhi,			/* green zone start and end */
+	int scale,					/* scaling factor for decimal precision */
 	double value, 				/* UPS variable value to draw */
+	double display_value, 		/* unscaled value for text output */
 	const char *format			/* printf style format to be used when rendering summary text */
 )
 {
 	gdImagePtr	im;
 	int		bar_color, summary_color;
 	char		text[SMALLBUF];
+	double	value_range;
 	int		bar_y;
 	int		width, height, scale_height;
 
@@ -260,14 +282,17 @@ static void drawbar(
 
 	/* draw the scale */
 	drawscale(im, lvllo, lvlhi, step, step5, step10, redlo1, redhi1,
-		redlo2, redhi2, grnlo, grnhi);
+		redlo2, redhi2, grnlo, grnhi, scale);
 
 	/* allocate colors for the bar and summary text */
 	bar_color	= color_alloc(im, get_imgarg("bar_col"));
 	summary_color	= color_alloc(im, get_imgarg("summary_col"));
 
 	/* rescale UPS value to fit in the scale */
-	bar_y = (int)((1.0 - (value - lvllo) / (lvlhi - lvllo)) * scale_height);
+	value_range = (double)(lvlhi - lvllo);
+	if (value_range == 0.0)
+		value_range = 1.0;
+	bar_y = (int)((1.0 - (value - lvllo) / value_range) * scale_height);
 
 	/* sanity checks: */
 
@@ -286,7 +311,7 @@ static void drawbar(
 	/* stick the text version of the value at the bottom center
 	 * expected format is one of imgvar[] entries for "double value"
 	 */
-	snprintf_dynamic(text, sizeof(text), format, "%f", value);
+	snprintf_dynamic(text, sizeof(text), format, "%f", display_value);
 	gdImageString(im, gdFontMediumBold,
 		(width - (int)(strlen(text))*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
@@ -367,29 +392,30 @@ static void noimage(const char *fmt, ...)
  * UPS variable can be determined.
  * deviation < 0 means that values below nom should be grey instead of green
  */
-static void drawgeneralbar(double var, int min, int nom, int max,
+static void drawgeneralbar(double var, double min, double nom, double max,
 		int deviation, 	const char *format)
 	__attribute__((noreturn));
 
-static void drawgeneralbar(double var, int min, int nom, int max,
+static void drawgeneralbar(double var, double min, double nom, double max,
 		int deviation, 	const char *format)
 {
 	int	hi, lo, step1, step5, step10, graybelownom=0;
+	double range, scale;
 
 	if(deviation < 0) {
 		deviation=-deviation;
 		graybelownom=1;
 	}
 
-	if ((nom == -1) && ((min == -1) || (max == -1)))
+	if (((int)nom == -1) && (((int)min == -1) || ((int)max == -1)))
 		noimage("Can't determine range");
 
 	/* if min, max and nom are mixed up, arrange them appropriately */
-	if (nom != -1) {
-		if (min == -1)
+	if ((int)nom != -1) {
+		if ((int)min == -1)
 			min = nom - 3*deviation;
 
-		if (max == -1)
+		if ((int)max == -1)
 			max = nom + 3*deviation;
 	} else {
 		/* if nominal value isn't available, assume, it's the
@@ -398,12 +424,19 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 	}
 
 	/* draw scale in the background */
-	if ((max - min) <= 50) {
+	range = max - min;
+	scale = 1.0;
+	if (range < 10.0) {
+		/* Use decimal precision for small ranges */
+		scale = 10.0;
+	}
+
+	if (range <= 50.0) {
 		/* the scale is sparse enough to draw finer scale */
 		step1 = 1;
 		step5 = 5;
 		step10 = 10;
-	} else if((max - min) <= 100) {
+	} else if((max - min) <= 100.0) {
 		step1 = 2;
 		step5 = 10;
 		step10 = 20;
@@ -414,31 +447,32 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 	}
 
 	/* round min and max points to get high and low numbers for graph */
-	lo = ((min - deviation) / step10) * step10;
-	hi = ((max + deviation + step10/2) / step10) * step10;
+	lo = (int)((floor((min - deviation) * scale / step10)) * step10);
+	hi = (int)((ceil((max + deviation + step10/2) * scale / step10)) * step10);
 
 	if(!graybelownom) {
-		drawbar(lo, hi, step1, step5, step10, max, hi, lo, min,
-				nom - deviation, nom + deviation, var, format);
+		drawbar(lo, hi, step1, step5, step10, max * scale, hi, lo, min * scale,
+				nom * scale - deviation * scale, nom * scale + deviation * scale,
+				(int)scale, var * scale, var, format);
 	}
 	else {
-		drawbar(lo, hi, step1, step5, step10, 0, min, max, hi,
-				nom, max, var, format);
+		drawbar(lo, hi, step1, step5, step10, 0, min * scale, max * scale, hi,
+				nom * scale, max * scale, (int)scale, var * scale, var, format);
 	}
 
 	/* NOTREACHED */
 }
 
 /* draws input and output voltage bar style indicators */
-static void draw_utility(double var, int min, int nom, int max,
+static void draw_utility(double var, double min, double nom, double max,
 		int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_utility(double var, int min, int nom, int max,
+static void draw_utility(double var, double min, double nom, double max,
 		int deviation, const char *format)
 {
 	/* hack: deal with hardware that doesn't have known transfer points */
-	if (min == -1) {
+	if ((int)min == -1) {
 		if(var < 200) {
 			min = 90;
 		}
@@ -451,7 +485,7 @@ static void draw_utility(double var, int min, int nom, int max,
 	}
 
 	/* somewhere between 220 and 230 V, to keep everybody satisfied */
-	if (nom == -1) {
+	if ((int)nom == -1) {
 		if(var < 200) {
 			nom = 110;
 		}
@@ -464,7 +498,7 @@ static void draw_utility(double var, int min, int nom, int max,
 	}
 
 	/* symmetrical around nom */
-	if (max == -1)
+	if ((int)max == -1)
 		max = nom+(nom-min);
 
 	/* Acceptable range of voltage is 85%-110% of nominal voltage
@@ -477,12 +511,12 @@ static void draw_utility(double var, int min, int nom, int max,
 }
 
 /* draws battery.percent bar style indicator */
-static void draw_battpct(double var, int min, int nom,
-		int max, int deviation, const char *format)
+static void draw_battpct(double var, double min, double nom,
+		double max, int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_battpct(double var, int min, int nom,
-		int max, int deviation, const char *format)
+static void draw_battpct(double var, double min, double nom,
+		double max, int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(nom);
 	NUT_UNUSED_VARIABLE(max);
@@ -492,18 +526,18 @@ static void draw_battpct(double var, int min, int nom,
 		min = 50;
 	}
 
-	drawbar(0, 100, 2, 10, 20, 0, min, -1, -1, 80, 100, var, format);
+	drawbar(0, 100, 2, 10, 20, 0, min, -1, -1, 80, 100, 1, var, var, format);
 }
 
 /* draws battery.voltage bar style indicator */
-static void draw_battvolt(double var, int min, int nom, int max,
+static void draw_battvolt(double var, double min, double nom, double max,
 		int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_battvolt(double var, int min, int nom, int max,
+static void draw_battvolt(double var, double min, double nom, double max,
 		int deviation, const char *format)
 {
-	if(nom == -1) {
+	if((int)nom == -1) {
 		/* Use a fixed set of reasonable nominal voltages, seems to
 		 * be the only way to get reasonable behaviour during
 		 * discharge */
@@ -525,11 +559,11 @@ static void draw_battvolt(double var, int min, int nom, int max,
 
 	}
 
-	if(min == -1) {
+	if((int)min == -1) {
 		min = (int)(nom/2*1.6+1); /* Assume a 2V cell is dead at 1.6V */
 	}
 
-	if(max == -1) {
+	if((int)max == -1) {
 		max = (int)(nom/2*2.3+1); /* Assume 2.3V float charge voltage */
 	}
 
@@ -545,13 +579,13 @@ static void draw_battvolt(double var, int min, int nom, int max,
 }
 
 /* draws ups.load bar style indicator */
-static void draw_upsload(double var, int min,
-		int nom, int max,
+static void draw_upsload(double var, double min,
+		double nom, double max,
 		int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_upsload(double var, int min,
-		int nom, int max,
+static void draw_upsload(double var, double min,
+		double nom, double max,
 		int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(min);
@@ -559,15 +593,15 @@ static void draw_upsload(double var, int min,
 	NUT_UNUSED_VARIABLE(max);
 	NUT_UNUSED_VARIABLE(deviation);
 
-	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, var, format);
+	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, 1, var, var, format);
 }
 
 /* draws temperature bar style indicator */
-static void draw_temperature(double var, int min, int nom, int max,
+static void draw_temperature(double var, double min, double nom, double max,
 		int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_temperature(double var, int min, int nom, int max,
+static void draw_temperature(double var, double min, double nom, double max,
 		int deviation, const char *format)
 {
 	int	hi = get_imgarg("tempmax");
@@ -575,23 +609,26 @@ static void draw_temperature(double var, int min, int nom, int max,
 	NUT_UNUSED_VARIABLE(nom);
 	NUT_UNUSED_VARIABLE(deviation);
 
-	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
+	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, 1, var, var, format);
 }
 
 /* draws humidity bar style indicator */
-static void draw_humidity(double var, int min, int nom, int max,
+static void draw_humidity(double var, double min, double nom, double max,
 		int deviation, const char *format)
 	__attribute__((noreturn));
 
-static void draw_humidity(double var, int min, int nom, int max,
+static void draw_humidity(double var, double min, double nom, double max,
 		int deviation, const char *format)
 {
 	NUT_UNUSED_VARIABLE(nom);
 	NUT_UNUSED_VARIABLE(deviation);
 
-	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, var, format);
+	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, 1, var, var, format);
 }
 
+/** Retrieves the value of a variable from the UPS into the string buf
+ *  Returns 1 if the variable was found, 0 if not found or an error occurred.
+ */
 static int get_var(const char *var, char *buf, size_t buflen)
 {
 	int	ret;
@@ -627,7 +664,8 @@ static void clean_exit(void)
 int main(int argc, char **argv)
 {
 	char	str[SMALLBUF], *s;
-	int	i, min, nom, max;
+	int	i;
+	double	min, nom, max;
 	double	var = 0;
 
 #ifdef WIN32
@@ -741,12 +779,13 @@ int main(int argc, char **argv)
 			/* get the minimum value */
 			if (imgvar[i].minimum) {
 				if (get_var(imgvar[i].minimum, str,
-					sizeof(str)) == 1) {
-					min = atoi(str);
+					sizeof(str)) == 1
+				) {
+					min = strtod(str, NULL);
 				} else {
 					min = get_imgarg(imgvar[i].minimum);
+					/* min = -1; // AI? */
 				}
-
 			} else {
 				min = -1;
 			}
@@ -754,12 +793,13 @@ int main(int argc, char **argv)
 			/* get the nominal value */
 			if (imgvar[i].nominal) {
 				if (get_var(imgvar[i].nominal, str,
-					sizeof(str)) == 1) {
-					nom = atoi(str);
+					sizeof(str)) == 1
+				) {
+					nom = strtod(str, NULL);
 				} else {
 					nom = get_imgarg(imgvar[i].nominal);
+					/* nom = -1; // AI? */
 				}
-
 			} else {
 				nom = -1;
 			}
@@ -767,19 +807,22 @@ int main(int argc, char **argv)
 			/* get the maximum value */
 			if (imgvar[i].maximum) {
 				if (get_var(imgvar[i].maximum, str,
-					sizeof(str)) == 1) {
-					max = atoi(str);
+					sizeof(str)) == 1
+				) {
+					max = strtod(str, NULL);
 				} else {
 					max = get_imgarg(imgvar[i].maximum);
+					/* max = -1; // AI? */
 				}
-
 			} else {
 				max = -1;
 			}
 
 			imgvar[i].drawfunc(var, min, nom, max,
 				imgvar[i].deviation, imgvar[i].format);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);
+#endif
 		}
 
 	noimage("Unknown display");
