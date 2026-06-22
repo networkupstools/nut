@@ -949,7 +949,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                             # assumed only useful if we use it via pkgconfig
                             case "${D}" in
                                 /usr/lib) ;;
-                                *) LDFLAGS="${LDFLAGS} -R${D}/${_BITS}" ;;
+                                *) LDFLAGS="${LDFLAGS} -Wl,-R${D}/${_BITS}" ;;
                             esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
@@ -964,7 +964,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                             SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_ARCH}/pkgconfig"
                             case "${D}" in
                                 /usr/lib) ;;
-                                *) LDFLAGS="${LDFLAGS} -R${D}/${_ARCH}" ;;
+                                *) LDFLAGS="${LDFLAGS} -Wl,-R${D}/${_ARCH}" ;;
                             esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
@@ -997,7 +997,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                         SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig"
                         case "${D}" in
                             /usr/lib) ;;
-                            *) LDFLAGS="${LDFLAGS} -R${D}" ;;
+                            *) LDFLAGS="${LDFLAGS} -Wl,-R${D}" ;;
                         esac
                     fi
                 fi
