@@ -2270,5 +2270,11 @@ int main(int argc, char **argv)
 	checkconf();
 
 	upsdebugx(1, "Exiting upssched (CLI process)");
+
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	exit(EXIT_SUCCESS);
 }

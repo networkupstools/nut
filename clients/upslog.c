@@ -1065,6 +1065,11 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	for (
 		monhost_ups_current = monhost_ups_anchor;
 		monhost_ups_current != NULL;
@@ -1086,6 +1091,9 @@ int main(int argc, char **argv)
 		free(logformat);
 		logformat = NULL;
 	}
+
+	fflush(stdout);
+	fflush(stderr);
 
 	upscli_cleanup();
 	exit(EXIT_SUCCESS);
