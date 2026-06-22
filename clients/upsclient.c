@@ -832,6 +832,7 @@ int upscli_init2(int certverify, const char *certpath,
 	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
 	if (ret != 1) {
 		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
+		upscli_cleanup();
 		return -1;
 	}
 # endif
@@ -841,6 +842,7 @@ int upscli_init2(int certverify, const char *certpath,
 			upslogx(LOG_ERR, "Can not verify certificate if any is specified: no CERTPATH was given");
 			/* Failed: checking the server cert is mandatory, but no
 			 * collection of trusted CA/server cert files was given */
+			upscli_cleanup();
 			return -1;
 		}
 	} else {
@@ -863,6 +865,7 @@ int upscli_init2(int certverify, const char *certpath,
 			if ((ret = SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL)) != 1) {
 				ssl_debug();
 				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				upscli_cleanup();
 				return -1;
 			} else {
 				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
@@ -918,6 +921,7 @@ int upscli_init2(int certverify, const char *certpath,
 #   else	/* Not SSL_* methods either */
 
 		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
+		upscli_cleanup();
 		return -1;
 #   endif
 #  endif	/* ...SET_DEFAULT_PASSWD_CB */
@@ -930,16 +934,19 @@ int upscli_init2(int certverify, const char *certpath,
 		if ((ssl_ret = SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile)) != 1) {
 			upslogx(LOG_ERR, "Failed to load client certificate from %s", certfile);
 			ssl_debug();
+			upscli_cleanup();
 			return -1;
 		}
 		if ((ssl_ret = SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM)) != 1) {
 			upslogx(LOG_ERR, "Failed to load client private key from %s", certfile);
 			ssl_debug();
+			upscli_cleanup();
 			return -1;
 		}
 		if ((ssl_ret = SSL_CTX_check_private_key(ssl_ctx)) != 1) {
 			upslogx(LOG_ERR, "Failed to check client private key from %s", certfile);
 			ssl_debug();
+			upscli_cleanup();
 			return -1;
 		}
 
@@ -976,6 +983,7 @@ int upscli_init2(int certverify, const char *certpath,
 							OPENSSL_free(subject);
 						}
 						upslogx(LOG_ERR, "Unexpected certificate provided");
+						upscli_cleanup();
 						return -1;
 					} else {
 						upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", sslcertname);
@@ -986,12 +994,14 @@ int upscli_init2(int certverify, const char *certpath,
 			}
 #  else	/* Missing X509 methods wanted above */
 			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", sslcertname);
+			upscli_cleanup();
 			return -1;
 #  endif	/* Got ways to check CERTIDENT? */
 		}	/* else: CERTIDENT did not pass a name, nothing to check */
 	} else {
 		if (sslcertname && *sslcertname) {
 			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", sslcertname);
+			upscli_cleanup();
 			return -1;
 		}
 	}
@@ -1024,6 +1034,7 @@ int upscli_init2(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		nss_error("upscli_init / NSS_[NoDB]_Init");
+		upscli_cleanup();
 		return -1;
 	}
 
@@ -1031,6 +1042,7 @@ int upscli_init2(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
 		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		upscli_cleanup();
 		return -1;
 	}
 
@@ -1040,18 +1052,21 @@ int upscli_init2(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable SSLv3");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+		upscli_cleanup();
 		return -1;
 	}
 	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable TLSv1");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+		upscli_cleanup();
 		return -1;
 	}
 	status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
+		upscli_cleanup();
 		return -1;
 	}
 	verify_certificate = certverify;
@@ -1059,6 +1074,7 @@ int upscli_init2(int certverify, const char *certpath,
 	/* Note: historically we do not return with error here,
 	 * and nowadays have the default timeout handling etc.,
 	 * just fall through to below and treat as initialized.
+	 * There's nothing to retry to change that state anyway.
 	 */
 	if (certverify || certpath || certname || certpasswd || certfile) {
 		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
@@ -1118,7 +1134,6 @@ int upscli_cleanup(void)
 		SSL_CTX_free(ssl_ctx);
 		ssl_ctx = NULL;
 	}
-
 #endif /* WITH_OPENSSL */
 
 #ifdef WITH_NSS
