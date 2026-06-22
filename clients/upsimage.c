@@ -734,10 +734,10 @@ int main(int argc, char **argv)
 	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 		if (ac_default) {
-			if (ac_default->certverify) {
+			if (ac_default->certverify > 0) {
 				flags_ssl |= UPSCLI_CONN_CERTVERIF;
 			}
-			if (ac_default->forcessl) {
+			if (ac_default->forcessl > 0) {
 				flags_ssl ^= UPSCLI_CONN_TRYSSL;
 				flags_ssl |= UPSCLI_CONN_REQSSL;
 			}

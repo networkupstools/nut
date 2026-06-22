@@ -846,18 +846,18 @@ int main(int argc, char **argv)
 			monhost_ups_current->port
 			);
 
-		/* FIXME: Currently libupsclient allows for one SSL context shared
-		 *  by all connections, specifically the CERTIDENT of the client.
+		/* FIXME [#3494]: Currently libupsclient allows for *one* SSL context
+		 *  shared by all connections, specifically the CERTIDENT of the client.
 		 *  We can have multiple CERTHOST certificates (and/or reading
 		 *  users/passwords) though. */
 		ac_current = upscli_get_authconf_item(NULL, monhost_ups_current->hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, monhost_ups_current->port) > 0 ? str_port : NULL, 1);
 		/* Always call this, to register possible CERTHOSTs etc. */
 		if (upscli_init_authconf(ac_current) > 0) {
 			if (ac_default) {
-				if (ac_default->certverify) {
+				if (ac_default->certverify > 0) {
 					flags_ssl |= UPSCLI_CONN_CERTVERIF;
 				}
-				if (ac_default->forcessl) {
+				if (ac_default->forcessl > 0) {
 					flags_ssl ^= UPSCLI_CONN_TRYSSL;
 					flags_ssl |= UPSCLI_CONN_REQSSL;
 				}

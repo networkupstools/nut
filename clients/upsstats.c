@@ -552,10 +552,10 @@ static void ups_connect(void)
 	/* Always call this, to register possible CERTHOSTs etc. */
 	if (upscli_init_authconf(ac_current) > 0) {
 		if (ac_default) {
-			if (ac_default->certverify) {
+			if (ac_default->certverify > 0) {
 				flags_ssl |= UPSCLI_CONN_CERTVERIF;
 			}
-			if (ac_default->forcessl) {
+			if (ac_default->forcessl > 0) {
 				flags_ssl ^= UPSCLI_CONN_TRYSSL;
 				flags_ssl |= UPSCLI_CONN_REQSSL;
 			}
