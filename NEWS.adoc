@@ -396,6 +396,27 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    opt-in via the `allow_shutdown` flag because the firmware does not
    auto-restart on mains return. [PR #3447]
 
+ - `ragtech` driver updates:
+   * Put the CDC-ACM port into raw mode at startup. A freshly enumerated
+     port defaults to canonical mode, where the kernel buffers the firmware's
+     binary replies waiting for a newline that never arrives, so the first
+     poll timed out as "no reply to initial status poll" unless the port had
+     been set raw externally. [issue #3500]
+   * Retry the initial status poll a few times before bailing out, so the
+     driver starts cleanly under the stock systemd units when the device has
+     only just enumerated at boot, instead of leaning on a fatal exit and a
+     `Restart=on-failure` cycle. [issue #3500]
+   * Drain the firmware's handshake reply before the first status poll.
+     Some models (e.g. the Easy Pro 3200 VA GT) are half-duplex and dropped
+     the read command that was sent while the handshake reply was still in
+     flight. [issue #3500]
+   * Compute `battery.charge` as `raw / 2.55` so a fully charged battery
+     reports exactly 100 % instead of 100.2 %.
+   * Added a `va` option to override the apparent-power rating when the
+     firmware model id is shared between product lines, correcting
+     `ups.power.nominal`, `ups.realpower.nominal` and the computed
+     `ups.load`. [issue #3500]
+
  - `riello_ser` and `riello_usb` driver updates:
    * Since the beginning, these drivers fenced availability of *either*
      `load.*` *or* `shutdown.return` instant commands based on current
