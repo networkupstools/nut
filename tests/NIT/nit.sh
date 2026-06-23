@@ -901,6 +901,8 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
 # Adjust path spelling to run-time platform, libraries seem to want that on WIN32
 # NOTE: Windows backslashes are pre-escaped in the configure-generated value
+# NOTE: For mingw bash at least, shell globs (wildcards, not exact file names)
+#  should be separated by a forward slash in any case.
 case "${ABS_TOP_BUILDDIR}" in
     ?":\\"*)
         TESTCERT_PATH_SEP='\\'
@@ -994,8 +996,9 @@ check_NIT_certs_NSS() {
             exit 0
         fi
 
-        ls -l "${2}${TESTCERT_PATH_SEP}${3}"*.txt || true
-        ls -l "${2}${TESTCERT_PATH_SEP}${3}"*.db || exit
+        # See comments above about no TESTCERT_PATH_SEP for shell globs.
+        ls -l "${2}"/"${3}"*.txt || true
+        ls -l "${2}"/"${3}"*.db || exit
     )   || die "Could not list NSS ${1} DB files"
 
     # NSS certutil error handling is complicated: anything unexpected means
@@ -1020,16 +1023,17 @@ check_NIT_certs_NSS() {
         ; then
             log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
 
-            if ls -l "${2}${TESTCERT_PATH_SEP}"*.p12 "${2}${TESTCERT_PATH_SEP}".pwfile && (command -v pk12util) ; then
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            if ls -l "${2}"/*.p12 "${2}${TESTCERT_PATH_SEP}".pwfile && (command -v pk12util) ; then
                 log_info "Will try to create older-format DB from P12 files"
             else
                 # Assume we do not have tools for new NSS DB format files,
                 # use PEM and generate P12 instead:
                 (command -v pk12util) && (command -v openssl) && \
                 case "$1" in
-                    CA) ls -l "${2}${TESTCERT_PATH_SEP}"*.crt || true ; ls -l "${2}${TESTCERT_PATH_SEP}"*.pem "${2}${TESTCERT_PATH_SEP}"*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
+                    CA) ls -l "${2}"/*.crt || true ; ls -l "${2}"/*.pem "${2}"/*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
                     Server|Client)
-                        ls -l "${2}${TESTCERT_PATH_SEP}"*.pem || true ; ls -l "${2}${TESTCERT_PATH_SEP}"*.crt "${2}${TESTCERT_PATH_SEP}"*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
+                        ls -l "${2}"/*.pem || true ; ls -l "${2}"/*.crt "${2}"/*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
                     *)  die "Unexpected cert store type, no idea how to fix that one: '$1'" ;;
                 esac || die "Can not recreate NSS DB from PEM files: some of them are missing"
 
@@ -1059,7 +1063,8 @@ check_NIT_certs_NSS() {
 
             # Import the payload relevant for this directory
             # Assume one P12 file in the cache dir for this type of info
-            pk12util -i "${2}${TESTCERT_PATH_SEP}"*.p12 -d "${2}" -k "${2}${TESTCERT_PATH_SEP}".pwfile -w "${2}${TESTCERT_PATH_SEP}".pwfile \
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            pk12util -i "${2}"/*.p12 -d "${2}" -k "${2}${TESTCERT_PATH_SEP}".pwfile -w "${2}${TESTCERT_PATH_SEP}".pwfile \
             || die "Could not import $1 PKCS#12 to NSS in $2"
 
             case "$1" in
@@ -1093,7 +1098,8 @@ check_NIT_certs() {
 
     case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         *OpenSSL*)
-            ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"*.? \
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}"/*.? \
             || die "Could not list OpenSSL CA PEM file and hash links"
 
             ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"upsd.pem \
@@ -1153,7 +1159,8 @@ if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
     && [ -d "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}upsmon" ] \
     ; then
         mkdir -p "${TESTCERT_PATH_BASE}"
-        cp -pr "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}"* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+        # See comments above about no TESTCERT_PATH_SEP for shell globs.
+        cp -prf "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
         log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
 
         check_NIT_certs set-none-on-fail || {
@@ -1198,7 +1205,8 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
             else
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
                 mkdir -p "${TESTCERT_PATH_BASE}"
-                cp -pr "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}"* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+                # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                cp -pfr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
 
                 # If there is a setup script there, source it to get variables
                 if [ -f "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env" ]; then
@@ -1272,7 +1280,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                 if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
                     mkdir -p "${TESTCERT_PATH_BASE}"
-                    cp -pr "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}"* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+                    # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                    cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
 
                     if check_NIT_certs ; then
                         rm -f "${LOCKFILE}"
@@ -1474,9 +1483,12 @@ EOF
                     || die "Could not determine OpenSSL certificate hash for Root CA files"
 
                     # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
+                    log_info "SSL: Preparing OpenSSL CA PEM file hash-named (${CERTHASH}) copies or links"
                     ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
                     ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
-                    ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}${CERTHASH}"* \
+
+                    # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                    ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}"/"${CERTHASH}"* \
                     || die "Could not list OpenSSL CA PEM file and hash links"
                 }
 
@@ -1632,7 +1644,8 @@ EOF
                                     mkpk12key -legacy && mkjks
                                 }
                             fi
-                            ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"*.jks "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"*.p12 || true
+                            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
 
                             cat server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem server.key > upsd.pem 2>/dev/null || true
                         fi
@@ -1729,7 +1742,8 @@ EOF
                                     -alias "${TESTCERT_SERVER_NAME}" \
                                     -noprompt \
                                 && log_info "Generated Java JKS for Server (from OpenSSL)"
-                                ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"*.jks "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"*.p12 || true
+                                # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
                             fi
                         fi
                         ;;
@@ -1899,7 +1913,7 @@ EOF
                                 -storepass "${TESTCERT_ROOTCA_PASS}" \
                                 -noprompt \
                             && log_info "Generated Java JKS truststore for Client (OpenSSL)"
-                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"*.jks || true
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
                         fi
 
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
@@ -1962,7 +1976,7 @@ EOF
                                     fi
                                 fi
                             fi
-                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"*.jks "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"*.p12 || true
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
                         fi
                         ;;
                 esac
@@ -1975,7 +1989,7 @@ EOF
                 if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
                     log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
                     mkdir -p "${CI_CACHE_NIT_HASHDIR}"
-                    cp -pr "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"* "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}"
+                    cp -prf "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}"
                     set | ${EGREP} '^TESTCERT[^ ]*=' | grep -v PATH \
                     > "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env"
                 fi
