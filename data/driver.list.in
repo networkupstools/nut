@@ -545,7 +545,8 @@
 
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
 
-"GoldenMate"	"ups"	"1"	"UPS 1000VA Pro"	"USB"	"usbhid-ups"
+"GoldenMate"	"ups"	"2"	"UPS 1000VA Pro (USB ID 075d:0300)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/3015
+"GoldenMate"	"ups"	"2"	"1000VA/800W LiFePO4 (USB ID 06da:ffff)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/3501
 
 "Grafenthal"	"ups"	"3"	"PR-3000-HS"	"SNMP/Web Minislot card (ref 149G0006)"	"snmp-ups"	# http://grafenthal.de/produkte/usv/online/pr-hs-serie/pr-3000-hs/?L=3et8
 
