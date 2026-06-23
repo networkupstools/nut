@@ -1571,6 +1571,7 @@ void upscli_free_host_cert(const char* hostname, const char* certname)
 		port, certname);
 }
 
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 static void upscli_free_host_port_cert_data(HOST_CERT_t* cert)
 {
 	if (!cert)
@@ -1584,6 +1585,7 @@ static void upscli_free_host_port_cert_data(HOST_CERT_t* cert)
 	cert->certname = NULL;
 	cert->next = NULL;
 }
+#endif	/* SSL */
 
 void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname)
 {
