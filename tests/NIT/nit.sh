@@ -231,7 +231,7 @@ isBusy_NUT_PORT() {
 }
 
 die() {
-    echo "[FATAL] $@" >&2
+    echo "`TZ=UTC LANG=C date` [FATAL] $@" >&2
     exit 1
 }
 
