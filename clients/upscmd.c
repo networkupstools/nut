@@ -472,15 +472,7 @@ int main(int argc, char **argv)
 	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
 	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
-		if (ac_default) {
-			if (ac_default->certverify > 0) {
-				flags_ssl |= UPSCLI_CONN_CERTVERIF;
-			}
-			if (ac_default->forcessl > 0) {
-				flags_ssl ^= UPSCLI_CONN_TRYSSL;
-				flags_ssl |= UPSCLI_CONN_REQSSL;
-			}
-		}
+		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
 	}
 
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));

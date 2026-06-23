@@ -75,6 +75,7 @@ static int (*nut_upscli_authenticate_authconf)(UPSCONN_t *ups, upscli_authconf_t
 static void (*nut_upscli_get_default_connect_timeout)(struct timeval *ptv);
 static void (*nut_upscli_free_host_cert)(const char *hostname, const char *certname);
 static void (*nut_upscli_free_host_port_cert)(const char *hostname, uint16_t port, const char *certname);
+static void (*nut_upscli_authconf_update_conn_flags)(const upscli_authconf_t *ac, int *flags);
 
 /* This variable collects device(s) from a sequential or parallel scan,
  * is returned to caller, and cleared to allow subsequent independent scans */
@@ -352,6 +353,14 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		symbol = "upscli_free_host_port_cert");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		nut_upscli_free_host_port_cert = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_authconf_update_conn_flags) = lt_dlsym(dl_handle,
+		symbol = "upscli_authconf_update_conn_flags");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_authconf_update_conn_flags = NULL;
 		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
 			__func__, symbol);
 	}
@@ -781,14 +790,10 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
-	ac_default = (*nut_upscli_find_authconf_item)(NULL, NULL, NULL);
-	if (ac_default) {
-		if (ac_default->certverify > 0) {
-			flags_ssl |= UPSCLI_CONN_CERTVERIF;
-		}
-		if (ac_default->forcessl > 0) {
-			flags_ssl ^= UPSCLI_CONN_TRYSSL;
-			flags_ssl |= UPSCLI_CONN_REQSSL;
+	if (nut_upscli_find_authconf_item != NULL) {
+		ac_default = (*nut_upscli_find_authconf_item)(NULL, NULL, NULL);
+		if (ac_default && nut_upscli_authconf_update_conn_flags != NULL) {
+			(*nut_upscli_authconf_update_conn_flags)(ac_default, &flags_ssl);
 		}
 	}
 
@@ -944,26 +949,8 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 				 *  so we can forget it soon without hassle */
 				nut_arg->ac_current = (*nut_upscli_get_authconf_item)(NULL, ip_str, sec ? sec->port_string : NULL, 0);
 				/* Always call upscli_init_authconf(), to register possible CERTHOSTs etc. */
-				if ((*nut_upscli_init_authconf)(nut_arg->ac_current) > 0 && nut_arg->ac_current != NULL) {
-					switch (nut_arg->ac_current->certverify) {
-						case 0: nut_arg->flags_ssl ^= UPSCLI_CONN_CERTVERIF; break;
-						case 1: nut_arg->flags_ssl |= UPSCLI_CONN_CERTVERIF; break;
-						case -1: break;
-						default: break;
-					}
-
-					switch (nut_arg->ac_current->forcessl) {
-						case 0:
-							nut_arg->flags_ssl ^= UPSCLI_CONN_TRYSSL;
-							nut_arg->flags_ssl ^= UPSCLI_CONN_REQSSL;
-							break;
-						case 1:
-							nut_arg->flags_ssl ^= UPSCLI_CONN_TRYSSL;
-							nut_arg->flags_ssl |= UPSCLI_CONN_REQSSL;
-							break;
-						case -1: break;
-						default: break;
-					}
+				if ((*nut_upscli_init_authconf)(nut_arg->ac_current) > 0 && nut_arg->ac_current != NULL && nut_upscli_authconf_update_conn_flags != NULL) {
+					(*nut_upscli_authconf_update_conn_flags)(nut_arg->ac_current, &(nut_arg->flags_ssl));
 				}
 			} else {
 				nut_arg->ac_current = NULL;

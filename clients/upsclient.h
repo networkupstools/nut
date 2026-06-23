@@ -339,6 +339,9 @@ int upscli_init_default_connect_timeout(const char *cli_secs, const char *config
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
 
+/** Update tryssl/reqssl/certverif bits according to authconf */
+int upscli_authconf_update_conn_flags(const upscli_authconf_t *ac, int *flags);
+
 /******************************************************************************
  * String methods for space-separated token lists, used originally in dstate  *
  * These methods should ease third-party NUT clients' parsing of `ups.status` *
