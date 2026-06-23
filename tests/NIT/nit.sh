@@ -1485,10 +1485,19 @@ EOF
                     && [ -n "${CERTHASH}" ] \
                     || die "Could not determine OpenSSL certificate hash for Root CA files"
 
-                    # NOTE: Symlinking may be prohibited or not implemented on some platforms (e.g. Windows) or file systems
+                    # NOTE: Symlinking may be prohibited or not implemented
+                    # on some platforms (e.g. Windows) or file systems, and
+                    # even if we can create a symlink, we may have trouble
+                    # copying it as such.
                     log_info "SSL: Preparing OpenSSL CA PEM file hash-named (${CERTHASH}) copies or links"
-                    ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
-                    ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                    if [ x"${MSYSTEM}${MSYS2_PATH}${MSYSTEM_PREFIX}" = x ]; then
+                        ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
+                        ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                    else
+                        # On Windows/MSYS2, less hassle to just make copies:
+                        cp -f rootca.pem "${CERTHASH}".0
+                        cp -f rootca.pem "${CERTHASH}"
+                    fi
 
                     # See comments above about no TESTCERT_PATH_SEP for shell globs.
                     ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}"/"${CERTHASH}"* \
