@@ -1160,7 +1160,8 @@ if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
     ; then
         mkdir -p "${TESTCERT_PATH_BASE}"
         # See comments above about no TESTCERT_PATH_SEP for shell globs.
-        cp -prf "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+        cp -prf "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \
+        cp -prfL "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
         log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
 
         check_NIT_certs set-none-on-fail || {
@@ -1206,7 +1207,8 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
                 mkdir -p "${TESTCERT_PATH_BASE}"
                 # See comments above about no TESTCERT_PATH_SEP for shell globs.
-                cp -pfr "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+                cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \\
+                cp -prfL "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
 
                 # If there is a setup script there, source it to get variables
                 if [ -f "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env" ]; then
@@ -1281,7 +1283,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
                     mkdir -p "${TESTCERT_PATH_BASE}"
                     # See comments above about no TESTCERT_PATH_SEP for shell globs.
-                    cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+                    cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \
+                    cp -prfL "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
 
                     if check_NIT_certs ; then
                         rm -f "${LOCKFILE}"
