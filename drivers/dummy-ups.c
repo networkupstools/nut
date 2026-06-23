@@ -159,7 +159,7 @@ void upsdrv_initinfo(void)
 			}
 			/* Connect to the target */
 			ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
-			{
+			{	/* scoping */
 				upscli_authconf_t	*ac_conn = NULL;
 				int	flags_ssl = UPSCLI_CONN_TRYSSL;
 				char	str_port[16];
@@ -167,27 +167,20 @@ void upsdrv_initinfo(void)
 				ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
 				if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
 					upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
-					if (ac_default) {
-						if (ac_default->certverify)
-							flags_ssl |= UPSCLI_CONN_CERTVERIF;
-						if (ac_default->forcessl) {
-							flags_ssl ^= UPSCLI_CONN_TRYSSL;
-							flags_ssl |= UPSCLI_CONN_REQSSL;
-						}
-					}
+					upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
 				}
 				if (upscli_connect(ups, hostname, port, flags_ssl) < 0)
 				{
-					if(repeater_disable_strict_start == 1)
+					if (repeater_disable_strict_start == 1)
 					{
 						upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
 					}
 					else
 					{
 						fatalx(EXIT_FAILURE, "Error: %s. "
-						"Any errors encountered starting the repeater mode result in driver termination, "
-						"perhaps you want to set the 'repeater_disable_strict_start' option?"
-						, upscli_strerror(ups));
+							"Any errors encountered starting the repeater mode result in driver termination, "
+							"perhaps you want to set the 'repeater_disable_strict_start' option?",
+							upscli_strerror(ups));
 					}
 				}
 				else
@@ -196,7 +189,7 @@ void upsdrv_initinfo(void)
 				}
 				if (ac_conn && ac_conn->user && ac_conn->pass) {
 					upsdebugx(1, "%s: Using authentication from configuration file", __func__);
-					if (upscli_authenticate_authconf(ups, ac_conn)) {
+					if (upscli_authenticate_authconf(ups, ac_conn) < 0) {
 						fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 					}
 				}
@@ -216,9 +209,9 @@ void upsdrv_initinfo(void)
 				else
 				{
 					fatalx(EXIT_FAILURE, "Error: %s. "
-					"Any errors encountered starting the repeater mode result in driver termination, "
-					"perhaps you want to set the 'repeater_disable_strict_start' option?"
-					, upscli_strerror(ups));
+						"Any errors encountered starting the repeater mode result in driver termination, "
+						"perhaps you want to set the 'repeater_disable_strict_start' option?",
+						upscli_strerror(ups));
 				}
 			}
 			/* FIXME: commands and settable variable! */
