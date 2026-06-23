@@ -1576,8 +1576,8 @@ static void upscli_free_host_port_cert_data(HOST_CERT_t* cert)
 	if (!cert)
 		return;
 
-	free(cert->host);
-	free(cert->certname);
+	free((void*)cert->host);
+	free((void*)cert->certname);
 
 	/* Don't let consumers with a copy get any funny ideas about memory we no longer own */
 	cert->host = NULL;
