@@ -1625,7 +1625,11 @@ void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char*
 		pthread_mutex_unlock(&mutex_host_cert);
 # endif
 	}
-#endif /* ! SSL */
+#else	/* ! SSL */
+	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
+	NUT_UNUSED_VARIABLE(certname);
+#endif	/* ! SSL */
 }
 
 void upscli_free_host_cert_list(void)
