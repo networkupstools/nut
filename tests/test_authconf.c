@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	const char	*include_conf = "test_include.conf";
 	FILE	*f;
 	upscli_authconf_t	*ac, *ac5, *ac7, *ac8, *ac9, *ac12;
-	size_t	num_sections;
+	size_t	num_sections, expected_sections = 0;
 	char	buf[512], *s;
 	int	l, testnum = 0;
 
@@ -46,13 +46,19 @@ int main(int argc, char **argv)
 		perror("fopen test_nutauth.conf");
 		return 1;
 	}
+
+	expected_sections++;
 	fprintf(f, "USER = globaluser\n");
 	fprintf(f, "PASS = globalpass\n");
 	fprintf(f, "CERTVERIFY = 1\n");
 	fprintf(f, "INCLUDE %s\n", include_conf);
+
+	expected_sections++;
 	fprintf(f, "[@localhost:12345]\n");
 	fprintf(f, "  USER = hostuser\n");
 	fprintf(f, "  FORCESSL = 1\n");
+
+	expected_sections++;
 	fprintf(f, "[admin@localhost:12345]\n");
 	fprintf(f, "  PASS = adminpass\n");
 	fprintf(f, "  FORCESSL = 1\n");
@@ -63,6 +69,8 @@ int main(int argc, char **argv)
 		perror("fopen test_include.conf");
 		return 1;
 	}
+
+	expected_sections++;
 	fprintf(f, "[@otherhost]\n");
 	fprintf(f, "  USER = otheruser\n");
 	fprintf(f, "  CERTHOST = \"Other Server\"\n");
@@ -93,14 +101,14 @@ int main(int argc, char **argv)
 	/* Not "for_debug", but how would this info look in a config file */
 	num_sections = upscli_dump_authconf_list(NULL, 0, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
-	printf("%sok %d - parsed 4 sections\n", num_sections == 4 ? "" : "not ", ++testnum);
+	printf("%sok %d - parsed %" PRIuSIZE " sections (including global)\n", num_sections == expected_sections ? "" : "not ", ++testnum, expected_sections);
 
 	/* 3. Expected printout 2 */
 	printf("=== Parsed configuration (debug view):\n");
 	/* With "for_debug", show all fields (highlight NULLs) */
 	num_sections = upscli_dump_authconf_list(NULL, 1, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
-	printf("%sok %d - parsed 4 sections\n", num_sections == 4 ? "" : "not ", ++testnum);
+	printf("%sok %d - parsed %" PRIuSIZE " sections (including global)\n", num_sections == expected_sections ? "" : "not ", ++testnum, expected_sections);
 
 	/* Test matching */
 	printf("=== Testing matches...\n");
@@ -108,6 +116,7 @@ int main(int argc, char **argv)
 	/* 4. Global match (no specific section for this host) */
 	printf("Checking global match for '@somehost:port', and adding it to the list...\n");
 	ac = upscli_get_authconf_item(NULL, "somehost", "port", 1);
+	expected_sections++;
 	if (ac) {
 		printf("Global match got user=%s\n", ac->user ? ac->user : "NULL");
 		if (ac->user && strcmp(ac->user, "globaluser") == 0) {
@@ -181,7 +190,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* 8. Host default match, saved to list */
+	/* 8. Host default match, saved to list (already is there) */
 	printf("Checking host default match for '@localhost:12345' and saving into list\n");
 	ac8 = upscli_get_authconf_item(NULL, "localhost", "12345", 1);
 	if (ac8 && strcmp(ac8->user, "hostuser") == 0 && ac8->forcessl == 1 && ac8->certverify == 1) {
@@ -194,6 +203,7 @@ int main(int argc, char **argv)
 	/* 9. Non-exact match, take 2 */
 	printf("Checking non-exact match for 'somebody@localhost:12345' after list modification, and adding it to the list\n");
 	ac9 = upscli_get_authconf_item("somebody", "localhost", "12345", 1);
+	expected_sections++;
 	if (ac9) {
 		printf("Non-exact match: got user=%s pass=%s forcessl=%d\n",
 			ac9->user ? ac9->user : "NULL",
@@ -320,7 +330,8 @@ int main(int argc, char **argv)
 	num_sections = upscli_dump_authconf_list(NULL, 0, 1);
 	printf("===== Collected %" PRIuSIZE " sections\n\n", num_sections);
 	/* Added '@somehost:port' and 'somebody@...' */
-	printf("%sok %d - parsed 6 sections\n", num_sections == 6 ? "" : "not ", ++testnum);
+	printf("%sok %d - parsed %" PRIuSIZE " sections (including global and cached results), expected %" PRIuSIZE "\n",
+		num_sections == expected_sections ? "" : "not ", ++testnum, num_sections, expected_sections);
 
 	upscli_free_authconf_item(ac5);
 	upscli_free_authconf_item(ac7);
