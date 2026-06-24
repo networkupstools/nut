@@ -43,7 +43,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         # NOTE: This is the unprivileged part of the GHA-01-tarballs ritual,
         #  running potentially untrusted shell code from the PR source branch.
