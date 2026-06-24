@@ -1792,7 +1792,18 @@ sub to_nut_args {
     if ($sect =~ /@/) {
         $sect =~ s/^[^@]*@//;
     }
-    if ($sect =~ /:/) {
+
+    if (substr($sect, 0, 1) eq '[') {
+        my $close = index($sect, ']');
+        if ($close != -1) {
+            $host = substr($sect, 1, $close - 1);
+            if (length($sect) > $close + 1 && substr($sect, $close + 1, 1) eq ':') {
+                $port = substr($sect, $close + 2);
+            }
+        } else {
+            $host = $sect;
+        }
+    } elsif ($sect =~ /:/) {
         ($host, $port) = split(/:/, $sect, 2);
     } elsif ($sect ne "") {
         $host = $sect;

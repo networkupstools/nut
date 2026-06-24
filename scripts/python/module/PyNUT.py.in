@@ -405,7 +405,20 @@ class PyNUTClient :
             addr_part = section
 
         if addr_part:
-            if ':' in addr_part:
+            if addr_part.startswith('['):
+                close_bracket = addr_part.find(']')
+                if close_bracket != -1:
+                    host = addr_part[1:close_bracket]
+                    if len(addr_part) > close_bracket + 1 and addr_part[close_bracket+1] == ':':
+                        try:
+                            port = int(addr_part[close_bracket+2:])
+                        except ValueError:
+                            pass
+                    else:
+                        pass # port remains default
+                else:
+                    host = addr_part # Should not happen in well-formed authconf
+            elif ':' in addr_part:
                 parts = addr_part.split(':', 1)
                 host = parts[0]
                 try:
