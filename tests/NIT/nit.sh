@@ -536,32 +536,6 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
         ;;
 esac
 
-case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
-    *NSS*)
-        (command -v certutil) || {
-            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
-                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for NSS"
-            fi
-            log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
-            if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
-            if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
-        }
-        ;;
-esac
-
-case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
-    *OpenSSL*)
-        (command -v openssl) || {
-            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
-                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for OpenSSL"
-            fi
-            log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
-            if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
-            if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
-        }
-        ;;
-esac
-
 TESTCERT_ROOTCA_NAME="NUT Mock Root CA"
 TESTCERT_ROOTCA_PASS="VeryS@cur@1337"
 TESTCERT_CLIENT_NAME="NIT upsmon"
@@ -1219,6 +1193,7 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                 fi
 
                 check_NIT_certs && return
+
                 log_warn "FAILED check_NIT_certs with cached data, will generate anew. Removing:"
                 find "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" -ls || true
                 rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
@@ -1229,6 +1204,34 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
         fi
     fi
 fi
+
+# NOTE: We only check for command-line tooling if we need to generate
+#  certs *now* (we can use cached/tarballed ones without that).
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*)
+        (command -v certutil) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for NSS"
+            fi
+            log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*)
+        (command -v openssl) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for OpenSSL"
+            fi
+            log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
 
 # Follow docs/security.txt points about setting up the crypto material
 # stores and their contents (mock a self-signed CA here where appropriate)
