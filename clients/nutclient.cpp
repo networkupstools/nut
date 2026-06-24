@@ -2209,7 +2209,7 @@ static int splitaddr(const std::string& buf, std::string& hostname, uint16_t& po
 			return -1;
 		}
 		hostname = tmp.substr(1, close_bracket - 1);
-		
+
 		size_t next_colon = tmp.find(':', close_bracket);
 		if (next_colon != std::string::npos && next_colon == close_bracket + 1) {
 			colon = next_colon;
@@ -2254,7 +2254,20 @@ static void normalize_parts(std::string& normalized_name, std::string& user, std
 		snprintf(portbuf, sizeof(portbuf), "%u", static_cast<unsigned int>(NUT_PORT));
 		port = portbuf;
 	}
-	normalized_name = user + "@" + host + ":" + port;
+
+	normalized_name = "";
+	if (!user.empty()) {
+		normalized_name += user + "@";
+	}
+
+	if ((host.find(':') != std::string::npos || host.find('[') != std::string::npos || host.find(']') != std::string::npos)
+		&& host.front() != '[') {
+		normalized_name += "[" + host + "]";
+	} else {
+		normalized_name += host;
+	}
+
+	normalized_name += ":" + port;
 }
 
 void AuthConf::merge(const AuthConf& source)

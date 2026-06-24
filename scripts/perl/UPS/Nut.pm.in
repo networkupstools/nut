@@ -1695,12 +1695,17 @@ sub getAuthConf {
     my $norm_host = $host || 'localhost';
     my $norm_port = $port; # may be undef
 
+    my $host_part = $norm_host;
+    if (($host_part =~ /:/ || $host_part =~ /\[/ || $host_part =~ /\]/) && substr($host_part, 0, 1) ne '[') {
+        $host_part = "[$host_part]";
+    }
+
     my $target_user_host_port = "";
     $target_user_host_port .= "$user\@" if defined $user;
-    $target_user_host_port .= $norm_host;
+    $target_user_host_port .= $host_part;
     $target_user_host_port .= ":$norm_port" if defined $norm_port;
 
-    my $target_host_port = "\@$norm_host";
+    my $target_host_port = "\@$host_part";
     $target_host_port .= ":$norm_port" if defined $norm_port;
 
     my $res = UPS::Nut::AuthConf->new("[$target_user_host_port]");
@@ -1738,6 +1743,14 @@ sub findAuthConf {
     my ($user, $host, $port, $auth_configs_ref) = @_;
     my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : ( @authconf_list ? @authconf_list : $class->readAuthConfFile() );
 
+    my $norm_host = $host || 'localhost';
+    my $norm_port = $port; # may be undef
+
+    my $host_part = $norm_host;
+    if (($host_part =~ /:/ || $host_part =~ /\[/ || $host_part =~ /\]/) && substr($host_part, 0, 1) ne '[') {
+        $host_part = "[$host_part]";
+    }
+
     my $star_match;
     foreach my $ac (@auth_configs) {
         my $section = $ac->{section};
@@ -1746,16 +1759,16 @@ sub findAuthConf {
 
         my $target = "";
         $target .= "$user\@" if defined $user;
-        $target .= $host || 'localhost';
-        $target .= ":$port" if defined $port;
+        $target .= $host_part;
+        $target .= ":$norm_port" if defined $norm_port;
 
         return $ac if $section eq $target;
 
         # fallback matches
-        if (!defined $user && defined $host && defined $port && $section eq "$host:$port") {
+        if (!defined $user && defined $norm_port && $section eq "$host_part:$norm_port") {
             return $ac;
         }
-        if (!defined $user && !defined $port && defined $host && $section eq $host) {
+        if (!defined $user && !defined $norm_port && $section eq $host_part) {
             return $ac;
         }
 

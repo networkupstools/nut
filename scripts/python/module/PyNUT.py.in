@@ -306,12 +306,17 @@ class AuthConf:
         norm_host = host if host else 'localhost'
         norm_port = port # may be None
 
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = f"[{host_part}]"
+
         target_user_host_port = ""
         if user: target_user_host_port += f"{user}@"
-        target_user_host_port += f"{norm_host}"
+        target_user_host_port += f"{host_part}"
         if norm_port: target_user_host_port += f":{norm_port}"
 
-        target_host_port = f"@{norm_host}"
+        target_host_port = f"@{host_part}"
         if norm_port: target_host_port += f":{norm_port}"
 
         res = AuthConf(f"[{target_user_host_port}]")
@@ -342,6 +347,14 @@ class AuthConf:
         if auth_configs is None:
             auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
 
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = f"[{host_part}]"
+
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
         for ac in auth_configs:
@@ -350,18 +363,18 @@ class AuthConf:
             # 1. Exact match user@host:port
             target = ""
             if user: target += f"{user}@"
-            target += f"{host if host else 'localhost'}"
-            if port: target += f":{port}"
+            target += f"{host_part}"
+            if norm_port: target += f":{norm_port}"
 
             if section == target:
                 return ac
 
             # 2. Match host:port
-            if not user and section == f"{host}:{port}":
+            if not user and section == f"{host_part}:{norm_port}":
                 return ac
 
             # 3. Match host
-            if not user and not port and section == host:
+            if not user and not norm_port and section == host_part:
                 return ac
 
         return AuthConf.__global_defaults
