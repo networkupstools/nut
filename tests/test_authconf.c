@@ -70,8 +70,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	/* NOTE: Non-commented tokens are probably also ignored */
 	expected_sections++;
-	fprintf(f, "[@otherhost]\n");
+	fprintf(f, "[@otherhost] # Other (commented) tokens ignored\n");
 	fprintf(f, "  USER = otheruser\n");
 	fprintf(f, "  CERTHOST = \"Other Server\"\n");
 	fclose(f);
