@@ -3825,9 +3825,9 @@ testcase_sandbox_cppnit_without_creds() {
     if ( unset NUT_USER || true
          unset NUT_PASS || true
          setenv_ssl_cppnit
-        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
-            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
-        fi
+         if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+         fi
          "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
