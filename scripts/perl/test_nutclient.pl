@@ -16,6 +16,7 @@ if ($@) {
 
 # Main logic
 if (1) {
+    my $NUT_IGNORE_AUTHCONF = (($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "true" || ($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "1") ? 1 : 0;
     my $NUT_HOST = $ENV{'NUT_HOST'} || '127.0.0.1';
     my $NUT_PORT = $ENV{'NUT_PORT'} || '3493';
     my $NUT_USER = $ENV{'NUT_USER'} || undef;
@@ -28,6 +29,29 @@ if (1) {
     my $NUT_CERTVERIFY = (($ENV{'NUT_CERTVERIFY'} || "false") eq "true" || ($ENV{'NUT_CERTVERIFY'} || "false") eq "1") ? 1 : 0;
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
     my $NUT_CAPATH = $ENV{'NUT_CAPATH'} || undef;
+    my $NUT_CERTFILE = $ENV{'NUT_CERTFILE'} || undef;
+    my $NUT_KEYFILE = $ENV{'NUT_KEYFILE'} || undef;
+    my $NUT_KEYPASS = $ENV{'NUT_KEYPASS'} || undef;
+
+    if (!$NUT_IGNORE_AUTHCONF) {
+        # UPS::Nut::AuthConf->getAuthConf() should return a merged config
+        my $ac = UPS::Nut::AuthConf->getAuthConf($NUT_USER, $NUT_HOST, $NUT_PORT);
+        if ($ac) {
+            $NUT_USER = $ac->{user} if defined $ac->{user};
+            $NUT_PASS = $ac->{pass} if defined $ac->{pass};
+            $NUT_CAFILE = $ac->{certpath} if defined $ac->{certpath};
+            $NUT_CERTFILE = $ac->{certfile} if defined $ac->{certfile};
+            $NUT_KEYFILE = $ac->{certident} if defined $ac->{certident};
+            $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
+            $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
+            $NUT_FORCESSL = $ac->{forcessl} if $ac->{forcessl} != -1;
+            # Note: nutauth.conf does not seem to have a direct "usessl" (NUT_SSL)
+            # but it has "forcessl". If forcessl is on, we should probably enable SSL.
+            if ($NUT_FORCESSL) {
+                $NUT_SSL = 1;
+            }
+        }
+    }
     # Note: Python's cert_file, key_file, key_pass are not directly
     # supported by current Nut.pm STARTTLS as independent args, but
     # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
@@ -64,9 +88,9 @@ if (1) {
             # In case PyNUT's cert_file, key_file are needed:
             SSL_ca_file => $NUT_CAFILE,
             SSL_ca_path => $NUT_CAPATH,
-            SSL_cert_file => $ENV{'NUT_CERTFILE'},
-            SSL_key_file => $ENV{'NUT_KEYFILE'},
-            SSL_key_pass => $ENV{'NUT_KEYPASS'}
+            SSL_cert_file => $NUT_CERTFILE,
+            SSL_key_file => $NUT_KEYFILE,
+            SSL_key_pass => $NUT_KEYPASS
         );
     };
     if ($@ || !defined($nut)) {
