@@ -2193,26 +2193,54 @@ static int splitaddr(const std::string& buf, std::string& hostname, uint16_t& po
 {
 	if (buf.empty()) return -1;
 
-	size_t open_bracket = buf.find('[');
-	size_t close_bracket = buf.find(']');
-	size_t colon;
+	std::string tmp = buf;
+	size_t at = tmp.find('@');
+	if (at != std::string::npos) {
+		/* matches upscli_splitaddr warning */
+		fprintf(stderr, "splitaddr: wrong call? Got upsname@hostname[:port] string where only hostname[:port] was expected: %s\n", buf.c_str());
+		tmp = tmp.substr(at + 1);
+	}
 
-	if (open_bracket != std::string::npos && close_bracket != std::string::npos && open_bracket < close_bracket) {
-		hostname = buf.substr(open_bracket + 1, close_bracket - open_bracket - 1);
-		colon = buf.find(':', close_bracket);
-	} else {
-		colon = buf.find(':');
-		if (colon != std::string::npos) {
-			hostname = buf.substr(0, colon);
+	size_t colon = std::string::npos;
+	if (tmp[0] == '[') {
+		size_t close_bracket = tmp.find(']');
+		if (close_bracket == std::string::npos) {
+			fprintf(stderr, "splitaddr: missing closing bracket in [domain literal]: %s\n", buf.c_str());
+			return -1;
+		}
+		hostname = tmp.substr(1, close_bracket - 1);
+		
+		size_t next_colon = tmp.find(':', close_bracket);
+		if (next_colon != std::string::npos && next_colon == close_bracket + 1) {
+			colon = next_colon;
 		} else {
-			hostname = buf;
+			port = NUT_PORT;
+			return 0;
+		}
+	} else {
+		colon = tmp.find(':');
+		if (colon != std::string::npos) {
+			hostname = tmp.substr(0, colon);
+		} else {
+			hostname = tmp;
+			port = NUT_PORT;
+			return 0;
 		}
 	}
 
-	if (colon != std::string::npos && colon + 1 < buf.length()) {
-		port = static_cast<uint16_t>(strtol(buf.substr(colon + 1).c_str(), nullptr, 10));
+	if (colon != std::string::npos && colon + 1 < tmp.length()) {
+		std::string portstr = tmp.substr(colon + 1);
+		char* endptr = nullptr;
+		long l = strtol(portstr.c_str(), &endptr, 10);
+		if (endptr && *endptr == '\0' && l > 0 && l <= 65535) {
+			port = static_cast<uint16_t>(l);
+		} else {
+			fprintf(stderr, "splitaddr: invalid port number specified after ':' separator: %s\n", buf.c_str());
+			return -1;
+		}
 	} else {
-		port = NUT_PORT;
+		fprintf(stderr, "splitaddr: no port number specified after ':' separator: %s\n", buf.c_str());
+		return -1;
 	}
 
 	return 0;
