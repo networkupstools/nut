@@ -3860,7 +3860,7 @@ isTestablePerl() {
         return 1
     fi
 
-    if [ ! -s "${TOP_SRCDIR}/scripts/perl/UPS/Nut.pm" ] \
+    if [ ! -s "${TOP_BUILDDIR}/scripts/perl/UPS/Nut.pm" ] \
     ; then
         return 1
     fi
@@ -3890,7 +3890,7 @@ isTestablePerl() {
         log_error "[isTestablePerl] Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
     fi
 
-    PERL_OPTS_INC="-I${TOP_SRCDIR}/scripts/perl"
+    PERL_OPTS_INC="-I${TOP_BUILDDIR}/scripts/perl"
     PERL_OPTS_DEBUG=''
     if [ x"$NIT_DEBUG_PERL" = xtrue ] ; then
         if [ -d "${HOME}/perl5/lib/perl5" ] ; then

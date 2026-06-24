@@ -7404,6 +7404,7 @@ AC_CONFIG_FILES([
  scripts/installer/Makefile
  scripts/misc/nut.bash_completion
  scripts/obs/Makefile
+ scripts/perl/UPS/Nut.pm
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py

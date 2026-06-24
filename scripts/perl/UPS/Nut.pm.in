@@ -1560,7 +1560,7 @@ sub readAuthConfFile {
         }
 
         if (!defined $filename) {
-            my $confpath = $ENV{NUT_CONFPATH} || "/etc/nut";
+            my $confpath = $ENV{NUT_CONFPATH} || "@CONFPATH@";
             if (-r "$confpath/nutauth.conf") {
                 $filename = "$confpath/nutauth.conf";
             }
