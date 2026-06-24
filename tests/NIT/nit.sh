@@ -2493,6 +2493,7 @@ EOF
         esac
 
         # Shared features for both SSL backends:
+        [ x"${WITH_SSL_CLIENT}" = xnone ] || \
         case x"${WITH_SSL_CLIENT_CERTIDENT}" in
             x"name+pass")
                 cat << EOF
