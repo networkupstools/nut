@@ -2280,8 +2280,10 @@ void AuthConf::merge(const AuthConf& source)
 	if (at != std::string::npos && at > 0) {
 		/* Section title strictly defines a user name */
 		user = section.substr(0, at);
+	} else if (at == 0) {
+		/* Section starts with @, so no user in title */
 	} else {
-		/* No '@' or no username chars before it in target section title */
+		/* No '@' in target section title */
 		if (user.empty() && !source.user.empty()) {
 			user = source.user;
 		}
