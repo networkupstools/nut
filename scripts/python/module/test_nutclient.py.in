@@ -7,6 +7,38 @@ import PyNUT
 import sys
 import os
 
+
+def test_splitaddr(addr, expected_host, expected_port):
+    ac = PyNUT.AuthConf(f"[{addr}]")
+    client = PyNUT.PyNUTClient.from_authconf(ac, connect_now=False)
+    # Note: host in PyNUTClient is __host, but we can't access it easily if it's private.
+    # Looking at the code, we might need to add a getter or use _PyNUTClient__host
+    host = client._PyNUTClient__host
+    port = client._PyNUTClient__port
+
+    if host == expected_host and port == expected_port:
+        print(f"OK: {addr} -> {host}:{port}")
+    else:
+        print(f"FAIL: {addr} -> expected {expected_host}:{expected_port}, got {host}:{port}")
+        return 1
+    return 0
+
+def testsuite_splitaddr():
+    errors = 0
+    errors += test_splitaddr("localhost", "localhost", 3493)
+    errors += test_splitaddr("localhost:12345", "localhost", 12345)
+    errors += test_splitaddr("[::1]", "::1", 3493)
+    errors += test_splitaddr("[::1]:12345", "::1", 12345)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]", "fe80::215:5dff:fea4:f780", 3493)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]:3495", "fe80::215:5dff:fea4:f780", 3495)
+
+    if errors:
+        print("Some Python splitaddr tests FAILED")
+        return False
+
+    print("All Python splitaddr tests passed!")
+    return True
+
 if __name__ == "__main__" :
     NUT_HOST = os.getenv('NUT_HOST', '127.0.0.1')
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
@@ -192,6 +224,10 @@ if __name__ == "__main__" :
         result = result + "\nTEST-CASE FAILED"
         failed.append('ListClients-dummy-after')
     print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting authconf section name parser" )
+    if not testsuite_splitaddr():
+        failed.append('testsuite_splitaddr')
 
     print( 80*"-" + "\nTesting 'PyNUT' instance teardown (end of test script)" )
     # No more tests AFTER this line; add them above the teardown message

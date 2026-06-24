@@ -64,7 +64,7 @@ check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
 	+@cd "$(top_builddir)/scripts" && $(MAKE) $(AM_MAKEFLAGS) -s perl/UPS/Nut.pm
-	+@cd "$(top_builddir)/scripts" && $(MAKE) $(AM_MAKEFLAGS) -s python/module/PyNUT.py
+	+@cd "$(top_builddir)/scripts/python/module/" && $(MAKE) $(AM_MAKEFLAGS) -s PyNUT.py test_nutclient.py
 	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s cleanup-touchfiles-for-generated-headers
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 
