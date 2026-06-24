@@ -75,6 +75,33 @@ int main(int argc, char **argv)
 	fprintf(f, "[@otherhost] # Other (commented) tokens ignored\n");
 	fprintf(f, "  USER = otheruser\n");
 	fprintf(f, "  CERTHOST = \"Other Server\"\n");
+
+	/* A link-local (MAC address based) IPv6 address as colon-separated hexes in square brackets
+	 * Here and below - essentially a test for upscli_split_authconf_section() method.
+	 * A missing '@' should mean the section name is wholly the host name (maybe with port) */
+	expected_sections++;
+	fprintf(f, "[[fe80::215:5dff:fea4:f780]]\n");
+	fprintf(f, "  CERTHOST = \"An IPv6 Server\"\n");
+
+	expected_sections++;
+	fprintf(f, "[ipv6user@[fe80::215:5dff:fea4:f780]]\n");
+	fprintf(f, "  PASS = \"ipv6pass\"\n");
+
+	expected_sections++;
+	fprintf(f, "[[fe80::215:5dff:fea4:f781]:3495]\n");
+	fprintf(f, "  CERTHOST = \"An IPv6 Server on port 3495\"\n");
+
+	/* FIXME: With proper IPv6 parsing, these two should collapse into the same section
+	 *  or error out in case of conflicts/redefinitions */
+	expected_sections++;
+	fprintf(f, "[@[0::1]:12345]\n");
+	fprintf(f, "  USER = IPv6user\n");
+	fprintf(f, "  CERTHOST = \"An IPv6 localhost Server\"\n");
+	expected_sections++;
+	fprintf(f, "[@[::1]:12345]\n");
+	fprintf(f, "  USER = IPv6user2\n");
+	fprintf(f, "  CERTHOST = \"An IPv6 localhost Server\"\n");
+
 	fclose(f);
 
 	if ((s = getenv("NUT_AUTHCONF_FILE"))) {
@@ -325,7 +352,204 @@ int main(int argc, char **argv)
 		printf("ok %d - No bogus match kind of OK: got no ac\n", ++testnum);
 	}
 
-	/* 16. Expected printout 3 */
+	/* 16. IPv6#1 in brackets */
+	printf("Checking IPv6#1 match for a link-local address section\n");
+	ac = upscli_find_authconf_item(NULL, "[fe80::215:5dff:fea4:f780]", NULL);
+	if (ac) {
+		/* Normalized, with default port injected */
+		if (ac->section && !strcmp(ac->section, "@[fe80::215:5dff:fea4:f780]:3493")) {
+			printf("ok %d - got expected bracketed IPv6#1 address as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed IPv6#1 address as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed IPv6#1 address\n", ++testnum);
+		return 1;
+	}
+
+	/* 17. Data in that IPv6#1 section... */
+	if (ac->certhost && !strcmp(ac->certhost, "An IPv6 Server")) {
+		printf("ok %d - got expected CERTHOST in IPv6#1 section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected CERTHOST in IPv6#1 section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+	/* FIXME: Find a host_cert for the bracketed IPv6 address, make sure it is the same as the one in the section */
+
+	/* 18. user@IPv6#1 in brackets */
+	printf("Checking user@IPv6#1 match for a link-local address section\n");
+	ac = upscli_find_authconf_item("ipv6user", "[fe80::215:5dff:fea4:f780]", NULL);
+	if (ac) {
+		if (ac->section && !strcmp(ac->section, "ipv6user@[fe80::215:5dff:fea4:f780]:3493")) {
+			printf("ok %d - got expected bracketed user@IPv6#1 address as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed user@IPv6#1 address as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed user@IPv6#1 address\n", ++testnum);
+		return 1;
+	}
+
+	/* 19. Data in that user@IPv6#1 section, unique... */
+	if (ac->pass && !strcmp(ac->pass, "ipv6pass")) {
+		printf("ok %d - got expected PASS in user@IPv6#1 section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected PASS in user@IPv6#1 section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+
+	/* 20. Data in that user@IPv6#1 section, inherited - should be none for find method... */
+	if (!(ac->certhost)) {
+		printf("ok %d - no expected CERTHOST in user@IPv6#1 section\n", ++testnum);
+	} else {
+		printf("not ok %d - got an unexpected CERTHOST in user@IPv6#1 section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+
+	/* 21. Re-probe with get method */
+	printf("Checking user@IPv6#1 CERTHOST match for a link-local address section after upscli_get_authconf_item(), already in list - updated in place\n");
+	ac = upscli_get_authconf_item("ipv6user", "[fe80::215:5dff:fea4:f780]", NULL, 1);
+	/* NOTE: Not bumping expected_sections because the section is already in the list */
+	if (ac) {
+		if (ac->section && !strcmp(ac->section, "ipv6user@[fe80::215:5dff:fea4:f780]:3493")) {
+			printf("ok %d - got expected bracketed user@IPv6#1 address as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed user@IPv6#1 address as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed user@IPv6#1 address\n", ++testnum);
+		return 1;
+	}
+
+	/* 22. Data in that user@IPv6#1 section, now inherited... */
+	if (ac->certhost && !strcmp(ac->certhost, "An IPv6 Server")) {
+		printf("ok %d - got expected CERTHOST in user@IPv6#1 section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected CERTHOST in user@IPv6#1 section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+
+	/* 23. IPv6#2 in brackets */
+	printf("Checking NO IPv6#2 match for a link-local address section without a port\n");
+	ac = upscli_find_authconf_item(NULL, "[fe80::215:5dff:fea4:f781]", NULL);
+	if (ac) {
+		if (ac->section) {
+			printf("not ok %d - got a hit by expected bracketed IPv6#2 address as the section name but without asking for the custom port\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		} else {
+			printf("ok %d - got the global section by expected bracketed IPv6#2 address when not asking for the custom port\n", ++testnum);
+		}
+	} else {
+		printf("ok %d - (sort of OK - expected global section) did not get any section by expected bracketed IPv6#2 address when not asking for the custom port\n", ++testnum);
+	}
+
+	/* 24. IPv6#2 in brackets */
+	printf("Checking IPv6#2 match for a link-local address section\n");
+	ac = upscli_find_authconf_item(NULL, "[fe80::215:5dff:fea4:f781]", "3495");
+	if (ac) {
+		if (ac->section && !strcmp(ac->section, "@[fe80::215:5dff:fea4:f781]:3495")) {
+			printf("ok %d - got expected bracketed IPv6#2 address and port as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed IPv6#2 address and port as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed IPv6#2 address and port\n", ++testnum);
+		return 1;
+	}
+
+	/* 25. Data in that IPv6#2 section... */
+	if (ac->certhost && !strcmp(ac->certhost, "An IPv6 Server on port 3495")) {
+		printf("ok %d - got expected CERTHOST in IPv6#2 section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected CERTHOST in IPv6#2 section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+	/* FIXME: Find a host_port_cert for the bracketed IPv6 address, make sure it is the same
+	 *  as the one in the section, and there are no hits for any other ports */
+
+	/* 26. IPv6#3 in brackets */
+	printf("Checking NO IPv6#3 match for a localhost address section without a port\n");
+	ac = upscli_find_authconf_item(NULL, "[0::1]", NULL);
+	if (ac) {
+		if (ac->section) {
+			printf("not ok %d - got a hit by expected bracketed IPv6#3 address as the section name but without asking for the custom port\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		} else {
+			printf("ok %d - (sort of) got the global section by expected bracketed IPv6#3 address when not asking for the custom port\n", ++testnum);
+		}
+	} else {
+		printf("ok %d - did not get any section by expected bracketed IPv6#3 address when not asking for the custom port\n", ++testnum);
+	}
+
+	/* 27. IPv6#3a in brackets */
+	printf("Checking IPv6#3a match for a localhost address section\n");
+	ac = upscli_find_authconf_item(NULL, "[::1]", "12345");
+	if (ac) {
+		if (ac->section && !strcmp(ac->section, "@[::1]:12345")) {
+			printf("ok %d - got expected bracketed IPv6#3a address and port as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed IPv6#3a address and port as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed IPv6#3a address and port\n", ++testnum);
+		return 1;
+	}
+
+	/* 28. Data in that IPv6#3 section... */
+	/* FIXME: With proper IPv6 parsing, [::1] and [0::1] should collapse into the same section
+	 *  or error out in case of conflicts/redefinitions; for now they are treated as separate */
+	if (ac->user && !strcmp(ac->user, "IPv6user2")) {
+		printf("ok %d - got expected USERNAME in IPv6#3a section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected USERNAME in IPv6#3a section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+
+	/* 29. IPv6#3b in brackets */
+	printf("Checking IPv6#3b match for a localhost address section\n");
+	ac = upscli_find_authconf_item(NULL, "[0::1]", "12345");
+	if (ac) {
+		if (ac->section && !strcmp(ac->section, "@[0::1]:12345")) {
+			printf("ok %d - got expected bracketed IPv6#3b address and port as the section name\n", ++testnum);
+		} else {
+			printf("not ok %d - did not get expected bracketed IPv6#3b address and port as the section name\n", ++testnum);
+			upscli_dump_authconf_item(NULL, ac, 1, 1);
+			return 1;
+		}
+	} else {
+		printf("not ok %d - did not get any section by expected bracketed IPv6#3a address and port\n", ++testnum);
+		return 1;
+	}
+
+	/* 30. Data in that IPv6#3 section... */
+	/* FIXME: see above */
+	if (ac->user && !strcmp(ac->user, "IPv6user")) {
+		printf("ok %d - got expected USERNAME in IPv6#3b section\n", ++testnum);
+	} else {
+		printf("not ok %d - did not get expected USERNAME in IPv6#3b section\n", ++testnum);
+		upscli_dump_authconf_item(NULL, ac, 1, 1);
+		return 1;
+	}
+
+	/* 31. Expected printout 3 */
 	printf("=== Parsed configuration (production view) after several 'get' operations with results caching:\n");
 	/* Not "for_debug", but how would this info look in a config file */
 	num_sections = upscli_dump_authconf_list(NULL, 0, 1);
