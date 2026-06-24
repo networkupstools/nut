@@ -3599,7 +3599,22 @@ setenv_ssl_common() {
 # Executed in subshell context of test cases below
 # Same vars are also used for C++ (cppnit) tests
 setenv_ssl_python() {
-    setenv_ssl_common "python"
+    # NOTE: Python and PERL SSL is backed by OpenSSL;
+    # they can not (currently?) use configs and files
+    # made for e.g. Mozilla NSS.
+    if [ -s "${NUT_CONFPATH}/nutauth.conf" ] && [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_python() although '${NUT_CONFPATH}/nutauth.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+            setenv_ssl_common "python"
+        else
+            log_info "SKIP setenv_ssl_python() because '${NUT_CONFPATH}/nutauth.conf' exists"
+            return 0
+        fi
+    else
+        setenv_ssl_common "python"
+    fi
 
     $PYTHON << EOF
 try:
@@ -3627,6 +3642,17 @@ EOF
 # Executed in subshell context of test cases below
 # Same vars are also used for Python (PyNUTClient) tests
 setenv_ssl_cppnit() {
+    if [ -s "${NUT_CONFPATH}/nutauth.conf" ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_cppnit() although '${NUT_CONFPATH}/nutauth.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+        else
+            log_info "SKIP setenv_ssl_cppnit() because '${NUT_CONFPATH}/nutauth.conf' exists"
+            return 0
+        fi
+    fi
+
     case "${WITH_SSL_CLIENT}" in
         none)
             NUT_SSL=false
@@ -3799,7 +3825,22 @@ testcases_sandbox_python() {
 ####################################
 
 setenv_ssl_perl() {
-    setenv_ssl_common "perl"
+    # NOTE: Python and PERL SSL is backed by OpenSSL;
+    # they can not (currently?) use configs and files
+    # made for e.g. Mozilla NSS.
+    if [ -s "${NUT_CONFPATH}/nutauth.conf" ] && [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_perl() although '${NUT_CONFPATH}/nutauth.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+            setenv_ssl_common "perl"
+        else
+            log_info "SKIP setenv_ssl_perl() because '${NUT_CONFPATH}/nutauth.conf' exists"
+            return 0
+        fi
+    else
+        setenv_ssl_common "perl"
+    fi
 
     case "${NUT_CAPATH}" in
         ?":\\"*|?":/"*)
@@ -3815,7 +3856,7 @@ setenv_ssl_perl() {
             # Perl uses a platform-dependent PATH separator,
             # however in mingw/msys2 it uses ":" which clashes
             # with "C:\..." that Python insists on in this var.
-	    _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+            _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
             ;;
     esac
 
