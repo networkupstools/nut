@@ -588,26 +588,101 @@ int upscli_split_authconf_section(const char *sect_name,
 	/* Take raw sect_name as input (e.g. a user-written string from config files).
 	 * Normalize it by splitting into user, host, and port components (populating absent values).
 	 * Return normalized components and reconstructed section name in output parameters (if not NULL).
+	 * This looks similar to upscli_splitname() but reserves the option to evolve
+	 * the supported section name syntax differently for the different purpose.
+	 * TOTHINK: Combine the `host:port` logic with upscli_splitaddr() to
+	 *  de-duplicate IPv6 nuance handling etc.?
 	 */
-	const char	*at = NULL, *colon = NULL;
+	const char	*at = NULL, *colon = NULL, *bracket_open = NULL, *bracket_close = NULL;
 	char	*sect_user = NULL, *sect_host = NULL, *sect_port = NULL;
 	int	fixed_sect_user = 0;
 
 	if (!sect_name) {
 		upsdebugx(1, "%s: sect_name is NULL", __func__);
+		errno = EINVAL;
 		return -1;
 	}
 
 	if (!(*sect_name)) {
 		/* TOTHINK: Should this mean `localhost@NUT_PORT`? Or global? Probably neither. */
 		upsdebugx(1, "%s: sect_name is empty", __func__);
+		errno = EINVAL;
 		return -1;
 	}
 
 	at = strchr(sect_name, '@');
 	colon = strchr(sect_name, ':');
+	bracket_open = strchr(sect_name, '[');
+	bracket_close = strchr(sect_name, ']');
+
+	/* Sanity checks */
 	if (at && colon && colon < at) {
 		upsdebugx(1, "%s: Invalid section header: colon ':' before at '@': '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* IPv6 numeric addresses are a series of colon-separated hex digits wrapped in square brackets */
+	if (bracket_open && colon && colon < bracket_open) {
+		upsdebugx(1, "%s: Invalid section header: colon ':' before opening bracket '[': '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	if ( (bracket_open && !bracket_close)
+	 ||  (!bracket_open && bracket_close)
+	) {
+		upsdebugx(1, "%s: Invalid section header: single bracket '[' or ']' in text: '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (bracket_close && colon && colon > bracket_close) {
+		upsdebugx(1, "%s: Invalid section header: first colon ':' is after closing bracket ']': '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (bracket_close && !colon) {
+		upsdebugx(1, "%s: Invalid section header: brackets '[...]' present but no colon ':' inside: '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* For valid IPv6 spelling, consider there should be several colons inside brackets */
+	if (bracket_open && bracket_close && colon && colon > bracket_open && colon < bracket_close) {
+		/* There should be at most one more colon inside brackets
+		 * Technically: up to 8 hex sections split by 7 colons,
+		 *  but long stretches of zeroes may collapse into "::" ONCE.
+		 */
+		colon = strchr(colon + 1, ':');
+		if (!colon || colon > bracket_close) {
+			upsdebugx(1, "%s: Invalid section header: withh numeric IPv6 there must be multiple colons ':' inside brackets: '%s'", __func__, sect_name);
+			errno = EINVAL;
+			return -1;
+		}
+	}
+
+	/* For valid IPv6 spelling, consider the colon after brackets as the port separator (if any, NULL otherwise) */
+	if (bracket_close) {
+		/* There should be at most one colon after brackets (may also be none) */
+		colon = strchr(bracket_close + 1, ':');
+	}
+
+	if (colon && strchr(colon + 1, ':')) {
+		upsdebugx(1, "%s: Invalid section header: multiple colons ':' in text: '%s'", __func__, sect_name);
+		return -1;
+	}
+
+	if (bracket_open && strchr(bracket_open + 1, '[')) {
+		upsdebugx(1, "%s: Invalid section header: multiple opening brackets '[' in text: '%s'", __func__, sect_name);
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (bracket_close && strchr(bracket_close + 1, ']')) {
+		upsdebugx(1, "%s: Invalid section header: multiple closing brackets ']' in text: '%s'", __func__, sect_name);
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -722,8 +797,10 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 
 		current_section_ignored = 0;
 
-		sect_name = xstrdup(&arg[0][1]);	/* forget leading '[' */
-		end_bracket = strchr(sect_name, ']');
+		/* forget leading '[' */
+		sect_name = xstrdup(&arg[0][1]);
+		/* we would remove the LAST seen bracket (there may be some in text, in case of IPv6 addresses) */
+		end_bracket = strrchr(sect_name, ']');
 		if (!end_bracket || !strcmp(sect_name, "_global_defaults")) {
 			free(sect_name);
 
@@ -740,7 +817,9 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			return;
 		}
 
-		*(char *)(end_bracket) = '\0';	/* forget trailing ']' and any characters after it (comments etc.) */
+		/* forget trailing ']' and any characters after it (comments etc.)...
+		 * although those should be separate parseconf arguments */
+		*(char *)(end_bracket) = '\0';
 
 		if (upscli_split_authconf_section(sect_name, &normalized_sect_name,
 			&sect_user, &current_section_with_fixed_username,
