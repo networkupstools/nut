@@ -1565,19 +1565,35 @@ sub readAuthConfFile {
                 $filename = "$confpath/nutauth.conf";
             }
         }
+
+        if (defined $filename) {
+            $self->_debug("readAuthConfFile(): filename was not provided, detected default: " . $filename);
+        } else {
+            $self->_debug("readAuthConfFile(): filename was not provided, and NOT detected!");
+        }
     }
 
     if (!defined $filename || !-e $filename) {
-        if ($fatal_errors) {
-            die "Can't open a user/site-provided default nutauth.conf file" if !defined $filename;
-            die "Could not open $filename";
+        my $errMsg;
+        if (defined $filename) {
+            $errMsg = "Can't open a user/site-provided default nutauth.conf file";
+        } else {
+            $errMsg = "Could not open $filename";
         }
+
+        if ($fatal_errors) {
+            die $errMsg;
+        }
+
+        $self->_debug("readAuthConfFile(): " . $errMsg);
         return ();
     }
 
     my $fh;
     if (!open($fh, '<', $filename)) {
-        die "Error opening $filename: $!" if $fatal_errors;
+        my $errMsg = "Error opening $filename: $!";
+        die $errMsg if $fatal_errors;
+        $self->_debug("readAuthConfFile(): " . $errMsg);
         return ();
     }
 
