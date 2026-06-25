@@ -2024,6 +2024,24 @@ AuthConf::AuthConf(const AuthConf& source, const std::string& section_name)
 {
 }
 
+AuthConf& AuthConf::operator=(const AuthConf& source)
+{
+	if (this != &source) {
+		section = source.section;
+		user = source.user;
+		pass = source.pass;
+		certpath = source.certpath;
+		certfile = source.certfile;
+		certident = source.certident;
+		certpasswd = source.certpasswd;
+		ssl_backend = source.ssl_backend;
+		certhost = source.certhost;
+		certverify = source.certverify;
+		forcessl = source.forcessl;
+	}
+	return *this;
+}
+
 AuthConf::~AuthConf()
 {
 }

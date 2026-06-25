@@ -95,6 +95,7 @@ class AuthConf
 public:
 	AuthConf(const std::string& section = "");
 	AuthConf(const AuthConf& source, const std::string& section = "");
+	AuthConf& operator=(const AuthConf& source);
 	~AuthConf();
 
 	/** Get the one global list of all parsed authentication configurations */
