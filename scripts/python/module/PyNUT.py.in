@@ -131,16 +131,34 @@ class AuthConf:
 
     def __init__(self, section=""):
         self.section = section
+        ''' [@host:port] or [user@host:port], or NULL for global '''
+
         self.user = None
         self.pass_ = None
+
         self.certpath = None
+        ''' Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes '''
+
         self.certfile = None
+        ''' (OpenSSL only) Client certificate file for authentication to the server '''
+
         self.certident = None
+        ''' Client certificate identity (nickname, alias) '''
+
         self.certpasswd = None
+        ''' Password for key/cert storage '''
+
         self.ssl_backend = None
+        ''' "openssl"/"nss" '''
+
         self.certhost = None
+        ''' Expected certificate subject (common name) of that server's certificate '''
+
         self.certverify = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
+
         self.forcessl = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
 
     @staticmethod
     def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):

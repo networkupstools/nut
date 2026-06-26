@@ -1564,17 +1564,17 @@ sub new {
     my $class = shift;
     my $section = shift || "";
     my $self = {
-        section     => $section,
+        section     => $section,  # [@host:port] or [user@host:port], or NULL for global
         user        => undef,
         pass        => undef,
-        certpath    => undef,
-        certfile    => undef,
-        certident   => undef,
-        certpasswd  => undef,
-        ssl_backend => undef,
-        certhost    => undef,
-        certverify  => -1,
-        forcessl    => -1,
+        certpath    => undef,     # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
+        certfile    => undef,     # (OpenSSL only) Client certificate file for authentication to the server
+        certident   => undef,     # Client certificate identity (nickname, alias)
+        certpasswd  => undef,     # Password for key/cert storage
+        ssl_backend => undef,     # "openssl"/"nss"
+        certhost    => undef,     # Expected certificate subject (common name) of that server's certificate
+        certverify  => -1,        # -1 = unset, 0 = off, 1 = on
+        forcessl    => -1,        # -1 = unset, 0 = off, 1 = on
     };
     bless $self, $class;
     return $self;
