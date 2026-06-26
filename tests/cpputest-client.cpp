@@ -74,9 +74,13 @@
 # define _NUTCLIENTTEST_BUILD 1
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include "../clients/nutclient.h"
 #include "../clients/nutclientmem.h"
-#include "../clients/authconf.h"
 
 namespace nut {
 
@@ -254,27 +258,40 @@ void NutActiveClientTest::setUp()
 
 	char * ignore_authconf = std::getenv("NUT_IGNORE_AUTHCONF");
 	if (!ignore_authconf || (std::string(ignore_authconf) != "1" && std::string(ignore_authconf) != "true")) {
-		if (upscli_read_authconf_file(NULL, 0) == 1) {
+		if (nut::AuthConf::readAuthConfFile("", 0) == 1) {
 			char szPort[32];
+			std::cerr << "NUT AuthConf file read succeeded, applying its values for host connection instead of envvars (if any)" << std::endl;
 			snprintf(szPort, sizeof(szPort), "%u", env_NUT_PORT);
-			upscli_authconf_t * ac = upscli_get_authconf_item(
-				env_NUT_USER.empty() ? NULL : env_NUT_USER.c_str(),
+			nut::AuthConf ac = nut::AuthConf::getAuthConf(
+				env_NUT_USER,
 				"localhost",
 				szPort,
-				0);
-			if (ac) {
-				if (ac->user) env_NUT_USER = ac->user;
-				if (ac->pass) env_NUT_PASS = ac->pass;
-				if (ac->certpath) env_NUT_CAFILE = ac->certpath;
-				if (ac->certfile) env_NUT_CERTFILE = ac->certfile;
-				if (ac->certident) env_NUT_KEYFILE = ac->certident;
-				if (ac->certpasswd) env_NUT_KEYPASS = ac->certpasswd;
-				if (ac->certverify != -1) env_NUT_CERTVERIFY = ac->certverify;
-				if (ac->forcessl != -1) {
-					env_NUT_FORCESSL = (ac->forcessl == 1);
+				false);
+			if (!ac.user.empty() || !ac.pass.empty() || !ac.certpath.empty()) {
+				if (!ac.user.empty()) env_NUT_USER = ac.user;
+				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
+				if (!ac.certpath.empty()) {
+					struct stat st;
+					if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+						env_NUT_CAPATH = ac.certpath;
+					} else {
+						env_NUT_CAFILE = ac.certpath;
+					}
+				}
+				if (!ac.certfile.empty()) {
+					if (env_NUT_CAFILE.empty()) {
+						env_NUT_CAFILE = ac.certfile;
+					} else {
+						env_NUT_CERTFILE = ac.certfile;
+					}
+				}
+				if (!ac.certident.empty()) env_NUT_KEYFILE = ac.certident;
+				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
+				if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
+				if (ac.forcessl != -1) {
+					env_NUT_FORCESSL = (ac.forcessl == 1);
 					if (env_NUT_FORCESSL) env_NUT_SSL = true;
 				}
-				upscli_free_authconf_item(ac);
 			}
 		}
 	}

@@ -166,7 +166,7 @@ class AuthConf:
                                 filename = p
 
             if filename is None:
-                filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
+                filename = os.path.join(os.environ.get("NUT_CONFPATH", "/usr/local/ups/etc"), "nutauth.conf")
 
         if not os.path.exists(filename):
             if fatal_errors:
@@ -419,35 +419,21 @@ class PyNUTClient :
                 else:
                     host = addr_part # Should not happen in well-formed authconf
             elif ':' in addr_part:
-                parts = addr_part.split(':', 1)
-                host = parts[0]
+                host, port_str = addr_part.split(':', 1)
                 try:
-                    port = int(parts[1])
+                    port = int(port_str)
                 except ValueError:
                     pass
             else:
                 host = addr_part
 
-        if host == "":
-            host = "127.0.0.1"
-
-        client_args = {
-            "host": host,
-            "port": port,
-            "login": authconf.user,
-            "password": authconf.pass_,
-            "use_ssl": authconf.forcessl > 0,
-            "force_ssl": authconf.forcessl > 0,
-            "cert_verify": authconf.certverify > 0 if authconf.certverify != -1 else None,
-            "ca_path": authconf.certpath,
-            "cert_file": authconf.certfile,
-            "cert_ident": authconf.certident,
-            "key_pass": authconf.certpasswd,
-            "certhost": authconf.certhost
-        }
-        # Override with any explicit kwargs
-        client_args.update(kwargs)
-        return cls(**client_args)
+        return cls(host=host, port=port, login=authconf.user, password=authconf.pass_,
+                   ca_file=authconf.certpath if authconf.certpath and os.path.isfile(authconf.certpath) else authconf.certfile,
+                   ca_path=authconf.certpath if authconf.certpath and os.path.isdir(authconf.certpath) else None,
+                   cert_file=authconf.certfile, key_file=authconf.certident, key_pass=authconf.certpasswd,
+                   cert_verify=(authconf.certverify == 1) if authconf.certverify != -1 else None,
+                   use_ssl=(authconf.forcessl == 1), force_ssl=(authconf.forcessl == 1),
+                   **kwargs)
 
     __debug       = None   # Set class to debug mode (prints everything useful for debugging...)
     __host        = None
@@ -469,8 +455,7 @@ class PyNUTClient :
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False,
-                  connect_now=True, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
                   cert_file=None, key_file=None, key_pass=None, force_ssl=False, cert_ident=None, certhost=None ) :
         """ Class initialization method
@@ -480,9 +465,8 @@ port        : Port where NUT listens for connections (default to 3493)
 login       : Login used to connect to NUT server (default to None for no authentication)
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
-connect_now : Boolean, connect to NUT server immediately and apply "tracking" setting (default to True)
 timeout     : Timeout used to wait for network response
-tracking    : Boolean or 'ON'/'OFF', if we connect and try to enable TRACKING support right away (remembered for subsequent connect() call if not connecting now)
+tracking    : Boolean or 'ON'/'OFF', try to enable TRACKING support right away
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
@@ -549,7 +533,15 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if self.__debug:
                     print( "[DEBUG] Creating SSL context" )
                 # Create a default context and apply parameters
-                self.__ssl_context = ssl.create_default_context(cafile=ca_file, capath=ca_path)
+                # If cafile is a directory, it should be passed as capath
+                eff_cafile = ca_file
+                eff_capath = ca_path
+                if ca_file and os.path.isdir(ca_file):
+                    if not eff_capath:
+                        eff_capath = ca_file
+                    eff_cafile = None
+
+                self.__ssl_context = ssl.create_default_context(cafile=eff_cafile, capath=eff_capath)
                 if cert_verify is not None:
                     if not cert_verify:
                         # Must be set first, else we get
@@ -614,13 +606,9 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if force_ssl:
                     raise PyNUTError( "SSL required but 'ssl' module not available" )
 
-        self.__tracking_wanted = tracking
-        self.__tracking = None
-        ''' Actual tracking state applied over protocol (maybe) '''
+        self.__connect()
 
-        if connect_now:
-            # Sets self.__tracking if explicit mode is wanted
-            self.__connect()
+        self.__tracking = self.SetTrackingMode(tracking)
 
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
@@ -735,8 +723,6 @@ if something goes wrong.
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
-
-        self.__tracking = self.SetTrackingMode(self.__tracking_wanted)
 
     def SetTrackingMode( self, value="" ) :
         """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')

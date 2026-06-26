@@ -60,8 +60,18 @@ if __name__ == "__main__" :
         if ac:
             NUT_USER = ac.user or NUT_USER
             NUT_PASS = ac.pass_ or NUT_PASS
-            NUT_CAFILE = ac.certpath or NUT_CAFILE
-            NUT_CERTFILE = ac.certfile or NUT_CERTFILE
+            if ac.certpath:
+                if os.path.isdir(ac.certpath):
+                    NUT_CAPATH = ac.certpath
+                else:
+                    NUT_CAFILE = ac.certpath
+            # If certfile was specified, it might be the CA file OR a client cert.
+            # In test_nutclient, NUT_CAFILE is used for CAs.
+            if ac.certfile:
+                if not NUT_CAFILE:
+                    NUT_CAFILE = ac.certfile
+                else:
+                    NUT_CERTFILE = ac.certfile
             NUT_KEYFILE = ac.certident or NUT_KEYFILE
             NUT_KEYPASS = ac.certpasswd or NUT_KEYPASS
             if ac.certverify != -1:

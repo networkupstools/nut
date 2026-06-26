@@ -39,8 +39,20 @@ if (1) {
         if ($ac) {
             $NUT_USER = $ac->{user} if defined $ac->{user};
             $NUT_PASS = $ac->{pass} if defined $ac->{pass};
-            $NUT_CAFILE = $ac->{certpath} if defined $ac->{certpath};
-            $NUT_CERTFILE = $ac->{certfile} if defined $ac->{certfile};
+            if (defined $ac->{certpath}) {
+                if (-d $ac->{certpath}) {
+                    $NUT_CAPATH = $ac->{certpath};
+                } else {
+                    $NUT_CAFILE = $ac->{certpath};
+                }
+            }
+            if (defined $ac->{certfile}) {
+                if (!defined $NUT_CAFILE) {
+                    $NUT_CAFILE = $ac->{certfile};
+                } else {
+                    $NUT_CERTFILE = $ac->{certfile};
+                }
+            }
             $NUT_KEYFILE = $ac->{certident} if defined $ac->{certident};
             $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
             $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
