@@ -166,7 +166,7 @@ class AuthConf:
                                 filename = p
 
             if filename is None:
-                filename = os.path.join(os.environ.get("NUT_CONFPATH", "/usr/local/ups/etc"), "nutauth.conf")
+                filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
 
         if not os.path.exists(filename):
             if fatal_errors:
@@ -455,7 +455,8 @@ class PyNUTClient :
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False,
+                  connect_now=True, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
                   cert_file=None, key_file=None, key_pass=None, force_ssl=False, cert_ident=None, certhost=None ) :
         """ Class initialization method
@@ -465,8 +466,9 @@ port        : Port where NUT listens for connections (default to 3493)
 login       : Login used to connect to NUT server (default to None for no authentication)
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
+connect_now : Boolean, connect to NUT server immediately and apply "tracking" setting (default to True)
 timeout     : Timeout used to wait for network response
-tracking    : Boolean or 'ON'/'OFF', try to enable TRACKING support right away
+tracking    : Boolean or 'ON'/'OFF', if we connect and try to enable TRACKING support right away (remembered for subsequent connect() call if not connecting now)
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
@@ -606,9 +608,13 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if force_ssl:
                     raise PyNUTError( "SSL required but 'ssl' module not available" )
 
-        self.__connect()
+        self.__tracking_wanted = tracking
+        self.__tracking = None
+        ''' Actual tracking state applied over protocol (maybe) '''
 
-        self.__tracking = self.SetTrackingMode(tracking)
+        if connect_now:
+            # Sets self.__tracking if explicit mode is wanted
+            self.__connect()
 
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
@@ -723,6 +729,9 @@ if something goes wrong.
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        # NOTE: no-op if "None"
+        self.__tracking = self.SetTrackingMode(self.__tracking_wanted)
 
     def SetTrackingMode( self, value="" ) :
         """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
