@@ -77,7 +77,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef _WIN32
-#include <unistd.h>
+# include <unistd.h>
 #endif
 #include "../clients/nutclient.h"
 #include "../clients/nutclientmem.h"
@@ -256,17 +256,22 @@ void NutActiveClientTest::setUp()
 		env_NUT_CERTIDENT_NAME = s;
 	}
 
-	char * ignore_authconf = std::getenv("NUT_IGNORE_AUTHCONF");
-	if (!ignore_authconf || (std::string(ignore_authconf) != "1" && std::string(ignore_authconf) != "true")) {
+	s = std::getenv("NUT_IGNORE_AUTHCONF");
+	if (!s || (s != std::string("1") && s != std::string("true"))) {
 		if (nut::AuthConf::readAuthConfFile("", 0) == 1) {
 			char szPort[32];
-			std::cerr << "NUT AuthConf file read succeeded, applying its values for host connection instead of envvars (if any)" << std::endl;
+			std::cerr << "[DEBUG] NUT AuthConf file read succeeded, applying its values for host connection instead of envvars (if any)" << std::endl;
 			snprintf(szPort, sizeof(szPort), "%u", env_NUT_PORT);
+
 			nut::AuthConf ac = nut::AuthConf::getAuthConf(
 				env_NUT_USER,
 				"localhost",
 				szPort,
 				false);
+
+			std::cerr << "[DEBUG] NUT AuthConf settings extracted for section:" << std::endl
+				<< ac.to_string(true, true) << std::endl;
+
 			if (!ac.user.empty() || !ac.pass.empty() || !ac.certpath.empty()) {
 				if (!ac.user.empty()) env_NUT_USER = ac.user;
 				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
@@ -293,6 +298,8 @@ void NutActiveClientTest::setUp()
 					if (env_NUT_FORCESSL) env_NUT_SSL = true;
 				}
 			}
+		} else {
+			std::cerr << "[DEBUG] NUT AuthConf file read failed, will rely on envvars for host connection (if any)" << std::endl;
 		}
 	}
 }
