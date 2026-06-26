@@ -508,6 +508,13 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
             print( "[DEBUG]  -> Host  = %s (port %s, timeout %s)" % ( host, port, timeout) )
             print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
             print( "[DEBUG]  -> SSL   = %s (force: %s, verify: %s)" % (use_ssl, force_ssl, cert_verify) )
+            if use_ssl or force_ssl or cert_verify:
+                print( "[DEBUG]  -> SSL -> ca_file     = %s" % (ca_file) )
+                print( "[DEBUG]  -> SSL -> ca_path     = %s" % (ca_path) )
+                print( "[DEBUG]  -> SSL -> cert_file   = %s" % (cert_file) )
+                print( "[DEBUG]  -> SSL -> key_file    = %s" % (key_file) )
+                print( "[DEBUG]  -> SSL -> cert_ident  = %s" % (cert_ident) )
+                print( "[DEBUG]  -> SSL -> certhost    = %s" % (certhost) )
 
         self.__host        = host
         self.__port        = port
