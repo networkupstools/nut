@@ -2472,6 +2472,7 @@ EOF
             OpenSSL)
                 log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
                 cat << EOF
+SSLBACKEND = "`echo ${WITH_SSL_CLIENT} | tr 'A-Z' 'a-z'`"
 # OpenSSL CERTFILE: PEM file with client cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
 CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
@@ -2486,6 +2487,7 @@ EOF
             NSS)
                 log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
                 cat << EOF
+SSLBACKEND = "`echo ${WITH_SSL_CLIENT} | tr 'A-Z' 'a-z'`"
 # NSS CERTPATH: Directory with 3-file database of cert/key store
 CERTPATH = "${TESTCERT_PATH_CLIENT}"
 EOF
