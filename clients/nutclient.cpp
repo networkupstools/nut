@@ -2463,7 +2463,15 @@ void AuthConf::merge(const AuthConf& source)
 	AuthConf* retval_user = nullptr;
 	AuthConf* retval_host = nullptr;
 
+#if defined(DEBUG) && DEBUG
+	std::cerr << "[DEBUG] getAuthConf: normalized_name=" << normalized_name
+		<< ", add_to_list=" << add_to_list << std::endl;
+#endif
+
 	for (auto& ac : authconf_list) {
+#if defined(DEBUG) && DEBUG
+		std::cerr << "[DEBUG] getAuthConf: checking " << ac.to_string(true) << std::endl;
+#endif
 		if (ac.section == normalized_name) {
 			retval_user = &ac;
 			break;
@@ -2480,6 +2488,14 @@ void AuthConf::merge(const AuthConf& source)
 			}
 		}
 	}
+
+#if defined(DEBUG) && DEBUG
+	std::cerr << "[DEBUG] getAuthConf lookups finished"
+		<< ", retval_user=" << (retval_user ? retval_user->to_string(true) : "<null>")
+		<< ", retval_host=" << (retval_host ? retval_host->to_string(true) : "<null>")
+		<< ", global_defaults=" << (global_defaults ? global_defaults->to_string(true) : "<null>")
+		<< std::endl;
+#endif
 
 	if (add_to_list) {
 		if (!retval_user) {
