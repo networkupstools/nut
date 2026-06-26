@@ -61,6 +61,9 @@ if __name__ == "__main__" :
         PyNUT.AuthConf.__debug = NUT_DEBUG
         ac = PyNUT.AuthConf.getAuthConf(user=NUT_USER, host=NUT_HOST, port=NUT_PORT)
         if ac:
+            if NUT_DEBUG:
+                print ("[DEBUG] NUT AuthConf settings extracted for section [%s]\n" % ac.section)
+
             NUT_USER = ac.user or NUT_USER
             NUT_PASS = ac.password or NUT_PASS
             if ac.certpath:

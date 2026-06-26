@@ -73,7 +73,6 @@ import socket
 import time
 import re
 import os
-import sys
 import getpass
 
 ssl_available = False
@@ -197,7 +196,7 @@ class AuthConf:
 
         try:
             if AuthConf.__debug:
-                sys.print( "[DEBUG] Reading NUT AuthConf data from '%s'" % (filename) )
+                print( "[DEBUG] Reading NUT AuthConf data from '%s'" % (filename) )
             with os.open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
