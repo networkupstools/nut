@@ -1508,6 +1508,29 @@ package UPS::Nut::AuthConf;
 
 my @authconf_list;
 my $global_defaults_ref;
+my $debug = 0;
+my $debugout = undef;
+
+sub _debug { # print debug messages to stdout or file
+# Author: Kit Peters (original variant for main class)
+  my $class = shift;
+  if ($class->{debug}) {
+    chomp (my $msg = shift);
+    my $out; # filehandle for output
+    if ($class->{debugout}) { # if filename is given, use that
+      $out = new FileHandle ($class->{debugout}, ">>") or warn "Error: $!";
+    }
+    if ($out) { # if out was set to a filehandle, create nifty timestamp
+      my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+      $year = sprintf("%02d", $year % 100); # Y2.1K compliant, even!
+      my $timestamp = join '/', ($mon + 1), $mday, $year; # today
+      $timestamp .= " ";
+      $timestamp .= join ':', $hour, $min, $sec;
+      print $out "$timestamp $msg\n";
+    }
+    else { print "DEBUG[AuthConf]: $msg\n"; } # otherwise, print to stdout
+  }
+}
 
 sub getAuthConfList {
     return @authconf_list;
@@ -1567,9 +1590,9 @@ sub readAuthConfFile {
         }
 
         if (defined $filename) {
-            $self->_debug("readAuthConfFile(): filename was not provided, detected default: " . $filename);
+            $class->_debug("readAuthConfFile(): filename was not provided, detected default: " . $filename);
         } else {
-            $self->_debug("readAuthConfFile(): filename was not provided, and NOT detected!");
+            $class->_debug("readAuthConfFile(): filename was not provided, and NOT detected!");
         }
     }
 
@@ -1585,7 +1608,7 @@ sub readAuthConfFile {
             die $errMsg;
         }
 
-        $self->_debug("readAuthConfFile(): " . $errMsg);
+        $class->_debug("readAuthConfFile(): " . $errMsg);
         return ();
     }
 
@@ -1593,7 +1616,7 @@ sub readAuthConfFile {
     if (!open($fh, '<', $filename)) {
         my $errMsg = "Error opening $filename: $!";
         die $errMsg if $fatal_errors;
-        $self->_debug("readAuthConfFile(): " . $errMsg);
+        $class->_debug("readAuthConfFile(): " . $errMsg);
         return ();
     }
 
