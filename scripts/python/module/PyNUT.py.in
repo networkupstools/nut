@@ -241,7 +241,7 @@ class AuthConf:
 
                     if '=' in line:
                         key, value = line.split('=', 1)
-                        key = key.strip().lower()
+                        keyUC = key.strip().upper()
                         value = value.strip()
                         # Remove quotes if present
                         if (value.startswith('"') and value.endswith('"')) or \
@@ -257,25 +257,26 @@ class AuthConf:
                             else:
                                 continue
 
-                        if key == 'user':
-                            current_ac.user = value
-                        elif key == 'password':
+                        if keyUC == 'USER' or keyUC == 'USERNAME':
+                            if current_ac.user is None or current_ac.user == "":
+                                current_ac.user = value
+                        elif keyUC == 'PASS' or keyUC == 'PASSWORD':
                             current_ac.password = value
-                        elif key == 'certpath':
+                        elif key == 'CERTPATH':
                             current_ac.certpath = value
-                        elif key == 'certfile':
+                        elif key == 'CERTFILE':
                             current_ac.certfile = value
-                        elif key == 'certident':
+                        elif key == 'CERTIDENT':
                             current_ac.certident = value
-                        elif key == 'certpasswd':
+                        elif key == 'CERTPASSWD':
                             current_ac.certpasswd = value
-                        elif key == 'ssl_backend':
+                        elif key == 'SSLBACKEND':
                             current_ac.ssl_backend = value
-                        elif key == 'certhost':
+                        elif key == 'CERTHOST':
                             current_ac.certhost = value
-                        elif key == 'certverify':
+                        elif key == 'CERTVERIFY':
                             current_ac.certverify = 1 if value.lower() in ('on', 'yes', '1') else 0
-                        elif key == 'forcessl':
+                        elif key == 'FORCESSL':
                             current_ac.forcessl = 1 if value.lower() in ('on', 'yes', '1') else 0
         except Exception as e:
             if fatal_errors:
