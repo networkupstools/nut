@@ -45,7 +45,9 @@
 #include <iostream>	/* std::cerr debugging */
 #include <cstdint>
 #include <cstdlib>
+#include <cctype>
 #include <stdlib.h>
+#include <algorithm>
 
 #ifndef WIN32
 # ifdef HAVE_PTHREAD
@@ -2113,19 +2115,28 @@ AuthConf::~AuthConf()
 
 static void set_authconf_val(AuthConf& conf, const std::string& var, const std::string& val)
 {
-	if (var == "user") { conf.user = val; }
-	else if (var == "password") { conf.pass = val; }
-	else if (var == "certpath") { conf.certpath = val; }
-	else if (var == "certfile") { conf.certfile = val; }
-	else if (var == "certident") { conf.certident = val; }
-	else if (var == "certpasswd") { conf.certpasswd = val; }
-	else if (var == "ssl_backend") { conf.ssl_backend = val; }
-	else if (var == "certhost") { conf.certhost = val; }
-	else if (var == "certverify") {
+#if defined(DEBUG) && DEBUG
+	std::cerr << "[DEBUG] set_authconf_val: var=" << var << ", val=" << val << std::endl;
+#endif
+
+	std::string varUpper = std::string(var);
+	std::transform(varUpper.begin(), varUpper.end(), varUpper.begin(), ::toupper);
+
+	if (varUpper == "USER" || varUpper == "USERNAME") {
+		if (conf.user.empty())conf.user = val;
+	}
+	else if (varUpper == "PASS" || varUpper == "PASSWORD") { conf.pass = val; }
+	else if (var == "CERTPATH") { conf.certpath = val; }
+	else if (var == "CERTFILE") { conf.certfile = val; }
+	else if (var == "CERTIDENT_NAME") { conf.certident = val; }
+	else if (var == "CERTIDENT_PASS") { conf.certpasswd = val; }
+	else if (var == "SSLBACKEND") { conf.ssl_backend = val; }
+	else if (var == "CERTHOST") { conf.certhost = val; }
+	else if (var == "CERTVERIFY") {
 		if (val == "on" || val == "yes" || val == "1") conf.certverify = 1;
 		else if (val == "off" || val == "no" || val == "0") conf.certverify = 0;
 	}
-	else if (var == "forcessl") {
+	else if (var == "FORCESSL") {
 		if (val == "on" || val == "yes" || val == "1") conf.forcessl = 1;
 		else if (val == "off" || val == "no" || val == "0") conf.forcessl = 0;
 	}
