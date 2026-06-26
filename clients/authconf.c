@@ -280,7 +280,7 @@ static int upscli_dump_authconf_line_str(FILE *stream, const char *var, const ch
 
 static int upscli_dump_authconf_line_int(FILE *stream, const char *var, int val, const char *indent, int for_debug)
 {
-	/* Assume sane inputs from upscli_dump_authconf_item(); val may be NULL */
+	/* Assume sane inputs from upscli_dump_authconf_item() */
 	int res;
 
 	/* TOTHINK: Print "-1" values when not running "for_debug"?
