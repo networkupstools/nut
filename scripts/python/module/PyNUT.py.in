@@ -73,6 +73,7 @@ import socket
 import time
 import re
 import os
+import sys
 import getpass
 
 ssl_available = False
@@ -117,6 +118,7 @@ class AuthConf:
     """ Authentication configuration for a NUT client. """
     __authconf_list = []
     __global_defaults = None
+    __debug = False
 
     @staticmethod
     def getAuthConfList():
@@ -194,7 +196,9 @@ class AuthConf:
         current_ac = AuthConf.__global_defaults if global_scope else None
 
         try:
-            with open(filename, 'r') as f:
+            if AuthConf.__debug:
+                sys.print( "[DEBUG] Reading NUT AuthConf data from '%s'" % (filename) )
+            with os.open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith('#'):
@@ -275,7 +279,7 @@ class AuthConf:
                             current_ac.forcessl = 1 if value.lower() in ('on', 'yes', '1') else 0
         except Exception as e:
             if fatal_errors:
-                raise PyNUTError(f"Error reading {filename}: {str(e)}")
+                raise PyNUTError("Error reading '%s': %s" % (filename, str(e)))
 
         return AuthConf.__authconf_list
 
