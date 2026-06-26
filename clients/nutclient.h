@@ -125,6 +125,11 @@ public:
 	/** Clear the global list of authentication configurations */
 	static void freeAuthConfList();
 
+	/** Allow to print the contents of this configuration item */
+	std::string to_string(bool for_debug = false, bool show_pass = false);
+	static std::string toString_line_str(const std::string &var, const std::string &val, const std::string &indent, bool for_debug);
+	static std::string toString_line_int(const std::string &var, int val, const std::string &indent, bool for_debug);
+
 	/** [@host:port] or [user@host:port], or empty for global defaults */
 	std::string section;
 

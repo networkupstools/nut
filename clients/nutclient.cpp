@@ -2042,6 +2042,66 @@ AuthConf& AuthConf::operator=(const AuthConf& source)
 	return *this;
 }
 
+/*static*/ std::string AuthConf::toString_line_str(const std::string &var, const std::string &val, const std::string &indent, bool for_debug)
+{
+	/* Assume sane inputs from toString(); val may be empty (assumed like NULL in C) */
+	if (val.empty()) {
+		if (for_debug) {
+			return indent + var + " = <null>\n";
+		}
+		return "";
+	} else {
+		if (for_debug == 1) {
+			char	enc[LARGEBUF];
+			return indent + var + " = \"" + pconf_encode(val.c_str(), enc, sizeof(enc)) + "\"\n";
+		} else {
+			return indent + var + " = \"" + val + "\"\n";
+		}
+	}
+}
+
+/*static*/ std::string AuthConf::toString_line_int(const std::string &var, int val, const std::string &indent, bool for_debug)
+{
+	/* TOTHINK: Print "-1" values when not running "for_debug"?
+	 *  We do parse them to hop over to a better preference... */
+	NUT_UNUSED_VARIABLE(for_debug);
+
+	return indent + var + " = " + std::to_string(val) + "\n";
+}
+
+std::string AuthConf::to_string(bool for_debug, bool show_pass)
+{
+	std::string s, indent;
+
+	if (!(section.empty())) {
+		indent = "\t";
+		s += "[" + section + "]\n";
+	} else {
+		/* Global section */
+		if (for_debug) {
+			indent = "\t";
+			s = "[<null>]\n";
+		} else {
+			indent = "";
+			s = "";
+		}
+	}
+
+	s += toString_line_str("USER", user, indent, for_debug);
+	s += toString_line_str("PASS", show_pass || pass.empty() ? pass : "<redacted>", indent, for_debug);
+	s += toString_line_str("CERTPATH", certpath, indent, for_debug);
+	s += toString_line_str("CERTFILE", certfile, indent, for_debug);
+	s += toString_line_str("CERTIDENT_NAME", certident, indent, for_debug);
+	s += toString_line_str("CERTIDENT_PASS", show_pass || certpasswd.empty() ? certpasswd : "<redacted>", indent, for_debug);
+	s += toString_line_str("SSLBACKEND", ssl_backend, indent, for_debug);
+	s += toString_line_str("CERTHOST", certhost, indent, for_debug);
+
+	s += toString_line_int("CERTVERIFY", certverify, indent, for_debug);
+	s += toString_line_int("FORCESSL", forcessl, indent, for_debug);
+
+	return s;
+}
+
 AuthConf::~AuthConf()
 {
 }
