@@ -134,7 +134,7 @@ class AuthConf:
         ''' [@host:port] or [user@host:port], or NULL for global '''
 
         self.user = None
-        self.pass_ = None
+        self.password = None
 
         self.certpath = None
         ''' Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes '''
@@ -256,7 +256,7 @@ class AuthConf:
                         if key == 'user':
                             current_ac.user = value
                         elif key == 'password':
-                            current_ac.pass_ = value
+                            current_ac.password = value
                         elif key == 'certpath':
                             current_ac.certpath = value
                         elif key == 'certfile':
@@ -294,8 +294,8 @@ class AuthConf:
             if self.user is None and source.user is not None:
                 self.user = source.user
 
-        if self.pass_ is None and source.pass_ is not None:
-            self.pass_ = source.pass_
+        if self.password is None and source.password is not None:
+            self.password = source.password
         if self.certpath is None and source.certpath is not None:
             self.certpath = source.certpath
         if self.certfile is None and source.certfile is not None:
@@ -445,7 +445,7 @@ class PyNUTClient :
             else:
                 host = addr_part
 
-        return cls(host=host, port=port, login=authconf.user, password=authconf.pass_,
+        return cls(host=host, port=port, login=authconf.user, password=authconf.password,
                    ca_file=authconf.certpath if authconf.certpath and os.path.isfile(authconf.certpath) else authconf.certfile,
                    ca_path=authconf.certpath if authconf.certpath and os.path.isdir(authconf.certpath) else None,
                    cert_file=authconf.certfile, key_file=authconf.certident, key_pass=authconf.certpasswd,
@@ -553,6 +553,7 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if self.__debug:
                     print( "[DEBUG] Creating SSL context" )
                 # Create a default context and apply parameters
+
                 # If cafile is a directory, it should be passed as capath
                 eff_cafile = ca_file
                 eff_capath = ca_path
@@ -562,6 +563,7 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                     eff_cafile = None
 
                 self.__ssl_context = ssl.create_default_context(cafile=eff_cafile, capath=eff_capath)
+
                 if cert_verify is not None:
                     if not cert_verify:
                         # Must be set first, else we get
