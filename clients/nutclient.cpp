@@ -2148,10 +2148,13 @@ static int parse_authconf_file(const std::string& filename, int fatal_errors, bo
 	PCONF_CTX_t ctx;
 	AuthConf* current_section = nullptr;
 
+	upsdebugx(1, "%s: parsing '%s'", __func__, filename.c_str());
+
 	if (pconf_init(&ctx, nullptr) != 1) {
 		if (fatal_errors) throw nut::IOException("Failed to initialize parser");
 		return -1;
 	}
+
 	if (pconf_file_begin(&ctx, filename.c_str()) != 1) {
 		pconf_finish(&ctx);
 		if (fatal_errors) throw nut::IOException("Can't open authconf file: " + filename);
