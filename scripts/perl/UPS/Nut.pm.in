@@ -1533,11 +1533,11 @@ my $debugout = undef;
 sub _debug { # print debug messages to stdout or file
 # Author: Kit Peters (original variant for main class)
   my $class = shift;
-  if ($class->{debug}) {
+  if ($debug) {
     chomp (my $msg = shift);
     my $out; # filehandle for output
-    if ($class->{debugout}) { # if filename is given, use that
-      $out = new FileHandle ($class->{debugout}, ">>") or warn "Error: $!";
+    if ($debugout) { # if filename is given, use that
+      $out = new FileHandle ($debugout, ">>") or warn "Error: $!";
     }
     if ($out) { # if out was set to a filehandle, create nifty timestamp
       my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
@@ -1558,6 +1558,12 @@ sub getAuthConfList {
 sub freeAuthConfList {
     @authconf_list = ();
     $global_defaults_ref = undef;
+}
+
+sub setDebug {
+    my $class = shift;
+    my $dbgval = shift || 1;
+    $debug = $dbgval;
 }
 
 sub new {

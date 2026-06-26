@@ -38,10 +38,12 @@ if (1) {
 
     my $NUT_IGNORE_AUTHCONF = (($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "true" || ($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "1") ? 1 : 0;
     if (!$NUT_IGNORE_AUTHCONF) {
-        UPS::Nut::AuthConf->$debug = $NUT_DEBUG;
+        UPS::Nut::AuthConf->setDebug($NUT_DEBUG);
         # UPS::Nut::AuthConf->getAuthConf() should return a merged config
         my $ac = UPS::Nut::AuthConf->getAuthConf($NUT_USER, $NUT_HOST, $NUT_PORT);
         if ($ac) {
+            print ("[DEBUG] NUT AuthConf settings extracted for section [" . $ac->{section} . "]\n") if $NUT_DEBUG;
+
             $NUT_USER = $ac->{user} if defined $ac->{user};
             $NUT_PASS = $ac->{pass} if defined $ac->{pass};
             if (defined $ac->{certpath}) {
