@@ -16,7 +16,6 @@ if ($@) {
 
 # Main logic
 if (1) {
-    my $NUT_IGNORE_AUTHCONF = (($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "true" || ($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "1") ? 1 : 0;
     my $NUT_HOST = $ENV{'NUT_HOST'} || '127.0.0.1';
     my $NUT_PORT = $ENV{'NUT_PORT'} || '3493';
     my $NUT_USER = $ENV{'NUT_USER'} || undef;
@@ -33,7 +32,13 @@ if (1) {
     my $NUT_KEYFILE = $ENV{'NUT_KEYFILE'} || undef;
     my $NUT_KEYPASS = $ENV{'NUT_KEYPASS'} || undef;
 
+    my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
+    # Numeric if set, values defined by SSL.pm module:
+    my $NUT_DEBUG_SSL = $ENV{'NUT_DEBUG_SSL_PERL'} ; #(($ENV{'NUT_DEBUG_SSL_PERL'} || "") eq "" ? undef : $ENV{'NUT_DEBUG_SSL_PERL'};
+
+    my $NUT_IGNORE_AUTHCONF = (($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "true" || ($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "1") ? 1 : 0;
     if (!$NUT_IGNORE_AUTHCONF) {
+        UPS::Nut::AuthConf->$debug = $NUT_DEBUG;
         # UPS::Nut::AuthConf->getAuthConf() should return a merged config
         my $ac = UPS::Nut::AuthConf->getAuthConf($NUT_USER, $NUT_HOST, $NUT_PORT);
         if ($ac) {
@@ -67,10 +72,6 @@ if (1) {
     # Note: Python's cert_file, key_file, key_pass are not directly
     # supported by current Nut.pm STARTTLS as independent args, but
     # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
-
-    my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
-    # Numeric if set, values defined by SSL.pm module:
-    my $NUT_DEBUG_SSL = $ENV{'NUT_DEBUG_SSL_PERL'} ; #(($ENV{'NUT_DEBUG_SSL_PERL'} || "") eq "" ? undef : $ENV{'NUT_DEBUG_SSL_PERL'};
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
