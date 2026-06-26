@@ -25,7 +25,7 @@ typedef struct upscli_authconf_s {
 	char	*user;
 	char	*pass;
 	char	*certpath;	/* Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes */
-	char	*certfile;	/* (OpenSSL only) Client certificate file for authentication to the server */
+	char	*certfile;	/* (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key) */
 	char	*certident;	/* Client certificate identity (nickname, alias) */
 	char	*certpasswd;	/* Password for key/cert storage */
 	char	*ssl_backend;	/* "openssl"/"nss" */

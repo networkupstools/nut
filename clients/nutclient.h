@@ -136,7 +136,8 @@ public:
 	 * of the NSS DB files used for all purposes */
 	std::string certpath;
 
-	/** (OpenSSL only) Client certificate file for authentication to the server */
+	/** (OpenSSL only) Client certificate file for authentication to the server
+	 *  (client cert, CA chain, client key) */
 	std::string certfile;
 
 	/** Client certificate identity (nickname, alias) */

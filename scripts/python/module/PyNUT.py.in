@@ -140,7 +140,7 @@ class AuthConf:
         ''' Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes '''
 
         self.certfile = None
-        ''' (OpenSSL only) Client certificate file for authentication to the server '''
+        ''' (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key) '''
 
         self.certident = None
         ''' Client certificate identity (nickname, alias) '''

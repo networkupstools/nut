@@ -1568,7 +1568,7 @@ sub new {
         user        => undef,
         pass        => undef,
         certpath    => undef,     # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
-        certfile    => undef,     # (OpenSSL only) Client certificate file for authentication to the server
+        certfile    => undef,     # (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
         certident   => undef,     # Client certificate identity (nickname, alias)
         certpasswd  => undef,     # Password for key/cert storage
         ssl_backend => undef,     # "openssl"/"nss"
