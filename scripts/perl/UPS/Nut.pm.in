@@ -42,12 +42,31 @@ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my %arg;
+
+  # Are we initialized with a hash of arguments or
+  # with an AuthConf instance (spelled for a specific
+  # connection) prepared by caller?
   if (scalar(@_) == 1 && ref($_[0]) eq 'UPS::Nut::AuthConf') {
     my $ac = shift;
     %arg = $ac->to_nut_args();
   } else {
     %arg = @_; # hash of arguments
+
+    if (exists($arg{AUTHCONF})) {
+      my $ac = $arg{AUTHCONF};
+      if (ref($ac) eq 'UPS::Nut::AuthConf') {
+        # combine hash of arguments, prefer those from explicit args
+        my %arg_ac = $ac->to_nut_args();
+        foreach my $key (keys %arg_ac) {
+          if(!(exists $arg{$key})) {
+            $arg{$key} = $arg_ac{$key};
+          }
+        }
+      }
+      delete($arg{AUTHCONF});
+    }
   }
+
   my $self = {};	# _initialize will fill it later
   bless $self, $class;
   unless ($self->_initialize(%arg)) { # can't initialize
