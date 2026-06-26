@@ -2175,6 +2175,12 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 				current_section = &authconf_list.back();
 			}
 		}
+
+		size_t at = current_section->section.find('@');
+		if (at != std::string::npos && at > 0) {
+			current_section->user = current_section->section.substr(0, at - 1);
+		}
+
 		return;
 	}
 
