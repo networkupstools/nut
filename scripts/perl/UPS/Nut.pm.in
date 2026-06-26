@@ -1689,6 +1689,7 @@ sub readAuthConfFile {
             my ($key, $value) = ($1, $2);
             $key =~ s/^\s+|\s+$//g;
             $key = lc($key);
+            my $keyUC = uc($key);
             $value =~ s/^\s+|\s+$//g;
             $value =~ s/^["']|["']$//g;
 
@@ -1704,16 +1705,20 @@ sub readAuthConfFile {
                 }
             }
 
-            if ($key eq 'user') { $current_ac->{user} = $value; }
-            elsif ($key eq 'password') { $current_ac->{pass} = $value; }
-            elsif ($key eq 'certpath') { $current_ac->{certpath} = $value; }
-            elsif ($key eq 'certfile') { $current_ac->{certfile} = $value; }
-            elsif ($key eq 'certident') { $current_ac->{certident} = $value; }
-            elsif ($key eq 'certpasswd') { $current_ac->{certpasswd} = $value; }
-            elsif ($key eq 'ssl_backend') { $current_ac->{ssl_backend} = $value; }
-            elsif ($key eq 'certhost') { $current_ac->{certhost} = $value; }
-            elsif ($key eq 'certverify') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
-            elsif ($key eq 'forcessl') { $current_ac->{forcessl} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            if ($keyUC eq 'USER' || $keyUC eq 'USERNAME') {
+                if (!exists($current_ac->{user}) || !defined($current_ac->{user})) {
+                    $current_ac->{user} = $value;
+                }
+            }
+            elsif ($keyUC eq 'PASS' || $keyUC eq 'PASSWORD' ) { $current_ac->{pass} = $value; }
+            elsif ($key eq 'CERTPATH') { $current_ac->{certpath} = $value; }
+            elsif ($key eq 'CERTFILE') { $current_ac->{certfile} = $value; }
+            elsif ($key eq 'CERTIDENT') { $current_ac->{certident} = $value; }
+            elsif ($key eq 'CERTPASSWD') { $current_ac->{certpasswd} = $value; }
+            elsif ($key eq 'SSLBACKEND') { $current_ac->{ssl_backend} = $value; }
+            elsif ($key eq 'CERTHOST') { $current_ac->{certhost} = $value; }
+            elsif ($key eq 'CERTVERIFY') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            elsif ($key eq 'FORCESSL') { $current_ac->{forcessl} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
         }
     }
     close($fh);
