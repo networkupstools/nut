@@ -664,6 +664,10 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
+        ragtech)
+            # Serial protocol carried over a USB CDC-ACM device node
+            # (/dev/ttyACM*); needs the same udev settling as a serial port.
+            printf '%s\n%s\n' "$CURR_DRV" "serial" ; return ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         nutdrv_qx) # May be direct serial or USB
