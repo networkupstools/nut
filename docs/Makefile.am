@@ -456,6 +456,8 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 	 fi ; \
 	 cat '$<' | { $(SED) \
 		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
+		-e 's%\[\([^]]*\)](\(https*://[^ ]*\))%link:\2[\1]%g' \
+		-e 's%\(link:https*://github.com/[^ ]*\)\.\.\.\([^ ]*\)%\1..\2%g' \
 		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
 		-e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
 		-e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
