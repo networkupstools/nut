@@ -111,6 +111,12 @@ https://github.com/networkupstools/nut/milestone/13
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
+    * `idowell-hid` subdriver now also supports GoldenMate 1000VA/800W LiFePO4
+      battery packs (`0x06da:0xffff`), which carry the same `-BMS-` firmware and
+      HID descriptor as the existing `0x075d:0x0300` device. The shared
+      Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
+      devices on that ID still fall through to `liebert-hid` / `mge-hid`.
+      [issue #3501, PR #3502]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose

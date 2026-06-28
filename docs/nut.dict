@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3781 utf-8
+personal_ws-1.1 en 3783 utf-8
 AAC
 AAS
 ABI
@@ -99,6 +99,7 @@ BD
 BKnnnnM
 BKxxxM
 BMC
+BMS
 BNT
 BOH
 BP
@@ -2363,6 +2364,7 @@ idProduct
 idVendor
 ident
 idleload
+idowell
 ie
 ietf
 ifdef
