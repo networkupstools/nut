@@ -1566,6 +1566,11 @@ sub setDebug {
     $debug = $dbgval;
 }
 
+sub getDebug {
+    my $class = shift;
+    return $debug;
+}
+
 sub new {
     my $class = shift;
     my $section = shift || "";
@@ -1651,6 +1656,7 @@ sub readAuthConfFile {
 
     my $current_ac;
     # If we are in global scope (no section yet), we might be re-populating global_defaults
+    # FIXME: If we INCLUDE inside a section, we should not restart with `undef` and possibly global
     $current_ac = $global_defaults_ref if $global_scope;
 
     while (my $line = <$fh>) {
@@ -1660,7 +1666,7 @@ sub readAuthConfFile {
 
         if ($line =~ /^\[(.*)\]$/) {
             my $sectname = $1;
-            if ($sectname eq "_global_defaults" || $sectname eq "") {
+            if ($sectname eq "_global_defaults" || $sectname eq "" || $sectname eq '*') {
                 if (!defined $global_defaults_ref) {
                     $global_defaults_ref = UPS::Nut::AuthConf->new("");
                     push @authconf_list, $global_defaults_ref;
@@ -1740,8 +1746,13 @@ sub merge {
     return if !defined $source;
 
     my $sect = $self->{section};
-    $sect =~ s/^\[//;
-    $sect =~ s/\]$//;
+
+    if (UPS::Nut::AuthConf->getDebug()) {
+        UPS::Nut::AuthConf->_debug("merge(): input 1:");
+        $dumper->dumpValue($self);
+        UPS::Nut::AuthConf->_debug("merge(): input 2:");
+        $dumper->dumpValue($source);
+    }
 
     if ($sect =~ /^([^@]+)@/) {
         $self->{user} = $1 if !defined $self->{user};
@@ -1758,6 +1769,11 @@ sub merge {
     $self->{certhost} = $source->{certhost} if !defined $self->{certhost} && defined $source->{certhost};
     $self->{certverify} = $source->{certverify} if $self->{certverify} == -1 && $source->{certverify} != -1;
     $self->{forcessl} = $source->{forcessl} if $self->{forcessl} == -1 && $source->{forcessl} != -1;
+
+    if (UPS::Nut::AuthConf->getDebug()) {
+        UPS::Nut::AuthConf->_debug("merge(): result:");
+        $dumper->dumpValue($self);
+    }
 }
 
 sub getAuthConf {
@@ -1804,9 +1820,18 @@ sub getAuthConf {
         }
     }
 
-    $res->merge($retval_user) if defined $retval_user;
-    $res->merge($retval_host) if defined $retval_host;
-    $res->merge($global_defaults) if defined $global_defaults;
+    if (defined $retval_user) {
+        $class->_debug("getAuthConf(): merge retval_user into the result");
+        $res->merge($retval_user);
+    }
+    if (defined $retval_host) {
+        $class->_debug("getAuthConf(): merge retval_host into the result");
+        $res->merge($retval_host);
+    }
+    if (defined $global_defaults) {
+        $class->_debug("getAuthConf(): merge global_defaults into the result");
+        $res->merge($global_defaults);
+    }
 
     # Final enforcement of user if requested
     $res->{user} = $user if defined $user;
