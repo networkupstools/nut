@@ -75,6 +75,35 @@ https://github.com/networkupstools/nut/milestone/13
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
 
+ - Introduced a new NUT driver named `ragtech` which provides support for the
+   Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
+   the NEP, TORO, INNERGIE and OneUP brands in Brazil). Devices present a USB
+   CDC-ACM serial interface (VID `0x04D8`, PID `0x000A`) and speak a proprietary
+   6-byte register-access protocol with read/write/AND/OR opcodes; the driver
+   covers the 20 models in the family-10 device table and was validated
+   end-to-end against an Easy 2000 TI. Shutdown-related instant commands are
+   opt-in via the `allow_shutdown` flag because the firmware does not
+   auto-restart on mains return. [Initial PR #3447]
+   * Put the CDC-ACM port into raw mode at startup. A freshly enumerated
+     port defaults to canonical mode, where the kernel buffers the firmware's
+     binary replies waiting for a newline that never arrives, so the first
+     poll timed out as "no reply to initial status poll" unless the port had
+     been set raw externally. [issue #3500]
+   * Retry the initial status poll a few times before bailing out, so the
+     driver starts cleanly under the stock systemd units when the device has
+     only just enumerated at boot, instead of leaning on a fatal exit and a
+     `Restart=on-failure` cycle. [issue #3500]
+   * Drain the firmware's handshake reply before the first status poll.
+     Some models (e.g. the Easy Pro 3200 VA GT) are half-duplex and dropped
+     the read command that was sent while the handshake reply was still in
+     flight. [issue #3500]
+   * Compute `battery.charge` as `raw / 2.55` so a fully charged battery
+     reports exactly 100 % instead of 100.2 %.
+   * Added a `va` option to override the apparent-power rating when the
+     firmware model id is shared between product lines, correcting
+     `ups.power.nominal`, `ups.realpower.nominal` and the computed
+     `ups.load`. [issue #3500]
+
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
       some problems possible when iterating devices. [issue #1768, PR #3477]
@@ -88,6 +117,12 @@ https://github.com/networkupstools/nut/milestone/13
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+
+ - `snmp-ups` driver updates:
+    * Extended the XPPC-MIB subdriver (enterprise 935) to expose
+      `battery.runtime`, `battery.voltage`, `input.frequency`,
+      `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
+      based UPS cards that already answer the rest of the subtree. [#2608]
 
  - common code:
     * Revised 'dstate' machinery to track socket connections closed mid-way
@@ -133,6 +168,15 @@ https://github.com/networkupstools/nut/milestone/13
     * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
       report the ability to check `CERTIDENT` information. [#3331]
 
+ - Various clients:
+    * Flush standard output and error buffers before handling clean exit
+      rituals, to avoid losing the result of client's work in case that
+      clean-up crashes (e.g. due to third-party code involved). [#3454]
+
+ - `upsimage.cgi` client updates:
+    * Adjust scaling for small (single-digit) value ranges to avoid division
+      by zero and not rendering anything. [issue #3469]
+
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
       itself to the data server also in OpenSSL builds. [issue #3331]
@@ -172,6 +216,8 @@ https://github.com/networkupstools/nut/milestone/13
       PRs #3429, #3432]
     * Updated a NUT CI farm worker to FreeBSD 15 and updated the recipes and
       documentation according to problems that were found along the way. [#3453]
+    * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
+      [#3489, #3495, #3498]
     * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
       controllers and build agents, `docs/config-prereqs.txt` revised.
 
@@ -391,16 +437,6 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      actually broke anything, or the needed values were deduced from
      subdriver definition then). For consistency, these pointers are now
      assigned. [#1962]
-
- - Introduced a new NUT driver named `ragtech` which provides support for the
-   Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
-   the NEP, TORO, INNERGIE and OneUP brands in Brazil). Devices present a USB
-   CDC-ACM serial interface (VID `0x04D8`, PID `0x000A`) and speak a proprietary
-   6-byte register-access protocol with read/write/AND/OR opcodes; the driver
-   covers the 20 models in the family-10 device table and was validated
-   end-to-end against an Easy 2000 TI. Shutdown-related instant commands are
-   opt-in via the `allow_shutdown` flag because the firmware does not
-   auto-restart on mains return. [PR #3447]
 
  - `riello_ser` and `riello_usb` driver updates:
    * Since the beginning, these drivers fenced availability of *either*

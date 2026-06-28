@@ -2777,6 +2777,11 @@ static void upsmon_cleanup(void)
 	int	i;
 	utype_t	*utmp, *unext;
 
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	/* close all fds */
 	utmp = firstups;
 
@@ -2798,6 +2803,9 @@ static void upsmon_cleanup(void)
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
 	}
+
+	fflush(stdout);
+	fflush(stderr);
 
 	upscli_cleanup();
 

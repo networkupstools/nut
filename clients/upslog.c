@@ -1065,6 +1065,11 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	for (
 		monhost_ups_current = monhost_ups_anchor;
 		monhost_ups_current != NULL;
@@ -1087,6 +1092,9 @@ int main(int argc, char **argv)
 		logformat = NULL;
 	}
 
+	fflush(stdout);
+	fflush(stderr);
+
 	upscli_cleanup();
 	exit(EXIT_SUCCESS);
 }
@@ -1095,6 +1103,9 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
+	NUT_UNUSED_VARIABLE(upsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
 	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

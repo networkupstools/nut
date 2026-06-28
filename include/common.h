@@ -38,7 +38,7 @@
 #endif	/* WIN32 */
 
 /* Need this on AIX when using xlc to get alloca */
-#ifdef _AIX
+#if defined(_AIX) && defined(__IBMC__)
 #pragma alloca
 #endif /* _AIX */
 

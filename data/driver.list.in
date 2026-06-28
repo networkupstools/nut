@@ -135,6 +135,7 @@
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
 "ARES"	"ups"	"2"	"AR265i"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 did not explicitly mention the driver parameters, but other reports in the discussion did
+"ARES"	"ups"	"2"	"AR630"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"
 
 "ARTronic"	"ups"	"2"	"ARTon Millenium 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
 "ARTronic"	"ups"	"2"	"ARTon Millenium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
@@ -668,6 +669,24 @@
 "Ippon"	"ups"	"2"	"2058874 Battery for UPS Ippon NA+ RTA 2000"	"Serial port"	"blazer_ser"
 "Ippon"	"ups"	"2"	"2049899 Battery for UPS Ippon NA+ RTA 3000"	"Serial port"	"blazer_ser"
 "Ippon"	"ups"	"2"	"2049897 Battery for UPS Ippon NA+ RTA 6/10K"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TA 1000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TAE 1000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TA 2000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TAE 2000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TA 3000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TAE 3000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TA 6K"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II TA 10K"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II RTA 1000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II RTA 2000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II RTA 3000"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II RTA 6k"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ II RTA 10k"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ Frosty 650"	"Serial port"	"blazer_ser"
+"Ippon"	"ups"	"2"	"Na+ Frosty 850"	"USB"	"blazer_usb"
+"Ippon"	"ups"	"2"	"Na+ Frosty 1050"	"USB"	"blazer_usb"
+"Ippon"	"ups"	"2"	"Na+ Frosty 1500"	"USB"	"blazer_usb"
+"Ippon"	"ups"	"2"	"Na+ Frosty 2000"	"USB"	"blazer_usb"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
