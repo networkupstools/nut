@@ -1715,7 +1715,6 @@ sub readAuthConfFile {
         if ($line =~ /^([^=]+)=(.*)$/) {
             my ($key, $value) = ($1, $2);
             $key =~ s/^\s+|\s+$//g;
-            $key = lc($key);
             my $keyUC = uc($key);
 
             # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
