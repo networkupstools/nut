@@ -1862,6 +1862,71 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            # Add PEM and Java JKS (trust store) for good
+                            # measure, but only if we prepare the cache:
+                            # JKS is not used in-tree now, but e.g. for
+                            # jNut tests; PEM is used in the other type
+                            # of build.
+
+                            pk12cmd() {
+                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            # Export private key to PEM for OpenSSL builds;
+                            # client.crt is already PEM (from signing step)
+                            mkpk12key() {
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                    openssl pkcs12 -in client.p12 \
+                                        -out client.key \
+                                        -nodes -nocerts \
+                                        -passin file:.pwfile "$@" \
+                                    && log_info "Exported NSS Client key to OpenSSL PEM"
+                                fi
+                            }
+                            mkpk12key
+
+                            # Bonus program: Java JKS (if caching)
+                            if command -v keytool >/dev/null 2>&1 && [ -f client.p12 ] ; then
+                                # Use client.p12 as source if we have it
+                                mkjks() {
+                                    keytool -importkeystore \
+                                        -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                        -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                        -destkeystore upsd.jks \
+                                        -srckeystore client.p12 \
+                                        -srcstoretype PKCS12 \
+                                        -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                        -alias "${TESTCERT_CLIENT_NAME}" \
+                                        -noprompt \
+                                    && log_info "Generated Java JKS for Client"
+                                    # else openssl -legacy
+                                    # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
+                                }
+
+                                mkjks || {
+                                    mkpk12key -legacy && mkjks
+                                }
+                            fi
+                            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
+
+                            cat client.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem client.key > upsmon.pem 2>/dev/null \
+                            || true #|| die "Could not combine an upsmon.pem"
+
+                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem \
+                            || true # || die "Could not list an upsmon.pem"
+
+                            log_info "SSL: Exporting public data of server certificate for client use..."
+                            cat "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem > upsd-public.pem \
+                            || true #|| die "Could not combine a upsd-public.pem"
+
+                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsd-public.pem" \
+                            || true #|| die "Could not list a upsd-public.pem"
+                        fi
+
                         check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
                         ;;
                     OpenSSL)
