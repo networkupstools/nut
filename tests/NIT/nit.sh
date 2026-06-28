@@ -2604,8 +2604,63 @@ password = "${TESTPASS_UPSMON_SECONDARY}"
 
 [dummy-user@localhost:${NUT_PORT}]
     password = "${TESTPASS_UPSMON_SECONDARY}"
+
+# Currently NUT authconf parsers do not try to resolve the host name<=>numeric
+# addresses during normalization. For the sake of some test cases, we repeat
+# the above entries with 127.0.0.1 for localhost:
+[tester@127.0.0.1:${NUT_PORT}]
+	password = "${TESTPASS_TESTER}"
+
+[dummy-admin-m@127.0.0.1:${NUT_PORT}]
+    pass = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-admin@127.0.0.1:${NUT_PORT}]
+    PASSWORD = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-user-s@127.0.0.1:${NUT_PORT}]
+password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[dummy-user@127.0.0.1:${NUT_PORT}]
+    password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[@127.0.0.1:${NUT_PORT}]
+    # Default credentials for access to this server
+    USERNAME = reader
+    PASS = "$TESTPASS_READER"
 EOF
 
+        case "${WITH_SSL_CLIENT}" in
+            none) ;;
+            OpenSSL|NSS)
+                if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                    case x"${WITH_SSL_CLIENT_CERTHOST}" in
+                        x"none") cat << EOF
+    # Custom settings for a specific remote server:
+    CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 0
+EOF
+                            ;;
+                        x"addr") cat << EOF
+    # Custom settings for a specific remote server without verifying
+    # the host cert for nickname '${TESTCERT_SERVER_NAME}':
+    # CERTHOST = ""
+    # Just verify the CA matches what we trust:
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                        *) cat << EOF
+# Custom settings for a specific remote server:
+CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                    esac
+                fi
+                ;;
+      esac
     } > "${NUT_CONFPATH}/nutauth.conf" \
     && chmod 640 "${NUT_CONFPATH}/nutauth.conf" \
     || die "Failed to populate temporary FS structure for the NIT: nutauth.conf"
