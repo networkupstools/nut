@@ -127,6 +127,10 @@ https://github.com/networkupstools/nut/milestone/13
     * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
       report the ability to check `CERTIDENT` information. [#3331]
 
+ - `upsimage.cgi` client updates:
+    * Adjust scaling for small (single-digit) value ranges to avoid division
+      by zero and not rendering anything. [issue #3469]
+
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
       itself to the data server also in OpenSSL builds. [issue #3331]

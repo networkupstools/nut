@@ -156,7 +156,7 @@ upssched_LDADD += \
 	$(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
-upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
+upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS) -lm
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
 
