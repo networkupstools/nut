@@ -91,6 +91,11 @@ static void help(const char *prog)
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	if (ups) {
 		upscli_disconnect(ups);
 	}

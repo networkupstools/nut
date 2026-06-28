@@ -1117,6 +1117,11 @@ static void check_conf(void)
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	upscli_cleanup();
 
 	upsdebugx(1, "%s: finished, exiting", __func__);

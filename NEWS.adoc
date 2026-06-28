@@ -162,6 +162,11 @@ https://github.com/networkupstools/nut/milestone/13
     * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
       report the ability to check `CERTIDENT` information. [#3331]
 
+ - Various clients:
+    * Flush standard output and error buffers before handling clean exit
+      rituals, to avoid losing the result of client's work in case that
+      clean-up crashes (e.g. due to third-party code involved). [#3454]
+
  - `upsimage.cgi` client updates:
     * Adjust scaling for small (single-digit) value ranges to avoid division
       by zero and not rendering anything. [issue #3469]
