@@ -32,6 +32,11 @@ and M2 (220 V) variants, also sold under the NEP, TORO, INNERGIE and
 OneUP brands in Brazil -- share the same wire protocol and register
 layout and are expected to work; please report results.
 
+Units from other Ragtech lines that share the same USB id (for example
+the Easy Pro "GT" series) speak the same protocol but may report a model
+id that collides with a table entry, so the driver can pick the wrong VA
+rating. Use the *va* option below to set the correct rating in that case.
+
 This driver is *experimental*. Polling, status decoding and the
 `shutdown.stayoff` / `shutdown.stop` instant commands have been
 verified on hardware; `shutdown.return` and `test.battery.start.deep`
@@ -49,6 +54,15 @@ This driver supports the following options in the *ups.conf*:
 Per-unit output current calibration constant. If omitted (default),
 the driver reads the value from register `0xF3` at startup. Set this
 only to override a wrong factory-stored calibration.
+
+*va*='number';;
+Override the apparent-power (VA) rating of the unit. The model id byte
+reported by the firmware is shared between some product lines (for
+example a 3200 VA "GT" unit reports the same id as the Easy 2200 TI),
+so the driver cannot always tell them apart and may pick the wrong VA
+rating from its model table. Setting *va* to the nameplate rating
+corrects `ups.power.nominal`, `ups.realpower.nominal` (VA times the
+0.7 power factor) and the computed `ups.load`.
 
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and

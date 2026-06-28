@@ -49,7 +49,7 @@
  *   Family 10 register map (buf[i] = reg(0x80 + i - 1) for the main range):
  *
  *     buf[ 1]  0x80  F_AUTOSTART(0) F_ICBATTERY(2) F_LINESENS(7)
- *     buf[ 8]  0x87  V_CBATTERY      battery.charge      = raw * 0.3930
+ *     buf[ 8]  0x87  V_CBATTERY      battery.charge      = raw / 2.55  (0..100 %)
  *     buf[11]  0x8A  V_VBATTERY      battery.voltage     = raw * 0.0670 (or 0.1340 for 24V models)
  *     buf[12]  0x8B  V_VINPUT        input.voltage       = raw * 1.0600
  *     buf[13]  0x8C  V_IOUTPUT       output.current      = raw * model_imult / iout_calib
@@ -74,7 +74,10 @@
  *     fOutput = (53.0 + 4.0 * (V_FOUTPUT - V_OSC53) / (V_OSC57 - V_OSC53)) * 0.9806 + 1.46
  *
  *   The pre-poll handshake "0xFF 0xFE 0x00 0x8E 0x01 0x8F" sent by the OEM
- *   firmware has unknown semantics; treating as opaque wake-up.
+ *   firmware has unknown semantics; treating as opaque wake-up. The firmware
+ *   answers it with a byte or two (e.g. 0xCA); upsdrv_initinfo drains that
+ *   reply before the first read, since half-duplex units otherwise drop a
+ *   read command that arrives while the handshake reply is still in flight.
  *
  *   Write/action commands (shutdown, fullDischarge, setLineSens, ...) are
  *   declared in the OEM XML as register-level writes (e.g. shutdown writes
@@ -101,7 +104,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Ragtech UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.10"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -122,6 +125,7 @@ upsdrv_info_t upsdrv_info = {
 #define RAGTECH_TIMEOUT_USEC	0
 #define RAGTECH_POST_OPEN_MS	200
 #define RAGTECH_INTER_CMD_MS	100
+#define RAGTECH_INIT_RETRIES	10	/* initial-poll attempts before giving up */
 
 /* Opaque wake-up that the OEM firmware sends once before the first poll. */
 static const uint8_t cmd_handshake[] = { 0xFF, 0xFE, 0x00, 0x8E, 0x01, 0x8F };
@@ -217,6 +221,8 @@ static struct ragtech_model fallback_model = {
 static double iout_calib = 16.0;	/* read from reg 0xF3 at init */
 static uint8_t osc53, osc57;		/* read from 0x202..0x203 at init */
 static int shutdown_enabled;		/* opt-in via ups.conf "allow_shutdown" */
+static unsigned int va_override = 0;	/* ups.conf "va" override (0 = use model table) */
+static unsigned int effective_va = 0;	/* va_override if set, else model->va */
 
 static const struct ragtech_model *find_model(uint8_t id)
 {
@@ -433,17 +439,50 @@ void upsdrv_initinfo(void)
 	uint8_t reply[64];
 	uint8_t osc[2];
 	uint8_t calib;
+	int tries;
 
 	dstate_setinfo("ups.mfr", "%s", "Ragtech");
 	dstate_setinfo("ups.model", "%s", "Unknown");
 
-	if (ser_send_buf(upsfd, cmd_handshake, sizeof(cmd_handshake))
-	    != (ssize_t)sizeof(cmd_handshake)) {
-		upslogx(LOG_WARNING, "handshake TX failed");
-	}
-	usleep(RAGTECH_INTER_CMD_MS * 1000);
+	/* Retry the wake-up handshake and first poll a few times before bailing.
+	 * Right after a cold boot the CDC-ACM device may have only just been
+	 * enumerated and the firmware can need a moment to answer the first read.
+	 * Retrying here lets the driver come up cleanly when started by the stock
+	 * NUT systemd units (which launch it as soon as the device node appears),
+	 * instead of relying on a fatal exit plus a Restart=on-failure cycle to
+	 * eventually recover -- which is noisy and only retries on a 5 s cadence. */
+	for (tries = 0; tries < RAGTECH_INIT_RETRIES; tries++) {
+		if (ser_send_buf(upsfd, cmd_handshake, sizeof(cmd_handshake))
+		    != (ssize_t)sizeof(cmd_handshake)) {
+			upslogx(LOG_WARNING, "handshake TX failed");
+		}
+		tcdrain(upsfd);
 
-	if (ragtech_read(RAGTECH_MAIN_BASE, RAGTECH_MAIN_LEN, reply) < 0)
+		/* The firmware answers the handshake with a couple of bytes (e.g.
+		 * 0xCA). Some models are half-duplex and silently drop the following
+		 * command if it arrives while that reply is still being transmitted,
+		 * which surfaces as "no reply to initial status poll". Drain the
+		 * handshake reply (short per-chunk timeout) so the first read is only
+		 * sent once the UPS is idle again. Units that do not answer the
+		 * handshake just time out here. */
+		{
+			uint8_t hs[16];
+			int i;
+			for (i = 0; i < 4; i++) {
+				if (ser_get_buf(upsfd, hs, sizeof(hs), 0,
+						RAGTECH_INTER_CMD_MS * 1000) <= 0)
+					break;
+			}
+		}
+
+		if (ragtech_read(RAGTECH_MAIN_BASE, RAGTECH_MAIN_LEN, reply) >= 0)
+			break;
+
+		upsdebugx(1, "initial status poll attempt %d/%d got no reply",
+			  tries + 1, RAGTECH_INIT_RETRIES);
+		usleep(RAGTECH_POST_OPEN_MS * 1000);
+	}
+	if (tries == RAGTECH_INIT_RETRIES)
 		fatalx(EXIT_FAILURE, "no reply to initial status poll -- is the UPS connected and not held by another program (e.g. Ragtech supsvc)?");
 
 	model = find_model(reply[OFF_V_MODEL - 1]);
@@ -453,10 +492,16 @@ void upsdrv_initinfo(void)
 		model = &fallback_model;
 	}
 	dstate_setinfo("ups.model", "%s", model->name);
-	if (model->va) {
-		dstate_setinfo("ups.power.nominal",     "%u", model->va);
+
+	/* Some product lines (e.g. the GT series) reuse a family-10 model id, so
+	 * the id byte alone cannot tell a 2200 TI from a 3200 GT. When the user
+	 * knows the real VA rating they can set "va" in ups.conf; that value then
+	 * drives ups.power.nominal, ups.realpower.nominal and the computed load. */
+	effective_va = va_override ? va_override : model->va;
+	if (effective_va) {
+		dstate_setinfo("ups.power.nominal",     "%u", effective_va);
 		dstate_setinfo("ups.realpower.nominal", "%u",
-			       (unsigned int)(model->va * model->pf + 0.5));
+			       (unsigned int)(effective_va * model->pf + 0.5));
 	}
 	{
 		double v_in_now = reply[OFF_V_VINPUT - 1] * 1.0600;
@@ -515,10 +560,9 @@ void upsdrv_updateinfo(void)
 
 	vout = r[OFF_V_VOUTPUT - 1] * model->vmult;
 	iout = (r[OFF_V_IOUTPUT - 1] * model->imult) / iout_calib;
-	/* OEM scaling 0.3930 makes raw=255 yield 100.2; clamp so a fully
-	 * charged battery never crosses the [0,100] %-defined range. */
-	bcharge = r[OFF_V_CBATTERY - 1] * 0.3930;
-	if (bcharge > 100.0) bcharge = 100.0;
+	/* Battery charge: raw / 2.55 maps the 0..255 byte onto 0..100 % and
+	 * yields exactly 100.0 at raw=255 (matches the OEM/Node-RED scaling). */
+	bcharge = r[OFF_V_CBATTERY - 1] / 2.55;
 
 	dstate_setinfo("battery.charge",  "%.1f", bcharge);
 	dstate_setinfo("battery.voltage", "%.2f", r[OFF_V_VBATTERY - 1]  * model->bmult);
@@ -528,7 +572,7 @@ void upsdrv_updateinfo(void)
 	/* Reg 0x8D reports load as integer percent and floors to 0 at sub-1%
 	 * loads. Compute apparent-power load for accurate light-load readings. */
 	dstate_setinfo("ups.load",        "%.1f",
-		model->va > 0 ? (vout * iout) / model->va * 100.0 : 0.0);
+		effective_va > 0 ? (vout * iout) / effective_va * 100.0 : 0.0);
 	dstate_setinfo("ups.temperature", "%u",   r[OFF_V_TEMPER - 1]);
 	dstate_setinfo("output.frequency", "%.2f",
 		compute_frequency(r[OFF_V_FOUTPUT - 1]));
@@ -596,6 +640,11 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "iout_calib",
 	       "Override per-unit output current calibration (default: read from reg 0xF3)");
+	addvar(VAR_VALUE, "va",
+	       "Override the apparent-power (VA) rating used for ups.power.nominal, "
+	       "ups.realpower.nominal and the computed ups.load. Useful when the "
+	       "model id is shared between product lines (e.g. a GT unit reporting "
+	       "the same id as an Easy 2200 TI).");
 	addvar(VAR_FLAG, "allow_shutdown",
 	       "Enable the shutdown.* and test.battery.start.deep instcmds. "
 	       "WARNING: this UPS firmware does not auto-restart after a "
@@ -607,11 +656,37 @@ void upsdrv_initups(void)
 {
 	const char *v;
 
-	/* CDC-ACM only: NEVER call tcsetattr (it pulses DTR on Linux and the
-	 * UPS interprets that as a shutdown signal on some Ragtech families).
-	 * Leave the port at whatever line settings the kernel set on enumeration
-	 * -- CDC-ACM ignores baud at the wire anyway. */
 	upsfd = ser_open(device_path);
+
+	/* A freshly enumerated CDC-ACM tty defaults to canonical mode (ICANON),
+	 * where the kernel buffers incoming bytes until a newline arrives. The
+	 * firmware's replies are raw binary and contain no newline, so the first
+	 * poll never sees them and times out as "no reply to initial status poll".
+	 * Put the port into raw 8N1 mode. Baud is left untouched (CDC-ACM ignores
+	 * it at the wire); CLOCAL plus clearing HUPCL keep this reconfigure and
+	 * the eventual close from toggling DTR. */
+#ifndef WIN32
+	{
+		struct termios	tio;
+
+		if (tcgetattr(upsfd, &tio) == 0) {
+			tio.c_iflag &= ~(tcflag_t)(IGNBRK | BRKINT | PARMRK | ISTRIP
+						   | INLCR | IGNCR | ICRNL | IXON);
+			tio.c_oflag &= ~(tcflag_t)OPOST;
+			tio.c_lflag &= ~(tcflag_t)(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+			tio.c_cflag &= ~(tcflag_t)(CSIZE | PARENB | HUPCL);
+			tio.c_cflag |= (tcflag_t)(CS8 | CLOCAL | CREAD);
+			tcsetattr(upsfd, TCSANOW, &tio);
+		}
+	}
+#endif	/* !WIN32 */
+
+	/* Force the modem-control lines low after the tcsetattr (in case the tty
+	 * layer pulsed them); the OEM client keeps DTR/RTS at 0 and some Ragtech
+	 * families read a non-zero level as a remote-shutdown signal. */
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 0);
+
 	usleep(RAGTECH_POST_OPEN_MS * 1000);
 
 	v = getval("iout_calib");
@@ -619,6 +694,13 @@ void upsdrv_initups(void)
 		double parsed = atof(v);
 		if (parsed > 0.0)
 			iout_calib = parsed;
+	}
+
+	v = getval("va");
+	if (v) {
+		long parsed = atol(v);
+		if (parsed > 0)
+			va_override = (unsigned int)parsed;
 	}
 
 	shutdown_enabled = testvar("allow_shutdown") ? 1 : 0;
