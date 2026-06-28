@@ -132,7 +132,7 @@ class AuthConf:
 
     def __init__(self, section=""):
         self.section = section
-        ''' [@host:port] or [user@host:port], or NULL for global '''
+        ''' `@host:port` or `user@host:port`, or None for global; note that host may be an IPv6 address enclosed in brackets '''
 
         self.user = None
         self.password = None
@@ -205,7 +205,7 @@ class AuthConf:
 
                     if line.startswith('[') and line.endswith(']'):
                         sectname = line[1:-1]
-                        if sectname in ("_global_defaults", ""):
+                        if sectname in ("_global_defaults", "", "*"):
                             if AuthConf.__global_defaults is None:
                                 AuthConf.__global_defaults = AuthConf("")
                                 AuthConf.__authconf_list.append(AuthConf.__global_defaults)
@@ -242,6 +242,8 @@ class AuthConf:
                         key, value = line.split('=', 1)
                         keyUC = key.strip().upper()
                         value = value.strip()
+
+                        # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
                         # Remove quotes if present
                         if (value.startswith('"') and value.endswith('"')) or \
                            (value.startswith("'") and value.endswith("'")):
@@ -341,13 +343,15 @@ class AuthConf:
         target_host_port = f"@{host_part}"
         if norm_port: target_host_port += f":{norm_port}"
 
-        res = AuthConf(f"[{target_user_host_port}]")
+        res = AuthConf(f"{target_user_host_port}")
 
         retval_user = None
         retval_host = None
 
         for ac in auth_configs:
-            sect = ac.section[1:-1]
+            sect = ac.section
+            if sect.startswith('[') and sect.endswith(']'):
+                sect = sect[1:-1]
             if sect == target_user_host_port:
                 retval_user = ac
             elif sect == target_host_port:
@@ -380,7 +384,10 @@ class AuthConf:
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
         for ac in auth_configs:
-            section = ac.section[1:-1] # Remove brackets
+            section = ac.section
+            if section.startswith('[') and section.endswith(']'):
+                # Remove brackets
+                section = section[1:-1]
 
             # 1. Exact match user@host:port
             target = ""
@@ -417,7 +424,7 @@ class PyNUTClient :
 
         # Simple split, could be more robust
         section = authconf.section
-        if section.startswith('['):
+        if section.startswith('[') and section.endswith(']'):
             section = section[1:-1]
 
         # Handle user@host:port
