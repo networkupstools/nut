@@ -170,6 +170,8 @@ https://github.com/networkupstools/nut/milestone/13
       PRs #3429, #3432]
     * Updated a NUT CI farm worker to FreeBSD 15 and updated the recipes and
       documentation according to problems that were found along the way. [#3453]
+    * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
+      [#3489, #3495, #3498]
     * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
       controllers and build agents, `docs/config-prereqs.txt` revised.
 
