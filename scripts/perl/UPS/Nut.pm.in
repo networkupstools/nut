@@ -1547,7 +1547,7 @@ sub _debug { # print debug messages to stdout or file
       $timestamp .= join ':', $hour, $min, $sec;
       print $out "$timestamp $msg\n";
     }
-    else { print "DEBUG[AuthConf]: $msg\n"; } # otherwise, print to stdout
+    else { print "[DEBUG{AuthConf}]: $msg\n"; } # otherwise, print to stdout
   }
 }
 
@@ -1569,6 +1569,10 @@ sub setDebug {
 sub new {
     my $class = shift;
     my $section = shift || "";
+
+    $section =~ s/^\[//;
+    $section =~ s/\]$//;
+
     my $self = {
         section     => $section,  # [@host:port] or [user@host:port], or NULL for global
         user        => undef,
@@ -1675,7 +1679,7 @@ sub readAuthConfFile {
                     }
                 }
                 if (!defined $current_ac) {
-                    $current_ac = UPS::Nut::AuthConf->new("[$sectname]");
+                    $current_ac = UPS::Nut::AuthConf->new("$sectname");
                     push @authconf_list, $current_ac;
                 }
             }
@@ -1781,18 +1785,21 @@ sub getAuthConf {
 
     my ($retval_user, $retval_host, $global_defaults);
 
+    $class->_debug("getAuthConf(): Looking for user [" . ($user || "undef") . "], host [" . ($host || "undef") . "]=>[$host_part], port [" . ($port || "undef") . "]");
     foreach my $ac (@auth_configs) {
         my $sect = $ac->{section};
-        $sect =~ s/^\[//;
-        $sect =~ s/\]$//;
+        $class->_debug("getAuthConf(): Processing section: [$sect]");
 
         if ($sect eq $target_user_host_port) {
+            $class->_debug("getAuthConf(): hit retval_user looking for target_user_host_port [$target_user_host_port]");
             $retval_user = $ac;
         }
         if ($sect eq $target_host_port) {
+            $class->_debug("getAuthConf(): hit retval_host looking for target_host_port [$target_host_port]");
             $retval_host = $ac;
         }
-        if ($sect eq "" || $sect eq "_global_defaults") {
+        if ($sect eq "" || $sect eq "_global_defaults" || $sect eq '*') {
+            $class->_debug("getAuthConf(): found global defaults section");
             $global_defaults = $ac;
         }
     }
@@ -1820,30 +1827,39 @@ sub findAuthConf {
         $host_part = "[$host_part]";
     }
 
+    my $target = "";
+    $target .= "$user\@" if defined $user;
+    $target .= $host_part;
+    $target .= ":$norm_port" if defined $norm_port;
+
     my $star_match;
+    $class->_debug("findAuthConf(): Looking for user [" . ($user || "undef") . "], host [" . ($host || "undef") . "]=>[$norm_host], port [" . ($port || "undef") . "]");
     foreach my $ac (@auth_configs) {
         my $section = $ac->{section};
-        $section =~ s/^\[//;
-        $section =~ s/\]$//;
+        $class->_debug("findAuthConf(): Processing section: [$section]");
 
-        my $target = "";
-        $target .= "$user\@" if defined $user;
-        $target .= $host_part;
-        $target .= ":$norm_port" if defined $norm_port;
-
-        return $ac if $section eq $target;
+        if ($section eq $target) {
+            $class->_debug("findAuthConf(): hit 1: target [$target]");
+            return $ac;
+        }
 
         # fallback matches
         if (!defined $user && defined $norm_port && $section eq "$host_part:$norm_port") {
+            $class->_debug("findAuthConf(): hit 2: no user, host+port OK");
             return $ac;
         }
         if (!defined $user && !defined $norm_port && $section eq $host_part) {
+            $class->_debug("findAuthConf(): hit 3: no user, no port, host OK");
             return $ac;
         }
 
-        $star_match = $ac if $section eq '*';
+        if ($section eq '*' || $section eq '' || $section eq "_global_defaults") {
+            $class->_debug("findAuthConf(): found global defaults section for fallback");
+            $star_match = $ac;
+        }
     }
 
+    $class->_debug("findAuthConf(): got no direct hits, returning global defaults section if found");
     return $star_match if defined $star_match;
     return undef;
 }

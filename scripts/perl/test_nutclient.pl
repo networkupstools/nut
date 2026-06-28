@@ -14,6 +14,8 @@ if ($@) {
   sub color { return ""; }
 }
 
+use Dumpvalue; my $dumper = Dumpvalue->new;
+
 # Main logic
 if (1) {
     my $NUT_HOST = $ENV{'NUT_HOST'} || '127.0.0.1';
@@ -42,7 +44,8 @@ if (1) {
         # UPS::Nut::AuthConf->getAuthConf() should return a merged config
         my $ac = UPS::Nut::AuthConf->getAuthConf($NUT_USER, $NUT_HOST, $NUT_PORT);
         if ($ac) {
-            print ("[DEBUG] NUT AuthConf settings extracted for section [" . $ac->{section} . "]\n") if $NUT_DEBUG;
+            print ("[DEBUG] NUT AuthConf settings extracted for section [" . $ac->{section} . "]:\n") if $NUT_DEBUG;
+            $dumper->dumpValue($ac) if $NUT_DEBUG;
 
             $NUT_USER = $ac->{user} if defined $ac->{user};
             $NUT_PASS = $ac->{pass} if defined $ac->{pass};
