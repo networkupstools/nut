@@ -111,6 +111,10 @@ dnl NOTE: this option should not be passed via the fourth argument of the macro,
 dnl or it ends up in the flags too, possibly during the "pop"; have to use the
 dnl GOOD_FLAG instead :\
     COMPILERFLAG="$1"
+dnl GCC will silently accept warning disable options, but then if there is an issue, warn about the option, i.e.
+dnl "cc1: note: unrecognized command-line option '-Wno-unknown-warning-option' may have been intended to silence earlier diagnostics"
+dnl Instead try the enable option to check if it is valid
+    COMPILERTESTFLAG="`echo $1 | sed 's/^-Wno-/-W/'`"
 
 dnl We also try to run an actual build since tools called from that might
 dnl complain if they are forwarded unknown flags accepted by the front-end.
@@ -119,14 +123,22 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_MSG_NOTICE([Starting check compile flag for '${COMPILERFLAG}'; now CFLAGS='${CFLAGS}' and CXXFLAGS='${CXXFLAGS}'])
 
     AC_LANG_PUSH([C])
+dnl Use a simple program with out previous #defines so we don't cause errors on clang with -Wreserved-identifier
+    m4_pushdef([AC_LANG_CONFTEST(C)], [m4_ifdef([AC_LANG_DEFINES_PROVIDED], [AC_LANG_DEFINES_PROVIDED])
+cat << _ACEOF > conftest.$ac_ext
+int main(void) { return 0; }
+_ACEOF
+    ])
     GOOD_FLAG=no
-    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+    # CFLAGS="-Werror $CFLAGS"
+    AX_CHECK_COMPILE_FLAG([${COMPILERTESTFLAG}],
         [CFLAGS="-Werror $NUT_SAVED_CFLAGS ${COMPILERFLAG}"
          AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CC linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [GOOD_FLAG=yes],[])
          AC_MSG_RESULT([${GOOD_FLAG}])
         ], [], [])
+    m4_popdef([AC_LANG_CONFTEST(C)])
     AC_LANG_POP([C])
     AS_IF([test x"${GOOD_FLAG}" = xyes],
         [CFLAGS="$NUT_SAVED_CFLAGS ${COMPILERFLAG}"],
@@ -135,14 +147,22 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_MSG_NOTICE([${GOOD_FLAG} for C '${COMPILERFLAG}'; now CFLAGS=${CFLAGS}])
 
     AC_LANG_PUSH([C++])
+dnl Use a simple program with out previous #defines so we don't cause errors on clang with -Wreserved-identifier
+    m4_pushdef([AC_LANG_CONFTEST(C++)], [m4_ifdef([AC_LANG_DEFINES_PROVIDED], [AC_LANG_DEFINES_PROVIDED])
+cat << _ACEOF > conftest.$ac_ext
+int main(void) { return 0; }
+_ACEOF
+    ])
     GOOD_FLAG=no
-    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+    # CXXFLAGS="-Werror $CXXFLAGS"
+    AX_CHECK_COMPILE_FLAG([${COMPILERTESTFLAG}],
         [CXXFLAGS="-Werror $NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"
          AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CXX linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [GOOD_FLAG=yes],[])
          AC_MSG_RESULT([${GOOD_FLAG}])
         ], [], [])
+    m4_popdef([AC_LANG_CONFTEST(C++)])
     AC_LANG_POP([C++])
     AS_IF([test x"${GOOD_FLAG}" = xyes],
         [CXXFLAGS="$NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"],
