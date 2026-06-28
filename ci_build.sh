@@ -1078,7 +1078,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
             # linking well. For more details see
             # https://github.com/networkupstools/nut/pull/2870#issuecomment-2768590518
             if [ -d "/usr/pkg/lib" -a -d "/usr/pkg/include" ] ; then
-                LDFLAGS="${LDFLAGS-} -R/usr/pkg/lib"
+                LDFLAGS="${LDFLAGS-} -Wl,-R/usr/pkg/lib"
                 CFLAGS="${CFLAGS-} -I/usr/pkg/include"
                 CXXFLAGS="${CXXFLAGS-} -I/usr/pkg/include"
             fi
