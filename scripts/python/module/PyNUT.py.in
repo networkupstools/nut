@@ -207,7 +207,7 @@ class AuthConf:
 
         try:
             if AuthConf.__debug:
-                print( "[DEBUG] Reading NUT AuthConf data from '%s'" % (filename) )
+                print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
             with os.open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
@@ -216,6 +216,13 @@ class AuthConf:
 
                     if line.startswith('[') and line.endswith(']'):
                         sectname = line[1:-1]
+
+                        if AuthConf.__debug:
+                            if current_ac is None:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]" % (sectname) )
+                            else:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
+
                         if sectname in ("_global_defaults", "", "*"):
                             if AuthConf.__global_defaults is None:
                                 AuthConf.__global_defaults = AuthConf("")
@@ -246,6 +253,8 @@ class AuthConf:
                             inc_file = inc_file[1:-1]
 
                         is_required = (inc_type == "INCLUDE_REQUIRED")
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
                         AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
                         continue
 
@@ -265,9 +274,19 @@ class AuthConf:
                                 if AuthConf.__global_defaults is None:
                                     AuthConf.__global_defaults = AuthConf("")
                                     AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                                    if AuthConf.__debug:
+                                        print( "[DEBUG] readAuthConfFile(): starting [] (global defaults) section handling" )
+
                                 current_ac = AuthConf.__global_defaults
                             else:
+                                # We are parsing an INCLUDE'd file but were not
+                                # in global scope when that directive was seen
                                 continue
+
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
+                                current_ac.section, str(key), str(value), str(keyUC)
+                            ))
 
                         if keyUC == 'USER' or keyUC == 'USERNAME':
                             if current_ac.user is None or current_ac.user == "":
@@ -287,12 +306,15 @@ class AuthConf:
                         elif key == 'CERTHOST':
                             current_ac.certhost = value
                         elif key == 'CERTVERIFY':
-                            current_ac.certverify = 1 if value.lower() in ('on', 'yes', '1') else 0
+                            current_ac.certverify = 1 if value.lower() in ['on', 'yes', '1'] else 0
                         elif key == 'FORCESSL':
-                            current_ac.forcessl = 1 if value.lower() in ('on', 'yes', '1') else 0
+                            current_ac.forcessl = 1 if value.lower() in ['on', 'yes', '1'] else 0
         except Exception as e:
+            msgErr = "Error reading '%s': %s" % (filename, str(e))
+            if AuthConf.__debug:
+                print( "[DEBUG] readAuthConfFile(): %s" % (msgErr) )
             if fatal_errors:
-                raise PyNUTError("Error reading '%s': %s" % (filename, str(e)))
+                raise PyNUTError(msgErr)
 
         return AuthConf.__authconf_list
 
@@ -300,6 +322,9 @@ class AuthConf:
         """ Merge contents of another configuration item into this one. """
         if source is None:
             return
+
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merging {%s} into {%s}" % (str(source), str(self)))
 
         sect = self.section
         if sect.startswith('[') and sect.endswith(']'):
@@ -330,6 +355,9 @@ class AuthConf:
         if self.forcessl == -1 and source.forcessl != -1:
             self.forcessl = source.forcessl
 
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merge result: {%s}" % (str(self)))
+
     @staticmethod
     def getAuthConf(user=None, host=None, port=None, auth_configs=None):
         """ Find the best matching authconf for a given connection string, and fill in
@@ -359,18 +387,42 @@ class AuthConf:
         retval_user = None
         retval_host = None
 
+        if AuthConf.__debug:
+            print ("[DEBUG] getAuthConf(): looking for user [%s], host [%s]=>[%s], port [%s]" % (
+                str(user), str(host), str(host_part), str(port)
+            ))
+
         for ac in auth_configs:
             sect = ac.section
             if sect.startswith('[') and sect.endswith(']'):
                 sect = sect[1:-1]
+
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): Processing section: [%s]" % (sect))
+
             if sect == target_user_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_user looking for target_user_host_port [%s]" % (target_user_host_port))
                 retval_user = ac
             elif sect == target_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_host looking for target_host_port [%s]" % (target_host_port))
                 retval_host = ac
 
-        if retval_user: res.merge(retval_user)
-        if retval_host: res.merge(retval_host)
-        if AuthConf.__global_defaults: res.merge(AuthConf.__global_defaults)
+        if retval_user:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_user into the result")
+            res.merge(retval_user)
+
+        if retval_host:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_host into the result")
+            res.merge(retval_host)
+
+        if AuthConf.__global_defaults:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge global_defaults into the result")
+            res.merge(AuthConf.__global_defaults)
 
         # Final enforcement of user if requested
         if user:
