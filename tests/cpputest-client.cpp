@@ -287,14 +287,16 @@ void NutActiveClientTest::setUp()
 				if (!ac.certfile.empty()) {
 					// (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
 					env_NUT_CERTFILE = ac.certfile;
+					env_NUT_KEYFILE = "";
 				}
-				if (!ac.certident.empty()) env_NUT_KEYFILE = ac.certident;
+				if (!ac.certident.empty()) env_NUT_CERTIDENT_NAME = ac.certident;
 				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
 				if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
 				if (ac.forcessl != -1) {
 					env_NUT_FORCESSL = (ac.forcessl == 1);
 					if (env_NUT_FORCESSL) env_NUT_SSL = true;
 				}
+				// TOTHINK: Make use of SSLBACKEND to pick one side?
 			}
 		} else {
 			std::cerr << "[DEBUG] NUT AuthConf file read failed, will rely on envvars for host connection (if any)" << std::endl;
