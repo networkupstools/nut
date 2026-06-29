@@ -276,6 +276,7 @@ void NutActiveClientTest::setUp()
 				if (!ac.user.empty()) env_NUT_USER = ac.user;
 				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
 				if (!ac.certpath.empty()) {
+					// Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
 					struct stat st;
 					if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
 						env_NUT_CAPATH = ac.certpath;
@@ -284,11 +285,8 @@ void NutActiveClientTest::setUp()
 					}
 				}
 				if (!ac.certfile.empty()) {
-					if (env_NUT_CAFILE.empty()) {
-						env_NUT_CAFILE = ac.certfile;
-					} else {
-						env_NUT_CERTFILE = ac.certfile;
-					}
+					// (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+					env_NUT_CERTFILE = ac.certfile;
 				}
 				if (!ac.certident.empty()) env_NUT_KEYFILE = ac.certident;
 				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
