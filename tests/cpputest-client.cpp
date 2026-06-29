@@ -108,6 +108,7 @@ private:
 
 	/* SSL options: shared */
 	bool env_NUT_SSL = false;
+	bool env_NUT_SSL_specified = false;
 	bool env_NUT_FORCESSL = false;
 	int env_NUT_CERTVERIFY = -1;
 	std::string env_NUT_KEYPASS = "";
@@ -187,6 +188,7 @@ void NutActiveClientTest::setUp()
 	} // else stays empty
 
 	s = std::getenv("NUT_SSL");
+	env_NUT_SSL_specified = (s != nullptr);
 	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
 		env_NUT_SSL = true;
 	}
@@ -302,10 +304,12 @@ void NutActiveClientTest::setUp()
 					env_NUT_CERTHOST_ADDR = std::string("localhost:") + szPort;
 					env_NUT_CERTHOST_NAME = ac.certhost;
 				}
-				if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
-				if (ac.forcessl != -1) {
-					env_NUT_FORCESSL = (ac.forcessl == 1);
-					if (env_NUT_FORCESSL) env_NUT_SSL = true;
+
+				// If test runner has explicitly set NUT_SSL=False,
+				// ignore the value required in the authconf
+				if (!env_NUT_SSL_specified || env_NUT_SSL) {
+					if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
+					if (ac.forcessl != -1) env_NUT_FORCESSL = (ac.forcessl == 1);
 				}
 				// TOTHINK: Make use of SSLBACKEND to pick one side?
 			}
@@ -313,6 +317,9 @@ void NutActiveClientTest::setUp()
 			std::cerr << "[DEBUG] NUT AuthConf file read failed, will rely on envvars for host connection (if any)" << std::endl;
 		}
 	}
+
+	if (!env_NUT_SSL_specified)
+		env_NUT_SSL = env_NUT_FORCESSL;
 }
 
 void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)

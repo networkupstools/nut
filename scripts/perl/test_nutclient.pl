@@ -66,15 +66,20 @@ if (1) {
 
             $NUT_KEYFILE = $ac->{certident} if defined $ac->{certident};
             $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
-            $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
-            $NUT_FORCESSL = $ac->{forcessl} if $ac->{forcessl} != -1;
-            # Note: nutauth.conf does not seem to have a direct "usessl" (NUT_SSL)
-            # but it has "forcessl". If forcessl is on, we should probably enable SSL.
-            if ($NUT_FORCESSL) {
-                $NUT_SSL = 1;
+
+            # If test runner has explicitly set NUT_SSL=False,
+            # ignore the value required in the authconf
+            if (!(defined $NUT_SSL) || $NUT_SSL) {
+                $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
+                $NUT_FORCESSL = $ac->{forcessl} if $ac->{forcessl} != -1;
             }
         }
     }
+
+    if (!(defined $NUT_SSL)) {
+        $NUT_SSL = ($NUT_FORCESSL > 0);
+    }
+
     # Note: Python's cert_file, key_file, key_pass are not directly
     # supported by current Nut.pm STARTTLS as independent args, but
     # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.

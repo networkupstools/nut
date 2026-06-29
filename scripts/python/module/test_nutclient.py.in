@@ -44,7 +44,9 @@ if __name__ == "__main__" :
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
     NUT_USER = os.getenv('NUT_USER', None)
     NUT_PASS = os.getenv('NUT_PASS', None)
-    NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    NUT_SSL  = os.getenv('NUT_SSL', None)
+    if NUT_SSL is not None:
+        NUT_SSL = (NUT_SSL in ["true", "1"])
     NUT_FORCESSL = (os.getenv('NUT_FORCESSL', 'false') in ["true", "1"])
     NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'false') in ["true", "1"])
     NUT_CAFILE = os.getenv('NUT_CAFILE', None)
@@ -75,12 +77,16 @@ if __name__ == "__main__" :
             NUT_CERTFILE = ac.certfile or NUT_CERTFILE
             NUT_KEYFILE = ac.certident or NUT_KEYFILE
             NUT_KEYPASS = ac.certpasswd or NUT_KEYPASS
-            if ac.certverify != -1:
-                NUT_CERTVERIFY = (ac.certverify == 1)
-            if ac.forcessl != -1:
-                NUT_FORCESSL = (ac.forcessl == 1)
-                if NUT_FORCESSL:
-                    NUT_SSL = True
+            if NUT_SSL is not False:
+                # If test runner has explicitly set NUT_SSL=False,
+                # ignore the value required in the authconf
+                if ac.certverify != -1:
+                    NUT_CERTVERIFY = (ac.certverify == 1)
+                if ac.forcessl != -1:
+                    NUT_FORCESSL = (ac.forcessl == 1)
+
+    if NUT_SSL is None:
+        NUT_SSL = (NUT_FORCESSL is True)
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
