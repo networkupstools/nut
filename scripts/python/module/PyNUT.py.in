@@ -239,7 +239,7 @@ class AuthConf:
                                     current_ac = ac
                                     break
                             if current_ac is None:
-                                current_ac = AuthConf(line)
+                                current_ac = AuthConf(sectname)
                                 AuthConf.__authconf_list.append(current_ac)
                         continue
 
