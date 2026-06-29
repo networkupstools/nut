@@ -310,6 +310,30 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	if (env_NUT_DEBUG_LEVEL > 0)
 		c.setDebugConnect(true);
 
+	std::cerr << "[D] Incoming SSLConfig data points:"
+		// shared:
+		<< " env_NUT_USER='" << env_NUT_USER
+		<< "' env_NUT_PASS='" << env_NUT_PASS
+		<< "' (try?)NUT_SSL=" << env_NUT_SSL
+		<< " NUT_FORCESSL=" << env_NUT_FORCESSL
+		<< " NUT_CERTVERIFY=" << env_NUT_CERTVERIFY
+		<< " NUT_CERTIDENT_NAME='" << env_NUT_CERTIDENT_NAME
+		<< "' NUT_CAPATH='" << env_NUT_CAPATH
+		// OpenSSL-only:
+		<< "' NUT_CAFILE='" << env_NUT_CAFILE
+		<< "' NUT_CERTFILE='" << env_NUT_CERTFILE
+		<< "' NUT_KEYFILE='" << env_NUT_KEYFILE
+		// shared:
+		<< "' NUT_KEYPASS='" << env_NUT_KEYPASS
+		<< "' NUT_CERTHOST_ADDR='" << env_NUT_CERTHOST_ADDR
+		<< "' NUT_CERTHOST_NAME='" << env_NUT_CERTHOST_NAME
+		// NSS-only:
+		<< "' NUT_CERTSTORE_PATH='" << env_NUT_CERTSTORE_PATH
+		<< "' NUT_CERTSTORE_PREFIX='" << env_NUT_CERTSTORE_PREFIX
+		<< "'"
+		<< " NUT_PORT=" << env_NUT_PORT
+		<< std::endl;
+
 	if (env_NUT_CERTVERIFY != -1
 	 || env_NUT_FORCESSL
 	 || !env_NUT_CAFILE.empty()
@@ -323,6 +347,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 #ifndef WITH_SSL_CXX
 		try {
 #endif
+		std::cerr << "[D] Setting SSLConfig_OpenSSL" << std::endl;
 		c.setSSLConfig(SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -361,6 +386,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 #ifndef WITH_SSL_CXX
 		try {
 #endif
+		std::cerr << "[D] Setting SSLConfig_OpenNSS" << std::endl;
 		c.setSSLConfig(SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -399,7 +425,6 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< "' NUT_KEYFILE='" << c.getSslKeyFile()
 		// shared:
 		<< "' NUT_KEYPASS='" << c.getSslKeyPass()
-		// should be shared, but so far NSS-only (FIXME):
 		<< "' NUT_CERTHOST_ADDR='" << c.getSslCertHostAddr()
 		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
 		// NSS-only:
