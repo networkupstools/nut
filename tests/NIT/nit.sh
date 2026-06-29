@@ -3763,6 +3763,7 @@ setenv_ssl_python() {
         fi
     else
         setenv_ssl_common "python"
+        NUT_IGNORE_AUTHCONF=true
     fi
 
     $PYTHON << EOF
@@ -3784,7 +3785,13 @@ EOF
         log_warn "The python interpreter '$PYTHON' can not use ssl module, so we will not FORCESSL in the test"
         NUT_FORCESSL=0
         export NUT_FORCESSL
-        unset NUT_SSL
+        if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
+            # Let the test script and eventually module auto-detect undef => can_ssl
+            unset NUT_SSL
+        else
+            NUT_SSL=false
+            export NUT_SSL
+        fi
     fi
 }
 
@@ -3993,7 +4000,7 @@ setenv_ssl_perl() {
         NUT_IGNORE_AUTHCONF=true
     fi
 
-    if [ x"${NUT_IGNORE_AUTHCONF}" != xtrue ] ; then
+    if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
         case "${NUT_CAPATH}" in
             ?":\\"*|?":/"*)
                 # Perl uses a platform-dependent PATH separator,
@@ -4018,8 +4025,13 @@ setenv_ssl_perl() {
             log_warn "The perl interpreter '$PERL' can not use IO::Socket::SSL module, so we will not FORCESSL in the test"
             NUT_FORCESSL=0
             export NUT_FORCESSL
-            # Let the test script and eventually module auto-detect undef => can_ssl
-            unset NUT_SSL
+            if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
+                # Let the test script and eventually module auto-detect undef => can_ssl
+                unset NUT_SSL
+            else
+                NUT_SSL=false
+                export NUT_SSL
+            fi
         }
     fi
 
