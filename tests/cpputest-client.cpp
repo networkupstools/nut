@@ -277,11 +277,18 @@ void NutActiveClientTest::setUp()
 				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
 				if (!ac.certpath.empty()) {
 					// Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
-					struct stat st;
-					if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-						env_NUT_CAPATH = ac.certpath;
-					} else {
-						env_NUT_CAFILE = ac.certpath;
+					if (ac.ssl_backend != "openssl") {
+						// NSS or none or unspecified
+						env_NUT_CERTSTORE_PATH = ac.certpath;
+					}
+					if (ac.ssl_backend != "nss") {
+						// OpenSSL or none or unspecified
+						struct stat st;
+						if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+							env_NUT_CAPATH = ac.certpath;
+						} else {
+							env_NUT_CAFILE = ac.certpath;
+						}
 					}
 				}
 				if (!ac.certfile.empty()) {
