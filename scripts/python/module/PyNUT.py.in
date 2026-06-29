@@ -208,7 +208,7 @@ class AuthConf:
         try:
             if AuthConf.__debug:
                 print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
-            with os.open(filename, 'r') as f:
+            with open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith('#'):
