@@ -58,7 +58,7 @@ if __name__ == "__main__" :
     NUT_IGNORE_AUTHCONF = (os.getenv('NUT_IGNORE_AUTHCONF', 'false') in ["true", "1"])
     if not NUT_IGNORE_AUTHCONF:
         # Load from nutauth.conf
-        PyNUT.AuthConf.__debug = NUT_DEBUG
+        ### PyNUT.AuthConf.__debug = NUT_DEBUG
         ac = PyNUT.AuthConf.getAuthConf(user=NUT_USER, host=NUT_HOST, port=NUT_PORT)
         if ac:
             if NUT_DEBUG:
