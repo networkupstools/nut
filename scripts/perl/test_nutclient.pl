@@ -49,20 +49,21 @@ if (1) {
 
             $NUT_USER = $ac->{user} if defined $ac->{user};
             $NUT_PASS = $ac->{pass} if defined $ac->{pass};
+
+            if (defined $ac->{certfile}) {
+                # (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+                $NUT_CERTFILE = $ac->{certfile};
+            }
+
             if (defined $ac->{certpath}) {
+                # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
                 if (-d $ac->{certpath}) {
                     $NUT_CAPATH = $ac->{certpath};
                 } else {
                     $NUT_CAFILE = $ac->{certpath};
                 }
             }
-            if (defined $ac->{certfile}) {
-                if (!defined $NUT_CAFILE) {
-                    $NUT_CAFILE = $ac->{certfile};
-                } else {
-                    $NUT_CERTFILE = $ac->{certfile};
-                }
-            }
+
             $NUT_KEYFILE = $ac->{certident} if defined $ac->{certident};
             $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
             $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
