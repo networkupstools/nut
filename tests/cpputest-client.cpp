@@ -298,6 +298,10 @@ void NutActiveClientTest::setUp()
 				}
 				if (!ac.certident.empty()) env_NUT_CERTIDENT_NAME = ac.certident;
 				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
+				if (!ac.certhost.empty()) {
+					env_NUT_CERTHOST_ADDR = std::string("localhost:") + szPort;
+					env_NUT_CERTHOST_NAME = ac.certhost;
+				}
 				if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
 				if (ac.forcessl != -1) {
 					env_NUT_FORCESSL = (ac.forcessl == 1);
