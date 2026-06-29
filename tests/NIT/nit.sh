@@ -3760,6 +3760,17 @@ setenv_ssl_python() {
             log_info "SKIP setenv_ssl_python() because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
             NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
             export NUT_AUTHCONF_FILE
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
         fi
     else
         setenv_ssl_common "python"
@@ -3805,6 +3816,18 @@ setenv_ssl_cppnit() {
             export NUT_IGNORE_AUTHCONF
         else
             log_info "SKIP setenv_ssl_cppnit() because '${NUT_CONFPATH}/nutauth.conf' exists"
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
+
             return 0
         fi
     fi
@@ -3994,6 +4017,17 @@ setenv_ssl_perl() {
             log_info "SKIP setenv_ssl_perl() because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
             NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
             export NUT_AUTHCONF_FILE
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
         fi
     else
         setenv_ssl_common "perl"
