@@ -161,6 +161,17 @@ class AuthConf:
         self.forcessl = -1
         ''' -1 = unset, 0 = off, 1 = on '''
 
+    def __str__(self):
+        sb = []
+        for key in self.__dict__:
+            if key == "section": continue
+            sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
+
+        return ("PyNUT.AuthConf[%s]: " % ("<null>" if self.section is None else self.section)) + (', '.join(sb))
+
+    def __repr__(self):
+        return self.__str__()
+
     @staticmethod
     def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
         """ Read the authentication configuration file (usually nutauth.conf) """
