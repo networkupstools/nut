@@ -3353,6 +3353,16 @@ void SSLConfig::addCertHost(const SSLConfig_CERTHOST& certhost)
 #  endif
 # endif
 
+	/* Ensure we don't have a duplicate pointer or object with same details */
+	for (auto* item : _certhosts) {
+		if (item->getHostAddr() == certhost.getHostAddr() &&
+		    item->getPort() == certhost.getPort() &&
+		    item->getCertSubj() == certhost.getCertSubj())
+		{
+			return;
+		}
+	}
+
 	_certhosts.insert(certhost.clone());
 }
 
