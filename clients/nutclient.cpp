@@ -31,6 +31,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <list>
 
 #ifndef WIN32
 # include <unistd.h>
@@ -2009,7 +2010,7 @@ bool Client::hasFeature(const Feature& feature)
  *
  */
 
-std::vector<AuthConf> AuthConf::authconf_list;
+std::list<AuthConf> AuthConf::authconf_list;
 AuthConf* AuthConf::global_defaults = nullptr;
 
 AuthConf::AuthConf(const std::string& section_name)
@@ -2108,7 +2109,7 @@ AuthConf::~AuthConf()
 {
 }
 
-/*static*/ std::vector<AuthConf> AuthConf::getAuthConfList()
+/*static*/ std::list<AuthConf>& AuthConf::getAuthConfList()
 {
 	return authconf_list;
 }
@@ -2142,9 +2143,9 @@ static void set_authconf_val(AuthConf& conf, const std::string& var, const std::
 	}
 }
 
-static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults);
+static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults);
 
-static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_section, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults)
+static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_section, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults)
 {
 	if (numargs < 1) return;
 
@@ -2155,9 +2156,7 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 
 		if (sectname == "_global_defaults" || sectname.empty()) {
 			if (!global_defaults) {
-				global_defaults = new AuthConf("");
-				authconf_list.push_back(*global_defaults);
-				// Re-point global_defaults to the one in the list
+				authconf_list.emplace_back("");
 				global_defaults = &authconf_list.back();
 			}
 			current_section = global_defaults;
@@ -2207,8 +2206,7 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 	if (!current_section) {
 		if (global_scope) {
 			if (!global_defaults) {
-				global_defaults = new AuthConf("");
-				authconf_list.push_back(*global_defaults);
+				authconf_list.emplace_back("");
 				global_defaults = &authconf_list.back();
 			}
 			current_section = global_defaults;
@@ -2220,7 +2218,7 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 	set_authconf_val(*current_section, var, val);
 }
 
-static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::vector<AuthConf>& authconf_list, AuthConf*& global_defaults)
+static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults)
 {
 	PCONF_CTX_t ctx;
 	AuthConf* current_section = nullptr;

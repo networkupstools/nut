@@ -41,6 +41,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 #include <set>
 #include <exception>
@@ -99,7 +100,7 @@ public:
 	~AuthConf();
 
 	/** Get the one global list of all parsed authentication configurations */
-	static std::vector<AuthConf> getAuthConfList();
+	static std::list<AuthConf>& getAuthConfList();
 
 	/** Read the authentication configuration file (usually nutauth.conf) */
 	static int readAuthConfFile(const std::string& filename = "", int fatal_errors = 0);
@@ -163,7 +164,7 @@ public:
 	int forcessl;	/* -1 = unset, 0 = off, 1 = on */
 
 private:
-	static std::vector<AuthConf> authconf_list;
+	static std::list<AuthConf> authconf_list;
 	static AuthConf* global_defaults;
 };
 
