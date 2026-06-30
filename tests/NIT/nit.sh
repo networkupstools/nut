@@ -3757,7 +3757,7 @@ setenv_ssl_python() {
             export NUT_IGNORE_AUTHCONF
             setenv_ssl_common "python"
         else
-            log_info "SKIP setenv_ssl_python() because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            log_info "SKIP setenv_ssl_common(python) because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
             NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
             export NUT_AUTHCONF_FILE
 
@@ -4014,7 +4014,7 @@ setenv_ssl_perl() {
             export NUT_IGNORE_AUTHCONF
             setenv_ssl_common "perl"
         else
-            log_info "SKIP setenv_ssl_perl() because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            log_info "SKIP setenv_ssl_common(perl) because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
             NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
             export NUT_AUTHCONF_FILE
 
@@ -4026,6 +4026,42 @@ setenv_ssl_perl() {
                 none)
                     NUT_SSL=false
                     export NUT_SSL
+                    ;;
+            esac
+
+            # See detailed comments below.
+            case "${TESTCERT_PATH_ROOTCA}" in
+                ?":\\"*|?":/"*)
+                    NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl-perl-win.conf"
+                    log_info "Prepare a separate '${NUT_AUTHCONF_FILE}' for this platform"
+                    while read LINE ; do
+                        case "${LINE}" in
+                            *=*)
+                                KEY="`echo \"${LINE}\" | awk -F= '{print $1}'`"
+                                VAL="`echo \"${LINE}\" | awk -F= '{print $2}' | sed -e 's,^ *\"\(.*\)\"$,\1,'`"
+                                case "${VAL}" in
+                                    ?":\\"*|?":/"*)
+                                        VAL_ORIG="${VAL}"
+                                        _VAL="`realpath \"${VAL}\"`" && [ -n "${_VAL}" ] && VAL="${_VAL}" || true
+
+                                        case "${VAL}" in
+                                            ?":\\"*|?":/"*)
+                                                _VAL="`realpath \"${VAL}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_VAL}" ] && VAL="${_VAL}" || true
+                                                ;;
+                                        esac
+
+                                        if [ x"${VAL}" != x ] && [ x"${VAL}" != x"${VAL_ORIG}" ] ; then
+                                            echo "${KEY} = \"${VAL}\""
+                                        else
+                                            echo "${LINE}"
+                                        fi
+                                        ;;
+                                    *)  echo "${LINE}" ;;
+                                esac
+                                ;;
+                            *)  echo "${LINE}" ;;
+                        esac
+                    done < "${NUT_CONFPATH}/nutauth-openssl.conf" > "${NUT_AUTHCONF_FILE}"
                     ;;
             esac
         fi
@@ -4044,11 +4080,9 @@ setenv_ssl_perl() {
                 ;;
         esac
 
+        # Retry another way if that failed to remove the colon:
         case "${NUT_CAPATH}" in
             ?":\\"*|?":/"*)
-                # Perl uses a platform-dependent PATH separator,
-                # however in mingw/msys2 it uses ":" which clashes
-                # with "C:\..." that Python insists on in this var.
                 _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
                 ;;
         esac
