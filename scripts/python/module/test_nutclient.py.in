@@ -9,7 +9,7 @@ import os
 
 
 def test_splitaddr(addr, expected_host, expected_port):
-    ac = PyNUT.AuthConf(f"[{addr}]")
+    ac = PyNUT.AuthConf(addr)
     client = PyNUT.PyNUTClient.from_authconf(ac, connect_now=False)
     # Note: host in PyNUTClient is __host, but we can't access it easily if it's private.
     # Looking at the code, we might need to add a getter or use _PyNUTClient__host
@@ -17,9 +17,9 @@ def test_splitaddr(addr, expected_host, expected_port):
     port = client._PyNUTClient__port
 
     if host == expected_host and port == expected_port:
-        print(f"OK: {addr} -> {host}:{port}")
+        print("OK: {%s} -> {%s}:{%s}" % (str(addr), str(host), str(port)))
     else:
-        print(f"FAIL: {addr} -> expected {expected_host}:{expected_port}, got {host}:{port}")
+        print("FAIL: {%s} -> expected {%s}:{%s}, got {%s}:{%s}" % (str(addr), str(expected_host), str(expected_port), str(host), str(port)))
         return 1
     return 0
 

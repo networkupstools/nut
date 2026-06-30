@@ -200,7 +200,7 @@ class AuthConf:
 
         if not os.path.exists(filename):
             if fatal_errors:
-                raise PyNUTError(f"Can't open a user/site-provided default nutauth.conf file" if filename is None else f"Could not open {filename}")
+                raise PyNUTError("Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename)))
             return AuthConf.__authconf_list
 
         current_ac = AuthConf.__global_defaults if global_scope else None
@@ -373,17 +373,17 @@ class AuthConf:
         # Proper IPv6 bracket handling for construction
         host_part = norm_host
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
-            host_part = f"[{host_part}]"
+            host_part = "[%s]" % host_part
 
         target_user_host_port = ""
-        if user: target_user_host_port += f"{user}@"
-        target_user_host_port += f"{host_part}"
-        if norm_port: target_user_host_port += f":{norm_port}"
+        if user: target_user_host_port += "%s@" % user
+        target_user_host_port += host_part
+        if norm_port: target_user_host_port += ":%s" % str(norm_port)
 
-        target_host_port = f"@{host_part}"
-        if norm_port: target_host_port += f":{norm_port}"
+        target_host_port = "@%s" % host_part
+        if norm_port: target_host_port += ":%s" % str(norm_port)
 
-        res = AuthConf(f"{target_user_host_port}")
+        res = AuthConf(target_user_host_port)
 
         retval_user = None
         retval_host = None
@@ -443,7 +443,7 @@ class AuthConf:
         # Proper IPv6 bracket handling for construction
         host_part = norm_host
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
-            host_part = f"[{host_part}]"
+            host_part = "[%s]" % host_part
 
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
@@ -455,15 +455,15 @@ class AuthConf:
 
             # 1. Exact match user@host:port
             target = ""
-            if user: target += f"{user}@"
-            target += f"{host_part}"
-            if norm_port: target += f":{norm_port}"
+            if user: target += "%s@" % user
+            target += host_part
+            if norm_port: target += ":%s" % str(norm_port)
 
             if section == target:
                 return ac
 
             # 2. Match host:port
-            if not user and section == f"{host_part}:{norm_port}":
+            if not user and section == ("%s:%s" % (host_part, str(norm_port))):
                 return ac
 
             # 3. Match host
