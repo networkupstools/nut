@@ -27,6 +27,9 @@ def testsuite_splitaddr():
     errors = 0
     errors += test_splitaddr("localhost", "localhost", 3493)
     errors += test_splitaddr("localhost:12345", "localhost", 12345)
+    errors += test_splitaddr("127.0.0.1", "127.0.0.1", 3493)
+    errors += test_splitaddr("127.0.0.1:12345", "127.0.0.1", 12345)
+    # IPv6 addresses we expect NOT bracketed when to be used for Python socket API (not URLs etc.):
     errors += test_splitaddr("[::1]", "::1", 3493)
     errors += test_splitaddr("[::1]:12345", "::1", 12345)
     errors += test_splitaddr("[fe80::215:5dff:fea4:f780]", "fe80::215:5dff:fea4:f780", 3493)

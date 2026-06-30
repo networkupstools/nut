@@ -233,8 +233,6 @@ class AuthConf:
                             current_ac = None
                             for ac in AuthConf.__authconf_list:
                                 ac_sect = ac.section
-                                if ac_sect.startswith('[') and ac_sect.endswith(']'):
-                                    ac_sect = ac_sect[1:-1]
                                 if ac_sect == sectname:
                                     current_ac = ac
                                     break
@@ -328,8 +326,6 @@ class AuthConf:
             print ("[DEBUG] AuthConf Merging {%s} into {%s}" % (str(source), str(self)))
 
         sect = self.section
-        if sect.startswith('[') and sect.endswith(']'):
-            sect = sect[1:-1]
 
         if '@' in sect and sect.find('@') > 0:
             self.user = sect.split('@')[0]
@@ -395,8 +391,6 @@ class AuthConf:
 
         for ac in auth_configs:
             sect = ac.section
-            if sect.startswith('[') and sect.endswith(']'):
-                sect = sect[1:-1]
 
             if AuthConf.__debug:
                 print ("[DEBUG] getAuthConf(): Processing section: [%s]" % (sect))
@@ -449,9 +443,6 @@ class AuthConf:
         # This is a simplified version of the C logic
         for ac in auth_configs:
             section = ac.section
-            if section.startswith('[') and section.endswith(']'):
-                # Remove brackets
-                section = section[1:-1]
 
             # 1. Exact match user@host:port
             target = ""
@@ -488,8 +479,6 @@ class PyNUTClient :
 
         # Simple split, could be more robust
         section = authconf.section
-        if section.startswith('[') and section.endswith(']'):
-            section = section[1:-1]
 
         # Handle user@host:port
         if '@' in section:
