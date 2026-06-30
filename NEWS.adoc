@@ -185,6 +185,10 @@ https://github.com/networkupstools/nut/milestone/13
       success of SSL initialization with both backends is more diligently
       tracked) should now not cause exit of the client if secure connection
       is not required by its configuration in the first place. [#3420]
+    * Introduced a new notification type for unexpected clock change which
+      is specially handled (data re-initialization), whether due to sleep
+      and wake-up, or NTP/RTC clock changes during boot, or severe delays
+      on a stressed system (to name a few practical cases). [issue #3405]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which

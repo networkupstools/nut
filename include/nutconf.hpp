@@ -5,7 +5,7 @@
 
         Author: Emilien Kia <emilien.kia@gmail.com>
 
-    Copyright (C) 2024-2025 NUT Community
+    Copyright (C) 2024-2026 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -1553,6 +1553,8 @@ public:
 		NOTIFY_NOTBOOST,
 
 		NOTIFY_SHUTDOWN_HOSTSYNC,
+
+		NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED,
 
 		NOTIFY_OTHER = 28,
 		NOTIFY_NOTOTHER,
