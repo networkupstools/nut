@@ -215,6 +215,11 @@ AC_SUBST([NUT_CONFIG_CXXFLAGS])
 AC_SUBST([NUT_CONFIG_CPPFLAGS])
 AC_SUBST([NUT_CONFIG_LDFLAGS])
 
+dnl If re-configuring in a directory where another build was done earlier and
+dnl not cleaned away, some compilers or tools (especially DMF scripts) may be
+dnl confused and would produce corrupt results.
+rm -f include/config.h || true
+
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
