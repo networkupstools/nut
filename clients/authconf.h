@@ -17,8 +17,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdio.h>
-
-#include "nut_stdint.h"
+#include <stdint.h>
 
 typedef struct upscli_authconf_s {
 	char	*section;	/* [@host:port] or [user@host:port], or NULL for global */

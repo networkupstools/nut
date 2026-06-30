@@ -14,6 +14,7 @@
 #include "authconf.h"
 #include "parseconf.h"
 #include "upsclient.h"
+#include "nut_stdint.h"
 
 #include <stdio.h>
 #include <stdlib.h>
