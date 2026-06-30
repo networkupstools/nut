@@ -53,7 +53,7 @@ if __name__ == "__main__" :
     # driver = dummy-ups
     # desc = "Test device"
     # port = /src/nut/data/evolution500.seq
-    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in upsd.conf) :")
+    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in ups.conf) :")
     result = nut.GetUPSVars( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
@@ -101,8 +101,38 @@ if __name__ == "__main__" :
                 failed.append('SetUPSVar')
     print( "\033[01;33m%s\033[0m\n" % result )
 
+    print( 80*"-" + "\nTesting 'SetRWVar' with TRACKING for 'driver.debug' (1s interval, 10s timeout):")
+    try :
+        # Note: UPS1 is often used in NUT tests as a common device name
+        # Also try 'dummy' which is used in this test script
+        target_ups = "UPS1"
+        try:
+            nut.GetUPSVars(target_ups)
+        except:
+            target_ups = "dummy"
+
+        tid = nut.SetRWVar( target_ups, "driver.debug", "1", wait_interval_sec=1, wait_max_count=10 )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+
+        if isinstance(tid, PyNUT.TrackingID):
+            print( "Got TRACKING ID: %s, created: %s, age: %0.2fs" % (str(tid), tid.created(), tid.age()) )
+            result = str(tid)
+        else:
+            result = tid
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (ex != 'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('SetUPSVar-Tracking')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
     # testing who has an upsmon-like log-in session to a device
-    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in upsd.conf) before test client is connected :")
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in ups.conf) before test client is connected :")
     try :
         result = nut.ListClients( "dummy" )
     except :
@@ -126,7 +156,7 @@ if __name__ == "__main__" :
     print( "\033[01;33m%s\033[0m\n" % result )
 
     loggedIntoDummy = False
-    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in ups.conf; current credentials should have an upsmon role in upsd.users) :")
     try :
         result = nut.DeviceLogin( "dummy" )
         if (NUT_USER is None):

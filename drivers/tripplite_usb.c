@@ -1087,7 +1087,8 @@ static int setvar(const char *varname, const char *val)
 
 	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
 		char outlet_name[80];
-		char index_str[10], *first_dot, *next_dot;
+		char index_str[10];
+		const char	*first_dot, *next_dot;
 		long index_chars;
 		int  index, state, ret;
 

@@ -1172,7 +1172,7 @@ static int sock_read(conn_t *conn)
 		ret = read(conn->fd, &ch, 1);
 
 		if (ret > 0)
-			upsdebug_with_errno(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
+			upsdebug_with_errno(7, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
 				conn->fd, ret, ch);
 
 		if (ret < 1) {
@@ -2270,5 +2270,11 @@ int main(int argc, char **argv)
 	checkconf();
 
 	upsdebugx(1, "Exiting upssched (CLI process)");
+
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	exit(EXIT_SUCCESS);
 }

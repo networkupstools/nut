@@ -101,7 +101,7 @@ typedef PVOID win_phidp_preparsed_data_t;
 /* HIDP_CAPS mirror                                                       */
 /* ---------------------------------------------------------------------- */
 
-/*! @brief HIDP_CAPS mirror — top-level device capabilities summary */
+/*! @brief HIDP_CAPS mirror -- top-level device capabilities summary */
 typedef struct win_hidp_caps_s {
 	USHORT Usage;
 	USHORT UsagePage;
@@ -155,7 +155,7 @@ typedef union win_hidp_union_range_u {
 	win_hidp_notrange_t NotRange;
 } win_hidp_union_range_t;
 
-/*! @brief HIDP_VALUE_CAPS mirror — describes one value-type HID data item */
+/*! @brief HIDP_VALUE_CAPS mirror -- describes one value-type HID data item */
 typedef struct win_hidp_value_caps_s {
 	USHORT UsagePage;
 	UCHAR ReportID;
@@ -182,7 +182,7 @@ typedef struct win_hidp_value_caps_s {
 	win_hidp_union_range_t u;
 } win_hidp_value_caps_t;
 
-/*! @brief HIDP_BUTTON_CAPS mirror — describes one button-type HID data item */
+/*! @brief HIDP_BUTTON_CAPS mirror -- describes one button-type HID data item */
 typedef struct win_hidp_button_caps_s {
 	USHORT UsagePage;
 	UCHAR ReportID;
@@ -199,7 +199,7 @@ typedef struct win_hidp_button_caps_s {
 	win_hidp_union_range_t u;
 } win_hidp_button_caps_t;
 
-/*! @brief HIDP_LINK_COLLECTION_NODE mirror — one node in the collection tree */
+/*! @brief HIDP_LINK_COLLECTION_NODE mirror -- one node in the collection tree */
 typedef struct win_hidp_link_collection_node_s {
 	USHORT LinkUsage;
 	USHORT LinkUsagePage;
@@ -228,7 +228,7 @@ extern usb_communication_subdriver_t winhid_subdriver;
  *   - Insert PowerSummary collection nodes where expected by subdriver tables
  *   - Re-map 0x84xx (Power Device page) status leaf usages to their canonical
  *     0x85xx (Battery System page) equivalents
- *   - Flatten intermediate collection hierarchy (e.g. PowerConverter.Input →
+ *   - Flatten intermediate collection hierarchy (e.g. PowerConverter.Input =>
  *     Input) and rewrite collection ID nodes to base form
  *   - Generate alias HIDData items for paths that differ only by the above
  *     transformations, so both old and new path forms resolve

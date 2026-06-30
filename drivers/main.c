@@ -897,19 +897,21 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	}
 
 	if (upsh.instcmd == NULL) {
+		const char	*cs = NULL;
+
 		/* FIXME: support main_instcmd() too? */
 		upsdebugx(1, "This driver does not implement INSTCMD support");
 
 		/* ...but the default one we can short-circuit without
 		 * registered INSTCMDs (FIXME: loop detection/protection):
 		 */
-		s = strstr(sdcmds, "shutdown.default");
-		if (s) {
+		cs = strstr(sdcmds, "shutdown.default");
+		if (cs) {
 			/* check this is really a sub-string */
 			size_t	cmdlen = strlen("shutdown.default");
 			if (
-				(s == sdcmds || *(s-1) == ',') &&
-				(s[cmdlen] == '\0' || s[cmdlen] == ',')
+				(cs == sdcmds || *(cs-1) == ',') &&
+				(cs[cmdlen] == '\0' || cs[cmdlen] == ',')
 			) {
 				upsdebugx(1, "Handle 'shutdown.default' directly, "
 					"ignore other `sdcommands` (if any): %s",

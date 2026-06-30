@@ -1619,7 +1619,7 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 	/* Best-effort (size-wise) for logging in the end: */
 	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
 #ifdef NUT_PLATFORM_LINUX
-	char	*s = NULL;
+	const char	*s = NULL;
 #endif
 	const char	**pprogname = NULL;
 	size_t	total_prognames = 0, i = 0;
@@ -2622,7 +2622,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
  */
 int	str_contains_token(const char *string, const char *token)
 {
-	char	*s = NULL;
+	const char	*s = NULL;
 	size_t	offset = 0, toklen = 0;
 
 	if (!token || !*token || !string || !*string)
@@ -2869,7 +2869,7 @@ char *xbasename_no_ext(const char *file)
 			 *  One implementation is currently tucked away in
 			 *  libusb0.c because net-snmp may provide another...
 			 */
-			char	*s = strstr(cs, exeext);
+			const char	*s = strstr(cs, exeext);
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
 				 * this character is what we already do not want */
@@ -3183,11 +3183,16 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	 * a reload action for Type=notify-reload; for more details see
 	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
 	 */
-	struct timespec monoclock_ts;
-	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+	struct timespec	monoclock_ts;
+	int	got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
 #  endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 # endif	/* HAVE_SD_NOTIFY */
 #endif	/* WITH_LIBSYSTEMD */
+
+	/* Some code paths (build configurations/goals) do not involve these,
+	 * but easier to make-believe that we do than pepper code with ifdefs */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
 
 	/* Were we asked to be quiet on the console? */
 	if (upsnotify_report_verbosity < 0) {
@@ -3258,8 +3263,6 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
-	NUT_UNUSED_VARIABLE(buf);
-	NUT_UNUSED_VARIABLE(msglen);
 	if (!upsnotify_reported_disabled_systemd) {
 		upsdebugx(upsnotify_report_verbosity,
 			"%s: notify about state %s with libsystemd: "
@@ -5171,6 +5174,53 @@ char *xstrdup(const char *string)
 	return p;
 }
 
+/* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
+#ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+{
+	int rc;
+	int err = 0;
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	rc = connect(fd, (const struct sockaddr *)addr, addrlen);
+	if (rc == -1 && errno != EINPROGRESS) {
+		err = errno;
+	} else if (rc == -1) {
+		fd_set w_fds;
+		fd_set e_fds;
+		struct timeval tv;
+
+		FD_ZERO(&w_fds);
+		FD_SET(fd, &w_fds);
+		FD_ZERO(&e_fds);
+		FD_SET(fd, &e_fds);
+
+		tv.tv_sec = d_sec;
+		tv.tv_usec = d_usec;
+
+		rc = select(fd + 1, NULL, &w_fds, &e_fds, &tv);
+
+		if (rc < 0) {
+			err = errno;
+		} else if (rc == 0) {
+			err = ETIMEDOUT;
+		} else {
+			socklen_t len = sizeof(err);
+			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+		}
+	}
+
+	fcntl(fd, F_SETFL, flags);
+
+	if (err != 0) {
+		errno = err;
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
@@ -5415,7 +5465,7 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
 				__func__, index, NUT_STRARG(dirname));
-                        index++;
+			index++;
 			continue;
 		}
 		index++;

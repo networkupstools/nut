@@ -65,20 +65,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
-
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
-
-        # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
-        config-file: ./.github/codeql/codeql-config.yml
+      uses: actions/checkout@v7
 
     # Using hints from https://askubuntu.com/questions/272248/processing-triggers-for-man-db
     - if: matrix.language == 'cpp' && matrix.os == 'ubuntu-latest'
@@ -94,7 +81,7 @@ jobs:
     - name: Prepare ccache
       # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
       id: cache-ccache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       env:
         cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}
       with:
@@ -126,7 +113,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
@@ -142,7 +129,7 @@ jobs:
     # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
     - if: matrix.build-mode == 'autobuild'
       name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+      uses: github/codeql-action/autobuild@v4
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
@@ -195,6 +182,6 @@ jobs:
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"

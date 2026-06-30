@@ -91,6 +91,11 @@ static void help(const char *prog)
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	if (ups) {
 		upscli_disconnect(ups);
 	}
@@ -271,7 +276,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	}
 
 	/* Check if varname is in VAR=VALUE form */
-	if ((ptr = strchr(varname, '=')) != NULL) {
+	if ((ptr = (char*)strchr(varname, '=')) != NULL) {
 		*ptr++ = 0;
 		snprintf(newval, sizeof(newval), "%s", ptr);
 	} else {
@@ -817,6 +822,9 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
+	NUT_UNUSED_VARIABLE(upsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
 	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

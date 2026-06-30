@@ -110,8 +110,11 @@ ListDevice MemClientStub::getDevicesVariableValues(const std::set<std::string>& 
 	return res;
 }
 
-TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)
+TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec, int waitMaxCount)
 {
+	NUT_UNUSED_VARIABLE(waitIntervalSec);
+	NUT_UNUSED_VARIABLE(waitMaxCount);
+
 	auto it_dev = _values.find(dev);
 	if (it_dev == _values.end())
 	{
@@ -134,11 +137,15 @@ TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::s
 			map->emplace(name, list_value);
 		}
 	}
-	return "";
+
+	return TrackingID("");
 }
 
-TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values)
+TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::string& name, const ListValue& values, int waitIntervalSec, int waitMaxCount)
 {
+	NUT_UNUSED_VARIABLE(waitIntervalSec);
+	NUT_UNUSED_VARIABLE(waitMaxCount);
+
 	auto it_dev = _values.find(dev);
 	if (it_dev != _values.end())
 	{
@@ -153,7 +160,8 @@ TrackingID MemClientStub::setDeviceVariable(const std::string& dev, const std::s
 			map->emplace(name, values);
 		}
 	}
-	return "";
+
+	return TrackingID("");
 }
 
 std::set<std::string> MemClientStub::getDeviceCommandNames(const std::string& dev)
@@ -169,11 +177,19 @@ std::string MemClientStub::getDeviceCommandDescription(const std::string& dev, c
 	throw NutException("Not implemented");
 }
 
-TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
+TrackingID MemClientStub::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param, int waitIntervalSec, int waitMaxCount)
 {
 	NUT_UNUSED_VARIABLE(dev);
 	NUT_UNUSED_VARIABLE(name);
 	NUT_UNUSED_VARIABLE(param);
+	NUT_UNUSED_VARIABLE(waitIntervalSec);
+	NUT_UNUSED_VARIABLE(waitMaxCount);
+	throw NutException("Not implemented");
+}
+
+bool MemClientStub::isValidProtocolVersion(const std::string& version_re)
+{
+	NUT_UNUSED_VARIABLE(version_re);
 	throw NutException("Not implemented");
 }
 
@@ -226,6 +242,32 @@ int MemClientStub::deviceGetNumLogins(const std::string& dev)
 TrackingResult MemClientStub::getTrackingResult(const TrackingID& id)
 {
 	NUT_UNUSED_VARIABLE(id);
+	throw NutException("Not implemented");
+	//return TrackingResult::SUCCESS;
+}
+
+void MemClientStub::enableTrackingModeOnce(void)
+{
+	/* Hush warning: function 'enableTrackingModeOnce' could be declared with attribute 'noreturn' [-Wmissing-noreturn] */
+	int	id;
+	NUT_UNUSED_VARIABLE(id);
+	throw NutException("Not implemented");
+	//return TrackingResult::SUCCESS;
+}
+
+bool MemClientStub::isTrackingModeEnabled(void) {
+	/* Hush warning: function 'enableTrackingModeOnce' could be declared with attribute 'noreturn' [-Wmissing-noreturn] */
+	int	id;
+	NUT_UNUSED_VARIABLE(id);
+	throw NutException("Not implemented");
+	//return false;
+}
+
+TrackingResult MemClientStub::waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount)
+{
+	NUT_UNUSED_VARIABLE(id);
+	NUT_UNUSED_VARIABLE(waitIntervalSec);
+	NUT_UNUSED_VARIABLE(waitMaxCount);
 	throw NutException("Not implemented");
 	//return TrackingResult::SUCCESS;
 }

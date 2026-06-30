@@ -581,9 +581,10 @@ or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
 and exiting the daemon. Zero means immediate exit (default), negative
 values mean never exiting on its own accord.
 
-*CERTPATH* 'certificate file or database'::
+*CERTPATH* 'certificate database'::
 
-When compiled with SSL support, you can enter the certificate path here.
+When compiled with SSL support, you can enter the certificate database
+path here.
 +
   With NSS:;;
     Certificates are stored in a dedicated database (data split in 3 files).
@@ -593,28 +594,51 @@ When compiled with SSL support, you can enter the certificate path here.
     the server certificate presented by the upsd server. The files each
     contain one CA certificate. The files are looked up by the CA subject
     name hash value, which must hence be available.
++
+Alternatively, with OpenSSL the `CERTPATH` can specify a particular
+    PEM file with a collection of multiple CA certificates, e.g.
++
+  CERTPATH /etc/ssl/certs/ca-certificates.crt
+
+*CERTFILE 'certificate file'*::
+
+When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
+you can enter the client certificate file here. No-op in NSS builds
+which use `CERTPATH` for all purposes.
++
+The certificates must be in PEM format and must be sorted starting with
+the subject's certificate (server certificate), followed by intermediate
+CA certificates (if applicable) and the highest level (root) CA.
+It should end with the server's private key corresponding to the certificate.
+See `docs/security.txt` in NUT sources, or the Security chapter of the NUT
+User manual, for more information on the SSL support in NUT.
 
 *CERTIDENT* 'certificate name' 'database password'::
 
-When compiled with SSL support with NSS, you can specify the certificate
-name to retrieve from database to authenticate itself and the password
-required to access certificate related private key.
+When compiled with SSL support, you can specify the certificate name to
+retrieve from the database, for the client to authenticate itself, and
+the password required to access the private key related to that certificate.
 +
-Currently no-op when built with OpenSSL.
+Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+Now this feature is supported with both OpenSSL (fully with 1.1.0 or
+newer, just for private key password with older 1.0.2+ library and an
+empty "certificate name") and NSS backends.
 +
-NOTE: Be sure to enclose "certificate name" in double-quotes if you
+NOTE: Be sure to enclose the "certificate name" in double-quotes if you
 are using a value with spaces in it.
 
 *CERTHOST* 'hostname' 'certificate name' 'certverify' 'forcessl'::
 
-When compiled with SSL support with NSS, you can specify security directive
+When compiled with SSL support, you can specify the security directive
 for each server you can contact.
 +
-Each entry maps server name with the expected certificate name and flags
-indicating if the server certificate is verified and if the connection
-must be secure.
+Each entry maps a server name with the expected certificate name and flags
+indicating if the server certificate must be "verified" (should the secure
+connection attempt be aborted upon mismatch or inability to verify?), and if
+the connection must be "secured" (should there be no fallback to plain-text?)
 +
-Currently no-op when built with OpenSSL.
+Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.
 +
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.
@@ -630,8 +654,8 @@ This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
 +
-When compiled with NSS support of SSL, can be overridden for host
-specified with a CERTHOST directive.
+When compiled with NSS support of SSL (also OpenSSL since NUT release v2.8.6),
+this can be overridden for certain hosts specified with a `CERTHOST` directive.
 
 *FORCESSL* '0 | 1'::
 
@@ -643,8 +667,8 @@ that nobody can sniff your sessions without a large effort. Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 +
-When compiled with NSS support of SSL, can be overridden for host
-specified with a CERTHOST directive.
+When compiled with NSS support of SSL (also OpenSSL since NUT release v2.8.6),
+this can be overridden for certain hosts specified with a `CERTHOST` directive.
 
 *DEBUG_MIN* 'INTEGER'::
 

@@ -133,7 +133,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 	char start_port = 0;
 	char stop_port = 0;
 	char current_port = 0;
-	char * list_sep_ptr = NULL;
+	const char * list_sep_ptr = NULL;
 	char ** ports_list = NULL;
 	char str_tmp[128];
 	char * tok;

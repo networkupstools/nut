@@ -1120,6 +1120,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wexit-time-destructors" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wdeprecated-declarations"],
+    [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations=yes],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_deprecated_declarations" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-declarations"])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wdeprecated-declarations" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wdeprecated-declarations"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_deprecated_declarations_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-declarations" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wsuggest-override" (outside functions)],
     [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc],
     [AC_COMPILE_IFELSE(

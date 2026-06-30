@@ -12,7 +12,8 @@ EXTRA_DIST = \
     logrotate/nutlogd \
     misc/nut.bash_completion.in \
     misc/osd-notify \
-    perl/Nut.pm \
+    perl/UPS/Nut.pm \
+    perl/test_nutclient.pl \
     RedHat/halt.patch \
     RedHat/README.adoc \
     RedHat/ups.in \

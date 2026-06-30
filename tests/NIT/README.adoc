@@ -39,3 +39,24 @@ behavior, notably `NIT_CASE`, `NUT_PORT`, `NUT_STATEPATH` and `NUT_CONFPATH`,
 but also many more. See its sources, as well as the top-level `Makefile.am`
 recipe and the `./tests/NIT/tmp/etc/NIT.env` file generated during a test run,
 for more details and examples about the currently supported tunables.
+
+Caching!
+--------
+
+Like the `ci_build.sh`, `nit.sh` can make use of a persistent cache directory
+to store generated certificates and speed up repetitive runs of the `configure`
+script on developer or CI farm machines when the script sources remain the same.
+
+They can be stored outside of the build area(s), under `${CI_CACHE_NUT_BASEDIR}`
+(default: `${HOME}/.cache/nut-ci`) if `DO_USE_NUTCI_CACHE=yes` as provided by
+caller (e.g. via `~/.profile` of a developer) or guessed from environment
+variables typical for CI runs.
+
+If something acts up, or the build environment changes invisibly to the
+script, an `export DO_CLEAN_NUTCI_CACHE_BEFORE=yes` (or a more targeted
+`DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE` to not impact `ci_build.sh`).
+
+You can also always nuke the `${CI_CACHE_NUT_BASEDIR}` directory, or the
+`NIT_CERT_*` subdirectories and stale lock files under it.
+It would likely be needed from time to time anyway, as there is
+now no automated clean-up of no longer relevant caches.

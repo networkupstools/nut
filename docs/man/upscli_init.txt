@@ -4,7 +4,7 @@ UPSCLI_INIT(3)
 NAME
 ----
 
-upscli_init - Initialize upsclient module specifying security properties.
+upscli_init, upscli_init2 - Initialize upsclient module specifying security properties.
 
 SYNOPSIS
 --------
@@ -12,11 +12,20 @@ SYNOPSIS
 ------
 	#include <upsclient.h>
 
+	/* Legacy API, without support for client's
+	 * own certificate in OpenSSL builds */
 	int upscli_init(
 		int certverify,
 		const char *certpath,
 		const char *certname,
 		const char *certpasswd);
+
+	int upscli_init2(
+		int certverify,
+		const char *certpath,
+		const char *certname,
+		const char *certpasswd,
+		const char *certfile);
 ------
 
 DESCRIPTION
@@ -26,6 +35,17 @@ The *upscli_init()* function initializes upsclient module and sets many
 TLS/SSL-related properties: 'certverify' to 1 makes certificate verification
 required for all SSL connections and 'certpath' is the location of
 certificate database.
+It is equivalent to the newer *upscli_init2()* with 'certfile' set to 'NULL'.
+
+`certverify`::
+
+Specify a non-zero value to require that server certificate is valid,
+and abort the `STARTTLS` attempt if it is not.
++
+Specify a zero value to ignore any results of such a check (e.g. only log
+the situation), or not do it at all.
+
+`certpath` and `certfile`::
 
 * If compiled with OpenSSL, 'certpath' refers to directory containing
   certificates where the certificates must be named according to their
@@ -41,22 +61,42 @@ certificate database.
 Alternatively, the `c_rehash` utility (provided by e.g. `openssl-perl`
   package) can take a directory and iterate it to link all certificates
   found in that directory, in the manner described above.
++
+The 'certfile' may be used to refer to a PEM file with the client certificate
+  and corresponding private key.
 
-* If compiled with NSS, 'certpath' refers to a directory containing its
+* If compiled with NSS, the 'certpath' refers to a directory containing its
   database files.
++
+The 'certfile' is currently not used for NSS: all needed information is in
+  the database.
 
-If compiled with NSS and using SSL, you can specify 'certname' with the name
+`certname` and `certpasswd`::
+If using SSL, you can specify 'certname' with the subject name
 of the certificate to send to `upsd`, and 'certpasswd' with the password used
 to decrypt certificate private key.
 
-If compiled with NSS, it would normally log either the infamous message
-"Init SSL without certificate database" if no 'certpath' was provided,
+* If compiled with NSS, this allows to choose one of many certificates that
+  may be stored in the database.
+
+* If compiled with OpenSSL, the 'certfile' is expected to hold one set of
+  certificate and key data.
+
+In both cases, the 'certname' (if not empty) can be used to verify that the
+specified file provides a certificate with expected subject name, or possibly
+matches the expected host name or IP address.
+
+Other nuances
+-------------
+
+If compiled with NSS, the client library would normally log either the infamous
+message "Init SSL without certificate database" if no 'certpath' was provided,
 or "Init SSL with certificate database located at %s" otherwise.
 Since some programmatic consumers become confused by such extra text on
 the `stderr` of tools they call (such as monitoring systems doing `upsc`
 queries), you can export an environment variable `NUT_QUIET_INIT_SSL`
 with string values `"true"`, `"TRUE"` or `"1"`, to avoid logging these
-messages and just emit them as debug stream (at verbosity 1 or higher).
+messages and only emit them as debug stream (seen at verbosity 1 or higher).
 
 As part of general initialization, *upscli_init()* function can call the
 linkman:upscli_init_default_connect_timeout[3] method (if it was never used
@@ -65,7 +105,7 @@ from presence of the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable for
 linkman:upscli_connect[3] attempts to be not blocking (as per default).
 
 You can call linkman:upscli_add_host_cert[3] to register specific host
-security policy before initialize connections to them.
+security policy before initializing connections to them.
 
 You must call linkman:upscli_cleanup[3] when exiting application.
 

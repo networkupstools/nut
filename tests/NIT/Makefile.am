@@ -33,13 +33,15 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 #               if NUT was built with SSL support
 #   required    Require that the SSL tests are set up always (e.g. fail if NUT
 #               was built without SSL support)
-# Default: try to set up crypto if possible (tools available, NUT built with
-# SSL support) and run the tests in resulting conditions.
+#   best-effort(yes): Default: try to set up crypto if possible (tools are
+#               available, NUT built with SSL support) and run the tests in
+#               resulting conditions; skip if crypto setup fails (tools absent,
+#               rejected our commands/passwords, etc.). Tests still must pass.
 ### if WITH_OPENSSL
 ### WITH_SSL_TESTS = no
 ### else !WITH_OPENSSL
 ### WITH_SSL_TESTS = required-conditional
-WITH_SSL_TESTS = yes
+WITH_SSL_TESTS = best-effort
 ### endif !WITH_OPENSSL
 
 # Run in builddir, use script from srcdir
@@ -56,10 +58,12 @@ check-NIT: $(abs_srcdir)/nit.sh
 
 # Make sure pre-requisites for NIT are fresh as we iterate
 check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s generated-sources-with-a-touch
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
 	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s cleanup-touchfiles-for-generated-headers
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 
 # Allow to override with make/env vars; provide sensible defaults (see nit.sh):

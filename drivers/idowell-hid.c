@@ -30,17 +30,29 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.20"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.21"
 /* FIXME: experimental flag to be put in upsdrv_info */
+/* v0.21 GoldenMate LiFePO4 packs reuse the shared Phoenixtec VID (0x06da):
+ *       claim only those (by -BMS-/Smart-Battery firmware strings) and defer
+ *       everything else on that VID to liebert-hid / mge-hid */
 /* v0.20 Goldenmate also uses the same vendorID and productID so added additional HID2NUT lookup values */
 
 /* iDowell, Goldenmate */
 #define IDOWELL_VENDORID	0x075d
 
+/* Phoenixtec Power Co., Ltd; this VID is shared with liebert-hid (the default
+ * sink for 0x06da) and mge-hid (AEG PROTECT NAS). GoldenMate 1000VA/800W
+ * LiFePO4 packs reuse 0x06da:0xffff with the same iDowell-style -BMS- firmware
+ * and HID descriptor as 0x075d:0x0300, so the table match is gated by device
+ * strings in idowell_claim() to avoid hijacking the other 0x06da devices. */
+#define PHOENIXTEC_VENDORID	0x06da
+
 /* USB IDs device table */
 static usb_device_id_t idowell_usb_device_table[] = {
 	/* iDowell, Goldenmate */
 	{ USB_DEVICE(IDOWELL_VENDORID, 0x0300), NULL },
+	/* GoldenMate 1000VA/800W LiFePO4; claim gated by strings, see idowell_claim() */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID, 0xffff), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -147,6 +159,23 @@ static const char *idowell_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
+/* The Phoenixtec vendor ID (0x06da) is shared between several subdrivers:
+ * liebert-hid is the default sink, mge-hid grabs AEG PROTECT NAS, and we want
+ * only the GoldenMate LiFePO4 packs. They carry the same iDowell-style BMS
+ * firmware as the 0x075d:0x0300 device, reporting manufacturer "-BMS-" and
+ * product "Smart-Battery". Match on those strings so the other 0x06da devices
+ * fall through to liebert-hid / mge-hid. */
+static int idowell_is_goldenmate(HIDDevice_t *hd)
+{
+	if (hd->Vendor && strstr(hd->Vendor, "BMS")) {
+		return 1;
+	}
+	if (hd->Product && strstr(hd->Product, "Smart-Battery")) {
+		return 1;
+	}
+	return 0;
+}
+
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int idowell_claim(HIDDevice_t *hd)
@@ -164,6 +193,11 @@ static int idowell_claim(HIDDevice_t *hd)
 		return 0;
 
 	case SUPPORTED:
+		/* On the shared Phoenixtec VID, only claim GoldenMate; let
+		 * liebert-hid (default sink) and mge-hid (AEG) handle the rest. */
+		if (hd->VendorID == PHOENIXTEC_VENDORID && !idowell_is_goldenmate(hd)) {
+			return 0;
+		}
 		return 1;
 
 	case NOT_SUPPORTED:

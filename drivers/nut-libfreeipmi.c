@@ -1115,6 +1115,6 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 
 /*
 --chassis-control=CONTROL
-              Control the chassis. This command provides power-up, power-down, and reset control. Supported values: POWER-DOWN, POWER-UP, POWER-CYCLE, HARD-RESET, DIAGNOS‐
-              TIC-INTERRUPT, SOFT-SHUTDOWN.
+    Control the chassis. This command provides power-up, power-down, and reset control.
+    Supported values: POWER-DOWN, POWER-UP, POWER-CYCLE, HARD-RESET, DIAGNOSTIC-INTERRUPT, SOFT-SHUTDOWN.
 */

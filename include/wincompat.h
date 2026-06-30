@@ -195,6 +195,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 int tcgetattr (serial_handler_t * sh, struct termios *t);
 int tcsetattr (serial_handler_t * sh, int action, const struct termios *t);
 int tcflush (serial_handler_t * sh, int queue);
+int tcdrain (serial_handler_t * sh);
 #define HAVE_CFSETISPEED
 void cfsetispeed(struct termios * t, speed_t speed);
 void cfsetospeed(struct termios * t, speed_t speed);

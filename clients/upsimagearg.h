@@ -66,8 +66,16 @@ typedef struct {
 	int	deviation;	/* variable deviation - width of green zone */
 	char	*format;	/* format string to generate summary text   */
 
-				/* pointer to drawing function              */
-	void	(*drawfunc)(double, int, int, int, int, const char*);
+	/* pointer to drawing function:
+	 * draws bar indicator when minimum, nominal or maximum values for the given
+	 * UPS variable can be determined.
+	 * deviation < 0 means that values below nom should be grey instead of green
+	 */
+	void	(*drawfunc)(double var, double min, double nom, double max, int	deviation, const char* format)
+#ifdef HAVE___ATTRIBUTE__NORETURN
+		__attribute__((noreturn))
+#endif
+		;
 } imgvar_t;
 
 extern imgvar_t imgvar[];

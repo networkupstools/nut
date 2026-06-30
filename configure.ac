@@ -37,6 +37,15 @@ AC_PROG_EGREP
 export GREP
 export EGREP
 
+dnl Work around ancient autotools:
+AS_IF([test x"${PACKAGE_URL-}" = x], [
+    _dirname0="`dirname \"$0\"`/tools/gitlog2version.sh"
+    PACKAGE_URL="`NUT_VERSION_QUERY=URL \"_dirname0\"/tools/gitlog2version.sh`" 2>/dev/null
+    unset _dirname0
+    AC_SUBST([PACKAGE_URL])
+    AC_DEFINE_UNQUOTED([PACKAGE_URL], "${PACKAGE_URL}", [Define to the home page for this package.])
+])
+
 dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
 dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
 dnl snapshots further set in stone. Either way, there should be a slash and
@@ -138,6 +147,19 @@ AC_MSG_RESULT([${CONFIG_FLAGS}])
 
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["${CONFIG_FLAGS}"],[Flags passed to configure script])
 AC_SUBST(CONFIG_FLAGS)
+
+dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl and this breaks "checking for C compiler version" in a standard step below
+AS_IF([set | ${EGREP} '^CCACHE_DIR(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Unsetting a provided but empty CCACHE_DIR environment variable])
+    AS_UNSET([CCACHE_DIR])
+])
+
+AS_IF([set | ${EGREP} '^CCACHE_PATH(=|=""|='"''"')$'], [
+    AC_MSG_NOTICE([Resetting a provided but empty CCACHE_PATH environment variable to current PATH])
+    CCACHE_PATH="${PATH}"
+])
 
 AC_CHECK_PROGS([MKTEMP], [mktemp], [])
 AS_IF([test x"${MKTEMP}" = x], [
@@ -251,7 +273,14 @@ dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+    dnl Find and report the location of attempted compiler
+    dnl (maybe wrapped with something like ccache, distcc, etc.)
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG)        PATH='${PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) CCACHE_PATH='${CCACHE_PATH}'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CC:  '${CC}' => '`command -v ${CC}`'])
+    AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) Compiler location: CXX: '${CXX}' => '`command -v ${CXX}`'])
 ])
+
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
@@ -269,6 +298,9 @@ dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
 dnl Note that NUT does not support building with C89 anyway
 dnl AC_PROG_CC_C99
 dnl Needed for per-target flags
+dnl NOTE: The AM macro below wraps its AC name-sake to perform
+dnl  additional tricks needed for automake. There seems to not be
+dnl  a CXX variant of that however, or at least not ubiquitoisly.
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
@@ -493,6 +525,7 @@ AS_IF([test ! -d "${PIDPATH}" -o -h "${PIDPATH}" && test -d "/run" -a ! -h "/run
 
 AC_CHECK_PROGS([GETENT], [getent], [])
 AC_CHECK_PROGS([ID], [id], [])
+AC_CHECK_PROGS([LSGROUP], [lsgroup], [])
 
 PROBE_OS_USER="false"
 PROBE_OS_GROUP="false"
@@ -502,20 +535,24 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		AS_IF([test -r "/etc/groups"], [
-			dnl FIXME: For command prefix usage like used in this
-			dnl  script, we might be better off defining a shell
-			dnl  function and referring to it. Grep would catch
-			dnl  also user names that have a group as secondary!
-			PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+		AS_IF([test x"${LSGROUP}" != x], [
+			PROBE_OS_GROUP="${LSGROUP} "
 			], [
-			dnl This shows groups of a USER with specified name!
-			dnl But to probe for cases where string names are
-			dnl same (e.g. "nut" or "ups") this might be good
-			dnl enough.
-			PROBE_OS_GROUP="${ID} -g "
+			AS_IF([test -r "/etc/groups"], [
+				dnl FIXME: For command prefix usage like used in this
+				dnl  script, we might be better off defining a shell
+				dnl  function and referring to it. Grep would catch
+				dnl  also user names that have a group as secondary!
+				PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+				], [
+				dnl This shows groups of a USER with specified name!
+				dnl But to probe for cases where string names are
+				dnl same (e.g. "nut" or "ups") this might be good
+				dnl enough.
+				PROBE_OS_GROUP="${ID} -g "
+				])
+			AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 			])
-		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
@@ -1335,11 +1372,11 @@ AC_CHECK_HEADER([semaphore.h],
      dnl   sem_init   nut_scanner-nut-scanner.o
      dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
      AC_SEARCH_LIBS([sem_init], [pthread], [], [
-	unset ac_cv_search_sem_init
-	AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_init
+        AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
      AC_SEARCH_LIBS([sem_open], [pthread], [], [
-	unset ac_cv_search_sem_open
-	AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+        unset ac_cv_search_sem_open
+        AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
 
      AS_CASE([${ac_cv_search_sem_init}], [no*], [], [SEMLIBS="${ac_cv_search_sem_init}"])
      AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${SEMLIBS}"], [], [SEMLIBS="${ac_cv_search_sem_open}"])
@@ -1666,12 +1703,13 @@ AC_CACHE_CHECK([for %zu as PRIuSIZE],
     [ac_cv_printfmt_zu],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdio.h>
 #include <stdlib.h>
 ],
             [[size_t n = 123;
 char buf[64];
 snprintf(buf, sizeof(buf), "%zu", n);
-return !strcmp(buf, "123");
+return strcmp(buf, "123");
 ]])],
         [ac_cv_printfmt_zu=yes], [ac_cv_printfmt_zu=no]
     )])
@@ -1825,14 +1863,15 @@ AC_CACHE_CHECK([for BSD KVM process info libs],
 /* we hope the code above fails if type is not defined or range is not sufficient */
 ]])],
         [ac_cv_lib_bsd_kvm_proc=yes
-        BSDKVMPROCLIBS="-lkvm"
+         AC_CACHE_VAL([ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS], [ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS="-lkvm"])
         ], [ac_cv_lib_bsd_kvm_proc=no]
     )])
 LIBS="$myLIBS"
 
 AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
-    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
-    )
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])
+     BSDKVMPROCLIBS="${ac_cv_lib_bsd_kvm_proc_BSDKVMPROCLIBS}"
+    ])
 
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
 dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
@@ -2143,7 +2182,9 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     ]
     )
 
-NETLIBS_GETADDRS=""
+dnl May be cached or not
+NETLIBS_GETADDRS="${nut_cv_var_NETLIBS_GETADDRS}"
+
 dnl For `nut-scanner -m auto` modes, see also:
 dnl https://stackoverflow.com/a/41151132/4715872
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
@@ -2190,7 +2231,7 @@ printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, 
                     dnl e.g. add "-lws2_32" for mingw builds, maybe "-liphlpapi"
                     dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
                     SAVED_LIBS="$LIBS"
-                    LIBS="$LIBS $NETLIBS"
+                    LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
                     AX_RUN_OR_LINK_IFELSE(
                         [AC_LANG_PROGRAM(
                             [${myIPHLPAPI_TEST_HEADERS}],
@@ -2283,7 +2324,23 @@ printf("%ld ", GetAdaptersInfo(buf, &bufsz))
     )]
 )
 AC_SUBST([NETLIBS_GETADDRS])
+AC_CACHE_VAL([nut_cv_var_NETLIBS_GETADDRS], [nut_cv_var_NETLIBS_GETADDRS="${NETLIBS_GETADDRS}"])
 
+dnl ----------------------------------------------------------------------
+dnl Simple check that it exists and can be executed
+AC_PATH_PROGS([PERL], perl, [none])
+AS_IF([test x"${PERL}" != xnone], [
+    AC_MSG_CHECKING([whether PERL interpreter is basically usable: '${PERL}'])
+    AS_IF([${PERL} -e 1 >/dev/null], [
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+        PERL=none
+    ])
+])
+
+AC_SUBST([PERL])
+AM_CONDITIONAL([HAVE_PERL], [test x"$PERL" != xnone])
 
 dnl ----------------------------------------------------------------------
 dnl First remember if caller wants a custom Python package location?
@@ -2872,6 +2929,33 @@ NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation ability (currently requires NSS, beware issue #3329)], [auto])
 
+dnl Optionally reset/initialize the cache values shared by several backends
+dnl if the check methods below never ran for all active code paths (one or more):
+AS_CASE([x${nut_cv_checked_libopenssl}${nut_cv_checked_libnss}x],
+    [xyesx], [],
+    [xyesyesx], [],
+        [
+        dnl Magic-format string to hold chosen SSL library version and its config-source
+        nut_cv_ssl_lib=""
+
+        nut_cv_LIBSSL_CFLAGS=""
+        nut_cv_LIBSSL_LIBS=""
+        nut_cv_LIBSSL_REQUIRES=""
+        nut_cv_LIBSSL_LDFLAGS_RPATH=""
+        nut_cv_LIBSSL_REQUIRES_SOURCE=""
+        nut_cv_LIBSSL_CFLAGS_SOURCE=""
+        nut_cv_LIBSSL_LIBS_SOURCE=""
+
+        dnl Start with what the build args said:
+        nut_cv_with_ssl="${nut_with_ssl}"
+
+        dnl Ensure re-evaluation if need be:
+        AS_UNSET([nut_cv_checked_libopenssl])
+        AS_UNSET([nut_noncv_checked_libopenssl_now])
+        AS_UNSET([nut_cv_checked_libnss])
+        AS_UNSET([nut_noncv_checked_libnss_now])
+    ])
+
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
@@ -2906,6 +2990,17 @@ if test "${nut_with_ssl}" != "no"; then
       fi
    fi
 fi
+
+dnl Summary for re-runs:
+AS_IF([test "${nut_noncv_checked_libopenssl_now}" = no || test "${nut_noncv_checked_libnss_now}" = no], [
+    AC_MSG_NOTICE([Some LIBSSL (cached): ${nut_with_ssl} (${nut_ssl_lib})])
+    AC_MSG_NOTICE([Some LIBSSL (cached): cflags_source=${LIBSSL_CFLAGS_SOURCE} libs_source=${LIBSSL_LIBS_SOURCE}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_CFLAGS=${LIBSSL_CFLAGS}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_LIBS=${LIBSSL_LIBS}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): LIBSSL_LDFLAGS_RPATH=${LIBSSL_LDFLAGS_RPATH}])
+    AC_MSG_NOTICE([Some LIBSSL (cached): requires_source=${LIBSSL_REQUIRES_SOURCE} LIBSSL_REQUIRES=${LIBSSL_REQUIRES}])
+])
+
 
 AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
 AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
@@ -4243,7 +4338,6 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	esac
 done
-rm -rf "${DOCTESTDIR}"
 
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_BUILD_LIST:            '${DOC_BUILD_LIST}'])
@@ -4251,6 +4345,11 @@ AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_SKIPBUILD_LIST:        '${DOC_SKIPBUILD_LIST}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_DISTED_MANS:   '${DOC_INSTALL_DISTED_MANS}'])
 	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) DOC_INSTALL_SELECTED_MANS: '${DOC_INSTALL_SELECTED_MANS}'])
+	AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) This script's DOCTESTDIR:  '${DOCTESTDIR}'])
+],[
+	dnl If we are debugging, and doc generation fails, we want the directory
+	dnl else remove it later (after confirming success) below
+	rm -rf "${DOCTESTDIR}"
 ])
 
 case "${nut_with_doc}" in
@@ -4294,6 +4393,11 @@ AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_tit
 
 NUT_REPORT_FEATURE([would build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST} ${DOC_INSTALL_SELECTED_MANS}],
 					[WITH_DOCS], [Define to enable overall documentation generation], [-])
+
+AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
+	dnl Delayed clean-up after success of desired doc types:
+	rm -rf "${DOCTESTDIR}"
+])
 
 # To cater for less portable make's, precalculate the target list
 # for "make check" in "docs/" here...
@@ -6924,6 +7028,10 @@ AC_SUBST(LIBSSL_LDFLAGS_RPATH)
 AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
+AC_SUBST(LIBGLIB_CFLAGS)
+AC_SUBST(LIBGLIB_LIBS)
+AC_SUBST(LIBGIO_CFLAGS)
+AC_SUBST(LIBGIO_LIBS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LIBS)
 AC_SUBST(LIBREGEX_LIBS)
@@ -7180,18 +7288,28 @@ dnl #    with hints about _Nullable vs. _Nonnull pointers. The general idea
 dnl #    is respectable for memory safety and could be addressed for true old
 dnl #    C99 toolkits and current language spec e.g. with macros... later.
 dnl #    Currently it is more like whack-a-mole as distros update headers.
+dnl # -Wno-c11-extensions -- clang-21 on Ubuntu 26.04 at least complains a lot
+dnl #    about system headers (string.h, cdefs.h, etc.) using __glibc_const_generic
+dnl # -Wno-used-but-marked-unused -- openssl and clang do not always agree...
+dnl # -Wno-thread-safety-negative -- clang bug, it seems (https://reviews.llvm.org/D84604)
+dnl # -Wno-unused-command-line-argument -- avoid the likes of (clang++)
+dnl #    error: argument unused during compilation: '-pthread'
+dnl #  (apparently in FreeBSD 15 builds something gets into the wrong *FLAGS,
+dnl #  maybe via pkg-config... or it was just the first one to notice and yell)
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c11-extensions -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion -Wno-used-but-marked-unused -Wno-thread-safety-negative -Wno-unused-command-line-argument"
+        LDFLAGS="${LDFLAGS} -Wno-unused-command-line-argument"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -7581,8 +7699,9 @@ AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
 dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
-dnl Avoid exporting them if not set at the configure time (assuming ci_build.sh
-dnl integration or user's shell profile sets them persistently)
+dnl  ccache: error: CCACHE_DIR must not be the empty string
+dnl Avoid exporting them if NOT set at the configure time (assuming ci_build.sh
+dnl integration or user's shell profile sets them persistently... or empty)
 AS_IF([test x"${CCACHE_NAMESPACE-}" = x], [NUT_AM_EXPORT_CCACHE_NAMESPACE="#"], [NUT_AM_EXPORT_CCACHE_NAMESPACE=""])
 AC_SUBST(NUT_AM_EXPORT_CCACHE_NAMESPACE)
 AS_IF([test x"${CCACHE_BASEDIR-}" = x], [NUT_AM_EXPORT_CCACHE_BASEDIR="#"], [NUT_AM_EXPORT_CCACHE_BASEDIR=""])
@@ -7694,8 +7813,10 @@ dnl Such a problem for NUT was only seen/reported on Termux and MSYS2 so far.
 
 LIBSSL_CXXFLAGS="${LIBSSL_CFLAGS}"
 nut_with_ssl_cxx=no
-AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
-    AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
+AS_IF([test "${have_cxx11}" = yes], [
+  AS_IF([test x"${LIBSSL_CXXFLAGS}" = x],
+   [nut_with_ssl_cxx=yes],
+   [AC_MSG_CHECKING([if C++ support in current compiler needs flag tweaks to build with SSL libs])
 
     my_CFLAGS="${CFLAGS}"
     my_CPPFLAGS="${CPPFLAGS}"
@@ -7798,14 +7919,15 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
                     ]
                 )
             ])
+        ])
 
-        AS_IF([test "$my_FIXED" = true],
-            [nut_with_ssl_cxx=yes],
-            [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
-             dnl We disable just SSL support in the C++ library
-            ])
-        ]
-	)
+    dnl Revise if we fixed the support (or it just worked):
+    AS_IF([test "$my_FIXED" = true],
+        [nut_with_ssl_cxx=yes],
+        [AC_MSG_RESULT([LIBSSL flags just won't work with C++])
+         dnl We disable just SSL support in the C++ library
+         nut_with_ssl_cxx=no
+        ])
 
     CFLAGS="${my_CFLAGS}"
     CPPFLAGS="${my_CPPFLAGS}"
@@ -7817,11 +7939,27 @@ AS_IF([test "${have_cxx11}" = yes && test -n "${LIBSSL_CXXFLAGS}"], [
     unset my_FIXED
     unset my_INCLUDEDIR_C
     unset my_INCLUDEDIR_CXX
+  ])
 ])
 
 AC_SUBST(LIBSSL_CXXFLAGS)
 NUT_REPORT_FEATURE([enable SSL support in C++ client library], [${nut_with_ssl_cxx}], [${nut_ssl_lib}],
 					[WITH_SSL_CXX], [Define to enable SSL in libnutclient])
+
+dnl At least FreeBSD clang complains about NSS builds with
+dnl   error: argument unused during compilation: '-pthread'
+dnl which pops up in LDFLAGS/LIBS and is kept as "compiler"
+dnl flag when calling the linker.
+dnl Does not hurt plain C builds though.
+LIBSSL_LIBS_CXX="${LIBSSL_LIBS}"
+AS_IF([test "$nut_with_ssl_cxx" = "yes"],
+    [AS_CASE([$LIBSSL_LIBS_CXX],
+        [*" -pthread "*|"-pthread "*|*" -pthread"|-pthread], [
+            AC_MSG_NOTICE([Remove -pthread from LIBSSL_LIBS for C++ builds])
+            LIBSSL_LIBS_CXX="`echo \"${LIBSSL_LIBS}\" | sed 's, *-pthread *, ,'`"
+        ])
+    ])
+AC_SUBST(LIBSSL_LIBS_CXX)
 
 AC_DEFINE_UNQUOTED([EXEEXT], ["${EXEEXT}"], [Platform-specific extension for binary program files (may be empty where not required)])
 AC_SUBST(EXEEXT)

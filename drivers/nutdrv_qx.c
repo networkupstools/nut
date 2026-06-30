@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.49"
+#define DRIVER_VERSION	"0.51"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2200,8 +2200,14 @@ static void load_armac_endpoint_cache(void)
  * software, which doesn't seem to be Armac specific. The banner is: "2004
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
+ *
+ * NOTE: ARMAC_READ_SIZE_FOR_CONTROL is set to 8. While some Armac devices
+ * return exactly 6 bytes per interrupt read (1 control byte + 5 data bytes),
+ * others return 7 bytes (1 control byte + 6 data bytes). Requesting 8 bytes
+ * safely accommodates these variations (up to endpoint MaxPacketSize) without
+ * dropping trailing bytes or timing out.
  */
-#define ARMAC_READ_SIZE_FOR_CONTROL 6
+#define ARMAC_READ_SIZE_FOR_CONTROL 8
 #define ARMAC_READ_SIZE_FOR_INTERRUPT 64
 static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
@@ -2282,8 +2288,8 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		/* Cleanup buffer before sending a new command */
 		for (i = 0; i < 10; i++) {
 			ret = usb_interrupt_read(udev, 0x81,
-				(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE_FOR_CONTROL, 100);
-			if (ret != ARMAC_READ_SIZE_FOR_CONTROL) {
+				(usb_ctrl_charbuf)tmpbuf, read_size, 100);
+			if (ret <= 0) {
 				/* Timeout - buffer is clean. */
 				break;
 			}
@@ -2322,14 +2328,14 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	while (bufpos + read_size + 1 < buflen) {
 		size_t bytes_available;
 
-		/* Read data in 6-byte chunks */
+		/* Read data in chunks (read_size handles both 8-byte control and 64-byte interrupt cases) */
 		ret = usb_interrupt_read(udev, use_interrupt ? armac_endpoint_cache.in_endpoint_address : 0x81,
 			(usb_ctrl_charbuf)tmpbuf, read_size, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
 		 * to the UPS) */
-		if (ret != read_size) {
+		if (ret <= 0) {
 			/* NOTE: If end condition is invalid for particular UPS we might make one
 			 * request more and get this error. If bufpos > (say) 10 this could be ignored
 			 * and the reply correctly read. */
@@ -2360,9 +2366,9 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 			break;
 		}
 
-		if (bytes_available > (unsigned)read_size - 1) {
-			/* Single interrupt transfer has 1 control + 5 data bytes */
-			bytes_available = read_size - 1;
+		if (bytes_available > (unsigned)ret - 1) {
+			/* Do not read past what we actually received */
+			bytes_available = ret - 1;
 		}
 
 		/* Copy bytes into the final buffer while detecting end of line - \r */
@@ -2567,7 +2573,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(UNITEK_VENDORID,	0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
+	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* NOTE: VID:PID may be used by non-UPS devices with CH340/341 chips! But also Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
 	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
@@ -2611,7 +2617,8 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 		if (usbdev->fun != NULL)
 			(*usbdev->fun)(device);
 
-		return SUPPORTED;
+		if (subdriver_command)
+			return SUPPORTED;
 
 	}
 
@@ -3880,10 +3887,23 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
+/* Consecutive LIBUSB_ERROR_OVERFLOW results on the interrupt-IN endpoint
+ * tolerated before escalating from "retry on the next poll" to a USB-level
+ * device reset. A one-off oversized frame is transient; a sustained run means
+ * the bridge firmware has wedged the endpoint and only re-enumeration clears
+ * it (e.g. the 0665:5161 Cypress USB-serial family: Salicru SPS, Ippon,
+ * ViewPower, various Voltronic Power). See NUT issue #598. */
+#define QX_USB_OVERFLOW_RESET_TRIES	3
+
 static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 #ifndef TESTING
 	ssize_t	ret = -1;
+# ifdef QX_USB
+	/* Persists across calls; only consecutive overflows accumulate (any clean
+	 * read zeroes it, see the switch on `ret` below). */
+	static int	overflow_tries = 0;
+# endif
 #endif
 
 /* NOTE: Could not find in which ifdef-ed codepath, but clang complained
@@ -3917,6 +3937,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		ret = (*subdriver_command)(cmd, cmdlen, buf, buflen);
 
 		if (ret >= 0) {
+			overflow_tries = 0;	/* clean read: forget any overflow streak */
 			return ret;
 		}
 
@@ -3978,8 +3999,26 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			udev = NULL;
 			break;
 
+		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type:
+						 * an oversized interrupt-IN frame. A one-off is
+						 * transient (retry on the next poll); a sustained
+						 * run means the bridge firmware has wedged the
+						 * endpoint and only a USB-level reset recovers it.
+						 * See NUT issue #598. */
+			if (++overflow_tries < QX_USB_OVERFLOW_RESET_TRIES) {
+				upsdebugx(2, "Got OVERFLOW on EP 0x81 (%d/%d), retrying on next poll",
+					overflow_tries, QX_USB_OVERFLOW_RESET_TRIES);
+				break;
+			}
+			upsdebugx(1, "OVERFLOW on EP 0x81 persisted for %d polls; resetting device",
+				overflow_tries);
+			overflow_tries = 0;
+			if (usb_reset(udev) == 0) {
+				upsdebugx(1, "Device reset handled");
+			}
+			goto fallthrough_case_reconnect;
+
 		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
-		case LIBUSB_ERROR_OVERFLOW:	/* Value too large for defined data type */
 #if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
 #endif

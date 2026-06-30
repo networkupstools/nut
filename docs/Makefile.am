@@ -457,6 +457,8 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 	 fi ; \
 	 cat '$<' | { $(SED) \
 		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
+		-e 's%\[\([^]]*\)](\(https*://[^ ]*\))%link:\2[\1]%g' \
+		-e 's%\(link:https*://github.com/[^ ]*\)\.\.\.\([^ ]*\)%\1..\2%g' \
 		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
 		-e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
 		-e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
@@ -831,7 +833,10 @@ SPELLCHECK_SRC_DEFAULT = \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
+	../SECURITY.md \
 	$(ALL_TXT_SRC)
+
+# TOTHINK: Fit SECURITY.md policy into the main asciidoc trail?
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -866,6 +871,11 @@ SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+# Do not let it remove words it thinks are not needed (in interactive mode) --
+# default dictionaries differ from platform to platform, from decade to decade:
+ASPELL_NUT_COMMON_ARGS += --dont-validate-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-words
+ASPELL_NUT_COMMON_ARGS += --dont-clean-affixes
 # Note: If there is a need to use filter path (e.g. in mingw/msys2 builds),
 # it must be before --mode=tex (-t) option!
 ASPELL_NUT_TEXMODE_ARGS =
@@ -873,7 +883,11 @@ if HAVE_ASPELL_FILTER_TEX_PATH
 ASPELL_NUT_TEXMODE_ARGS += --filter-path="$(ASPELL_FILTER_TEX_PATH)"
 endif HAVE_ASPELL_FILTER_TEX_PATH
 ASPELL_NUT_TEXMODE_ARGS += -t
+# NOTE: LANG(UAGE) may be a two-char code, but LC_ALL must include the country/area,
+#  or be "C" for case-sensitive sorting (upper-case first, non-ASCII goes last then):
 ASPELL_ENV_LANG = en.UTF-8
+ASPELL_ENV_LC_ALL = C
+### ASPELL_ENV_LC_ALL = en_US.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 
 # WARNING: The percent wildcard is a GNU extension; otherwise we need
@@ -938,7 +952,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 	 esac ; \
 	 if [ x"$(SPELLCHECK_INTERACTIVE)" = xtrue ] ; then \
 		echo "  ASPELL	Spell checking (interactively) on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' || exit ; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LC_ALL) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' || exit ; \
 		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] \
 		&& ( [ x"$(SPELLCHECK_QUICK)" = xtrue ] || diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-interactive >/dev/null ) \
 		; then \
@@ -993,10 +1007,22 @@ SPELLCHECK_AUTO_ONE = ( \
 .conf.conf-spellchecked-auto: @dotMAKE@
 	+@$(SPELLCHECK_AUTO_ONE)
 
+# If we can, make sure the documentation is ASCII (with maybe
+# single-byte accented characters here and there, they seem okay):
+if HAVE_PERL
+SOURCE_CHECK_UNICODE = { \
+	echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	( cd $(SPELLCHECK_SRCDIR) && @PERL@ $(abs_top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) ) || exit ; \
+	}
+
+else !HAVE_PERL
+SOURCE_CHECK_UNICODE = true
+endif !HAVE_PERL
+
 spellcheck: @dotMAKE@
 	@if test "$(SPELLCHECK_ENV_DEBUG)" = detailed ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
-		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
+		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LC_ALL); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
 		(command -v dpkg) && ( dpkg -l | $(GREP) -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
@@ -1052,6 +1078,7 @@ spellcheck: @dotMAKE@
 		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
+	@$(SOURCE_CHECK_UNICODE)
 
 # Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).
@@ -1066,7 +1093,7 @@ spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 # Note also that "$(<F)" is not POSIX portable, so we spell out the name var :(
 $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
-	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
+	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LC_ALL); export LANG; export LC_ALL; ( \
 	    WORDLIST="`tail -n +2 < '$(?)' | sort | uniq`"; \
 	    WORDCOUNT="`echo \"$$WORDLIST\" | wc -l`"; \
 	    head -1 < '$?' | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \

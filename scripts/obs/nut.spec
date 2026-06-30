@@ -106,9 +106,10 @@
 %define NUTPKG_WITH_DMF	%( test -d scripts/DMF && echo 1 || echo 0 )
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
-# Something like `git grep 'version-info' '*.am'` ?
+# Something like `git grep 'version-info' '*.am'`
+# WARNING: note here we use "$MAJOR - $AGE" (so for a `6.0.2` we put `4` here)!
 %define SO_MAJOR_LIBUPSCLIENT	7
-%define SO_MAJOR_LIBNUTCLIENT	2
+%define SO_MAJOR_LIBNUTCLIENT	4
 %define SO_MAJOR_LIBNUTCLIENTSTUB	1
 %define SO_MAJOR_LIBNUTSCAN	4
 %define SO_MAJOR_LIBNUTCONF	0
