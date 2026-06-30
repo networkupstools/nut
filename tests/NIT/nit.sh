@@ -4110,6 +4110,12 @@ setenv_ssl_perl() {
         NUT_CERTVERIFY=0
         export NUT_CERTVERIFY
         #unset NUT_CERTVERIFY
+
+        if [ x"${NUT_IGNORE_AUTHCONF}" != xtrue ] && [ x"${NUT_AUTHCONF_FILE}" != x ] && [ -s "${NUT_AUTHCONF_FILE}" ] ; then
+            NUT_AUTHCONF_FILE_X="${NUT_CONFPATH}/nutauth-openssl-perl-darwin.conf"
+            sed 's,\(CERTVERIFY =\) *1,\1 0,' < "${NUT_AUTHCONF_FILE}" > "${NUT_AUTHCONF_FILE_X}" \
+            && NUT_AUTHCONF_FILE="${NUT_AUTHCONF_FILE_X}"
+        fi
     fi
 
     if [ x"${NUT_DEBUG_SSL_PERL}" = x ] ; then
