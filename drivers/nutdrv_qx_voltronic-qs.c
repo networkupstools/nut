@@ -100,6 +100,20 @@ static item_t	voltronic_qs_qx2nut[] = {
 	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "output.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
+	/* Query UPS for charge and runtime
+	 * > [QI\r]
+	 * < [(100 00979 50.0 000.3 177 290 0 0000010000112000\r]
+	 *    0123456789012345678901234567890123456789012345678
+	 *    0         1         2         3         4
+	 */
+
+	{ "battery.charge",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	1,	3,	"%.0f",	0,		NULL,	NULL,	NULL },
+	{ "battery.runtime",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	5,	9,	"%.0f",	0,		NULL,	NULL,	NULL },
+	{ "input.frequency",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	11,	14,	"%.1f",	0,		NULL,	NULL,	NULL },
+	{ "output.current",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	16,	20,	"%.1f",	0,		NULL,	NULL,	NULL },
+	{ "input.transfer.low",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	22,	24,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	{ "input.transfer.high",	0,	NULL,	"QI\r",	"",	49,	'(',	"",	26,	28,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
 	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
@@ -123,6 +137,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 static testing_t	voltronic_qs_testing[] = {
 	{ "QS\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r",	-1 },
 	{ "F\r",	"#220.0 003 12.00 50.0\r",	-1 },
+	{ "QI\r",	"(100 00979 50.0 000.3 177 290 0 0000010000112000\r", -1}
 	{ "M\r",	"V\r",	-1 },
 	{ "Q\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
