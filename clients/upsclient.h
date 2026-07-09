@@ -100,7 +100,6 @@ typedef struct {
 
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
-	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PRFileDesc	*ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
@@ -110,6 +109,14 @@ typedef struct {
 	char	readbuf[64];
 	size_t	readlen;
 	size_t	readidx;
+
+	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
+	 * same for different builds! */
+#ifdef WITH_OPENSSL
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
+#else
+	void	*extra_reserved;
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 }	UPSCONN_t;
 

@@ -205,6 +205,7 @@ if WITH_SSL
 endif WITH_SSL
 
 # Below we set API versions of public libraries
+# This includes changes to method signatures and struct content/sizes!
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # Note that changes here may have to be reflected in packaging (the shared
 # object .so names would differ)

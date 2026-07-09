@@ -2206,14 +2206,23 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
 		 * Set up the SSL specific data into "openssl_cert_verify_data"
 		 * and store it into the SSL structure. */
-		if (ups->openssl_cert_verify_data.hostname_allocated
-		 && ups->openssl_cert_verify_data.hostname)
-			free((void *)ups->openssl_cert_verify_data.hostname);
-		memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+		if (ups->openssl_cert_verify_data != NULL
+		 && ups->openssl_cert_verify_data->hostname_allocated
+		 && ups->openssl_cert_verify_data->hostname
+		) {
+			free((void *)ups->openssl_cert_verify_data->hostname);
+		}
 
-		ups->openssl_cert_verify_data.verify_depth = verify_depth;
-		ups->openssl_cert_verify_data.hostname = ups->host;	/* not allocated, not to be freed with the structure */
-		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, &(ups->openssl_cert_verify_data));
+		if (ups->openssl_cert_verify_data == NULL) {
+			upsdebugx(5, "%s: allocate new ups->openssl_cert_verify_data struct instance", __func__);
+			ups->openssl_cert_verify_data = (openssl_cert_verify_data_t*)xmalloc(sizeof(openssl_cert_verify_data_t));
+		}
+
+		memset(ups->openssl_cert_verify_data, 0, sizeof(*(ups->openssl_cert_verify_data)));
+
+		ups->openssl_cert_verify_data->verify_depth = verify_depth;
+		ups->openssl_cert_verify_data->hostname = ups->host;	/* not allocated, not to be freed with the structure (flag remains 0) */
+		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, ups->openssl_cert_verify_data);
 
 		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, openssl_cert_verify_callback);
 	} else {
@@ -2511,7 +2520,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		return -1;
 	}
 
-	/* clear out any lingering junk */
+	/* clear out any lingering junk on heap memory;
+	 * if the struct is actually reused - all free's
+	 * were to be handled by upscli_disconnect()
+	 */
 	memset(ups, 0, sizeof(*ups));
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
 	ups->fd = -1;
@@ -3367,14 +3379,18 @@ int upscli_disconnect(UPSCONN_t *ups)
 	ups->host = NULL;
 
 #ifdef WITH_OPENSSL
-	if (ups->openssl_cert_verify_data.hostname_allocated
-	 && ups->openssl_cert_verify_data.hostname
-	) {
-		free((void *)ups->openssl_cert_verify_data.hostname);
-		ups->openssl_cert_verify_data.hostname = NULL;
-	}
+	if (ups->openssl_cert_verify_data != NULL) {
+		if (ups->openssl_cert_verify_data->hostname_allocated
+		 && ups->openssl_cert_verify_data->hostname
+		) {
+			free((void *)ups->openssl_cert_verify_data->hostname);
+			ups->openssl_cert_verify_data->hostname = NULL;
+		}
 
-	memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+		memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+		free(ups->openssl_cert_verify_data);
+		ups->openssl_cert_verify_data = NULL;
+	}
 #endif
 
 	if (ups->fd < 0) {
@@ -3391,7 +3407,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 	if (net_read(ups, tmp, sizeof(tmp), DEFAULT_NETWORK_TIMEOUT) > 0) {
 		if (!strcmp(tmp, "OK Goodbye\n")) {
 			/* There may be trailing garbage from the buffer after the newline, not sure why */
-			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, as expected", __func__, tmp);
+			upsdebugx(1, "%s: We logged out, and server said 'OK Goodbye\\n' nicely, as expected", __func__);
 		} else if (!strncmp(tmp, "OK", 2)) {
 			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, good enough", __func__, tmp);
 		} else {
