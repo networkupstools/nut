@@ -5207,6 +5207,8 @@ dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
 dnl FIXME: Add a toggle like "--with(out)-systemd" to disable these probes too
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
 AC_MSG_CHECKING(whether to install systemd unit files)
 NUT_ARG_WITH([systemdsystemunitdir], [(DIRPATH|yes|no|auto)], [Directory for systemd service files], [auto])
 systemdsystemunitdir="${nut_with_systemdsystemunitdir}"
@@ -5219,12 +5221,16 @@ case "${systemdsystemunitdir}" in
 			[def_systemdsystemunitdir=""])
 
 		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			def_msgerr="--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings. Please double-check that you have {lib,}systemd-dev{,el} installed as appropriate for your OS distribution!"
 			AS_IF([test "${systemdsystemunitdir}" = yes],
-				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+				[AC_MSG_ERROR([${def_msgerr}])])
+			AS_IF([test x"${SYSTEMD_SYSTEMCTL_PROGRAM}" != x -a -x "${SYSTEMD_SYSTEMCTL_PROGRAM}"],
+				[AC_MSG_WARN([${SYSTEMD_SYSTEMCTL_PROGRAM} is present and ${def_msgerr}])])
 			systemdsystemunitdir=""
+			AS_UNSET(def_msgerr)
 			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
 
-		unset def_systemdsystemunitdir
+		AS_UNSET(def_systemdsystemunitdir)
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -5251,8 +5257,6 @@ NUT_REPORT_FEATURE([consider basic systemd support], [${have_systemd}], [],
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
-
-AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
 
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
