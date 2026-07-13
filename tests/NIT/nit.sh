@@ -2752,6 +2752,9 @@ EOF
 
             ${EGREP} -v '^(SSLBACKEND|CERTPATH) = ' "${NUT_CONFPATH}/nutauth.conf"
         }
+        if [ ! -s "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem ] ; then
+            log_warn "Tests for OpenSSL clients will likely fail: '${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem' not found!"
+        fi
         ;;
         *) cat "${NUT_CONFPATH}/nutauth.conf" ;;
     esac > "${NUT_CONFPATH}/nutauth-openssl.conf" \
