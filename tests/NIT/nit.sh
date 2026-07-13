@@ -231,7 +231,9 @@ isBusy_NUT_PORT() {
 }
 
 die() {
-    echo "`TZ=UTC LANG=C date` [FATAL] $@" >&2
+    # NOTE: the `] Error` combo seems redundant but helps troubleshoot
+    #  via `make`-oriented build logs faster
+    echo "`TZ=UTC LANG=C date` [FATAL] Error: $@" >&2
     exit 1
 }
 
