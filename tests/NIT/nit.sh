@@ -1394,13 +1394,13 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
                         || die "Could not extract the NSS CA certificate to PEM"
 
-                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
-                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
-                        && command -v pk12util >/dev/null 2>&1 \
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
                         ; then
                             # Bonus program: Extract the CA private key
                             # (and certificate) to a PKCS#12 file, then
-                            # to PEM for use by OpenSSL-based builds:
+                            # to PEM for use by OpenSSL-based builds
+                            # e.g. for PERL and Python test suites:
                             pk12cmd() {
                                 pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
                             }
@@ -1461,9 +1461,12 @@ EOF
                                 -config rootca.req.conf
                         } || die "Could not self-sign OpenSSL CA req"
 
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
                         && command -v certutil >/dev/null 2>&1 \
                         && [ -s rootca.pem ] && [ -s rootca.key ] \
                         ; then
@@ -1633,15 +1636,14 @@ EOF
                             -a -i server.crt -t "u,u,u" \
                         || die "Could not import the signed NSS Server certificate into server database"
 
-                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
-                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
-                        && command -v pk12util >/dev/null 2>&1 \
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
                         ; then
                             # Add PEM and Java JKS (trust store) for good
-                            # measure, but only if we prepare the cache:
-                            # JKS is not used in-tree now, but e.g. for
+                            # measure, but JKS only if we prepare the cache:
+                            # it is not used in-tree now, but e.g. for
                             # jNut tests; PEM is used in the other type
-                            # of build.
+                            # of build, as well as PERL and Python tests.
 
                             pk12cmd() {
                                 pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile
@@ -1660,7 +1662,10 @@ EOF
                             mkpk12key
 
                             # Bonus program: Java JKS (if caching)
-                            if command -v keytool >/dev/null 2>&1 && [ -f server.p12 ] ; then
+                            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                            && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                            && command -v keytool >/dev/null 2>&1 && [ -f server.p12 ] \
+                            ; then
                                 # Use server.p12 as source if we have it
                                 mkjks() {
                                     keytool -importkeystore \
@@ -1731,6 +1736,8 @@ EOF
                         ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"upsd.pem \
                         || die "Could not list an upsd.pem"
 
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
@@ -1880,15 +1887,14 @@ EOF
                             -a -i client.crt -t ",," \
                         || die "Could not import the signed NSS Client certificate into client database"
 
-                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
-                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
-                        && command -v pk12util >/dev/null 2>&1 \
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
                         ; then
                             # Add PEM and Java JKS (trust store) for good
-                            # measure, but only if we prepare the cache:
-                            # JKS is not used in-tree now, but e.g. for
+                            # measure, but JKS only if we prepare the cache:
+                            # it is not used in-tree now, but e.g. for
                             # jNut tests; PEM is used in the other type
-                            # of build.
+                            # of build, as well as PERL and Python tests.
 
                             pk12cmd() {
                                 pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
@@ -1907,7 +1913,10 @@ EOF
                             mkpk12key
 
                             # Bonus program: Java JKS (if caching)
-                            if command -v keytool >/dev/null 2>&1 && [ -f client.p12 ] ; then
+                            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                            && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                            && command -v keytool >/dev/null 2>&1 && [ -f client.p12 ] \
+                            ; then
                                 # Use client.p12 as source if we have it
                                 mkjks() {
                                     keytool -importkeystore \
@@ -2018,6 +2027,8 @@ EOF
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
                         fi
 
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
                         if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
                         && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
                         && command -v pk12util >/dev/null 2>&1 \
