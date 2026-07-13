@@ -66,23 +66,6 @@
 	double			previous_battery_charge_value = -1.0;
 	st_tree_timespec_t	previous_battery_charge_timestamp;
 
-#ifdef WIN32
-static void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd)
-{
-	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
-		fatal_with_errno(EXIT_FAILURE, "InitializeSecurityDescriptor failed");
-	}
-
-	if (!SetSecurityDescriptorDacl(sd, TRUE, NULL, FALSE)) {
-		fatal_with_errno(EXIT_FAILURE, "SetSecurityDescriptorDacl failed");
-	}
-
-	sa->nLength = sizeof(*sa);
-	sa->lpSecurityDescriptor = sd;
-	sa->bInheritHandle = FALSE;
-}
-#endif	/* WIN32 */
-
 #ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
 static void sock_fail(const char *fn)

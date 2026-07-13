@@ -157,6 +157,7 @@ typedef struct pipe_conn_s {
 extern pipe_conn_t *pipe_connhead;
 extern OVERLAPPED pipe_connection_overlapped;
 void pipe_create(const char * pipe_name);
+void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd);
 void pipe_connect();
 void pipe_disconnect(pipe_conn_t *conn);
 int pipe_ready(pipe_conn_t *conn);

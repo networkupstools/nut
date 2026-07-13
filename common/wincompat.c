@@ -515,6 +515,21 @@ static const char	*named_pipe_name=NULL;
 OVERLAPPED		pipe_connection_overlapped;
 pipe_conn_t		*pipe_connhead = NULL;
 
+void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd)
+{
+	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
+		fatal_with_errno(EXIT_FAILURE, "InitializeSecurityDescriptor failed");
+	}
+
+	if (!SetSecurityDescriptorDacl(sd, TRUE, NULL, FALSE)) {
+		fatal_with_errno(EXIT_FAILURE, "SetSecurityDescriptorDacl failed");
+	}
+
+	sa->nLength = sizeof(*sa);
+	sa->lpSecurityDescriptor = sd;
+	sa->bInheritHandle = FALSE;
+}
+
 void pipe_create(const char * pipe_name)
 {
 	BOOL	ret;
