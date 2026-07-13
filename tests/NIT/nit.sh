@@ -2774,15 +2774,29 @@ EOF
 EOF
             fi
 
-            cat << EOF
+            if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
+                cat << EOF
 # OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
 #  CA subject name hash value (which must include our NUT server).
 #  Here we just use the path for PEM file that should be populated
 #  by the generatecfg_upsd_add_SSL() method.
 CERTPATH = "${TESTCERT_PATH_ROOTCA}"
 EOF
+            else
+                if test -s "${TESTCERT_PATH_ROOTCA}/rootca.pem" ; then
+                    cat << EOF
+# OpenSSL CERTPATH: One ROOT CA PEM file, that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH = "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}rootca.pem"
+EOF
+                else
+                    log_warn "SKIPPING tests for OpenSSL clients server validation: neither ${TESTCERT_PATH_ROOTCA}/rootca.pem nor a <CERTHASH>.0 file was found!"
+                    echo "#NOT-FOUND# CERTPATH = ..."
+                    # FIXME: Neuter CERTVERIFY in transplanted requirements?
+                fi
+            fi
 
-            ${EGREP} -v '^(SSLBACKEND|CERTPATH|CERTIDENT) = ' "${NUT_CONFPATH}/nutauth.conf"
+            ${EGREP} -v '^(SSLBACKEND|CERTPATH|CERTIDENT_NAME|CERTIDENT_PASS) = ' "${NUT_CONFPATH}/nutauth.conf"
         }
         ;;
         *) cat "${NUT_CONFPATH}/nutauth.conf" ;;
