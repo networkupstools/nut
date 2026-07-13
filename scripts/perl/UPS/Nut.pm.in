@@ -288,6 +288,8 @@ sub StartTLS {
       } else {
         $self->_debug("CERTIDENT: Could not retrieve loaded client certificate for validation");
       }
+    } else {
+      $self->_debug("CERTIDENT: not checking: not configured");
     }
 
     return 1;
@@ -1746,8 +1748,8 @@ sub readAuthConfFile {
             elsif ($keyUC eq 'PASS' || $keyUC eq 'PASSWORD' ) { $current_ac->{pass} = $value; }
             elsif ($key eq 'CERTPATH') { $current_ac->{certpath} = $value; }
             elsif ($key eq 'CERTFILE') { $current_ac->{certfile} = $value; }
-            elsif ($key eq 'CERTIDENT') { $current_ac->{certident} = $value; }
-            elsif ($key eq 'CERTPASSWD') { $current_ac->{certpasswd} = $value; }
+            elsif ($key eq 'CERTIDENT_NAME') { $current_ac->{certident} = $value; }
+            elsif ($key eq 'CERTIDENT_PASS') { $current_ac->{certpasswd} = $value; }
             elsif ($key eq 'SSLBACKEND') { $current_ac->{ssl_backend} = $value; }
             elsif ($key eq 'CERTHOST') { $current_ac->{certhost} = $value; }
             elsif ($key eq 'CERTVERIFY') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }

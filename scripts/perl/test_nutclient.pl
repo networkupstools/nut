@@ -31,6 +31,7 @@ if (1) {
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
     my $NUT_CAPATH = $ENV{'NUT_CAPATH'} || undef;
     my $NUT_CERTFILE = $ENV{'NUT_CERTFILE'} || undef;
+    my $NUT_CERTIDENT = $ENV{'NUT_CERTIDENT'} || undef;
     my $NUT_KEYFILE = $ENV{'NUT_KEYFILE'} || undef;
     my $NUT_KEYPASS = $ENV{'NUT_KEYPASS'} || undef;
 
@@ -64,7 +65,7 @@ if (1) {
                 }
             }
 
-            $NUT_KEYFILE = $ac->{certident} if defined $ac->{certident};
+            $NUT_CERTIDENT = $ac->{certident} if defined $ac->{certident};
             $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
 
             # If test runner has explicitly set NUT_SSL=False,
@@ -102,6 +103,7 @@ if (1) {
             PORT => $NUT_PORT,
             USERNAME => $NUT_USER,
             PASSWORD => $NUT_PASS,
+            CERTIDENT => $NUT_CERTIDENT,
             DEBUG => $NUT_DEBUG,
             DEBUGSSL => $NUT_DEBUG_SSL,
             # TRACKING => 'ON', # undef by default, enabled in certain tests below

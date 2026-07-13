@@ -55,6 +55,7 @@ if __name__ == "__main__" :
     NUT_CAFILE = os.getenv('NUT_CAFILE', None)
     NUT_CAPATH = os.getenv('NUT_CAPATH', None)
     NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    NUT_CERTIDENT = os.getenv('NUT_CERTIDENT', None)
     NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
     NUT_KEYPASS = os.getenv('NUT_KEYPASS', None)
 
@@ -78,7 +79,7 @@ if __name__ == "__main__" :
                     NUT_CAFILE = ac.certpath
             # (OpenSSL only) Client certificate file for authentication to the server
             NUT_CERTFILE = ac.certfile or NUT_CERTFILE
-            NUT_KEYFILE = ac.certident or NUT_KEYFILE
+            NUT_CERTIDENT = ac.certident or NUT_CERTIDENT
             NUT_KEYPASS = ac.certpasswd or NUT_KEYPASS
             if NUT_SSL is not False:
                 # If test runner has explicitly set NUT_SSL=False,
@@ -103,7 +104,8 @@ if __name__ == "__main__" :
         nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT,
                                     use_ssl=NUT_SSL, force_ssl=NUT_FORCESSL, cert_verify=NUT_CERTVERIFY,
                                     ca_file=NUT_CAFILE, ca_path=NUT_CAPATH,
-                                    cert_file=NUT_CERTFILE, key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
+                                    cert_file=NUT_CERTFILE, cert_ident=NUT_CERTIDENT,
+                                    key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
     except:
         ex = str(sys.exc_info()[1])
         print( "EXCEPTION during initialization: %s" % ex )
