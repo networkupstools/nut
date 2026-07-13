@@ -708,19 +708,23 @@ static TYPE_FD open_sock(void)
 	set_close_on_exec(fd);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	fd = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX | /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attributes */
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attributes */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -943,25 +947,29 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 #else /* WIN32 */
 
 	conn_t	*conn, *tmp, *last;
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
 	/* We have detected a connection on the opened pipe. So we start
 	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX |  /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attribute */
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attribute */
 
 	if (INVALID_FD(acc)) {
 		fatal_with_errno(EXIT_FAILURE,

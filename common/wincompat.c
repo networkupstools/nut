@@ -534,6 +534,8 @@ void pipe_create(const char * pipe_name)
 {
 	BOOL	ret;
 	char	pipe_full_name[NUT_PATH_MAX + 1];
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
 	/* save pipe name for further use in pipe_connect */
 	if (pipe_name == NULL) {
@@ -552,6 +554,8 @@ void pipe_create(const char * pipe_name)
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
 	upsdebugx(2, "%s: creating NAMED_PIPE (listener): '%s'", __func__, pipe_full_name);
 	pipe_connection_handle = CreateNamedPipe(
 		pipe_full_name,
@@ -564,7 +568,7 @@ void pipe_create(const char * pipe_name)
 		LARGEBUF,		/* output buffer size */
 		LARGEBUF,		/* input buffer size */
 		0,			/* client time-out */
-		NULL);			/* FIXME: default security attribute */
+		&pipe_sa);		/* default security attribute */
 
 	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR, "Error creating named pipe");
