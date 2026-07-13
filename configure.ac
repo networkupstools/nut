@@ -5719,8 +5719,14 @@ return res ? 0 : 1;
      LDFLAGS="$my_LDFLAGS $pkg_cv_CPPUNIT_LDFLAGS"
      LIBS="$my_LIBS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
-     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [have_cppunit=yes], [have_cppunit=no])
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])], [
+        have_cppunit=yes
+     ], [
+        have_cppunit=no
+        AS_CASE([$CXXFLAGS],
+            [*-std=*++*], [AC_MSG_WARN([You have a C++ standard version explicitly required in CXXFLAGS... The CPPUNIT build test failed, and some of its releases used auto_ptr which is deprecated since C++14 and removed in e.g. clang since C++17])]
+        )
+     ])
      CXXFLAGS="$my_CXXFLAGS"
      LDFLAGS="$my_LDFLAGS"
      LIBS="$my_LIBS"
