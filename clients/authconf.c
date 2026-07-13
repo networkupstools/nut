@@ -458,7 +458,7 @@ static void set_authconf_val(upscli_authconf_t *conf, const char *var, const cha
 				conf->forcessl = 0;
 		}
 	} else {
-		upslogx(LOG_WARNING, "Unrecognized authconf keyword: '%s'", var);
+		upslogx(LOG_WARNING, "Unsupported keyword in NUT auth configuration file: '%s'", var);
 	}
 }
 

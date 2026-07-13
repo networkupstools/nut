@@ -1752,6 +1752,7 @@ sub readAuthConfFile {
             elsif ($key eq 'CERTHOST') { $current_ac->{certhost} = $value; }
             elsif ($key eq 'CERTVERIFY') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
             elsif ($key eq 'FORCESSL') { $current_ac->{forcessl} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            else { print "[WARNING] Unsupported keyword in NUT auth configuration file: '$key'"; }
         }
     }
     close($fh);

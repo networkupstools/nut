@@ -307,6 +307,8 @@ class AuthConf:
                             current_ac.certverify = 1 if value.lower() in ['on', 'yes', '1'] else 0
                         elif key == 'FORCESSL':
                             current_ac.forcessl = 1 if value.lower() in ['on', 'yes', '1'] else 0
+                        else:
+                            print( "[WARNING] Unsupported keyword in NUT auth configuration file: '%s'" % key )
         except Exception as e:
             msgErr = "Error reading '%s': %s" % (filename, str(e))
             if AuthConf.__debug:

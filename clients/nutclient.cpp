@@ -2141,6 +2141,10 @@ static void set_authconf_val(AuthConf& conf, const std::string& var, const std::
 		if (val == "on" || val == "yes" || val == "1") conf.forcessl = 1;
 		else if (val == "off" || val == "no" || val == "0") conf.forcessl = 0;
 	}
+	else {
+		std::cerr << "[WARNING] Unsupported keyword in NUT auth configuration file: '"
+			<< var << "'" << std::endl;
+	}
 }
 
 static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults);
