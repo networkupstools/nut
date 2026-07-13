@@ -1,6 +1,3 @@
-#ifndef NUT_WINCOMPAT_H
-#define NUT_WINCOMPAT_H 1
-
 /*
    Copyright (C)
 	2001	Andrew Delpha (delpha@computer.org)
@@ -28,6 +25,9 @@
    This header is provided to map Windows system calls to be compatible
    with the NUT code.
 */
+
+#ifndef NUT_WINCOMPAT_H
+#define NUT_WINCOMPAT_H 1
 
 #include "common.h"
 #include <limits.h>
