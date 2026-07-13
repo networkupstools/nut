@@ -2757,8 +2757,24 @@ EOF
 SSLBACKEND = "openssl"
 # OpenSSL CERTFILE: PEM file with client cert, possibly the
 # intermediate and root CA's, and finally corresponding private key
+EOF
+
+            if [ -s "${TESTCERT_PATH_CLIENT}/upsmon.pem" ] ; then
+                cat << EOF
 CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
 
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+            else
+                log_warn "SKIPPING tests for OpenSSL clients self-identification: '${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem' not found!"
+                cat << EOF
+#NOT-FOUND# CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+EOF
+            fi
+
+            cat << EOF
 # OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
 #  CA subject name hash value (which must include our NUT server).
 #  Here we just use the path for PEM file that should be populated
@@ -2766,11 +2782,8 @@ CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
 CERTPATH = "${TESTCERT_PATH_ROOTCA}"
 EOF
 
-            ${EGREP} -v '^(SSLBACKEND|CERTPATH) = ' "${NUT_CONFPATH}/nutauth.conf"
+            ${EGREP} -v '^(SSLBACKEND|CERTPATH|CERTIDENT) = ' "${NUT_CONFPATH}/nutauth.conf"
         }
-        if [ ! -s "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem ] ; then
-            log_warn "Tests for OpenSSL clients will likely fail: '${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem' not found!"
-        fi
         ;;
         *) cat "${NUT_CONFPATH}/nutauth.conf" ;;
     esac > "${NUT_CONFPATH}/nutauth-openssl.conf" \
