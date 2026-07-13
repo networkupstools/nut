@@ -1158,24 +1158,36 @@ fi
 # (here CI_CACHE_NIT_HASHDIR based on hash of nit.sh) under provided or
 # defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_NIT_TESTCERT_CACHE=yes
 [ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="no"
-[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="no"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
 [ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
 [ -n "$DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE" ] || DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
 [ -n "$DO_USE_NIT_TESTCERT_CACHE" ] || DO_USE_NIT_TESTCERT_CACHE="${DO_USE_NUTCI_CACHE}"
 [ -n "$DO_USE_NIT_TESTCERT_CACHE_DEBUG" ] || DO_USE_NIT_TESTCERT_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
 
 unset CI_CACHE_NIT_HASHDIR
+
+[ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
+    if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
+        CI_CACHE_NUT_BASEDIR="${HOME}${TESTCERT_PATH_SEP}.cache${TESTCERT_PATH_SEP}nut-ci"
+    fi
+}
+
+# Default value that can trickle down from ci_build.sh on some systems
+# or used with direct command-line runs of the script. By default, use
+# the cache if its dir already exists.
+if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xauto ] \
+&& [ -n "${CI_CACHE_NUT_BASEDIR-}" ] \
+&& [ -d "${CI_CACHE_NUT_BASEDIR-}" ] \
+; then
+    DO_USE_NIT_TESTCERT_CACHE="yes"
+fi
+
 if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
-    [ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
-        if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
-            CI_CACHE_NUT_BASEDIR="${HOME}${TESTCERT_PATH_SEP}.cache${TESTCERT_PATH_SEP}nut-ci"
-        fi
-    }
-    if [ -n "${CI_CACHE_NUT_BASEDIR}" ] ; then
+    if [ -n "${CI_CACHE_NUT_BASEDIR-}" ] ; then
         mkdir -p "${CI_CACHE_NUT_BASEDIR}" || CI_CACHE_NUT_BASEDIR=""
     fi
 
-    if [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
+    if [ -n "${CI_CACHE_NUT_BASEDIR-}" ] && [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
         # Calculate hash of nit.sh to decide about re-generation
         NIT_HASH="`somehash_filter < \"$0\"`"
         CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
@@ -1208,7 +1220,11 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
         else
             log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
         fi
+    else
+        log_warn "Asked to use a test certificate cache, but CI_CACHE_NUT_BASEDIR does not exist and/or could not be made"
     fi
+else
+    log_info "Not using a test certificate cache now; if you want it, 'export DO_USE_NIT_TESTCERT_CACHE=yes'"
 fi
 
 # NOTE: We only check for command-line tooling if we need to generate
