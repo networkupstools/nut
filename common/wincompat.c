@@ -454,7 +454,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* At least while this is not configurable, can be static to speed up;
 	 * see https://github.com/networkupstools/nut/issues/3375
 	 */
-	static char	pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
+	static char	pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME, reported_no_pipe = 0;
 	char	buf1[LARGEBUF + sizeof(DWORD)];
 	char	buf2[LARGEBUF];
 	va_list	ap;
@@ -490,12 +490,18 @@ void syslog(int priority, const char *fmt, ...)
 		NULL);			/* no template file */
 
 	if (pipe == INVALID_HANDLE_VALUE) {
-		upsdebug_with_errno(1,
+		upsdebug_with_errno(reported_no_pipe ? 7 : 1,
 			"%s: SKIP: can't open existing event log NAMED_PIPE: '%s'",
 			__func__, pipe_full_name);
 
+		reported_no_pipe = 1;
 		return;
 	}
+
+	if (reported_no_pipe)
+		upsdebugx(1, "%s: opened existing event log NAMED_PIPE which we failed to use earlier: '%s'",
+			__func__, pipe_full_name);
+	reported_no_pipe = 0;
 
 	WriteFile(pipe, buf1, strlen(buf2) + sizeof(DWORD), &bytesWritten, NULL);
 
