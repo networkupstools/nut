@@ -715,11 +715,12 @@ static TYPE_FD open_sock(void)
 
 	fd = CreateNamedPipe(
 			pipefn,		/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
 			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 			BUF_LEN,	/* output buffer size */
 			BUF_LEN,	/* input buffer size */
@@ -960,11 +961,12 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
 			pipefn,		/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
 			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 			BUF_LEN,	/* output buffer size */
 			BUF_LEN,	/* input buffer size */

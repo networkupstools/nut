@@ -579,6 +579,7 @@ void pipe_create(const char * pipe_name)
 		| FILE_FLAG_OVERLAPPED,	/* async IO */
 		PIPE_TYPE_MESSAGE
 		| PIPE_READMODE_MESSAGE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
 		| PIPE_WAIT,
 		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 		LARGEBUF,		/* output buffer size */

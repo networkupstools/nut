@@ -206,6 +206,7 @@ static TYPE_FD sock_open(const char *fn)
 		| FILE_FLAG_OVERLAPPED,	/* async IO */
 		PIPE_TYPE_BYTE
 		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
 		| PIPE_WAIT,
 		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 		ST_SOCK_BUF_LEN,	/* output buffer size */
@@ -664,6 +665,7 @@ static void sock_connect(TYPE_FD sock)
 		| FILE_FLAG_OVERLAPPED,	/* async IO */
 		PIPE_TYPE_BYTE
 		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
 		| PIPE_WAIT,
 		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 		ST_SOCK_BUF_LEN,	/* output buffer size */
