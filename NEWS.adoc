@@ -187,6 +187,10 @@ https://github.com/networkupstools/nut/milestone/13
       tracked) should now not cause exit of the client if secure connection
       is not required by its configuration in the first place. [#3420]
 
+ - `upssched` client/tool updates:
+    * Fixed handling of `NOTIFYMSG` from command line if other arguments are
+      present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
+
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting

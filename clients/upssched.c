@@ -2201,13 +2201,12 @@ static void help(const char *arg_progname)
 
 int main(int argc, char **argv)
 {
-	int	opt_ret, argn = 0;
+	int	opt_ret;
 
 	/* Here this is a global variable, used also in start_daemon() */
 	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
 	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
-		argn++;
 		switch (opt_ret) {
 			case 'D':
 				nut_debug_level_args++;
@@ -2253,9 +2252,9 @@ int main(int argc, char **argv)
 
 	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
-	upsdebugx(2, "Remaining argn=%d of argc=%d", argn, argc);
-	if (argc > argn + 1 && *argv[argn + 1])
-		notify_msg = argv[argn + 1];
+	upsdebugx(2, "Handled optind=%d CLI tokens of argc=%d", optind - 1, argc);
+	if (argc > optind && *argv[optind])
+		notify_msg = argv[optind];
 
 	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
