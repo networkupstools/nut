@@ -454,7 +454,7 @@ void syslog(int priority, const char *fmt, ...)
 	/* At least while this is not configurable, can be static to speed up;
 	 * see https://github.com/networkupstools/nut/issues/3375
 	 */
-	static char	pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME, reported_no_pipe = 0;
+	static char	pipe_full_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME, reported_no_pipe = 0, reentered = 0;
 	char	buf1[LARGEBUF + sizeof(DWORD)];
 	char	buf2[LARGEBUF];
 	va_list	ap;
@@ -464,6 +464,13 @@ void syslog(int priority, const char *fmt, ...)
 	if (EventLogName == NULL) {
 		return;
 	}
+
+	/* Could an upsdebugx() below cause re-syslog?.. */
+	if (reentered) {
+		return;
+	}
+
+	reentered = 1;
 
 	/* Format message */
 	va_start(ap, fmt);
@@ -495,6 +502,7 @@ void syslog(int priority, const char *fmt, ...)
 			__func__, pipe_full_name);
 
 		reported_no_pipe = 1;
+		reentered = 0;
 		return;
 	}
 
@@ -510,6 +518,8 @@ void syslog(int priority, const char *fmt, ...)
 	 * loop */
 	upsdebugx(6, "%s: closing event log NAMED_PIPE", __func__);
 	CloseHandle(pipe);
+
+	reentered = 0;
 }
 
 /* Signal emulation via NamedPipe */
