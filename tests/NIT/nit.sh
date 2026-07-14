@@ -917,11 +917,7 @@ TESTCERT_VALIDITY_MONTHS=240
 discover_somehash_filter() {
     # First, constrain hash string lengths for shorter logs and path lookups.
     # KEEP IN SYNC WITH ci_build.sh SCRIPT!
-    if (command -v cut) >/dev/null 2>/dev/null && [ x"`echo 1234567890 | cut -c 3-8`" = x345678 ] ; then
-        cut_filter() { cut -c 1-8 ; }
-    else
-        cut_filter() { sed -e 's,^\(........\).*$,\1,'; }
-    fi
+    cut_filter() { sed -e 's,^\(....\).*\(....\)$,\1\2,'; }
 
     for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
         if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
