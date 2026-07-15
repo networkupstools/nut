@@ -134,6 +134,10 @@ https://github.com/networkupstools/nut/milestone/13
     * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
       to fix per-close `libusb_exit()` deadlock, and escalate a persistent
       `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
+    * Some driver code paths used buffers sent via USB transfers as fixed-size
+      chunks populated only partially with bytes we intended. These buffers are
+      now more diligently pre-zeroed as their siblings were in other code paths,
+      to avoid sending host stack garbage to a device. [#3529]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
