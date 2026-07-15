@@ -147,12 +147,19 @@
 MINSUPPLIES 1
 
 # --------------------------------------------------------------------------
-# SHUTDOWNCMD "<command>"
+# SHUTDOWNCMD "<command>" ["<arg1>" "<arg2>" ...]
 #
 # upsmon runs this command when the system needs to be brought down.
 #
 # This should work just about everywhere ... if it doesn't, well, change it,
 # perhaps to a more complicated custom script.
+#
+# Unlike some others, this directive still allows to pass both the command
+# and its arguments as a single quoted token. It also supports a multi-token
+# syntax to pass each argument as a separate token:
+# SHUTDOWNCMD "/sbin/shutdown -h +0"
+# SHUTDOWNCMD "/sbin/shutdown" "-h" "+0"
+# SHUTDOWNCMD /sbin/shutdown -h +0
 #
 # Note that while you experiment with the initial setup and want to test how
 # your configuration reacts to power state changes and ultimately when power
@@ -206,15 +213,16 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #SHUTDOWNEXIT yes
 
 # --------------------------------------------------------------------------
-# NOTIFYCMD <command>
+# NOTIFYCMD <command> ["<arg1>" "<arg2>" ...]
 #
 # upsmon calls this to send messages when things happen
 #
-# The value is interpreted as a complete path to an externally stored
-# executable script (e.g. not an inline scriptlet) or program file without
-# further arguments (this is a change from NUT v2.8.5 and older releases).
+# The first (possibly only) token of the value is interpreted as a complete
+# path to an externally stored executable script (e.g. not an inline scriptlet)
+# or program file without further arguments (which may be passed in explicitly
+# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 # This command is called with the full text of the message (from NOTIFYMSG)
-# as one argument.
+# as one last argument, with further details passed as environment variables.
 #
 # The environment string NOTIFYTYPE will contain the type string of
 # whatever caused this event to happen.

@@ -81,7 +81,15 @@ typedef struct ttype_s {
 
 static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
-static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static char	*pipefn = NULL, *lockfn = NULL;
+/* Argument array for respective program, where [0] is the program name,
+ * followed by (argc-1) possible command-line argument tokens, with a
+ * NULL value in the end as the [argc]'th entry. Overall (argc+1) items
+ * if at all populated, minimum 2 for the program name and NULL sentinel.
+ * Concatenated value is also stored to ease debug logging, but is not
+ * used directly for program calls. */
+static char	**cmdscript_argv = NULL, *cmdscript_concat = NULL;
+static size_t	cmdscript_argc = 0;
 static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_conf = 0;
 static int	list_timers = 0;
 
@@ -111,18 +119,15 @@ static void exec_cmd(const char *cmd)
 #else
 	int	err = 0;
 #endif
-	char	*argv[3];
+	char	**argv = NULL;
 
-	if (cmdscript == NULL) {
+	if (cmdscript_argc == 0) {
 		upslogx(LOG_ERR, "No CMDSCRIPT defined, cannot execute command: %s", NUT_STRARG(cmd));
 		return;
 	}
 
-	argv[0] = cmdscript;
-	argv[1] = (char *)cmd;
-	argv[2] = NULL;
-
-	upsdebugx(4, "%s: calling: %s %s", __func__, cmdscript, NUT_STRARG(cmd));
+	/* For logging note that cmdscript_concat is quoted as appropriate */
+	upsdebugx(4, "%s: calling: %s \"%s\"", __func__, NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
 
 #ifndef WIN32
 	pid = fork();
@@ -131,49 +136,60 @@ static void exec_cmd(const char *cmd)
 		return;
 	}
 
-	if (pid == 0) {
-		/* child process */
-		execvp(cmdscript, argv);
-		/* execvp() only returns on error */
-		upslog_with_errno(LOG_ERR, "execvp(%s) failed", cmdscript);
-		exit(EXIT_FAILURE);
-	}
+	if (pid > 0) {
+		/* parent process - wait for child */
+		waitret = waitpid(pid, &waitstatus, 0);
+		if (waitret < 0) {
+			upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)pid);
+			return;
+		}
 
-	/* parent process - wait for child */
-	waitret = waitpid(pid, &waitstatus, 0);
-	if (waitret < 0) {
-		upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)pid);
+		if (WIFEXITED(waitstatus)) {
+			if (WEXITSTATUS(waitstatus)) {
+				upslogx(LOG_INFO, "exec_cmd(%s '%s') returned %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WEXITSTATUS(waitstatus));
+			}
+		} else {
+			if (WIFSIGNALED(waitstatus)) {
+				upslogx(LOG_WARNING, "exec_cmd(%s '%s') terminated with signal %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WTERMSIG(waitstatus));
+			} else {
+				upslogx(LOG_ERR, "Execute command failure: %s '%s'",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+			}
+		}
+
+		upsdebugx(3, "%s: returned status %d", __func__, waitstatus);
 		return;
 	}
+#endif	/* !WIN32 */
 
-	if (WIFEXITED(waitstatus)) {
-		if (WEXITSTATUS(waitstatus)) {
-			upslogx(LOG_INFO, "exec_cmd(%s %s) returned %d",
-				cmdscript, NUT_STRARG(cmd), WEXITSTATUS(waitstatus));
-		}
-	} else {
-		if (WIFSIGNALED(waitstatus)) {
-			upslogx(LOG_WARNING, "exec_cmd(%s %s) terminated with signal %d",
-				cmdscript, NUT_STRARG(cmd), WTERMSIG(waitstatus));
-		} else {
-			upslogx(LOG_ERR, "Execute command failure: %s %s",
-				cmdscript, NUT_STRARG(cmd));
-		}
-	}
+	/* Only deal with argv for child or mono-process */
+	/* We will add one argument, plus one NULL sentinel, after argc original entries */
+	argv = (char**)xcalloc(cmdscript_argc + 2, sizeof(char *));
+	/* Copy entries [0]..[argc-1] */
+	memcpy(argv, cmdscript_argv, cmdscript_argc * sizeof(char *));
+	argv[cmdscript_argc] = (char *)cmd;
+	argv[cmdscript_argc + 1] = NULL;
 
-	upsdebugx(3, "%s: returned status %d", __func__, waitstatus);
+#ifndef WIN32
+	/* child process */
+	execvp(cmdscript_argv[0], argv);
+	/* execvp() only returns on error */
+	upslog_with_errno(LOG_ERR, "execvp(%s) failed", NUT_STRARG(cmdscript_concat));
+	free(argv);
+	exit(EXIT_FAILURE);
 #else	/* WIN32 */
 	/* Use _spawnvp for Windows */
-	err = _spawnvp(_P_WAIT, cmdscript, (const char * const *)argv);
+	err = _spawnvp(_P_WAIT, cmdscript_argv[0], (const char * const *)argv);
 	if (err != -1) {
-		upslogx(LOG_INFO, "Execute command \"%s %s\" OK", cmdscript, NUT_STRARG(cmd));
+		upslogx(LOG_INFO, "Execute command %s \"%s\" OK", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
 		upsdebugx(3, "%s: returned status %d", __func__, err);
 	} else {
-		upslog_with_errno(LOG_ERR, "Execute command \"%s %s\" failure", cmdscript, NUT_STRARG(cmd));
+		upslog_with_errno(LOG_ERR, "Execute command %s \"%s\" failure", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
 	}
+	free(argv);
 #endif	/* WIN32 */
-
-	return;
 }
 
 /* Collect the list of strings into a "sep" (e.g. comma) separated string.
@@ -1973,7 +1989,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 {
 	/* complain both ways in case we don't have a tty */
 
-	if (!cmdscript) {
+	if (!cmdscript_argc) {
 		printf("CMDSCRIPT must be set before any ATs in the config file!\n");
 		fatalx(EXIT_FAILURE, "CMDSCRIPT must be set before any ATs in the config file!");
 	}
@@ -2074,9 +2090,43 @@ static int conf_arg(size_t numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
-	/* CMDSCRIPT <scriptname> */
+	/* CMDSCRIPT <scriptname> [<arg1> [<arg2>...]] */
 	if (!strcmp(arg[0], "CMDSCRIPT")) {
-		cmdscript = xstrdup(arg[1]);
+		size_t	i, l = 0;
+
+		/* -1: the arg[0] is the configuration token */
+		cmdscript_argc = numargs - 1;
+
+		/* +1: the cmdscript_argv[cmdscript_argc] is the NULL sentinel */
+		free(cmdscript_argv);
+		cmdscript_argv = (char**)xcalloc(cmdscript_argc + 1, sizeof(char *));
+		for (i = 1; i < numargs; i++) {
+			/* +1: either a space follows, or '\0'
+			 * +2: surrounding quotes
+			 */
+			l += strlen(arg[i]) + 3;
+			cmdscript_argv[i - 1] = xstrdup(arg[i]);
+			strcpy(cmdscript_argv[i - 1], arg[i]);
+		}
+		cmdscript_argv[cmdscript_argc] = NULL;
+
+		free(cmdscript_concat);
+		cmdscript_concat = (char*)xcalloc(l + 2, sizeof(char));
+		for (i = 1; i < numargs; i++) {
+			snprintfcat(cmdscript_concat, l + 1, "'%s'%s",
+				arg[i], i == numargs - 1 ? "" : " ");
+		}
+
+		upsdebugx(1, "%s: collected %s with %" PRIuSIZE " tokens: %s",
+			__func__, arg[0], cmdscript_argc, NUT_STRARG(cmdscript_concat));
+
+		if (cmdscript_argc > 0 && strchr(cmdscript_argv[0], ' ')) {
+			/* NOTE: this may also be a path with spaces, more prominent on Windows or MacOS, probably */
+			upslogx(LOG_WARNING, "%s: command '%s' contains spaces, be sure to pass any arguments as separately quoted tokens!",
+				arg[0], cmdscript_argv[0]);
+		}
+
+		/* Handled OK */
 		return 1;
 	}
 

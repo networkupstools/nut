@@ -213,11 +213,11 @@ same as when `max=1`), and a zero value means to never repeat the message
 Note that this throttle only applies to one latest-active error state per
 monitored device.
 
-*NOTIFYCMD* 'command'::
+*NOTIFYCMD* 'command' ['arg1' 'arg2' ...]::
 
 upsmon calls this to send messages when things happen.
 +
-This command is called with the full text of the message as one
+This command is called with the full text of the message as one last
 argument.  The environment string NOTIFYTYPE will contain the type
 string of whatever caused this event to happen.
 +
@@ -230,18 +230,22 @@ NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 Making this some sort of shell script might not be a bad idea.  For
 more information and ideas, see docs/scheduling.txt
 +
-The value is interpreted as a complete path to an externally stored
-executable script (e.g. not an inline scriptlet) or program file without
-further arguments (this is a change from NUT v2.8.5 and older releases).
+The first (possibly only) token of the value is interpreted as a complete
+path to an externally stored executable script (e.g. not an inline scriptlet)
+or program file without further arguments (which may be passed in explicitly
+# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 Remember, this command also needs to be one element in the configuration
 file, so if your command path has spaces, then wrap it in quotes.
 +
-+NOTIFYCMD "/path to/script"+
+------
+NOTIFYCMD "/path to/script"
+NOTIFYCMD "/path to/script" "--debug" "-v"
+------
 +
-This script is run in the background--that is, upsmon forks before it
-calls out to start it.  This means that your NOTIFYCMD may have multiple
-instances running simultaneously if a lot of stuff happens all at once.
-Keep this in mind when designing complicated notifiers.
+This script is run in the background -- that is, linkman:upsmon[8] normally
+forks before it calls out to start it.  This means that your NOTIFYCMD may
+have multiple instances running simultaneously if a lot of stuff happens all
+at once. Keep this in mind when designing complicated notifiers.
 
 *NOTIFYMSG* 'type' 'message'::
 
@@ -539,7 +543,7 @@ powered off, at just the time you need it here), and is not available on
 all platforms -- so such setups are something users explore on their own
 so far (we would welcome posts on NUT Wiki or links to blogs though).
 
-*SHUTDOWNCMD* 'command'::
+*SHUTDOWNCMD* 'command' ['arg1' 'arg2' ...]::
 
 upsmon runs this command when the system needs to be brought down.  If
 it is a secondary, it will do that immediately whenever the current
@@ -548,11 +552,24 @@ overall power value drops below the MINSUPPLIES value above.
 When upsmon is a primary, it will allow any secondaries to log out before
 starting the local shutdown procedure.
 +
-Note that the command needs to be one element in the config file.  If
-your shutdown command includes spaces, then put it in quotes to keep it
-together, i.e.:
-
+Note that historically (before NUT v2.8.6 release) the command needed to
+be one element in the config file.  If your shutdown command included spaces,
+then you should have put it in quotes to keep it together, i.e.:
++
+------
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
+------
++
+Now unlike some others, this directive still allows to pass both the command
+and its arguments as a single quoted token, but it also supports a multi-token
+syntax to pass each argument as a separate token.
+These lines should be equivalent with NUT v2.8.6 or newer:
++
+------
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+SHUTDOWNCMD "/sbin/shutdown" "-h" "+0"
+SHUTDOWNCMD /sbin/shutdown -h +0
+------
 
 *SHUTDOWNEXIT* 'boolean|number'::
 
