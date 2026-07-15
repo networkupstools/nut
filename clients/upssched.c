@@ -2256,6 +2256,83 @@ static void checkconf(void)
 	pconf_finish(&ctx);
 }
 
+static void clean_exit(void)
+{
+	ttype_t	*tcurr, *tnext;
+	conn_t	*ccurr, *cnext;
+	size_t	i;
+
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	upsdebugx(1, "%s: starting", __func__);
+
+	/* Free timers */
+	tcurr = thead;
+	while (tcurr) {
+		tnext = tcurr->next;
+
+		free(tcurr->name);
+
+		if (tcurr->upsnames) {
+			for (i = 0; tcurr->upsnames[i]; i++) {
+				free(tcurr->upsnames[i]);
+			}
+			free(tcurr->upsnames);
+		}
+
+		if (tcurr->notifytypes) {
+			for (i = 0; tcurr->notifytypes[i]; i++) {
+				free(tcurr->notifytypes[i]);
+			}
+			free(tcurr->notifytypes);
+		}
+
+		if (tcurr->notifymsgs) {
+			for (i = 0; tcurr->notifymsgs[i]; i++) {
+				free(tcurr->notifymsgs[i]);
+			}
+			free(tcurr->notifymsgs);
+		}
+
+		free(tcurr);
+		tcurr = tnext;
+	}
+	thead = NULL;
+
+	/* Free connections */
+	ccurr = connhead;
+	while (ccurr) {
+		cnext = ccurr->next;
+		pconf_finish(&ccurr->ctx);
+		free(ccurr);
+		ccurr = cnext;
+	}
+	connhead = NULL;
+
+	/* Free strings and arrays */
+	if (cmdscript_argv) {
+		for (i = 0; i < cmdscript_argc; i++) {
+			free(cmdscript_argv[i]);
+		}
+		free(cmdscript_argv);
+		cmdscript_argv = NULL;
+	}
+
+	free(cmdscript_concat);
+	cmdscript_concat = NULL;
+
+	free(pipefn);
+	pipefn = NULL;
+
+	free(lockfn);
+	lockfn = NULL;
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
@@ -2350,20 +2427,19 @@ int main(int argc, char **argv)
 	else
 		upsdebugx(1, "Did not get any NOTIFYMSG from command line");
 
-	/* see if this matches anything in the config file */
+	/* Whenever a process exits, do carefully free any resources it
+	 * has (maybe by parent, from before forking some notifier etc.) */
+	atexit(clean_exit);
+
+	setproctag("cli");
+
+	/* See if this request matches anything in the config file */
 	/* This is actually the processing loop:
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
 	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
 	 */
-	setproctag("cli");
 	checkconf();
 
 	upsdebugx(1, "Exiting upssched (CLI process)");
-
-	/* Flush *our* output before possibly failing in third-party code
-	 * (e.g. SSL libs), so client consumers have a chance to see it */
-	fflush(stdout);
-	fflush(stderr);
-
 	exit(EXIT_SUCCESS);
 }

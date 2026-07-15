@@ -202,6 +202,9 @@ https://github.com/networkupstools/nut/milestone/13
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
 
+ - `upssched` client/tool updates:
+    * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
+
  - `upsd` data server updates:
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]

@@ -4648,6 +4648,7 @@ end_loop_cycle:
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+	/* TOTHINK: use atexit() instead, to handle any code path? */
 	upsmon_cleanup();
 
 	upsdebugx(1, "Finally exiting due to signal %d", exit_flag);
