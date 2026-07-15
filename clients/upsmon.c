@@ -2900,16 +2900,31 @@ static void upsmon_cleanup(void)
 	}
 
 	free(run_as_user);
+	run_as_user = NULL;
 	free(shutdowncmd_concat);
+	shutdowncmd_concat = NULL;
 	free(notifycmd_concat);
+	notifycmd_concat = NULL;
 	free(powerdownflag);
+	powerdownflag = NULL;
 	free(configfile);
+	configfile = NULL;
+
+	free(certpath);
+	certpath = NULL;
+	free(certname);
+	certname = NULL;
+	free(certpasswd);
+	certpasswd = NULL;
+	free(certfile);
+	certfile = NULL;
 
 	if (shutdowncmd_argv) {
 		for (i = 0; i < shutdowncmd_argc; i++) {
 			free(shutdowncmd_argv[i]);
 		}
 		free(shutdowncmd_argv);
+		shutdowncmd_argv = NULL;
 	}
 
 	if (notifycmd_argv) {
@@ -2917,10 +2932,12 @@ static void upsmon_cleanup(void)
 			free(notifycmd_argv[i]);
 		}
 		free(notifycmd_argv);
+		notifycmd_argv = NULL;
 	}
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
+		notifylist[i].msg = NULL;
 	}
 
 	fflush(stdout);
