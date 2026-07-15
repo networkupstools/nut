@@ -302,7 +302,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 			setenv("NOTIFYTYPE", data->ntype, 1);
 			/* Copy entries [0]..[argc-1] */
 			memcpy(argv, notifycmd_argv, notifycmd_argc * sizeof(char *));
-			argv[notifycmd_argc] = data->notice;
+			argv[notifycmd_argc] = (char*)(data->notice);
 			argv[notifycmd_argc + 1] = NULL;
 			ret = _spawnvp(_P_WAIT, notifycmd_argv[0], (const char * const *)argv);
 			if (ret == -1) {
@@ -384,7 +384,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 			setenv("NOTIFYTYPE", ntype, 1);
 			/* Copy entries [0]..[argc-1] */
 			memcpy(argv, notifycmd_argv, notifycmd_argc * sizeof(char *));
-			argv[notifycmd_argc] = notice;
+			argv[notifycmd_argc] = (char*)notice;
 			argv[notifycmd_argc + 1] = NULL;
 			execvp(notifycmd_argv[0], argv);
 			/* execvp() only returns on error */
