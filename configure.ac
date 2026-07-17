@@ -5247,6 +5247,8 @@ dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
 dnl FIXME: Add a toggle like "--with(out)-systemd" to disable these probes too
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
 AC_MSG_CHECKING(whether to install systemd unit files)
 NUT_ARG_WITH([systemdsystemunitdir], [(DIRPATH|yes|no|auto)], [Directory for systemd service files], [auto])
 systemdsystemunitdir="${nut_with_systemdsystemunitdir}"
@@ -5259,12 +5261,16 @@ case "${systemdsystemunitdir}" in
 			[def_systemdsystemunitdir=""])
 
 		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			def_msgerr="--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings. Please double-check that you have {lib,}systemd-dev{,el} installed as appropriate for your OS distribution!"
 			AS_IF([test "${systemdsystemunitdir}" = yes],
-				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+				[AC_MSG_ERROR([${def_msgerr}])])
+			AS_IF([test x"${SYSTEMD_SYSTEMCTL_PROGRAM}" != x -a -x "${SYSTEMD_SYSTEMCTL_PROGRAM}"],
+				[AC_MSG_WARN([${SYSTEMD_SYSTEMCTL_PROGRAM} is present and ${def_msgerr}])])
 			systemdsystemunitdir=""
+			AS_UNSET(def_msgerr)
 			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
 
-		unset def_systemdsystemunitdir
+		AS_UNSET(def_systemdsystemunitdir)
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -5291,8 +5297,6 @@ NUT_REPORT_FEATURE([consider basic systemd support], [${have_systemd}], [],
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
-
-AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
 
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
@@ -5759,8 +5763,14 @@ return res ? 0 : 1;
      LDFLAGS="$my_LDFLAGS $pkg_cv_CPPUNIT_LDFLAGS"
      LIBS="$my_LIBS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
-     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [have_cppunit=yes], [have_cppunit=no])
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])], [
+        have_cppunit=yes
+     ], [
+        have_cppunit=no
+        AS_CASE([$CXXFLAGS],
+            [*-std=*++*], [AC_MSG_WARN([You have a C++ standard version explicitly required in CXXFLAGS... The CPPUNIT build test failed, and some of its releases used auto_ptr which is deprecated since C++14 and removed in e.g. clang since C++17])]
+        )
+     ])
      CXXFLAGS="$my_CXXFLAGS"
      LDFLAGS="$my_LDFLAGS"
      LIBS="$my_LIBS"
@@ -7981,6 +7991,7 @@ AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
+ conf/nutauth.conf.sample
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
  conf/upsstats.html.sample
@@ -8025,6 +8036,7 @@ AC_CONFIG_FILES([
  scripts/installer/Makefile
  scripts/misc/nut.bash_completion
  scripts/obs/Makefile
+ scripts/perl/UPS/Nut.pm
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py

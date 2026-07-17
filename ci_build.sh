@@ -1154,10 +1154,14 @@ do_autogen_get_CONFIGURE_SCRIPT() {
 }
 
 discover_somehash_filter() {
+    # First, constrain hash string lengths for shorter logs and path lookups.
+    # KEEP IN SYNC WITH tests/NIT/nit.sh SCRIPT!
+    cut_filter() { sed -e 's,^\(....\).*\(....\)$,\1\2,'; }
+
     for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
         if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
             somehash_filter() {
-                "$HASH_CMD" | awk '{print $1}'
+                "$HASH_CMD" | awk '{print $1}' | cut_filter
             }
             return
         fi
@@ -1170,7 +1174,7 @@ discover_somehash_filter() {
             case "$OUT" in
             *stdin*)
                 somehash_filter() {
-                    openssl "$HASH_CMD" | awk '{print $NF}'
+                    openssl "$HASH_CMD" | awk '{print $NF}' | cut_filter
                 }
                 return
                 ;;
@@ -1178,7 +1182,7 @@ discover_somehash_filter() {
         done
     fi
 
-    # Worst-case: use data size?
+    # Worst-case: use data size? Do not cut_filter here!
     somehash_filter() {
         wc -c
     }
@@ -2828,7 +2832,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     FAILED+=("TESTCOMBO=${TESTCOMBO}[configure]")
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
-                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        echo "===== [Matrix] Error: Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
                     fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
@@ -2844,7 +2848,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     RES_ALLERRORS=$?
                     FAILED+=("TESTCOMBO=${TESTCOMBO}[build]")
                     # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'TESTCOMBO=${TESTCOMBO}' build"
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' build"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -2857,7 +2861,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     RES_ALLERRORS=$?
                     FAILED+=("TESTCOMBO=${TESTCOMBO}[check]")
                     # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'TESTCOMBO=${TESTCOMBO}' check"
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -2885,7 +2889,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         RES_ALLERRORS=$?
                         FAILED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
                         # Help find end of build (before cleanup noise) in logs:
-                        echo "=== FAILED 'TESTCOMBO=${TESTCOMBO}' check-parallel-builds"
+                        echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' check-parallel-builds"
                         if [ "$CI_FAILFAST" = true ]; then
                             echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                             break
@@ -2959,7 +2963,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
-                echo "FAILED ${#FAILED[@]} build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
+                echo "[Matrix] Error: FAILED ${#FAILED[@]} build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
             else
                 echo "(and no build scenarios had failed)" >&2
             fi

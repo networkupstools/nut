@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.58"
+#define MGE_HID_VERSION		"MGE HID 1.59"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -558,6 +558,19 @@ static const char *eaton_abm_check_chrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
 	{
 		if (d_equal(value, 1)) {
+			/* UPS.PowerSummary.PresentStatus.Charging stays asserted in
+			 * float/maintenance mode on CC-mode devices (e.g. Eaton 5E series)
+			 * that do not expose the ABM HID path. Suppress CHRG once the
+			 * battery is fully charged so that ups.status does not show a
+			 * persistent OL CHRG at 100%. */
+			const char	*charge_str = dstate_getinfo("battery.charge");
+			if (charge_str != NULL) {
+				double	charge = strtod(charge_str, NULL);
+				if (charge >= 100.0) {
+					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+					return mge_scratch_buf;
+				}
+			}
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 		}
 		else {

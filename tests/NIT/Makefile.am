@@ -56,13 +56,18 @@ check-NIT: $(abs_srcdir)/nit.sh
 	WITH_SSL_TESTS='$(WITH_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
-# Make sure pre-requisites for NIT are fresh as we iterate
+# Make sure pre-requisites for NIT are fresh as we iterate code.
+# NOTE: nut-scanner may be optional per `configure` settings,
+#  so we only ask for "all" there and let its Makefile decide.
 check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s generated-sources-with-a-touch
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
-	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
+	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT) upslog$(EXEEXT) upssched$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
+	+@cd "$(top_builddir)/scripts" && $(MAKE) $(AM_MAKEFLAGS) -s perl/UPS/Nut.pm
+	+@cd "$(top_builddir)/scripts/python/module/" && $(MAKE) $(AM_MAKEFLAGS) -s PyNUT.py test_nutclient.py
+	+@cd "$(top_builddir)/tools/nut-scanner" && $(MAKE) $(AM_MAKEFLAGS) -s all
 	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s cleanup-touchfiles-for-generated-headers
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 

@@ -182,7 +182,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # libnutscan version information
 ### WARNING: Do not forget to update SO_MAJOR_LIBNUTSCAN under scripts/obs,
 ### especially when bumping "age" into loss of compatibility with old releases!
-libnutscan_la_LDFLAGS += -version-info 5:0:1
+libnutscan_la_LDFLAGS += -version-info 6:0:2
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed

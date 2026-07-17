@@ -38,6 +38,11 @@ int nutscan_unload_upsclient_library(void);
 
 #define SCAN_NUT_DRIVERNAME "dummy-ups"
 
+/* Same default timeout as in upsc and other clients, but numeric.
+ * Handled via nut_upscli_init_default_connect_timeout() if detected,
+ * or as the fallback default if not (and none passed by C caller). */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC 10
+
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
@@ -57,6 +62,20 @@ static void (*nut_upscli_upslog_setproctag)(const char *tag, const void *cookie)
 static void (*nut_upscli_upslog_setprocname)(const char *tag, const void *cookie);
 static struct timeval *(*nut_upscli_upslog_start_sync)(struct timeval *tv, const void *cookie);
 static void (*nut_upscli_report_build_details)(void);
+static int (*nut_upscli_init_default_connect_timeout)(const char *cli_secs,
+					const char *config_secs, const char *default_secs);
+static upscli_authconf_t *(*nut_upscli_get_authconf_item)(const char *user,
+					const char *host, const char *port, int add_to_list);
+static int (*nut_upscli_init_authconf)(upscli_authconf_t *ac);
+static upscli_authconf_t *(*nut_upscli_find_authconf_item)(const char *user,
+					const char *host, const char *port);
+static void (*nut_upscli_free_authconf_item)(upscli_authconf_t *ac);
+static int (*nut_upscli_read_authconf_file)(const char *filename, int fatal_errors);
+static int (*nut_upscli_authenticate_authconf)(UPSCONN_t *ups, upscli_authconf_t *ac);
+static void (*nut_upscli_get_default_connect_timeout)(struct timeval *ptv);
+static void (*nut_upscli_free_host_cert)(const char *hostname, const char *certname);
+static void (*nut_upscli_free_host_port_cert)(const char *hostname, uint16_t port, const char *certname);
+static void (*nut_upscli_authconf_update_conn_flags)(const upscli_authconf_t *ac, int *flags);
 
 /* This variable collects device(s) from a sequential or parallel scan,
  * is returned to caller, and cleared to allow subsequent independent scans */
@@ -77,6 +96,8 @@ struct scan_nut_arg {
 	 * address, and/or :port suffix (if customized so): */
 	char * hostname;
 	useconds_t timeout;
+	int flags_ssl;
+	upscli_authconf_t	*ac_current;
 };
 
 /* Return 0 on success, -1 on error e.g. "was not loaded";
@@ -256,6 +277,94 @@ int nutscan_load_upsclient_library(const char *libname_path)
 		(*nut_upscli_report_build_details)();
 	}
 
+	*(void **) (&nut_upscli_init_default_connect_timeout) = lt_dlsym(dl_handle,
+		symbol = "upscli_init_default_connect_timeout");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_init_default_connect_timeout = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_get_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_get_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_get_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_init_authconf) = lt_dlsym(dl_handle,
+		symbol = "upscli_init_authconf");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_init_authconf = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_find_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_find_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_find_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_free_authconf_item) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_authconf_item");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_authconf_item = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_read_authconf_file) = lt_dlsym(dl_handle,
+		symbol = "upscli_read_authconf_file");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_read_authconf_file = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_authenticate_authconf) = lt_dlsym(dl_handle,
+		symbol = "upscli_authenticate_authconf");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_authenticate_authconf = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_get_default_connect_timeout) = lt_dlsym(dl_handle,
+		symbol = "upscli_get_default_connect_timeout");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_get_default_connect_timeout = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_free_host_cert) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_host_cert");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_host_cert = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_free_host_port_cert) = lt_dlsym(dl_handle,
+		symbol = "upscli_free_host_port_cert");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_free_host_port_cert = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
+	*(void **) (&nut_upscli_authconf_update_conn_flags) = lt_dlsym(dl_handle,
+		symbol = "upscli_authconf_update_conn_flags");
+	if ((dl_error = lt_dlerror()) != NULL) {
+		nut_upscli_authconf_update_conn_flags = NULL;
+		upsdebugx(1, "%s: %s() not found, using older libupsclient build?",
+			__func__, symbol);
+	}
+
 	/* Passed final lt_dlsym() */
 	symbol = NULL;
 
@@ -322,7 +431,7 @@ static void * list_nut_devices_thready(void * arg)
 		goto end;
 	}
 
-	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
+	if ((*nut_upscli_tryconnect)(ups, hostname, port, nut_arg->flags_ssl, &tv) < 0) {
 		/* Avoid disconnect from not connected ups */
 		upsdebugx(4, "%s: upscli_tryconnect() failed", __func__);
 		if (ups) {
@@ -332,6 +441,13 @@ static void * list_nut_devices_thready(void * arg)
 		}
 		ups = NULL;
 		goto end;
+	}
+
+	/* Best-effort login (if present in the file for that host, or default) */
+	if (nut_upscli_authenticate_authconf != NULL && nut_arg->ac_current != NULL
+	 && nut_arg->ac_current->user && nut_arg->ac_current->pass
+	) {
+		(*nut_upscli_authenticate_authconf)(ups, nut_arg->ac_current);
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
@@ -426,13 +542,29 @@ end:
 
 nutscan_device_t * nutscan_scan_nut(const char* start_ip, const char* stop_ip, const char* port, useconds_t usec_timeout)
 {
+	nutscan_nut_authconf_t sec;
+	sec.usec_timeout = usec_timeout;
+	sec.port_string = port;
+
+	/* Best-effort use of a user- or system- provided file, okay if absent */
+	sec.authconf_file = NULL;
+
+	/* UNUSED so far: */
+	sec.peername = NULL;
+	sec.port_number = 0;	/* we pass the port strings in args, to be resolved later */
+
+	return nutscan_scan_nut_authconf(start_ip, stop_ip, &sec);
+}
+
+nutscan_device_t * nutscan_scan_nut_authconf(const char* start_ip, const char* stop_ip, nutscan_nut_authconf_t *sec)
+{
 	nutscan_device_t	*ndret;
 	nutscan_ip_range_list_t irl;
 
 	nutscan_init_ip_ranges(&irl);
 	nutscan_add_ip_range(&irl, (char *)start_ip, (char *)stop_ip);
 
-	ndret = nutscan_scan_ip_range_nut(&irl, port, usec_timeout);
+	ndret = nutscan_scan_ip_range_nut_authconf(&irl, sec);
 
 	/* Avoid nuking caller's strings here */
 	irl.ip_ranges->start_ip = NULL;
@@ -443,6 +575,22 @@ nutscan_device_t * nutscan_scan_nut(const char* start_ip, const char* stop_ip, c
 }
 
 nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char* port, useconds_t usec_timeout)
+{
+	nutscan_nut_authconf_t sec;
+	sec.usec_timeout = usec_timeout;
+	sec.port_string = port;
+
+	/* Best-effort use of a user- or system- provided file, okay if absent */
+	sec.authconf_file = NULL;
+
+	/* UNUSED so far: */
+	sec.peername = NULL;
+	sec.port_number = 0;	/* we pass the port strings in args, to be resolved later */
+
+	return nutscan_scan_ip_range_nut_authconf(irl, &sec);
+}
+
+nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * irl, nutscan_nut_authconf_t *sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_ip_range_list_iter_t ip;
@@ -457,7 +605,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-	sem_t * semaphore = nutscan_semaphore();
+	sem_t * semaphore = NULL;
 #  if (defined HAVE_SEMAPHORE_UNNAMED)
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
@@ -471,6 +619,90 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
+
+	const char *nutauth = sec ? sec->authconf_file : NULL;
+	upscli_authconf_t	*ac_default = NULL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
+	int have_nutauth_methods = (
+		nut_upscli_authenticate_authconf != NULL &&
+		nut_upscli_read_authconf_file != NULL &&
+		nut_upscli_init_authconf != NULL &&
+		nut_upscli_find_authconf_item != NULL &&
+		nut_upscli_get_authconf_item != NULL &&
+		nut_upscli_free_authconf_item != NULL
+	);
+
+	/* Technically speaking, this variable should hold values
+	 * up to 1000000, but in practice would be at least 31-bit.
+	 * If no spec from caller, apply the default we have. */
+	useconds_t usec_timeout = sec ? sec->usec_timeout : (useconds_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC * (1000*1000);
+
+	if (nut_upscli_init_default_connect_timeout
+	 && nut_upscli_get_default_connect_timeout
+	) {
+		/* If the method is present, let the library know what timeout we want */
+		char buf2[SMALLBUF];
+
+		if (sec)
+			snprintf(buf, sizeof(buf), "%g", (double)sec->usec_timeout / 1000000);
+		snprintf(buf2, sizeof(buf2), "%" PRIuMAX, (uintmax_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC);
+
+		if ((*nut_upscli_init_default_connect_timeout)(
+			sec ? buf : NULL,
+			NULL, buf2) >= 0
+		) {
+			struct timeval tv;
+			(*nut_upscli_get_default_connect_timeout)(&tv);
+			usec_timeout = tv.tv_sec * (1000*1000) + tv.tv_usec;
+		} else {
+			upsdebugx(1, "%s: upscli_init_default_connect_timeout() failed: "
+				"invalid network timeout was requested, using initial default: %"
+				PRIuMAX "usec", __func__, (uintmax_t)usec_timeout);
+		}
+	}
+
+	if (nutauth && *nutauth && strcmp(nutauth, "none")) {
+		/* Non-trivial, not a skip */
+		if (!have_nutauth_methods) {
+			upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but needed methods are missing in loaded libupsclient", nutauth);
+			return NULL;
+		}
+	}
+
+	if (nutauth && *nutauth) {
+		/* If we are here, needed method pointers are non-NULL */
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "%s: Using nutauth='%s': skipping NUT auth config", __func__, nutauth);
+		} else {
+			/* Not passing fatal_errors=1 into the parser due to JSON support */
+			int	parsed = -1;
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "%s: Using nutauth='%s': require a user or system provided NUT auth config file", __func__, nutauth);
+				parsed = (*nut_upscli_read_authconf_file)(NULL, 0);
+			} else {
+				upsdebugx(1, "%s: Using nutauth='%s': require this NUT auth config file", __func__, nutauth);
+				parsed = (*nut_upscli_read_authconf_file)(nutauth, 0);
+			}
+			if (parsed < 0) {
+				upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but we failed to parse it", nutauth);
+				return NULL;
+			}
+		}
+	} else {
+		if (nut_upscli_read_authconf_file) {
+			upsdebugx(1, "%s: Using best-effort NUT auth config detection", __func__);
+			(*nut_upscli_read_authconf_file)(NULL, 0);
+		} else {
+			upsdebugx(1, "%s: NOT using best-effort NUT auth config detection: upscli_read_authconf_file() not available", __func__);
+		}
+	}
+
+#ifdef HAVE_PTHREAD
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+	semaphore = nutscan_semaphore();
+# endif
+#endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 
@@ -557,6 +789,13 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 #endif	/* !WIN32 */
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
+
+	if (nut_upscli_find_authconf_item != NULL) {
+		ac_default = (*nut_upscli_find_authconf_item)(NULL, NULL, NULL);
+		if (ac_default && nut_upscli_authconf_update_conn_flags != NULL) {
+			(*nut_upscli_authconf_update_conn_flags)(ac_default, &flags_ssl);
+		}
+	}
 
 	while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
@@ -674,12 +913,12 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 #endif   /* HAVE_PTHREAD */
 
 		if (pass) {
-			if (port) {
+			if (sec && sec->port_string && *(sec->port_string)) {
 				if (ip.curr_ip_iter.type == IPv4) {
-					snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
+					snprintf(buf, sizeof(buf), "%s:%s", ip_str, sec->port_string);
 				}
 				else {
-					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, port);
+					snprintf(buf, sizeof(buf), "[%s]:%s", ip_str, sec->port_string);
 				}
 
 				ip_dest = strdup(buf);
@@ -694,8 +933,28 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				break;
 			}
 
+			/* NOTE: Above we defer to nut_upscli_init_default_connect_timeout()
+			 *  when present and may fall back to envvars like other NUT clients,
+			 *  if no value was passed by C API caller */
 			nut_arg->timeout = usec_timeout;
 			nut_arg->hostname = ip_dest;
+			nut_arg->flags_ssl = flags_ssl;
+
+			if (have_nutauth_methods) {
+				/* FIXME [#3494]: Currently libupsclient allows for *one* SSL context
+				 *  shared by all connections, specifically the CERTIDENT of the client.
+				 *  We can have multiple CERTHOST certificates (and/or reading
+				 *  users/passwords) though. */
+				/* NOTE: Unlike other clients, here we DO NOT add the item to list,
+				 *  so we can forget it soon without hassle */
+				nut_arg->ac_current = (*nut_upscli_get_authconf_item)(NULL, ip_str, sec ? sec->port_string : NULL, 0);
+				/* Always call upscli_init_authconf(), to register possible CERTHOSTs etc. */
+				if ((*nut_upscli_init_authconf)(nut_arg->ac_current) > 0 && nut_arg->ac_current != NULL && nut_upscli_authconf_update_conn_flags != NULL) {
+					(*nut_upscli_authconf_update_conn_flags)(nut_arg->ac_current, &(nut_arg->flags_ssl));
+				}
+			} else {
+				nut_arg->ac_current = NULL;
+			}
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, list_nut_devices_thready, (void*)nut_arg) == 0) {
@@ -726,12 +985,22 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			list_nut_devices_thready(nut_arg);
 #endif /* if HAVE_PTHREAD */
 
+			/* NOTE: Work with host_cert list is
+			 *  mutex'ed in the upsclient library */
+			if (nut_upscli_free_host_cert) {
+				(*nut_upscli_free_host_cert)(ip_dest, NULL);
+			}
+
 			/* Prepare the next iteration; note that
 			 * nutscan_scan_ipmi_device_thready()
 			 * takes care of freeing "tmp_sec" and its
 			 * copy (note strdup!) of "ip_str" as
 			 * hostname, possibly suffixed with a port.
 			 */
+			if (nut_arg->ac_current && have_nutauth_methods) {
+				(*nut_upscli_free_authconf_item)(nut_arg->ac_current);
+				nut_arg->ac_current = NULL;
+			}
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */

@@ -14,6 +14,8 @@ if ($@) {
   sub color { return ""; }
 }
 
+use Dumpvalue; my $dumper = Dumpvalue->new;
+
 # Main logic
 if (1) {
     my $NUT_HOST = $ENV{'NUT_HOST'} || '127.0.0.1';
@@ -28,13 +30,60 @@ if (1) {
     my $NUT_CERTVERIFY = (($ENV{'NUT_CERTVERIFY'} || "false") eq "true" || ($ENV{'NUT_CERTVERIFY'} || "false") eq "1") ? 1 : 0;
     my $NUT_CAFILE = $ENV{'NUT_CAFILE'} || undef;
     my $NUT_CAPATH = $ENV{'NUT_CAPATH'} || undef;
-    # Note: Python's cert_file, key_file, key_pass are not directly
-    # supported by current Nut.pm STARTTLS as independent args, but
-    # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
+    my $NUT_CERTFILE = $ENV{'NUT_CERTFILE'} || undef;
+    my $NUT_CERTIDENT = $ENV{'NUT_CERTIDENT'} || undef;
+    my $NUT_KEYFILE = $ENV{'NUT_KEYFILE'} || undef;
+    my $NUT_KEYPASS = $ENV{'NUT_KEYPASS'} || undef;
 
     my $NUT_DEBUG = (($ENV{'DEBUG'} || "false") eq "true" || defined($ENV{'NUT_DEBUG_LEVEL'})) ? 1 : 0;
     # Numeric if set, values defined by SSL.pm module:
     my $NUT_DEBUG_SSL = $ENV{'NUT_DEBUG_SSL_PERL'} ; #(($ENV{'NUT_DEBUG_SSL_PERL'} || "") eq "" ? undef : $ENV{'NUT_DEBUG_SSL_PERL'};
+
+    my $NUT_IGNORE_AUTHCONF = (($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "true" || ($ENV{'NUT_IGNORE_AUTHCONF'} || "false") eq "1") ? 1 : 0;
+    if (!$NUT_IGNORE_AUTHCONF) {
+        ### UPS::Nut::AuthConf->setDebug($NUT_DEBUG);
+        # UPS::Nut::AuthConf->getAuthConf() should return a merged config
+        my $ac = UPS::Nut::AuthConf->getAuthConf($NUT_USER, $NUT_HOST, $NUT_PORT);
+        if ($ac) {
+            print ("[DEBUG] NUT AuthConf settings extracted for section [" . $ac->{section} . "]:\n") if $NUT_DEBUG;
+            $dumper->dumpValue($ac) if $NUT_DEBUG;
+
+            $NUT_USER = $ac->{user} if defined $ac->{user};
+            $NUT_PASS = $ac->{pass} if defined $ac->{pass};
+
+            if (defined $ac->{certfile}) {
+                # (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+                $NUT_CERTFILE = $ac->{certfile};
+            }
+
+            if (defined $ac->{certpath}) {
+                # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
+                if (-d $ac->{certpath}) {
+                    $NUT_CAPATH = $ac->{certpath};
+                } else {
+                    $NUT_CAFILE = $ac->{certpath};
+                }
+            }
+
+            $NUT_CERTIDENT = $ac->{certident} if defined $ac->{certident};
+            $NUT_KEYPASS = $ac->{certpasswd} if defined $ac->{certpasswd};
+
+            # If test runner has explicitly set NUT_SSL=False,
+            # ignore the value required in the authconf
+            if (!(defined $NUT_SSL) || $NUT_SSL) {
+                $NUT_CERTVERIFY = $ac->{certverify} if $ac->{certverify} != -1;
+                $NUT_FORCESSL = $ac->{forcessl} if $ac->{forcessl} != -1;
+            }
+        }
+    }
+
+    if (!(defined $NUT_SSL)) {
+        $NUT_SSL = ($NUT_FORCESSL > 0);
+    }
+
+    # Note: Python's cert_file, key_file, key_pass are not directly
+    # supported by current Nut.pm STARTTLS as independent args, but
+    # passed via %arg. Nut.pm uses STARTTLS method which takes %arg.
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
@@ -54,6 +103,7 @@ if (1) {
             PORT => $NUT_PORT,
             USERNAME => $NUT_USER,
             PASSWORD => $NUT_PASS,
+            CERTIDENT => $NUT_CERTIDENT,
             DEBUG => $NUT_DEBUG,
             DEBUGSSL => $NUT_DEBUG_SSL,
             # TRACKING => 'ON', # undef by default, enabled in certain tests below
@@ -64,9 +114,9 @@ if (1) {
             # In case PyNUT's cert_file, key_file are needed:
             SSL_ca_file => $NUT_CAFILE,
             SSL_ca_path => $NUT_CAPATH,
-            SSL_cert_file => $ENV{'NUT_CERTFILE'},
-            SSL_key_file => $ENV{'NUT_KEYFILE'},
-            SSL_key_pass => $ENV{'NUT_KEYPASS'}
+            SSL_cert_file => $NUT_CERTFILE,
+            SSL_key_file => $NUT_KEYFILE,
+            SSL_key_pass => $NUT_KEYPASS
         );
     };
     if ($@ || !defined($nut)) {

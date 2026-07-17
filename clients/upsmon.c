@@ -47,7 +47,15 @@
 #define builtin_setproctag(x)	setproctag(x)
 #define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
 
-static	char	*shutdowncmd = NULL, *notifycmd = NULL;
+/* Argument array for respective program, where [0] is the program name,
+ * followed by (argc-1) possible command-line argument tokens, with a
+ * NULL value in the end as the [argc]'th entry. Overall (argc+1) items
+ * if at all populated, minimum 2 for the program name and NULL sentinel.
+ * Concatenated value of NOTIFYCMD is also stored to ease debug logging,
+ * but is not used directly for program calls (value of SHUTDOWNCMD is
+ * currently passed to system() as concatenated, not as an array). */
+static	char	**shutdowncmd_argv = NULL, **notifycmd_argv = NULL, *shutdowncmd_concat = NULL, *notifycmd_concat = NULL;
+static	size_t	shutdowncmd_argc = 0, notifycmd_argc = 0;
 static	char	*powerdownflag = NULL, *configfile = NULL;
 
 static	unsigned int	minsupplies = 1, sleepval = 5;
@@ -238,25 +246,18 @@ static void wall(const char *text)
 	pclose(wf);
 #else	/* WIN32 */
 #	define MESSAGE_CMD "message.exe"
-	char	*command;
+	char	*argv[3];
+	int	ret;
 
-	/* first +1 is for the space between message and text
-	 * second +1 is for trailing 0
-	 * +2 is for ""
-	 */
-	size_t	commandsz = strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1;
+	argv[0] = MESSAGE_CMD;
+	argv[1] = (char *)text;
+	argv[2] = NULL;
 
-	command = malloc (commandsz);
-	if (command == NULL) {
-		upslog_with_errno(LOG_NOTICE, "Not enough memory for wall");
-		return;
+	upsdebugx(6, "%s: executing %s with message: %s", __func__, MESSAGE_CMD, NUT_STRARG(text));
+	ret = _spawnvp(_P_WAIT, MESSAGE_CMD, (const char * const *)argv);
+	if (ret != 0) {
+		upslog_with_errno(LOG_NOTICE, "Can't invoke wall (status: %d)", ret);
 	}
-
-	snprintf(command, commandsz, "%s \"%s\"", MESSAGE_CMD, text);
-	if (system(command) != 0) {
-		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
-	}
-	free(command);
 #endif	/* WIN32 */
 }
 
@@ -271,33 +272,43 @@ typedef struct async_notify_s {
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
-	char	exec[LARGEBUF];
-	char	notice[LARGEBUF];
+	int	ret;
 
 	/* the following code is a copy of the content of the NOT WIN32 part of
-	"notify" function below */
+	 * "notify" function below */
 
 	async_notify_t *data = (async_notify_t *)param;
 
 	if (flag_isset(data->flags, NOTIFY_WALL)) {
-		snprintf(notice,LARGEBUF,"%s: %s", data->date, data->notice);
+		char	notice[LARGEBUF];
+
+		snprintf(notice, sizeof(notice), "%s: %s", data->date, data->notice);
 		wall(notice);
 	}
 
 	if (flag_isset(data->flags, NOTIFY_EXEC)) {
-		if (notifycmd != NULL) {
-			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, data->notice);
+		if (notifycmd_argc > 0) {
+			/* We will add one argument, plus one NULL sentinel, after argc original entries */
+			char	**argv = (char**)xcalloc(notifycmd_argc + 2, sizeof(char *));
 
-			upsdebugx(6, "%s: Calling NOTIFYCMD: %s", __func__, exec);
+			/* For logging note that notifycmd_concat is quoted as appropriate */
+			upsdebugx(6, "%s: Calling NOTIFYCMD as %s with notice: %s",
+				__func__, NUT_STRARG(notifycmd_concat), NUT_STRARG(data->notice));
 			if (data->upsname)
 				setenv("UPSNAME", data->upsname, 1);
 			else
 				setenv("UPSNAME", "", 1);
 
 			setenv("NOTIFYTYPE", data->ntype, 1);
-			if (system(exec) == -1) {
-				upslog_with_errno(LOG_ERR, "%s", __func__);
+			/* Copy entries [0]..[argc-1] */
+			memcpy(argv, notifycmd_argv, notifycmd_argc * sizeof(char *));
+			argv[notifycmd_argc] = (char*)(data->notice);
+			argv[notifycmd_argc + 1] = NULL;
+			ret = _spawnvp(_P_WAIT, notifycmd_argv[0], (const char * const *)argv);
+			if (ret == -1) {
+				upslog_with_errno(LOG_ERR, "%s: _spawnvp failed", __func__);
 			}
+			free(argv);
 		}
 	}
 
@@ -314,12 +325,11 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
 {
 #ifndef WIN32
-	char	exec[LARGEBUF];
 	int	ret;
 #endif	/* !WIN32 */
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
-		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
+		__func__, upsname ? upsname : "upsmon itself", ntype, flags, NUT_STRARG(notice));
 
 	if (flag_isset(flags, NOTIFY_IGNORE)) {
 		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
@@ -328,7 +338,7 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_SYSLOG)) {
 		upsdebugx(6, "%s: NOTIFY_SYSLOG (as LOG_NOTICE)", __func__);
-		upslogx(LOG_NOTICE, "%s", notice);
+		upslogx(LOG_NOTICE, "%s", NUT_STRARG(notice));
 	}
 
 #ifndef WIN32
@@ -351,16 +361,20 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 		__func__, use_pipe ? "grand" : "");
 
 	if (flag_isset(flags, NOTIFY_WALL)) {
-		upsdebugx(6, "%s (%schild): NOTIFY_WALL", __func__, use_pipe ? "grand" : "");
+		upsdebugx(6, "%s (%schild): NOTIFY_WALL",
+			__func__, use_pipe ? "grand" : "");
 		wall(notice);
 	}
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
-		if (notifycmd != NULL) {
-			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
-				__func__, use_pipe ? "grand" : "", notifycmd, notice);
+		if (notifycmd_argc > 0) {
+			/* We will add one argument, plus one NULL sentinel, after argc original entries */
+			char	**argv = (char**)xcalloc(notifycmd_argc + 2, sizeof(char *));
 
-			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
+			/* For logging note that notifycmd_concat is quoted as appropriate */
+			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: calling NOTIFYCMD as %s with notice: '%s'",
+				__func__, use_pipe ? "grand" : "",
+				NUT_STRARG(notifycmd_concat), NUT_STRARG(notice));
 
 			if (upsname)
 				setenv("UPSNAME", upsname, 1);
@@ -368,15 +382,24 @@ static void notify(const char *notice, unsigned int flags, const char *ntype,
 				setenv("UPSNAME", "", 1);
 
 			setenv("NOTIFYTYPE", ntype, 1);
-			if (system(exec) == -1) {
-				upslog_with_errno(LOG_ERR, "%s", __func__);
-			}
+			/* Copy entries [0]..[argc-1] */
+			memcpy(argv, notifycmd_argv, notifycmd_argc * sizeof(char *));
+			argv[notifycmd_argc] = (char*)notice;
+			argv[notifycmd_argc + 1] = NULL;
+			execvp(notifycmd_argv[0], argv);
+			/* execvp() only returns on error */
+			upslog_with_errno(LOG_ERR, "%s: execvp(%s) failed",
+				__func__, NUT_STRARG(notifycmd_concat));
+			free(argv);
+			exit(EXIT_FAILURE);
 		} else {
-			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__, use_pipe ? "grand" : "");
+			upsdebugx(6, "%s (%schild): NOTIFY_EXEC: no NOTIFYCMD was configured",
+				__func__, use_pipe ? "grand" : "");
 		}
 	}
 
-	upsdebugx(6, "%s (%schild): exiting after notifications", __func__, use_pipe ? "grand" : "");
+	upsdebugx(6, "%s (%schild): exiting after notifications",
+		__func__, use_pipe ? "grand" : "");
 
 	exit(EXIT_SUCCESS);
 #else	/* WIN32 */
@@ -564,43 +587,9 @@ static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
-	if (!ups->un) {
-		upslogx(LOG_ERR, "UPS [%s]: no username defined!", ups->sys);
-		return 0;
-	}
-
-	snprintf(buf, sizeof(buf), "USERNAME %s\n", ups->un);
-	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
-		upslogx(LOG_ERR, "Can't set username on [%s]: %s",
+	if (upscli_authenticate(&ups->conn, ups->un, ups->pw, 0, 0) < 0) {
+		upslogx(LOG_ERR, "Authentication on [%s] failed: %s",
 			ups->sys, upscli_strerror(&ups->conn));
-			return 0;
-	}
-
-	if (upscli_readline(&ups->conn, buf, sizeof(buf)) < 0) {
-		upslogx(LOG_ERR, "Set username on [%s] failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-		return 0;
-	}
-
-	/* authenticate first */
-	snprintf(buf, sizeof(buf), "PASSWORD %s\n", ups->pw);
-
-	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
-		upslogx(LOG_ERR, "Can't set password on [%s]: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-			return 0;
-	}
-
-	if (upscli_readline(&ups->conn, buf, sizeof(buf)) < 0) {
-		upslogx(LOG_ERR, "Set password on [%s] failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-		return 0;
-	}
-
-	/* catch insanity from the server - not ERR and not OK either */
-	if (strncmp(buf, "OK", 2) != 0) {
-		upslogx(LOG_ERR, "Set password on [%s] failed - got [%s]",
-			ups->sys, buf);
 		return 0;
 	}
 
@@ -1048,13 +1037,19 @@ static void doshutdown(void)
 		}
 #endif	/* WIN32 */
 
+		/* NOTE: Unlike NOTIFYCMD whose arg[0] MUST be a program path name
+		 *  (so we can pass additional args safely), we do not currently
+		 *  require that of the SHUTDOWNCMD whose one string may contain
+		 *  further arguments right away. We, however, do support multi-token
+		 *  syntax for that directive too.
+		 */
 		upsdebugx(1, "%s: upsmon mono-process: Calling shutdown command: %s",
-			__func__, shutdowncmd);
-		sret = system(shutdowncmd);
+			__func__, NUT_STRARG(shutdowncmd_concat));
+		sret = system(shutdowncmd_concat);
 
 		if (sret != 0)
 			upslogx(LOG_ERR, "Unable to call shutdown command: %s",
-				shutdowncmd);
+				shutdowncmd_concat);
 	}
 
 	/* code below runs in the child (or only) process */
@@ -2315,12 +2310,95 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
-	/* SHUTDOWNCMD <cmd> */
-	if (!strcmp(arg[0], "SHUTDOWNCMD")) {
-		checkmode(arg[0], shutdowncmd, arg[1], reload_flag);
+	/* NOTIFYCMD <cmd> [<arg1> [<arg2>...]] */
+	if (!strcmp(arg[0], "NOTIFYCMD")) {
+		size_t	i, l = 0;
 
-		free(shutdowncmd);
-		shutdowncmd = xstrdup(arg[1]);
+		/* -1: the arg[0] is the configuration token */
+		notifycmd_argc = numargs - 1;
+
+		/* +1: the notifycmd_argv[notifycmd_argc] is the NULL sentinel */
+		free(notifycmd_argv);
+		notifycmd_argv = (char**)xcalloc(notifycmd_argc + 1, sizeof(char *));
+		for (i = 1; i < numargs; i++) {
+			/* +1: either a space follows, or '\0'
+			 * +2: surrounding quotes
+			 */
+			l += strlen(arg[i]) + 3;
+			notifycmd_argv[i - 1] = xstrdup(arg[i]);
+			strcpy(notifycmd_argv[i - 1], arg[i]);
+		}
+		notifycmd_argv[notifycmd_argc] = NULL;
+
+		free(notifycmd_concat);
+		notifycmd_concat = (char*)xcalloc(l + 2, sizeof(char));
+		for (i = 1; i < numargs; i++) {
+			snprintfcat(notifycmd_concat, l + 1, "'%s'%s",
+				arg[i], i == numargs - 1 ? "" : " ");
+		}
+
+		upsdebugx(1, "%s: collected %s with %" PRIuSIZE " tokens: %s",
+			__func__, arg[0], notifycmd_argc, NUT_STRARG(notifycmd_concat));
+
+		if (notifycmd_argc > 0 && strchr(notifycmd_argv[0], ' ')) {
+			/* NOTE: this may also be a path with spaces, more prominent on Windows or MacOS, probably */
+			upslogx(LOG_WARNING, "%s: command '%s' contains spaces, be sure to pass any arguments as separately quoted tokens!",
+				arg[0], notifycmd_argv[0]);
+		}
+
+		/* Handled OK */
+		return 1;
+	}
+
+	/* SHUTDOWNCMD <cmd> [<arg1> [<arg2>...]] */
+	if (!strcmp(arg[0], "SHUTDOWNCMD")) {
+		/* Similar to NOTIFYCMD handling, but while there the first
+		 * arg token MUST be the command/path name, here we allow
+		 * arguments inside the single-token definition (or as some
+		 * follow-up tokens). This impacts the shutdowncmd_concat
+		 * value by NOT quoting the first (possibly only) token. */
+		char	*shutdowncmd_concat_new = NULL;
+		size_t	i, l = 0;
+
+		/* -1: the arg[0] is the configuration token */
+		shutdowncmd_argc = numargs - 1;
+
+		/* +1: the shutdowncmd_argv[shutdowncmd_argc] is the NULL sentinel */
+		free(shutdowncmd_argv);
+		shutdowncmd_argv = (char**)xcalloc(shutdowncmd_argc + 1, sizeof(char *));
+		for (i = 1; i < numargs; i++) {
+			/* +1: either a space follows, or '\0'
+			 * +2: surrounding quotes
+			 */
+			l += strlen(arg[i]) + 3;
+			shutdowncmd_argv[i - 1] = xstrdup(arg[i]);
+			strcpy(shutdowncmd_argv[i - 1], arg[i]);
+		}
+		shutdowncmd_argv[shutdowncmd_argc] = NULL;
+
+		/* For SHUTDOWNCMD we do not quote first (possibly only)
+		 * token that may have a full command line scriptlet */
+		shutdowncmd_concat_new = (char*)xcalloc(l + 2, sizeof(char));
+		snprintf(shutdowncmd_concat_new, l + 1, "%s%s",
+			shutdowncmd_argv[0], numargs == 2 ? "" : " ");
+		for (i = 2; i < numargs; i++) {
+			snprintfcat(shutdowncmd_concat_new, l + 1, "'%s'%s",
+				arg[i], i == numargs - 1 ? "" : " ");
+		}
+
+		/* First check whether the old value is same as new and
+		 * remains known to the other process, if appropriate;
+		 * only then release the memory and replace the pointer.
+		 */
+		checkmode(arg[0], shutdowncmd_concat, shutdowncmd_concat_new, reload_flag);
+
+		free(shutdowncmd_concat);
+		shutdowncmd_concat = shutdowncmd_concat_new;
+
+		upsdebugx(1, "%s: collected %s with %" PRIuSIZE " tokens: %s",
+			__func__, arg[0], shutdowncmd_argc, NUT_STRARG(shutdowncmd_concat));
+
+		/* Handled OK */
 		return 1;
 	}
 
@@ -2361,13 +2439,6 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			upslogx(LOG_INFO, "Using power down flag file %s",
 				arg[1]);
 
-		return 1;
-	}
-
-	/* NOTIFYCMD <cmd> */
-	if (!strcmp(arg[0], "NOTIFYCMD")) {
-		free(notifycmd);
-		notifycmd = xstrdup(arg[1]);
 		return 1;
 	}
 
@@ -2774,7 +2845,7 @@ static void ups_free(utype_t *ups)
 
 static void upsmon_cleanup(void)
 {
-	int	i;
+	size_t	i;
 	utype_t	*utmp, *unext;
 
 	/* Flush *our* output before possibly failing in third-party code
@@ -2795,13 +2866,44 @@ static void upsmon_cleanup(void)
 	}
 
 	free(run_as_user);
-	free(shutdowncmd);
-	free(notifycmd);
+	run_as_user = NULL;
+	free(shutdowncmd_concat);
+	shutdowncmd_concat = NULL;
+	free(notifycmd_concat);
+	notifycmd_concat = NULL;
 	free(powerdownflag);
+	powerdownflag = NULL;
 	free(configfile);
+	configfile = NULL;
+
+	free(certpath);
+	certpath = NULL;
+	free(certname);
+	certname = NULL;
+	free(certpasswd);
+	certpasswd = NULL;
+	free(certfile);
+	certfile = NULL;
+
+	if (shutdowncmd_argv) {
+		for (i = 0; i < shutdowncmd_argc; i++) {
+			free(shutdowncmd_argv[i]);
+		}
+		free(shutdowncmd_argv);
+		shutdowncmd_argv = NULL;
+	}
+
+	if (notifycmd_argv) {
+		for (i = 0; i < notifycmd_argc; i++) {
+			free(notifycmd_argv[i]);
+		}
+		free(notifycmd_argv);
+		notifycmd_argv = NULL;
+	}
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
+		notifylist[i].msg = NULL;
 	}
 
 	fflush(stdout);
@@ -3559,12 +3661,12 @@ static void runparent(int fd)
 	set_pdflag();
 
 	upsdebugx(1, "%s: upsmon parent: Calling shutdown command: %s",
-		__func__, shutdowncmd);
-	sret = system(shutdowncmd);
+		__func__, shutdowncmd_concat);
+	sret = system(shutdowncmd_concat);
 
 	if (sret != 0)
 		upslogx(LOG_ERR, "upsmon parent: Unable to call shutdown command: %s",
-			shutdowncmd);
+			shutdowncmd_concat);
 
 	if (shutdownexitdelay) {
 		/* make sure the child is still alive - inverse of check_parent() */
@@ -3577,7 +3679,7 @@ static void runparent(int fd)
 			"after %s (%i) shutdown command: %s",
 			exit_flag, (intmax_t)pid_pipechild,
 			(sret == 0 ? "calling" : "trying to call"),
-			sret, shutdowncmd);
+			sret, shutdowncmd_concat);
 		upsnotify(NOTIFY_STATE_EXTEND_TIMEOUT, "Parent: waiting for child to exit");
 
 		do {
@@ -3616,7 +3718,7 @@ static void runparent(int fd)
 	close(fd);
 	upslogx(LOG_WARNING, "upsmon parent: Exiting after %s (%i) shutdown command: %s",
 		(sret == 0 ? "calling" : "trying to call"),
-		sret, shutdowncmd);
+		sret, shutdowncmd_concat);
 	exit(EXIT_SUCCESS);
 }
 #endif	/* !WIN32 */
@@ -4136,21 +4238,23 @@ int main(int argc, char *argv[])
 	if (checking_flag)
 		exit(check_pdflag());
 
-	if (shutdowncmd == NULL) {
+	if (shutdowncmd_argc == 0) {
 		printf("Warning: no shutdown command defined%s\n",
 			(minsupplies < 1)
 			? ", but that is OK for a monitoring-only client."
 			: "!");
 		fflush(stdout);
 	} else {
-		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'", shutdowncmd);
+		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'",
+			NUT_STRARG(shutdowncmd_concat));
 	}
 
-	if (notifycmd == NULL) {
+	if (notifycmd_argc == 0) {
 		printf("Warning: no custom notification command defined, just so you know\n");
 		fflush(stdout);
 	} else {
-		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'", notifycmd);
+		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'",
+			NUT_STRARG(notifycmd_concat));
 	}
 
 	/* we may need to get rid of a flag from a previous shutdown */
@@ -4501,11 +4605,17 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %.06f seconds", dt);
+			char	dtstr[SMALLBUF];
+			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %s", dtstr);
+			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %.06f seconds", dt);
+			char	dtstr[SMALLBUF];
+			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %s", dtstr);
+			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
@@ -4527,6 +4637,7 @@ end_loop_cycle:
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+	/* TOTHINK: use atexit() instead, to handle any code path? */
 	upsmon_cleanup();
 
 	upsdebugx(1, "Finally exiting due to signal %d", exit_flag);

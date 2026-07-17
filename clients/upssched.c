@@ -81,7 +81,15 @@ typedef struct ttype_s {
 
 static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
-static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static char	*pipefn = NULL, *lockfn = NULL;
+/* Argument array for respective program, where [0] is the program name,
+ * followed by (argc-1) possible command-line argument tokens, with a
+ * NULL value in the end as the [argc]'th entry. Overall (argc+1) items
+ * if at all populated, minimum 2 for the program name and NULL sentinel.
+ * Concatenated value is also stored to ease debug logging, but is not
+ * used directly for program calls. */
+static char	**cmdscript_argv = NULL, *cmdscript_concat = NULL;
+static size_t	cmdscript_argc = 0;
 static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_conf = 0;
 static int	list_timers = 0;
 
@@ -105,36 +113,83 @@ static OVERLAPPED connect_overlapped;
 
 static void exec_cmd(const char *cmd)
 {
-	int	err;
-	char	buf[LARGEBUF];
-
-	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
-
-	upsdebugx(4, "%s: calling: %s", __func__, buf);
-	err = system(buf);
-	upsdebugx(3, "%s(%s): returned %d", __func__, buf, err);
 #ifndef WIN32
-	if (WIFEXITED(err)) {
-		if (WEXITSTATUS(err)) {
-			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
-		}
-	} else {
-		if (WIFSIGNALED(err)) {
-			upslogx(LOG_WARNING, "exec_cmd(%s) terminated with signal %d", buf, WTERMSIG(err));
-		} else {
-			upslogx(LOG_ERR, "Execute command failure: %s", buf);
-		}
-	}
-#else	/* WIN32 */
-	if(err != -1) {
-		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
-	}
-	else {
-		upslogx(LOG_ERR, "Execute command failure : %s", buf);
-	}
-#endif	/* WIN32 */
+	int	waitstatus = 0;
+	pid_t	pid, waitret;
+#else
+	int	err = 0;
+#endif
+	char	**argv = NULL;
 
-	return;
+	if (cmdscript_argc == 0) {
+		upslogx(LOG_ERR, "No CMDSCRIPT defined, cannot execute command: %s", NUT_STRARG(cmd));
+		return;
+	}
+
+	/* For logging note that cmdscript_concat is quoted as appropriate */
+	upsdebugx(4, "%s: calling: %s \"%s\"", __func__, NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+
+#ifndef WIN32
+	pid = fork();
+	if (pid < 0) {
+		upslog_with_errno(LOG_ERR, "fork() failed in exec_cmd");
+		return;
+	}
+
+	if (pid > 0) {
+		/* parent process - wait for child */
+		waitret = waitpid(pid, &waitstatus, 0);
+		if (waitret < 0) {
+			upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)pid);
+			return;
+		}
+
+		if (WIFEXITED(waitstatus)) {
+			if (WEXITSTATUS(waitstatus)) {
+				upslogx(LOG_INFO, "exec_cmd(%s '%s') returned %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WEXITSTATUS(waitstatus));
+			}
+		} else {
+			if (WIFSIGNALED(waitstatus)) {
+				upslogx(LOG_WARNING, "exec_cmd(%s '%s') terminated with signal %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WTERMSIG(waitstatus));
+			} else {
+				upslogx(LOG_ERR, "Execute command failure: %s '%s'",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+			}
+		}
+
+		upsdebugx(3, "%s: returned status %d", __func__, waitstatus);
+		return;
+	}
+#endif	/* !WIN32 */
+
+	/* Only deal with argv for child or mono-process */
+	/* We will add one argument, plus one NULL sentinel, after argc original entries */
+	argv = (char**)xcalloc(cmdscript_argc + 2, sizeof(char *));
+	/* Copy entries [0]..[argc-1] */
+	memcpy(argv, cmdscript_argv, cmdscript_argc * sizeof(char *));
+	argv[cmdscript_argc] = (char *)cmd;
+	argv[cmdscript_argc + 1] = NULL;
+
+#ifndef WIN32
+	/* child process */
+	execvp(cmdscript_argv[0], argv);
+	/* execvp() only returns on error */
+	upslog_with_errno(LOG_ERR, "execvp(%s) failed", NUT_STRARG(cmdscript_concat));
+	free(argv);
+	exit(EXIT_FAILURE);
+#else	/* WIN32 */
+	/* Use _spawnvp for Windows */
+	err = _spawnvp(_P_WAIT, cmdscript_argv[0], (const char * const *)argv);
+	if (err != -1) {
+		upslogx(LOG_INFO, "Execute command %s \"%s\" OK", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+		upsdebugx(3, "%s: returned status %d", __func__, err);
+	} else {
+		upslog_with_errno(LOG_ERR, "Execute command %s \"%s\" failure", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+	}
+	free(argv);
+#endif	/* WIN32 */
 }
 
 /* Collect the list of strings into a "sep" (e.g. comma) separated string.
@@ -708,19 +763,24 @@ static TYPE_FD open_sock(void)
 	set_close_on_exec(fd);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	fd = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX | /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attributes */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attributes */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -943,25 +1003,30 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 #else /* WIN32 */
 
 	conn_t	*conn, *tmp, *last;
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
 	/* We have detected a connection on the opened pipe. So we start
 	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX |  /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attribute */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attribute */
 
 	if (INVALID_FD(acc)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -1934,7 +1999,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 {
 	/* complain both ways in case we don't have a tty */
 
-	if (!cmdscript) {
+	if (!cmdscript_argc) {
 		printf("CMDSCRIPT must be set before any ATs in the config file!\n");
 		fatalx(EXIT_FAILURE, "CMDSCRIPT must be set before any ATs in the config file!");
 	}
@@ -2035,9 +2100,43 @@ static int conf_arg(size_t numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
-	/* CMDSCRIPT <scriptname> */
+	/* CMDSCRIPT <scriptname> [<arg1> [<arg2>...]] */
 	if (!strcmp(arg[0], "CMDSCRIPT")) {
-		cmdscript = xstrdup(arg[1]);
+		size_t	i, l = 0;
+
+		/* -1: the arg[0] is the configuration token */
+		cmdscript_argc = numargs - 1;
+
+		/* +1: the cmdscript_argv[cmdscript_argc] is the NULL sentinel */
+		free(cmdscript_argv);
+		cmdscript_argv = (char**)xcalloc(cmdscript_argc + 1, sizeof(char *));
+		for (i = 1; i < numargs; i++) {
+			/* +1: either a space follows, or '\0'
+			 * +2: surrounding quotes
+			 */
+			l += strlen(arg[i]) + 3;
+			cmdscript_argv[i - 1] = xstrdup(arg[i]);
+			strcpy(cmdscript_argv[i - 1], arg[i]);
+		}
+		cmdscript_argv[cmdscript_argc] = NULL;
+
+		free(cmdscript_concat);
+		cmdscript_concat = (char*)xcalloc(l + 2, sizeof(char));
+		for (i = 1; i < numargs; i++) {
+			snprintfcat(cmdscript_concat, l + 1, "'%s'%s",
+				arg[i], i == numargs - 1 ? "" : " ");
+		}
+
+		upsdebugx(1, "%s: collected %s with %" PRIuSIZE " tokens: %s",
+			__func__, arg[0], cmdscript_argc, NUT_STRARG(cmdscript_concat));
+
+		if (cmdscript_argc > 0 && strchr(cmdscript_argv[0], ' ')) {
+			/* NOTE: this may also be a path with spaces, more prominent on Windows or MacOS, probably */
+			upslogx(LOG_WARNING, "%s: command '%s' contains spaces, be sure to pass any arguments as separately quoted tokens!",
+				arg[0], cmdscript_argv[0]);
+		}
+
+		/* Handled OK */
 		return 1;
 	}
 
@@ -2167,6 +2266,83 @@ static void checkconf(void)
 	pconf_finish(&ctx);
 }
 
+static void clean_exit(void)
+{
+	ttype_t	*tcurr, *tnext;
+	conn_t	*ccurr, *cnext;
+	size_t	i;
+
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	upsdebugx(1, "%s: starting", __func__);
+
+	/* Free timers */
+	tcurr = thead;
+	while (tcurr) {
+		tnext = tcurr->next;
+
+		free(tcurr->name);
+
+		if (tcurr->upsnames) {
+			for (i = 0; tcurr->upsnames[i]; i++) {
+				free(tcurr->upsnames[i]);
+			}
+			free(tcurr->upsnames);
+		}
+
+		if (tcurr->notifytypes) {
+			for (i = 0; tcurr->notifytypes[i]; i++) {
+				free(tcurr->notifytypes[i]);
+			}
+			free(tcurr->notifytypes);
+		}
+
+		if (tcurr->notifymsgs) {
+			for (i = 0; tcurr->notifymsgs[i]; i++) {
+				free(tcurr->notifymsgs[i]);
+			}
+			free(tcurr->notifymsgs);
+		}
+
+		free(tcurr);
+		tcurr = tnext;
+	}
+	thead = NULL;
+
+	/* Free connections */
+	ccurr = connhead;
+	while (ccurr) {
+		cnext = ccurr->next;
+		pconf_finish(&ccurr->ctx);
+		free(ccurr);
+		ccurr = cnext;
+	}
+	connhead = NULL;
+
+	/* Free strings and arrays */
+	if (cmdscript_argv) {
+		for (i = 0; i < cmdscript_argc; i++) {
+			free(cmdscript_argv[i]);
+		}
+		free(cmdscript_argv);
+		cmdscript_argv = NULL;
+	}
+
+	free(cmdscript_concat);
+	cmdscript_concat = NULL;
+
+	free(pipefn);
+	pipefn = NULL;
+
+	free(lockfn);
+	lockfn = NULL;
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
 
@@ -2186,20 +2362,19 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+	printf("\n%s", suggest_doc_links(arg_progname, "upssched.conf"));
 
 	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
 {
-	int	opt_ret, argn = 0;
+	int	opt_ret;
 
 	/* Here this is a global variable, used also in start_daemon() */
 	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
 	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
-		argn++;
 		switch (opt_ret) {
 			case 'D':
 				nut_debug_level_args++;
@@ -2245,9 +2420,9 @@ int main(int argc, char **argv)
 
 	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
-	upsdebugx(2, "Remaining argn=%d of argc=%d", argn, argc);
-	if (argc > argn + 1 && *argv[argn + 1])
-		notify_msg = argv[argn + 1];
+	upsdebugx(2, "Handled optind=%d CLI tokens of argc=%d", optind - 1, argc);
+	if (argc > optind && *argv[optind])
+		notify_msg = argv[optind];
 
 	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
@@ -2261,20 +2436,19 @@ int main(int argc, char **argv)
 	else
 		upsdebugx(1, "Did not get any NOTIFYMSG from command line");
 
-	/* see if this matches anything in the config file */
+	/* Whenever a process exits, do carefully free any resources it
+	 * has (maybe by parent, from before forking some notifier etc.) */
+	atexit(clean_exit);
+
+	setproctag("cli");
+
+	/* See if this request matches anything in the config file */
 	/* This is actually the processing loop:
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
 	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
 	 */
-	setproctag("cli");
 	checkconf();
 
 	upsdebugx(1, "Exiting upssched (CLI process)");
-
-	/* Flush *our* output before possibly failing in third-party code
-	 * (e.g. SSL libs), so client consumers have a chance to see it */
-	fflush(stdout);
-	fflush(stderr);
-
 	exit(EXIT_SUCCESS);
 }

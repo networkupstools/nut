@@ -15,7 +15,7 @@ dist_noinst_HEADERS = \
     state.h str.h strjson.h timehead.h upsconf.h		\
     nut_bool.h nut_float.h nut_stdint.h nut_platform.h		\
     dmf.h alist.h dmfsnmp.h dmfcore.h				\
-    wincompat.h
+    strcasestr-static.h wincompat.h
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3828 utf-8
+personal_ws-1.1 en 3834 utf-8
 AAC
 AAS
 ABI
@@ -1254,6 +1254,7 @@ SPS
 SRC
 SRVS
 SSD
+SSLBACKEND
 SSLContext
 SSSS
 STARTTLS
@@ -1712,6 +1713,7 @@ authPassword
 authPriv
 authProtocol
 authType
+authconf
 autoboot
 autoconf
 autodetect
@@ -2235,6 +2237,7 @@ formatconfig
 formatstring
 fosshost
 fp
+fprintf
 freebsd
 freedesktop
 freeipmi
@@ -2890,6 +2893,7 @@ numa
 numbatteries
 numlogins
 numq
+nutauth
 nutclient
 nutclientmem
 nutconf
@@ -3229,6 +3233,7 @@ schuko
 scm
 screenshot
 screenshots
+scriptlet
 scriptname
 sd
 sdcmd
@@ -3351,6 +3356,7 @@ spectype
 spellcheck
 spellchecked
 splitaddr
+splitauth
 splitname
 sprintf
 squasher

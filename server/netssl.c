@@ -1107,7 +1107,7 @@ void ssl_init(void)
 
 	if (!ssl_ctx) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_new failed");
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_new failed");
 	}
 
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
@@ -1124,7 +1124,7 @@ void ssl_init(void)
 #  else	/* newer OPENSSL_VERSION_NUMBER */
 	if (SSL_CTX_set_min_proto_version(ssl_ctx, disable_weak_ssl ? TLS1_2_VERSION : TLS1_VERSION) != 1) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_set_min_proto_version(TLS1_VERSION)");
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_set_min_proto_version(TLS1_VERSION)");
 	}
 #  endif	/* OPENSSL_VERSION_NUMBER */
 
@@ -1161,25 +1161,24 @@ void ssl_init(void)
 
 #   else	/* Not SSL_* methods either */
 
-		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet", certfile);
 #   endif
 #  endif	/* ...SET_DEFAULT_PASSWD_CB */
 	}	/* else: CERTIDENT did not pass a password, nothing to check */
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
 	}
 
 	if (SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
 	}
 
 	if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_check_private_key(%s) failed", certfile);
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_check_private_key(%s) failed", certfile);
 	}
 
 	if (certname && certname[0] != '\0') {
@@ -1214,7 +1213,7 @@ void ssl_init(void)
 					if (subject) {
 						OPENSSL_free(subject);
 					}
-					fatalx(EXIT_FAILURE, "Unexpected certificate provided");
+					fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: Unexpected certificate provided");
 				} else {
 					upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", certname);
 				}
@@ -1223,20 +1222,22 @@ void ssl_init(void)
 			}
 		}
 #  else	/* Missing X509 methods wanted above */
-		fatalx(EXIT_FAILURE, "CERTIDENT name verification is not supported in this OpenSSL build (too old)");
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: CERTIDENT name verification is not supported in this OpenSSL build (too old)");
 #  endif	/* Got ways to check CERTIDENT? */
-	}/* else: CERTIDENT did not pass a name, nothing to check */
+	}	/* else: CERTIDENT did not pass a name, nothing to check; note that
+		 * with OpenSSL (unlike NSS somewhat) the CERTFILE is asumed to
+		 * reliably specify (suffices to know) what we want to load */
 
 	upsdebugx(2, "%s: initialized with OpenSSL and certfile='%s'", __func__, certfile);
 
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list failed");
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_set_cipher_list failed");
 	}
 
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	if (certrequest < NETSSL_CERTREQ_NO || certrequest > NETSSL_CERTREQ_REQUIRE) {
-		fatalx(EXIT_FAILURE, "Invalid certificate requirement");
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: Invalid certificate requirement");
 	}
 
 	if (certpath) {
@@ -1248,7 +1249,7 @@ void ssl_init(void)
 			if (SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL) != 1) {
 				ssl_debug();
 				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
-				/* return? fatal? */
+				/* TOTHINK: return? fatal? */
 			} else {
 				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
 			}
@@ -1282,13 +1283,21 @@ void ssl_init(void)
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 # endif
 
+	upsdebugx(2, "%s: initialized with OpenSSL and certpath='%s' / certfile='%s'",
+		__func__, NUT_STRARG(certpath), NUT_STRARG(certfile));
 	ssl_initialized = 1;
 
 # elif defined(WITH_NSS)	/* not WITH_OPENSSL */
 
 	if (!certname || certname[0]==0 ) {
-		upslogx(LOG_ERR, "The SSL certificate name is not specified.");
-		return;
+		/* TOTHINK: This is not for CERTIDENT double-check like above,
+		 * but directly which cert we should load. Maybe we can fall
+		 * back to discovering the only cert with a private key,
+		 * if the NSS DB can be opened below?..
+		 */
+		/* SSL setup was specified, but incompletely.
+		 * This start-up is unexpectedly unsafe => abort. */
+		fatalx(EXIT_FAILURE, "The SSL certificate name is not specified, required with NSS backend.");
 	}
 
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
@@ -1301,16 +1310,26 @@ void ssl_init(void)
 	 * probably NSS key db object allocation too. */
 	status = NSS_Init(certpath);
 	if (status != SECSuccess) {
+		/* NSS DB file error handling is complicated: anything
+		 * unexpected means SEC_ERROR_LEGACY_DATABASE, whether that
+		 * really is an old database, or insufficient permissions,
+		 * or a missing directory we point to... and this mess
+		 * includes the case that we have a set of files with the
+		 * *old* (~2014) NSS library and *NEW* database format in
+		 * the specified directory (cert9.db not cert8.db)!
+		 * Note that more recent libraries (2020's) are okay with
+		 * either of these two formats.
+		 */
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		nss_error("ssl_init / NSS_Init");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 	}
 
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
 		nss_error("ssl_init / NSS_SetDomesticPolicy");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 	}
 
 	/* Default server cache config */
@@ -1318,7 +1337,7 @@ void ssl_init(void)
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL server cache");
 		nss_error("ssl_init / SSL_ConfigServerSessionIDCache");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 	}
 
 	if (!disable_weak_ssl) {
@@ -1326,13 +1345,13 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable SSLv3");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 	} else {
 #  if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 14))
@@ -1340,7 +1359,7 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not get versions supported");
 			nss_error("ssl_init / SSL_VersionRangeGetSupported");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 		range.min = SSL_LIBRARY_VERSION_TLS_1_1;
 #   ifdef SSL_LIBRARY_VERSION_TLS_1_2
@@ -1350,7 +1369,7 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not set versions supported");
 			nss_error("ssl_init / SSL_VersionRangeSetDefault");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 		/* Disable old/weak ciphers */
 		SSL_CipherPrefSetDefault(TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, PR_FALSE);
@@ -1362,13 +1381,13 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not disable SSLv3");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_DISABLE_SSL3)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 #  endif	/* NSS_VMAJOR */
 	}
@@ -1378,8 +1397,7 @@ void ssl_init(void)
 	 || certrequest > NETSSL_CERTREQ_REQUIRE	/* > 2 */
 	) {
 		upslogx(LOG_ERR, "Invalid certificate requirement");
-		return;
-	}
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 
 	if (certrequest == NETSSL_CERTREQ_REQUEST	/* 1 */
 	 || certrequest == NETSSL_CERTREQ_REQUIRE	/* 2 */
@@ -1388,7 +1406,7 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate request");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 	}
 
@@ -1397,30 +1415,32 @@ void ssl_init(void)
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate requirement");
 			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
-			return;
+			fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 		}
 	}
 #  endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
+	/* TOTHINK: if certname is not specified (see also the check above)
+	 * fall back to finding the (only?) cert with a private key? */
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if (cert == NULL) {
 		upslogx(LOG_ERR, "Can not find server certificate");
 		nss_error("ssl_init / PK11_FindCertFromNickname");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 	}
 
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
 	if (privKey == NULL) {
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
 		nss_error("ssl_init / PK11_FindKeyByAnyCert");
-		return;
+		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
 	}
 
 	upsdebugx(2, "%s: initialized with NSS and certpath='%s'", __func__, certpath);
 	ssl_initialized = 1;
 # else /* not (WITH_OPENSSL | WITH_NSS) */
 	/* Looking at ifdefs, we should not get here. But just in case... */
-	upslogx(LOG_ERR, "ssl_init called but no supported SSL backend wasn compiled in");
+	upslogx(LOG_ERR, "ssl_init called but no supported SSL backend was compiled in");
 # endif /* WITH_OPENSSL | WITH_NSS */
 }
 

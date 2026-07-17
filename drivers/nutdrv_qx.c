@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_VERSION	"0.52"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -913,6 +913,8 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	int	ret;
 	size_t	i;
 
+	memset(tmp, 0, sizeof(tmp));
+
 	if (buflen > INT_MAX) {
 		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
 			"reducing buflen to (INT_MAX-1)",
@@ -1640,6 +1642,7 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 	/* Send command */
 
 	/* Remove the CR */
+	memset(command, 0, sizeof(command));
 	snprintf(command, sizeof(command), "%.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	/* Length of the command that will be sent to the UPS can be
@@ -1947,6 +1950,8 @@ static int ablerex_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		int	ret;
 
 		memset(buf, 0, buflen);
+		memset(tmp, 0, sizeof(tmp));
+
 		tmp[0] = 0x05;
 		tmp[1] = 0;
 		tmp[2] = 1 + (char)strcspn(cmd, "\r");

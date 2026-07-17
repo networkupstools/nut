@@ -82,6 +82,8 @@ upsset will only talk to linkman:upsd[8] servers that have been defined
 in your linkman:hosts.conf[5].  If it complains about "Access to that host
 is not authorized", check your hosts.conf first.
 
+SSL access may be further managed by linkman:nutauth.conf[5] file.
+
 SECURITY
 --------
 
@@ -95,7 +97,8 @@ The short explanation is--if you can't lock it down, don't try to run it.
 FILES
 -----
 
-linkman:hosts.conf[5], linkman:upsset.conf[5]
+linkman:hosts.conf[5], linkman:upsset.conf[5],
+linkman:nutauth.conf[5]
 
 SEE ALSO
 --------
