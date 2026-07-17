@@ -110,7 +110,7 @@ endif HAVE_CXX11
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS = upsclient.h
+ include_HEADERS = upsclient.h authconf.h
 if HAVE_CXX11
  include_HEADERS += nutclient.h nutclientmem.h
 else !HAVE_CXX11
@@ -170,7 +170,7 @@ upsstats_cgi_LDADD = $(LDADD_CLIENT) $(top_builddir)/common/libcommonstrjson.la
 # but it needs nut_version.h made before the rest of build,
 # to include it into upsclient.c (without an explicit link,
 # this target is sometimes missed in parallel builds):
-libupsclient_la_SOURCES = upsclient.c upsclient.h
+libupsclient_la_SOURCES = upsclient.c upsclient.h authconf.c authconf.h
 
 # See comments for similar trick in common/Makefile.am for common-nut_version.c
 if BUILDING_IN_TREE
@@ -205,6 +205,7 @@ if WITH_SSL
 endif WITH_SSL
 
 # Below we set API versions of public libraries
+# This includes changes to method signatures and struct content/sizes!
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # Note that changes here may have to be reflected in packaging (the shared
 # object .so names would differ)

@@ -38,9 +38,6 @@ int user_checkaction(const char *un, const char *pw, const char *action);
 
 void user_flush(void);
 
-/* cheat - we don't want the full upsd.h included here */
-void check_perms(const char *fn);
-
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

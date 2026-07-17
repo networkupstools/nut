@@ -43,8 +43,9 @@
 #include "usb-common.h"
 #include "nut_libusb.h"
 #ifdef WIN32
-#include "wincompat.h"
+# include "wincompat.h"
 #endif	/* WIN32 */
+#include "strcasestr-static.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
 #define USB_DRIVER_VERSION	"0.53"
@@ -59,14 +60,6 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
-
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
-/* Only used in this file of all NUT codebase, so not in str.{c,h}
- * where it happens to conflict with netsnmp-provided variant for
- * some of our build products.
- */
-static char *strcasestr(const char *haystack, const char *needle);
-#endif
 
 static void nut_libusb_close(usb_dev_handle *udev);
 
@@ -1014,37 +1007,6 @@ static void nut_libusb_close(usb_dev_handle *udev)
 	/* usb_release_interface(udev, 0); */
 	usb_close(udev);
 }
-
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
-static char *strcasestr(const char *haystack, const char *needle) {
-	/* work around "const char *" and guarantee the original is not
-	 * touched... not efficient but we have few uses for this method */
-	char * dH = NULL, *dN = NULL, *lH = NULL, *lN = NULL, *first = NULL;
-
-	dH = strdup(haystack);
-	if (dH == NULL) goto err;
-	dN = strdup(needle);
-	if (dN == NULL) goto err;
-	lH = strlwr(dH);
-	if (lH == NULL) goto err;
-	lN = strlwr(dN);
-	if (lN == NULL) goto err;
-	first = strstr(lH, lN);
-
-err:
-	if (dH != NULL) free(dH);
-	if (dN != NULL) free(dN);
-	/* Does this implementation of strlwr() change original buffer? */
-	if (lH != dH && lH != NULL) free(lH);
-	if (lN != dN && lN != NULL) free(lN);
-	if (first == NULL) {
-		return NULL;
-	}
-
-	/* Pointer to first char of the needle found in original haystack */
-	return (char *)(haystack + (first - lH));
-}
-#endif
 
 usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_NAME,

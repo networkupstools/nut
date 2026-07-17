@@ -49,6 +49,9 @@ public:
 		NUT_UNUSED_VARIABLE(user);
 		NUT_UNUSED_VARIABLE(passwd);
 	}
+	virtual void authenticate(const AuthConf& ac) override {
+		NUT_UNUSED_VARIABLE(ac);
+	}
 	virtual void logout() override {}
 
 	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;

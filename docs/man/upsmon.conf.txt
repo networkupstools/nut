@@ -623,13 +623,13 @@ Alternatively, with OpenSSL the `CERTPATH` can specify a particular
 *CERTFILE 'certificate file'*::
 
 When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
-you can enter the client certificate file here. No-op in NSS builds
-which use `CERTPATH` for all purposes.
+you can enter the client certificate file here.
+No-op in NSS builds which use `CERTPATH` for all purposes.
 +
 The certificates must be in PEM format and must be sorted starting with
-the subject's certificate (server certificate), followed by intermediate
+the subject's certificate (client certificate), followed by intermediate
 CA certificates (if applicable) and the highest level (root) CA.
-It should end with the server's private key corresponding to the certificate.
+It should end with the client's private key corresponding to the certificate.
 See `docs/security.txt` in NUT sources, or the Security chapter of the NUT
 User manual, for more information on the SSL support in NUT.
 
@@ -659,6 +659,13 @@ the connection must be "secured" (should there be no fallback to plain-text?)
 +
 Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
 Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.
++
+For a data server with non-default port, it should be specified as a
+colon-separated part of 'hostname', e.g.
++
+------
+CERTHOST "localhost:34930" "My nut server" 1 1
+------
 +
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.

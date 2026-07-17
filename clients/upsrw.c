@@ -24,7 +24,6 @@
 #include "nut_platform.h"
 
 #ifndef WIN32
-#include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -54,7 +53,7 @@ struct list_t {
 };
 
 /* For getopt loops; should match usage documented below: */
-static const char	optstring[] = "+Dhls:p:t:u:wVW:";
+static const char	optstring[] = "+Dhls:p:t:u:wVW:A:";
 
 static void help(const char *prog)
 {
@@ -78,6 +77,9 @@ static void help(const char *prog)
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
 		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
 	printf("  -D         - raise debugging level\n");
 	printf("  -h         - display this help text\n");
 	printf("\n");
@@ -232,48 +234,9 @@ static void do_set(const char *varname, const char *newval)
 # pragma GCC diagnostic pop
 #endif
 
-static void do_setvar(const char *varname, char *uin, const char *pass)
+static void do_setvar(const char *varname)
 {
-	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], *ptr;
-	struct passwd	*pw;
-
-	if (uin) {
-		snprintf(user, sizeof(user), "%s", uin);
-	} else {
-		memset(user, '\0', sizeof(user));
-
-		pw = getpwuid(getuid());
-
-		if (pw) {
-			printf("Username (%s): ", pw->pw_name);
-		} else {
-			printf("Username: ");
-		}
-
-		if (fgets(user, sizeof(user), stdin) == NULL) {
-			upsdebug_with_errno(LOG_INFO, "%s", __func__);
-		}
-
-		/* deal with that pesky newline */
-		if (strlen(user) > 1) {
-			user[strlen(user) - 1] = '\0';
-		} else {
-			if (!pw) {
-				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
-			}
-
-			snprintf(user, sizeof(user), "%s", pw->pw_name);
-		}
-	}
-
-	/* leaks - use -p when running in valgrind */
-	if (!pass) {
-		pass = GETPASS("Password: " );
-
-		if (!pass) {
-			fatal_with_errno(EXIT_FAILURE, "getpass failed");
-		}
-	}
+	char	newval[SMALLBUF], temp[SMALLBUF * 2], *ptr;
 
 	/* Check if varname is in VAR=VALUE form */
 	if ((ptr = (char*)strchr(varname, '=')) != NULL) {
@@ -286,31 +249,6 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 			upsdebug_with_errno(LOG_INFO, "%s", __func__);
 		}
 		newval[strlen(newval) - 1] = '\0';
-	}
-
-	snprintf(temp, sizeof(temp), "USERNAME %s\n", user);
-
-	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set username: %s", upscli_strerror(ups));
-	}
-
-	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
-
-		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Set username failed due to an unknown command. You probably need to upgrade upsd.");
-		}
-
-		fatalx(EXIT_FAILURE, "Set username failed: %s", upscli_strerror(ups));
-	}
-
-	snprintf(temp, sizeof(temp), "PASSWORD %s\n", pass);
-
-	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set password: %s", upscli_strerror(ups));
-	}
-
-	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
 
 	/* no upsname means die */
@@ -686,9 +624,11 @@ int main(int argc, char **argv)
 	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	int	opt_ret = 0;
 	uint16_t	port;
+	upscli_authconf_t	*ac_conn = NULL;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsrw");
 	const char	*net_connect_timeout = NULL;
-	char	*password = NULL, *username = NULL, *setvar = NULL;
+	char	*password = NULL, *username = NULL, *setvar = NULL, *nutauth = NULL, str_port[16];
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
 
 	NUT_UNUSED_VARIABLE(upslog_start_tmp);
 	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
@@ -738,42 +678,72 @@ int main(int argc, char **argv)
 		switch (opt_ret)
 		{
 		case 'D': break;	/* See nut_debug_level handled above */
+
+		case 'A':
+			nutauth = optarg;
+			break;
+
 		case 's':
 			setvar = optarg;
 			break;
+
 		case 'l':
 			if (setvar) {
 				upslogx(LOG_WARNING, "Listing mode requested, overriding setvar specified earlier!");
 				setvar = NULL;
 			}
 			break;
+
 		case 'p':
 			password = optarg;
 			break;
+
 		case 't':
 			if (!str_to_uint(optarg, &timeout, 10))
 				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
 			break;
+
 		case 'u':
 			username = optarg;
 			break;
+
 		case 'w':
 			tracking_enabled = 1;
 			break;
+
 		case 'V':
 			/* just show the version and optional
 			 * CONFIG_FLAGS banner if available */
 			print_banner_once(prog, 1);
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
+
 		case 'W':
 			net_connect_timeout = optarg;
 			break;
+
 		case 'h':
 		default:
 			help(prog);
 			exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				upscli_read_authconf_file(NULL, 1);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				upscli_read_authconf_file(nutauth, 1);
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -799,15 +769,34 @@ int main(int argc, char **argv)
 	}
 	setproctag(argv[0]);	/* ups[@host[:port]] */
 
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+	}
+
 	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
 
-	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(ups, hostname, port, flags_ssl) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
 	if (setvar) {
 		/* setting a variable */
-		do_setvar(setvar, username, password);
+		if (ac_conn && ac_conn->user && !username && ac_conn->pass && !password) {
+			upsdebugx(1, "Using authentication from configuration file");
+			if (upscli_authenticate_authconf(ups, ac_conn)) {
+				fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
+			}
+		} else {
+			upsdebugx(1, "Using authentication from CLI or interactive session");
+			if (upscli_authenticate(ups, username, password, 1, 1) < 0) {
+				fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
+			}
+		}
+
+		/* VAR (interactive) or VAR=VAL */
+		do_setvar(setvar);
 	} else {
 		/* if not, get the list of supported read/write variables */
 		print_rwlist();

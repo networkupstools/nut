@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -159,23 +159,40 @@ void upsdrv_initinfo(void)
 			}
 			/* Connect to the target */
 			ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
-			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-			{
-				if(repeater_disable_strict_start == 1)
+			{	/* scoping */
+				upscli_authconf_t	*ac_conn = NULL;
+				int	flags_ssl = UPSCLI_CONN_TRYSSL;
+				char	str_port[16];
+
+				ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+				if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+					upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+					upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+				}
+				if (upscli_connect(ups, hostname, port, flags_ssl) < 0)
 				{
-					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+					if (repeater_disable_strict_start == 1)
+					{
+						upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+					}
+					else
+					{
+						fatalx(EXIT_FAILURE, "Error: %s. "
+							"Any errors encountered starting the repeater mode result in driver termination, "
+							"perhaps you want to set the 'repeater_disable_strict_start' option?",
+							upscli_strerror(ups));
+					}
 				}
 				else
 				{
-					fatalx(EXIT_FAILURE, "Error: %s. "
-					"Any errors encountered starting the repeater mode result in driver termination, "
-					"perhaps you want to set the 'repeater_disable_strict_start' option?"
-					, upscli_strerror(ups));
+					upsdebugx(1, "Connected to %s@%s", client_upsname, hostname);
 				}
-			}
-			else
-			{
-				upsdebugx(1, "Connected to %s@%s", client_upsname, hostname);
+				if (ac_conn && ac_conn->user && ac_conn->pass) {
+					upsdebugx(1, "%s: Using authentication from configuration file", __func__);
+					if (upscli_authenticate_authconf(ups, ac_conn) < 0) {
+						fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+					}
+				}
 			}
 			if (upsclient_update_vars() < 0)
 			{
@@ -192,9 +209,9 @@ void upsdrv_initinfo(void)
 				else
 				{
 					fatalx(EXIT_FAILURE, "Error: %s. "
-					"Any errors encountered starting the repeater mode result in driver termination, "
-					"perhaps you want to set the 'repeater_disable_strict_start' option?"
-					, upscli_strerror(ups));
+						"Any errors encountered starting the repeater mode result in driver termination, "
+						"perhaps you want to set the 'repeater_disable_strict_start' option?",
+						upscli_strerror(ups));
 				}
 			}
 			/* FIXME: commands and settable variable! */
@@ -455,6 +472,7 @@ void upsdrv_tweak_prognames(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
+	addvar(VAR_VALUE,	"authconf", "Select authentication config for repeater mode (default, none, or path to authconf file)");
 	addvar(VAR_FLAG,	"repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
@@ -481,9 +499,30 @@ void upsdrv_initups(void)
 	||   (val && !strcmp(val, "repeater"))
 	/*||   (val && !strcmp(val, "meta")) */
 	) {
+		const char	*authconf = dstate_getinfo("driver.parameter.authconf");
 		upsdebugx(1, "Repeater mode");
 		mode = MODE_REPEATER;
 		dstate_setinfo("driver.parameter.mode", "repeater");
+
+		/* Handle authconf option in repeater mode */
+		if (authconf) {
+			if (!strcmp(authconf, "none")) {
+				upsdebugx(1, "%s: Using authconf='%s': skipping auth config", __func__, authconf);
+			} else {
+				if (!strcmp(authconf, "default")) {
+					upsdebugx(1, "%s: Using authconf='%s': require a user or system provided file", __func__, authconf);
+					if (upscli_read_authconf_file(NULL, 1) < 0)
+						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
+				} else {
+					upsdebugx(1, "%s: Using authconf='%s': require this file", __func__, authconf);
+					if (upscli_read_authconf_file(authconf, 1) < 0)
+						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
+				}
+			}
+		} else {
+			upsdebugx(1, "%s: Using best-effort auth config detection", __func__);
+			upscli_read_authconf_file(NULL, 0);
+		}
 		/* FIXME: if there is at least one more => MODE_META... */
 	}
 	else

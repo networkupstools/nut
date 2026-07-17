@@ -58,6 +58,11 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+ - `dummy-ups` driver updates:
+   * Added `authconf` driver parameter for repeater mode to control
+     authentication configuration discovery. It accepts `default`, `none`,
+     or a specific authconf file path. [issue #3329]
+
  - `nutdrv_qx` driver updates:
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
@@ -174,6 +179,8 @@ https://github.com/networkupstools/nut/milestone/13
       allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
     * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
       report the ability to check `CERTIDENT` information. [#3331]
+    * Introduced support for "authconf" files to store and convey NUT client
+      authentication details. [issue #3329]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
@@ -183,6 +190,29 @@ https://github.com/networkupstools/nut/milestone/13
  - `upsimage.cgi` client updates:
     * Adjust scaling for small (single-digit) value ranges to avoid division
       by zero and not rendering anything. [issue #3469]
+
+ - `upsc`, `upscmd`, `upsrw` command-line client updates:
+    * Enabled support for `nutauth.conf` files to provide credentials and/or
+      SSL settings in the client which previously only did best-effort attempts
+      at secure communications without an individual certificate, and only
+      anonymously for reading. The new `-A filename` option defaults to trying
+      to use a `nutauth.conf` file (if found in one of the default locations)
+      but not failing if one is not usable; specific values can require use of
+      such a file (`default`) or to not even try reading one (`none`).
+      [issues #3329, #3411]
+
+ - `upslog` client/tool updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations or via `-A` option, as described above. Since this client
+      can establish multiple connections, keep in mind that currently it
+      can only identify itself with some one (first seen) client certificate,
+      if `CERTIDENT` settings are used. Multiple `CERTHOST` directives for
+      specially trusted servers can be used. [#3329]
+
+ - `upsstats`, `upsset`, `upsimage` CGI client updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations described above (no way to choose the location, other than
+      by web-server environment variables for CGI calls). [#3329]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
@@ -229,6 +259,9 @@ https://github.com/networkupstools/nut/milestone/13
       much later (tell the sysadmin to increase `ulimit` or set up a more
       conservative `MAXCONN`). If there is a separate soft and hard limit,
       and `MAXCONN` exceeds the soft limit, try to raise the bar. [issue #3365]
+    * If SSL configuration was provided, but the server failed to apply some
+      aspect of that, it should now abort with an explanation (and not proceed
+      with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `ci_build.sh` settings and respective CI workflow settings
@@ -237,7 +270,9 @@ https://github.com/networkupstools/nut/milestone/13
       files. Both can be enabled by `export DO_USE_NUTCI_CACHE=yes` and would
       store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
       `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
-      [issues #3108, #3390, #1711, PR #3109]
+      Directory names are based on hashes of strings that identify the content,
+      which are size-limited to some 8 characters.
+      [issues #3108, #3390, #1711, #3526, PR #3109]
     * Rearranged the GHA job to prepare Dist and Docs Tarballs. [PR #3460]
     * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS

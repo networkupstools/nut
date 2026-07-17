@@ -587,43 +587,9 @@ static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
-	if (!ups->un) {
-		upslogx(LOG_ERR, "UPS [%s]: no username defined!", ups->sys);
-		return 0;
-	}
-
-	snprintf(buf, sizeof(buf), "USERNAME %s\n", ups->un);
-	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
-		upslogx(LOG_ERR, "Can't set username on [%s]: %s",
+	if (upscli_authenticate(&ups->conn, ups->un, ups->pw, 0, 0) < 0) {
+		upslogx(LOG_ERR, "Authentication on [%s] failed: %s",
 			ups->sys, upscli_strerror(&ups->conn));
-			return 0;
-	}
-
-	if (upscli_readline(&ups->conn, buf, sizeof(buf)) < 0) {
-		upslogx(LOG_ERR, "Set username on [%s] failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-		return 0;
-	}
-
-	/* authenticate first */
-	snprintf(buf, sizeof(buf), "PASSWORD %s\n", ups->pw);
-
-	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
-		upslogx(LOG_ERR, "Can't set password on [%s]: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-			return 0;
-	}
-
-	if (upscli_readline(&ups->conn, buf, sizeof(buf)) < 0) {
-		upslogx(LOG_ERR, "Set password on [%s] failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-		return 0;
-	}
-
-	/* catch insanity from the server - not ERR and not OK either */
-	if (strncmp(buf, "OK", 2) != 0) {
-		upslogx(LOG_ERR, "Set password on [%s] failed - got [%s]",
-			ups->sys, buf);
 		return 0;
 	}
 

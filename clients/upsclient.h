@@ -69,6 +69,7 @@ extern "C" {
 #define UPSCLI_NETBUF_LEN	512	/* network i/o buffer */
 
 #include "parseconf.h"
+#include "authconf.h"
 
 #ifdef WITH_OPENSSL
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
@@ -99,7 +100,6 @@ typedef struct {
 
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
-	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PRFileDesc	*ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
@@ -109,6 +109,14 @@ typedef struct {
 	char	readbuf[64];
 	size_t	readlen;
 	size_t	readidx;
+
+	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
+	 * same for different builds! */
+#ifdef WITH_OPENSSL
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
+#else
+	void	*extra_reserved;
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 }	UPSCONN_t;
 
@@ -152,13 +160,21 @@ struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
  * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
+int upscli_init_authconf(upscli_authconf_t *ac);
 int upscli_cleanup(void);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
 int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
 
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl);
+/* hostname may be a host:port */
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
+
+/* hostname may be a host:port; if certname is NULL, all list items are iterated */
+void upscli_free_host_cert(const char* hostname, const char* certname);
+void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname);
+void upscli_free_host_cert_list(void);
 
 /* --- functions that only use the new names --- */
 
@@ -194,6 +210,40 @@ int upscli_upserror(UPSCONN_t *ups);
  *  and check it against given expectations. */
 int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re);
 
+/** Common method to supply USERNAME and PASSWORD during the server dialog,
+ *  whether pre-defined (CLI, authconf) or optionally queried interactively,
+ *  for access to non-anonymous commands, variable settings, or data reads.
+ *  Note that per NUT protocol, such authentication is only expected
+ *  at most once per connection.
+ *
+ *  Note this is separate from (but a prerequisite of) the LOGIN operation
+ *  which allows a client like upsmon to gain a special role for a specific
+ *  device, and perhaps further become a PRIMARY monitoring client for it.
+ *
+ * \param ups connection state
+ * \param username if NULL, we can optionally detect the username from the OS and query/confirm interactively
+ * \param password if NULL, we can optionally query for the password interactively
+ * \param check_os_user if 1, and username is NULL, try to get OS user name
+ * \param ask_password if 1, and password is NULL, try to ask for it on stdin
+ *
+ * \return 0 on success, -1 on argument error (failed to get fallback username
+ *         and/or password), -2 on protocol error (failed when trying to use
+ *         those values); check upscli_upserror() for details
+ */
+int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
+	int check_os_user, int ask_password);
+
+/** Equivalent (wrapper) for upscli_authenticate() with upscli_authconf_t
+ *  which should convey definite "user" and "pass" field values
+ *  (no interactive fallbacks here).
+ *
+ * \param ups connection state
+ * \param ac authentication configuration (user and pass fields are used)
+ *
+ * \return 0 on success, or -1 on error
+ */
+int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac);
+
 /* returns 1 if SSL mode is active for this connection */
 int upscli_ssl(UPSCONN_t *ups);
 
@@ -215,14 +265,16 @@ int upscli_ssl_caps(void);
 const char *upscli_ssl_caps_descr(void);
 void upscli_report_build_details(void);
 
-/* Assign default upscli_connect() from string; return 0 if OK, or
+/** Assign default upscli_connect() timeout from string (value
+ * in seconds, may be a fractional number); return 0 if OK, or
  * return -1 if parsing failed and current value was kept  */
 int upscli_set_default_connect_timeout(const char *secs);
-/* If ptv!=NULL, populate it with a copy of last assigned internal timeout */
+/** If ptv!=NULL, populate it with a copy of last assigned internal timeout */
 void upscli_get_default_connect_timeout(struct timeval *ptv);
-/* Initialize default upscli_connect() timeout from a number of sources:
+/** Initialize default upscli_connect() timeout from a number of sources:
  * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
  * or specified strings (may be NULL) most-preferred first.
+ * Non-NULL values are in seconds, may be fractional.
  * Returns 0 if any provided value was valid and applied,
  * or if none were provided so the built-in default was applied;
  * returns -1 if all provided values were not valid (so the built-in
@@ -293,6 +345,9 @@ int upscli_init_default_connect_timeout(const char *cli_secs, const char *config
 #define UPSCLI_CONN_INET		0x0004	/* IPv4 only */
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
+
+/** Update tryssl/reqssl/certverif bits according to authconf */
+int upscli_authconf_update_conn_flags(const upscli_authconf_t *ac, int *flags);
 
 /******************************************************************************
  * String methods for space-separated token lists, used originally in dstate  *

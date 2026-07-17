@@ -72,6 +72,7 @@
 import socket
 import time
 import re
+import os
 
 ssl_available = False
 try:
@@ -111,12 +112,411 @@ class TrackingID:
     def isValid(self):
         return self.__id is not None and self.__id != ""
 
+class AuthConf:
+    """ Authentication configuration for a NUT client. """
+    __authconf_list = []
+    __global_defaults = None
+    __debug = False
+
+    @staticmethod
+    def getAuthConfList():
+        """ Get the one global list of all parsed authentication configurations """
+        return AuthConf.__authconf_list
+
+    @staticmethod
+    def freeAuthConfList():
+        """ Clear the global list of authentication configurations """
+        AuthConf.__authconf_list = []
+        AuthConf.__global_defaults = None
+
+    def __init__(self, section=""):
+        self.section = section
+        ''' `@host:port` or `user@host:port`, or None for global; note that host may be an IPv6 address enclosed in brackets '''
+
+        self.user = None
+        self.password = None
+
+        self.certpath = None
+        ''' Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes '''
+
+        self.certfile = None
+        ''' (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key) '''
+
+        self.certident = None
+        ''' Client certificate identity (nickname, alias) '''
+
+        self.certpasswd = None
+        ''' Password for key/cert storage '''
+
+        self.ssl_backend = None
+        ''' "openssl"/"nss" '''
+
+        self.certhost = None
+        ''' Expected certificate subject (common name) of that server's certificate '''
+
+        self.certverify = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
+
+        self.forcessl = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
+
+    def __str__(self):
+        sb = []
+        for key in self.__dict__:
+            if key == "section": continue
+            sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
+
+        return ("PyNUT.AuthConf[%s]: " % ("<null>" if self.section is None else self.section)) + (', '.join(sb))
+
+    def __repr__(self):
+        return self.__str__()
+
+    @staticmethod
+    def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
+        """ Read the authentication configuration file (usually nutauth.conf) """
+        if filename is None:
+            # Matches C implementation logic for default path
+            s = os.environ.get("NUT_AUTHCONF_FILE")
+            if s and os.path.exists(s):
+                filename = s
+            else:
+                s = os.environ.get("NUT_AUTHCONF_PATH")
+                if s and os.path.exists(os.path.join(s, "nutauth.conf")):
+                    filename = os.path.join(s, "nutauth.conf")
+                else:
+                    s = os.environ.get("HOME")
+                    if s:
+                        p = os.path.join(s, ".config", "nut", "nutauth.conf")
+                        if os.path.exists(p):
+                            filename = p
+                        else:
+                            p = os.path.join(s, ".nutauth.conf")
+                            if os.path.exists(p):
+                                filename = p
+
+            if filename is None:
+                filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
+
+        if not os.path.exists(filename):
+            if fatal_errors:
+                raise PyNUTError("Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename)))
+            return AuthConf.__authconf_list
+
+        current_ac = AuthConf.__global_defaults if global_scope else None
+
+        try:
+            if AuthConf.__debug:
+                print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
+            with open(filename, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    if line.startswith('[') and line.endswith(']'):
+                        sectname = line[1:-1]
+
+                        if AuthConf.__debug:
+                            if current_ac is None:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]" % (sectname) )
+                            else:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
+
+                        if sectname in ("_global_defaults", "", "*"):
+                            if AuthConf.__global_defaults is None:
+                                AuthConf.__global_defaults = AuthConf("")
+                                AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                            current_ac = AuthConf.__global_defaults
+                        else:
+                            # Check if section already exists
+                            current_ac = None
+                            for ac in AuthConf.__authconf_list:
+                                ac_sect = ac.section
+                                if ac_sect == sectname:
+                                    current_ac = ac
+                                    break
+                            if current_ac is None:
+                                current_ac = AuthConf(sectname)
+                                AuthConf.__authconf_list.append(current_ac)
+                        continue
+
+                    # INCLUDE support
+                    m = re.match(r'^(INCLUDE(?:_REQUIRED)?)\s+(.*)$', line, re.I)
+                    if m:
+                        inc_type = m.group(1).upper()
+                        inc_file = m.group(2).strip()
+                        if (inc_file.startswith('"') and inc_file.endswith('"')) or \
+                           (inc_file.startswith("'") and inc_file.endswith("'")):
+                            inc_file = inc_file[1:-1]
+
+                        is_required = (inc_type == "INCLUDE_REQUIRED")
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
+                        AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
+                        continue
+
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        keyUC = key.strip().upper()
+                        value = value.strip()
+
+                        # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
+                        # Remove quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+
+                        if current_ac is None:
+                            if global_scope:
+                                if AuthConf.__global_defaults is None:
+                                    AuthConf.__global_defaults = AuthConf("")
+                                    AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                                    if AuthConf.__debug:
+                                        print( "[DEBUG] readAuthConfFile(): starting [] (global defaults) section handling" )
+
+                                current_ac = AuthConf.__global_defaults
+                            else:
+                                # We are parsing an INCLUDE'd file but were not
+                                # in global scope when that directive was seen
+                                continue
+
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
+                                current_ac.section, str(key), str(value), str(keyUC)
+                            ))
+
+                        if keyUC == 'USER' or keyUC == 'USERNAME':
+                            if current_ac.user is None or current_ac.user == "":
+                                current_ac.user = value
+                        elif keyUC == 'PASS' or keyUC == 'PASSWORD':
+                            current_ac.password = value
+                        elif key == 'CERTPATH':
+                            current_ac.certpath = value
+                        elif key == 'CERTFILE':
+                            current_ac.certfile = value
+                        elif key == 'CERTIDENT_NAME':
+                            current_ac.certident = value
+                        elif key == 'CERTIDENT_PASS':
+                            current_ac.certpasswd = value
+                        elif key == 'SSLBACKEND':
+                            current_ac.ssl_backend = value
+                        elif key == 'CERTHOST':
+                            current_ac.certhost = value
+                        elif key == 'CERTVERIFY':
+                            current_ac.certverify = 1 if value.lower() in ['on', 'yes', '1'] else 0
+                        elif key == 'FORCESSL':
+                            current_ac.forcessl = 1 if value.lower() in ['on', 'yes', '1'] else 0
+                        else:
+                            print( "[WARNING] Unsupported keyword in NUT auth configuration file: '%s'" % key )
+        except Exception as e:
+            msgErr = "Error reading '%s': %s" % (filename, str(e))
+            if AuthConf.__debug:
+                print( "[DEBUG] readAuthConfFile(): %s" % (msgErr) )
+            if fatal_errors:
+                raise PyNUTError(msgErr)
+
+        return AuthConf.__authconf_list
+
+    def merge(self, source):
+        """ Merge contents of another configuration item into this one. """
+        if source is None:
+            return
+
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merging {%s} into {%s}" % (str(source), str(self)))
+
+        sect = self.section
+
+        if '@' in sect and sect.find('@') > 0:
+            self.user = sect.split('@')[0]
+        else:
+            if self.user is None and source.user is not None:
+                self.user = source.user
+
+        if self.password is None and source.password is not None:
+            self.password = source.password
+        if self.certpath is None and source.certpath is not None:
+            self.certpath = source.certpath
+        if self.certfile is None and source.certfile is not None:
+            self.certfile = source.certfile
+        if self.certident is None and source.certident is not None:
+            self.certident = source.certident
+        if self.certpasswd is None and source.certpasswd is not None:
+            self.certpasswd = source.certpasswd
+        if self.ssl_backend is None and source.ssl_backend is not None:
+            self.ssl_backend = source.ssl_backend
+        if self.certhost is None and source.certhost is not None:
+            self.certhost = source.certhost
+        if self.certverify == -1 and source.certverify != -1:
+            self.certverify = source.certverify
+        if self.forcessl == -1 and source.forcessl != -1:
+            self.forcessl = source.forcessl
+
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merge result: {%s}" % (str(self)))
+
+    @staticmethod
+    def getAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string, and fill in
+            the missing points from higher levels (exact match => host defaults => global).
+        """
+        if auth_configs is None:
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
+
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = "[%s]" % host_part
+
+        target_user_host_port = ""
+        if user: target_user_host_port += "%s@" % user
+        target_user_host_port += host_part
+        if norm_port: target_user_host_port += ":%s" % str(norm_port)
+
+        target_host_port = "@%s" % host_part
+        if norm_port: target_host_port += ":%s" % str(norm_port)
+
+        res = AuthConf(target_user_host_port)
+
+        retval_user = None
+        retval_host = None
+
+        if AuthConf.__debug:
+            print ("[DEBUG] getAuthConf(): looking for user [%s], host [%s]=>[%s], port [%s]" % (
+                str(user), str(host), str(host_part), str(port)
+            ))
+
+        for ac in auth_configs:
+            sect = ac.section
+
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): Processing section: [%s]" % (sect))
+
+            if sect == target_user_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_user looking for target_user_host_port [%s]" % (target_user_host_port))
+                retval_user = ac
+            elif sect == target_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_host looking for target_host_port [%s]" % (target_host_port))
+                retval_host = ac
+
+        if retval_user:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_user into the result")
+            res.merge(retval_user)
+
+        if retval_host:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_host into the result")
+            res.merge(retval_host)
+
+        if AuthConf.__global_defaults:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge global_defaults into the result")
+            res.merge(AuthConf.__global_defaults)
+
+        # Final enforcement of user if requested
+        if user:
+            res.user = user
+
+        return res
+
+    @staticmethod
+    def findAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string """
+        if auth_configs is None:
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
+
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = "[%s]" % host_part
+
+        # Try to match [user@host:port], then [host:port], then [host], then [*]
+        # This is a simplified version of the C logic
+        for ac in auth_configs:
+            section = ac.section
+
+            # 1. Exact match user@host:port
+            target = ""
+            if user: target += "%s@" % user
+            target += host_part
+            if norm_port: target += ":%s" % str(norm_port)
+
+            if section == target:
+                return ac
+
+            # 2. Match host:port
+            if not user and section == ("%s:%s" % (host_part, str(norm_port))):
+                return ac
+
+            # 3. Match host
+            if not user and not norm_port and section == host_part:
+                return ac
+
+        return AuthConf.__global_defaults
+
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
 
 
 class PyNUTClient :
     """ Abstraction class to access NUT (Network UPS Tools) server """
+
+    @classmethod
+    def from_authconf(cls, authconf, **kwargs):
+        """ Create a PyNUTClient from an AuthConf object """
+        # Extract host and port from authconf.section if possible
+        host = "127.0.0.1"
+        port = 3493
+
+        # Simple split, could be more robust
+        section = authconf.section
+
+        # Handle user@host:port
+        if '@' in section:
+            user_part, addr_part = section.split('@', 1)
+        else:
+            addr_part = section
+
+        if addr_part:
+            if addr_part.startswith('['):
+                close_bracket = addr_part.find(']')
+                if close_bracket != -1:
+                    host = addr_part[1:close_bracket]
+                    if len(addr_part) > close_bracket + 1 and addr_part[close_bracket+1] == ':':
+                        try:
+                            port = int(addr_part[close_bracket+2:])
+                        except ValueError:
+                            pass
+                    else:
+                        pass # port remains default
+                else:
+                    host = addr_part # Should not happen in well-formed authconf
+            elif ':' in addr_part:
+                host, port_str = addr_part.split(':', 1)
+                try:
+                    port = int(port_str)
+                except ValueError:
+                    pass
+            else:
+                host = addr_part
+
+        return cls(host=host, port=port, login=authconf.user, password=authconf.password,
+                   ca_file=authconf.certpath if authconf.certpath and os.path.isfile(authconf.certpath) else authconf.certfile,
+                   ca_path=authconf.certpath if authconf.certpath and os.path.isdir(authconf.certpath) else None,
+                   cert_file=authconf.certfile, cert_ident=authconf.certident, key_pass=authconf.certpasswd,
+                   cert_verify=(authconf.certverify == 1) if authconf.certverify != -1 else None,
+                   use_ssl=(authconf.forcessl == 1), force_ssl=(authconf.forcessl == 1),
+                   **kwargs)
 
     __debug       = None   # Set class to debug mode (prints everything useful for debugging...)
     __host        = None
@@ -138,7 +538,8 @@ class PyNUTClient :
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False,
+                  connect_now=True, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
                   cert_file=None, key_file=None, key_pass=None, force_ssl=False, cert_ident=None, certhost=None ) :
         """ Class initialization method
@@ -148,15 +549,16 @@ port        : Port where NUT listens for connections (default to 3493)
 login       : Login used to connect to NUT server (default to None for no authentication)
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
+connect_now : Boolean, connect to NUT server immediately and apply "tracking" setting (default to True)
 timeout     : Timeout used to wait for network response
-tracking    : Boolean or 'ON'/'OFF', try to enable TRACKING support right away
+tracking    : Boolean or 'ON'/'OFF', if we connect and try to enable TRACKING support right away (remembered for subsequent connect() call if not connecting now)
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
 ca_file     : Path to CA certificate file (PEM format)
 ca_path     : Path to directory with CA certificates (PEM format)
 cert_file   : Path to client certificate file (PEM format)
-key_file    : Path to client private key file (PEM format)
+key_file    : Path to client private key file (PEM format), if separate from cert_file
 key_pass    : Password for client private key file (default to None)
 force_ssl   : Boolean, if True, the connection must be secure (default to False)
 cert_ident  : Optional string, expected Common Name (CN) or Subject Alternative Name (SAN) of the *loaded client certificate*
@@ -171,6 +573,13 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
             print( "[DEBUG]  -> Host  = %s (port %s, timeout %s)" % ( host, port, timeout) )
             print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
             print( "[DEBUG]  -> SSL   = %s (force: %s, verify: %s)" % (use_ssl, force_ssl, cert_verify) )
+            if use_ssl or force_ssl or cert_verify:
+                print( "[DEBUG]  -> SSL -> ca_file     = %s" % (ca_file) )
+                print( "[DEBUG]  -> SSL -> ca_path     = %s" % (ca_path) )
+                print( "[DEBUG]  -> SSL -> cert_file   = %s" % (cert_file) )
+                print( "[DEBUG]  -> SSL -> key_file    = %s" % (key_file) )
+                print( "[DEBUG]  -> SSL -> cert_ident  = %s" % (cert_ident) )
+                print( "[DEBUG]  -> SSL -> certhost    = %s" % (certhost) )
 
         self.__host        = host
         self.__port        = port
@@ -216,7 +625,17 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if self.__debug:
                     print( "[DEBUG] Creating SSL context" )
                 # Create a default context and apply parameters
-                self.__ssl_context = ssl.create_default_context(cafile=ca_file, capath=ca_path)
+
+                # If cafile is a directory, it should be passed as capath
+                eff_cafile = ca_file
+                eff_capath = ca_path
+                if ca_file and os.path.isdir(ca_file):
+                    if not eff_capath:
+                        eff_capath = ca_file
+                    eff_cafile = None
+
+                self.__ssl_context = ssl.create_default_context(cafile=eff_cafile, capath=eff_capath)
+
                 if cert_verify is not None:
                     if not cert_verify:
                         # Must be set first, else we get
@@ -281,9 +700,13 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
                 if force_ssl:
                     raise PyNUTError( "SSL required but 'ssl' module not available" )
 
-        self.__connect()
+        self.__tracking_wanted = tracking
+        self.__tracking = None
+        ''' Actual tracking state applied over protocol (maybe) '''
 
-        self.__tracking = self.SetTrackingMode(tracking)
+        if connect_now:
+            # Sets self.__tracking if explicit mode is wanted
+            self.__connect()
 
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
@@ -398,6 +821,9 @@ if something goes wrong.
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        # NOTE: no-op if "None"
+        self.__tracking = self.SetTrackingMode(self.__tracking_wanted)
 
     def SetTrackingMode( self, value="" ) :
         """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
