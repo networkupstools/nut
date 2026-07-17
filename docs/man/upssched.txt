@@ -98,9 +98,16 @@ EARLY SHUTDOWNS
 ---------------
 
 To shut down the system early, define a timer that starts due to an ONBATT
-condition.  When it triggers, make your CMDSCRIPT call your shutdown
-routine.  It should finish by calling `upsmon -c fsd` so that upsmon gets
-to shut down the slaves in a controlled manner.
+condition.  When it triggers, make your `CMDSCRIPT` call your shutdown
+routine, especially if you have to prioritize something to stop first,
+or have subsystems that can take longer to gracefully stop than the normal
+OS shutdown patience allows (some systems might `kill` remaining processes
+after a hard-coded timeout).
+
+Your `CMDSCRIPT` should finish by calling `upsmon -c fsd`, so that your
+primary instance of linkman:upsmon[8] gets to shut down the secondary
+systems in a controlled manner (note the primary instance would also run
+its local definition of `SHUTDOWNCMD` in the end).
 
 Be sure you cancel the timer if power returns (ONLINE).
 

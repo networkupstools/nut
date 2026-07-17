@@ -2266,7 +2266,11 @@ generatecfg_upsmon_trivial() {
 
         NOTIFYTGT=""
         if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
-            echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
+            (echo "#!/bin/sh" ; echo "TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug \"\$@\"") > "$NUT_CONFPATH/upsmon-notify.sh" \
+            && chmod +x "$NUT_CONFPATH/upsmon-notify.sh" \
+            || exit
+
+            echo "NOTIFYCMD \"$NUT_CONFPATH/upsmon-notify.sh\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
 
             # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
             # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
