@@ -763,19 +763,24 @@ static TYPE_FD open_sock(void)
 	set_close_on_exec(fd);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	fd = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX | /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attributes */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attributes */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -998,25 +1003,30 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 #else /* WIN32 */
 
 	conn_t	*conn, *tmp, *last;
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
 	/* We have detected a connection on the opened pipe. So we start
 	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX |  /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attribute */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attribute */
 
 	if (INVALID_FD(acc)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -2352,20 +2362,19 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+	printf("\n%s", suggest_doc_links(arg_progname, "upssched.conf"));
 
 	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
 {
-	int	opt_ret, argn = 0;
+	int	opt_ret;
 
 	/* Here this is a global variable, used also in start_daemon() */
 	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
 	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
-		argn++;
 		switch (opt_ret) {
 			case 'D':
 				nut_debug_level_args++;
@@ -2411,9 +2420,9 @@ int main(int argc, char **argv)
 
 	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
-	upsdebugx(2, "Remaining argn=%d of argc=%d", argn, argc);
-	if (argc > argn + 1 && *argv[argn + 1])
-		notify_msg = argv[argn + 1];
+	upsdebugx(2, "Handled optind=%d CLI tokens of argc=%d", optind - 1, argc);
+	if (argc > optind && *argv[optind])
+		notify_msg = argv[optind];
 
 	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");

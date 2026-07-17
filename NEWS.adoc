@@ -133,6 +133,7 @@ https://github.com/networkupstools/nut/milestone/13
       `connect()` to ensure a timeout if something does not respond. [PR #3456]
     * Windows driver state named pipes now use explicit security attributes
       instead of relying on default settings from the launch context. [PR #3479]
+    * Likewise for named pipes in other NUT daemons and `upssched`. [PR #3527]
     * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
       to fix per-close `libusb_exit()` deadlock, and escalate a persistent
       `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
@@ -206,6 +207,10 @@ https://github.com/networkupstools/nut/milestone/13
       is specially handled (data re-initialization), whether due to sleep
       and wake-up, or NTP/RTC clock changes during boot, or severe delays
       on a stressed system (to name a few practical cases). [issue #3405]
+
+ - `upssched` client/tool updates:
+    * Fixed handling of `NOTIFYMSG` from command line if other arguments are
+      present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
