@@ -5,7 +5,7 @@
 
         Author: Emilien Kia <emilien.kia@gmail.com>
 
-    Copyright (C) 2024-2025 NUT Community
+    Copyright (C) 2024-2026 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -1362,6 +1362,8 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_SUSPEND_STARTING;
 	else if(str=="SUSPEND_FINISHED")
 		return NOTIFY_SUSPEND_FINISHED;
+	else if(str=="SUSPEND_TIMEJUMP_UNEXPECTED")
+		return NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED;
 	else
 		return NOTIFY_TYPE_MAX;
 }

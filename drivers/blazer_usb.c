@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -150,6 +150,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	int	ret;
 	size_t	i;
 
+	memset(tmp, 0, sizeof(tmp));
+
 	for (i = 0; i < 8; i++) {
 
 		/* Read data in 8-byte chunks */
@@ -234,6 +236,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	int	ret, len;
 	size_t	i;
 
+	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
 	for (i = 0; i < strlen(tmp); i += (size_t)ret) {

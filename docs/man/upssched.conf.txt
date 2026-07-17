@@ -42,10 +42,15 @@ Example:
 
 	DEBUG_MIN 6
 
-*CMDSCRIPT* 'scriptname'::
+*CMDSCRIPT* 'scriptname' ['arg1' 'arg2' ...]::
 Required.  This must be above any AT lines.  This script is used to
 invoke commands when your timers are triggered.  It receives a single
-argument which is the name of the timer that caused it to trigger.
+last argument which is the name of the timer that caused it to trigger.
++
+The first (possibly only) token of the value is interpreted as a complete
+path to an externally stored executable script (e.g. not an inline scriptlet)
+or program file without further arguments (which may be passed in explicitly
+quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 
 *PIPEFN* 'filename'::
 Required.  This sets the file name of the socket which will be used for

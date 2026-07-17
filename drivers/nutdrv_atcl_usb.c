@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.23"
+#define DRIVER_VERSION	"1.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -608,7 +608,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	char	reply[STATUS_PACKETSIZE];
+	char	reply[STATUS_PACKETSIZE] = {0};
 	int	ret;
 
 	if (!udev) {
@@ -682,8 +682,11 @@ int instcmd(const char *cmdname, const char *extra)
 
 		/* Not "const" because this mismatches arg type
 		 * of usb_interrupt_write() */
-		char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+		char	shutdown_packet[SHUTDOWN_PACKETSIZE];
 		int ret;
+
+		memset(shutdown_packet, 0, sizeof(shutdown_packet));
+		shutdown_packet[0] = 0x01;
 
 		upslogx(LOG_DEBUG,
 			"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",

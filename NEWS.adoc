@@ -122,6 +122,8 @@ https://github.com/networkupstools/nut/milestone/13
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+    * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
+      mode devices when battery is fully charged. [issue #3518, PR #3519]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
@@ -136,9 +138,14 @@ https://github.com/networkupstools/nut/milestone/13
       `connect()` to ensure a timeout if something does not respond. [PR #3456]
     * Windows driver state named pipes now use explicit security attributes
       instead of relying on default settings from the launch context. [PR #3479]
+    * Likewise for named pipes in other NUT daemons and `upssched`. [PR #3527]
     * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
       to fix per-close `libusb_exit()` deadlock, and escalate a persistent
       `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
+    * Some driver code paths used buffers sent via USB transfers as fixed-size
+      chunks populated only partially with bytes we intended. These buffers are
+      now more diligently pre-zeroed as their siblings were in other code paths,
+      to avoid sending host stack garbage to a device. [#3529]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
@@ -215,11 +222,33 @@ https://github.com/networkupstools/nut/milestone/13
       success of SSL initialization with both backends is more diligently
       tracked) should now not cause exit of the client if secure connection
       is not required by its configuration in the first place. [#3420]
+    * Potentially a breaking change for existing deployments with `upsmon` and
+      `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
+      revised for the first token to mean an exact program name (possibly with
+      spaces in the value), not a shell scriptlet. Documentation in earlier
+      NUT releases implied that arguments could be passed here -- this is no
+      longer true. If you need to pass special arguments to a notification
+      program, please use additional separately quoted tokens, or write a
+      small helper script to do so and specify its path here.
+      The `SHUTDOWNCMD` is still a scriptlet, as far as specifying command
+      arguments is concerned, but it also newly supports parsing multiple
+      tokens as additional arguments. [PR #3499]
+    * Introduced a new notification type for unexpected clock change which
+      is specially handled (data re-initialization), whether due to sleep
+      and wake-up, or NTP/RTC clock changes during boot, or severe delays
+      on a stressed system (to name a few practical cases). [issue #3405]
+
+ - `upssched` client/tool updates:
+    * Fixed handling of `NOTIFYMSG` from command line if other arguments are
+      present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
+
+ - `upssched` client/tool updates:
+    * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
 
  - `upsd` data server updates:
     * If we hit "Too many open files" during configuration reload, close

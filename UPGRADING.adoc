@@ -46,10 +46,22 @@ Changes from 2.8.5 to 2.8.6
   if the requested value is larger than what is allowed (minus some reserve
   for configuration files and other use-cases). [issue #3365]
 
-- `upsd` data server updates:
-    * If SSL configuration was provided, but the server failed to apply some
-      aspect of that, it should now abort with an explanation (and not proceed
-      with insecure start-up like it could do before). [issue #3331, PR #3435]
+- Potentially a breaking change for existing deployments with `upsmon` and
+  `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
+  revised for the first token to mean an exact program name (possibly with
+  spaces in the value), not a shell scriptlet. Documentation in earlier NUT
+  releases implied that arguments could be passed here -- this is no longer
+  true. If you need to pass special arguments to a notification program,
+  please use additional separately quoted tokens, or write a small helper
+  script to do so and specify its path here. The `SHUTDOWNCMD` is still a
+  scriptlet, as far as specifying command arguments is concerned, but it also
+  newly supports parsing multiple tokens as additional arguments. [PR #3499]
+
+- Potentially a breaking change for existing deployments with some flaw in
+  configuration of the `upsd` data server: If SSL configuration was provided,
+  but the server failed to apply some aspect of that, it should now abort
+  with an explanation (and not proceed with insecure start-up like it could
+  do before). [issue #3331, PR #3435]
 
 - Enabled support for `nutauth.conf` files to provide credentials and/or
   SSL settings in clients which previously only did best-effort attempts at
@@ -61,7 +73,6 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   usable; specific values can require use of such a file or to not even try
   reading one ('none' as the legacy default). See the updated manual pages
   for more details. [issues #3329, #3411]
-
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------
