@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -807,6 +807,8 @@ void upsdrv_updateinfo(void)
 		}
 		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
+
+	memset(reply, 0, sizeof(reply));
 
 	ret = query_ups(reply);
 

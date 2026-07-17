@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -129,6 +129,8 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 
 	size = 7;
 
+	memset(USB_buff_pom, 0, sizeof(USB_buff_pom));
+
 	/* routine which parse report into 4-bytes packet */
 	for (i=0; i<(numbytes/size); i++) {
 		USB_buff_pom[0] = 0x37;
@@ -190,6 +192,8 @@ static int Get_USB_Packet(uint8_t *buffer)
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
+
+	memset(inBuf, 0, sizeof(inBuf));
 
 	/* Note: depending on libusb API version, size is either int or uint16_t
 	 * either way, likely less than size_t limit. But we don't assign much.

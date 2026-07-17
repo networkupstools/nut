@@ -136,6 +136,8 @@ typedef struct {
 
 #define NOTIFY_SHUTDOWN_HOSTSYNC	26	/* Shutdown initiated; primary system is waiting for secondaries to log out or time out */
 
+#define NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED	27	/* Clock jumped unexpectedly by X.Y sec */
+
 /* Special handling below */
 #define NOTIFY_OTHER	28	/* UPS has at least one unclassified status token */
 #define NOTIFY_NOTOTHER	29	/* UPS has no unclassified status tokens anymore */
@@ -212,6 +214,8 @@ static struct {
 	/* Reported when status_tokens tree becomes empty */
 	{ NOTIFY_NOTOTHER, "NOTOTHER", NULL, "UPS %s has no unclassified status tokens anymore", NOTIFY_DEFAULT },
 
+	/* NOTE: Stringify the time value as argument, e.g. `%g seconds` */
+	{ NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, "SUSPEND_TIMEJUMP_UNEXPECTED", NULL, "Unexpected clock change by %s, treating as wake up from sleep", NOTIFY_DEFAULT },
 	{ NOTIFY_SUSPEND_STARTING, "SUSPEND_STARTING", NULL, "OS is entering sleep/suspend/hibernate mode", NOTIFY_DEFAULT },
 	{ NOTIFY_SUSPEND_FINISHED, "SUSPEND_FINISHED", NULL, "OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown", NOTIFY_DEFAULT },
 

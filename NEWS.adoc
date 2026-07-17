@@ -117,6 +117,8 @@ https://github.com/networkupstools/nut/milestone/13
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+    * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
+      mode devices when battery is fully charged. [issue #3518, PR #3519]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
@@ -134,6 +136,10 @@ https://github.com/networkupstools/nut/milestone/13
     * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
       to fix per-close `libusb_exit()` deadlock, and escalate a persistent
       `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
+    * Some driver code paths used buffers sent via USB transfers as fixed-size
+      chunks populated only partially with bytes we intended. These buffers are
+      now more diligently pre-zeroed as their siblings were in other code paths,
+      to avoid sending host stack garbage to a device. [#3529]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
@@ -196,6 +202,10 @@ https://github.com/networkupstools/nut/milestone/13
       The `SHUTDOWNCMD` is still a scriptlet, as far as specifying command
       arguments is concerned, but it also newly supports parsing multiple
       tokens as additional arguments. [PR #3499]
+    * Introduced a new notification type for unexpected clock change which
+      is specially handled (data re-initialization), whether due to sleep
+      and wake-up, or NTP/RTC clock changes during boot, or severe delays
+      on a stressed system (to name a few practical cases). [issue #3405]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which

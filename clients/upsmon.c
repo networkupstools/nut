@@ -4639,11 +4639,17 @@ int main(int argc, char *argv[])
 		 * without NUT direct support for suspend/inhibit */
 		dt = difftimeval(end, start);
 		if (dt > (sleepval + sleep_overhead_tolerance)) {
-			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %.06f seconds", dt);
+			char	dtstr[SMALLBUF];
+			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
+			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %s", dtstr);
+			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
-			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %.06f seconds", dt);
+			char	dtstr[SMALLBUF];
+			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
+			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %s", dtstr);
+			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
