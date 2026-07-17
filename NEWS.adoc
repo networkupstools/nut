@@ -117,6 +117,8 @@ https://github.com/networkupstools/nut/milestone/13
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+    * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
+      mode devices when battery is fully charged. [issue #3518, PR #3519]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
