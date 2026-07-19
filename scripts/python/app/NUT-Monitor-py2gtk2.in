@@ -730,7 +730,8 @@ class interface :
         # Try to init pynotify
         try :
             import pynotify
-            pynotify.init( "NUT Monitor" )
+            if not pynotify.init( "NUT Monitor" ):
+                return
 
             if ( icon_file != "" ) :
                 icon = "file://%s" % os.path.abspath( os.path.join( self.__resdir, "pixmaps", icon_file ) )
