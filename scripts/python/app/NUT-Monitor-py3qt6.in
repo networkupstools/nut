@@ -765,25 +765,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     # Display a message on the status bar. The message is also set as
     # tooltip to enable users to see long messages.
     def gui_status_message( self, msg="" ) :
-        text = msg
-
-        self.__widgets["status_bar"].showMessage( text.replace("\n", "") )
-        self.__widgets["status_bar"].setToolTip( text )
+        try:
+            text = msg
+            if self.__widgets.get("status_bar"):
+                self.__widgets["status_bar"].showMessage( text.replace("\n", "") )
+                self.__widgets["status_bar"].setToolTip( text )
+        except Exception:
+            pass
 
     #-------------------------------------------------------------------
     # Display a notification using QSystemTrayIcon with an optional icon
     def gui_status_notification( self, message="", icon_file="" ) :
-        if ( icon_file != "" ) :
-            icon = QIcon( os.path.abspath( self.__find_res_file( "pixmaps", icon_file ) ) )
-        else :
-            icon = None
+        try:
+            if not self.__widgets.get("status_icon"):
+                return
+            if ( icon_file != "" ) :
+                icon = QIcon( os.path.abspath( self.__find_res_file( "pixmaps", icon_file ) ) )
+            else :
+                icon = None
 
-        self.__widgets["status_icon"].showMessage(
-            "NUT Monitor",
-            message,
-            icon if icon else QSystemTrayIcon.MessageIcon.Information,
-            5000
-        )
+            self.__widgets["status_icon"].showMessage(
+                "NUT Monitor",
+                message,
+                icon if icon else QSystemTrayIcon.MessageIcon.Information,
+                5000
+            )
+        except Exception:
+            pass
 
     #-------------------------------------------------------------------
     # Connect to the selected UPS using parameters (host,port,login,pass)
