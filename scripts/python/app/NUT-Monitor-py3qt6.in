@@ -245,6 +245,18 @@ class interface :
 
         self.gui_init_unconnected()
 
+        # Load global authentication configuration
+        PyNUT.AuthConf.readAuthConfFile()
+        # and populate fields from global defaults if any
+        ac = PyNUT.AuthConf.getAuthConf()
+        if ac:
+            if ac.user:
+                self.__widgets["ups_authentication_login"].setText(ac.user)
+                self.__widgets["ups_authentication_check"].setChecked(True)
+            if ac.password:
+                self.__widgets["ups_authentication_password"].setText(ac.password)
+                self.__widgets["ups_authentication_check"].setChecked(True)
+
         if ( cmd_opts.hidden != True ) :
             self.__widgets["main_window"].show()
 
@@ -380,6 +392,28 @@ class interface :
         port     = int( self.__widgets["ups_port_entry"].value() )
         login    = None
         password = None
+
+        ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+        if ac:
+            # Check for mismatch if fields are already filled
+            curr_login = self.__widgets["ups_authentication_login"].text()
+            curr_pass  = self.__widgets["ups_authentication_password"].text()
+
+            mismatch = False
+            if curr_login and ac.user and curr_login != ac.user:
+                mismatch = True
+            if curr_pass and ac.password and curr_pass != ac.password:
+                mismatch = True
+
+            if mismatch:
+                self.gui_status_message( _("Note: interactive login/password differs from nutauth.conf") )
+            else:
+                if ac.user and not curr_login:
+                    self.__widgets["ups_authentication_login"].setText(ac.user)
+                    self.__widgets["ups_authentication_check"].setChecked(True)
+                if ac.password and not curr_pass:
+                    self.__widgets["ups_authentication_password"].setText(ac.password)
+                    self.__widgets["ups_authentication_check"].setChecked(True)
 
         if self.__widgets["ups_authentication_check"].isChecked() :
             login    = self.__widgets["ups_authentication_login"].text()
