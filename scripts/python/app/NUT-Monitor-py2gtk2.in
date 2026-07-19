@@ -536,8 +536,9 @@ class interface :
             # reactions with the 'check_gui_fields' function.
             if ( self.__favorites[fav_name].get("auth", False ) ) :
                 self.__widgets["ups_authentication_check"].set_active( True )
+                password = base64.b64decode( self.__favorites[fav_name].get("password","") )
                 self.__widgets["ups_authentication_login"].set_text( self.__favorites[fav_name].get("login","") )
-                self.__widgets["ups_authentication_password"].set_text( self.__favorites[fav_name].get("password","") )
+                self.__widgets["ups_authentication_password"].set_text( password )
 
             self.__widgets["ups_host_entry"].set_text( self.__favorites[fav_name].get("host","") )
             self.__widgets["ups_port_entry"].set_value( float(self.__favorites[fav_name].get("port",3493.0)) )
