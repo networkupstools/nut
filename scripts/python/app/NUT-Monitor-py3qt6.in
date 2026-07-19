@@ -1112,14 +1112,7 @@ class gui_updater :
             # Teardown old connection handler properly
             old_handler = self.__parent_class._interface__ups_handler
             if old_handler is not None:
-                try:
-                    # Close the underlying telnet connection if it exists
-                    if hasattr(old_handler, '_PyNUTClient__tn') and old_handler._PyNUTClient__tn is not None:
-                        old_handler._PyNUTClient__tn.close()
-                    elif hasattr(old_handler, 'tn') and old_handler.tn is not None:
-                        old_handler.tn.close()
-                except Exception:
-                    pass  # Best effort cleanup
+                old_handler.disconnect()
                 del old_handler
 
             # Create a new connection handler
