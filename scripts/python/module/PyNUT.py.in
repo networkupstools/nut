@@ -721,7 +721,10 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
         while True:
             data_end_index = data.find(finished_reading_data)
             if data_end_index == -1:
-                data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+                chunk = self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+                if not chunk:
+                    raise EOFError("Connection closed by server")
+                data += chunk
             else:
                 break
         data_end_index += len(finished_reading_data)
