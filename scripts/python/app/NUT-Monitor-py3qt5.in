@@ -1047,8 +1047,17 @@ class gui_updater :
                     # Stop the current timer
                     self.__timer.stop()
                     
+                    # Close the socket to avoid "Broken pipe" in subsequent calls if any
+                    try:
+                        self.__parent_class._interface__ups_handler._PyNUTClient__srv_handler.close()
+                    except Exception:
+                        pass
+
                     # Schedule reconnection attempt after 2 seconds
                     QTimer.singleShot(2000, self.__attempt_reconnect)
+                elif self.__reconnect_attempted:
+                    # Reconnection already in progress, just ignore this update
+                    pass
                 else:
                     self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
                     self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
@@ -1129,6 +1138,7 @@ class gui_updater :
         self.__timer.start(1000)
 
     def stop_thread( self ) :
+        self.__stop_thread = True
         if hasattr(self, '_gui_updater__timer'):
             self.__timer.stop()
 
