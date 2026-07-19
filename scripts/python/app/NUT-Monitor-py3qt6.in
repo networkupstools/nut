@@ -436,7 +436,11 @@ class interface :
             password = self.__widgets["ups_authentication_password"].text()
 
         try :
-            nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
+            # ac was already looked up for host/port above
+            if ac:
+                nut_handler = PyNUT.PyNUTClient.from_authconf( ac )
+            else:
+                nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
             upses = nut_handler.GetUPSList()
 
             ups_list = list(key.decode('ascii') for key in upses.keys())
@@ -860,8 +864,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             login    = self.__widgets["ups_authentication_login"].text()
             password = self.__widgets["ups_authentication_password"].text()
 
+        ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
         try :
-            self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
+            if ac:
+                self.__ups_handler = PyNUT.PyNUTClient.from_authconf( ac )
+            else:
+                self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
 
         except :
             self.gui_status_message( _("Error connecting to '{0}' ({1})").format( host, sys.exc_info()[1] ) )
@@ -1170,7 +1178,11 @@ class gui_updater :
                 del old_handler
 
             # Create a new connection handler
-            ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
+            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
+            if ac:
+                ups_handler = PyNUT.PyNUTClient.from_authconf(ac)
+            else:
+                ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
 
             # Verify the UPS is available
             ups = self.__parent_class._interface__current_ups
