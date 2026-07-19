@@ -710,16 +710,19 @@ class interface :
     # Display a message on the status bar. The message is also set as
     # tooltip to enable users to see long messages.
     def gui_status_message( self, msg="" ) :
-        context_id = self.__widgets["status_bar"].get_context_id("Infos")
-        self.__widgets["status_bar"].pop( context_id )
+        try:
+            context_id = self.__widgets["status_bar"].get_context_id("Infos")
+            self.__widgets["status_bar"].pop( context_id )
 
-        if ( platform.system() == "Windows" ) :
-            text = msg.decode("cp1250").encode("utf8")
-        else :
-            text = msg
+            if ( platform.system() == "Windows" ) :
+                text = msg.decode("cp1250").encode("utf8")
+            else :
+                text = msg
 
-        message_id = self.__widgets["status_bar"].push( context_id, text.replace("\n", "") )
-        self.__widgets["status_bar"].set_tooltip_text( text )
+            message_id = self.__widgets["status_bar"].push( context_id, text.replace("\n", "") )
+            self.__widgets["status_bar"].set_tooltip_text( text )
+        except :
+            pass
 
     #-------------------------------------------------------------------
     # Display a notification using PyNotify with an optional icon
