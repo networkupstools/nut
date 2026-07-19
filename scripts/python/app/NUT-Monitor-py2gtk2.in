@@ -120,6 +120,9 @@ class interface :
     __current_ups                    = None
     __reconnect_attempted            = False
 
+    __login_manually_edited          = False
+    __password_manually_edited       = False
+
     def __init__( self ) :
 
         # Before anything, parse command line options if any present...
@@ -194,8 +197,8 @@ class interface :
                              "on_imagemenuitem1_activate"      : self.gui_about_dialog,
                              "on_imagemenuitem5_activate"      : self.quit,
                              "on_entry1_changed"               : self.__check_gui_fields,
-                             "on_entry2_changed"               : self.__check_gui_fields,
-                             "on_entry3_changed"               : self.__check_gui_fields,
+                             "on_entry2_changed"               : self.__on_login_changed,
+                             "on_entry3_changed"               : self.__on_password_changed,
                              "on_checkbutton1_toggled"         : self.__check_gui_fields,
                              "on_spinbutton1_value_changed"    : self.__check_gui_fields,
                              "on_button1_clicked"              : self.__update_ups_list,
@@ -288,9 +291,11 @@ class interface :
         ac = PyNUT.AuthConf.getAuthConf()
         if ac:
             if ac.user:
+                self.__login_manually_edited = False
                 self.__widgets["ups_authentication_login"].set_text(ac.user)
                 self.__widgets["ups_authentication_check"].set_active(True)
             if ac.password:
+                self.__password_manually_edited = False
                 self.__widgets["ups_authentication_password"].set_text(ac.password)
                 self.__widgets["ups_authentication_check"].set_active(True)
 
@@ -306,6 +311,14 @@ class interface :
             self.__update_ups_list()
             if ( len( self.__widgets["ups_list_combo"].get_model() ) == 1 ) :
                 self.connect_to_ups()
+
+    def __on_login_changed( self, widget=None ) :
+        self.__login_manually_edited = True
+        self.__check_gui_fields()
+
+    def __on_password_changed( self, widget=None ) :
+        self.__password_manually_edited = True
+        self.__check_gui_fields()
 
     # Check if correct fields are filled to enable connection to the UPS
     def __check_gui_fields( self, widget=None ) :
@@ -378,18 +391,20 @@ class interface :
             curr_pass  = self.__widgets["ups_authentication_password"].get_text()
 
             mismatch = False
-            if curr_login and ac.user and curr_login != ac.user:
+            if self.__login_manually_edited and ac.user and curr_login != ac.user:
                 mismatch = True
-            if curr_pass and ac.password and curr_pass != ac.password:
+            if self.__password_manually_edited and ac.password and curr_pass != ac.password:
                 mismatch = True
 
             if mismatch:
                 self.gui_status_message( _("Note: interactive login/password differs from nutauth.conf") )
             else:
-                if ac.user and not curr_login:
+                if ac.user and not self.__login_manually_edited and not self.__password_manually_edited:
+                    self.__login_manually_edited = False
                     self.__widgets["ups_authentication_login"].set_text(ac.user)
                     self.__widgets["ups_authentication_check"].set_active(True)
-                if ac.password and not curr_pass:
+                if ac.password and not self.__login_manually_edited and not self.__password_manually_edited:
+                    self.__password_manually_edited = False
                     self.__widgets["ups_authentication_password"].set_text(ac.password)
                     self.__widgets["ups_authentication_check"].set_active(True)
 
