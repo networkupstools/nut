@@ -711,10 +711,20 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
         """ Class destructor method """
-        try :
-            self.__send( b"LOGOUT\n" )
-        except :
-            pass
+        self.disconnect()
+
+    def disconnect(self):
+        """ Disconnects from the server cleanly """
+        if hasattr(self, '__srv_handler') and self.__srv_handler:
+            try:
+                self.__send(b"LOGOUT\n")
+            except:
+                pass
+            try:
+                self.__srv_handler.close()
+            except:
+                pass
+            self.__srv_handler = None
 
     def __send(self, data):
         """ Internal method to send data through the socket with error handling """

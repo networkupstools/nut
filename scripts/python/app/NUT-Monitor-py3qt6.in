@@ -1079,10 +1079,8 @@ class gui_updater :
                     self.__timer.stop()
 
                     # Close the socket to avoid "Broken pipe" in subsequent calls if any
-                    try:
-                        self.__parent_class._interface__ups_handler._PyNUTClient__srv_handler.close()
-                    except Exception:
-                        pass
+                    if self.__parent_class._interface__ups_handler:
+                        self.__parent_class._interface__ups_handler.disconnect()
 
                     # Schedule reconnection attempt after 2 seconds
                     QTimer.singleShot(2000, self.__attempt_reconnect)

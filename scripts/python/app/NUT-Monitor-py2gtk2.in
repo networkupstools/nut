@@ -995,6 +995,10 @@ class gui_updater( threading.Thread ) :
                     self.__parent_class.gui_status_message( _("Connection lost - attempting to reconnect...") )
                     self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
 
+                    # Close the socket to avoid "Broken pipe" in subsequent calls if any
+                    if self.__parent_class._interface__ups_handler:
+                        self.__parent_class._interface__ups_handler.disconnect()
+
                     # Wait for 2 seconds before attempting reconnection
                     time.sleep( 2 )
                     self.__attempt_reconnect()
