@@ -120,6 +120,15 @@ class AuthConf:
     __debug = False
 
     @staticmethod
+    def setDebug(val):
+        AuthConf.__debug = val
+
+    @staticmethod
+    def printDebug(msg):
+        if AuthConf.__debug:
+            sys.stderr.write( "[DEBUG] %s\n" % str(msg) )
+
+    @staticmethod
     def getAuthConfList():
         """ Get the one global list of all parsed authentication configurations """
         return AuthConf.__authconf_list
@@ -223,8 +232,7 @@ class AuthConf:
         current_ac = AuthConf.__global_defaults if global_scope else None
 
         try:
-            if AuthConf.__debug:
-                print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
+            AuthConf.printDebug( "readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
             with open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
@@ -234,11 +242,10 @@ class AuthConf:
                     if line.startswith('[') and line.endswith(']'):
                         sectname = line[1:-1]
 
-                        if AuthConf.__debug:
-                            if current_ac is None:
-                                print( "[DEBUG] readAuthConfFile(): starting [%s]" % (sectname) )
-                            else:
-                                print( "[DEBUG] readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
+                        if current_ac is None:
+                            AuthConf.printDebug( "readAuthConfFile(): starting [%s]" % (sectname) )
+                        else:
+                            AuthConf.printDebug( "readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
 
                         if sectname in ("_global_defaults", "", "*"):
                             if AuthConf.__global_defaults is None:
@@ -268,8 +275,7 @@ class AuthConf:
                             inc_file = inc_file[1:-1]
 
                         is_required = (inc_type == "INCLUDE_REQUIRED")
-                        if AuthConf.__debug:
-                            print( "[DEBUG] readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
+                        AuthConf.printDebug( "readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
                         AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
                         continue
 
@@ -290,8 +296,7 @@ class AuthConf:
                                 if AuthConf.__global_defaults is None:
                                     AuthConf.__global_defaults = AuthConf("")
                                     AuthConf.__authconf_list.append(AuthConf.__global_defaults)
-                                    if AuthConf.__debug:
-                                        print( "[DEBUG] readAuthConfFile(): starting [] (global defaults) section handling" )
+                                    AuthConf.printDebug( "readAuthConfFile(): starting [] (global defaults) section handling" )
 
                                 current_ac = AuthConf.__global_defaults
                             else:
@@ -299,10 +304,9 @@ class AuthConf:
                                 # in global scope when that directive was seen
                                 continue
 
-                        if AuthConf.__debug:
-                            print( "[DEBUG] readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
-                                current_ac.section, str(key), str(value), str(keyUC)
-                            ))
+                        AuthConf.printDebug( "readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
+                            current_ac.section, str(key), str(value), str(keyUC)
+                        ))
 
                         if keyUC == 'USER' or keyUC == 'USERNAME':
                             if current_ac.user is None or current_ac.user == "":
@@ -329,17 +333,15 @@ class AuthConf:
                             print( "[WARNING] Unsupported keyword in NUT auth configuration file: '%s'" % key )
         except Exception as e:
             msgErr = "Error reading '%s': %s" % (filename, str(e))
-            if AuthConf.__debug:
-                print( "[DEBUG] readAuthConfFile(): %s" % (msgErr) )
+            AuthConf.printDebug( "readAuthConfFile(): %s" % (msgErr) )
             if fatal_errors:
                 raise PyNUTError(msgErr)
 
         return AuthConf.__authconf_list
 
-    @staticmethod
-    def clone(source):
-        ac = AuthConf(source.section)
-        ac.merge(source)
+    def clone(self):
+        ac = AuthConf(self.section)
+        ac.merge(self)
         return ac
 
     def merge(self, source):
