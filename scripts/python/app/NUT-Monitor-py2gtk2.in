@@ -373,6 +373,12 @@ class interface :
                     self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
                     self.__login_manually_edited = False
                     self.__login_suggested = True
+            elif ac and ac.user:
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_login"].set_text(ac.user)
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+                self.__login_manually_edited = False
+                self.__login_suggested = True
 
             if self.__password_suggested:
                 if not ac or not ac.password:
@@ -386,6 +392,12 @@ class interface :
                     self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
                     self.__password_manually_edited = False
                     self.__password_suggested = True
+            elif ac and ac.password:
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_password"].set_text(ac.password)
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                self.__password_manually_edited = False
+                self.__password_suggested = True
 
             self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
             self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
