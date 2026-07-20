@@ -294,17 +294,23 @@ class interface :
         ac = PyNUT.AuthConf.getAuthConf()
         if ac:
             if ac.user:
-                self.__login_manually_edited = False
-                self.__login_suggested = True
                 self.__widgets["ups_authentication_login"].set_text(ac.user)
                 self.__widgets["ups_authentication_check"].set_active(True)
                 self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+
+                # (Re-)Set these AFTER on*changed handlers might
+                # by default assume the field was edited by user!
+                self.__login_manually_edited = False
+                self.__login_suggested = True
             if ac.password:
-                self.__password_manually_edited = False
-                self.__password_suggested = True
                 self.__widgets["ups_authentication_password"].set_text(ac.password)
                 self.__widgets["ups_authentication_check"].set_active(True)
                 self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+
+                # (Re-)Set these AFTER on*changed handlers might
+                # by default assume the field was edited by user!
+                self.__password_manually_edited = False
+                self.__password_suggested = True
 
         self.gui_status_message( _("Welcome to NUT Monitor") )
 
@@ -352,21 +358,32 @@ class interface :
             ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
             if self.__login_suggested:
                 if not ac or not ac.user:
-                    self.__login_suggested = False
                     self.__widgets["ups_authentication_login"].set_text("")
                     self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+
+                    # (Re-)Set these AFTER on*changed handlers might
+                    # by default assume the field was edited by user!
+                    self.__login_manually_edited = False
+                    self.__login_suggested = False
                 elif ac.user != self.__widgets["ups_authentication_login"].get_text():
                     # Re-populate if it matches a different entry for this host/port
                     self.__widgets["ups_authentication_login"].set_text(ac.user)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+                    self.__login_manually_edited = False
+                    self.__login_suggested = True
 
             if self.__password_suggested:
                 if not ac or not ac.password:
-                    self.__password_suggested = False
                     self.__widgets["ups_authentication_password"].set_text("")
                     self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+                    self.__password_manually_edited = False
+                    self.__password_suggested = False
                 elif ac.password != self.__widgets["ups_authentication_password"].get_text():
                     # Re-populate if it matches a different entry for this host/port
                     self.__widgets["ups_authentication_password"].set_text(ac.password)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                    self.__password_manually_edited = False
+                    self.__password_suggested = True
 
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].get_active() != -1 :
@@ -447,15 +464,21 @@ class interface :
             else:
                 if not self.__login_manually_edited and not self.__password_manually_edited:
                     if ac.user:
-                        self.__login_suggested = True
                         self.__widgets["ups_authentication_login"].set_text(ac.user)
                         self.__widgets["ups_authentication_check"].set_active(True)
                         self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+
+                        # (Re-)Set these AFTER on*changed handlers might
+                        # by default assume the field was edited by user!
+                        self.__login_manually_edited = False
+                        self.__login_suggested = True
+
                     if ac.password:
-                        self.__password_suggested = True
                         self.__widgets["ups_authentication_password"].set_text(ac.password)
                         self.__widgets["ups_authentication_check"].set_active(True)
                         self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                        self.__password_manually_edited = False
+                        self.__password_suggested = True
 
         if self.__widgets["ups_authentication_check"].get_active() :
             login    = self.__widgets["ups_authentication_login"].get_text()
