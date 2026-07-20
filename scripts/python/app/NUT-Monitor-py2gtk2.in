@@ -202,7 +202,7 @@ class interface :
                              "on_entry1_changed"               : self.__check_gui_fields,
                              "on_entry2_changed"               : self.__on_login_changed,
                              "on_entry3_changed"               : self.__on_password_changed,
-                             "on_checkbutton1_toggled"         : self.__check_gui_fields,
+                             "on_checkbutton1_toggled"         : self.__on_auth_check_changed,
                              "on_spinbutton1_value_changed"    : self.__check_gui_fields,
                              "on_button1_clicked"              : self.__update_ups_list,
                              "on_button2_clicked"              : self.connect_to_ups,
@@ -336,15 +336,33 @@ class interface :
             widget.modify_base(gtk.STATE_NORMAL, None)
 
     def __on_login_changed( self, widget=None ) :
+        if not self.__widgets["ups_authentication_login"].get_sensitive():
+            return
         self.__login_manually_edited = True
         self.__login_suggested = False
         self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
         self.__check_gui_fields()
 
     def __on_password_changed( self, widget=None ) :
+        if not self.__widgets["ups_authentication_password"].get_sensitive():
+            return
         self.__password_manually_edited = True
         self.__password_suggested = False
         self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+        self.__check_gui_fields()
+
+    def __on_auth_check_changed( self, widget=None ) :
+        checked = self.__widgets["ups_authentication_check"].get_active()
+        if not checked :
+            # If user unchecks, we clear suggestions so it doesn't immediately re-check
+            if self.__login_suggested :
+                self.__login_suggested = False
+                self.__widgets["ups_authentication_login"].set_text("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+            if self.__password_suggested :
+                self.__password_suggested = False
+                self.__widgets["ups_authentication_password"].set_text("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
         self.__check_gui_fields()
 
     # Check if correct fields are filled to enable connection to the UPS
@@ -399,8 +417,14 @@ class interface :
                 self.__password_manually_edited = False
                 self.__password_suggested = True
 
-            self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
-            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
+            # Only programmatically change checkbox if we HAVE a suggestion
+            if self.__login_suggested or self.__password_suggested:
+                self.__widgets["ups_authentication_check"].handler_block_by_func(self.__on_auth_check_changed)
+                self.__widgets["ups_authentication_check"].set_active(True)
+                self.__widgets["ups_authentication_check"].handler_unblock_by_func(self.__on_auth_check_changed)
+
+        # Only highlight the checkbox as suggested if it was all suggested
+        self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__login_suggested and self.__password_suggested )
 
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].get_active() != -1 :
