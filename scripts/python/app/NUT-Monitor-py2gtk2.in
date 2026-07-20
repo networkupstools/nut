@@ -288,7 +288,7 @@ class interface :
         self.__parse_favorites()
 
         # Load global authentication configuration
-        PyNUT.AuthConf.readAuthConfFile()
+        PyNUT.AuthConf.readAuthConfFile(verbose_missing_hinted=True)
         # and populate fields from global defaults if any
         ac = PyNUT.AuthConf.getAuthConf()
         if ac:
