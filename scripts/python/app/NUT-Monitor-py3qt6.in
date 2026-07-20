@@ -119,6 +119,7 @@ class interface :
 
     DESIRED_FAVORITES_DIRECTORY_MODE = 0o700
 
+    __quitting                       = False
     __widgets                        = {}
     __callbacks                      = {}
     __favorites                      = {}
@@ -446,13 +447,17 @@ class interface :
     #-------------------------------------------------------------------
     # Quit program
     def quit( self, widget=None ) :
+        if self.__quitting:
+            return
+        self.__quitting = True
+
         # If we are connected to an UPS, disconnect first...
         if self.__connected :
             try:
                 self.gui_status_message( _("Disconnecting from device") )
                 self.disconnect_from_ups()
-            except RuntimeError:
-                pass  # widgets may already be deleted during shutdown
+            except (RuntimeError, AttributeError):
+                pass  # widgets or attributes may already be deleted during shutdown
 
         self.__app.quit()
 

@@ -102,6 +102,7 @@ class interface :
 
     DESIRED_FAVORITES_DIRECTORY_MODE = 0700
 
+    __quitting                       = False
     __widgets                        = {}
     __callbacks                      = {}
     __favorites                      = {}
@@ -423,6 +424,10 @@ class interface :
     #-------------------------------------------------------------------
     # Quit program
     def quit( self, widget=None ) :
+        if self.__quitting:
+            return
+        self.__quitting = True
+
         # If we are connected to an UPS, disconnect first...
         if self.__connected :
             try:
