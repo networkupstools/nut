@@ -3011,7 +3011,8 @@ int main(int argc, char **argv)
 			char ch;
 
 			close(background_pipefd[1]);
-			// Wait for child
+
+			/* Wait for child */
 			ret = read(background_pipefd[0], &ch, 1);
 
 			close(background_pipefd[0]);
