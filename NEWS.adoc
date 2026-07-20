@@ -257,6 +257,9 @@ https://github.com/networkupstools/nut/milestone/13
       restart). [issue #3509, PR #3523]
     * Added support for `nutauth.conf` files as source of configuration about
       default/server/user access credentials and SSL setup. [#issue #3514]
+    * Fixed TAB/SHIFT-TAB focus change order through login page. [PR #3533]
+    * Updated formal version of all three client variants to `2.1.0`. [#3514,
+      #3509]
 
  - `upssched` client/tool updates:
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]

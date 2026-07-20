@@ -40,6 +40,11 @@
 # 2025-05-08 Sebastian Kuttnig - Version 2.0.3
 #            Port to Python 3 with PyQt6.
 #
+# 2026-07-18 Jim Klimov and "developersorli" - Version 2.1.0
+#            Added support for NUT authconf files (credentials, SSL)
+#            Added support for reconnections (client sleep, server restart)
+#            Fixed TAB/SHIFT-TAB focus change order through login page
+#
 
 import PyQt6.uic
 from PyQt6.QtCore import *

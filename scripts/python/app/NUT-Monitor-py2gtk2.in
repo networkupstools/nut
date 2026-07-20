@@ -30,7 +30,12 @@
 # 2025-03-15 Jim Klimov - Version 2.0.2 (to align with Python3 variant)
 #            Revise localisation, inject PACKAGE_VERSION and NUT_WEBSITE_BASE
 #            into the About dialog contents
-
+#
+# 2026-07-18 Jim Klimov and "developersorli" - Version 2.1.0
+#            Added support for NUT authconf files (credentials, SSL)
+#            Added support for reconnections (client sleep, server restart)
+#            Fixed TAB/SHIFT-TAB focus change order through login page
+#
 
 import gtk, gtk.glade, gobject
 
