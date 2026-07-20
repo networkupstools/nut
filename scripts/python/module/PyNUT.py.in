@@ -318,6 +318,12 @@ class AuthConf:
 
         return AuthConf.__authconf_list
 
+    @staticmethod
+    def clone(source):
+        ac = AuthConf(source.section)
+        ac.merge(source)
+        return ac
+
     def merge(self, source):
         """ Merge contents of another configuration item into this one. """
         if source is None:
