@@ -295,22 +295,24 @@ class interface :
         if ac:
             if ac.user:
                 self.__widgets["ups_authentication_login"].set_text(ac.user)
-                self.__widgets["ups_authentication_check"].set_active(True)
                 self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
 
                 # (Re-)Set these AFTER on*changed handlers might
                 # by default assume the field was edited by user!
                 self.__login_manually_edited = False
                 self.__login_suggested = True
+
             if ac.password:
                 self.__widgets["ups_authentication_password"].set_text(ac.password)
-                self.__widgets["ups_authentication_check"].set_active(True)
                 self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
 
                 # (Re-)Set these AFTER on*changed handlers might
                 # by default assume the field was edited by user!
                 self.__password_manually_edited = False
                 self.__password_suggested = True
+
+            self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
+            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
 
         self.gui_status_message( _("Welcome to NUT Monitor") )
 
@@ -384,6 +386,9 @@ class interface :
                     self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
                     self.__password_manually_edited = False
                     self.__password_suggested = True
+
+            self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
+            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
 
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].get_active() != -1 :
@@ -465,7 +470,6 @@ class interface :
                 if not self.__login_manually_edited and not self.__password_manually_edited:
                     if ac.user:
                         self.__widgets["ups_authentication_login"].set_text(ac.user)
-                        self.__widgets["ups_authentication_check"].set_active(True)
                         self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
 
                         # (Re-)Set these AFTER on*changed handlers might
@@ -475,10 +479,12 @@ class interface :
 
                     if ac.password:
                         self.__widgets["ups_authentication_password"].set_text(ac.password)
-                        self.__widgets["ups_authentication_check"].set_active(True)
                         self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
                         self.__password_manually_edited = False
                         self.__password_suggested = True
+
+                    self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
 
         if self.__widgets["ups_authentication_check"].get_active() :
             login    = self.__widgets["ups_authentication_login"].get_text()
