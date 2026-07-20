@@ -246,6 +246,16 @@ class interface :
         self.__widgets["ups_commands_combo_store"] = self.__widgets["ups_commands_combo"]
         #---------------------------------------------------------------
 
+        # Set initial tab order
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_host_entry"], self.__widgets["ups_port_entry"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_port_entry"], self.__widgets["ups_list_combo"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_list_combo"], self.__widgets["ups_refresh_button"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_refresh_button"], self.__widgets["ups_authentication_check"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_login"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_login"], self.__widgets["ups_authentication_password"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_password"], self.__widgets["ups_connect"] )
+        self.__widgets["interface"].setTabOrder( self.__widgets["ups_connect"], self.__widgets["ups_host_entry"] )
+
         self.gui_init_unconnected()
 
         # Load global authentication configuration
