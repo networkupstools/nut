@@ -34,6 +34,7 @@
 
 import gtk, gtk.glade, gobject
 import sys
+import socket
 import base64
 import os, os.path
 import stat
@@ -116,6 +117,7 @@ class interface :
     __ups_rw_vars                    = None
     __gui_thread                     = None
     __current_ups                    = None
+    __reconnect_attempted            = False
 
     def __init__( self ) :
 
@@ -389,8 +391,11 @@ class interface :
     def quit( self, widget=None ) :
         # If we are connected to an UPS, disconnect first...
         if self.__connected :
-            self.gui_status_message( _("Disconnecting from device") )
-            self.disconnect_from_ups()
+            try:
+                self.gui_status_message( _("Disconnecting from device") )
+                self.disconnect_from_ups()
+            except Exception:
+                pass
 
         gtk.main_quit()
 
@@ -705,16 +710,19 @@ class interface :
     # Display a message on the status bar. The message is also set as
     # tooltip to enable users to see long messages.
     def gui_status_message( self, msg="" ) :
-        context_id = self.__widgets["status_bar"].get_context_id("Infos")
-        self.__widgets["status_bar"].pop( context_id )
+        try:
+            context_id = self.__widgets["status_bar"].get_context_id("Infos")
+            self.__widgets["status_bar"].pop( context_id )
 
-        if ( platform.system() == "Windows" ) :
-            text = msg.decode("cp1250").encode("utf8")
-        else :
-            text = msg
+            if ( platform.system() == "Windows" ) :
+                text = msg.decode("cp1250").encode("utf8")
+            else :
+                text = msg
 
-        message_id = self.__widgets["status_bar"].push( context_id, text.replace("\n", "") )
-        self.__widgets["status_bar"].set_tooltip_text( text )
+            message_id = self.__widgets["status_bar"].push( context_id, text.replace("\n", "") )
+            self.__widgets["status_bar"].set_tooltip_text( text )
+        except :
+            pass
 
     #-------------------------------------------------------------------
     # Display a notification using PyNotify with an optional icon
@@ -722,7 +730,8 @@ class interface :
         # Try to init pynotify
         try :
             import pynotify
-            pynotify.init( "NUT Monitor" )
+            if not pynotify.init( "NUT Monitor" ):
+                return
 
             if ( icon_file != "" ) :
                 icon = "file://%s" % os.path.abspath( os.path.join( self.__resdir, "pixmaps", icon_file ) )
@@ -746,6 +755,7 @@ class interface :
     # Connect to the selected UPS using parameters (host,port,login,pass)
     def connect_to_ups( self, widget=None ) :
 
+        self.__reconnect_attempted = False
         host     = self.__widgets["ups_host_entry"].get_text()
         port     = int( self.__widgets["ups_port_entry"].get_value() )
         login    = None
@@ -862,6 +872,7 @@ class gui_updater( threading.Thread ) :
     __parent_class = None
     __stop_thread  = False
     was_online = True
+    __reconnect_attempted = False
 
     def __init__( self, parent_class ) :
         threading.Thread.__init__( self )
@@ -977,11 +988,87 @@ class gui_updater( threading.Thread ) :
                 # Display UPS status as tooltip for tray icon
                 self.__parent_class._interface__widgets["status_icon"].set_tooltip_markup( status_text )
 
-            except :
-                self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
-                self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
+            except (socket.error, EOFError, PyNUT.PyNUTError) as e:
+                # Connection error detected - attempt automatic reconnection
+                if not self.__reconnect_attempted and self.__parent_class._interface__connected:
+                    self.__reconnect_attempted = True
+                    self.__parent_class.gui_status_message( _("Connection lost - attempting to reconnect...") )
+                    self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
+
+                    # Close the socket to avoid "Broken pipe" in subsequent calls if any
+                    if self.__parent_class._interface__ups_handler:
+                        self.__parent_class._interface__ups_handler.disconnect()
+
+                    # Wait for 2 seconds before attempting reconnection
+                    time.sleep( 2 )
+                    self.__attempt_reconnect()
+                else:
+                    self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
+                    self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
 
             time.sleep( 1 )
+
+    def __attempt_reconnect( self ) :
+        """Attempt to reconnect to the UPS after a connection loss."""
+        if self.__stop_thread:
+            return
+
+        try:
+            # Get connection parameters from the parent class
+            host = self.__parent_class._interface__widgets["ups_host_entry"].get_text()
+            port = int(self.__parent_class._interface__widgets["ups_port_entry"].get_value())
+            login = None
+            password = None
+
+            if self.__parent_class._interface__widgets["ups_authentication_check"].get_active():
+                login = self.__parent_class._interface__widgets["ups_authentication_login"].get_text()
+                password = self.__parent_class._interface__widgets["ups_authentication_password"].get_text()
+
+            # Teardown old connection handler properly
+            old_handler = self.__parent_class._interface__ups_handler
+            if old_handler is not None:
+                old_handler.disconnect()
+                del old_handler
+
+            # Create a new connection handler
+            ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
+
+            # Verify the UPS is available
+            ups = self.__parent_class._interface__current_ups
+            srv_upses = ups_handler.GetUPSList()
+
+            if ups not in srv_upses:
+                self.__parent_class.gui_status_message( _("UPS '{0}' not found after reconnection").format(ups) )
+                self.__reconnect_attempted = False
+                return
+
+            if not ups_handler.CheckUPSAvailable(ups):
+                self.__parent_class.gui_status_message( _("UPS '{0}' is still not reachable").format(ups) )
+                self.__reconnect_attempted = False
+                return
+
+            # Connection successful - update the parent class
+            self.__parent_class._interface__ups_handler = ups_handler
+            self.__parent_class._interface__connected = True
+            self.__reconnect_attempted = False
+
+            # Refresh UPS data
+            commands = ups_handler.GetUPSCommands(ups)
+            self.__parent_class._interface__ups_commands = list(commands.keys())
+            self.__parent_class._interface__ups_commands.sort()
+
+            self.__parent_class._interface__ups_vars = ups_handler.GetUPSVars(ups)
+            self.__parent_class._interface__ups_rw_vars = ups_handler.GetRWVars(ups)
+
+            # Update the GUI (must be done on the main thread in GTK)
+            gobject.idle_add( self.__parent_class._interface__gui_update_ups_vars_view )
+            gobject.idle_add( self.__parent_class.change_status_icon, "on_line", False )
+            self.__parent_class.gui_status_message( _("Reconnected to '{0}' on {1}").format(ups, host) )
+            self.__parent_class.gui_status_notification( _("Reconnected to UPS"), "on_line.png" )
+
+        except (socket.error, EOFError, PyNUT.PyNUTError) as e:
+            self.__parent_class.gui_status_message( _("Reconnection failed: {0}").format(str(e)) )
+            self.__reconnect_attempted = False
 
     def stop_thread( self ) :
         self.__stop_thread = True

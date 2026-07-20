@@ -248,6 +248,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
+    * Fixed both Python 2 and 3 variants to handle automatic client reconnection
+      (e.g. after system suspend/resume, network interruption, or NUT server
+      restart). [issue #3509, PR #3523]
 
  - `upssched` client/tool updates:
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
