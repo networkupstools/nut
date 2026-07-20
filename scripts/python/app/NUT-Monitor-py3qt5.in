@@ -255,12 +255,16 @@ class interface :
         if ac:
             if ac.user:
                 self.__login_manually_edited = False
+                self.__login_suggested = True
                 self.__widgets["ups_authentication_login"].setText(ac.user)
                 self.__widgets["ups_authentication_check"].setChecked(True)
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
             if ac.password:
                 self.__password_manually_edited = False
+                self.__password_suggested = True
                 self.__widgets["ups_authentication_password"].setText(ac.password)
                 self.__widgets["ups_authentication_check"].setChecked(True)
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
 
         if ( cmd_opts.hidden != True ) :
             self.__widgets["main_window"].show()
