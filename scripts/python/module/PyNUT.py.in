@@ -239,7 +239,14 @@ class AuthConf:
                     if not line or line.startswith('#'):
                         continue
 
-                    if line.startswith('[') and line.endswith(']'):
+                    if line.startswith('['):
+                        # Chomp any trailing comments:
+                        if '#' in line:
+                            line = line[:line.index('#')].strip()
+
+                        if not line.endswith(']'):
+                            raise PyNUTError("Invalid section header in '%s': '%s'" % (filename, line))
+
                         sectname = line[1:-1]
 
                         if current_ac is None:
