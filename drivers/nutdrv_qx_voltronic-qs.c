@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.10"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.11"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
