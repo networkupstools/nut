@@ -42,6 +42,7 @@ import PyQt5.uic
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+
 import sys
 import socket
 import base64
@@ -54,7 +55,6 @@ import optparse
 import configparser
 import locale
 import gettext
-import PyNUT
 
 # Try local development/accompanying packaging first,
 # then system installation
@@ -1177,15 +1177,15 @@ class gui_updater :
                 self.__parent_class._interface__widgets["status_icon"].setToolTip( "\n".join( tooltip_lines ) )
 
             except (socket.error, ConnectionError, EOFError, OSError, PyNUT.PyNUTError) as e:
-                # Connection error detected — attempt automatic reconnection
+                # Connection error detected - attempt automatic reconnection
                 if not self.__reconnect_attempted and self.__parent_class._interface__connected:
                     self.__reconnect_attempted = True
-                    self.__parent_class.gui_status_message( _("Connection lost — attempting to reconnect...") )
+                    self.__parent_class.gui_status_message( _("Connection lost - attempting to reconnect...") )
                     self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
-                    
+
                     # Stop the current timer
                     self.__timer.stop()
-                    
+
                     # Close the socket to avoid "Broken pipe" in subsequent calls if any
                     if self.__parent_class._interface__ups_handler:
                         self.__parent_class._interface__ups_handler.disconnect()
@@ -1210,7 +1210,7 @@ class gui_updater :
             port = int(self.__parent_class._interface__widgets["ups_port_entry"].value())
             login = None
             password = None
-            
+
             if self.__parent_class._interface__widgets["ups_authentication_check"].isChecked():
                 login = self.__parent_class._interface__widgets["ups_authentication_login"].text()
                 password = self.__parent_class._interface__widgets["ups_authentication_password"].text()
@@ -1237,25 +1237,25 @@ class gui_updater :
                 ups_handler = PyNUT.PyNUTClient.from_authconf(ac)
             else:
                 ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
-            
+
             # Verify the UPS is available
             ups = self.__parent_class._interface__current_ups
             srv_upses = ups_handler.GetUPSList()
-            
+
             if ups.encode('ascii') not in srv_upses:
                 self.__parent_class.gui_status_message( _("UPS '{0}' not found after reconnection").format(ups) )
                 self.__reconnect_attempted = False
                 # Restart the timer to continue polling
                 self.__timer.start(1000)
                 return
-            
+
             if not ups_handler.CheckUPSAvailable(ups):
                 self.__parent_class.gui_status_message( _("UPS '{0}' is still not reachable").format(ups) )
                 self.__reconnect_attempted = False
                 self.__timer.start(1000)
                 return
 
-            # Connection successful — update the parent class
+            # Connection successful - update the parent class
             self.__parent_class._interface__ups_handler = ups_handler
             self.__parent_class._interface__connected = True
             self.__reconnect_attempted = False
@@ -1267,7 +1267,7 @@ class gui_updater :
 
             self.__parent_class._interface__ups_vars = ups_handler.GetUPSVars(ups)
             self.__parent_class._interface__ups_rw_vars = ups_handler.GetRWVars(ups)
-            
+
             # Update the GUI
             self.__parent_class._interface__gui_update_ups_vars_view()
             self.__parent_class.change_status_icon("on_line", blink=False)

@@ -48,12 +48,12 @@ from PyQt6.QtWidgets import *
 
 import sys
 import socket
-import threading
 import base64
 import os, os.path
 import stat
 import platform
 import time
+import threading
 import optparse
 import configparser
 import locale
@@ -1065,8 +1065,6 @@ class gui_updater :
     def __init__( self, parent_class ) :
         self.__parent_class = parent_class
         self.__reconnect_attempted = False
-        
-        
 
     def start( self ) :
         self.__timer = QTimer()
@@ -1200,10 +1198,10 @@ class gui_updater :
                 self.__parent_class._interface__widgets["status_icon"].setToolTip( "\n".join( tooltip_lines ) )
 
             except (socket.error, ConnectionError, EOFError, OSError, PyNUT.PyNUTError) as e:
-                # Connection error detected \u2014 attempt automatic reconnection
+                # Connection error detected - attempt automatic reconnection
                 if not self.__reconnect_attempted and self.__parent_class._interface__connected:
                     self.__reconnect_attempted = True
-                    self.__parent_class.gui_status_message( _("Connection lost \u2014 attempting to reconnect...") )
+                    self.__parent_class.gui_status_message( _("Connection lost - attempting to reconnect...") )
                     self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
 
                     # Stop the current timer
@@ -1280,7 +1278,7 @@ class gui_updater :
                 self.__timer.start(1000)
                 return
 
-            # Connection successful \u2014 update the parent class
+            # Connection successful - update the parent class
             self.__parent_class._interface__ups_handler = ups_handler
             self.__parent_class._interface__connected = True
             self.__reconnect_attempted = False
