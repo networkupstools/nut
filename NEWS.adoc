@@ -138,6 +138,10 @@ https://github.com/networkupstools/nut/milestone/13
       based UPS cards that already answer the rest of the subtree. [#2608]
 
  - common code:
+    * Refactored `common::background()` method used by numerous NUT daemons
+      to handle parent and child code paths by separately addressable methods.
+      This got used in the shared drivers `main` code file to preclude losing
+      track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
     * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
