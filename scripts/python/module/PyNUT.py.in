@@ -73,6 +73,7 @@ import socket
 import time
 import re
 import os
+import sys
 
 ssl_available = False
 try:
@@ -172,34 +173,51 @@ class AuthConf:
         return self.__str__()
 
     @staticmethod
-    def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
+    def readAuthConfFile(filename=None, fatal_errors=False, verbose_missing_hinted=False, verbose_missing_default=None, global_scope=True):
         """ Read the authentication configuration file (usually nutauth.conf) """
+        if verbose_missing_default is None:
+            verbose_missing_default = verbose_missing_hinted
+
         if filename is None:
             # Matches C implementation logic for default path
             s = os.environ.get("NUT_AUTHCONF_FILE")
-            if s and os.path.exists(s):
+            if s and os.path.exists(s) and os.path.isfile(s):
                 filename = s
             else:
+                if s and verbose_missing_hinted:
+                    sys.stderr.write("Warning: location pointed to by NUT_AUTHCONF_FILE environment variable does not exist or is not a file: %s\n" % s)
                 s = os.environ.get("NUT_AUTHCONF_PATH")
                 if s and os.path.exists(os.path.join(s, "nutauth.conf")):
                     filename = os.path.join(s, "nutauth.conf")
                 else:
+                    if s and verbose_missing_hinted:
+                        sys.stderr.write("Warning: location pointed to by NUT_AUTHCONF_PATH environment variable does not exist or does not contain a nutauth.conf file: %s\n" % s)
                     s = os.environ.get("HOME")
                     if s:
                         p = os.path.join(s, ".config", "nut", "nutauth.conf")
                         if os.path.exists(p):
                             filename = p
                         else:
+                            if verbose_missing_default:
+                                sys.stderr.write("Warning: User-default nutauth.conf file not found: %s\n" % p)
                             p = os.path.join(s, ".nutauth.conf")
                             if os.path.exists(p):
                                 filename = p
+                            else:
+                                if verbose_missing_default:
+                                    sys.stderr.write("Warning: User-default nutauth.conf file not found: %s\n" % p)
 
             if filename is None:
                 filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
+                if not os.path.isfile(filename) and verbose_missing_default:
+                    sys.stderr.write("Warning: System-default NUT_CONFPATH directory does not exist or does not contain a nutauth.conf file: %s\n" % filename)
 
-        if not os.path.exists(filename):
+        if not os.path.exists(filename) or not os.path.isfile(filename):
+            msg = "Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename))
+            if verbose_missing_default:
+                sys.stderr.write("%s\n" % msg)
             if fatal_errors:
-                raise PyNUTError("Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename)))
+                raise PyNUTError(msg)
             return AuthConf.__authconf_list
 
         current_ac = AuthConf.__global_defaults if global_scope else None
