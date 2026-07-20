@@ -138,6 +138,8 @@ class interface :
 
     __login_manually_edited          = False
     __password_manually_edited       = False
+    __login_suggested                = False
+    __password_suggested             = False
 
     def __init__( self, argv ) :
 
@@ -333,16 +335,54 @@ class interface :
         # No banana!
         raise RuntimeError("Cannot find %s resource %s" % ('icon', filename))
 
+    def __set_suggested_style( self, widget, is_suggested ) :
+        if is_suggested :
+            # gray-yellowish background
+            widget.setStyleSheet( "background-color: #fcfce0;" )
+        else :
+            widget.setStyleSheet( "" )
+
     def __on_login_changed( self, text ) :
         self.__login_manually_edited = True
+        self.__login_suggested = False
+        self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
         self.__check_gui_fields()
 
     def __on_password_changed( self, text ) :
         self.__password_manually_edited = True
+        self.__password_suggested = False
+        self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
         self.__check_gui_fields()
 
     # Check if correct fields are filled to enable connection to the UPS
     def __check_gui_fields( self, widget=None ) :
+        host = self.__widgets["ups_host_entry"].text()
+        try:
+            port = int( self.__widgets["ups_port_entry"].value() )
+        except:
+            port = 3493
+
+        # If not manually edited and was suggested, check if it still matches authconf for current host/port
+        if not self.__login_manually_edited and not self.__password_manually_edited and self.__login_suggested:
+            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+            if not ac or not ac.user:
+                self.__login_suggested = False
+                self.__widgets["ups_authentication_login"].setText("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+            elif ac.user != self.__widgets["ups_authentication_login"].text():
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_login"].setText(ac.user)
+
+        if not self.__login_manually_edited and not self.__password_manually_edited and self.__password_suggested:
+            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+            if not ac or not ac.password:
+                self.__password_suggested = False
+                self.__widgets["ups_authentication_password"].setText("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+            elif ac.password != self.__widgets["ups_authentication_password"].text():
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_password"].setText(ac.password)
+
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].currentIndex() != -1 :
             self.__widgets["ups_list_combo"].clear()
@@ -423,13 +463,15 @@ class interface :
                 self.gui_status_message( _("Note: interactive login/password differs from nutauth.conf") )
             else:
                 if ac.user and not self.__login_manually_edited and not self.__password_manually_edited:
-                    self.__login_manually_edited = False
+                    self.__login_suggested = True
                     self.__widgets["ups_authentication_login"].setText(ac.user)
                     self.__widgets["ups_authentication_check"].setChecked(True)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
                 if ac.password and not self.__login_manually_edited and not self.__password_manually_edited:
-                    self.__password_manually_edited = False
+                    self.__password_suggested = True
                     self.__widgets["ups_authentication_password"].setText(ac.password)
                     self.__widgets["ups_authentication_check"].setChecked(True)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
 
         if self.__widgets["ups_authentication_check"].isChecked() :
             login    = self.__widgets["ups_authentication_login"].text()
