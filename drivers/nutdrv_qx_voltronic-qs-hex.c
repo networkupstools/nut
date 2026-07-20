@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.11"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.12"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -83,7 +83,7 @@ static item_t	voltronic_qs_hex_qx2nut[] = {
 
 	{ "input.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	1,	7,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
 	{ "output.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	9,	15,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
-	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	17,	18,	"%d",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_load },
+	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	17,	18,	"%ld",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_load },
 	{ "output.frequency",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	20,	30,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_frequency },
 	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	32,	36,	"%.2f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_battery_voltage },
 	/* Status bits */
