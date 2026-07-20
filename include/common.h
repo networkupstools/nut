@@ -38,7 +38,7 @@
 #endif	/* WIN32 */
 
 /* Need this on AIX when using xlc to get alloca */
-#ifdef _AIX
+#if defined(_AIX) && defined(__IBMC__)
 #pragma alloca
 #endif /* _AIX */
 
@@ -67,6 +67,7 @@
 
 #ifndef WIN32
 # include <syslog.h>
+# include <sys/un.h>
 #else	/* WIN32 */
 # include <winsock2.h>
 # include <windows.h>
@@ -427,6 +428,9 @@ int	str_add_unique_token(
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
+/* Check filesystem permissions for files/dirs we deem secretive */
+void check_perms(const char *fn);
+
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
@@ -758,6 +762,7 @@ int match_regex_hex(const regex_t *preg, const int n);
 
 /* Note: different method signatures instead of TYPE_FD_SER due to "const" */
 #ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #else	/* WIN32 */

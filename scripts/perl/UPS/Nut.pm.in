@@ -41,7 +41,32 @@ sub new {
 # Author: Kit Peters
   my $proto = shift;
   my $class = ref($proto) || $proto;
-  my %arg = @_; # hash of arguments
+  my %arg;
+
+  # Are we initialized with a hash of arguments or
+  # with an AuthConf instance (spelled for a specific
+  # connection) prepared by caller?
+  if (scalar(@_) == 1 && ref($_[0]) eq 'UPS::Nut::AuthConf') {
+    my $ac = shift;
+    %arg = $ac->to_nut_args();
+  } else {
+    %arg = @_; # hash of arguments
+
+    if (exists($arg{AUTHCONF})) {
+      my $ac = $arg{AUTHCONF};
+      if (ref($ac) eq 'UPS::Nut::AuthConf') {
+        # combine hash of arguments, prefer those from explicit args
+        my %arg_ac = $ac->to_nut_args();
+        foreach my $key (keys %arg_ac) {
+          if(!(exists $arg{$key})) {
+            $arg{$key} = $arg_ac{$key};
+          }
+        }
+      }
+      delete($arg{AUTHCONF});
+    }
+  }
+
   my $self = {};	# _initialize will fill it later
   bless $self, $class;
   unless ($self->_initialize(%arg)) { # can't initialize
@@ -51,7 +76,7 @@ sub new {
   return $self;
 }
 
-# accessor functions.  Return a value if successful, return undef 
+# accessor functions.  Return a value if successful, return undef
 # otherwise.
 
 sub BattPercent { # get battery percentage
@@ -82,7 +107,7 @@ sub Temperature { # get the internal temperature of UPS
   return shift->GetVar('battery.temperature');
 }
 
-# control functions: they control our relationship to upsd, and send 
+# control functions: they control our relationship to upsd, and send
 # commands to upsd.
 
 sub SetTrackingMode {
@@ -263,6 +288,8 @@ sub StartTLS {
       } else {
         $self->_debug("CERTIDENT: Could not retrieve loaded client certificate for validation");
       }
+    } else {
+      $self->_debug("CERTIDENT: not checking: not configured");
     }
 
     return 1;
@@ -272,8 +299,8 @@ sub StartTLS {
   return undef;
 }
 
-sub Login { # login to upsd, so that it won't shutdown unless we say we're 
-            # ok.  This should only be used if you're actually connected 
+sub Login { # login to upsd, so that it won't shutdown unless we say we're
+            # ok.  This should only be used if you're actually connected
             # to the ups that upsd is monitoring.
             # This assumes the upsmon SECONDARY role so we can be alerted
             # and initiate a shutdown if someone else sends the FSD command
@@ -281,8 +308,8 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
             # system which manages it.
 
 # Author: Kit Peters
-# ### changelog: modified login logic a bit.  Now it doesn't check to see 
-# ### changelog: if we got OK, ERR, or something else from upsd.  It 
+# ### changelog: modified login logic a bit.  Now it doesn't check to see
+# ### changelog: if we got OK, ERR, or something else from upsd.  It
 # ### changelog: simply checks for a response beginning with OK from upsd.
 # ### changelog: Anything else is an error.
 #
@@ -320,7 +347,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
   return undef;
 }
 
-sub Authenticate { # Announce to the UPS who we are to set up the proper 
+sub Authenticate { # Announce to the UPS who we are to set up the proper
                    # management level.  See upsd.conf man page for details.
 
 # Contributor: Wayne Wylupski
@@ -374,8 +401,8 @@ sub Logout { # logout of upsd and close connection
   }
 }
 
-# internal functions.  These are only used by UPS::Nut internally, so 
-# please don't use them otherwise.  If you really think an internal 
+# internal functions.  These are only used by UPS::Nut internally, so
+# please don't use them otherwise.  If you really think an internal
 # function should be externalized, let me know.
 
 sub _initialize {
@@ -503,7 +530,7 @@ sub _initialize {
     }
   }
 
-  # get a hash of vars for both the TIE functions as well as for 
+  # get a hash of vars for both the TIE functions as well as for
   # expanding vars.
   $self->{vars} = $self->ListVar;
 
@@ -524,7 +551,7 @@ sub _initialize {
 # _send
 #
 # Sends a command to the server and retrieves the results.
-# If there was a network error, return undef; $! will contain the 
+# If there was a network error, return undef; $! will contain the
 # error.
 sub _send
 {
@@ -578,7 +605,7 @@ sub GetVar { # request a variable from the UPS
 # Author: Kit Peters
   my $self = shift;
 # ### changelog: 8/3/2002 - KP - Request() now returns undef if not
-# ### changelog: connected to upsd via $srvsock 
+# ### changelog: connected to upsd via $srvsock
 # ### changelog: uses the new _send command
 #
 # Modified by Gabor Kiss according to protocol version 1.5+
@@ -1265,7 +1292,7 @@ Nut - a module to talk to a UPS via NUT (Network UPS Tools) upsd
 
 =head1 DESCRIPTION
 
-This is an object-oriented (whoo!) interface between Perl and upsd from 
+This is an object-oriented (whoo!) interface between Perl and upsd from
 the Network UPS Tools package version 1.5 and above
 (https://www.networkupstools.org/).
 Note that it only talks to upsd for you in a Perl-ish way.
@@ -1284,11 +1311,11 @@ Shown with defaults: new UPS::Nut( NAME => "default",
 * NAME is the name of the UPS to monitor, as specified in ups.conf
 * HOST is the host running upsd
 * PORT is the port that upsd is running on
-* USERNAME and PASSWORD are those that you use to login to upsd.  This 
+* USERNAME and PASSWORD are those that you use to login to upsd.  This
   gives you the right to do certain things, as specified in upsd.conf.
 * DEBUG turns on debugging output, set to 1 or 0
-* DEBUGOUT is de thing you do when de s*** hits the fan.  Actually, it's 
-  the filename where you want debugging output to go.  If it's not 
+* DEBUGOUT is de thing you do when de s*** hits the fan.  Actually, it's
+  the filename where you want debugging output to go.  If it's not
   specified, debugging output comes to standard output.
 
 =head1 Important notice
@@ -1309,31 +1336,31 @@ single reference or undef.
 
 =item Getvar($varname)
 
-returns value of the specified variable. Returns undef if variable 
+returns value of the specified variable. Returns undef if variable
 unsupported.
 Old method named Request() is also supported for compatibility.
 
 =item Set($varname, $value)
 
-sets the value of the specified variable. Returns undef if variable 
+sets the value of the specified variable. Returns undef if variable
 unsupported, or if variable cannot be set for some other reason. See
 Authenticate() if you wish to use this function.
 
 =item BattPercent()
 
-returns percentage of battery left. Returns undef if we can't get 
+returns percentage of battery left. Returns undef if we can't get
 battery percentage for some reason. Same as GetVar('battery.charge').
 
 =item LoadPercent($context)
 
-returns percentage of the load on the UPS. Returns undef if load 
+returns percentage of the load on the UPS. Returns undef if load
 percentage is unavailable. $context is a selector of 3 phase systems.
 Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
 
 =item LineVoltage($context)
 
-returns input line (e.g. the outlet) voltage. Returns undef if line 
+returns input line (e.g. the outlet) voltage. Returns undef if line
 voltage is unavailable. $context is a selector of 3 phase systems.
 Possible values are 1, 2, 3, 'L1', 'L2', 'L3'. It should be omitted
 in case of single phase UPS.
@@ -1341,9 +1368,9 @@ in case of single phase UPS.
 =item Status()
 
 returns UPS status, one of OL or OB. OL or OB may be followed by LB,
-which signifies low battery state. OL or OB may also be followed by 
-FSD, which denotes that the forced shutdown state 
-( see UPS::Nut->FSD() ) has been set on upsd. Returns undef if status 
+which signifies low battery state. OL or OB may also be followed by
+FSD, which denotes that the forced shutdown state
+( see UPS::Nut->FSD() ) has been set on upsd. Returns undef if status
 unavailable. Same as GetVar('ups.status').
 
 =item Temperature()
@@ -1355,14 +1382,14 @@ temperature unavailable. Same as GetVar('battery.temperature').
 
 =head2 Other methods
 
-These all operate on the UPS specified in the NAME argument to the 
+These all operate on the UPS specified in the NAME argument to the
 constructor.
 
 =over 4
 
 =item Authenticate($username, $password)
 
-With NUT certain operations are only available if the user has the 
+With NUT certain operations are only available if the user has the
 privilege. The program has to authenticate with one of the accounts
 defined in upsd.conf.
 
@@ -1412,20 +1439,20 @@ This method replaces the old ListInstCmds().
 
 =item InstCmd($command)
 
-Send an instant command to the UPS. Returns 1 on success. Returns 
+Send an instant command to the UPS. Returns 1 on success. Returns
 undef if the command can't be completed.
 
 =item FSD()
 
-Set the FSD (forced shutdown) flag for the UPS. This means that we're 
-planning on shutting down the UPS very soon, so the attached load should 
+Set the FSD (forced shutdown) flag for the UPS. This means that we're
+planning on shutting down the UPS very soon, so the attached load should
 be shut down as well. Returns 1 on success, returns undef on failure.
 This cannot be unset, so don't set it unless you mean it.
 
 =item Error()
 
-why did the previous operation fail? The answer is here. It will 
-return a concise, well-written, and brilliantly insightful few words as 
+why did the previous operation fail? The answer is here. It will
+return a concise, well-written, and brilliantly insightful few words as
 to why whatever you just did went bang.
 
 =item GetDesc($variable)
@@ -1475,7 +1502,7 @@ value of 'tie' useful, as in:
 
 =head1 AUTHOR
 
-  Original version made by Kit Peters 
+  Original version made by Kit Peters
   perl@clownswilleatyou.com
   http://www.awod.com/staff/kpeters/perl/
 
@@ -1486,10 +1513,10 @@ value of 'tie' useful, as in:
 Developed with the kind support of A World Of Difference, Inc.
 <http://www.awod.com/>
 
-Many thanks to Ryan Jessen <rjessen@cyberpowersystems.com> at CyberPower 
+Many thanks to Ryan Jessen <rjessen@cyberpowersystems.com> at CyberPower
 Systems for much-needed assistance.
 
-Thanks to Wayne Wylupski <wayne@connact.com> for the code to make 
+Thanks to Wayne Wylupski <wayne@connact.com> for the code to make
 accessor methods for all supported vars.
 
 =head1 LICENSE
@@ -1497,6 +1524,436 @@ accessor methods for all supported vars.
 This module is distributed under the same license as Perl itself.
 
 =cut
+
+package UPS::Nut::AuthConf;
+
+my @authconf_list;
+my $global_defaults_ref;
+my $debug = 0;
+my $debugout = undef;
+
+sub _debug { # print debug messages to stdout or file
+# Author: Kit Peters (original variant for main class)
+  my $class = shift;
+  if ($debug) {
+    chomp (my $msg = shift);
+    my $out; # filehandle for output
+    if ($debugout) { # if filename is given, use that
+      $out = new FileHandle ($debugout, ">>") or warn "Error: $!";
+    }
+    if ($out) { # if out was set to a filehandle, create nifty timestamp
+      my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+      $year = sprintf("%02d", $year % 100); # Y2.1K compliant, even!
+      my $timestamp = join '/', ($mon + 1), $mday, $year; # today
+      $timestamp .= " ";
+      $timestamp .= join ':', $hour, $min, $sec;
+      print $out "$timestamp $msg\n";
+    }
+    else { print "[DEBUG{AuthConf}]: $msg\n"; } # otherwise, print to stdout
+  }
+}
+
+sub getAuthConfList {
+    return @authconf_list;
+}
+
+sub freeAuthConfList {
+    @authconf_list = ();
+    $global_defaults_ref = undef;
+}
+
+sub setDebug {
+    my $class = shift;
+    my $dbgval = shift || 1;
+    $debug = $dbgval;
+}
+
+sub getDebug {
+    my $class = shift;
+    return $debug;
+}
+
+sub new {
+    my $class = shift;
+    my $section = shift || "";
+
+    $section =~ s/^\[//;
+    $section =~ s/\]$//;
+
+    my $self = {
+        section     => $section,  # [@host:port] or [user@host:port], or NULL for global
+        user        => undef,
+        pass        => undef,
+        certpath    => undef,     # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
+        certfile    => undef,     # (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+        certident   => undef,     # Client certificate identity (nickname, alias)
+        certpasswd  => undef,     # Password for key/cert storage
+        ssl_backend => undef,     # "openssl"/"nss"
+        certhost    => undef,     # Expected certificate subject (common name) of that server's certificate
+        certverify  => -1,        # -1 = unset, 0 = off, 1 = on
+        forcessl    => -1,        # -1 = unset, 0 = off, 1 = on
+    };
+    bless $self, $class;
+    return $self;
+}
+
+sub readAuthConfFile {
+    my $class = shift;
+    my $filename = shift;
+    my $fatal_errors = shift || 0;
+    my $global_scope = shift;
+    $global_scope = 1 if !defined $global_scope;
+
+    if (!defined $filename) {
+        my $s;
+        if (($s = $ENV{NUT_AUTHCONF_FILE}) && -r $s) {
+            $filename = $s;
+        } elsif (($s = $ENV{NUT_AUTHCONF_PATH}) && -r "$s/nutauth.conf") {
+            $filename = "$s/nutauth.conf";
+        } elsif ($s = $ENV{HOME}) {
+            if (-r "$s/.config/nut/nutauth.conf") {
+                $filename = "$s/.config/nut/nutauth.conf";
+            } elsif (-r "$s/.nutauth.conf") {
+                $filename = "$s/.nutauth.conf";
+            }
+        }
+
+        if (!defined $filename) {
+            my $confpath = $ENV{NUT_CONFPATH} || "@CONFPATH@";
+            if (-r "$confpath/nutauth.conf") {
+                $filename = "$confpath/nutauth.conf";
+            }
+        }
+
+        if (defined $filename) {
+            $class->_debug("readAuthConfFile(): filename was not provided, detected default: " . $filename);
+        } else {
+            $class->_debug("readAuthConfFile(): filename was not provided, and NOT detected!");
+        }
+    }
+
+    if (!defined $filename || !-e $filename) {
+        my $errMsg;
+        if (defined $filename) {
+            $errMsg = "Can't open a user/site-provided default nutauth.conf file";
+        } else {
+            $errMsg = "Could not open $filename";
+        }
+
+        if ($fatal_errors) {
+            die $errMsg;
+        }
+
+        $class->_debug("readAuthConfFile(): " . $errMsg);
+        return ();
+    }
+
+    my $fh;
+    if (!open($fh, '<', $filename)) {
+        my $errMsg = "Error opening $filename: $!";
+        die $errMsg if $fatal_errors;
+        $class->_debug("readAuthConfFile(): " . $errMsg);
+        return ();
+    }
+
+    my $current_ac;
+    # If we are in global scope (no section yet), we might be re-populating global_defaults
+    # FIXME: If we INCLUDE inside a section, we should not restart with `undef`
+    #  and possibly global scope (next'ed below) if the included file has
+    #  no section title at start... right? or wrong?..
+    $current_ac = $global_defaults_ref if $global_scope;
+
+    while (my $line = <$fh>) {
+        chomp $line;
+        $line =~ s/^\s+|\s+$//g;
+        next if !$line || $line =~ /^#/;
+
+        if ($line =~ /^\[(.*)\]$/) {
+            my $sectname = $1;
+            if ($class->getDebug()) {
+                if (defined $current_ac) {
+                    $class->_debug("readAuthConfFile(): starting [$sectname]; completed reading [$current_ac->{section}]:");
+                    $dumper->dumpValue($current_ac);
+                } else {
+                    $class->_debug("readAuthConfFile(): starting [$sectname]");
+                }
+            }
+            if ($sectname eq "_global_defaults" || $sectname eq "" || $sectname eq '*') {
+                if (!defined $global_defaults_ref) {
+                    $global_defaults_ref = UPS::Nut::AuthConf->new("");
+                    push @authconf_list, $global_defaults_ref;
+                }
+                $current_ac = $global_defaults_ref;
+            } else {
+                # Check if section already exists
+                $current_ac = undef;
+                foreach my $ac (@authconf_list) {
+                    my $ac_sect = $ac->{section};
+                    $ac_sect =~ s/^\[//;
+                    $ac_sect =~ s/\]$//;
+                    if ($ac_sect eq $sectname) {
+                        $current_ac = $ac;
+                        last;
+                    }
+                }
+                if (!defined $current_ac) {
+                    $current_ac = UPS::Nut::AuthConf->new("$sectname");
+                    push @authconf_list, $current_ac;
+                }
+            }
+            next;
+        }
+
+        # INCLUDE support
+        if ($line =~ /^INCLUDE(?:_REQUIRED)?\s+(.*)$/i) {
+            my $inc_file = $1;
+            $inc_file =~ s/^["']|["']$//g;
+            my $is_required = ($line =~ /^INCLUDE_REQUIRED/i);
+            $class->_debug("readAuthConfFile(): INCLUDE '$inc_file'");
+            $class->readAuthConfFile($inc_file, $is_required, (!defined $current_ac || $current_ac == $global_defaults_ref));
+            next;
+        }
+
+        if ($line =~ /^([^=]+)=(.*)$/) {
+            my ($key, $value) = ($1, $2);
+            $key =~ s/^\s+|\s+$//g;
+            my $keyUC = uc($key);
+
+            # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
+            $value =~ s/^\s+|\s+$//g;
+            $value =~ s/^["']|["']$//g;
+
+            if (!defined $current_ac) {
+                if ($global_scope) {
+                    if (!defined $global_defaults_ref) {
+                        $global_defaults_ref = UPS::Nut::AuthConf->new("");
+                        push @authconf_list, $global_defaults_ref;
+                        $class->_debug("readAuthConfFile(): starting [] (global defaults) section handling");
+                    }
+                    $current_ac = $global_defaults_ref;
+                } else {
+                    # We are parsing an INCLUDE'd file but were not
+                    # in global scope when that directive was seen
+                    next;
+                }
+            }
+
+            $class->_debug("readAuthConfFile(): KEY=VAL line for [$current_ac->{section}]: '$key' = '$value' (keyUC='$keyUC')");
+
+            if ($keyUC eq 'USER' || $keyUC eq 'USERNAME') {
+                if (!exists($current_ac->{user}) || !defined($current_ac->{user})) {
+                    $current_ac->{user} = $value;
+                }
+            }
+            elsif ($keyUC eq 'PASS' || $keyUC eq 'PASSWORD' ) { $current_ac->{pass} = $value; }
+            elsif ($key eq 'CERTPATH') { $current_ac->{certpath} = $value; }
+            elsif ($key eq 'CERTFILE') { $current_ac->{certfile} = $value; }
+            elsif ($key eq 'CERTIDENT_NAME') { $current_ac->{certident} = $value; }
+            elsif ($key eq 'CERTIDENT_PASS') { $current_ac->{certpasswd} = $value; }
+            elsif ($key eq 'SSLBACKEND') { $current_ac->{ssl_backend} = $value; }
+            elsif ($key eq 'CERTHOST') { $current_ac->{certhost} = $value; }
+            elsif ($key eq 'CERTVERIFY') { $current_ac->{certverify} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            elsif ($key eq 'FORCESSL') { $current_ac->{forcessl} = ($value =~ /^(on|yes|1)$/i) ? 1 : 0; }
+            else { print "[WARNING] Unsupported keyword in NUT auth configuration file: '$key'"; }
+        }
+    }
+    close($fh);
+    return @authconf_list;
+}
+
+sub merge {
+    my ($self, $source) = @_;
+    return if !defined $source;
+
+    my $sect = $self->{section};
+
+    if (UPS::Nut::AuthConf->getDebug()) {
+        UPS::Nut::AuthConf->_debug("merge(): input 1:");
+        $dumper->dumpValue($self);
+        UPS::Nut::AuthConf->_debug("merge(): input 2:");
+        $dumper->dumpValue($source);
+    }
+
+    if ($sect =~ /^([^@]+)@/) {
+        $self->{user} = $1 if !defined $self->{user};
+    } else {
+        $self->{user} = $source->{user} if !defined $self->{user} && defined $source->{user};
+    }
+
+    $self->{pass} = $source->{pass} if !defined $self->{pass} && defined $source->{pass};
+    $self->{certpath} = $source->{certpath} if !defined $self->{certpath} && defined $source->{certpath};
+    $self->{certfile} = $source->{certfile} if !defined $self->{certfile} && defined $source->{certfile};
+    $self->{certident} = $source->{certident} if !defined $self->{certident} && defined $source->{certident};
+    $self->{certpasswd} = $source->{certpasswd} if !defined $self->{certpasswd} && defined $source->{certpasswd};
+    $self->{ssl_backend} = $source->{ssl_backend} if !defined $self->{ssl_backend} && defined $source->{ssl_backend};
+    $self->{certhost} = $source->{certhost} if !defined $self->{certhost} && defined $source->{certhost};
+    $self->{certverify} = $source->{certverify} if $self->{certverify} == -1 && $source->{certverify} != -1;
+    $self->{forcessl} = $source->{forcessl} if $self->{forcessl} == -1 && $source->{forcessl} != -1;
+
+    if (UPS::Nut::AuthConf->getDebug()) {
+        UPS::Nut::AuthConf->_debug("merge(): result:");
+        $dumper->dumpValue($self);
+    }
+}
+
+sub getAuthConf {
+    my $class = shift;
+    my ($user, $host, $port, $auth_configs_ref) = @_;
+    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : ( @authconf_list ? @authconf_list : $class->readAuthConfFile() );
+
+    my $norm_host = $host || 'localhost';
+    my $norm_port = $port; # may be undef
+
+    my $host_part = $norm_host;
+    if (($host_part =~ /:/ || $host_part =~ /\[/ || $host_part =~ /\]/) && substr($host_part, 0, 1) ne '[') {
+        $host_part = "[$host_part]";
+    }
+
+    my $target_user_host_port = "";
+    $target_user_host_port .= "$user\@" if defined $user;
+    $target_user_host_port .= $host_part;
+    $target_user_host_port .= ":$norm_port" if defined $norm_port;
+
+    my $target_host_port = "\@$host_part";
+    $target_host_port .= ":$norm_port" if defined $norm_port;
+
+    my $res = UPS::Nut::AuthConf->new("[$target_user_host_port]");
+
+    my ($retval_user, $retval_host, $global_defaults);
+
+    $class->_debug("getAuthConf(): Looking for user [" . ($user || "undef") . "], host [" . ($host || "undef") . "]=>[$host_part], port [" . ($port || "undef") . "]");
+    foreach my $ac (@auth_configs) {
+        my $sect = $ac->{section};
+        $class->_debug("getAuthConf(): Processing section: [$sect]");
+
+        if ($sect eq $target_user_host_port) {
+            $class->_debug("getAuthConf(): hit retval_user looking for target_user_host_port [$target_user_host_port]");
+            $retval_user = $ac;
+        }
+        if ($sect eq $target_host_port) {
+            $class->_debug("getAuthConf(): hit retval_host looking for target_host_port [$target_host_port]");
+            $retval_host = $ac;
+        }
+        if ($sect eq "" || $sect eq "_global_defaults" || $sect eq '*') {
+            $class->_debug("getAuthConf(): found global defaults section");
+            $global_defaults = $ac;
+        }
+    }
+
+    if (defined $retval_user) {
+        $class->_debug("getAuthConf(): merge retval_user into the result");
+        $res->merge($retval_user);
+    }
+    if (defined $retval_host) {
+        $class->_debug("getAuthConf(): merge retval_host into the result");
+        $res->merge($retval_host);
+    }
+    if (defined $global_defaults) {
+        $class->_debug("getAuthConf(): merge global_defaults into the result");
+        $res->merge($global_defaults);
+    }
+
+    # Final enforcement of user if requested
+    $res->{user} = $user if defined $user;
+
+    return $res;
+}
+
+sub findAuthConf {
+    my $class = shift;
+    my ($user, $host, $port, $auth_configs_ref) = @_;
+    my @auth_configs = $auth_configs_ref ? @$auth_configs_ref : ( @authconf_list ? @authconf_list : $class->readAuthConfFile() );
+
+    my $norm_host = $host || 'localhost';
+    my $norm_port = $port; # may be undef
+
+    my $host_part = $norm_host;
+    if (($host_part =~ /:/ || $host_part =~ /\[/ || $host_part =~ /\]/) && substr($host_part, 0, 1) ne '[') {
+        $host_part = "[$host_part]";
+    }
+
+    my $target = "";
+    $target .= "$user\@" if defined $user;
+    $target .= $host_part;
+    $target .= ":$norm_port" if defined $norm_port;
+
+    my $star_match;
+    $class->_debug("findAuthConf(): Looking for user [" . ($user || "undef") . "], host [" . ($host || "undef") . "]=>[$norm_host], port [" . ($port || "undef") . "]");
+    foreach my $ac (@auth_configs) {
+        my $section = $ac->{section};
+        $class->_debug("findAuthConf(): Processing section: [$section]");
+
+        if ($section eq $target) {
+            $class->_debug("findAuthConf(): hit 1: target [$target]");
+            return $ac;
+        }
+
+        # fallback matches
+        if (!defined $user && defined $norm_port && $section eq "$host_part:$norm_port") {
+            $class->_debug("findAuthConf(): hit 2: no user, host+port OK");
+            return $ac;
+        }
+        if (!defined $user && !defined $norm_port && $section eq $host_part) {
+            $class->_debug("findAuthConf(): hit 3: no user, no port, host OK");
+            return $ac;
+        }
+
+        if ($section eq '*' || $section eq '' || $section eq "_global_defaults") {
+            $class->_debug("findAuthConf(): found global defaults section for fallback");
+            $star_match = $ac;
+        }
+    }
+
+    $class->_debug("findAuthConf(): got no direct hits, returning global defaults section if found");
+    return $star_match if defined $star_match;
+    return undef;
+}
+
+sub to_nut_args {
+    my $self = shift;
+    my %args;
+
+    # Extract HOST and PORT from section
+    my $host = 'localhost';
+    my $port = '3493';
+    my $sect = $self->{section};
+    $sect =~ s/^\[//;
+    $sect =~ s/\]$//;
+    if ($sect =~ /@/) {
+        $sect =~ s/^[^@]*@//;
+    }
+
+    if (substr($sect, 0, 1) eq '[') {
+        my $close = index($sect, ']');
+        if ($close != -1) {
+            $host = substr($sect, 1, $close - 1);
+            if (length($sect) > $close + 1 && substr($sect, $close + 1, 1) eq ':') {
+                $port = substr($sect, $close + 2);
+            }
+        } else {
+            $host = $sect;
+        }
+    } elsif ($sect =~ /:/) {
+        ($host, $port) = split(/:/, $sect, 2);
+    } elsif ($sect ne "") {
+        $host = $sect;
+    }
+
+    $args{HOST} = $host;
+    $args{PORT} = $port;
+    $args{USERNAME} = $self->{user} if defined $self->{user};
+    $args{PASSWORD} = $self->{pass} if defined $self->{pass};
+    $args{LOGIN} = 1 if defined $self->{user};
+    $args{USESSL} = 1 if $self->{forcessl} > 0;
+    $args{FORCESSL} = 1 if $self->{forcessl} > 0;
+    $args{CERTVERIFY} = ($self->{certverify} > 0) if $self->{certverify} != -1;
+    $args{CERTPATH} = $self->{certpath} if defined $self->{certpath};
+    $args{CERTFILE} = $self->{certfile} if defined $self->{certfile};
+    $args{CERTIDENT} = $self->{certident} if defined $self->{certident};
+    $args{CERTPASSWD} = $self->{certpasswd} if defined $self->{certpasswd};
+
+    return %args;
+}
 
 package UPS::Nut::TrackingID;
 use strict;

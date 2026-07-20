@@ -40,6 +40,9 @@
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
+static upscli_authconf_t	*ac_default = NULL;
+static int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 static int	output_json = 0;
@@ -477,6 +480,8 @@ static void ups_connect(void)
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
 	uint16_t	newport = 0;
+	char	str_port[16];
+	upscli_authconf_t	*ac_current = NULL;
 
 	upsdebug_call_starting0();
 
@@ -535,10 +540,38 @@ static void ups_connect(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if (currups && upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
+	/* FIXME: Currently libupsclient allows for one SSL context shared
+	 *  by all connections, specifically the CERTIDENT of the client.
+	 *  We can have multiple CERTHOST certificates (and/or reading
+	 *  users/passwords) though. */
+	ac_current = upscli_get_authconf_item(
+		NULL, hostname,
+		snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL,
+		1);
+
+	/* Always call this, to register possible CERTHOSTs etc. */
+	if (upscli_init_authconf(ac_current) > 0) {
+		if (ac_default) {
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+
+			// Do not call on the next loop cycle, if any
+			ac_default = NULL;
+		}
+	}
+
+	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
 			upscli_strerror(&ups));
+	} else {
+		/* TOTHINK #3411: Consider autologin via ac_conn->user/pass fields?
+		 *  Probably no, not for a web client anyone can interact with...
+		 *  This one is for a read-only listing, but could something be abused?
+		 *  If it comes to that, better fall back to requiring query/form args
+		 *  like in upsset.c
+		 *  //upscli_authenticate_authconf(&ups, ac_current);
+		 */
+	}
 
 	lastups = currups;
 	upsdebug_call_finished2(": pick first device on newly connected data server [%s]",
@@ -1686,6 +1719,11 @@ static void display_json(void)
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	upscli_cleanup();
 	upsdebugx(1, "%s: finished, exiting", __func__);
 }
@@ -1750,8 +1788,14 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
+
+	/* Prepare for handling in first loop through ups_connect() */
+	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 
 	/*
 	 * If json is in the query, bypass all HTML and call display_json()

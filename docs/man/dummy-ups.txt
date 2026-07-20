@@ -228,10 +228,25 @@ For instance:
 		driver = dummy-ups
 		port = ups1@remotehost
 		desc = "dummy-ups in repeater mode"
+		authconf = default
 
 Unlike UPS specifications in the rest of NUT, the `@hostname` portion is not
 optional -- it is the `@` character which enables Repeater Mode. To refer to an
 UPS on the same host as *dummy-ups*, use `port = upsname@localhost`.
+
+Since NUT v2.8.6 release, a new `authconf` driver parameter lets you
+choose how the driver discovers authentication and trust parameters
+for the repeated UPS connection:
+
+* `authconf = default` to require a user (see `RUN_AS_USER`) or system
+  supplied NUT authconf file. See linkman:nutauth.conf[5] man page
+  about default locations for the file.
+* `authconf = none` to disable authconf parsing entirely.
+* `authconf = <path>` to require a specific authconf file.
+
+If no value is specified, the driver will try to find and use
+the file in default locations, but should not fail if that is
+not possible.
 
 Note that to avoid CPU overload with an infinite loop, the driver "sleeps" a
 bit between data-requesting cycles (currently this delay is hardcoded to one

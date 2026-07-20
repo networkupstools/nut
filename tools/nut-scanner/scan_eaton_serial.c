@@ -28,11 +28,6 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 
-/* Need this on AIX when using xlc to get alloca */
-#ifdef _AIX
-# pragma alloca
-#endif /* _AIX */
-
 #include <fcntl.h>
 #include <stdio.h>
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)

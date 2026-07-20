@@ -74,6 +74,11 @@
 # define _NUTCLIENTTEST_BUILD 1
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifndef _WIN32
+# include <unistd.h>
+#endif
 #include "../clients/nutclient.h"
 #include "../clients/nutclientmem.h"
 
@@ -103,6 +108,7 @@ private:
 
 	/* SSL options: shared */
 	bool env_NUT_SSL = false;
+	bool env_NUT_SSL_specified = false;
 	bool env_NUT_FORCESSL = false;
 	int env_NUT_CERTVERIFY = -1;
 	std::string env_NUT_KEYPASS = "";
@@ -182,6 +188,7 @@ void NutActiveClientTest::setUp()
 	} // else stays empty
 
 	s = std::getenv("NUT_SSL");
+	env_NUT_SSL_specified = (s != nullptr);
 	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
 		env_NUT_SSL = true;
 	}
@@ -250,6 +257,69 @@ void NutActiveClientTest::setUp()
 	if (s) {
 		env_NUT_CERTIDENT_NAME = s;
 	}
+
+	s = std::getenv("NUT_IGNORE_AUTHCONF");
+	if (!s || (s != std::string("1") && s != std::string("true"))) {
+		if (nut::AuthConf::readAuthConfFile("", 0) == 1) {
+			char szPort[32];
+			std::cerr << "[DEBUG] NUT AuthConf file read succeeded, applying its values for host connection instead of envvars (if any)" << std::endl;
+			snprintf(szPort, sizeof(szPort), "%u", env_NUT_PORT);
+
+			nut::AuthConf ac = nut::AuthConf::getAuthConf(
+				env_NUT_USER,
+				"localhost",
+				szPort,
+				false);
+
+			std::cerr << "[DEBUG] NUT AuthConf settings extracted for section:" << std::endl
+				<< ac.to_string(true, true) << std::endl;
+
+			if (!ac.user.empty() || !ac.pass.empty() || !ac.certpath.empty()) {
+				if (!ac.user.empty()) env_NUT_USER = ac.user;
+				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
+				if (!ac.certpath.empty()) {
+					// Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
+					if (ac.ssl_backend != "openssl") {
+						// NSS or none or unspecified
+						env_NUT_CERTSTORE_PATH = ac.certpath;
+					}
+					if (ac.ssl_backend != "nss") {
+						// OpenSSL or none or unspecified
+						struct stat st;
+						if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+							env_NUT_CAPATH = ac.certpath;
+						} else {
+							env_NUT_CAFILE = ac.certpath;
+						}
+					}
+				}
+				if (!ac.certfile.empty()) {
+					// (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+					env_NUT_CERTFILE = ac.certfile;
+					env_NUT_KEYFILE = "";
+				}
+				if (!ac.certident.empty()) env_NUT_CERTIDENT_NAME = ac.certident;
+				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
+				if (!ac.certhost.empty()) {
+					env_NUT_CERTHOST_ADDR = std::string("localhost:") + szPort;
+					env_NUT_CERTHOST_NAME = ac.certhost;
+				}
+
+				// If test runner has explicitly set NUT_SSL=False,
+				// ignore the value required in the authconf
+				if (!env_NUT_SSL_specified || env_NUT_SSL) {
+					if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
+					if (ac.forcessl != -1) env_NUT_FORCESSL = (ac.forcessl == 1);
+				}
+				// TOTHINK: Make use of SSLBACKEND to pick one side?
+			}
+		} else {
+			std::cerr << "[DEBUG] NUT AuthConf file read failed, will rely on envvars for host connection (if any)" << std::endl;
+		}
+	}
+
+	if (!env_NUT_SSL_specified)
+		env_NUT_SSL = env_NUT_FORCESSL;
 }
 
 void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
@@ -257,6 +327,30 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 	// NOTE: Currently this is a boolean toggle, not a numeric verbosity level
 	if (env_NUT_DEBUG_LEVEL > 0)
 		c.setDebugConnect(true);
+
+	std::cerr << "[D] Incoming SSLConfig data points:"
+		// shared:
+		<< " env_NUT_USER='" << env_NUT_USER
+		<< "' env_NUT_PASS='" << env_NUT_PASS
+		<< "' (try?)NUT_SSL=" << env_NUT_SSL
+		<< " NUT_FORCESSL=" << env_NUT_FORCESSL
+		<< " NUT_CERTVERIFY=" << env_NUT_CERTVERIFY
+		<< " NUT_CERTIDENT_NAME='" << env_NUT_CERTIDENT_NAME
+		<< "' NUT_CAPATH='" << env_NUT_CAPATH
+		// OpenSSL-only:
+		<< "' NUT_CAFILE='" << env_NUT_CAFILE
+		<< "' NUT_CERTFILE='" << env_NUT_CERTFILE
+		<< "' NUT_KEYFILE='" << env_NUT_KEYFILE
+		// shared:
+		<< "' NUT_KEYPASS='" << env_NUT_KEYPASS
+		<< "' NUT_CERTHOST_ADDR='" << env_NUT_CERTHOST_ADDR
+		<< "' NUT_CERTHOST_NAME='" << env_NUT_CERTHOST_NAME
+		// NSS-only:
+		<< "' NUT_CERTSTORE_PATH='" << env_NUT_CERTSTORE_PATH
+		<< "' NUT_CERTSTORE_PREFIX='" << env_NUT_CERTSTORE_PREFIX
+		<< "'"
+		<< " NUT_PORT=" << env_NUT_PORT
+		<< std::endl;
 
 	if (env_NUT_CERTVERIFY != -1
 	 || env_NUT_FORCESSL
@@ -271,6 +365,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 #ifndef WITH_SSL_CXX
 		try {
 #endif
+		std::cerr << "[D] Setting SSLConfig_OpenSSL" << std::endl;
 		c.setSSLConfig(SSLConfig_OpenSSL(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -309,6 +404,7 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 #ifndef WITH_SSL_CXX
 		try {
 #endif
+		std::cerr << "[D] Setting SSLConfig_OpenNSS" << std::endl;
 		c.setSSLConfig(SSLConfig_NSS(
 			env_NUT_FORCESSL,
 			env_NUT_CERTVERIFY,
@@ -347,7 +443,6 @@ void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
 		<< "' NUT_KEYFILE='" << c.getSslKeyFile()
 		// shared:
 		<< "' NUT_KEYPASS='" << c.getSslKeyPass()
-		// should be shared, but so far NSS-only (FIXME):
 		<< "' NUT_CERTHOST_ADDR='" << c.getSslCertHostAddr()
 		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
 		// NSS-only:

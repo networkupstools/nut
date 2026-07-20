@@ -43,9 +43,7 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_DECL_REALPATH
-# include <sys/stat.h>
-#endif
+#include <sys/stat.h>
 
 /* Just yield a unique value - e.g. address of a statically allocated variable
  * which would be different if several copies of NUT-common object code are
@@ -613,6 +611,28 @@ pid_t get_max_pid_t(void)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic pop
 #endif
+}
+
+void check_perms(const char *fn)
+{
+#ifndef WIN32
+	int	ret;
+	struct stat	st;
+
+	ret = stat(fn, &st);
+
+	if (ret != 0) {
+		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
+	}
+
+	/* include the x bit here in case we check a directory */
+	if (st.st_mode & (S_IROTH | S_IXOTH)) {
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
+	}
+#else   /* WIN32 */
+	NUT_UNUSED_VARIABLE(fn);
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif  /* WIN32 */
 }
 
 	/* Normally sendsignalfn(), sendsignalpid() and related methods call
@@ -5187,6 +5207,53 @@ char *xstrdup(const char *string)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
 	return p;
 }
+
+/* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
+#ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+{
+	int rc;
+	int err = 0;
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	rc = connect(fd, (const struct sockaddr *)addr, addrlen);
+	if (rc == -1 && errno != EINPROGRESS) {
+		err = errno;
+	} else if (rc == -1) {
+		fd_set w_fds;
+		fd_set e_fds;
+		struct timeval tv;
+
+		FD_ZERO(&w_fds);
+		FD_SET(fd, &w_fds);
+		FD_ZERO(&e_fds);
+		FD_SET(fd, &e_fds);
+
+		tv.tv_sec = d_sec;
+		tv.tv_usec = d_usec;
+
+		rc = select(fd + 1, NULL, &w_fds, &e_fds, &tv);
+
+		if (rc < 0) {
+			err = errno;
+		} else if (rc == 0) {
+			err = ETIMEDOUT;
+		} else {
+			socklen_t len = sizeof(err);
+			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+		}
+	}
+
+	fcntl(fd, F_SETFL, flags);
+
+	if (err != 0) {
+		errno = err;
+		return -1;
+	}
+	return 0;
+}
+#endif
 
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.

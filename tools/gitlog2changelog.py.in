@@ -13,7 +13,9 @@ import subprocess
 # Python 3 compatibility hack
 try:
     try:
-        import unicode
+        # Alternate name is for Python 2 (with built-in symbol) to avoid
+        #   TypeError: 'module' object is not callable
+        import unicode as unicode_module
     except:
         # Maybe built-in?
         pass

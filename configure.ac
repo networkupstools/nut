@@ -525,6 +525,7 @@ AS_IF([test ! -d "${PIDPATH}" -o -h "${PIDPATH}" && test -d "/run" -a ! -h "/run
 
 AC_CHECK_PROGS([GETENT], [getent], [])
 AC_CHECK_PROGS([ID], [id], [])
+AC_CHECK_PROGS([LSGROUP], [lsgroup], [])
 
 PROBE_OS_USER="false"
 PROBE_OS_GROUP="false"
@@ -534,20 +535,24 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		AS_IF([test -r "/etc/groups"], [
-			dnl FIXME: For command prefix usage like used in this
-			dnl  script, we might be better off defining a shell
-			dnl  function and referring to it. Grep would catch
-			dnl  also user names that have a group as secondary!
-			PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+		AS_IF([test x"${LSGROUP}" != x], [
+			PROBE_OS_GROUP="${LSGROUP} "
 			], [
-			dnl This shows groups of a USER with specified name!
-			dnl But to probe for cases where string names are
-			dnl same (e.g. "nut" or "ups") this might be good
-			dnl enough.
-			PROBE_OS_GROUP="${ID} -g "
+			AS_IF([test -r "/etc/groups"], [
+				dnl FIXME: For command prefix usage like used in this
+				dnl  script, we might be better off defining a shell
+				dnl  function and referring to it. Grep would catch
+				dnl  also user names that have a group as secondary!
+				PROBE_OS_GROUP="cat /etc/groups | ${GREP} -w "
+				], [
+				dnl This shows groups of a USER with specified name!
+				dnl But to probe for cases where string names are
+				dnl same (e.g. "nut" or "ups") this might be good
+				dnl enough.
+				PROBE_OS_GROUP="${ID} -g "
+				])
+			AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 			])
-		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
@@ -1698,12 +1703,13 @@ AC_CACHE_CHECK([for %zu as PRIuSIZE],
     [ac_cv_printfmt_zu],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#include <stdio.h>
 #include <stdlib.h>
 ],
             [[size_t n = 123;
 char buf[64];
 snprintf(buf, sizeof(buf), "%zu", n);
-return !strcmp(buf, "123");
+return strcmp(buf, "123");
 ]])],
         [ac_cv_printfmt_zu=yes], [ac_cv_printfmt_zu=no]
     )])
@@ -5201,6 +5207,8 @@ dnl Note: Currently there is no reliable automatic detection -
 dnl users have to ask they want systemd units installed, or
 dnl risk auto-detection like seen below.
 dnl FIXME: Add a toggle like "--with(out)-systemd" to disable these probes too
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
 AC_MSG_CHECKING(whether to install systemd unit files)
 NUT_ARG_WITH([systemdsystemunitdir], [(DIRPATH|yes|no|auto)], [Directory for systemd service files], [auto])
 systemdsystemunitdir="${nut_with_systemdsystemunitdir}"
@@ -5213,12 +5221,16 @@ case "${systemdsystemunitdir}" in
 			[def_systemdsystemunitdir=""])
 
 		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			def_msgerr="--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings. Please double-check that you have {lib,}systemd-dev{,el} installed as appropriate for your OS distribution!"
 			AS_IF([test "${systemdsystemunitdir}" = yes],
-				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+				[AC_MSG_ERROR([${def_msgerr}])])
+			AS_IF([test x"${SYSTEMD_SYSTEMCTL_PROGRAM}" != x -a -x "${SYSTEMD_SYSTEMCTL_PROGRAM}"],
+				[AC_MSG_WARN([${SYSTEMD_SYSTEMCTL_PROGRAM} is present and ${def_msgerr}])])
 			systemdsystemunitdir=""
+			AS_UNSET(def_msgerr)
 			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
 
-		unset def_systemdsystemunitdir
+		AS_UNSET(def_systemdsystemunitdir)
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -5245,8 +5257,6 @@ NUT_REPORT_FEATURE([consider basic systemd support], [${have_systemd}], [],
 dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
-
-AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
 
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
@@ -5713,8 +5723,14 @@ return res ? 0 : 1;
      LDFLAGS="$my_LDFLAGS $pkg_cv_CPPUNIT_LDFLAGS"
      LIBS="$my_LIBS $pkg_cv_CPPUNIT_LIBS"
      AC_LANG_PUSH([C++])
-     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [have_cppunit=yes], [have_cppunit=no])
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])], [
+        have_cppunit=yes
+     ], [
+        have_cppunit=no
+        AS_CASE([$CXXFLAGS],
+            [*-std=*++*], [AC_MSG_WARN([You have a C++ standard version explicitly required in CXXFLAGS... The CPPUNIT build test failed, and some of its releases used auto_ptr which is deprecated since C++14 and removed in e.g. clang since C++17])]
+        )
+     ])
      CXXFLAGS="$my_CXXFLAGS"
      LDFLAGS="$my_LDFLAGS"
      LIBS="$my_LIBS"
@@ -7353,6 +7369,7 @@ AC_CONFIG_FILES([
  clients/Makefile
  common/Makefile
  conf/Makefile
+ conf/nutauth.conf.sample
  conf/upsmon.conf.sample
  conf/upssched.conf.sample
  conf/upsstats.html.sample
@@ -7397,6 +7414,7 @@ AC_CONFIG_FILES([
  scripts/installer/Makefile
  scripts/misc/nut.bash_completion
  scripts/obs/Makefile
+ scripts/perl/UPS/Nut.pm
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py

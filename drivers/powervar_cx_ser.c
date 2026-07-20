@@ -142,16 +142,20 @@ void upsdrv_initups(void)
 			ser_set_speed(upsfd, device_path, B38400);
 			upsdebugx (4, "Serial baud set to 38400.");
 		}
+#if defined(B57600)
 		else if (ulBaud == 57600)
 		{
 			ser_set_speed(upsfd, device_path, B57600);
 			upsdebugx (4, "Serial baud set to 57600.");
 		}
+#endif
+#if defined(B115200)
 		else if (ulBaud == 115200)	/* The only other baud known to be available. */
 		{
 			ser_set_speed(upsfd, device_path, B115200);
 			upsdebugx (4, "Serial baud set to 115200.");
 		}
+#endif
 		else
 		{
 			upsdebugx (4, "Serial baud not set!! (%" PRIu32 ").", ulBaud);

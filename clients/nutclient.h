@@ -41,6 +41,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 #include <set>
 #include <exception>
@@ -86,6 +87,86 @@ class TcpClient;
 class Device;
 class Variable;
 class Command;
+
+/**
+ * Authentication configuration for a NUT client.
+ */
+class AuthConf
+{
+public:
+	AuthConf(const std::string& section = "");
+	AuthConf(const AuthConf& source, const std::string& section = "");
+	AuthConf& operator=(const AuthConf& source);
+	~AuthConf();
+
+	/** Get the one global list of all parsed authentication configurations */
+	static std::list<AuthConf>& getAuthConfList();
+
+	/** Read the authentication configuration file (usually nutauth.conf) */
+	static int readAuthConfFile(const std::string& filename = "", int fatal_errors = 0);
+
+	/** Find the best matching authconf for a given connection string */
+	static AuthConf findAuthConf(const std::string& user, const std::string& host, const std::string& port);
+
+	/** Find the best matching authconf for a given connection string, and fill in
+	 * the missing points from higher levels (exact match => host defaults => global).
+	 * Based on `add_to_list` flag, the returned item is always new and unique and
+	 * not on the list (can adapt to changes in higher levels but must be freed by
+	 * caller), or will be edited on or added to the list (subsequent calls would
+	 * likely not add anything new, but memory management is easier, data is cached).
+	 * if all args are empty, return the global section or empty if none such in the list.
+	 */
+	static AuthConf getAuthConf(const std::string& user, const std::string& host, const std::string& port, bool add_to_list = false);
+
+	/** Merge contents of another configuration item into this one.
+	 *  Follows C upscli_merge_authconf_item() logic.
+	 */
+	void merge(const AuthConf& source);
+
+	/** Clear the global list of authentication configurations */
+	static void freeAuthConfList();
+
+	/** Allow to print the contents of this configuration item */
+	std::string to_string(bool for_debug = false, bool show_pass = false);
+	static std::string toString_line_str(const std::string &var, const std::string &val, const std::string &indent, bool for_debug);
+	static std::string toString_line_int(const std::string &var, int val, const std::string &indent, bool for_debug);
+
+	/** [@host:port] or [user@host:port], or empty for global defaults */
+	std::string section;
+
+	std::string user;
+	std::string pass;
+
+	/** Path to trusted CA certificates;
+	 * in case of NSS, this is the path to location
+	 * of the NSS DB files used for all purposes */
+	std::string certpath;
+
+	/** (OpenSSL only) Client certificate file for authentication to the server
+	 *  (client cert, CA chain, client key) */
+	std::string certfile;
+
+	/** Client certificate identity (nickname, alias) */
+	std::string certident;
+
+	/** Password for key/cert storage */
+	std::string certpasswd;
+
+	/** "openssl"/"nss" */
+	std::string ssl_backend;
+
+	/** Expected certificate subject (common name) of that
+	 * server's certificate; alternately the IP address or
+	 * host name used in the section title should match that
+	 * in the common name (CN) or subject alternate names (SAN) */
+	std::string certhost;
+	int certverify;	/* -1 = unset, 0 = off, 1 = on */
+	int forcessl;	/* -1 = unset, 0 = off, 1 = on */
+
+private:
+	static std::list<AuthConf> authconf_list;
+	static AuthConf* global_defaults;
+};
 
 /**
  * Base class for certificate store location information
@@ -402,17 +483,20 @@ public:
 class SSLConfig_CERTHOST
 {
 public:
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
 	SSLConfig_CERTHOST(
 		const std::string& host_addr,
 		const std::string& cert_subj,
 		int forcessl = -1,
-		int certverify = -1);
+		int certverify = -1,
+		uint16_t port = 0);
 
 	SSLConfig_CERTHOST(
 		const char *host_addr,
 		const char *cert_subj,
 		int forcessl = -1,
-		int certverify = -1);
+		int certverify = -1,
+		uint16_t port = 0);
 
 	SSLConfig_CERTHOST& operator=(const SSLConfig_CERTHOST&) = default;
 	SSLConfig_CERTHOST(const SSLConfig_CERTHOST&) = default;
@@ -423,6 +507,8 @@ public:
 
 	const std::string& getHostAddr() const;
 	const char *getHostAddr_c_str() const;
+
+	uint16_t getPort() const;
 
 	const std::string& getCertSubj() const;
 	const char *getCertSubj_c_str() const;
@@ -438,6 +524,7 @@ protected:
 	std::string	_cert_subj;
 	int	_forcessl;
 	int	_certverify;
+	uint16_t	_port;
 };
 
 /**
@@ -496,9 +583,10 @@ public:
 	/** Simplify workflow for single-server connections */
 	const SSLConfig_CERTHOST *getFirstCertHost() const;
 
-	const SSLConfig_CERTHOST *getCertHostByAddr(std::string &s) const;
-	const SSLConfig_CERTHOST *getCertHostBySubj(std::string &s) const;
-	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(std::string &s) const;
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
+	const SSLConfig_CERTHOST *getCertHostByAddr(const std::string &s, uint16_t port = 0) const;
+	const SSLConfig_CERTHOST *getCertHostBySubj(const std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(const std::string &s, uint16_t port = 0) const;
 
 	/** Callback to apply this configuration into a TcpClient instance
 	 * (and further propagate into a Socket instance used by it).
@@ -814,6 +902,12 @@ public:
 	virtual void authenticate(const std::string& user, const std::string& passwd) = 0;
 
 	/**
+	 * Authenticate to a NUTD server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	virtual void authenticate(const AuthConf& ac) = 0;
+
+	/**
 	 * Disconnect from the NUTD server.
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
@@ -1117,6 +1211,12 @@ public:
 	void connect(const std::string& host, uint16_t port, bool tryssl);
 
 	/**
+	 * Connect to the specified server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	void connect(const AuthConf& ac);
+
+	/**
 	 * Connect to the server.
 	 * Host name and ports must have already set (useful for reconnection).
 	 */
@@ -1162,6 +1262,7 @@ public:
 	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
+	virtual void authenticate(const AuthConf& ac) override;
 	virtual void logout() override;
 
 	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;

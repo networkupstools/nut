@@ -202,6 +202,17 @@ typedef struct nutscan_usb {
 	int report_bcdDevice;
 } nutscan_usb_t;
 
+typedef struct nutscan_nut_authconf {
+	const char * authconf_file;	/* where to load authconf data from; "none" means to ignore auth config even if it exists */
+	useconds_t usec_timeout;	/* Wait this long for a response */
+	const char * port_string;	/* We can pass a port name like "nut" and resolve it inside */
+
+	/* Added for consistency with other structs; not used at the moment;
+	 * practically see also `struct nut_scan_arg` in `scan_nut.c`: */
+	const char * peername;
+	uint16_t port_number;
+} nutscan_nut_authconf_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
 nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_snmp_t * sec);
@@ -215,6 +226,8 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
 nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char * port, useconds_t usec_timeout);
+nutscan_device_t * nutscan_scan_nut_authconf(const char * startIP, const char * stopIP, nutscan_nut_authconf_t *sec);
+nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * irl, nutscan_nut_authconf_t *sec);
 
 nutscan_device_t * nutscan_scan_nut_simulation(void);
 

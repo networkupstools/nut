@@ -1,0 +1,112 @@
+RAGTECH(8)
+==========
+
+NAME
+----
+
+ragtech - Driver for Ragtech UPS units (USB CDC-ACM)
+
+SYNOPSIS
+--------
+
+*ragtech* -h
+
+*ragtech* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of
+the ragtech driver. For information about the core driver, see
+linkman:nutupsdrv[8].
+
+
+SUPPORTED HARDWARE
+------------------
+
+Targets Ragtech UPSes that expose a USB CDC-ACM serial interface
+(USB VID 0x04D8, PID 0x000A -- Microchip PIC with CDC firmware).
+The device shows up under Linux as `/dev/ttyACM*`.
+
+Validated end-to-end against the Ragtech Easy 2000 TI (model id 16 in
+the family-10 device table). The other 19 models in the same table --
+Easy 600/700/900/1200/1300/1400/1600/1800/2000/2200 in both TI (115 V)
+and M2 (220 V) variants, also sold under the NEP, TORO, INNERGIE and
+OneUP brands in Brazil -- share the same wire protocol and register
+layout and are expected to work; please report results.
+
+Units from other Ragtech lines that share the same USB id (for example
+the Easy Pro "GT" series) speak the same protocol but may report a model
+id that collides with a table entry, so the driver can pick the wrong VA
+rating. Use the *va* option below to set the correct rating in that case.
+
+This driver is *experimental*. Polling, status decoding and the
+`shutdown.stayoff` / `shutdown.stop` instant commands have been
+verified on hardware; `shutdown.return` and `test.battery.start.deep`
+are implemented but not yet verified end-to-end (see the
+*allow_shutdown* note below). The beeper-control wire encoding has
+not been reverse-engineered yet.
+
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following options in the *ups.conf*:
+
+*iout_calib*='number';;
+Per-unit output current calibration constant. If omitted (default),
+the driver reads the value from register `0xF3` at startup. Set this
+only to override a wrong factory-stored calibration.
+
+*va*='number';;
+Override the apparent-power (VA) rating of the unit. The model id byte
+reported by the firmware is shared between some product lines (for
+example a 3200 VA "GT" unit reports the same id as the Easy 2200 TI),
+so the driver cannot always tell them apart and may pick the wrong VA
+rating from its model table. Setting *va* to the nameplate rating
+corrects `ups.power.nominal`, `ups.realpower.nominal` (VA times the
+0.7 power factor) and the computed `ups.load`.
+
+*allow_shutdown*;;
+Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
+`test.battery.start.deep` instant commands. Disabled by default for
+safety: the Easy 2000 TI firmware does **not** auto-restart after a
+coordinated shutdown, so an `upsmon`-driven shutdown on low battery
+will leave the UPS (and everything plugged into it) powered off until
+someone presses the physical power button. Only set this flag if you
+have an out-of-band way to power the UPS back up, or if you are
+deliberately running a UPS that should stay off after a critical-
+battery event. With this flag unset, `upsdrv_shutdown` logs the
+refusal and exits with failure instead of cutting the output.
+
+
+CAVEATS
+-------
+
+The serial control lines DTR and RTS are forced low by the driver
+immediately after opening the port. Non-zero levels on either line
+are interpreted by the UPS as a remote shutdown signal -- never run
+this driver alongside other software that toggles those lines on the
+same device node.
+
+Replies are framed by a 0xAA start byte and have no checksum; the
+driver re-synchronizes by scanning for the start byte after any
+short read.
+
+
+AUTHOR
+------
+
+juslex
+
+
+SEE ALSO
+--------
+
+linkman:nutupsdrv[8],
+linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+
+* Reverse-engineering reference:
+  https://github.com/antunesls/UPS_ESP32_tinySrv

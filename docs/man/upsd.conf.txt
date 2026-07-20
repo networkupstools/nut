@@ -256,6 +256,15 @@ or CLI options, regardless of older logging level being higher or lower
 than the newly found number; a missing (or commented away) value however
 does not change the previously active logging verbosity.
 
+HARDENING
+---------
+
+Starting with NUT v2.8.6 release, if SSL configuration options are specified
+(`CERTFILE` or `CERTPATH`, possibly `CERTIDENT` as applicable for the SSL
+backend the program was built against), but the configuration was incomplete
+or could not be applied (e.g. missing certificates), the server would refuse
+to start. Earlier releases logged the error and proceeded in insecure fashion.
+
 SEE ALSO
 --------
 

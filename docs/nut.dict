@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3768 utf-8
+personal_ws-1.1 en 3792 utf-8
 AAC
 AAS
 ABI
@@ -99,6 +99,7 @@ BD
 BKnnnnM
 BKxxxM
 BMC
+BMS
 BNT
 BOH
 BP
@@ -456,6 +457,7 @@ GPLv
 GPSER
 GRs
 GS
+GT
 GTK
 GTS
 GUESSTIMATION
@@ -557,6 +559,7 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNERGIE
 INNO
 INSTCMDDESC
 INTERNETOFFICE
@@ -807,6 +810,7 @@ NAS
 NBF
 NConfigs
 NDE
+NEP
 NETVER
 NETVERSION
 NFS
@@ -917,6 +921,7 @@ OmniSmart
 OnLine
 OnTime
 OneAC
+OneUP
 OpenBSD
 OpenIPMI
 OpenIndiana
@@ -979,6 +984,7 @@ PROTVER
 PRs
 PSA
 PSD
+PSDR
 PSF
 PSFn
 PSGPSER
@@ -1052,6 +1058,7 @@ PowerWalker
 PowerWare
 Powerchute
 Powercool
+Powershield
 Powervar
 Powervar's
 Powerwell
@@ -1083,6 +1090,7 @@ QFRE
 QGR
 QGS
 QHE
+QI
 QID
 QLDL
 QMD
@@ -1139,6 +1147,7 @@ RUPS
 RWD
 Rackmount
 Radek
+Ragtech
 RatedVA
 RealSmart
 RedHat
@@ -1242,6 +1251,7 @@ SPS
 SRC
 SRVS
 SSD
+SSLBACKEND
 SSLContext
 SSSS
 STARTTLS
@@ -1370,6 +1380,7 @@ TIOCMBIS
 TLS
 TLSv
 TODO
+TORO
 TRACKINGDELAY
 TREELINK
 TRYSSL
@@ -1694,6 +1705,7 @@ authPassword
 authPriv
 authProtocol
 authType
+authconf
 autoboot
 autoconf
 autodetect
@@ -1816,6 +1828,7 @@ cablepower
 cachefile
 cafile
 calc
+calib
 calloc
 capath
 cb
@@ -2202,6 +2215,7 @@ formatconfig
 formatstring
 fosshost
 fp
+fprintf
 freebsd
 freedesktop
 freeipmi
@@ -2356,6 +2370,7 @@ idProduct
 idVendor
 ident
 idleload
+idowell
 ie
 ietf
 ifdef
@@ -2426,6 +2441,7 @@ ioLogikE
 ioLogikR
 iocage
 iostream
+iout
 ip
 ipE
 ipF
@@ -2464,6 +2480,7 @@ jq
 jre
 js
 json
+juslex
 kVA
 kadets
 kaminski
@@ -2848,6 +2865,7 @@ numa
 numbatteries
 numlogins
 numq
+nutauth
 nutclient
 nutclientmem
 nutconf
@@ -3075,6 +3093,7 @@ qx
 qx's
 qxflags
 rD
+ragtech
 raritan
 rb
 rc
@@ -3179,6 +3198,7 @@ schuko
 scm
 screenshot
 screenshots
+scriptlet
 scriptname
 sd
 sdcmd
@@ -3301,6 +3321,7 @@ spectype
 spellcheck
 spellchecked
 splitaddr
+splitauth
 splitname
 sprintf
 squasher
@@ -3706,9 +3727,11 @@ writepid
 writeups
 ws
 wwwroot
+xAA
 xAAAA
 xCC
 xD
+xF
 xFF
 xXXXX
 xYYYY
@@ -3752,6 +3775,7 @@ youruid
 yyy
 zaac
 zakx
+zdb
 zeroes
 zfs
 zinto

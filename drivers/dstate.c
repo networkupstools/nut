@@ -193,6 +193,10 @@ static TYPE_FD sock_open(const char *fn)
 		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
 		__func__, fn);
@@ -202,12 +206,13 @@ static TYPE_FD sock_open(const char *fn)
 		| FILE_FLAG_OVERLAPPED,	/* async IO */
 		PIPE_TYPE_BYTE
 		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
 		| PIPE_WAIT,
 		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 		ST_SOCK_BUF_LEN,	/* output buffer size */
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
-		NULL);			/* FIXME: default security attribute */
+		&pipe_sa);
 
 	if (INVALID_FD(fd)) {
 		upsdebugx(1, "%s: Can't create a state socket "
@@ -640,6 +645,10 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = fd;
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	/* We have detected a connection on the opened pipe.
 	 * So we start by saving its handle and creating
@@ -656,12 +665,13 @@ static void sock_connect(TYPE_FD sock)
 		| FILE_FLAG_OVERLAPPED,	/* async IO */
 		PIPE_TYPE_BYTE
 		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
 		| PIPE_WAIT,
 		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
 		ST_SOCK_BUF_LEN,	/* output buffer size */
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
-		NULL);			/* FIXME: default security attribute */
+		&pipe_sa);
 
 	if (INVALID_FD(sockfd)) {
 		upsdebugx(1, "%s: Can't open state socket "
