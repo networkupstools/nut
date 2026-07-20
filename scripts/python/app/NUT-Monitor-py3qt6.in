@@ -479,8 +479,19 @@ class interface :
             password = self.__widgets["ups_authentication_password"].text()
 
         try :
-            # ac was already looked up for host/port above
+            # ac was already looked up for host/port above,
+            # and it may also be about SSL etc.
             if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
                 nut_handler = PyNUT.PyNUTClient.from_authconf( ac )
             else:
                 nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
@@ -911,6 +922,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
         try :
             if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
                 self.__ups_handler = PyNUT.PyNUTClient.from_authconf( ac )
             else:
                 self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
@@ -1224,6 +1245,16 @@ class gui_updater :
             # Create a new connection handler
             ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
             if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
                 ups_handler = PyNUT.PyNUTClient.from_authconf(ac)
             else:
                 ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
