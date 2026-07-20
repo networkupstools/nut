@@ -81,6 +81,10 @@ https://github.com/networkupstools/nut/milestone/13
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
+    * Modified `voltronic-qs` subdriver to request the QI command, supplying
+      NUT with battery charge, runtime, input frequency, output current, and
+      input transfer low/high values on devices which support it (`H`, `I`, `J`
+      protocols, e.g. Powershield PSDR800). [#3521]
 
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under

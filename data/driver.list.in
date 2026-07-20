@@ -1233,6 +1233,7 @@
 "Powermatic"	"ups"	"2"	"Cleanline L-1000C"	"USB"	"nutdrv_qx"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-September/008015.html
 
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
+"PowerShield"	"ups"	"2"	"PSDR800"	"USB"	"nutdrv_qx protocol=voltronic-qs"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
