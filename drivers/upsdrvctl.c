@@ -1484,7 +1484,7 @@ static void start_driver(const ups_t *ups)
 						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
 
-					if (upscount > 1 && ups->exceeded_timeout) {
+					if (ups->exceeded_timeout) {
 						/* Final checks, similar to those in forkexec() */
 #ifndef WIN32
 						int	wstat;

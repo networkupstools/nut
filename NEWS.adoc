@@ -137,6 +137,12 @@ https://github.com/networkupstools/nut/milestone/13
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
 
+ - `upsdrvctl` tool updates:
+    * Previously when looping to start a driver (and initially failing), we
+      checked if it completed the start-up during cool-down delay only when
+      called to start multiple (all) drivers at once. There is no reason to
+      not do so for single-driver runs -- addressed with this release. [#3302]
+
  - common code:
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
