@@ -492,6 +492,7 @@ class interface :
             self.__widgets["ups_authentication_frame"].set_sensitive( False )
 
         self.gui_status_message()
+        self.refresh_gui()
 
     #-------------------------------------------------------------------
     # This method is used to show/hide the main window when user clicks on the tray icon
