@@ -260,6 +260,9 @@ class interface :
         self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_password"], self.__widgets["ups_connect"] )
         self.__widgets["interface"].setTabOrder( self.__widgets["ups_connect"], self.__widgets["ups_host_entry"] )
 
+        # Set initial focus to host field
+        self.__widgets["ups_host_entry"].setFocus()
+
         self.gui_init_unconnected()
 
         # Load global authentication configuration
