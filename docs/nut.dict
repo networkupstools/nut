@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3779 utf-8
+personal_ws-1.1 en 3837 utf-8
 AAC
 AAS
 ABI
@@ -84,6 +84,7 @@ Avocent
 Axel
 Axpert
 Axxium
+BASEDIR
 BATGNn
 BATNn
 BATTDATE
@@ -98,6 +99,7 @@ BD
 BKnnnnM
 BKxxxM
 BMC
+BMS
 BNT
 BOH
 BP
@@ -125,6 +127,7 @@ Balker
 Bartek
 BatteryA
 BatteryB
+BatterySystemError
 Baulé
 BayTech
 Belkin's
@@ -456,6 +459,7 @@ GPLv
 GPSER
 GRs
 GS
+GT
 GTK
 GTS
 GUESSTIMATION
@@ -479,6 +483,7 @@ GetUPSNames
 GetUPSVars
 Ghali
 Giese
+Gigabit
 GitHub
 GitHub's
 Gnomovision
@@ -556,6 +561,7 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNERGIE
 INNO
 INSTCMDDESC
 INTERNETOFFICE
@@ -709,6 +715,7 @@ LowBatt
 Loyer
 Lua
 Luca
+Lukas
 Luxeon
 Lygre
 Lynge
@@ -807,6 +814,7 @@ NAS
 NBF
 NConfigs
 NDE
+NEP
 NETVER
 NETVERSION
 NFS
@@ -918,6 +926,7 @@ OmniSmart
 OnLine
 OnTime
 OneAC
+OneUP
 OpenBSD
 OpenIPMI
 OpenIndiana
@@ -980,6 +989,7 @@ PROTVER
 PRs
 PSA
 PSD
+PSDR
 PSF
 PSFn
 PSGPSER
@@ -1045,6 +1055,7 @@ PowerShare
 PowerShell
 PowerShield
 PowerSure
+PowerSystemError
 PowerTech
 PowerTrust
 PowerVS
@@ -1052,6 +1063,7 @@ PowerWalker
 PowerWare
 Powerchute
 Powercool
+Powershield
 Powervar
 Powervar's
 Powerwell
@@ -1083,6 +1095,7 @@ QFRE
 QGR
 QGS
 QHE
+QI
 QID
 QLDL
 QMD
@@ -1118,6 +1131,7 @@ RISC
 RK
 RMCARD
 RMCPplus
+RMI
 RMXL
 RNF
 RNG
@@ -1138,6 +1152,7 @@ RUPS
 RWD
 Rackmount
 Radek
+Ragtech
 RatedVA
 RealSmart
 RedHat
@@ -1165,6 +1180,7 @@ Rouben
 Rozman
 Rucelf
 RunAs
+RunTimeCalibrationStatus
 RunUPSCommand
 RxD
 Ryabov
@@ -1241,6 +1257,7 @@ SPS
 SRC
 SRVS
 SSD
+SSLBACKEND
 SSLContext
 SSSS
 STARTTLS
@@ -1271,6 +1288,7 @@ Salvia
 Santinoli
 Savia
 Sawatzky
+Schmid
 Schmier
 Schoch
 Schonefeld
@@ -1357,6 +1375,7 @@ TCIOFLUSH
 TCSANOW
 TEMPC
 TEMPF
+TESTCERT
 TESTEDFILE
 TESTEDINDEX
 TESTPASS
@@ -1369,6 +1388,7 @@ TIOCMBIS
 TLS
 TLSv
 TODO
+TORO
 TRACKINGDELAY
 TREELINK
 TRYSSL
@@ -1650,6 +1670,7 @@ apc
 apcc
 apcd
 apcevilhack
+apcmicrolink
 apcsmart
 apctest
 apcupsd
@@ -1695,6 +1716,7 @@ authPassword
 authPriv
 authProtocol
 authType
+authconf
 autoboot
 autoconf
 autodetect
@@ -1769,10 +1791,13 @@ bigups
 bindir
 binfmt
 binutils
+bitfield
 bitmapped
 bitmask
 bitness
 bitnesses
+blog
+blogs
 bmake
 bn
 bool
@@ -1815,6 +1840,7 @@ cablepower
 cachefile
 cafile
 calc
+calib
 calloc
 capath
 cb
@@ -1886,6 +1912,7 @@ cmdline
 cmdname
 cmdparam
 cmds
+cmdsrc
 cmdvartab
 cnf
 codebase
@@ -1911,6 +1938,7 @@ configureaz
 configureaza
 confpath
 conn
+connectable
 const
 contrib
 cooldown
@@ -2045,6 +2073,7 @@ distros
 dl
 dladm
 dll
+dllldd
 dlopen
 dmake
 dmesg
@@ -2198,7 +2227,9 @@ filesystems
 filt
 firewalling
 firmwares
+fixNSS
 fmt
+fmtutil
 fno
 fontconfig
 fopen
@@ -2209,6 +2240,7 @@ formatconfig
 formatstring
 fosshost
 fp
+fprintf
 freebsd
 freedesktop
 freeipmi
@@ -2257,6 +2289,7 @@ getenv
 gethostbyname
 getopt
 getproctag
+getrlimit
 getter
 getters
 gettext
@@ -2363,6 +2396,7 @@ idProduct
 idVendor
 ident
 idleload
+idowell
 ie
 ietf
 ifdef
@@ -2415,6 +2449,7 @@ integrations
 intel
 intelliSenseMode
 intercharacter
+internalnetwork
 internet
 interoperability
 interoperate
@@ -2432,6 +2467,7 @@ ioLogikE
 ioLogikR
 iocage
 iostream
+iout
 ip
 ipE
 ipF
@@ -2471,6 +2507,7 @@ jre
 js
 json
 jsonify
+juslex
 kVA
 kadets
 kaminski
@@ -2605,6 +2642,7 @@ localhost
 localip
 localport
 localtime
+localuser
 lockf
 logfacility
 logfile
@@ -2709,6 +2747,7 @@ mk
 mkdb
 mkdir
 mkstr
+mktexlsr
 mmZ
 mmap
 mn
@@ -2820,6 +2859,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nonascii
 noncommercially
 noout
 nooutstats
@@ -2856,6 +2896,7 @@ numa
 numbatteries
 numlogins
 numq
+nutauth
 nutclient
 nutclientmem
 nutconf
@@ -2895,6 +2936,8 @@ onlinedischarge
 ont
 onwards
 ooce
+opcode
+opcodes
 openSUSE
 openSUSEBuildService
 opencollective
@@ -2945,6 +2988,7 @@ pconf
 pcre
 pcs
 pdf
+pdftex
 pdu
 pe
 peasy
@@ -2978,6 +3022,7 @@ pkgin
 pkgsrc
 plaintext
 plugin
+plugins
 pluma
 pmset
 pmu
@@ -3028,7 +3073,9 @@ preprocessor
 prerelease
 prereqs
 pretentiousVariableNamingSchemes
+prev
 prgshut
+primary's
 printf
 prio
 priv
@@ -3082,6 +3129,7 @@ qx
 qx's
 qxflags
 rD
+ragtech
 raritan
 rb
 rc
@@ -3188,6 +3236,7 @@ schuko
 scm
 screenshot
 screenshots
+scriptlet
 scriptname
 sd
 sdcmd
@@ -3247,6 +3296,8 @@ sha
 shellcheck
 shellenv
 shm
+showinternals
+showunmapped
 shutdownArguments
 shutdowncmd
 shutdowndelay
@@ -3271,6 +3322,7 @@ slaveid
 slavesync
 slibtool
 sm
+smartslot
 smartups
 smbus
 sms
@@ -3307,6 +3359,7 @@ spectype
 spellcheck
 spellchecked
 splitaddr
+splitauth
 splitname
 sprintf
 squasher
@@ -3435,6 +3488,7 @@ tempmax
 tempmin
 termios
 testime
+testinterval
 testtime
 testuser
 testvar
@@ -3464,6 +3518,7 @@ tonumber
 toolchain
 toolkits
 toolset
+tooltips
 topFrame
 topbot
 tport
@@ -3713,9 +3768,11 @@ writepid
 writeups
 ws
 wwwroot
+xAA
 xAAAA
 xCC
 xD
+xF
 xFF
 xXXXX
 xYYYY
@@ -3763,6 +3820,7 @@ youruid
 yyy
 zaac
 zakx
+zdb
 zeroes
 zfs
 zinto

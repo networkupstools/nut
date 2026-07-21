@@ -45,6 +45,9 @@
 #  include <signal.h>
 /* #include <poll.h> */
 # endif
+# ifdef HAVE_SYS_RESOURCE_H
+#  include <sys/resource.h>	/* for getrlimit() and struct rlimit */
+# endif
 #else	/* WIN32 */
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
@@ -94,12 +97,14 @@ int allow_no_device = 0;
  */
 int allow_not_all_listeners = 0;
 
-/* preloaded to POSIX sysconf(_SC_OPEN_MAX) or WIN32 MAX_WAIT_OBJECTS in main
+/* Preloaded to POSIX sysconf(_SC_OPEN_MAX) or WIN32 MAX_WAIT_OBJECTS in main
  * and elsewhere, the run-time value can be overridden via upsd.conf `MAXCONN`
  * option (may cause partial waits chunk by chunk, if sysmaxconn is smaller).
+ * The sysmaxconn_hard is derived from getrlimit() (aka `ulimit` on allowed
+ * opened file descriptors) where available.
  */
 nfds_t	maxconn = 0;
-static nfds_t	sysmaxconn = 0;
+static nfds_t	sysmaxconn = 0, sysmaxconn_hard = 0;
 
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
@@ -653,6 +658,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 	size_t	len;
 	char	ans[NUT_NET_ANSWER_MAX+1];
 	va_list	ap;
+	const char	*op = NULL;
 
 	if (!client) {
 		return 0;
@@ -671,20 +677,28 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 #ifdef WITH_SSL
 	if (client->ssl) {
+		op = "ssl_write";
 		res = ssl_write(client, ans, len);
 	} else
 #endif /* WITH_SSL */
 	{
+		op = "write";
 		res = write(client->sock_fd, ans, len);
 	}
 
 	{ /* scoping */
-		char * s = str_rtrim(ans, '\n');
-		upsdebugx(2, "write: [destfd=%d] [len=%" PRIuSIZE "] [%s]", client->sock_fd, len, s);
+		char	*s = str_rtrim(ans, '\n');
+
+		upsdebugx(2, "%s: %s(): [destfd=%d] [len=%" PRIuSIZE "] ans=[%s]",
+			__func__, op, client->sock_fd, len, s);
 	}
 
 	if (res < 0 || len != (size_t)res) {
-		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
+		upslog_with_errno(LOG_NOTICE, "%s() failed for %s", op, client->addr);
+		upsdebugx(2, "%s: %s() failed for %s "
+			"(res=%" PRIiSIZE ", len=%" PRIuSIZE "), "
+			"setting client->last_heard=0",
+			__func__, op, client->addr, res, len);
 		client->last_heard = 0;
 		return 0;	/* failed */
 	}
@@ -702,6 +716,22 @@ int send_err(nut_ctype_t *client, const char *errtype)
 	upsdebugx(4, "Sending error [%s] to client %s", errtype, client->addr);
 
 	return sendback(client, "ERR %s\n", errtype);
+}
+
+int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra)
+{
+	/* TOTHINK: Skip also empty `!*extra` strings? */
+	if (!extra) {
+		return send_err(client, errtype);
+	}
+
+	if (!client) {
+		return -1;
+	}
+
+	upsdebugx(4, "Sending error [%s] [%s] to client %s", errtype, extra, client->addr);
+
+	return sendback(client, "ERR %s %s\n", errtype, extra);
 }
 
 /* disconnect anyone logged into this UPS */
@@ -1233,12 +1263,68 @@ static void update_sysmaxconn(void)
 	char	*s = getenv("NUT_SYSMAXCONN_LIMIT");
 
 #ifndef WIN32
+# ifdef HAVE_SYS_RESOURCE_H
+	struct rlimit	limit;
+# endif	/* HAVE_SYS_RESOURCE_H */
+
 	/* default to system limit (may be overridden in upsd.conf) */
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	l = sysconf(_SC_OPEN_MAX);
+
+# ifdef HAVE_SYS_RESOURCE_H
+	/* Try to use getrlimit/setrlimit to detect and possibly increase the limit */
+	if (getrlimit(RLIMIT_NOFILE, &limit) == 0) {
+		upsdebugx(2, "%s: System file descriptor limits: soft=%ld, hard=%ld",
+			__func__, (long)limit.rlim_cur, (long)limit.rlim_max);
+
+		/* If we requested a specific MAXCONN, try to ensure we have enough FDs */
+		if (maxconn > 0) {
+			rlim_t	needed = (rlim_t)maxconn + RESERVE_FD_COUNT_UPSD;
+
+			if (limit.rlim_cur < needed) {
+				if (needed <= limit.rlim_max) {
+					upslogx(LOG_INFO, "Increasing file descriptor limit to %ld", (long)needed);
+
+					limit.rlim_cur = needed;
+					if (setrlimit(RLIMIT_NOFILE, &limit) != 0) {
+						upslog_with_errno(LOG_WARNING, "setrlimit(RLIMIT_NOFILE) to %ld failed", (long)needed);
+					}
+				} else {
+					upslogx(LOG_WARNING, "WARNING: Requested MAXCONN %" PRIdMAX
+						" requires %ld FDs overall "
+						"(with %ld reserved for non-connection purposes), "
+						"but system hard limit is %ld",
+						(intmax_t)maxconn, (long)needed,
+						(long)RESERVE_FD_COUNT_UPSD,
+						(long)limit.rlim_max);
+
+					/* We might still try to bump to hard limit */
+					if (limit.rlim_cur < limit.rlim_max) {
+						limit.rlim_cur = limit.rlim_max;
+						setrlimit(RLIMIT_NOFILE, &limit);
+					}
+				}
+			}
+		}
+
+		/* Refresh limit after possible update */
+		getrlimit(RLIMIT_NOFILE, &limit);
+		sysmaxconn_hard = (long)limit.rlim_cur;
+	} else {
+# endif	/* HAVE_SYS_RESOURCE_H */
+		/* Fallback to sysconf if getrlimit fails or is absent */
+		/* TOTHINK: Any other reasonable fallback hard limit? */
+		sysmaxconn_hard = (nfds_t)l;
+# ifdef HAVE_SYS_RESOURCE_H
+	}
+# endif	/* HAVE_SYS_RESOURCE_H */
+
 #else	/* WIN32 */
 	/* hard-coded 64 (from ddk/wdm.h or winnt.h) */
 	l = (long)MAXIMUM_WAIT_OBJECTS;
+
+	/* No known limit, do not check */
+	sysmaxconn_hard = 0;
 #endif	/* WIN32 */
 
 	if (l < 1) {
@@ -1251,11 +1337,35 @@ static void update_sysmaxconn(void)
 			l);
 	}
 
+	if (sysmaxconn_hard > 0 && sysmaxconn_hard < RESERVE_FD_COUNT_UPSD + 10) {
+		fatalx(EXIT_FAILURE,
+			"System reported an absurd value %ld (below the %ld reservation for\n"
+			"non-connection purposes and some 10 for driver/client/... connections)\n"
+			"as its hard maximum number of connections.\n"
+			"The server won't start until this problem is resolved.\n",
+			(long)sysmaxconn_hard, (long)RESERVE_FD_COUNT_UPSD);
+	}
+
 	/* Note this historically also serves as
 	 * the initial/default MAXCONN setting
 	 * (so site/platform-dependent).
 	 */
-	sysmaxconn = (nfds_t)l;
+	if (sysmaxconn_hard > 0) {
+		if (l < RESERVE_FD_COUNT_UPSD + 10) {
+			fatalx(EXIT_FAILURE,
+				"System reported an absurd value %ld (below the %ld reservation for\n"
+				"non-connection purposes and some 10 for driver/client/... connections)\n"
+				"as its sysconf maximum number of connections.\n"
+				"The server won't start until this problem is resolved.\n",
+				l, (long)RESERVE_FD_COUNT_UPSD);
+		}
+
+		sysmaxconn = (nfds_t)(l - RESERVE_FD_COUNT_UPSD);
+	} else {
+		/* No known limit on open FDs/handles, whether connections or files or other streams */
+		sysmaxconn = (nfds_t)l;
+	}
+
 	if (maxconn < 1) {
 		upsdebugx(1, "%s: defaulting maxconn to sysmaxconn: %ld",
 			__func__, l);
@@ -1282,6 +1392,15 @@ static void poll_reload(void)
 
 	/* Not likely this would change, but refresh just in case */
 	update_sysmaxconn();
+
+	if (sysmaxconn_hard > 0 && (maxconn > sysmaxconn_hard - RESERVE_FD_COUNT_UPSD)) {
+		fatalx(EXIT_FAILURE,
+			"You requested %" PRIdMAX " as maximum number of connections,\n"
+			"but the system only allows %" PRIdMAX " and we need %d for ourselves.\n"
+			"The server won't start until this problem is resolved\n"
+			"(reduce MAXCONN or increase ulimit or similar settings).\n",
+			(intmax_t)maxconn, (intmax_t)sysmaxconn, RESERVE_FD_COUNT_UPSD);
+	}
 
 	if ((intmax_t)sysmaxconn < (intmax_t)maxconn) {
 		upslogx(LOG_WARNING,
@@ -1568,6 +1687,7 @@ static void mainloop(void)
 	if (reload_flag) {
 		upsnotify(NOTIFY_STATE_RELOADING, NULL);
 		conf_reload();
+		/* Among other things, re-detect sysmaxconn after loading config, because MAXCONN might have changed */
 		poll_reload();
 		reload_flag = 0;
 		upsnotify(NOTIFY_STATE_READY, NULL);
@@ -1790,7 +1910,7 @@ static void mainloop(void)
 
 		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
-			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %d] due to%s%s%s",
+			upsdebug_with_errno(3, "%s: Disconnect %s [%s%sFD %ld] due to%s%s%s",
 				__func__,
 				(handler[i].type==DRIVER ? "DRIVER" :
 				(handler[i].type==CLIENT ? "CLIENT" :
@@ -1801,7 +1921,7 @@ static void mainloop(void)
 				(handler[i].type==SERVER ? "" :
 				""))),
 				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
-				fds[i].fd,
+				(long int)fds[i].fd,
 				(fds[i].revents & POLLHUP ? " POLLHUP" : ""),
 				(fds[i].revents & POLLERR ? " POLLERR" : ""),
 				(fds[i].revents & POLLNVAL ? " POLLNVAL" : "")
@@ -1855,7 +1975,7 @@ static void mainloop(void)
 
 		if (fds[i].revents & POLLIN) {
 
-			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %d]",
+			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %ld]",
 				__func__,
 				(handler[i].type==SERVER ? "connection" : "data"),
 				(handler[i].type==DRIVER ? "DRIVER" :
@@ -1867,7 +1987,7 @@ static void mainloop(void)
 				(handler[i].type==SERVER ? "" :
 				""))),
 				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
-				fds[i].fd
+				(long int)fds[i].fd
 				);
 
 			switch(handler[i].type)
@@ -2372,26 +2492,20 @@ static void setup_signals(void)
 #endif	/* WIN32 */
 }
 
-void check_perms(const char *fn)
+void close_oldest_client(void)
 {
-#ifndef WIN32
-	int	ret;
-	struct stat	st;
+	nut_ctype_t	*client, *oldest = NULL;
 
-	ret = stat(fn, &st);
-
-	if (ret != 0) {
-		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
+	for (client = firstclient; client; client = client->next) {
+		if (!oldest || client->last_heard < oldest->last_heard) {
+			oldest = client;
+		}
 	}
 
-	/* include the x bit here in case we check a directory */
-	if (st.st_mode & (S_IROTH | S_IXOTH)) {
-		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
+	if (oldest) {
+		upslogx(LOG_INFO, "Closing oldest client connection from %s to free up file descriptors", oldest->addr);
+		client_disconnect(oldest);
 	}
-#else	/* WIN32 */
-	NUT_UNUSED_VARIABLE(fn);
-	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
-#endif	/* WIN32 */
 }
 
 int main(int argc, char **argv)
@@ -2682,6 +2796,9 @@ int main(int argc, char **argv)
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
+
+	/* Re-detect sysmaxconn after loading config, because MAXCONN might have changed */
+	update_sysmaxconn();
 
 	/* CLI debug level can not be smaller than debug_min specified
 	 * in upsd.conf. Note that non-zero debug_min does not impact

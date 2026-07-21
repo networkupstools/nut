@@ -18,10 +18,16 @@
 
 # ============================================================================
 #
-# CMDSCRIPT <scriptname>
+# CMDSCRIPT <scriptname> ["<arg1>" "<arg2>" ...]
 #
 # This script gets called to invoke commands for timers that trigger.
-# It is given a single argument - the <timername> in your
+#
+# The first (possibly only) token of the value is interpreted as a complete
+# path to an externally stored executable script (e.g. not an inline scriptlet)
+# or program file without further arguments (which may be passed in explicitly
+# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
+#
+# It is given a single last argument - the <timername> in your
 # AT ... START-TIMER defines.
 #
 # *** This must be defined *before* the first AT line.  Otherwise the

@@ -52,6 +52,8 @@ struct list_t {
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
+static int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
 static char	*monups, *username, *password, *function, *upscommand;
 
 /* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
@@ -371,7 +373,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -1117,6 +1119,11 @@ static void check_conf(void)
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	upscli_cleanup();
 
 	upsdebugx(1, "%s: finished, exiting", __func__);
@@ -1124,8 +1131,9 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	char *s;
-	int i;
+	char *s, str_port[16];
+	upscli_authconf_t	*ac_conn = NULL;
+	int	i;
 
 #ifdef WIN32
 	/* Required ritual before calling any socket functions */
@@ -1183,12 +1191,25 @@ int main(int argc, char **argv)
 	/* see if the magic string is present in the config file */
 	check_conf();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
 
 	extractpostargs();
 
-	/* Nothing POSTed (or parsed correctly)? */
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+	}
+
+	/* Nothing POSTed (or parsed correctly)?
+	 * TOTHINK: Consider autologin via ac_conn->user/pass fields?
+	 *  Probably no, not for a web client anyone can interact with...
+	 *  //upscli_authenticate_authconf(&ups, ac_conn); after a connect()
+	 */
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 

@@ -47,6 +47,8 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 
 import sys
+import socket
+import threading
 import base64
 import os, os.path
 import stat
@@ -103,6 +105,16 @@ except Exception as ignored:
 os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
 # print(os.getcwd())
 
+def plain_status_text( text ) :
+    document = QTextDocument()
+    document.setHtml( text )
+    return document.toPlainText()
+
+def tooltip_value( value, unit="" ) :
+    if isinstance( value, bytes ) :
+        value = value.decode( 'ascii' )
+    return "%s%s" % ( value, unit )
+
 class interface :
 
     DESIRED_FAVORITES_DIRECTORY_MODE = 0o700
@@ -122,7 +134,6 @@ class interface :
     __ups_rw_vars                    = None
     __gui_updater                    = None
     __current_ups                    = None
-    __quitting                       = False
 
     def __init__( self, argv ) :
 
@@ -401,14 +412,13 @@ class interface :
     #-------------------------------------------------------------------
     # Quit program
     def quit( self, widget=None ) :
-        if self.__quitting:
-            return
-        self.__quitting = True
-
         # If we are connected to an UPS, disconnect first...
-        if self.__widgets.get("main_window") and self.__connected :
-            self.gui_status_message( _("Disconnecting from device") )
-            self.disconnect_from_ups()
+        if self.__connected :
+            try:
+                self.gui_status_message( _("Disconnecting from device") )
+                self.disconnect_from_ups()
+            except RuntimeError:
+                pass  # widgets may already be deleted during shutdown
 
         self.__app.quit()
 
@@ -755,25 +765,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     # Display a message on the status bar. The message is also set as
     # tooltip to enable users to see long messages.
     def gui_status_message( self, msg="" ) :
-        text = msg
-
-        self.__widgets["status_bar"].showMessage( text.replace("\n", "") )
-        self.__widgets["status_bar"].setToolTip( text )
+        try:
+            text = msg
+            if self.__widgets.get("status_bar"):
+                self.__widgets["status_bar"].showMessage( text.replace("\n", "") )
+                self.__widgets["status_bar"].setToolTip( text )
+        except Exception:
+            pass
 
     #-------------------------------------------------------------------
     # Display a notification using QSystemTrayIcon with an optional icon
     def gui_status_notification( self, message="", icon_file="" ) :
-        if ( icon_file != "" ) :
-            icon = QIcon( os.path.abspath( self.__find_res_file( "pixmaps", icon_file ) ) )
-        else :
-            icon = None
+        try:
+            if not self.__widgets.get("status_icon"):
+                return
+            if ( icon_file != "" ) :
+                icon = QIcon( os.path.abspath( self.__find_res_file( "pixmaps", icon_file ) ) )
+            else :
+                icon = None
 
-        self.__widgets["status_icon"].showMessage(
-            "NUT Monitor",
-            message,
-            icon if icon else QSystemTrayIcon.MessageIcon.Information,
-            5000
-        )
+            self.__widgets["status_icon"].showMessage(
+                "NUT Monitor",
+                message,
+                icon if icon else QSystemTrayIcon.MessageIcon.Information,
+                5000
+            )
+        except Exception:
+            pass
 
     #-------------------------------------------------------------------
     # Connect to the selected UPS using parameters (host,port,login,pass)
@@ -874,8 +892,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
     def gui_init_unconnected( self ) :
-        if self.__quitting:
-            return
 
         if not self.__widgets.get("main_window") or not self.__widgets.get("status_icon"):
             return
@@ -886,7 +902,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         self.__widgets["ups_infos"].hide()
         self.__widgets["ups_params_box"].setEnabled( True )
         self.__widgets["menu_favorites_root"].setEnabled( True )
-        self.__widgets["status_icon"].setToolTip( _("<i>Not connected</i>") )
+        self.__widgets["status_icon"].setToolTip( _("Not connected") )
         self.__widgets["ups_params_box"].show()
 
         # Try to resize the main window...
@@ -898,8 +914,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         self.gui_init_unconnected()
 
         # Stop the GUI updater
-        self.__gui_updater.stop()
-        self.__gui_updater = None
+        self.__gui_updater.stop_thread()
 
         del self.__ups_handler
         self.gui_status_message( _("Disconnected from '%s'") % self.__current_ups )
@@ -912,10 +927,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class gui_updater :
 
     __parent_class = None
-    __stop_updater = False
+    __stop_thread  = False
+    was_online = True
+    __reconnect_attempted = False
 
     def __init__( self, parent_class ) :
         self.__parent_class = parent_class
+        self.__reconnect_attempted = False
+        
+        
 
     def start( self ) :
         self.__timer = QTimer()
@@ -927,19 +947,19 @@ class gui_updater :
         ups    = self.__parent_class._interface__current_ups
 
         # Define a dict containing different UPS status
-        status_mapper = { b"LB"     : "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"),
-                          b"RB"     : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"),
-                          b"ALARM"  : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"),
-                          b"BYPASS" : "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"),
-                          b"ECO"    : _("In ECO mode (as defined by vendor)"),
-                          b"CAL"    : _("Performing runtime calibration"),
-                          b"OFF"    : "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ),
-                          b"OVER"   : "<font color=\"#BB0000\">%s</font> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ),
-                          b"TRIM"   : _("Triming <i>(UPS is triming incoming voltage)</i>"),
-                          b"BOOST"  : _("Boost <i>(UPS is boosting incoming voltage)</i>")
+        status_mapper = { b"LB"     : ( "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"), _("Low batteries") ),
+                          b"RB"     : ( "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"), _("Replace batteries !") ),
+                          b"ALARM"  : ( "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"), _("Active alarms !") ),
+                          b"BYPASS" : ( "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"), "%s %s" % ( _("Bypass"), _("(no battery protection)") ) ),
+                          b"ECO"    : ( _("In ECO mode (as defined by vendor)"), _("In ECO mode (as defined by vendor)") ),
+                          b"CAL"    : ( _("Performing runtime calibration"), _("Performing runtime calibration") ),
+                          b"OFF"    : ( "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ), "%s (%s)" % ( _("Offline"), _("not providing power to the load") ) ),
+                          b"OVER"   : ( "<font color=\"#BB0000\">%s</font> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ), "%s (%s)" % ( _("Overloaded !"), _("there is too much load for device") ) ),
+                          b"TRIM"   : ( _("Triming <i>(UPS is triming incoming voltage)</i>"), plain_status_text( _("Triming <i>(UPS is triming incoming voltage)</i>") ) ),
+                          b"BOOST"  : ( _("Boost <i>(UPS is boosting incoming voltage)</i>"), plain_status_text( _("Boost <i>(UPS is boosting incoming voltage)</i>") ) )
                         }
 
-        if ups and not self.__stop_updater and not self.__parent_class._interface__quitting :
+        if not self.__stop_thread :
             try :
                 vars = self.__parent_class._interface__ups_handler.GetUPSVars( ups )
                 self.__parent_class._interface__ups_vars = vars
@@ -947,39 +967,43 @@ class gui_updater :
                 # Text displayed on the status frame
                 text_left   = ""
                 text_right  = ""
-                status_text = ""
+                status_parts = []
+                tooltip_status_parts = []
+                tooltip_lines = []
 
                 text_left  += "<b>%s</b><br>" % _("Device status :")
 
                 if ( vars.get(b"ups.status").find(b"OL") != -1 ) :
-                    text_right += "<font color=\"#009000\"><b>%s</b></font>" % _("Online")
-                    if self.__parent_class._interface__online is not True :
+                    status_parts.append( "<font color=\"#009000\"><b>%s</b></font>" % _("Online") )
+                    tooltip_status_parts.append( _("Online") )
+                    if not self.was_online :
                         self.__parent_class.change_status_icon( "on_line", blink=False )
-                        self.__parent_class.gui_status_notification( _("Device is online"), "on_line.png" )
-                        self.__parent_class._interface__online = True
+                        self.was_online = True
 
                 if ( vars.get(b"ups.status").find(b"OB") != -1 ) :
-                    text_right += "<font color=\"#900000\"><b>%s</b></font>" % _("On batteries")
-                    if self.__parent_class._interface__online is not False:
+                    status_parts.append( "<font color=\"#900000\"><b>%s</b></font>" % _("On batteries") )
+                    tooltip_status_parts.append( _("On batteries") )
+                    if self.was_online :
                         self.__parent_class.change_status_icon( "on_battery", blink=True )
                         self.__parent_class.gui_status_notification( _("Device is running on batteries"), "on_battery.png" )
-                        self.__parent_class._interface__online = False
+                        self.was_online = False
 
                 # Check for additionnal information
                 for k,v in status_mapper.items() :
                     if vars.get(b"ups.status").find(k) != -1 :
-                        if ( text_right != "" ) :
-                            text_right += " - %s" % v
-                        else :
-                            text_right += "%s" % v
+                        status_parts.append( v[0] )
+                        tooltip_status_parts.append( v[1] )
 
                 # CHRG and DISCHRG cannot be trated with the previous loop ;)
                 if ( vars.get(b"ups.status").find(b"DISCHRG") != -1 ) :
-                    text_right += " - <i>%s</i>" % _("discharging")
+                    status_parts.append( "<i>%s</i>" % _("discharging") )
+                    tooltip_status_parts.append( _("discharging") )
                 elif ( vars.get(b"ups.status").find(b"CHRG") != -1 ) :
-                    text_right += " - <i>%s</i>" % _("charging")
+                    status_parts.append( "<i>%s</i>" % _("charging") )
+                    tooltip_status_parts.append( _("charging") )
 
-                status_text += text_right
+                text_right += " - ".join( status_parts )
+                tooltip_lines.append( "%s %s" % ( _("Device status :"), " - ".join( tooltip_status_parts ) ) )
                 text_right += "<br>"
 
                 if ( b"ups.mfr" in vars ) :
@@ -988,14 +1012,17 @@ class gui_updater :
                         vars.get(b"ups.mfr",b"").decode('ascii'),
                         vars.get(b"ups.model",b"").decode('ascii'),
                     )
+                    tooltip_lines.append( "%s %s %s" % ( _("Model :"), tooltip_value( vars.get(b"ups.mfr",b"") ), tooltip_value( vars.get(b"ups.model",b"") ) ) )
 
                 if ( b"ups.temperature" in vars ) :
                     text_left  += "<b>%s</b><br>" % _("Temperature :")
                     text_right += "%s<br>" % int( float( vars.get( b"ups.temperature", 0 ) ) )
+                    tooltip_lines.append( "%s %s" % ( _("Temperature :"), int( float( vars.get( b"ups.temperature", 0 ) ) ) ) )
 
                 if ( b"battery.voltage" in vars ) :
                     text_left  += "<b>%s</b><br>" % _("Battery voltage :")
                     text_right += "%sv<br>" % (vars.get( b"battery.voltage", 0 ).decode('ascii'),)
+                    tooltip_lines.append( "%s %s" % ( _("Battery voltage :"), tooltip_value( vars.get( b"battery.voltage", 0 ), "v" ) ) )
 
                 self.__parent_class._interface__widgets["ups_status_left"].setText( text_left[:-4] )
                 self.__parent_class._interface__widgets["ups_status_right"].setText( text_right[:-4] )
@@ -1006,7 +1033,7 @@ class gui_updater :
                     charge = vars.get( b"battery.charge", "0" )
                     self.__parent_class._interface__widgets["progress_battery_charge"].setValue( int( float( charge ) ) )
                     self.__parent_class._interface__widgets["progress_battery_charge"].resetFormat()
-                    status_text += "<br>%s %s%%" % ( _("Battery charge :"), int( float( charge ) ) )
+                    tooltip_lines.append( "%s %s%%" % ( _("Battery charge :"), int( float( charge ) ) ) )
                 else :
                     self.__parent_class._interface__widgets["progress_battery_charge"].setValue( 0 )
                     self.__parent_class._interface__widgets["progress_battery_charge"].setFormat( _("Not available") )
@@ -1017,7 +1044,7 @@ class gui_updater :
                     load = vars.get( b"ups.load", "0" )
                     self.__parent_class._interface__widgets["progress_battery_load"].setValue( int( float( load ) ) )
                     self.__parent_class._interface__widgets["progress_battery_load"].resetFormat()
-                    status_text += "<br>%s %s%%" % ( _("UPS load :"), int( float( load ) ) )
+                    tooltip_lines.append( "%s %s%%" % ( _("UPS load :"), int( float( load ) ) ) )
                 else :
                     self.__parent_class._interface__widgets["progress_battery_load"].setValue( 0 )
                     self.__parent_class._interface__widgets["progress_battery_load"].setFormat( _("Not available") )
@@ -1036,19 +1063,108 @@ class gui_updater :
                     info = _("Not available")
 
                 self.__parent_class._interface__widgets["ups_status_time"].setText( info )
+                tooltip_lines.append( "%s %s" % ( _("Autonomy :"), plain_status_text( info ) ) )
 
                 # Display UPS status as tooltip for tray icon
-                self.__parent_class._interface__widgets["status_icon"].setToolTip( status_text )
+                self.__parent_class._interface__widgets["status_icon"].setToolTip( "\n".join( tooltip_lines ) )
 
-            except :
-                self.__parent_class._interface__online = None
-                self.__parent_class.change_status_icon( "warning", blink=True )
-                self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
-                self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
+            except (socket.error, ConnectionError, EOFError, OSError, PyNUT.PyNUTError) as e:
+                # Connection error detected \u2014 attempt automatic reconnection
+                if not self.__reconnect_attempted and self.__parent_class._interface__connected:
+                    self.__reconnect_attempted = True
+                    self.__parent_class.gui_status_message( _("Connection lost \u2014 attempting to reconnect...") )
+                    self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
 
-    def stop( self ) :
-        self.__timer.stop()
-        self.__stop_updater = True
+                    # Stop the current timer
+                    self.__timer.stop()
+
+                    # Close the socket to avoid "Broken pipe" in subsequent calls if any
+                    if self.__parent_class._interface__ups_handler:
+                        self.__parent_class._interface__ups_handler.disconnect()
+
+                    # Schedule reconnection attempt after 2 seconds
+                    QTimer.singleShot(2000, self.__attempt_reconnect)
+                elif self.__reconnect_attempted:
+                    # Reconnection already in progress, just ignore this update
+                    pass
+                else:
+                    self.__parent_class._interface__online = None
+                    self.__parent_class.change_status_icon( "warning", blink=True )
+                    self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
+                    self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
+
+    def __attempt_reconnect( self ) :
+        """Attempt to reconnect to the UPS after a connection loss."""
+        if self.__stop_thread:
+            return
+
+        try:
+            # Get connection parameters from the parent class
+            host = self.__parent_class._interface__widgets["ups_host_entry"].text()
+            port = int(self.__parent_class._interface__widgets["ups_port_entry"].value())
+            login = None
+            password = None
+
+            if self.__parent_class._interface__widgets["ups_authentication_check"].isChecked():
+                login = self.__parent_class._interface__widgets["ups_authentication_login"].text()
+                password = self.__parent_class._interface__widgets["ups_authentication_password"].text()
+
+            # Teardown old connection handler properly
+            old_handler = self.__parent_class._interface__ups_handler
+            if old_handler is not None:
+                old_handler.disconnect()
+                del old_handler
+
+            # Create a new connection handler
+            ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
+
+            # Verify the UPS is available
+            ups = self.__parent_class._interface__current_ups
+            srv_upses = ups_handler.GetUPSList()
+
+            if ups.encode('ascii') not in srv_upses:
+                self.__parent_class.gui_status_message( _("UPS '{0}' not found after reconnection").format(ups) )
+                self.__reconnect_attempted = False
+                # Restart the timer to continue polling
+                self.__timer.start(1000)
+                return
+
+            if not ups_handler.CheckUPSAvailable(ups):
+                self.__parent_class.gui_status_message( _("UPS '{0}' is still not reachable").format(ups) )
+                self.__reconnect_attempted = False
+                self.__timer.start(1000)
+                return
+
+            # Connection successful \u2014 update the parent class
+            self.__parent_class._interface__ups_handler = ups_handler
+            self.__parent_class._interface__connected = True
+            self.__reconnect_attempted = False
+
+            # Refresh UPS data
+            commands = ups_handler.GetUPSCommands(ups)
+            self.__parent_class._interface__ups_commands = list(commands.keys())
+            self.__parent_class._interface__ups_commands.sort()
+
+            self.__parent_class._interface__ups_vars = ups_handler.GetUPSVars(ups)
+            self.__parent_class._interface__ups_rw_vars = ups_handler.GetRWVars(ups)
+
+            # Update the GUI
+            self.__parent_class._interface__gui_update_ups_vars_view()
+            self.__parent_class.change_status_icon("on_line", blink=False)
+            self.__parent_class.gui_status_message( _("Reconnected to '{0}' on {1}").format(ups, host) )
+            self.__parent_class.gui_status_notification( _("Reconnected to UPS"), "on_line.png" )
+
+        except (socket.error, ConnectionError, EOFError, OSError, PyNUT.PyNUTError) as e:
+            self.__parent_class.gui_status_message( _("Reconnection failed: {0}").format(str(e)) )
+            self.__reconnect_attempted = False
+
+        # Restart the timer to continue polling
+        self.__timer.start(1000)
+
+    def stop_thread( self ) :
+        self.__stop_thread = True
+        if hasattr(self, '_gui_updater__timer'):
+            self.__timer.stop()
 
 
 #-----------------------------------------------------------------------

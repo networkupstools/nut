@@ -1,6 +1,3 @@
-#ifndef NUT_WINCOMPAT_H
-#define NUT_WINCOMPAT_H 1
-
 /*
    Copyright (C)
 	2001	Andrew Delpha (delpha@computer.org)
@@ -28,6 +25,9 @@
    This header is provided to map Windows system calls to be compatible
    with the NUT code.
 */
+
+#ifndef NUT_WINCOMPAT_H
+#define NUT_WINCOMPAT_H 1
 
 #include "common.h"
 #include <limits.h>
@@ -157,6 +157,7 @@ typedef struct pipe_conn_s {
 extern pipe_conn_t *pipe_connhead;
 extern OVERLAPPED pipe_connection_overlapped;
 void pipe_create(const char * pipe_name);
+void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd);
 void pipe_connect();
 void pipe_disconnect(pipe_conn_t *conn);
 int pipe_ready(pipe_conn_t *conn);
@@ -195,6 +196,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 int tcgetattr (serial_handler_t * sh, struct termios *t);
 int tcsetattr (serial_handler_t * sh, int action, const struct termios *t);
 int tcflush (serial_handler_t * sh, int queue);
+int tcdrain (serial_handler_t * sh);
 #define HAVE_CFSETISPEED
 void cfsetispeed(struct termios * t, speed_t speed);
 void cfsetospeed(struct termios * t, speed_t speed);

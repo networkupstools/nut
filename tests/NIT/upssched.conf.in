@@ -8,7 +8,7 @@
 
 #DEBUG_MIN 4
 
-CMDSCRIPT @TOP_BUILDDIR@/clients/upssched-cmd
+CMDSCRIPT @TOP_SRCDIR@/clients/upssched-cmd
 
 PIPEFN @NUT_STATEPATH@/upssched.pipe
 LOCKFN @NUT_STATEPATH@/upssched.lock

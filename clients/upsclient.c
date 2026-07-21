@@ -26,6 +26,8 @@
 #include "nut_platform.h"
 
 #ifndef WIN32
+# include <pwd.h>
+# include <sys/types.h>
 # ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #  include <pthread.h>
@@ -77,6 +79,10 @@
 #else
 #	define AIX_NBCONNECT_0(status) (0)
 #endif	/* end of AIX WA for non-blocking connect */
+
+#ifdef WITH_OPENSSL
+# include <openssl/x509v3.h>
+#endif
 
 #ifdef WITH_NSS
 #	include <prerror.h>
@@ -153,13 +159,17 @@ static struct {
 
 typedef struct HOST_CERT_s {
 	const char	*host;
+	uint16_t	port;
 	const char	*certname;
 	int			certverify;
 	int			forcessl;
 
 	struct HOST_CERT_s	*next;
 }	HOST_CERT_t;
+#if 0
 static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
+#endif
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port, int verbose);
 
 /* Flag for SSL init */
 static int upscli_initialized = 0;
@@ -168,14 +178,57 @@ static int upscli_initialized = 0;
 static struct timeval upscli_default_connect_timeout = {0, 0};
 static int upscli_default_connect_timeout_initialized = 0;
 
+#ifndef WITH_THREADING
+# define WITH_THREADING 0
+#endif
+
+#if !WITH_THREADING
+/* Not detected or actively disabled in configure script */
+# ifdef HAVE_PTHREAD
+#  undef HAVE_PTHREAD
+# endif
+# ifdef HAVE_SEMAPHORE_UNNAMED
+#  undef HAVE_SEMAPHORE_UNNAMED
+# endif
+# ifdef HAVE_SEMAPHORE_NAMED
+#  undef HAVE_SEMAPHORE_NAMED
+# endif
+#endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+#  include <semaphore.h>
+# endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  ifdef HAVE_FCNTL_H
+#   include <fcntl.h>           /* For O_* constants with sem_open() */
+#  endif
+#  ifdef SYS_STAT_H
+#   include <sys/stat.h>        /* For mode constants */
+#  endif
+# endif
+#endif
+
 #ifdef WITH_OPENSSL
-static SSL_CTX	*ssl_ctx;
-#elif defined(WITH_NSS) /* WITH_OPENSLL */
+static SSL_CTX	*ssl_ctx = NULL;
+#endif	/* WITH_OPENSSL */
+
+#ifdef WITH_NSS
 static int verify_certificate = 1;
+#endif	/* WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+# ifdef HAVE_PTHREAD
+static pthread_mutex_t mutex_host_cert;
+# endif	/* HAVE_PTHREAD */
+
 static HOST_CERT_t *first_host_cert = NULL;
-static char* nsscertname = NULL;
-static char* nsscertpasswd = NULL;
-#endif /* WITH_OPENSSL | WITH_NSS */
+static char* sslcertname = NULL;
+static char* sslcertpasswd = NULL;
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 
 #ifdef WITH_OPENSSL
@@ -236,8 +289,9 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	NUT_UNUSED_VARIABLE(arg);
 
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
-		PK11_GetSlotName(slot), PK11_GetTokenName(slot), nsscertpasswd?"":"not ");
-	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
+		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		sslcertpasswd ? "" : "not ");
+	return sslcertpasswd ? PL_strdup(sslcertpasswd) : NULL;
 }
 
 /** Detail the currently raised NSS error code if possible, and debug-log
@@ -299,14 +353,90 @@ static void nss_error(const char* text)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
-	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
-	upslogx(LOG_INFO, "Intend to authenticate server %s : %s",
-		ups?ups->host:"<unnamed>",
-		status==SECSuccess?"SUCCESS":"FAILED");
+	UPSCONN_t	*ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	CERTCertificate	*peer  = SSL_PeerCertificate(fd);
+	SECStatus	status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+
+	upsdebugx(2, "%s: checking peer cert '%s' for NSS connection to URL '%s'",
+		__func__,
+		peer ? NUT_STRARG(peer->subjectName) : "<null>",
+		NUT_STRARG(SSL_RevealURL(fd)));
+
 	if (status != SECSuccess) {
-		nss_error("SSL_AuthCertificate");
+		nss_error(isServer ? "SSL_AuthCertificate(server)" : "SSL_AuthCertificate(client)");
 	}
+
+	/* Check CERTHOST setting anticipated for host:port, if any
+	 * Note that we keep "status" value as good or bad as the check above
+	 * returned it, unless we make it worse by failing the test (or better
+	 * once if we are told to ignore certverify results).
+	 */
+	if (peer && ups) {
+		HOST_CERT_t	*cert;
+
+		cert = upscli_find_host_port_cert(ups->host, ups->port, 1);
+		if (cert != NULL && cert->certname != NULL) {
+			upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
+				ups->host, cert->certname);
+
+			/* Note: CERT_VerifyCertName() is not necessarily
+			 * what we want here, it focuses on domain names/URLs
+			 * and we checked that for ups->host with generic
+			 * SSL_AuthCertificate() above */
+			upsdebugx(4, "%s: check if expected cert name matches peer by hostname rules", __func__);
+			if (CERT_VerifyCertName(peer, cert->certname) != SECSuccess) {
+				char	*peer_subject_CN = (peer->subjectName ? (char*)strstr(peer->subjectName, "CN=") + 3 : NULL);
+				size_t	certname_len = strlen(cert->certname);
+
+				upsdebugx(4, "%s: check if expected cert name matches peer CN", __func__);
+
+				/* Check if cert->certname matches the whole subject or just .../CN=.../ part as a string */
+				if (!peer->subjectName || !(
+					strcmp(peer->subjectName, cert->certname) == 0
+					|| (peer_subject_CN && !strncmp(peer_subject_CN, cert->certname, certname_len)
+					    && (peer_subject_CN[certname_len] == '\0'
+						|| peer_subject_CN[certname_len] == '/'
+						|| peer_subject_CN[certname_len] == ','
+						|| (peer_subject_CN[certname_len] == '\\' && peer_subject_CN[certname_len + 1] == '/')) )
+				)) {
+					/* This way or that, the names differ */
+					upslogx(LOG_ERR, "Peer certificate subject (%s) does not match CERTHOST name (%s)",
+						peer->subjectName ? peer->subjectName : "unknown", cert->certname);
+
+					if (nut_debug_level > 4)
+						nss_error(isServer ? "CERT_VerifyCertName(server)" : "CERT_VerifyCertName(client)");
+
+					status = SECFailure;
+				} else {
+					upsdebugx(2, "Peer certificate subject verified against CERTHOST subject name (%s)", cert->certname);
+				}
+			} else {
+				upsdebugx(2, "Peer certificate subject verified against CERTHOST host name (%s)", cert->certname);
+			}
+
+			if (status != SECSuccess) {
+				if (cert->certverify < 1) {
+					upslogx(LOG_ERR, "Peer certificate verification failed for '%s', but was not required, proceeding", ups->host);
+					status = SECSuccess;
+				}
+			}
+		} else {
+			upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
+		}
+	} else {
+		upsdebugx(1, "%s: WARNING: 'ups' pin arg and/or peer cert was NULL, who are we connecting to?", __func__);
+	}
+
+	upslogx(LOG_INFO, "Intended to authenticate %s %s:%u : %s",
+		isServer ? "client" : "server",
+		ups ? ups->host : "<unnamed>",
+		(unsigned int)(ups ? ups->port : NUT_PORT),
+		status==SECSuccess ? "SUCCESS" : "FAILED");
+
+	if (peer) {
+		CERT_DestroyCertificate(peer);
+	}
+
 	return status;
 }
 
@@ -318,8 +448,11 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 	NUT_UNUSED_VARIABLE(checksig);
 	NUT_UNUSED_VARIABLE(isServer);
 
-	upslogx(LOG_INFO, "Do not intend to authenticate server %s",
-		ups?ups->host:"<unnamed>");
+	upslogx(LOG_INFO, "Do not intend to authenticate %s %s:%u",
+		isServer ? "client" : "server",
+		ups ? ups->host : "<unnamed>",
+		(unsigned int)(ups ? ups->port : NUT_PORT));
+
 	return SECSuccess;
 }
 
@@ -328,15 +461,16 @@ static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 	HOST_CERT_t* cert;
 	NUT_UNUSED_VARIABLE(fd);
 
-	upslogx(LOG_WARNING, "Certificate validation failed for %s",
-		(arg&&arg->host)?arg->host:"<unnamed>");
+	upslogx(LOG_WARNING, "Certificate validation failed for %s:%" PRIu16,
+		(arg&&arg->host)?arg->host:"<unnamed>",
+		(uint16_t)(arg ? arg->port : NUT_PORT));
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
 	 */
-	cert = upscli_find_host_cert(arg->host);
+	cert = arg ? upscli_find_host_port_cert(arg->host, arg->port, 1) : NULL;
 	if (cert != NULL) {
-		return cert->certverify==0 ?  SECSuccess : SECFailure;
+		return cert->certverify==0 ? SECSuccess : SECFailure;
 	} else {
 		return verify_certificate==0 ? SECSuccess : SECFailure;
 	}
@@ -349,8 +483,8 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 	SECKEYPrivateKey *privKey;
 	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
 	if (status == SECFailure) {
-		if (nsscertname != NULL) {
-			cert = PK11_FindCertFromNickname(nsscertname, NULL);
+		if (sslcertname != NULL) {
+			cert = PK11_FindCertFromNickname(sslcertname, NULL);
 			if(cert==NULL)	{
 				upslogx(LOG_ERR, "Can not find self-certificate");
 				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
@@ -383,27 +517,518 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+#ifdef WITH_OPENSSL
+# if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+static int openssl_password_callback(char *buf, int size, int rwflag, void *userdata)
+{
+	/* See https://docs.openssl.org/1.0.2/man3/SSL_CTX_set_default_passwd_cb */
+	/* is callback used for reading/decryption (rwflag=0) or writing/encryption (rwflag=1)? */
+	NUT_UNUSED_VARIABLE(rwflag);
+	/* "userdata" is generally the user-provided password, possibly cached
+	 * from an earlier loop (e.g. to check interactively typing it twice,
+	 * or to probe several items in a loop). For us, it should be sslcertpasswd
+	 * via SSL_CTX_set_default_passwd_cb_userdata(), but most programs out
+	 * there do not have just one variable with one password to think about. */
+
+	if (!buf || size < 1) {
+		/* Can not even set buf[0] */
+		return 0;
+	}
+
+	if (!userdata || !*((char*)userdata)) {
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA)
+		/* Use what we were told to use (or not), do not surprise
+		 * anyone by some hard-coded fallback to sslcertpasswd here! */
+		buf[0] = '\0';
+		return 0;
+#  else
+		userdata = (void*)sslcertpasswd;
+#  endif
+	}
+
+	if (strlen((char*)userdata) >= (size_t)size) {
+		/* Do not return truncated trash, just say we could not do it */
+		return 0;
+	}
+
+	strncpy(buf, (char*)userdata, (size_t)size);
+	buf[size - 1] = '\0';
+	return (int)strlen(buf);
+}
+# endif	/* ...SET_DEFAULT_PASSWD_CB */
+
+/* Adapted from https://stackoverflow.com/a/42477707 with references to
+ * https://wiki.openssl.org/index.php/SSL/TLS_Client and further cURL,
+ * and https://www.zedwood.com/article/c-openssl-parse-x509-certificate-pem */
+static int openssl_cert_verify_san_name(const char* label, X509* const cert, const char *hostname)
+{
+	int	san_seen = 0, ok = 0;
+	GENERAL_NAMES*	names = NULL;
+	unsigned char*	utf8 = NULL;
+
+	do
+	{
+		int	i, count;
+
+		if (!cert) break; /* failed */
+
+		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
+		if (!names) break;
+
+		/* OpenSSL macros may have an unreachable effect like this */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		count = sk_GENERAL_NAME_num(names);
+		if (!count) break; /* failed */
+
+		for (i = 0; i < count; ++i) {
+			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
+			if (!entry) continue;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
+
+			if (GEN_DNS == entry->type) {
+				int	len1 = 0, len2 = -1;
+
+				len1 = ASN1_STRING_to_UTF8(&utf8, entry->d.dNSName);
+				if (utf8) {
+					len2 = (int)strlen((const char*)utf8);
+				}
+
+				if (len1 != len2) {
+					upsdebugx(5, "%s: %s: strlen and ASN1_STRING size "
+						"do not match (embedded null?): %d vs %d",
+						__func__, label, len2, len1);
+				}
+
+				/* If there's a problem with string lengths, then
+				 * we skip the candidate and move on to the next.
+				 * Another policy would be to fail, since it probably
+				 * indicates the client is under attack by a corrupt
+				 * server.
+				 */
+				if (utf8 && len1 && len2 && (len1 == len2)) {
+					san_seen = 1;
+					if (hostname && *hostname && !strcasecmp((const char*)utf8, hostname)) {
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: MATCHED '%s'",
+							__func__, label, utf8, hostname);
+						ok = 1;
+					} else {
+						/* TOTHINK: Wildcard certs, with respect to TLD constraints
+						 *  (do not accept *.com) etc. if we !HAVE_X509_CHECK_HOST ? */
+						upsdebugx(5, "%s: %s: [DNS]\t%s\t: DID NOT MATCH '%s'",
+							__func__, label, utf8, NUT_STRARG(hostname));
+					}
+				} else {
+					upsdebugx(4, "%s: WARNING: there is some mismatch about "
+						"a SAN entry in %s: [DNS]\t%s (len1=%d len2=%d)",
+						__func__, label, NUT_STRARG((char*)utf8), len1, len2);
+				}
+
+				if (utf8) {
+					OPENSSL_free(utf8);
+					utf8 = NULL;
+				}
+			} else if (GEN_IPADD == entry->type) {
+				/* https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.6:
+				 * When the subjectAltName extension contains an iPAddress,
+				 * the address MUST be stored in the octet string in "network
+				 * byte order", as specified in [RFC791].  The least significant
+				 * bit (LSB) of each octet is the LSB of the corresponding byte
+				 * in the network address.  For IP version 4, as specified in
+				 * [RFC791], the octet string MUST contain exactly four octets.
+				 * For IP version 6, as specified in [RFC2460], the octet string
+				 * MUST contain exactly sixteen octets.
+				 */
+				char	ip_addr_buf[128], *p = ip_addr_buf, *pMax = ip_addr_buf + sizeof(ip_addr_buf) - 5;
+				const unsigned char	*ip_addr_raw =
+# ifdef HAVE_ASN1_STRING_GET0_DATA
+					ASN1_STRING_get0_data(entry->d.iPAddress)
+# elif defined(HAVE_ASN1_STRING_DATA)
+					ASN1_STRING_data(entry->d.iPAddress)
+# else
+					(const unsigned char *)entry->d.iPAddress->data
+# endif
+					;
+				int	ip_addr_raw_len =
+# ifdef HAVE_ASN1_STRING_LENGTH
+					ASN1_STRING_length(entry->d.iPAddress)
+# else
+					(int)entry->d.iPAddress->length
+# endif
+					, j;
+
+				memset(ip_addr_buf, 0, sizeof(ip_addr_buf));
+				switch (ip_addr_raw_len) {
+					case 4:
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%u%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ".");
+						}
+						break;
+
+					case 16:
+						/* TOTHINK: There are many ways to print an IPv6 address;
+						 *  maybe we should rather convert the expected address
+						 *  into an array of 16 chars and compare that?
+						 *  For reporting, however, this is good enough, even if
+						 *  a bit wasteful. */
+						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
+							p += snprintf(p,
+								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								"%02x%s",
+								ip_addr_raw[j],
+								(j == ip_addr_raw_len - 1) ? "" : ":");
+						}
+						break;
+
+					default:
+						upsdebugx(5, "%s: %s: invalid IP address length: %d",
+							__func__, label, ip_addr_raw_len);
+						continue;
+				}
+
+				san_seen = 1;
+				if (hostname && *hostname && !strcasecmp((const char*)ip_addr_buf, hostname)) {
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: MATCHED '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, hostname);
+					ok = 1;
+				} else {
+					/* TOTHINK: invert the check as commented above, if we !HAVE_X509_CHECK_IP_ASC ? */
+					upsdebugx(5, "%s: %s: [%s]\t%s\t: DID NOT MATCH '%s'",
+						__func__, label,
+						(ip_addr_raw_len == 4 ? "IPv4" : "IPv6"),
+						ip_addr_buf, NUT_STRARG(hostname));
+				}
+			} else
+			{
+				/* GEN_URI, RID, email, etc. - not something we
+				 * care about for network server/client certs */
+				upsdebugx(5, "%s: Unknown GENERAL_NAME type, or irrelevant for certificate vs. hostname validation: %d", __func__, entry->type);
+			}
+		}
+	} while (0);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+	/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	if (!ok && hostname && *hostname && (0
+# if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
+	 || (X509_check_host(cert, (const char *)hostname, 0, 0, NULL) == 1)
+# endif
+# if (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC)
+	 || (X509_check_ip_asc(cert, (const char *)hostname, 0) == 1)
+# endif
+	)) {
+		upsdebugx(5, "%s: %s: MATCHED '%s' using OpenSSL-provided methods",
+			__func__, label, hostname);
+		ok = 1;
+	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
+
+	if (names)
+		GENERAL_NAMES_free(names);
+
+	if (utf8)
+		OPENSSL_free(utf8);
+
+	if (!san_seen) {
+		upsdebugx(4, "%s: %s: subjAltNames not available", __func__, label);
+	} else {
+		if (!ok) {
+			upsdebugx(4, "%s: %s: subjAltNames available, but did not match '%s'", __func__, label, hostname);
+		} else {
+			upsdebugx(4, "%s: %s: subjAltNames available and at least one matched '%s'", __func__, label, hostname);
+		}
+	}
+
+	return ok;
+}
+
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+static int	openssl_cert_verify_data_index;
+static int	verify_depth = 9;	/* openssl default */
+static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	char	buf[SMALLBUF];
+	X509	*err_cert;
+	int	err, depth;
+	SSL	*ssl;
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
+
+	err_cert = X509_STORE_CTX_get_current_cert(ctx);
+	err = X509_STORE_CTX_get_error(ctx);
+	depth = X509_STORE_CTX_get_error_depth(ctx);
+
+	/* Retrieve the pointer to the SSL of the connection currently treated
+	 * and the application-specific data stored into the SSL object.
+	 */
+	ssl = (SSL *)X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	openssl_cert_verify_data = (openssl_cert_verify_data_t *)SSL_get_ex_data(ssl, openssl_cert_verify_data_index);
+
+	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
+
+	/* Sanity-check */
+	if (!openssl_cert_verify_data) {
+		upsdebugx(4, "%s: openssl_cert_verify_data settings not passed, return ok=%d provided by caller: depth=%d:%s",
+			__func__, preverify_ok, depth, buf);
+		return preverify_ok;
+	}
+
+	/* This is the counterpart's own cert */
+	if (depth == 0 && !preverify_ok) {
+		/* Call this in any err case, to print debug logs about
+		 *  presence and value(s) of subjAltNames in that cert */
+		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
+		if (san_ok
+# ifdef X509_V_ERR_HOSTNAME_MISMATCH
+			&& err == X509_V_ERR_HOSTNAME_MISMATCH
+# else
+			&& err != 0
+# endif
+		) {
+			/* Caller had some problem with it, did SAN match fix it? */
+			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
+				"probably by CN, but SAN matched - reporting ok=%d and clearing error state",
+				__func__, err,
+				X509_verify_cert_error_string(err),
+				depth, buf, san_ok);
+			err = 0;
+			X509_STORE_CTX_set_error(ctx, err);
+			return san_ok;
+		}
+	}
+
+	/* Catch a too long certificate chain. The depth limit set using
+	 * SSL_CTX_set_verify_depth() is by purpose set to "limit+1" so
+	 * that whenever the "depth>verify_depth" condition is met, we
+	 * have violated the limit and want to log this error condition.
+	 * We must do it here, because the CHAIN_TOO_LONG error would not
+	 * be found explicitly; only errors introduced by cutting off the
+	 * additional certificates would be logged.
+	 */
+	if (depth > openssl_cert_verify_data->verify_depth) {
+		preverify_ok = 0;
+		err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
+		X509_STORE_CTX_set_error(ctx, err);
+	}
+
+	if (!preverify_ok) {
+		upsdebugx(5, "%s: called with verify error:num=%d:%s:depth=%d:%s",
+			__func__, err,
+			X509_verify_cert_error_string(err),
+			depth, buf);
+	}
+	else if (openssl_cert_verify_data->verbose_mode)
+	{
+		upsdebugx(5, "%s: called with depth=%d:%s", __func__, depth, buf);
+	}
+
+	/* At this point, err contains the last verification error.
+	 * We can use it for something special, like a report: */
+	if (!preverify_ok && (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT))
+	{
+		char	bufCA[SMALLBUF];
+		/* In older versions maybe: X509_NAME_oneline(X509_get_issuer_name(ctx->current_cert), buf, sizeof(buf)); */
+		X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get_current_cert(ctx)), bufCA, sizeof(bufCA));
+		upsdebugx(5, "%s: issuer=%s", __func__, bufCA);
+	}
+
+/* TOTHINK: Match by CN=...? (Here we are after clearing other error cases) :
+	// This is the counterpart's own cert :
+	if (depth == 0 && !preverify_ok) {
+	}
+*/
+
+	if (openssl_cert_verify_data->always_continue) {
+		upsdebugx(4, "%s: requested to always continue, return ok=1 (not %d provided by caller): depth=%d:%s", __func__, preverify_ok, depth, buf);
+		return 1;
+	}
+
+	upsdebugx(4, "%s: return ok=%d provided by caller: depth=%d:%s", __func__, preverify_ok, depth, buf);
+	return preverify_ok;
+}
+
+#endif
+
+int upscli_authconf_update_conn_flags(const upscli_authconf_t *ac, int *flags)
+{
+	if (!ac || !flags)
+		return 0;
+
+	upsdebugx(4, "%s: starting with flags_ssl=0x%02X (try=%d req=%d ver=%d), "
+		"authconf: forcessl=%d certverify=%d",
+		__func__, (unsigned int)(*flags),
+		*flags & UPSCLI_CONN_TRYSSL ? 1 : 0,
+		*flags & UPSCLI_CONN_REQSSL ? 1 : 0,
+		*flags & UPSCLI_CONN_CERTVERIF ? 1 : 0,
+		ac->forcessl, ac->certverify);
+
+	/* Initial default is usually "TRYSSL".
+	 * Does the user force or avoid SSL mode? */
+	switch (ac->forcessl) {
+		case 0:	/* Do not try, rather require */
+			*flags &= ~UPSCLI_CONN_TRYSSL;
+			*flags &= ~UPSCLI_CONN_REQSSL;
+			break;
+		case 1:	/* Neither require nor even try, explicitly */
+			*flags &= ~UPSCLI_CONN_TRYSSL;
+			*flags |= UPSCLI_CONN_REQSSL;
+			break;
+		case -1:	/* Keep previous value, no override at this level */
+			/* *flags |= UPSCLI_CONN_TRYSSL; */
+			break;
+		default: break;
+	}
+
+	switch (ac->certverify) {
+		case 0: *flags &= ~UPSCLI_CONN_CERTVERIF; break;
+		case 1: *flags |= UPSCLI_CONN_CERTVERIF; break;
+		case -1: break;
+		default: break;
+	}
+
+	upsdebugx(4, "%s: finished with flags_ssl=0x%02X (try=%d req=%d ver=%d)",
+		__func__, (unsigned int)(*flags),
+		*flags & UPSCLI_CONN_TRYSSL ? 1 : 0,
+		*flags & UPSCLI_CONN_REQSSL ? 1 : 0,
+		*flags & UPSCLI_CONN_CERTVERIF ? 1 : 0);
+
+	/* Operation did not fail */
+	return 1;
+}
+
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * Legacy API, without support for client's own certificate in OpenSSL builds.
+ *
+ * @see upscli_init_authconf()
+ * @see upscli_init2()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
+ */
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
+{
+	return upscli_init2(certverify, certpath, certname, certpasswd, NULL);
+}
+
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * NOTE: Maybe eventually the upscli_init2()/upscli_init_authconf() methods
+ *  will invert who is implementation of whom (the other being a wrapper).
+ *
+ * TODO: Consider a method that parses our collection from
+ *  upscli_get_authconf_list() to upscli_add_host_port_cert() and
+ *  set up the one most applicable set of client identity data
+ *  for that [user@host:port] combo.
+ *
+ * @see upscli_init2()
+ * @see upscli_init()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
+ */
+int upscli_init_authconf(upscli_authconf_t *ac)
+{
+	if (!ac) {
+		upsdebugx(1, "%s: SKIP: NULL authconf pointer", __func__);
+		return -1;
+	}
+
+	upsdebugx(5, "%s: got an authconf pointer", __func__);
+	if (nut_debug_level > 5) {
+		upscli_dump_authconf_item(stderr, ac, 1, 0);
+	}
+
+	if (ac->certhost && ac->section) {
+		const char	*host_port = strchr(ac->section, '@');
+
+		if (!host_port) {
+			host_port = ac->section;
+		} else {
+			host_port++;
+		}
+
+		upscli_add_host_cert(host_port, ac->certhost, ac->certverify, ac->forcessl);
+	}
+
+	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
+}
+
+/** Initialize SSL support with specific requirements.
+ * Call this or a related method before upscli_sslinit() to initiate STARTTLS
+ * in a connection to the server.
+ *
+ * Unlike legacy upscli_init() this method allows support for client's own
+ * certificate in OpenSSL builds (as well as NSS builds available before it).
+ *
+ * NOTE: Maybe eventually the upscli_init2()/upscli_init_authconf() methods
+ *  will invert who is implementation of whom (the other being a wrapper).
+ *
+ * @see upscli_init_authconf()
+ * @see upscli_init()
+ * @see upscli_sslinit()
+ * @see upscli_connect()
+ * @see upscli_tryconnect()
+ */
+int upscli_init2(int certverify, const char *certpath,
+					const char *certname, const char *certpasswd,
+					const char *certfile)
 {
 	const char	*quiet_init_ssl;
 #ifdef WITH_OPENSSL
 	long	ret;
 	int	ssl_mode = SSL_VERIFY_NONE;
-	/* Now these are technically "used" below for the log messaging.
-	 * Keeping macros here to remind devs that these arguments are
-	 * not really used by library code in this variant of the build.
-	 */
-	NUT_UNUSED_VARIABLE(certname);
-	NUT_UNUSED_VARIABLE(certpasswd);
 #elif defined(WITH_NSS)	/* WITH_OPENSSL */
 	SECStatus	status;
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	if (certname) {
+		sslcertname = xstrdup(certname);
+	}
+	if (certpasswd) {
+		sslcertpasswd = xstrdup(certpasswd);
+	}
 #else	/* neither backend: */
 	/* See comment above */
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(certpath);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certpasswd);
+	NUT_UNUSED_VARIABLE(certfile);
 #endif	/* WITH_OPENSSL | WITH_NSS */
 
 	if (upscli_initialized == 1) {
@@ -425,16 +1050,15 @@ int upscli_init(int certverify, const char *certpath,
 			&&  strncmp(quiet_init_ssl, "TRUE", 4)
 			&&  strncmp(quiet_init_ssl, "1", 1) )
 		) {
-			upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+			if (strncmp(quiet_init_ssl, "false", 5)
+			&&  strncmp(quiet_init_ssl, "FALSE", 5)
+			&&  strncmp(quiet_init_ssl, "0", 1) )
+				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
 			quiet_init_ssl = NULL;
 		}
 	}
 
 #ifdef WITH_OPENSSL
-
-	if (certname || certpasswd) {
-		upslogx(LOG_ERR, "upscli_init called with 'certname' and/or 'certpasswd' but OpenSSL backend does not use them");
-	}
 
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
@@ -457,18 +1081,22 @@ int upscli_init(int certverify, const char *certpath,
 	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
 	if (ret != 1) {
 		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
+		upscli_cleanup();
 		return -1;
 	}
 # endif
 
 	if (!certpath) {
 		if (certverify == 1) {
-			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
-			return -1;	/* Failed : cert is mandatory but no certfile */
+			upslogx(LOG_ERR, "Can not verify certificate if any is specified: no CERTPATH was given");
+			/* Failed: checking the server cert is mandatory, but no
+			 * collection of trusted CA/server cert files was given */
+			upscli_cleanup();
+			return -1;
 		}
 	} else {
-		switch(certverify) {
-
+		switch (certverify)
+		{
 		case 0:
 			ssl_mode = SSL_VERIFY_NONE;
 			break;
@@ -479,16 +1107,163 @@ int upscli_init(int certverify, const char *certpath,
 
 		ret = SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath);
 		if (ret != 1) {
-			upslogx(LOG_ERR, "Failed to load certificate from pemfile %s", certpath);
+			ssl_debug();
+			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
+
+			/* Can it be a specific PEM file? */
+			if ((ret = SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL)) != 1) {
+				ssl_debug();
+				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				upscli_cleanup();
+				return -1;
+			} else {
+				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
+			}
+		} else {
+			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
+		}
+
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+		openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
+			"openssl_cert_verify_data index (client)",
+			NULL, NULL, NULL);
+
+		SSL_CTX_set_verify(ssl_ctx, ssl_mode, openssl_cert_verify_callback);
+
+		/* Let the openssl_cert_verify_callback() catch any verify_depth
+		 * error, so that we get an appropriate error in the logfile;
+		 * see more around SSL_connect(). */
+		SSL_CTX_set_verify_depth(ssl_ctx, verify_depth + 1);
+	}
+
+	if (sslcertpasswd) {
+#  if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
+		/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros */
+		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
+#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)sslcertpasswd);
+#   endif	/* else callback uses global variable */
+#  else	/* Not SSL_CTX_* methods */
+		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
+		 * the `SSL_CTX*` variants were added in 1.1.
+		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
+		 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
+		 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
+		 *
+		 * But to use those, we would need to get that SSL* (connection-oriented,
+		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
+		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
+		 *
+		 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
+		 */
+#   if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
+		/* Theoretical solution - didn't find a build system where such methods
+		 * would actually be available, so this could be tested and used */
+		SSL	*ssl_tmp = SSL_new(ssl_ctx);
+		/* OpenSSL 0.9.6+ at least? */
+		SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
+#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_set_default_passwd_cb_userdata(ssl_tmp, (void*)sslcertpasswd);
+#    endif
+		SSL_free(ssl_tmp);
+
+#   else	/* Not SSL_* methods either */
+
+		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
+		upscli_cleanup();
+		return -1;
+#   endif
+#  endif	/* ...SET_DEFAULT_PASSWD_CB */
+	}	/* else: CERTIDENT did not pass a password, nothing to check */
+
+	if (certfile) {
+		/* Note: same certfile PEM for cert and private key,
+		 * which is optionally protected by sslcertpasswd */
+		int	ssl_ret;
+		if ((ssl_ret = SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client certificate from %s", certfile);
+			ssl_debug();
+			upscli_cleanup();
+			return -1;
+		}
+		if ((ssl_ret = SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client private key from %s", certfile);
+			ssl_debug();
+			upscli_cleanup();
+			return -1;
+		}
+		if ((ssl_ret = SSL_CTX_check_private_key(ssl_ctx)) != 1) {
+			upslogx(LOG_ERR, "Failed to check client private key from %s", certfile);
+			ssl_debug();
+			upscli_cleanup();
 			return -1;
 		}
 
-		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
+		if (sslcertname && *sslcertname) {
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+			/* Roughly OpenSSL 1.0.2+ */
+			X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
+			if (x509) {
+				/* Check if sslcertname matches the host (CN or SAN) */
+				if (X509_check_host(x509, (const char *)sslcertname, 0, 0, NULL) != 1
+				 && X509_check_ip_asc(x509, (const char *)sslcertname, 0) != 1
+				) {
+					char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+					char	*subject_CN = (subject ? (char*)strstr(subject, "CN=") + 3 : NULL);
+					size_t	sslcertname_len = strlen(sslcertname);
+
+					upsdebugx(4, "%s: My certificate subject: '%s'; CN: '%s'; CERTIDENT: [%" PRIuSIZE "]'%s'",
+						__func__, NUT_STRARG(subject), NUT_STRARG(subject_CN),
+						sslcertname_len, NUT_STRARG(sslcertname));
+
+					/* Check if sslcertname matches the whole subject or just .../CN=.../ part as a string */
+					if (!subject || !(
+						strcmp(subject, sslcertname) == 0
+						|| (subject_CN && !strncmp(subject_CN, sslcertname, sslcertname_len)
+							&& (subject_CN[sslcertname_len] == '\0'
+								|| subject_CN[sslcertname_len] == '/'
+								|| subject_CN[sslcertname_len] == ','
+								|| (subject_CN[sslcertname_len] == '\\' && subject_CN[sslcertname_len + 1] == '/')) )
+					)) {
+						/* This way or that, the names differ */
+						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+							subject ? subject : "unknown", sslcertname);
+						if (subject) {
+							OPENSSL_free(subject);
+						}
+						upslogx(LOG_ERR, "Unexpected certificate provided");
+						upscli_cleanup();
+						return -1;
+					} else {
+						upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", sslcertname);
+					}
+				} else {
+					upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", sslcertname);
+				}
+			}
+#  else	/* Missing X509 methods wanted above */
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", sslcertname);
+			upscli_cleanup();
+			return -1;
+#  endif	/* Got ways to check CERTIDENT? */
+		}	/* else: CERTIDENT did not pass a name, nothing to check */
+	} else {
+		if (sslcertname && *sslcertname) {
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", sslcertname);
+			upscli_cleanup();
+			return -1;
+		}
 	}
+
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
+
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 
 	PK11_SetPasswordFunc(nss_password_callback);
+
+	if (certfile) {
+		upsdebugx(1, "%s: certfile is not used for NSS init, ignored", __func__);
+	}
 
 	if (certpath) {
 		if (quiet_init_ssl != NULL) {
@@ -508,6 +1283,7 @@ int upscli_init(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		nss_error("upscli_init / NSS_[NoDB]_Init");
+		upscli_cleanup();
 		return -1;
 	}
 
@@ -515,6 +1291,7 @@ int upscli_init(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
 		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		upscli_cleanup();
 		return -1;
 	}
 
@@ -524,33 +1301,31 @@ int upscli_init(int certverify, const char *certpath,
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable SSLv3");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+		upscli_cleanup();
 		return -1;
 	}
 	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not enable TLSv1");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+		upscli_cleanup();
 		return -1;
 	}
 	status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
+		upscli_cleanup();
 		return -1;
-	}
-	if (certname) {
-		nsscertname = xstrdup(certname);
-	}
-	if (certpasswd) {
-		nsscertpasswd = xstrdup(certpasswd);
 	}
 	verify_certificate = certverify;
 #else
 	/* Note: historically we do not return with error here,
 	 * and nowadays have the default timeout handling etc.,
 	 * just fall through to below and treat as initialized.
+	 * There's nothing to retry to change that state anyway.
 	 */
-	if (certverify || certpath || certname || certpasswd) {
+	if (certverify || certpath || certname || certpasswd || certfile) {
 		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
 	}
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -561,44 +1336,326 @@ int upscli_init(int certverify, const char *certpath,
 	return 1;
 }
 
+static uint16_t get_port_from_string(const char *str_port)
+{
+	uint16_t	retval = 0;
+
+	if (str_port && *str_port) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		long	l = atol(str_port);
+
+		if (l > 0 && (uintmax_t)l <= (uintmax_t)UINT16_MAX) {
+			retval = (uint16_t)l;
+		} else {
+			struct servent	*se = getservbyname(str_port, "tcp");
+			if (se && se->s_port > 0 && (uintmax_t)(se->s_port) <= (uintmax_t)UINT16_MAX) {
+				retval = se->s_port;
+			}
+		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+
+	return retval;
+}
+
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
 {
-#ifdef WITH_NSS
-	HOST_CERT_t* cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
-	cert->next = first_host_cert;
+	/* Support parsing apart authconf section names */
+	const char	*substr_port = strchr(hostname, ':'), *substr_host = strchr(hostname, '@');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (substr_host) {
+		substr_host++;
+	} else {
+		substr_host = hostname;
+	}
+
+	if (substr_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(substr_port - substr_host + 1)),
+			"%s", substr_host);
+
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in [user@]hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, substr_port + 1);
+				port = NUT_PORT;
+			}
+		}
+	} else {
+		host[0] = '\0';
+	}
+
+	upsdebugx(4, "%s: split '%s' into hostname '%s' port '%u'",
+		__func__, hostname,
+		substr_port ? host : substr_host,
+		(unsigned int)port);
+
+	upscli_add_host_port_cert(
+		substr_port ? host : substr_host,
+		port, certname, certverify, forcessl);
+}
+
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	HOST_CERT_t* cert = upscli_find_host_port_cert(hostname, port, 0);
+
+	if (cert) {
+		upsdebugx(5, "%s: SKIP: found existing CERTHOST with same data (host '%s' and port '%u')",
+			__func__, hostname, (unsigned int)port);
+		return;
+	}
+
+	cert = (HOST_CERT_t *)xmalloc(sizeof(HOST_CERT_t));
+
+	upsdebugx(1, "%s: adding CERTHOST: host '%s' port '%u' certname '%s' certverify %d forcessl %d",
+		__func__, hostname, (unsigned int)port, certname, certverify, forcessl);
+
 	cert->host = xstrdup(hostname);
+	cert->port = port ? port : NUT_PORT;
 	cert->certname = xstrdup(certname);
 	cert->certverify = certverify;
 	cert->forcessl = forcessl;
+
+	/* Insert to head of list */
+# ifdef HAVE_PTHREAD
+	pthread_mutex_lock(&mutex_host_cert);
+# endif
+	cert->next = first_host_cert;
 	first_host_cert = cert;
+# ifdef HAVE_PTHREAD
+	pthread_mutex_unlock(&mutex_host_cert);
+# endif
+
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
 	NUT_UNUSED_VARIABLE(certname);
 	NUT_UNUSED_VARIABLE(certverify);
 	NUT_UNUSED_VARIABLE(forcessl);
 
-	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
+	upsdebugx(1, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
 #endif /* WITH_NSS */
 }
 
-static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+static HOST_CERT_t* upscli_find_host_port_cert(const char* hostname, uint16_t port, int verbose)
 {
-#ifdef WITH_NSS
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	HOST_CERT_t* cert = first_host_cert;
 	if (hostname != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
 		while (cert != NULL) {
-			if (cert->host != NULL && strcmp(cert->host, hostname)==0 ) {
+			if (cert->host != NULL
+			 && strcmp(cert->host, hostname) == 0
+			 && cert->port == port
+			) {
+				if (verbose)
+					upsdebugx(4, "%s: found '%s' for '%s':'%u'",
+						__func__, NUT_STRARG(cert->certname), hostname, (unsigned int)port);
+# ifdef HAVE_PTHREAD
+				pthread_mutex_unlock(&mutex_host_cert);
+# endif
 				return cert;
 			}
 			cert = cert->next;
 		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
 	}
+	if (verbose)
+		upsdebugx(4, "%s: nothing found for '%s':'%u'", __func__, hostname, (unsigned int)port);
 #else
 	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
 
-	upsdebugx(4, "%s: no-op when libupsclient was not built WITH_NSS", __func__);
-#endif /* WITH_NSS */
+	if (verbose)
+		upsdebugx(4, "%s: no-op when libupsclient was not built WITH_SSL", __func__);
+#endif /* WITH_OPENSSL | WITH_NSS */
 	return NULL;
+}
+
+#if 0
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname, int verbose)
+{
+	const char	*substr_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (substr_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(substr_port - hostname)),
+			"%s", hostname);
+
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, substr_port + 1);
+				port = NUT_PORT;
+			}
+		}
+	}
+
+	return upscli_find_host_port_cert(
+		substr_port ? host : hostname,
+		port, verbose);
+}
+#endif
+
+void upscli_free_host_cert(const char* hostname, const char* certname)
+{
+	const char	*substr_port = strchr(hostname, ':');
+	uint16_t	port = NUT_PORT;
+	char	host[LARGEBUF];
+
+	if (substr_port) {
+		snprintf(host,
+			MIN(sizeof(host) - 1, (size_t)(substr_port - hostname)),
+			"%s", hostname);
+
+		if (substr_port[1]) {
+			port = get_port_from_string(substr_port + 1);
+			if (port == 0) {
+				upsdebugx(1, "%s: could not resolve port component '%s' "
+					"in hostname:port spec '%s' into a number, "
+					"falling back to standard NUT port",
+					__func__, hostname, substr_port + 1);
+				port = NUT_PORT;
+			}
+		}
+	}
+
+	upscli_free_host_port_cert(
+		substr_port ? host : hostname,
+		port, certname);
+}
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+static void upscli_free_host_port_cert_data(HOST_CERT_t* cert)
+{
+	if (!cert)
+		return;
+
+	free((void*)cert->host);
+	free((void*)cert->certname);
+
+	/* Don't let consumers with a copy get any funny ideas about memory we no longer own */
+	cert->host = NULL;
+	cert->certname = NULL;
+	cert->next = NULL;
+}
+#endif	/* SSL */
+
+void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	HOST_CERT_t* cert = first_host_cert, *next = NULL, *prev = NULL;
+
+	if (cert != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
+		while (cert != NULL) {
+			next = cert->next;
+
+			if (cert->host != NULL
+			 && strcmp(cert->host, hostname) == 0
+			 && cert->port == port
+			 && (!certname || strcmp(cert->certname, certname) == 0)
+			) {
+				if (prev)
+					prev->next = next;
+
+				upscli_free_host_port_cert_data(cert);
+				free(cert);
+
+				if (certname) {
+# ifdef HAVE_PTHREAD
+					pthread_mutex_unlock(&mutex_host_cert);
+# endif
+					return;
+				}
+			}
+
+			prev = cert;
+			cert = next;
+		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
+	}
+#else	/* ! SSL */
+	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(port);
+	NUT_UNUSED_VARIABLE(certname);
+#endif	/* ! SSL */
+}
+
+void upscli_free_host_cert_list(void)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	HOST_CERT_t* cert = first_host_cert, *next = NULL;
+
+	if (cert != NULL) {
+# ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&mutex_host_cert);
+# endif
+
+		while (cert != NULL) {
+			next = cert->next;
+			upscli_free_host_port_cert_data(cert);
+			free(cert);
+			cert = next;
+		}
+
+# ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&mutex_host_cert);
+# endif
+	}
+#endif /* ! SSL */
 }
 
 int upscli_cleanup(void)
@@ -608,7 +1665,6 @@ int upscli_cleanup(void)
 		SSL_CTX_free(ssl_ctx);
 		ssl_ctx = NULL;
 	}
-
 #endif /* WITH_OPENSSL */
 
 #ifdef WITH_NSS
@@ -625,6 +1681,8 @@ int upscli_cleanup(void)
 	PL_ArenaFinish();
 #endif /* WITH_NSS */
 
+	upscli_free_host_cert_list();
+	upscli_free_authconf_list();
 	upscli_initialized = 0;
 	return 1;
 }
@@ -648,8 +1706,8 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return "Invalid error number";
 	}
 
-	switch (upscli_errlist[ups->upserror].flags) {
-
+	switch (upscli_errlist[ups->upserror].flags)
+	{
 	case 0:		/* simple error */
 		return upscli_errlist[ups->upserror].str;
 
@@ -1059,10 +2117,15 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 # pragma GCC diagnostic pop
 #endif
 
-/*
- * 1  : OK
- * -1 : ERROR
- * 0  : SSL NOT SUPPORTED (whether by library or by server)
+/** Initialize STARTTLS on the specified "ups" connection.
+ *
+ *  For specific security requirements, you should call a
+ *  method from the upscli_init() family in advance.
+ *
+ * Returns:
+ * -  1  : OK
+ * - -1  : ERROR
+ * -  0  : SSL NOT SUPPORTED (whether by library or by server)
  */
 static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
@@ -1081,7 +2144,6 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 	PRFileDesc	*socket;
-	HOST_CERT_t *cert;
 # endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
@@ -1141,9 +2203,67 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	}
 
 	if (verifycert != 0) {
-		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, NULL);
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example:
+		 * Set up the SSL specific data into "openssl_cert_verify_data"
+		 * and store it into the SSL structure. */
+		if (ups->openssl_cert_verify_data != NULL
+		 && ups->openssl_cert_verify_data->hostname_allocated
+		 && ups->openssl_cert_verify_data->hostname
+		) {
+			free((void *)ups->openssl_cert_verify_data->hostname);
+		}
+
+		if (ups->openssl_cert_verify_data == NULL) {
+			upsdebugx(5, "%s: allocate new ups->openssl_cert_verify_data struct instance", __func__);
+			ups->openssl_cert_verify_data = (openssl_cert_verify_data_t*)xmalloc(sizeof(openssl_cert_verify_data_t));
+		}
+
+		memset(ups->openssl_cert_verify_data, 0, sizeof(*(ups->openssl_cert_verify_data)));
+
+		ups->openssl_cert_verify_data->verify_depth = verify_depth;
+		ups->openssl_cert_verify_data->hostname = ups->host;	/* not allocated, not to be freed with the structure (flag remains 0) */
+		SSL_set_ex_data(ups->ssl, openssl_cert_verify_data_index, ups->openssl_cert_verify_data);
+
+		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, openssl_cert_verify_callback);
 	} else {
 		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
+	}
+
+	{	/* scoping */
+		HOST_CERT_t	*cert = upscli_find_host_port_cert(ups->host, ups->port, 1);
+
+		if (cert != NULL && cert->certname != NULL) {
+			/* We have a setting like upsmon CERTHOST - to pin the certificate
+			 * and other security properties for a host, e.g.:
+			 * CERTHOST <hostname> <certificate name> <certverify> <forcessl>
+			 */
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			/* hostname verification - OpenSSL 1.1.0+
+			 * NOTE: Until OpenSSL 4.x this does not handle SAN, hence our openssl_cert_verify_callback()
+			 */
+			const char	*verif_host = (cert && cert->certname) ? cert->certname : ups->host;
+			X509_VERIFY_PARAM	*vpm = SSL_get0_param(ups->ssl);
+
+			X509_VERIFY_PARAM_set1_host(vpm, verif_host, 0);
+
+			upslogx(LOG_INFO, "Connecting in SSL to '%s' and looking at certificate called '%s'",
+				ups->host, cert->certname);
+# else
+			upslogx(cert->certverify ? LOG_ERR : LOG_WARNING,
+				"Connecting in SSL to '%s' and was asked to look at certificate "
+				"called '%s', but the OpenSSL library in this build is too old for that. "
+				"Please disable the CERTHOST setting or update the library used by NUT. %s",
+				ups->host, cert->certname,
+				cert->certverify
+				? "Refusing connection attempt now because certificate verification was required."
+				: "Proceeding without certificate verification as it was not required.");
+
+			if (cert->certverify)
+				return -1;
+# endif
+		} else {
+			upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
+		}
 	}
 
 	/* SSL_connect() on a non-blocking socket requires a retry loop.
@@ -1183,6 +2303,17 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 			if (res == 1) {
 				upsdebugx(3, "%s: SSL connected (%s)",
 					__func__, SSL_get_version(ups->ssl));
+
+				/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+				if (SSL_get_peer_certificate(ups->ssl)) {
+					if (SSL_get_verify_result(ups->ssl) == X509_V_OK) {
+						upsdebugx(3, "%s: The server sent a certificate which verified OK", __func__);
+					} else {
+						upsdebugx(3, "%s: The server sent a certificate which did not verify OK", __func__);
+					}
+				} else {
+					upsdebugx(3, "%s: Odd, the server did not send a certificate", __func__);
+				}
 				break;
 			}
 
@@ -1253,8 +2384,6 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	upsdebugx(3, "%s: Succeeded to STARTTLS (OpenSSL)", __func__);
 
-	return 1;
-
 # elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(ups->fd);
@@ -1280,29 +2409,34 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #endif
 	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
-			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
+			(SSLAuthCertificate)AuthCertificate,
+			CERT_GetDefaultCertDB());
 	} else {
 		status = SSL_AuthCertificateHook(ups->ssl,
-			(SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
+			(SSLAuthCertificate)AuthCertificateDontVerify,
+			CERT_GetDefaultCertDB());
 	}
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_AuthCertificateHook");
 		return -1;
 	}
 
-	status = SSL_BadCertHook(ups->ssl, (SSLBadCertHandler)BadCertHandler, ups);
+	status = SSL_BadCertHook(ups->ssl,
+		(SSLBadCertHandler)BadCertHandler, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_BadCertHook");
 		return -1;
 	}
 
-	status = SSL_GetClientAuthDataHook(ups->ssl, (SSLGetClientAuthData)GetClientAuthData, ups);
+	status = SSL_GetClientAuthDataHook(ups->ssl,
+		(SSLGetClientAuthData)GetClientAuthData, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_GetClientAuthDataHook");
 		return -1;
 	}
 
-	status = SSL_HandshakeCallback(ups->ssl, (SSLHandshakeCallback)HandshakeCallback, ups);
+	status = SSL_HandshakeCallback(ups->ssl,
+		(SSLHandshakeCallback)HandshakeCallback, ups);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_HandshakeCallback");
 		return -1;
@@ -1311,15 +2445,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #pragma GCC diagnostic pop
 #endif
 
-	cert = upscli_find_host_cert(ups->host);
-	if (cert != NULL && cert->certname != NULL) {
-		upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
-			ups->host, cert->certname);
-		status = SSL_SetURL(ups->ssl, cert->certname);
-	} else {
-		upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
-		status = SSL_SetURL(ups->ssl, ups->host);
-	}
+	status = SSL_SetURL(ups->ssl, ups->host);
 	if (status != SECSuccess) {
 		nss_error("upscli_sslinit / SSL_SetURL");
 		return -1;
@@ -1344,9 +2470,22 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 	upsdebugx(3, "%s: Succeeded to STARTTLS (NSS)", __func__);
 
-	return 1;
-
 # endif /* WITH_OPENSSL | WITH_NSS */
+
+	/* Make sure handshake succeeded or abort early
+	 * (there is currently no way for the server to
+	 * report its fault to the client when connection
+	 * is half-way secure):
+	 */
+	if (!upscli_is_valid_protocol_version(ups, NULL)) {
+		upslogx(LOG_WARNING, "%s: STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required", __func__);
+		ups->ssl = NULL;
+		/* Reaction to forceSSL etc. is up to the caller */
+		/* TODO: Should caller drop SSL context or restart the connection as plaintext if SSL is not required? */
+		return -2;
+	}
+
+	return 1;
 #endif /* WITH_SSL */
 }
 
@@ -1381,7 +2520,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		return -1;
 	}
 
-	/* clear out any lingering junk */
+	/* clear out any lingering junk on heap memory;
+	 * if the struct is actually reused - all free's
+	 * were to be handled by upscli_disconnect()
+	 */
 	memset(ups, 0, sizeof(*ups));
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
 	ups->fd = -1;
@@ -1565,12 +2707,12 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 
 	ups->port = port;
 
-	hostcert = upscli_find_host_cert(host);
+	hostcert = upscli_find_host_port_cert(host, port, 1);
 
 	if (hostcert != NULL) {
 		/* An host security rule is specified. */
-		certverify	= hostcert->certverify;
-		forcessl	= hostcert->forcessl;
+		certverify	= (hostcert->certverify != -1) ? hostcert->certverify : ((flags & UPSCLI_CONN_CERTVERIF) != 0 ? 1 : 0);
+		forcessl	= (hostcert->forcessl != -1) ? hostcert->forcessl : ((flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0);
 	} else {
 		certverify	= (flags & UPSCLI_CONN_CERTVERIF) != 0 ? 1 : 0;
 		forcessl	= (flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0;
@@ -1584,7 +2726,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
-		} else if (tryssl && ret == -1) {
+		} else if (tryssl && ret < 0) {
+			/* TODO: (ret == -2) Drop SSL context or restart the connection as plaintext if SSL is not required? */
 			upslogx(LOG_NOTICE, "Error while connecting to NUT server %s, disconnect", host);
 			upscli_disconnect(ups);
 			return -1;
@@ -1687,7 +2830,8 @@ static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 	/* look it up in the table */
 	for (i = 0; upsd_errlist[i].text != NULL; i++) {
 		if (!strncmp(&buf[4], upsd_errlist[i].text,
-			strlen(upsd_errlist[i].text))) {
+			strlen(upsd_errlist[i].text))
+		) {
 			ups->upserror = upsd_errlist[i].errnum;
 			return -1;
 		}
@@ -2163,6 +3307,60 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	return 0;
 }
 
+int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re)
+{
+	char	version[UPSCLI_NETBUF_LEN];
+	size_t	len;
+
+	if (!ups) {
+		return -1;
+	}
+
+	net_write(ups, "PROTVER\n", 8, 0);
+	memset(version, 0, sizeof(version));
+	if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+		if (!strncmp(version, "ERR", 3)) {
+			version[0] = '\0';
+		}
+	}
+
+	if (!version[0]) {
+		/* Deprecated and hidden, but may be what ancient NUT servers say
+		 * May throw if the error is due to (non-)connection */
+		net_write(ups, "NETVER\n", 8, 0);
+		memset(version, 0, sizeof(version));
+		if (net_read(ups, version, sizeof(version), DEFAULT_NETWORK_TIMEOUT) > 0) {
+			if (!strncmp(version, "ERR", 3)) {
+				version[0] = '\0';
+			}
+		}
+	}
+
+	if (!version[0]) {
+		upsdebugx(3, "%s: PROTVER and NETVER queries returned an error, assuming disconnection or non-compliant NUT server", __func__);
+		return -1;
+	}
+
+	len = strlen(version);
+	if (len > 0 && version[len-1] == '\n') {
+		version[len-1] = '\0';
+	}
+
+	upsdebugx(3, "%s: PROTVER or NETVER returned '%s', matching against '%s'",
+		__func__, version, NUT_STRARG(version_re));
+
+	if (!version_re) {
+		/* Basic check for 1.0 through 1.3, as of NUT v2.8.2 */
+		return (
+			!strcmp(version, "1.0") || !strcmp(version, "1.1") ||
+			!strcmp(version, "1.2") || !strcmp(version, "1.3")
+			);
+	}
+
+	// TODO: Regex
+	return (!strcmp(version_re, version));
+}
+
 int upscli_disconnect(UPSCONN_t *ups)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
@@ -2180,6 +3378,21 @@ int upscli_disconnect(UPSCONN_t *ups)
 	free(ups->host);
 	ups->host = NULL;
 
+#ifdef WITH_OPENSSL
+	if (ups->openssl_cert_verify_data != NULL) {
+		if (ups->openssl_cert_verify_data->hostname_allocated
+		 && ups->openssl_cert_verify_data->hostname
+		) {
+			free((void *)ups->openssl_cert_verify_data->hostname);
+			ups->openssl_cert_verify_data->hostname = NULL;
+		}
+
+		memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+		free(ups->openssl_cert_verify_data);
+		ups->openssl_cert_verify_data = NULL;
+	}
+#endif
+
 	if (ups->fd < 0) {
 		return 0;
 	}
@@ -2194,7 +3407,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 	if (net_read(ups, tmp, sizeof(tmp), DEFAULT_NETWORK_TIMEOUT) > 0) {
 		if (!strcmp(tmp, "OK Goodbye\n")) {
 			/* There may be trailing garbage from the buffer after the newline, not sure why */
-			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, as expected", __func__, tmp);
+			upsdebugx(1, "%s: We logged out, and server said 'OK Goodbye\\n' nicely, as expected", __func__);
 		} else if (!strncmp(tmp, "OK", 2)) {
 			upsdebugx(1, "%s: We logged out, and server said '%s' nicely, good enough", __func__, tmp);
 		} else {
@@ -2252,6 +3465,140 @@ int upscli_upserror(UPSCONN_t *ups)
 	return ups->upserror;
 }
 
+int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
+	int check_os_user, int ask_password)
+{
+	char	buf[UPSCLI_NETBUF_LEN], user[UPSCLI_NETBUF_LEN - 12], pass[UPSCLI_NETBUF_LEN - 12];
+	const char	*user_ptr = username;
+	const char	*pass_ptr = password;
+	size_t	len;
+
+	if (!ups) {
+		return -1;
+	}
+
+	if (!user_ptr && check_os_user) {
+		struct passwd	*pw = getpwuid(getuid());
+
+		if (pw) {
+			printf("Username (%s): ", pw->pw_name);
+		} else {
+			printf("Username: ");
+		}
+
+		memset(user, '\0', sizeof(user));
+		if (!fgets(user, sizeof(user), stdin)) {
+			upslog_with_errno(LOG_ERR, "Error reading from stdin!");
+			ups->upserror = UPSCLI_ERR_INVUSERNAME;
+			return -1;
+		}
+
+		/* deal with that pesky newline from fgets() */
+		len = strlen(user);
+		while (len > 1) {
+			if (user[len - 1] == '\n' || user[len - 1] == '\r') {
+				user[len - 1] = '\0';
+				len--;
+				continue;
+			}
+			break;
+		}
+
+		if (!len) {
+			/* blank-line input */
+			if (!pw) {
+				upslogx(LOG_ERR, "No username available - even tried getpwuid");
+				ups->upserror = UPSCLI_ERR_USERREQUIRED;
+				return -1;
+			}
+			/* User accepted the proposed default from pw */
+			snprintf(user, sizeof(user), "%s", pw->pw_name);
+		}
+		user_ptr = user;
+	}
+
+	if (!pass_ptr && ask_password) {
+		/* NOTE: getpass leaks slightly - use -p when testing in valgrind.
+		 * Generally using getpass() or getpass_r() might not be a
+		 * good idea here (marked obsolete in POSIX) so we macro
+		 * between the available options (also getpassphrase etc).
+		 */
+		char	*pwtmp = GETPASS("Password: ");
+		if (!pwtmp) {
+			upslog_with_errno(LOG_ERR, "getpass failed");
+			ups->upserror = UPSCLI_ERR_INVPASSWORD;
+			return -1;
+		}
+		snprintf(pass, sizeof(pass), "%s", pwtmp);
+		pass_ptr = pass;
+	}
+
+	if (!user_ptr || !pass_ptr) {
+		upslogx(LOG_ERR, "Got this far without a username or password, this should not have happened");
+		return -1;
+	}
+
+	/* We have enough strings to try and log in */
+	snprintf(buf, sizeof(buf), "USERNAME %s\n", user_ptr);
+	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+		upslogx(LOG_ERR, "Can't set username: %s", upscli_strerror(ups));
+		return -2;
+	}
+
+	if (upscli_readline(ups, buf, sizeof(buf)) < 0 || upscli_errcheck(ups, buf) < 0) {
+		if (upscli_upserror(ups) != UPSCLI_ERR_UNKCOMMAND) {
+			upslogx(LOG_ERR, "Set username failed: %s", upscli_strerror(ups));
+		} else {
+			upslogx(LOG_ERR,
+				"Set username failed due to an unknown command.\n"
+				"You probably need to upgrade upsd.");
+		}
+		return -2;
+	}
+
+	/* catch insanity from the server - not ERR and not OK either */
+	if (strncmp(buf, "OK", 2) != 0) {
+		upslogx(LOG_ERR, "Set username failed with unexpected protocol response: %s", buf);
+		ups->upserror = UPSCLI_ERR_PROTOCOL;
+		return -2;
+	}
+
+	snprintf(buf, sizeof(buf), "PASSWORD %s\n", pass_ptr);
+	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+		upslogx(LOG_ERR, "Can't set password: %s", upscli_strerror(ups));
+		return -2;
+	}
+
+	if (upscli_readline(ups, buf, sizeof(buf)) < 0 || upscli_errcheck(ups, buf) < 0) {
+		if (upscli_upserror(ups) != UPSCLI_ERR_UNKCOMMAND) {
+			upslogx(LOG_ERR, "Set password failed: %s", upscli_strerror(ups));
+		} else {
+			upslogx(LOG_ERR,
+				"Set password failed due to an unknown command.\n"
+				"You probably need to upgrade upsd.");
+		}
+		return -2;
+	}
+
+	/* catch insanity from the server - not ERR and not OK either */
+	if (strncmp(buf, "OK", 2) != 0) {
+		upslogx(LOG_ERR, "Set password failed with unexpected protocol response: %s", buf);
+		ups->upserror = UPSCLI_ERR_PROTOCOL;
+		return -2;
+	}
+
+	return 0;
+}
+
+int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac)
+{
+	if (!ac) {
+		ups->upserror = UPSCLI_ERR_INVALIDARG;
+		return -1;
+	}
+	return upscli_authenticate(ups, ac->user, ac->pass, 0, 0);
+}
+
 int upscli_ssl(UPSCONN_t *ups)
 {
 	if (!ups) {
@@ -2279,9 +3626,22 @@ int upscli_ssl_caps(void)
 #ifdef WITH_SSL
 # ifdef WITH_OPENSSL
 	ret |= UPSCLI_SSL_CAPS_OPENSSL;
+#  if (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_PASS;
+#  endif
+#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT_NAME;
+	ret |= UPSCLI_SSL_CAPS_CERTHOST_NAME;
+#  endif
+	ret |= UPSCLI_SSL_CAPS_CERTHOST_ADDR;
+#  if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	ret |= UPSCLI_SSL_CAPS_CERTHOST_NAME;
+#  endif
 # endif
 # ifdef WITH_NSS
 	ret |= UPSCLI_SSL_CAPS_NSS;
+	ret |= UPSCLI_SSL_CAPS_CERTIDENT;
+	ret |= UPSCLI_SSL_CAPS_CERTHOST;
 # endif
 #endif	/* WITH_SSL */
 
@@ -2296,10 +3656,24 @@ const char *upscli_ssl_caps_descr(void)
 		"out SSL support";
 #else	/* WITH_SSL */
 		" SSL support: "
+
 # ifdef WITH_OPENSSL
 		"OpenSSL"
+#  if !( ( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) ) && (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT"
+#  else
+#   if !( (defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) || (defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB) )
+		" sans CERTIDENT(pass)"
+#   endif
+#   if !( (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE) )
+		" sans CERTIDENT(name)"
+#   endif
+#  endif
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+		" sans CERTHOST(name)"
+#  endif
 #  ifdef WITH_NSS
-	/* Not likely we'd get here, but... */
+		/* Not likely we'd get here, but... */
 		" and "
 #  endif
 # endif
@@ -2309,6 +3683,7 @@ const char *upscli_ssl_caps_descr(void)
 # if !(defined WITH_NSS) && !(defined WITH_OPENSSL)
 		"oddly undefined"
 # endif
+
 		;
 #endif	/* WITH_SSL */
 

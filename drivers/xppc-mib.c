@@ -24,7 +24,7 @@
 
 #include "xppc-mib.h"
 
-#define XPPC_MIB_VERSION  "0.40"
+#define XPPC_MIB_VERSION  "0.41"
 
 #define XPPC_SYSOID       ".1.3.6.1.4.1.935"
 
@@ -109,14 +109,22 @@ static snmp_info_t xppc_mib[] = {
 
 	/* upsBaseIdentModel.0 = STRING: "Intelligent" */
 	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.1.1.1.0", "Generic Phoenixtec SNMP device", SU_FLAG_OK, NULL),
+	/* upsSmartIdentAgentFirmwareRevision.0 = STRING: "11105200-1.44.00" */
+	snmp_info_default("ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.1.2.4.0", NULL, SU_FLAG_OK, NULL),
 	/* upsBaseBatteryStatus.0 = INTEGER: batteryNormal(2) */
 	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.2.1.1.0", "", SU_STATUS_BATT | SU_TYPE_INT | SU_FLAG_OK, xpcc_onbatt_info),
 	/* upsSmartBatteryCapacity.0 = INTEGER: 100 */
 	snmp_info_default("battery.charge", 0, 1, ".1.3.6.1.4.1.935.1.1.1.2.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
+	/* upsSmartBatteryVoltage.0 = INTEGER: 809 */
+	snmp_info_default("battery.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.2.2.2.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartBatteryTemperature.0 = INTEGER: 260 */
 	snmp_info_default("ups.temperature", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.2.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
+	/* upsSmartBatteryRunTimeRemaining.0 = INTEGER: 4800 */
+	snmp_info_default("battery.runtime", 0, 1.0, ".1.3.6.1.4.1.935.1.1.1.2.2.4.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartInputLineVoltage.0 = INTEGER: 1998 */
 	snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.3.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
+	/* upsSmartInputFrequency.0 = INTEGER: 499 */
+	snmp_info_default("input.frequency", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.3.2.4.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsBaseOutputStatus.0 = INTEGER: onLine(2) */
 	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.4.1.1.0", "", SU_TYPE_INT | SU_STATUS_PWR, xpcc_power_info),
 	/* upsSmartOutputVoltage.0 = INTEGER: 2309 */
@@ -125,6 +133,8 @@ static snmp_info_t xppc_mib[] = {
 	snmp_info_default("output.frequency", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.4.2.2.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartOutputLoad.0 = INTEGER: 7 */
 	snmp_info_default("ups.load", 0, 1, ".1.3.6.1.4.1.935.1.1.1.4.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
+	/* upsSmartConfigRatedOutputVoltage.0 = INTEGER: 2200 */
+	snmp_info_default("output.voltage.nominal", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.5.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
 	snmp_info_sentinel

@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.44"
+#define DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -811,6 +811,7 @@ static void debug_message(const char *msg, size_t len)
 	unsigned char tmp_value[9];
 	char var_name[20], err_msg[80];
 
+	memset(tmp_value, 0, sizeof(tmp_value));
 	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
 	ret = send_cmd((const unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
@@ -1087,7 +1088,8 @@ static int setvar(const char *varname, const char *val)
 
 	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
 		char outlet_name[80];
-		char index_str[10], *first_dot, *next_dot;
+		char index_str[10];
+		const char	*first_dot, *next_dot;
 		long index_chars;
 		int  index, state, ret;
 

@@ -245,6 +245,7 @@ check-list-SRC_ALL_PAGES:
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
+	nutauth.conf.txt \
 	ups.conf.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
@@ -253,6 +254,7 @@ SRC_CONF_PAGES = \
 
 INST_MAN_CONF_PAGES = \
 	nut.conf.$(MAN_SECTION_CFG) \
+	nutauth.conf.$(MAN_SECTION_CFG) \
 	ups.conf.$(MAN_SECTION_CFG) \
 	upsd.conf.$(MAN_SECTION_CFG) \
 	upsd.users.$(MAN_SECTION_CFG) \
@@ -269,6 +271,7 @@ mancfg_DATA += $(MAN_CONF_PAGES)
 
 INST_HTML_CONF_MANS = \
 	nut.conf.html \
+	nutauth.conf.html \
 	ups.conf.html \
 	upsd.conf.html \
 	upsd.users.html \
@@ -532,6 +535,7 @@ HTML_CGI_MANS = $(INST_HTML_CGI_MANS)
 SRC_DEV_PAGES = \
 	upsclient.txt \
 	upscli_add_host_cert.txt \
+	upscli_authenticate.txt \
 	upscli_cleanup.txt \
 	upscli_connect.txt \
 	upscli_disconnect.txt \
@@ -553,6 +557,12 @@ SRC_DEV_PAGES = \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	upscli_upslog_set_debug_level.txt \
+	upscli_create_authconf_item.txt \
+	upscli_dump_authconf_item.txt \
+	upscli_find_authconf_item.txt \
+	upscli_free_authconf_list.txt \
+	upscli_get_authconf_list.txt \
+	upscli_read_authconf_file.txt \
 	upscli_str_add_unique_token.txt \
 	upscli_str_contains_token.txt \
 	libnutclient.txt \
@@ -645,6 +655,8 @@ LIBNUTCLIENT_TCP_DEPS_SUB = \
 	nutclient_tcp_get_ssl_certstore_prefix.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certident_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certident_name.$(MAN_SECTION_API) \
+	nutclient_tcp_set_ssl_certhost_addr.$(MAN_SECTION_API) \
+	nutclient_tcp_get_ssl_certhost_addr.$(MAN_SECTION_API) \
 	nutclient_tcp_set_ssl_certhost_name.$(MAN_SECTION_API) \
 	nutclient_tcp_get_ssl_certhost_name.$(MAN_SECTION_API)
 
@@ -660,7 +672,7 @@ $(LIBNUTCLIENT_TCP_DEPS_FIRST): libnutclient_tcp.$(MAN_SECTION_API)
 	touch $@
 
 $(LIBNUTCLIENT_TCP_DEPS_SUB): nutclient_tcp_create_client.$(MAN_SECTION_API)
-	@if [ x"`cat '$@'`" != x ] 2>/dev/null ; then \
+	@if ( [ x"`cat '$@'`" != x ] ) 2>/dev/null ; then \
 		touch '$@' ; \
 	 else \
 		cat nutclient_tcp_create_client.$(MAN_SECTION_API) > '$@' ; \
@@ -719,6 +731,9 @@ $(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS): upscli_upslog_set_debug_level.$(MAN_SECTI
 INST_MAN_DEV_API_PAGES = \
 	upsclient.$(MAN_SECTION_API) \
 	upscli_add_host_cert.$(MAN_SECTION_API) \
+	$(UPSCLI_ADD_HOST_CERT_DEPS) \
+	upscli_authenticate.$(MAN_SECTION_API) \
+	$(UPSCLI_AUTHENTICATE_DEPS) \
 	upscli_cleanup.$(MAN_SECTION_API) \
 	upscli_connect.$(MAN_SECTION_API) \
 	upscli_tryconnect.$(MAN_SECTION_API) \
@@ -726,6 +741,7 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_fd.$(MAN_SECTION_API) \
 	upscli_get.$(MAN_SECTION_API) \
 	upscli_init.$(MAN_SECTION_API) \
+	$(UPSCLI_INIT_DEPS) \
 	upscli_set_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_get_default_connect_timeout.$(MAN_SECTION_API) \
 	upscli_init_default_connect_timeout.$(MAN_SECTION_API) \
@@ -746,6 +762,15 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
+	upscli_create_authconf_item.$(MAN_SECTION_API) \
+	$(UPSCLI_CREATE_AUTHCONF_DEPS) \
+	upscli_dump_authconf_item.$(MAN_SECTION_API) \
+	$(UPSCLI_DUMP_AUTHCONF_DEPS) \
+	upscli_find_authconf_item.$(MAN_SECTION_API) \
+	$(UPSCLI_FIND_AUTHCONF_DEPS) \
+	upscli_free_authconf_list.$(MAN_SECTION_API) \
+	upscli_get_authconf_list.$(MAN_SECTION_API) \
+	upscli_read_authconf_file.$(MAN_SECTION_API) \
 	$(UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS) \
 	upscli_str_add_unique_token.$(MAN_SECTION_API) \
 	upscli_str_contains_token.$(MAN_SECTION_API) \
@@ -794,6 +819,18 @@ INST_MAN_DEV_API_PAGES = \
 	nutscan_init.$(MAN_SECTION_API)
 
 # Alias page for one text describing two commands:
+UPSCLI_INIT_DEPS = upscli_init2.$(MAN_SECTION_API) upscli_init_authconf.$(MAN_SECTION_API)
+$(UPSCLI_INIT_DEPS): upscli_init.$(MAN_SECTION_API)
+	touch $@
+
+UPSCLI_AUTHENTICATE_DEPS = upscli_authenticate_authconf.$(MAN_SECTION_API)
+$(UPSCLI_AUTHENTICATE_DEPS): upscli_authenticate.$(MAN_SECTION_API)
+	touch $@
+
+UPSCLI_ADD_HOST_CERT_DEPS = upscli_add_host_port_cert.$(MAN_SECTION_API)
+$(UPSCLI_ADD_HOST_CERT_DEPS): upscli_add_host_cert.$(MAN_SECTION_API)
+	touch $@
+
 upscli_readline_timeout.$(MAN_SECTION_API): upscli_readline.$(MAN_SECTION_API)
 	touch $@
 
@@ -807,6 +844,27 @@ upscli_sendline_timeout_may_disconnect.$(MAN_SECTION_API): upscli_sendline.$(MAN
 	touch $@
 
 upscli_tryconnect.$(MAN_SECTION_API): upscli_connect.$(MAN_SECTION_API)
+	touch $@
+
+UPSCLI_CREATE_AUTHCONF_DEPS = \
+	upscli_clone_authconf_item.$(MAN_SECTION_API) \
+	upscli_merge_authconf_item.$(MAN_SECTION_API) \
+	upscli_free_authconf_item.$(MAN_SECTION_API)
+
+UPSCLI_DUMP_AUTHCONF_DEPS = upscli_dump_authconf_list.$(MAN_SECTION_API)
+
+UPSCLI_FIND_AUTHCONF_DEPS = \
+	upscli_get_authconf_item.$(MAN_SECTION_API) \
+	upscli_normalize_authconf_section_parts.$(MAN_SECTION_API) \
+	upscli_split_authconf_section.$(MAN_SECTION_API)
+
+$(UPSCLI_CREATE_AUTHCONF_DEPS): upscli_create_authconf_item.$(MAN_SECTION_API)
+	touch $@
+
+$(UPSCLI_DUMP_AUTHCONF_DEPS): upscli_dump_authconf_item.$(MAN_SECTION_API)
+	touch $@
+
+$(UPSCLI_FIND_AUTHCONF_DEPS): upscli_find_authconf_item.$(MAN_SECTION_API)
 	touch $@
 
 nutscan_scan_ip_range_snmp.$(MAN_SECTION_API): nutscan_scan_snmp.$(MAN_SECTION_API)
@@ -833,6 +891,7 @@ NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
 	nutscan_upslog_setproctag.$(MAN_SECTION_API)
 
 $(NUTSCAN_UPSLOG_SET_DEBUG_LEVEL_DEPS): nutscan_upslog_set_debug_level.$(MAN_SECTION_API)
+	touch $@
 
 INST_MAN_DEV_CMD_USR_PAGES = \
 	libupsclient-config.$(MAN_SECTION_CMD_USR)
@@ -861,6 +920,7 @@ endif WITH_DEV
 INST_HTML_DEV_MANS = \
 	upsclient.html \
 	upscli_add_host_cert.html \
+	upscli_authenticate.html \
 	upscli_cleanup.html \
 	upscli_connect.html \
 	upscli_disconnect.html \
@@ -882,6 +942,12 @@ INST_HTML_DEV_MANS = \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	upscli_upslog_set_debug_level.html \
+	upscli_create_authconf_item.html \
+	upscli_dump_authconf_item.html \
+	upscli_find_authconf_item.html \
+	upscli_free_authconf_list.html \
+	upscli_get_authconf_list.html \
+	upscli_read_authconf_file.html \
 	upscli_str_add_unique_token.html \
 	upscli_str_contains_token.html \
 	libnutclient.html \
@@ -940,6 +1006,9 @@ HTML_DEV_MANS_FICTION = \
 	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
 
+upscli_authenticate_authconf.html: upscli_authenticate.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
 upscli_readline_timeout.html upscli_readline_timeout_may_disconnect.html: upscli_readline.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
@@ -947,6 +1016,21 @@ upscli_sendline_timeout.html upscli_sendline_timeout_may_disconnect.html: upscli
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 upscli_tryconnect.html: upscli_connect.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_get_authconf_item.html: upscli_find_authconf_item.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_normalize_authconf_section_parts.html: upscli_find_authconf_item.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_split_authconf_section.html: upscli_find_authconf_item.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_free_authconf_item.html: upscli_create_authconf_item.html
+	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
+
+upscli_dump_authconf_list.html: upscli_dump_authconf_item.html
 	test -n '$?' -a -s '$@' && rm -f $@ && ln -s $? $@
 
 nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
@@ -975,6 +1059,7 @@ endif
 # (--with-serial)
 SRC_SERIAL_PAGES = \
 	al175.txt	\
+	apcmicrolink.txt	\
 	apcsmart.txt	\
 	apcsmart-old.txt	\
 	bcmxcp.txt 	\
@@ -1015,6 +1100,7 @@ SRC_SERIAL_PAGES = \
 	powercom.txt 	\
 	powerpanel.txt	\
 	powervar_cx_ser.txt	\
+	ragtech.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
 	sms_ser.txt \
@@ -1029,6 +1115,7 @@ SRC_SERIAL_PAGES = \
 
 INST_MAN_SERIAL_PAGES = \
 	al175.$(MAN_SECTION_CMD_SYS)	\
+	apcmicrolink.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart.$(MAN_SECTION_CMD_SYS)	\
 	apcsmart-old.$(MAN_SECTION_CMD_SYS)	\
 	bcmxcp.$(MAN_SECTION_CMD_SYS) 	\
@@ -1067,6 +1154,7 @@ INST_MAN_SERIAL_PAGES = \
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
 	powervar_cx_ser.$(MAN_SECTION_CMD_SYS)	\
+	ragtech.$(MAN_SECTION_CMD_SYS)	\
 	rhino.$(MAN_SECTION_CMD_SYS)		\
 	riello_ser.$(MAN_SECTION_CMD_SYS)	\
 	sms_ser.$(MAN_SECTION_CMD_SYS) \
@@ -1137,6 +1225,7 @@ INST_HTML_SERIAL_MANS = \
 	powercom.html 	\
 	powerpanel.html	\
 	powervar_cx_ser.html	\
+	ragtech.html	\
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \
@@ -1147,6 +1236,7 @@ INST_HTML_SERIAL_MANS = \
 	upscode2.html	\
 	ve-direct.html	\
 	victronups.html	\
+	apcmicrolink.html \
 	apcupsd-ups.html
 
 if HAVE_LINUX_SERIAL_H

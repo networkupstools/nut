@@ -7,21 +7,90 @@ import PyNUT
 import sys
 import os
 
+
+def test_splitaddr(addr, expected_host, expected_port):
+    ac = PyNUT.AuthConf(addr)
+    client = PyNUT.PyNUTClient.from_authconf(ac, connect_now=False)
+    # Note: host in PyNUTClient is __host, but we can't access it easily if it's private.
+    # Looking at the code, we might need to add a getter or use _PyNUTClient__host
+    host = client._PyNUTClient__host
+    port = client._PyNUTClient__port
+
+    if host == expected_host and port == expected_port:
+        print("OK: {%s} -> {%s}:{%s}" % (str(addr), str(host), str(port)))
+    else:
+        print("FAIL: {%s} -> expected {%s}:{%s}, got {%s}:{%s}" % (str(addr), str(expected_host), str(expected_port), str(host), str(port)))
+        return 1
+    return 0
+
+def testsuite_splitaddr():
+    errors = 0
+    errors += test_splitaddr("localhost", "localhost", 3493)
+    errors += test_splitaddr("localhost:12345", "localhost", 12345)
+    errors += test_splitaddr("127.0.0.1", "127.0.0.1", 3493)
+    errors += test_splitaddr("127.0.0.1:12345", "127.0.0.1", 12345)
+    # IPv6 addresses we expect NOT bracketed when to be used for Python socket API (not URLs etc.):
+    errors += test_splitaddr("[::1]", "::1", 3493)
+    errors += test_splitaddr("[::1]:12345", "::1", 12345)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]", "fe80::215:5dff:fea4:f780", 3493)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]:3495", "fe80::215:5dff:fea4:f780", 3495)
+
+    if errors:
+        print("Some Python splitaddr tests FAILED")
+        return False
+
+    print("All Python splitaddr tests passed!")
+    return True
+
 if __name__ == "__main__" :
     NUT_HOST = os.getenv('NUT_HOST', '127.0.0.1')
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
     NUT_USER = os.getenv('NUT_USER', None)
     NUT_PASS = os.getenv('NUT_PASS', None)
-    NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    NUT_SSL  = os.getenv('NUT_SSL', None)
+    if NUT_SSL is not None:
+        NUT_SSL = (NUT_SSL in ["true", "1"])
     NUT_FORCESSL = (os.getenv('NUT_FORCESSL', 'false') in ["true", "1"])
     NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'false') in ["true", "1"])
     NUT_CAFILE = os.getenv('NUT_CAFILE', None)
     NUT_CAPATH = os.getenv('NUT_CAPATH', None)
     NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    NUT_CERTIDENT = os.getenv('NUT_CERTIDENT', None)
     NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
     NUT_KEYPASS = os.getenv('NUT_KEYPASS', None)
 
     NUT_DEBUG = ("true" == os.getenv('DEBUG', 'false') or os.getenv('NUT_DEBUG_LEVEL', None) is not None)
+
+    NUT_IGNORE_AUTHCONF = (os.getenv('NUT_IGNORE_AUTHCONF', 'false') in ["true", "1"])
+    if not NUT_IGNORE_AUTHCONF:
+        # Load from nutauth.conf
+        ### PyNUT.AuthConf.__debug = NUT_DEBUG
+        ac = PyNUT.AuthConf.getAuthConf(user=NUT_USER, host=NUT_HOST, port=NUT_PORT)
+        if ac:
+            if NUT_DEBUG:
+                print ("[DEBUG] NUT AuthConf settings extracted for section [%s]: {%s}\n" % (ac.section, str(ac)))
+
+            NUT_USER = ac.user or NUT_USER
+            NUT_PASS = ac.password or NUT_PASS
+            if ac.certpath:
+                if os.path.isdir(ac.certpath):
+                    NUT_CAPATH = ac.certpath
+                else:
+                    NUT_CAFILE = ac.certpath
+            # (OpenSSL only) Client certificate file for authentication to the server
+            NUT_CERTFILE = ac.certfile or NUT_CERTFILE
+            NUT_CERTIDENT = ac.certident or NUT_CERTIDENT
+            NUT_KEYPASS = ac.certpasswd or NUT_KEYPASS
+            if NUT_SSL is not False:
+                # If test runner has explicitly set NUT_SSL=False,
+                # ignore the value required in the authconf
+                if ac.certverify != -1:
+                    NUT_CERTVERIFY = (ac.certverify == 1)
+                if ac.forcessl != -1:
+                    NUT_FORCESSL = (ac.forcessl == 1)
+
+    if NUT_SSL is None:
+        NUT_SSL = (NUT_FORCESSL is True)
 
     # Account "unexpected" failures (more due to coding than circumstances)
     # e.g. lack of protected access when no credentials were passed is okay
@@ -35,7 +104,8 @@ if __name__ == "__main__" :
         nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT,
                                     use_ssl=NUT_SSL, force_ssl=NUT_FORCESSL, cert_verify=NUT_CERTVERIFY,
                                     ca_file=NUT_CAFILE, ca_path=NUT_CAPATH,
-                                    cert_file=NUT_CERTFILE, key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
+                                    cert_file=NUT_CERTFILE, cert_ident=NUT_CERTIDENT,
+                                    key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
     except:
         ex = str(sys.exc_info()[1])
         print( "EXCEPTION during initialization: %s" % ex )
@@ -53,7 +123,7 @@ if __name__ == "__main__" :
     # driver = dummy-ups
     # desc = "Test device"
     # port = /src/nut/data/evolution500.seq
-    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in upsd.conf) :")
+    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in ups.conf) :")
     result = nut.GetUPSVars( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
@@ -101,8 +171,38 @@ if __name__ == "__main__" :
                 failed.append('SetUPSVar')
     print( "\033[01;33m%s\033[0m\n" % result )
 
+    print( 80*"-" + "\nTesting 'SetRWVar' with TRACKING for 'driver.debug' (1s interval, 10s timeout):")
+    try :
+        # Note: UPS1 is often used in NUT tests as a common device name
+        # Also try 'dummy' which is used in this test script
+        target_ups = "UPS1"
+        try:
+            nut.GetUPSVars(target_ups)
+        except:
+            target_ups = "dummy"
+
+        tid = nut.SetRWVar( target_ups, "driver.debug", "1", wait_interval_sec=1, wait_max_count=10 )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+
+        if isinstance(tid, PyNUT.TrackingID):
+            print( "Got TRACKING ID: %s, created: %s, age: %0.2fs" % (str(tid), tid.created(), tid.age()) )
+            result = str(tid)
+        else:
+            result = tid
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (ex != 'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('SetUPSVar-Tracking')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
     # testing who has an upsmon-like log-in session to a device
-    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in upsd.conf) before test client is connected :")
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in ups.conf) before test client is connected :")
     try :
         result = nut.ListClients( "dummy" )
     except :
@@ -126,7 +226,7 @@ if __name__ == "__main__" :
     print( "\033[01;33m%s\033[0m\n" % result )
 
     loggedIntoDummy = False
-    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in upsd.conf; current credentials should have an upsmon role in upsd.users) :")
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in ups.conf; current credentials should have an upsmon role in upsd.users) :")
     try :
         result = nut.DeviceLogin( "dummy" )
         if (NUT_USER is None):
@@ -162,6 +262,10 @@ if __name__ == "__main__" :
         result = result + "\nTEST-CASE FAILED"
         failed.append('ListClients-dummy-after')
     print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting authconf section name parser" )
+    if not testsuite_splitaddr():
+        failed.append('testsuite_splitaddr')
 
     print( 80*"-" + "\nTesting 'PyNUT' instance teardown (end of test script)" )
     # No more tests AFTER this line; add them above the teardown message

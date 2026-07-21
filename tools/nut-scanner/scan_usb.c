@@ -773,7 +773,6 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				 * do not otherwise support these options:
 				 */
 				if (strncmp(driver_name, "bcmxcp_usb", 10)
-				 && strncmp(driver_name, "richcomm_usb", 12)
 				 && strncmp(driver_name, "nutdrv_atcl_usb", 15)
 				) {
 					snprintf(string, sizeof(string), "%04X", VendorID);
@@ -837,7 +836,6 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 					/* NOTE: nutdrv_atcl_usb recognizes
 					 * "vendor" but not other opts */
 					if (strncmp(driver_name, "bcmxcp_usb", 10)
-					 && strncmp(driver_name, "richcomm_usb", 12)
 					) {
 						nutscan_add_option_to_device(nut_dev,
 							"vendor",

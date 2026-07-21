@@ -28,6 +28,52 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
+Changes from 2.8.5 to 2.8.6
+---------------------------
+
+- PLANNED: Keep track of any further API clean-up?
+
+- Potentially a breaking change for C++ clients that rushed to use the new
+  SSL support options in `libnutclient`: for Mozilla NSS setup, the way to
+  provide an expected `CERTHOST` address was missing.  Now the API is fixed
+  in this regard, at the cost of adding arguments to methods introduced in
+  the previous release. [issue #3331, PR #3408]
+
+- Potentially a breaking change for existing deployments with a (large)
+  `MAXCONN` setting in `upsd.conf`: now this value is checked against the
+  `getrlimit()` (e.g. `ulimit -n`) setting of the operating system for this
+  daemon, where available, and the `upsd` data server would refuse to start
+  if the requested value is larger than what is allowed (minus some reserve
+  for configuration files and other use-cases). [issue #3365]
+
+- Potentially a breaking change for existing deployments with `upsmon` and
+  `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
+  revised for the first token to mean an exact program name (possibly with
+  spaces in the value), not a shell scriptlet. Documentation in earlier NUT
+  releases implied that arguments could be passed here -- this is no longer
+  true. If you need to pass special arguments to a notification program,
+  please use additional separately quoted tokens, or write a small helper
+  script to do so and specify its path here. The `SHUTDOWNCMD` is still a
+  scriptlet, as far as specifying command arguments is concerned, but it also
+  newly supports parsing multiple tokens as additional arguments. [PR #3499]
+
+- Potentially a breaking change for existing deployments with some flaw in
+  configuration of the `upsd` data server: If SSL configuration was provided,
+  but the server failed to apply some aspect of that, it should now abort
+  with an explanation (and not proceed with insecure start-up like it could
+  do before). [issue #3331, PR #3435]
+
+- Enabled support for `nutauth.conf` files to provide credentials and/or
+  SSL settings in clients which previously only did best-effort attempts at
+  secure communications without an individual certificate, and only anonymously
+  for reading like `upsc`.
++
+The new `-A filename` option defaults to trying to use a `nutauth.conf` file
+  (if found in one of the default locations) but not failing if one is not
+  usable; specific values can require use of such a file or to not even try
+  reading one ('none' as the legacy default). See the updated manual pages
+  for more details. [issues #3329, #3411]
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 

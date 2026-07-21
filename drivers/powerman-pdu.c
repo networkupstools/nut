@@ -50,8 +50,8 @@ static int reconnect_ups(void);
 static int instcmd(const char *cmdname, const char *extra)
 {
 	pm_err_t rv = PM_EBADARG;
-	char *cmdsuffix = NULL;
-	char *cmdindex = NULL;
+	const char *cmdsuffix = NULL;
+	const char *cmdindex = NULL;
 	char outletname[SMALLBUF];
 
 	/* May be used in logging below, but not as a command argument */

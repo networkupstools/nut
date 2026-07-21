@@ -9,11 +9,11 @@ upsc - Lightweight read-only NUT client
 SYNOPSIS
 --------
 
-*upsc* [-j] -l | -L ['host']
+*upsc* [-j] [-A 'authconf'] -l | -L ['host']
 
-*upsc* [-j] 'ups' ['variable']
+*upsc* [-j] [-A 'authconf'] 'ups' ['variable']
 
-*upsc* [-j] -c 'ups'
+*upsc* [-j] [-A 'authconf'] -c 'ups'
 
 DESCRIPTION
 -----------
@@ -41,13 +41,13 @@ OPTIONS
 *-l* 'host'::
 
   List all UPS names configured at 'host', one name per line. The hostname
-  defaults to "localhost".  You may optionally add a colon and a port number.
+  defaults to `localhost`.  You may optionally add a colon and a port number.
 
 *-L* 'host'::
 
   As above, list all UPS names configured at 'host', including their description
   provided by the remote linkman:upsd[8] from its linkman:ups.conf[5].
-  The hostname defaults to "localhost".  You may optionally add a colon and
+  The hostname defaults to `localhost`.  You may optionally add a colon and
   a port number to override the default port.
 
 *-c* 'ups'::
@@ -57,7 +57,7 @@ OPTIONS
 'ups'::
 
   Display the status of that UPS.  The format for this option is
-  'upsname[@hostname[:port]]'.  The default hostname is "localhost".
+  'upsname[@hostname[:port]]'.  The default hostname is `localhost`.
 
 'variable'::
 
@@ -88,6 +88,30 @@ COMMON OPTIONS
   Set the timeout for initial network connections (by default they are
   indefinitely non-blocking, or until the system interrupts the attempt).
   Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
+
+*-A* '/path/to/nutauth.conf'::
+
+  Require use of the specified linkman:nutauth.conf[5] file (fail if absent,
+  not accessible, or has content errors when parsed) to specify connection
+  security settings and/or credentials for this run.
++
+NOTE: Credentials are not currently required for read-only access to NUT.
++
+By silent default, the client tries best-effort (non-fatal) detection of a
+  configuration file in per-user locations `${HOME}/.config/nut/nutauth.conf`
+  or `${HOME}/.nutauth.conf`, or site default `${NUT_CONFPATH}/nutauth.conf`.
++
+NOTE: If the `NUT_AUTHCONF_FILE` environment variable is exported, only that
+  exact full (relative or absolute) file path and name would be tried as the
+  default; otherwise, if the `NUT_AUTHCONF_PATH` environment variable is
+  exported, only a `nutauth.conf` file in that directory would be tried as the
+  default (instead of looking at hard-coded default locations listed above).
++
+Special values:
+
+* `default`: require a default file in one of the locations found per rules
+  listed above;
+* `none`: do not even try to find and load any such file (legacy default).
 
 EXAMPLES
 --------
@@ -162,6 +186,7 @@ SEE ALSO
 
 linkman:upslog[8],
 linkman:ups.conf[5],
+linkman:nutauth.conf[5],
 linkman:upsd[8]
 
 Internet resources:

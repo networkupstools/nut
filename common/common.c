@@ -43,9 +43,7 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_DECL_REALPATH
-# include <sys/stat.h>
-#endif
+#include <sys/stat.h>
 
 /* Just yield a unique value - e.g. address of a statically allocated variable
  * which would be different if several copies of NUT-common object code are
@@ -615,6 +613,28 @@ pid_t get_max_pid_t(void)
 #endif
 }
 
+void check_perms(const char *fn)
+{
+#ifndef WIN32
+	int	ret;
+	struct stat	st;
+
+	ret = stat(fn, &st);
+
+	if (ret != 0) {
+		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
+	}
+
+	/* include the x bit here in case we check a directory */
+	if (st.st_mode & (S_IROTH | S_IXOTH)) {
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
+	}
+#else   /* WIN32 */
+	NUT_UNUSED_VARIABLE(fn);
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif  /* WIN32 */
+}
+
 	/* Normally sendsignalfn(), sendsignalpid() and related methods call
 	 * upslogx() to report issues such as failed fopen() of PID file,
 	 * failed parse of its contents, inability to send a signal (absent
@@ -797,21 +817,46 @@ void open_syslog(const char *progname)
 #endif	/* WIN32 */
 }
 
+int background_fork(void)
+{
+	int	pid = 0;
+
+#ifndef WIN32
+	if ((pid = fork()) < 0)
+		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
+#endif	/* !WIN32 */
+
+	return pid;
+}
+
 /* close ttys and become a daemon */
 void background(void)
+{
+#ifndef WIN32
+	int	pid;
+
+	pid = background_fork();
+	if (pid != 0) {
+		/* parent */
+		/* these are typically fds 0-2: */
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+		_exit(EXIT_SUCCESS);
+	}
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
+	background_child();
+}
+
+void background_child(void)
 {
 	/* Normally we enable SYSLOG and disable STDERR,
 	 * unless NUT_DEBUG_SYSLOG envvar interferes as
 	 * interpreted in syslog_is_disabled() method: */
 	int	syslog_disabled = syslog_is_disabled(),
 		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
-
-#ifndef WIN32
-	int	pid;
-
-	if ((pid = fork()) < 0)
-		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
-#endif	/* !WIN32 */
 
 	if (!syslog_disabled)
 		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
@@ -821,17 +866,6 @@ void background(void)
 		xbit_clear(&upslog_flags, UPSLOG_STDERR);
 
 #ifndef WIN32
-	if (pid != 0) {
-		/* parent */
-		/* these are typically fds 0-2: */
-		close(STDIN_FILENO);
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-		_exit(EXIT_SUCCESS);
-	}
-
-	/* child */
-
 	/* make fds 0-2 (typically) point somewhere defined */
 # ifdef HAVE_DUP2
 	/* system can close (if needed) and (re-)open a specific FD number */
@@ -1619,7 +1653,7 @@ int compareprocnames(pid_t pid, const char *procname, const char **prognames)
 	/* Best-effort (size-wise) for logging in the end: */
 	char	all_prognames[LARGEBUF], all_progbasenames[LARGEBUF];
 #ifdef NUT_PLATFORM_LINUX
-	char	*s = NULL;
+	const char	*s = NULL;
 #endif
 	const char	**pprogname = NULL;
 	size_t	total_prognames = 0, i = 0;
@@ -2622,7 +2656,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
  */
 int	str_contains_token(const char *string, const char *token)
 {
-	char	*s = NULL;
+	const char	*s = NULL;
 	size_t	offset = 0, toklen = 0;
 
 	if (!token || !*token || !string || !*string)
@@ -2869,7 +2903,7 @@ char *xbasename_no_ext(const char *file)
 			 *  One implementation is currently tucked away in
 			 *  libusb0.c because net-snmp may provide another...
 			 */
-			char	*s = strstr(cs, exeext);
+			const char	*s = strstr(cs, exeext);
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
 				 * this character is what we already do not want */
@@ -3183,11 +3217,16 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	 * a reload action for Type=notify-reload; for more details see
 	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
 	 */
-	struct timespec monoclock_ts;
-	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+	struct timespec	monoclock_ts;
+	int	got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
 #  endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 # endif	/* HAVE_SD_NOTIFY */
 #endif	/* WITH_LIBSYSTEMD */
+
+	/* Some code paths (build configurations/goals) do not involve these,
+	 * but easier to make-believe that we do than pepper code with ifdefs */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
 
 	/* Were we asked to be quiet on the console? */
 	if (upsnotify_report_verbosity < 0) {
@@ -3258,8 +3297,6 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
-	NUT_UNUSED_VARIABLE(buf);
-	NUT_UNUSED_VARIABLE(msglen);
 	if (!upsnotify_reported_disabled_systemd) {
 		upsdebugx(upsnotify_report_verbosity,
 			"%s: notify about state %s with libsystemd: "
@@ -5171,6 +5208,53 @@ char *xstrdup(const char *string)
 	return p;
 }
 
+/* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
+#ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+{
+	int rc;
+	int err = 0;
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	rc = connect(fd, (const struct sockaddr *)addr, addrlen);
+	if (rc == -1 && errno != EINPROGRESS) {
+		err = errno;
+	} else if (rc == -1) {
+		fd_set w_fds;
+		fd_set e_fds;
+		struct timeval tv;
+
+		FD_ZERO(&w_fds);
+		FD_SET(fd, &w_fds);
+		FD_ZERO(&e_fds);
+		FD_SET(fd, &e_fds);
+
+		tv.tv_sec = d_sec;
+		tv.tv_usec = d_usec;
+
+		rc = select(fd + 1, NULL, &w_fds, &e_fds, &tv);
+
+		if (rc < 0) {
+			err = errno;
+		} else if (rc == 0) {
+			err = ETIMEDOUT;
+		} else {
+			socklen_t len = sizeof(err);
+			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+		}
+	}
+
+	fcntl(fd, F_SETFL, flags);
+
+	if (err != 0) {
+		errno = err;
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
@@ -5415,7 +5499,7 @@ void nut_prepare_search_paths(void) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
 				__func__, index, NUT_STRARG(dirname));
-                        index++;
+			index++;
 			continue;
 		}
 		index++;

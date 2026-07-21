@@ -17,6 +17,287 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
 
+PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
+-------------------------------------------------------------
+
+https://github.com/networkupstools/nut/milestone/13
+
+ - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
+   the driver binaries to be built once and data mappings to be loaded
+   and modernized on the fly (porting from 42ITy project)
+
+ - (expected) Porting of patches suggested by different distribution packages
+
+ - (expected) C code clean-up/consistency (string format security, work with
+   Boolean values, string to number conversions, etc. in the same manner)
+
+ - (expected) clean-up of libusb API variants support [#300 and follow-ups]
+
+ - (expected) CI automation for coding style
+
+ - (expected) CI automation for driver flags and variables to be certainly
+   documented, handled in augeas lenses, nutconf classes, etc.
+
+ - (expected) CI automation for use of data points in drivers that conform
+   to patterns defined in link:docs/nut-names.txt[]
+
+ - Second-level bullet points listed in this file will now use 4 spaces
+   (not 3 like before) for easier initial indentation of new entries.
+
+ - Introduced an experimental `apcmicrolink` driver for devices with
+   the APC Microlink protocol on serial port connections. Tested against
+   APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
+
+ - `apc_modbus` driver updates:
+    * Fixed string join not doing zero termination. [PR #3413]
+    * Decode `RunTimeCalibrationStatus_BF` into
+      `experimental.ups.calibration.result` [PR #3416]
+    * Decode `BatterySystemError_BF` as alarms. [PR #3415]
+    * Decode `PowerSystemError_BF` as alarms. [PR #3415]
+    * Added `modbus_retries` option to configure the number of read retry
+      attempts on timeout errors, simplifying error recovery. [PR #3414]
+    * Increased default TCP response timeout to 2000 ms. [PR #3418]
+
+ - `dummy-ups` driver updates:
+   * Added `authconf` driver parameter for repeater mode to control
+     authentication configuration discovery. It accepts `default`, `none`,
+     or a specific authconf file path. [issue #3329]
+
+ - `nutdrv_qx` driver updates:
+    * Only claim a USB device as "supported" during discovery out of the box
+      if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
+      USB chips not only in UPSes). [issue #3410]
+    * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
+      (when a device returns all-spaces in that part of the `I` query response)
+      out of the box and not ignore the device as unsupported, by adding the
+      `QX_FLAG_ABSENT` in the mapping table. The practical effect should be
+      similar to specifying `novendor` in the `ups.conf` (except that the
+      option bypasses the check altogether, so driver instances handling well
+      behaved devices would also not show their manufacturer). [issue #3436]
+    * Modified `armac` subdriver's USB interrupt read logic to request up to
+      8 bytes per read instead of strictly requiring 6 bytes. This resolves
+      an initialization failure with certain UPS models (e.g., SVC
+      VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
+      allowing the Megatec payload to be successfully reconstructed. [PR #3485]
+    * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
+      recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
+    * Modified `voltronic-qs` subdriver to request the QI command, supplying
+      NUT with battery charge, runtime, input frequency, output current, and
+      input transfer low/high values on devices which support it (`H`, `I`, `J`
+      protocols, e.g. Powershield PSDR800). [#3521]
+
+ - Introduced a new NUT driver named `ragtech` which provides support for the
+   Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
+   the NEP, TORO, INNERGIE and OneUP brands in Brazil). Devices present a USB
+   CDC-ACM serial interface (VID `0x04D8`, PID `0x000A`) and speak a proprietary
+   6-byte register-access protocol with read/write/AND/OR opcodes; the driver
+   covers the 20 models in the family-10 device table and was validated
+   end-to-end against an Easy 2000 TI. Shutdown-related instant commands are
+   opt-in via the `allow_shutdown` flag because the firmware does not
+   auto-restart on mains return. [Initial PR #3447]
+   * Put the CDC-ACM port into raw mode at startup. A freshly enumerated
+     port defaults to canonical mode, where the kernel buffers the firmware's
+     binary replies waiting for a newline that never arrives, so the first
+     poll timed out as "no reply to initial status poll" unless the port had
+     been set raw externally. [issue #3500]
+   * Retry the initial status poll a few times before bailing out, so the
+     driver starts cleanly under the stock systemd units when the device has
+     only just enumerated at boot, instead of leaning on a fatal exit and a
+     `Restart=on-failure` cycle. [issue #3500]
+   * Drain the firmware's handshake reply before the first status poll.
+     Some models (e.g. the Easy Pro 3200 VA GT) are half-duplex and dropped
+     the read command that was sent while the handshake reply was still in
+     flight. [issue #3500]
+   * Compute `battery.charge` as `raw / 2.55` so a fully charged battery
+     reports exactly 100 % instead of 100.2 %.
+   * Added a `va` option to override the apparent-power rating when the
+     firmware model id is shared between product lines, correcting
+     `ups.power.nominal`, `ups.realpower.nominal` and the computed
+     `ups.load`. [issue #3500]
+
+ - `richcomm_usb` driver updates:
+    * Completed support for NUT standard USB configuration options, and fixed
+      some problems possible when iterating devices. [issue #1768, PR #3477]
+
+ - `usbhid-ups` driver updates:
+    * When reconnecting, report success more visibly (not only in debug), and
+      do not reset driver state to "quiet" when it will loop trying. [PR #3423]
+    * `idowell-hid` subdriver now also supports GoldenMate 1000VA/800W LiFePO4
+      battery packs (`0x06da:0xffff`), which carry the same `-BMS-` firmware and
+      HID descriptor as the existing `0x075d:0x0300` device. The shared
+      Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
+      devices on that ID still fall through to `liebert-hid` / `mge-hid`.
+      [issue #3501, PR #3502]
+    * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
+      mode devices when battery is fully charged. [issue #3518, PR #3519]
+
+ - `snmp-ups` driver updates:
+    * Extended the XPPC-MIB subdriver (enterprise 935) to expose
+      `battery.runtime`, `battery.voltage`, `input.frequency`,
+      `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
+      based UPS cards that already answer the rest of the subtree. [#2608]
+
+ - common code:
+    * Refactored `common::background()` method used by numerous NUT daemons
+      to handle parent and child code paths by separately addressable methods.
+      This got used in the shared drivers `main` code file to preclude losing
+      track of some libusb resources when forking the daemon. [#3437]
+    * Revised 'dstate' machinery to track socket connections closed mid-way
+      through a call, to avoid access after `free()`. [#3302]
+    * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
+      `connect()` to ensure a timeout if something does not respond. [PR #3456]
+    * Windows driver state named pipes now use explicit security attributes
+      instead of relying on default settings from the launch context. [PR #3479]
+    * Likewise for named pipes in other NUT daemons and `upssched`. [PR #3527]
+    * Drivers with libusb-1.0 code path, and `nutdrv_qx` in particular: revise
+      to fix per-close `libusb_exit()` deadlock, and escalate a persistent
+      `LIBUSB_ERROR_OVERFLOW` state to USB reset handling. [PR #3448]
+    * Some driver code paths used buffers sent via USB transfers as fixed-size
+      chunks populated only partially with bytes we intended. These buffers are
+      now more diligently pre-zeroed as their siblings were in other code paths,
+      to avoid sending host stack garbage to a device. [#3529]
+
+ - NUT client libraries:
+    * Complete support for actions documented in `docs/net-protocol.txt`
+      was implemented in C++, Python and PERL bindings in-tree, and for Java
+      in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
+      other things, all these libraries now support `STARTTLS` and `TRACKING`
+      to wait for server confirmation of a `SET VAR` or `INSTCMD` request,
+      and this is tested by the NIT script. [issues #656, #1348, #1349, #1350,
+      #1613, #1711, PR #3402]
+    * Enhanced client side of `STARTTLS` dialog to follow up by a simple
+      query (for protocol version) to verify that handshake succeeded.
+      This change impacted also the classic C `libupsclient` library.
+      [issue #3387, PR #3402]
+    * Updated OpenSSL code paths in the `libupsclient` C library to support
+      features earlier only available with NSS builds, like specifying the
+      client certificate+key, optionally with password, and pinning expected
+      server certificates. For both backends such pinning should now honour
+      the 'certverify' setting of the `CERTHOST` entry (e.g. not abort the
+      connection attempt if that number is '0'). Also, the `-1` value is
+      now supported to mean "use global default setting". [issue #3331]
+    * Updated SSL support in the `upsd` data server to handle `CERTREQUEST`
+      (optional validation of clients identified by a certificate) also
+      when built with OpenSSL, optionally using the `CERTPATH` with a
+      collection of CA certificates (directory or a big PEM file).
+      Also support `CERTIDENT` to provide a private key password and ensure
+      that the certificate in `CERTFILE` has an expected subject name as an
+      exact string, or that its CN or SAN match the provided string as a
+      standard expression of host name (section 3.5 of RFC 1034) or IP address.
+      [issue #3331]
+    * The `libupsclient` API was extended with a `upscli_init2()` method which
+      allows to pass the `certfile` argument needed for OpenSSL builds. [#3331]
+    * The `libupsclient` (C) and `libnutclient` (C++) API were updated to
+      report the ability to check `CERTIDENT` information. [#3331]
+    * Introduced support for "authconf" files to store and convey NUT client
+      authentication details. [issue #3329]
+
+ - Various clients:
+    * Flush standard output and error buffers before handling clean exit
+      rituals, to avoid losing the result of client's work in case that
+      clean-up crashes (e.g. due to third-party code involved). [#3454]
+
+ - `upsimage.cgi` client updates:
+    * Adjust scaling for small (single-digit) value ranges to avoid division
+      by zero and not rendering anything. [issue #3469]
+
+ - `upsc`, `upscmd`, `upsrw` command-line client updates:
+    * Enabled support for `nutauth.conf` files to provide credentials and/or
+      SSL settings in the client which previously only did best-effort attempts
+      at secure communications without an individual certificate, and only
+      anonymously for reading. The new `-A filename` option defaults to trying
+      to use a `nutauth.conf` file (if found in one of the default locations)
+      but not failing if one is not usable; specific values can require use of
+      such a file (`default`) or to not even try reading one (`none`).
+      [issues #3329, #3411]
+
+ - `upslog` client/tool updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations or via `-A` option, as described above. Since this client
+      can establish multiple connections, keep in mind that currently it
+      can only identify itself with some one (first seen) client certificate,
+      if `CERTIDENT` settings are used. Multiple `CERTHOST` directives for
+      specially trusted servers can be used. [#3329]
+
+ - `upsstats`, `upsset`, `upsimage` CGI client updates:
+    * Added support for best-effort use of `nutauth.conf` files from default
+      locations described above (no way to choose the location, other than
+      by web-server environment variables for CGI calls). [#3329]
+
+ - `upsmon` client updates:
+    * Introduced support for `CERTFILE` option, so the client can identify
+      itself to the data server also in OpenSSL builds. [issue #3331]
+    * Failure of SSL connection setup (e.g. due to inability to load the
+      NSS library, a practical regression since NUT v2.8.4 release, now that
+      success of SSL initialization with both backends is more diligently
+      tracked) should now not cause exit of the client if secure connection
+      is not required by its configuration in the first place. [#3420]
+    * Potentially a breaking change for existing deployments with `upsmon` and
+      `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
+      revised for the first token to mean an exact program name (possibly with
+      spaces in the value), not a shell scriptlet. Documentation in earlier
+      NUT releases implied that arguments could be passed here -- this is no
+      longer true. If you need to pass special arguments to a notification
+      program, please use additional separately quoted tokens, or write a
+      small helper script to do so and specify its path here.
+      The `SHUTDOWNCMD` is still a scriptlet, as far as specifying command
+      arguments is concerned, but it also newly supports parsing multiple
+      tokens as additional arguments. [PR #3499]
+    * Introduced a new notification type for unexpected clock change which
+      is specially handled (data re-initialization), whether due to sleep
+      and wake-up, or NTP/RTC clock changes during boot, or severe delays
+      on a stressed system (to name a few practical cases). [issue #3405]
+
+ - `upssched` client/tool updates:
+    * Fixed handling of `NOTIFYMSG` from command line if other arguments are
+      present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
+
+ - `NUT-Monitor` Python GUI client:
+    * Fixed Qt tray tooltips to render in plain text, not rich text which
+      ended up as literal HTML on KDE Plasma 6; now that rich text formatting
+      is only used for main window status labels. [PR #3430]
+    * Fixed both Python 2 and 3 variants to handle automatic client reconnection
+      (e.g. after system suspend/resume, network interruption, or NUT server
+      restart). [issue #3509, PR #3523]
+
+ - `upssched` client/tool updates:
+    * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
+
+ - `upsd` data server updates:
+    * If we hit "Too many open files" during configuration reload, close
+      the oldest client connection and retry. [issue #3365]
+    * If the `MAXCONN` requested in the configuration file exceeds the OS
+      allowance on open file descriptors, fail early since the requested
+      configuration can not be guaranteed and can mis-fire unexpectedly
+      much later (tell the sysadmin to increase `ulimit` or set up a more
+      conservative `MAXCONN`). If there is a separate soft and hard limit,
+      and `MAXCONN` exceeds the soft limit, try to raise the bar. [issue #3365]
+    * If SSL configuration was provided, but the server failed to apply some
+      aspect of that, it should now abort with an explanation (and not proceed
+      with insecure start-up like it could do before). [issue #3331, PR #3435]
+
+ - Recipes, CI and helper script updates not classified above:
+    * Introduced `ci_build.sh` settings and respective CI workflow settings
+      to optionally re-use a `config.cache` file from older runs, and similar
+      logic for NIT `nit.sh` to re-use generated certificate and private key
+      files. Both can be enabled by `export DO_USE_NUTCI_CACHE=yes` and would
+      store data under a `${CI_CACHE_NUT_BASEDIR}` directory (defaults to
+      `~/.cache/nut-ci`); more fine-tuning environment variables are provided.
+      Directory names are based on hashes of strings that identify the content,
+      which are size-limited to some 8 characters.
+      [issues #3108, #3390, #1711, #3526, PR #3109]
+    * Rearranged the GHA job to prepare Dist and Docs Tarballs. [PR #3460]
+    * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
+      names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
+      dependencies were not previously discovered and bundled). [issue #3420,
+      PRs #3429, #3432]
+    * Updated a NUT CI farm worker to FreeBSD 15 and updated the recipes and
+      documentation according to problems that were found along the way. [#3453]
+    * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
+      [#3489, #3495, #3498]
+    * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
+      controllers and build agents, `docs/config-prereqs.txt` revised.
+
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
 ----------------------------------------------------

@@ -70,13 +70,399 @@
 #            NUT STARTTLS protocol action.
 
 import socket
+import time
+import re
+import os
 
 ssl_available = False
 try:
     import ssl
     ssl_available = True
+    try:
+        with ssl.create_default_context(cafile="x", capath="y") as tmp:
+            pass
+    except AttributeError as ignored:
+        # Too old, module has no such symbol (since Python 3.4)
+        # TODO: Use the older code patterns as fallback?
+        ssl_available = False
+    except:
+        # Missing file, etc.
+        pass
 except:
     pass
+
+class TrackingID:
+    """ Cookie given when performing async action, used to redeem result at a later date. """
+    def __init__(self, tracking_id):
+        self.__id = tracking_id
+        self.__created = time.time()
+
+    def id(self):
+        return self.__id
+
+    def created(self):
+        return self.__created
+
+    def age(self):
+        return time.time() - self.__created
+
+    def __str__(self):
+        return self.__id
+
+    def isValid(self):
+        return self.__id is not None and self.__id != ""
+
+class AuthConf:
+    """ Authentication configuration for a NUT client. """
+    __authconf_list = []
+    __global_defaults = None
+    __debug = False
+
+    @staticmethod
+    def getAuthConfList():
+        """ Get the one global list of all parsed authentication configurations """
+        return AuthConf.__authconf_list
+
+    @staticmethod
+    def freeAuthConfList():
+        """ Clear the global list of authentication configurations """
+        AuthConf.__authconf_list = []
+        AuthConf.__global_defaults = None
+
+    def __init__(self, section=""):
+        self.section = section
+        ''' `@host:port` or `user@host:port`, or None for global; note that host may be an IPv6 address enclosed in brackets '''
+
+        self.user = None
+        self.password = None
+
+        self.certpath = None
+        ''' Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes '''
+
+        self.certfile = None
+        ''' (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key) '''
+
+        self.certident = None
+        ''' Client certificate identity (nickname, alias) '''
+
+        self.certpasswd = None
+        ''' Password for key/cert storage '''
+
+        self.ssl_backend = None
+        ''' "openssl"/"nss" '''
+
+        self.certhost = None
+        ''' Expected certificate subject (common name) of that server's certificate '''
+
+        self.certverify = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
+
+        self.forcessl = -1
+        ''' -1 = unset, 0 = off, 1 = on '''
+
+    def __str__(self):
+        sb = []
+        for key in self.__dict__:
+            if key == "section": continue
+            sb.append("{key}='{value}'".format(key=key, value=self.__dict__[key]))
+
+        return ("PyNUT.AuthConf[%s]: " % ("<null>" if self.section is None else self.section)) + (', '.join(sb))
+
+    def __repr__(self):
+        return self.__str__()
+
+    @staticmethod
+    def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
+        """ Read the authentication configuration file (usually nutauth.conf) """
+        if filename is None:
+            # Matches C implementation logic for default path
+            s = os.environ.get("NUT_AUTHCONF_FILE")
+            if s and os.path.exists(s):
+                filename = s
+            else:
+                s = os.environ.get("NUT_AUTHCONF_PATH")
+                if s and os.path.exists(os.path.join(s, "nutauth.conf")):
+                    filename = os.path.join(s, "nutauth.conf")
+                else:
+                    s = os.environ.get("HOME")
+                    if s:
+                        p = os.path.join(s, ".config", "nut", "nutauth.conf")
+                        if os.path.exists(p):
+                            filename = p
+                        else:
+                            p = os.path.join(s, ".nutauth.conf")
+                            if os.path.exists(p):
+                                filename = p
+
+            if filename is None:
+                filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
+
+        if not os.path.exists(filename):
+            if fatal_errors:
+                raise PyNUTError("Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename)))
+            return AuthConf.__authconf_list
+
+        current_ac = AuthConf.__global_defaults if global_scope else None
+
+        try:
+            if AuthConf.__debug:
+                print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
+            with open(filename, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    if line.startswith('[') and line.endswith(']'):
+                        sectname = line[1:-1]
+
+                        if AuthConf.__debug:
+                            if current_ac is None:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]" % (sectname) )
+                            else:
+                                print( "[DEBUG] readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
+
+                        if sectname in ("_global_defaults", "", "*"):
+                            if AuthConf.__global_defaults is None:
+                                AuthConf.__global_defaults = AuthConf("")
+                                AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                            current_ac = AuthConf.__global_defaults
+                        else:
+                            # Check if section already exists
+                            current_ac = None
+                            for ac in AuthConf.__authconf_list:
+                                ac_sect = ac.section
+                                if ac_sect == sectname:
+                                    current_ac = ac
+                                    break
+                            if current_ac is None:
+                                current_ac = AuthConf(sectname)
+                                AuthConf.__authconf_list.append(current_ac)
+                        continue
+
+                    # INCLUDE support
+                    m = re.match(r'^(INCLUDE(?:_REQUIRED)?)\s+(.*)$', line, re.I)
+                    if m:
+                        inc_type = m.group(1).upper()
+                        inc_file = m.group(2).strip()
+                        if (inc_file.startswith('"') and inc_file.endswith('"')) or \
+                           (inc_file.startswith("'") and inc_file.endswith("'")):
+                            inc_file = inc_file[1:-1]
+
+                        is_required = (inc_type == "INCLUDE_REQUIRED")
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
+                        AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
+                        continue
+
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        keyUC = key.strip().upper()
+                        value = value.strip()
+
+                        # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
+                        # Remove quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+
+                        if current_ac is None:
+                            if global_scope:
+                                if AuthConf.__global_defaults is None:
+                                    AuthConf.__global_defaults = AuthConf("")
+                                    AuthConf.__authconf_list.append(AuthConf.__global_defaults)
+                                    if AuthConf.__debug:
+                                        print( "[DEBUG] readAuthConfFile(): starting [] (global defaults) section handling" )
+
+                                current_ac = AuthConf.__global_defaults
+                            else:
+                                # We are parsing an INCLUDE'd file but were not
+                                # in global scope when that directive was seen
+                                continue
+
+                        if AuthConf.__debug:
+                            print( "[DEBUG] readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
+                                current_ac.section, str(key), str(value), str(keyUC)
+                            ))
+
+                        if keyUC == 'USER' or keyUC == 'USERNAME':
+                            if current_ac.user is None or current_ac.user == "":
+                                current_ac.user = value
+                        elif keyUC == 'PASS' or keyUC == 'PASSWORD':
+                            current_ac.password = value
+                        elif key == 'CERTPATH':
+                            current_ac.certpath = value
+                        elif key == 'CERTFILE':
+                            current_ac.certfile = value
+                        elif key == 'CERTIDENT_NAME':
+                            current_ac.certident = value
+                        elif key == 'CERTIDENT_PASS':
+                            current_ac.certpasswd = value
+                        elif key == 'SSLBACKEND':
+                            current_ac.ssl_backend = value
+                        elif key == 'CERTHOST':
+                            current_ac.certhost = value
+                        elif key == 'CERTVERIFY':
+                            current_ac.certverify = 1 if value.lower() in ['on', 'yes', '1'] else 0
+                        elif key == 'FORCESSL':
+                            current_ac.forcessl = 1 if value.lower() in ['on', 'yes', '1'] else 0
+                        else:
+                            print( "[WARNING] Unsupported keyword in NUT auth configuration file: '%s'" % key )
+        except Exception as e:
+            msgErr = "Error reading '%s': %s" % (filename, str(e))
+            if AuthConf.__debug:
+                print( "[DEBUG] readAuthConfFile(): %s" % (msgErr) )
+            if fatal_errors:
+                raise PyNUTError(msgErr)
+
+        return AuthConf.__authconf_list
+
+    def merge(self, source):
+        """ Merge contents of another configuration item into this one. """
+        if source is None:
+            return
+
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merging {%s} into {%s}" % (str(source), str(self)))
+
+        sect = self.section
+
+        if '@' in sect and sect.find('@') > 0:
+            self.user = sect.split('@')[0]
+        else:
+            if self.user is None and source.user is not None:
+                self.user = source.user
+
+        if self.password is None and source.password is not None:
+            self.password = source.password
+        if self.certpath is None and source.certpath is not None:
+            self.certpath = source.certpath
+        if self.certfile is None and source.certfile is not None:
+            self.certfile = source.certfile
+        if self.certident is None and source.certident is not None:
+            self.certident = source.certident
+        if self.certpasswd is None and source.certpasswd is not None:
+            self.certpasswd = source.certpasswd
+        if self.ssl_backend is None and source.ssl_backend is not None:
+            self.ssl_backend = source.ssl_backend
+        if self.certhost is None and source.certhost is not None:
+            self.certhost = source.certhost
+        if self.certverify == -1 and source.certverify != -1:
+            self.certverify = source.certverify
+        if self.forcessl == -1 and source.forcessl != -1:
+            self.forcessl = source.forcessl
+
+        if AuthConf.__debug:
+            print ("[DEBUG] AuthConf Merge result: {%s}" % (str(self)))
+
+    @staticmethod
+    def getAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string, and fill in
+            the missing points from higher levels (exact match => host defaults => global).
+        """
+        if auth_configs is None:
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
+
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = "[%s]" % host_part
+
+        target_user_host_port = ""
+        if user: target_user_host_port += "%s@" % user
+        target_user_host_port += host_part
+        if norm_port: target_user_host_port += ":%s" % str(norm_port)
+
+        target_host_port = "@%s" % host_part
+        if norm_port: target_host_port += ":%s" % str(norm_port)
+
+        res = AuthConf(target_user_host_port)
+
+        retval_user = None
+        retval_host = None
+
+        if AuthConf.__debug:
+            print ("[DEBUG] getAuthConf(): looking for user [%s], host [%s]=>[%s], port [%s]" % (
+                str(user), str(host), str(host_part), str(port)
+            ))
+
+        for ac in auth_configs:
+            sect = ac.section
+
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): Processing section: [%s]" % (sect))
+
+            if sect == target_user_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_user looking for target_user_host_port [%s]" % (target_user_host_port))
+                retval_user = ac
+            elif sect == target_host_port:
+                if AuthConf.__debug:
+                    print ("[DEBUG] getAuthConf(): hit retval_host looking for target_host_port [%s]" % (target_host_port))
+                retval_host = ac
+
+        if retval_user:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_user into the result")
+            res.merge(retval_user)
+
+        if retval_host:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge retval_host into the result")
+            res.merge(retval_host)
+
+        if AuthConf.__global_defaults:
+            if AuthConf.__debug:
+                print ("[DEBUG] getAuthConf(): merge global_defaults into the result")
+            res.merge(AuthConf.__global_defaults)
+
+        # Final enforcement of user if requested
+        if user:
+            res.user = user
+
+        return res
+
+    @staticmethod
+    def findAuthConf(user=None, host=None, port=None, auth_configs=None):
+        """ Find the best matching authconf for a given connection string """
+        if auth_configs is None:
+            auth_configs = AuthConf.__authconf_list if AuthConf.__authconf_list else AuthConf.readAuthConfFile()
+
+        norm_host = host if host else 'localhost'
+        norm_port = port # may be None
+
+        # Proper IPv6 bracket handling for construction
+        host_part = norm_host
+        if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
+            host_part = "[%s]" % host_part
+
+        # Try to match [user@host:port], then [host:port], then [host], then [*]
+        # This is a simplified version of the C logic
+        for ac in auth_configs:
+            section = ac.section
+
+            # 1. Exact match user@host:port
+            target = ""
+            if user: target += "%s@" % user
+            target += host_part
+            if norm_port: target += ":%s" % str(norm_port)
+
+            if section == target:
+                return ac
+
+            # 2. Match host:port
+            if not user and section == ("%s:%s" % (host_part, str(norm_port))):
+                return ac
+
+            # 3. Match host
+            if not user and not norm_port and section == host_part:
+                return ac
+
+        return AuthConf.__global_defaults
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
@@ -84,6 +470,53 @@ class PyNUTError( Exception ) :
 
 class PyNUTClient :
     """ Abstraction class to access NUT (Network UPS Tools) server """
+
+    @classmethod
+    def from_authconf(cls, authconf, **kwargs):
+        """ Create a PyNUTClient from an AuthConf object """
+        # Extract host and port from authconf.section if possible
+        host = "127.0.0.1"
+        port = 3493
+
+        # Simple split, could be more robust
+        section = authconf.section
+
+        # Handle user@host:port
+        if '@' in section:
+            user_part, addr_part = section.split('@', 1)
+        else:
+            addr_part = section
+
+        if addr_part:
+            if addr_part.startswith('['):
+                close_bracket = addr_part.find(']')
+                if close_bracket != -1:
+                    host = addr_part[1:close_bracket]
+                    if len(addr_part) > close_bracket + 1 and addr_part[close_bracket+1] == ':':
+                        try:
+                            port = int(addr_part[close_bracket+2:])
+                        except ValueError:
+                            pass
+                    else:
+                        pass # port remains default
+                else:
+                    host = addr_part # Should not happen in well-formed authconf
+            elif ':' in addr_part:
+                host, port_str = addr_part.split(':', 1)
+                try:
+                    port = int(port_str)
+                except ValueError:
+                    pass
+            else:
+                host = addr_part
+
+        return cls(host=host, port=port, login=authconf.user, password=authconf.password,
+                   ca_file=authconf.certpath if authconf.certpath and os.path.isfile(authconf.certpath) else authconf.certfile,
+                   ca_path=authconf.certpath if authconf.certpath and os.path.isdir(authconf.certpath) else None,
+                   cert_file=authconf.certfile, cert_ident=authconf.certident, key_pass=authconf.certpasswd,
+                   cert_verify=(authconf.certverify == 1) if authconf.certverify != -1 else None,
+                   use_ssl=(authconf.forcessl == 1), force_ssl=(authconf.forcessl == 1),
+                   **kwargs)
 
     __debug       = None   # Set class to debug mode (prints everything useful for debugging...)
     __host        = None
@@ -97,17 +530,18 @@ class PyNUTClient :
     __use_ssl     = False
     __ssl_context = None
 
-    __version     = "1.9.0"
-    __release     = "2026-03-16"
+    __version     = "1.10.0"
+    __release     = "2026-04-08"
 
     try:
         NUT_DEFAULT_CONNECT_TIMEOUT = float(os.getenv("NUT_DEFAULT_CONNECT_TIMEOUT", "5.0"))
     except:
         NUT_DEFAULT_CONNECT_TIMEOUT = 5.0
 
-    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=NUT_DEFAULT_CONNECT_TIMEOUT,
+    def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False,
+                  connect_now=True, timeout=NUT_DEFAULT_CONNECT_TIMEOUT, tracking=False,
                   use_ssl=False, ssl_context=None, cert_verify=None, ca_file=None, ca_path=None,
-                  cert_file=None, key_file=None, key_pass=None, force_ssl=False ) :
+                  cert_file=None, key_file=None, key_pass=None, force_ssl=False, cert_ident=None, certhost=None ) :
         """ Class initialization method
 
 host        : Host to connect (default to localhost)
@@ -115,16 +549,22 @@ port        : Port where NUT listens for connections (default to 3493)
 login       : Login used to connect to NUT server (default to None for no authentication)
 password    : Password used when using authentication (default to None)
 debug       : Boolean, put class in debug mode (prints everything on console, default to False)
+connect_now : Boolean, connect to NUT server immediately and apply "tracking" setting (default to True)
 timeout     : Timeout used to wait for network response
+tracking    : Boolean or 'ON'/'OFF', if we connect and try to enable TRACKING support right away (remembered for subsequent connect() call if not connecting now)
 use_ssl     : Boolean, use SSL/TLS for connection (default to False; subject to 'ssl' module availability)
 ssl_context : ssl.SSLContext object to use for SSL/TLS connection (default to None; subject to 'ssl' module availability)
 cert_verify : Boolean, verify server certificate (default to None, which means True if CA info is provided)
 ca_file     : Path to CA certificate file (PEM format)
 ca_path     : Path to directory with CA certificates (PEM format)
 cert_file   : Path to client certificate file (PEM format)
-key_file    : Path to client private key file (PEM format)
+key_file    : Path to client private key file (PEM format), if separate from cert_file
 key_pass    : Password for client private key file (default to None)
 force_ssl   : Boolean, if True, the connection must be secure (default to False)
+cert_ident  : Optional string, expected Common Name (CN) or Subject Alternative Name (SAN) of the *loaded client certificate*
+certhost    : Optional dict or list of dict/lists: {hostname: [certname, certverify, forcessl]}
+                or [{hostname: [certname, certverify, forcessl]}, ...]
+                or [[hostname, certname, certverify, forcessl], ...]
         """
         self.__debug = debug
 
@@ -133,6 +573,13 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
             print( "[DEBUG]  -> Host  = %s (port %s, timeout %s)" % ( host, port, timeout) )
             print( "[DEBUG]  -> Login = '%s' / '%s'" % ( login, password ) )
             print( "[DEBUG]  -> SSL   = %s (force: %s, verify: %s)" % (use_ssl, force_ssl, cert_verify) )
+            if use_ssl or force_ssl or cert_verify:
+                print( "[DEBUG]  -> SSL -> ca_file     = %s" % (ca_file) )
+                print( "[DEBUG]  -> SSL -> ca_path     = %s" % (ca_path) )
+                print( "[DEBUG]  -> SSL -> cert_file   = %s" % (cert_file) )
+                print( "[DEBUG]  -> SSL -> key_file    = %s" % (key_file) )
+                print( "[DEBUG]  -> SSL -> cert_ident  = %s" % (cert_ident) )
+                print( "[DEBUG]  -> SSL -> certhost    = %s" % (certhost) )
 
         self.__host        = host
         self.__port        = port
@@ -142,6 +589,34 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
         # might upset other scripts that use PyNUTClient, and/or
         # their imposed timeouts might confuse NUT expectations:
         self.__timeout     = NUT_DEFAULT_CONNECT_TIMEOUT if (timeout is None or type(timeout) not in [float, int] or timeout < 0.0) else timeout
+
+        # CERTHOST handling: if provided as a list, convert to a dictionary
+        self.__certhost = {}
+        if certhost:
+            if isinstance(certhost, dict):
+                self.__certhost = certhost
+            elif isinstance(certhost, (list, tuple)):
+                for entry in certhost:
+                    if isinstance(entry, dict):
+                        self.__certhost.update(entry)
+                    elif isinstance(entry, (list, tuple)) and len(entry) >= 4:
+                        # CERTHOST <hostname> <certificate name> <certverify> <forcessl>
+                        self.__certhost[entry[0]] = [entry[1], int(entry[2]), int(entry[3])]
+
+        # If current host is in CERTHOST, override defaults
+        self.__cert_ident = cert_ident
+        if self.__host in self.__certhost:
+            ch_certname, ch_verify, ch_force = self.__certhost[self.__host]
+            if self.__debug:
+                print( "[DEBUG]  -> CERTHOST match for %s: certname=%s verify=%s force=%s" % (self.__host, ch_certname, ch_verify, ch_force) )
+            # In CERTHOST context, 'certificate name' refers to what the server should present
+            # We'll use this for server_hostname in wrap_socket if it's not None
+            self.__expected_server_certname = ch_certname
+            if cert_verify is None:
+                cert_verify = (ch_verify == 1)
+            use_ssl = use_ssl or (ch_force == 1)
+            force_ssl = force_ssl or (ch_force == 1)
+
         if ssl_available:
             self.__use_ssl     = use_ssl or force_ssl
             self.__force_ssl   = force_ssl
@@ -150,7 +625,17 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
                 if self.__debug:
                     print( "[DEBUG] Creating SSL context" )
                 # Create a default context and apply parameters
-                self.__ssl_context = ssl.create_default_context(cafile=ca_file, capath=ca_path)
+
+                # If cafile is a directory, it should be passed as capath
+                eff_cafile = ca_file
+                eff_capath = ca_path
+                if ca_file and os.path.isdir(ca_file):
+                    if not eff_capath:
+                        eff_capath = ca_file
+                    eff_cafile = None
+
+                self.__ssl_context = ssl.create_default_context(cafile=eff_cafile, capath=eff_capath)
+
                 if cert_verify is not None:
                     if not cert_verify:
                         # Must be set first, else we get
@@ -159,6 +644,50 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
                     self.__ssl_context.verify_mode = ssl.CERT_REQUIRED if cert_verify else ssl.CERT_NONE
                 if cert_file:
                     self.__ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file, password=key_pass)
+
+                    # CERTIDENT: verify the LOADED client certificate as a hit/match
+                    # between certificate subject name and expected string.
+                    # TOTHINK: Check somehow CN/SAN host/IP address? Of the client?..
+                    if self.__cert_ident:
+                        if self.__debug:
+                            print( "[DEBUG] CERTIDENT specified: %s (validating loaded cert %s)" % (self.__cert_ident, cert_file) )
+
+                        try:
+                            # Python's ssl module doesn't expose the loaded chain
+                            # easily until a connection is made, so we can either
+                            # use a temporary context and load the certificate there,
+                            # and then find a way to verify it, or just load the
+                            # PEM file ourselves and check it.
+                            # Without extra dependencies, we can use the fact that
+                            # the CN is often after "/CN=":
+                            with open(cert_file, 'rb') as f:
+                                cert_data = f.read().decode('utf-8', errors='ignore')
+                                match = re.search(r'Subject:.*?/CN=([^/\n\s]+)', cert_data)
+                                if not match:
+                                    # Fallback for some formats
+                                    match = re.search(r'commonName\s*=\s*([^/\n\s]+)', cert_data)
+                                if not match:
+                                    # Fallback to full subject string provided by caller
+                                    match = re.search(r'Subject:\s*([^\n]+)', cert_data)
+
+                                if match:
+                                    loaded_cn = match.group(1).strip()
+                                    if self.__cert_ident != loaded_cn:
+                                        msg = "CERTIDENT mismatch: expected %s, found CN %s in %s" % (self.__cert_ident, loaded_cn, cert_file)
+                                        if self.__debug:
+                                            print( "[DEBUG] %s" % msg )
+                                        if self.__force_ssl:
+                                            raise PyNUTError(msg)
+                                    else:
+                                        if self.__debug:
+                                            print( "[DEBUG] CERTIDENT match: %s found in %s" % (loaded_cn, cert_file) )
+                                else:
+                                    if self.__debug:
+                                        print( "[DEBUG] Could not extract CN from %s for CERTIDENT validation" % cert_file )
+                        except Exception as e:
+                            if self.__debug:
+                                print( "[DEBUG] Could not verify CERTIDENT before connection: %s" % str(e) )
+
                 if self.__debug:
                     print( "[DEBUG] SSL context created")
         else:
@@ -171,22 +700,50 @@ force_ssl   : Boolean, if True, the connection must be secure (default to False)
                 if force_ssl:
                     raise PyNUTError( "SSL required but 'ssl' module not available" )
 
-        self.__connect()
+        self.__tracking_wanted = tracking
+        self.__tracking = None
+        ''' Actual tracking state applied over protocol (maybe) '''
+
+        if connect_now:
+            # Sets self.__tracking if explicit mode is wanted
+            self.__connect()
 
     # Try to disconnect cleanly when class is deleted ;)
     def __del__( self ) :
         """ Class destructor method """
-        try :
-            self.__srv_handler.send( b"LOGOUT\n" )
-        except :
-            pass
+        self.disconnect()
+
+    def disconnect(self):
+        """ Disconnects from the server cleanly """
+        if hasattr(self, '__srv_handler') and self.__srv_handler:
+            try:
+                self.__send(b"LOGOUT\n")
+            except:
+                pass
+            try:
+                self.__srv_handler.close()
+            except:
+                pass
+            self.__srv_handler = None
+
+    def __send(self, data):
+        """ Internal method to send data through the socket with error handling """
+        try:
+            self.__srv_handler.sendall(data)
+        except (AttributeError, socket.error) as e:
+            if self.__debug:
+                print("[DEBUG] Send failed: %s" % str(e))
+            raise e
 
     def __read_until(self, finished_reading_data):
         data = self.__recv_leftover
         while True:
             data_end_index = data.find(finished_reading_data)
             if data_end_index == -1:
-                data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+                chunk = self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+                if not chunk:
+                    raise EOFError("Connection closed by server")
+                data += chunk
             else:
                 break
         data_end_index += len(finished_reading_data)
@@ -215,17 +772,48 @@ if something goes wrong.
         if self.__use_ssl :
             if self.__debug :
                 print( "[DEBUG] Requesting STARTTLS" )
-            self.__srv_handler.send( b"STARTTLS\n" )
+            self.__send( b"STARTTLS\n" )
             result = self.__read_until( b"\n" )
             if result[:11] == b"OK STARTTLS" :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS accepted, wrapping socket" )
                 if self.__ssl_context is None :
                     self.__ssl_context = ssl.create_default_context()
-                self.__srv_handler = self.__ssl_context.wrap_socket(
-                    self.__srv_handler,
-                    server_hostname=self.__host
-                )
+
+                # Not sure if we can enter this river twice (e.g. if the server
+                # side of the handshake would still be listening), but we can try:
+                wrap_server_hostname = self.__host
+                if hasattr(self, "__expected_server_certname") and self.__expected_server_certname:
+                    wrap_server_hostname = self.__expected_server_certname
+
+                for i in range(5, 0, -1):
+                    try:
+                        self.__srv_handler = self.__ssl_context.wrap_socket(
+                            self.__srv_handler,
+                            server_hostname=wrap_server_hostname
+                        )
+                        break
+                    except TimeoutError as te:
+                        if self.__debug:
+                            print( "[DEBUG] STARTTLS handshake timed out%s: %s" %(
+                                ("" if (i < 1) else (", retrying (%d)" % i)),
+                                str(te)) )
+
+                        if (i > 1):
+                            time.sleep(1)
+                        else:
+                            raise te
+
+                # Make sure handshake succeeded or abort early
+                # (there is currently no way for the server to
+                # report its fault to the client when connection
+                # is half-way secure):
+                if not self.isValidProtocolVersion():
+                    if self.__debug :
+                        print( "[DEBUG] STARTTLS setup claimed to succeed, but protocol version check in the secured session failed" )
+                    if self.__force_ssl:
+                        raise PyNUTError("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required")
+                    # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
             else :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS failed: %s" % result )
@@ -237,24 +825,243 @@ if something goes wrong.
                     self.__use_ssl = False
 
         if self.__login != None :
-            self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )
+            self.__send( ("USERNAME %s\n" % self.__login).encode('ascii') )
             result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
                 raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         if self.__password != None :
-            self.__srv_handler.send( ("PASSWORD %s\n" % self.__password).encode('ascii') )
+            self.__send( ("PASSWORD %s\n" % self.__password).encode('ascii') )
             result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
                 if result == b"ERR INVALID-ARGUMENT\n" :
                     # Quote the password (if it has whitespace etc)
                     # TODO: Escape special chard like NUT does?
-                    self.__srv_handler.send( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
+                    self.__send( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
                     result = self.__read_until( b"\n" )
                     if result[:2] != b"OK" :
                         raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
                 else:
                     raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        # NOTE: no-op if "None"
+        self.__tracking = self.SetTrackingMode(self.__tracking_wanted)
+
+    def SetTrackingMode( self, value="" ) :
+        """ Enable/disable TRACKING ability for SETVAR/INSTCMD ('ON'/'OFF')
+
+            Remember in $self.__tracking if we could set it with this upsd
+            version, and then to which value?
+        """
+        if value is None or str(value).strip() == "":
+            return None
+
+        if str(value) == 'False':
+            value = 'OFF'
+
+        if str(value) == 'True':
+            value = 'ON'
+
+        if value not in ['ON', 'OFF']:
+            if self.__debug :
+                print( "[DEBUG] Invalid setting for TRACKING mode was requested" )
+            # TOTHINK # raise PyNUTError( "Invalid setting for TRACKING mode was requested" )
+            return None
+
+        self.__send( ("SET TRACKING %s\n" % value).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result == b"OK\n" :
+            self.__tracking = value
+            return value
+
+        if self.__debug :
+            print( "[DEBUG] Failed to set TRACKING mode: %s" % result.replace( b"\n", b"" ).decode('ascii') )
+
+        self.__tracking = None
+        return None
+
+    def EnableTrackingModeOnce( self ) :
+        if self.__tracking is not None and self.__tracking == 'ON':
+            return True
+
+        if self.SetTrackingMode('ON') == 'ON':
+            return True
+
+        return False
+
+    def GetTrackingResult( self, tracking_id="" ) :
+        """ Returns the result of an asynchronous command execution
+        """
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
+        if self.__debug :
+            print( "[DEBUG] GetTrackingResult for %s" % tracking_id )
+
+        self.__send( ("GET TRACKING %s\n" % tracking_id).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result in [b"PENDING\n", b"SUCCESS\n"]:
+            return result.replace( b"\n", b"" ).decode('ascii')
+        else :
+            # ERR...
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def WaitTrackingResult( self, tracking_id="", wait_interval_sec = 1, wait_max_count = 10) :
+        tid = tracking_id
+        if isinstance(tracking_id, TrackingID):
+            tracking_id = tracking_id.id()
+
+        if tracking_id is None or str(tracking_id).strip() == "" or \
+                wait_interval_sec is None or wait_interval_sec < 1 or \
+                wait_max_count is None or wait_max_count < 1 :
+            # Non-fatal skip; TOTHINK: raise a special exception for bad args?
+            return None
+
+        while wait_max_count > 0:
+            value = self.GetTrackingResult(tid)
+
+            if value == 'SUCCESS':
+                if self.__debug :
+                    print( "[DEBUG] Request with TRACKING ID %s has successfully completed" % tracking_id )
+                return True
+
+            if value == 'PENDING':
+                if self.__debug :
+                    print( "[DEBUG] Still waiting for TRACKING ID %s..." % tracking_id )
+            else:
+                if self.__debug:
+                    print( "[DEBUG] Got bogus reply while waiting for TRACKING ID %s: %s" % (tracking_id, str(value)) )
+
+            time.sleep(wait_interval_sec)
+            wait_max_count = wait_max_count - 1
+
+        if self.__debug :
+            print( "[DEBUG] Timed out waiting for TRACKING ID %s" % tracking_id )
+
+        return False
+
+    def isValidProtocolVersion(self, version_re = None):
+        """ Sends a PROTVER/NETVER query using the active connection and
+            returns True if the returned version string matches a valid
+            NUT protocol version regex (defaults to an "X(.Y)" number aka
+            "^\\d+(?:\\.\\d+)?$" if version_re is None).
+        """
+        result = None
+        try:
+            self.__send( ("PROTVER\n").encode('ascii') )
+            result = self.__read_until( b"\n" )
+        except PyNUTError as ignored:
+            # Deprecated and hidden, but may be what ancient NUT servers say
+            # May throw if the error is due to (non-)connection
+            # Here we assume that any other exceptions are due to broken
+            # connection etc. and forward them to caller right away.
+            self.__send( ("NETVER\n").encode('ascii') )
+            result = self.__read_until( b"\n" )
+
+        # print ( "[DEBUG] isValidProtocolVersion: version_re='%s' result='%s'" % (str(version_re), str(result)))
+
+        if result is None:
+            return False
+
+        result = result.replace( b"\n", b"" ).decode('ascii')
+
+        if version_re is None:
+            # Currently supported: 1.0, 1.1, 1.2, 1.3 => r'^1\.[0-3]$'
+            # Is it an X(.Y) number?
+            version_re = r'^\d+(\.\d+)?$'
+
+        if re.match(version_re, result):
+            return True
+
+        return False
+
+    def GetVariableType( self, ups="", var="" ) :
+        """ Returns the type of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableType for %s / %s" % ( ups, var ) )
+
+        self.__send( ("GET TYPE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"TYPE" :
+            # TYPE <ups> <var> <type>
+            off = len( ("TYPE %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetVariableDescription( self, ups="", var="" ) :
+        """ Returns the description of the specified variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetVariableDescription for %s / %s" % ( ups, var ) )
+
+        self.__send( ("GET DESC %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:4] == b"DESC" :
+            # DESC <ups> <var> "<description>"
+            off = len( ("DESC %s %s " % ( ups, var )).encode('ascii') )
+            return result[off:-1].split(b'"')[1].decode('ascii')
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def GetEnumList( self, ups="", var="" ) :
+        """ Returns the list of possible values for an ENUM variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetEnumList for %s / %s" % ( ups, var ) )
+
+        self.__send( ("LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        enum_list = []
+        result = self.__read_until( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("ENUM %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            enum_list.append( current[offset:].split( b'"' )[1].decode('ascii') )
+
+        return enum_list
+
+    def GetRangeList( self, ups="", var="" ) :
+        """ Returns the list of possible ranges for a RANGE variable
+        """
+        if self.__debug :
+            print( "[DEBUG] GetRangeList for %s / %s" % ( ups, var ) )
+
+        self.__send( ("LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result != ("BEGIN LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+        range_list = []
+        result = self.__read_until( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') )
+        offset = len( ("RANGE %s %s " % ( ups, var )).encode('ascii') )
+        end_offset = 0 - ( len( ("END LIST RANGE %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
+
+        for current in result[:end_offset].split( b"\n" ) :
+            # RANGE <ups> <var> "<min>" "<max>"
+            ranges = current[offset:].split( b'"' )
+            range_list.append( { 'min' : ranges[1].decode('ascii'), 'max' : ranges[3].decode('ascii') } )
+
+        return range_list
+
+    def GetDeviceNumLogins( self, ups="" ) :
+        """ Returns the number of connected clients for the specified UPS
+        """
+        if self.__debug :
+            print( "[DEBUG] GetDeviceNumLogins for %s" % ups )
+
+        self.__send( ("GET NUMLOGINS %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if result[:9] == b"NUMLOGINS" :
+            # NUMLOGINS <ups> <value>
+            return int( result.replace( b"\n", b"" ).split(b' ')[2] )
+        else :
+            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
@@ -268,7 +1075,7 @@ which is of little concern for Python2 but is important in Python3
         if self.__debug :
             print( "[DEBUG] GetUPSList from server" )
 
-        self.__srv_handler.send( b"LIST UPS\n" )
+        self.__send( b"LIST UPS\n" )
         result = self.__read_until( b"\n" )
         if result != b"BEGIN LIST UPS\n":
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
@@ -308,7 +1115,7 @@ available vars.
         if self.__debug :
             print( "[DEBUG] GetUPSVars called..." )
 
-        self.__srv_handler.send( ("LIST VAR %s\n" % ups).encode('ascii') )
+        self.__send( ("LIST VAR %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST VAR %s\n" % ups).encode('ascii') :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
@@ -334,7 +1141,7 @@ The result is True (reachable) or False (unreachable)
         if self.__debug :
             print( "[DEBUG] CheckUPSAvailable called..." )
 
-        self.__srv_handler.send( ("LIST CMD %s\n" % ups).encode('ascii') )
+        self.__send( ("LIST CMD %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST CMD %s\n" % ups).encode('ascii') :
             return False
@@ -351,7 +1158,7 @@ of the command as value
         if self.__debug :
             print( "[DEBUG] GetUPSCommands called..." )
 
-        self.__srv_handler.send( ("LIST CMD %s\n" % ups).encode('ascii') )
+        self.__send( ("LIST CMD %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
         if result != ("BEGIN LIST CMD %s\n" % ups).encode('ascii') :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
@@ -366,7 +1173,7 @@ of the command as value
 
             # For each var we try to get the available description
             try :
-                self.__srv_handler.send( ("GET CMDDESC %s %s\n" % ( ups, var )).encode('ascii') )
+                self.__send( ("GET CMDDESC %s %s\n" % ( ups, var )).encode('ascii') )
                 temp = self.__read_until( b"\n" )
                 if temp[:7] != b"CMDDESC" :
                     raise PyNUTError
@@ -409,21 +1216,37 @@ The result is presented as a dictionary containing 'key->val' pairs
 
         return( rw_vars )
 
-    def SetRWVar( self, ups="", var="", value="" ):
+    def SetRWVar( self, ups="", var="", value="", wait_interval_sec = None, wait_max_count = None ):
         """ Set a variable to the specified value on selected UPS
 
 The variable must be a writable value (cf GetRWVars) and you must have the proper
 rights to set it (maybe login/password).
         """
 
-        self.__srv_handler.send( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
+        self.__send( ("SET VAR %s %s %s\n" % ( ups, var, value )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
-        else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+        else:
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Variable setting %s %s sent successfully, got tracking ID '%s'" % (var, value, tracking_id) )
 
-    def RunUPSCommand( self, ups="", command="" ) :
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tid )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+
+    def RunUPSCommand( self, ups="", command="", wait_interval_sec = None, wait_max_count = None ) :
         """ Send a command to the specified UPS
 
 Returns OK on success or raises an error
@@ -432,21 +1255,42 @@ Returns OK on success or raises an error
         if self.__debug :
             print( "[DEBUG] RunUPSCommand called..." )
 
-        self.__srv_handler.send( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
+        do_wait = False
+        if not (wait_interval_sec is None or wait_interval_sec < 1 or
+                wait_max_count is None or wait_max_count < 1) :
+            do_wait = True
+            self.EnableTrackingModeOnce()
+
+        self.__send( ("INSTCMD %s %s\n" % ( ups, command )).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+            if ( result[:12] == b"OK TRACKING " ) :
+                tracking_id = result.replace( b"\n", b"" ).split(b" ")[2].decode('ascii')
+                if self.__debug :
+                    print( "[DEBUG] Instant command %s sent successfully, got tracking ID '%s'" % (command, tracking_id) )
+
+                tid = TrackingID(tracking_id)
+                if do_wait and self.WaitTrackingResult(tid, wait_interval_sec, wait_max_count):
+                    return( "OK" )
+                return( tid )
+            else:
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
     def DeviceLogin( self, ups="") :
         """ Establish a login session with a device (like upsmon does)
 
+This assumes the upsmon SECONDARY role so we can be alerted and initiate a shutdown
+if someone else sends the FSD command to this UPS; we can further becomePrimary()
+if we are the system which manages it.
+
 Returns OK on success or raises an error
+
 USERNAME and PASSWORD must have been specified earlier in the session (once)
 and upsd.conf should permit that user with one of `upsmon` role types.
 
-Note there is no "device LOGOUT" in the protocol, just one for general end
+Note there is no "device LOGOUT" in the protocol, just one for a general end
 of connection.
         """
 
@@ -458,7 +1302,7 @@ of connection.
                 print( "[DEBUG] DeviceLogin: %s is not a valid UPS" % ups )
             raise PyNUTError( "ERR UNKNOWN-UPS" )
 
-        self.__srv_handler.send( ("LOGIN %s\n" % ups).encode('ascii') )
+        self.__send( ("LOGIN %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result.startswith( ("User %s@" % self.__login).encode('ascii')) and result.endswith (("[%s]\n" % ups).encode('ascii')) ):
             # User dummy-user@127.0.0.1 logged into UPS [dummy]
@@ -469,33 +1313,46 @@ of connection.
         else :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
-    def FSD( self, ups="") :
-        """ Send FSD command
+    def becomePrimary( self, ups="") :
+        """ Assume the upsmon PRIMARY role so we can send FSD command
 
 Returns OK on success or raises an error
 
 NOTE: API changed since NUT 2.8.0 to replace MASTER with PRIMARY
 (and backwards-compatible alias handling)
         """
-
         if self.__debug :
             print( "[DEBUG] PRIMARY called..." )
 
-        self.__srv_handler.send( ("PRIMARY %s\n" % ups).encode('ascii') )
+        self.__send( ("PRIMARY %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
-        if ( result != b"OK PRIMARY-GRANTED\n" ) :
-            if self.__debug :
-                print( "[DEBUG] Retrying: MASTER called..." )
-            self.__srv_handler.send( ("MASTER %s\n" % ups).encode('ascii') )
-            result = self.__read_until( b"\n" )
-            if ( result != b"OK MASTER-GRANTED\n" ) :
-                if self.__debug :
-                    print( "[DEBUG] Primary level functions are not available" )
-                raise PyNUTError( "ERR ACCESS-DENIED" )
+        if ( result == b"OK PRIMARY-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Retrying: MASTER called..." )
+        self.__send( ("MASTER %s\n" % ups).encode('ascii') )
+        result = self.__read_until( b"\n" )
+        if ( result == b"OK MASTER-GRANTED\n" ) :
+            return( "OK" )
+
+        if self.__debug :
+            print( "[DEBUG] Primary level functions are not available" )
+        raise PyNUTError( "ERR ACCESS-DENIED" )
+
+    def FSD( self, ups="", becomePrimaryFirst = True) :
+        """ Send FSD command
+
+Returns OK on success or raises an error
+        """
+
+        if becomePrimaryFirst:
+            # raises an error if not "OK", so not checking return value
+            self.becomePrimary(ups)
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
-        self.__srv_handler.send( ("FSD %s\n" % ups).encode('ascii') )
+        self.__send( ("FSD %s\n" % ups).encode('ascii') )
         result = self.__read_until( b"\n" )
         if ( result == b"OK FSD-SET\n" ) :
             return( "OK" )
@@ -538,11 +1395,11 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
             raise PyNUTError( "ERR UNKNOWN-UPS" )
 
         if ups:
-            self.__srv_handler.send( ("LIST CLIENT %s\n" % ups).encode('ascii') )
+            self.__send( ("LIST CLIENT %s\n" % ups).encode('ascii') )
         else:
             # NOTE: Currently NUT does not support just listing all clients
             # (not providing an "ups" argument) => NUT_ERR_INVALID_ARGUMENT
-            self.__srv_handler.send( b"LIST CLIENT\n" )
+            self.__send( b"LIST CLIENT\n" )
         result = self.__read_until( b"\n" )
         if ( (ups and result != ("BEGIN LIST CLIENT %s\n" % ups).encode('ascii')) or (ups is None and result != b"BEGIN LIST CLIENT\n") ):
             if ups is None and (result == b"ERR INVALID-ARGUMENT\n") :

@@ -277,6 +277,11 @@ created by cloud-OI image into the Linux Recovery CD session:
         rpool ONLINE
            vda ONLINE
 ----
+* RECOMMENDED: Double-check that `ashift=12` (4KB sectors) setting is applied.
+  Storage may subtly misbehave (from being slow to getting corrupted) when
+  using default `ashift=9` (512B sectors) on disks with 4KB actual sectors,
+  especially under stress such as CI builds. It may be worthwhile to recreate
+  the ZFS pool if it was prepared in a "wrong" manner.
 * Import without mounting (`-N`), using an alternate root if we decide to
   mount something later (`-R /a`), and ignoring possible markers that the
   pool was not unmounted so might be used by another storage user (`-f`):
@@ -586,6 +591,15 @@ Linux systems) with ZFS, to be consistent across the board, was an adventure.
   https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Stretch%20Root%20on%20ZFS.html
   have to be used particularly to `zpool create bpool` (with the dumbed-down
   options for GRUB to be able to read that boot-pool);
+  * With DigitalOcean VMs it is recommended to explicitly assign `ashift=12`
+    when creating ZFS pools on systems which support setting this explicitly.
+    By default the storage sector size is guessed, and may end up using `9`
+    (512 bytes) leading to read-modify-write cycles in the underlying storage
+    layers, causing slower I/O and even possible data corruption.
+  * Usually you can check a resulting ZFS pool's `ashift` value with
+    `zpool get ashift zroot`; however for a guessed value `0` may be reported.
+    In this case, `zdb -C -e zroot | grep ashift` is a more certain way.
+  * WARNING: The `ashift` value can only be assigned during pool creation!
 * For the rest of the system,
   https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html
   is relevant for current distro (Debian 12) and is well-written;
