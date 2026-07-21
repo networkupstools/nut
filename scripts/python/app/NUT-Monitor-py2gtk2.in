@@ -297,16 +297,38 @@ class interface :
             self.__widgets["ups_authentication_password"].set_property("can-focus", True)
             self.__widgets["ups_connect"].set_property("can-focus", True)
 
+            # Set explicit focus chains on containers to ensure TAB/SHIFT-TAB works through all fields
+            # table1 contains Host, Port, Device, Refresh
+            self.__widgets["interface"].get_widget("table1").set_focus_chain([
+                self.__widgets["ups_host_entry"],
+                self.__widgets["ups_port_entry"],
+                self.__widgets["ups_list_combo"],
+                self.__widgets["ups_refresh_button"]
+            ])
+            # hbox1 contains Login, Password
+            self.__widgets["interface"].get_widget("hbox1").set_focus_chain([
+                self.__widgets["ups_authentication_login"],
+                self.__widgets["ups_authentication_password"]
+            ])
+            # vbox6 contains table1, checkbutton1, hbox1
+            self.__widgets["interface"].get_widget("vbox6").set_focus_chain([
+                self.__widgets["interface"].get_widget("table1"),
+                self.__widgets["ups_authentication_check"],
+                self.__widgets["interface"].get_widget("hbox1")
+            ])
+            # hbox2 contains Connect, Disconnect
+            self.__widgets["interface"].get_widget("hbox2").set_focus_chain([
+                self.__widgets["ups_connect"],
+                self.__widgets["ups_disconnect"]
+            ])
+            # vbox5 contains vbox6, hbox2
+            self.__widgets["interface"].get_widget("vbox5").set_focus_chain([
+                self.__widgets["interface"].get_widget("vbox6"),
+                self.__widgets["interface"].get_widget("hbox2")
+            ])
+
             # Set initial focus to host field
             self.__widgets["ups_host_entry"].grab_focus()
-
-            # Chaining focus via move-focus signal or just letting GTK handle it
-            # since we've ensured they can all focus.
-            # To be more explicit, we could set the focus chain on their common parents.
-            # But without knowing the exact hierarchy (which box contains which),
-            # it's safer to just set the 'tab-next' if we could, but GTK2 doesn't have it.
-            # However, we can use the 'key-press-event' to override TAB if needed.
-            # For now, ensuring can-focus is a good first step.
         except:
             pass
 

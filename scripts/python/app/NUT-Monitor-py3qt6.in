@@ -251,14 +251,14 @@ class interface :
         #---------------------------------------------------------------
 
         # Set initial tab order
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_host_entry"], self.__widgets["ups_port_entry"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_port_entry"], self.__widgets["ups_list_combo"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_list_combo"], self.__widgets["ups_refresh_button"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_refresh_button"], self.__widgets["ups_authentication_check"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_login"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_login"], self.__widgets["ups_authentication_password"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_authentication_password"], self.__widgets["ups_connect"] )
-        self.__widgets["interface"].setTabOrder( self.__widgets["ups_connect"], self.__widgets["ups_host_entry"] )
+        QWidget.setTabOrder( self.__widgets["ups_host_entry"], self.__widgets["ups_port_entry"] )
+        QWidget.setTabOrder( self.__widgets["ups_port_entry"], self.__widgets["ups_list_combo"] )
+        QWidget.setTabOrder( self.__widgets["ups_list_combo"], self.__widgets["ups_refresh_button"] )
+        QWidget.setTabOrder( self.__widgets["ups_refresh_button"], self.__widgets["ups_authentication_check"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_login"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_login"], self.__widgets["ups_authentication_password"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_password"], self.__widgets["ups_connect"] )
+        QWidget.setTabOrder( self.__widgets["ups_connect"], self.__widgets["ups_host_entry"] )
 
         # Set initial focus to host field
         self.__widgets["ups_host_entry"].setFocus()
