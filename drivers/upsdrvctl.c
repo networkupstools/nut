@@ -1534,8 +1534,9 @@ static void help(const char *arg_progname)
 	printf("usage: %s [OPTIONS] (start | stop | shutdown | status) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
+	printf("For scripting with 'status' and 'list', you may want NUT_QUIET_INIT_BANNER=true\n");
 
-	printf("Common options:\n");
+	printf("\nCommon options:\n");
 	printf("  -h			display this help\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
@@ -1548,8 +1549,8 @@ static void help(const char *arg_progname)
 
 	printf("\nListing known driver(s):\n");
 	printf("  -l | list		list all device driver confgurations that can be managed\n");
-	printf("  -l | list <ups>	only try to list the specified device driver confgurations\n");
-	printf("              		(error out if the device name is unresolved)\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confguration\n");
+	printf("              		(check it is known, error out if the device name is unresolved)\n");
 
 	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
