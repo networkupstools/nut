@@ -493,8 +493,6 @@ class interface :
         else :
             self.__widgets["ups_authentication_frame"].setEnabled( False )
 
-        self.gui_status_message()
-
     #-------------------------------------------------------------------
     # This method is used to show/hide the main window when user clicks on the tray icon
     def tray_activated( self, widget=None, data=None ) :

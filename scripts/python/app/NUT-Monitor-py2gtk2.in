@@ -491,7 +491,6 @@ class interface :
         else :
             self.__widgets["ups_authentication_frame"].set_sensitive( False )
 
-        self.gui_status_message()
         self.refresh_gui()
 
     #-------------------------------------------------------------------
