@@ -731,8 +731,24 @@ binary packages that exist on various major systems.
 Debian, Ubuntu and other derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: NUT is packaged and well maintained in these systems.
-The official Debian packager used to be part of the NUT Team.
+[NOTE]
+======
+NUT is packaged and well maintained in these systems.
+
+Still, with especially Debian distribution being focused on stability and
+predictability, its major releases settle on some version of NUT as the base
+line and might only significantly update it with the next major release.
+Packages may be several years behind the tip of development, shielding the
+users from both recent bugs and recent improvements. Ubuntu is similar in
+this regard, but has more frequent interim (non-LTS) releases.
+
+Either way, if your device is only supported with a newer version of NUT
+than what the OS packages deliver, or that support was improved in newer
+versions, you may have to build your own (whether from scratch or by adapting
+the distro-provided recipes to newer NUT sources), or try "experimental"
+official repositories that may ship more recent versions of software as
+they are staged for a future OS release.
+======
 
 Using your preferred method (apt-get, aptitude, Synaptic, ...), install
 the 'nut' package, and optionally the following:
@@ -759,7 +775,8 @@ Mandriva
 ~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Mandriva packager is part of the NUT Team.
+That said, considerations noted above regarding packages being behind
+latest development still apply.
 
 Using your preferred method (urpmi, RPMdrake, ...), install one of the
 two below packages:
@@ -778,7 +795,8 @@ SUSE / openSUSE
 ~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official SUSE packager is part of the NUT Team.
+That said, considerations noted above regarding packages being behind
+latest development still apply.
 
 Install the 'nut-classic' package, and optionally the following:
 
@@ -796,7 +814,8 @@ Red Hat, Fedora and CentOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Red Hat packager is part of the NUT Team.
+That said, considerations noted above regarding packages being behind
+latest development still apply.
 
 Using your preferred method (yum, Add/Remove Software, ...), install
 one of the two below packages:

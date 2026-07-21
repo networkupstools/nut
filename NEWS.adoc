@@ -79,6 +79,12 @@ https://github.com/networkupstools/nut/milestone/13
       an initialization failure with certain UPS models (e.g., SVC
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
+    * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
+      recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
+    * Modified `voltronic-qs` subdriver to request the QI command, supplying
+      NUT with battery charge, runtime, input frequency, output current, and
+      input transfer low/high values on devices which support it (`H`, `I`, `J`
+      protocols, e.g. Powershield PSDR800). [#3521]
 
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
@@ -132,6 +138,10 @@ https://github.com/networkupstools/nut/milestone/13
       based UPS cards that already answer the rest of the subtree. [#2608]
 
  - common code:
+    * Refactored `common::background()` method used by numerous NUT daemons
+      to handle parent and child code paths by separately addressable methods.
+      This got used in the shared drivers `main` code file to preclude losing
+      track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
     * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
@@ -246,6 +256,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
+    * Fixed both Python 2 and 3 variants to handle automatic client reconnection
+      (e.g. after system suspend/resume, network interruption, or NUT server
+      restart). [issue #3509, PR #3523]
 
  - `upssched` client/tool updates:
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]

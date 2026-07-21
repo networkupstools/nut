@@ -817,21 +817,46 @@ void open_syslog(const char *progname)
 #endif	/* WIN32 */
 }
 
+int background_fork(void)
+{
+	int	pid = 0;
+
+#ifndef WIN32
+	if ((pid = fork()) < 0)
+		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
+#endif	/* !WIN32 */
+
+	return pid;
+}
+
 /* close ttys and become a daemon */
 void background(void)
+{
+#ifndef WIN32
+	int	pid;
+
+	pid = background_fork();
+	if (pid != 0) {
+		/* parent */
+		/* these are typically fds 0-2: */
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+		_exit(EXIT_SUCCESS);
+	}
+#else	/* WIN32 */
+	NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE();
+#endif	/* WIN32 */
+	background_child();
+}
+
+void background_child(void)
 {
 	/* Normally we enable SYSLOG and disable STDERR,
 	 * unless NUT_DEBUG_SYSLOG envvar interferes as
 	 * interpreted in syslog_is_disabled() method: */
 	int	syslog_disabled = syslog_is_disabled(),
 		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
-
-#ifndef WIN32
-	int	pid;
-
-	if ((pid = fork()) < 0)
-		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
-#endif	/* !WIN32 */
 
 	if (!syslog_disabled)
 		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
@@ -841,17 +866,6 @@ void background(void)
 		xbit_clear(&upslog_flags, UPSLOG_STDERR);
 
 #ifndef WIN32
-	if (pid != 0) {
-		/* parent */
-		/* these are typically fds 0-2: */
-		close(STDIN_FILENO);
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-		_exit(EXIT_SUCCESS);
-	}
-
-	/* child */
-
 	/* make fds 0-2 (typically) point somewhere defined */
 # ifdef HAVE_DUP2
 	/* system can close (if needed) and (re-)open a specific FD number */
