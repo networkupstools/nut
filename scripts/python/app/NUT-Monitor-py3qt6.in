@@ -205,6 +205,7 @@ class interface :
         self.__widgets["ups_authentication_password"].textChanged.connect( self.__on_password_changed )
         self.__widgets["ups_authentication_check"].toggled.connect( self.__on_auth_check_changed )
         self.__widgets["ups_port_entry"].valueChanged.connect( self.__check_gui_fields )
+        self.__widgets["ups_port_entry"].lineEdit().textChanged.connect( self.__check_gui_fields )
         self.__widgets["ups_refresh_button"].clicked.connect( self.__update_ups_list )
         self.__widgets["ups_connect"].clicked.connect( self.connect_to_ups )
         self.__widgets["ups_disconnect"].clicked.connect( self.disconnect_from_ups )

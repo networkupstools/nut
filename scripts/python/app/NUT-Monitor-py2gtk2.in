@@ -204,6 +204,7 @@ class interface :
                              "on_entry3_changed"               : self.__on_password_changed,
                              "on_checkbutton1_toggled"         : self.__on_auth_check_changed,
                              "on_spinbutton1_value_changed"    : self.__check_gui_fields,
+                             "on_spinbutton1_changed"          : self.__check_gui_fields,
                              "on_button1_clicked"              : self.__update_ups_list,
                              "on_button2_clicked"              : self.connect_to_ups,
                              "on_button7_clicked"              : self.disconnect_from_ups,
