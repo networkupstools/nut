@@ -400,7 +400,13 @@ class interface :
     def __check_gui_fields( self, widget=None ) :
         host = self.__widgets["ups_host_entry"].get_text()
         try:
-            port = int( self.__widgets["ups_port_entry"].get_value() )
+            # Note: get_value() might not reflect currently typed text until focused out or Enter pressed.
+            # get_text() + conversion is safer for real-time typing response.
+            port_text = self.__widgets["ups_port_entry"].get_text()
+            if not port_text:
+                port = 3493
+            else:
+                port = int(float(port_text))
         except:
             port = 3493
 
