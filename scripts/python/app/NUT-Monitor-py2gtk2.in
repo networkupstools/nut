@@ -297,6 +297,9 @@ class interface :
             self.__widgets["ups_authentication_password"].set_property("can-focus", True)
             self.__widgets["ups_connect"].set_property("can-focus", True)
 
+            # Set initial focus to host field
+            self.__widgets["ups_host_entry"].grab_focus()
+
             # Chaining focus via move-focus signal or just letting GTK handle it
             # since we've ensured they can all focus.
             # To be more explicit, we could set the focus chain on their common parents.
