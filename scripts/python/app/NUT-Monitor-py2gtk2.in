@@ -168,6 +168,14 @@ class interface :
         self.__widgets["ups_authentication_frame"]    = self.__widgets["interface"].get_widget("hbox1")
         self.__widgets["ups_authentication_login"]    = self.__widgets["interface"].get_widget("entry2")
         self.__widgets["ups_authentication_password"] = self.__widgets["interface"].get_widget("entry3")
+
+        # Connect to 'changed' signal on the Entry part of the SpinButton if possible
+        # for real-time response to typing.
+        try:
+            self.__widgets["ups_port_entry"].connect("changed", self.__check_gui_fields)
+        except:
+            pass
+
         self.__widgets["ups_list_combo"]              = self.__widgets["interface"].get_widget("combobox1")
         self.__widgets["ups_commands_button"]         = self.__widgets["interface"].get_widget("button8")
         self.__widgets["ups_connect"]                 = self.__widgets["interface"].get_widget("button2")
@@ -204,7 +212,6 @@ class interface :
                              "on_entry3_changed"               : self.__on_password_changed,
                              "on_checkbutton1_toggled"         : self.__on_auth_check_changed,
                              "on_spinbutton1_value_changed"    : self.__check_gui_fields,
-                             "on_spinbutton1_changed"          : self.__check_gui_fields,
                              "on_button1_clicked"              : self.__update_ups_list,
                              "on_button2_clicked"              : self.connect_to_ups,
                              "on_button7_clicked"              : self.disconnect_from_ups,
