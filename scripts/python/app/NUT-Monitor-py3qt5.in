@@ -448,6 +448,15 @@ class interface :
                 self.__widgets["ups_authentication_check"].setChecked(True)
                 self.__widgets["ups_authentication_check"].blockSignals(False)
 
+            # If we had suggestions but they are now gone,
+            # and user didn't manually edit anything, we
+            # should also uncheck the "Use authentication" box
+            if not self.__login_suggested and not self.__password_suggested:
+                if self.__widgets["ups_authentication_check"].isChecked():
+                    self.__widgets["ups_authentication_check"].blockSignals(True)
+                    self.__widgets["ups_authentication_check"].setChecked(False)
+                    self.__widgets["ups_authentication_check"].blockSignals(False)
+
         # Only highlight the checkbox as suggested if it was all suggested
         self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__login_suggested and self.__password_suggested )
 
