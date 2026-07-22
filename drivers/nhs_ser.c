@@ -595,7 +595,7 @@ static int openfd(const char * portarg, int BAUDRATE) {
 	tty.c_cflag |= CS8;		/* 8 bits per byte */
 
 	/* CTS / RTS */
-	tty.c_cflag |= CRTSCTS;	/* Enable hardware flow control */
+    tty.c_cflag &= ~CRTSCTS;	/* NHS serial / CDC-ACM has no RTS/CTS flow control */
 
 	/* Enable Read and disable modem control */
 	/* // tty.c_cflag |= (CLOCAL | CREAD); */
