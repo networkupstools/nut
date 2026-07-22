@@ -40,6 +40,11 @@
 # 2025-05-08 Sebastian Kuttnig - Version 2.0.3
 #            Port to Python 3 with PyQt6.
 #
+# 2026-07-18 Jim Klimov and "developersorli" - Version 2.1.0
+#            Added support for NUT authconf files (credentials, SSL)
+#            Added support for reconnections (client sleep, server restart)
+#            Fixed TAB/SHIFT-TAB focus change order through login page
+#
 
 import PyQt6.uic
 from PyQt6.QtCore import *
@@ -48,12 +53,12 @@ from PyQt6.QtWidgets import *
 
 import sys
 import socket
-import threading
 import base64
 import os, os.path
 import stat
 import platform
 import time
+import threading
 import optparse
 import configparser
 import locale
@@ -119,6 +124,7 @@ class interface :
 
     DESIRED_FAVORITES_DIRECTORY_MODE = 0o700
 
+    __quitting                       = False
     __widgets                        = {}
     __callbacks                      = {}
     __favorites                      = {}
@@ -134,6 +140,11 @@ class interface :
     __ups_rw_vars                    = None
     __gui_updater                    = None
     __current_ups                    = None
+
+    __login_manually_edited          = False
+    __password_manually_edited       = False
+    __login_suggested                = False
+    __password_suggested             = False
 
     def __init__( self, argv ) :
 
@@ -195,10 +206,11 @@ class interface :
         self.__widgets["interface"].imagemenuitem1.triggered.connect( self.gui_about_dialog )
         self.__widgets["interface"].imagemenuitem5.triggered.connect( self.quit )
         self.__widgets["ups_host_entry"].textChanged.connect( self.__check_gui_fields )
-        self.__widgets["ups_authentication_login"].textChanged.connect( self.__check_gui_fields )
-        self.__widgets["ups_authentication_password"].textChanged.connect( self.__check_gui_fields )
-        self.__widgets["ups_authentication_check"].stateChanged.connect( self.__check_gui_fields )
+        self.__widgets["ups_authentication_login"].textChanged.connect( self.__on_login_changed )
+        self.__widgets["ups_authentication_password"].textChanged.connect( self.__on_password_changed )
+        self.__widgets["ups_authentication_check"].toggled.connect( self.__on_auth_check_changed )
         self.__widgets["ups_port_entry"].valueChanged.connect( self.__check_gui_fields )
+        self.__widgets["ups_port_entry"].lineEdit().textChanged.connect( self.__check_gui_fields )
         self.__widgets["ups_refresh_button"].clicked.connect( self.__update_ups_list )
         self.__widgets["ups_connect"].clicked.connect( self.connect_to_ups )
         self.__widgets["ups_disconnect"].clicked.connect( self.disconnect_from_ups )
@@ -243,7 +255,46 @@ class interface :
         self.__widgets["ups_commands_combo_store"] = self.__widgets["ups_commands_combo"]
         #---------------------------------------------------------------
 
+        # Set initial tab order
+        QWidget.setTabOrder( self.__widgets["ups_host_entry"], self.__widgets["ups_port_entry"] )
+        QWidget.setTabOrder( self.__widgets["ups_port_entry"], self.__widgets["ups_list_combo"] )
+        QWidget.setTabOrder( self.__widgets["ups_list_combo"], self.__widgets["ups_refresh_button"] )
+        QWidget.setTabOrder( self.__widgets["ups_refresh_button"], self.__widgets["ups_authentication_check"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_login"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_login"], self.__widgets["ups_authentication_password"] )
+        QWidget.setTabOrder( self.__widgets["ups_authentication_password"], self.__widgets["ups_connect"] )
+        QWidget.setTabOrder( self.__widgets["ups_connect"], self.__widgets["ups_host_entry"] )
+
+        # Set initial focus to host field
+        self.__widgets["ups_host_entry"].setFocus()
+
         self.gui_init_unconnected()
+
+        # Load global authentication configuration
+        PyNUT.AuthConf.readAuthConfFile(verbose_missing_hinted=True)
+        # and populate fields from global defaults if any
+        ac = PyNUT.AuthConf.getAuthConf()
+        if ac:
+            if ac.user:
+                self.__widgets["ups_authentication_login"].setText(ac.user)
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+
+                # (Re-)Set these AFTER on*changed handlers might
+                # by default assume the field was edited by user!
+                self.__login_manually_edited = False
+                self.__login_suggested = True
+
+            if ac.password:
+                self.__widgets["ups_authentication_password"].setText(ac.password)
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+
+                # (Re-)Set these AFTER on*changed handlers might
+                # by default assume the field was edited by user!
+                self.__password_manually_edited = False
+                self.__password_suggested = True
+
+            self.__widgets["ups_authentication_check"].setChecked(self.__login_suggested or self.__password_suggested)
+            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].isChecked() )
 
         if ( cmd_opts.hidden != True ) :
             self.__widgets["main_window"].show()
@@ -315,8 +366,112 @@ class interface :
         # No banana!
         raise RuntimeError("Cannot find %s resource %s" % ('icon', filename))
 
+    def __set_suggested_style( self, widget, is_suggested ) :
+        if is_suggested :
+            # gray-yellowish background
+            widget.setStyleSheet( "background-color: #fcfce0;" )
+        else :
+            widget.setStyleSheet( "" )
+
+    def __on_login_changed( self, text ) :
+        if not self.__widgets["ups_authentication_login"].isEnabled():
+            return
+        self.__login_manually_edited = True
+        self.__login_suggested = False
+        self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+        self.__check_gui_fields()
+
+    def __on_password_changed( self, text ) :
+        if not self.__widgets["ups_authentication_password"].isEnabled():
+            return
+        self.__password_manually_edited = True
+        self.__password_suggested = False
+        self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+        self.__check_gui_fields()
+
+    def __on_auth_check_changed( self, checked ) :
+        if not checked :
+            # If user unchecks, we clear suggestions so it doesn't immediately re-check
+            if self.__login_suggested :
+                self.__login_suggested = False
+                self.__widgets["ups_authentication_login"].setText("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+            if self.__password_suggested :
+                self.__password_suggested = False
+                self.__widgets["ups_authentication_password"].setText("")
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+        self.__check_gui_fields()
+
     # Check if correct fields are filled to enable connection to the UPS
     def __check_gui_fields( self, widget=None ) :
+        host = self.__widgets["ups_host_entry"].text()
+        try:
+            port = int( self.__widgets["ups_port_entry"].value() )
+        except:
+            port = 3493
+
+        # If not manually edited and was suggested, check if it still matches authconf for current host/port
+        if not self.__login_manually_edited and not self.__password_manually_edited:
+            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+            if self.__login_suggested:
+                if not ac or not ac.user:
+                    self.__widgets["ups_authentication_login"].setText("")
+                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+
+                    # (Re-)Set these AFTER on*changed handlers might
+                    # by default assume the field was edited by user!
+                    self.__login_manually_edited = False
+                    self.__login_suggested = False
+                elif ac.user != self.__widgets["ups_authentication_login"].text():
+                    # Re-populate if it matches a different entry for this host/port
+                    self.__widgets["ups_authentication_login"].setText(ac.user)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+                    self.__login_manually_edited = False
+                    self.__login_suggested = True
+            elif ac and ac.user:
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_login"].setText(ac.user)
+                self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+                self.__login_manually_edited = False
+                self.__login_suggested = True
+
+            if self.__password_suggested:
+                if not ac or not ac.password:
+                    self.__widgets["ups_authentication_password"].setText("")
+                    self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
+                    self.__password_manually_edited = False
+                    self.__password_suggested = False
+                elif ac.password != self.__widgets["ups_authentication_password"].text():
+                    # Re-populate if it matches a different entry for this host/port
+                    self.__widgets["ups_authentication_password"].setText(ac.password)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                    self.__password_manually_edited = False
+                    self.__password_suggested = True
+            elif ac and ac.password:
+                # Re-populate if it matches a different entry for this host/port
+                self.__widgets["ups_authentication_password"].setText(ac.password)
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                self.__password_manually_edited = False
+                self.__password_suggested = True
+
+            # Only programmatically change checkbox if we HAVE a suggestion
+            if self.__login_suggested or self.__password_suggested:
+                self.__widgets["ups_authentication_check"].blockSignals(True)
+                self.__widgets["ups_authentication_check"].setChecked(True)
+                self.__widgets["ups_authentication_check"].blockSignals(False)
+
+            # If we had suggestions but they are now gone,
+            # and user didn't manually edit anything, we
+            # should also uncheck the "Use authentication" box
+            if not self.__login_suggested and not self.__password_suggested:
+                if self.__widgets["ups_authentication_check"].isChecked():
+                    self.__widgets["ups_authentication_check"].blockSignals(True)
+                    self.__widgets["ups_authentication_check"].setChecked(False)
+                    self.__widgets["ups_authentication_check"].blockSignals(False)
+
+        # Only highlight the checkbox as suggested if it was all suggested
+        self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__login_suggested and self.__password_suggested )
+
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].currentIndex() != -1 :
             self.__widgets["ups_list_combo"].clear()
@@ -350,8 +505,6 @@ class interface :
         else :
             self.__widgets["ups_authentication_frame"].setEnabled( False )
 
-        self.gui_status_message()
-
     #-------------------------------------------------------------------
     # This method is used to show/hide the main window when user clicks on the tray icon
     def tray_activated(self, reason):
@@ -381,12 +534,61 @@ class interface :
         login    = None
         password = None
 
+        ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+        if ac:
+            # Check for mismatch if fields are already filled
+            curr_login = self.__widgets["ups_authentication_login"].text()
+            curr_pass  = self.__widgets["ups_authentication_password"].text()
+
+            mismatch = False
+            if self.__login_manually_edited and ac.user and curr_login != ac.user:
+                mismatch = True
+            if self.__password_manually_edited and ac.password and curr_pass != ac.password:
+                mismatch = True
+
+            if mismatch:
+                self.gui_status_message( _("Note: interactive login/password differs from nutauth.conf") )
+            else:
+                if not self.__login_manually_edited and not self.__password_manually_edited:
+                    if ac.user:
+                        self.__widgets["ups_authentication_login"].setText(ac.user)
+                        self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
+
+                        # (Re-)Set these AFTER on*changed handlers might
+                        # by default assume the field was edited by user!
+                        self.__login_manually_edited = False
+                        self.__login_suggested = True
+
+                    if ac.password:
+                        self.__widgets["ups_authentication_password"].setText(ac.password)
+                        self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                        self.__password_manually_edited = False
+                        self.__password_suggested = True
+
+                    self.__widgets["ups_authentication_check"].setChecked(self.__login_suggested or self.__password_suggested)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].isChecked() )
+
         if self.__widgets["ups_authentication_check"].isChecked() :
             login    = self.__widgets["ups_authentication_login"].text()
             password = self.__widgets["ups_authentication_password"].text()
 
         try :
-            nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
+            # ac was already looked up for host/port above,
+            # and it may also be about SSL etc.
+            if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
+                nut_handler = PyNUT.PyNUTClient.from_authconf( ac )
+            else:
+                nut_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
             upses = nut_handler.GetUPSList()
 
             ups_list = list(key.decode('ascii') for key in upses.keys())
@@ -412,13 +614,17 @@ class interface :
     #-------------------------------------------------------------------
     # Quit program
     def quit( self, widget=None ) :
+        if self.__quitting:
+            return
+        self.__quitting = True
+
         # If we are connected to an UPS, disconnect first...
         if self.__connected :
             try:
                 self.gui_status_message( _("Disconnecting from device") )
                 self.disconnect_from_ups()
-            except RuntimeError:
-                pass  # widgets may already be deleted during shutdown
+            except (RuntimeError, AttributeError):
+                pass  # widgets or attributes may already be deleted during shutdown
 
         self.__app.quit()
 
@@ -497,8 +703,9 @@ class interface :
             # reactions with the 'check_gui_fields' function.
             if ( self.__favorites[fav_name].get("auth", False ) ) :
                 self.__widgets["ups_authentication_check"].setChecked( True )
+                password = base64.b64decode( self.__favorites[fav_name].get("password","") ).decode('ascii')
                 self.__widgets["ups_authentication_login"].setText( self.__favorites[fav_name].get("login","") )
-                self.__widgets["ups_authentication_password"].setText( self.__favorites[fav_name].get("password","") )
+                self.__widgets["ups_authentication_password"].setText( password )
 
             self.__widgets["ups_host_entry"].setText( self.__favorites[fav_name].get("host","") )
             self.__widgets["ups_port_entry"].setValue( int( self.__favorites[fav_name].get( "port", 3493 ) ) )
@@ -806,8 +1013,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             login    = self.__widgets["ups_authentication_login"].text()
             password = self.__widgets["ups_authentication_password"].text()
 
+        ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
         try :
-            self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
+            if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
+                self.__ups_handler = PyNUT.PyNUTClient.from_authconf( ac )
+            else:
+                self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
 
         except :
             self.gui_status_message( _("Error connecting to '{0}' ({1})").format( host, sys.exc_info()[1] ) )
@@ -934,8 +1155,6 @@ class gui_updater :
     def __init__( self, parent_class ) :
         self.__parent_class = parent_class
         self.__reconnect_attempted = False
-        
-        
 
     def start( self ) :
         self.__timer = QTimer()
@@ -1069,10 +1288,10 @@ class gui_updater :
                 self.__parent_class._interface__widgets["status_icon"].setToolTip( "\n".join( tooltip_lines ) )
 
             except (socket.error, ConnectionError, EOFError, OSError, PyNUT.PyNUTError) as e:
-                # Connection error detected \u2014 attempt automatic reconnection
+                # Connection error detected - attempt automatic reconnection
                 if not self.__reconnect_attempted and self.__parent_class._interface__connected:
                     self.__reconnect_attempted = True
-                    self.__parent_class.gui_status_message( _("Connection lost \u2014 attempting to reconnect...") )
+                    self.__parent_class.gui_status_message( _("Connection lost - attempting to reconnect...") )
                     self.__parent_class.gui_status_notification( _("Connection lost"), "warning.png" )
 
                     # Stop the current timer
@@ -1116,7 +1335,21 @@ class gui_updater :
                 del old_handler
 
             # Create a new connection handler
-            ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
+            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
+            if ac:
+                ac = ac.clone()
+                if self.__widgets["ups_authentication_check"].isChecked() :
+                    # If the user entered something, honor that.
+                    # Otherwise, re-use what we suggested.
+                    ac.user = login
+                    ac.password = password
+                else:
+                    ac.user = None
+                    ac.password = None
+
+                ups_handler = PyNUT.PyNUTClient.from_authconf(ac)
+            else:
+                ups_handler = PyNUT.PyNUTClient(host=host, port=port, login=login, password=password)
 
             # Verify the UPS is available
             ups = self.__parent_class._interface__current_ups
@@ -1135,7 +1368,7 @@ class gui_updater :
                 self.__timer.start(1000)
                 return
 
-            # Connection successful \u2014 update the parent class
+            # Connection successful - update the parent class
             self.__parent_class._interface__ups_handler = ups_handler
             self.__parent_class._interface__connected = True
             self.__reconnect_attempted = False

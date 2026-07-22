@@ -52,6 +52,12 @@ which can also issue commands to the driver (like linkman:upscmd[8]) and
 set supported variables (like linkman:upsrw[8]) -- propagated to the device,
 where applicable.
 
+The linkman:nutauth.conf[5] files are supported for both SSL setup and for
+suggestion of credentials (default or based on host and port match -- in
+real time as those fields are being edited), highlighted with a gray-yellow
+background for clarity, as long as the credential fields were not edited
+manually.
+
 The Python UI client can be used on a system different from the NUT data
 server (the one connected to the actual UPS by communications media and
 running the NUT driver(s)), and may be using a different OS platform
