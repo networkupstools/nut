@@ -212,6 +212,7 @@ class interface :
                              "on_entry3_changed"               : self.__on_password_changed,
                              "on_checkbutton1_toggled"         : self.__on_auth_check_changed,
                              "on_spinbutton1_value_changed"    : self.__check_gui_fields,
+                             "on_spinbutton1_changed"          : self.__check_gui_fields,
                              "on_button1_clicked"              : self.__update_ups_list,
                              "on_button2_clicked"              : self.connect_to_ups,
                              "on_button7_clicked"              : self.disconnect_from_ups,
@@ -284,53 +285,8 @@ class interface :
         self.__widgets["ups_commands_combo_store"] = list_store
         #---------------------------------------------------------------
 
-        # Set initial focus chain
-        # Note: In GTK2, focus chain is set on containers.
-        # We try to set the focus chain for the main parameters box and its parents.
-        try:
-            self.__widgets["ups_host_entry"].set_property("can-focus", True)
-            self.__widgets["ups_port_entry"].set_property("can-focus", True)
-            self.__widgets["ups_list_combo"].set_property("can-focus", True)
-            self.__widgets["ups_refresh_button"].set_property("can-focus", True)
-            self.__widgets["ups_authentication_check"].set_property("can-focus", True)
-            self.__widgets["ups_authentication_login"].set_property("can-focus", True)
-            self.__widgets["ups_authentication_password"].set_property("can-focus", True)
-            self.__widgets["ups_connect"].set_property("can-focus", True)
-
-            # Set explicit focus chains on containers to ensure TAB/SHIFT-TAB works through all fields
-            # table1 contains Host, Port, Device, Refresh
-            self.__widgets["interface"].get_widget("table1").set_focus_chain([
-                self.__widgets["ups_host_entry"],
-                self.__widgets["ups_port_entry"],
-                self.__widgets["ups_list_combo"],
-                self.__widgets["ups_refresh_button"]
-            ])
-            # hbox1 contains Login, Password
-            self.__widgets["interface"].get_widget("hbox1").set_focus_chain([
-                self.__widgets["ups_authentication_login"],
-                self.__widgets["ups_authentication_password"]
-            ])
-            # vbox6 contains table1, checkbutton1, hbox1
-            self.__widgets["interface"].get_widget("vbox6").set_focus_chain([
-                self.__widgets["interface"].get_widget("table1"),
-                self.__widgets["ups_authentication_check"],
-                self.__widgets["interface"].get_widget("hbox1")
-            ])
-            # hbox2 contains Connect, Disconnect
-            self.__widgets["interface"].get_widget("hbox2").set_focus_chain([
-                self.__widgets["ups_connect"],
-                self.__widgets["ups_disconnect"]
-            ])
-            # vbox5 contains vbox6, hbox2
-            self.__widgets["interface"].get_widget("vbox5").set_focus_chain([
-                self.__widgets["interface"].get_widget("vbox6"),
-                self.__widgets["interface"].get_widget("hbox2")
-            ])
-
-            # Set initial focus to host field
-            self.__widgets["ups_host_entry"].grab_focus()
-        except:
-            pass
+        # Set initial focus to host field
+        self.__widgets["ups_host_entry"].grab_focus()
 
         if ( cmd_opts.hidden != True ) :
             self.__widgets["main_window"].show()
