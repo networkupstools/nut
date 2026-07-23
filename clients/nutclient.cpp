@@ -2148,6 +2148,7 @@ static void set_authconf_val(AuthConf& conf, const std::string& var, const std::
 }
 
 static int parse_authconf_file(const std::string& filename, int fatal_errors, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults);
+static bool normalize_section(const std::string& section, std::string& normalized_name, std::string& user);
 
 static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_section, bool global_scope, std::list<AuthConf>& authconf_list, AuthConf*& global_defaults)
 {
@@ -2158,13 +2159,19 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 		std::string sectname = arg[0];
 		sectname = sectname.substr(1, sectname.length() - 2);
 
-		if (sectname == "_global_defaults" || sectname.empty()) {
+		if (sectname == "_global_defaults" || sectname.empty() || sectname == "*") {
 			if (!global_defaults) {
 				authconf_list.emplace_back("");
 				global_defaults = &authconf_list.back();
 			}
 			current_section = global_defaults;
 		} else {
+			std::string normalized_name;
+			std::string section_user;
+			if (!normalize_section(sectname, normalized_name, section_user)) {
+				throw nut::IOException("Invalid authconf section: " + sectname);
+			}
+			sectname = normalized_name;
 			/* Check if section already exists */
 			current_section = nullptr;
 			for (auto& ac : authconf_list) {
@@ -2181,7 +2188,7 @@ static void handle_authconf_args(size_t numargs, char **arg, AuthConf*& current_
 
 		size_t at = current_section->section.find('@');
 		if (at != std::string::npos && at > 0) {
-			current_section->user = current_section->section.substr(0, at - 1);
+			current_section->user = current_section->section.substr(0, at);
 		}
 
 		return;
@@ -2354,12 +2361,17 @@ static void normalize_parts(std::string& normalized_name, std::string& user, std
 		char portbuf[16];
 		snprintf(portbuf, sizeof(portbuf), "%u", static_cast<unsigned int>(NUT_PORT));
 		port = portbuf;
+	} else if (port.find_first_not_of("0123456789") != std::string::npos) {
+		struct servent* service = getservbyname(port.c_str(), "tcp");
+		if (service) {
+			char portbuf[16];
+			snprintf(portbuf, sizeof(portbuf), "%u",
+				static_cast<unsigned int>(ntohs(static_cast<uint16_t>(service->s_port))));
+			port = portbuf;
+		}
 	}
 
-	normalized_name = "";
-	if (!user.empty()) {
-		normalized_name += user + "@";
-	}
+	normalized_name = user + "@";
 
 	if ((host.find(':') != std::string::npos || host.find('[') != std::string::npos || host.find(']') != std::string::npos)
 		&& host.front() != '[') {
@@ -2369,6 +2381,41 @@ static void normalize_parts(std::string& normalized_name, std::string& user, std
 	}
 
 	normalized_name += ":" + port;
+}
+
+static bool normalize_section(const std::string& section, std::string& normalized_name, std::string& user)
+{
+	std::string addr = section;
+	size_t at = section.find('@');
+	if (at != std::string::npos) {
+		user = section.substr(0, at);
+		addr = section.substr(at + 1);
+	} else {
+		user.clear();
+	}
+
+	std::string host;
+	std::string port;
+	if (!addr.empty() && addr.front() == '[') {
+		size_t close = addr.find(']');
+		if (close == std::string::npos) return false;
+		host = addr.substr(1, close - 1);
+		if (close + 1 < addr.size()) {
+			if (addr[close + 1] != ':') return false;
+			port = addr.substr(close + 2);
+		}
+	} else {
+		size_t colon = addr.find(':');
+		if (colon == std::string::npos) {
+			host = addr;
+		} else {
+			host = addr.substr(0, colon);
+			port = addr.substr(colon + 1);
+		}
+	}
+
+	normalize_parts(normalized_name, user, host, port);
+	return true;
 }
 
 void AuthConf::merge(const AuthConf& source)
@@ -2382,7 +2429,10 @@ void AuthConf::merge(const AuthConf& source)
 		/* Section title strictly defines a user name */
 		user = section.substr(0, at);
 	} else if (at == 0) {
-		/* Section starts with @, so no user in title */
+		/* Userless host section: USER may be supplied by this section or defaults. */
+		if (user.empty() && !source.user.empty()) {
+			user = source.user;
+		}
 	} else {
 		/* No '@' in target section title */
 		if (user.empty() && !source.user.empty()) {

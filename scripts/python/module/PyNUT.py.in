@@ -140,10 +140,14 @@ class AuthConf:
         AuthConf.__global_defaults = None
 
     def __init__(self, section=""):
-        self.section = section
+        self.section = AuthConf.normalizeSection(section) if section else section
         ''' `@host:port` or `user@host:port`, or None for global; note that host may be an IPv6 address enclosed in brackets '''
 
         self.user = None
+        if self.section and '@' in self.section:
+            section_user = self.section.split('@', 1)[0]
+            if section_user:
+                self.user = section_user
         self.password = None
 
         self.certpath = None
@@ -169,6 +173,49 @@ class AuthConf:
 
         self.forcessl = -1
         ''' -1 = unset, 0 = off, 1 = on '''
+
+    @staticmethod
+    def normalizeSection(section):
+        """Return the canonical user@host:port spelling of an authconf section."""
+        if section.startswith('[') and section.endswith(']'):
+            inner = section[1:-1]
+            if '@' in inner or ':' not in inner or inner.startswith('['):
+                section = inner
+        user = None
+        addr = section
+        if '@' in section:
+            user, addr = section.split('@', 1)
+
+        host = addr
+        port = None
+        if addr.startswith('['):
+            close_bracket = addr.find(']')
+            if close_bracket < 0:
+                raise PyNUTError("Invalid authconf section: '%s'" % section)
+            host = addr[1:close_bracket]
+            suffix = addr[close_bracket + 1:]
+            if suffix:
+                if not suffix.startswith(':'):
+                    raise PyNUTError("Invalid authconf section: '%s'" % section)
+                port = suffix[1:]
+        elif ':' in addr:
+            host, port = addr.split(':', 1)
+
+        if not host:
+            host = 'localhost'
+        if not port:
+            port = '3493'
+        elif not port.isdigit():
+            try:
+                port = str(socket.getservbyname(port, 'tcp'))
+            except socket.error:
+                pass
+
+        host_part = host
+        if ':' in host and not (host.startswith('[') and host.endswith(']')):
+            host_part = '[%s]' % host
+
+        return "%s@%s:%s" % (user if user else '', host_part, port)
 
     def __str__(self):
         sb = []
@@ -260,6 +307,7 @@ class AuthConf:
                                 AuthConf.__authconf_list.append(AuthConf.__global_defaults)
                             current_ac = AuthConf.__global_defaults
                         else:
+                            sectname = AuthConf.normalizeSection(sectname)
                             # Check if section already exists
                             current_ac = None
                             for ac in AuthConf.__authconf_list:
@@ -405,13 +453,13 @@ class AuthConf:
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
             host_part = "[%s]" % host_part
 
-        target_user_host_port = ""
-        if user: target_user_host_port += "%s@" % user
-        target_user_host_port += host_part
+        target_user_host_port = "%s@%s" % (user if user else '', host_part)
         if norm_port: target_user_host_port += ":%s" % str(norm_port)
+        target_user_host_port = AuthConf.normalizeSection(target_user_host_port)
 
         target_host_port = "@%s" % host_part
         if norm_port: target_host_port += ":%s" % str(norm_port)
+        target_host_port = AuthConf.normalizeSection(target_host_port)
 
         res = AuthConf(target_user_host_port)
 
@@ -487,10 +535,9 @@ class AuthConf:
                 print ("[DEBUG] findAuthConf(): Processing section: [%s]" % (section))
 
             # 1. Exact match user@host:port
-            target = ""
-            if user: target += "%s@" % user
-            target += host_part
+            target = "%s@%s" % (user if user else '', host_part)
             if norm_port: target += ":%s" % str(norm_port)
+            target = AuthConf.normalizeSection(target)
 
             if section == target:
                 if AuthConf.__debug:

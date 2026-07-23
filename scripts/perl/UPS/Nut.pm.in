@@ -1573,16 +1573,52 @@ sub getDebug {
     return $debug;
 }
 
+sub normalizeSection {
+    my ($class, $section) = @_;
+    my ($user, $addr) = (undef, $section);
+    if ($section =~ /@/) {
+        ($user, $addr) = split(/@/, $section, 2);
+    }
+
+    my ($host, $port) = ($addr, undef);
+    if (substr($addr, 0, 1) eq '[') {
+        my $close = index($addr, ']');
+        die "Invalid authconf section: '$section'" if $close < 0;
+        $host = substr($addr, 1, $close - 1);
+        my $suffix = substr($addr, $close + 1);
+        if ($suffix ne '') {
+            die "Invalid authconf section: '$section'" unless substr($suffix, 0, 1) eq ':';
+            $port = substr($suffix, 1);
+        }
+    } elsif ($addr =~ /:/) {
+        ($host, $port) = split(/:/, $addr, 2);
+    }
+
+    $host = 'localhost' if !defined($host) || $host eq '';
+    $port = '3493' if !defined($port) || $port eq '';
+    if ($port !~ /^\d+$/) {
+        my $service_port = getservbyname($port, 'tcp');
+        $port = $service_port if defined $service_port;
+    }
+    my $host_part = $host =~ /:/ ? "[$host]" : $host;
+    my $fixed_user = defined($user) && $user ne '' ? $user : undef;
+    return ((defined($fixed_user) ? $fixed_user : '') . "\@$host_part:$port", $fixed_user);
+}
+
 sub new {
     my $class = shift;
     my $section = shift || "";
 
-    $section =~ s/^\[//;
-    $section =~ s/\]$//;
+    if ($section =~ /^\[(.*)\]$/) {
+        my $inner = $1;
+        $section = $inner if $inner =~ /@/ || $inner !~ /:/ || substr($inner, 0, 1) eq '[';
+    }
+    my $section_user;
+    ($section, $section_user) = $class->normalizeSection($section) if $section ne '';
 
     my $self = {
         section     => $section,  # [@host:port] or [user@host:port], or NULL for global
-        user        => undef,
+        user        => $section_user,
         pass        => undef,
         certpath    => undef,     # Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
         certfile    => undef,     # (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
@@ -1685,6 +1721,7 @@ sub readAuthConfFile {
                 }
                 $current_ac = $global_defaults_ref;
             } else {
+                ($sectname) = $class->normalizeSection($sectname);
                 # Check if section already exists
                 $current_ac = undef;
                 foreach my $ac (@authconf_list) {
@@ -1809,13 +1846,13 @@ sub getAuthConf {
         $host_part = "[$host_part]";
     }
 
-    my $target_user_host_port = "";
-    $target_user_host_port .= "$user\@" if defined $user;
-    $target_user_host_port .= $host_part;
+    my $target_user_host_port = (defined($user) ? $user : '') . "\@$host_part";
     $target_user_host_port .= ":$norm_port" if defined $norm_port;
+    ($target_user_host_port) = $class->normalizeSection($target_user_host_port);
 
     my $target_host_port = "\@$host_part";
     $target_host_port .= ":$norm_port" if defined $norm_port;
+    ($target_host_port) = $class->normalizeSection($target_host_port);
 
     my $res = UPS::Nut::AuthConf->new("[$target_user_host_port]");
 
@@ -1872,10 +1909,9 @@ sub findAuthConf {
         $host_part = "[$host_part]";
     }
 
-    my $target = "";
-    $target .= "$user\@" if defined $user;
-    $target .= $host_part;
+    my $target = (defined($user) ? $user : '') . "\@$host_part";
     $target .= ":$norm_port" if defined $norm_port;
+    ($target) = $class->normalizeSection($target);
 
     my $star_match;
     $class->_debug("findAuthConf(): Looking for user [" . ($user || "undef") . "], host [" . ($host || "undef") . "]=>[$norm_host], port [" . ($port || "undef") . "]");
