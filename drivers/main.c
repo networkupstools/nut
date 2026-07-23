@@ -101,7 +101,8 @@ vartab_t	*vartab_h = NULL;
  */
 time_t	poll_interval = 2;
 static char	*chroot_path = NULL, *user = NULL, *group = NULL;
-static int	user_from_cmdline = 0, group_from_cmdline = 0;
+static int	user_from_cmdline = 0, group_from_cmdline = 0,
+		reconnect_max_tries = -1, reconnect_count = 0;
 
 /* signal handling */
 int	exit_flag = 0;
@@ -1397,6 +1398,18 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not. */
+	if (!strcmp(var, "reconnect_max_tries")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_max_tries = intval;
+			reconnect_count = 0;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_max_tries value found in ups.conf global settings");
+		}
+	}
+
 	/* only for upsdrvctl - ignored here */
 	if (!strcmp(var, "sdorder"))
 		return 1;	/* handled */
@@ -1566,6 +1579,18 @@ static void do_global_args(const char *var, const char *val)
 				do_synchronous=-1;
 			else
 				do_synchronous=0;
+		}
+
+		return;
+	}
+
+	if (!strcmp(var, "reconnect_max_tries")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_max_tries = intval;
+			reconnect_count = 0;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_max_tries value found in ups.conf global settings");
 		}
 
 		return;
@@ -2168,6 +2193,76 @@ void setup_signals(void)
 # endif
 }
 #endif /* !WIN32*/
+
+/* Called by a driver to either enter/continue a reconnection loop
+ * (trying=1), or to end it (trying=0). Return how many attempts
+ * remain before driver exits (-1 if it won't).
+ */
+int reconnect_trying(int trying)
+{
+	if (!trying) {
+		if (reconnect_count > 0)
+			upslogx(LOG_INFO, "Driver reconnected "
+				"to the device [%s] after %d attempts",
+				upsname, reconnect_count);
+		reconnect_count = 0;
+		dstate_setinfo("driver.state", "quiet");
+		return -1;
+	}
+
+	if (reconnect_max_tries == 0) {
+		upslogx(LOG_WARNING, "Driver lost connection "
+			"to the device [%s] and will exit immediately",
+			upsname);
+		set_exit_flag(EF_EXIT_FAILURE);
+		return 0;
+	}
+
+	dstate_setinfo("driver.state", "reconnect.trying");
+
+	if (reconnect_count == 0) {
+		if (reconnect_max_tries < 0) {
+			upslogx(LOG_INFO, "Driver reconnecting "
+				"to the device [%s], will try "
+				"indefinitely",
+				upsname);
+		} else {
+			upslogx(LOG_INFO, "Driver reconnecting "
+				"to the device [%s], will try for "
+				"max %d attempts, then will exit",
+				upsname, reconnect_max_tries);
+		}
+	}
+
+	if (reconnect_count < INT_MAX) {
+		reconnect_count++;
+	} else {
+		upsdebugx(1, "%s: reconnect counter overflowed", __func__);
+		if (reconnect_max_tries > 0) {
+			upslogx(LOG_WARNING, "Driver lost connection "
+				"to the device [%s] and reconnect "
+				"counter overflowed, will exit immediately",
+				upsname);
+			set_exit_flag(EF_EXIT_FAILURE);
+			return 0;
+		}
+	}
+
+	if (reconnect_max_tries > 0) {
+		if (reconnect_max_tries < reconnect_count) {
+			upslogx(LOG_WARNING, "Driver lost connection "
+				"to the device [%s] and tried to "
+				"reconnect for %d times, "
+				"now will exit as configured",
+				upsname, reconnect_count);
+			set_exit_flag(EF_EXIT_FAILURE);
+			return 0;
+		}
+		return reconnect_max_tries - reconnect_count + 1;
+	}
+
+	return -1;
+}
 
 /* This source file is used in some unit tests to mock realistic driver
  * behavior - using a production driver skeleton, but their own main().
@@ -3300,6 +3395,11 @@ sockname_ownership_finished:
 
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
+
+		if (reconnect_count > 0) {
+			dstate_setinfo("driver.reconnect_count", "%d", reconnect_count);
+			dstate_setinfo("driver.reconnect_max_tries", "%d", reconnect_max_tries);
+		}
 
 		/* Drivers can now choose to track changes of current battery
 		 * charge vs. its previous value to e.g. report "CHRG" status.
