@@ -1,5 +1,5 @@
 diff --git a/drivers/nhs_ser.c b/drivers/nhs_ser.c
-index 5b08856c7..c6a126f8e 100644
+index 5b08856c7..49fde674d 100644
 --- a/drivers/nhs_ser.c
 +++ b/drivers/nhs_ser.c
 @@ -29,13 +29,10 @@
@@ -86,7 +86,7 @@ index 5b08856c7..c6a126f8e 100644
  
  static void print_pkt_hwinfo(pkt_hwinfo data);
  static void print_pkt_data(pkt_data data);
-@@ -526,103 +546,285 @@ static void print_pkt_data(pkt_data data) {
+@@ -526,103 +546,286 @@ static void print_pkt_data(pkt_data data) {
  	upsdebugx(5, "End Marker: %u", data.end_marker);
  }
  
@@ -392,6 +392,7 @@ index 5b08856c7..c6a126f8e 100644
 +	/*
 +	 * Disable every flow-control mechanism before enabling the selected mode.
 +	 * In particular, "none" leaves RTS/CTS off for CDC-ACM and 3-wire links.
++	 * Both mechanisms are disabled here; the configured mode is enabled below.
 +	 */
 +	tty.c_cflag &= ~CRTSCTS;
 +	tty.c_iflag &= ~(IXON | IXOFF | IXANY);
@@ -439,7 +440,7 @@ index 5b08856c7..c6a126f8e 100644
  	return fd;
  }
  
-@@ -939,28 +1141,38 @@ static int write_serial(int fd, const char *dados, size_t size) {
+@@ -939,28 +1142,38 @@ static int write_serial(int fd, const char *dados, size_t size) {
  }
  #endif
  
@@ -497,7 +498,7 @@ index 5b08856c7..c6a126f8e 100644
  }
  
  #if 0
-@@ -1704,20 +1916,27 @@ static unsigned int get_numbat(void) {
+@@ -1704,20 +1917,27 @@ static unsigned int get_numbat(void) {
  	return retval;
  }
  
@@ -529,7 +530,7 @@ index 5b08856c7..c6a126f8e 100644
  			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
  			serial_fd = openfd(porta, baudrate);
  			retries++;
-@@ -1727,7 +1946,7 @@ static int reconnect_ups_if_needed(void) {
+@@ -1727,7 +1947,7 @@ static int reconnect_ups_if_needed(void) {
  			usleep(checktime);
  		}
  
@@ -538,7 +539,7 @@ index 5b08856c7..c6a126f8e 100644
  			if (retries > MAXTRIES) {
  				upslogx(LOG_NOTICE, "Communications with UPS re-established");
  			}
-@@ -2233,41 +2452,55 @@ void upsdrv_updateinfo(void) {
+@@ -2233,41 +2453,55 @@ void upsdrv_updateinfo(void) {
  	upsdebugx(3, "%s: starting...", __func__);
  
  	/* If comms failed earlier, try to resuscitate */
@@ -623,7 +624,7 @@ index 5b08856c7..c6a126f8e 100644
  
  	if (chr != 0xFE || !datapacketstart) {
  		upsdebugx(2, "%s: packet reading did not finish, not interpreting yet", __func__);
-@@ -2347,11 +2580,7 @@ void upsdrv_updateinfo(void) {
+@@ -2347,11 +2581,7 @@ void upsdrv_updateinfo(void) {
  			if (bwritten == -1) {
  				upsdebugx(1, "%s: Data problem", __func__);
  			}
@@ -636,7 +637,7 @@ index 5b08856c7..c6a126f8e 100644
  		}	/* end if */
  		else {
  			if (checktime > max_checktime)
-@@ -2380,10 +2609,7 @@ void upsdrv_shutdown(void) {
+@@ -2380,10 +2610,7 @@ void upsdrv_shutdown(void) {
  void upsdrv_cleanup(void) {
  	upsdebugx(3, "%s: starting...", __func__);
  
@@ -648,7 +649,7 @@ index 5b08856c7..c6a126f8e 100644
  
  	upsdebugx(3, "%s: finished", __func__);
  }
-@@ -2398,8 +2624,6 @@ void upsdrv_initups(void) {
+@@ -2398,8 +2625,6 @@ void upsdrv_initups(void) {
  	 * you may be quickly going into upsdrv_shutdown next.
  	 */
  
@@ -657,7 +658,7 @@ index 5b08856c7..c6a126f8e 100644
  	upsdebugx(3, "%s: starting...", __func__);
  
  	/* Process optional configuration flags that may
-@@ -2412,20 +2636,19 @@ void upsdrv_initups(void) {
+@@ -2412,20 +2637,19 @@ void upsdrv_initups(void) {
  	if (getval("debug_pkt_hwinfo"))
  		debug_pkt_hwinfo = 1;
  
@@ -683,7 +684,7 @@ index 5b08856c7..c6a126f8e 100644
  			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d",
  				porta, baudrate);
  		else {
-@@ -2449,7 +2672,20 @@ void upsdrv_makevartable(void) {
+@@ -2449,7 +2673,20 @@ void upsdrv_makevartable(void) {
  	/* Standard variable in main.c */
  	/* //addvar(VAR_VALUE, "port", "Port to communication"); */
  
@@ -705,7 +706,7 @@ index 5b08856c7..c6a126f8e 100644
  
  	addvar(VAR_VALUE, "ah", "Battery discharge capacity in Ampere/hour");
  
-@@ -2477,7 +2713,9 @@ void upsdrv_makevartable(void) {
+@@ -2477,7 +2714,9 @@ void upsdrv_makevartable(void) {
  	addvar(VAR_VALUE, "vbat", help);
  
  	addvar(VAR_FLAG, "debug_pkt_raw", "Enable debug logging of packet bytes");
