@@ -508,7 +508,7 @@ class PyNUTClient :
     def from_authconf(cls, authconf, **kwargs):
         """ Create a PyNUTClient from an AuthConf object """
         # Extract host and port from authconf.section if possible
-        host = "127.0.0.1"
+        host = "localhost"
         port = 3493
 
         # Simple split, could be more robust
@@ -536,6 +536,8 @@ class PyNUTClient :
                     host = addr_part # Should not happen in well-formed authconf
             elif ':' in addr_part:
                 host, port_str = addr_part.split(':', 1)
+                if not host:
+                    host = "localhost"
                 try:
                     port = int(port_str)
                 except ValueError:

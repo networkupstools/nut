@@ -1935,6 +1935,7 @@ sub to_nut_args {
         }
     } elsif ($sect =~ /:/) {
         ($host, $port) = split(/:/, $sect, 2);
+        $host = 'localhost' if !defined($host) || $host eq '';
     } elsif ($sect ne "") {
         $host = $sect;
     }
@@ -1996,4 +1997,3 @@ sub isValid {
 
 1;
 __END__
-

@@ -1404,6 +1404,9 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 		snprintf(host,
 			MIN(sizeof(host) - 1, (size_t)(substr_port - substr_host + 1)),
 			"%s", substr_host);
+		if (!host[0]) {
+			snprintf(host, sizeof(host), "%s", "localhost");
+		}
 
 		if (substr_port[1]) {
 			port = get_port_from_string(substr_port + 1);

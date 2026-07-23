@@ -2321,6 +2321,7 @@ static int splitaddr(const std::string& buf, std::string& hostname, uint16_t& po
 		colon = tmp.find(':');
 		if (colon != std::string::npos) {
 			hostname = tmp.substr(0, colon);
+			if (hostname.empty()) hostname = "localhost";
 		} else {
 			hostname = tmp;
 			port = NUT_PORT;
@@ -3809,7 +3810,7 @@ void TcpClient::connect(const AuthConf& ac)
 	std::string hostname;
 	uint16_t portnum = NUT_PORT;
 	if (splitaddr(ac.section, hostname, portnum) == 0) {
-		_host = !hostname.empty() ? hostname : "localhost";
+		_host = hostname;
 		_port = portnum;
 	}
 
