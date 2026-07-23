@@ -1456,5 +1456,18 @@ if __name__ == "__main__" :
          module.bindtextdomain( APP, DIR )
          module.textdomain( APP )
 
+    nut_debug_level = os.getenv("NUT_DEBUG_LEVEL", 0)
+    try:
+        nut_debug_level = int(nut_debug_level)
+    except ValueError:
+        nut_debug_level = 0
+    except TypeError:
+        nut_debug_level = 0
+
+    if nut_debug_level > 0:
+        PyNUT.debug = True
+        if nut_debug_level > 5:
+            PyNUT.AuthConf.setDebug(True)
+
     gui = interface(sys.argv)
     gui.exec()
