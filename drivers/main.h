@@ -112,6 +112,15 @@ typedef struct vartab_s {
 void addvar(int vartype, const char *name, const char *desc);
 void addvar_reloadable(int vartype, const char *name, const char *desc);
 
+/** Called by a driver to either enter/continue a reconnection loop
+ * (trying=1, and with certain configuration of `reconnect_max_tries>=0`
+ * can `set_exit_flag()`), or to end it (trying=0).
+ * Sets the `driver.state` to "reconnect.trying" or "quiet" respectively.
+ * Returns how many attempts remain before driver exits (-1 if it won't,
+ * 0 if exiting now).
+ */
+int reconnect_trying(int trying);
+
 /* Several helpers for driver configuration reloading follow:
  * * testval_reloadable() checks if we are currently reloading (or initially
  *   loading) the configuration, and if strings oldval==newval or not,

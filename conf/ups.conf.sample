@@ -112,6 +112,18 @@ maxretry = 3
 #
 #                The default is 75 seconds.
 #
+# reconnect_max_tries: OPTIONAL. This can be set as a global variable above
+#              your first UPS definition and it can also be set in a
+#              UPS section. If a driver loses connection to the device,
+#              try reconnecting for the specified number of iterations and
+#              exit (so some OS service management facility or an alerted
+#              sysadmin can restart the driver program "from scratch").
+#              A zero value (unreasonable but possible) means to exit as
+#              soon as the device connection was lost.
+#              A negative value (default) means to try reconnecting
+#              indefinitely (e.g. data cable fell out, or the data path
+#              to a networked UPS was lost for a significant time).
+#
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
 #              and for the upsdrvctl tool (when specified at global level),
 #              or for this driver daemon (when specified in a driver section),
