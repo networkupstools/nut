@@ -784,6 +784,7 @@ static TYPE_FD_SER openfd(const char *portarg, int requested_baudrate)
 	/*
 	 * Disable every flow-control mechanism before enabling the selected mode.
 	 * In particular, "none" leaves RTS/CTS off for CDC-ACM and 3-wire links.
+	 * By default, none is selected
 	 */
 	tty.c_cflag &= ~CRTSCTS;
 	tty.c_iflag &= ~(IXON | IXOFF | IXANY);
