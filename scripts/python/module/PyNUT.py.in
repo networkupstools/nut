@@ -473,10 +473,18 @@ class AuthConf:
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
             host_part = "[%s]" % host_part
 
+        if AuthConf.__debug:
+            print ("[DEBUG] findAuthConf(): looking for user [%s], host [%s]=>[%s], port [%s]" % (
+                str(user), str(host), str(host_part), str(port)
+            ))
+
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
         for ac in auth_configs:
             section = ac.section
+
+            if AuthConf.__debug:
+                print ("[DEBUG] findAuthConf(): Processing section: [%s]" % (section))
 
             # 1. Exact match user@host:port
             target = ""
@@ -485,16 +493,25 @@ class AuthConf:
             if norm_port: target += ":%s" % str(norm_port)
 
             if section == target:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit exact match user@host:port by section name [%s]" % (target))
                 return ac
 
             # 2. Match host:port
-            if not user and section == ("%s:%s" % (host_part, str(norm_port))):
+            target = ("%s:%s" % (host_part, str(norm_port)))
+            if not user and section == target:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit host:port by section name [%s]" % (target))
                 return ac
 
             # 3. Match host
             if not user and not norm_port and section == host_part:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit host by section name [%s]" % (host_part))
                 return ac
 
+        if AuthConf.__debug:
+            print ("[DEBUG] findAuthConf(): return global_defaults")
         return AuthConf.__global_defaults
 
 class PyNUTError( Exception ) :
