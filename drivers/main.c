@@ -2199,12 +2199,16 @@ void setup_signals(void)
  * Return how many attempts remain before driver exits (-1 if it won't).
  */
 int reconnect_trying(reconnect_state_t trying) {
+	/* TODO: Reconcile log-throttling with e.g. USB precedent in richcomm_usb.c, usbhid-ups.c et al. */
+	/* TODO: Raise/clear dstate_datastale()/dstate_dataok()? After how many iterations? */
 	switch (trying) {
 		case RECONNECT_SUCCESS:
-			if (reconnect_count > 0)
-				upslogx(LOG_INFO, "Driver reconnected "
+			if (reconnect_count > 0) {
+				upsdebugx(1, "%s: Driver reconnected "
 					"to the device [%s] after %d attempts",
-					upsname, reconnect_count);
+					__func__, upsname, reconnect_count);
+				upslogx(LOG_NOTICE, "Communications with UPS [%s] re-established", upsname);
+			}
 			reconnect_count = 0;
 			dstate_setinfo("driver.state", "quiet");
 			return -1;
@@ -2246,12 +2250,12 @@ int reconnect_trying(reconnect_state_t trying) {
 
 			if (reconnect_count == 0) {
 				if (reconnect_max_tries < 0) {
-					upslogx(LOG_INFO, "Driver reconnecting "
+					upslogx(LOG_WARNING, "Driver reconnecting "
 						"to the device [%s], will try "
 						"indefinitely",
 						upsname);
 				} else {
-					upslogx(LOG_INFO, "Driver reconnecting "
+					upslogx(LOG_WARNING, "Driver reconnecting "
 						"to the device [%s], will try for "
 						"max %d attempts, then will exit",
 						upsname, reconnect_max_tries);
