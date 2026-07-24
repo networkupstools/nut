@@ -43,7 +43,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -955,7 +955,7 @@ static void _apc_modbus_create_reopen_matcher(void)
 
 static int _apc_modbus_reopen(void)
 {
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	if (modbus_connect(modbus_ctx) < 0) {
 		upslogx(LOG_ERR, "%s: Unable to connect Modbus: %s", __func__, modbus_strerror(errno));
@@ -975,9 +975,10 @@ static int _apc_modbus_reopen(void)
 
 	is_open = 1;
 
-	dstate_setinfo("driver.state", "reconnect.updateinfo");
+	reconnect_trying(RECONNECT_UPDATEINFO);
 	_apc_modbus_read_inventory();
-	dstate_setinfo("driver.state", "quiet");
+
+	reconnect_trying(RECONNECT_SUCCESS);
 
 	return 1;
 }

@@ -159,7 +159,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Introduced a `reconnect_max_tries` setting for NUT drivers, so they can
       be configured to exit after the specified number of reconnection attempts
       (so that the OS service management facility can completely recycle the
-      driver program). [#3541]
+      driver program). Multiple drivers updated to use the new facility to
+      consistently report `reconnect_trying()` states. [#3541]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`

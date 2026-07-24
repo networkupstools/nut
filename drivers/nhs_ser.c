@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2024   Lucas Willian Bocchi <lucas@lucas.inf.br>
  *     Initial Release (as nhs-nut.c)
- * Copyright (C) 2024 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2024 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *     Codebase adjusted to NUT standards
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -1706,7 +1706,7 @@ static unsigned int get_numbat(void) {
 
 /* Return serial_fd after the reconnection attempt, for easier calls */
 static int reconnect_ups_if_needed(void) {
-	/* retries to open port */
+	/* retries to open port until we declare "data stale" loudly */
 	static unsigned int	retries = 0;
 
 	/* If comms failed earlier, try to resuscitate */
@@ -1715,7 +1715,7 @@ static int reconnect_ups_if_needed(void) {
 			__func__, porta);
 
 		/* Uh oh, got to reconnect! */
-		dstate_setinfo("driver.state", "reconnect.trying");
+		reconnect_trying(RECONNECT_TRYING);
 
 		while (serial_fd <= 0) {
 			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
@@ -1732,7 +1732,7 @@ static int reconnect_ups_if_needed(void) {
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
 			}
 			retries = 0;
-			dstate_setinfo("driver.state", "quiet");
+			reconnect_trying(RECONNECT_SUCCESS);
 		} else {
 			if (retries == MAXTRIES) {
 				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
