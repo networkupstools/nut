@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.45"
+#define DRIVER_VERSION	"0.46"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -392,7 +392,7 @@ static int reconnect_ups(void)
 		return 1;
 	}
 
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	upsdebugx(2, "==================================================");
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
@@ -406,7 +406,7 @@ static int reconnect_ups(void)
 	}
 
 	hd = &curDevice;
-	dstate_setinfo("driver.state", "quiet");
+	reconnect_trying(RECONNECT_SUCCESS);
 
 	return ret;
 }
@@ -689,7 +689,8 @@ static void usb_comm_fail(int res, const char *msg)
 #endif
 
 		default:
-			dstate_setinfo("driver.state", "reconnect.trying");
+			reconnect_trying(RECONNECT_TRYING);
+			/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
@@ -701,9 +702,9 @@ static void usb_comm_fail(int res, const char *msg)
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
 				try_num = 0;
-				dstate_setinfo("driver.state", "reconnect.updateinfo");
+				reconnect_trying(RECONNECT_UPDATEINFO);
 				upsdrv_initinfo();
-				dstate_setinfo("driver.state", "quiet");
+				reconnect_trying(RECONNECT_SUCCESS);
 			} else {
 				if(try_num > MAX_RECONNECT_TRIES) {
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");

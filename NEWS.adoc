@@ -156,6 +156,11 @@ https://github.com/networkupstools/nut/milestone/13
       chunks populated only partially with bytes we intended. These buffers are
       now more diligently pre-zeroed as their siblings were in other code paths,
       to avoid sending host stack garbage to a device. [#3529]
+    * Introduced a `reconnect_max_tries` setting for NUT drivers, so they can
+      be configured to exit after the specified number of reconnection attempts
+      (so that the OS service management facility can completely recycle the
+      driver program). Multiple drivers updated to use the new facility to
+      consistently report `reconnect_trying()` states. [#3541]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`

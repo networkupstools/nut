@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.52"
+#define DRIVER_VERSION	"0.53"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -3908,6 +3908,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 	/* Persists across calls; only consecutive overflows accumulate (any clean
 	 * read zeroes it, see the switch on `ret` below). */
 	static int	overflow_tries = 0;
+	int	reconnecting = (udev == NULL);
 # endif
 #endif
 
@@ -3927,8 +3928,8 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 	if (is_usb) {
 #  endif	/* QX_SERIAL (&& QX_USB)*/
 
-		if (udev == NULL) {
-			dstate_setinfo("driver.state", "reconnect.trying");
+		if (reconnecting) {
+			reconnect_trying(RECONNECT_TRYING);
 
 			ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
@@ -3936,13 +3937,16 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 				return ret;
 			}
 
-			dstate_setinfo("driver.state", "reconnect.updateinfo");
+			reconnect_trying(RECONNECT_UPDATEINFO);
 		}
 
 		ret = (*subdriver_command)(cmd, cmdlen, buf, buflen);
 
 		if (ret >= 0) {
 			overflow_tries = 0;	/* clean read: forget any overflow streak */
+			if (reconnecting) {
+				reconnect_trying(RECONNECT_SUCCESS);
+			}
 			return ret;
 		}
 
@@ -3999,6 +4003,8 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		case LIBUSB_ERROR_NOT_FOUND:	/* No such file or directory */
 		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
+			/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+			 * to avoid off-by-one counter errors */
 			dstate_setinfo("driver.state", "reconnect.trying");
 			usb->close_dev(udev);
 			udev = NULL;
@@ -4031,6 +4037,14 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			break;
 		}
 
+		if (reconnecting) {
+			/* Success after updateinfo in the bulk of this method body */
+			upsdebugx(1, "%s: libusb returned %" PRIiSIZE
+				" which was not classified as a known error, assuming reconnection succeeded",
+				__func__, ret);
+			reconnect_trying(RECONNECT_SUCCESS);
+		}
+
 #  ifdef QX_SERIAL
 	/* Communication: serial */
 	} else {	/* !is_usb */
@@ -4045,6 +4059,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		ret = ser_send_buf(upsfd, cmd, cmdlen);
 
 		if (ret <= 0) {
+			/* TOTHINK: Is any special reconnect logic/tracking needed? */
 			upsdebugx(3, "send: %s (%" PRIiSIZE ")",
 				ret ? strerror(errno) : "timeout", ret);
 			return ret;

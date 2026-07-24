@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -185,6 +185,7 @@ static int query_ups(char *reply)
 
 static void usb_comm_fail(const char *fmt, ...)
 {
+	/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
 	int	ret;
 	char	why[SMALLBUF];
 	va_list	ap;
@@ -240,6 +241,7 @@ static void usb_comm_fail(const char *fmt, ...)
 
 static void usb_comm_good(void)
 {
+	/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
 	if (comm_failures == 0) {
 		return;
 	}
@@ -797,15 +799,20 @@ void upsdrv_updateinfo(void)
 {
 	char	reply[REPLY_PACKETSIZE];
 	int	ret, online, battery_normal;
+	int	reconnecting = (udev == NULL);
 
-	if (!udev) {
-		dstate_setinfo("driver.state", "reconnect.trying");
+	if (reconnecting) {
+		reconnect_trying(RECONNECT_TRYING);
+
 		ret = usb_device_open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
+		/* FIXIME: Other drivers have <1 check here */
 		if (ret < 0) {
+			dstate_datastale();
 			return;
 		}
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
+
+		reconnect_trying(RECONNECT_UPDATEINFO);
 	}
 
 	memset(reply, 0, sizeof(reply));
@@ -816,6 +823,8 @@ void upsdrv_updateinfo(void)
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
+		/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+		 * to avoid off-by-one counter errors */
 		dstate_setinfo("driver.state", "reconnect.trying");
 		usb_device_close(udev);
 		udev = NULL;
@@ -825,6 +834,10 @@ void upsdrv_updateinfo(void)
 
 	usb_comm_good();
 	dstate_dataok();
+
+	if (reconnecting) {
+		reconnect_trying(RECONNECT_SUCCESS);
+	}
 
 	/*
 	 * 3rd bit of 4th byte indicates whether the UPS is on line (1)

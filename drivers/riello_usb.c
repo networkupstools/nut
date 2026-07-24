@@ -9,7 +9,7 @@
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
  * Copyright (C) 2022-2024 "amikot"
- * Copyright (C) 2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2022-2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -363,7 +363,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
-		dstate_setinfo("driver.state", "reconnect.trying");
+		reconnect_trying(RECONNECT_TRYING);
 
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
@@ -371,9 +371,9 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 		if (ret < 0)
 			return ret;
 
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
+		reconnect_trying(RECONNECT_UPDATEINFO);
 		upsdrv_initinfo();	/* reconnect usb cable */
-		dstate_setinfo("driver.state", "quiet");
+		reconnect_trying(RECONNECT_SUCCESS);
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -423,6 +423,8 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+		 * to avoid off-by-one counter errors */
 		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;

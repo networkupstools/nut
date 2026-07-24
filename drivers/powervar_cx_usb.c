@@ -45,7 +45,7 @@
 #include "powervar_cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CUSSP UPS driver (USB)"
-#define DRIVER_VERSION	"1.01"
+#define DRIVER_VERSION	"1.02"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
@@ -402,7 +402,8 @@ void upsdrv_updateinfo(void)
 
 	if (ReconnectFlag)
 	{
-		dstate_setinfo("driver.state", "reconnect.trying");
+		/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
+		reconnect_trying(RECONNECT_TRYING);
 		upslogx(LOG_WARNING, "USB device may be detached.");
 		upslogx(LOG_NOTICE, "USB reconnect attempt: %d.", ++CnctAttempts);
 		upsdebugx(4, "USB reconnect attempt: %d", CnctAttempts);
@@ -433,10 +434,11 @@ void upsdrv_updateinfo(void)
 		hd = &curDevice;
 
 		upslogx(LOG_NOTICE, "USB reconnect successful");
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
+		reconnect_trying(RECONNECT_UPDATEINFO);
 		upsdrv_initinfo();
 
-		dstate_setinfo("driver.state", "quiet");
+		reconnect_trying(RECONNECT_SUCCESS);
+		/* dstate_dataok() managed in powervar_cx.c::PvarCommon_UpdateInfo() */
 	}
 
 	PvarCommon_Updateinfo ();
