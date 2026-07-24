@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.72"
+#define DRIVER_VERSION	"0.73"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1380,7 +1380,7 @@ void upsdrv_updateinfo(void)
 {
 	hid_info_t	*item;
 	HIDData_t	*event[MAX_EVENT_NUM], *found_data;
-	int		i, evtCount;
+	int		i, evtCount, reconnecting = (hd == NULL);
 	double		value;
 	time_t		now;
 
@@ -1389,12 +1389,13 @@ void upsdrv_updateinfo(void)
 	time(&now);
 
 	/* check for device availability to set datastale! */
-	if (hd == NULL) {
+	if (reconnecting) {
 		/* don't flood reconnection attempts */
 		if (now < (lastpoll + poll_interval)) {
 			return;
 		}
 
+		reconnect_trying(RECONNECT_TRYING);
 		upsdebugx(1, "Got to reconnect!");
 		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
 			upsdebugx(0, "Reconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
@@ -1412,11 +1413,15 @@ void upsdrv_updateinfo(void)
 		interrupt_pipe_EIO_count = 0;
 		interrupt_pipe_no_events_count = 0;
 
+		reconnect_trying(RECONNECT_UPDATEINFO);
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
 			return;
 		}
+
+		/* Claim ultimate RECONNECT_SUCCESS further below */
 	}
+
 #ifdef DEBUG
 	interval();
 #endif
@@ -1451,11 +1456,15 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+			 * to avoid off-by-one counter errors */
 			dstate_setinfo("driver.state", "reconnect.trying");
 			hd = NULL;
 			return;
 		case LIBUSB_ERROR_IO:        /* I/O error */
 			/* Uh oh, got to reconnect, with a special suggestion! */
+			/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+			 * to avoid off-by-one counter errors */
 			dstate_setinfo("driver.state", "reconnect.trying");
 			interrupt_pipe_EIO_count++;
 			hd = NULL;
@@ -1508,10 +1517,12 @@ void upsdrv_updateinfo(void)
 
 		ups_infoval_set(item, value);
 	}
+
 #ifdef DEBUG
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...",
 		interval());
 #endif
+
 	/* clear status buffer before beginning */
 	status_init();
 	buzzmode_init();
@@ -1544,10 +1555,15 @@ void upsdrv_updateinfo(void)
 	status_commit();
 
 	dstate_dataok();
+
 #ifdef DEBUG
 	upsdebugx(1, "took %.3f seconds handling feature reports...",
 		interval());
 #endif
+
+	if (reconnecting) {
+		reconnect_trying(RECONNECT_SUCCESS);
+	}
 }
 
 void upsdrv_initinfo(void)
@@ -2408,6 +2424,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case LIBUSB_ERROR_NO_MEM:    /* Insufficient memory */
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
+			/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+			 * to avoid off-by-one counter errors */
 			dstate_setinfo("driver.state", "reconnect.trying");
 			hd = NULL;
 			return FALSE;
@@ -2519,6 +2537,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	 && (mode == HU_WALKMODE_QUICK_UPDATE || mode == HU_WALKMODE_FULL_UPDATE)
 	) {
 		upsdebugx(1, "Got zero successful data polls - device may be disconnected");
+		/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+		 * to avoid off-by-one counter errors */
 		dstate_setinfo("driver.state", "reconnect.trying");
 		hd = NULL;
 		return FALSE;
@@ -2533,6 +2553,8 @@ static int reconnect_ups(void)
 	char	*val;
 	int wait_before_reconnect = 0;
 
+	/* NOTE: Not calling reconnect_trying() counters/loggers here,
+	 * as our caller upsdrv_updateinfo() does it */
 	dstate_setinfo("driver.state", "reconnect.trying");
 
 	/* Init time to wait before trying to reconnect (seconds) */
@@ -2564,6 +2586,10 @@ static int reconnect_ups(void)
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, NULL);
 	upsdebugx(4, "Opening comm_driver returns ret=%i", ret);
 	if (ret > 0) {
+		/* NOTE: Not calling reconnect_trying() counters/loggers here,
+		 * as our caller upsdrv_updateinfo() does it. Notably, it will
+		 * "RECONNECT_UPDATEINFO" just after this success before handing
+		 * off the data to ultimate consumers. */
 		upsdebugx(0, "Device has been reconnected");
 		dstate_setinfo("driver.state", "quiet");
 		return 1;

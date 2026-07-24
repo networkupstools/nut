@@ -38,7 +38,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.39"
+#define DRIVER_VERSION	"3.40"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -2395,7 +2395,7 @@ void upsdrv_updateinfo(void)
 		/* become aggressive after a few tries */
 		if (!(last_worked % 60)) {
 			upslogx(LOG_WARNING, "Trying to reconnect to the UPS");
-			dstate_setinfo("driver.state", "reconnect.trying");
+			reconnect_trying(RECONNECT_TRYING);
 
 			upsdebugx(1, "%s: call upsdrv_cleanup", __func__);
 			/* dstate_setinfo("driver.state", "cleanup.upsdrv"); */
@@ -2412,12 +2412,12 @@ void upsdrv_updateinfo(void)
 			/* dstate_setinfo("driver.state", "init.info"); */
 			upsdrv_initinfo();
 
+			reconnect_trying(RECONNECT_UPDATEINFO);
 			upsdebugx(1, "%s: call upsdrv_updateinfo", __func__);
-			dstate_setinfo("driver.state", "reconnect.updateinfo");
 			/* dstate_setinfo("driver.state", "init.updateinfo"); */
 			upsdrv_updateinfo();
 
-			dstate_setinfo("driver.state", "init.quiet");
+			reconnect_trying(RECONNECT_SUCCESS);
 		}
 
 		upsdebugx(1, "%s: nudging UPS with 'Y', iteration #%d ...",
