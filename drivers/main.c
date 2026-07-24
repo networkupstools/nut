@@ -2066,7 +2066,7 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
-	switch (exit_flag) {
+	switch (sig) {
 		case -2:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);
 			break;
