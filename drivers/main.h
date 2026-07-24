@@ -114,8 +114,13 @@ void addvar_reloadable(int vartype, const char *name, const char *desc);
 
 /** Called by a driver to either enter/continue a reconnection loop
  * (trying=1, and with certain configuration of `reconnect_max_tries>=0`
- * can `set_exit_flag()`), or to end it (trying=0).
- * Sets the `driver.state` to "reconnect.trying" or "quiet" respectively.
+ * can `set_exit_flag()`), signal impending success (trying=2),
+ * or to end it due to successful reconnection (trying=0).
+ * Sets the `driver.state` to "reconnect.trying" (1) or "quiet" (0)
+ * respectively; if some drivers re-evaluate complete device data
+ * after reconnection has technically succeeded but before becoming
+ * generally available again, they are welcome to set `driver.state`
+ * to "reconnect.updateinfo" (2).
  * Returns how many attempts remain before driver exits (-1 if it won't,
  * 0 if exiting now).
  */
