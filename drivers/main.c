@@ -2198,96 +2198,125 @@ void setup_signals(void)
  * (trying=1), almost done (trying=2), or to end it (trying=0).
  * Return how many attempts remain before driver exits (-1 if it won't).
  */
-int reconnect_trying(int trying)
-{
-	if (!trying) {
-		if (reconnect_count > 0)
-			upslogx(LOG_INFO, "Driver reconnected "
-				"to the device [%s] after %d attempts",
-				upsname, reconnect_count);
-		reconnect_count = 0;
-		dstate_setinfo("driver.state", "quiet");
-		return -1;
+int reconnect_trying(reconnect_state_t trying) {
+	switch (trying) {
+		case RECONNECT_SUCCESS:
+			if (reconnect_count > 0)
+				upslogx(LOG_INFO, "Driver reconnected "
+					"to the device [%s] after %d attempts",
+					upsname, reconnect_count);
+			reconnect_count = 0;
+			dstate_setinfo("driver.state", "quiet");
+			return -1;
+
+		case RECONNECT_UPDATEINFO:
+			if (reconnect_count > 0) {
+				upsdebugx(1, "%s: Driver has technically reconnected "
+					"to the device [%s] after %d attempts "
+					"and is now re-evaluating device data",
+					__func__, upsname, reconnect_count);
+			} else {
+				upsdebugx(1, "%s: BOGUS: Driver reported that it "
+					"reconnected to the device [%s] and is now "
+					"re-evaluating device data, but it never "
+					"started a reconnection counter",
+					__func__, upsname);
+			}
+			dstate_setinfo("driver.state", "reconnect.updateinfo");
+
+			/* Not expecting a restart. Not finished, so not clearing the
+			 * counter either, though -- the update might fail and we would
+			 * again try to reconnect, logically continuing the current loop. */
+			if (reconnect_max_tries > 0 && reconnect_max_tries > reconnect_count) {
+				return reconnect_max_tries - reconnect_count + 1;
+			}
+
+			return -1;
+
+		case RECONNECT_TRYING:
+			if (reconnect_max_tries == 0) {
+				upslogx(LOG_WARNING, "Driver lost connection "
+					"to the device [%s] and will exit immediately",
+					upsname);
+				set_exit_flag(EF_EXIT_FAILURE);
+				return 0;
+			}
+
+			dstate_setinfo("driver.state", "reconnect.trying");
+
+			if (reconnect_count == 0) {
+				if (reconnect_max_tries < 0) {
+					upslogx(LOG_INFO, "Driver reconnecting "
+						"to the device [%s], will try "
+						"indefinitely",
+						upsname);
+				} else {
+					upslogx(LOG_INFO, "Driver reconnecting "
+						"to the device [%s], will try for "
+						"max %d attempts, then will exit",
+						upsname, reconnect_max_tries);
+				}
+			}
+
+			if (reconnect_count < INT_MAX) {
+				reconnect_count++;
+			} else {
+				upsdebugx(1, "%s: reconnect counter overflowed", __func__);
+				if (reconnect_max_tries > 0) {
+					upslogx(LOG_WARNING, "Driver lost connection "
+						"to the device [%s] and reconnect "
+						"counter overflowed, will exit immediately",
+						upsname);
+					set_exit_flag(EF_EXIT_FAILURE);
+					return 0;
+				}
+			}
+
+			if (reconnect_max_tries > 0) {
+				if (reconnect_max_tries < reconnect_count) {
+					upslogx(LOG_WARNING, "Driver lost connection "
+						"to the device [%s] and tried to "
+						"reconnect for %d times, "
+						"now will exit as configured",
+						upsname, reconnect_count);
+					set_exit_flag(EF_EXIT_FAILURE);
+					return 0;
+				}
+				return reconnect_max_tries - reconnect_count + 1;
+			}
+
+			return -1;
+
+		/* Some warnings settings require all enum values to be covered
+		 * and complain if a default is then present "superfluously",
+		 * others require that a default always exists. Quiesce that.
+		 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+			/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* any `tries not in [0, 1, 2]`, must not occur */
+			upsdebugx(1, "%s: Invalid reconnect status value: %d", __func__, (int)trying);
+			return -1;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
-
-	if (trying == 2) {
-		if (reconnect_count > 0) {
-			upsdebugx(1, "%s: Driver has technically reconnected "
-				"to the device [%s] after %d attempts "
-				"and is now re-evaluating device data",
-				__func__, upsname, reconnect_count);
-		} else {
-			upsdebugx(1, "%s: BOGUS: Driver reported that it "
-				"reconnected to the device [%s] and is now "
-				"re-evaluating device data, but it never "
-				"started a reconnection counter",
-				__func__, upsname);
-		}
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
-
-		/* Not expecting a restart. Not finished, so not clearing the
-		 * counter either, though -- the update might fail and we would
-		 * again try to reconnect, logically continuing the current loop. */
-		if (reconnect_max_tries > 0 && reconnect_max_tries > reconnect_count) {
-			return reconnect_max_tries - reconnect_count + 1;
-		}
-
-		return -1;
-	}
-
-	/* any `tries not in [0, 2]` */
-	if (reconnect_max_tries == 0) {
-		upslogx(LOG_WARNING, "Driver lost connection "
-			"to the device [%s] and will exit immediately",
-			upsname);
-		set_exit_flag(EF_EXIT_FAILURE);
-		return 0;
-	}
-
-	dstate_setinfo("driver.state", "reconnect.trying");
-
-	if (reconnect_count == 0) {
-		if (reconnect_max_tries < 0) {
-			upslogx(LOG_INFO, "Driver reconnecting "
-				"to the device [%s], will try "
-				"indefinitely",
-				upsname);
-		} else {
-			upslogx(LOG_INFO, "Driver reconnecting "
-				"to the device [%s], will try for "
-				"max %d attempts, then will exit",
-				upsname, reconnect_max_tries);
-		}
-	}
-
-	if (reconnect_count < INT_MAX) {
-		reconnect_count++;
-	} else {
-		upsdebugx(1, "%s: reconnect counter overflowed", __func__);
-		if (reconnect_max_tries > 0) {
-			upslogx(LOG_WARNING, "Driver lost connection "
-				"to the device [%s] and reconnect "
-				"counter overflowed, will exit immediately",
-				upsname);
-			set_exit_flag(EF_EXIT_FAILURE);
-			return 0;
-		}
-	}
-
-	if (reconnect_max_tries > 0) {
-		if (reconnect_max_tries < reconnect_count) {
-			upslogx(LOG_WARNING, "Driver lost connection "
-				"to the device [%s] and tried to "
-				"reconnect for %d times, "
-				"now will exit as configured",
-				upsname, reconnect_count);
-			set_exit_flag(EF_EXIT_FAILURE);
-			return 0;
-		}
-		return reconnect_max_tries - reconnect_count + 1;
-	}
-
-	return -1;
 }
 
 /* This source file is used in some unit tests to mock realistic driver
