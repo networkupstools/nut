@@ -2195,8 +2195,8 @@ void setup_signals(void)
 #endif /* !WIN32*/
 
 /* Called by a driver to either enter/continue a reconnection loop
- * (trying=1), or to end it (trying=0). Return how many attempts
- * remain before driver exits (-1 if it won't).
+ * (trying=1), almost done (trying=2), or to end it (trying=0).
+ * Return how many attempts remain before driver exits (-1 if it won't).
  */
 int reconnect_trying(int trying)
 {
@@ -2210,6 +2210,32 @@ int reconnect_trying(int trying)
 		return -1;
 	}
 
+	if (trying == 2) {
+		if (reconnect_count > 0) {
+			upsdebugx(1, "%s: Driver has technically reconnected "
+				"to the device [%s] after %d attempts "
+				"and is now re-evaluating device data",
+				__func__, upsname, reconnect_count);
+		} else {
+			upsdebugx(1, "%s: BOGUS: Driver reported that it "
+				"reconnected to the device [%s] and is now "
+				"re-evaluating device data, but it never "
+				"started a reconnection counter",
+				__func__, upsname);
+		}
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
+
+		/* Not expecting a restart. Not finished, so not clearing the
+		 * counter either, though -- the update might fail and we would
+		 * again try to reconnect, logically continuing the current loop. */
+		if (reconnect_max_tries > 0 && reconnect_max_tries > reconnect_count) {
+			return reconnect_max_tries - reconnect_count + 1;
+		}
+
+		return -1;
+	}
+
+	/* any `tries not in [0, 2]` */
 	if (reconnect_max_tries == 0) {
 		upslogx(LOG_WARNING, "Driver lost connection "
 			"to the device [%s] and will exit immediately",
