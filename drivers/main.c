@@ -2067,10 +2067,10 @@ static void exit_cleanup(void)
 void set_exit_flag(int sig)
 {
 	switch (sig) {
-		case -2:
+		case EF_EXIT_SUCCESS:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);
 			break;
-		case -1:
+		case EF_EXIT_FAILURE:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_FAILURE", __func__);
 			break;
 		default:
