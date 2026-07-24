@@ -3426,7 +3426,7 @@ sockname_ownership_finished:
 			if (update_count == dump_data) {
 				dstate_setinfo("driver.state", "dumping");
 				dstate_dump();
-				exit_flag = 1;
+				set_exit_flag(EF_EXIT_SUCCESS);
 			}
 			else
 				update_count++;
@@ -3448,6 +3448,6 @@ sockname_ownership_finished:
 		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	}
 
-	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
