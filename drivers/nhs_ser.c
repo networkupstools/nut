@@ -29,13 +29,10 @@
 #include "nut_float.h"
 #include "serial.h"
 #include <stdio.h>
-#include <linux/serial.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
 #include <time.h>
 #include <stdbool.h>
 #include <termios.h>
@@ -43,7 +40,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -52,6 +49,19 @@
 #define DEFAULTPERC	2.0
 #define DATAPACKETSIZE	100	/* NOTE: Practical anticipated max is 50 */
 #define DEFAULTBATV	12.0
+
+/*
+ * Keep the historical 2400 8N1 + RTS/CTS behavior when ups.conf does not
+ * specify serial options. The maximum values bound user-provided delays.
+ */
+#define DEFAULT_SERIAL_DATA_BITS	8
+#define DEFAULT_SERIAL_PARITY		"none"
+#define DEFAULT_SERIAL_STOP_BITS	1
+#define DEFAULT_SERIAL_FLOW_CONTROL	"hardware"
+#define DEFAULT_SERIAL_READ_TIMEOUT_MS	100
+#define DEFAULT_SERIAL_SEND_PACE_US	0
+#define MAX_SERIAL_READ_TIMEOUT_MS	60000
+#define MAX_SERIAL_SEND_PACE_US	999999
 
 /* comms revival attempts before declaring them stale */
 #define MAXTRIES	3
@@ -226,7 +236,7 @@ static const unsigned int	string_initialization_short[9] = {0xFF, 0x09, 0x53, 0x
 
 static int		debug_pkt_data = 0, debug_pkt_hwinfo = 0, debug_pkt_raw = 0;
 
-static int		serial_fd = -1;
+static TYPE_FD_SER	serial_fd = ERROR_FD_SER;
 static unsigned char	chr;
 static size_t		datapacket_index = 0;
 static bool		datapacketstart = false;
@@ -237,7 +247,15 @@ static unsigned int	send_extended = 0;
 static int		bwritten = 0;
 static unsigned char	datapacket[DATAPACKETSIZE];
 static char		porta[NUT_PATH_MAX + 1] = DEFAULTPORT;
+
+/* Validated serial settings used for initial connection and reconnection. */
 static int		baudrate = DEFAULTBAUD;
+static unsigned int	serial_data_bits = DEFAULT_SERIAL_DATA_BITS;
+static char		serial_parity[8] = DEFAULT_SERIAL_PARITY;
+static unsigned int	serial_stop_bits = DEFAULT_SERIAL_STOP_BITS;
+static char		serial_flow_control[16] = DEFAULT_SERIAL_FLOW_CONTROL;
+static unsigned int	serial_read_timeout_ms = DEFAULT_SERIAL_READ_TIMEOUT_MS;
+static unsigned int	serial_send_pace_us = DEFAULT_SERIAL_SEND_PACE_US;
 static float		minpower = 0;
 static float		maxpower = 0;
 static unsigned int	minpowerperc = 0;
@@ -350,11 +368,13 @@ static char * strtolow(char* s);
 static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim);
 static float calculate_efficiency(float vacoutrms, float vacinrms);
 
-static int openfd(const char * portarg, int BAUDRATE);
+static void parse_serial_options(void);
+static void close_serial_port(void);
+static TYPE_FD_SER openfd(const char *portarg, int requested_baudrate);
 #if 0
 static int write_serial(int fd, const char * dados, int size);
 #endif
-static int write_serial_int(int fd, const unsigned int *data, size_t size);
+static int write_serial_int(TYPE_FD_SER fd, const unsigned int *data, size_t size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
@@ -526,103 +546,286 @@ static void print_pkt_data(pkt_data data) {
 	upsdebugx(5, "End Marker: %u", data.end_marker);
 }
 
-/* FIXME: Replace with NUT ser_open() and ser_set_speed() */
-static int openfd(const char * portarg, int BAUDRATE) {
-	long unsigned int	i = 0;
-	int	done = 0;
-	struct termios	tty;
-	struct serial_struct	serial;
+/*
+ * Load the seven supported serial options from ups.conf. Defaults are reset
+ * first so each setting has one source of truth, and every supplied value is
+ * fully validated before the serial port is touched.
+ */
+static void parse_serial_options(void)
+{
+	const char	*value;
+	char		*endptr;
+	long		number;
+	size_t		i;
+	int		supported;
 
-	/* //int	fd = ser_open(portarg); */
-	int	fd = open(portarg, O_RDWR | O_NOCTTY | O_SYNC);
+	baudrate = DEFAULTBAUD;
+	serial_data_bits = DEFAULT_SERIAL_DATA_BITS;
+	snprintf(serial_parity, sizeof(serial_parity), "%s", DEFAULT_SERIAL_PARITY);
+	serial_stop_bits = DEFAULT_SERIAL_STOP_BITS;
+	snprintf(serial_flow_control, sizeof(serial_flow_control), "%s",
+		DEFAULT_SERIAL_FLOW_CONTROL);
+	serial_read_timeout_ms = DEFAULT_SERIAL_READ_TIMEOUT_MS;
+	serial_send_pace_us = DEFAULT_SERIAL_SEND_PACE_US;
 
-	if (fd < 0) {
-		upsdebugx(1, "%s: Error on open %s", __func__, portarg);
-		return -1;
+	/*
+	 * The existing table is authoritative: platform-dependent entries guarded
+	 * in the original source are accepted only when present in this build.
+	 */
+	value = getval("baud");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number <= 0) {
+			fatalx(EXIT_FAILURE,
+				"Invalid baud value '%s': expected a supported baud rate",
+				value);
+		}
+
+		supported = 0;
+		for (i = 0; i < NUM_BAUD_RATES; i++) {
+			if (number == baud_rates[i].speed) {
+				supported = 1;
+				break;
+			}
+		}
+		if (!supported) {
+			fatalx(EXIT_FAILURE,
+				"Invalid baud value '%s': rate is not available in this build",
+				value);
+		}
+		baudrate = (int)number;
 	}
 
-	if (tcflush(fd, TCIOFLUSH) != 0) {
-		upsdebugx(1, "%s: Error on flush data on %s", __func__, portarg);
-		return -1;
+	value = getval("serial_data_bits");
+	if (value) {
+		/* Reject partial numbers and anything outside the termios CS5..CS8 set. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' ||
+			(number != 5 && number != 6 && number != 7 && number != 8)) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_data_bits value '%s': expected 5, 6, 7 or 8",
+				value);
+		}
+		serial_data_bits = (unsigned int)number;
+	}
+
+	value = getval("serial_parity");
+	if (value) {
+		if (strcasecmp(value, "none") != 0 &&
+			strcasecmp(value, "even") != 0 &&
+			strcasecmp(value, "odd") != 0) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_parity value '%s': expected none, even or odd",
+				value);
+		}
+		snprintf(serial_parity, sizeof(serial_parity), "%s", value);
+	}
+
+	value = getval("serial_stop_bits");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' ||
+			(number != 1 && number != 2)) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_stop_bits value '%s': expected 1 or 2",
+				value);
+		}
+		serial_stop_bits = (unsigned int)number;
+	}
+
+	value = getval("serial_flow_control");
+	if (value) {
+		if (strcasecmp(value, "none") != 0 &&
+			strcasecmp(value, "hardware") != 0 &&
+			strcasecmp(value, "software") != 0 &&
+			strcasecmp(value, "both") != 0) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_flow_control value '%s': expected "
+				"none, hardware, software or both",
+				value);
+		}
+		snprintf(serial_flow_control, sizeof(serial_flow_control), "%s", value);
+	}
+
+	value = getval("serial_read_timeout_ms");
+	if (value) {
+		/* A zero timeout requests a non-blocking poll from ser_get_char. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' ||
+			number < 0 || number > MAX_SERIAL_READ_TIMEOUT_MS) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_read_timeout_ms value '%s': expected 0 to %d",
+				value, MAX_SERIAL_READ_TIMEOUT_MS);
+		}
+		serial_read_timeout_ms = (unsigned int)number;
+	}
+
+	value = getval("serial_send_pace_us");
+	if (value) {
+		/* Zero selects an unpaced send; positive values delay each byte. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' ||
+			number < 0 || number > MAX_SERIAL_SEND_PACE_US) {
+			fatalx(EXIT_FAILURE,
+				"Invalid serial_send_pace_us value '%s': expected 0 to %d",
+				value, MAX_SERIAL_SEND_PACE_US);
+		}
+		serial_send_pace_us = (unsigned int)number;
+	}
+}
+
+static void close_serial_port(void)
+{
+	/* Use NUT's portable descriptor checks and always invalidate after closing. */
+	if (VALID_FD_SER(serial_fd)) {
+		if (ser_close(serial_fd, porta) != 0) {
+			upsdebug_with_errno(1, "%s: Error closing serial port %s",
+				__func__, porta);
+		}
+		serial_fd = ERROR_FD_SER;
+	}
+}
+
+static TYPE_FD_SER openfd(const char *portarg, int requested_baudrate)
+{
+	TYPE_FD_SER	fd;
+	struct termios	tty;
+	speed_t		rate = 0;
+	size_t		i;
+
+	/* Translate the numeric ups.conf value to the matching termios constant. */
+	for (i = 0; i < NUM_BAUD_RATES; i++) {
+		if (baud_rates[i].speed == requested_baudrate) {
+			rate = baud_rates[i].rate;
+			upsdebugx(1, "%s: Selected baud rate %d -- %s",
+				__func__, baud_rates[i].speed,
+				baud_rates[i].description);
+			break;
+		}
+	}
+
+	if (rate == 0) {
+		upslogx(LOG_ERR, "%s: Unsupported baud rate %d",
+			__func__, requested_baudrate);
+		return ERROR_FD_SER;
+	}
+
+	/*
+	 * Establish NUT's standard raw serial baseline first, then customize only
+	 * data bits, parity, stop bits and flow control below.
+	 */
+	fd = ser_open_nf(portarg);
+	if (INVALID_FD_SER(fd)) {
+		upsdebug_with_errno(1, "%s: Error opening %s", __func__, portarg);
+		return ERROR_FD_SER;
+	}
+
+	if (ser_set_speed_nf(fd, portarg, rate) != 0) {
+		upsdebug_with_errno(1, "%s: Error setting baud rate on %s",
+			__func__, portarg);
+		ser_close(fd, portarg);
+		return ERROR_FD_SER;
 	}
 
 	if (tcgetattr(fd, &tty) != 0) {
-		upsdebugx(1, "%s: Error on set termios values to %s", __func__, portarg);
-		close(fd);
-		return -1;
+		upsdebug_with_errno(1, "%s: Error reading serial settings from %s",
+			__func__, portarg);
+		ser_close(fd, portarg);
+		return ERROR_FD_SER;
 	}
 
-	serial.xmit_fifo_size = 1;
-	ioctl(fd, TIOCSSERIAL, &serial);
+	/* Replace the baseline character size with the validated selection. */
+	tty.c_cflag &= ~CSIZE;
+	if (serial_data_bits == 5)
+		tty.c_cflag |= CS5;
+	else if (serial_data_bits == 6)
+		tty.c_cflag |= CS6;
+	else if (serial_data_bits == 7)
+		tty.c_cflag |= CS7;
+	else
+		tty.c_cflag |= CS8;
 
-
-	/* select speed based on baud */
-	while ((i < NUM_BAUD_RATES) && (done == 0)) {
-		if (baud_rates[i].speed == BAUDRATE) {
-			done = baud_rates[i].rate;
-			upsdebugx(1, "%s: Baud rate selected by user: %d -- %s",
-				__func__,
-				baud_rates[i].speed,
-				baud_rates[i].description);
-		}
-		i++;
-	}
-
-	/* if done is 0, no one speed has selected, then use default */
-	if (done == 0) {
-		while ((i < NUM_BAUD_RATES) && (done == 0)) {
-			if (baud_rates[i].speed == DEFAULTBAUD) {
-				done = baud_rates[i].rate;
-				upsdebugx(1, "%s: Baud rate selected by default: %d -- %s",
-					__func__,
-					baud_rates[i].speed,
-					baud_rates[i].description);
-			}
-			i++;
-		}
-	}
-
-	/* Wrong macro? */
-	if (done == 0) {
-		upsdebugx(1, "%s: Baud rate not found, using default %d", __func__, DEFAULTBAUD);
-		done = B2400;
-	}
-
-
-	tty.c_cflag &= ~PARENB;	/* Disable Parity */
-	tty.c_cflag &= ~CSTOPB;	/* 1 stop bit */
-	tty.c_cflag &= ~CSIZE;	/* Clear Bit Set */
-	tty.c_cflag |= CS8;		/* 8 bits per byte */
-
-	/* CTS / RTS */
-	tty.c_cflag |= CRTSCTS;	/* Enable hardware flow control */
-
-	/* Enable Read and disable modem control */
-	/* // tty.c_cflag |= (CLOCAL | CREAD); */
-	tty.c_cflag |= CREAD;
-
-
-	tty.c_iflag &= ~(IXON | IXOFF | IXANY);	/* Disable Software Control */
-	tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
-
-	tty.c_oflag &= ~OPOST;	/* Disable output post-processing */
-	tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);	/* Modo raw */
-
-	/* To enable  block read: VTIME = 1 and VMIN = 0
-	 * To disable block read: VTIME = 0 and VMIN = 1
+	/*
+	 * Configure parity as a complete unit. Parity errors are ignored for
+	 * "none", but checked for the even and odd modes.
 	 */
-	tty.c_cc[VTIME] = 1;
-	tty.c_cc[VMIN] = 0;
-
-
-	cfsetispeed(&tty, done);
-	cfsetospeed(&tty, done);
-
-	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-		upsdebugx(1, "%s: Error on tcsetattr on port %s", __func__, portarg);
-		close(fd);
-		return -1;
+	tty.c_cflag &= ~(PARENB | PARODD);
+	tty.c_iflag &= ~INPCK;
+	if (strcasecmp(serial_parity, "none") == 0) {
+		tty.c_iflag |= IGNPAR;
 	}
+	else if (strcasecmp(serial_parity, "even") == 0) {
+		tty.c_iflag &= ~IGNPAR;
+		tty.c_cflag |= PARENB;
+		tty.c_iflag |= INPCK;
+	}
+	else {
+		tty.c_iflag &= ~IGNPAR;
+		tty.c_cflag |= PARENB | PARODD;
+		tty.c_iflag |= INPCK;
+	}
+
+	/* CSTOPB clear means one stop bit; set means two stop bits. */
+	if (serial_stop_bits == 2)
+		tty.c_cflag |= CSTOPB;
+	else
+		tty.c_cflag &= ~CSTOPB;
+
+	/*
+	 * Disable every flow-control mechanism before enabling the selected mode.
+	 * In particular, "none" leaves RTS/CTS off for CDC-ACM and 3-wire links.
+	 * Both mechanisms are disabled here; the configured mode is enabled below.
+	 */
+	tty.c_cflag &= ~CRTSCTS;
+	tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+
+	if (strcasecmp(serial_flow_control, "none") == 0) {
+		/* Hardware and software flow control remain disabled. */
+	}
+	else if (strcasecmp(serial_flow_control, "hardware") == 0) {
+		tty.c_cflag |= CRTSCTS;
+	}
+	else if (strcasecmp(serial_flow_control, "software") == 0) {
+		tty.c_iflag |= IXON | IXOFF;
+	}
+	else if (strcasecmp(serial_flow_control, "both") == 0) {
+		tty.c_cflag |= CRTSCTS;
+		tty.c_iflag |= IXON | IXOFF;
+	}
+
+	/* Apply the four conventional settings together. */
+	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+		upsdebug_with_errno(1, "%s: Error applying serial settings to %s",
+			__func__, portarg);
+		ser_close(fd, portarg);
+		return ERROR_FD_SER;
+	}
+
+	/* Discard bytes queued under any previous port configuration. */
+	if (ser_flush_io(fd) != 0) {
+		upsdebug_with_errno(1, "%s: Error flushing serial port %s",
+			__func__, portarg);
+		ser_close(fd, portarg);
+		return ERROR_FD_SER;
+	}
+
+	upsdebugx(1, "%s: Serial settings: %d baud, %u data bits, %s parity, "
+		"%u stop bit(s), %s flow control, read timeout %u ms, "
+		"send pace %u us",
+		__func__, requested_baudrate, serial_data_bits, serial_parity,
+		serial_stop_bits, serial_flow_control,
+		serial_read_timeout_ms, serial_send_pace_us);
+
 	return fd;
 }
 
@@ -939,28 +1142,38 @@ static int write_serial(int fd, const char *dados, size_t size) {
 }
 #endif
 
-static int write_serial_int(int fd, const unsigned int *data, size_t size) {
-	if (fd > 0) {
-		ssize_t	bytes_written;
-		uint8_t	*message = NULL;
-		size_t	i = 0;
+static int write_serial_int(TYPE_FD_SER fd, const unsigned int *data, size_t size)
+{
+	uint8_t	*message;
+	ssize_t	sent;
+	size_t	i;
 
-		message = (uint8_t *)xcalloc(size, sizeof(uint8_t));
-		for (i = 0; i < size; i++) {
-			message[i] = (uint8_t)data[i];
-			/* //upsdebugx(5, "%d %c %u %d %c %u", message[i], message[i], data[i], data[i]); */
-		}
-		bytes_written = write(fd, message, size);
-		free(message);
+	if (INVALID_FD_SER(fd))
+		return -1;
 
-		if (bytes_written < 0)
-			return -1;
-		if (tcdrain(fd) != 0)
-			return -2;
-		return i;
-	}
+	/*
+	 * NHS commands are declared as unsigned int arrays in the original
+	 * protocol code. Convert each element to the byte buffer expected by the
+	 * NUT serial API without changing command contents or framing.
+	 */
+	message = (uint8_t *)xcalloc(size, sizeof(*message));
+	for (i = 0; i < size; i++)
+		message[i] = (uint8_t)data[i];
+
+	/* Avoid per-byte delays unless serial_send_pace_us explicitly requests one. */
+	if (serial_send_pace_us == 0)
+		sent = ser_send_buf(fd, message, size);
 	else
-		return fd;
+		sent = ser_send_buf_pace(fd,
+			(useconds_t)serial_send_pace_us, message, size);
+
+	free(message);
+
+	/* A partial transmission is a communication failure, not a successful send. */
+	if (sent < 0 || (size_t)sent != size)
+		return -1;
+
+	return (int)sent;
 }
 
 #if 0
@@ -1704,20 +1917,27 @@ static unsigned int get_numbat(void) {
 	return retval;
 }
 
-/* Return serial_fd after the reconnection attempt, for easier calls */
-static int reconnect_ups_if_needed(void) {
+/*
+ * Return serial_fd after preserving the original bounded retry behavior.
+ * Reopened ports pass through openfd, so the same validated settings are
+ * restored after a communication failure.
+ */
+static TYPE_FD_SER reconnect_ups_if_needed(void) {
 	/* retries to open port */
 	static unsigned int	retries = 0;
 
 	/* If comms failed earlier, try to resuscitate */
-	if (serial_fd <= 0) {
+	if (INVALID_FD_SER(serial_fd)) {
 		upsdebugx(1, "%s: Serial port '%s' communications problem",
 			__func__, porta);
 
 		/* Uh oh, got to reconnect! */
 		dstate_setinfo("driver.state", "reconnect.trying");
 
-		while (serial_fd <= 0) {
+		/* Close any surviving handle and mark it invalid before reopening. */
+		close_serial_port();
+
+		while (INVALID_FD_SER(serial_fd)) {
 			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
 			serial_fd = openfd(porta, baudrate);
 			retries++;
@@ -1727,7 +1947,7 @@ static int reconnect_ups_if_needed(void) {
 			usleep(checktime);
 		}
 
-		if (serial_fd > 0) {
+		if (VALID_FD_SER(serial_fd)) {
 			if (retries > MAXTRIES) {
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
 			}
@@ -2233,41 +2453,55 @@ void upsdrv_updateinfo(void) {
 	upsdebugx(3, "%s: starting...", __func__);
 
 	/* If comms failed earlier, try to resuscitate */
-	if (reconnect_ups_if_needed() <= 0)
+	if (INVALID_FD_SER(reconnect_ups_if_needed()))
 		return;
 
-	/* Clean all read buffers to avoid errors:
-	 * To clean OUTPUT buffer is TCOFLUSH.
-	 * To both is TCIOFLUSH.
-	 * //tcflush(serial_fd, TCIFLUSH);
-	 *
-	 * Alternative implemented below - we might
-	 * potentially break off in the middle of
-	 * the read() loop and continue in the next
-	 * call to the method. In reality this is
-	 * unlikely.
-	 */
 	chr = '\0';
-	while (read(serial_fd, &chr, 1) > 0) {
-		if (chr == 0xFF) {	/* DataPacket start */
-			datapacketstart = true;
-			memset(datapacket, 0, sizeof(datapacket));
-			datapacket_index = 0;
-		}	/* end for */
-		if (datapacketstart) {
-			datapacket[datapacket_index] = chr;
-			datapacket_index++;
-			if (chr == 0xFE) {	/* DataPacket */
-				break;
+	{
+		ssize_t	read_result;
+
+		/* ser_get_char accepts separate seconds and microseconds components. */
+		time_t		timeout_sec = (time_t)(serial_read_timeout_ms / 1000);
+		useconds_t	timeout_usec =
+			(useconds_t)((serial_read_timeout_ms % 1000) * 1000);
+
+		/*
+		 * A positive result supplies one byte, zero is the configured normal
+		 * timeout, and a negative result is handled as a communication error.
+		 */
+		while ((read_result = ser_get_char(
+			serial_fd,
+			&chr,
+			timeout_sec,
+			timeout_usec
+		)) > 0) {
+			if (chr == 0xFF) {	/* DataPacket start */
+				datapacketstart = true;
+				memset(datapacket, 0, sizeof(datapacket));
+				datapacket_index = 0;
 			}
-			if (datapacket_index >= sizeof(datapacket)) {
-				upslogx(LOG_WARNING, "Incoming packet does not seem to end, discarding!");
-				datapacketstart = false;
-				/* // datapacket_index = 0; */
-				break;
+			if (datapacketstart) {
+				datapacket[datapacket_index] = chr;
+				datapacket_index++;
+				if (chr == 0xFE) {	/* DataPacket */
+					break;
+				}
+				if (datapacket_index >= sizeof(datapacket)) {
+					upslogx(LOG_WARNING, "Incoming packet does not seem to end, discarding!");
+					datapacketstart = false;
+					break;
+				}
 			}
 		}
-	}	/* end while read */
+
+		if (read_result < 0) {
+			upsdebug_with_errno(1, "%s: Serial read failed on %s",
+				__func__, porta);
+			close_serial_port();
+			dstate_datastale();
+			return;
+		}
+	}
 
 	if (chr != 0xFE || !datapacketstart) {
 		upsdebugx(2, "%s: packet reading did not finish, not interpreting yet", __func__);
@@ -2347,11 +2581,7 @@ void upsdrv_updateinfo(void) {
 			if (bwritten == -1) {
 				upsdebugx(1, "%s: Data problem", __func__);
 			}
-			if (bwritten == -2) {
-				upsdebugx(1, "%s: Flush problem", __func__);
-			}
-			close(serial_fd);
-			serial_fd = -1;
+			close_serial_port();
 		}	/* end if */
 		else {
 			if (checktime > max_checktime)
@@ -2380,10 +2610,7 @@ void upsdrv_shutdown(void) {
 void upsdrv_cleanup(void) {
 	upsdebugx(3, "%s: starting...", __func__);
 
-	if (serial_fd != -1) {
-		close(serial_fd);
-		serial_fd = -1;
-	}
+	close_serial_port();
 
 	upsdebugx(3, "%s: finished", __func__);
 }
@@ -2398,8 +2625,6 @@ void upsdrv_initups(void) {
 	 * you may be quickly going into upsdrv_shutdown next.
 	 */
 
-	char	*b = getval("baud");
-
 	upsdebugx(3, "%s: starting...", __func__);
 
 	/* Process optional configuration flags that may
@@ -2412,20 +2637,19 @@ void upsdrv_initups(void) {
 	if (getval("debug_pkt_hwinfo"))
 		debug_pkt_hwinfo = 1;
 
-	baudrate = DEFAULTBAUD;
+	/* Validate the complete serial configuration before accessing the device. */
+	parse_serial_options();
 
-	upsdebugx(1, "%s: Port is %s and baud_rate is %s",
-		__func__, device_path, NUT_STRARG(b));
+	upsdebugx(1, "%s: Port is %s and baud_rate is %d",
+		__func__, device_path, baudrate);
 
-	if (b)
-		baudrate = atoi(b);
 	if (device_path) {
 		if (strcasecmp(device_path, "auto") == 0)
 			strncpy(porta, DEFAULTPORT, sizeof(porta) - 1);
 		else
 			strncpy(porta, device_path, sizeof(porta) - 1);
 		serial_fd = openfd(porta, baudrate);
-		if (serial_fd == -1)
+		if (INVALID_FD_SER(serial_fd))
 			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d",
 				porta, baudrate);
 		else {
@@ -2449,7 +2673,20 @@ void upsdrv_makevartable(void) {
 	/* Standard variable in main.c */
 	/* //addvar(VAR_VALUE, "port", "Port to communication"); */
 
-	addvar(VAR_VALUE, "baud", "Baud Rate from port");
+	/* Expose only the seven conventional serial settings supported above. */
+	addvar(VAR_VALUE, "baud", "Serial baud rate from the rates compiled into this driver (default: 2400)");
+
+	addvar(VAR_VALUE, "serial_data_bits", "Serial data bits: 5, 6, 7 or 8 (default: 8)");
+
+	addvar(VAR_VALUE, "serial_parity", "Serial parity: none, even or odd (default: none)");
+
+	addvar(VAR_VALUE, "serial_stop_bits", "Serial stop bits: 1 or 2 (default: 1)");
+
+	addvar(VAR_VALUE, "serial_flow_control", "Serial flow control: none, hardware, software or both (default: hardware)");
+
+	addvar(VAR_VALUE, "serial_read_timeout_ms", "Timeout per serial byte: 0 to 60000 ms (default: 100)");
+
+	addvar(VAR_VALUE, "serial_send_pace_us", "Delay between transmitted bytes: 0 to 999999 us (default: 0)");
 
 	addvar(VAR_VALUE, "ah", "Battery discharge capacity in Ampere/hour");
 
@@ -2477,7 +2714,9 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "vbat", help);
 
 	addvar(VAR_FLAG, "debug_pkt_raw", "Enable debug logging of packet bytes");
+
 	addvar(VAR_FLAG, "debug_pkt_data", "Enable debug logging of data packet decoding");
+
 	addvar(VAR_FLAG, "debug_pkt_hwinfo", "Enable debug logging of hwinfo packet decoding");
 }
 

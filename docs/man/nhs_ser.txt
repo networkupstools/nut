@@ -32,7 +32,29 @@ EXTRA ARGUMENTS
 This driver also supports the following optional settings:
 
 *baud*='num'::
-Set the value of serial port baud rate (default: 2400)
+Set the serial port baud rate. The value must be one of the rates available
+in the current build (default: 2400).
+
+*serial_data_bits*='num'::
+Set the number of data bits to 5, 6, 7, or 8 (default: 8).
+
+*serial_parity*='value'::
+Set serial parity to `none`, `even`, or `odd` (default: `none`).
+
+*serial_stop_bits*='num'::
+Set the number of stop bits to 1 or 2 (default: 1).
+
+*serial_flow_control*='value'::
+Set serial flow control to `none`, `hardware`, `software`, or `both`
+(default: `hardware`).
+
+*serial_read_timeout_ms*='num'::
+Set the timeout for reading each byte, in milliseconds. Values from 0 to
+60000 are accepted; 0 requests a non-blocking read (default: 100).
+
+*serial_send_pace_us*='num'::
+Set the delay between transmitted bytes, in microseconds. Values from 0 to
+999999 are accepted; 0 disables transmission pacing (default: 0).
 
 *ah*='num'::
 Battery discharge capacity in Ampere/hour.

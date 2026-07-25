@@ -63,6 +63,12 @@ https://github.com/networkupstools/nut/milestone/13
      authentication configuration discovery. It accepts `default`, `none`,
      or a specific authconf file path. [issue #3329]
 
+ - `nhs_ser` driver updates:
+    * Modernized serial communication and added validated settings for baud
+      rate, data bits, parity, stop bits, flow control, per-byte read timeout,
+      and transmission pacing. Also improved serial resource handling and
+      reconnection behavior. [issue #3510, PR #3543]
+
  - `nutdrv_qx` driver updates:
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
