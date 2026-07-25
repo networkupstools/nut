@@ -125,6 +125,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Completed support for NUT standard USB configuration options, and fixed
       some problems possible when iterating devices. [issue #1768, PR #3477]
 
+ - `riello_usb`, `riello_ser` driver updates:
+	* riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
