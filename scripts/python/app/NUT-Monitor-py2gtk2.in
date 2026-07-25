@@ -130,6 +130,8 @@ class interface :
     __password_manually_edited       = False
     __login_suggested                = False
     __password_suggested             = False
+    __auth_check_suggested           = False
+    __auth_suggestions_suppressed    = False
 
     def __init__( self ) :
 
@@ -328,8 +330,9 @@ class interface :
                 self.__password_manually_edited = False
                 self.__password_suggested = True
 
-            self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
-            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
+            self.__auth_check_suggested = self.__login_suggested and self.__password_suggested
+            self.__widgets["ups_authentication_check"].set_active(self.__auth_check_suggested)
+            self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__auth_check_suggested )
 
         self.gui_status_message( _("Welcome to NUT Monitor") )
 
@@ -369,16 +372,24 @@ class interface :
         self.__check_gui_fields()
 
     def __on_auth_check_changed( self, widget=None ) :
+        self.__auth_check_suggested = False
         checked = self.__widgets["ups_authentication_check"].get_active()
+        self.__auth_suggestions_suppressed = not checked
         if not checked :
             # If user unchecks, we clear suggestions so it doesn't immediately re-check
             if self.__login_suggested :
                 self.__login_suggested = False
+                self.__widgets["ups_authentication_login"].handler_block_by_func(self.__on_login_changed)
                 self.__widgets["ups_authentication_login"].set_text("")
+                self.__widgets["ups_authentication_login"].handler_unblock_by_func(self.__on_login_changed)
+                self.__login_manually_edited = False
                 self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
             if self.__password_suggested :
                 self.__password_suggested = False
+                self.__widgets["ups_authentication_password"].handler_block_by_func(self.__on_password_changed)
                 self.__widgets["ups_authentication_password"].set_text("")
+                self.__widgets["ups_authentication_password"].handler_unblock_by_func(self.__on_password_changed)
+                self.__password_manually_edited = False
                 self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
         self.__check_gui_fields()
 
@@ -396,67 +407,92 @@ class interface :
         except:
             port = 3493
 
-        # If not manually edited and was suggested, check if it still matches authconf for current host/port
-        if not self.__login_manually_edited and not self.__password_manually_edited:
-            ac = PyNUT.AuthConf.getAuthConf(host=host, port=port)
-            if self.__login_suggested:
-                if not ac or not ac.user:
-                    self.__widgets["ups_authentication_login"].set_text("")
-                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
+        login = self.__widgets["ups_authentication_login"].get_text()
+        ac_no_user = PyNUT.AuthConf.getAuthConf(host=host, port=port)
 
-                    # (Re-)Set these AFTER on*changed handlers might
-                    # by default assume the field was edited by user!
+        # If not manually edited and was suggested, check if it still matches authconf for current host/port/user
+        if not self.__login_manually_edited and not self.__auth_suggestions_suppressed:
+            if self.__login_suggested:
+                if not ac_no_user or not ac_no_user.user:
+                    self.__widgets["ups_authentication_login"].handler_block_by_func(self.__on_login_changed)
+                    self.__widgets["ups_authentication_login"].set_text("")
+                    self.__widgets["ups_authentication_login"].handler_unblock_by_func(self.__on_login_changed)
+                    self.__set_suggested_style( self.__widgets["ups_authentication_login"], False )
                     self.__login_manually_edited = False
                     self.__login_suggested = False
-                elif ac.user != self.__widgets["ups_authentication_login"].get_text():
-                    # Re-populate if it matches a different entry for this host/port
-                    self.__widgets["ups_authentication_login"].set_text(ac.user)
+                elif ac_no_user.user != self.__widgets["ups_authentication_login"].get_text():
+                    self.__widgets["ups_authentication_login"].handler_block_by_func(self.__on_login_changed)
+                    self.__widgets["ups_authentication_login"].set_text(ac_no_user.user)
+                    self.__widgets["ups_authentication_login"].handler_unblock_by_func(self.__on_login_changed)
                     self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
                     self.__login_manually_edited = False
                     self.__login_suggested = True
-            elif ac and ac.user:
-                # Re-populate if it matches a different entry for this host/port
-                self.__widgets["ups_authentication_login"].set_text(ac.user)
+            elif ac_no_user and ac_no_user.user:
+                self.__widgets["ups_authentication_login"].handler_block_by_func(self.__on_login_changed)
+                self.__widgets["ups_authentication_login"].set_text(ac_no_user.user)
+                self.__widgets["ups_authentication_login"].handler_unblock_by_func(self.__on_login_changed)
                 self.__set_suggested_style( self.__widgets["ups_authentication_login"], True )
                 self.__login_manually_edited = False
                 self.__login_suggested = True
 
-            if self.__password_suggested:
-                if not ac or not ac.password:
+        # Now re-evaluate password suggestion based on potentially updated login
+        login = self.__widgets["ups_authentication_login"].get_text()
+        ac = PyNUT.AuthConf.getAuthConf(user=login, host=host, port=port)
+        # Look for direct hits
+        ac_user_match = PyNUT.AuthConf.findAuthConf(user=login, host=host, port=port)
+        if not ((ac_no_user and ac_no_user.user == login) or
+                (ac_user_match and ac_user_match.section == ac.section)):
+            ac = None
+
+        # Ensure that if the entered username doesn't match anything, we clear suggested password
+        # (even if login itself was manually edited)
+        if not self.__password_manually_edited and not self.__auth_suggestions_suppressed:
+            if not ac or not ac.password:
+                if self.__password_suggested:
+                    self.__widgets["ups_authentication_password"].handler_block_by_func(self.__on_password_changed)
                     self.__widgets["ups_authentication_password"].set_text("")
+                    self.__widgets["ups_authentication_password"].handler_unblock_by_func(self.__on_password_changed)
                     self.__set_suggested_style( self.__widgets["ups_authentication_password"], False )
                     self.__password_manually_edited = False
                     self.__password_suggested = False
-                elif ac.password != self.__widgets["ups_authentication_password"].get_text():
-                    # Re-populate if it matches a different entry for this host/port
-                    self.__widgets["ups_authentication_password"].set_text(ac.password)
-                    self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
-                    self.__password_manually_edited = False
-                    self.__password_suggested = True
-            elif ac and ac.password:
-                # Re-populate if it matches a different entry for this host/port
+            elif self.__password_suggested and ac.password != self.__widgets["ups_authentication_password"].get_text():
+                # If it was suggested but now matches a different password (e.g. for a different user)
+                self.__widgets["ups_authentication_password"].handler_block_by_func(self.__on_password_changed)
                 self.__widgets["ups_authentication_password"].set_text(ac.password)
+                self.__widgets["ups_authentication_password"].handler_unblock_by_func(self.__on_password_changed)
+                self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
+                self.__password_manually_edited = False
+                self.__password_suggested = True
+            elif not self.__password_suggested and ac and ac.password:
+                # If not suggested yet but we found a match
+                self.__widgets["ups_authentication_password"].handler_block_by_func(self.__on_password_changed)
+                self.__widgets["ups_authentication_password"].set_text(ac.password)
+                self.__widgets["ups_authentication_password"].handler_unblock_by_func(self.__on_password_changed)
                 self.__set_suggested_style( self.__widgets["ups_authentication_password"], True )
                 self.__password_manually_edited = False
                 self.__password_suggested = True
 
-            # Only programmatically change checkbox if we HAVE a suggestion
-            if self.__login_suggested or self.__password_suggested:
+
+        # Automatically select authentication only for a complete credential suggestion.
+        if (self.__login_suggested and self.__password_suggested and
+                not self.__widgets["ups_authentication_check"].get_active()):
+            self.__widgets["ups_authentication_check"].handler_block_by_func(self.__on_auth_check_changed)
+            self.__widgets["ups_authentication_check"].set_active(True)
+            self.__widgets["ups_authentication_check"].handler_unblock_by_func(self.__on_auth_check_changed)
+            self.__auth_check_suggested = True
+
+        # Only retract an automatic selection. Editing either credential transfers
+        # control to the user and keeps authentication selected.
+        if self.__auth_check_suggested and not (self.__login_suggested and self.__password_suggested):
+            if self.__login_manually_edited or self.__password_manually_edited:
+                self.__auth_check_suggested = False
+            else:
                 self.__widgets["ups_authentication_check"].handler_block_by_func(self.__on_auth_check_changed)
-                self.__widgets["ups_authentication_check"].set_active(True)
+                self.__widgets["ups_authentication_check"].set_active(False)
                 self.__widgets["ups_authentication_check"].handler_unblock_by_func(self.__on_auth_check_changed)
+                self.__auth_check_suggested = False
 
-            # If we had suggestions but they are now gone,
-            # and user didn't manually edit anything, we
-            # should also uncheck the "Use authentication" box
-            if not self.__login_suggested and not self.__password_suggested:
-                if self.__widgets["ups_authentication_check"].get_active():
-                    self.__widgets["ups_authentication_check"].handler_block_by_func(self.__on_auth_check_changed)
-                    self.__widgets["ups_authentication_check"].set_active(False)
-                    self.__widgets["ups_authentication_check"].handler_unblock_by_func(self.__on_auth_check_changed)
-
-        # Only highlight the checkbox as suggested if it was all suggested
-        self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__login_suggested and self.__password_suggested )
+        self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__auth_check_suggested )
 
         # If UPS list contains something, clear it
         if self.__widgets["ups_list_combo"].get_active() != -1 :
@@ -551,8 +587,9 @@ class interface :
                         self.__password_manually_edited = False
                         self.__password_suggested = True
 
-                    self.__widgets["ups_authentication_check"].set_active(self.__login_suggested or self.__password_suggested)
-                    self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__widgets["ups_authentication_check"].get_active() )
+                    self.__widgets["ups_authentication_check"].set_active(self.__login_suggested and self.__password_suggested)
+                    self.__auth_check_suggested = self.__login_suggested and self.__password_suggested
+                    self.__set_suggested_style( self.__widgets["ups_authentication_check"], self.__auth_check_suggested )
 
         if self.__widgets["ups_authentication_check"].get_active() :
             login    = self.__widgets["ups_authentication_login"].get_text()
@@ -1334,6 +1371,18 @@ if __name__ == "__main__" :
          module.bindtextdomain( APP, DIR )
          module.textdomain( APP )
 
+    nut_debug_level = os.getenv("NUT_DEBUG_LEVEL", 0)
+    try:
+        nut_debug_level = int(nut_debug_level)
+    except ValueError:
+        nut_debug_level = 0
+    except TypeError:
+        nut_debug_level = 0
+
+    if nut_debug_level > 0:
+        PyNUT.debug = True
+        if nut_debug_level > 5:
+            PyNUT.AuthConf.setDebug(True)
+
     gui = interface()
     gtk.main()
-
