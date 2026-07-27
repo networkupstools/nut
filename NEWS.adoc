@@ -183,7 +183,7 @@ https://github.com/networkupstools/nut/milestone/13
       `tripplite_usb`, `usbhid-ups` (it is possible that for now some of them
       would log the situation twice, with old methods and the new, and that
       some would abort the program if reconnection attempt fails). [PR #3541]
-    * `belkin`, `bestfortress`, `genericups`, `powerpanel` drivers
+    * `belkin`, `bestfortress`, `genericups`, `powerpanel`, `tripplite` drivers
       introduced attempts to reconnect in case of failure, instead of just
       exiting right away or remaining in data stale mode indefinitely, also
       using `reconnect_trying()` for consistent reporting. They now track
