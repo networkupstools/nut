@@ -266,6 +266,7 @@ https://github.com/networkupstools/nut/milestone/13
  - `upssched` client/tool updates:
     * Fixed handling of `NOTIFYMSG` from command line if other arguments are
       present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
+    * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
