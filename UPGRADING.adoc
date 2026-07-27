@@ -74,6 +74,10 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   reading one ('none' as the legacy default). See the updated manual pages
   for more details. [issues #3329, #3411]
 
+- `powervar_cx_usb` driver used a built-in limit on reconnection
+  attempts after which it exited. This was revised to follow the new common
+  setting `reconnect_max_tries` which defaults to trying indefinitely. [#3541]
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 

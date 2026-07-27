@@ -49,7 +49,6 @@
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
-#define MAX_CNCT_ATTMPTS	60	/* x calls to upsdrv_updateinfo */
 
 /* Powervar */
 #define POWERVAR_VENDORID	0x4234
@@ -396,40 +395,27 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	int ret;
-	static int CnctAttempts = 0;
 
 	upsdebugx(3, "In upsdrv_updateinfo");
 
 	if (ReconnectFlag)
 	{
-		/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
 		reconnect_trying(RECONNECT_TRYING);
 		upslogx(LOG_WARNING, "USB device may be detached.");
-		upslogx(LOG_NOTICE, "USB reconnect attempt: %d.", ++CnctAttempts);
-		upsdebugx(4, "USB reconnect attempt: %d", CnctAttempts);
 
 		hd = NULL;
 
 		ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_something);
 		if (ret < 1)
 		{
-			if (CnctAttempts >= MAX_CNCT_ATTMPTS)
-			{
-				upsdebugx(4, "Exceeded max reconnect attemtps.");
-				fatalx(EXIT_FAILURE, "Exceeded max reconnect attempts.");
-			}
-			else
-			{
-				upslogx(LOG_INFO, "USB reconnect attempt %d failed.", CnctAttempts);
-				upslogx(LOG_INFO, "Will try another reconnect in a bit.");
-				dstate_datastale();
-				return;
-			}
+			upslogx(LOG_INFO, "USB reconnect attempt failed.");
+			upslogx(LOG_INFO, "Will try another reconnect in a bit.");
+			dstate_datastale();
+			return;
 		}
 
 		upsdebugx(4, "USB device reconnected!");
 		ReconnectFlag = 0;	/* Show good for now */
-		CnctAttempts = 0;
 
 		hd = &curDevice;
 
