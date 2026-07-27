@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.42"
+#define DRIVER_VERSION	"1.43"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -180,6 +180,20 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	upsdebugx(4, "%s: exit", __func__);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+	upslogx(LOG_WARNING, "Communications with UPS lost; attempting to re-establish the connection");
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	upsdrv_initinfo();
+
+	/* TOTHINK: Any data refresh and reconnect_trying(RECONNECT_UPDATEINFO) here? */
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_initinfo(void)
 {
 	char	*v;
@@ -231,7 +245,8 @@ void upsdrv_updateinfo(void)
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
 		ser_comm_fail("Status read failed");
-		dstate_datastale();
+		if (!reconnect_ups())
+			dstate_datastale();
 		return;
 	}
 
