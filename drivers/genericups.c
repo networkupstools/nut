@@ -187,9 +187,12 @@ static int reconnect_ups(void)
 
 	upsdrv_cleanup();
 	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
 	upsdrv_initinfo();
 
-	/* TOTHINK: Any data refresh and reconnect_trying(RECONNECT_UPDATEINFO) here? */
 	reconnect_trying(RECONNECT_SUCCESS);
 	return 1;
 }
@@ -452,6 +455,12 @@ void upsdrv_initups(void)
 
 	upsfd = ser_open(device_path);
 
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	if (tcgetattr(upsfd, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 	}
@@ -490,5 +499,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }
