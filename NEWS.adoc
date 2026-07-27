@@ -58,10 +58,6 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
- - `belkin`, `bestfortress`, `genericups`, `powerpanel` driver updates:
-    * Introduced attempts to reconnect in case of failure, instead of just
-      exiting right away or remaining in data stale mode indefinitely.
-      Track serial port file descriptor validity more diligently. [PR #3541]
 
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
@@ -179,8 +175,19 @@ https://github.com/networkupstools/nut/milestone/13
     * Introduced a `reconnect_max_tries` setting for NUT drivers, so they can
       be configured to exit after the specified number of reconnection attempts
       (so that the OS service management facility can completely recycle the
-      driver program). Multiple drivers updated to use the new facility to
-      consistently report `reconnect_trying()` states. [#3541]
+      driver program). Multiple drivers were updated to use the new facility
+      to consistently report `reconnect_trying()` states instead of what they
+      did before, including: `adelsystem_cbi`, `apc_modbus`, `apcsmart`,
+      `bcmxcp_usb`, `blazer_usb`, `generic_modbus`, `nhs_ser`, `nutdrv_qx`,
+      `powerman-pdu`, `powervar_cx_usb`, `richcomm_usb`, `riello_usb`,
+      `tripplite_usb`, `usbhid-ups` (it is possible that for now some of them
+      would log the situation twice, with old methods and the new, and that
+      some would abort the program if reconnection attempt fails). [PR #3541]
+    * `belkin`, `bestfortress`, `genericups`, `powerpanel` drivers
+      introduced attempts to reconnect in case of failure, instead of just
+      exiting right away or remaining in data stale mode indefinitely, also
+      using `reconnect_trying()` for consistent reporting. They now track
+      serial port file descriptor validity a bit more diligently. [PR #3541]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
