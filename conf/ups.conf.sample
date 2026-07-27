@@ -124,6 +124,13 @@ maxretry = 3
 #              indefinitely (e.g. data cable fell out, or the data path
 #              to a networked UPS was lost for a significant time).
 #
+# reconnect_report_freq: OPTIONAL.  This can be set as a global variable
+#              above your first UPS definition and it can also be set in a
+#              UPS section, and used in conjunction with reconnect_max_tries
+#              to report progress (and on-going lack of success) every N
+#              attempts, to avoid flooding the logs.  A non-positive value
+#              disables such updates completely (default).
+#
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons
 #              and for the upsdrvctl tool (when specified at global level),
 #              or for this driver daemon (when specified in a driver section),

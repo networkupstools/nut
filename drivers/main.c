@@ -102,7 +102,7 @@ vartab_t	*vartab_h = NULL;
 time_t	poll_interval = 2;
 static char	*chroot_path = NULL, *user = NULL, *group = NULL;
 static int	user_from_cmdline = 0, group_from_cmdline = 0,
-		reconnect_max_tries = -1, reconnect_count = 0;
+		reconnect_max_tries = -1, reconnect_count = 0, reconnect_report_freq = -1;
 
 /* signal handling */
 int	exit_flag = 0;
@@ -1410,6 +1410,15 @@ static int main_arg(char *var, char *val)
 		}
 	}
 
+	if (!strcmp(var, "reconnect_report_freq")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_report_freq = intval;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_report_freq value found in ups.conf global settings");
+		}
+	}
+
 	/* only for upsdrvctl - ignored here */
 	if (!strcmp(var, "sdorder"))
 		return 1;	/* handled */
@@ -1591,6 +1600,17 @@ static void do_global_args(const char *var, const char *val)
 			reconnect_count = 0;
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid reconnect_max_tries value found in ups.conf global settings");
+		}
+
+		return;
+	}
+
+	if (!strcmp(var, "reconnect_report_freq")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_report_freq = intval;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_report_freq value found in ups.conf global settings");
 		}
 
 		return;
@@ -2260,6 +2280,10 @@ int reconnect_trying(reconnect_state_t trying) {
 						"max %d attempts, then will exit",
 						upsname, reconnect_max_tries);
 				}
+			} else if (reconnect_report_freq > 0 && (reconnect_count % reconnect_report_freq) == 0) {
+				upslogx(LOG_WARNING, "Driver still reconnecting "
+					"to the device [%s] for %d attempts",
+					upsname, reconnect_count);
 			}
 
 			if (reconnect_count < INT_MAX) {
