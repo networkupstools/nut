@@ -58,6 +58,10 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+ - `belkin` driver updates:
+    * Introduced attempts to reconnect in case of failure, instead of just
+      exiting right away or remaining in data stale mode indefinitely. [#3541]
+
  - `dummy-ups` driver updates:
    * Added `authconf` driver parameter for repeater mode to control
      authentication configuration discovery. It accepts `default`, `none`,
