@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -600,7 +600,7 @@ static int get_ups_extended(void)
 	/* optional */
 	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get extended Ko: command not supported");
-		return 0;
+		return -1;
 	}
 
 	upsdebugx (3, "Get extended Ok: read byte: %d", recv);
