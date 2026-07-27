@@ -506,6 +506,13 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* set DTR to low and RTS to high */
@@ -594,7 +601,7 @@ static int reconnect_ups(void)
 	upsdrv_cleanup();
 	upsdrv_initups();
 
-	if (!init_driver_state(0)) {
+	if (INVALID_FD_SER(upsfd) || !init_driver_state(0)) {
 		dstate_datastale();
 		return 0;
 	}
@@ -606,5 +613,10 @@ static int reconnect_ups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }
