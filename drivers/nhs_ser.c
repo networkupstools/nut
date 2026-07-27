@@ -1942,19 +1942,21 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 			serial_fd = openfd(porta, baudrate);
 			retries++;
 			/* Try above at least once per main cycle */
-			if (retries >= MAXTRIES)
+			if (retries >= MAXTRIES) {
+				upsdebugx(1, "%s: serial port reopen failed", __func__);
 				break;
+			}
 			usleep(checktime);
 		}
 
 		if (VALID_FD_SER(serial_fd)) {
-			if (retries > MAXTRIES) {
+			if (retries > MAXTRIES && may_log_reconnect_trying(1)) {
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
 			}
 			retries = 0;
 			reconnect_trying(RECONNECT_SUCCESS);
 		} else {
-			if (retries == MAXTRIES) {
+			if (retries == MAXTRIES && may_log_reconnect_trying(1)) {
 				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
 			}
 			dstate_datastale();

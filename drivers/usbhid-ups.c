@@ -1391,13 +1391,15 @@ void upsdrv_updateinfo(void)
 	/* check for device availability to set datastale! */
 	if (reconnecting) {
 		/* don't flood reconnection attempts */
+		int	maylog;
 		if (now < (lastpoll + poll_interval)) {
 			return;
 		}
 
+		maylog = may_log_reconnect_trying(1);
 		reconnect_trying(RECONNECT_TRYING);
 		upsdebugx(1, "Got to reconnect!");
-		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
+		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0 && maylog) {
 			upsdebugx(0, "Reconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
 				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
 				"options section for this driver!");

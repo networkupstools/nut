@@ -384,21 +384,23 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
  */
 static int reconnect_ups(void)
 {
-	int ret;
+	int ret, maylog;
 
 	if (hd != NULL) {
 		return 1;
 	}
 
+	maylog = may_log_reconnect_trying(1);
 	reconnect_trying(RECONNECT_TRYING);
 
-	upsdebugx(2, "==================================================");
-	upsdebugx(2, "= device has been disconnected, try to reconnect =");
-	upsdebugx(2, "==================================================");
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
 
 	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_unitid);
 	if (ret < 1) {
-		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
+		if (maylog)
+			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
 		return 0;
 	}

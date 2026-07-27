@@ -400,16 +400,22 @@ void upsdrv_updateinfo(void)
 
 	if (ReconnectFlag)
 	{
+		int	maylog = may_log_reconnect_trying(1);
+
+		if (maylog)
+			upslogx(LOG_WARNING, "USB device may be detached.");
+
 		reconnect_trying(RECONNECT_TRYING);
-		upslogx(LOG_WARNING, "USB device may be detached.");
 
 		hd = NULL;
 
 		ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_something);
 		if (ret < 1)
 		{
-			upslogx(LOG_INFO, "USB reconnect attempt failed.");
-			upslogx(LOG_INFO, "Will try another reconnect in a bit.");
+			if (maylog) {
+				upslogx(LOG_INFO, "USB reconnect attempt failed.");
+				upslogx(LOG_INFO, "Will try another reconnect in a bit.");
+			}
 			dstate_datastale();
 			return;
 		}
@@ -419,7 +425,9 @@ void upsdrv_updateinfo(void)
 
 		hd = &curDevice;
 
-		upslogx(LOG_NOTICE, "USB reconnect successful");
+		if (maylog)
+			upslogx(LOG_NOTICE, "USB reconnect successful");
+
 		reconnect_trying(RECONNECT_UPDATEINFO);
 		upsdrv_initinfo();
 

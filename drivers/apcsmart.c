@@ -2402,7 +2402,8 @@ void upsdrv_updateinfo(void)
 
 		/* become aggressive after a few tries */
 		if (!(last_worked % 60)) {
-			upslogx(LOG_WARNING, "Trying to reconnect to the UPS");
+			upsdebugx(1, "%s: Trying to reconnect to the UPS", __func__);
+
 			reconnect_trying(RECONNECT_TRYING);
 
 			upsdebugx(1, "%s: call upsdrv_cleanup", __func__);

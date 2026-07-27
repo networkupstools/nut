@@ -183,7 +183,6 @@ static void parse_input_signals(const char *value, int *line, int *val)
 static int reconnect_ups(void)
 {
 	reconnect_trying(RECONNECT_TRYING);
-	upslogx(LOG_WARNING, "Communications with UPS lost; attempting to re-establish the connection");
 
 	upsdrv_cleanup();
 	upsdrv_initups();

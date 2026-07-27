@@ -53,7 +53,6 @@ upsdrv_info_t upsdrv_info = {
 static int reconnect_ups(void)
 {
 	reconnect_trying(RECONNECT_TRYING);
-	upslogx(LOG_WARNING, "Communications with UPS lost; attempting to re-establish the connection");
 
 	upsdrv_cleanup();
 	upsdrv_initups();

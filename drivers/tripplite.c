@@ -410,7 +410,6 @@ void upsdrv_shutdown(void)
 static int reconnect_ups(void)
 {
 	reconnect_trying(RECONNECT_TRYING);
-	upslogx(LOG_WARNING, "Communications with UPS lost; attempting to re-establish the connection");
 
 	upsdrv_cleanup();
 	upsdrv_initups();

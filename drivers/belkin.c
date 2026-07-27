@@ -229,11 +229,15 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		upslogx(LOG_WARNING, "Communications with UPS lost: status read failed; attempting reconnect");
+		if (may_log_reconnect_trying(0))
+			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed; attempting reconnect");
+
 		if (!reconnect_ups()) {
 			dstate_datastale();
+		} else {
+			/* Do not extra-log below */
+			retry = 0;
 		}
-		retry = 0;
 		return;
 	}
 
@@ -538,7 +542,9 @@ static int init_driver_state(int fatal_on_failure)
 				);
 		}
 
-		upslogx(LOG_WARNING, "Unable to re-establish communication with the Belkin UPS on port %s", device_path);
+		if (may_log_reconnect_trying(1))
+			upslogx(LOG_WARNING, "Unable to re-establish communication with the Belkin UPS on port %s", device_path);
+
 		return 0;
 	}
 
@@ -596,7 +602,6 @@ void upsdrv_initinfo(void)
 static int reconnect_ups(void)
 {
 	reconnect_trying(RECONNECT_TRYING);
-	upslogx(LOG_WARNING, "Communications with UPS lost; attempting to re-establish the connection");
 
 	upsdrv_cleanup();
 	upsdrv_initups();
