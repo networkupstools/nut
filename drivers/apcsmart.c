@@ -477,7 +477,7 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
 	}
 
-	if (INVALID_FD(upsfd))
+	if (INVALID_FD_SER(upsfd))
 		return 0;
 
 	if (flags & SER_D0) {
@@ -605,7 +605,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 	ssize_t ret;
 	errno = 0;
 
-	if (INVALID_FD(upsfd))
+	if (INVALID_FD_SER(upsfd))
 		return 0;
 
 	ret = ser_send_char(upsfd, code);
@@ -2301,6 +2301,13 @@ void upsdrv_initups(void)
 	}
 
 	upsfd = extrafd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	apc_ser_set();
 
 	/* fill length values */
@@ -2312,7 +2319,7 @@ void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
-	if (INVALID_FD(upsfd))
+	if (INVALID_FD_SER(upsfd))
 		return;
 
 	apc_flush(0);
@@ -2320,6 +2327,7 @@ void upsdrv_cleanup(void)
 	apc_write(APC_GODUMB);
 	apc_read(temp, sizeof(temp), SER_TO);
 	ser_close(upsfd, device_path);
+	upsfd = ERROR_FD_SER;
 }
 
 void upsdrv_initinfo(void)
@@ -2411,6 +2419,12 @@ void upsdrv_updateinfo(void)
 			upsdebugx(1, "%s: call upsdrv_initinfo", __func__);
 			/* dstate_setinfo("driver.state", "init.info"); */
 			upsdrv_initinfo();
+
+			if (INVALID_FD_SER(upsfd)) {
+				upsdebugx(1, "%s: upsfd remains invalid", __func__);
+				dstate_datastale();
+				return;
+			}
 
 			reconnect_trying(RECONNECT_UPDATEINFO);
 			upsdebugx(1, "%s: call upsdrv_updateinfo", __func__);
