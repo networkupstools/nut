@@ -2214,6 +2214,25 @@ void setup_signals(void)
 }
 #endif /* !WIN32*/
 
+/* Return 1 if driver can now report custom reconnection start/progress details */
+int may_log_reconnect_trying(int throttle_hit) {
+	if (reconnect_count > 0) {
+		/* Accounting reconnections already, no care about throttling - be quiet */
+		if (!throttle_hit || reconnect_report_freq < 1)
+			return 0;
+
+		/* At that point in throttling where we may talk */
+		if ((reconnect_count % reconnect_report_freq) == 0)
+			return 1;
+
+		/* Throttling - be quiet */
+		return 0;
+	}
+
+	/* Not counting yet, would be a first report */
+	return 1;
+}
+
 /* Called by a driver to either enter/continue a reconnection loop
  * (trying=1), almost done (trying=2), or to end it (trying=0).
  * Return how many attempts remain before driver exits (-1 if it won't).

@@ -134,6 +134,17 @@ typedef enum reconnect_state {
  */
 int reconnect_trying(reconnect_state_t trying);
 
+/** Return 1 if driver can now report custom reconnection start/progress
+ *  details, with common information to be logged by reconnect_trying(),
+ *  otherwise 0. If `throttle_hit!=0`, check if `reconnect_report_freq>0`
+ *  and `reconnect_count%reconnect_report_freq == 0` to allow a progress
+ *  report to be logged.
+ *
+ *  This method should be called before reconnect_trying(RECONNECT_TRYING)
+ *  bumps the counters involved.
+ */
+int may_log_reconnect_trying(int throttle_hit);
+
 /* Several helpers for driver configuration reloading follow:
  * * testval_reloadable() checks if we are currently reloading (or initially
  *   loading) the configuration, and if strings oldval==newval or not,
