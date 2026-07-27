@@ -279,8 +279,6 @@ static int is_smart_protocol(void)
 #define MAX_RECV_TRIES 10
 #define RECV_WAIT_MSEC 1000	/*!< was 100 for OMNIVS; SMARTPRO units need longer */
 
-#define MAX_RECONNECT_TRIES 10
-
 #define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /*!< seconds (max 0xFF) */
@@ -677,8 +675,6 @@ void upsdrv_initinfo(void);
  */
 static void usb_comm_fail(int res, const char *msg)
 {
-	static int try_num = 0;
-
 	switch(res) {
 		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING,
@@ -689,26 +685,18 @@ static void usb_comm_fail(int res, const char *msg)
 #endif
 
 		default:
-			reconnect_trying(RECONNECT_TRYING);
-			/* FIXME [#3541]: Clean up driver custom tracking and MAX tolerance */
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
 
-			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try_num);
 			hd = NULL;
 			reconnect_ups();
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
-				try_num = 0;
 				reconnect_trying(RECONNECT_UPDATEINFO);
 				upsdrv_initinfo();
 				reconnect_trying(RECONNECT_SUCCESS);
-			} else {
-				if(try_num > MAX_RECONNECT_TRIES) {
-					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
-				}
 			}
 			break;
 	}
