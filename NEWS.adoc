@@ -62,6 +62,10 @@ https://github.com/networkupstools/nut/milestone/13
     * Introduced attempts to reconnect in case of failure, instead of just
       exiting right away or remaining in data stale mode indefinitely. [#3541]
 
+ - `bestfortress` driver updates:
+    * Introduced attempts to reconnect in case of failure, instead of just
+      exiting right away or remaining in data stale mode indefinitely. [#3541]
+
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
       authentication configuration discovery. It accepts `default`, `none`,
