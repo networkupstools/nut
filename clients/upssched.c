@@ -1644,17 +1644,20 @@ static void start_daemon(TYPE_FD lockfd)
 	 * BOTH bInheritHandle=TRUE on the handle itself (set above) AND
 	 * bInheritHandles=TRUE in the CreateProcess() call below.
 	 *
-	 * NOTE for the developer applying this patch: passing a raw
-	 * HANDLE value across a process boundary via argv, encoded as
-	 * text, is somewhat unusual (a named/well-known event, or the
-	 * newer PROC_THREAD_ATTRIBUTE_HANDLE_LIST mechanism, are the more
-	 * modern alternatives) but is simple, requires no extra Windows
-	 * SDK version checks, and is a well-documented pattern for
-	 * inherited handle hand-off predating Vista-era API additions.
+	 * NOTE for the developers reading this years down the road:
+	 * passing a raw HANDLE value across a process boundary via argv,
+	 * encoded as text (with hex value), is somewhat unusual (because a
+	 * named/well-known event, or the newer PROC_THREAD_ATTRIBUTE_HANDLE_LIST
+	 * mechanism, are the more modern alternatives), but it is simple,
+	 * requires no extra Windows SDK version checks, and is a
+	 * well-documented pattern for inherited handle hand-off predating
+	 * Vista-era API additions.
 	 * strtoull()/"%llx" are used here for portability across the
 	 * MinGW-w64 and MSVC toolchains this project supports; please
 	 * double check this against the actual minimum supported
-	 * toolchain versions in this codebase's build files. */
+	 * toolchain versions in this codebase's build files, should
+	 * any target OS level ever get officially deprecated by the
+	 * NUT project. */
 	snprintf(ready_event_str, sizeof(ready_event_str), "%llx",
 		(unsigned long long)(uintptr_t)hReady);
 	snprintf(cmdline, sizeof(cmdline), "\"%s\" %s %s",
