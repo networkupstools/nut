@@ -2496,7 +2496,17 @@ static int conf_arg(size_t numargs, char **arg)
 #ifndef WIN32
 		pipefn = xstrdup(arg[1]);
 #else	/* WIN32 */
-		pipefn = xstrdup("\\\\.\\pipe\\upssched");
+		if (arg[1] && strlen(arg[1]) > 9
+		 && !strncmp(arg[1], "\\\\.\\pipe\\", 9)
+		) {
+			pipefn = xstrdup(arg[1]);
+		} else {
+			pipefn = xstrdup("\\\\.\\pipe\\upssched");
+			upslogx(LOG_WARNING, "%s: Invalid PIPEFN '%s' provided: "
+				"must start with '\\\\.\\pipe\\' for this platform; "
+				"falling back to default '%s'",
+				__func__, NUT_STRARG(arg[1]), pipefn);
+		}
 #endif	/* WIN32 */
 		return 1;
 	}
