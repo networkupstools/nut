@@ -171,6 +171,8 @@ https://github.com/networkupstools/nut/milestone/13
       chunks populated only partially with bytes we intended. These buffers are
       now more diligently pre-zeroed as their siblings were in other code paths,
       to avoid sending host stack garbage to a device. [#3529]
+    * USB drivers: fixed an out-of-bounds read of the candidate HID report
+      descriptor lengths, which could cause a segmentation fault. [PR #3550]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
