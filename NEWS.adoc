@@ -159,6 +159,10 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
+      is", complete with a confusing blank line where `\n` ended the message.
+      This is now passed through newly introduced `upsdebug_ascii_compact()`
+      method for better readability and more compact logs. [PR #3525]
     * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
       `connect()` to ensure a timeout if something does not respond. [PR #3456]
     * Windows driver state named pipes now use explicit security attributes
