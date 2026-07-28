@@ -807,7 +807,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			}
 		}
 
-		for (j = 0; j < sizeof(rdlens); j++) {
+		for (j = 0; j < SIZEOF_ARRAY(rdlens); j++) {
 			rdlen = rdlens[j];
 			if (rdlen < 0)
 				continue;
@@ -897,7 +897,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			break;
 		}
 
-		if (j >= sizeof(rdlens)) {
+		if (j >= SIZEOF_ARRAY(rdlens)) {
 			/* Ended the loop without success */
 			goto next_device;
 		}
