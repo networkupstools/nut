@@ -905,7 +905,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	va_end(ap);
 
 	buflen = strlen(buf);
-	upsdebugx(5, "%s: sending %" PRIuSIZE " bytes: [%s]", __func__, buflen, buf);
+	upsdebugx(5, "%s: sending %" PRIuSIZE " bytes:", __func__, buflen);
+	upsdebug_ascii(5, "send_to_one: buffer content: ", buf, buflen);
 
 	if (buflen >= SSIZE_MAX) {
 		/* Can't compare buflen to ret */
