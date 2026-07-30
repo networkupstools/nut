@@ -4,7 +4,7 @@
  *    2012 - 2024 Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
  *    2016 - 2021 - EATON - Various threads-related improvements
- *    2023 - 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ *    2023 - 2026 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,8 +63,25 @@
 #include "nutscan-device.h"
 #include "nutscan-ip.h"
 
-#ifdef WITH_IPMI
-#include <freeipmi/freeipmi.h>
+#if (defined WITH_IPMI) && WITH_IPMI
+# include <freeipmi/freeipmi.h>
+#endif
+
+#ifndef WITH_THREADING
+# define WITH_THREADING 0
+#endif
+
+#if !WITH_THREADING
+/* Not detected or actively disabled in configure script */
+# ifdef HAVE_PTHREAD
+#  undef HAVE_PTHREAD
+# endif
+# ifdef HAVE_SEMAPHORE_UNNAMED
+#  undef HAVE_SEMAPHORE_UNNAMED
+# endif
+# ifdef HAVE_SEMAPHORE_NAMED
+#  undef HAVE_SEMAPHORE_NAMED
+# endif
 #endif
 
 #ifdef HAVE_PTHREAD
@@ -185,6 +202,17 @@ typedef struct nutscan_usb {
 	int report_bcdDevice;
 } nutscan_usb_t;
 
+typedef struct nutscan_nut_authconf {
+	const char * authconf_file;	/* where to load authconf data from; "none" means to ignore auth config even if it exists */
+	useconds_t usec_timeout;	/* Wait this long for a response */
+	const char * port_string;	/* We can pass a port name like "nut" and resolve it inside */
+
+	/* Added for consistency with other structs; not used at the moment;
+	 * practically see also `struct nut_scan_arg` in `scan_nut.c`: */
+	const char * peername;
+	uint16_t port_number;
+} nutscan_nut_authconf_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
 nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_snmp_t * sec);
@@ -198,6 +226,8 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
 nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char * port, useconds_t usec_timeout);
+nutscan_device_t * nutscan_scan_nut_authconf(const char * startIP, const char * stopIP, nutscan_nut_authconf_t *sec);
+nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * irl, nutscan_nut_authconf_t *sec);
 
 nutscan_device_t * nutscan_scan_nut_simulation(void);
 
@@ -207,6 +237,8 @@ nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, 
 nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+
+nutscan_device_t * nutscan_scan_upower(void);
 
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)

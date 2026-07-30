@@ -4,7 +4,8 @@ UPSCLI_READLINE(3)
 NAME
 ----
 
-upscli_readline, upscli_readline_timeout - Read a single response from a UPS
+upscli_readline, upscli_readline_timeout,
+upscli_readline_timeout_may_disconnect - Read a single response from a UPS
 
 SYNOPSIS
 --------
@@ -17,6 +18,10 @@ SYNOPSIS
 
 	int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen,
 		const time_t timeout);
+
+	int upscli_readline_timeout_may_disconnect(UPSCONN_t *ups,
+		char *buf, size_t buflen, const time_t timeout,
+		int may_disconnect);
 ------
 
 DESCRIPTION
@@ -31,10 +36,12 @@ Some parsing of the string occurs during reception.  In particular,
 ERR messages from linkman:upsd[8] are detected and will cause this
 function to return '-1'.
 
-The difference between the two functions is that *upscli_readline_timeout()*
+The difference between the three functions is that *upscli_readline_timeout()*
 lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_readline()* does not offer this
-freedom, and uses NUT default network timeout (5 seconds).
+freedom, and uses NUT default network timeout (5 seconds). Both of these
+disconnect upon errors. The *upscli_readline_timeout_may_disconnect()*
+further allows to enable or disable such disconnections.
 
 RETURN VALUE
 ------------

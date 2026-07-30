@@ -1,0 +1,3 @@
+debian/tmp/lib/nut/phoenixcontact_modbus
+debian/tmp/lib/nut/generic_modbus
+debian/tmp/lib/nut/huawei-ups2000

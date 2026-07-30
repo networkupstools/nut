@@ -81,6 +81,7 @@ static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
 #  define timegm(tm) _mkgmtime(tm)
 # else
 #  ifdef WANT_TIMEGM_FALLBACK
+time_t timegm_fallback(struct tm const* t);
 	/* use an implementation from fallbacks in NUT codebase */
 #   define timegm(tm) timegm_fallback(tm)
 #  else

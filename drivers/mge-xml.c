@@ -132,7 +132,7 @@ typedef struct {
 	uint32_t xmlflags;	/* XML flags (to be used to determine what kind of variable this is */
 	size_t	xmllen;		/* length of the XML string */
 	const char	*(*convert)(const char *value);	/* conversion function from XML<->NUT value (returns
-						   NULL if no further processing is required) */
+							 * NULL if no further processing is required) */
 } xml_info_t;
 
 static const char *online_info(const char *arg_val)

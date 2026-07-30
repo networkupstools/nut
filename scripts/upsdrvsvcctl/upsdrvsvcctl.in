@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016-2018 Eaton
-# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ while [ $# -gt 0 ]; do
             ;;
         status)
             RES=0
-            STATUSES="`NUT_QUIET_INIT_BANNER=true "${UPSDRVCTL}" status $2`" || RES=$?
+            STATUSES="`NUT_QUIET_INIT_BANNER=true \"${UPSDRVCTL}\" status $2`" || RES=$?
             if [ x"${STATUSES}" = x ]; then
                 exit $RES
             fi
@@ -184,8 +184,8 @@ while [ $# -gt 0 ]; do
                     printf '%-'"${SVC_NAME_WIDTH}"'s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "SVC_NAME" "SVC_STATE" "$LINE"
                     continue
                 fi
-                DEV_NAME="`echo "$LINE" | awk '{print $1}'`"
-                SVC_NAME="`echo "$SVCINSTS" | awk '($NF == "'"${DEV_NAME}"'") {print $1}'`" && [ -n "$SVC_NAME" ] || SVC_NAME="N/A"
+                DEV_NAME="`echo \"$LINE\" | awk '{print $1}'`"
+                SVC_NAME="`echo \"$SVCINSTS\" | awk '($NF == \"'\"${DEV_NAME}\"'\") {print $1}'`" && [ -n "$SVC_NAME" ] || SVC_NAME="N/A"
                 if [ x"$SVC_NAME" = "N/A" ]; then
                     SVC_STATE="N/A"
                 else
@@ -196,7 +196,7 @@ while [ $# -gt 0 ]; do
                             ;;
                         systemd) SVC_STATE=""
                             CMDRES=0
-                            OUT="`$CMDREPORT is-enabled "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            OUT="`$CMDREPORT is-enabled \"${SVC_NAME}\" 2>/dev/null`" || CMDRES=$?
                             if [ x"$OUT" != x ] ; then SVC_STATE="${OUT}" ; else
                                 [ 0 = "$CMDRES" ] && SVC_STATE="enabled" || SVC_STATE="disabled"
                             fi
@@ -206,7 +206,7 @@ while [ $# -gt 0 ]; do
                             # The masked unit state has no separate query in some (all?)
                             # systemd versions and can be reported as part of the above
                             CMDRES=0
-                            OUT="`$CMDREPORT is-masked "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            OUT="`$CMDREPORT is-masked \"${SVC_NAME}\" 2>/dev/null`" || CMDRES=$?
                             if [ x"$OUT" != x ] ; then
                                 if [ x"${SVC_STATE}" != xmasked ] && [ x"${SVC_STATE}" != x"${OUT}" ] ; then
                                     SVC_STATE="${SVC_STATE},${OUT}"
@@ -216,7 +216,7 @@ while [ $# -gt 0 ]; do
                             fi
 
                             CMDRES=0
-                            OUT="`$CMDREPORT is-active "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            OUT="`$CMDREPORT is-active \"${SVC_NAME}\" 2>/dev/null`" || CMDRES=$?
                             if [ x"$OUT" != x ] ; then
                                 SVC_STATE="${SVC_STATE},${OUT}"
                             else
@@ -224,7 +224,7 @@ while [ $# -gt 0 ]; do
                             fi
 
                             CMDRES=0
-                            OUT="`$CMDREPORT is-failed "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            OUT="`$CMDREPORT is-failed \"${SVC_NAME}\" 2>/dev/null`" || CMDRES=$?
                             if [ x"$OUT" != x ] ; then
                                 if [ x"${OUT}" != xactive ] && [ x"${OUT}" != xinactive ] ; then
                                     SVC_STATE="${SVC_STATE},${OUT}"
@@ -242,7 +242,7 @@ while [ $# -gt 0 ]; do
         start|stop)
             ACTION="$1"
             if [ -n "$2" ] ; then
-                SVCINST="`$ENUMERATOR --get-service-for-device "$2"`" || exit
+                SVCINST="`$ENUMERATOR --get-service-for-device \"$2\"`" || exit
                 shift
             fi
             ;;

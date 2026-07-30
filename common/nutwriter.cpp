@@ -5,7 +5,7 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-    Copyright (C) 2024-2025 NUT Community
+    Copyright (C) 2024-2026 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -399,6 +399,7 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"COMMOK",	// NOTIFY_COMMOK
 	"COMMBAD",	// NOTIFY_COMMBAD
 	"SHUTDOWN",	// NOTIFY_SHUTDOWN
+	"SHUTDOWN_HOSTSYNC",	// NOTIFY_SHUTDOWN_HOSTSYNC
 	"REPLBATT",	// NOTIFY_REPLBATT
 	"NOCOMM",	// NOTIFY_NOCOMM
 	"NOPARENT",	// NOTIFY_NOPARENT
@@ -420,6 +421,7 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"NOTBOOST",	// NOTIFY_NOTBOOST
 	"OTHER",	// NOTIFY_OTHER
 	"NOTOTHER",	// NOTIFY_NOTOTHER
+	"SUSPEND_TIMEJUMP_UNEXPECTED",	// NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED
 	"SUSPEND_STARTING",	// NOTIFY_SUSPEND_STARTING
 	"SUSPEND_FINISHED",	// NOTIFY_SUSPEND_FINISHED
 };

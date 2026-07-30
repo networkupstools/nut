@@ -1,6 +1,7 @@
 #!/bin/sh
 #	install.sh
 #	Copyright (c) 2013-2016, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #	A shell script which installs IPP - Unix
 #	It installs the native package then runs NUT configuration tools
 #	to create an initial configuration and finally run the service.
@@ -9,6 +10,9 @@
 PATH="$PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/ccs/bin:/usr/xpg4/bin:/usr/xpg6/bin"
 export PATH
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 NUT_PACKAGE_SOLARI="NUT_solaris_sparc_package2.6.5.local"
 NUT_PACKAGE_SOLINT="NUT_solaris_i386_package2.6.5.local"
@@ -45,7 +49,7 @@ NUT_PORT="3493"
 
 ADMIN_FILE="/tmp/ipp_admin_file"
 
-cd "`dirname $0`"
+cd "`dirname \"$0\"`"
 
 . "$COMMON_DIR/string.sh"
 
@@ -539,14 +543,14 @@ initial_configure () {
 	chmod 640 "$instpath/etc/upsd.users" >> "$LOG_FILE" 2>&1
 
 	# Report the SHUTDOWNSCRIPT_CUSTOM value or that it is missing
-	_VAR="`egrep '^[ \t]*SHUTDOWNSCRIPT_CUSTOM=' "$instpath/etc/ipp.conf" 2>/dev/null`" || CC_SHUTDOWNSCRIPT_CUSTOM=""
+	_VAR="`${EGREP} '^[ \t]*SHUTDOWNSCRIPT_CUSTOM=' \"$instpath/etc/ipp.conf\" 2>/dev/null`" || CC_SHUTDOWNSCRIPT_CUSTOM=""
 	if [ -n "${_VAR}" ] ; then
-		_VAR="`echo "${_VAR}" | sed 's,^[ \t]*SHUTDOWNSCRIPT_CUSTOM=,,'`"
-		_VAR="`echo "${_VAR}" | sed -e 's,^"\(.*\)"$,\1,g' -e "s,^\'\(.*\)\'$,\1,g"`"
+		_VAR="`echo \"${_VAR}\" | sed 's,^[ \t]*SHUTDOWNSCRIPT_CUSTOM=,,'`"
+		_VAR="`echo \"${_VAR}\" | sed -e 's,^\"\(.*\)\"$,\1,g' -e \"s,^\'\(.*\)\'$,\1,g\"`"
 		case "${_VAR}" in
-			*NUT_DIR*) _VAR1="`egrep '^[^\#]*NUT_DIR=' "$instpath/etc/ipp.conf" 2>/dev/null`" \
-				&& [ -n "${_VAR1}" ] && _VAR1="`eval $_VAR1 && echo "$NUT_DIR"`" && [ -n "${_VAR1}" ] \
-				&& _VAR2="`NUT_DIR="${_VAR1}" ; eval echo "${_VAR}"`" \
+			*NUT_DIR*) _VAR1="`${EGREP} '^[^\#]*NUT_DIR=' \"$instpath/etc/ipp.conf\" 2>/dev/null`" \
+				&& [ -n "${_VAR1}" ] && _VAR1="`eval $_VAR1 && echo \"$NUT_DIR\"`" && [ -n "${_VAR1}" ] \
+				&& _VAR2="`NUT_DIR=\"${_VAR1}\" ; eval echo \"${_VAR}\"`" \
 				&& [ -n "${_VAR2}" ] && _VAR="${_VAR2}" ;;
 		esac
 		if [ -n "${_VAR}" ] && [ -s "${_VAR}" ] && [ -x "${_VAR}" ]; then
@@ -585,8 +589,8 @@ display_device () {
 
 	while [ "$DISP_COUNTER" -le "$C_NUM_DEV" ]; do
 		eval TMP=\$C_DEVICE"$DISP_COUNTER"
-#		DEV_TYPE="`printf "${DISP_COUNTER}- $TMP" | awk   -F' ' '{print \$2}'`"
-		DEV_CONF="`echo "$TMP" | awk   -F' ' '{print \$3}'`"
+#		DEV_TYPE="`printf \"${DISP_COUNTER}- $TMP\" | awk   -F' ' '{print \$2}'`"
+		DEV_CONF="`echo \"$TMP\" | awk   -F' ' '{print \$3}'`"
 		echo " " "$DISP_COUNTER". "$DEV_TYPE" "$DEV_CONF"
 		DISP_COUNTER="`expr $DISP_COUNTER + 1`"
 	done
@@ -753,7 +757,7 @@ choose_esd_timer() {
 		read_def $CS_ESDTIMER_2 "$C_SHUTDOWN_TIMER"
 		#Check if this is a valid number
 		if [ "$answer" = "" ]; then answer="-1"; fi
-		if echo "$answer" | egrep '^\-*[0-9]+$' > /dev/null 2>&1 ; then
+		if echo "$answer" | ${EGREP} '^\-*[0-9]+$' > /dev/null 2>&1 ; then
 			#this is a number
 			if [ $answer -lt 0 ]; then
 				answer="-1"
@@ -778,7 +782,7 @@ choose_minsupplies() {
 	while [ "$answer" = "" ]; do
 		read_def $CS_MINSUP_2 $C_NUM_DEV
 		#Check if this is a valid number
-		if echo "$answer" | egrep '^[0-9]+$' > /dev/null 2>&1 ; then
+		if echo "$answer" | ${EGREP} '^[0-9]+$' > /dev/null 2>&1 ; then
 			#this is a number
 			if [ $answer -lt 1 ]; then
 				answer=""
@@ -857,7 +861,7 @@ choose_ask_scan_serial() {
 }
 
 choose_serial() {
-	serial_list="`$NUTCONF --scan-serial auto 2>> "$LOG_FILE"`"
+	serial_list="`$NUTCONF --scan-serial auto 2>> \"$LOG_FILE\"`"
 	if [ x"$serial_list" = x"" ]; then
 		echo
 		read_def $CS_ERR_NO_SERIAL ""
@@ -876,7 +880,7 @@ choose_serial() {
 
 	i="1"
 	for s in $serial_list; do
-		DEV_NAME="`echo "$s" | awk   -F' ' '{print \$3}'`"
+		DEV_NAME="`echo \"$s\" | awk   -F' ' '{print \$3}'`"
 		echo "                      $i. $DEV_NAME"
 		i="`expr $i + 1`"
 	done
@@ -919,7 +923,7 @@ choose_manual_serial () {
 	necho $CS_MANUAL_SERIAL_2
 	read_def $CS_MANUAL_SERIAL_3 ""
 
-	DEV="`$NUTCONF --scan-serial $answer 2>> "$LOG_FILE"`"
+	DEV="`$NUTCONF --scan-serial $answer 2>> \"$LOG_FILE\"`"
 
 	if [ "$DEV" = "" ]; then
 		read_def $CS_MANUAL_SERIAL_ERR ""
@@ -986,14 +990,14 @@ choose_xml() {
 	necho $CS_SNMP_6
 	echo
 
-	LIST_XML="`$NUTCONF --scan-xml-http 2>> "$LOG_FILE"`"
+	LIST_XML="`$NUTCONF --scan-xml-http 2>> \"$LOG_FILE\"`"
 	if [ "$LIST_XML" = "" ]; then
 		read_def $CS_SNMP_7 ""
 		choose_snmp
 		return $?
 	fi
 
-	LIST_XML="`echo "$LIST_XML" | sort`"
+	LIST_XML="`echo \"$LIST_XML\" | sort`"
 
 	echo
 
@@ -1005,8 +1009,8 @@ choose_xml() {
 	for s in $LIST_XML; do
 		#FIXME: If there is a comma in the description, the description
 		#will be shown up to this comma only.
-		IP_ADDR="`echo "$s" | awk   -F' ' '{print \$3}' | sed 's/http:\/\///g'`"
-		#DESC="`echo "$s" | awk   -F\" '{print $6}' | sed -e "s/^.*\"\(.*\)\".*$/\1/"`"
+		IP_ADDR="`echo \"$s\" | awk   -F' ' '{print \$3}' | sed 's/http:\/\///g'`"
+		#DESC="`echo \"$s\" | awk   -F\" '{print $6}' | sed -e \"s/^.*\"\(.*\)\".*$/\1/\"`"
 		echo "                      $i. $IP_ADDR"
 		i="`expr $i + 1`"
 	done
@@ -1076,9 +1080,9 @@ choose_snmp() {
 	necho $CS_SNMP_6
 	echo
 
-	list="`$NUTCONF --scan-snmp "$FIRST_IP" "$LAST_IP" community="$C_COMMUNITY" 2>> "$LOG_FILE"`"
+	list="`$NUTCONF --scan-snmp \"$FIRST_IP\" \"$LAST_IP\" community=\"$C_COMMUNITY\" 2>> \"$LOG_FILE\"`"
 
-	list="`echo "$list" | sort`"
+	list="`echo \"$list\" | sort`"
 	echo
 
 	filter_snmp_list
@@ -1096,8 +1100,8 @@ choose_snmp() {
 	for s in $LIST_SNMP; do
 		#FIXME: If there is a comma in the description, the description
 		#will be shown up to this comma only.
-		IP_ADDR="`echo "$s" | awk   -F' ' '{print \$3}'`"
-		#DESC="`echo "$s" | awk   -F\" '{print $6}' | sed -e "s/^.*\"\(.*\)\".*$/\1/"`"
+		IP_ADDR="`echo \"$s\" | awk   -F' ' '{print \$3}'`"
+		#DESC="`echo \"$s\" | awk   -F\" '{print $6}' | sed -e \"s/^.*\"\(.*\)\".*$/\1/\"`"
 		echo "                      $i. $IP_ADDR"
 		i="`expr $i + 1`"
 	done
@@ -1141,17 +1145,17 @@ filter_snmp_list() {
 	IFS="
 "
 	for s in $list; do
-		IP_SNMP="`echo "$s" | awk   -F' ' '{print \$3}'`"
+		IP_SNMP="`echo \"$s\" | awk   -F' ' '{print \$3}'`"
 		TO_ADD="$s"
 		for x in $LIST_XML; do
-			IP_XML="`echo "$x" | awk   -F' ' '{print \$3}' | sed 's/http:\/\///g'`"
+			IP_XML="`echo \"$x\" | awk   -F' ' '{print \$3}' | sed 's/http:\/\///g'`"
 			if [ "$IP_SNMP" = "$IP_XML" ]; then
 				TO_ADD=""
 				break
 			fi
 		done
 		if [ ! "$TO_ADD" = "" ]; then
-			LIST_SNMP="`echo "$LIST_SNMP";echo "$TO_ADD"`"
+			LIST_SNMP="`echo \"$LIST_SNMP\";echo \"$TO_ADD\"`"
 		fi
 	done
 	IFS="$OLD1_IFS"
@@ -1181,7 +1185,7 @@ choose_server() {
 	necho $CS_SERVER_5
 	echo
 
-	list="`$NUTCONF --scan-nut "$FIRST_IP" "$LAST_IP" "$NUT_PORT" 2>> "$LOG_FILE"`"
+	list="`$NUTCONF --scan-nut \"$FIRST_IP\" \"$LAST_IP\" \"$NUT_PORT\" 2>> \"$LOG_FILE\"`"
 #TODO parse scan results
 	if [ "$list" = "" ]; then
 		read_def $CS_SERVER_6 ""
@@ -1196,7 +1200,7 @@ choose_server() {
 
 	i="1"
 	for s in $list; do
-		UPS="`echo "$s" | awk   -F' ' '{print \$3}'`"
+		UPS="`echo \"$s\" | awk   -F' ' '{print \$3}'`"
 		echo "                      $i. $UPS"
 		i="`expr $i + 1`"
 	done
@@ -1261,7 +1265,7 @@ get_networked_device() {
 	while [ "$NDEV" -lt "$C_NUM_DEV" ]; do
 		NDEV="`expr $NDEV + 1`"
 		eval TMP=\$C_DEVICE"$NDEV"
-		DRIVER="`echo "$TMP" | awk -F' ' '{print \$2}'`"
+		DRIVER="`echo \"$TMP\" | awk -F' ' '{print \$2}'`"
 		if [ "$DRIVER" = "netxml-ups" ]; then
 			C_NUM_NETWORK_DEVICE="`expr $C_NUM_NETWORK_DEVICE + 1`"
 		fi
@@ -1313,7 +1317,7 @@ choose_shutdown_duration() {
 	while [ "$answer" = "" ]; do
 		read_def $CS_SHUTOFF_DELAY_3 "$C_SHUTDOWN_DURATION"
 		#Check if this is a valid number
-		if echo "$answer" | egrep '^[0-9]+$' > /dev/null 2>&1; then
+		if echo "$answer" | ${EGREP} '^[0-9]+$' > /dev/null 2>&1; then
 			#this is a number, do nothing
 			sleep 0
 		else
@@ -1399,7 +1403,7 @@ set_ippconf_value() {
 	# Replaces a value in the installed ipp.conf which is an assignment
 	# of "$1='$2'" and which is not a comment (optional whitespace may
 	# be prepended in the present line, but will be removed in the end)
-	egrep -v '^[ \t]*('"$1"')=' "$instpath/etc/ipp.conf" \
+	${EGREP} -v '^[ \t]*('"$1"')=' "$instpath/etc/ipp.conf" \
 		> "$instpath/etc/ipp.conf.tmp" && \
 	echo "$1='$2'" >> "$instpath/etc/ipp.conf.tmp" && \
 	cat "$instpath/etc/ipp.conf.tmp" > "$instpath/etc/ipp.conf"
@@ -1419,7 +1423,7 @@ set_minsupplies() {
 
 set_debug_flag() {
 	# Keep an old value if it was set
-	egrep '^[ \t]*IPP_DEBUG=' "$instpath/etc/ipp.conf" >/dev/null || \
+	${EGREP} '^[ \t]*IPP_DEBUG=' "$instpath/etc/ipp.conf" >/dev/null || \
 		echo "IPP_DEBUG='$IPP_DEBUG'" >> "$instpath/etc/ipp.conf"
 }
 
@@ -1514,9 +1518,9 @@ apply_conf_client() {
 	$NUTCONF --set-user upsmon=slave password=upsmon 2>> "$LOG_FILE"
 
 	eval TMP=\$C_DEVICE$NDEV
-	DEV="`echo "$TMP" | awk -F' ' '{print \$3}'`"
-	UPS="`echo "$DEV" | awk -F'@' '{print \$1}'`"
-	HOST="`echo "$DEV"| awk -F'@' '{print \$2}'`"
+	DEV="`echo \"$TMP\" | awk -F' ' '{print \$3}'`"
+	UPS="`echo \"$DEV\" | awk -F'@' '{print \$1}'`"
+	HOST="`echo \"$DEV\"| awk -F'@' '{print \$2}'`"
 	# TODO: Here we assume that one UPS powers one input of the server
 	# Logically this can mismatch our setting of MINSUPPLIES if the user
 	# (later) specifies real powersource counts, and topology is not 1:1
@@ -1525,18 +1529,18 @@ apply_conf_client() {
 	while [ "$NDEV" -lt "$C_NUM_DEV" ]; do
 		NDEV="`expr $NDEV + 1`"
 		eval TMP=\$C_DEVICE$NDEV
-		DEV="`echo "$TMP" | awk -F' ' '{print \$3}'`"
-		UPS="`echo "$DEV" | awk -F'@' '{print \$1}'`"
-		HOST="`echo "$DEV"| awk -F'@' '{print \$2}'`"
+		DEV="`echo \"$TMP\" | awk -F' ' '{print \$3}'`"
+		UPS="`echo \"$DEV\" | awk -F'@' '{print \$1}'`"
+		HOST="`echo \"$DEV\"| awk -F'@' '{print \$2}'`"
 		$NUTCONF --add-monitor "${UPS}" "$HOST" 1 upsmon upsmon slave 2>> "$LOG_FILE"
 	done
 }
 
 split_device () {
 	eval TMP=\$C_DEVICE$NDEV
-	ID="`echo "$TMP" | awk -F' ' '{print \$1}'`"
-	DRIVER="`echo "$TMP" | awk -F' ' '{print \$2}'`"
-	PORT="`echo "$TMP" | awk -F' ' '{print \$3}'`"
+	ID="`echo \"$TMP\" | awk -F' ' '{print \$1}'`"
+	DRIVER="`echo \"$TMP\" | awk -F' ' '{print \$2}'`"
+	PORT="`echo \"$TMP\" | awk -F' ' '{print \$3}'`"
 }
 
 setup_tty () {
@@ -1548,12 +1552,14 @@ setup_tty () {
 
 set_device_monitor_user () {
 	NDEV=1
+	ROLE=master
+	#ROLE=primary
 
 	split_device
 
 	eval TMP=\$C_OPTION$NDEV
 	$NUTCONF --set-device "${ID}$NDEV" "$DRIVER" "$PORT" $TMP 2>> "$LOG_FILE"
-	$NUTCONF --set-monitor "${ID}$NDEV" localhost 1 upsmon upsmon master 2>> "$LOG_FILE"
+	$NUTCONF --set-monitor "${ID}$NDEV" localhost 1 upsmon upsmon "$ROLE" 2>> "$LOG_FILE"
 
 	echo "$PORT" | grep '^/dev/tty' >/dev/null && setup_tty "$PORT"
 
@@ -1562,13 +1568,13 @@ set_device_monitor_user () {
 		split_device
 		eval TMP=\$C_OPTION$NDEV
 		$NUTCONF --add-device "${ID}$NDEV" "$DRIVER" "$PORT" $TMP 2>> "$LOG_FILE"
-		$NUTCONF --add-monitor "${ID}$NDEV" localhost 1 upsmon upsmon master 2>> "$LOG_FILE"
+		$NUTCONF --add-monitor "${ID}$NDEV" localhost 1 upsmon upsmon "$ROLE" 2>> "$LOG_FILE"
 
 		echo "$PORT" | grep '^/dev/tty' >/dev/null && setup_tty "$PORT"
 	done
 
 	$NUTCONF --set-user admin password="$C_PASSWORD" actions=SET instcmds=all 2>> "$LOG_FILE"
-	$NUTCONF --add-user upsmon=master password=upsmon 2>> "$LOG_FILE"
+	$NUTCONF --add-user upsmon="$ROLE" password=upsmon 2>> "$LOG_FILE"
 }
 
 apply_conf_server() {
@@ -1788,7 +1794,7 @@ ret=TRUE
 	necho $WELCOME_STR1
 
 #	echo "         `pwd`/$0 Version 5.0.0"
-	lineStr="`head "-$STR_VERSION" $installres |tail -1`"
+	lineStr="`head \"-$STR_VERSION\" $installres |tail -1`"
 	#echo "         `pwd`/$0 $lineStr $lineStr1"
 	echo "                       $lineStr $IPP_VERSION"
 

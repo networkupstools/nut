@@ -2,6 +2,7 @@
 
 #init.d script to start nut services for IPP - Unix on Solaris
 #       Customizations copyright (c) 2015, by Eaton (R) Corporation. All rights reserved.
+#       Copyright (c) 2024-2025, by the Network UPS Tools project community.
 
 NUT_DIR="/usr/local/ups"
 

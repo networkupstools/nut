@@ -13,22 +13,62 @@ EXTRA_DIST = nit.sh README.adoc
 
 if WITH_CHECK_NIT
 check: check-NIT
-else
+else !WITH_CHECK_NIT
 check:
 	@echo "NO-OP: $@ in `pwd` is inactive by default. Run 'configure --enable-check-NIT' or 'make check-NIT' explicitly" >&2
-endif
+endif !WITH_CHECK_NIT
+
+# Paths possibly different from what automake provides (POSIXish)
+# when building on/for e.g. Windows. Matters where system() is used,
+# such as NIT suite using/testing upsdrvctl:
+ABS_TOP_SRCDIR = @ABS_TOP_SRCDIR@
+ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
+
+# Early in issue #1711 OpenSSL tests failed more often than we liked, so
+# this toggle was added.  It may still be useful for CI on some platforms.
+# Developers can run the script directly or override the make variable.
+#   no          Avoid the SSL test setup even if possible
+#   required-conditional    Require that the SSL tests are set up (NSS/OpenSSL
+#               tools are available and succeed to generate certificate stores)
+#               if NUT was built with SSL support
+#   required    Require that the SSL tests are set up always (e.g. fail if NUT
+#               was built without SSL support)
+#   best-effort(yes): Default: try to set up crypto if possible (tools are
+#               available, NUT built with SSL support) and run the tests in
+#               resulting conditions; skip if crypto setup fails (tools absent,
+#               rejected our commands/passwords, etc.). Tests still must pass.
+### if WITH_OPENSSL
+### WITH_SSL_TESTS = no
+### else !WITH_OPENSSL
+### WITH_SSL_TESTS = required-conditional
+WITH_SSL_TESTS = best-effort
+### endif !WITH_OPENSSL
 
 # Run in builddir, use script from srcdir
 # Avoid running "$<" - not all make implementations handle that
 check-NIT: $(abs_srcdir)/nit.sh
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
+	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
+	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
+	EXEEXT='$(EXEEXT)' \
+	WITH_SSL_TESTS='$(WITH_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
-# Make sure pre-requisites for NIT are fresh as we iterate
-check-NIT-devel: $(abs_srcdir)/nit.sh
+# Make sure pre-requisites for NIT are fresh as we iterate code.
+# NOTE: nut-scanner may be optional per `configure` settings,
+#  so we only ask for "all" there and let its Makefile decide.
+check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s generated-sources-with-a-touch
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
-	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
+	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT) upslog$(EXEEXT) upssched$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
+	+@cd "$(top_builddir)/scripts" && $(MAKE) $(AM_MAKEFLAGS) -s perl/UPS/Nut.pm
+	+@cd "$(top_builddir)/scripts/python/module/" && $(MAKE) $(AM_MAKEFLAGS) -s PyNUT.py test_nutclient.py
+	+@cd "$(top_builddir)/tools/nut-scanner" && $(MAKE) $(AM_MAKEFLAGS) -s all
+	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s cleanup-touchfiles-for-generated-headers
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 
 # Allow to override with make/env vars; provide sensible defaults (see nit.sh):
@@ -36,15 +76,24 @@ check-NIT-devel: $(abs_srcdir)/nit.sh
 NIT_CASE = testgroup_sandbox_upsmon_master
 NUT_PORT = 12345
 check-NIT-sandbox: $(abs_srcdir)/nit.sh
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	[ -n "$${DEBUG_SLEEP-}" ] && [ "$${DEBUG_SLEEP-}" -gt 0 ] || DEBUG_SLEEP=600 ; export DEBUG_SLEEP ; \
 	LANG=C LC_ALL=C TZ=UTC \
 	NUT_PORT=$(NUT_PORT) NIT_CASE="$(NIT_CASE)" NUT_FOREGROUND_WITH_PID=true \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
+	abs_srcdir='$(abs_srcdir)' abs_builddir='$(abs_builddir)' \
+	abs_top_srcdir='$(abs_top_srcdir)' abs_top_builddir='$(abs_top_builddir)' \
+	ABS_TOP_SRCDIR='$(ABS_TOP_SRCDIR)' ABS_TOP_BUILDDIR='$(ABS_TOP_BUILDDIR)' \
+	EXEEXT='$(EXEEXT)' \
+	WITH_SSL_TESTS='$(WITH_SSL_TESTS)' \
 	"$(abs_srcdir)/nit.sh"
 
-check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh
+check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+[ -n "$${DEBUG_SLEEP-}" ] && [ "$${DEBUG_SLEEP-}" -gt 0 ] || DEBUG_SLEEP=600 ; export DEBUG_SLEEP ; \
+	GREP="$(GREP)"; EGREP="$(EGREP)"; export GREP; export EGREP; \
 	LANG=C LC_ALL=C TZ=UTC \
 	NUT_PORT=$(NUT_PORT) NIT_CASE="$(NIT_CASE)" NUT_FOREGROUND_WITH_PID=true \
+	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	$(MAKE) $(AM_MAKEFLAGS) check-NIT-devel
 
 SPELLCHECK_SRC = README.adoc
@@ -53,20 +102,20 @@ SPELLCHECK_SRC = README.adoc
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
-#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 
-.sample.sample-spellchecked:
+.sample.sample-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-.in.in-spellchecked:
+.in.in-spellchecked: @dotMAKE@
 	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-spellcheck spellcheck-interactive spellcheck-sortdict:
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked

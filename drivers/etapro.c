@@ -55,7 +55,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -82,8 +82,8 @@ etapro_get_response(const char *resp_type)
 	unsigned int n, val;
 
 	/* Read until a newline is found or there is no room in the buffer.
-	   Unlike ser_get_line(), don't discard the following characters
-	   because we have to handle multi-line responses.  */
+	 * Unlike ser_get_line(), don't discard the following characters
+	 * because we have to handle multi-line responses.  */
 	n = 0;
 	while (ser_get_char(upsfd, (unsigned char *)&tmp[n], 1, 0) == 1) {
 		if (n >= sizeof(tmp) - 1 || tmp[n] == '\n')
@@ -189,23 +189,30 @@ etapro_set_off_timer(unsigned int seconds)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		etapro_set_off_timer(1);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		etapro_set_on_timer(1);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
 		etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -285,7 +292,7 @@ upsdrv_updateinfo(void)
 	}
 
 	/* TODO: >= 1000VA models have a 24V battery (max 28V) - check
-	   the model string returned by the RI command.  */
+	 * the model string returned by the RI command.  */
 	battvolt = (14.0 / 255) * x;
 
 	x = etapro_get_response("SL");  /* load (on battery), 0xFF = 150% */
@@ -301,8 +308,8 @@ upsdrv_updateinfo(void)
 		return;
 	}
 	/* This is the time how long the UPS has been running on battery
-	   (in seconds, reset to zero after power returns), but there
-	   seems to be no variable defined for this yet...  */
+	 * (in seconds, reset to zero after power returns), but there
+	 * seems to be no variable defined for this yet...  */
 
 	status_init();
 
@@ -353,6 +360,12 @@ upsdrv_shutdown(void)
 
 void
 upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void
+upsdrv_tweak_prognames(void)
 {
 }
 

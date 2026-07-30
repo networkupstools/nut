@@ -86,7 +86,7 @@ Escaping special characters and quoting multiple-word elements is all
 handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
-NOTE: this does not apply to drivers.  Driver authors should use the
+NOTE: This does not apply to drivers.  Driver authors should use the
 `upsdrv_makevartable()` scheme to pick up values from 'ups.conf' file.
 Drivers should not have their own config files.
 
@@ -121,6 +121,25 @@ Portability
 Avoid things that will break on other systems.  All the world is not an
 x86 Linux box.
 
+ASCII vs. Unicode
+~~~~~~~~~~~~~~~~~
+
+Some systems that NUT can still be built on pre-date the sprawl of Unicode
+support, whether in compilers or in documentation management tooling.
+
+To err on the safe side, please avoid the multi-byte characters where
+plain-text ASCII suffices.  This is especially notable with computer-aided
+software development, whether with AI agents or IDE code completion,
+or when copying text from web sites or specifications, where all sorts of
+typographical "quote" and "dash" characters pop up.
+
+Keep it simple, use the ASCII minuses, single or double quotes, or back-tick
+characters as appropriate for your comments in C sources and headers, or in
+the Asciidoc sources (e.g. man pages).
+
+See the `tools/check-source-nonascii.pl` (also called from NUT `Makefile.am`
+recipes) for a simple check about this.
+
 C comments
 ~~~~~~~~~~
 
@@ -130,6 +149,21 @@ There are still older systems out there that don't do C++ style comments.
 /* Comments look like this. */
 // Not like this.
 --------------------------------------
+
+Complete method signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a method has intentionally no arguments, this should be explicit by
+specifying a `void` argument list in both declarations (header or top
+of a C source file for `static` methods) and implementations:
+
+-------------------------------------------------------------------------------
+/* Like this: */
+void good_stuff(void);
+
+/* NOT like this: */
+void bad_stuff();
+-------------------------------------------------------------------------------
 
 Variable declarations go on top
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -185,6 +219,38 @@ function do_stuff(void)
 	for (int i = 10; i < 15; ++i) { ... }
 }
 --------------------------------------------------------------------------------
+
+Variable length arrays
+~~~~~~~~~~~~~~~~~~~~~~
+
+We also avoid initialization of arrays using a variable (e.g. a method
+argument) as poorly portable to older compilers, and prefer explicitly
+allocated and freed buffers, if variable size is needed.
+
+This should be avoided:
+--------------------------------------------------------------------------------
+function avoid_vla(int len)
+{
+	char	*buf[len];
+...
+}
+--------------------------------------------------------------------------------
+
+This should be used instead (preferably with `size_t` arguments right away),
+be sure to `free()` anywhere you `return` from the function:
+--------------------------------------------------------------------------------
+int use_xcalloc(size_t len)
+{
+	char	*buf = xcalloc(len, sizeof(char));
+
+	if (!buf)
+		return -1;
+...
+	free(buf);
+	return 1;
+}
+--------------------------------------------------------------------------------
+
 
 Other hints
 ~~~~~~~~~~~
@@ -290,7 +356,8 @@ locations can be wiped by a careless `git clean -fdX`. You are advised
 to explore configuring your IDE to store project configurations outside
 the source codebase location, or to track such subdirectories as `nbproject`
 or `nb-cache` or `.idea` as a separate Git repository (not necessarily a
-submodule of NUT nor really diligently tracked) to avoid such surprises.
+submodule of NUT nor really diligently tracked) to avoid such surprises,
+e.g. `(cd nbproject && git init .)` can help.
 
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~
@@ -1172,7 +1239,7 @@ you can limit the depth of the clone:
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
 better (based off a recent release, see
-linkdoc:developer-guide[NUT Versioning,versioning,docs/nut-versioning.adoc]
+linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc]
 for more details):
 
 	:; cd nut
@@ -1402,12 +1469,14 @@ then advise which special environment variables to `export` in your situation
 and re-run it.
 ======
 
-Even if you do not use your distribution's packages of NUT, installing the
-distribution's list of build dependencies for NUT can reduce the amount of
-trial-and-error when installing dependencies. For instance, in Debian, you
-can run `apt-get build-dep nut` to install all of the auto* tools as well
-as any development libraries and headers -- as known for the version of NUT
-packaged with the OS distribution release you are using.
+Even if you do not use the official NUT packages provided by your
+OS distribution, installing the list of build dependencies and tools
+according to their recipes for NUT packaging can reduce the amount of
+trial-and-error when preparing for a custom build. For instance, in Debian
+and derived operating systems, you can run `apt-get build-dep nut` to
+install all of the auto* tools as well as any development libraries and
+headers -- as known for the version of NUT packaged with the OS distribution
+release you are using.
 
 After running `./autogen.sh`, you can pass your local configuration
 options to `./configure` and run `make` from the top-level directory.

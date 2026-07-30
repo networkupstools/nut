@@ -5,7 +5,7 @@
 
         Author: Emilien Kia <emilien.kia@gmail.com>
 
-    Copyright (C) 2024-2025 NUT Community
+    Copyright (C) 2024-2026 NUT Community
 
         Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
@@ -35,6 +35,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <utility>
 #include <cassert>
 
 
@@ -270,23 +271,23 @@ NutParser::Token NutParser::parseToken()
 				} else if (c == '[') {
 					token = Token(Token::TOKEN_BRACKET_OPEN, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == ']') {
 					token = Token(Token::TOKEN_BRACKET_CLOSE, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == ':' && !hasOptions(OPTION_IGNORE_COLON)) {
 					token = Token(Token::TOKEN_COLON, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '=') {
 					token = Token(Token::TOKEN_EQUAL, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '\r' || c == '\n') {
 					token = Token(Token::TOKEN_EOL, c);
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == '#') {
 					token.type = Token::TOKEN_COMMENT;
 					state = LEXPARSING_STATE_COMMENT;
@@ -318,7 +319,7 @@ NutParser::Token NutParser::parseToken()
 						token.str += '"';
 					} else {
 						popPos();
-						return token;
+						return Token(std::move(token));
 					}
 				} else if (c == '\\') {
 					if (escaped) {
@@ -333,10 +334,10 @@ NutParser::Token NutParser::parseToken()
 					/* WTF ? consider it as correct ? */
 					back();
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == 0) /* EOF */ {
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else /* Bad character ?? */ {
 					/* WTF ? Keep, Ignore ? */
 				}
@@ -355,7 +356,7 @@ NutParser::Token NutParser::parseToken()
 					} else {
 						back();
 						popPos();
-						return token;
+						return Token(std::move(token));
 					}
 				} else if (c == '\\') {
 					if (escaped) {
@@ -367,10 +368,10 @@ NutParser::Token NutParser::parseToken()
 				} else if (c == '\r' || c == '\n') /* EOL */{
 					back();
 					popPos();
-					return token;
+					return Token(std::move(token));
 				} else if (c == 0) /* EOF */ {
 					popPos();
-					return token;
+					return Token(std::move(token));
 				}else if (isgraph(c)) {
 					token.str += c;
 				} else /* Bad character ?? */ {
@@ -382,7 +383,7 @@ NutParser::Token NutParser::parseToken()
 			case LEXPARSING_STATE_COMMENT:
 			{
 				if (c == '\r' || c == '\n') {
-					return token;
+					return Token(std::move(token));
 				} else {
 					token.str += c;
 				}
@@ -416,7 +417,7 @@ NutParser::Token NutParser::parseToken()
 		}
 	}
 	popPos();
-	return token;
+	return Token(std::move(token));
 }
 
 std::list<NutParser::Token> NutParser::parseLine()
@@ -1044,15 +1045,13 @@ void GenericConfiguration::removeSection(const std::string & section)
 
 std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool caseSensitive) const
 {
-	std::string str;
-
 	ConfigParamList params;
 
 	if (!get(section, entry, params, caseSensitive))
-		return str;
+		return std::string();
 
 	if (params.empty())
-		return str;
+		return std::string();
 
 	return params.front();
 }
@@ -1315,6 +1314,8 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_COMMBAD;
 	else if(str=="SHUTDOWN")
 		return NOTIFY_SHUTDOWN;
+	else if(str=="SHUTDOWN_HOSTSYNC")
+		return NOTIFY_SHUTDOWN_HOSTSYNC;
 	else if(str=="REPLBATT")
 		return NOTIFY_REPLBATT;
 	else if(str=="NOCOMM")
@@ -1361,6 +1362,8 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_SUSPEND_STARTING;
 	else if(str=="SUSPEND_FINISHED")
 		return NOTIFY_SUSPEND_FINISHED;
+	else if(str=="SUSPEND_TIMEJUMP_UNEXPECTED")
+		return NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED;
 	else
 		return NOTIFY_TYPE_MAX;
 }
@@ -2110,5 +2113,76 @@ bool UpsdUsersConfiguration::writeTo(NutStream & ostream) const
 
 	return NutWriter::NUTW_OK == writer.writeConfig(*this);
 }
+
+
+NutAuthConfiguration::NutAuthConfiguration()
+	: GenericConfiguration()
+{
+}
+
+bool NutAuthConfiguration::parseFrom(NutStream &istream)
+{
+	return GenericConfiguration::parseFrom(istream);
+}
+
+bool NutAuthConfiguration::writeTo(NutStream &ostream) const
+{
+	return GenericConfiguration::writeTo(ostream);
+}
+
+
+NutAuthConfigParser::NutAuthConfigParser(const char *buffer)
+	: NutConfigParser(buffer), _config(nullptr), _currentSection("")
+{
+}
+
+NutAuthConfigParser::NutAuthConfigParser(const std::string &buffer)
+	: NutConfigParser(buffer), _config(nullptr), _currentSection("")
+{
+}
+
+void NutAuthConfigParser::parseNutAuthConfig(NutAuthConfiguration *config)
+{
+	_config = config;
+	parseConfig(config);
+}
+
+void NutAuthConfigParser::onParseBegin()
+{
+	_currentSection = "";
+}
+
+void NutAuthConfigParser::onParseComment(const std::string &)
+{
+}
+
+void NutAuthConfigParser::onParseSectionName(const std::string &sectionName, const std::string &)
+{
+	_currentSection = sectionName;
+}
+
+void NutAuthConfigParser::onParseDirective(const std::string &directiveName, char, const ConfigParamList &values, const std::string &)
+{
+	if (!_config) {
+		return;
+	}
+
+	if (values.empty()) {
+		return;
+	}
+
+	std::string section = _currentSection;
+	if (section.empty()) {
+		section = "*";
+	}
+
+	_config->set(section, directiveName, values);
+}
+
+void NutAuthConfigParser::onParseEnd()
+{
+	_config = nullptr;
+}
+
 
 } /* namespace nut */

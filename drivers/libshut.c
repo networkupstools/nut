@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.89"
+#define SHUT_DRIVER_VERSION	"0.90"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -373,7 +373,7 @@ static int libshut_open(
 	SHUTDevice_t *curDevice,
 	char *arg_device_path,
 	int (*callback)(usb_dev_handle arg_upsfd, SHUTDevice_t *hd,
-		            usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen))
+		usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen))
 {
 	int ret, res;
 	usb_ctrl_char buf[20] __attribute__((aligned(4)));
@@ -478,7 +478,7 @@ static int libshut_open(
 	if (res < 9)
 	{
 		upsdebugx(2, "DEVICE descriptor too short (expected %d, got %d)",
-		      USB_DT_DEVICE_SIZE, res);
+			USB_DT_DEVICE_SIZE, res);
 		return -1;
 	}
 
@@ -508,7 +508,7 @@ static int libshut_open(
 		fatal_with_errno(EXIT_FAILURE, "Out of memory");
 	}
 	upsdebugx(2, "%s: NOTE: BusPort is always zero with libshut", __func__);
-	sprintf(curDevice->BusPort, "%03d", 0);
+	snprintf(curDevice->BusPort, 4, "%03d", 0);
 #endif
 
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
@@ -725,9 +725,9 @@ static int libshut_get_report(
 	return shut_control_msg(arg_upsfd,
 		REQUEST_TYPE_GET_REPORT,
 		/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
-		 0x01,
-		 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-		 0, raw_buf, ReportSize, SHUT_TIMEOUT);
+		0x01,
+		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		0, raw_buf, ReportSize, SHUT_TIMEOUT);
 }
 
 /* return ReportSize upon success ; -1 otherwise */
@@ -876,7 +876,7 @@ int shut_synchronise(usb_dev_handle arg_upsfd)
 {
 	int retCode = 0;
 	unsigned char c = SHUT_SYNC_OFF, reply;
-	int try;
+	int try_num;
 
 	upsdebugx (2, "entering shut_synchronise()");
 	reply = '\0';
@@ -898,9 +898,9 @@ int shut_synchronise(usb_dev_handle arg_upsfd)
 	*/
 
 	/* Sync with the UPS according to notification */
-	for (try = 0; try < MAX_TRY; try++)
+	for (try_num = 0; try_num < MAX_TRY; try_num++)
 	{
-		upsdebugx (3, "Syncing communication (try %i)", try);
+		upsdebugx (3, "Syncing communication (try %i)", try_num);
 
 		if ((ser_send_char(arg_upsfd, c)) == -1)
 		{
@@ -1156,8 +1156,15 @@ static int shut_get_descriptor(
 		"entering shut_get_descriptor(n %02x, %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
 		type, size);
 
-	return shut_control_msg(arg_upsfd, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
-				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, SHUT_TIMEOUT);
+	return shut_control_msg(
+		arg_upsfd,
+		USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
+		USB_REQ_GET_DESCRIPTOR,
+		(type << 8) + index,
+		0,
+		(usb_ctrl_charbuf)buf,
+		size,
+		SHUT_TIMEOUT);
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */

@@ -4,7 +4,8 @@
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
-	2020-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2020-2026	Jim Klimov <jimklimov+nut@gmail.com>
+	2025		desertwitch <dezertwitsh@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,6 +43,7 @@
 #include "parseconf.h"
 #include "attribute.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 
 	static TYPE_FD	sockfd = ERROR_FD;
 #ifndef WIN32
@@ -50,7 +52,8 @@
 	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
 #endif	/* WIN32 */
-	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0,
+				alarm_legacy_status = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN],
 			buzzmode_buf[ST_MAX_VALUE_LEN];
 	static conn_t	*connhead = NULL;
@@ -58,6 +61,10 @@
 	static cmdlist_t	*cmdhead = NULL;
 
 	struct ups_handler	upsh;
+
+	/* Globally track if we are charging or losing power, and how fast */
+	double			previous_battery_charge_value = -1.0;
+	st_tree_timespec_t	previous_battery_charge_timestamp;
 
 #ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
@@ -77,24 +84,27 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	pwuser = getpwuid(getuid());
-
-	if (!pwuser) {
-		fatal_with_errno(EXIT_FAILURE, "getpwuid");
-	}
-
 	/* deal with some common problems */
 	switch (errno)
 	{
 	case EACCES:
-		printf("\nCurrent user: %s (UID %d)\n\n",
-			pwuser->pw_name, (int)pwuser->pw_uid);
+		pwuser = getpwuid(getuid());
+
+		if (pwuser) {
+			printf("\nCurrent user: %s (UID %" PRIiMAX ")\n\n",
+				NUT_STRARG(pwuser->pw_name),
+				(intmax_t)pwuser->pw_uid);
+		}
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
 			dflt_statepath());
-		printf(" - run this as some other user "
+		printf(" - run this program as some other user "
 			"(try -u <username>)\n");
+
+		if (!pwuser) {
+			fatal_with_errno(EXIT_FAILURE, "getpwuid");
+		}
 		break;
 
 	case ENOENT:
@@ -106,6 +116,18 @@ static void sock_fail(const char *fn)
 		printf("\nThings to try:\n\n");
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
+		break;
+
+	case EADDRINUSE:
+	case EADDRNOTAVAIL:
+		printf("\nThings to try:\n\n");
+		/* NOTE: Do not reformat indentation with TABs, to keep lines aligned for consistent editing */
+		printf(" - ps -ef | grep '%s'\t(Linux, GNU userland)\n"
+		       " - ps -xawwu | grep '%s'\t(BSD, Solaris, embedded)\n"
+		       "   To check if another copy of the driver is running; if not:\n\n",
+			progname, progname);
+		printf(" - ls -la %s\n   To check if a (non-socket) filesystem object already exists there\n\n", fn);
+		printf(" - rm -rf %s\n   To remove any offending files (a new driver instance creates its own)\n", fn);
 		break;
 
 	default:
@@ -171,31 +193,43 @@ static TYPE_FD sock_open(const char *fn)
 		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
+	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
+		__func__, fn);
 	fd = CreateNamedPipe(
-			fn,			/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
-			ST_SOCK_BUF_LEN,	/* output buffer size */
-			ST_SOCK_BUF_LEN,	/* input buffer size */
-			0,			/* client time-out */
-			NULL);			/* FIXME: default security attribute */
+		fn,			/* pipe name */
+		PIPE_ACCESS_DUPLEX	/* read/write access */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_BYTE
+		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		ST_SOCK_BUF_LEN,	/* output buffer size */
+		ST_SOCK_BUF_LEN,	/* input buffer size */
+		0,			/* client time-out */
+		&pipe_sa);
 
 	if (INVALID_FD(fd)) {
+		upsdebugx(1, "%s: Can't create a state socket "
+			"(windows named pipe) for listening: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
 	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
-	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
+	connect_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
 	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
@@ -213,17 +247,55 @@ static TYPE_FD sock_open(const char *fn)
 
 static void sock_disconnect(conn_t *conn)
 {
+	if (!conn) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		return;
+	}
+
+	conn->closing = 1;
+
 #ifndef WIN32
+# if 0
+	if (VALID_FD(conn->fd)) {
+		FILE	*f = fdopen(conn->fd, 600);
+		if (f) {
+			upsdebugx(4, "%s: flushing socket %d", __func__, (int)conn->fd);
+			setvbuf(f, NULL, _IONBF, 0);
+			fflush(f);
+		}
+	}
+# endif
 	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
 #else	/* WIN32 */
-	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right way to close a connection */
+	/* FIXME NUT_WIN32_INCOMPLETE not sure if this is the right
+	 *  way to close a connection, but was revised to match
+	 *  the wincompat::pipe_disconnect() implementation.
+	 * In practice at least dummy-ups tends to crash soon after
+	 * this with memory (re-)allocation troubles if send_to_one
+	 * failed (e.g. upsd killed at the right moment). May be an
+	 * MSYS2 platform problem though. */
+	if (conn->fd != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: flushing named pipe handle %p", __func__, conn->fd);
+		FlushFileBuffers(conn->fd);
+	}
+
 	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		upsdebugx(4, "%s: closing not-invalid named pipe read_overlapped event handle %p",
+			__func__, conn->read_overlapped.hEvent);
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
-	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
-	DisconnectNamedPipe(conn->fd);
+	if (conn->fd != INVALID_HANDLE_VALUE) {
+		upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
+		if (DisconnectNamedPipe(conn->fd) == 0)
+			upsdebug_with_errno(3, "%s: DisconnectNamedPipe failed");
+		upsdebugx(4, "%s: closing named pipe handle %p", __func__, conn->fd);
+		CloseHandle(conn->fd);
+		conn->fd = INVALID_HANDLE_VALUE;
+	} else {
+		upsdebugx(3, "%s: NOT disconnecting named pipe handle %p: already invalid", __func__, conn->fd);
+	}
 #endif	/* WIN32 */
 
 	upsdebugx(5, "%s: finishing parsing context", __func__);
@@ -246,6 +318,10 @@ static void sock_disconnect(conn_t *conn)
 	free(conn);
 }
 
+/** Iterate all connections to post a formatted string on them.
+ *  Clean up any connections found to be aborted during this cycle.
+ *  No return code.
+ */
 static void send_to_all(const char *fmt, ...)
 {
 	ssize_t	ret;
@@ -300,13 +376,13 @@ static void send_to_all(const char *fmt, ...)
 		DWORD bytesWritten = 0;
 		BOOL  result = FALSE;
 
-		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
-		if( result == 0 ) {
+		result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
+		if (result == 0) {
 			upsdebugx(2, "%s: write failed on handle %p, disconnecting", __func__, conn->fd);
-			sock_disconnect(conn);
+			conn->closing = 1;
 			continue;
 		}
-		else  {
+		else {
 			ret = (ssize_t)bytesWritten;
 		}
 #endif	/* WIN32 */
@@ -321,9 +397,9 @@ static void send_to_all(const char *fmt, ...)
 				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
-			upsdebugx(6, "%s: failed write: %s", __func__, buf);
+			upsdebug_ascii_compact(6, "send_to_all: failed to write buffer content: ", buf, buflen);
 
-			sock_disconnect(conn);
+			conn->closing = 1;
 
 			/* TOTHINK: Maybe fallback elsewhere in other cases? */
 			if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
@@ -333,16 +409,41 @@ static void send_to_all(const char *fmt, ...)
 				do_synchronous = 1;
 			}
 
+			/* Note: calls send_to_all() for connections alive
+			 *  at the moment (if any), so it was important to
+			 *  forget the failed one above: */
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
 			upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
-				"(ret=%" PRIiSIZE "): %s",
-				__func__, buflen, conn->fd, ret, buf);
+				"(ret=%" PRIiSIZE "):",
+				__func__, buflen, conn->fd, ret);
+			upsdebug_ascii_compact(6, "send_to_all: buffer content: ", buf, buflen);
 		}
 	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
+			conn = NULL;
+		}
+	}
+
+	errno = 0;
 }
 
+/**
+ * Send a formatted string to one given connection.
+ *
+ * @param conn
+ * @param fmt
+ * @param ...
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty formatting string)
+ */
 static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
 	ssize_t	ret;
@@ -353,6 +454,12 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 #endif	/* WIN32 */
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;	/* failed and freed */
+	}
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -374,7 +481,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 	va_end(ap);
 
-	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
+	upsdebugx(2, "%s: sending (got %" PRIiSIZE " from vsnprintf): %.*s",
+		__func__, ret, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -384,6 +492,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (buflen >= SSIZE_MAX) {
 		/* Can't compare buflen to ret... though should not happen with ST_SOCK_BUF_LEN */
 		upslog_with_errno(LOG_NOTICE, "%s failed: buffered message too large", __func__);
+		errno = ENOMEM;
 		return 0;	/* failed */
 	}
 
@@ -391,18 +500,19 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
 /*
-	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d: %s",
-		__func__, buflen, conn->fd, buf);
+	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d:",
+		__func__, buflen, conn->fd);
+	upsdebug_ascii_compact(0, "send_to_one buffer: content: ", buf, buflen);
 */
 
 #ifndef WIN32
 	ret = write(conn->fd, buf, buflen);
 #else	/* WIN32 */
-	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
-	if( result == 0 ) {
-		ret = 0;
+	result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
+	if (result == 0) {
+		ret = -1;	/* wait and retry below */
 	}
-	else  {
+	else {
 		ret = (ssize_t)bytesWritten;
 	}
 #endif	/* WIN32 */
@@ -411,24 +521,25 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
-			__func__, buflen, (int)conn->fd, ret, buf);
+			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE "):",
+			__func__, buflen, (int)conn->fd, ret);
 #else	/* WIN32 */
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
+		upsdebug_ascii_compact(1, "send_to_one: buffer content: ", buf, buflen);
 
 		usleep(200);
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
 #else	/* WIN32 */
-		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
-		if( result == 0 ) {
-			ret = 0;
+		result = WriteFile(conn->fd, buf, buflen, &bytesWritten, NULL);
+		if (result == 0) {
+			ret = 0;	/* signal error */
 		}
-		else  {
+		else {
 			ret = (ssize_t)bytesWritten;
 		}
 #endif	/* WIN32 */
@@ -440,15 +551,17 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, (int)conn->fd, ret);
 #else	/* WIN32 */
 		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
-		upsdebugx(6, "%s: failed write: %s", __func__, buf);
+		upsdebug_ascii_compact(6, "send_to_one: failed to write buffer content: ", buf, buflen);
+
 		sock_disconnect(conn);
+		conn = NULL;
 
 		/* TOTHINK: Maybe fallback elsewhere in other cases? */
 		if (ret < 0 && errno == EAGAIN && do_synchronous == -1) {
@@ -458,20 +571,25 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 			do_synchronous = 1;
 		}
 
+		/* Note: calls send_to_all() for connections alive
+		 *  at the moment (if any), so it was important to
+		 *  forget the failed one above: */
 		dstate_setinfo("driver.parameter.synchronous", "%s",
 			(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 
-		return 0;	/* failed */
+		errno = ENOTCONN;
+		return -2;	/* failed and freed */
 	} else {
 #ifndef WIN32
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
-			"(ret=%" PRIiSIZE "): %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"(ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #else	/* WIN32 */
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to handle %p succeeded "
-			"(ret=%" PRIiSIZE "): %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"(ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
+		upsdebug_ascii_compact(6, "send_to_one: buffer content: ", buf, buflen);
 	}
 
 	return 1;	/* OK */
@@ -532,6 +650,10 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = fd;
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	/* We have detected a connection on the opened pipe.
 	 * So we start by saving its handle and creating
@@ -540,51 +662,61 @@ static void sock_connect(TYPE_FD sock)
 	conn->fd = sock;
 
 	/* sockfd is the handle of the connection pending pipe */
+	upsdebugx(6, "%s: opening NAMED_PIPE for incoming data: '%s'",
+		__func__, pipename);
 	sockfd = CreateNamedPipe(
-			pipename,		/* pipe name */
-			PIPE_ACCESS_DUPLEX |	/* read/write access */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
-			ST_SOCK_BUF_LEN,	/* output buffer size */
-			ST_SOCK_BUF_LEN,	/* input buffer size */
-			0,			/* client time-out */
-			NULL);			/* FIXME: default security attribute */
+		pipename,		/* pipe name */
+		PIPE_ACCESS_DUPLEX	/* read/write access */
+		| FILE_FLAG_OVERLAPPED,	/* async IO */
+		PIPE_TYPE_BYTE
+		| PIPE_READMODE_BYTE
+		| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+		| PIPE_WAIT,
+		PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+		ST_SOCK_BUF_LEN,	/* output buffer size */
+		ST_SOCK_BUF_LEN,	/* input buffer size */
+		0,			/* client time-out */
+		&pipe_sa);
 
 	if (INVALID_FD(sockfd)) {
+		upsdebugx(1, "%s: Can't open state socket "
+			"(windows named pipe) for incoming data: %s",
+			__func__, pipename);
 		fatal_with_errno(EXIT_FAILURE,
 			"Can't create a state socket (windows named pipe)");
 	}
 
 	/* Prepare a new async wait for a connection on the pipe */
 	CloseHandle(connect_overlapped.hEvent);
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
-	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(sockfd,&connect_overlapped);
+	ConnectNamedPipe(sockfd, &connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
-	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
-	memset(conn->buf,0,sizeof(conn->buf));
-	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
-	if(conn->read_overlapped.hEvent == NULL ) {
+	memset(&conn->read_overlapped, 0, sizeof(conn->read_overlapped));
+	memset(conn->buf, 0, sizeof(conn->buf));
+	conn->read_overlapped.hEvent = CreateEvent(
+		NULL,	/* Security */
+		FALSE,	/* auto-reset */
+		FALSE,	/* initial state = non signaled */
+		NULL	/* no name */
+	);
+	if (conn->read_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
-	ReadFile (conn->fd, conn->buf,
+	ReadFile(conn->fd, conn->buf,
 		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailling 0 */
 		NULL, &(conn->read_overlapped));
 #endif	/* WIN32 */
@@ -609,34 +741,59 @@ static void sock_connect(TYPE_FD sock)
 
 }
 
+/**
+ * Send data from one state tree node into the given connection
+ * (value and possible enum/range/aux/type information).
+ *
+ * @param node
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty/NULL nodes)
+ */
 static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 {
 	enum_t	*etmp;
 	range_t	*rtmp;
+	int	send_ret;
 
-	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
-		return 0;	/* write failed, bail out */
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
 	}
+
+	send_ret = send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val);
+	if (errno == ENOTCONN)
+		return -2;
+	if (!send_ret)
+		return 0;	/* write failed, bail out */
 
 	/* send any enums */
 	for (etmp = node->enum_list; etmp; etmp = etmp->next) {
-		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val)) {
+		send_ret = send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* send any ranges */
 	for (rtmp = node->range_list; rtmp; rtmp = rtmp->next) {
-		if (!send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max)) {
+		send_ret = send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* provide any auxiliary data */
 	if (node->aux) {
-		if (!send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux)) {
+		send_ret = send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	/* finally report any flags */
@@ -656,64 +813,138 @@ static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 			snprintfcat(flist, sizeof(flist), " NUMBER");
 		}
 
-		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
+		send_ret = send_to_one(conn, "SETFLAGS %s\n", flist);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	return 1;	/* everything's OK here ... */
 }
 
+/**
+ * Dump the state tree into given connection, as a recursive tree walk
+ * and st_tree_dump_conn_one_node() calls for encountered nodes.
+ *
+ * @param node Starting point for left-right iteration walk
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty/NULL nodes)
+ */
 static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 {
-	int	ret;
+	int	send_ret;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	if (!node) {
 		return 1;	/* not an error */
 	}
 
 	if (node->left) {
-		ret = st_tree_dump_conn(node->left, conn);
-
-		if (!ret) {
+		send_ret = st_tree_dump_conn(node->left, conn);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret) {
 			return 0;	/* write failed in the child */
 		}
 	}
 
-	if (!st_tree_dump_conn_one_node(node, conn))
+	send_ret = st_tree_dump_conn_one_node(node, conn);
+	if (errno == ENOTCONN)
+		return -2;
+	if (!send_ret)
 		return 0;	/* one of writes failed, bail out */
 
 	if (node->right) {
-		return st_tree_dump_conn(node->right, conn);
+		send_ret = st_tree_dump_conn(node->right, conn);
+		if (errno == ENOTCONN)
+			return -2;
+		return send_ret;
 	}
 
-	return 1;	/* everything's OK here ... */
+	return 1;	/* no right node; everything's OK here ... */
 }
 
+/**
+ * Report all known commands for this driver into the given connection.
+ *
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 if any send_to_one() failed otherwise;
+ *		1 for successful send of everything (or no-op with empty list)
+ */
 static int cmd_dump_conn(conn_t *conn)
 {
 	cmdlist_t	*cmd;
+	int	send_ret;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	for (cmd = cmdhead; cmd; cmd = cmd->next) {
-		if (!send_to_one(conn, "ADDCMD %s\n", cmd->name)) {
+		send_ret = send_to_one(conn, "ADDCMD %s\n", cmd->name);
+		if (errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
 			return 0;
-		}
 	}
 
 	return 1;
 }
 
-
-static void send_tracking(conn_t *conn, const char *id, int value)
+/**
+ * Send an operation with a tracking ID.
+ * Returns same as send_to_one().
+ *
+ * @return	-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful send (or no-op with empty formatting string)
+ */
+static int send_tracking(conn_t *conn, const char *id, int value)
 {
-	send_to_one(conn, "TRACKING %s %i\n", id, value);
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
+
+	return send_to_one(conn, "TRACKING %s %i\n", id, value);
 }
 
+/**
+ * Called from sock_read() to handle command arg[0] (with possible arguments)
+ * for a given connection.
+ *
+ * @return	-3 command recognized but a send_to_one() returned 0;
+ *		-2 and errno=ENOTCONN if connections was or became closed;
+ *		0 other failures (e.g. insufficient numarg for a specific
+ *		  command, or unknown command overall);
+ *		1 for successful send (or no-op with empty formatting string)
+ *		2 for handled LOGOUT (connection may be already closed with
+ *		  errno=ENOTCONN raised, or will be soon)
+ */
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
 #ifdef WIN32
 	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
 #endif	/* WIN32 */
+	int	send_ret, send_errno;
+
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
 
 	upsdebugx(6, "%s: Driver on %s is now handling %s with %" PRIuSIZE " args",
 		__func__, sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
@@ -723,40 +954,76 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	}
 
 	if (!strcasecmp(arg[0], "LOGOUT")) {
-		send_to_one(conn, "OK Goodbye\n");
+		/* NOTE: conn may be freed after send_to_one(),
+		 *  do not dereference it anymore */
+		TYPE_FD	conn_fd = conn->fd;
+		send_ret = send_to_one(conn, "OK Goodbye\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(OK Goodbye) returned %d",
+			__func__, arg[0], send_ret);
+
 #ifndef WIN32
-		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn_fd);
 #else	/* WIN32 */
-		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn_fd);
 #endif	/* WIN32 */
+
 		/* Let the system flush the reply somehow (or the other
 		 * side to just see it) before we drop the pipe */
 		usleep(1000000);
-		/* err on the safe side, and actually close/free conn separately */
-		conn->closing = 1;
+
+		/* err on the safe side, and actually close/free the conn
+		 *  separately, if not already discarded by send_to_one()
+		 *  e.g. due to aborted client side: */
+		if (send_errno != ENOTCONN)
+			conn->closing = 1;
 		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
-		return 2;
+		return 2;	/* Special code for LOGOUT to be known by caller */
 	}
 
 	if (!strcasecmp(arg[0], "GETPID")) {
-		send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
-		return 1;
+		send_ret = send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(PID) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;
 	}
 
 	if (!strcasecmp(arg[0], "DUMPALL") || !strcasecmp(arg[0], "DUMPSTATUS") || (!strcasecmp(arg[0], "DUMPVALUE") && numarg > 1)) {
 		/* first thing: the staleness flag (see also below) */
-		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
-			return 1;
+		if (stale == 1) {
+			send_ret = send_to_one(conn, "DATASTALE\n");
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_to_one(DATASTALE) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		}
 
 		if (!strcasecmp(arg[0], "DUMPALL")) {
-			if (!st_tree_dump_conn(dtree_root, conn)) {
-				return 1;
-			}
+			send_ret = st_tree_dump_conn(dtree_root, conn);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: st_tree_dump_conn() returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 
-			if (!cmd_dump_conn(conn)) {
-				return 1;
-			}
+			send_ret = cmd_dump_conn(conn);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: cmd_dump_conn() returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		} else {
 			/* A cheaper version of the dump */
 			char	*varname = (!strcasecmp(arg[0], "DUMPSTATUS") ? "ups.status" : (numarg > 1 ? arg[1] : NULL));
@@ -766,22 +1033,51 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				upsdebugx(1, "%s: %s was requested but currently no %s is known",
 					__func__, arg[0], NUT_STRARG(varname));
 			} else {
-				if (!st_tree_dump_conn_one_node(sttmp, conn))
-					return 1;
+				send_ret = st_tree_dump_conn_one_node(sttmp, conn);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: st_tree_dump_conn_one_node() returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
 			}
 		}
 
-		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
-			return 1;
+		if (stale == 0) {
+			send_ret = send_to_one(conn, "DATAOK\n");
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_to_one(DATAOK) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
 		}
 
-		send_to_one(conn, "DUMPDONE\n");
-		return 1;
+		send_ret = send_to_one(conn, "DUMPDONE\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(DUMPDONE) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+
+		upsdebugx(4, "%s: %s processing finished", __func__, arg[0]);
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;	/* one way or another, the command was handled */
 	}
 
 	if (!strcasecmp(arg[0], "PING")) {
-		send_to_one(conn, "PONG\n");
-		return 1;
+		send_ret = send_to_one(conn, "PONG\n");
+		send_errno = errno;
+		upsdebugx(6, "%s: %s: send_to_one(PONG) returned %d",
+			__func__, arg[0], send_ret);
+		if (send_errno == ENOTCONN)
+			return -2;
+		if (!send_ret)
+			return -3;	/* failed */
+		return send_ret;
 	}
 
 	if (!strcasecmp(arg[0], "NOBROADCAST")) {
@@ -838,7 +1134,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			cmdparam = arg[2];
 			cmdid = arg[4];
 		} else if (numarg != 2) {
-			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			upslogx(LOG_INSTCMD_INVALID, "Malformed INSTCMD request");
 			return 0;
 		}
 
@@ -854,11 +1150,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			 * not pass to driver-provided logic. */
 
 			/* send back execution result if requested */
-			if (cmdid)
-				send_tracking(conn, cmdid, ret);
+			send_ret = 1;
+			if (cmdid) {
+				send_ret = send_tracking(conn, cmdid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(shared INSTCMD) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		} /* else try other handler(s) */
 
 		/* try the driver-provided handler if present */
@@ -866,19 +1171,28 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			ret = upsh.instcmd(cmdname, cmdparam);
 
 			/* send back execution result if requested */
-			if (cmdid)
-				send_tracking(conn, cmdid, ret);
+			send_ret = 1;
+			if (cmdid) {
+				send_ret = send_tracking(conn, cmdid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(driver-provided INSTCMD) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		}
 
 		if (cmdparam) {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s' '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
 		} else {
-			upslogx(LOG_NOTICE,
+			upslogx(LOG_INSTCMD_UNKNOWN,
 				"Got INSTCMD '%s', but driver lacks a handler",
 				NUT_STRARG(cmdname));
 		}
@@ -890,11 +1204,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		 * call stack, or returned by a driver's handler (for unknown
 		 * commands) just a bit above.
 		 */
-		if (cmdid)
-			send_tracking(conn, cmdid, ret);
+		send_ret = 1;
+		if (cmdid) {
+			send_ret = send_tracking(conn, cmdid, ret);
+			send_errno = errno;
+			upsdebugx(6, "%s: %s: send_tracking(other INSTCMD) returned %d",
+				__func__, arg[0], send_ret);
+			if (send_errno == ENOTCONN)
+				return -2;
+			if (!send_ret)
+				return -3;	/* failed */
+		}
 
 		/* The command was handled, status is a separate consideration */
-		return 1;
+		return send_ret;
 	}
 
 	if (numarg < 3) {
@@ -912,7 +1235,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				setid = arg[4];
 			}
 			else {
-				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+				upslogx(LOG_SET_INVALID, "Got SET <var> with unsupported parameters (%s/%s)",
 					arg[3], arg[4]);
 				return 0;
 			}
@@ -928,11 +1251,20 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			 * not pass to driver-provided logic. */
 
 			/* send back execution result if requested */
-			if (setid)
-				send_tracking(conn, setid, ret);
+			send_ret = 1;
+			if (setid) {
+				send_ret = send_tracking(conn, setid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(shared SETVAR) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		} /* else try other handler(s) */
 
 		/* try the driver-provided handler if present */
@@ -940,14 +1272,23 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			ret = upsh.setvar(arg[1], arg[2]);
 
 			/* send back execution result if requested */
-			if (setid)
-				send_tracking(conn, setid, ret);
+			send_ret = 1;
+			if (setid) {
+				send_ret = send_tracking(conn, setid, ret);
+				send_errno = errno;
+				upsdebugx(6, "%s: %s: send_tracking(driver-provided SETVAR) returned %d",
+					__func__, arg[0], send_ret);
+				if (send_errno == ENOTCONN)
+					return -2;
+				if (!send_ret)
+					return -3;	/* failed */
+			}
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
+			return send_ret;
 		}
 
-		upslogx(LOG_NOTICE, "Got SET, but driver lacks a handler");
+		upslogx(LOG_SET_UNKNOWN, "Got SET, but driver lacks a handler");
 		return 1;
 	}
 
@@ -955,14 +1296,35 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	return 0;
 }
 
-static void sock_read(conn_t *conn)
+/**
+ * Reads incoming data into a buffer and parses them,
+ * to handle via sock_arg().
+ *
+ * @param conn
+ * @return	-2 and errno=ENOTCONN if connections was or became closed,
+ *                 including after LOGOUT handling;
+ *		-1 if read() yielded EINTR or EAGAIN (POSIX builds)
+ *                 or buffer parsing failed;
+ *		0 other failures (e.g. no memory for buffer);
+ *		1 for successful enough handling (no syntax or connection
+ *		  errors along the way; response sending may have failed
+ *		  or unknown commands may have been posted)
+ */
+static int sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
 	int	ret_arg = -1;
-
 #ifndef WIN32
 	char	buf[SMALLBUF];
+#endif
 
+	if (!conn || conn->closing) {
+		upsdebugx(3, "%s: WARNING: called after connection was closed?", __func__);
+		errno = ENOTCONN;
+		return -2;
+	}
+
+#ifndef WIN32
 	ret = read(conn->fd, buf, sizeof(buf));
 
 	if (ret < 0) {
@@ -970,11 +1332,14 @@ static void sock_read(conn_t *conn)
 		{
 		case EINTR:
 		case EAGAIN:
-			return;
+			return -1;
 
+		case ENOTCONN:
 		default:
 			sock_disconnect(conn);
-			return;
+			conn = NULL;
+			errno = ENOTCONN;
+			return -2;
 		}
 	}
 
@@ -1006,7 +1371,9 @@ static void sock_read(conn_t *conn)
 		if (is_closed) {
 			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
 			sock_disconnect(conn);
-			return;
+			conn = NULL;
+			errno = ENOTCONN;
+			return -2;
 		}
 	} else {
 		conn->readzero = 0;
@@ -1015,18 +1382,25 @@ static void sock_read(conn_t *conn)
 	char *buf = conn->buf;
 	DWORD bytesRead;
 	BOOL res;
+
 	res = GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead, FALSE);
-	if( res == 0 ) {
-		upslogx(LOG_INFO, "Read error : %d",(int)GetLastError());
+	if (res == 0) {
+		upslogx(LOG_INFO, "Read error : %d", (int)GetLastError());
 		sock_disconnect(conn);
-		return;
+		conn = NULL;
+		errno = ENOTCONN;
+		return -2;
 	}
 	ret = bytesRead;
 
+	/* TODO: Make use of this for a retry loop like above? */
+	if (ret > 0)
+		conn->readzero = 0;
+
 	/* Special case for signals */
 	if (!strncmp(conn->buf, COMMAND_STOP, sizeof(COMMAND_STOP))) {
-		set_exit_flag(1);
-		return;
+		set_exit_flag(EF_EXIT_SUCCESS);
+		return 1;
 	}
 #endif	/* WIN32 */
 
@@ -1039,6 +1413,11 @@ static void sock_read(conn_t *conn)
 
 		case 1: /* try to use it, and complain about unknown commands */
 			ret_arg = sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist);
+			if (errno == ENOTCONN) {
+				upsdebugx(1, "%s: socket was closed by sock_arg()", __func__);
+				return -2;
+			}
+
 			if (!ret_arg) {
 				size_t	arg;
 
@@ -1047,31 +1426,48 @@ static void sock_read(conn_t *conn)
 				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
+			} else if (ret_arg == -3) {
+				upslogx(LOG_INFO, "Failed to handle a recognized command on socket");
 			} else if (ret_arg == 2) {
-				/* closed by LOGOUT processing, conn is free()'d */
+				/* closed by LOGOUT processing, conn is free()'d
+				 * or soon will be (at least marked conn->closing=1) */
 				if (i < ret)
-					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
-				return;
+					upsdebugx(1, "%s: returning early after LOGOUT, socket may be not valid anymore", __func__);
+				errno = ENOTCONN;
+				return -2;
 			}
 
 			continue;
 
 		default: /* nothing parsed */
 			upslogx(LOG_NOTICE, "Parse error on sock: %s", conn->ctx.errmsg);
-			return;
+			return -1;
 		}
 	}
 
 #ifdef WIN32
-	/* Restart async read */
-	memset(conn->buf,0,sizeof(conn->buf));
-	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+	if (!conn->closing) {
+		/* Restart async read */
+		memset(conn->buf, 0, sizeof(conn->buf));
+		ReadFile(
+			conn->fd,
+			conn->buf,
+			sizeof(conn->buf) - 1,	/* -1 to be sure to have a trailing 0 */
+			NULL,
+			&(conn->read_overlapped)
+		);
+	}
 #endif	/* WIN32 */
+
+	return 1;	/* Handled without errors */
 }
 
+/** Dismantle the socket (or named pipe) and connections */
 static void sock_close(void)
 {
 	conn_t	*conn, *cnext;
+
+	upsdebugx(1, "%s: starting...", __func__);
 
 	if (VALID_FD(sockfd)) {
 #ifndef WIN32
@@ -1093,10 +1489,13 @@ static void sock_close(void)
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
 		sock_disconnect(conn);
+		conn = NULL;
 	}
 
 	connhead = NULL;
 	/* conntail = NULL; */
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 /* interface */
@@ -1227,6 +1626,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (conn->closing) {
 			sock_disconnect(conn);
+			conn = NULL;
 		}
 	}
 
@@ -1295,7 +1695,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 	/* Retrieve the signaled connection */
 	for (conn = connhead; conn != NULL; conn = conn->next) {
-		if( conn->read_overlapped.hEvent == rfds[ret-WAIT_OBJECT_0]) {
+		if (conn->read_overlapped.hEvent == rfds[ret-WAIT_OBJECT_0]) {
 			break;
 		}
 	}
@@ -1316,6 +1716,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (conn->closing) {
 			sock_disconnect(conn);
+			conn = NULL;
 		}
 	}
 
@@ -1637,6 +2038,14 @@ const char *dstate_getinfo(const char *var)
 	return state_getinfo(dtree_root, var);
 }
 
+const st_tree_t *dstate_tree_find(const char *var)
+{
+	if (!var)
+		return NULL;
+
+	return state_tree_find(dtree_root, var);
+}
+
 void dstate_addcmd(const char *cmdname)
 {
 	int	ret;
@@ -1766,12 +2175,12 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
-	if (dstate_getinfo("driver.flag.ignorelb")) {
-		ignorelb = 1;
-	}
+	/* This does not normally change in driver run-time, but can in tests */
+	ignorelb = (dstate_getinfo("driver.flag.ignorelb") ? 1 : 0);
 
 	memset(status_buf, 0, sizeof(status_buf));
 	alarm_status = 0;
+	alarm_legacy_status = 0;
 }
 
 /* check if a status element has been set, return 0 if not, 1 if yes
@@ -1795,17 +2204,23 @@ static int status_set_callback(char *tgt, size_t tgtsize, const char *token)
 	}
 
 	if (!strcasecmp(token, "ALARM")) {
-		/* Drivers really should not raise alarms this way,
-		 * but for the sake of third-party forks, we handle
-		 * the possibility...
+		/* Drivers should not do this anymore, but we continue
+		 * to support it. The upsmon notifiers do not care where
+		 * alarm tokens get set and legacy drivers may still use
+		 * this older method. The only real limitations are that
+		 * the alarm state is very tightly coupled to the UPS
+		 * status, and the ups.alarm variables do not get published
+		 * in a controlled manner. Rather, these are very dependent
+		 * on the (legacy) driver, and alarm notifications via upsmon
+		 * will show placeholder "n/a" if all values are missing.
+		 * The status token is ignored to prepend it to other tokens
+		 * later, within the status_commit() function.
+		 * For more information, see this discussion:
+		 * https://github.com/networkupstools/nut/pull/2931#issuecomment-2841705269
 		 */
-		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
-		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
-			alarm_init();	/* no-op currently, but better be proper about it */
-			alarm_set("[N/A]");
-		}
-		alarm_status++;
-		return 0;
+		upsdebugx(6, "%s: caller set ALARM as a status, this is deprecated - please fix the NUT driver code", __func__);
+		alarm_legacy_status = 1;
+		return 0; /* ignore it */
 	}
 
 	/* Proceed adding the token */
@@ -1823,10 +2238,13 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
+	/* FIXME: Further unify two accesses to, and parses of, "battery.charge" */
+	const st_tree_t	*dstate_battery_charge_entry = dstate_tree_find("battery.charge");
+
 	while (ignorelb) {
 		const char	*val, *low;
 
-		val = dstate_getinfo("battery.charge");
+		val = dstate_battery_charge_entry ? dstate_battery_charge_entry->val : NULL;
 		low = dstate_getinfo("battery.charge.low");
 
 		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
@@ -1848,36 +2266,61 @@ void status_commit(void)
 		break;
 	}
 
-	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
-	 * but note that if someone also uses status_set("ALARM") we can end
-	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
-	 * and only add the token here so it remains first.
-	 *
-	 * NOTE: alarm_commit() must be executed before status_commit() for
-	 * this report to work!
-	 * * If a driver only called status_set("ALARM") and did not bother
-	 *   with alarm_commit(), the "ups.alarm" value queries would have
-	 *   returned NULL if not for the "sloppy driver" fix below, although
-	 *   the "ups.status" value would report an ALARM token.
-	 * * If a driver properly used alarm_init() and alarm_set(), but then
-	 *   called status_commit() before alarm_commit(), the "ups.status"
-	 *   value would not know to report an ALARM token, as before.
-	 * * If a driver used both status_set("ALARM") and alarm_set() later,
-	 *   the injected "[N/A]" value of the alarm (if that's its complete
-	 *   value) would be overwritten by the explicitly assigned contents,
-	 *   and an explicit alarm_commit() would be required for proper
-	 *   reporting from a non-sloppy driver.
-	 */
+	if (dstate_battery_charge_entry && dstate_battery_charge_entry->val) {
+		double	current_battery_charge_value = -1.0;
 
-	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
-		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
-		alarm_commit();
+		if (previous_battery_charge_value >= 0.0
+		 && str_to_double(dstate_battery_charge_entry->val, &current_battery_charge_value, 10)
+		 && current_battery_charge_value >= 0
+		 && current_battery_charge_value < 100.0
+		 && (!(d_equal(previous_battery_charge_value, current_battery_charge_value)))
+		) {
+			/* We are not at 100%... is the battery filling up,
+			 * or is the load greater than wall power/genset? */
+			int	reports_DISCHRG = status_get("DISCHRG"), reports_CHRG = status_get("CHRG");
+
+			if (!reports_DISCHRG && !reports_CHRG) {
+				upsdebugx(5, "%s: driver did not report a (DIS)CHRG state, but we know "
+					"that battery.charge changed to %g from %g reported %g seconds ago",
+					__func__, current_battery_charge_value,
+					previous_battery_charge_value,
+					difftime_st_tree_timespec(dstate_battery_charge_entry->lastset, previous_battery_charge_timestamp)
+				);
+
+				if (current_battery_charge_value > previous_battery_charge_value) {
+					status_set("CHRG");
+				} else {
+					status_set("DISCHRG");
+				}
+			} else {
+				int	misleading_DISCHRG = (current_battery_charge_value > previous_battery_charge_value && reports_DISCHRG);
+				int	misleading_CHRG =    (current_battery_charge_value < previous_battery_charge_value && reports_CHRG);
+
+				if (misleading_DISCHRG || misleading_CHRG) {
+					upslogx(LOG_WARNING, "Device reports that it is %scharging, "
+						"but the current battery charge %g is %s than %g "
+						"reported %g seconds ago",
+						misleading_DISCHRG ? "dis" : "",
+						current_battery_charge_value,
+						misleading_DISCHRG ? "greater" : "less",
+						previous_battery_charge_value,
+						difftime_st_tree_timespec(dstate_battery_charge_entry->lastset, previous_battery_charge_timestamp)
+					);
+					status_set(misleading_DISCHRG ? "CHRG" : "DISCHRG");
+				}
+			}
+		}
 	}
 
-	if (alarm_active) {
-		dstate_setinfo("ups.status", "ALARM %s", status_buf);
+	if (alarm_active || alarm_legacy_status) {
+		if (*status_buf != '\0') {
+			dstate_setinfo("ups.status", "ALARM %s", status_buf);
+		} else {
+			dstate_setinfo("ups.status", "ALARM");
+		}
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
+		alarm_legacy_status = 0; /* just to be sure */
 	}
 }
 
@@ -1984,7 +2427,9 @@ void alarm_set(const char *buf)
 			}
 		}
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
-			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
+			__func__, alarm_tmp,
+			( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" )
+			);
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
 		char	alarm_tmp[LARGEBUF];
 		int	ibuflen;
@@ -2020,7 +2465,8 @@ void alarm_set(const char *buf)
 		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
 			"alarm_buf (limited to %" PRIuSIZE " bytes), with message: %s%s",
 			__func__, sizeof(alarm_buf), alarm_tmp,
-			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" ));
+			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" )
+			);
 	}
 }
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
@@ -2166,13 +2612,14 @@ int dstate_detect_phasecount(
 		 * tables should take care of this with converion routine and numeric
 		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
-		do { strncpy(bufrw_ptr, suffix, bufrw_max); \
-		  if ( (var = dstate_getinfo(buf)) ) { \
-		    if ( (var[0] == '0' && var[1] == '\0') || \
-		         (var[0] == '\0') ) { \
-		      var = NULL; \
-		    } \
-		  } \
+		do { \
+			strncpy(bufrw_ptr, suffix, bufrw_max); \
+			if ( (var = dstate_getinfo(buf)) ) { \
+				if ( (var[0] == '0' && var[1] == '\0') \
+				||   (var[0] == '\0') ) { \
+					var = NULL; \
+				} \
+			} \
 		} while(0)
 
 		dstate_getinfo_nonzero(v1,  "L1.voltage");
@@ -2191,37 +2638,40 @@ int dstate_detect_phasecount(
 		dstate_getinfo_nonzero(v0,  "voltage");
 		dstate_getinfo_nonzero(c0,  "current");
 
-		if ( (v1 && v2 && !v3) ||
-		     (v1n && v2n && !v3n) ||
-		     (c1 && c2 && !c3) ||
-		     (v12 && !v23 && !v31) ) {
+		if ( (v1 && v2 && !v3)
+		 ||  (v1n && v2n && !v3n)
+		 ||  (c1 && c2 && !c3)
+		 ||  (v12 && !v23 && !v31)
+		) {
 			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
 			*num_phases = 2;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
-		} else if ( (v1 && v2 && v3) ||
-		     (v1n && v2n && v3n) ||
-		     (c1 && (c2 || c3)) ||
-		     (c2 && (c1 || c3)) ||
-		     (c3 && (c1 || c2)) ||
-		     v12 || v23 || v31 ) {
+		} else if ( (v1 && v2 && v3)
+		 ||  (v1n && v2n && v3n)
+		 ||  (c1 && (c2 || c3))
+		 ||  (c2 && (c1 || c3))
+		 ||  (c3 && (c1 || c2))
+		 ||  v12 || v23 || v31
+		) {
 			upsdebugx(5, "%s(): determined a 3-phase case", __func__);
 			*num_phases = 3;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
 		} else if ( /* We definitely have only one non-zero line */
-		     !v12 && !v23 && !v31 && (
-		     (c0 && !c1 && !c2 && !c3) ||
-		     (v0 && !v1 && !v2 && !v3) ||
-		     (c1 && !c2 && !c3) ||
-		     (!c1 && c2 && !c3) ||
-		     (!c1 && !c2 && c3) ||
-		     (v1 && !v2 && !v3) ||
-		     (!v1 && v2 && !v3) ||
-		     (!v1 && !v2 && v3) ||
-		     (v1n && !v2n && !v3n) ||
-		     (!v1n && v2n && !v3n) ||
-		     (!v1n && !v2n && v3n) ) ) {
+		     !v12 && !v23 && !v31
+		 && (   (c0 && !c1 && !c2 && !c3)
+		     || (v0 && !v1 && !v2 && !v3)
+		     || (c1 && !c2 && !c3)
+		     || (!c1 && c2 && !c3)
+		     || (!c1 && !c2 && c3)
+		     || (v1 && !v2 && !v3)
+		     || (!v1 && v2 && !v3)
+		     || (!v1 && !v2 && v3)
+		     || (v1n && !v2n && !v3n)
+		     || (!v1n && v2n && !v3n)
+		     || (!v1n && !v2n && v3n) )
+		) {
 			*num_phases = 1;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;

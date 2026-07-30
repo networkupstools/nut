@@ -1,24 +1,24 @@
 /*
-* clone-outlet.c: clone an UPS, treating its outlet as if it were an UPS
-*                 (monitoring only)
-*
-* Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
-* Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-*/
+ * clone-outlet.c: clone an UPS, treating its outlet as if it were an UPS
+ *                 (monitoring only)
+ *
+ * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
 
 #include "main.h"
 #include "parseconf.h"
@@ -31,7 +31,7 @@
 #endif	/* !WIN32 */
 
 #define DRIVER_NAME	"Clone outlet UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -303,7 +303,9 @@ static TYPE_FD sstate_connect(void)
 	dumpdone = 0;
 
 	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-	dstate_setinfo("ups.status", "WAIT");
+	status_init();
+	status_set("WAIT");
+	status_commit();
 
 	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
 	return fd;
@@ -453,7 +455,7 @@ static int sstate_dead(int maxage)
 
 	if (elapsed > maxage) {
 		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-			   device_path, elapsed, maxage);
+			device_path, elapsed, maxage);
 		return -1;	/* dead */
 	}
 
@@ -491,20 +493,20 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	status_init();
+
 	if (outlet.status == 0) {
 		upsdebugx(2, "OFF flag set (%s: switched off)", prefix.status);
-		dstate_setinfo("ups.status", "%s OFF", ups.status);
-		return;
+		status_set("OFF");
 	}
 
 	if ((outlet.timer.shutdown > -1) && (outlet.timer.shutdown <= outlet.delay.shutdown)) {
 		upsdebugx(2, "FSD flag set (%s: -1 < [%ld] <= %ld)", prefix.timer.shutdown, outlet.timer.shutdown, outlet.delay.shutdown);
-		dstate_setinfo("ups.status", "FSD %s", ups.status);
-		return;
+		status_set("FSD");
 	}
 
-	upsdebugx(3, "%s: power state not critical", getval("prefix"));
-	dstate_setinfo("ups.status", "%s", ups.status);
+	status_set(ups.status); /* FIXME: Split token words? */
+	status_commit();
 
 	last_poll = now;
 }
@@ -523,6 +525,12 @@ void upsdrv_shutdown(void)
 
 
 void upsdrv_help(void)
+{
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

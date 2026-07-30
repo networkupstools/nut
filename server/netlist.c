@@ -243,7 +243,7 @@ static void list_ups(nut_ctype_t *client)
 
 		} else {
 			ret = sendback(client, "UPS %s \"Description unavailable\"\n",
-				 utmp->name);
+				utmp->name);
 		}
 
 		if (!ret)

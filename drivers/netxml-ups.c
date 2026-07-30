@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.47"
+#define DRIVER_VERSION	"0.49"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -247,7 +247,7 @@ static char	*product_page = NULL;
 /* Support functions */
 static void netxml_alarm_set(void);
 static void netxml_status_set(void);
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password);
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 static int netxml_get_page(const char *page);
 
@@ -423,13 +423,13 @@ void upsdrv_shutdown(void) {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
 	/* fatalx(EXIT_FAILURE, "shutdown not supported"); */
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -486,14 +486,21 @@ void upsdrv_shutdown(void) {
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: shutdown per above? */
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
 */
 
-	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -502,6 +509,8 @@ static int setvar(const char *varname, const char *val) {
 
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {
@@ -522,6 +531,7 @@ static int setvar(const char *varname, const char *val) {
 
 		/* Check if setting was done */
 		if (1 > object_query_size(resp)) {
+			upslog_SET_UNKNOWN(varname, val);
 			status = STAT_SET_UNKNOWN;
 
 			break;
@@ -538,10 +548,17 @@ static int setvar(const char *varname, const char *val) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
+	if (status == STAT_SET_FAILED)
+		upslog_SET_FAILED(varname, val);
 	return status;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -823,7 +840,7 @@ static int netxml_alarm_subscribe(const char *page)
 	ne_request_destroy(request);
 
 	/* due to different formats used by the various NMCs, we need to\
-	   break up the reply in lines and parse each one separately */
+	 * break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
 		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);
@@ -957,12 +974,12 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 }
 
 /* Supply the 'login' and 'password' when authentication is required */
-static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
+static int netxml_authenticate(void *userdata, const char *realm, int try_num, char *username, char *password)
 {
 	char	*val;
 	NUT_UNUSED_VARIABLE(userdata);
 
-	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
+	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, try_num);
 
 	val = getval("login");
 	snprintf(username, NE_ABUFSIZ, "%s", val ? val : "");
@@ -970,7 +987,7 @@ static int netxml_authenticate(void *userdata, const char *realm, int attempt, c
 	val = getval("password");
 	snprintf(password, NE_ABUFSIZ, "%s", val ? val : "");
 
-	return attempt;
+	return try_num;
 }
 
 /* Convert the local status information to NUT format and set NUT

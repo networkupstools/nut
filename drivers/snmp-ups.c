@@ -6,7 +6,7 @@
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2022	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2022	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
- *	2022 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+ *	2022 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -47,8 +47,11 @@
 #include "netvision-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
+#include "eaton-pdu-nlogic-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
 #include "eaton-pdu-revelation-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
@@ -69,9 +72,7 @@
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
-#include "eaton-pdu-nlogic-mib.h"
-#include "eaton-ups-pwnm2-mib.h"
-#include "eaton-ups-pxg-mib.h"
+#include "vertiv-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -128,6 +129,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&netvision,			/* This struct comes from : netvision-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&vertiv,		/* This struct comes from : vertiv-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
@@ -177,7 +179,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.34"
+#define DRIVER_VERSION	"1.40"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -221,6 +223,149 @@ static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(snmp_info_flags_t template_type, const char* varname);
 snmp_info_flags_t get_template_type(const char* varname);
+
+static void analyze_mapping_usage(void) {
+	/* Check if the subdriver code (mappings) and the device report
+	 * sit together well. Note that for yet-unknown concepts, the
+	 * NUT driver developers can either raise a discussion on how
+	 * to best formalize that concept via docs/nut-names.txt, or
+	 * temporarily place them into "experimental.*" or "unmapped.*"
+	 * namespaces.
+	 *
+	 * Later also check that all defined mappings were used?
+	 * TBH, this is unlikely in practice, so of little value
+	 * (unless we are troubleshooting and under 5 or 10 data
+	 * points are served from actually the device, and not
+	 * from user configs or driver fallbacks).
+	 *
+	 * See also: similar methods in usbhid-ups and nutdrv_qx.
+	 */
+	size_t	unused_count = 0, known_mappings = 0;
+	size_t	unused_bufsize = LARGEBUF, unused_prevlen = 0, used_mappings = 0;
+	int	ret_printf;
+	char	*unused_names = NULL;
+	snmp_info_t	*su_info_p;
+
+	/* FIXME? this activity is limited to when debugging is enabled, even
+	 *  if some of the messages below can be posted visibly at level 0.
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	upsdebugx(1, "%s: checking if the subdriver code (mappings) "
+		"consults all data points from the device report",
+		__func__);
+
+	if (!snmp_info) {
+		upsdebugx(1, "%s: SKIP: snmp_info==null", __func__);
+		return;
+	}
+
+	unused_names = (char*)xcalloc(unused_bufsize, sizeof(char));
+
+	for (su_info_p = &snmp_info[0]; (su_info_p != NULL && su_info_p->info_type != NULL) ; su_info_p++)
+	{
+		if (!su_info_p)
+			continue;
+
+		known_mappings++;
+
+		if (su_info_p->flags & SU_FLAG_MAPPING_HANDLED) {
+			used_mappings++;
+		} else {
+			char	*pName = su_info_p->info_type;
+			const char	*pType = (SU_TYPE(su_info_p) == SU_TYPE_CMD ? "cmd" : "data");
+			int	retry = 0;
+
+			/* Keep aliases for code similarity with usbhid-ups and nutdrv_qx */
+			char	**pNames = &unused_names;
+			size_t	*pCount = &unused_count, *pPrevLen = &unused_prevlen, *pBufSize = &unused_bufsize;
+
+			if (!pName) {
+				upsdebugx(2, "%s: error getting a data point name, skipped", __func__);
+				continue;
+			}
+
+			/* We may overflow the pre-allocated buffer,
+			 * so we loop here until snprintf() succeeds
+			 * or we are known to have failed completely.
+			 */
+			do {
+				retry = 0;
+				if (!*pNames) {
+					break;
+				}
+
+				upsdebugx(5, "%s: adding '%s (%s)' (%" PRIuSIZE " bytes) "
+					"to buffer of %" PRIuSIZE "/%" PRIuSIZE " bytes",
+					__func__, NUT_STRARG(pName), NUT_STRARG(pType),
+					pName ? strlen(pName) : 0,
+					*pPrevLen, *pBufSize);
+
+				ret_printf = snprintf(*pNames + *pPrevLen, *pBufSize - *pPrevLen - 1, "%s%s (%s)",
+					*pCount ? ", " : "", NUT_STRARG(pName), NUT_STRARG(pType));
+
+				upsdebugx(6, "%s: snprintf() returned %d", __func__, ret_printf);
+				(*pNames)[*pBufSize - 1] = '\0';
+
+				if (ret_printf < 0) {
+					upsdebugx(1, "%s: error collecting names, might not report unused descriptor names", __func__);
+				} else if ((size_t)ret_printf + *pPrevLen >= *pBufSize) {
+					if (*pBufSize < SIZE_MAX - LARGEBUF) {
+						*pBufSize = *pBufSize + LARGEBUF;
+						upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, *pBufSize);
+							*pNames = (char*)realloc(*pNames, *pBufSize);
+
+						if (!*pNames) {
+							upsdebugx(1, "%s: buffer overflowed, will not report unused descriptor names", __func__);
+						} else {
+							upsdebugx(5, "%s: buffer overflowed, but reallocated successfully - retrying", __func__);
+							/* Retry this loop */
+							retry = 1;
+						}
+					} else {
+						upsdebugx(1, "%s: buffer overflowed, might not report unused descriptor names", __func__);
+					}
+				} else {
+					*pPrevLen += (size_t)ret_printf;
+				}
+			} while (retry);
+
+			*pCount = *pCount + 1;
+		}
+	}
+
+	if (unused_count) {
+		upsdebugx(1, "%s: %" PRIuSIZE " items are present in the "
+			"mapping table for the SNMP UPS, but %" PRIuSIZE " "
+			"of them were completely not used by name via the "
+			"mapping defined in the selected NUT subdriver %s: %s",
+			__func__, known_mappings, unused_count,
+			NUT_STRARG(mibname), NUT_STRARG(unused_names));
+	}
+
+	if (unused_names)
+		free(unused_names);
+
+	/* We arbitrarily declare that having under 10 known or used
+	 * mappings is few enough to be loud about this */
+	if (known_mappings < 10 || used_mappings < 10) {
+		upsdebugx(0,
+			"%s: %" PRIuSIZE " mapping entries are defined, and "
+			"%" PRIuSIZE " were actually used from SNMP walk, "
+			"in the selected NUT subdriver %s",
+			__func__, known_mappings, used_mappings,
+			NUT_STRARG(mibname));
+
+		upsdebugx(0, "Please check if there is a newer version of NUT available "
+			"(may be not packaged for your distribution yet), try a custom "
+			"build of development branch to test latest driver code per "
+			"%s/docs/user-manual.chunked/_installation_instructions.html#Installing_inplace, "
+			"and see %s/docs/developer-guide.chunked/new-drivers.html#snmp-subdrivers "
+			"for suggestions how you can help improve this driver.",
+			NUT_WEBSITE_BASE, NUT_WEBSITE_BASE);
+	}
+}
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -287,6 +432,7 @@ void upsdrv_initinfo(void)
 	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
 		comm_status = COMM_OK;
+		analyze_mapping_usage();
 	}
 	else {
 		dstate_datastale();
@@ -313,7 +459,17 @@ void upsdrv_updateinfo(void)
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
 			upsdebugx(1, "%s: pollfreq: Data OK", __func__);
 			dstate_dataok();
-			comm_status = COMM_OK;
+			if (comm_status != COMM_OK) {
+				/* We may have missed the initial connection,
+				 * or lost one subsequently during normal work.
+				 * Help at least with the former case with info
+				 * about efficiency of the current mapping table.
+				 * And who knows how the reconnection went, maybe
+				 * a new firmware got installed or modules added?
+				 */
+				analyze_mapping_usage();
+				comm_status = COMM_OK;
+			}
 		}
 		else {
 			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
@@ -387,6 +543,38 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	upsdebugx(1, "entering %s", __func__);
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+	upsdebugx(1, "entering %s", __func__);
+
+	/* If executed via an accepted alias, move it down in prognames[] stack */
+	if (!strcmp(prognames[0], "snmp-ups-old")) {
+		upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+			__func__, prognames[0], "snmp-ups");
+
+		if (prognames_should_free[1] && prognames[1])
+			free((char*)prognames[1]);
+		prognames[1] = prognames[0];
+		prognames_should_free[1] = prognames_should_free[0];
+
+		if (prognames_should_free[0])
+			free((char*)prognames[0]);
+		prognames[0] = xstrdup("snmp-ups");
+		prognames_should_free[0] = 1;
+	} else {
+		if (!strcmp(prognames[0], "snmp-ups")) {
+			upsdebugx(3, "%s: marking program name '%s' as an alias for '%s'",
+				__func__, "snmp-ups-old", prognames[0]);
+
+			if (prognames_should_free[1])
+				free((char*)prognames[1]);
+			prognames[1] = xstrdup("snmp-ups-old");
+			prognames_should_free[1] = 1;
+		}
+	}
 }
 
 /* list flags and values that you want to receive via -x */
@@ -604,9 +792,10 @@ void upsdrv_initups(void)
 	if (!strcmp(mibs, "--list")) {
 		int i;
 
-		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
-		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
-		       "the first one matches your device\n\n", mibs);
+		printf(
+			"The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
+			"and for 'mibs=auto' these mappings will be tried in the following order until\n"
+			"the first one matches your device\n\n", mibs);
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
 			"NUMBER", "MAPPING NAME", "VERSION",
 			"ENTRY POINT OID", "AUTO CHECK OID");
@@ -695,8 +884,8 @@ void upsdrv_initups(void)
 	}
 
 	if (status == TRUE)
-		upslogx(0, "Detected %s on host %s (mib: %s %s)",
-			 model, device_path, mibname, mibvers);
+		upslogx(LOG_INFO, "Detected %s on host %s (mib: %s %s)",
+			model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
 		/* FIXME: "No supported device detected" */
@@ -818,6 +1007,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 	/* Initialize session */
 	snmp_sess_init(&g_snmp_sess);
 
+	/* peername may include the port, transport, etc. and will be parsed by the SNMP library */
 	g_snmp_sess.peername = xstrdup(hostname);
 
 	/* Net-SNMP timeout and retries */
@@ -1094,7 +1284,7 @@ static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration, int log_unhandled_loudly)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -1122,6 +1312,11 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 	while( nb_iteration < max_iteration ) {
 		struct snmp_pdu	**new_ret_array;
+
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0) {
+			fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+		}
 
 		/* Going to a shorter OID means we are outside our sub-tree */
 		if( current_name_len < name_len ) {
@@ -1182,17 +1377,25 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			snmp_free_pdu(response);
 			break;
 		} else {
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
 			/* Checked the "type" field of the returned varbind if
 			 * it is a type error exception (only applicable with
 			 * SNMPv2 or SNMPv3 protocol, would not happen with
 			 * SNMPv1). This allows to proceed interpreting large
 			 * responses when one entry in the middle is rejectable.
 			 */
-			if (response->variables->type == SNMP_NOSUCHOBJECT ||
-			    response->variables->type == SNMP_NOSUCHINSTANCE ||
-			    response->variables->type == SNMP_ENDOFMIBVIEW) {
-				upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
+			if (response->variables->type == SNMP_NOSUCHOBJECT
+			 || response->variables->type == SNMP_NOSUCHINSTANCE
+			 || response->variables->type == SNMP_ENDOFMIBVIEW
+			) {
+				if (log_unhandled_loudly) {
+					upslogx(LOG_WARNING, "[%s] Warning: type error exception (OID = %s)",
 						upsname?upsname:device_name, OID);
+				} else {
+					upsdebugx(2, "[%s] Warning: type error exception (OID = %s)",
+						upsname?upsname:device_name, OID);
+				}
 				snmp_free_pdu(response);
 				break;
 			}
@@ -1204,12 +1407,12 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		new_ret_array = realloc(
+		new_ret_array = (struct snmp_pdu**)realloc(
 			ret_array,
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
 		if (new_ret_array == NULL) {
-			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			upsdebugx(1, "%s: Failed to realloc ret_array", __func__);
 			break;
 		}
 		else {
@@ -1227,7 +1430,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	return ret_array;
 }
 
-struct snmp_pdu *nut_snmp_get(const char *OID)
+static struct snmp_pdu *do_nut_snmp_get(const char *OID, int log_unhandled_loudly)
 {
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * ret_pdu;
@@ -1237,7 +1440,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
 
-	pdu_array = nut_snmp_walk(OID,1);
+	pdu_array = nut_snmp_walk(OID, 1, log_unhandled_loudly);
 
 	if(pdu_array == NULL) {
 		return NULL;
@@ -1248,6 +1451,11 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	nut_snmp_free(pdu_array);
 
 	return ret_pdu;
+}
+
+struct snmp_pdu *nut_snmp_get(const char *OID)
+{
+	return do_nut_snmp_get(OID, 1);
 }
 
 static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info)
@@ -1409,7 +1617,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 	return ret;
 }
 
-bool_t nut_snmp_get_int(const char *OID, long *pval)
+static bool_t do_nut_snmp_get_int(const char *OID, long *pval, int log_unhandled_loudly)
 {
 	char tmp_buf[SU_LARGEBUF];
 	struct snmp_pdu *pdu;
@@ -1418,14 +1626,14 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 
 	upsdebugx(3, "Entering %s()", __func__);
 
-	pdu = nut_snmp_get(OID);
+	pdu = do_nut_snmp_get(OID, log_unhandled_loudly);
 	if (pdu == NULL)
 		return FALSE;
 
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
 	case ASN_OPAQUE:
-		buf = xmalloc(pdu->variables->val_len + 1);
+		buf = (char*)xmalloc(pdu->variables->val_len + 1);
 		memcpy(buf, pdu->variables->val.string, pdu->variables->val_len);
 		buf[pdu->variables->val_len] = '\0';
 		value = strtol(buf, NULL, 0);
@@ -1443,8 +1651,8 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	case ASN_OBJECT_ID:
 		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
 		upsdebugx(2, "Received an OID value: %s", tmp_buf);
-		/* Try to get the value of the pointed OID */
-		if (nut_snmp_get_int(tmp_buf, &value) == FALSE) {
+		/* Try to get the value of the pointed OID, quietly */
+		if (do_nut_snmp_get_int(tmp_buf, &value, 0) == FALSE) {
 			char	*oid_leaf;
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
@@ -1454,8 +1662,19 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		}
 		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
-			upsname?upsname:device_name, pdu->variables->type, OID);
+		/* This is often seen with "ASN 0x80" meaning "context-specific"
+		 * (ASN_CONTEXT) with no further bits. In practice in may mean
+		 * trying to read from an OID that is itself the value, which
+		 * the fallback above handles for us. For analysis, see:
+		 *   https://github.com/networkupstools/nut/issues/1358
+		 */
+		if (log_unhandled_loudly) {
+			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		} else {
+			upsdebugx(3, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+		}
 		return FALSE;
 	}
 
@@ -1465,6 +1684,11 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		*pval = value;
 
 	return TRUE;
+}
+
+bool_t nut_snmp_get_int(const char *OID, long *pval)
+{
+	return do_nut_snmp_get_int(OID, pval, 1);
 }
 
 bool_t nut_snmp_set(const char *OID, char type, const char *value)
@@ -1698,6 +1922,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 		snprintf(info_type, 128, "%s", su_info_p->info_type);
 	}
 
+	su_info_p->flags |= SU_FLAG_MAPPING_HANDLED;
 	upsdebugx(1, "%s: using info_type '%s'", __func__, info_type);
 
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -1706,8 +1931,8 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	/* ups.status and {ups, Lx, outlet, outlet.group}.alarm have special
 	 * handling, not here! */
 	if ((strcasecmp(su_info_p->info_type, "ups.status"))
-		&& (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm")))
-	{
+	&&  (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm"))
+	) {
 		if (value != NULL)
 			dstate_setinfo(info_type, "%s", value);
 		else if (su_info_p->dfl != NULL)
@@ -1728,15 +1953,17 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 			upsdebugx(3, "%s: adding enumerated values", __func__);
 
 			/* Loop on all existing values */
-			for (info_lkp = su_info_p->oid2info; info_lkp != NULL
-				&& info_lkp->info_value != NULL; info_lkp++) {
-					dstate_addenum(info_type, "%s", info_lkp->info_value);
+			for (info_lkp = su_info_p->oid2info;
+				info_lkp != NULL && info_lkp->info_value != NULL;
+				info_lkp++
+			) {
+				dstate_addenum(info_type, "%s", info_lkp->info_value);
 			}
 		}
 
 		/* Commit the current value, to avoid staleness with huge
 		 * data collections on slow devices */
-		 dstate_dataok();
+		dstate_dataok();
 	}
 }
 
@@ -1780,11 +2007,12 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 	if ((info_value = su_find_infoval(su_info_p->oid2info, &value)) != NULL
 		&& info_value[0] != 0)
 	{
-		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
+		char alarm_info_value_more[SU_LARGEBUF + 32]; /* can snprintf() SU_LARGEBUF plus markup into here */
 
 		/* Special handling for outlet & outlet groups alarms */
 		if ((su_info_p->flags & SU_OUTLET)
-			|| (su_info_p->flags & SU_OUTLET_GROUP)) {
+		||  (su_info_p->flags & SU_OUTLET_GROUP)
+		) {
 			/* Extract template number */
 			item_number = extract_template_number(su_info_p->flags, info_type);
 
@@ -2014,6 +2242,11 @@ bool_t load_mib2nut(const char *mib)
 			__func__, mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
+			/* Check if we are asked to stop (reactivity++) */
+			if (exit_flag != 0) {
+				fatalx(EXIT_FAILURE, "Aborting because exit_flag was set");
+			}
+
 			upsdebugx(3, "%s: trying the new match_sysoid() method: attempt #%d",
 				__func__, (i+1));
 			if ((m2n = match_sysoid()) != NULL)
@@ -2097,6 +2330,15 @@ bool_t load_mib2nut(const char *mib)
 		upsdebugx(1, "%s: using %s MIB for device [%s] (host %s)",
 			__func__, mibname,
 			upsname ? upsname : device_name, device_path);
+
+		/* FIXME: also "tripplite" on devices that do not identify as such */
+		if (mibIsAuto && strcasecmp(mibname, "ietf"))
+			upsdebugx(0, "Only the IETF standard mapping was found as fallback. "
+				"Please check %s/docs/developer-guide.chunked/new-drivers.html#snmp-subdrivers "
+				"for suggestions how you can help improve the driver to "
+				"support vendor-specific mappings for your device better.",
+				NUT_WEBSITE_BASE);
+
 		return TRUE;
 	}
 
@@ -2123,7 +2365,9 @@ bool_t load_mib2nut(const char *mib)
 	return FALSE;
 }
 
-/* find the OID value matching that INFO_* value */
+/* find the OID value matching that INFO_* value
+ * Return -1 and errno==EINVAL for unsupported inputs.
+ */
 long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
@@ -2133,16 +2377,21 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 
 		if (!(strcmp(info_lkp->info_value, value))) {
 			upsdebugx(1, "%s: found %s (value: %s)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->oid_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%s)", __func__, value);
+	errno = EINVAL;
 	return -1;
 }
 
-/* String reformatting function */
+/* String reformatting function.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 #if WITH_SNMP_LKP_FUN
@@ -2151,8 +2400,12 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 	upsdebugx(1, "%s: no result value for this OID string value (%s)", __func__, (char*)value);
@@ -2160,10 +2413,14 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
 #endif /* WITH_SNMP_LKP_FUN */
+
+	errno = EINVAL;
 	return NULL;
 }
 
-/* find the INFO_* value matching that OID numeric (long) value */
+/* Find the INFO_* value matching that OID numeric (long) value.
+ * Return NULL and errno==EINVAL for unsupported inputs.
+ */
 const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 {
 	info_lkp_t *info_lkp;
@@ -2175,24 +2432,35 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		const char	*retvalue;
 
 		upsdebugx(2, "%s: using generic lookup function", __func__);
+		errno = 0;
 		retvalue = oid2info->fun_vp2s(raw_value);
-		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		upsdebugx(2, "%s: got value '%s'%s",
+			__func__, retvalue,
+			(errno == EINVAL ? ", invalid input" : "")
+		);
 		return retvalue;
 	}
 #endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
-	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-
+	for (
+		info_lkp = oid2info;
+		(info_lkp != NULL)
+		&& (info_lkp->info_value != NULL)
+		&& (strcmp(info_lkp->info_value, "NULL"));
+		info_lkp++
+	) {
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
-					__func__, info_lkp->info_value, value);
+				__func__, info_lkp->info_value, value);
 
+			errno = 0;
 			return info_lkp->info_value;
 		}
 	}
+
 	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%ld)", __func__, value);
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -2235,12 +2503,12 @@ void set_delays(void)
 		offdelay = -1;
 
 	if (ondelay >= 0) {
-		sprintf(su_scratch_buf, "%d", ondelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", ondelay);
 		su_setvar("ups.delay.start", su_scratch_buf);
 	}
 
 	if (offdelay >= 0) {
-		sprintf(su_scratch_buf, "%d", offdelay);
+		snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%d", offdelay);
 		su_setvar("ups.delay.shutdown", su_scratch_buf);
 	}
 }
@@ -2255,7 +2523,7 @@ void set_delays(void)
 static bool_t is_multiple_template(const char *OID_template)
 {
 	bool_t retCode = FALSE;
-	char *format_char = NULL;
+	const char *format_char = NULL;
 
 	if (OID_template) {
 		format_char = strchr(OID_template, '%');
@@ -2565,9 +2833,11 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
-						memset(&tmp_buf[0], 0, SU_INFOSIZE);
-						strcat(&tmp_buf[0], "device.%i.");
-						strcat(&tmp_buf[0], su_info_p->info_type);
+						/* Prepare a new formatting string with literal '.%i.' in it */
+						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
+						snprintf(tmp_buf, sizeof(tmp_buf), "device.%%i.%s", su_info_p->info_type);
+						/* strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf)); */
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 						snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -2602,9 +2872,11 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
-						memset(&tmp_buf[0], 0, SU_INFOSIZE);
-						strcat(&tmp_buf[0], "device.%i.");
-						strcat(&tmp_buf[0], su_info_p->info_type);
+						/* Prepare a new formatting string with literal '.%i.' in it */
+						memset(&tmp_buf[0], 0, sizeof(tmp_buf));	/* SU_INFOSIZE */
+						snprintf(tmp_buf, sizeof(tmp_buf), "device.%%i.%s", su_info_p->info_type);
+						/* strncat(&tmp_buf[0], "device.%i.", sizeof(tmp_buf));
+						strncat(&tmp_buf[0], su_info_p->info_type, sizeof(tmp_buf)); */
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 							snprintf_dynamic((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -2838,6 +3110,7 @@ bool_t daisychain_init(void)
 		{
 #if WITH_SNMP_LKP_FUN
 			devices_count = -1;
+			errno = 0;
 			/* First test if we have a generic lookup function
 			 * FIXME: Check if the field type is a string?
 			 */
@@ -2849,11 +3122,14 @@ bool_t daisychain_init(void)
 				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
 				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
 					devices_count = su_info_p->oid2info->nuf_s2l(buf);
-					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+					upsdebugx(2, "%s: got value '%ld'%s",
+						__func__, devices_count,
+						(errno == EINVAL ? ", invalid input" : "")
+					);
 				}
 			}
 
-			if (devices_count == -1) {
+			if (devices_count == -1 || errno == EINVAL) {
 #endif /* WITH_SNMP_LKP_FUN */
 
 				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE) {
@@ -3081,6 +3357,8 @@ bool_t snmp_ups_walk(int mode)
 	bool_t status = FALSE;
 
 	if (mode == SU_WALKMODE_UPDATE) {
+		/* Below we skip semi-static elements in update mode:
+		 * only parse when countdown reaches exactly 0 */
 		semistatic_countdown--;
 		if (semistatic_countdown < 0)
 			semistatic_countdown = semistaticfreq;
@@ -3185,7 +3463,8 @@ bool_t snmp_ups_walk(int mode)
 			/* skip instcmd, not linked to outlets */
 			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+			) {
 				upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 				continue;
 			}
@@ -3201,16 +3480,18 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* skip static elements in update mode */
-			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC)) {
+				upsdebugx(1, "Skipping static entry %s", su_info_p->OID);
 				continue;
+			}
 
-			/* Set default value if we cannot fetch it */
-			/* and set static flag on this element.
+			/* Set default value if we cannot fetch it
+			 * and set static flag on this element.
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if ((su_info_p->flags & SU_FLAG_ABSENT)
-				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)
-				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
+			if ( (su_info_p->flags & SU_FLAG_ABSENT)
+			 && !(su_info_p->flags & SU_OUTLET)
+			 && !(su_info_p->flags & SU_OUTLET_GROUP)
+			 && !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
 			{
 				if (mode == SU_WALKMODE_INIT)
 				{
@@ -3229,6 +3510,9 @@ bool_t snmp_ups_walk(int mode)
 							/* Set default value if we cannot fetch it from ups. */
 							su_setinfo(su_info_p, NULL);
 						}
+						upsdebugx(1, "Defaulting absent entry and setting to static: %s", su_info_p->OID);
+					} else {
+						upsdebugx(1, "Setting absent entry to static (no defautl provided): %s", su_info_p->OID);
 					}
 					su_info_p->flags |= SU_FLAG_STATIC;
 				}
@@ -3483,7 +3767,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					upsdebugx(2, "=> truncating alarms present to INT_MAX");
 					value = INT_MAX;
 				}
-				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value);
+				pdu_array = nut_snmp_walk(su_info_p->OID, (int)value, 1);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;
@@ -3653,10 +3937,13 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
  * @varname: name of variable or command to set the OID from
  * @val: value for settings, NULL for commands
 
- * Returns
- *   STAT_SET_HANDLED if OK,
- *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
- *   STAT_SET_FAILED otherwise
+ * Returns respectively (for instcmd or setvar activity):
+ *   STAT_INSTCMD_HANDLED or STAT_SET_HANDLED if OK,
+ *   STAT_*_CONVERSION_FAILED if the value was invalid
+ *       (not a number when expected one,
+ *        not a key in mapping table when used)
+ *   STAT_*_INVALID or STAT_*_UNKNOWN if the command / setting is not supported
+ *   STAT_*_FAILED otherwise
  */
 static int su_setOID(int mode, const char *varname, const char *val)
 {
@@ -3670,12 +3957,14 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	int daisychain_device_number = -1;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
+	const char *val_practical = NULL;
 	char setOID[SU_INFOSIZE];
 	/* Used for potentially appending "device.X." to {outlet,outlet.group}.count */
 	char template_count_var[SU_BUFSIZE];
 
 	upsdebugx(2, "entering %s(%s, %s, %s)", __func__,
-		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar", varname, val);
+		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar",
+		NUT_STRARG(varname), NUT_STRARG(val));
 
 	memset(setOID, 0, SU_INFOSIZE);
 	memset(template_count_var, 0, SU_BUFSIZE);
@@ -3748,7 +4037,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
 		free(tmp_varname);
-		return STAT_SET_INVALID;
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 	}
 
 	/* Check if it is outlet / outlet.group, or standard variable */
@@ -3815,7 +4104,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			/* out of bound item number */
 			upsdebugx(2, "%s: item is out of bound (%i / %i)",
 				__func__, item_number, total_items);
-			return STAT_SET_INVALID;
+			return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 		}
 		/* find back the item template */
 		item_varname = (char *)xmalloc(SU_INFOSIZE);
@@ -3884,8 +4173,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 					tmp_info_p->OID, "%i", item_number);
 			}
 		}
-		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
-		 * can be setting a server side variable! */
+		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR
+		 * since we can be setting a server side variable - but
+		 * note this consideration does not apply to instcmd's! */
 		else {
 			if (mode==SU_MODE_INSTCMD) {
 				free_info(su_info_p);
@@ -3910,7 +4200,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		if (tmp_varname != NULL)
 			free(tmp_varname);
 
-		return STAT_SET_UNKNOWN;
+		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_UNKNOWN : (int)STAT_SET_UNKNOWN);
 	}
 
 	/* set value into the device, using the provided one, or the default one otherwise */
@@ -3918,30 +4208,37 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		/* Sanity check: commands should either have a value or a default */
 		if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
 			upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
-			return STAT_SET_INVALID;
+			return STAT_INSTCMD_INVALID;
 		}
+		upslog_INSTCMD_POWERSTATE_CHECKED(varname, val);
 	}
 
+	val_practical = val ? val : su_info_p->dfl;
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
+		status = nut_snmp_set_str(su_info_p->OID, val_practical);
 	}
 	else {
 		if (mode==SU_MODE_INSTCMD) {
-			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
+			if ( !str_to_long(val_practical, &value, 10) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
-				return STAT_SET_INVALID;
+				return STAT_INSTCMD_CONVERSION_FAILED;
 			}
 		}
 		else {
 			/* non string data may imply a value lookup */
 			if (su_info_p->oid2info) {
-				value = su_find_valinfo(su_info_p->oid2info, val ? val : su_info_p->dfl);
+				value = su_find_valinfo(su_info_p->oid2info, val_practical);
+				if (value == -1 && errno == EINVAL) {
+					upsdebugx(1, "%s: cannot set '%s': value %s is not supported by lookup mapping!",
+						__func__, varname, NUT_STRARG(val_practical));
+					return STAT_SET_CONVERSION_FAILED;
+				}
 			}
 			else {
 				/* Convert value and apply multiplier */
 				if ( !str_to_long(val, &value, 10) ) {
 					upsdebugx(1, "%s: cannot set '%s': value is not a number!", __func__, varname);
-					return STAT_SET_INVALID;
+					return STAT_SET_CONVERSION_FAILED;
 				}
 				value = (long)((double)value / su_info_p->info_len);
 			}
@@ -3957,23 +4254,26 @@ static int su_setOID(int mode, const char *varname, const char *val)
 
 	/* Process result */
 	if (status == FALSE) {
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: cannot execute command '%s'", __func__, varname);
-		else
+			retval = STAT_INSTCMD_FAILED;
+		}
+		else {
 			upsdebugx(1, "%s: cannot set value %s on OID %s", __func__, val, su_info_p->OID);
-
-		retval = STAT_SET_FAILED;
+			retval = STAT_SET_FAILED;
+		}
 	}
 	else {
-		retval = STAT_SET_HANDLED;
-		if (mode==SU_MODE_INSTCMD)
+		if (mode==SU_MODE_INSTCMD) {
 			upsdebugx(1, "%s: successfully sent command %s", __func__, varname);
-		else {
+			retval = STAT_INSTCMD_HANDLED;
+		} else {
 			upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
 
 			/* update info array: call dstate_setinfo, since flags and aux are
 			 * already published, and this saves us some processing */
 			dstate_setinfo(varname, "%s", val);
+			retval = STAT_SET_HANDLED;
 		}
 	}
 
@@ -3989,7 +4289,15 @@ static int su_setOID(int mode, const char *varname, const char *val)
  * FIXME: make a common function with su_instcmd! */
 int su_setvar(const char *varname, const char *val)
 {
-	return su_setOID(SU_MODE_SETVAR, varname, val);
+	int	ret;
+
+	upsdebug_SET_STARTING(varname, val);
+
+	ret = su_setOID(SU_MODE_SETVAR, varname, val);
+
+	upslog_SET_RESULT(ret, varname, val);
+
+	return ret;
 }
 
 /* Daisychain-aware function to add instant commands:
@@ -4020,7 +4328,15 @@ int su_addcmd(snmp_info_t *su_info_p)
 /* process instant command and take action. */
 int su_instcmd(const char *cmdname, const char *extradata)
 {
-	return su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+	int	ret;
+
+	upsdebug_INSTCMD_STARTING(cmdname, extradata);
+
+	ret = su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
+
+	upslog_INSTCMD_RESULT(ret, cmdname, extradata);
+
+	return ret;
 }
 
 /* FIXME: the below functions can be removed since these were for loading
@@ -4074,7 +4390,7 @@ void read_mibconf(char *mib)
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
-	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", CONFPATH, mib);
+	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", confpath(), mib);
 
 	pconf_init(&ctx, mibconf_err);
 

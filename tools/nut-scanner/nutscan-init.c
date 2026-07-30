@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - 2021 EATON
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2021 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ int nutscan_avail_nut_simulation = 0;
 int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
+int nutscan_avail_upower = 0;
 
 /* Methods defined in scan_*.c source files */
 int nutscan_load_usb_library(const char *libname_path);
@@ -72,6 +73,15 @@ int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_unload_upsclient_library(void);
+void nutscan_upscli_set_debug_level(int level, const void *cookie);
+void nutscan_upscli_setprocname(const char *pn, const void *cookie);
+void nutscan_upscli_setproctag(const char *tag, const void *cookie);
+struct timeval *nutscan_upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
+int nutscan_load_upower_library(const char *libname_path);
+int nutscan_unload_upower_library(void);
+
+/* privately exported from common.c for internal libs */
+const char *setproctag_lib_once(const char *val);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE_UNNAMED
@@ -138,7 +148,7 @@ size_t max_threads_ipmi = 0;	/* limits not yet known */
 #endif /* HAVE_PTHREAD */
 
 #ifdef WIN32
-/* Stub for libupsclient */
+/* Stub for libupsclient, no need to register a callback for ENABLE_SHARED_PRIVATE_LIBS builds */
 void do_upsconf_args(char *confupsname, char *var, char *val) {
 	NUT_UNUSED_VARIABLE(confupsname);
 	NUT_UNUSED_VARIABLE(var);
@@ -146,16 +156,85 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 }
 #endif	/* WIN32 */
 
+const void *nutscan_upslog_cookie(void)
+{
+	return nut_common_cookie();
+}
+
+void nutscan_upslog_set_debug_level(int level, const void *cookie) {
+	nut_debug_level = level;
+
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_set_debug_level(level, cookie ? cookie : nutscan_upslog_cookie());
+
+}
+
+int nutscan_upslog_get_debug_level(void)
+{
+	return nut_debug_level;
+}
+
+/* Avoid re-querying /proc or equivalent and logging about it,
+ * if the caller is a NUT program that already knows its name:
+ * see getmyprocname() in NUT common library */
+void nutscan_upslog_setprocname(const char *pn, const void *cookie)
+{
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	setmyprocname(pn);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setprocname(pn, cookie ? cookie : nutscan_upslog_cookie());
+}
+
+void nutscan_upslog_setproctag(const char *tag, const void *cookie)
+{
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	setproctag(tag);
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_setproctag(tag, cookie ? cookie : nutscan_upslog_cookie());
+}
+
+const char *nutscan_upslog_getproctag(void)
+{
+	return getproctag();
+}
+
+struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie)
+{
+	/* No-op if internal tv equals passed tv */
+	struct timeval *nstv = upslog_start_sync(tv);
+
+	if (cookie != nutscan_upslog_cookie())
+		setproctag_lib_once("libnutscan");
+
+	/* Succeeds after init and if the library is loaded, else no-op */
+	nutscan_upscli_upslog_start_sync(nstv, cookie ? cookie : nutscan_upslog_cookie());
+
+	return nstv;
+}
+
 void nutscan_init(void)
 {
 	char *libname = NULL;
 
 #ifdef WIN32
 	/* Required ritual before calling any socket functions */
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
 #endif	/* WIN32 */
+
+	upsdebugx(1, "%s: starting...", __func__);
 
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
@@ -235,7 +314,7 @@ void nutscan_init(void)
 	 * known-compatible SOFILE_LIB<X> first.
 	 */
 
-#ifdef WITH_USB
+#if (defined WITH_USB) && WITH_USB
 # if WITH_LIBUSB_1_0
 
 #  ifdef SOFILE_LIBUSB1
@@ -343,8 +422,8 @@ void nutscan_init(void)
 		__func__, "LibUSB");
 #endif	/* WITH_USB */
 
-#ifdef WITH_SNMP
-# ifdef WITH_SNMP_STATIC
+#if (defined WITH_SNMP) && WITH_SNMP
+# if (defined WITH_SNMP_STATIC) && WITH_SNMP_STATIC
 	/* This is a rare situation, reserved for platforms where libnetsnmp or
 	 * equivalent (some other ucd-snmp descendants) was not packaged, and
 	 * thus was custom-built for NUT (so linked statically to avoid potential
@@ -412,7 +491,7 @@ void nutscan_init(void)
 		__func__, "LibSNMP");
 #endif	/* WITH_SNMP */
 
-#ifdef WITH_NEON
+#if (defined WITH_NEON) && WITH_NEON
 # ifdef SOFILE_LIBNEON
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBNEON);
@@ -481,7 +560,7 @@ void nutscan_init(void)
 		__func__, "LibNeon");
 #endif	/* WITH_NEON */
 
-#ifdef WITH_AVAHI
+#if (defined WITH_AVAHI) && WITH_AVAHI
 # ifdef SOFILE_LIBAVAHI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBAVAHI);
@@ -528,7 +607,57 @@ void nutscan_init(void)
 		__func__, "LibAvahi");
 #endif	/* WITH_AVAHI */
 
-#ifdef WITH_FREEIPMI
+#if (defined WITH_UPOWER) && WITH_UPOWER
+/* NOTE: There may be a stack of libraries involved (libgio, libglib2,
+ *  libmount...) in driver programs, but one entry point suffices
+ *  (and/or dynamically pulls in the others) for just the scan itself */
+# ifdef SOFILE_LIBGIO
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBGIO);
+	}
+# endif	/* SOFILE_LIBGIO */
+	if (!libname) {
+		libname = get_libname("libgio-2.0" SOEXT);
+	}
+# ifdef SOPATH_LIBGIO
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBGIO);
+	}
+# endif	/* SOPATH_LIBGIO */
+
+	if (libname) {
+		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
+			__func__, libname, "LibGIO");
+		nutscan_avail_upower = nutscan_load_upower_library(libname);
+		free(libname);
+		libname = NULL;
+	} else {
+		/* let libtool (lt_dlopen) do its default magic maybe better */
+		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
+			"trying to load it with libtool default resolver",
+			__func__, "LibGIO");
+# ifdef SOFILE_LIBGIO
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
+		}
+# endif	/* SOFILE_LIBGIO */
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library("libgio-2.0" SOEXT);
+		}
+# ifdef SOPATH_LIBGIO
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library(SOPATH_LIBGIO);
+		}
+# endif	/* SOPATH_LIBGIO */
+	}
+	upsdebugx(1, "%s: %s to load the library for %s",
+		__func__, nutscan_avail_upower ? "succeeded" : "failed", "LibGIO");
+#else	/* not WITH_UPOWER */
+	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
+		__func__, "LibGIO");
+#endif	/* WITH_UPOWER */
+
+#if (defined WITH_FREEIPMI) && WITH_FREEIPMI
 # ifdef SOFILE_LIBFREEIPMI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
@@ -637,6 +766,8 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
+
+	upsdebugx(1, "%s: done", __func__);
 }
 
 /* Return 0 on success, -1 on error e.g. "was not loaded";
@@ -658,7 +789,7 @@ int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
 	}
 
 	/* if previous init failed */
-	if (*pdl_handle == (void *)1) {
+	if (*pdl_handle == (lt_dlhandle)1) {
 		goto end;
 	}
 
@@ -693,12 +824,15 @@ end:
 
 void nutscan_free(void)
 {
+	upsdebugx(1, "%s: starting...", __func__);
+
 	nutscan_unload_usb_library();
 	nutscan_unload_snmp_library();
 	nutscan_unload_neon_library();
 	nutscan_unload_avahi_library();
 	nutscan_unload_ipmi_library();
 	nutscan_unload_upsclient_library();
+	nutscan_unload_upower_library();
 
 #ifdef HAVE_PTHREAD
 /* TOTHINK: See comments near mutex/semaphore init code above */
@@ -717,4 +851,5 @@ void nutscan_free(void)
 # endif
 #endif
 
+	upsdebugx(1, "%s: done", __func__);
 }

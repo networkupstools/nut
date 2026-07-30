@@ -61,8 +61,9 @@ background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
 }
 
 /* For Customizable Header plugin: */
-.custom-header__title {
-background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
+/* before Jul 2025 : .custom-header__title { */
+.jenkins-header__navigation {
+  background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
   background-repeat: no-repeat;
 /*  background-attachment: fixed; */
   background-position: right;

@@ -12,7 +12,7 @@
 # Licensed under the terms of the Network UPS Tools source license (GPLv2+)
 
 [ -n "${TEMPDIR-}" ] || TEMPDIR="${TMPDIR-}"
-[ -n "${TEMPDIR-}" ] || { [ -d "/dev/shm" && TEMPDIR="/dev/shm" || TEMPDIR="/tmp" ; }
+[ -n "${TEMPDIR-}" ] || { [ -d "/dev/shm" ] && TEMPDIR="/dev/shm" || TEMPDIR="/tmp" ; }
 
 printf '%s\t[%s]\t%s\t[%s]:\t%s\t(%s tokens)\n' "`date -u`" "`id`" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >> "${TEMPDIR}/notifyme-`id -u`.log"
 
@@ -24,5 +24,5 @@ if [ -n "${TOP_BUILDDIR}" -a -x "${TOP_BUILDDIR}/clients/upssched" ] ; then
 	if [ "${NUT_DEBUG_LEVEL-}" -gt 0 ] 2>/dev/null ; then
 		printf '%s: %s\t%s\t[%s]:\targs: %s\t(%s arg tokens)\n' "`date -u`" "$0" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >&2
 	fi
-	"${TOP_BUILDDIR}/clients/upssched"
+	"${TOP_BUILDDIR}/clients/upssched" "$@"
 fi

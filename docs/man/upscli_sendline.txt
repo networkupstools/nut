@@ -4,7 +4,8 @@ UPSCLI_SENDLINE(3)
 NAME
 ----
 
-upscli_sendline, upscli_sendline_timeout - Send a single command to a UPS
+upscli_sendline, upscli_sendline_timeout,
+upscli_sendline_timeout_may_disconnect - Send a single command to a UPS
 
 SYNOPSIS
 --------
@@ -17,6 +18,10 @@ SYNOPSIS
 
 	int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen,
 		const time_t timeout);
+
+	int upscli_sendline_timeout_may_disconnect(UPSCONN_t *ups,
+		const char *buf, size_t buflen, const time_t timeout,
+		int may_disconnect);
 ------
 
 DESCRIPTION
@@ -29,10 +34,12 @@ of size 'buflen' to the server.
 The data in 'buf' must be a fully formatted protocol command as no
 parsing of the buffer occurs within this function.
 
-The difference between the two functions is that *upscli_sendline_timeout()*
+The difference between the three functions is that *upscli_sendline_timeout()*
 lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_sendline()* does not offer this
-freedom, and uses an immediate timeout (0 second).
+freedom, and uses an immediate timeout (0 second). Both of these disconnect
+upon errors. The *upscli_sendline_timeout_may_disconnect()* further allows
+to enable or disable such disconnections.
 
 RETURN VALUE
 ------------

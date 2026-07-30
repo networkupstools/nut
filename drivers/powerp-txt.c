@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.63"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.65"
 
 typedef struct {
 	float          i_volt;
@@ -146,40 +146,48 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return powpan_instcmd("beeper.enable", NULL);
 	}
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
 
 		if (strcasecmp(cmdname, cmdtab[i].cmd)) {
 			continue;
 		}
 
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		if ((powpan_command(cmdtab[i].command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+		upslog_INSTCMD_FAILED(cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "Z.%ld\r", offdelay / 6);
 		} else {
 			snprintf(command, sizeof(command), "Z%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "S.%ld\r", offdelay / 6);
 		} else {
 			snprintf(command, sizeof(command), "S%02ld\r", offdelay / 60);
 		}
 	} else if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if (offdelay < 60) {
 			snprintf(command, sizeof(command), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 		} else {
 			snprintf(command, sizeof(command), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -187,7 +195,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
+	upslog_INSTCMD_FAILED(cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -195,6 +203,8 @@ static int powpan_setvar(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
 	int 	i;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	for (i = 0;  vartab[i].var != NULL; i++) {
 
@@ -214,11 +224,11 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: setting variable [%s] to [%s] failed", __func__, varname, val);
-		return STAT_SET_UNKNOWN;
+		upslog_SET_FAILED(varname, val);
+		return STAT_SET_UNKNOWN;	/* FIXME: ..._FAILED? */
 	}
 
-	upslogx(LOG_ERR, "%s: variable [%s] not found", __func__, varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -368,6 +378,10 @@ static void powpan_initinfo(void)
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
+
+	/* install handlers */
+	upsh.instcmd = powpan_instcmd;
+	upsh.setvar = powpan_setvar;
 }
 
 static ssize_t powpan_status(status_t *status)

@@ -2,7 +2,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
-   Copyright (C) 2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,21 +30,35 @@
 
 #include "nut_stdint.h"
 #include "upsclient.h"
+#include "strjson.h"
 
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
-static char		*upsname = NULL, *hostname = NULL;
-static UPSCONN_t	*ups = NULL;
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
 
-static void usage(const char *prog)
+static char		*upsname = NULL, *hostname = NULL,
+	/* Note: nutauth is either NULL or points to an optarg, so is not freed */
+	*nutauth = NULL;
+static UPSCONN_t	*ups = NULL;
+static int	output_json = 0;
+
+/* For getopt loops below: */
+static const char	optstring[] = "+DhlLcVW:jA:";
+
+static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
 	printf("NUT read-only client program to display UPS variables.\n");
 
-	printf("\nusage: %s -l | -L [<hostname>[:port]]\n", prog);
-	printf("       %s <ups> [<variable>]\n", prog);
-	printf("       %s -c <ups>\n", prog);
+	printf("\nusage: %s [-j] -l | -L [<hostname>[:port]]\n", prog);
+	printf("       %s [-j] <ups> [<variable>]\n", prog);
+	printf("       %s [-j] -c <ups>\n", prog);
+
+	printf("\nOption:\n");
+	printf("  -j         - display output in JSON format\n");
 
 	printf("\nFirst form (lists UPSes):\n");
 	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
@@ -63,12 +77,36 @@ static void usage(const char *prog)
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
+	printf("  -D         - raise debugging level\n");
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, NULL));
+}
+
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg)
+	__attribute__((noreturn));
+
+static void fatalx_error_json_simple(int msg_is_simple, const char *msg) {
+	/* To be used in simpler cases, where the possible JSON
+	 * message is not embedded into other lists/objects */
+	if (output_json) {
+		if (msg_is_simple) {
+			/* Caller knows there is nothing to escape here, pass through */
+			printf("{\"error\": \"%s\"}\n", NUT_STRARG(msg));
+		} else {
+			printf("{\"error\": \"");
+			json_print_esc(msg);
+			printf("\"}\n");
+		}
+	}
+	fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
 }
 
 static void printvar(const char *var)
@@ -80,7 +118,7 @@ static void printvar(const char *var)
 
 	/* old-style variable name? */
 	if (!strchr(var, '.')) {
-		fatalx(EXIT_FAILURE, "Error: old-style variable names are not supported");
+		fatalx_error_json_simple(1, "old-style variable names are not supported");
 	}
 
 	query[0] = "VAR";
@@ -92,25 +130,39 @@ static void printvar(const char *var)
 	ret = upscli_get(ups, numq, query, &numa, &answer);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
 
 		/* new var and old upsd?  try to explain the situation */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: variable unknown (old upsd detected)");
+			msg = "variable unknown (old upsd detected)";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(msg_is_simple, msg);
 	}
 
 	if (numa < numq) {
-		fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
+		char	msg[LARGEBUF];
+		snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least %" PRIuSIZE ")", numa, numq);
+		fatalx_error_json_simple(1, msg);
 	}
 
-	printf("%s\n", answer[3]);
+	if (output_json) {
+		printf("\"");
+		json_print_esc(answer[3]);
+		printf("\"\n");
+	} else {
+		printf("%s\n", answer[3]);
+	}
 }
 
 static void list_vars(void)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
@@ -119,32 +171,74 @@ static void list_vars(void)
 	query[1] = upsname;
 	numq = 2;
 
+	if (output_json) {
+		printf("{\n");
+	}
+
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
 
 		/* check for an old upsd */
+		upsdebugx(1, "%s: got code %d, upserror %d",
+			__func__, ret, upscli_upserror(ups));
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		if (output_json) {
+			if (msg_is_simple) {
+				printf("  \"error\": \"%s\"\n}\n", NUT_STRARG(msg));
+			} else {
+				printf("  \"error\": \"");
+				json_print_esc(msg);
+				printf("\"\n}\n");
+			}
+		}
+		fatalx(EXIT_FAILURE, "Error: %s", NUT_STRARG(msg));
 	}
 
 	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
+			if (output_json) {
+				printf("  \"error\": \"%s\"\n}\n", msg);
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
-		printf("%s: %s\n", answer[2], answer[3]);
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  \"");
+			json_print_esc(answer[2]);
+			printf("\": \"");
+			json_print_esc(answer[3]);
+			printf("\"");
+			first = 0;
+		} else {
+			printf("%s: %s\n", answer[2], answer[3]);
+		}
+	}
+
+	if (output_json) {
+		printf("\n}\n");
 	}
 }
 
 static void list_upses(int verbose)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
@@ -155,25 +249,74 @@ static void list_upses(int verbose)
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
+
 		/* check for an old upsd */
+		upsdebugx(1, "%s: got code %d, upserror %d",
+			__func__, ret, upscli_upserror(ups));
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(msg_is_simple, msg);
+	}
+
+	if (output_json) {
+		if (verbose) {
+			printf("{\n");
+		} else {
+			printf("[\n");
+		}
 	}
 
 	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			if (output_json) {
+				printf("  %s", verbose ? "" : "{");
+				printf("\"error\": \"%s\"\n}\n", msg);
+				if (!verbose)
+					printf("]\n");
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
-		if(verbose) {
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  ");
+			if (verbose) {
+				printf("\"");
+				json_print_esc(answer[1]);
+				printf("\": \"");
+				json_print_esc(answer[2]);
+				printf("\"");
+			} else {
+				printf("\"");
+				json_print_esc(answer[1]);
+				printf("\"");
+			}
+			first = 0;
+		} else if(verbose) {
 			printf("%s: %s\n", answer[1], answer[2]);
 		} else {
 			printf("%s\n", answer[1]);
+		}
+	}
+
+	if (output_json) {
+		if (verbose) {
+			printf("\n}\n");
+		} else {
+			printf("\n]\n");
 		}
 	}
 }
@@ -181,6 +324,7 @@ static void list_upses(int verbose)
 static void list_clients(const char *devname)
 {
 	int		ret;
+	int		first = 1;
 	size_t	numq, numa;
 	const char	*query[4];
 	char		**answer;
@@ -192,27 +336,61 @@ static void list_clients(const char *devname)
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
+		const char	*msg = NULL;
+		int	msg_is_simple = 1;
+
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			msg = "upsd is too old to support this query";
+		} else {
+			msg = upscli_strerror(ups);
+			msg_is_simple = 0;
 		}
 
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+		fatalx_error_json_simple(msg_is_simple, msg);
+	}
+
+	if (output_json) {
+		printf("[\n");
 	}
 
 	while ((ret=upscli_list_next(ups, numq, query, &numa, &answer)) == 1) {
 
 		/* CLIENT <upsname> <address> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			char	msg[LARGEBUF];
+			snprintf(msg, sizeof(msg), "insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+			if (output_json) {
+				printf("  {\"error\": \"%s\"\n}\n]\n", msg);
+			}
+			fatalx(EXIT_FAILURE, "Error: %s", msg);
 		}
 
-		printf("%s\n", answer[2]);
+		if (output_json) {
+			if (!first) {
+				printf(",\n");
+			}
+			printf("  \"");
+			json_print_esc(answer[2]);
+			printf("\"");
+			first = 0;
+		} else {
+			printf("%s\n", answer[2]);
+		}
+	}
+
+	if (output_json) {
+		printf("\n]\n");
 	}
 }
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	if (ups) {
 		upscli_disconnect(ups);
 	}
@@ -220,32 +398,81 @@ static void clean_exit(void)
 	free(upsname);
 	free(hostname);
 	free(ups);
+
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 
 int main(int argc, char **argv)
 {
-	int	i = 0;
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	int	opt_ret = 0;
 	uint16_t	port;
+	upscli_authconf_t	*ac_conn = NULL;
 	int	varlist = 0, clientlist = 0, verbose = 0;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsc");
 	const char	*net_connect_timeout = NULL;
-	char	*s = NULL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
+	char	str_port[16];
 
-	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
-	 * and NUT methods called from it. This line aims to just initialize
-	 * the subsystem, and set initial timestamp. Debugging the client is
-	 * primarily of use to developers, so is not exposed via `-D` args.
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
 	 */
-	s = getenv("NUT_DEBUG_LEVEL");
-	if (s && str_to_int(s, &i, 10) && i > 0) {
-		nut_debug_level = i;
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
 	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	setproctag(prog);
 	upsdebugx(1, "Starting NUT client: %s", prog);
 
-	while ((i = getopt(argc, argv, "+hlLcVW:")) != -1) {
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
 
-		switch (i)
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+
+		switch (opt_ret)
 		{
+		case 'D': break;	/* See nut_debug_level handled above */
+
+		case 'A':
+			nutauth = optarg;
+			break;
+
 		case 'L':
 			verbose = 1;
 			goto fallthrough_case_l;
@@ -256,6 +483,10 @@ int main(int argc, char **argv)
 
 		case 'c':
 			clientlist = 1;
+			break;
+
+		case 'j':
+			output_json = 1;
 			break;
 
 		case 'V':
@@ -271,16 +502,41 @@ int main(int argc, char **argv)
 
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
 
-	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
-		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
-			net_connect_timeout);
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			/* Not passing fatal_errors=1 into the parser due to JSON support */
+			int	parsed = -1;
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				parsed = upscli_read_authconf_file(NULL, 0);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				parsed = upscli_read_authconf_file(nutauth, 0);
+			}
+			if (parsed < 0) {
+				fatalx_error_json_simple(0, "Failed to parse auth config file");
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0);
 	}
 
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		char	msg[LARGEBUF];
+		snprintf(msg, sizeof(msg), "invalid network timeout: %s", net_connect_timeout);
+		fatalx_error_json_simple(0, msg);
+	}
+
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
@@ -289,34 +545,43 @@ int main(int argc, char **argv)
 
 	if (varlist) {
 		if (upscli_splitaddr(argv[0] ? argv[0] : "localhost", &hostname, &port) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid hostname.\nRequired format: [hostname[:port]]");
+			fatalx_error_json_simple(0, "invalid hostname.\nRequired format: [hostname[:port]]");
 		}
 	} else {
 		if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
+			fatalx_error_json_simple(0, "invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 		}
 	}
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
-	ups = xmalloc(sizeof(*ups));
-
-	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
-		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
 	}
+
+	ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
+
+	if (upscli_connect(ups, hostname, port, flags_ssl) < 0) {
+		fatalx_error_json_simple(0, upscli_strerror(ups));
+	}
+
+	/* Best-effort login (if present in the file) */
+	if (ac_conn && ac_conn->user && ac_conn->pass)
+		upscli_authenticate_authconf(ups, ac_conn);
 
 	if (varlist) {
 		upsdebugx(1, "Calling list_upses()");
 		list_upses(verbose);
-		exit(EXIT_SUCCESS);
 	}
-
+	else
 	if (clientlist) {
 		upsdebugx(1, "Calling list_clients()");
 		list_clients(upsname);
-		exit(EXIT_SUCCESS);
 	}
-
+	else
 	if (argc > 1) {
 		upsdebugx(1, "Calling printvar(%s)", argv[1]);
 		printvar(argv[1]);
@@ -325,6 +590,8 @@ int main(int argc, char **argv)
 		list_vars();
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 
@@ -332,6 +599,9 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	NUT_UNUSED_VARIABLE(upsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

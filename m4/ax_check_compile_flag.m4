@@ -52,7 +52,7 @@ AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
     [dnl Toolkit per se did not return an error code; but did it complain?
      dnl Below are a few strings typical for some versions of GCC and CLANG
      dnl This relies on AC_COMPILE_IFELSE implementation retaining conftest.err
-     AS_IF([grep -E '(unrecognized.* option|did you mean|unknown argument:)' < conftest.err >/dev/null 2>/dev/null],
+     AS_IF([${EGREP} '(unrecognized.* option|did you mean|unknown argument:)' < conftest.err >/dev/null 2>/dev/null],
         [AS_VAR_SET(CACHEVAR,[no])],dnl Hit a complaint, flag is not supported after all
         [AS_VAR_SET(CACHEVAR,[yes])])],
     [AS_VAR_SET(CACHEVAR,[no])])

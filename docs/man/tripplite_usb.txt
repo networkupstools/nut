@@ -80,9 +80,9 @@ to the same monitoring system, and you want to be sure that you shut them down
 in the correct order.
 +
 This regex is matched against the full USB product string as seen in
-lsusb(8). The `ups.model` in the linkman:upsc[1] output only lists the name
-after `TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
-`.*SMART2200.*`.
+linkmanext:lsusb[8]. The `ups.model` in the linkman:upsc[8] output only lists
+the name after `TRIPP LITE`, so to match a 'SMART2200RMXL2U', you could use the
+regex like `.*SMART2200.*`.
 
 * The *productid* is a regular expression which matches the UPS PID as four
 hexadecimal digits.  So far, the only known devices that work with this driver
@@ -149,12 +149,13 @@ instance should control.
 For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
 same time, since they have different USB Product ID strings. If you have two
 SMART1500RM2U units, you would have to find which USB bus and device number
-each unit is on (via lsusb(8)).
+each unit is on (via linkmanext:lsusb[8]).
 
-Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid`
-config argument to uniquely specify which UPS a given driver instance should control.
-This allows for precise identification of UPS devices when multiple devices are connected.
-To retrieve or set the upsid use the linkman:upsrw[8] utility.
+Some of the SMART*2U models have a configurable Unit ID number, and you can
+now use the `upsid` config argument to uniquely specify which UPS a given
+driver instance should control.  This allows for precise identification of
+UPS devices when multiple devices are connected.  To retrieve or set the
+`upsid`, you can use the linkman:upsrw[8] utility.
 
 AUTHORS
 -------
@@ -183,7 +184,7 @@ linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 Other tools:
 ~~~~~~~~~~~~
 
-regex(7), lsusb(8)
+linkmanext:regex[7], linkmanext:lsusb[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

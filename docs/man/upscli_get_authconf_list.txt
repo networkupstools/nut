@@ -1,0 +1,40 @@
+UPSCLI_GET_AUTHCONF_LIST(3)
+===========================
+
+NAME
+----
+
+upscli_get_authconf_list - Get the list of known authentication configurations
+
+SYNOPSIS
+--------
+
+------
+	#include <authconf.h>
+
+	upscli_authconf_t *upscli_get_authconf_list(void);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_get_authconf_list()* function returns a pointer to the internal list
+of authentication configurations parsed from the configuration file (usually
+*nutauth.conf*) via linkman:upscli_read_authconf_file[3].
+
+Each element in the list is of type `upscli_authconf_t` as detailed in
+linkman:upscli_create_authconf_item[3].
+
+RETURN VALUE
+------------
+
+The *upscli_get_authconf_list()* function returns a pointer to the first element
+of the `upscli_authconf_t` list, or NULL if the list is empty or hasn't been
+initialized by linkman:upscli_read_authconf_file[3].
+
+SEE ALSO
+--------
+
+linkman:upscli_create_authconf_item[3],
+linkman:upscli_read_authconf_file[3], linkman:upscli_find_authconf_item[3],
+linkman:upscli_free_authconf_list[3], linkman:upscli_dump_authconf_list[3]

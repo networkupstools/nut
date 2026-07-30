@@ -5,7 +5,7 @@
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011	Arnaud Quette <arnaud.quette@free.fr>
 	2013	Emilien Kia <kiae.dev@gmail.com>
-	2020	Jim Klimov <jimklimov@gmail.com>
+	2020-2026	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,6 +35,20 @@
 #ifdef WITH_OPENSSL
 #	include <openssl/err.h>
 #	include <openssl/ssl.h>
+
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example
+ * FIXME: dedup something with upsclient.c and nutclient.cpp?
+ */
+typedef struct {
+	int	verbose_mode;
+	int	verify_depth;
+	int	always_continue;
+
+	/* In this context, hostname is by default a pointer to client->addr, which
+	 * should not be freed or changed (otherwise set hostname_allocated!=0) */
+	const char	*hostname;
+	int	hostname_allocated;
+} openssl_cert_verify_data_t;
 #endif
 
 #include "parseconf.h"
@@ -59,10 +73,11 @@ typedef struct nut_ctype_s {
 
 #ifdef	WITH_OPENSSL
 	SSL	*ssl;
+	openssl_cert_verify_data_t	openssl_cert_verify_data;
 #elif defined(WITH_NSS)
 	PRFileDesc	*ssl;
 #else
-	void *ssl;
+	void	*ssl;
 #endif
 	int	ssl_connected;
 

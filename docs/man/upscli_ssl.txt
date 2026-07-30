@@ -23,6 +23,10 @@ The *upscli_ssl*() function takes the pointer 'ups' to a
 compiled into the linkman:upsclient[3] library, and if it was successfully
 enabled for this connection.
 
+Starting with NUT v2.8.5, you can use linkman:upscli_ssl_caps[3] from consumer
+code to query the library about its build circumstances (whether it supports
+SSL, and which backend(s)).
+
 RETURN VALUE
 ------------
 
@@ -32,6 +36,7 @@ not.  It returns '-1' in the event of an error.
 SEE ALSO
 --------
 
+linkman:upscli_ssl_caps[3], linkman:upscli_ssl_caps_descr[3],
 linkman:upscli_fd[3], linkman:upscli_get[3],
 linkman:upscli_readline[3], linkman:upscli_sendline[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

@@ -8,7 +8,7 @@
  *  https://github.com/networkupstools/nut/issues/2370
  *
  * Copyright (C)
- *      2024   Jim Klimov <jimklimov+nut@gmail.com>
+ *      2024-2026   Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+
+/* Dummy here */
+#include "nut_libusb.h"
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+usb_communication_subdriver_t   usb_subdriver = {0};
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic pop
+#endif
 
 #include "belkin-hid.c"
 /* from drivers/belkin-hid.c we test:

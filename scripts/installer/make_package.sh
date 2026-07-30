@@ -2,12 +2,17 @@
 
 #	make_package.sh
 #	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #	Unlike what the name implies, this script prepares tarballs for each
 #	supported platform, including a separately prepared platform package
 #	with compiled NUT and adds third-party libs and Eaton IPP - Unix
 #	scripts for better taste ;)
 
 . ./version.sh || exit $?
+
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
 rm -Rf package
 mkdir package
@@ -22,7 +27,7 @@ mkdir package
 # NOTE: See README.adoc about expected subdirectory contents with binary files
 NAME="ipp-solaris-$IPP_VERSION.sparc"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|hpux|solint'`"
+FILE_LIST="`find . -type f -name '*' | ${EGREP} -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|hpux|solint'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"
@@ -31,7 +36,7 @@ cd ..
 
 NAME="ipp-solaris-$IPP_VERSION.x86"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|hpux|solari/'`"
+FILE_LIST="`find . -type f -name '*' | ${EGREP} -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|hpux|solari/'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"
@@ -40,7 +45,7 @@ cd ..
 
 NAME="ipp-hpux-$IPP_VERSION.parisc"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|solint|solari/|solcmn/'`"
+FILE_LIST="`find . -type f -name '*' | ${EGREP} -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|aix|solint|solari/|solcmn/'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"
@@ -49,7 +54,7 @@ cd ..
 
 NAME="ipp-aix-$IPP_VERSION.powerpc"
 mkdir "package/$NAME"
-FILE_LIST="`find . -type f -name '*' | egrep -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|hpux|solint|solari/|solcmn/'`"
+FILE_LIST="`find . -type f -name '*' | ${EGREP} -v '.svn|.git|./nutconf-dummy|./make_package.sh|nut/|(un|)install.log|package/|hpux|solint|solari/|solcmn/'`"
 cp --parents -r $FILE_LIST "package/$NAME"
 cd package
 tar cpvf "$NAME.tar" "$NAME"

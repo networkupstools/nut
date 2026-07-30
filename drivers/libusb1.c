@@ -27,13 +27,27 @@
  * -------------------------------------------------------------------------- */
 
 #include "config.h" /* for HAVE_LIBUSB_DETACH_KERNEL_DRIVER flag */
+
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+# if (defined BUILD_FOR_SHARED_PRIVATE_LIBS) && BUILD_FOR_SHARED_PRIVATE_LIBS
+#  define suggest_NDE_conflict          LIBNUTPRIVATE_suggest_NDE_conflict
+/* else: would need to pass method pointer like in main.c, too much
+ * hassle for a mixed-dynamicity build that might never happen */
+# endif
+#endif
+
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
 #include "nut_stdint.h"
+#include "nut_bool.h"
+
+#ifndef WIN32
+# include <signal.h>	/* sigaction(), SIGALRM for the atexit watchdog */
+#endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.50"
+#define USB_DRIVER_VERSION	"0.54"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -45,6 +59,77 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
+
+/* Explicit libusb context, initialized once on the first call to
+ * nut_libusb_open() and released exactly once at process shutdown via
+ * the atexit handler below.
+ *
+ * Background: the original code called libusb_init(NULL) on every open and
+ * libusb_exit(NULL) on every close, bumping/decrementing the default
+ * context's refcount. That pattern violates the documented contract for
+ * libusb_exit (which "should be called after closing all open devices and
+ * before your application terminates"), and on certain firmware can wedge
+ * indefinitely: when libusb_exit hits the 1->0 transition it tears the
+ * context down, which waits on its internal sync primitives for URBs to
+ * drain -- but URBs orphaned by libusb_reset_device or by an unexpected
+ * USB device disconnect never drain, so the wait never returns. That
+ * deadlock has been observed on the 0665:5161 Cypress USB-serial bridge
+ * family (Salicru SPS, Ippon, ViewPower, various Voltronic Power UPSes;
+ * see NUT issues #598, #993, #2453) but the underlying bug class is
+ * generic and reachable via any reconnect path.
+ *
+ * The fix is to use an explicit context that we own end-to-end:
+ * initialize it once at first open, never call libusb_exit during runtime
+ * (close_dev no longer does), and release it exactly once at process
+ * shutdown via atexit. A SIGALRM-bounded timeout on the atexit libusb_exit
+ * keeps a deadlock-prone teardown from wedging supervisor shutdowns
+ * (e.g. systemctl stop) if it ever happens at exit time. Generalizes the
+ * 2018 partial fix in commit 4f84b7f92 ("don't libusb_exit() when closing
+ * a previously opened device").
+ */
+static libusb_context	*nut_usb_ctx = NULL;
+static nut_bool_t	 nut_usb_ctx_initialized = false;
+
+#ifndef WIN32
+__attribute__((noreturn))
+static void nut_libusb_cleanup_alarm(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+	/* libusb_exit is taking too long, almost certainly waiting on URBs
+	 * orphaned by a recent device reset / disconnect that will never
+	 * drain. Force the process down so supervisor shutdown isn't blocked.
+	 */
+	_exit(0);
+}
+#endif	/* !WIN32 */
+
+/* Release the libusb context that nut_libusb_open() initialized.
+ * Bounded by a SIGALRM (POSIX) so deadlock-prone teardown can't wedge
+ * process shutdown indefinitely.
+ */
+static void nut_libusb_cleanup_atexit(void)
+{
+	if (!nut_usb_ctx_initialized || !nut_usb_ctx) {
+		return;
+	}
+#ifndef WIN32
+	{
+		struct sigaction	sa, prev;
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_handler = nut_libusb_cleanup_alarm;
+		sigemptyset(&sa.sa_mask);
+		sigaction(SIGALRM, &sa, &prev);
+		alarm(2);	/* sub-ms on healthy context; 2s is generous */
+		libusb_exit(nut_usb_ctx);
+		alarm(0);
+		sigaction(SIGALRM, &prev, NULL);
+	}
+#else	/* WIN32 */
+	libusb_exit(nut_usb_ctx);
+#endif	/* !WIN32 */
+	nut_usb_ctx = NULL;
+	nut_usb_ctx_initialized = false;
+}
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
@@ -185,7 +270,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #endif
 	/* libusb-1.0 usb_ctrl_charbufsize is uint16_t and we
 	 * want the rdlen vars signed - so taking a wider type */
-	int32_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	int32_t rdlen1, rdlen2, rdlens[2]; /* report descriptor length, method 1+2, then an array to iterate them (if both) in chosen order */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
 	ssize_t	devcount = 0;
@@ -203,13 +288,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const unsigned char *p;
 	char string[256];
 	int i;
+	size_t j;
 	int count_open_EACCESS = 0;
 	int count_open_errors = 0;
 	int count_open_attempts = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int32_t		rdlen;
+	int32_t		rdlen = -1;
 
 	static int	usb_hid_number_opts_parsed = 0;
 	if (!usb_hid_number_opts_parsed) {
@@ -281,10 +367,18 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		usb_hid_number_opts_parsed = 1;
 	}
 
-	/* libusb base init */
-	if (libusb_init(NULL) < 0) {
-		libusb_exit(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+	/* libusb base init: initialize our explicit context on the first call
+	 * here, and register the matching one-shot teardown via atexit. See the
+	 * comment near the file-scope declaration of nut_usb_ctx for the design
+	 * rationale (avoids the libusb_exit-per-reconnect misuse and the
+	 * teardown-deadlock it enables on some firmware).
+	 */
+	if (!nut_usb_ctx_initialized) {
+		if (libusb_init(&nut_usb_ctx) < 0) {
+			fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		}
+		nut_usb_ctx_initialized = true;
+		atexit(nut_libusb_cleanup_atexit);
 	}
 
 /* TODO: Find a place for this, from Windows branch made for libusb0.c */
@@ -302,7 +396,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		libusb_close(*udevp);
 #endif
 
-	devcount = libusb_get_device_list(NULL, &devlist);
+	devcount = libusb_get_device_list(nut_usb_ctx, &devlist);
 
 	/* devcount may be < 0, loop will get skipped;
 	 * its SSIZE_MAX < SIZE_MAX for devnum */
@@ -334,10 +428,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		udev = *udevp;
 
 		/* collect the identifying information of this
-		   device. Note that this is safe, because
-		   there's no need to claim an interface for
-		   this (and therefore we do not yet need to
-		   detach any kernel drivers). */
+		 * device. Note that this is safe, because
+		 * there's no need to claim an interface for
+		 * this (and therefore we do not yet need to
+		 * detach any kernel drivers). */
 
 		free(curDevice->Vendor);
 		free(curDevice->Product);
@@ -358,7 +452,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice->Bus, "%03d", bus_num);
+		snprintf(curDevice->Bus, 4, "%03d", bus_num);
 
 		device_addr = libusb_get_device_address(device);
 		curDevice->Device = (char *)malloc(4);
@@ -368,7 +462,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 		if (device_addr > 0) {
 			/* 0 means not available, e.g. lack of platform support */
-			sprintf(curDevice->Device, "%03d", device_addr);
+			snprintf(curDevice->Device, 4, "%03d", device_addr);
 		} else {
 			if (devnum <= 999) {
 				/* Log visibly so users know their number discovered
@@ -376,7 +470,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				upsdebugx(0, "%s: invalid libusb device address %" PRIu8 ", "
 					"falling back to enumeration order counter %" PRIuSIZE,
 					__func__, device_addr, devnum);
-				sprintf(curDevice->Device, "%03d", (int)devnum);
+				snprintf(curDevice->Device, 4, "%03d", (int)devnum);
 			} else {
 				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
 					__func__, device_addr);
@@ -393,7 +487,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
 		if (bus_port > 0) {
-			sprintf(curDevice->BusPort, "%03d", bus_port);
+			snprintf(curDevice->BusPort, 4, "%03d", bus_port);
 		} else {
 			upsdebugx(1, "%s: invalid libusb bus number %i",
 				__func__, bus_port);
@@ -653,17 +747,17 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		if (rdlen1 < -1) {
 			upsdebugx(2, "Warning: HID descriptor, method 1 failed");
 		}
-		upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
+		upsdebugx(3, "HID descriptor length (method 1) %" PRIi32, rdlen1);
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of
-		   interface descriptor, i.e., bytes tucked onto the end of
-		   descriptor 2. */
+		 * interface descriptor, i.e., bytes tucked onto the end of
+		 * descriptor 2. */
 
 		/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
-			only this second method gives the correct result */
+		 * only this second method gives the correct result */
 
 		/* for now, we always assume configuration 0, interface 0,
-		   altsetting 0, as above. */
+		 * altsetting 0, as above. */
 
 		if_desc = &(conf_desc->interface[usb_subdriver.hid_rep_index].altsetting[0]);
 		for (i = 0; i < if_desc->extra_length; i += if_desc->extra[i]) {
@@ -683,36 +777,48 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		if (rdlen2 < -1) {
 			upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 		}
-		upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
+		upsdebugx(3, "HID descriptor length (method 2) %" PRIi32, rdlen2);
 
 		/* when available, always choose the second value, as it
-			seems to be more reliable (it is the one reported e.g. by
-			lsusb). Note: if the need arises, can change this to use
-			the maximum of the two values instead. */
+		 * seems to be more reliable (it is the one reported e.g. by
+		 * lsusb). Note: if the need arises, can change this to use
+		 * the maximum of the two values instead. */
 		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
 			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
-			rdlen = rdlen1;
+			rdlens[0] = rdlen1;
+			rdlens[1] = rdlen2;
 		}
 		else {
-			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			rdlens[0] = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			rdlens[1] = rdlen2 >= 0 ? rdlen1 : rdlen2;
 		}
 
-		if (rdlen < 0) {
+		if (rdlen1 < 0 && rdlen2 < 0) {
 			upsdebugx(2, "Unable to retrieve any HID descriptor");
 			goto next_device;
 		}
 		if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
 			upsdebugx(2, "Warning: two different HID descriptors retrieved "
-				"(Reportlen = %d vs. %d)", rdlen1, rdlen2);
+				"(Reportlen = %" PRIi32 " vs. %" PRIi32 ")",
+				rdlen1, rdlen2);
+		} else {
+			if (rdlen1 == rdlen2) {
+				rdlens[1] = -1;
+			}
 		}
 
-		upsdebugx(2, "HID descriptor length %d", rdlen);
+		for (j = 0; j < SIZEOF_ARRAY(rdlens); j++) {
+			rdlen = rdlens[j];
+			if (rdlen < 0)
+				continue;
 
-		if (rdlen > (int)sizeof(rdbuf)) {
-			upsdebugx(2, "HID descriptor too long %d (max %d)",
-				rdlen, (int)sizeof(rdbuf));
-			goto next_device;
-		}
+			upsdebugx(2, "Trying HID descriptor length %" PRIi32, rdlen);
+
+			if (rdlen > (int)sizeof(rdbuf)) {
+				upsdebugx(2, "HID descriptor too long %" PRIi32 " (max %d)",
+					rdlen, (int)sizeof(rdbuf));
+				continue;
+			}
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic push
@@ -726,67 +832,78 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
 #endif
-		if ((uintmax_t)rdlen > UINT16_MAX) {
+			if ((uintmax_t)rdlen > UINT16_MAX) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2, "HID descriptor too long %d (max %" PRIuMAX ")",
-				rdlen, (uintmax_t)UINT16_MAX);
-			goto next_device;
-		}
+				upsdebugx(2, "HID descriptor too long %" PRIi32
+					" (max %" PRIuMAX ")",
+					rdlen, (uintmax_t)UINT16_MAX);
+				continue;
+			}
 
-		/* libusb0: USB_ENDPOINT_IN + 1 */
-		res = libusb_control_transfer(udev,
-			LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
-			LIBUSB_REQUEST_GET_DESCRIPTOR,
-			(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
-			usb_subdriver.hid_rep_index,
-			rdbuf, (uint16_t)rdlen, USB_TIMEOUT);
+			/* libusb0: USB_ENDPOINT_IN + 1 */
+			res = libusb_control_transfer(udev,
+				LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
+				LIBUSB_REQUEST_GET_DESCRIPTOR,
+				(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
+				usb_subdriver.hid_rep_index,
+				rdbuf, (uint16_t)rdlen, USB_TIMEOUT);
 
-		if (res < 0)
-		{
-			upsdebug_with_errno(2, "Unable to get Report descriptor");
-			goto next_device;
-		}
+			if (res < 0)
+			{
+				upsdebug_with_errno(2, "Unable to get Report descriptor");
+				continue;
+			}
 
-		if (res < rdlen)
-		{
+			if (res < rdlen)
+			{
 #ifndef WIN32
-			upsdebugx(2, "Warning: report descriptor too short "
-				"(expected %d, got %d)", rdlen, res);
+				upsdebugx(2, "Warning: report descriptor too short "
+					"(expected %" PRIi32 ", got %d)", rdlen, res);
 #else	/* WIN32 */
-			/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
-			upsdebugx(0, "Warning: report descriptor too short "
-				"(expected %d, got %d)", rdlen, res);
-			upsdebugx(0, "Please check your Windows Device Manager: "
-				"perhaps the UPS was recognized by default OS\n"
-				"driver such as HID UPS Battery (hidbatt.sys, "
-				"hidusb.sys or similar). It could have been\n"
-				"\"restored\" by Windows Update. You can try "
-				"https://zadig.akeo.ie/ to handle it with\n"
-				"either WinUSB, libusb0.sys or libusbK.sys.");
+				/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
+				upsdebugx(0, "Warning: report descriptor too short "
+					"(expected %" PRIi32 ", got %d)", rdlen, res);
+				upsdebugx(0, "Please check your Windows Device Manager: "
+					"perhaps the UPS was recognized by default OS\n"
+					"driver such as HID UPS Battery (hidbatt.sys, "
+					"hidusb.sys or similar). It could have been\n"
+					"\"restored\" by Windows Update. You can try "
+					"https://zadig.akeo.ie/ to handle it with\n"
+					"either WinUSB, libusb0.sys or libusbK.sys.");
 #endif	/* WIN32 */
-			rdlen = res; /* correct rdlen if necessary */
+				rdlen = res; /* correct rdlen if necessary */
+			}
+
+			if (rdlen < USB_CTRL_CHARBUFSIZE_MIN
+			||  (uintmax_t)rdlen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
+			) {
+				upsdebugx(2,
+					"Report descriptor length is out of range on this device: "
+					"should be %" PRIdMAX " < %" PRIi32 " < %" PRIuMAX,
+						(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
+						(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+				goto next_device;
+			}
+
+			res = callback(udev, curDevice, rdbuf, (usb_ctrl_charbufsize)rdlen);
+			if (res < 1) {
+				upsdebugx(2, "Caller doesn't like this device");
+				continue;
+			}
+
+			/* We found it... or at least something that did not complain */
+			break;
 		}
 
-		if (rdlen < USB_CTRL_CHARBUFSIZE_MIN
-		||  (uintmax_t)rdlen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX
-		) {
-			upsdebugx(2,
-				"Report descriptor length is out of range on this device: "
-				"should be %" PRIdMAX " < %d < %" PRIuMAX,
-					(intmax_t)USB_CTRL_CHARBUFSIZE_MIN, rdlen,
-					(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
+		if (j >= SIZEOF_ARRAY(rdlens)) {
+			/* Ended the loop without success */
 			goto next_device;
 		}
 
-		res = callback(udev, curDevice, rdbuf, (usb_ctrl_charbufsize)rdlen);
-		if (res < 1) {
-			upsdebugx(2, "Caller doesn't like this device");
-			goto next_device;
-		}
-
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %" PRIi32 ")",
+			rdlen);
 		upsdebugx(2, "Found HID device");
 
 		upsdebugx(3, "Using default, detected or customized USB HID numbers: "
@@ -840,6 +957,12 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				"requested criteria",
 				count_open_attempts - count_open_errors);
 		}
+		suggest_NDE_conflict();
+		/* FIXME: Wiki names are inherently volatile;
+		 * maybe keep a more persistent copy in the
+		 * NUT-website with some knowledge-base ID? */
+		upsdebugx(1, "For more ideas, please check a NUT GitHub Wiki page named like "
+			"https://github.com/networkupstools/nut/wiki/%%22Insufficient-permissions%%22-when-starting-USB-drivers");
 	}
 
 #ifdef WIN32
@@ -1127,7 +1250,12 @@ static void nut_libusb_close(libusb_device_handle *udev)
 	 */
 	/* libusb_release_interface(udev, usb_subdriver.hid_rep_index); */
 	libusb_close(udev);
-	libusb_exit(NULL);
+	/* libusb_exit() is no longer called here. The libusb context is owned
+	 * by nut_libusb_open() and released exactly once at process shutdown
+	 * via the atexit handler; calling it per-close was a longstanding
+	 * misuse that deadlocked on orphaned URBs after a device reset or
+	 * disconnect (NUT #598). See the comment near nut_usb_ctx above.
+	 */
 }
 
 usb_communication_subdriver_t usb_subdriver = {

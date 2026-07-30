@@ -1,0 +1,162 @@
+Network UPS Tools - Quick Start for Debian
+------------------------------------------
+
+Anyway, here are the quick start instructions for using nut:
+
+These Quick Start instructions are useful for a UPS connected to a single
+machine.  For a UPS connected to multiple machines, additional steps must be
+taken, as outlined at the end of this file, including the notice regarding
+SECURITY CONSIDERATIONS.
+
+(I) Upgrading
+=============
+
+In case of upgrading, follow instructions given in:
+/usr/share/doc/nut/UPGRADING
+
+Note that service(s) (driver(s), upsd, upsmon) are not restarted upon
+upgrade, to avoid service disruption. You have to manually do it.
+
+(II) Installation
+=================
+
+Configuration files are located in /etc/nut/
+In order to tune NUT configuration according to your needs, follow the below
+information, along with the one provided inside these files.
+
+(1) /etc/nut/nut.conf (see 'man 5 nut.conf' for more information)
+    Edit /etc/nut/nut.conf and modify the "MODE" variable according to your
+    configuration.
+
+    You can also fine tune the daemons options through UPSD_OPTIONS and
+    UPSMON_OPTIONS.
+
+The steps 2 to 5 are only required if you use a "standalone" or "netserver"
+MODE. If you are running in "netclient" MODE, jump directly to section 6.
+
+(2) /etc/nut/ups.conf (see 'man 5 ups.conf' for more information)
+    
+    Edit /etc/nut/ups.conf and add something like:
+      [myups]
+        driver = usbhid-ups
+        port = auto
+    Use the appropriate driver for your UPS and select the correct port.
+    To select the driver, take a look at the UPS compatibility list:
+    /usr/share/nut/driver.list
+
+    If you have more than one UPS, add as many entries as needed.
+
+    If you wish to test manually whether your configuration of ups.conf is
+    correct, you may invoke upsdrvctl by hand (as root):
+      /sbin/upsdrvctl start [myups]
+      /sbin/upsdrvctl stop [myups]
+
+    Ensure that the permissions of ups.conf do not permit the world to
+    read it.  It should already be thus, but the following command
+    accomplishes this:
+      chown root:nut /etc/nut/ups.conf
+      chmod 640 /etc/nut/ups.conf
+
+(3) device port permissions
+    The nut user need to be able to access the device port both for reading and
+    writing.
+
+    For serial devices, there are two possibilities:
+
+    a) You can add the nut user to the dialout group.
+       The following command accomplishes this:
+         addgroup nut dialout
+
+       This is not done by default for security reason on Debian, but is applied
+       on Ubuntu.
+
+    b) Another solution, for system supporting udev, is to create a file,
+       For example /etc/udev/rules.d/92-nut-serialups.rules. It will
+       be used after /lib/udev/rules.d/91-permissions.rules, and
+       contains something like:
+
+         KERNEL=="ttyS1", GROUP="nut"
+
+       where 'ttyS1' has to be replaced by the exact name of your serial port.
+
+    For USB devices, permissions are automatically set by the
+    /lib/udev/rules.d/52-nut-usbups.rules udev rules file.
+
+(4) /etc/nut/upsd.conf (see 'man 5 upsd.conf' for more information)
+    the default /etc/nut/upsd.conf is fine for a "standalone" configuration.
+    If you are in "netserver" MODE, you will have to modify the LISTEN option
+    to something suitable.
+
+    Ensure that the permissions of upsd.conf do not permit the world to
+    read it.  It should already be thus, but the following command
+    accomplishes this:
+      chown root:nut /etc/nut/upsd.conf
+      chmod 640 /etc/nut/upsd.conf
+
+(5) /etc/nut/upsd.users (see 'man 5 upsd.users' for more information)
+    Edit /etc/nut/upsd.users and add something like the following,
+    without the comments, in order to define a user:
+      [monmaster]
+        password = blah
+        upsmon master
+    Please use *different* usernames and passwords than you use on your
+    system; see the note regarding SECURITY CONSIDERATIONS at the end
+    of this file.
+
+    Ensure that the permissions of upsd.users do not permit the world to
+    read it.  It should already be thus, but the following command
+    accomplishes this:
+      chown root:nut /etc/nut/upsd.users
+      chmod 640 /etc/nut/upsd.users
+
+(6) /etc/nut/upsmon.conf (see 'man 5 upsmon.conf' for more information)
+    Edit /etc/nut/upsmon.conf and add something like the following:
+      MONITOR myups@localhost 1 monmaster blah master
+      POWERDOWNFLAG /etc/killpower
+      SHUTDOWNCMD "/sbin/shutdown -h +0"
+
+    Ensure that the permissions of upsmon.conf do not permit the world to
+    read it.  It should already be thus, but the following commands
+    accomplishes this:
+      chown root:nut /etc/nut/upsmon.conf
+      chmod 640 /etc/nut/upsmon.conf
+
+(7) /etc/default/nut
+    This file is not used anymore.
+    nut.conf provides all the needed features to replace this file.
+
+(8) start the daemon
+    If you use a "standalone" or "netserver" MODE, invoke:
+    - '/etc/init.d/nut-server start' to start upsd and appropriate driver(s),
+    - '/etc/init.d/nut-client start' to start upsmon.
+
+    If you are running in "netclient" MODE, invoke:
+    - '/etc/init.d/nut-client start' to start upsmon.
+
+    Check /var/log/syslog to ensure that daemon(s) started up correctly.
+
+
+Additional Notes for Sharing a UPS
+----------------------------------
+If you have multiple machines connected to the same UPS, you will need to
+(a) modify the access control lists in upsd.conf on the server;
+(b) add additional users to upsd.users on the server; and
+(c) configure upsmon.conf on the clients.
+
+Please note that upsmon on a client machine and upsd on a server machine need
+to communicate via your network.  This means that you need to ensure that all
+the networking equipment (hub, switch, router, etc.) between the client and the
+server is powered by the UPS.  Otherwise, when the power goes down, the network
+connection between the client machine will be broken and the client will not
+be told to shut down.
+
+SECURITY CONSIDERATIONS
+-----------------------
+Finally, please be aware of the following SECURITY CONSIDERATIONS:  the TCP
+communications between the client daemon, upsmon, and the server daemon, upsd,
+send the username and passwords defined in upsd.users and used in upsmon.conf
+over the wire UNENCRYPTED.  This means that somebody could sniff the username
+and password.  A version that encrypts the connection using SSL should be
+available someday.
+
+Please see the documentation in /usr/share/doc/nut/docs for more information.

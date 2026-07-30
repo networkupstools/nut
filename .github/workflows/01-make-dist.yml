@@ -1,0 +1,224 @@
+# Adapted from NUT codeql.yml with inspiration taken from
+# https://javahelps.com/manage-github-artifact-storage-quota
+# regarding uploads of artifacts and clearing the way for them.
+#
+# This workflow is triggered on pushes to a repository (PRs,
+# branch increments, or tags). It has higher permissions to
+# perform management of comments and checks, and launches a
+# separate "Worker" workflow for tarball generation touching
+# possibly untrusted code base.
+#
+# See also:
+#   https://github.com/actions/upload-artifact
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+#   https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
+
+name: "GHA-01: Tarballs"
+
+on:
+  push:
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+    tags:
+      - v*
+  pull_request_target:
+    # The branches below must be a subset of the branches above
+    # Note that for PRs this runs the copy of workflow in the
+    # target branch (and only then gets some of the permissions
+    # listed below), and identification/naming of PR source vs.
+    # a pushed branch (e.g. master updated by a PR merge) is
+    # tricky.
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+  schedule:
+    - cron: '15 12 * * 0'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+permissions:
+  checks: write
+  actions: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  arrange-dist-tarballs:
+    name: "Arrange making Dist and Docs Tarballs, see workflow page for links"
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # https://github.com/marketplace/actions/substitute-string
+    # See also examples in https://github.com/dhimmel/dump-actions-context/
+    # Note it warns about "unexpected input(s)" with replacement tokens below,
+    # as they are by design not predefined, as far as actions API is concerned.
+    # They still work for substitutions though.
+    - uses: bluwy/substitute-string-action@v4
+      id: subst-github-ref-name
+      with:
+        _input-text: "${{ github.event.pull_request.number > 0 && format('PR-{0}', github.event.pull_request.number) || github.head_ref || github.ref_name }}"
+        " ": _
+        "/": _
+
+    - name: Define Artifact Name
+      id: set-artifact-name
+      run: echo "artifact_name=NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}" >> "$GITHUB_OUTPUT"
+
+    - name: Debug PR/branch identification
+      run: |
+        echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
+        echo "github.event.pull_request.number='${{ github.event.pull_request.number }}'" || true
+        echo "format('PR-{0}', github.event.pull_request.number)='${{ format('PR-{0}', github.event.pull_request.number) }}'" || true
+        echo "github.head_ref='${{ github.head_ref }}'" || true
+        echo "github.ref='${{ github.ref }}'" || true
+        echo "github.ref_name='${{ github.ref_name }}'" || true
+
+    - name: "GHA-01: Create/Update new GH PR comment for future link"
+      if: github.event.pull_request.number > 0
+      continue-on-error: true
+      env:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        message: |
+            Preparing a ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} ...
+        comment-tag: tarball-url
+        github-token: ${{ env.GITHUB_TOKEN }}
+
+    # We do not necessarily trust any code that comes from the PR branch
+    # (nor whatever is produced by scripts and tools running there),
+    # so we run that in a separate sandbox and just publish a link to
+    # the results later.
+    - name: Launch Build Worker
+      id: launch_worker
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        workflow: "GHA-01: Tarballs Build Worker"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.event.pull_request.number > 0 && github.event.pull_request.base.ref || github.base_ref || github.head_ref || github.ref_name }}
+        inputs: '{ "ref": "${{ github.event.pull_request.number > 0 && github.event.pull_request.head.sha || github.sha }}", "artifact_name": "${{ steps.set-artifact-name.outputs.artifact_name }}" }'
+        wait-timeout-seconds: 3600
+        wait-for-completion: true
+        sync-status: true
+
+    # The artifact was already uploaded by the "Worker" job.
+    # We need to find the artifact URL and report it below.
+    - name: Get Artifact URL
+      id: get_artifact_url
+      uses: actions/github-script@v9
+      with:
+          script: |
+              const res = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              })
+              const artifactName = '${{ steps.set-artifact-name.outputs.artifact_name }}';
+              // Find the most recent artifact with this name
+              const artifacts = res.data.artifacts
+                .filter(a => a.name === artifactName)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              if (artifacts.length > 0) {
+                const artifact = artifacts[0];
+                var workflowRunId = artifact.workflow_run_id || ${{ steps.launch_worker.outputs.runId }};
+                core.setOutput('artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
+                core.setOutput('real_artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
+                core.setOutput('artifact_id', `${artifact.id}`);
+                console.log(`Detected newest artifact ${artifact.id} from workflow run ${workflowRunId}`);
+              } else {
+                core.setFailed(`Artifact ${artifactName} not found`);
+              }
+
+    # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
+    # This is the part which needs "actions: write" permission.
+    # Note that the code below wipes everything matched by the filter!
+    # We may want another script block (after this cleanup of obsolete data)
+    # to iterate clearing the way build by build until there's X MB available
+    # (at least 12MB as of Nov 2025).
+    - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
+      name: Delete Old Artifacts for this feature branch/PR
+      uses: actions/github-script@v9
+      id: delete_old_artifact_for_pr
+      continue-on-error: true
+      with:
+        script: |
+          const res = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          })
+
+          const artifact_id = '${{ steps.get_artifact_url.outputs.artifact_id }}';
+
+          res.data.artifacts
+            .filter(({ name }) => name === '${{ steps.set-artifact-name.outputs.artifact_name }}')
+            .forEach(({ id }) => {
+              if (id == artifact_id) return;
+              console.log(`Deleting artifact ${id}`);
+              github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: id,
+              })
+            })
+
+    - name: "GHA-01: Create/update new GH PR comment with link"
+      if: github.event.pull_request.number > 0
+      continue-on-error: true
+      env:
+        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        message: |
+            A ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} is temporarily available: [${{ env.artifact_name }}](${{ env.artifact_url }}).
+        comment-tag: tarball-url
+        github-token: ${{ env.GITHUB_TOKEN }}
+
+    # NOTE: Despite the docs examples, due to GH API changes in Mar 2025
+    # this action can no longer update an existing check, only create a
+    # new one. Also calls authenticated with "github-actions" GH App may
+    # not set "details_url" freely...
+    # https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28
+    # FIXME: Construct the URL to commit ID (may be on PR source repo?)
+    # FIXME: The details_url seems to be ignored, and a click leads not to
+    #  the artifact download right away, but rather to the build page of
+    #  the workflow (which then has a message and link to the ZIP file).
+    # FIXME: The resulting Checks entry tends to use a random prefix
+    #  (e.g. "GHA-05: CodeQL / URL for ...") and not necessarily the
+    #  same as this workflow name ("GHA-01: Tarballs / URL for ...")
+    #  There gotta be a parameter to set it in the JSON below, right?
+    #  Maybe a pointer to the workflow/run ID?..
+    - name: "GHA-01: Create new GH Check report - shell/cURL"
+      if: always()
+      continue-on-error: true
+      env:
+        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/check-runs \
+          -d '{"head_sha": "${{ env.ref }}", "name": "URL for ${{ env.artifact_name }}", "details_url": "${{ env.artifact_url }}", "status": "completed", "conclusion": "${{ job.status }}", "output": {"title": "${{ env.artifact_url }}", "summary": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}"} }'
+
+    ### This tends to use same "name" text on both sides of Checks list entry:
+    #- name: "GHA-01: Add link as GH Check report"
+    #  uses: LouisBrunner/checks-action@v2.0.0
+    #  if: always()
+    #  continue-on-error: true
+    #  env:
+    #    artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+    #    artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
+    #    ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    #  with:
+    #    token: ${{ secrets.GITHUB_TOKEN }}
+    #    name: "[${{ env.artifact_name }}](${{ env.artifact_url }})"
+    #    status: "completed"
+    #    conclusion: ${{ job.status }}
+    #    details_url: ${{ env.artifact_url }}
+    #    output: '{ "text_description": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}", "summary": "${{ job.status }}" }'

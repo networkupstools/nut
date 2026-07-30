@@ -86,7 +86,7 @@ do_stop() {
 	RETVAL=0
 	if test -e "${NUT_RUN_DIR}"/upsmon.pid; then
 		echo "Stopping UPS monitor: \c"
-		PID="`cat "${NUT_RUN_DIR}"/upsmon.pid`"
+		PID="`cat \"${NUT_RUN_DIR}\"/upsmon.pid`"
 		kill -15 $PID && success || { RETVAL=$?; failure; }
 		rm "${NUT_RUN_DIR}"/upsmon.pid
 	fi
@@ -94,7 +94,7 @@ do_stop() {
 	if [ "$SERVER" = "yes" ]; then
 		if test -e "${NUT_RUN_DIR}"/upsd.pid; then
 			echo "Stopping upsd: \c"
-			PID="`cat "${NUT_RUN_DIR}"/upsd.pid`"
+			PID="`cat \"${NUT_RUN_DIR}\"/upsd.pid`"
 			kill -15 $PID && success || { RETVAL=$?; failure; }
 			rm "${NUT_RUN_DIR}"/upsd.pid
 		fi

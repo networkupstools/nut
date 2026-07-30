@@ -137,7 +137,7 @@ Shutdown
 ~~~~~~~~
 
 *FSD_pulse_duration*='value'::
-A number specifying the duration in ms for the inhibit pulse.
+A number specifying the duration in milliseconds for the inhibit pulse.
 If it's not defined, signal has only one transition depending
 on FSD_noro configuration.
 +
@@ -228,6 +228,11 @@ On the other hand, you can setup any kind of modbus server, and configure
 the `generic_modbus` driver to connect and read or write specific registers.
 Your application / modbus server could then drive NUT statuses (e.g. OL, OB,
 HB etc) by writing over those registers.
+
+KNOWN ISSUES
+------------
+
+include::networked_hostnames.txt[]
 
 AUTHOR
 ------

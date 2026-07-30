@@ -1,10 +1,10 @@
-/* main.c - Network UPS Tools driver core
+/* main.c - Network UPS Tools driver core logic and global variables
 
    Copyright (C)
    1999			Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
    2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
-   2017 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "common.h"
 #include "main.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "dstate.h"
 #include "attribute.h"
 #include "upsdrvquery.h"
@@ -43,7 +44,21 @@ TYPE_FD	upsfd = ERROR_FD;
  * during their assignment when reading program parameters
  * from CLI or config file. */
 char		*device_path = NULL, *device_sdcommands = NULL;
-const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+const char	*upsname = NULL, *device_name = NULL;
+
+/* We allow for aliases to certain program names (e.g. when renaming a driver
+ * between "old" and "new" and default implementations, it should accept both
+ * or more names it can be called by).
+ * The [0] entry is used to set up stuff like pipe names, man page links, etc.
+ */
+const char	*prognames[MAX_PROGNAMES];
+char	prognames_should_free[MAX_PROGNAMES];
+
+/* If not NULL, will be called by upsdrv_setproctag() so the tag value can be
+ * propagated to third-party code (should not update the driver's tag with our
+ * own copy of NUT common library -- this is what upsdrv_setproctag() does);
+ * see dummy-ups for an example use-case */
+void (*upsdrv_callback_setproctag)(const char *tag) = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
 TYPE_FD	extrafd = ERROR_FD;
@@ -86,7 +101,8 @@ vartab_t	*vartab_h = NULL;
  */
 time_t	poll_interval = 2;
 static char	*chroot_path = NULL, *user = NULL, *group = NULL;
-static int	user_from_cmdline = 0, group_from_cmdline = 0;
+static int	user_from_cmdline = 0, group_from_cmdline = 0,
+		reconnect_max_tries = -1, reconnect_count = 0, reconnect_report_freq = -1;
 
 /* signal handling */
 int	exit_flag = 0;
@@ -155,30 +171,75 @@ static int handle_reload_flag(void);
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
 static int reload_requires_restart = -1;
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+/* Note about the pragmas: for pedantic warnings, the sub-arrays in our struct
+ * (struct_magic and padding) are "sub-objects" that should all have their own
+ * initializers, e.g. { {0}, 0, ..., 0, {0} } which would be insane to maintain.
+ * Newer C standards require that a statically initialized object is zeroed by
+ * the compiler (so `= {0}` part is not needed at all), but I guess NUT with
+ * decades of backwards compatibility should not rely on that being the case
+ * with each and every one of 1990's compilers. Likewise, this initializer
+ * should ensure that all memory in the struct is zeroed out, and so does the
+ * init_upsdrv_callbacks() macro. So belts and suspenders, better safe than
+ * sorry, and all that.
+ */
+static upsdrv_callback_t	upsdrv_callbacks = {0};
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_FIELD_INITIALIZERS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_MISSING_BRACES_BESIDEFUNC) )
+#pragma GCC diagnostic pop
+#endif
+void register_upsdrv_callbacks(upsdrv_callback_t *runtime_callbacks, size_t cb_struct_sz) {
+	/* Plain memcpy of arbitrarily ordered list of function pointers
+	 * does not feel safe, so we use some means of input validation
+	 * as defined in main.h macros this code (potentially a NUT private
+	 * shared library, years apart from a driver that tries to use it)
+	 * was built against: */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+#pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+	safe_copy_upsdrv_callbacks(runtime_callbacks, &upsdrv_callbacks, cb_struct_sz);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+#pragma GCC diagnostic pop
+#endif
+}
+
 /* print the driver banner */
 void upsdrv_banner (void)
 {
 	int i;
 
 	printf("Network UPS Tools %s - %s%s %s\n",
-		describe_NUT_VERSION_once(),
-		upsdrv_info.name,
-		strstr(upsdrv_info.name, "river") ? "" : " driver",
-		upsdrv_info.version);
+		upsdrv_callbacks.describe_NUT_VERSION_once(),
+		upsdrv_callbacks.upsdrv_info->name,
+		strstr(upsdrv_callbacks.upsdrv_info->name, "river") ? "" : " driver",
+		upsdrv_callbacks.upsdrv_info->version);
 
 	/* process sub driver(s) information */
-	for (i = 0; upsdrv_info.subdrv_info[i]; i++) {
+	for (i = 0; upsdrv_callbacks.upsdrv_info->subdrv_info[i]; i++) {
 
-		if (!upsdrv_info.subdrv_info[i]->name) {
+		if (!upsdrv_callbacks.upsdrv_info->subdrv_info[i]->name) {
 			continue;
 		}
 
-		if (!upsdrv_info.subdrv_info[i]->version) {
+		if (!upsdrv_callbacks.upsdrv_info->subdrv_info[i]->version) {
 			continue;
 		}
 
-		printf("%s %s\n", upsdrv_info.subdrv_info[i]->name,
-			upsdrv_info.subdrv_info[i]->version);
+		printf("%s %s\n", upsdrv_callbacks.upsdrv_info->subdrv_info[i]->name,
+			upsdrv_callbacks.upsdrv_info->subdrv_info[i]->version);
 	}
 
 	fflush(stdout);
@@ -208,17 +269,24 @@ static void forceshutdown(void)
 	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
+/* For getopt loops; should match usage documented below: */
+static const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
+#ifndef WIN32
+		"P:"
+#endif	/* WIN32 */
+		;
+
 /* this function only prints the usage message; it does not call exit() */
 static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	if (banner_is_disabled()) {
+	if (upsdrv_callbacks.banner_is_disabled()) {
 		/* Was not printed at start of main() */
 		upsdrv_banner();
 	}
 
-	nut_report_config_flags();
+	upsdrv_callbacks.nut_report_config_flags();
 
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
@@ -281,23 +349,35 @@ static void help_msg(void)
 	printf("                 - example: -x cable=940-0095B\n\n");
 
 	if (vartab_h) {
+		size_t len = 0;
+		size_t maxlen = 0;
+		vartab_t *tmp_len;
 		tmp = vartab_h;
+
+		/* Calculate the longest variable name for print alignment */
+		tmp_len = vartab_h;
+		while (tmp_len) {
+			len = strlen(tmp_len->var);
+			if (len > maxlen)
+				maxlen = len;
+			tmp_len = tmp_len->next;
+		}
 
 		printf("Acceptable values for -x or ups.conf in this driver:\n\n");
 
 		while (tmp) {
 			if (tmp->vartype == VAR_VALUE)
-				printf("%40s : -x %s=<value>\n",
-					tmp->desc, tmp->var);
+				printf("  %*s=<value>\t%s\n",
+					(int)(maxlen), tmp->var, tmp->desc);
 			else
-				printf("%40s : -x %s\n", tmp->desc, tmp->var);
+				printf("  %*s        \t%s\n", (int)maxlen, tmp->var, tmp->desc);
 			tmp = tmp->next;
 		}
 	}
 
-	upsdrv_help();
+	upsdrv_callbacks.upsdrv_help();
 
-	printf("\n%s", suggest_doc_links(progname, "ups.conf"));
+	printf("\n%s", upsdrv_callbacks.suggest_doc_links(progname, "ups.conf"));
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -331,6 +411,7 @@ static
 void storeval(const char *var, char *val)
 {
 	vartab_t	*tmp, *last;
+	const char	**pprogname;
 
 	/* NOTE: (FIXME?) The override and default mechanisms here
 	 * effectively bypass both VAR_SENSITIVE protections and
@@ -402,33 +483,37 @@ void storeval(const char *var, char *val)
 	printf("Look in the man page or call this driver with -h for a list of\n");
 	printf("valid variable names and flags.\n");
 
-	if (!strcmp(progname, "nutdrv_qx")) {
-		/* First many entries are from nut_usb_addvars() implementations;
-		 * the latter two (about langid) are from nutdrv_qx.c
-		 */
-		if (!strcmp(var, "vendor")
-		||  !strcmp(var, "product")
-		||  !strcmp(var, "serial")
-		||  !strcmp(var, "vendorid")
-		||  !strcmp(var, "productid")
-		||  !strcmp(var, "bus")
-		||  !strcmp(var, "device")
-		||  !strcmp(var, "busport")
-		||  !strcmp(var, "usb_set_altinterface")
-		||  !strcmp(var, "usb_config_index")
-		||  !strcmp(var, "usb_hid_rep_index")
-		||  !strcmp(var, "usb_hid_desc_index")
-		||  !strcmp(var, "usb_hid_ep_in")
-		||  !strcmp(var, "usb_hid_ep_out")
-		||  !strcmp(var, "allow_duplicates")
-		||  !strcmp(var, "langid_fix")
-		||  !strcmp(var, "noscanlangid")
-		) {
-			printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
-				"if it was built with USB support. If you are running a custom build of NUT,\n"
-				"please check results of the `configure` checks, and consider an explicit\n"
-				"`--with-usb` option. Also make sure that both libusb library and headers\n"
-				"are installed in your build environment.\n\n", progname, var);
+	/* FIXME: find a way to separate this logic from main.c */
+	for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+		if (!strcmp(*pprogname, "nutdrv_qx")) {
+			/* First many entries are from nut_usb_addvars() implementations;
+			 * the latter two (about langid) are from nutdrv_qx.c
+			 */
+			if (!strcmp(var, "vendor")
+			||  !strcmp(var, "product")
+			||  !strcmp(var, "serial")
+			||  !strcmp(var, "vendorid")
+			||  !strcmp(var, "productid")
+			||  !strcmp(var, "bus")
+			||  !strcmp(var, "device")
+			||  !strcmp(var, "busport")
+			||  !strcmp(var, "usb_set_altinterface")
+			||  !strcmp(var, "usb_config_index")
+			||  !strcmp(var, "usb_hid_rep_index")
+			||  !strcmp(var, "usb_hid_desc_index")
+			||  !strcmp(var, "usb_hid_ep_in")
+			||  !strcmp(var, "usb_hid_ep_out")
+			||  !strcmp(var, "allow_duplicates")
+			||  !strcmp(var, "langid_fix")
+			||  !strcmp(var, "noscanlangid")
+			) {
+				printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
+					"if it was built with USB support. If you are running a custom build of NUT,\n"
+					"please check results of the `configure` checks, and consider an explicit\n"
+					"`--with-usb` option. Also make sure that both libusb library and headers\n"
+					"are installed in your build environment.\n\n", progname, var);
+				break;
+			}
 		}
 	}
 
@@ -744,7 +829,7 @@ static void do_addvar(int vartype, const char *name, const char *desc, int reloa
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(vartab_t));
+	tmp = (vartab_t *)xmalloc(sizeof(vartab_t));
 
 	tmp->vartype = vartype;
 	tmp->var = xstrdup(name);
@@ -813,24 +898,28 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	}
 
 	if (upsh.instcmd == NULL) {
+		const char	*cs = NULL;
+
 		/* FIXME: support main_instcmd() too? */
 		upsdebugx(1, "This driver does not implement INSTCMD support");
 
 		/* ...but the default one we can short-circuit without
 		 * registered INSTCMDs (FIXME: loop detection/protection):
 		 */
-		s = strstr(sdcmds, "shutdown.default");
-		if (s) {
+		cs = strstr(sdcmds, "shutdown.default");
+		if (cs) {
 			/* check this is really a sub-string */
 			size_t	cmdlen = strlen("shutdown.default");
 			if (
-				(s == sdcmds || *(s-1) == ',') &&
-				(s[cmdlen] == '\0' || s[cmdlen] == ',')
+				(cs == sdcmds || *(cs-1) == ',') &&
+				(cs[cmdlen] == '\0' || cs[cmdlen] == ',')
 			) {
 				upsdebugx(1, "Handle 'shutdown.default' directly, "
 					"ignore other `sdcommands` (if any): %s",
 					sdcmds);
-				upsdrv_shutdown();
+				/* TOTHINK : These logs are handled in driver codes */
+				/* upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.default", NULL); */
+				upsdrv_callbacks.upsdrv_shutdown();
 				cmdret = STAT_INSTCMD_HANDLED;
 				/* commented below */
 				if (cmdused && !(*cmdused))
@@ -846,9 +935,14 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			continue;
 
 		if (!strcmp(s, "shutdown.default")) {
-			upsdrv_shutdown();
+			/* TOTHINK : These logs are handled in driver codes */
+			/* We are trying (if at all implemented), so "maybe"... */
+			/* upslog_INSTCMD_POWERSTATE_MAYBE(s, NULL); */
+			upsdrv_callbacks.upsdrv_shutdown();
 			cmdret = STAT_INSTCMD_HANDLED;
 		} else {
+			/* TOTHINK : These logs are handled in driver codes */
+			/* upslog_INSTCMD_POWERSTATE_CHECKED(s, NULL); */
 			cmdret = upsh.instcmd(s, NULL);
 		}
 
@@ -940,7 +1034,7 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
 	}
 
 	if (sdret == STAT_INSTCMD_HANDLED) {
-		upslogx(LOG_INFO, "UPS [%s]: shutdown request was successful with '%s'",
+		upslogx(LOG_CRIT, "UPS [%s]: shutdown request was successful with '%s'",
 			NUT_STRARG(upsname), NUT_STRARG(sdcmd_used));
 
 		/* Pass it up to caller? */
@@ -965,6 +1059,10 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
 /* handle instant commands common for all drivers */
 int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	char buf[SMALLBUF];
+
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+
 	if (conn)
 #ifndef WIN32
 		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
@@ -975,7 +1073,8 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		snprintf(buf, sizeof(buf), "(null)");
 
 	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
-		cmdname, extra, NUT_STRARG(upsname), buf);
+		NUT_STRARG(cmdname), NUT_STRARG(extra),
+		NUT_STRARG(upsname), buf);
 
 	if (!strcmp(cmdname, "shutdown.default")) {
 		/* Call the default implementation of UPS shutdown as
@@ -991,7 +1090,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * called by default if none were passed (or this one
 		 * was passed explicitly).
 		 */
-		upsdrv_shutdown();
+		upsdrv_callbacks.upsdrv_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -1003,7 +1102,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * flag involved.
 		 */
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
-			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
+			upslogx(LOG_CRIT, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
 				"due to socket protocol request", NUT_STRARG(upsname));
 			if (handling_upsdrv_shutdown == 0)
@@ -1013,7 +1112,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 			dstate_setinfo("driver.state", "quiet");
 			return STAT_INSTCMD_HANDLED;
 		} else {
-			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
+			upslogx(LOG_CRIT, "Got socket protocol request for UPS [%s] "
 				"to power off, but driver.flag.allow_killpower does not"
 				"permit this - request was currently ignored!",
 				NUT_STRARG(upsname));
@@ -1128,8 +1227,8 @@ int main_setvar(const char *varname, const char *val, conn_t *conn) {
 	return STAT_SET_UNKNOWN;
 
 invalid:
-	upsdebugx(1, "Error: UPS [%s]: invalid %s value: %s",
-		NUT_STRARG(upsname), varname, val);
+	upsdebugx(1, "shared %s(): Error: UPS [%s]: invalid %s value: %s",
+		__func__, NUT_STRARG(upsname), varname, val);
 	return STAT_SET_INVALID;
 }
 
@@ -1297,6 +1396,27 @@ static int main_arg(char *var, char *val)
 		}
 
 		return 1;	/* handled */
+	}
+
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not. */
+	if (!strcmp(var, "reconnect_max_tries")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_max_tries = intval;
+			reconnect_count = 0;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_max_tries value found in ups.conf global settings");
+		}
+	}
+
+	if (!strcmp(var, "reconnect_report_freq")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_report_freq = intval;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_report_freq value found in ups.conf global settings");
+		}
 	}
 
 	/* only for upsdrvctl - ignored here */
@@ -1473,6 +1593,29 @@ static void do_global_args(const char *var, const char *val)
 		return;
 	}
 
+	if (!strcmp(var, "reconnect_max_tries")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_max_tries = intval;
+			reconnect_count = 0;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_max_tries value found in ups.conf global settings");
+		}
+
+		return;
+	}
+
+	if (!strcmp(var, "reconnect_report_freq")) {
+		int	intval = -1;
+		if ( str_to_int (val, &intval, 10) ) {
+			reconnect_report_freq = intval;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid reconnect_report_freq value found in ups.conf global settings");
+		}
+
+		return;
+	}
+
 	/* Allow to specify its minimal debugging level for all drivers -
 	 * admins can set more with command-line args, but can't set
 	 * less without changing config. Should help debug of services.
@@ -1584,41 +1727,69 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	 * reload should not allow changes here, but would report
 	 */
 	if (!strcmp(var, "driver")) {
-		int do_handle;
+		int	do_handle = -2, good_hits = 0, bad_hits = 0;
+		const char	**pprogname;
+		char	all_prognames[LARGEBUF];
+		size_t	i;
 
 		upsdebugx(5, "%s: this is a 'driver' setting, may we proceed?", __func__);
-		do_handle = testval_reloadable(var, progname, val, 0);
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			do_handle = testval_reloadable(var, prognames[0], val, 0);
 
-		if (do_handle == -1) {
-			upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
-			return;
-		}
-
-		/* Acceptable progname is only set once during start-up
-		 * val is from ups.conf
-		 */
-		if (!reload_flag || do_handle > 0) {
-			/* Accomodate for libtool wrapped developer iterations
-			 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
-			 */
-			size_t tmplen = strlen("lt-");
-			if (strncmp("lt-", progname, tmplen) == 0
-			&&  strcmp(val, progname + tmplen) == 0) {
-				/* debug level may be not initialized yet, and situation
-				 * should not happen in end-user builds, so ok to yell: */
-				upsdebugx(0, "Seems this driver binary %s is a libtool "
-					"wrapped build for driver %s", progname, val);
-				/* progname points to xbasename(argv[0]) in-place;
-				 * roll the pointer forward a bit, we know we can:
-				 */
-				progname = progname + tmplen;
+			if (do_handle == -1) {
+				upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
+				return;
 			}
 		}
 
-		if (strcmp(val, progname) != 0) {
-			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
-				confupsname, val, progname);
+		memset(all_prognames, 0, sizeof(all_prognames));
+		/* Acceptable progname is only set once during start-up
+		 * val is from ups.conf
+		 */
+		i = 0;
+		for (pprogname = prognames; *pprogname != NULL; pprogname++) {
+			if (!reload_flag || do_handle > 0) {
+				/* Accomodate for libtool wrapped developer iterations
+				 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+				 */
+				size_t	tmplen = strlen("lt-");
+				if (strncmp("lt-", *pprogname, tmplen) == 0
+				&&  strcmp(val, *pprogname + tmplen) == 0) {
+					/* debug level may be not initialized yet, and situation
+					 * should not happen in end-user builds, so ok to yell: */
+					upsdebugx(0, "Seems this driver binary %s is a libtool "
+						"wrapped build for driver %s", *pprogname, val);
+					if (prognames_should_free[i]) {
+						char	*newpn = xstrdup(*pprogname + tmplen);
+						free((char*)*pprogname);
+						*pprogname = newpn;
+					} else {
+						/* *pprogname points to xbasename(argv[0]) in-place;
+						 * roll the pointer forward a bit, we know we can */
+						*pprogname = *pprogname + tmplen;
+					}
+				}
+			}
+
+			snprintfcat(all_prognames, sizeof(all_prognames), "%s'%s'",
+				all_prognames[0] ? "/" : "", *pprogname);
+
+			if (strcmp(val, *pprogname) != 0) {
+				bad_hits++;
+			} else {
+				good_hits++;
+			}
+
+			i++;
 		}
+
+		upsdebugx(3, "%s: collected %d bad hits and %d good hits for '%s' in %s",
+			__func__, bad_hits, good_hits, val, all_prognames);
+		if (!good_hits) {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver '%s', but I'm %s!\n",
+				confupsname, val, all_prognames);
+		}
+
 		return;
 	}
 
@@ -1780,11 +1951,16 @@ static void splitxarg(char *inbuf)
 	}
 
 	/* see if main handles this first */
-	if (main_arg(buf, val))
+	if (main_arg(buf, val)) {
+		free(buf);
+
 		return;
+	}
 
 	/* otherwise store it for later */
 	storeval(buf, val);
+
+	free(buf);
 }
 
 /* dump the list from the vartable for external parsers */
@@ -1834,14 +2010,24 @@ void vartab_free(void)
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static void upsdrv_setproctag(const char *tag)
+{
+	setproctag(tag);
+	if (upsdrv_callback_setproctag) {
+		(*upsdrv_callback_setproctag)(tag);
+	}
+}
+
 static void exit_upsdrv_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.upsdrv");
-	upsdrv_cleanup();
+	upsdrv_callbacks.upsdrv_cleanup();
 }
 
 static void exit_cleanup(void)
 {
+	size_t	i;
+
 	dstate_setinfo("driver.state", "cleanup.exit");
 
 	if (!dump_data && !help_only) {
@@ -1876,16 +2062,35 @@ static void exit_cleanup(void)
 		CloseHandle(mutex);
 	}
 #endif	/* WIN32 */
+
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such)
+	 * although it does bring a bit of clarity to the logs, just the wording is odd:
+	 *  [D2:1112101:dummy-ups:test] a dummy-ups sub-process (test) is exiting now
+	 *
+	 * //TOTHINK// upsdrv_setproctag(xstrdup(prognames[0]));
+	 */
+
+	for (i = 0; i < MAX_PROGNAMES; i++) {
+		/* Some prognames[] may be allocated statically,
+		 * e.g. can be a pointer to part of argv[0];
+		 * others come from strdup() and friends.
+		 */
+		if (prognames_should_free[i] && *(prognames[i])) {
+			free((char*)(prognames[i]));
+		}
+	}
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 void set_exit_flag(int sig)
 {
-	switch (exit_flag) {
-		case -2:
+	switch (sig) {
+		case EF_EXIT_SUCCESS:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);
 			break;
-		case -1:
+		case EF_EXIT_FAILURE:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_FAILURE", __func__);
 			break;
 		default:
@@ -2009,40 +2214,212 @@ void setup_signals(void)
 }
 #endif /* !WIN32*/
 
+/* Return 1 if driver can now report custom reconnection start/progress details */
+int may_log_reconnect_trying(int throttle_hit) {
+	if (reconnect_count > 0) {
+		/* Accounting reconnections already, no care about throttling - be quiet */
+		if (!throttle_hit || reconnect_report_freq < 1)
+			return 0;
+
+		/* At that point in throttling where we may talk */
+		if ((reconnect_count % reconnect_report_freq) == 0)
+			return 1;
+
+		/* Throttling - be quiet */
+		return 0;
+	}
+
+	/* Not counting yet, would be a first report */
+	return 1;
+}
+
+/* Called by a driver to either enter/continue a reconnection loop
+ * (trying=1), almost done (trying=2), or to end it (trying=0).
+ * Return how many attempts remain before driver exits (-1 if it won't).
+ */
+int reconnect_trying(reconnect_state_t trying) {
+	/* TODO: Reconcile log-throttling with e.g. USB precedent in richcomm_usb.c, usbhid-ups.c et al. */
+	/* TODO: Raise/clear dstate_datastale()/dstate_dataok()? After how many iterations? */
+	switch (trying) {
+		case RECONNECT_SUCCESS:
+			if (reconnect_count > 0) {
+				upsdebugx(1, "%s: Driver reconnected "
+					"to the device [%s] after %d attempts",
+					__func__, upsname, reconnect_count);
+				upslogx(LOG_NOTICE, "Communications with UPS [%s] re-established", upsname);
+			}
+			reconnect_count = 0;
+			dstate_setinfo("driver.state", "quiet");
+			return -1;
+
+		case RECONNECT_UPDATEINFO:
+			if (reconnect_count > 0) {
+				upsdebugx(1, "%s: Driver has technically reconnected "
+					"to the device [%s] after %d attempts "
+					"and is now re-evaluating device data",
+					__func__, upsname, reconnect_count);
+			} else {
+				upsdebugx(1, "%s: BOGUS: Driver reported that it "
+					"reconnected to the device [%s] and is now "
+					"re-evaluating device data, but it never "
+					"started a reconnection counter",
+					__func__, upsname);
+			}
+			dstate_setinfo("driver.state", "reconnect.updateinfo");
+
+			/* Not expecting a restart. Not finished, so not clearing the
+			 * counter either, though -- the update might fail and we would
+			 * again try to reconnect, logically continuing the current loop. */
+			if (reconnect_max_tries > 0 && reconnect_max_tries > reconnect_count) {
+				return reconnect_max_tries - reconnect_count + 1;
+			}
+
+			return -1;
+
+		case RECONNECT_TRYING:
+			if (reconnect_max_tries == 0) {
+				upslogx(LOG_WARNING, "Driver lost connection "
+					"to the device [%s] and will exit immediately",
+					upsname);
+				set_exit_flag(EF_EXIT_FAILURE);
+				return 0;
+			}
+
+			dstate_setinfo("driver.state", "reconnect.trying");
+
+			if (reconnect_count == 0) {
+				if (reconnect_max_tries < 0) {
+					upslogx(LOG_WARNING, "Driver reconnecting "
+						"to the device [%s], will try "
+						"indefinitely",
+						upsname);
+				} else {
+					upslogx(LOG_WARNING, "Driver reconnecting "
+						"to the device [%s], will try for "
+						"max %d attempts, then will exit",
+						upsname, reconnect_max_tries);
+				}
+			} else if (reconnect_report_freq > 0 && (reconnect_count % reconnect_report_freq) == 0) {
+				upslogx(LOG_WARNING, "Driver still reconnecting "
+					"to the device [%s] for %d attempts",
+					upsname, reconnect_count);
+			}
+
+			if (reconnect_count < INT_MAX) {
+				reconnect_count++;
+			} else {
+				upsdebugx(1, "%s: reconnect counter overflowed", __func__);
+				if (reconnect_max_tries > 0) {
+					upslogx(LOG_WARNING, "Driver lost connection "
+						"to the device [%s] and reconnect "
+						"counter overflowed, will exit immediately",
+						upsname);
+					set_exit_flag(EF_EXIT_FAILURE);
+					return 0;
+				}
+			}
+
+			if (reconnect_max_tries > 0) {
+				if (reconnect_max_tries < reconnect_count) {
+					upslogx(LOG_WARNING, "Driver lost connection "
+						"to the device [%s] and tried to "
+						"reconnect for %d times, "
+						"now will exit as configured",
+						upsname, reconnect_count);
+					set_exit_flag(EF_EXIT_FAILURE);
+					return 0;
+				}
+				return reconnect_max_tries - reconnect_count + 1;
+			}
+
+			return -1;
+
+		/* Some warnings settings require all enum values to be covered
+		 * and complain if a default is then present "superfluously",
+		 * others require that a default always exists. Quiesce that.
+		 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+			/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* any `tries not in [0, 1, 2]`, must not occur */
+			upsdebugx(1, "%s: Invalid reconnect status value: %d", __func__, (int)trying);
+			return -1;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+}
+
 /* This source file is used in some unit tests to mock realistic driver
  * behavior - using a production driver skeleton, but their own main().
+ * It is called from main-stub.c in shared-mode builds.
  */
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
+# if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+int drv_main(int argc, char **argv)
+# else
+/* Used right away */
 int main(int argc, char **argv)
+# endif
 {
 	struct	passwd	*new_uid = NULL;
-	int	i, do_forceshutdown = 0;
+	int	opt_ret = 0, do_forceshutdown = 0, i;
 	int	update_count = 0;
 
-#ifndef WIN32
+# ifndef WIN32
 	int	cmd = 0;
 	pid_t	oldpid = -1;
-#else	/* WIN32 */
+	int	background_pipefd[2];
+# else	/* WIN32 */
 /* FIXME NUT_WIN32_INCOMPLETE : *actually* handle WIN32 builds too */
 	const char	* cmd = NULL;
+	char	drv_pipe_name[NUT_PATH_MAX + 1];
+# endif	/* WIN32 */
 
-	const char	* drv_name = NULL;
-	char	* dot = NULL;
-	char	name[NUT_PATH_MAX + 1];
-#endif	/* WIN32 */
+# if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+# else
+	/* static build, symbols should be visible to main.c right away */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+# pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+	default_register_upsdrv_callbacks();
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic pop
+#endif
+# endif	/* ENABLE_SHARED_PRIVATE_LIBS */
 
-	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
-#ifndef WIN32
-		"P:"
-#endif	/* WIN32 */
-		;
-
-	/* init verbosity from default in common.c (0 probably) */
+	/* init verbosity from default in common.c (0 probably)
+	 * Note that unlike simpler programs, this is a long-running
+	 * daemon which can change debug verbosity on the fly, so
+	 * we track numerous variables for juggling that act. */
 	nut_debug_level_args = nut_debug_level;
 
 	/* handle CLI-driven debug level in advance, to trace initialization if needed */
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'D':
 				/* bump right here, may impact reporting of other CLI args */
 				nut_debug_level++;
@@ -2108,40 +2485,33 @@ int main(int argc, char **argv)
 	/* pick up a default from configure --with-group */
 	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
-	progname = xbasename(argv[0]);
+	memset(prognames, 0, sizeof(prognames));
+	memset(prognames_should_free, 0, sizeof(prognames_should_free));
 
-#ifdef WIN32
-	drv_name = xbasename(argv[0]);
-	/* remove trailing .exe */
-	dot = strrchr(drv_name,'.');
-	if (dot != NULL) {
-		if (strcasecmp(dot, ".exe") == 0) {
-			progname = strdup(drv_name);
-			char * t = strrchr(progname,'.');
-			*t = 0;
-		}
-	}
-	else {
-		progname = strdup(drv_name);
-	}
-#endif	/* WIN32 */
+	/* Note: "const char *" to (substring of) argv[0] itself,
+	 * or an allocated string auto-cleaned by the NUT common
+	 * library; either way, this program does not free() it: */
+	prognames[0] = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "nutdrv");
+	upsdrv_setproctag(prognames[0]);
+
+	upsdrv_callbacks.upsdrv_tweak_prognames();
 
 	open_syslog(progname);
 
-	if (!banner_is_disabled()) {
+	if (!upsdrv_callbacks.banner_is_disabled()) {
 		upsdrv_banner();
 	}
 
-	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
+	if (upsdrv_callbacks.upsdrv_info->status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
 
 	/* build the driver's extra (-x) variable table */
-	upsdrv_makevartable();
+	upsdrv_callbacks.upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, optstring)) != -1) {
-		switch (i) {
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'a':
 				if (upsname)
 					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
@@ -2200,7 +2570,8 @@ int main(int argc, char **argv)
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
-						"sent with option -%c. Try -h for help.", i);
+						"sent with option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
 
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
@@ -2210,28 +2581,29 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "exit", strlen(optarg))) {
 					cmd = SIGCMD_EXIT;
 				}
-#ifndef WIN32
+# ifndef WIN32
 				else
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
 				} else
-# ifdef SIGCMD_RELOAD_OR_RESTART
+#  ifdef SIGCMD_RELOAD_OR_RESTART
 				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_RESTART;
 				} else
-# endif
+#  endif
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_EXIT;
 				}
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 
 				/* bad command given */
 				if (!cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
-						"Error: unknown argument to option -%c. Try -h for help.", i);
+						"Error: unknown argument to option -%c. Try -h for help.",
+						(char)opt_ret);
 				}
-#ifndef WIN32
+# ifndef WIN32
 				if (cmd > 0)
 					upsdebugx(1, "Will send signal %d (%s) for command '%s' "
 						"to already-running driver %s-%s (if any) and exit",
@@ -2240,20 +2612,20 @@ int main(int argc, char **argv)
 					upsdebugx(1, "Will send request for command '%s' (internal code %d) "
 						"to already-running driver %s-%s (if any) and exit",
 						optarg, cmd, progname, upsname);
-#else	/* WIN32 */
+# else	/* WIN32 */
 				upsdebugx(1, "Will send request '%s' for command '%s' "
 					"to already-running driver %s-%s (if any) and exit",
 					cmd, optarg, progname, upsname);
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 				break;
 
-#ifndef WIN32
+# ifndef WIN32
 			/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
 					help_msg();
 				break;
-#endif	/* !WIN32 */
+# endif	/* !WIN32 */
 			case 'L':
 				listxarg();
 				exit(EXIT_SUCCESS);
@@ -2306,11 +2678,11 @@ int main(int argc, char **argv)
 
 				/* just show the version and optional
 				 * CONFIG_FLAGS banner if available */
-				if (banner_is_disabled()) {
+				if (upsdrv_callbacks.banner_is_disabled()) {
 					/* Was not printed at start of main() */
 					upsdrv_banner();
 				}
-				nut_report_config_flags();
+				upsdrv_callbacks.nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':
 				splitxarg(optarg);
@@ -2321,7 +2693,7 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 
@@ -2332,7 +2704,7 @@ int main(int argc, char **argv)
 	 * Reference code for such message is in common/common.c prints to log
 	 * and/or syslog when any debug level is enabled.
 	 */
-	nut_report_config_flags();
+	upsdrv_callbacks.nut_report_config_flags();
 
 	argc -= optind;
 	argv += optind;
@@ -2346,6 +2718,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE,
 			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
+	upsdrv_setproctag(upsname);
 
 	/* we need to get the port from somewhere, unless we are just sending a signal and exiting */
 	if (!device_path && !cmd) {
@@ -2364,7 +2737,7 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-#ifndef WIN32
+# ifndef WIN32
 	/* We only need switch to statepath if we're not powering off
 	 * or not just dumping data (for discovery), in particular to
 	 * hold that path from getting unmounted easily while used for
@@ -2390,7 +2763,7 @@ int main(int argc, char **argv)
 		/* Setup signals to communicate with driver which is destined for a long run. */
 		setup_signals();
 	}
-#endif	/* !WIN32 */
+# endif	/* !WIN32 */
 
 	if (do_forceshutdown) {
 		/* First try to handle this over socket protocol
@@ -2402,10 +2775,13 @@ int main(int argc, char **argv)
 		ssize_t	cmdret = -1;
 		struct timeval	tv;
 
+		upslogx(LOG_INFO, "Checking if an already running driver instance can handle the shutdown command for us");
+
 		/* Post the query and wait for reply */
 		/* FIXME: coordinate with pollfreq? */
 		tv.tv_sec = 15;
 		tv.tv_usec = 0;
+		upsdebugx(1, "Make sure the other driver instance is allowed to kill power");
 		cmdret = upsdrvquery_oneshot(progname, upsname,
 			"SET driver.flag.allow_killpower 1\n",
 			NULL, 0, &tv);
@@ -2414,6 +2790,7 @@ int main(int argc, char **argv)
 			/* FIXME: somehow mark drivers expected to loop infinitely? */
 			tv.tv_sec = -1;
 			tv.tv_usec = -1;
+			upsdebugx(1, "Send the actual command to the other driver instance");
 			cmdret = upsdrvquery_oneshot(progname, upsname,
 				"INSTCMD driver.killpower\n",
 				NULL, 0, &tv);
@@ -2421,7 +2798,7 @@ int main(int argc, char **argv)
 			if (cmdret < 0) {
 				upsdebug_with_errno(1, "Socket dialog with the other driver instance");
 			} else {
-				upslogx(LOG_INFO, "Request to killpower via running driver returned code %" PRIiSIZE, cmdret);
+				upslogx(LOG_INFO, "Request to killpower via running driver instance returned code %" PRIiSIZE, cmdret);
 				if (cmdret == 0)
 					/* Note: many drivers would abort with
 					 * "shutdown not supported" at this
@@ -2439,29 +2816,29 @@ int main(int argc, char **argv)
 
 	/* Handle reload-or-error over socket protocol with
 	 * the running older driver instance */
-#ifndef WIN32
+# ifndef WIN32
 	if (cmd == SIGCMD_RELOAD_OR_ERROR || cmd == SIGCMD_EXIT)
-#else	/* WIN32 */
+# else	/* WIN32 */
 	if (cmd && (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR) || !strcmp(cmd, SIGCMD_EXIT)))
-#endif  /* WIN32 */
+# endif  /* WIN32 */
 	{	/* Not a signal, but a socket protocol action */
 		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF], cmdbuf[LARGEBUF];
 		struct timeval	tv;
 		char *cmdname = NULL;
 
-#ifndef WIN32
+# ifndef WIN32
 		if (cmd == SIGCMD_RELOAD_OR_ERROR)
-#else	/* WIN32 */
+# else	/* WIN32 */
 		if (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 			cmdname = "reload-or-error";
 		else
-#ifndef WIN32
+# ifndef WIN32
 		if (cmd == SIGCMD_EXIT)
-#else	/* WIN32 */
+# else	/* WIN32 */
 		if (!strcmp(cmd, SIGCMD_EXIT))
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 			cmdname = "exit";
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW || defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION)
@@ -2558,11 +2935,11 @@ int main(int argc, char **argv)
 			 */
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (local %s exists)! "
 				"Asked the other driver nicely to self-terminate!",
-#ifndef WIN32
+# ifndef WIN32
 				"Unix socket"
-#else	/* WIN32 */
+# else	/* WIN32 */
 				"pipe"
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 				);
 
 			for (i = 10; i > 0; i--) {
@@ -2610,7 +2987,7 @@ int main(int argc, char **argv)
 		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
 	}
 
-#ifndef WIN32
+# ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded (or staying foregrounded with `-FF`),
 	 * and to stop a competing older instance. Or to send it a signal
@@ -2625,9 +3002,9 @@ int main(int argc, char **argv)
 			int cmdret = -1;
 			/* Send a signal to older copy of the driver, if any */
 			if (oldpid < 0) {
-				cmdret = sendsignalfn(pidfnbuf, cmd, progname, 1);
+				cmdret = sendsignalfnaliases(pidfnbuf, cmd, prognames, 1);
 			} else {
-				cmdret = sendsignalpid(oldpid, cmd, progname, 1);
+				cmdret = sendsignalpidaliases(oldpid, cmd, prognames, 1);
 			}
 
 			switch (cmdret) {
@@ -2667,7 +3044,7 @@ int main(int argc, char **argv)
 				 * for troubleshooting, e.g. about lack of PID file
 				 */
 				upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
-# ifdef HAVE_SYSTEMD
+#  ifdef HAVE_SYSTEMD
 				switch (cmd) {
 				case SIGCMD_RELOAD:
 					upslogx(LOG_NOTICE, "Try something like "
@@ -2677,9 +3054,9 @@ int main(int argc, char **argv)
 					break;
 
 				case SIGCMD_RELOAD_OR_EXIT:
-#  ifdef SIGCMD_RELOAD_OR_RESTART
+#   ifdef SIGCMD_RELOAD_OR_RESTART
 				case SIGCMD_RELOAD_OR_RESTART:
-#  endif
+#   endif
 					upslogx(LOG_NOTICE, "Try something like "
 						"'systemctl reload-or-restart "
 						"nut-driver@%s.service'%s",
@@ -2698,11 +3075,11 @@ int main(int argc, char **argv)
 				 * and so save the PID file for ability to manage the daemon
 				 * beside the service framework, possibly confusing things...
 				 */
-# else	/* not HAVE_SYSTEMD */
+#  else	/* not HAVE_SYSTEMD */
 				if (oldpid < 0) {
 					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 				}
-# endif	/* HAVE_SYSTEMD */
+#  endif	/* HAVE_SYSTEMD */
 			} /* if (cmdret != 0) */
 
 			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -2722,9 +3099,9 @@ int main(int argc, char **argv)
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM, progname, 1) != 0)) {
+			if ((sigret = sendsignalfnaliases(pidfnbuf, SIGTERM, prognames, 1) != 0)) {
 				upsdebug_with_errno(1, "Can't send signal to PID, assume invalid PID file %s; "
-					"sendsignalfn() returned %d", pidfnbuf, sigret);
+					"sendsignalfnaliases() returned %d", pidfnbuf, sigret);
 				break;
 			}
 
@@ -2739,9 +3116,9 @@ int main(int argc, char **argv)
 			struct stat	st;
 			if (stat(pidfnbuf, &st) == 0) {
 				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", pidfnbuf);
-				if (sendsignalfn(pidfnbuf, SIGKILL, progname, 1) == 0) {
+				if (sendsignalfnaliases(pidfnbuf, SIGKILL, prognames, 1) == 0) {
 					sleep(5);
-					if (sendsignalfn(pidfnbuf, 0, progname, 1) == 0) {
+					if (sendsignalfnaliases(pidfnbuf, 0, prognames, 1) == 0) {
 						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
 						/* TODO: Should we writepid() below in this case?
 						 * Or if driver init fails, restore the old content
@@ -2765,8 +3142,8 @@ int main(int argc, char **argv)
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
-#else	/* WIN32 */
-	snprintf(name, sizeof(name), "%s-%s", progname, upsname);
+# else	/* WIN32 */
+	snprintf(drv_pipe_name, sizeof(drv_pipe_name), "%s-%s", progname, upsname);
 
 	if (cmd) {
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
@@ -2774,10 +3151,10 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
 	}
 
-	mutex = CreateMutex(NULL, TRUE, name);
+	mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 	if (mutex == NULL) {
 		if (GetLastError() != ERROR_ACCESS_DENIED) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", name, (int)GetLastError());
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", drv_pipe_name, (int)GetLastError());
 		}
 	}
 
@@ -2785,7 +3162,7 @@ int main(int argc, char **argv)
 		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
 		for (i = 0; i < 10; i++) {
 			DWORD	res;
-			sendsignal(name, COMMAND_STOP, 1);
+			sendsignal(drv_pipe_name, COMMAND_STOP, 1);
 			if (mutex != NULL) {
 				res = WaitForSingleObject(mutex, 1000);
 				if (res == WAIT_OBJECT_0) {
@@ -2794,7 +3171,7 @@ int main(int argc, char **argv)
 			}
 			else {
 				sleep(1);
-				mutex = CreateMutex(NULL, TRUE, name);
+				mutex = CreateMutex(NULL, TRUE, drv_pipe_name);
 				if (mutex != NULL) {
 					break;
 				}
@@ -2804,7 +3181,7 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
 		}
 	}
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 
 	/* Restore the signal errors verbosity */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
@@ -2816,21 +3193,49 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
+#ifndef WIN32
+	if (foreground == 0) {
+		/* start backgrounding */
+		int ret, pid;
+
+		ret = pipe(background_pipefd);
+		if (ret)
+			fatal_with_errno(EXIT_FAILURE, "pipe creation failed");
+
+		pid = background_fork();
+		if (pid > 0) {
+			/* parent: wait for child to send success or exit */
+			char ch;
+
+			close(background_pipefd[1]);
+
+			/* Wait for child */
+			ret = read(background_pipefd[0], &ch, 1);
+
+			close(background_pipefd[0]);
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			_exit(ret == 1 ? EXIT_SUCCESS : EXIT_FAILURE);
+		}
+	}
+#endif
+
 	dstate_setinfo("driver.state", "init.device");
-	upsdrv_initups();
+	upsdrv_callbacks.upsdrv_initups();
 	dstate_setinfo("driver.state", "init.quiet");
 
 	/* UPS is detected now, cleanup upon exit */
 	atexit(exit_upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
-	if (upsdrv_info.status == DRV_BROKEN) {
+	if (upsdrv_callbacks.upsdrv_info->status == DRV_BROKEN) {
 		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
 	/* publish the top-level data: version numbers, driver name */
-	dstate_setinfo("driver.version", "%s", UPS_VERSION);
-	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
+	dstate_setinfo("driver.version", "%s", upsdrv_callbacks.UPS_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", upsdrv_callbacks.upsdrv_info->version);
 	dstate_setinfo("driver.name", "%s", progname);
 
 	/*
@@ -2843,7 +3248,7 @@ int main(int argc, char **argv)
 
 	/* get the base data established before allowing connections */
 	dstate_setinfo("driver.state", "init.info");
-	upsdrv_initinfo();
+	upsdrv_callbacks.upsdrv_initinfo();
 
 	/* Register a way to call upsdrv_shutdown() among `sdcommands` */
 	dstate_addcmd("shutdown.default");
@@ -2856,7 +3261,7 @@ int main(int argc, char **argv)
 	/* Note: a few drivers also call their upsdrv_updateinfo() during
 	 * their upsdrv_initinfo(), possibly to impact the initialization */
 	dstate_setinfo("driver.state", "init.updateinfo");
-	upsdrv_updateinfo();
+	upsdrv_callbacks.upsdrv_updateinfo();
 	dstate_setinfo("driver.state", "init.quiet");
 
 	if (dstate_getinfo("driver.flag.ignorelb")) {
@@ -2891,7 +3296,7 @@ int main(int argc, char **argv)
 		if (strcmp(group, RUN_AS_GROUP)
 		||  strcmp(user,  RUN_AS_USER)
 		) {
-#ifndef WIN32
+# ifndef WIN32
 			int allOk = 1;
 			/* Use file descriptor, not name, to first check and then manipulate permissions:
 			 *   https://cwe.mitre.org/data/definitions/367.html
@@ -2988,10 +3393,10 @@ sockname_ownership_finished:
 				close(fd);
 				fd = ERROR_FD;
 			}
-#else	/* WIN32 */
+# else	/* WIN32 */
 			/* NUT_WIN32_INCOMPLETE(); */
 			upsdebugx(1, "Options for alternate user/group are not implemented on this platform");
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 		}
 		free(sockname);
 	}
@@ -3013,11 +3418,23 @@ sockname_ownership_finished:
 
 	switch (foreground) {
 		case 0:
+#ifndef WIN32
+			/* close handles */
+			background_child();
+
+			/* notify parent of success */
+			i = write(background_pipefd[1], "G", 1);
+			if (i < 1)
+				upslogx(LOG_ERR, "Unable to call parent pipe for shutdown");
+			close(background_pipefd[1]);
+#else
 			background();
+#endif
 			/* We had saved a PID before backgrounding, but
 			 * it changes when backgrounding - so save again
 			 */
 			writepid(pidfn);
+
 			break;
 
 		/* >0: Keep the initial PID; don't care about "!dump_data" here
@@ -3046,20 +3463,20 @@ sockname_ownership_finished:
 	dstate_setflags("driver.flag.allow_killpower", ST_FLAG_RW | ST_FLAG_NUMBER);
 	dstate_addcmd("driver.killpower");
 
-#ifndef WIN32
+# ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upsd and upsmon */
 	dstate_addcmd("driver.reload");
 	dstate_addcmd("driver.reload-or-exit");
-# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+#  ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	dstate_addcmd("driver.reload-or-error");
-# endif
-# ifdef SIGCMD_RELOAD_OR_RESTART
+#  endif
+#  ifdef SIGCMD_RELOAD_OR_RESTART
 	dstate_addcmd("driver.reload-or-restart");
-# endif
-#else	/* WIN32 */
+#  endif
+# else	/* WIN32 */
 	/* https://github.com/networkupstools/nut/issues/1916 */
 	NUT_WIN32_INCOMPLETE_DETAILED("driver.reload* instant commands");
-#endif	/* WIN32 */
+# endif	/* WIN32 */
 
 	dstate_setinfo("driver.state", "quiet");
 	if (dump_data) {
@@ -3069,8 +3486,10 @@ sockname_ownership_finished:
 		upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
 	}
 
+	memset(&previous_battery_charge_timestamp, 0, sizeof(previous_battery_charge_timestamp));
 	while (!exit_flag) {
 		struct timeval	timeout;
+		const st_tree_t	*dstate_entry = NULL;
 
 		if (!dump_data) {
 			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
@@ -3079,8 +3498,28 @@ sockname_ownership_finished:
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
 
+		if (reconnect_count > 0) {
+			dstate_setinfo("driver.reconnect_count", "%d", reconnect_count);
+			dstate_setinfo("driver.reconnect_max_tries", "%d", reconnect_max_tries);
+		}
+
+		/* Drivers can now choose to track changes of current battery
+		 * charge vs. its previous value to e.g. report "CHRG" status.
+		 * TODO: Eventually provide a common `runtimecal` fallback to all?
+		 */
+		if ((dstate_entry = dstate_tree_find("battery.charge")) && dstate_entry->val) {
+			double	d = -1.0;
+
+			if (str_to_double(dstate_entry->val, &d, 10) && d >= 0.0) {
+				if (!d_equal(previous_battery_charge_value, d)) {
+					previous_battery_charge_value = d;
+					previous_battery_charge_timestamp = dstate_entry->lastset;
+				}
+			}
+		}
+
 		dstate_setinfo("driver.state", "updateinfo");
-		upsdrv_updateinfo();
+		upsdrv_callbacks.upsdrv_updateinfo();
 		dstate_setinfo("driver.state", "quiet");
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */
@@ -3089,7 +3528,7 @@ sockname_ownership_finished:
 			if (update_count == dump_data) {
 				dstate_setinfo("driver.state", "dumping");
 				dstate_dump();
-				exit_flag = 1;
+				set_exit_flag(EF_EXIT_SUCCESS);
 			}
 			else
 				update_count++;
@@ -3111,6 +3550,6 @@ sockname_ownership_finished:
 		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	}
 
-	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */

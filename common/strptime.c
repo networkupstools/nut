@@ -316,8 +316,8 @@ recurse:
 					sse *= 10;
 					sse += *bp++ - '0';
 					rulim /= 10;
-				} while (((uint64_t)sse * 10 <= TIME_MAX) &&
-					 rulim && *bp >= '0' && *bp <= '9');
+				} while (((uint64_t)sse * 10 <= TIME_MAX)
+					&& rulim && *bp >= '0' && *bp <= '9');
 
 				if (sse < 0 || (uint64_t)sse > TIME_MAX) {
 					bp = NULL;
@@ -338,9 +338,9 @@ recurse:
 			 * point to calculate a real value, so just check the
 			 * range for now.
 			 */
-			 bp = conv_num(bp, &i, 0, 53);
-			 LEGAL_ALT(ALT_O);
-			 continue;
+			bp = conv_num(bp, &i, 0, 53);
+			LEGAL_ALT(ALT_O);
+			continue;
 
 		case 'w':	/* The day of week, beginning on sunday. */
 			bp = conv_num(bp, &tm->tm_wday, 0, 6);
@@ -496,8 +496,8 @@ recurse:
 					continue;
 				}
 
-				if ((*bp >= 'A' && *bp <= 'I') ||
-				    (*bp >= 'L' && *bp <= 'Y')
+				if ((*bp >= 'A' && *bp <= 'I')
+				 || (*bp >= 'L' && *bp <= 'Y')
 				) {
 #ifdef TM_GMTOFF
 					/* Argh! No 'J'! */

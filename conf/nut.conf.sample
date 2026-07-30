@@ -106,6 +106,13 @@ MODE=none
 #NUT_DEBUG_PID=true
 #export NUT_DEBUG_PID
 
+# Optionally log process name (or however the program chose to identify itself).
+# This may be useful when multiple NUT daemons log into the same file or console,
+# without syslog to prefix the name into each line (e.g. in tests, single init
+# script systems like Home Assistant, etc.).
+#NUT_DEBUG_PROCNAME=true
+#export NUT_DEBUG_PROCNAME
+
 # Normally NUT can (attempt to) use the syslog or Event Log (WIN32), but the
 # environment variable 'NUT_DEBUG_SYSLOG' allows to bypass it, and perhaps keep
 # the daemons logging to stderr (useful e.g. in NUT Integration Test suite to

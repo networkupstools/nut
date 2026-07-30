@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.27"
+#define SUBDRIVER_VERSION "0.29"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -26,13 +26,13 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_TRY_OPENUSB 32
 
 /* Powerware */
-#define POWERWARE 0x0592
+#define POWERWARE_VENDORID	0x0592
 
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC 0x06da
+#define PHOENIXTEC_VENDORID	0x06da
 
 /* Hewlett Packard */
-#define HP_VENDORID 0x03f0
+#define HP_VENDORID	0x03f0
 
 static USBDevice_t curDevice;
 
@@ -53,7 +53,7 @@ static int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, size_t size)
 {
 	assert (size < INT_MAX);
-	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, (int)size, 1000);
+	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, (usb_ctrl_charbuf)buf, (int)size, 1000);
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -69,7 +69,7 @@ static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned
 	NUT_UNUSED_VARIABLE(index);
 	NUT_UNUSED_VARIABLE(type);
 	assert (size < INT_MAX);
-	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, (int)size, 1000);
+	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, (usb_ctrl_charbuf)buf, (int)size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
@@ -81,10 +81,10 @@ static void *phoenixtec_ups(USBDevice_t *device) {
 /* USB IDs device table */
 static usb_device_id_t pw_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(POWERWARE, 0x0002), &powerware_ups },
+	{ USB_DEVICE(POWERWARE_VENDORID, 0x0002), &powerware_ups },
 
 	/* various models */
-	{ USB_DEVICE(PHOENIXTEC, 0x0002), &phoenixtec_ups },
+	{ USB_DEVICE(PHOENIXTEC_VENDORID, 0x0002), &phoenixtec_ups },
 
 	/* T500 */
 	{ USB_DEVICE(HP_VENDORID, 0x1f01), &phoenixtec_ups },
@@ -233,7 +233,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
 			upsdebugx(2, "get_answer: wrong header 0xab vs. %02x", my_buf[0]);
 			/* Sometime we read something wrong. bad cables? bad ports? */
-			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
+			my_buf = (unsigned char*)memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
 				return -1;
 		}
@@ -302,7 +302,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		tail = (ssize_t)bytes_read;
 		tail -= (ssize_t)(length + PW_HEADER_SIZE);
 		if (tail > 0)
-			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
+			my_buf = (unsigned char*)memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, (size_t)tail);
 		else if (tail == 0)
 			my_buf = &buf[0];
 		else { /* if (tail < 0) */
@@ -385,7 +385,7 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
@@ -396,7 +396,12 @@ void upsdrv_reconnect(void)
 
 	upsdrv_initups();
 
-	dstate_setinfo("driver.state", "quiet");
+	if (upsdev) {
+		reconnect_trying(RECONNECT_SUCCESS);
+		/* dstate_dataok() is called in bcmxcp.c::upsdrv_updateinfo() */
+	} else {
+		dstate_datastale();
+	}
 }
 
 /* USB functions */
@@ -448,7 +453,7 @@ static usb_dev_handle *open_powerware_usb(void)
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice.Bus, "%03d", bus_num);
+		snprintf(curDevice.Bus, 4, "%03d", bus_num);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer

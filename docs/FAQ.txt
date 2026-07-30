@@ -74,6 +74,38 @@ linkman:ups.conf[5].  Just define it before any of your `[sections]`:
 		port = /dev/ttyS0
 ----
 
+Alternately, you can specify a `user=` in the driver section.
+
+NOTE: The driver program runs with the group account(s) associated with
+that user account in the system, and sets its group ID to the primary
+group of that account.  For serial port access, you may want to add
+your 'ups' or 'nut' role account to the 'dialout' group on most Linux
+and Unix systems. The `group=` setting in `ups.conf` is for something
+else: sharing access to socket files used for communications with
+the `upsd` data server, which may run as another different user account.
+
+*Answer 3*
+
+Some other programs that you start may steal the port, so the NUT driver
+loses a connection (or can never establish one).  Revise your device
+file system node permissions for corresponding USB or serial ports,
+and group membership for NUT driver daemons and other programs in your
+system.  USB and serial ports might change ownership as the logged-in
+console user sessions (physically attached virtual terminals) are
+switched on some OS distributions.
+
+Investigate `udev` or similar framework to assign access permissions
+to certain devices on your system, and if you find an offending program
+that enumerates all ports thus "stealing" them from NUT and other
+consumers, find a way to configure it with a specific port list that
+it should use, or to run as a user account that has no access to the
+ports you want dedicated to NUT.
+
+One user report dealt with WINE emulator used for modem programs, so
+it was deliberately picking serial port devices and was running as a
+member of the `dialout` group.  That was an interesting way to shoot
+oneself in the foot...
+
 == upsc, upsstats, and the other clients say 'access denied'.  The device communication port (serial, USB or network) permissions are fine, so what gives?
 
 In this case, "access denied" means the access to linkman:upsd[8], not the
@@ -359,8 +391,108 @@ sources for a more streamlined and modern variant):
 	halt -p
 ------
 
+For more details and a better integrated example, please see
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+(a copy tailored for your OS distribution may be or not be included
+in NUT packages, if you installed from those).
+
+NOTE: The NUT-provided `nutshutdown` and its derivatives in packages
+provided by OS distributions are subject to proper NUT configuration,
+such as that you do not keep `MODE=none` in `nut.conf` (at which point
+the standard shutdown hook script would exit without doing anything).
+
 The other solution is to change your BIOS setting to "always power
 on" instead of "last state", assuming that's possible.
+
+== My operating system has no shutdown scripts, how can I tell the UPS to go down and/or avoid power races?
+
+Modern operating systems offer service management frameworks, like
+the Solaris 10/11 and illumos SMF, or Linux systemd.  These frameworks
+drive the life cycle of the operating system and enforce their opinions
+on the shutdown end-game in particular.  For example, any "user-land"
+processes which remain alive after a certain (configurable or hard-coded)
+timeout would be killed off to not block the shutdown or reboot request.
+
+While systemd has a concept of shutdown hooks, so the logic above can be
+placed as a script into a special directory `/usr/lib/systemd/system-shutdown`
+and called after all the service daemons have been killed off, the SMF does
+not commonly offer such a facility.
+
+Instead, the question is turned around: "What would break in your system
+if it is suddenly turned off (not only due to power, but also kernel panic,
+hardware failure, etc.?)" and the suggested solutions follow up from there.
+
+The copy-on-write filesystems, like ZFS extensively used in Solaris/illumos as
+well as other operating systems (including some *BSD and Linux distributions),
+do not care about sudden reboots (assuming the storage hardware does not lie
+about honouring orderly metadata flushes). At worst, an incomplete transaction
+would be lost, but the filesystem structure itself remains valid and does not
+need any lengthy `fsck` after a reboot.
+
+It may be or not be similar with databases (depending on how yours would log
+incoming write transactions), mail systems, etc.
+
+Chances are, with a complete stack of well-engineered software for which
+hardware failure is always an option (considered in design), you do not
+even need to shut down anything in case of reported power failure and the
+UPS going on battery.
+
+In practice, if you are not after maximizing the service uptime but rather want
+some peace of mind that your application data is not corrupted, you can script
+your `NOTIFYCMD` implementation to stop just those services (containers, VMs...),
+maybe `umount` non-transactional file systems (FAT EFI partition, USB storage),
+and revive them when/if the UPS becomes "on-line" again and this box is still
+alive. Or it just boots up if the power did get lost (whether you requested
+the UPS to power-off or power-cycle or not, whether it honoured such request
+or not). Probably `upssched` as the notification handler can help implement
+this logic consistently, so it would react to different events. Using service
+grouping or milestones as a way to consistently start/stop "fragile" services
+should also help (in this case the framework ensures the action only happens
+once, regardless of how many times your scripts requested it).
+
+Notably, with this approach you DO NOT tell the OS to actually shut down,
+and so suffer any forced kill of user-land processes after any timeouts.
+You choose which services might be hurt by the outage and should go down,
+and which can run as long as they can (or in which mode, e.g. turning your
+mail, DNS or LDAP server read-only just in case until the storm passes).
+The still-running stub of your OS is the environment which talks to the UPS
+and takes care of eventually restarting the services or the whole box, as
+you deem fit.
+
+
+== My operating system uses (immutable) images, how can I tell the UPS to go down and/or avoid power races?
+
+One approach was proposed in discussion with Lennart Poettering of systemd
+fame, that operating system concepts constructed with (immutable) run-time
+images are actually layered like onions, with code in another file system
+(usually an initrd) picking the run-time image to use and `chroot`'ing into
+it... and possibly regaining control when the run-time operating environment
+exits.  Sort of like containers, where the operating system which you interact
+with is the inside of the container, and you do not directly see its hypervisor.
+
+The problem is that while NUT services can run as part of the run-time image
+and decide to power-off or power-cycle the UPS in case of trouble, there is
+no space for classic NUT approach to do this in the end-game of that run-time
+image (calling `upsmon -K` to detect the `POWERDOWNFLAG` file, and launching
+some new instance of the driver to talk to the UPS itself) "after the filesystem
+was remounted read-only", because that life-cycle concept has no such spot in
+the state machine of the run-time image -- its storage is to be completely
+unmounted.
+
+Instead, the proposed idea was to have a build of NUT included also into that
+"managing" initrd image, with perhaps a `/run` (or similar) location passed
+(bind-mounted?) from the initial environment into the launched run-time system.
+Into such a location both the `POWERDOWNFLAG` file can be written and, as part
+of `NOTIFYCMD` handling, the most-recent copies of NUT configuration files
+which may be managed in the interactively accessible operating environment.
+
+When the run-time image exits and the logic in initrd image which launched it
+regains control, it can check for existence of the `POWERDOWNFLAG` file and
+call *its own* copies of NUT drivers to talk to the UPS, and/or implement the
+long sleep and reboot to avoid a power race condition, if needed.
+
+See also: https://github.com/networkupstools/nut/issues/2836
+
 
 == My system has an ATX power supply.  It will power off just fine, but it doesn't turn back on.  What can I do to fix this?
 
@@ -967,18 +1099,19 @@ in https://github.com/networkupstools/nut/issues/1899
 == I built NUT from Git, and it complains about lots of missing files. What happened?
 
 If you are not actively developing a driver, can you use a snapshot instead?
-The NUT instance of Buildbot generates tar files of the latest NUT source
-after each successful build, and these snapshots include a pre-built version
-of the `./configure` script.
-
-WARNING: There is an outstanding bug that after the shutdown of BuildBot,
-no regular distribution tarballs are in fact published.
+A NUT CI job generates tar files of the latest NUT source for pull requests and
+eventual increments of the `master` branch as part of each successful build,
+and these snapshots include a pre-built version of the `./configure` script.
+In GitHub build status for each such commit you can see status entries with
+a "GHA-01: Tarballs" prefix -- one of those would have an URL to a ZIP file
+with a standard source tarball, and another tarball with rendered documentation
+files.
 
 To build from Git, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
 list of the exact versions needed (which will quickly become out of date), we
-recommend you consult your distribution's dependency list for building a NUT
-package, and use that as a starting point.
+recommend you consult the dependency list in the recipes of your OS distribution
+for building their official NUT package, and use that as a starting point.
 
 That said, for the numerous systems running build agents of the NUT CI farm,
 their lists of dependency packages are available in `docs/config-prereqs.txt`

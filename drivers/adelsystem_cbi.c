@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.09"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -81,11 +81,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
 /* instant command triggered by upsd */
-int upscmd(const char *cmd, const char *arg);
-
-/* count the time elapsed since start */
-long time_elapsed(struct timeval *start);
-
+int upscmd(const char *cmdname, const char *extra);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -497,6 +493,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -785,61 +786,43 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	return rval;
 }
 
-/* returns the time elapsed since start in milliseconds */
-long time_elapsed(struct timeval *start)
-{
-	long rval;
-	struct timeval end;
-
-	rval = gettimeofday(&end, NULL);
-	if (rval < 0) {
-		upslog_with_errno(LOG_ERR, "time_elapsed");
-	}
-	if (start->tv_usec < end.tv_usec) {
-		suseconds_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
-		end.tv_usec -= 1000000 * nsec;
-		end.tv_sec += nsec;
-	}
-	if (start->tv_usec - end.tv_usec > 1000000) {
-		suseconds_t nsec = (start->tv_usec - end.tv_usec) / 1000000;
-		end.tv_usec += 1000000 * nsec;
-		end.tv_sec -= nsec;
-	}
-	rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
-
-	return rval;
-}
-
 /* instant command triggered by upsd */
-int upscmd(const char *cmd, const char *arg)
+int upscmd(const char *cmdname, const char *extra)
 {
 	int rval;
 	int data;
 
-	if (!strcasecmp(cmd, "load.off")) {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "load.off")) {
 		data = 1;
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
 		if (rval == -1) {
-			upslogx(2,
+			upsdebugx(2,
 				"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
 				modbus_strerror(errno),
 				(unsigned int)(regs[FSD].xaddr),
 				regs[FSD].type,
 				device_path
 			);
-			upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+			upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", NUT_STRARG(cmdname), NUT_STRARG(extra));
 			rval = STAT_INSTCMD_FAILED;
 		} else {
 			upsdebugx(2, "load.off: addr: 0x%x, data: %d",
 				(unsigned int)(regs[FSD].xaddr), data);
 			rval = STAT_INSTCMD_HANDLED;
 		}
-	} else if (!strcasecmp(cmd, "shutdown.stayoff")) {
+	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* FIXME: Which one is this actually -
 		 * "shutdown.stayoff" or "shutdown.return"? */
 		int cnt = FSD_REPEAT_CNT;	 /* shutdown repeat counter */
 		struct timeval start;
 		long etime;
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
@@ -849,19 +832,19 @@ int upscmd(const char *cmd, const char *arg)
 			}
 
 			/* wait for an increasing time interval before sending shutdown command */
-			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			while ((etime = elapsed_since_timeval(&start)) < ( FSD_REPEAT_INTRV / cnt));
 			upsdebugx(2, "ERROR: load.off failed, wait for %lims, retries left: %d", etime, cnt - 1);
 			cnt--;
 		}
 		switch (rval) {
 			case STAT_INSTCMD_FAILED:
 			case STAT_INSTCMD_INVALID:
-				upslog_with_errno(LOG_ERR, "instcmd: %s failed", cmd);
+				upslog_with_errno(LOG_INSTCMD_FAILED, "instcmd: %s failed", cmdname);
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				break;
 			case STAT_INSTCMD_UNKNOWN:
-				upslog_with_errno(LOG_ERR, "instcmd: %s not supported", cmd);
+				upslog_with_errno(LOG_INSTCMD_UNKNOWN, "instcmd: %s not supported", cmdname);
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				break;
@@ -872,7 +855,7 @@ int upscmd(const char *cmd, const char *arg)
 				break;
 		}
 	} else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		rval = STAT_INSTCMD_UNKNOWN;
 	}
 	return rval;
@@ -939,8 +922,9 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case LVDC:					/* "output.voltage" */
 		case LCUR:					/* "output.current" */
 			if (reg_val != 0) {
-				char	*fval_s;
 				double	fval;
+				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = reg_val / 1000.00; /* convert mV to V, mA to A */
@@ -948,9 +932,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -964,15 +949,17 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case VAC:					/* "input.voltage" */
 			if (reg_val != 0) {
 				char	*reg_val_s;
+				size_t	reg_val_sz;
 
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%u", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_sz = sizeof(char) * (n + 1);
+				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				sprintf(reg_val_s, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
 				state->reg.strval = reg_val_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -984,6 +971,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			if (reg_val != 0) {
 				double	fval;
 				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = (double )reg_val * regs[BSOC].scale;
@@ -991,9 +979,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -1006,16 +995,18 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			{ /* scoping */
 				double	fval;
 				char	*fval_s;
+				size_t	fval_sz;
 
 				state->reg.val.ui16 = reg_val;
 				fval = reg_val - 273.15;
 				n = snprintf(NULL, 0, "%.2f", fval);
-				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_sz = sizeof(char) * (n + 1);
+				fval_s = (char *)xmalloc(fval_sz);
 				if (ptr != NULL) {
 					free(ptr);
 				}
 				ptr = fval_s;
-				sprintf(fval_s, "%.2f", fval);
+				snprintf(fval_s, fval_sz, "%.2f", fval);
 				state->reg.strval = fval_s;
 			}
 			upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
@@ -1209,14 +1200,17 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		default:
 			{ /* scoping */
 				char	*reg_val_s;
+				size_t	reg_val_sz;
+
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%u", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_sz = sizeof(char) * (n + 1);
+				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				sprintf(reg_val_s, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
 				state->reg.strval = reg_val_s;
 			}
 			break;
@@ -1312,9 +1306,9 @@ modbus_t *modbus_new(const char *port)
 		if (mb == NULL) {
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context");
 		}
-	} else if ((sp = strchr(port, ':')) != NULL) {
-		char *tcp_port = xmalloc(sizeof(sp));
-		strcpy(tcp_port, sp + 1);
+	} else if ((sp = (char*)strchr(port, ':')) != NULL) {
+		char	*tcp_port = (char*)xmalloc(sizeof(sp));
+		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));
 		if (mb == NULL) {
@@ -1336,7 +1330,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(1, "modbus_reconnect, trying to reconnect to modbus server");
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1397,5 +1391,5 @@ void modbus_reconnect(void)
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
-	dstate_setinfo("driver.state", "quiet");
+	reconnect_trying(RECONNECT_SUCCESS);
 }

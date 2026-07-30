@@ -30,15 +30,25 @@
  * -------------------------------------------------------------------------- */
 
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
+
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+# if (defined BUILD_FOR_SHARED_PRIVATE_LIBS) && BUILD_FOR_SHARED_PRIVATE_LIBS
+#  define suggest_NDE_conflict          LIBNUTPRIVATE_suggest_NDE_conflict
+/* else: would need to pass method pointer like in main.c, too much
+ * hassle for a mixed-dynamicity build that might never happen */
+# endif
+#endif
+
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
 #ifdef WIN32
-#include "wincompat.h"
+# include "wincompat.h"
 #endif	/* WIN32 */
+#include "strcasestr-static.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.50"
+#define USB_DRIVER_VERSION	"0.53"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -50,14 +60,6 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
-
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
-/* Only used in this file of all NUT codebase, so not in str.{c,h}
- * where it happens to conflict with netsnmp-provided variant for
- * some of our build products.
- */
-static char *strcasestr(const char *haystack, const char *needle);
-#endif
 
 static void nut_libusb_close(usb_dev_handle *udev);
 
@@ -219,7 +221,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
 #endif
-	usb_ctrl_charbufsize rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	usb_ctrl_charbufsize rdlen1, rdlen2, rdlens[2]; /* report descriptor length, method 1+2, then an array to iterate them (if both) in chosen order */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -231,13 +233,14 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_char *p;
 	char string[256];
 	int i;
+	size_t j;
 	int count_open_EACCESS = 0;
 	int count_open_errors = 0;
 	int count_open_attempts = 0;
 
 	/* report descriptor */
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
-	usb_ctrl_charbufsize		rdlen;
+	usb_ctrl_charbufsize		rdlen = -1;
 
 	struct usb_bus *busses;
 
@@ -344,7 +347,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				bus->dirname, dev->filename);
 
 			/* supported vendors are now checked by the
-			   supplied matcher */
+			 * supplied matcher */
 
 			/* open the device */
 			*udevp = udev = usb_open(dev);
@@ -377,10 +380,10 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 			}
 
 			/* collect the identifying information of this
-			   device. Note that this is safe, because
-			   there's no need to claim an interface for
-			   this (and therefore we do not yet need to
-			   detach any kernel drivers). */
+			 * device. Note that this is safe, because
+			 * there's no need to claim an interface for
+			 * this (and therefore we do not yet need to
+			 * detach any kernel drivers). */
 
 			free(curDevice->Vendor);
 			free(curDevice->Product);
@@ -407,7 +410,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
 			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
-			sprintf(curDevice->BusPort, "%03d", 0);
+			snprintf(curDevice->BusPort, 4, "%03d", 0);
 #endif
 
 			if (dev->descriptor.iManufacturer) {
@@ -591,11 +594,11 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				rdlen1);
 
 			/* SECOND METHOD: find HID descriptor among "extra" bytes of
-			   interface descriptor, i.e., bytes tucked onto the end of
-			   descriptor 2. */
+			 * interface descriptor, i.e., bytes tucked onto the end of
+			 * descriptor 2. */
 
 			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
-				only this second method gives the correct result */
+			 * only this second method gives the correct result */
 			iface = &dev->config[usb_subdriver.usb_config_index].interface[usb_subdriver.hid_rep_index].altsetting[0];
 			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
 				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
@@ -620,18 +623,20 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				rdlen2);
 
 			/* when available, always choose the second value, as it
-				seems to be more reliable (it is the one reported e.g. by
-				lsusb). Note: if the need arises, can change this to use
-				the maximum of the two values instead. */
+			 * seems to be more reliable (it is the one reported e.g. by
+			 * lsusb). Note: if the need arises, can change this to use
+			 * the maximum of the two values instead. */
 			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
 				upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
-				rdlen = rdlen1;
+				rdlens[0] = rdlen1;
+				rdlens[1] = rdlen2;
 			}
 			else {
-				rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+				rdlens[0] = rdlen2 >= 0 ? rdlen2 : rdlen1;
+				rdlens[1] = rdlen2 >= 0 ? rdlen1 : rdlen2;
 			}
 
-			if (rdlen < 0) {
+			if (rdlen1 < 0 && rdlen2 < 0) {
 				upsdebugx(2, "Unable to retrieve any HID descriptor");
 				goto next_device;
 			}
@@ -640,61 +645,79 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 					"(Reportlen = %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 					" vs. %" PRI_NUT_USB_CTRL_CHARBUFSIZE ")",
 					rdlen1, rdlen2);
+			} else {
+				if (rdlen1 == rdlen2) {
+					rdlens[1] = -1;
+				}
 			}
 
-			upsdebugx(2,
-				"HID descriptor length %" PRI_NUT_USB_CTRL_CHARBUFSIZE,
-				rdlen);
+			for (j = 0; j < SIZEOF_ARRAY(rdlens); j++) {
+				rdlen = rdlens[j];
+				if (rdlen < 0)
+					continue;
 
-			if ((uintmax_t)rdlen > sizeof(rdbuf)) {
 				upsdebugx(2,
-					"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-					" (max %" PRIuSIZE ")",
-					rdlen, sizeof(rdbuf));
-				goto next_device;
-			}
+					"Trying HID descriptor length %" PRI_NUT_USB_CTRL_CHARBUFSIZE,
+					rdlen);
 
-			/* Note: rdlen is safe to cast to unsigned below,
-			 * since the <0 case was ruled out above */
-			/* res = usb_get_descriptor(udev, USB_DT_REPORT, hid_desc_index, bigbuf, rdlen); */
-			res = usb_control_msg(udev,
-				USB_ENDPOINT_IN + 1,
-				USB_REQ_GET_DESCRIPTOR,
-				(USB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
-				usb_subdriver.hid_rep_index,
-				rdbuf, rdlen, USB_TIMEOUT);
+				if ((uintmax_t)rdlen > sizeof(rdbuf)) {
+					upsdebugx(2,
+						"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+						" (max %" PRIuSIZE ")",
+						rdlen, sizeof(rdbuf));
+					continue;
+				}
 
-			if (res < 0)
-			{
-				upsdebug_with_errno(2, "Unable to get Report descriptor");
-				goto next_device;
-			}
+				/* Note: rdlen is safe to cast to unsigned below,
+				 * since the <0 case was ruled out above */
+				/* res = usb_get_descriptor(udev, USB_DT_REPORT, hid_desc_index, bigbuf, rdlen); */
+				res = usb_control_msg(udev,
+					USB_ENDPOINT_IN + 1,
+					USB_REQ_GET_DESCRIPTOR,
+					(USB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
+					usb_subdriver.hid_rep_index,
+					rdbuf, rdlen, USB_TIMEOUT);
 
-			if (res < rdlen)
-			{
+				if (res < 0)
+				{
+					upsdebug_with_errno(2, "Unable to get Report descriptor");
+					continue;
+				}
+
+				if (res < rdlen)
+				{
 #ifndef WIN32
-				upsdebugx(2, "Warning: report descriptor too short "
-					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-					", got %d)", rdlen, res);
+					upsdebugx(2, "Warning: report descriptor too short "
+						"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+						", got %d)", rdlen, res);
 #else	/* WIN32 */
-				/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
-				upsdebugx(0, "Warning: report descriptor too short "
-					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-					", got %d)", rdlen, res);
-				upsdebugx(0, "Please check your Windows Device Manager: "
-					"perhaps the UPS was recognized by default OS\n"
-					"driver such as HID UPS Battery (hidbatt.sys, "
-					"hidusb.sys or similar). It could have been\n"
-					"\"restored\" by Windows Update. You can try "
-					"https://zadig.akeo.ie/ to handle it with\n"
-					"either WinUSB, libusb0.sys or libusbK.sys.");
+					/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
+					upsdebugx(0, "Warning: report descriptor too short "
+						"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+						", got %d)", rdlen, res);
+					upsdebugx(0, "Please check your Windows Device Manager: "
+						"perhaps the UPS was recognized by default OS\n"
+						"driver such as HID UPS Battery (hidbatt.sys, "
+						"hidusb.sys or similar). It could have been\n"
+						"\"restored\" by Windows Update. You can try "
+						"https://zadig.akeo.ie/ to handle it with\n"
+						"either WinUSB, libusb0.sys or libusbK.sys.");
 #endif	/* WIN32 */
-				rdlen = res; /* correct rdlen if necessary */
+					rdlen = res; /* correct rdlen if necessary */
+				}
+
+				res = callback(udev, curDevice, rdbuf, rdlen);
+				if (res < 1) {
+					upsdebugx(2, "Caller doesn't like this device (or rdlen is wrong)");
+					continue;
+				}
+
+				/* We found it... or at least something that did not complain */
+				break;
 			}
 
-			res = callback(udev, curDevice, rdbuf, rdlen);
-			if (res < 1) {
-				upsdebugx(2, "Caller doesn't like this device");
+			if (j >= SIZEOF_ARRAY(rdlens)) {
+				/* Ended the loop without success */
 				goto next_device;
 			}
 
@@ -754,6 +777,12 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 				"requested criteria",
 				count_open_attempts - count_open_errors);
 		}
+		suggest_NDE_conflict();
+		/* FIXME: Wiki names are inherently volatile;
+		 * maybe keep a more persistent copy in the
+		 * NUT-website with some knowledge-base ID? */
+		upsdebugx(1, "For more ideas, please check a NUT GitHub Wiki page named like "
+			"https://github.com/networkupstools/nut/wiki/%%22Insufficient-permissions%%22-when-starting-USB-drivers");
 	}
 
 #ifdef WIN32
@@ -978,37 +1007,6 @@ static void nut_libusb_close(usb_dev_handle *udev)
 	/* usb_release_interface(udev, 0); */
 	usb_close(udev);
 }
-
-#if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
-static char *strcasestr(const char *haystack, const char *needle) {
-	/* work around "const char *" and guarantee the original is not
-	 * touched... not efficient but we have few uses for this method */
-	char * dH = NULL, *dN = NULL, *lH = NULL, *lN = NULL, *first = NULL;
-
-	dH = strdup(haystack);
-	if (dH == NULL) goto err;
-	dN = strdup(needle);
-	if (dN == NULL) goto err;
-	lH = strlwr(dH);
-	if (lH == NULL) goto err;
-	lN = strlwr(dN);
-	if (lN == NULL) goto err;
-	first = strstr(lH, lN);
-
-err:
-	if (dH != NULL) free(dH);
-	if (dN != NULL) free(dN);
-	/* Does this implementation of strlwr() change original buffer? */
-	if (lH != dH && lH != NULL) free(lH);
-	if (lN != dN && lN != NULL) free(lN);
-	if (first == NULL) {
-		return NULL;
-	}
-
-	/* Pointer to first char of the needle found in original haystack */
-	return (char *)(haystack + (first - lH));
-}
-#endif
 
 usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_NAME,

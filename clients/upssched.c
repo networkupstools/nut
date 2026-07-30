@@ -1,6 +1,14 @@
 /* upssched.c - upsmon's scheduling helper for offset timers
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2000       Russell Kroll <rkroll@exploits.org>
+	2005-2012  Arnaud Quette <arnaud.quette@free.fr>
+	2006       Charles Lepple <clepple+nut@gmail.com>
+	2006-2019  Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2006-2007  Peter Selinger <selinger@users.sourceforge.net>
+	2010-2012  Frederic BOHE <fredericbohe@eaton.com>
+	2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
+	2022       Dimitris Economou <dimitris.s.economou@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,7 +27,9 @@
 
 /* design notes for the curious:
  *
- * 1. we get called with a upsname and notifytype from upsmon
+ * 1. we get called with a ups_name and notify_type from upsmon
+ *    (and notify_msg via first non-option argv[] element if
+ *    present and not trivial)
  * 2. the config file is searched for an AT condition that matches
  * 3. the conditions on any matching lines are parsed
  *
@@ -63,15 +73,68 @@
 typedef struct ttype_s {
 	char	*name;
 	time_t	etime;
+	char	**upsnames;		/* List of unique UPSNAME values that commanded to start this timer name */
+	char	**notifytypes;	/* List of unique NOTIFYTYPE values that commanded to start this timer name */
+	char	**notifymsgs;	/* List of unique NOTIFYMSG values that commanded to start this timer name */
 	struct ttype_s	*next;
 } ttype_t;
 
 static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
-static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static char	*pipefn = NULL, *lockfn = NULL;
+/* Argument array for respective program, where [0] is the program name,
+ * followed by (argc-1) possible command-line argument tokens, with a
+ * NULL value in the end as the [argc]'th entry. Overall (argc+1) items
+ * if at all populated, minimum 2 for the program name and NULL sentinel.
+ * Concatenated value is also stored to ease debug logging, but is not
+ * used directly for program calls. */
+static char	**cmdscript_argv = NULL, *cmdscript_concat = NULL;
+static size_t	cmdscript_argc = 0;
+static int	nut_debug_level_args = 0, nut_debug_level_env = 0, nut_debug_level_conf = 0;
+static int	list_timers = 0;
+
+#ifdef WIN32
+/* WIN32-only: set when THIS process instance is itself the freshly
+ * spawned timer-daemon child (see WIN32_DAEMON_MARKER below), as
+ * opposed to being the short-lived CLI process invoked by upsmon.
+ *
+ * This flag makes conf_arg() treat the config file the same way it
+ * already does for the "-l" (list_timers) CLI switch: parse the
+ * global upssched.conf directives (PIPEFN, LOCKFN, CMDSCRIPT,
+ * DEBUG_MIN), but skip acting on "AT" lines (i.e. skip parse_at()
+ * and, transitively, sendcmd()) -- a daemon child must never re-send
+ * the notification that originally caused upsmon to invoke this
+ * program; that is precisely the bug this patch addresses. */
+static int	is_win32_timer_daemon = 0;
+
+/* Hidden/internal argv[1] marker, used only for the WIN32 replacement
+ * of fork(). CreateProcess() cannot split one already-running process
+ * into a "parent continues here" / "child takes over from here" pair
+ * the way fork() does on POSIX (see the "if (pid != 0) { ...; return; }"
+ * branch in start_daemon() below) -- it always starts a brand-new
+ * process at main(). We therefore spawn a new process and tell it,
+ * via this marker (checked at the very top of main(), before normal
+ * option/config parsing), that it must go straight to being the timer
+ * daemon instead of re-running the normal CLI codepath (which would
+ * re-parse the config and potentially re-send the very notification
+ * that caused upsmon to invoke this program -- the original cause of
+ * the runaway process cascade this patch fixes). */
+#define WIN32_DAEMON_MARKER	"--nut-upssched-win32-timer-daemon"
+
+/* HANDLE of a manual-reset Win32 event object, inherited from the
+ * spawning process, used as a one-shot "I am listening on the named
+ * pipe now" readiness signal from the daemon child back to the
+ * process that spawned it (see start_daemon() and
+ * win32_run_timer_daemon() below). This is the WIN32 counterpart of
+ * us_serialize(SERIALIZE_WAIT/SET), which is implemented below with a
+ * plain POSIX pipe(2) and has no WIN32 implementation.
+ * Populated from argv[2] in main() when is_win32_timer_daemon is set;
+ * remains NULL otherwise. */
+static HANDLE	win32_daemon_ready_event = NULL;
+#endif	/* WIN32 */
 
 /* ups name and notify type (string) as received from upsmon */
-static const	char	*upsname, *notify_type, *prog = NULL;
+static const	char	*ups_name = NULL, *notify_type = NULL, *notify_msg = NULL, *prog = NULL;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
@@ -90,34 +153,225 @@ static OVERLAPPED connect_overlapped;
 
 static void exec_cmd(const char *cmd)
 {
-	int	err;
-	char	buf[LARGEBUF];
-
-	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
-
-	err = system(buf);
 #ifndef WIN32
-	if (WIFEXITED(err)) {
-		if (WEXITSTATUS(err)) {
-			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
-		}
-	} else {
-		if (WIFSIGNALED(err)) {
-			upslogx(LOG_WARNING, "exec_cmd(%s) terminated with signal %d", buf, WTERMSIG(err));
-		} else {
-			upslogx(LOG_ERR, "Execute command failure: %s", buf);
-		}
-	}
-#else	/* WIN32 */
-	if(err != -1) {
-		upslogx(LOG_INFO, "Execute command \"%s\" OK", buf);
-	}
-	else {
-		upslogx(LOG_ERR, "Execute command failure : %s", buf);
-	}
-#endif	/* WIN32 */
+	int	waitstatus = 0;
+	pid_t	pid, waitret;
+#else
+	int	err = 0;
+#endif
+	char	**argv = NULL;
 
-	return;
+	if (cmdscript_argc == 0) {
+		upslogx(LOG_ERR, "No CMDSCRIPT defined, cannot execute command: %s", NUT_STRARG(cmd));
+		return;
+	}
+
+	/* For logging note that cmdscript_concat is quoted as appropriate */
+	upsdebugx(4, "%s: calling: %s \"%s\"", __func__, NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+
+#ifndef WIN32
+	pid = fork();
+	if (pid < 0) {
+		upslog_with_errno(LOG_ERR, "fork() failed in exec_cmd");
+		return;
+	}
+
+	if (pid > 0) {
+		/* parent process - wait for child */
+		waitret = waitpid(pid, &waitstatus, 0);
+		if (waitret < 0) {
+			upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)pid);
+			return;
+		}
+
+		if (WIFEXITED(waitstatus)) {
+			if (WEXITSTATUS(waitstatus)) {
+				upslogx(LOG_INFO, "exec_cmd(%s '%s') returned %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WEXITSTATUS(waitstatus));
+			}
+		} else {
+			if (WIFSIGNALED(waitstatus)) {
+				upslogx(LOG_WARNING, "exec_cmd(%s '%s') terminated with signal %d",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd), WTERMSIG(waitstatus));
+			} else {
+				upslogx(LOG_ERR, "Execute command failure: %s '%s'",
+					NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+			}
+		}
+
+		upsdebugx(3, "%s: returned status %d", __func__, waitstatus);
+		return;
+	}
+#endif	/* !WIN32 */
+
+	/* Only deal with argv for child or mono-process */
+	/* We will add one argument, plus one NULL sentinel, after argc original entries */
+	argv = (char**)xcalloc(cmdscript_argc + 2, sizeof(char *));
+	/* Copy entries [0]..[argc-1] */
+	memcpy(argv, cmdscript_argv, cmdscript_argc * sizeof(char *));
+	argv[cmdscript_argc] = (char *)cmd;
+	argv[cmdscript_argc + 1] = NULL;
+
+#ifndef WIN32
+	/* child process */
+	execvp(cmdscript_argv[0], argv);
+	/* execvp() only returns on error */
+	upslog_with_errno(LOG_ERR, "execvp(%s) failed", NUT_STRARG(cmdscript_concat));
+	free(argv);
+	exit(EXIT_FAILURE);
+#else	/* WIN32 */
+	/* Use _spawnvp for Windows */
+	err = _spawnvp(_P_WAIT, cmdscript_argv[0], (const char * const *)argv);
+	if (err != -1) {
+		upslogx(LOG_INFO, "Execute command %s \"%s\" OK", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+		upsdebugx(3, "%s: returned status %d", __func__, err);
+	} else {
+		upslog_with_errno(LOG_ERR, "Execute command %s \"%s\" failure", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
+	}
+	free(argv);
+#endif	/* WIN32 */
+}
+
+/* Collect the list of strings into a "sep" (e.g. comma) separated string.
+ * If the return value is not NULL, caller should free() this.
+ * TODO: Generalize and move to common as some snprintfcatext()?
+ */
+static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *pBufsize, size_t *pCount)
+{
+	size_t	bufsize = SMALLBUF, prevlen = 0, count = 0;
+	char	*buf = NULL, **ptr, *s;
+	int	ret_printf;
+
+	/* Do we have at least one non-trivial string there? */
+	if (!string_arr || !(*string_arr) || !(**string_arr))
+		return NULL;
+
+	buf = (char *)xcalloc(bufsize, sizeof(char));
+	if (!buf) {
+		upsdebugx(1, "%s: failed to allocate buffer, will not report any %s values", __func__, logtag);
+		return NULL;
+	}
+
+	for (ptr = string_arr; ptr != NULL; ptr++) {
+		int	retry;
+
+		s = *ptr;
+		upsdebugx(5, "%s: popped '%s'", __func__, NUT_STRARG(s));
+
+		if (s == NULL || *s == '\0')
+			break; /*continue?*/
+
+		upsdebugx(4, "%s: appending '%s' to buffer %" PRIuSIZE "/%" PRIuSIZE " full",
+			__func__, s, prevlen, bufsize);
+		do {
+			retry = 0;
+			ret_printf = snprintf(
+				buf + prevlen,
+				bufsize - prevlen - 1,
+				"%s%s",
+				count ? (sep ? sep : ",") : "",
+				s);
+			upsdebugx(4, "%s: got %d after adding into buffer %" PRIuSIZE "/%" PRIuSIZE " full",
+				__func__, ret_printf, prevlen, bufsize);
+			buf[bufsize - 1] = '\0';
+
+			if (ret_printf < 0) {
+				upsdebugx(1, "%s: error collecting names, might not report all %s values", __func__, logtag);
+				buf[prevlen] = '\0';
+			} else if ((size_t)ret_printf + prevlen >= bufsize) {
+				if (bufsize < SIZE_MAX - LARGEBUF) {
+					bufsize += LARGEBUF;
+					upsdebugx(1, "%s: buffer overflowed, trying to re-allocate as %" PRIuSIZE, __func__, bufsize);
+					buf = (char *)realloc(buf, bufsize);
+
+					if (!buf) {
+						upsdebugx(1, "%s: buffer overflowed and failed to re-allocate, will not report any %s values", __func__, logtag);
+						return NULL;
+					} else {
+						upsdebugx(5, "%s: buffer overflowed, but re-allocated successfully - retrying", __func__);
+						/* Retry this loop */
+						retry = 1;
+					}
+				} else {
+					upsdebugx(1, "%s: buffer overflowed, might not report all %s values", __func__, logtag);
+					buf[prevlen] = '\0';
+				}
+			} else {
+				prevlen += (size_t)ret_printf;
+			}
+		} while (retry);
+
+		count++;
+	}
+
+	upsdebugx(3, "%s: collected %" PRIuSIZE " items into %" PRIuSIZE " bytes: %s",
+		__func__, count, bufsize, buf);
+
+	if (pBufsize)
+		*pBufsize = bufsize;
+
+	if (pCount)
+		*pCount = count;
+
+	upsdebugx(5, "%s: returning", __func__);
+	return buf;
+}
+
+static void exec_cmd_timer(ttype_t *item)
+{
+	char	*upsnames = NULL, *notifytypes = NULL, *notifymsgs = NULL;
+	size_t	upsnames_count = 0, notifytypes_count = 0, notifymsgs_count = 0;
+
+	if (!item || !item->name || !(*(item->name))) {
+		upsdebugx(1, "%s: SKIP bad call with null arg or its command name", __func__);
+		return;
+	}
+
+	/* Do we have at least one non-trivial string there? */
+	if (item->upsnames && *(item->upsnames) && **(item->upsnames)) {
+		upsnames = collect_string(item->upsnames, "UPSNAME", ",", NULL, &upsnames_count);
+	}
+
+	if (item->notifytypes && *(item->notifytypes) && **(item->notifytypes)) {
+		notifytypes = collect_string(item->notifytypes, "NOTIFYTYPE", ",", NULL, &notifytypes_count);
+	}
+
+	if (item->notifymsgs && *(item->notifymsgs) && **(item->notifymsgs)) {
+		notifymsgs = collect_string(item->notifymsgs, "NOTIFYMSG", ".\t", NULL, &notifymsgs_count);
+	}
+
+	if (upsnames)
+		setenv("UPSNAME", upsnames, 1);
+
+	if (notifytypes)
+		setenv("NOTIFYTYPE", notifytypes, 1);
+
+	if (notifymsgs)
+		setenv("NOTIFYMSG", notifymsgs, 1);
+
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "Executing command by timer: %s\t[%s]\t[%s]\t[%s]",
+			item->name, NUT_STRARG(notifytypes), NUT_STRARG(upsnames), NUT_STRARG(notifymsgs));
+	exec_cmd(item->name);
+	upsdebugx(3, "%s: returned from exec_cmd()", __func__);
+
+	/* Timer process should not retain random envvars */
+	if (upsnames) {
+		unsetenv("UPSNAME");
+		free(upsnames);
+	}
+
+	if (notifytypes) {
+		unsetenv("NOTIFYTYPE");
+		free(notifytypes);
+	}
+
+	if (notifymsgs) {
+		unsetenv("NOTIFYMSG");
+		free(notifymsgs);
+	}
+
+	upsdebugx(3, "%s: done", __func__);
 }
 
 static void removetimer(ttype_t *tfind)
@@ -129,11 +383,37 @@ static void removetimer(ttype_t *tfind)
 
 	while (tmp) {
 		if (tmp == tfind) {	/* found it */
+			upsdebugx(5, "%s: found %s", __func__, NUT_STRARG(tmp->name));
 			if (last == NULL)	/* deleting first */
 				thead = tmp->next;
 			else
 				last->next = tmp->next;
 
+			if (tmp->upsnames) {
+				char **ps;
+				for (ps = tmp->upsnames; *ps != NULL; ps++) {
+					free(*ps);
+				}
+				free(tmp->upsnames);
+			}
+
+			if (tmp->notifytypes) {
+				char **ps;
+				for (ps = tmp->notifytypes; *ps != NULL; ps++) {
+					free(*ps);
+				}
+				free(tmp->notifytypes);
+			}
+
+			if (tmp->notifymsgs) {
+				char **ps;
+				for (ps = tmp->notifymsgs; *ps != NULL; ps++) {
+					free(*ps);
+				}
+				free(tmp->notifymsgs);
+			}
+
+			upsdebugx(3, "%s: forgetting %s", __func__, tmp->name);
 			free(tmp->name);
 			free(tmp);
 			return;
@@ -153,6 +433,8 @@ static void checktimers(void)
 	ttype_t	*tmp, *tmpnext;
 	time_t	now;
 	static	int	emptyctr = 0;
+
+	upsdebugx(3, "%s: starting", __func__);
 
 	/* if the queue is empty we might be ready to exit */
 	if (!thead) {
@@ -189,21 +471,25 @@ static void checktimers(void)
 			if (nut_debug_level)
 				upslogx(LOG_INFO, "Event: %s ", tmp->name);
 
-			exec_cmd(tmp->name);
+			exec_cmd_timer(tmp);
 
 			/* delete from queue */
+			upsdebugx(5, "%s: removing timer for the event just handled", __func__);
 			removetimer(tmp);
+			upsdebugx(5, "%s: removed timer for the event just handled", __func__);
 		}
 
 		tmp = tmpnext;
 	}
+
+	upsdebugx(3, "%s: done", __func__);
 }
 
-static void start_timer(const char *name, const char *ofsstr)
+static void start_timer(const char *name, const char *ofsstr, const char *notifytype, const char *upsname, const char *notifymsg, int shared_timer)
 {
 	time_t	now;
 	long	ofs;
-	ttype_t	*tmp, *last;
+	ttype_t	*tmp, *last = NULL;
 
 	/* get the time */
 	time(&now);
@@ -216,21 +502,139 @@ static void start_timer(const char *name, const char *ofsstr)
 		return;
 	}
 
-	if (nut_debug_level)
-		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
+	if (shared_timer) {
+		/* See if there is an older entry to attach to,
+		 * otherwise fall through to creating a new one */
+		tmp = last = thead;
+		upsdebugx(3, "%s: searching for existing timer named '%s' to share", __func__, name);
 
-	/* now add to the queue */
-	tmp = last = thead;
+		while (tmp) {
+			if (tmp->name && !strcmp(tmp->name, name)) {
+				if (nut_debug_level)
+					upslogx(LOG_INFO, "Append data to shared timer: %s\t[%s]\t[%s]\t[%s]\t(will elapse in %g seconds)",
+						name, NUT_STRARG(notifytype), NUT_STRARG(upsname), NUT_STRARG(notifymsg),
+						difftime(tmp->etime, now));
 
-	while (tmp) {
-		last = tmp;
-		tmp = tmp->next;
+				/* FIXME? Consider only the first hit as the shared timer?
+				 *  Or check if there is already a copy with same name elsewhere?
+				 */
+				if (notifytype && *notifytype) {
+					if (tmp->notifytypes) {
+						char	**ps = NULL;
+						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
+
+						for (ps = tmp->notifytypes; *ps != NULL ; ps++) {
+							count++;
+							if (!strcmp(*ps, notifytype))
+								break;
+						}
+
+						if (*ps == NULL) {
+							tmp->notifytypes = (char **)xrealloc(tmp->notifytypes, count + 2);
+							tmp->notifytypes[count] = xstrdup(notifytype);
+							tmp->notifytypes[count + 1] = NULL;
+						}
+					} else {
+						tmp->notifytypes = (char **)xcalloc(2, sizeof(char*));
+						tmp->notifytypes[0] = xstrdup(notifytype);
+						tmp->notifytypes[1] = NULL;
+					}
+				}
+
+				if (notifymsg && *notifymsg) {
+					if (tmp->notifymsgs) {
+						char	**ps = NULL;
+						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
+
+						for (ps = tmp->notifymsgs; *ps != NULL ; ps++) {
+							count++;
+							if (!strcmp(*ps, notifymsg))
+								break;
+						}
+
+						if (*ps == NULL) {
+							tmp->notifymsgs = (char **)xrealloc(tmp->notifymsgs, count + 2);
+							tmp->notifymsgs[count] = xstrdup(notifymsg);
+							tmp->notifymsgs[count + 1] = NULL;
+						}
+					} else {
+						tmp->notifymsgs = (char **)xcalloc(2, sizeof(char*));
+						tmp->notifymsgs[0] = xstrdup(notifymsg);
+						tmp->notifymsgs[1] = NULL;
+					}
+				}
+
+				if (upsname && *upsname) {
+					if (tmp->upsnames) {
+						char	**ps = NULL;
+						size_t	count = 0;	/* amount of non-NULL entries, if we get to the end */
+
+						for (ps = tmp->upsnames; *ps != NULL ; ps++) {
+							count++;
+							if (!strcmp(*ps, upsname))
+								break;
+						}
+
+						if (*ps == NULL) {
+							tmp->upsnames = (char **)xrealloc(tmp->upsnames, count + 2);
+							tmp->upsnames[count] = xstrdup(upsname);
+							tmp->upsnames[count + 1] = NULL;
+						}
+					} else {
+						tmp->upsnames = (char **)xcalloc(2, sizeof(char*));
+						tmp->upsnames[0] = xstrdup(upsname);
+						tmp->upsnames[1] = NULL;
+					}
+				}
+
+				return;
+			}
+
+			/* Looping anyway, prepare for fall-through if we get to it */
+			last = tmp;
+			tmp = tmp->next;
+		}
 	}
 
-	tmp = xmalloc(sizeof(ttype_t));
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "New timer: %s\t[%s]\t[%s]\t[%s]\t(will elapse in %ld seconds)",
+			name, NUT_STRARG(notifytype), NUT_STRARG(upsname), NUT_STRARG(notifymsg), ofs);
+
+	/* now add to the queue */
+	if (!shared_timer) {
+		tmp = last = thead;
+
+		while (tmp) {
+			last = tmp;
+			tmp = tmp->next;
+		}
+	}	/* else we already know */
+
+	tmp = (ttype_t *)xmalloc(sizeof(ttype_t));
 	tmp->name = xstrdup(name);
 	tmp->etime = now + ofs;
+	tmp->notifytypes = NULL;
+	tmp->notifymsgs = NULL;
+	tmp->upsnames = NULL;
 	tmp->next = NULL;
+
+	if (notifytype && *notifytype) {
+		tmp->notifytypes = (char **)xcalloc(2, sizeof(char*));
+		tmp->notifytypes[0] = xstrdup(notifytype);
+		tmp->notifytypes[1] = NULL;
+	}
+
+	if (notifymsg && *notifymsg) {
+		tmp->notifymsgs = (char **)xcalloc(2, sizeof(char*));
+		tmp->notifymsgs[0] = xstrdup(notifymsg);
+		tmp->notifymsgs[1] = NULL;
+	}
+
+	if (upsname && *upsname) {
+		tmp->upsnames = (char **)xcalloc(2, sizeof(char*));
+		tmp->upsnames[0] = xstrdup(upsname);
+		tmp->upsnames[1] = NULL;
+	}
 
 	if (last)
 		last->next = tmp;
@@ -238,20 +642,86 @@ static void start_timer(const char *name, const char *ofsstr)
 		thead = tmp;
 }
 
-static void cancel_timer(const char *name, const char *cname)
+static void cancel_timer(const char *name, const char *cname, const char *notifytype, const char *upsname, const char *notifymsg, int do_cancel_matched)
 {
 	ttype_t	*tmp;
+	size_t	removed = 0;
+
+	/* TOTHINK: Only cancel events associated with a particular UPS and/or type? */
+	NUT_UNUSED_VARIABLE(notifytype);
+	NUT_UNUSED_VARIABLE(upsname);
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
-			if (nut_debug_level)
-				upslogx(LOG_INFO, "Cancelling timer: %s", name);
+			/* Note we do not match "notifymsg" as it likely differs */
+			if (!do_cancel_matched
+			||  (   (!notifytype || !(*notifytype))
+				 && (!upsname || !(*upsname)) )
+			) {
+				upsdebugx(2, "%s: cancelling of timer %s not constrained by caller's NOTIFYTYPE nor UPSNAME", __func__, name);
+			} else {
+				char	**ps = NULL;
+				int	matched = 0;
+
+				/* FIXME: Do not remove whole timer, just the respective strings?
+				 *  (Do drop the timer only if none remain) */
+				if (notifytype) {
+					matched = 0;
+					if (!(tmp->notifytypes)) {
+						upsdebugx(2, "%s: do not cancel timer %s due to lack of NOTIFYTYPE in it", __func__, name);
+						continue;
+					}
+					for (ps = tmp->notifytypes; *ps != NULL ; ps++) {
+						if (!strcmp(*ps, notifytype)) {
+							matched = 1;
+							break;
+						}
+					}
+					if (!matched) {
+						upsdebugx(2, "%s: do not cancel timer %s due to mismatch vs. caller's NOTIFYTYPE", __func__, name);
+						continue;
+					}
+				}
+
+				if (upsname) {
+					matched = 0;
+					if (!(tmp->upsnames)) {
+						upsdebugx(2, "%s: do not cancel timer %s due to lack of UPSNAME in it", __func__, name);
+						continue;
+					}
+					for (ps = tmp->upsnames; *ps != NULL ; ps++) {
+						if (!strcmp(*ps, upsname)) {
+							matched = 1;
+							break;
+						}
+					}
+					if (!matched) {
+						upsdebugx(2, "%s: do not cancel timer %s due to mismatch vs. caller's UPSNAME", __func__, name);
+						continue;
+					}
+				}
+			}
+
+			if (nut_debug_level) {
+				if (notifymsg && *notifymsg) {
+					upslogx(LOG_INFO, "Cancelling timer: %s: %s", name, notifymsg);
+				} else {
+					upslogx(LOG_INFO, "Cancelling timer: %s", name);
+				}
+			}
 			removetimer(tmp);
-			return;
+			removed++;
+
+			/* Go on, we want to continue and cancel possibly many
+			 * timers with this name (modulo constraints by envvars) */
 		}
 	}
+	if (removed > 0)
+		return;
 
-	/* this is not necessarily an error */
+	/* this is not necessarily an error: per docs,
+	 * if the timer has passed then pass the optional argument cmd to CMDSCRIPT.
+	 */
 	if (cname && cname[0]) {
 		if (nut_debug_level)
 			upslogx(LOG_INFO, "Cancel %s, event: %s", name, cname);
@@ -333,19 +803,24 @@ static TYPE_FD open_sock(void)
 	set_close_on_exec(fd);
 
 #else /* WIN32 */
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
+
+	init_pipe_security(&pipe_sa, &pipe_sd);
 
 	fd = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX | /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attributes */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attributes */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -373,6 +848,12 @@ static void conn_del(conn_t *target)
 {
 	conn_t	*tmp, *last = NULL;
 
+	if (!target)
+		return;
+
+#ifndef WIN32
+	upsdebugx(3, "%s: closing connection %d", __func__, target->fd);
+#endif
 	tmp = connhead;
 
 	while (tmp) {
@@ -424,6 +905,9 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	va_end(ap);
 
 	buflen = strlen(buf);
+	upsdebugx(5, "%s: sending %" PRIuSIZE " bytes:", __func__, buflen);
+	upsdebug_ascii_compact(5, "send_to_one buffer content: ", buf, buflen);
+
 	if (buflen >= SSIZE_MAX) {
 		/* Can't compare buflen to ret */
 		upsdebugx(2, "send_to_one(): buffered message too large");
@@ -544,7 +1028,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(conn_t));
+	tmp = (conn_t *)xmalloc(sizeof(conn_t));
 	tmp->fd = acc;
 	tmp->next = NULL;
 
@@ -560,25 +1044,30 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 #else /* WIN32 */
 
 	conn_t	*conn, *tmp, *last;
+	SECURITY_ATTRIBUTES	pipe_sa;
+	SECURITY_DESCRIPTOR	pipe_sd;
 
 	/* We have detected a connection on the opened pipe. So we start
-	   by saving its handle  and create a new pipe for future connection */
+	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
+	init_pipe_security(&pipe_sa, &pipe_sd);
+
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
-			pipefn, /* pipe name */
-			PIPE_ACCESS_DUPLEX |  /* read/write access */
-			FILE_FLAG_OVERLAPPED, /* async IO */
-			PIPE_TYPE_BYTE |
-			PIPE_READMODE_BYTE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			BUF_LEN, /* output buffer size */
-			BUF_LEN, /* input buffer size */
-			0, /* client time-out */
-			NULL); /* FIXME: default security attribute */
+			pipefn,		/* pipe name */
+			PIPE_ACCESS_DUPLEX	/* read/write access */
+			| FILE_FLAG_OVERLAPPED,	/* async IO */
+			PIPE_TYPE_BYTE
+			| PIPE_READMODE_BYTE
+			| PIPE_REJECT_REMOTE_CLIENTS	/* local host only */
+			| PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			BUF_LEN,	/* output buffer size */
+			BUF_LEN,	/* input buffer size */
+			0,		/* client time-out */
+			&pipe_sa);	/* default security attribute */
 
 	if (INVALID_FD(acc)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -600,9 +1089,11 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	ConnectNamedPipe(acc,&connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created.
-	   We could manage the current connection now */
-	/* Start a read operation on the newly connected pipe so we could wait
-	   on the event associated to this IO */
+	 * We could manage the current connection now.
+	 */
+
+	/* Start a read operation on the newly connected pipe so we could
+	 * wait on the event associated to this IO */
 	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
 	memset(conn->buf,0,sizeof(conn->buf));
 	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
@@ -639,27 +1130,118 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 
 static int sock_arg(conn_t *conn)
 {
+	/* "Server-side" listener for the timer daemon */
 	if (conn->ctx.numargs < 1)
 		return 0;
 
-	/* CANCEL <name> [<cmd>] */
-	if (!strcmp(conn->ctx.arglist[0], "CANCEL")) {
+	/* LIST-TIMERS (no args expected now)
+	 * returns a list with tab-separated values for:
+	 * NAME TO_ABS TO_REL NOTIFYTYPES UPSNAMES NOTIFYMSGS_TABSEP
+	 */
+	if (!strcmp(conn->ctx.arglist[0], "LIST-TIMERS")) {
+		ttype_t	*item = thead;
+		char	*s = NULL;
+		time_t	now;
 
-		if (conn->ctx.numargs < 3)
-			cancel_timer(conn->ctx.arglist[1], NULL);
-		else
-			cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2]);
+		send_to_one(conn, "BEGIN LIST TIMERS\n");
+		time(&now);
 
+		while (item) {
+			if (item->name) {
+				send_to_one(conn, "%s\t%ld\t%g\t",
+					item->name, (long)item->etime, difftime(item->etime, now));
+
+				s = NULL;
+				if (item->notifytypes && *(item->notifytypes) && **(item->notifytypes)) {
+					s = collect_string(item->notifytypes, "NOTIFYTYPE", ",", NULL, NULL);
+				}
+
+				if (s && *s) {
+					send_to_one(conn, "%s\t", s);
+				} else {
+					send_to_one(conn, "\"\"\t");
+				}
+				if (s) {
+					free(s);
+				}
+
+				s = NULL;
+				if (item->upsnames && *(item->upsnames) && **(item->upsnames)) {
+					s = collect_string(item->upsnames, "UPSNAME", ",", NULL, NULL);
+				}
+
+				if (s && *s) {
+					send_to_one(conn, "%s\t", s);
+				} else {
+					send_to_one(conn, "\"\"\t");
+				}
+				if (s) {
+					free(s);
+				}
+
+				s = NULL;
+				if (item->notifymsgs && *(item->notifymsgs) && **(item->notifymsgs)) {
+					s = collect_string(item->notifymsgs, "NOTIFYMSG", ".\t", NULL, NULL);
+				}
+
+				if (s && *s) {
+					send_to_one(conn, "%s\n", s);
+				} else {
+					send_to_one(conn, "\"\"\n");
+				}
+				if (s) {
+					free(s);
+				}
+			}
+			item = item->next;
+		}
+
+		send_to_one(conn, "END LIST TIMERS\n");
+		send_to_one(conn, "OK\n\0");
+		return 1;
+	}
+
+	/* CANCEL <name> [<cmd>] [<NOTIFYTYPE> <UPSNAME> <NOTIFYMSG_FOR_LOGINFO>] */
+	{ /* scoping */
+		int	do_cancel = !strcmp(conn->ctx.arglist[0], "CANCEL"),
+			do_cancel_matched = !strcmp(conn->ctx.arglist[0], "CANCEL-MATCHED");
+
+		if (do_cancel || do_cancel_matched) {
+			/* "cmd" may be present and empty, this is handled in the method */
+			if (conn->ctx.numargs < 3)
+				cancel_timer(conn->ctx.arglist[1], NULL,
+					NULL, NULL, NULL, do_cancel_matched);
+			else
+			if (conn->ctx.numargs < 6)
+				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+					NULL, NULL, NULL, do_cancel_matched);
+			else
+				cancel_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+					conn->ctx.arglist[3], conn->ctx.arglist[4],
+					conn->ctx.arglist[5], do_cancel_matched);
+
+			send_to_one(conn, "OK\n");
+			return 1;
+		}
+	}
+
+	if (conn->ctx.numargs < 6)
+		return 0;
+
+	/* START <name> <length> <NOTIFYTYPE> <UPSNAME> <NOTIFYMSG> */
+	if (!strcmp(conn->ctx.arglist[0], "START")) {
+		start_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+			conn->ctx.arglist[3], conn->ctx.arglist[4],
+			conn->ctx.arglist[5], 0);
 		send_to_one(conn, "OK\n");
 		return 1;
 	}
 
-	if (conn->ctx.numargs < 3)
-		return 0;
-
-	/* START <name> <length> */
-	if (!strcmp(conn->ctx.arglist[0], "START")) {
-		start_timer(conn->ctx.arglist[1], conn->ctx.arglist[2]);
+	/* START-SHARED <name> <length> <NOTIFYTYPE> <UPSNAME> <NOTIFYMSG> */
+	if (!strcmp(conn->ctx.arglist[0], "START-SHARED")) {
+		start_timer(conn->ctx.arglist[1], conn->ctx.arglist[2],
+			conn->ctx.arglist[3], conn->ctx.arglist[4],
+			conn->ctx.arglist[5], 1);
 		send_to_one(conn, "OK\n");
 		return 1;
 	}
@@ -696,7 +1278,7 @@ static int sock_read(conn_t *conn)
 		ret = read(conn->fd, &ch, 1);
 
 		if (ret > 0)
-			upsdebug_with_errno(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
+			upsdebug_with_errno(7, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
 				conn->fd, ret, ch);
 
 		if (ret < 1) {
@@ -793,12 +1375,11 @@ static int sock_read(conn_t *conn)
 
 static void start_daemon(TYPE_FD lockfd)
 {
+#ifndef WIN32
 	int	maxfd = 0;	/* Unidiomatic use vs. "pipefd" below, which is "int" on non-WIN32 */
 	TYPE_FD pipefd;
 	struct	timeval	tv;
 	conn_t	*tmp;
-
-#ifndef WIN32
 	int	pid, ret;
 	fd_set	rfds;
 	conn_t	*tmpnext;
@@ -817,6 +1398,7 @@ static void start_daemon(TYPE_FD lockfd)
 	}
 
 	/* child */
+	setproctag("timer");
 
 	/* make fds 0-2 (typically) point somewhere defined */
 # ifdef HAVE_DUP2
@@ -896,6 +1478,7 @@ static void start_daemon(TYPE_FD lockfd)
 	 * CMDSCRIPT to run */
 	unsetenv("NOTIFYTYPE");
 	unsetenv("UPSNAME");
+	unsetenv("NOTIFYMSG");
 
 	/* now watch for activity */
 	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
@@ -979,36 +1562,246 @@ static void start_daemon(TYPE_FD lockfd)
 
 #else /* WIN32 */
 
-	DWORD timeout_ms;
-	HANDLE rfds[32];
+	/* NOTE ON THIS REWRITE:
+	 *
+	 * This function is only ever called by the short-lived CLI process
+	 * (the one invoked by upsmon with UPSNAME/NOTIFYTYPE set) when it
+	 * could not connect to an already-running timer daemon.
+	 *
+	 * Historically (see version control history for the code this
+	 * replaces), this WIN32 branch did NOT fork(): it called
+	 * CreateProcess(module, NULL, ...) -- i.e. spawned a brand-new,
+	 * unmarked copy of this very executable, which (since
+	 * lpEnvironment==NULL) inherited this process' current
+	 * environment, INCLUDING UPSNAME/NOTIFYTYPE -- and then THIS
+	 * process itself (not the spawned one!) called open_sock() and
+	 * ran the server for(;;) loop forever, i.e. becoming the daemon.
+	 *
+	 * That spawned copy had no way of knowing it was supposed to
+	 * "become the daemon": unlike fork(), CreateProcess() cannot
+	 * split this already-initialized process into a parent/child
+	 * pair -- it always starts a brand-new process at main(). So the
+	 * spawned copy simply re-ran the entire normal CLI codepath
+	 * (re-parsing upssched.conf, calling parse_at() and sendcmd()
+	 * again) as if upsmon had invoked upssched a second time for the
+	 * very same event. Combined with a lock-file race in
+	 * check_parent() (see the unconditional DeleteFile(lockfn) a few
+	 * lines above in that function), this could make the spawned
+	 * copy conclude that IT also needed to start a daemon, spawning
+	 * yet another copy, and so on -- a runaway cascade of processes
+	 * instead of the intended single client + single daemon pair.
+	 *
+	 * The rewrite below fixes this by:
+	 *   1. Explicitly marking the spawned process (via
+	 *      WIN32_DAEMON_MARKER on its command line, checked at the
+	 *      very top of main()) so it goes straight to
+	 *      win32_run_timer_daemon() instead of the normal CLI path.
+	 *   2. Clearing UPSNAME/NOTIFYTYPE/NOTIFYMSG from our own
+	 *      environment before spawning, since CreateProcess() with
+	 *      lpEnvironment==NULL takes a snapshot of it for the child.
+	 *   3. Adding an explicit readiness handshake (a manual-reset
+	 *      Win32 event, inherited by the child) so THIS process waits
+	 *      until the child is actually listening on the named pipe,
+	 *      then RETURNS -- exactly like the non-WIN32 parent branch
+	 *      above returns after us_serialize(SERIALIZE_WAIT). This
+	 *      process is NOT the daemon: control goes back to
+	 *      check_parent(), which retries try_connect() and delivers
+	 *      the ORIGINAL command to the now-running daemon, and this
+	 *      process then exits normally, same as on non-WIN32.
+	 */
 
 	char module[NUT_PATH_MAX + 1];
+	char cmdline[NUT_PATH_MAX + 64];
+	char ready_event_str[32];
 	STARTUPINFO sinfo;
 	PROCESS_INFORMATION pinfo;
+	SECURITY_ATTRIBUTES sa;
+	HANDLE hReady;
+	DWORD wait_ret;
+
 	if (!GetModuleFileName(NULL, module, sizeof(module))) {
 		fatal_with_errno(EXIT_FAILURE, "Can't retrieve module name");
 	}
-	memset(&sinfo,0,sizeof(sinfo));
-	if (!CreateProcess(module, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &sinfo, &pinfo)) {
-		fatal_with_errno(EXIT_FAILURE, "Can't create child process");
+
+	/* Manual-reset event, created inheritable, so the about-to-be
+	 * spawned child can SetEvent() it once its named pipe is up. This
+	 * is the WIN32 counterpart of us_serialize(SERIALIZE_INIT), which
+	 * is implemented above with a plain POSIX pipe(2) and has no
+	 * WIN32 equivalent. */
+	memset(&sa, 0, sizeof(sa));
+	sa.nLength = sizeof(sa);
+	sa.lpSecurityDescriptor = NULL;
+	sa.bInheritHandle = TRUE;
+
+	hReady = CreateEvent(&sa, TRUE /* manual-reset */, FALSE /* initially non-signaled */, NULL);
+	if (hReady == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create timer daemon readiness event");
 	}
+
+	/* Hand the readiness-event HANDLE down to the child as a hex
+	 * string on its command line, alongside WIN32_DAEMON_MARKER (see
+	 * main() for the receiving side). This relies on the handle
+	 * actually being inherited by the child process, which requires
+	 * BOTH bInheritHandle=TRUE on the handle itself (set above) AND
+	 * bInheritHandles=TRUE in the CreateProcess() call below.
+	 *
+	 * NOTE for the developers reading this years down the road:
+	 * passing a raw HANDLE value across a process boundary via argv,
+	 * encoded as text (with hex value), is somewhat unusual (because a
+	 * named/well-known event, or the newer PROC_THREAD_ATTRIBUTE_HANDLE_LIST
+	 * mechanism, are the more modern alternatives), but it is simple,
+	 * requires no extra Windows SDK version checks, and is a
+	 * well-documented pattern for inherited handle hand-off predating
+	 * Vista-era API additions.
+	 * strtoull()/"%llx" are used here for portability across the
+	 * MinGW-w64 and MSVC toolchains this project supports; please
+	 * double check this against the actual minimum supported
+	 * toolchain versions in this codebase's build files, should
+	 * any target OS level ever get officially deprecated by the
+	 * NUT project. */
+	snprintf(ready_event_str, sizeof(ready_event_str), "%llx",
+		(unsigned long long)(uintptr_t)hReady);
+	snprintf(cmdline, sizeof(cmdline), "\"%s\" %s %s",
+		module, WIN32_DAEMON_MARKER, ready_event_str);
+
+	/* Whatever upsmon envvars are currently set (UPSNAME, NOTIFYTYPE,
+	 * NOTIFYMSG) must NOT leak into the spawned child: unlike fork(),
+	 * CreateProcess() with lpEnvironment==NULL makes the child inherit
+	 * a snapshot of THIS process' current environment block -- and it
+	 * was exactly that inheritance which historically let the (back
+	 * then, unmarked) spawned copy believe it was handling a fresh
+	 * notification from upsmon. The child is not expected to consult
+	 * these variables at all now (is_win32_timer_daemon short-circuits
+	 * that in main()/conf_arg()), but we clear them here too, out of
+	 * caution. */
+	unsetenv("UPSNAME");
+	unsetenv("NOTIFYTYPE");
+	unsetenv("NOTIFYMSG");
+
+	memset(&sinfo, 0, sizeof(sinfo));
+	sinfo.cb = sizeof(sinfo);
+
+	/* bInheritHandles=TRUE is required for the child to receive a
+	 * usable duplicate of hReady. */
+	if (!CreateProcess(module, cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &sinfo, &pinfo)) {
+		CloseHandle(hReady);
+		fatal_with_errno(EXIT_FAILURE, "Can't create timer daemon child process");
+	}
+
+	/* We don't need to track or wait on the child process/thread
+	 * handles beyond this point -- only the readiness event matters
+	 * here. (The code this replaces never closed these two handles,
+	 * leaking a HANDLE pair on every daemon start; fixed here.) */
+	CloseHandle(pinfo.hThread);
+	CloseHandle(pinfo.hProcess);
+
+	/* Wait for the child to open its named pipe and call SetEvent();
+	 * this is the WIN32 equivalent of us_serialize(SERIALIZE_WAIT).
+	 * A finite timeout avoids hanging forever if the child fails to
+	 * start for some unrelated reason -- we fail loudly instead of
+	 * silently proceeding as if the daemon were already up. */
+	wait_ret = WaitForSingleObject(hReady, 10000 /* ms; NOTE: adjust if too tight/loose for the target environment */);
+	CloseHandle(hReady);
+
+	if (wait_ret != WAIT_OBJECT_0) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Timer daemon child did not signal readiness in time");
+	}
+
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "Timer daemon child confirmed ready");
+
+	/* We (the CLI process) are NOT the daemon. Release our lock and
+	 * return to the caller (check_parent()), which will retry
+	 * try_connect() and deliver the ORIGINAL command via the named
+	 * pipe, then exit -- mirroring the non-WIN32 parent branch above. */
+	CloseHandle(lockfd);
+	DeleteFile(lockfn);
+
+	return;
+#endif /* WIN32 */
+
+	/* Should not get here */
+/*
+	if (nut_debug_level)
+		upslogx(LOG_INFO, "Timer daemon ending");
+*/
+}
+
+#ifdef WIN32
+/* WIN32-only: body of the persistent timer-daemon process.
+ *
+ * Entered directly from main() when WIN32_DAEMON_MARKER is found on
+ * the command line (see main() below), i.e. this is the freshly
+ * spawned child created by start_daemon() above via CreateProcess().
+ * This process never goes through the normal CLI codepath: by the
+ * time main() calls us, checkconf() has already run (gated by
+ * is_win32_timer_daemon so that only PIPEFN/LOCKFN/CMDSCRIPT/
+ * DEBUG_MIN are parsed and no "AT" line is acted upon -- see
+ * conf_arg()).
+ *
+ * This is the WIN32 counterpart of the "child" branch of the
+ * non-WIN32 start_daemon() above (the code path taken when
+ * "pid != 0" is false, i.e. after the "if (pid != 0) { ...; return; }"
+ * block) -- except it necessarily lives in its own function, since
+ * unlike fork() it cannot simply "fall through" from inside
+ * start_daemon(): it is a distinct OS process running its own,
+ * separate main().
+ *
+ * Below this point, down to the closing brace, the loop body is
+ * relocated VERBATIM from the previous (buggy) WIN32 branch of
+ * start_daemon() -- no functional change was made to the connection/
+ * timer-handling logic itself, only to how and by which process this
+ * code gets reached. */
+static void win32_run_timer_daemon(void)
+{
+	int		maxfd = 0;
+	TYPE_FD		pipefd;
+	struct timeval	tv;
+	conn_t		*tmp;
+	DWORD		timeout_ms;
+	HANDLE		rfds[32];
+
 	pipefd = open_sock();
 
 	if (nut_debug_level)
 		upslogx(LOG_INFO, "Timer daemon started");
 
-	/* drop the lock now that the background is running */
-	CloseHandle(lockfd);
-	DeleteFile(lockfn);
+	/* Tell the process that spawned us (still waiting inside its own
+	 * call to start_daemon(), see above) that our named pipe is now
+	 * up and accepting connections. This is the WIN32 counterpart of
+	 * us_serialize(SERIALIZE_SET). */
+	if (win32_daemon_ready_event != NULL) {
+		SetEvent(win32_daemon_ready_event);
+		CloseHandle(win32_daemon_ready_event);
+		win32_daemon_ready_event = NULL;
+	} else {
+		/* Defensive: should not happen in normal operation, since
+		 * start_daemon() always passes a valid inherited handle via
+		 * WIN32_DAEMON_MARKER's argv[2]. Log and carry on: the
+		 * spawning process will simply hit its own
+		 * WaitForSingleObject() timeout and report an error, rather
+		 * than this (already perfectly usable) daemon exiting. */
+		upslogx(LOG_WARNING,
+			"%s: no readiness event handle was received from the spawning process",
+			__func__);
+	}
+
 	writepid(prog);
 
-	/* Whatever upsmon envvars were set when this daemon started, would be
-	 * irrelevant and only confusing at the moment a particular timer causes
-	 * CMDSCRIPT to run */
+	/* Whatever upsmon envvars were set for the CLI process that
+	 * spawned us would be irrelevant and only confusing at the moment
+	 * a particular timer causes CMDSCRIPT to run. Under normal
+	 * operation none of these should be inherited any more anyway,
+	 * since start_daemon() above clears them from its own environment
+	 * before calling CreateProcess() -- this is kept as a defensive,
+	 * now-redundant fallback matching the non-WIN32 daemon child. */
 	unsetenv("NOTIFYTYPE");
 	unsetenv("UPSNAME");
+	unsetenv("NOTIFYMSG");
 
 	/* now watch for activity */
+	upsdebugx(2, "Timer daemon waiting for connections");
 
 	for (;;) {
 		/* wait at most 1s so we can check our timers regularly */
@@ -1027,48 +1820,52 @@ static void start_daemon(TYPE_FD lockfd)
 		/* Add the connect event */
 		rfds[maxfd] = connect_overlapped.hEvent;
 		maxfd++;
-		DWORD ret_val;
-		ret_val = WaitForMultipleObjects(
-				maxfd,  /* number of objects in array */
-				rfds,   /* array of objects */
-				FALSE,  /* wait for any object */
-				timeout_ms); /* timeout in millisecond */
 
-		if (ret_val == WAIT_FAILED) {
-			upslog_with_errno(LOG_ERR, "waitfor failed");
-			return;
-		}
+		{
+			DWORD ret_val;
+			ret_val = WaitForMultipleObjects(
+					maxfd,  /* number of objects in array */
+					rfds,   /* array of objects */
+					FALSE,  /* wait for any object */
+					timeout_ms); /* timeout in millisecond */
 
-		/* timer has not expired */
-		if (ret_val != WAIT_TIMEOUT) {
-			/* Retrieve the signaled connection */
-			for(tmp = connhead; tmp != NULL; tmp = tmp->next) {
-				if( tmp->read_overlapped.hEvent == rfds[ret_val-WAIT_OBJECT_0]) {
-					break;
+			if (ret_val == WAIT_FAILED) {
+				upslog_with_errno(LOG_ERR, "waitfor failed");
+				return;
+			}
+
+			/* timer has not expired */
+			if (ret_val != WAIT_TIMEOUT) {
+				/* Retrieve the signaled connection */
+				for (tmp = connhead; tmp != NULL; tmp = tmp->next) {
+					if (tmp->read_overlapped.hEvent == rfds[ret_val - WAIT_OBJECT_0]) {
+						break;
+					}
 				}
-			}
 
-			/* the connection event handle has been signaled */
-			if (rfds[ret_val] == connect_overlapped.hEvent) {
-				pipefd = conn_add(pipefd);
-			}
-			/* one of the read event handle has been signaled */
-			else {
-				if( tmp != NULL) {
-					if (sock_read(tmp) < 0) {
-						upsdebugx(3, "closing connection on handle %p", tmp->fd);
-						CloseHandle(tmp->fd);
-						conn_del(tmp);
+				/* the connection event handle has been signaled */
+				if (rfds[ret_val] == connect_overlapped.hEvent) {
+					pipefd = conn_add(pipefd);
+				}
+				/* one of the read event handle has been signaled */
+				else {
+					if (tmp != NULL) {
+						if (sock_read(tmp) < 0) {
+							upsdebugx(3, "closing connection on handle %p", tmp->fd);
+							CloseHandle(tmp->fd);
+							conn_del(tmp);
+						}
 					}
 				}
 			}
-
 		}
 
 		checktimers();
 	}
-#endif /* WIN32 */
+
+	/* Should not get here (see the WAIT_FAILED "return" above) */
 }
+#endif	/* WIN32 */
 
 /* --- 'client' functions --- */
 
@@ -1184,7 +1981,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 	int	i;
 	ssize_t	ret;
 	size_t	enclen, buflen;
-	char buf[SMALLBUF], enc[SMALLBUF + 8];
+	char buf[LARGEBUF], enc[LARGEBUF + 8];
 #ifndef WIN32
 	int	ret_s;
 	struct	timeval tv;
@@ -1194,17 +1991,32 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 #endif	/* WIN32 */
 	TYPE_FD pipefd;
 
-	/* insanity */
-	if (!arg1)
+	/* sanity-check */
+	if (!arg1 && !list_timers)
 		return;
 
-	/* build the request */
+	/* build the request
+	 * note that in list-timers mode we may have no args to send, but
+	 * otherwise we must have at least the timer name to start or cancel
+	 */
 	snprintf(buf, sizeof(buf), "%s \"%s\"",
-		cmd, pconf_encode(arg1, enc, sizeof(enc)));
+		cmd, arg1 ? pconf_encode(arg1, enc, sizeof(enc)) : "");
 
-	if (arg2)
-		snprintfcat(buf, sizeof(buf), " \"%s\"",
-			pconf_encode(arg2, enc, sizeof(enc)));
+	snprintfcat(buf, sizeof(buf), " \"%s\"",
+		arg2 ? pconf_encode(arg2, enc, sizeof(enc)) : "");
+
+	/* use envvars set by caller (upsmon) when launching this client process
+	 * (C variables are known not-null courtesy of main() method... except
+	 * when we are in the list-timers mode).
+	 */
+	snprintfcat(buf, sizeof(buf), " \"%s\"",
+		notify_type ? pconf_encode(notify_type, enc, sizeof(enc)) : "");
+
+	snprintfcat(buf, sizeof(buf), " \"%s\"",
+		ups_name? pconf_encode(ups_name, enc, sizeof(enc)) : "");
+
+	snprintfcat(buf, sizeof(buf), " \"%s\"",
+		notify_msg ? pconf_encode(notify_msg, enc, sizeof(enc)) : "");
 
 	snprintf(enc, sizeof(enc), "%s\n", buf);
 
@@ -1216,21 +2028,29 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
 	}
 
-	/* see if the parent needs to be started (and maybe start it) */
-
 	for (i = 0; i < MAX_TRIES; i++) {
 
-		pipefd = check_parent(cmd, arg2);
+		if (list_timers) {
+			pipefd = try_connect();
 
-		if (pipefd == (TYPE_FD)PARENT_STARTED) {
-			/* loop back and try to connect now */
-			usleep(250000);
-			continue;
+			if (INVALID_FD(pipefd)) {
+				upsdebugx(1, "%s: failed to use PIPEFN='%s'", __func__, NUT_STRARG(pipefn));
+				fatalx(EXIT_FAILURE, "upssched timer is not running");
+			}
+		} else {
+			/* see if the parent needs to be started (and maybe start it) */
+			pipefd = check_parent(cmd, arg2);
+
+			if (pipefd == (TYPE_FD)PARENT_STARTED) {
+				/* loop back and try to connect now */
+				usleep(250000);
+				continue;
+			}
+
+			/* special case for CANCEL when no parent is running */
+			if (pipefd == (TYPE_FD)PARENT_UNNECESSARY)
+				return;
 		}
-
-		/* special case for CANCEL when no parent is running */
-		if (pipefd == (TYPE_FD)PARENT_UNNECESSARY)
-			return;
 
 		/* we're connected now */
 #ifndef WIN32
@@ -1238,9 +2058,15 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* if we can't send the whole thing, loop back and try again */
 		if ((ret < 1) || (ret != (ssize_t)enclen)) {
-			upslogx(LOG_ERR, "write failed, trying again");
-			close(pipefd);
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "write failed, daemon must have ended");
+				close(pipefd);
+				break;
+			} else {
+				upslogx(LOG_ERR, "write failed, trying again");
+				close(pipefd);
+				continue;
+			}
 		}
 
 		/* select on child's pipe fd */
@@ -1253,6 +2079,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			FD_SET(pipefd, &fdread);
 
 			ret_s = select(pipefd + 1, &fdread, NULL, NULL, &tv);
+			upsdebugx(2, "%s: ret_s=%d", __func__, ret_s);
 			switch(ret_s) {
 				/* select error */
 				case -1:
@@ -1265,7 +2092,45 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 				/* available data to read */
 				default:
-					ret = read(pipefd, buf, sizeof(buf));
+					memset (buf, 0, sizeof (buf));
+					ret = read(pipefd, buf, sizeof(buf) - 1);
+					upsdebugx(2, "%s: ret=%" PRIiSIZE ": [%s]", __func__, ret, buf);
+
+					if (list_timers && ret > 0) {
+						/* ASSUME we see whole starting and/or ending lines
+						 * of the response within one read() operation
+						 */
+						char	*end = strstr(buf, "END LIST TIMERS\n"),
+								*ok = strstr(buf, "OK\n");
+
+						/* Require to continue the reading loop */
+						ret_s = -2;
+
+						if (end)
+							*end = '\0';
+						else {
+							end = strstr(buf, "\nEND");
+							if (end)
+								*(end+1) = '\0';
+						}
+
+						if (ok)
+							*ok = '\0';
+
+						if (!strncmp(buf, "BEGIN LIST TIMERS\n", 18)) {
+							printf("%s", buf + 18);
+						} else {
+							printf("%s", buf);
+						}
+
+						if (ok) {
+							ret = snprintf(buf, sizeof(buf), "%s", "OK\n\0");
+							ret_s = 1;
+						} else {
+							/* Let more of the response accumulate in the buffer */
+							usleep(250000);
+						}
+					}
 					break;
 			}
 		} while (ret_s <= 0);
@@ -1274,39 +2139,181 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* same idea: no OK = go try it all again */
 		if (ret < 2) {
-			upslogx(LOG_ERR, "read confirmation failed, trying again");
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "read confirmation failed, daemon must have ended");
+				break;
+			} else {
+				upslogx(LOG_ERR, "read confirmation failed, trying again");
+				continue;
+			}
 		}
 
 #else /* WIN32 */
 		ret = WriteFile(pipefd, enc, enclen, &bytesWritten, NULL);
 		if (ret == 0 || bytesWritten != enclen) {
-			upslogx(LOG_ERR, "write failed, trying again");
-			CloseHandle(pipefd);
-			continue;
+			if (list_timers) {
+				upslogx(LOG_ERR, "write failed, daemon must have ended");
+				CloseHandle(pipefd);
+				break;
+			} else {
+				upslogx(LOG_ERR, "write failed, trying again");
+				CloseHandle(pipefd);
+				continue;
+			}
 		}
 
-		OVERLAPPED read_overlapped;
-		DWORD ret;
+		/* NOTE ON THIS REWRITE:
+		 *
+		 * The code this replaces used the return value of ReadFile()
+		 * itself as a "while (ReadFile(...))" loop condition. For a
+		 * handle opened with FILE_FLAG_OVERLAPPED (see try_connect()),
+		 * ReadFile() returning FALSE with GetLastError()==
+		 * ERROR_IO_PENDING is the NORMAL, expected outcome while the
+		 * read is still in flight -- it is NOT a failure, and it is
+		 * by far the common case here, since the daemon practically
+		 * never has its reply ready at the exact instant ReadFile()
+		 * is called. That meant the loop's body (containing the
+		 * WaitForSingleObject()/parsing logic) was, in practice,
+		 * almost never entered, leaving "buf" at the all-zeroes state
+		 * left by the memset() below -- which is the direct cause of
+		 * the empty "read confirmation got []" messages observed in
+		 * the logs.
+		 *
+		 * Separately, on the rare occasions that inner loop WAS
+		 * entered, the "continue"/"break" statements inside it (meant,
+		 * by the surrounding comments and by symmetry with the
+		 * non-WIN32 branch above, to retry/give up on the OUTER
+		 * "for (i = 0; i < MAX_TRIES; i++)" loop) actually only
+		 * affected that inner while-loop -- and did so right after
+		 * CloseHandle(pipefd) had already been called, meaning the
+		 * loop's own condition would then call ReadFile() again on an
+		 * already-closed HANDLE. This rewrite removes that inner loop
+		 * entirely (folding its one legitimate use -- accumulating a
+		 * possibly multi-chunk list_timers response -- into a small,
+		 * clearly-scoped do/while used only for that purpose), and
+		 * uses a "win32_outer_action" flag to route give-up/retry
+		 * decisions to plain "break"/"continue" statements that sit
+		 * directly in the outer for-loop's body, so they unambiguously
+		 * target the outer loop, exactly like every other
+		 * "break"/"continue" in this function already does.
+		 *
+		 * Also fixed in passing: pipefd (a HANDLE) was never closed
+		 * on the success path (a leak on every successful sendcmd()
+		 * call), and read_overlapped.hEvent was never closed at all
+		 * (a leak on every single call, success or failure). Both are
+		 * now closed exactly once, right before returning control to
+		 * the outer loop.
+		 */
+		{
+			OVERLAPPED	read_overlapped;
+			DWORD		bytesRead = 0;
+			int		win32_outer_action = 0;	/* 0=fall through and check buf; 1=continue; 2=break */
+			int		keep_reading;
 
-		memset(&read_overlapped,0,sizeof(read_overlapped));
-		memset(buf,0,sizeof(buf));
-		read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-				FALSE, /* auto-reset*/
-				FALSE, /* inital state = non signaled*/
-				NULL /* no name*/);
-		if(read_overlapped.hEvent == NULL ) {
-			fatal_with_errno(EXIT_FAILURE, "Can't create event");
-		}
+			memset(&read_overlapped, 0, sizeof(read_overlapped));
+			memset(buf, 0, sizeof(buf));
 
-		ReadFile(pipefd,buf,sizeof(buf)-1,NULL,&(read_overlapped));
+			read_overlapped.hEvent = CreateEvent(NULL, /* Security */
+					FALSE, /* auto-reset */
+					FALSE, /* initial state = non-signaled */
+					NULL /* no name */);
+			if (read_overlapped.hEvent == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Can't create event");
+			}
 
-		ret = WaitForSingleObject(read_overlapped.hEvent,2000);
+			do {
+				BOOL	read_ok;
 
-		if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
-			upslogx(LOG_ERR, "read confirmation failed, trying again");
+				keep_reading = 0;
+
+				read_ok = ReadFile(pipefd, buf, sizeof(buf) - 1, NULL, &read_overlapped);
+
+				if (!read_ok && GetLastError() != ERROR_IO_PENDING) {
+					/* A real, immediate failure -- as opposed to
+					 * the read simply being queued (see the long
+					 * comment above). */
+					upslogx(LOG_ERR, "ReadFile failed (error %lu)",
+						(unsigned long)GetLastError());
+					win32_outer_action = list_timers ? 2 : 1;
+					break;
+				}
+
+				{
+					/* Whether read_ok==TRUE (completed synchronously
+					 * -- rare but possible for a pipe) or the read
+					 * was queued (ERROR_IO_PENDING), wait on the
+					 * event to find out when it actually completes. */
+					DWORD wait_ret = WaitForSingleObject(read_overlapped.hEvent, 2000);
+
+					if (wait_ret != WAIT_OBJECT_0) {
+						if (list_timers) {
+							upslogx(LOG_ERR, "read confirmation failed, daemon must have ended");
+							win32_outer_action = 2;
+						} else {
+							upslogx(LOG_ERR, "read confirmation failed, trying again");
+							win32_outer_action = 1;
+						}
+						break;
+					}
+				}
+
+				/* The code this replaces never called
+				 * GetOverlappedResult() at all, and instead relied
+				 * on the leftover zeroed tail of the memset() above
+				 * to behave like a NUL terminator -- fragile, and
+				 * unable to distinguish "0 bytes read" (e.g. a
+				 * graceful pipe close by the peer) from "read
+				 * failed". */
+				if (!GetOverlappedResult(pipefd, &read_overlapped, &bytesRead, FALSE)) {
+					upslogx(LOG_ERR, "GetOverlappedResult failed (error %lu)",
+						(unsigned long)GetLastError());
+					win32_outer_action = list_timers ? 2 : 1;
+					break;
+				}
+
+				if (bytesRead >= sizeof(buf))
+					bytesRead = sizeof(buf) - 1;
+				buf[bytesRead] = '\0';
+
+				if (bytesRead == 0)
+					break;
+
+				if (list_timers) {
+					/* ASSUME we see whole starting and/or ending lines
+					 * of the response within one read() operation
+					 */
+					char	*end = strstr(buf, "END LIST TIMERS\n"),
+							*ok = strstr(buf, "OK\n");
+
+					if (end)
+						*end = '\0';
+
+					if (ok)
+						*ok = '\0';
+
+					if (!strncmp(buf, "BEGIN LIST TIMERS\n", 18)) {
+						printf("%s", buf + 18);
+					} else {
+						printf("%s", buf);
+					}
+
+					if (ok) {
+						snprintf(buf, sizeof(buf), "OK\n");
+					} else {
+						/* More of the multi-line response may
+						 * still be coming: read again. */
+						keep_reading = 1;
+					}
+				}
+			} while (keep_reading);
+
+			CloseHandle(read_overlapped.hEvent);
 			CloseHandle(pipefd);
-			continue;
+
+			if (win32_outer_action == 2)
+				break;
+			if (win32_outer_action == 1)
+				continue;
 		}
 #endif /* WIN32 */
 
@@ -1315,8 +2322,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
 
+		if (list_timers)
+			break;
+
 		/* try again ... */
 	}	/* loop until MAX_TRIES if no success above */
+
+	if (list_timers)
+		fatalx(EXIT_FAILURE, "Unable to connect to daemon or connection was broken during listing");
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
@@ -1326,7 +2339,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 {
 	/* complain both ways in case we don't have a tty */
 
-	if (!cmdscript) {
+	if (!cmdscript_argc) {
 		printf("CMDSCRIPT must be set before any ATs in the config file!\n");
 		fatalx(EXIT_FAILURE, "CMDSCRIPT must be set before any ATs in the config file!");
 	}
@@ -1341,28 +2354,28 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		fatalx(EXIT_FAILURE, "LOCKFN must be set before any ATs in the config file!");
 	}
 
-	/* check upsname: does this apply to us? */
-	upsdebugx(2, "%s: is '%s' in AT command the '%s' we were launched to process?",
-		__func__, un, upsname);
-	if (strcmp(upsname, un) != 0) {
+	/* check ups_name: does this apply to us? */
+	upsdebugx(3, "%s: is '%s' in AT command the '%s' we were launched to process?",
+		__func__, un, ups_name);
+	if (strcmp(ups_name, un) != 0) {
 		if (strcmp(un, "*") != 0) {
-			upsdebugx(1, "%s: SKIP: '%s' in AT command "
+			upsdebugx(4, "%s: SKIP: '%s' in AT command "
 				"did not match the '%s' UPSNAME "
 				"we were launched to process",
-				__func__, un, upsname);
+				__func__, un, ups_name);
 			return;		/* not for us, and not the wildcard */
 		} else {
-			upsdebugx(1, "%s: this AT command is for a wildcard: matched", __func__);
+			upsdebugx(2, "%s: this AT command is for a wildcard: matched", __func__);
 		}
 	} else {
-		upsdebugx(1, "%s: '%s' in AT command matched the '%s' "
+		upsdebugx(2, "%s: '%s' in AT command matched the '%s' "
 			"UPSNAME we were launched to process",
-			__func__, un, upsname);
+			__func__, un, ups_name);
 	}
 
 	/* see if the current notify type matches the one from the .conf */
 	if (strcasecmp(notify_type, ntype) != 0) {
-		upsdebugx(1, "%s: SKIP: '%s' in AT command "
+		upsdebugx(4, "%s: SKIP: '%s' in AT command "
 			"did not match the '%s' NOTIFYTYPE "
 			"we were launched to process",
 			__func__, ntype, notify_type);
@@ -1372,19 +2385,37 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	/* if command is valid, send it to the daemon (which may start it) */
 
 	if (!strcmp(cmd, "START-TIMER")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 		sendcmd("START", ca1, ca2);
 		return;
 	}
 
+	if (!strcmp(cmd, "START-TIMER-SHARED")) {
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
+		sendcmd("START-SHARED", ca1, ca2);
+		return;
+	}
+
 	if (!strcmp(cmd, "CANCEL-TIMER")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 		sendcmd("CANCEL", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		upsdebugx(1, "%s: processing %s", __func__, cmd);
+		upsdebugx(1, "%s: processing %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", __func__, cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 
 		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
@@ -1398,7 +2429,10 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		return;
 	}
 
-	upslogx(LOG_ERR, "Invalid command: %s", cmd);
+	upslogx(LOG_ERR, "Invalid command: %s\t[%s]\t[%s]\t[%s]\t[%s]\t[%s]", cmd,
+			NUT_STRARG(ca1), NUT_STRARG(ca2),
+			NUT_STRARG(notify_type), NUT_STRARG(ups_name),
+			NUT_STRARG(notify_msg));
 }
 
 static int conf_arg(size_t numargs, char **arg)
@@ -1406,9 +2440,54 @@ static int conf_arg(size_t numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
-	/* CMDSCRIPT <scriptname> */
+	/* CMDSCRIPT <scriptname> [<arg1> [<arg2>...]] */
 	if (!strcmp(arg[0], "CMDSCRIPT")) {
-		cmdscript = xstrdup(arg[1]);
+		size_t	i, l = 0;
+
+		/* -1: the arg[0] is the configuration token */
+		cmdscript_argc = numargs - 1;
+
+		/* +1: the cmdscript_argv[cmdscript_argc] is the NULL sentinel */
+		free(cmdscript_argv);
+		cmdscript_argv = (char**)xcalloc(cmdscript_argc + 1, sizeof(char *));
+		for (i = 1; i < numargs; i++) {
+			/* +1: either a space follows, or '\0'
+			 * +2: surrounding quotes
+			 */
+			l += strlen(arg[i]) + 3;
+			cmdscript_argv[i - 1] = xstrdup(arg[i]);
+			strcpy(cmdscript_argv[i - 1], arg[i]);
+		}
+		cmdscript_argv[cmdscript_argc] = NULL;
+
+		free(cmdscript_concat);
+		cmdscript_concat = (char*)xcalloc(l + 2, sizeof(char));
+		for (i = 1; i < numargs; i++) {
+			snprintfcat(cmdscript_concat, l + 1, "'%s'%s",
+				arg[i], i == numargs - 1 ? "" : " ");
+		}
+
+		upsdebugx(1, "%s: collected %s with %" PRIuSIZE " tokens: %s",
+			__func__, arg[0], cmdscript_argc, NUT_STRARG(cmdscript_concat));
+
+		if (cmdscript_argc > 0 && strchr(cmdscript_argv[0], ' ')) {
+			/* NOTE: this may also be a path with spaces, more prominent on Windows or MacOS, probably */
+			upslogx(LOG_WARNING, "%s: command '%s' contains spaces, be sure to pass any arguments as separately quoted tokens!",
+				arg[0], cmdscript_argv[0]);
+		}
+
+		/* Handled OK */
+		return 1;
+	}
+
+	/* DEBUG_MIN <num> */
+	if (!strcmp(arg[0], "DEBUG_MIN")) {
+		if (str_to_int(arg[1], &nut_debug_level_conf, 10)) {
+			if (nut_debug_level_conf > nut_debug_level) {
+				nut_debug_level = nut_debug_level_conf;
+				upsdebugx(1, "Applying debug_min=%d from upssched.conf", nut_debug_level);
+			}
+		}
 		return 1;
 	}
 
@@ -1417,7 +2496,17 @@ static int conf_arg(size_t numargs, char **arg)
 #ifndef WIN32
 		pipefn = xstrdup(arg[1]);
 #else	/* WIN32 */
-		pipefn = xstrdup("\\\\.\\pipe\\upssched");
+		if (arg[1] && strlen(arg[1]) > 9
+		 && !strncmp(arg[1], "\\\\.\\pipe\\", 9)
+		) {
+			pipefn = xstrdup(arg[1]);
+		} else {
+			pipefn = xstrdup("\\\\.\\pipe\\upssched");
+			upslogx(LOG_WARNING, "%s: Invalid PIPEFN '%s' provided: "
+				"must start with '\\\\.\\pipe\\' for this platform; "
+				"falling back to default '%s'",
+				__func__, NUT_STRARG(arg[1]), pipefn);
+		}
 #endif	/* WIN32 */
 		return 1;
 	}
@@ -1431,6 +2520,24 @@ static int conf_arg(size_t numargs, char **arg)
 #endif	/* WIN32 */
 		return 1;
 	}
+
+	/* In list_timers mode ("-l") and, on WIN32, in the timer-daemon
+	 * child process (is_win32_timer_daemon -- see WIN32_DAEMON_MARKER
+	 * and win32_run_timer_daemon()), we only care about the global
+	 * directives handled above (PIPEFN, LOCKFN, CMDSCRIPT, DEBUG_MIN).
+	 * "AT" lines describe notification-triggered actions and must NOT
+	 * be acted upon (parse_at() -> sendcmd()) by either of these two
+	 * modes: list_timers is a read-only query, and the WIN32 daemon
+	 * child is not forwarding any notification of its own -- doing so
+	 * would resend a stale/foreign command and, on WIN32, is exactly
+	 * what previously caused a runaway cascade of spawned processes. */
+#ifdef WIN32
+	if (list_timers || is_win32_timer_daemon)
+		return 2;
+#else
+	if (list_timers)
+		return 2;
+#endif	/* WIN32 */
 
 	if (numargs < 5)
 		return 0;
@@ -1482,6 +2589,11 @@ static void checkconf(void)
 		if (ctx.numargs < 1)
 			continue;
 
+		/* Note: for list_timers mode this only parses some config values
+		 * that are of interest for communications with the timer daemon
+		 * (e.g. PIPEFN), but for normal mode this also calls parse_at()
+		 * and does the actual work, as/when relevant, line by line.
+		 */
 		if (!conf_arg(ctx.numargs, ctx.arglist)) {
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
@@ -1498,9 +2610,38 @@ static void checkconf(void)
 		}
 	}
 
+	if (list_timers) {
+		if (!pipefn || !(*pipefn)) {
+			fatalx(EXIT_FAILURE, "upssched.conf: invalid configuration for timer listing: lacks PIPEFN");
+		}
+
+		upsdebugx(1, "%s: processing LIST-TIMERS", __func__);
+
+		/* Here the send() also handles the response for this use-case */
+		sendcmd("LIST-TIMERS", NULL, NULL);
+	}
+
+#ifdef WIN32
+	if (is_win32_timer_daemon) {
+		if (!pipefn || !(*pipefn)) {
+			fatalx(EXIT_FAILURE, "upssched.conf: invalid configuration for WIN32 timer daemon: lacks PIPEFN");
+		}
+		if (!lockfn || !(*lockfn)) {
+			fatalx(EXIT_FAILURE, "upssched.conf: invalid configuration for WIN32 timer daemon: lacks LOCKFN");
+		}
+
+		upsdebugx(1, "%s: config parsed for WIN32 timer daemon child", __func__);
+
+		/* NOTE: unlike list_timers mode above, we do NOT sendcmd()
+		 * here: this process IS the daemon being brought up, not a
+		 * client asking an already-running daemon to list its timers.
+		 * Control returns to main(), which calls
+		 * win32_run_timer_daemon() next. */
+	}
+#endif	/* WIN32 */
 
 	/* FIXME: Per legacy behavior, we silently went on.
-	 * Maybe should abort on unusable configs?
+	 *  Maybe should abort on unusable configs?
 	 */
 	if (numerrors) {
 		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
@@ -1509,47 +2650,191 @@ static void checkconf(void)
 	pconf_finish(&ctx);
 }
 
+static void clean_exit(void)
+{
+	ttype_t	*tcurr, *tnext;
+	conn_t	*ccurr, *cnext;
+	size_t	i;
+
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	upsdebugx(1, "%s: starting", __func__);
+
+	/* Free timers */
+	tcurr = thead;
+	while (tcurr) {
+		tnext = tcurr->next;
+
+		free(tcurr->name);
+
+		if (tcurr->upsnames) {
+			for (i = 0; tcurr->upsnames[i]; i++) {
+				free(tcurr->upsnames[i]);
+			}
+			free(tcurr->upsnames);
+		}
+
+		if (tcurr->notifytypes) {
+			for (i = 0; tcurr->notifytypes[i]; i++) {
+				free(tcurr->notifytypes[i]);
+			}
+			free(tcurr->notifytypes);
+		}
+
+		if (tcurr->notifymsgs) {
+			for (i = 0; tcurr->notifymsgs[i]; i++) {
+				free(tcurr->notifymsgs[i]);
+			}
+			free(tcurr->notifymsgs);
+		}
+
+		free(tcurr);
+		tcurr = tnext;
+	}
+	thead = NULL;
+
+	/* Free connections */
+	ccurr = connhead;
+	while (ccurr) {
+		cnext = ccurr->next;
+		pconf_finish(&ccurr->ctx);
+		free(ccurr);
+		ccurr = cnext;
+	}
+	connhead = NULL;
+
+	/* Free strings and arrays */
+	if (cmdscript_argv) {
+		for (i = 0; i < cmdscript_argc; i++) {
+			free(cmdscript_argv[i]);
+		}
+		free(cmdscript_argv);
+		cmdscript_argv = NULL;
+	}
+
+	free(cmdscript_concat);
+	cmdscript_concat = NULL;
+
+	free(pipefn);
+	pipefn = NULL;
+
+	free(lockfn);
+	lockfn = NULL;
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 static void help(const char *arg_progname)
 	__attribute__((noreturn));
+
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+DVhl";
 
 static void help(const char *arg_progname)
 {
 	printf("upssched: upsmon's scheduling helper for offset timers\n");
 	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
 
-	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
+	printf("\nUsage: %s [OPTIONS] [NOTIFYMSG]\n\n", arg_progname);
 	printf("  -D		raise debugging level (NOTE: keeps reporting when daemonized)\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
+	printf("  -l		display currently pending timers (if any)\n");
 
 	nut_report_config_flags();
 
-	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+	printf("\n%s", suggest_doc_links(arg_progname, "upssched.conf"));
 
 	exit(EXIT_SUCCESS);
 }
 
-
 int main(int argc, char **argv)
 {
-	int i;
+	int	opt_ret;
 
-	if (argc > 0)
-		prog = xbasename(argv[0]);
-	if (!prog)
-		prog = "upssched";
+	/* Here this is a global variable, used also in start_daemon() */
+	prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upssched");
 
-	while ((i = getopt(argc, argv, "+DVh")) != -1) {
-		switch (i) {
+#ifdef WIN32
+	/* WIN32 replacement for fork(): see the rewritten WIN32 branch of
+	 * start_daemon() for the process-spawning side of this handshake.
+	 * CreateProcess() always starts a brand-new process at main() --
+	 * there is no equivalent of the "if (pid == 0) { ...child
+	 * continues here... }" branch fork() gives us on POSIX. So we
+	 * recognize our own hidden marker in argv[1] here, at the very
+	 * top of main() (before getopt() and before the UPSNAME/
+	 * NOTIFYTYPE environment check further below), to take that
+	 * "we are the daemon" role explicitly -- instead of falling
+	 * through into the normal CLI path, which would re-parse the
+	 * config and re-send the very notification that caused upsmon to
+	 * invoke this program in the first place. That re-sending, plus
+	 * a lock-file race further down the call chain, is what used to
+	 * cause a runaway cascade of spawned processes; this patch fixes
+	 * it by giving the spawned process an explicit, unambiguous
+	 * signal of its role, mirroring fork()'s pid==0 branch.
+	 *
+	 * argv[2], if present, carries the hex-encoded value of a HANDLE
+	 * to a manual-reset Win32 event object created by the spawning
+	 * process (see start_daemon()) and marked inheritable; we
+	 * SetEvent() it, in win32_run_timer_daemon(), once our named pipe
+	 * is up and listening, so the spawning process (still waiting
+	 * inside its own start_daemon() call) knows it is safe to
+	 * proceed. */
+	if (argc > 1 && !strcmp(argv[1], WIN32_DAEMON_MARKER)) {
+		is_win32_timer_daemon = 1;
+
+		if (argc > 2 && argv[2] && *argv[2]) {
+			win32_daemon_ready_event = (HANDLE)(uintptr_t)strtoull(argv[2], NULL, 16);
+		}
+
+		/* Do NOT touch UPSNAME/NOTIFYTYPE/NOTIFYMSG here: this is
+		 * not a CLI invocation forwarding an upsmon notification, so
+		 * those variables -- even if somehow still present in our
+		 * environment -- are simply irrelevant on this codepath.
+		 * (start_daemon() already clears them from its own
+		 * environment before spawning us, so in practice they won't
+		 * be inherited at all any more.) */
+
+		open_syslog(prog);
+		syslogbit_set();
+		atexit(clean_exit);
+		setproctag("timer");
+
+		upsdebugx(1, "%s: running as the WIN32 timer-daemon child process", __func__);
+
+		/* Parses PIPEFN/LOCKFN/CMDSCRIPT/DEBUG_MIN from
+		 * upssched.conf via conf_arg(), gated by
+		 * is_win32_timer_daemon (see conf_arg() and checkconf()
+		 * above) to skip acting on any "AT" line. */
+		checkconf();
+
+		win32_run_timer_daemon();
+
+		/* win32_run_timer_daemon() only returns after a fatal wait
+		 * error (see WAIT_FAILED handling within it); nothing
+		 * sensible left to do here. */
+		exit(EXIT_FAILURE);
+	}
+#endif	/* WIN32 */
+
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		switch (opt_ret) {
 			case 'D':
-				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 
 			case 'h':
-				help(argv[0]);
+				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
+
+			case 'l':
+				list_timers = 1;
+				break;
 
 			case 'V':
 				/* just show the optional CONFIG_FLAGS banner */
@@ -1559,19 +2844,19 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 		}
 	}
 
+	nut_debug_level = nut_debug_level_args;
 	{ /* scoping */
 		char *s = getenv("NUT_DEBUG_LEVEL");
-		int l;
-		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level < 1) {
+		if (s && str_to_int(s, &nut_debug_level_env, 10)) {
+			if (nut_debug_level_env > 0 && nut_debug_level_args < 1) {
 				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
-					"since none was requested by command-line options", l);
-				nut_debug_level = l;
-			}	/* else follow -D settings */
+					"since none was requested by command-line options", nut_debug_level_env);
+				nut_debug_level = nut_debug_level_env;
+			}	/* else follow -D and/or upssched.conf DEBUG_MIN settings */
 		}	/* else nothing to bother about */
 	}
 
@@ -1579,16 +2864,31 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 	syslogbit_set();
 
-	upsname = getenv("UPSNAME");
+	ups_name = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
+	upsdebugx(2, "Handled optind=%d CLI tokens of argc=%d", optind - 1, argc);
+	if (argc > optind && *argv[optind])
+		notify_msg = argv[optind];
 
-	if ((!upsname) || (!notify_type)) {
+	if ((!list_timers) && ((!ups_name) || (!notify_type))) {
 		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
-		printf("This program should only be run from upsmon.\n");
+		printf("This program should only be run from upsmon(%s).\n", MAN_SECTION_CMD_SYS);
 		exit(EXIT_FAILURE);
 	}
 
-	/* see if this matches anything in the config file */
+	upsdebugx(1, "Handling NOTIFYTYPE='%s' for UPSNAME='%s'", notify_type, ups_name);
+	if (notify_msg)
+		upsdebugx(1, "Got a NOTIFYMSG from command line: %s", notify_msg);
+	else
+		upsdebugx(1, "Did not get any NOTIFYMSG from command line");
+
+	/* Whenever a process exits, do carefully free any resources it
+	 * has (maybe by parent, from before forking some notifier etc.) */
+	atexit(clean_exit);
+
+	setproctag("cli");
+
+	/* See if this request matches anything in the config file */
 	/* This is actually the processing loop:
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
 	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
