@@ -295,12 +295,13 @@ private:
 #ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
 	SSL* _ssl;
+	SSL_CTX* _ssl_ctx;
 	openssl_cert_verify_data_t	openssl_cert_verify_data;
 	int _verify_depth;
 	static int _openssl_cert_verify_data_index;
-	static SSL_CTX* _ssl_ctx;
 # elif defined(WITH_NSS)
 	PRFileDesc* _ssl;
+	bool _nss_initialized;
 # endif
 #endif
 	bool _debugConnect;
@@ -342,7 +343,6 @@ private:
 
 #ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
-SSL_CTX* Socket::_ssl_ctx = nullptr;
 int Socket::_openssl_cert_verify_data_index = 0;
 
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
@@ -862,6 +862,9 @@ Socket::Socket():
 # if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	_ssl(nullptr),
 # endif
+# ifdef WITH_OPENSSL
+	_ssl_ctx(nullptr),
+# endif
 # if defined(WITH_OPENSSL)
 	_verify_depth(9),	/* openssl default */
 # endif
@@ -898,6 +901,12 @@ Socket::Socket():
 Socket::~Socket()
 {
 	disconnect();
+#ifdef WITH_OPENSSL
+	if (_ssl_ctx) {
+		SSL_CTX_free(_ssl_ctx);
+		_ssl_ctx = nullptr;
+	}
+#endif
 }
 
 void Socket::setTimeout(time_t timeout)
@@ -1658,10 +1667,8 @@ void Socket::startTLS()
 
 # elif defined(WITH_NSS)
 	/* NSS implementation following upsclient.c logic */
-	static bool nss_initialized = false;
-
 	/* FIXME: Support several NSS databases, use prefix parameters? */
-	if (!nss_initialized) {
+	if (!_nss_initialized) {
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 		PK11_SetPasswordFunc(nss_password_callback);
 
@@ -1682,7 +1689,7 @@ void Socket::startTLS()
 		if (status != SECSuccess) {
 			throw nut::SSLException_NSS("NSS initialization failed");
 		}
-		nss_initialized = true;
+		_nss_initialized = true;
 	}
 
 	PRFileDesc *socket = PR_ImportTCPSocket(static_cast<int>(_sock));
