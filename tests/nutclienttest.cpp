@@ -36,6 +36,7 @@ class NutClientTest : public CppUnit::TestFixture
 
 		CPPUNIT_TEST( test_copy_constructor_dev );
 		CPPUNIT_TEST( test_copy_assignment_dev );
+		CPPUNIT_TEST( test_ssl_context_registry );
 
 		CPPUNIT_TEST( test_copy_constructor_cmd );
 		CPPUNIT_TEST( test_copy_assignment_cmd );
@@ -56,6 +57,7 @@ public:
 
 	void test_copy_constructor_dev();
 	void test_copy_assignment_dev();
+	void test_ssl_context_registry();
 
 	void test_copy_constructor_cmd();
 	void test_copy_assignment_cmd();
@@ -77,6 +79,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( NutClientTest );
 
 #include "../clients/nutclient.h"
 #include "../clients/nutclientmem.h"
+#include "../clients/upsclient.h"
 
 namespace nut {
 
@@ -216,6 +219,25 @@ void NutClientTest::test_copy_assignment_dev() {
 	CPPUNIT_ASSERT_EQUAL_MESSAGE(
 		"Failed to assign value of Device Command j by equating to i",
 		i, j);
+}
+
+void NutClientTest::test_ssl_context_registry() {
+	UPSCONN_t ups;
+	memset(&ups, 0, sizeof(ups));
+
+	void *ctx = reinterpret_cast<void *>(0x1234);
+	void *previous = upscli_set_ssl_context(&ups, ctx);
+
+	CPPUNIT_ASSERT_MESSAGE("Expected no previous SSL context", previous == nullptr);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the registered SSL context to be returned",
+		ctx, upscli_get_ssl_context(&ups));
+
+	void *replacement = reinterpret_cast<void *>(0x5678);
+	previous = upscli_set_ssl_context(&ups, replacement);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the previous SSL context to be returned on update",
+		ctx, previous);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the updated SSL context to be stored",
+		replacement, upscli_get_ssl_context(&ups));
 }
 
 void NutClientTest::test_copy_constructor_cmd() {
