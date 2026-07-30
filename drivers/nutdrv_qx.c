@@ -2575,6 +2575,14 @@ static void	*ippon_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*omron_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &omron_command;
+	return NULL;
+}
+
 static void	*krauler_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -2658,6 +2666,9 @@ typedef struct {
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483
 
+/* OMRON Corporation */
+#define OMRON_VENDORID	0x0590
+
 /* Sysgration Ltd. */
 #define SYSGRATION_VENDORID	0x05b8
 
@@ -2699,6 +2710,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* NOTE: VID:PID may be used by non-UPS devices with CH340/341 chips! But also Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
 	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b7),	NULL,		NULL,			&omron_subdriver },	/* OMRON BN150T */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
