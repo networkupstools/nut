@@ -34,8 +34,8 @@
 #define        inline  __inline
 #endif
 
-#define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.15"
+#define DRIVER_NAME	"Best Fortress UPS driver"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -73,6 +73,8 @@ static const char *shutdown_delay = "20";
 
 static int instcmd (const char *cmdname, const char *extra);
 static int upsdrv_setvar (const char *varname, const char *val);
+static int reconnect_ups(void);
+void upsdrv_cleanup(void);
 
 /* Rated maximum VA output as configured by the user. */
 static int maxload = 0;
@@ -361,7 +363,9 @@ void upsdrv_updateinfo(void)
 		/* \todo: Analyze/fix code and rewrite message. */
 		upsdebugx(2, "%s: pointer to data not initialized after processing",
 			__func__);
-		dstate_datastale();
+		if (!reconnect_ups()) {
+			dstate_datastale();
+		}
 		return;
 	}
 
@@ -624,7 +628,7 @@ void upsdrv_initups(void)
 	}
 
 	upsfd = ser_open(device_path);
-	if (INVALID_FD(upsfd)) {
+	if (INVALID_FD_SER(upsfd)) {
 		upslogx(LOG_WARNING, "%s: failed to open %s",
 			__func__, device_path);
 		/* \todo: Deal with the failure */
@@ -639,7 +643,28 @@ void upsdrv_initups(void)
 	upsdebugx(1, "%s: end", __func__);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_cleanup(void)
 {
-	upsdebugx(1, "%s: begin/end", __func__);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

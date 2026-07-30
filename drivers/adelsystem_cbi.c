@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -1330,7 +1330,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(1, "modbus_reconnect, trying to reconnect to modbus server");
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1391,5 +1391,5 @@ void modbus_reconnect(void)
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
-	dstate_setinfo("driver.state", "quiet");
+	reconnect_trying(RECONNECT_SUCCESS);
 }

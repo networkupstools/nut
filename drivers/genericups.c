@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.42"
+#define DRIVER_VERSION	"1.43"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -180,6 +180,22 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	upsdebugx(4, "%s: exit", __func__);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_initinfo(void)
 {
 	char	*v;
@@ -231,7 +247,8 @@ void upsdrv_updateinfo(void)
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
 		ser_comm_fail("Status read failed");
-		dstate_datastale();
+		if (!reconnect_ups())
+			dstate_datastale();
 		return;
 	}
 
@@ -437,6 +454,12 @@ void upsdrv_initups(void)
 
 	upsfd = ser_open(device_path);
 
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	if (tcgetattr(upsfd, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 	}
@@ -475,5 +498,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

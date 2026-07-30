@@ -1394,7 +1394,7 @@ static int sock_read(conn_t *conn)
 
 	/* Special case for signals */
 	if (!strncmp(conn->buf, COMMAND_STOP, sizeof(COMMAND_STOP))) {
-		set_exit_flag(1);
+		set_exit_flag(EF_EXIT_SUCCESS);
 		return 1;
 	}
 #endif	/* WIN32 */

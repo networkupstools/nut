@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.99"
+#define DRIVER_VERSION	"0.100"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -134,6 +134,8 @@ upsdrv_info_t upsdrv_info = {
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+
+static int reconnect_ups(void);
 
 static long hex2d(char *start, unsigned int len)
 {
@@ -405,6 +407,22 @@ void upsdrv_shutdown(void)
 		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_updateinfo(void)
 {
 	static int numfails;
@@ -420,7 +438,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Data command failed: [%" PRIiSIZE "] bytes != 21 bytes.", len);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -441,7 +462,10 @@ void upsdrv_updateinfo(void)
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Data out of bounds: [%0ld,%3d,%3ld,%02.2f]",
 					volt, temp, load, freq);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -452,7 +476,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Battery voltage out of bounds: [%02.1f]", bv);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -463,7 +490,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("InVoltMax out of bounds: [%ld]", vmax);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -474,7 +504,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("InVoltMin out of bounds: [%ld]", vmin);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -486,7 +519,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test is out of range: [%ld]", stest);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -494,7 +530,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test returned non-numeric data.");
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -502,7 +541,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test out of bounds: [%ld]", stest);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -644,6 +686,13 @@ void upsdrv_initups(void)
 	char	*val;
 
 	upsfd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	ser_set_speed(upsfd, device_path, B2400);
 
 	if ((val = getval("offdelay"))) {
@@ -665,6 +714,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }
-

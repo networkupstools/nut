@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -483,21 +483,27 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
 	ssize_t	ret;
+	int	reconnecting = (udev == NULL);
 
-	if (udev == NULL) {
-		dstate_setinfo("driver.state", "reconnect.trying");
+	if (reconnecting) {
+		reconnect_trying(RECONNECT_TRYING);
 
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
+			/* dstate_datastale/dstate_dataok managed in blazer.c::upsdrv_updateinfo() */
 			return ret;
 		}
 
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
+		reconnect_trying(RECONNECT_UPDATEINFO);
 	}
 
 	ret = (*subdriver_command)(cmd, buf, buflen);
 	if (ret >= 0) {
+		/* clean read: forget any overflow streak */
+		if (reconnecting) {
+			reconnect_trying(RECONNECT_SUCCESS);
+		}
 		return ret;
 	}
 
@@ -540,6 +546,8 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+		 * to avoid off-by-one counter errors */
 		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
@@ -556,6 +564,14 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 #endif	/* !WIN32 */
 	default:
 		break;
+	}
+
+	if (reconnecting) {
+		/* Success after updateinfo in the bulk of this method body */
+		upsdebugx(1, "%s: libusb returned %" PRIiSIZE
+			" which was not classified as a known error, assuming reconnection succeeded",
+			__func__, ret);
+		reconnect_trying(RECONNECT_SUCCESS);
 	}
 
 	return ret;

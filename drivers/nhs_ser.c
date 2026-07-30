@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2024   Lucas Willian Bocchi <lucas@lucas.inf.br>
  *     Initial Release (as nhs-nut.c)
- * Copyright (C) 2024 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
+ * Copyright (C) 2024 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *     Codebase adjusted to NUT standards
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1923,7 +1923,7 @@ static unsigned int get_numbat(void) {
  * restored after a communication failure.
  */
 static TYPE_FD_SER reconnect_ups_if_needed(void) {
-	/* retries to open port */
+	/* retries to open port until we declare "data stale" loudly */
 	static unsigned int	retries = 0;
 
 	/* If comms failed earlier, try to resuscitate */
@@ -1932,7 +1932,7 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 			__func__, porta);
 
 		/* Uh oh, got to reconnect! */
-		dstate_setinfo("driver.state", "reconnect.trying");
+		reconnect_trying(RECONNECT_TRYING);
 
 		/* Close any surviving handle and mark it invalid before reopening. */
 		close_serial_port();
@@ -1942,19 +1942,21 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 			serial_fd = openfd(porta, baudrate);
 			retries++;
 			/* Try above at least once per main cycle */
-			if (retries >= MAXTRIES)
+			if (retries >= MAXTRIES) {
+				upsdebugx(1, "%s: serial port reopen failed", __func__);
 				break;
+			}
 			usleep(checktime);
 		}
 
 		if (VALID_FD_SER(serial_fd)) {
-			if (retries > MAXTRIES) {
+			if (retries > MAXTRIES && may_log_reconnect_trying(1)) {
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
 			}
 			retries = 0;
-			dstate_setinfo("driver.state", "quiet");
+			reconnect_trying(RECONNECT_SUCCESS);
 		} else {
-			if (retries == MAXTRIES) {
+			if (retries == MAXTRIES && may_log_reconnect_trying(1)) {
 				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
 			}
 			dstate_datastale();
@@ -2602,7 +2604,7 @@ void upsdrv_shutdown(void) {
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	set_exit_flag(EF_EXIT_FAILURE);
 
 	upsdebugx(1, "Driver shutdown");
 }

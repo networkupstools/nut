@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.45"
+#define DRIVER_VERSION	"0.46"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -279,8 +279,6 @@ static int is_smart_protocol(void)
 #define MAX_RECV_TRIES 10
 #define RECV_WAIT_MSEC 1000	/*!< was 100 for OMNIVS; SMARTPRO units need longer */
 
-#define MAX_RECONNECT_TRIES 10
-
 #define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /*!< seconds (max 0xFF) */
@@ -386,27 +384,29 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
  */
 static int reconnect_ups(void)
 {
-	int ret;
+	int ret, maylog;
 
 	if (hd != NULL) {
 		return 1;
 	}
 
-	dstate_setinfo("driver.state", "reconnect.trying");
+	maylog = may_log_reconnect_trying(1);
+	reconnect_trying(RECONNECT_TRYING);
 
-	upsdebugx(2, "==================================================");
-	upsdebugx(2, "= device has been disconnected, try to reconnect =");
-	upsdebugx(2, "==================================================");
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
 
 	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_unitid);
 	if (ret < 1) {
-		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
+		if (maylog)
+			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
 		return 0;
 	}
 
 	hd = &curDevice;
-	dstate_setinfo("driver.state", "quiet");
+	reconnect_trying(RECONNECT_SUCCESS);
 
 	return ret;
 }
@@ -677,8 +677,6 @@ void upsdrv_initinfo(void);
  */
 static void usb_comm_fail(int res, const char *msg)
 {
-	static int try_num = 0;
-
 	switch(res) {
 		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING,
@@ -689,25 +687,18 @@ static void usb_comm_fail(int res, const char *msg)
 #endif
 
 		default:
-			dstate_setinfo("driver.state", "reconnect.trying");
 			upslogx(LOG_WARNING,
 				"%s: Device detached? (error %d: %s)",
 				msg, res, nut_usb_strerror(res));
 
-			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try_num);
 			hd = NULL;
 			reconnect_ups();
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
-				try_num = 0;
-				dstate_setinfo("driver.state", "reconnect.updateinfo");
+				reconnect_trying(RECONNECT_UPDATEINFO);
 				upsdrv_initinfo();
-				dstate_setinfo("driver.state", "quiet");
-			} else {
-				if(try_num > MAX_RECONNECT_TRIES) {
-					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
-				}
+				reconnect_trying(RECONNECT_SUCCESS);
 			}
 			break;
 	}

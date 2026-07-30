@@ -63,10 +63,11 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+
  - `dummy-ups` driver updates:
-   * Added `authconf` driver parameter for repeater mode to control
-     authentication configuration discovery. It accepts `default`, `none`,
-     or a specific authconf file path. [issue #3329]
+    * Added `authconf` driver parameter for repeater mode to control
+      authentication configuration discovery. It accepts `default`, `none`,
+      or a specific authconf file path. [issue #3329]
 
  - `nhs_ser` driver updates:
     * Modernized serial communication and added validated settings for baud
@@ -176,6 +177,22 @@ https://github.com/networkupstools/nut/milestone/13
       chunks populated only partially with bytes we intended. These buffers are
       now more diligently pre-zeroed as their siblings were in other code paths,
       to avoid sending host stack garbage to a device. [#3529]
+    * Introduced a `reconnect_max_tries` setting for NUT drivers, so they can
+      be configured to exit after the specified number of reconnection attempts
+      (so that the OS service management facility can completely recycle the
+      driver program). Multiple drivers were updated to use the new facility
+      to consistently report `reconnect_trying()` states instead of what they
+      did before, including: `adelsystem_cbi`, `apc_modbus`, `apcsmart`,
+      `bcmxcp_usb`, `blazer_usb`, `generic_modbus`, `nhs_ser`, `nutdrv_qx`,
+      `powerman-pdu`, `powervar_cx_usb`, `richcomm_usb`, `riello_usb`,
+      `tripplite_usb`, `usbhid-ups` (it is possible that for now some of them
+      would log the situation twice, with old methods and the new, and that
+      some would abort the program if reconnection attempt fails). [PR #3541]
+    * `belkin`, `bestfortress`, `genericups`, `powerpanel`, `tripplite` drivers
+      introduced attempts to reconnect in case of failure, instead of just
+      exiting right away or remaining in data stale mode indefinitely, also
+      using `reconnect_trying()` for consistent reporting. They now track
+      serial port file descriptor validity a bit more diligently. [PR #3541]
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault. [PR #3550]
 
