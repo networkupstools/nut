@@ -397,7 +397,7 @@ static void send_to_all(const char *fmt, ...)
 				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
-			upsdebugx(6, "%s: failed write: %s", __func__, buf);
+			upsdebug_ascii_compact(6, "send_to_all: failed to write buffer content: ", buf, buflen);
 
 			conn->closing = 1;
 
@@ -416,8 +416,9 @@ static void send_to_all(const char *fmt, ...)
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
 			upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
-				"(ret=%" PRIiSIZE "): %s",
-				__func__, buflen, conn->fd, ret, buf);
+				"(ret=%" PRIiSIZE "):",
+				__func__, buflen, conn->fd, ret);
+			upsdebug_ascii_compact(6, "send_to_all: buffer content: ", buf, buflen);
 		}
 	}
 
@@ -499,8 +500,9 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
 /*
-	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d: %s",
-		__func__, buflen, conn->fd, buf);
+	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d:",
+		__func__, buflen, conn->fd);
+	upsdebug_ascii_compact(0, "send_to_one buffer: content: ", buf, buflen);
 */
 
 #ifndef WIN32
@@ -519,13 +521,14 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
-			__func__, buflen, (int)conn->fd, ret, buf);
+			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE "):",
+			__func__, buflen, (int)conn->fd, ret);
 #else	/* WIN32 */
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
+		upsdebug_ascii_compact(1, "send_to_one: buffer content: ", buf, buflen);
 
 		usleep(200);
 
@@ -555,7 +558,8 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 			"handle %p failed (ret=%" PRIiSIZE "), disconnecting",
 			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
-		upsdebugx(6, "%s: failed write: %s", __func__, buf);
+		upsdebug_ascii_compact(6, "send_to_one: failed to write buffer content: ", buf, buflen);
+
 		sock_disconnect(conn);
 		conn = NULL;
 
@@ -578,13 +582,14 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	} else {
 #ifndef WIN32
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
-			"(ret=%" PRIiSIZE "): %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"(ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #else	/* WIN32 */
 		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to handle %p succeeded "
-			"(ret=%" PRIiSIZE "): %s",
-			__func__, buflen, conn->fd, ret, buf);
+			"(ret=%" PRIiSIZE "):",
+			__func__, buflen, conn->fd, ret);
 #endif	/* WIN32 */
+		upsdebug_ascii_compact(6, "send_to_one: buffer content: ", buf, buflen);
 	}
 
 	return 1;	/* OK */

@@ -165,6 +165,10 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
+      is", complete with a confusing blank line where `\n` ended the message.
+      This is now passed through newly introduced `upsdebug_ascii_compact()`
+      method for better readability and more compact logs. [PR #3525]
     * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
       `connect()` to ensure a timeout if something does not respond. [PR #3456]
     * Windows driver state named pipes now use explicit security attributes
@@ -290,6 +294,7 @@ https://github.com/networkupstools/nut/milestone/13
  - `upssched` client/tool updates:
     * Fixed handling of `NOTIFYMSG` from command line if other arguments are
       present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
+    * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
