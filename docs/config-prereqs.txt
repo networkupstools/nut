@@ -908,7 +908,10 @@ below.
     valgrind \
     cppcheck \
     pkgconf \
-    gcc clang
+    gcc
+
+# Name for LLVM CLANG compiler may vary on old and new systems:
+:; pkg install -y clang || pkg install -y llvm
 
 # To debug eventual core dump files, or trace programs with an IDE like
 # NetBeans (perhaps remotely), you may want the GNU Debugger program:
@@ -947,7 +950,6 @@ below.
     cppunit \
     nss \
     augeas \
-    libusb \
     glib \
     libmodbus \
     neon \
@@ -955,6 +957,10 @@ below.
     powerman \
     freeipmi \
     avahi
+
+# libusb may be not available, or not under that name.
+# Maybe not at all, being part of core system:
+:; pkg install libusb || true
 
 # NOTE: At least on FreeBSD 12, system-provided crypto exists and is used
 # by libnetsnmp, libneon, etc. - but is not marked as a package. Conversely,
