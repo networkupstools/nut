@@ -69,6 +69,7 @@ static void get_upsdesc(nut_ctype_t *client, const char *upsname)
 static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const	upstype_t	*ups;
+	const	char	*varptr;
 	const	char	*desc;
 
 	ups = get_ups_ptr(upsname);
@@ -81,7 +82,15 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 	if (!ups_available(ups, client))
 		return;
 
-	desc = desc_get_var(var);
+	/* Strip out upstream. for proxying (failover, clone...) lookups,
+	 * but return the requested full variable info back to the client. */
+	if (var && !strncmp(var, "upstream.", 9)) {
+		varptr = var + 9;
+	} else {
+		varptr = var;
+	}
+
+	desc = desc_get_var(varptr);
 
 	if (desc)
 		sendback(client, "DESC %s %s \"%s\"\n", upsname, var, desc);
@@ -92,6 +101,7 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cmd)
 {
 	const	upstype_t	*ups;
+	const	char	*cmdptr;
 	const	char	*desc;
 
 	ups = get_ups_ptr(upsname);
@@ -104,7 +114,15 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	if (!ups_available(ups, client))
 		return;
 
-	desc = desc_get_cmd(cmd);
+	/* Strip out upstream. for proxying (failover, clone...) lookups,
+	 * but return the requested full command info back to the client. */
+	if (cmd && !strncmp(cmd, "upstream.", 9)) {
+		cmdptr = cmd + 9;
+	} else {
+		cmdptr = cmd;
+	}
+
+	desc = desc_get_cmd(cmdptr);
 
 	if (desc)
 		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);

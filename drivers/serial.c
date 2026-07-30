@@ -448,7 +448,7 @@ ssize_t ser_send_buf_pace(TYPE_FD_SER fd, useconds_t d_usec, const void *buf,
 {
 	ssize_t	ret = 0;
 	ssize_t	sent;
-	const char	*data = buf;
+	const char	*data = (const char *)buf;
 
 	assert(buflen < SSIZE_MAX);
 	for (sent = 0; sent < (ssize_t)buflen; sent += ret) {
@@ -486,7 +486,7 @@ ssize_t ser_get_buf_len(TYPE_FD_SER fd, void *buf, size_t buflen, time_t d_sec, 
 {
 	ssize_t	ret;
 	ssize_t	recv;
-	char	*data = buf;
+	char	*data = (char *)buf;
 
 	assert(buflen < SSIZE_MAX);
 	memset(buf, '\0', buflen);
@@ -513,7 +513,7 @@ ssize_t ser_get_line_alert(TYPE_FD_SER fd, void *buf, size_t buflen, char endcha
 {
 	ssize_t	i, ret;
 	char	tmp[64];
-	char	*data = buf;
+	char	*data = (char *)buf;
 	ssize_t	count = 0, maxcount;
 
 	assert(buflen < SSIZE_MAX && buflen > 0);

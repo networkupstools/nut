@@ -7,12 +7,16 @@ a NUT (Network UPS Tools) server.
 Dependencies
 ------------
 
-This application (variants written in Python 2 + GTK2, and in Python 3 + Qt5)
+This application (variants written in Python 2 + GTK2, and Python 3 + Qt5/Qt6)
 uses the python-pynut class (available at http://www.lestat.st), delivered
 as PyNUT in the NUT source tree.
 
 Refer to your OS packaging and/or install custom modules with `pip` (or `pip3`)
-to get required dependencies (GTK + GObject or Qt5).
+to get required dependencies (GTK + GObject, Qt5 or Qt6).
+
+Some distributions may require installing of additional development packages,
+e.g. pyqt5-dev, pyqt5-dev-tools or pyqt6-dev pyqt6-dev-tools for Qt5/Qt6 to be
+detected available by the configuration script and function when later installed.
 
 Path to PyNUT module
 --------------------
@@ -27,6 +31,12 @@ or:
 
 ----
 :; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt5.in
+----
+
+or:
+
+----
+:; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt6.in
 ----
 
 Localization
@@ -51,11 +61,11 @@ Python 2 / GTK2 variant of the UI).
 Desktop menu integration
 ------------------------
 
-This component ships both implementation-specific `nut-monitor-py2gtk2.desktop`
-and `nut-monitor-py3qt5.desktop` files which allows a user to have icons for
-both variants separately, as well as the legacy-named `nut-monitor.desktop`
-for running the wrapper script `NUT-Monitor` which picks an implementation best
-suited for current run-time circumstances.
+This component ships implementation-specific `nut-monitor-py2gtk2.desktop`,
+`nut-monitor-py3qt5.desktop` and `nut-monitor-py3qt6.desktop` files which allows
+a user to have icons for either variants separately, as well as the legacy-named
+`nut-monitor.desktop` for running the wrapper script `NUT-Monitor` which picks
+an implementation best suited for the current run-time circumstances.
 
 Screenshots
 -----------
@@ -96,11 +106,11 @@ directory) run with:
 
 ----
 :; (cd .. && make `pwd`/app/locale/*/*/*) ; (cd ../../../ && ./config.status \
-   scripts/python/app/NUT-Monitor-py2gtk2 scripts/python/app/NUT-Monitor-py3qt5) \
-   && LANG=fr_FR ./NUT-Monitor-py2gtk2
+   scripts/python/app/NUT-Monitor-py2gtk2 scripts/python/app/NUT-Monitor-py3qt5 \
+   scripts/python/app/NUT-Monitor-py3qt6) && LANG=fr_FR ./NUT-Monitor-py2gtk2
 ----
 
-or `..../NUT-Monitor-py3qt5` respectively.
+or `..../NUT-Monitor-py3qt5`, `..../NUT-Monitor-py3qt6` respectively.
 
 NOTE: While `LANG=it` can be useful on MSYS2 for testing that localization does
 take place, it proved problematic to load `fr` and `ru` resources -- logic
@@ -120,3 +130,5 @@ NUT-Monitor was converted to Python 3 + Qt5 by Luke Dashjr
 
 PyNUT was extended, and two variants of NUT-Monitor converged and wrapped
 for Python 2+3 dual support by Jim Klimov
+
+NUT-Monitor was ported to Python 3 + Qt6 by Sebastian Kuttnig

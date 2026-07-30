@@ -7,7 +7,7 @@
    in isolated-binary fashion.
 
    Copyright (C)
-	2022-2025	Jim Klimov <jimklimov+nut@gmail.com>
+	2022-2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,6 +70,18 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
+#ifndef _NUTCLIENTTEST_BUILD
+# define _NUTCLIENTTEST_BUILD 1
+#endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifndef _WIN32
+# include <unistd.h>
+#endif
+#include "../clients/nutclient.h"
+#include "../clients/nutclientmem.h"
+
 namespace nut {
 
 class NutActiveClientTest : public CppUnit::TestFixture
@@ -87,14 +99,36 @@ class NutActiveClientTest : public CppUnit::TestFixture
 
 private:
 	/* Fed by caller via envvars: */
-	uint16_t NUT_PORT = 0;
-	std::string NUT_USER = "";
-	std::string NUT_PASS = "";
-	std::string NUT_PRIMARY_DEVICE = "";
-	std::string NUT_SETVAR_DEVICE = "";
+	int env_NUT_DEBUG_LEVEL = 0;
+	uint16_t env_NUT_PORT = 0;
+	std::string env_NUT_USER = "";
+	std::string env_NUT_PASS = "";
+	std::string env_NUT_PRIMARY_DEVICE = "";
+	std::string env_NUT_SETVAR_DEVICE = "";
+
+	/* SSL options: shared */
+	bool env_NUT_SSL = false;
+	bool env_NUT_SSL_specified = false;
+	bool env_NUT_FORCESSL = false;
+	int env_NUT_CERTVERIFY = -1;
+	std::string env_NUT_KEYPASS = "";
+
+	/* SSL options: OpenSSL */
+	std::string env_NUT_CAFILE = "";
+	std::string env_NUT_CAPATH = "";
+	std::string env_NUT_CERTFILE = "";
+	std::string env_NUT_KEYFILE = "";
+
+	/* SSL options: NSS */
+	std::string env_NUT_CERTSTORE_PATH = "";
+	std::string env_NUT_CERTSTORE_PREFIX = "";
+	std::string env_NUT_CERTHOST_ADDR = "";
+	std::string env_NUT_CERTHOST_NAME = "";
+	std::string env_NUT_CERTIDENT_NAME = "";
 
 public:
 	void setUp() override;
+	void setupClientSSL(nut::TcpClient &c);
 	void tearDown() override;
 
 	void test_query_ver();
@@ -107,17 +141,6 @@ public:
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION( NutActiveClientTest );
 
-} // namespace nut {}
-
-#ifndef _NUTCLIENTTEST_BUILD
-# define _NUTCLIENTTEST_BUILD 1
-#endif
-
-#include "../clients/nutclient.h"
-#include "../clients/nutclientmem.h"
-
-namespace nut {
-
 extern "C" {
 strarr stringset_to_strarr(const std::set<std::string>& strset);
 strarr stringvector_to_strarr(const std::vector<std::string>& strset);
@@ -125,8 +148,13 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset);
 
 void NutActiveClientTest::setUp()
 {
-	/* NUT_PORT etc. are provided by external test suite driver */
+	/* NUT_PORT etc. env vars are provided by external test suite driver */
 	char * s;
+
+	s = std::getenv("NUT_DEBUG_LEVEL");
+	if (s) {
+		env_NUT_DEBUG_LEVEL = atoi(s);
+	}
 
 	s = std::getenv("NUT_PORT");
 	if (s) {
@@ -134,30 +162,306 @@ void NutActiveClientTest::setUp()
 		if (l < 1 || l > 65535) {
 			throw std::runtime_error("NUT_PORT specified by caller is out of range");
 		}
-		NUT_PORT = static_cast<uint16_t>(l);
+		env_NUT_PORT = static_cast<uint16_t>(l);
 	} else {
 		throw std::runtime_error("NUT_PORT not specified by caller, NIT should call this test");
 	}
 
 	s = std::getenv("NUT_USER");
 	if (s) {
-		NUT_USER = s;
+		env_NUT_USER = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_PASS");
 	if (s) {
-		NUT_PASS = s;
+		env_NUT_PASS = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_PRIMARY_DEVICE");
 	if (s) {
-		NUT_PRIMARY_DEVICE = s;
+		env_NUT_PRIMARY_DEVICE = s;
 	} // else stays empty
 
 	s = std::getenv("NUT_SETVAR_DEVICE");
 	if (s) {
-		NUT_SETVAR_DEVICE = s;
+		env_NUT_SETVAR_DEVICE = s;
 	} // else stays empty
+
+	s = std::getenv("NUT_SSL");
+	env_NUT_SSL_specified = (s != nullptr);
+	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
+		env_NUT_SSL = true;
+	}
+
+	s = std::getenv("NUT_FORCESSL");
+	if (s && (std::string(s) == "1" || std::string(s) == "true" || std::string(s) == "yes")) {
+#ifdef WITH_SSL_CXX
+		env_NUT_FORCESSL = true;
+#else
+		std::cerr << "[D] Not built with WITH_SSL_CXX, ignoring NUT_FORCESSL=true" << std::endl;
+#endif
+	}
+
+	s = std::getenv("NUT_CERTVERIFY");
+	if (s) {
+		env_NUT_CERTVERIFY = atoi(s);
+	}
+
+	s = std::getenv("NUT_CAFILE");
+	if (s) {
+		env_NUT_CAFILE = s;
+	}
+
+	s = std::getenv("NUT_CAPATH");
+	if (s) {
+		env_NUT_CAPATH = s;
+	}
+
+	s = std::getenv("NUT_CERTFILE");
+	if (s) {
+		env_NUT_CERTFILE = s;
+	}
+
+	s = std::getenv("NUT_KEYFILE");
+	if (s) {
+		env_NUT_KEYFILE = s;
+	}
+
+	s = std::getenv("NUT_KEYPASS");
+	if (s) {
+		env_NUT_KEYPASS = s;
+	}
+
+	s = std::getenv("NUT_CERTSTORE_PATH");
+	if (s) {
+		env_NUT_CERTSTORE_PATH = s;
+	}
+
+	/* NOTE: What could be NUT_CERTSTORE_PASS is NUT_KEYPASS too */
+	s = std::getenv("NUT_CERTSTORE_PREFIX");
+	if (s) {
+		env_NUT_CERTSTORE_PREFIX = s;
+	}
+
+	s = std::getenv("NUT_CERTHOST_ADDR");
+	if (s) {
+		env_NUT_CERTHOST_ADDR = s;
+	}
+
+	s = std::getenv("NUT_CERTHOST_NAME");
+	if (s) {
+		env_NUT_CERTHOST_NAME = s;
+	}
+
+	s = std::getenv("NUT_CERTIDENT_NAME");
+	if (s) {
+		env_NUT_CERTIDENT_NAME = s;
+	}
+
+	s = std::getenv("NUT_IGNORE_AUTHCONF");
+	if (!s || (s != std::string("1") && s != std::string("true"))) {
+		if (nut::AuthConf::readAuthConfFile("", 0) == 1) {
+			char szPort[32];
+			std::cerr << "[DEBUG] NUT AuthConf file read succeeded, applying its values for host connection instead of envvars (if any)" << std::endl;
+			snprintf(szPort, sizeof(szPort), "%u", env_NUT_PORT);
+
+			nut::AuthConf ac = nut::AuthConf::getAuthConf(
+				env_NUT_USER,
+				"localhost",
+				szPort,
+				false);
+
+			std::cerr << "[DEBUG] NUT AuthConf settings extracted for section:" << std::endl
+				<< ac.to_string(true, true) << std::endl;
+
+			if (!ac.user.empty() || !ac.pass.empty() || !ac.certpath.empty()) {
+				if (!ac.user.empty()) env_NUT_USER = ac.user;
+				if (!ac.pass.empty()) env_NUT_PASS = ac.pass;
+				if (!ac.certpath.empty()) {
+					// Path to trusted CA certificates; in case of NSS, this is the path to location of the NSS DB files used for all purposes
+					if (ac.ssl_backend != "openssl") {
+						// NSS or none or unspecified
+						env_NUT_CERTSTORE_PATH = ac.certpath;
+					}
+					if (ac.ssl_backend != "nss") {
+						// OpenSSL or none or unspecified
+						struct stat st;
+						if (stat(ac.certpath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+							env_NUT_CAPATH = ac.certpath;
+						} else {
+							env_NUT_CAFILE = ac.certpath;
+						}
+					}
+				}
+				if (!ac.certfile.empty()) {
+					// (OpenSSL only) Client certificate file for authentication to the server (client cert, CA chain, client key)
+					env_NUT_CERTFILE = ac.certfile;
+					env_NUT_KEYFILE = "";
+				}
+				if (!ac.certident.empty()) env_NUT_CERTIDENT_NAME = ac.certident;
+				if (!ac.certpasswd.empty()) env_NUT_KEYPASS = ac.certpasswd;
+				if (!ac.certhost.empty()) {
+					env_NUT_CERTHOST_ADDR = std::string("localhost:") + szPort;
+					env_NUT_CERTHOST_NAME = ac.certhost;
+				}
+
+				// If test runner has explicitly set NUT_SSL=False,
+				// ignore the value required in the authconf
+				if (!env_NUT_SSL_specified || env_NUT_SSL) {
+					if (ac.certverify != -1) env_NUT_CERTVERIFY = ac.certverify;
+					if (ac.forcessl != -1) env_NUT_FORCESSL = (ac.forcessl == 1);
+				}
+				// TOTHINK: Make use of SSLBACKEND to pick one side?
+			}
+		} else {
+			std::cerr << "[DEBUG] NUT AuthConf file read failed, will rely on envvars for host connection (if any)" << std::endl;
+		}
+	}
+
+	if (!env_NUT_SSL_specified)
+		env_NUT_SSL = env_NUT_FORCESSL;
+}
+
+void NutActiveClientTest::setupClientSSL(nut::TcpClient &c)
+{
+	// NOTE: Currently this is a boolean toggle, not a numeric verbosity level
+	if (env_NUT_DEBUG_LEVEL > 0)
+		c.setDebugConnect(true);
+
+	std::cerr << "[D] Incoming SSLConfig data points:"
+		// shared:
+		<< " env_NUT_USER='" << env_NUT_USER
+		<< "' env_NUT_PASS='" << env_NUT_PASS
+		<< "' (try?)NUT_SSL=" << env_NUT_SSL
+		<< " NUT_FORCESSL=" << env_NUT_FORCESSL
+		<< " NUT_CERTVERIFY=" << env_NUT_CERTVERIFY
+		<< " NUT_CERTIDENT_NAME='" << env_NUT_CERTIDENT_NAME
+		<< "' NUT_CAPATH='" << env_NUT_CAPATH
+		// OpenSSL-only:
+		<< "' NUT_CAFILE='" << env_NUT_CAFILE
+		<< "' NUT_CERTFILE='" << env_NUT_CERTFILE
+		<< "' NUT_KEYFILE='" << env_NUT_KEYFILE
+		// shared:
+		<< "' NUT_KEYPASS='" << env_NUT_KEYPASS
+		<< "' NUT_CERTHOST_ADDR='" << env_NUT_CERTHOST_ADDR
+		<< "' NUT_CERTHOST_NAME='" << env_NUT_CERTHOST_NAME
+		// NSS-only:
+		<< "' NUT_CERTSTORE_PATH='" << env_NUT_CERTSTORE_PATH
+		<< "' NUT_CERTSTORE_PREFIX='" << env_NUT_CERTSTORE_PREFIX
+		<< "'"
+		<< " NUT_PORT=" << env_NUT_PORT
+		<< std::endl;
+
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CAFILE.empty()
+	 || !env_NUT_CAPATH.empty()
+	 || !env_NUT_CERTFILE.empty()
+	 || !env_NUT_KEYFILE.empty()
+	 || !env_NUT_CERTIDENT_NAME.empty()
+	 || !env_NUT_CERTHOST_ADDR.empty()
+	 || !env_NUT_CERTHOST_NAME.empty()
+	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
+		std::cerr << "[D] Setting SSLConfig_OpenSSL" << std::endl;
+		c.setSSLConfig(SSLConfig_OpenSSL(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
+			env_NUT_CAPATH,
+			env_NUT_CAFILE,
+			env_NUT_CERTFILE,
+			env_NUT_KEYFILE,
+			env_NUT_KEYPASS,
+			env_NUT_CERTIDENT_NAME,
+
+			// host name to check for CERTHOST
+			/*env_NUT_CERTHOST_ADDR.empty()
+			? (env_NUT_CERTHOST_NAME.empty() ? std::string() : "localhost")
+			: */
+			env_NUT_CERTHOST_ADDR,
+
+			env_NUT_CERTHOST_NAME
+			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(OpenSSL): " << ex.what() << std::endl;
+		}
+#endif
+	}
+
+	if (env_NUT_CERTVERIFY != -1
+	 || env_NUT_FORCESSL
+	 || !env_NUT_CERTSTORE_PATH.empty()
+	 || !env_NUT_CERTSTORE_PREFIX.empty()
+	 || !env_NUT_CERTIDENT_NAME.empty()
+	 || !env_NUT_CERTHOST_ADDR.empty()
+	 || !env_NUT_CERTHOST_NAME.empty()
+	) {
+#ifndef WITH_SSL_CXX
+		try {
+#endif
+		std::cerr << "[D] Setting SSLConfig_OpenNSS" << std::endl;
+		c.setSSLConfig(SSLConfig_NSS(
+			env_NUT_FORCESSL,
+			env_NUT_CERTVERIFY,
+			env_NUT_CERTSTORE_PATH,
+			env_NUT_KEYPASS,
+			env_NUT_CERTSTORE_PREFIX,
+			env_NUT_CERTIDENT_NAME,
+
+			// host name to check for CERTHOST
+			/*env_NUT_CERTHOST_ADDR.empty()
+			? (env_NUT_CERTHOST_NAME.empty() ? std::string() : "localhost")
+			: */
+			env_NUT_CERTHOST_ADDR,
+
+			env_NUT_CERTHOST_NAME
+			));
+#ifndef WITH_SSL_CXX
+		}
+		catch(nut::SSLException& ex)
+		{
+			std::cerr << "[D] Not built with WITH_SSL_CXX and reasonably failed to setSSLConfig(NSS): " << ex.what() << std::endl;
+		}
+#endif
+	}
+
+	std::cerr << "[D] C++ NUT Client lib enabled SSL options:"
+		// shared:
+		<< " (try?)NUT_SSL=" << c.getSslTry()
+		<< " NUT_FORCESSL=" << c.getSslForce()
+		<< " NUT_CERTVERIFY=" << c.getSslCertVerify()
+		<< " NUT_CERTIDENT_NAME='" << c.getSslCertIdentName()
+		<< "' NUT_CAPATH='" << c.getSslCAPath()
+		// OpenSSL-only:
+		<< "' NUT_CAFILE='" << c.getSslCAFile()
+		<< "' NUT_CERTFILE='" << c.getSslCertFile()
+		<< "' NUT_KEYFILE='" << c.getSslKeyFile()
+		// shared:
+		<< "' NUT_KEYPASS='" << c.getSslKeyPass()
+		<< "' NUT_CERTHOST_ADDR='" << c.getSslCertHostAddr()
+		<< "' NUT_CERTHOST_NAME='" << c.getSslCertHostName()
+		// NSS-only:
+		<< "' NUT_CERTSTORE_PATH='" << c.getSslCertstorePath()
+		<< "' NUT_CERTSTORE_PREFIX='" << c.getSslCertstorePrefix()
+		<< "'"
+		<< " NUT_PORT=" << env_NUT_PORT
+		<< std::endl;
+
+	std::cerr << "[D] TcpClient configured for SSL caps? "
+		<< (c.getSslCaps() ? "true" : "false")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_OPENSSL ? "[OpenSSL]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_NSS ? "[NSS]" : "")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_PASS ? "[CERTIDENT-pass]" : "<!CERTIDENT-pass!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTIDENT_NAME ? "[CERTIDENT-name]" : "<!CERTIDENT-name!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER ? "[CERTHOST-addr-number]" : "<!CERTHOST-addr-number!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT ? "[CERTHOST-addr-text]" : "<!CERTHOST-addr-text!>")
+		<< (c.getSslCaps() & UPSCLI_SSL_CAPS_CERTHOST_NAME ? "[CERTHOST-name]" : "<!CERTHOST-name!>")
+		<< std::endl;
 }
 
 void NutActiveClientTest::tearDown()
@@ -165,7 +469,11 @@ void NutActiveClientTest::tearDown()
 }
 
 void NutActiveClientTest::test_query_ver() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	// This can crash if the server is not running, SSL mismatch, etc.
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::string s;
 
 	std::cerr << "[D] C++ NUT Client lib test running against Data Server at: "
@@ -174,6 +482,10 @@ void NutActiveClientTest::test_query_ver() {
 	CPPUNIT_ASSERT_MESSAGE(
 		"TcpClient is not connected after constructor",
 		c.isConnected());
+
+	std::cerr << "[D] Channel protected by STARTTLS? "
+		<< (c.isSSL() ? "true" : "false")
+		<< std::endl;
 
 	/* Note: generic client code can not use protected methods
 	 * like low-level sendQuery(), list(), get() and some more,
@@ -219,7 +531,10 @@ void NutActiveClientTest::test_query_ver() {
 }
 
 void NutActiveClientTest::test_list_ups() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::set<std::string> devs;
 	bool noException = true;
 
@@ -251,12 +566,15 @@ void NutActiveClientTest::test_list_ups() {
 }
 
 void NutActiveClientTest::test_list_ups_clients() {
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	std::map<std::string, std::set<std::string>> deviceClients;
 	bool noException = true;
 
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 		/* Note: no high hopes here, credentials are checked by server
 		 * when running critical commands, not at auth request itself */
@@ -268,7 +586,7 @@ void NutActiveClientTest::test_list_ups_clients() {
 	}
 
 	try {
-		c.deviceLogin(NUT_PRIMARY_DEVICE);
+		c.deviceLogin(env_NUT_PRIMARY_DEVICE);
 	}
 	catch(nut::NutException& ex)
 	{
@@ -313,15 +631,18 @@ void NutActiveClientTest::test_list_ups_clients() {
 }
 
 void NutActiveClientTest::test_auth_user() {
-	if (NUT_USER.empty()) {
+	if (env_NUT_USER.empty()) {
 		std::cerr << "[D] SKIPPING test_auth_user()" << std::endl;
 		return;
 	}
 
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 		/* Note: no high hopes here, credentials are checked by server
 		 * when running critical commands, not at auth request itself */
@@ -332,29 +653,34 @@ void NutActiveClientTest::test_auth_user() {
 		noException = false;
 	}
 
-	if (!NUT_SETVAR_DEVICE.empty()) {
+	if (!env_NUT_SETVAR_DEVICE.empty()) {
 		try {
 			TrackingResult tres;
 			TrackingID tid;
 			int i;
 			std::string nutVar = "ups.status"; /* Has a risk of flip-flop with NIT dummy setup */
-			std::string s1 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+			std::string s1 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 			std::string sTest = s1 + "-test";
 
-			std::cerr << "[D] Got initial device '" << NUT_SETVAR_DEVICE
+			std::cerr << "[D] Got initial device '" << env_NUT_SETVAR_DEVICE
 				<< "' variable '" << nutVar << "' value: " << s1 << std::endl;
 			CPPUNIT_ASSERT_MESSAGE(
 				"Did not expect empty value here",
 				!s1.empty());
 
-			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, sTest);
+			tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, nutVar, sTest);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
 			}
 			if (tres != SUCCESS) {
-				std::cerr << "[D] Failed to set device variable: "
+				std::cerr << "[D] Failed to confirm setting device variable: "
 					<< "tracking result is " << tres << std::endl;
-				noException = false;
+				if (c.isTrackingModeEnabled()) {
+					noException = false;
+				} else {
+					std::cerr << "[D] Tracking mode is NOT enabled in this session so far"
+						<< std::endl;
+				}
 			}
 			/* Check what we got after set */
 			/* Note that above we told the server to tell the driver
@@ -366,7 +692,7 @@ void NutActiveClientTest::test_auth_user() {
 			 */
 			std::string s2;
 			for (i = 0; i < 100 ; i++) {
-				s2 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				s2 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 				if (s2 == sTest)
 					break;
 				usleep(100000);
@@ -376,18 +702,23 @@ void NutActiveClientTest::test_auth_user() {
 				<< std::endl;
 
 			/* Fix it back */
-			tid = c.setDeviceVariable(NUT_SETVAR_DEVICE, nutVar, s1);
+			tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, nutVar, s1);
 			while ( (tres = c.getTrackingResult(tid)) == PENDING) {
 				usleep(100);
 			}
 			if (tres != SUCCESS) {
-				std::cerr << "[D] Failed to set device variable: "
+				std::cerr << "[D] Failed to confirm setting device variable: "
 					<< "tracking result is " << tres << std::endl;
-				noException = false;
+				if (c.isTrackingModeEnabled()) {
+					noException = false;
+				} else {
+					std::cerr << "[D] Tracking mode is NOT enabled in this session so far"
+						<< std::endl;
+				}
 			}
 			std::string s3;
 			for (i = 0; i < 100 ; i++) {
-				s3 = c.getDeviceVariableValue(NUT_SETVAR_DEVICE, nutVar)[0];
+				s3 = c.getDeviceVariableValue(env_NUT_SETVAR_DEVICE, nutVar)[0];
 				if (s3 == s1)
 					break;
 				usleep(100000);
@@ -413,6 +744,31 @@ void NutActiveClientTest::test_auth_user() {
 			if (noException) {
 				std::cerr << "[D] Tweaked device variable value OK" << std::endl;
 			}
+
+			/* Specific test: SET VAR driver.debug 1 with TRACKING (1s interval, 10s timeout) */
+			std::cerr << "[D] Testing SET VAR " << env_NUT_SETVAR_DEVICE << " driver.debug 1 with TRACKING..." << std::endl;
+			try {
+				tid = c.setDeviceVariable(env_NUT_SETVAR_DEVICE, "driver.debug", "1", 1, 10);
+				if (tid.empty()) {
+					std::cerr << "[D] Failed to get tracking ID for driver.debug" << std::endl;
+					noException = false;
+				} else {
+					tres = tid.getStatus();
+					std::cerr << "[D] Got tracking ID: " << (std::string)tid << ", created: " << tid.created() << ", status: " << tres << std::endl;
+					if (tres == PENDING || tres == UNSET)
+						tres = c.getTrackingResult(tid);
+					std::cerr << "[D] Final tracking result: " << tres << " (age: " << tid.age() << "s, duration: " << tid.duration() << "s)" << std::endl;
+					if (tres != SUCCESS) {
+						std::cerr << "[D] TRACKING failed for driver.debug" << std::endl;
+						noException = false;
+					}
+				}
+			}
+			catch(nut::NutException& ex)
+			{
+				std::cerr << "[D] Failed to set driver.debug with tracking: " << ex.what() << std::endl;
+				noException = false;
+			}
 		}
 		catch(nut::NutException& ex)
 		{
@@ -434,15 +790,18 @@ void NutActiveClientTest::test_auth_user() {
 }
 
 void NutActiveClientTest::test_auth_primary() {
-	if (NUT_USER.empty() || NUT_PRIMARY_DEVICE.empty()) {
+	if (env_NUT_USER.empty() || env_NUT_PRIMARY_DEVICE.empty()) {
 		std::cerr << "[D] SKIPPING test_auth_primary()" << std::endl;
 		return;
 	}
 
-	nut::TcpClient c("localhost", NUT_PORT);
+	nut::TcpClient c;
+	setupClientSSL(c);
+
+	c.connect("localhost", env_NUT_PORT, env_NUT_SSL);
 	bool noException = true;
 	try {
-		c.authenticate(NUT_USER, NUT_PASS);
+		c.authenticate(env_NUT_USER, env_NUT_PASS);
 		std::cerr << "[D] Authenticated without exceptions" << std::endl;
 	}
 	catch(nut::NutException& ex)
@@ -453,31 +812,31 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 
 	try {
-		Device d = c.getDevice(NUT_PRIMARY_DEVICE);
+		Device d = c.getDevice(env_NUT_PRIMARY_DEVICE);
 		bool gotPrimary = false;
 		bool gotMaster = false;
 
 		try {
-			c.deviceMaster(NUT_PRIMARY_DEVICE);
+			c.deviceMaster(env_NUT_PRIMARY_DEVICE);
 			gotMaster = true;
 			std::cerr << "[D] Elevated as MASTER without exceptions" << std::endl;
 		}
 		catch(nut::NutException& ex)
 		{
 			std::cerr << "[D] Could not elevate as MASTER for "
-				<< "NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE << ": "
+				<< "NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE << ": "
 				<< ex.what() << std::endl;
 		}
 
 		try {
-			c.devicePrimary(NUT_PRIMARY_DEVICE);
+			c.devicePrimary(env_NUT_PRIMARY_DEVICE);
 			gotPrimary = true;
 			std::cerr << "[D] Elevated as PRIMARY without exceptions" << std::endl;
 		}
 		catch(nut::NutException& ex)
 		{
 			std::cerr << "[D] Could not elevate as PRIMARY for "
-				<< "NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE << ": "
+				<< "NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE << ": "
 				<< ex.what() << std::endl;
 		}
 
@@ -486,7 +845,7 @@ void NutActiveClientTest::test_auth_primary() {
 	}
 	catch(nut::NutException& ex)
 	{
-		std::cerr << "[D] NUT_PRIMARY_DEVICE " << NUT_PRIMARY_DEVICE
+		std::cerr << "[D] NUT_PRIMARY_DEVICE " << env_NUT_PRIMARY_DEVICE
 			<< " not found on Data Server: "
 			<< ex.what() << std::endl;
 		noException = false;

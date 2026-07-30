@@ -1,0 +1,50 @@
+#!/bin/sh -e
+
+case "$1" in
+
+  remove)
+    # remove sample file if those were previously (wrongly) installed
+    for file in ups.conf upsd.conf upsmon.conf upsd.users upssched.conf ; do
+      rm -f /etc/nut/${file}.sample
+    done
+    ;;
+
+  purge)
+    # remove udev rules files
+    rm -f /etc/udev/rules.d/025_nut-usbups.rules
+    rm -f /etc/udev/rules.d/52_nut-usbups.rules
+    rm -f /etc/udev/rules.d/52-nut-usbups.rules
+    # handle a dpkg bug
+    [ -d /etc/nut ] && rmdir --ignore-fail-on-non-empty /etc/nut >/dev/null 2>&1
+    ;;
+
+  upgrade)
+    # do nothing
+    ;;
+
+  failed-upgrade)
+    # do nothing
+    ;;
+
+  abort-install)
+    # do nothing
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  disappear)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+
+exit 0

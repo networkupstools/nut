@@ -88,7 +88,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -137,7 +137,7 @@ Some devices "natively" report just report a part of the total battery voltage
 device or properly guessed by the driver otherwise).
 +
 If this flag is set, most of the subdrivers (except those which know about
-more  complicated device-specific nuances, currently: *ablerex*, *masterguard*
+more complicated device-specific nuances, currently: *ablerex*, *masterguard*
 and *voltronic-qs-hex*) adjust their ultimately reported *battery.voltage*
 value as a multiple of *battery.packs* and "native" *battery.voltage*).
 +
@@ -168,8 +168,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-BESTUPS, INNOVART31, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ignoresab*::
 Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
@@ -217,8 +217,8 @@ Safeguard against talking to the wrong one of several identical UPSes on the sam
 Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
 
 
-INNOVART31, Q1, Q2, Q6 PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+INNOVART31, INNOVART33, INNOVATAE, Q1, Q2, Q6 PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ondelay*::
 The acceptable range is +0..599940+ seconds.
@@ -242,6 +242,22 @@ The acceptable range is +60..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..540+ seconds.
+
+
+VOLTRONIC-AXPERT PROTOCOL
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: This protocol is currently largely experimental, many features may
+be only exposed in specially configured builds of the NUT driver program.
+
+*reset_to_default*::
+Reset capability options and their limits to safe default values
+
+*bypass_alarm*::
+Alarm (BEEP!) at Bypass Mode [enabled/disabled]
+
+*battery_alarm*::
+Alarm (BEEP!) at Battery Mode [enabled/disabled]
 
 
 VOLTRONIC PROTOCOL
@@ -302,7 +318,7 @@ The UPS will still charge battery under this mode.
 Enable or disable ECO Mode [+enabled+/+disabled+].
 When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving.
 PFC and INVERTER are still active at this mode.
-Settable also `on the fly' with *bypass.start* and *bypass.stop* instant commands.
+Settable also "on the fly" with *bypass.start* and *bypass.stop* instant commands.
 
 *advanced_eco_mode =* 'string'::
 Enable or disable Advanced ECO Mode [+enabled+/+disabled+].
@@ -499,8 +515,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-BESTUPS, INNOVART31, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
@@ -509,11 +525,26 @@ Perform a battery test for the duration of 'value' seconds (truncated to 60 seco
 MASTERGUARD PROTOCOL
 ~~~~~~~~~~~~~~~~~~~~
 
+*clear.fault.record*::
+Clear fault/error record
+
 *beeper.enable*::
 Enable the UPS beeper.
 
 *beeper.disable*::
 Disable the UPS beeper.
+
+*test.battery.start.low*::
+Perform a battery test until the battery charge is low.
++
+The difference between the "battery test until battery low" and "deep battery
+test" is that the latter is actually a battery calibration test and needs some
+preconditions to be met, i.e. the load must be between 30% and 100% and the
+starting battery capacity is greater than 99%.
++
+The "Battery test until battery low" can be started anytime.
++
+Feature was tested on Masterguard A1000 and A2000 units.
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+0..5940+].
@@ -769,6 +800,19 @@ MASTERGUARD UNITS
 ~~~~~~~~~~~~~~~~~
 
 The driver is supposed to support both "new" A series (A700/1000/2000/3000 and their -19 cousins) and E series (E60/100/200) but was tested only on A due to lack of E hardware.
+
+
+VOLTRONIC-AXPERT UNITS
+~~~~~~~~~~~~~~~~~~~~~~
+
+This protocol supports Voltronic Power Axpert inverters, based on P30 protocol
+(used e.g. in photovoltaic equipment, often paired with an UPS charged by the
+solar panels).
+
+The code is currently largely experimental, with data point and command names
+not aligned with concepts that are part of NUT standard vocabulary (this many
+of them are prefixed with `experimental.` namespace). In fact,  many features
+may be only exposed in specially configured builds of the NUT driver program.
 
 
 VOLTRONIC-QS UNITS

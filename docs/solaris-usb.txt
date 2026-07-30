@@ -198,10 +198,11 @@ libusb version and binary
 -------------------------
 
 Until NUT release 2.7.4 the only option to build NUT drivers for
-USB connectivity was to use libusb-0.1 or a distribution's variant
-of it; the original Sun Solaris releases and later related systems
-provided their customized version for example (packaged originally
-as `SUNWlibusbugen`, `SUNWugen{,u}` and `SUNWusb{,s,u,vc}`).
+USB connectivity was to use libusb-0.1 or a variant of it provided
+by an OS distribution. The original Sun Solaris releases and later
+related systems provided their customized version for example
+(packaged originally as `SUNWlibusbugen`, `SUNWugen{,u}` and
+`SUNWusb{,s,u,vc}`).
 
 However, libusb-0.1 consuming programs had some stability issues
 reported when running with long-term connections to devices (such

@@ -15,8 +15,43 @@ AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 CLEANFILES =
 
+# Track unique NUT implementation-detail libraries that are commonly
+# used in different programs, and may get bundled into a shared lib.
+# Note that for rebuild-time optimization with static libraries, we
+# have historically used a number of source-file selections which may
+# overlap (e.g. libcommon includes libcommonclient and some more).
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 lib_LTLIBRARIES =
+
+if ENABLE_SHARED_PRIVATE_LIBS
+### Hopefully we can bundle this code together and
+### install this somewhat away from the public eye?..
+### We still do build static (noinst) libs to include
+### them into shared library files that should remain
+### compatible for existing consumers (in/out of tree).
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LIBADD = libcommon.la libcommonversion-private.la
+
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion-private.la
+
+### Avoid unexpected linking across NUT generations
+### far apart (e.g. custom rebuilds of new programs
+### tucked into an existing deployment); see libtool
+### docs about current:revision:age interface numbering.
+### WARNING: Maybe that would lead to SO_MAJOR_LIBNUTPRIVATE_* updates under scripts/obs,
+### especially when bumping "age" into loss of compatibility with old releases!
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS = -version-info 1:0:0
+
+if HAVE_WINDOWS
+  # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS += -no-undefined
+endif HAVE_WINDOWS
+endif ENABLE_SHARED_PRIVATE_LIBS
 
 # We define the recipe below in any case, but only activate it by default
 # if the build configuration tells us to:
@@ -55,12 +90,18 @@ else !BUILDING_IN_TREE
 		ln -s -f "$(top_srcdir)/common/common-nut_version.c" "$@" ; \
 	 fi
 
-  CLEANFILES += $(top_builddir)/common/nut_version.c
+  CLEANFILES += $(top_builddir)/common/common-nut_version.c
   BUILT_SOURCES = common-nut_version.c
 endif !BUILDING_IN_TREE
 
-$(top_builddir)/include/nut_version.h:
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+$(top_builddir)/include/nut_version.h: @dotMAKE@
+	+@if [ -s '$@' ] && ( [ x"$(NUT_VERSION_H_GENERATED)" = xtrue ] || [ x"$${NUT_VERSION_H_GENERATED}" = xtrue ] ) ; then \
+	    if [ x"$(MAINTAINER_GENERATE_HEADER_DEBUG)" = xyes ] ; then \
+	        echo "=== SKIP (common) $@ (NUT_VERSION_H_GENERATED makevar=$(NUT_VERSION_H_GENERATED) shellvar=$${NUT_VERSION_H_GENERATED})" >&2; \
+	    fi; \
+	    exit 0 ; \
+	  fi ; \
+	  cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # FIXME: If we maintain some of those helper libs as subsets of the others
 # (strictly), maybe build the lowest common denominator only and link the
@@ -76,12 +117,24 @@ libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
+# Common methods for JSON outputs from NUT programs
+noinst_LTLIBRARIES += libcommonstrjson.la
+libcommonstrjson_la_SOURCES = strjson.c
+
 # This one includes only version-related data and methods and should be
 # linked along with one of the other libcommon*.la for logging methods:
 noinst_LTLIBRARIES += libcommonversion.la
 libcommonversion_la_SOURCES = common-nut_version.c
 #libcommonversion_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 #libcommonversion_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
+
+if ENABLE_SHARED_PRIVATE_LIBS
+# A special build of the above for linking into shared private libs,
+# so they also know about the NUT version they were built from
+  noinst_LTLIBRARIES += libcommonversion-private.la
+  libcommonversion_private_la_SOURCES = common-nut_version.c
+  libcommonversion_private_la_CFLAGS = $(AM_CFLAGS) -DBUILD_FOR_SHARED_PRIVATE_LIBS=1
+endif
 
 # Eventually we expect more sources as the big common.c source gets split
 # into smaller better-focused files.
@@ -161,6 +214,8 @@ if WITH_DEV_LIBNUTCONF
   # libnutconf version information and build
   # currently considered a highly experimental and so unstable API at least
   # (at least, headers contain a lot of data/code, not sure they should)
+  ### WARNING: Do not forget to update SO_MAJOR_LIBNUTCONF under scripts/obs,
+  ### especially when bumping "age" into loss of compatibility with old releases!
   libnutconf_la_LDFLAGS = -version-info 0:1:0
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
@@ -169,7 +224,12 @@ endif HAVE_WINDOWS
 endif WITH_DEV_LIBNUTCONF
   libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
   # NOTE: No @LTLIBOBJS@ here, because libcommonclient.la includes them (if any)
-  libnutconf_la_LIBADD = @NETLIBS@ libcommonclient.la
+  libnutconf_la_LIBADD = @NETLIBS@
+if ENABLE_SHARED_PRIVATE_LIBS
+  libnutconf_la_LIBADD += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+  libnutconf_la_LIBADD += libcommonclient.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
   libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp \
 	../include/nutconf.hpp ../include/nutipc.hpp \
 	../include/nutstream.hpp ../include/nutwriter.hpp

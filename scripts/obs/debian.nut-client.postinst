@@ -1,0 +1,63 @@
+#!/bin/sh -e
+
+# Note: nut-common should be installed first and it delivers
+# the user accounts and the sysconfdir (/etc/nut)
+
+case "$1" in
+
+  configure)
+
+    # make sure that nut-client conffiles are secured and have
+    # the correct ownerships on first install
+    if [ -z "$2" ] ; then
+        for file in nut.conf upsmon.conf upssched.conf ; do
+            if [ -f /etc/nut/$file ] ; then
+                chown root:nut /etc/nut/$file
+                chmod 640 /etc/nut/$file
+            fi
+        done
+    fi
+
+    if dpkg --compare-versions "$2" le "2.6.4-2~" &&
+      [ -f /etc/init.d/nut ] ; then
+        if [ "`md5sum /etc/init.d/nut | cut -d ' ' -f 1`" = 72f1dbc6b92cb4407f26605d05b12681 ]; then
+            rm -f /etc/init.d/nut
+        else
+            mv /etc/init.d/nut /etc/init.d/nut.dpkg-old
+        fi
+        update-rc.d nut remove >/dev/null
+    fi
+
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl daemon-reload
+        /bin/systemctl enable nut-monitor.service
+        if [ -s /etc/nut/upsmon.conf ] ; then
+            /bin/systemctl start --no-block nut-monitor.service || true
+        fi
+    fi
+
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  abort-remove)
+    # do nothing
+    ;;
+
+  abort-deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+# Skip DEBHELPER because in this case we handle systemd in target OS better by ourselves #
+
+exit 0

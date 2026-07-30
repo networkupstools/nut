@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2025 by NUT contributors
+# Copyright (C) 2011-2026 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -54,13 +54,19 @@ Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 LimitNOFILE=1048576
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
+# DO NOT actually start if MODE is known and is "netclient" or "none";
+# however do start (and maybe fail if not yet configured), for other
+# MODE values or if nut.conf file is absent:
+@SYSTEMD_AVAILABLE_EXEC_CONDITION@ExecCondition=/bin/sh -c '[ x"${MODE}" != x"netclient" -a x"${MODE}" != x"none" ]'
+# This should be executed by the system, but better safe than sorry
+# (e.g. in custom rebuilds):
+ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 # Note: foreground mode "-F" by default skips writing a PID file (and
 # needs default Type=simple); we can use "-FF" here to create the file
 # anyway, so that old "upsd -c reload" works rather than systemd action:
-ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
 ExecStart=@SBINDIR@/upsd @SYSTEMD_DAEMON_ARGS_UPSD@
 ExecReload=@SBINDIR@/upsd -c reload -P $MAINPID
-ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
+ExecStartPost=-@EGREP@ 'Units|Max open files' /proc/${MAINPID}/limits
 # No tracking for PIDFile path and service attribute here (it might not
 # even exist).
 # If "-FF" or background-daemon mode is used, so that PID file exists

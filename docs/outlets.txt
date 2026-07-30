@@ -2,6 +2,11 @@
 NUT outlets management and PDU notes
 ====================================
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/user-manual.chunked/outlet_management.html
+//////////////////////////////////////////////////////////////////////////////
+
 NUT supports advanced outlets management for any kind of device that proposes
 it. This chapter introduces how to manage outlets in general, and how to take
 advantage of the provided features.
@@ -84,7 +89,7 @@ NOTE: If you need the scheduling function and your device doesn't support
 it, you can still use
 <<Advanced_usage_scheduling_notes,NUT scheduling features>>.
 
-WARNING: don't plug the UPS's communication cable (USB or network) on a
+WARNING: Do not plug the UPS's communication cable (USB or network) on a
 managed outlet. Otherwise, all computers will be stopped as soon as the
 communication is lost.
 

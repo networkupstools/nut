@@ -1,6 +1,11 @@
 How to make a new subdriver to support another SNMP device
 ----------------------------------------------------------
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/new-drivers.html#snmp-subdrivers
+//////////////////////////////////////////////////////////////////////////////
+
 Overall concept
 ~~~~~~~~~~~~~~~
 

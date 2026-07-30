@@ -10,11 +10,16 @@
 ################################################################################
 
 set -e
-SCRIPTDIR="`dirname "$0"`"
-SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+SCRIPTDIR="`dirname \"$0\"`"
+SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
 
-SCRIPT_PATH="${SCRIPTDIR}/`basename $0`"
+SCRIPT_PATH="${SCRIPTDIR}/`basename \"$0\"`"
 SCRIPT_ARGS=("$@")
+
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; export GREP ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; export EGREP ; }
+# Hoping for a GNU-style grep with -A/-B support here (for aid printouts; failing is not fatal):
+[ -n "$GGREP" ] || { GGREP="`command -v ggrep`" && [ x"${GGREP}" != x ] || GGREP="${GREP}" ; }
 
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
@@ -30,6 +35,11 @@ SCRIPT_ARGS=("$@")
 # in a different directory and then it would be used with a warning. This may
 # require that you `make distclean` the original source checkout first:
 #   CI_BUILDDIR=obj BUILD_TYPE=default-all-errors ./ci_build.sh
+#
+# The NUT_SSL_VARIANTS=[yes, no, auto, ssl, nss, openssl] values can be used
+# with generic builds (not only iteration of a default-all-errors* matrix)
+# to set specific SSL options in tested NUT builds.
+#
 case "$BUILD_TYPE" in
     fightwarn) ;; # for default compiler
     fightwarn-all)
@@ -49,7 +59,8 @@ case "$BUILD_TYPE" in
         else
             echo "SKIPPING BUILD_TYPE=fightwarn-clang: compiler not found" >&2
         fi
-        if ! $TRIED_BUILD ; then
+        if $TRIED_BUILD ; then true
+        else
             echo "FAILED to run: no default-named compilers were found" >&2
             exit 1
         fi
@@ -99,6 +110,12 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
 
     # Similarly for libusb implementations with varying support
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
+
+    # Similarly for testing builds with and without "unmapped" values
+    # (normally hidden by #ifdef blocks) in certain evolving drivers
+    #[ -n "$NUT_UNMAPPED_VARIANTS" ] || NUT_UNMAPPED_VARIANTS=auto
+
+    #[ -n "$NUT_LIBNUTPRIVATE_VARIANTS" ] || NUT_LIBNUTPRIVATE_VARIANTS=auto
 fi
 
 # configure default is "no"; an "auto" value is "yes unless CFLAGS say something"
@@ -172,8 +189,16 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
+TOLOWER="cat"
+for TR_VARIANT in "tr 'A-Z' 'a-z'" "tr '[:upper:]' '[:lower:]'" "tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'" ; do
+    if [ x"`echo C | $TR_VARIANT`" = xc ] ; then
+        TOLOWER="$TR_VARIANT"
+        break
+    fi
+done
+
 # Just in case we get blanks from CI - consider them as not-set:
-if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+if [ -z "`echo \"${MAKE-}\" | tr -d ' '`" ] ; then
     if [ "$1" = spellcheck -o "$1" = spellcheck-interactive -o "$1" = spellcheck-quick -o "$1" = spellcheck-interactive-quick ] \
     && (command -v gmake) >/dev/null 2>/dev/null \
     ; then
@@ -186,13 +211,15 @@ if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
     export MAKE
 fi
 
-[ -n "$GGREP" ] || GGREP=grep
-
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
-normalize_path() {
+normalize_path_perl() {
+    perl -e 'my %PATH; while (<>) { foreach my $D (split(/[:\r\n]/, $_)) { if (length($D) > 0 && !defined($PATH{$D})) { $PATH{$D} = scalar keys %PATH; } } } ; my $joined = join ":", sort { $PATH{$a} <=> $PATH{$b} } keys %PATH; print "$joined";'
+}
+
+normalize_path_shell() {
     # STDIN->STDOUT: strip duplicate "/" and extra ":" if present,
     # leave first copy of duplicates in (preferred) place
     sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,' -e 's,///*,/,g' \
@@ -202,7 +229,7 @@ normalize_path() {
             case "${D}" in
                 "") continue ;;
                 /)  ;;
-                */) D="`echo "${D}" | sed 's,/*$,,'`" ;;
+                */) D="`echo \"${D}\" | sed 's,/*$,,'`" ;;
             esac
             case "${P}" in
                 "${D}"|*":${D}"|"${D}:"*|*":${D}:"*) ;;
@@ -212,6 +239,19 @@ normalize_path() {
         done
         echo "${P}"
       )
+}
+
+HAVE_PERL=false
+if perl -e 1 2>/dev/null; then
+    HAVE_PERL=true
+fi
+
+normalize_path() {
+    if $HAVE_PERL ; then
+        normalize_path_perl "$@"
+    else
+        normalize_path_shell "$@"
+    fi
 }
 
 propose_CI_CCACHE_SYMLINKDIR() {
@@ -241,8 +281,8 @@ ensure_CI_CCACHE_SYMLINKDIR_envvar() {
     if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
         for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
             if [ -d "$D" ] ; then
-                if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
-                || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+                if ( ls -la "$D" | ${GREP} ' -> .*ccache' >/dev/null) \
+                || ( cd "$D" && test -n "`find . -type f | sed 's,^\./,,' | ${GREP} -v / | while read F ; do ${GREP} -li ccache $F ; done`" ) \
                 ; then
                     CI_CCACHE_SYMLINKDIR="$D" && break
                 else
@@ -269,7 +309,7 @@ optional_prepare_ccache() {
     # See also optional_ensure_ccache(), optional_prepare_compiler_family(),
     # ensure_CI_CCACHE_SYMLINKDIR_envvar()
     echo "PATH='$PATH' before possibly applying CCACHE into the mix"
-    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
+    ( echo "$PATH" | ${GREP} ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
     if [ -n "$CC" ]; then
         echo "CC='$CC' before possibly applying CCACHE into the mix"
         $CC --version $CFLAGS || \
@@ -289,7 +329,7 @@ optional_prepare_ccache() {
     else
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             # Tell ccache the PATH without itself in it, to avoid loops processing
-            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+            PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         fi
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
@@ -305,25 +345,25 @@ optional_prepare_ccache() {
 }
 
 is_gnucc() {
-    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
 }
 
 is_clang() {
-    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} 'clang version' > /dev/null ; then true ; else false ; fi
 }
 
 filter_version() {
     # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
     # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
-    sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+    sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^[0-9]' | head -1
 }
 
 ver_gnucc() {
-    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} -i gcc | filter_version
 }
 
 ver_clang() {
-    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | ${GREP} -i 'clang' | filter_version
 }
 
 optional_prepare_compiler_family() {
@@ -357,13 +397,13 @@ optional_prepare_compiler_family() {
         fi
 
         if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
-            case "`ver_gnucc "$CC"`" in
+            case "`ver_gnucc \"$CC\"`" in
                 [123].*) true ;;
                 4.[0123][.,-]*) true ;;
                 4.[0123]) true ;;
                 *) false ;;
             esac && \
-            case "`ver_gnucc "$CXX"`" in
+            case "`ver_gnucc \"$CXX\"`" in
                 [123].*) true ;;
                 4.[0123][.,-]*) true ;;
                 4.[0123]) true ;;
@@ -413,6 +453,13 @@ optional_prepare_compiler_family() {
 optional_ensure_ccache() {
     # Prepare PATH, CC, CXX envvars to use ccache (if enabled, applicable and available)
     # See also optional_prepare_ccache()
+    if [ x"${CI_CCACHE_USE-}" = xno ]; then
+        HAVE_CCACHE=no
+        CI_CCACHE_SYMLINKDIR=""
+        echo "WARNING: Caller required to not use ccache even if available" >&2
+        return
+    fi
+
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
@@ -435,9 +482,9 @@ optional_ensure_ccache() {
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
-                */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
+                */*) DIR_CC="`dirname \"$CC\"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd \"$DIR_CC\" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
                         CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
                     fi
                     ;;
@@ -451,9 +498,9 @@ optional_ensure_ccache() {
           if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
-                */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
+                */*) DIR_CXX="`dirname \"$CXX\"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd \"$DIR_CXX\" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
                         CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
                     fi
                     ;;
@@ -467,9 +514,9 @@ optional_ensure_ccache() {
         && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
             case "$CPP" in
                 *ccache*) ;;
-                */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
+                */*) DIR_CPP="`dirname \"$CPP\"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd \"$DIR_CPP\" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
                     [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
+                    if echo "$CCACHE_PATH" | ${EGREP} '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
                         CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
                     fi
                     ;;
@@ -509,9 +556,14 @@ fi
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
+# CI_PARMAKE_VERBOSITY_CPB is for "check-parallel-builds" part below.
 case "${CI_PARMAKE_VERBOSITY-}" in
-    silent|quiet|verbose|default) ;;
-    *) CI_PARMAKE_VERBOSITY=silent ;;
+    silent|quiet|verbose|default)
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB="${CI_PARMAKE_VERBOSITY-}"
+        ;;
+    *)  CI_PARMAKE_VERBOSITY=silent
+        [ -n "${CI_PARMAKE_VERBOSITY_CPB-}" ] || CI_PARMAKE_VERBOSITY_CPB=quiet
+        ;;
 esac
 
 # Set up the parallel make with reasonable limits, using several ways to
@@ -521,12 +573,13 @@ esac
 [ -n "$NCPUS" ] || { \
     NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`" || \
     NCPUS="`/usr/bin/getconf NPROCESSORS_ONLN`" || \
-    NCPUS="`cat /proc/cpuinfo | grep -wc processor`" || \
+    NCPUS="`cat /proc/cpuinfo | ${GREP} -wc processor`" || \
     { [ -x /usr/sbin/psrinfo ] && NCPUS="`/usr/sbin/psrinfo | wc -l`"; } \
     || NCPUS=1; } 2>/dev/null
+[ x"$NCPUS" = x ] || NCPUS="`echo \"$NCPUS\" | tr -d ' '`"
 [ x"$NCPUS" != x -a "$NCPUS" -ge 1 ] || NCPUS=1
 
-[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr "$NCPUS" '*' 2`" || NPARMAKES=2; }
+[ x"$NPARMAKES" = x ] && { NPARMAKES="`expr \"$NCPUS\" '*' 2`" || NPARMAKES=2; }
 [ x"$NPARMAKES" != x -a "$NPARMAKES" -ge 1 ] || NPARMAKES=2
 [ x"$MAXPARMAKES" != x ] && [ "$MAXPARMAKES" -ge 1 ] && \
     [ "$NPARMAKES" -gt "$MAXPARMAKES" ] && \
@@ -545,12 +598,31 @@ esac
 # for actual builds with parallel phases. Specify a whitespace to neuter.
 if [ -z "$PARMAKE_FLAGS" ]; then
     PARMAKE_FLAGS="-j $NPARMAKES"
-    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | grep -E 'GNU Make|Free Software Foundation' > /dev/null ; then
+    if LANG=C LC_ALL=C "$MAKE" --version 2>&1 | ${EGREP} 'GNU Make|Free Software Foundation' > /dev/null ; then
         PARMAKE_FLAGS="$PARMAKE_FLAGS -l $PARMAKE_LA_LIMIT"
         echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs), or peak out at $PARMAKE_LA_LIMIT system load average" >&2
     else
         echo "Parallel builds would spawn up to $NPARMAKES jobs (detected $NCPUS CPUs)" >&2
     fi
+fi
+
+# Try to avoid faults like:
+#   clang-cpp: error: unable to execute command: posix_spawn failed: Resource temporarily unavailable
+#   scripts/DMF/nut_cpp: fork: retry: Resource temporarily unavailable
+# We may lack permissions to change limits though -
+# better use /etc/login.conf or similar OS settings.
+# FIXME: Align numbers with desired parallelism or vice versa?
+if (command -v ulimit) >/dev/null 2>&1 ; then
+    for K in "-n" "-u" ; do
+        if { V="`ulimit $K`" && [ "$V" -gt 0 ] ; } 2>/dev/null ; then
+            if [ "$V" -lt 1024 ] ; then
+                echo "TRY TO ADJUST: ulimit $K 1024" >&2
+                ulimit $K 1024 || true
+                echo "RESULT: `ulimit $K`" || true
+            fi
+        fi
+    done
+    ulimit -a || true
 fi
 
 # Stash the value provided by caller, if any
@@ -632,6 +704,11 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=no ;;
         "NUT_BUILD_CAPS=libltdl"|"NUT_BUILD_CAPS=libltdl=yes")
             [ -n "$CANBUILD_WITH_LIBLTDL" ] || CANBUILD_WITH_LIBLTDL=yes ;;
+
+        # For now like this; VM systems with a clock skew can have natural
+        # problems with parallel tasks, which we can not do much about.
+        "NUT_BUILD_CAPS=check-parallel-builds=no")
+            [ -n "${CI_DO_CHECK_PARALLEL_BUILDS-}" ] || CI_DO_CHECK_PARALLEL_BUILDS=false ;;
     esac
 done
 
@@ -640,7 +717,7 @@ if [ -z "$CI_OS_NAME" ]; then
     # classification styled after (compatible with) that in Travis CI
     for CI_OS_HINT in \
         "$OS_FAMILY-$OS_DISTRO" \
-        "`grep = /etc/os-release 2>/dev/null`" \
+        "`${GREP} = /etc/os-release 2>/dev/null`" \
         "`cat /etc/release 2>/dev/null`" \
         "`uname -o 2>/dev/null`" \
         "`uname -s -r -v 2>/dev/null`" \
@@ -650,7 +727,7 @@ if [ -z "$CI_OS_NAME" ]; then
         [ -z "$CI_OS_HINT" -o "$CI_OS_HINT" = "-" ] || break
     done
 
-    case "`echo "$CI_OS_HINT" | tr 'A-Z' 'a-z'`" in
+    case "`echo \"$CI_OS_HINT\" | $TOLOWER`" in
         *freebsd*)
             CI_OS_NAME="freebsd" ;;
         *openbsd*)
@@ -813,12 +890,15 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     # Caller can override by OVERRIDE_PKG_CONFIG_PATH (ignore other values
     # then, including a PKG_CONFIG_PATH), where a "-" value leaves it empty.
     SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
-    BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
-    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+    BUILTIN_PKG_CONFIG_PATH="`$PKG_CONFIG --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
+    case "`echo \"$CI_OS_NAME\" | $TOLOWER`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
-            _ARCHES="${ARCH-}"
+            _ARCHES="${ARCH_TGT-}${ARCH-}${ARCH32-}${ARCH64-}"
             _BITS="${BITS-}"
             _ISA1=""
+
+            [ -n "${_BITS}" ] || \
+            _BITS="${ARCH_BITS-}"
 
             [ -n "${_BITS}" ] || \
             case "${CC}${CXX}${CFLAGS}${CXXFLAGS}${LDFLAGS}" in
@@ -869,7 +949,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                             # assumed only useful if we use it via pkgconfig
                             case "${D}" in
                                 /usr/lib) ;;
-                                *) LDFLAGS="${LDFLAGS} -R${D}/${_BITS}" ;;
+                                *) LDFLAGS="${LDFLAGS} -Wl,-R${D}/${_BITS}" ;;
                             esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
@@ -884,7 +964,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                             SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_ARCH}/pkgconfig"
                             case "${D}" in
                                 /usr/lib) ;;
-                                *) LDFLAGS="${LDFLAGS} -R${D}/${_ARCH}" ;;
+                                *) LDFLAGS="${LDFLAGS} -Wl,-R${D}/${_ARCH}" ;;
                             esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
@@ -917,7 +997,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                         SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig"
                         case "${D}" in
                             /usr/lib) ;;
-                            *) LDFLAGS="${LDFLAGS} -R${D}" ;;
+                            *) LDFLAGS="${LDFLAGS} -Wl,-R${D}" ;;
                         esac
                     fi
                 fi
@@ -950,7 +1030,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 # Net-SNMP "clashes" with system-provided tools (but no header/lib)
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
-                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
+                if [ -d "$checkFSobj" ] && [ ! -f "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] && [ ! -h "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
                     echo "Homebrew: export pkg-config location for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
                     #echo "Homebrew: export flags for Net-SNMP"
@@ -980,7 +1060,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
 
                 if [ -z "${XML_CATALOG_FILES-}" ] ; then
                     checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
-                    if [ -e "$checkFSobj" ] ; then
+                    if ( [ -e "$checkFSobj" ] ) 2>/dev/null || [ -d "$checkFSobj" ] || [ -f "$checkFSobj" ] || [ -h "$checkFSobj" ] ; then
                         echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
                         XML_CATALOG_FILES="$checkFSobj"
                         export XML_CATALOG_FILES
@@ -998,7 +1078,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
             # linking well. For more details see
             # https://github.com/networkupstools/nut/pull/2870#issuecomment-2768590518
             if [ -d "/usr/pkg/lib" -a -d "/usr/pkg/include" ] ; then
-                LDFLAGS="${LDFLAGS-} -R/usr/pkg/lib"
+                LDFLAGS="${LDFLAGS-} -Wl,-R/usr/pkg/lib"
                 CFLAGS="${CFLAGS-} -I/usr/pkg/include"
                 CXXFLAGS="${CXXFLAGS-} -I/usr/pkg/include"
             fi
@@ -1030,12 +1110,12 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     fi
 
     # Do not check for existence of non-trivial values, we normalize the mess (if any)
-    PKG_CONFIG_PATH="`echo "${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}" | normalize_path`"
+    PKG_CONFIG_PATH="`echo \"${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}\" | normalize_path`"
 }
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
 CONFIGURE_SCRIPT=""
-autogen_get_CONFIGURE_SCRIPT() {
+do_autogen_get_CONFIGURE_SCRIPT() {
     # Autogen once (delete the file if some scenario ever requires to re-autogen)
     if [ -n "${CONFIGURE_SCRIPT}" -a -s "${CONFIGURE_SCRIPT}" ] ; then return 0 ; fi
 
@@ -1068,6 +1148,128 @@ autogen_get_CONFIGURE_SCRIPT() {
     popd || exit
 }
 
+discover_somehash_filter() {
+    # First, constrain hash string lengths for shorter logs and path lookups.
+    # KEEP IN SYNC WITH tests/NIT/nit.sh SCRIPT!
+    cut_filter() { sed -e 's,^\(....\).*\(....\)$,\1\2,'; }
+
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}' | cut_filter
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}' | cut_filter
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size? Do not cut_filter here!
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
+# If it is non-trivial later, we use it
+unset CI_CACHE_NUT_HASHDIR || true
+autogen_get_CONFIGURE_SCRIPT() {
+    do_autogen_get_CONFIGURE_SCRIPT
+
+    unset CI_CACHE_NUT_HASHDIR || true
+    # Allow regular runners dedicate a persistent cache to re-run same configs
+    # more quickly. Opt-in, not applicable to all scenarios.
+    # FIXME: consider locking (one creator at least)?
+    if [ x"$DO_USE_AUTOCONF_CACHE" = xyes ] && [ -n "$CI_CACHE_NUT_BASEDIR" ] ; then
+        # FIXME later: any hash would do to detect changes
+        # Paths below assume SCRIPTDIR (of ci_build.sh) is the source root
+        AUTOCONF_FILES="`ls -1 \"${SCRIPTDIR}\"/configure.ac \"${SCRIPTDIR}\"/m4/*.m4 | sort`"
+        AUTOCONF_HASH="$({ cat ${AUTOCONF_FILES} ; uname -a ; } | somehash_filter)" \
+        || AUTOCONF_HASH=''
+
+        if [ -n "${AUTOCONF_HASH}" ]; then
+            CI_CACHE_NUT_HASHDIR="${CI_CACHE_NUT_BASEDIR}/AUTOCONF_${AUTOCONF_HASH}"
+            if [ x"$DO_CLEAN_AUTOCONF_CACHE_BEFORE" = xyes ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' but was asked to remove it first" >&2
+                rm -rf "${CI_CACHE_NUT_HASHDIR}" || true
+            fi
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if mkdir -p "${CI_CACHE_NUT_HASHDIR}" ; then
+                    # Just for info (so far):
+                    uname -a > "${CI_CACHE_NUT_HASHDIR}/ci_uname.txt"
+                    ls -lad ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_listing.txt"
+                    somehash_files ${AUTOCONF_FILES} > "${CI_CACHE_NUT_HASHDIR}/ci_hashes.txt"
+                else
+                    echo "=== FAILED to mkdir, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR='${CI_CACHE_NUT_HASHDIR}' ..." >&2
+                if [ ! -w "${CI_CACHE_NUT_HASHDIR}" ] ; then
+                    echo "=== ...but it seems to not be writeable, disabling cache mode" >&2
+                    CI_CACHE_NUT_HASHDIR=""
+                fi
+            fi
+        else
+            echo "=== FAILED to determine an AUTOCONF_HASH to support DO_USE_AUTOCONF_CACHE logic" >&2
+        fi
+    fi
+}
+
+get_CI_CACHE_NUT_HASHDIR_CFG_OPT() {
+    unset CI_CACHE_NUT_HASHDIR_CFG
+    CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        CI_CACHE_NUT_HASHDIR_CFG="${CI_CACHE_NUT_HASHDIR}/`echo \"$*\" | somehash_filter`" \
+        || CI_CACHE_NUT_HASHDIR_CFG=''
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+            if [ ! -d "${CI_CACHE_NUT_HASHDIR_CFG}" ] ; then
+                mkdir -p "${CI_CACHE_NUT_HASHDIR_CFG}"
+                echo "=== Populating new CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+                echo "$*" > "${CI_CACHE_NUT_HASHDIR_CFG}/ci_cfg.txt"
+                if [ x"${DO_USE_AUTOCONF_CACHE_DEBUG}" = xyes ]; then
+                    # To be filled after the configuration succeeds:
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.log"
+                    touch "${CI_CACHE_NUT_HASHDIR_CFG}/config.h"
+                fi
+            else
+                echo "=== Found existing CI_CACHE_NUT_HASHDIR_CFG='${CI_CACHE_NUT_HASHDIR_CFG}'" >&2
+            fi
+
+            # NOTE: the configure script touches it as empty first,
+            # then (quickly, I hope atomically) populates in the end.
+            CI_CACHE_NUT_HASHDIR_CFG_OPT="--cache-file=${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+        fi
+    fi
+}
+
+get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV() {
+    # Hash environment variables which we commonly use and that can impact
+    # the decisions of configure script as something that requires separate
+    # cache files, just in case.
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT "$* CC='$CC' CXX='$CXX' CPP='$CPP' MAKE='$MAKE' SHELL='$SHELL' CONFIG_SHELL='$CONFIG_SHELL' PATH='$PATH' LD_LIBRARY_PATH='$LD_LIBRARY_PATH' PKG_CONFIG_PATH='$PKG_CONFIG_PATH' ARCH='$ARCH' BITS='$BITS' CFLAGS='$CFLAGS' CXXFLAGS='$CXXFLAGS' CPPFLAGS='$CPPFLAGS' LDFLAGS='$LDFLAGS'"
+}
+
 configure_CI_BUILDDIR() {
     autogen_get_CONFIGURE_SCRIPT
 
@@ -1093,16 +1295,84 @@ configure_nut() {
     fi
 
     # Help copy-pasting build setups from CI logs to terminal:
-    local CONFIG_OPTS_STR="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done`" ### | tr '\n' ' '`"
+    local CONFIG_OPTS_STR="`END=' \'; NUM=0; for F in \"${CONFIG_OPTS[@]}\" ; do NUM=$(($NUM + 1)); [ x\"$NUM\" = x\"${#CONFIG_OPTS[@]}\" ] && END=''; printf \"'%s'%s\n\" \"$F\" \"$END\" ; done`"
+
+    get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${CONFIG_OPTS_STR}"
+
+    CI_CACHE_NUT_RETRIED=false
     while : ; do # Note the CI_SHELL_IS_FLAKY=true support below
       echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS_STR}"
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+      echo "=== PATH='$PATH'"
+
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
-      $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+        echo "$0: using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" >&2
+      else
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ]; then
+          echo "$0: NOT using ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because it did not exist (yet)" >&2
+        else if [ -s config.cache ]; then
+          echo "$0: NOT using existing ${CI_CACHE_NUT_HASHDIR_CFG}/config.cache because DO_USE_AUTOCONF_CACHE=$DO_USE_AUTOCONF_CACHE" >&2
+        fi; fi
+      fi
+
+      $CI_TIME $CONFIGURE_SCRIPT \
+          ${CI_CACHE_NUT_HASHDIR_CFG_OPT} \
+          "${CONFIG_OPTS[@]}" \
       && echo "$0: configure phase complete (0)" >&2 \
-      && return 0 \
+      && {
+        if [ x"${DO_USE_AUTOCONF_CACHE}" = xyes ] \
+        && [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] \
+        && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] \
+        ; then
+            case x"${DO_USE_AUTOCONF_CACHE_DEBUG}" in
+                xyes|xfirst)
+                    if [ x = x"`cat \"${CI_CACHE_NUT_HASHDIR_CFG}/config.log\" \"${CI_CACHE_NUT_HASHDIR_CFG}/config.h\"`" ] ; then
+                        # Stash a copy to track evolution:
+                        cp -pf "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache.orig"
+                        # Populate on first run (may cost 1-2Mb):
+                        cp -pf config.log "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                        cp -pf include/config.h "${CI_CACHE_NUT_HASHDIR_CFG}/"
+                    fi
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help" 2>&1
+                    ;;
+                xeach)
+                    TS="`date '+%s'`" && [ -n "$TS" ] && [ "$TS" -gt 0 ] \
+                    || { TS="`date | tr -d ':' | tr -d ' '`" && [ -n "$TS" ] ; } \
+                    || TS=$$
+
+                    for F in \
+                        "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" \
+                        config.log include/config.h \
+                    ; do
+                        cp -pf "$F" "${CI_CACHE_NUT_HASHDIR_CFG}/`basename \"$F\"`.$TS"
+                    done
+
+                    # Make sure all args are declared outside cached logic:
+                    $CONFIGURE_SCRIPT --help > "${CI_CACHE_NUT_HASHDIR_CFG}/config.help.$TS" 2>&1
+                    ;;
+            esac
+        fi
+      } && return 0 \
       || { RES_CFG=$?
         echo "$0: configure phase complete ($RES_CFG)" >&2
+        if [ -n "${CI_CACHE_NUT_HASHDIR_CFG_OPT}" ] && [ -s "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache" ] ; then
+            if ${EGREP} "run 'make distclean' and/or 'rm .*config.cache" config.log ; then
+                if [ x"$CI_CACHE_NUT_RETRIED" = xfalse ] ; then
+                    echo "=== RETRY with a new config.cache file" >&2
+                    rm -f "${CI_CACHE_NUT_HASHDIR_CFG}/config.cache"
+                    CI_CACHE_NUT_RETRIED=true
+                    continue
+                fi
+
+                echo "=== RETRY without a config.cache file (forfeit DO_USE_AUTOCONF_CACHE logic)" >&2
+                CI_CACHE_NUT_HASHDIR_CFG_OPT=""
+                CI_CACHE_NUT_RETRIED=2
+                continue
+            fi
+        fi
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -1147,7 +1417,7 @@ build_to_only_catch_errors_target() {
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" >/dev/null ;;
         quiet)
           $CI_TIME $MAKE $MAKE_FLAGS_QUIET -k $PARMAKE_FLAGS "$@" ;;
-        silent)
+        verbose)
           $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE -k $PARMAKE_FLAGS "$@" ;;
         default)
           $CI_TIME $MAKE -k $PARMAKE_FLAGS "$@" ;;
@@ -1171,7 +1441,7 @@ build_to_only_catch_errors_check() {
 
     # Lots of tedious touch-files to make, better run it in parallel separately.
     # May report absence of "aspell" but would not fail in that case (just noise).
-    if grep "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
+    if ${GREP} "WITH_SPELLCHECK_TRUE=''" config.log >/dev/null 2>/dev/null ; then
         echo "`date`: Starting a '$MAKE spellcheck-quick' first"
         $CI_TIME $MAKE $MAKE_FLAGS_QUIET spellcheck-quick \
         && echo "`date`: SUCCESS" \
@@ -1237,7 +1507,9 @@ check_gitignore() {
     [ -n "${BUILT_TARGETS-}" ] || BUILT_TARGETS="all? (usual default)"
 
     echo "=== Are GitIgnores good after '$MAKE $BUILT_TARGETS'? (should have no output below)"
-    if [ ! -e .git ]; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "WARNING: Skipping the GitIgnores check after '$BUILT_TARGETS' because there is no `pwd`/.git anymore" >&2
         return 0
     fi
@@ -1249,14 +1521,14 @@ check_gitignore() {
 
     if [ -n "${GITOUT-}" ] ; then
         echo "$GITOUT" \
-        | grep -E "${FILE_REGEX}"
+        | ${EGREP} "${FILE_REGEX}"
     else
         echo "Got no output and no errors querying git repo while in `pwd`: seems clean" >&2
     fi
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | grep -E "^.. ${FILE_REGEX}"`" ] \
+    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | ${EGREP} \"^.. ${FILE_REGEX}\"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
@@ -1281,28 +1553,41 @@ consider_cleanup_shortcut() {
         DO_REGENERATE=true
     fi
 
-    if [ -s Makefile ]; then
-        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
-        ; then
-            # Avoid reconfiguring just for the sake of distclean
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
-            DO_REGENERATE=true
-        fi
+    # NOTE: With out-of-tree builds, Makefile.in should get generated at the source,
+    # not in build dir, hence the `|| true` to avoid false-positive failures there.
+    if ( [ -s Makefile ] && (
+            [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.in -newer \"${CI_BUILDDIR}\"/Makefile`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${SCRIPTDIR}\"/Makefile.in || true`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name Makefile.am -newer \"${CI_BUILDDIR}\"/Makefile.in || true`" ] ) ) \
+    || ( [ -s configure ] && (
+            [ -n "`find \"${SCRIPTDIR}\" -name configure.ac -newer \"${CI_BUILDDIR}\"/configure`" ] \
+        ||  [ -n "`find \"${SCRIPTDIR}\" -name '*.m4' -newer \"${CI_BUILDDIR}\"/configure`" ] ) ) \
+    ; then
+        # Avoid reconfiguring just for the sake of distclean
+        echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+        DO_REGENERATE=true
     fi
 
     # When iterating configure.ac or m4 sources, we can end up with an
     # existing but useless script file - nuke it and restart from scratch!
     if [ -s "${CI_BUILDDIR}"/configure ] ; then
-        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+        # FIXME: Consider CONFIG_SHELL, maybe from script shebang,
+        #  here - like autogen.sh does
+        USE_CONFIG_SHELL=sh
+        if [ -n "${CONFIG_SHELL-}" ]; then
+            USE_CONFIG_SHELL="${CONFIG_SHELL}"
+        fi
+        if ${USE_CONFIG_SHELL} -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            true
+        else
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
             DO_REGENERATE=true
         fi
     fi
 
+    # FIXME? With out-of-tree builds, there may be no "${CI_BUILDDIR}"/configure
+    #  and a "${SCRIPTDIR}"/Makefile.in may remain obsolete compared to Makefile.am...
     if $DO_REGENERATE ; then
         rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure "${CI_BUILDDIR}"/include/config.h "${CI_BUILDDIR}"/include/config.h.in "${CI_BUILDDIR}"'/include/config.h.in~'
     fi
@@ -1313,19 +1598,24 @@ can_clean_check() {
         # NOTE: Not handling here particular DO_MAINTAINER_CLEAN_CHECK or DO_DIST_CLEAN_CHECK
         return 1
     fi
-    if [ -s Makefile ] && [ -e .git ] ; then
+
+    if [ -s Makefile ] && ( ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ) ; then
         return 0
     fi
     return 1
 }
 
 optional_maintainer_clean_check() {
-    if [ ! -e .git ]; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "Skipping maintainer-clean check because there is no .git" >&2
         return 0
     fi
 
-    if [ ! -e Makefile ]; then
+    if ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ; then
+        true
+    else
         echo "WARNING: Skipping maintainer-clean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
@@ -1335,14 +1625,23 @@ optional_maintainer_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='maintainer-clean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
+        MAKE_RES=0
         case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || return
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || MAKE_RES=$?
             ;;
         *)
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || MAKE_RES=$?
         esac
+
+        if [ x"$MAKE_RES" != x0 ]; then
+            return $MAKE_RES
+        fi
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
@@ -1351,12 +1650,16 @@ optional_maintainer_clean_check() {
 }
 
 optional_dist_clean_check() {
-    if [ ! -e .git ]; then
+    if ( [ -e .git ] ) 2>/dev/null || [ -d .git ] || [ -f .git ] || [ -h .git ] ; then
+        true
+    else
         echo "Skipping distclean check because there is no .git" >&2
         return 0
     fi
 
-    if [ ! -e Makefile ]; then
+    if ( [ -e Makefile ] ) 2>/dev/null || [ -f Makefile ] || [ -h Makefile ] ; then
+        true
+    else
         echo "WARNING: Skipping distclean check because there is no Makefile (did we clean in a loop earlier?)" >&2
         return 0
     fi
@@ -1366,8 +1669,17 @@ optional_dist_clean_check() {
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='distclean'"
+
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || return
+        MAKE_RES=0
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || MAKE_RES=$?
+
+        if [ x"$MAKE_RES" != x0 ]; then
+            return $MAKE_RES
+        fi
 
         check_gitignore "distclean" || return
     fi
@@ -1393,7 +1705,7 @@ if [ -z "$BUILD_TYPE" ] ; then
         --with-docs|--with-docs=*|--with-doc|--with-doc=*)
             # Note: causes a developer-style build (not CI)
             # Arg will be passed to configure script as `--with-$1`
-            BUILD_TYPE="`echo "$1" | sed 's,^--with-,,'`"
+            BUILD_TYPE="`echo \"$1\" | sed 's,^--with-,,'`"
             shift
             ;;
 
@@ -1402,6 +1714,8 @@ if [ -z "$BUILD_TYPE" ] ; then
         win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
 
         win|windows|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
+
+        pkg*) BUILD_TYPE="$1" ; shift ;;
 
         spellcheck|spellcheck-interactive|spellcheck-quick|spellcheck-interactive-quick)
             # Note: this is a little hack to reduce typing
@@ -1415,7 +1729,9 @@ if [ -z "$BUILD_TYPE" ] ; then
                     echo "=========================================================================="
                     sleep 5
                     ;;
-                *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                *)  if (command -v aspell) 2>/dev/null >/dev/null ; then
+                        true
+                    else
                         echo "=========================================================================="
                         echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
                         echo "script would find the spellchecking toolkit elsewhere)"
@@ -1438,24 +1754,60 @@ if [ -z "$BUILD_TYPE" ] ; then
             fi
             ;;
 
-        *) echo "WARNING: Command-line argument '$1' wsa not recognized as a BUILD_TYPE alias" >&2 ;;
+        *) echo "WARNING: Command-line argument '$1' was not recognized as a BUILD_TYPE alias" >&2 ;;
     esac
 fi
 
 # Default follows autotools:
 [ -n "${DISTCHECK_TGT-}" ] || DISTCHECK_TGT="distcheck"
 
+# https://www.gnu.org/software/autoconf/manual/autoconf-2.67/html_node/Cache-Files.html
+# Note that autotools automatically removes such file name during the
+# "make distclean" and stronger goals, so on our side we can only stash
+# and restore the file around such operations if stored in build area.
+# Better yet, this may use a persisted location outsude the build area,
+# e.g. a CI_CACHE_NUT_BASEDIR=~/.cache/nut-ci
+# There is also DO_USE_NIT_TESTCERT_CACHE and DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="auto"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
+[ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
+[ -n "$DO_CLEAN_AUTOCONF_CACHE_BEFORE" ] || DO_CLEAN_AUTOCONF_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_AUTOCONF_CACHE" ] || DO_USE_AUTOCONF_CACHE="${DO_USE_NUTCI_CACHE}"
+[ -n "$DO_USE_AUTOCONF_CACHE_DEBUG" ] || DO_USE_AUTOCONF_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
+
+if [ x"${DO_USE_AUTOCONF_CACHE}" = xauto ]; then
+    case "$BUILD_TYPE" in
+        # FIXME later # default-all-errors*) DO_USE_AUTOCONF_CACHE="yes" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_USE_AUTOCONF_CACHE="yes" ; else DO_USE_AUTOCONF_CACHE="no" ; fi ;;
+    esac
+fi
+export DO_USE_AUTOCONF_CACHE
+
+[ -n "$CI_CACHE_NUT_BASEDIR" ] || { if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then CI_CACHE_NUT_BASEDIR="${HOME}/.cache/nut-ci" ; fi ; }
+
+if [ x"${DO_CLEAN_AUTOCONF_CACHE_BEFORE}" = xauto ]; then
+    case "$BUILD_TYPE" in
+        #default-all-errors*) DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ;;
+        *) if [ -n "$CI_CACHE_NUT_BASEDIR" ] && [ -d "$CI_CACHE_NUT_BASEDIR" ] ; then DO_CLEAN_AUTOCONF_CACHE_BEFORE="no" ; else DO_CLEAN_AUTOCONF_CACHE_BEFORE="yes" ; fi ;;
+    esac
+fi
+export DO_CLEAN_AUTOCONF_CACHE_BEFORE
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
+
+PATH="`echo \"${PATH}\" | normalize_path`"
 
 ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
-set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT)=' || true
+set | ${EGREP} '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*|[^ ]*_TGT|INPLACE_RUNTIME)=' | sed 's,\(.\)$,\1 \\,' || true
+# Padding for trailing backslashed line
+echo "PARMAKE_FLAGS='${PARMAKE_FLAGS}'"
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-spellcheck|default-spellcheck-quick|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
+default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-all-errors-exhaustive|default-all-errors-quick|default-spellcheck|default-spellcheck-quick|default-shellcheck|default-nodoc|default-withdoc|default-withdoc:man|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -1495,8 +1847,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
     fi
 
-    PATH="`echo "${PATH}" | normalize_path`"
-    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
+    PATH="`echo \"${PATH}\" | normalize_path`"
+    CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
     # Note: Potentially there can be spaces in entries for multiple
     # *FLAGS here; this should be okay as long as entry expands to
@@ -1508,14 +1860,39 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
-    CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
+    #CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
+    CONFIG_OPTS+=("--with-confdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    case "${BUILD_TYPE}" in
+        "default-all-errors"*) ;;	# Treated below
+        *)
+            case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+                [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                    CONFIG_OPTS+=("--with-unmapped-data-points") ;;
+                [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                    CONFIG_OPTS+=("--without-unmapped-data-points") ;;
+                *)  ;; # Keep built-in default
+            esac
+            case x"${WITH_LIBNUTPRIVATE-}" in
+                [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                    CONFIG_OPTS+=("--enable-shared-pivate-libs") ;;
+                [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                    CONFIG_OPTS+=("--disable-shared-pivate-libs") ;;
+                *)  ;; # Keep built-in default
+            esac
+            ;;
+    esac
+
     if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
     fi
+
+    # If we end up building and/or installing documentation, do
+    # parse all files (even if we do not build some programs here)
+    CONFIG_OPTS+=("--enable-docs-man-for-progs-built-only=no")
 
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
@@ -1672,7 +2049,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 DO_CLEAN_CHECK=no
             fi
             ;;
-        "default-all-errors")
+        "default-all-errors"*)
             # This mode aims to build as many codepaths (to collect warnings)
             # as it can, so help it enable (require) as many options as we can.
 
@@ -1766,6 +2143,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # Build and check this project; note that zprojects always have an autogen.sh
@@ -1794,15 +2187,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
     fi
 
+    if [ x"${WITH_CHANGELOG}" != x ] ; then
+        CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+    else
+        if [ x"${CANBUILD_DOCS_ALL}" != xyes ] ; then
+            # default "auto" => may become "yes" for (pre-)release builds!
+            CONFIG_OPTS+=("--enable-docs-changelog=no")
+        fi
+    fi
+
     consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
-        # Let initial clean-up be at default verbosity
-
         # Handle Ctrl+C with helpful suggestions:
         trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure include/config.h* ; $0 $SCRIPT_ARGS"' 2
 
         echo "=== Starting initial clean-up (from old build products)"
+
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
+
+        # Let initial clean-up be at default verbosity
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
             ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
@@ -1814,8 +2219,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
         || true
         echo "=== Finished initial clean-up"
-
-        trap - 2
     fi
 
     # Just prepare `configure` script; we run it at different points
@@ -1828,9 +2231,23 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         sudo dpkg -r --force all pkg-config
     fi
 
-    if [ "$BUILD_TYPE" != "default-all-errors" ] ; then
-        configure_nut
-    fi
+    case "$BUILD_TYPE" in
+        "default-all-errors"*) ;;	# Treated below
+        *)  # Final choices that can conflict with the matrix
+            # tried in default-all-errors* builds
+            case "${NUT_SSL_VARIANTS}" in
+                ssl|nss|openssl)
+                    CONFIG_OPTS+=("--with-${NUT_SSL_VARIANTS}")
+                    ;;
+                yes) CONFIG_OPTS+=("--with-ssl") ;;
+                no)  CONFIG_OPTS+=("--without-ssl") ;;
+                auto) CONFIG_OPTS+=("--with-ssl=auto") ;;
+                "") ;;
+                *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+            esac
+            configure_nut
+            ;;
+    esac
 
     # NOTE: There is also a case "$BUILD_TYPE" above for setting CONFIG_OPTS
     # This case runs some specially handled BUILD_TYPEs and exists; support
@@ -1839,7 +2256,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
             # e.g. distcheck-ci, distcheck-light, distcheck-valgrind, cppcheck,
             # maybe others later, as defined in top-level Makefile.am:
-            BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
+            BUILD_TGT="`echo \"$BUILD_TYPE\" | sed 's,^default-tgt:,,'`"
             if [ -n "${PARMAKE_FLAGS}" ]; then
                 echo "`date`: Starting the parallel build attempt for singular target $BUILD_TGT..."
             else
@@ -1848,14 +2265,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
             # that include DISTCHECK_FLAGS if provided
-            DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
+            DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
             export DISTCHECK_FLAGS
+
+            # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+            # handlers in the stack of calls via Makefile.am should hear it
+            get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='$BUILD_TGT'"
 
             # Tell the sub-makes (likely distcheck*) to hush down
             # NOTE: Parameter pass-through was tested with:
             #   MAKEFLAGS="-j 12" BUILD_TYPE=default-tgt:distcheck-light ./ci_build.sh
             MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS "$BUILD_TGT"
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS "$BUILD_TGT"
 
             # Can be noisy if regen is needed (DMF branch)
             #GIT_DIFF_SHOW=false \
@@ -1876,7 +2297,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
-              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo "$BUILD_TYPE" | sed 's,^default-,,'`" >/dev/null 2>&1 \
+              $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo \"$BUILD_TYPE\" | sed 's,^default-,,'`" >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
             ( echo "`date`: FAILED something in spellcheck above; re-starting a verbose build attempt to give more context first:" >&2
@@ -1902,9 +2323,36 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             ( $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE shellcheck check-scripts-syntax )
             exit $?
             ;;
-        "default-all-errors")
-            # This mode aims to build as many codepaths (to collect warnings)
-            # as it can, so help it enable (require) as many options as we can.
+        "default-all-errors"|"default-all-errors-exhaustive"|"default-all-errors-quick")
+            # These modes aim to build as many codepaths (to collect warnings)
+            # as they can, so help'em enable (require) as many options as we can.
+            # The legacy "exhaustive" mode iterates each axis separately (not
+            # as a full matrix, but still with pretty many sub-builds done);
+            # the "quick" mode aims to ensure that each requested variable
+            # value is tried, but their combos are randomly mixed to ensure
+            # the smallest amount of builds / quickest turnaround possible.
+            # This has a small chance to miss some explosive combos, for which
+            # we compensate in the NUT CI farm by running many scenarios on
+            # many systems and toolkits, so different combos are expected to
+            # happen (maybe even more overall than with the legacy mode).
+            if [ x"${BUILD_TYPE}" = x"default-all-errors" ] ; then
+                # CI builds on Jenkins?
+                [ -z "$NODE_LABELS" ] \
+                && BUILD_TYPE="default-all-errors-exhaustive" \
+                || BUILD_TYPE="default-all-errors-quick"
+
+                echo "NOTE: adapted BUILD_TYPE 'default-all-errors' => '${BUILD_TYPE}'" >&2
+            fi
+
+            if [ x"${HAVE_CCACHE-}" = xyes ] && [ x"${CI_DO_CHECK_PARALLEL_BUILDS-}" = x ] ; then
+                # Ideally massive-build CI recipes would set this option
+                # for scenarios they are interested in, e.g. once per OS
+                # and make implementation, not all hundreds of builds?..
+                # On the other hand, catching issues (race conditions in
+                # recipes) is a big-numbers game...
+                CI_DO_CHECK_PARALLEL_BUILDS=true
+                echo "NOTE: we have ccache, so enabled 'make check-parallel-builds' for combos below" >&2
+            fi
 
             # Try to run various build scenarios to collect build errors
             # (no checks here) as configured further by caller's choice
@@ -1912,162 +2360,484 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # Note this is one scenario where we did not configure_nut()
             # in advance.
             RES_ALLERRORS=0
-            FAILED=""
-            SUCCEEDED=""
-            BUILDSTODO=0
+            FAILED=()
+            SUCCEEDED=()
 
             # Technically, let caller provide this setting explicitly
-            if [ -z "$NUT_SSL_VARIANTS" ] ; then
-                NUT_SSL_VARIANTS="auto"
-                if $PKG_CONFIG --exists nss && $PKG_CONFIG --exists openssl && [ "${BUILD_SSL_ONCE-}" != "true" ] ; then
+            if [ -n "$NUT_SSL_VARIANTS" ] ; then
+                TMP="$NUT_SSL_VARIANTS"
+                NUT_SSL_VARIANTS=()
+                for VAL in $TMP ; do
+                    if [ x"${VAL}" = x -o x"${VAL}" = xdefault ] ; then VAL=auto; fi
+                    NUT_SSL_VARIANTS+=("$VAL")
+                done
+            else
+                NUT_SSL_VARIANTS=()
+                if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
                     # Try builds for both cases as they are ifdef-ed
                     # TODO: Extend if we begin to care about different
                     # major versions of openssl (with their APIs), etc.
-                    NUT_SSL_VARIANTS="openssl nss"
-                else
-                    if [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                        $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS="nss"
-                        $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS="openssl"
-                    fi  # else leave at "auto", if we skipped building
-                        # two variants while having two possibilities
+                    $PKG_CONFIG --exists nss 2>/dev/null && NUT_SSL_VARIANTS+=("nss")
+                    $PKG_CONFIG --exists openssl 2>/dev/null && NUT_SSL_VARIANTS+=("openssl")
                 fi
 
-                # Consider also a build --without-ssl to test that codepath?
-                if [ "$NUT_SSL_VARIANTS" != auto ] && [ "${BUILD_SSL_ONCE-}" != "true" ]; then
-                    NUT_SSL_VARIANTS="$NUT_SSL_VARIANTS no"
+                if [ "${#NUT_SSL_VARIANTS[@]}" = 0 ] ; then
+                    # Either BUILD_SSL_ONCE or nothing supported found;
+                    # let configure figure it out...
+                    # Quietly build one scenario, whatever we can (or not)
+                    # configure regarding SSL and other features
+                    NUT_SSL_VARIANTS+=("auto")
+                fi
+
+                # If we did successfully find at least one SSL implementation,
+                # consider also a build --without-ssl to test that codepath?
+                if [ "${NUT_SSL_VARIANTS[*]}" != auto ] && [ "${BUILD_SSL_ONCE-}" != "true" ]; then
+                    NUT_SSL_VARIANTS+=("no")
                 fi
             fi
 
-            if [ -z "$NUT_USB_VARIANTS" ] ; then
+            if [ -n "$NUT_USB_VARIANTS" ] ; then
+                TMP="$NUT_USB_VARIANTS"
+                NUT_USB_VARIANTS=()
+                for VAL in $TMP ; do
+                    if [ x"${VAL}" = x -o x"${VAL}" = xdefault ] ; then VAL=auto; fi
+                    NUT_USB_VARIANTS+=("$VAL")
+                done
+            else
+                NUT_USB_VARIANTS=()
                 # Check preferred version first, in case BUILD_USB_ONCE==true
                 if $PKG_CONFIG --exists libusb-1.0 ; then
-                    NUT_USB_VARIANTS="1.0"
+                    NUT_USB_VARIANTS+=("1.0")
                 fi
 
                 # TODO: Is there anywhere a `pkg-config --exists libusb-0.1`?
                 if $PKG_CONFIG --exists libusb || ( command -v libusb-config || which libusb-config ) 2>/dev/null >/dev/null ; then
-                    if [ -z "$NUT_USB_VARIANTS" ] ; then
-                        NUT_USB_VARIANTS="0.1"
-                    else
-                        if [ "${BUILD_USB_ONCE-}" != "true" ] ; then
-                            NUT_USB_VARIANTS="$NUT_USB_VARIANTS 0.1"
-                        fi
+                    if [ "${#NUT_USB_VARIANTS[@]}" = 0 ] || [ "${BUILD_USB_ONCE-}" != "true" ] ; then
+                        NUT_USB_VARIANTS+=("0.1")
                     fi
                 fi
 
-                if [ -z "$NUT_USB_VARIANTS" ] ; then
-                    # Nothing supported detected...
+                if [ "${#NUT_USB_VARIANTS[@]}" = 0 ] ; then
+                    # Nothing supported detected... ; let configure figure it out
                     NUT_USB_VARIANTS="auto"
                 fi
 
                 # Consider also a build --without-usb to test that codepath?
                 # (e.g. for nutdrv_qx that has both serial and USB parts)
-                if [ "$NUT_USB_VARIANTS" != auto ] && [ "${BUILD_USB_ONCE-}" != "true" ]; then
-                    NUT_USB_VARIANTS="$NUT_USB_VARIANTS no"
+                if [ "${NUT_USB_VARIANTS[*]}" != auto ] && [ "${BUILD_USB_ONCE-}" != "true" ]; then
+                    NUT_USB_VARIANTS+=("no")
                 fi
+            fi
+
+            if [ -z "$NUT_UNMAPPED_VARIANTS" ] || [ "$NUT_UNMAPPED_VARIANTS" = auto ] || [ "$NUT_UNMAPPED_VARIANTS" = default ] ; then
+                # Unlike USB/SSL, here we choose according to another toggle value
+                # (and there is no "auto" mode really, just pure "yes" or "no"):
+                NUT_UNMAPPED_VARIANTS=()
+                case x"${WITH_UNMAPPED_DATAPOINTS-}" in
+                    [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                        NUT_UNMAPPED_VARIANTS+=("yes") ;;
+                    [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                        NUT_UNMAPPED_VARIANTS+=("no") ;;
+                    *)
+                        NUT_UNMAPPED_VARIANTS+=("yes" "no") ;;
+                esac
+            else
+                TMP="$NUT_UNMAPPED_VARIANTS"
+                NUT_UNMAPPED_VARIANTS=()
+                for VAL in $TMP ; do
+                    NUT_UNMAPPED_VARIANTS+=("$VAL")
+                done
+            fi
+
+            if [ -z "$NUT_LIBNUTPRIVATE_VARIANTS" ] || [ "$NUT_LIBNUTPRIVATE_VARIANTS" = auto ] || [ "$NUT_LIBNUTPRIVATE_VARIANTS" = default ] ; then
+                # Handle similarly to NUT_UNMAPPED_VARIANTS
+                NUT_LIBNUTPRIVATE_VARIANTS=()
+                case x"${WITH_LIBNUTPRIVATE-}" in
+                    [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+                        NUT_LIBNUTPRIVATE_VARIANTS+=("yes") ;;
+                    [Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+                        NUT_LIBNUTPRIVATE_VARIANTS+=("no") ;;
+                    *)
+                        NUT_LIBNUTPRIVATE_VARIANTS+=("yes" "no") ;;
+                esac
+            else
+                TMP="$NUT_LIBNUTPRIVATE_VARIANTS"
+                NUT_LIBNUTPRIVATE_VARIANTS=()
+                for VAL in $TMP ; do
+                    NUT_LIBNUTPRIVATE_VARIANTS+=("$VAL")
+                done
+            fi
+
+            # TODO: Similar loops for other variations like TESTING,
+            # MGE SHUT vs. other serial protocols...
+
+            BUILDSTODO_SSL="${#NUT_SSL_VARIANTS[@]}"
+            BUILDSTODO_USB="${#NUT_USB_VARIANTS[@]}"
+            BUILDSTODO_UNMAPPED="${#NUT_UNMAPPED_VARIANTS[@]}"
+            BUILDSTODO_LIBNUTPRIVATE="${#NUT_LIBNUTPRIVATE_VARIANTS[@]}"
+
+            echo "=== Found ${BUILDSTODO_SSL} SSL (${NUT_SSL_VARIANTS[*]}) and ${BUILDSTODO_USB} USB (${NUT_USB_VARIANTS[*]}) and ${BUILDSTODO_UNMAPPED} UNMAPPED (${NUT_UNMAPPED_VARIANTS[*]}) and ${BUILDSTODO_LIBNUTPRIVATE} LIBNUTPRIVATE (${NUT_LIBNUTPRIVATE_VARIANTS[*]}) variations..."
+            if [ x"${BUILDSTODO_SSL}${BUILDSTODO_USB}${BUILDSTODO_UNMAPPED}${BUILDSTODO_LIBNUTPRIVATE}" = x"0000" ] ; then
+                echo "=== ERROR: BUILD_TYPE='${BUILD_TYPE}' got no builds to run!" >&2
+                exit 1
             fi
 
             # Count our expected build variants, so the last one gets the
             # "maintainer-clean" check and not a mere "distclean" check
             # NOTE: We count different dependency variations separately,
             # and analyze later, to avoid building same (auto+auto) twice
-            BUILDSTODO_SSL=0
-            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                BUILDSTODO_SSL="`expr $BUILDSTODO_SSL + 1`"
-            done
+            BUILDSTODO_LIST=()
 
-            BUILDSTODO_USB=0
-            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
-                BUILDSTODO_USB="`expr $BUILDSTODO_USB + 1`"
-            done
+            # Apply these builds with exactly one chosen variant to all
+            # iterations, and do not care about iterating them later on:
+            BUILDSTODO_ALWAYS=""
+            if [ "$BUILDSTODO_SSL" = 1 ]; then
+                BUILDSTODO_ALWAYS="NUT_SSL_VARIANT=${NUT_SSL_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
+            fi
+            if [ "$BUILDSTODO_USB" = 1 ]; then
+                BUILDSTODO_ALWAYS="NUT_USB_VARIANT=${NUT_USB_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
+            fi
+            if [ "$BUILDSTODO_UNMAPPED" = 1 ]; then
+                BUILDSTODO_ALWAYS="NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
+            fi
+            if [ "$BUILDSTODO_LIBNUTPRIVATE" = 1 ]; then
+                BUILDSTODO_ALWAYS="NUT_LIBNUTPRIVATE_VARIANT=${NUT_LIBNUTPRIVATE_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
+            fi
 
-            if [ "${BUILDSTODO_SSL}" -gt 1 ] \
-            && [ "${BUILDSTODO_USB}" -gt 1 ] \
+            if [ "$BUILDSTODO_SSL" -le 1 ] \
+            && [ "$BUILDSTODO_USB" -le 1 ] \
+            && [ "$BUILDSTODO_UNMAPPED" -le 1 ] \
+            && [ "$BUILDSTODO_LIBNUTPRIVATE" -le 1 ] \
             ; then
-                BUILDSTODO="`expr $BUILDSTODO_SSL + $BUILDSTODO_USB`"
+                echo "=== NOTE: Considering at most one variant in each category, will do them all at once"
+                BUILDSTODO_LIST+=("${BUILDSTODO_ALWAYS}")
             else
-                ###BUILDSTODO=0
-                ###if [ "${BUILDSTODO_SSL}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_SSL}" ; fi
-                ###if [ "${BUILDSTODO_USB}" -gt "${BUILDSTODO}" ] ; then BUILDSTODO="${BUILDSTODO_USB}" ; fi
+                # Got at least one axis to iterate
+                if [ x"${BUILD_TYPE}" = x"default-all-errors-exhaustive" ] ; then
+                    # Keep eggs in different baskets, iterate one build sub-type
+                    # variable's values after another. Note that axes with just
+                    # one variant are fixed among BUILDSTODO_ALWAYS!
+                    if [ "$BUILDSTODO_SSL" -gt 1 ]; then
+                        # If we don't care about SSL implem (got 0/1 to try) but want to
+                        # pick USB, fall through straight there
+                        for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                            BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                        done
+                    fi
+                    if [ "$BUILDSTODO_USB" -gt 1 ]; then
+                        # Effectively, whatever up to one version of LibUSB support
+                        # was detected (or not), was tested above among SSL builds.
+                        # Here we drill deeper for envs that have more than one LibUSB,
+                        # or when caller explicitly requested to only test without it,
+                        # and then we only attempt the serial and/or USB options while
+                        # disabling other drivers for faster turnaround.
+                        for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                            BUILDSTODO_LIST+=("NUT_USB_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                        done
+                    fi
+                    if [ "$BUILDSTODO_UNMAPPED" -gt 1 ]; then
+                        for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                            if [ "$VAL" = no ] ; then continue ; fi # Default setting for other builds
+                            BUILDSTODO_LIST+=("NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                        done
+                    fi
+                    if [ "$BUILDSTODO_LIBNUTPRIVATE" -gt 1 ]; then
+                        for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                            if [ "$VAL" = no ] ; then continue ; fi # Default setting for other builds
+                            BUILDSTODO_LIST+=("NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                        done
+                    fi
+                else
+                    # Try to mix into the smallest amount of builds (randomize
+                    # the mix so we can cover many scenarios as different CI
+                    # agents do this.
 
-                # Use same logic as in actual loops below
-                # It may be imperfect (WRT avoiding extra builds) -- and
-                # that may be addressed separately, but counts should fit
-                BUILDSTODO="${BUILDSTODO_SSL}"
+                    # First populate the BUILDSTODO_LIST with the longest set
+                    # of variants; at least one of these is greater than "1":
+                    BUILDSTODO_MAX="$BUILDSTODO_SSL"
+                    BUILDSTODO_MAX_TYPE="BUILDSTODO_SSL"
 
-                # Adding up only if we are building several USB variants
-                # or a single non-default variant (maybe a "no" option),
-                # so we should be trying both SSL's and that/those USB
-                ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
-                ###{ [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ; } || \
-                if [ "${BUILDSTODO_USB}" -gt 1 ] \
-                || [ "$NUT_USB_VARIANTS" != "auto" ] \
-                ; then
-                    BUILDSTODO="`expr $BUILDSTODO + $BUILDSTODO_USB`"
-                fi
+                    [ "$BUILDSTODO_MAX" -ge "$BUILDSTODO_USB" ] \
+                    || { BUILDSTODO_MAX="$BUILDSTODO_USB"; BUILDSTODO_MAX_TYPE="BUILDSTODO_USB" ; }
 
-                if [ "$NUT_SSL_VARIANTS" = "auto" ] \
-                && [ "${BUILDSTODO_USB}" -gt 0 ] \
-                ; then
-                    echo "=== Only build USB scenario(s) picking whatever SSL is found"
-                    BUILDSTODO="${BUILDSTODO_USB}"
+                    [ "$BUILDSTODO_MAX" -ge "$BUILDSTODO_UNMAPPED" ] \
+                    || { BUILDSTODO_MAX="$BUILDSTODO_UNMAPPED"; BUILDSTODO_MAX_TYPE="BUILDSTODO_UNMAPPED" ; }
+
+                    [ "$BUILDSTODO_MAX" -ge "$BUILDSTODO_LIBNUTPRIVATE" ] \
+                    || { BUILDSTODO_MAX="$BUILDSTODO_LIBNUTPRIVATE"; BUILDSTODO_MAX_TYPE="BUILDSTODO_LIBNUTPRIVATE" ; }
+
+                    # FIXME: Can this be eval'ed?
+                    # First populate the longer set of variants:
+                    case "${BUILDSTODO_MAX_TYPE}" in
+                        BUILDSTODO_SSL)
+                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                            done
+                            ;;
+                        BUILDSTODO_USB)
+                            for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_USB_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                            done
+                            ;;
+                        BUILDSTODO_UNMAPPED)
+                            for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                            done
+                            ;;
+                        BUILDSTODO_LIBNUTPRIVATE)
+                            for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                            done
+                            ;;
+                    esac
+
+                    case "${BUILDSTODO_MAX_TYPE}" in
+                        BUILDSTODO_SSL)
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_USB" -le 1 ] || \
+                            for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_USB_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_UNMAPPED" -le 1 ] || \
+                            for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_LIBNUTPRIVATE" -le 1 ] || \
+                            for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+                            ;;
+                        BUILDSTODO_USB)
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_SSL" -le 1 ] || \
+                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_UNMAPPED" -le 1 ] || \
+                            for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_LIBNUTPRIVATE" -le 1 ] || \
+                            for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+                            ;;
+                        BUILDSTODO_UNMAPPED)
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_SSL" -le 1 ] || \
+                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_USB" -le 1 ] || \
+                            for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_USB_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_LIBNUTPRIVATE" -le 1 ] || \
+                            for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+                            ;;
+                        BUILDSTODO_LIBNUTPRIVATE)
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_SSL" -le 1 ] || \
+                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_USB" -le 1 ] || \
+                            for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_USB_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_UNMAPPED" -le 1 ] || \
+                            for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+                            ;;
+                    esac
                 fi
             fi
 
-            BUILDSTODO_INITIAL="$BUILDSTODO"
-            echo "=== Will loop now with $BUILDSTODO build variants: found ${BUILDSTODO_SSL} SSL ($NUT_SSL_VARIANTS) and ${BUILDSTODO_USB} USB ($NUT_USB_VARIANTS) variations..."
-            # If we don't care about SSL implem and want to pick USB, go straight there
-            ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) || \
-            for NUT_SSL_VARIANT in $NUT_SSL_VARIANTS ; do
-                # NOTE: Do not repeat a distclean before the loop,
-                # we have cleaned above before autogen, and here it
-                # would just re-evaluate `configure` to update the
-                # Makefile to remove it and other generated data.
-                #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE distclean $MAKE_FLAGS_CLEAN -k || true
+            # Actual amount of builds can be smaller than the sum of variants,
+            # as we can skip trivial ones (those with at most one option) or
+            # rather include them into other built variants:
+            BUILDSTODO="${#BUILDSTODO_LIST[@]}"
+            printf "=== Will loop now with ${BUILDSTODO} unique build variants:"
+            for TESTCOMBO in "${BUILDSTODO_LIST[@]}" ; do printf ' (%s)' "${TESTCOMBO}" ; done
+            printf '\n'
 
-                echo "=== Starting 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
-                case "$NUT_SSL_VARIANT" in
-                    ""|auto|default)
+            BUILDSTODO_INITIAL="$BUILDSTODO"
+            for TESTCOMBO in "${BUILDSTODO_LIST[@]}" ; do
+                # Assign new variations; empty means either "configure" script
+                # default, or opinionated choice of this script as seen below
+                NUT_SSL_VARIANT=""
+                NUT_USB_VARIANT=""
+                NUT_UNMAPPED_VARIANT=""
+                NUT_LIBNUTPRIVATE_VARIANT=""
+                eval $TESTCOMBO
+
+                echo "=== Starting 'TESTCOMBO=${TESTCOMBO}', ${BUILDSTODO} build variants remaining..."
+
+                ( # Sub-shell for CONFIG_OPTS (scratch replica) tuning;
+                case "${NUT_SSL_VARIANT}" in
+                    "") ;;
+                    auto)
                         # Quietly build one scenario, whatever we can (or not)
                         # configure regarding SSL and other features
-                        NUT_SSL_VARIANT=auto
-                        configure_nut
+                        CONFIG_OPTS+=("--with-ssl=auto")
                         ;;
                     no)
                         echo "=== Building without SSL support..."
-                        ( CONFIG_OPTS+=("--without-ssl")
-                          configure_nut
-                        )
+                        CONFIG_OPTS+=("--without-ssl")
                         ;;
-                    *)
+                    openssl|nss)
                         echo "=== Building with 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' ..."
-                        ( CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
-                          configure_nut
-                        )
+                        CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
                         ;;
-                esac || {
+                    *)  # Potentially something new? Unknown values can fail in the configure script.
+                        echo "=== Building with 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' (WARNING: may be not supported)..."
+                        CONFIG_OPTS+=("--with-ssl=${NUT_SSL_VARIANT}")
+                        ;;
+                esac
+
+                # FIXME: Move checks of SSL/USB presence and their impact up
+                #  to (exhaustive) BUILDSTODO_LIST preparation?
+                case "$NUT_USB_VARIANT" in
+                    "") ;;
+                    auto)
+                        # Quietly build one scenario, whatever we can (or not)
+                        # configure regarding USB and other features
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        CONFIG_OPTS+=("--with-usb=auto")
+                        ;;
+                    no)
+                        echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        CONFIG_OPTS+=("--without-usb")
+                        ;;
+                    libusb-*)
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
+                        ;;
+                    *)  # 0.1/1.0/...
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
+                        ;;
+                esac
+
+                case "${NUT_UNMAPPED_VARIANT}" in
+                    "") ;;
+                    yes|no)    # Try this variant
+                        echo "=== Building with 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' ..."
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        if [ "${NUT_USB_VARIANTS[*]}" != "no" ] && [ x"${NUT_USB_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--with-usb=auto")
+                        fi
+                        CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
+                        ;;
+                    *)  # Potentially something new? Unknown values can fail in the configure script.
+                        echo "=== Building with 'NUT_UNMAPPED_VARIANT=${NUT_UNMAPPED_VARIANT}' (WARNING: may be not supported)..."
+                        CONFIG_OPTS+=("--with-unmapped-data-points=${NUT_UNMAPPED_VARIANT}")
+                        ;;
+                esac
+
+                case "${NUT_LIBNUTPRIVATE_VARIANT}" in
+                    "") ;;
+                    yes|no)    # Try this variant
+                        echo "=== Building with 'NUT_LIBNUTPRIVATE_VARIANT=${NUT_LIBNUTPRIVATE_VARIANT}' ..."
+                        if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--without-all")
+                            CONFIG_OPTS+=("--without-ssl")
+                        fi
+                        CONFIG_OPTS+=("--with-serial=auto")
+                        if [ "${NUT_USB_VARIANTS[*]}" != "no" ] && [ x"${NUT_USB_VARIANT}" = x ] ; then
+                            CONFIG_OPTS+=("--with-usb=auto")
+                        fi
+                        CONFIG_OPTS+=("--enable-shared-private-libs=${NUT_LIBNUTPRIVATE_VARIANT}")
+                        ;;
+                    *)  # Potentially something new? Unknown values can fail in the configure script.
+                        echo "=== Building with 'NUT_LIBNUTPRIVATE_VARIANT=${NUT_LIBNUTPRIVATE_VARIANT}' (WARNING: may be not supported)..."
+                        CONFIG_OPTS+=("--enable-shared-private-libs=${NUT_LIBNUTPRIVATE_VARIANT}")
+                        ;;
+                esac
+
+                # Snippet from autogen.sh: restore files required by autoconf
+                # for non-"foreign" projects that a deep clean in other loops
+                # could have destroyed:
+                [ -f "${SCRIPTDIR}/NEWS" ] || { echo "Please see NEWS.adoc for actual contents" > "${SCRIPTDIR}/NEWS"; }
+                [ -f "${SCRIPTDIR}/README" ] || { echo "Please see README.adoc for actual contents" > "${SCRIPTDIR}/README"; }
+
+                configure_nut
+                ) || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[configure]"
+                    FAILED+=("TESTCOMBO=${TESTCOMBO}[configure]")
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
-                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        echo "===== [Matrix] Error: Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
                     fi
                     BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
                     continue
                 }
 
-                echo "=== Configured 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'TESTCOMBO=$TESTCOMBO', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
                 # Use default target e.g. "all":
                 build_to_only_catch_errors_target && {
-                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[build]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    FAILED+=("TESTCOMBO=${TESTCOMBO}[build]")
                     # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' build"
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' build"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -2075,17 +2845,46 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 }
 
                 build_to_only_catch_errors_check && {
-                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[check]")
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    FAILED+=("TESTCOMBO=${TESTCOMBO}[check]")
                     # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' check"
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
                     fi
                 }
+
+                # Check that the current MAKE implementation deals with parallel
+                # recipes properly. Ideally this is sped up by ccache. At least
+                # privately CI_FAILFAST=true to not retry this one sequentially.
+                # Note two passings of CHECK_PARALLEL_BUILDS_REGEN=false - as an
+                # envvar and as a make argument, to ensure that different `make`
+                # implementations honour our desire.
+                # WARNING: This check does repetitively `make clean` along the
+                # way, so should be the last operation before scenario clean-up!
+                if [ x"$CI_DO_CHECK_PARALLEL_BUILDS" = xtrue ] ; then
+                    CI_FAILFAST=true \
+                    CI_PARMAKE_VERBOSITY="${CI_PARMAKE_VERBOSITY_CPB-}" \
+                    CHECK_PARALLEL_BUILDS_REGEN=false \
+                    build_to_only_catch_errors_target \
+                        CHECK_PARALLEL_BUILDS_REGEN=false \
+                        check-parallel-builds \
+                    && {
+                        SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                    } || {
+                        RES_ALLERRORS=$?
+                        FAILED+=("TESTCOMBO=${TESTCOMBO}[check-parallel-builds]")
+                        # Help find end of build (before cleanup noise) in logs:
+                        echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' check-parallel-builds"
+                        if [ "$CI_FAILFAST" = true ]; then
+                            echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                            break
+                        fi
+                    }
+                fi
 
                 # Note: when `expr` calculates a zero value below, it returns
                 # an "erroneous" `1` as exit code. Why oh why?..
@@ -2104,205 +2903,56 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ### Avoid having to re-autogen in a loop:
                         optional_dist_clean_check && {
                             if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                                SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[dist_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[dist_clean]"
+                            FAILED+=("TESTCOMBO=${TESTCOMBO}[dist_clean]")
                         }
                     else
                         optional_maintainer_clean_check && {
                             if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                                SUCCEEDED+=("TESTCOMBO=${TESTCOMBO}[maintainer_clean]")
                             fi
                         } || {
                             RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[maintainer_clean]"
+                            FAILED+=("TESTCOMBO=${TESTCOMBO}[maintainer_clean]")
                         }
                     fi
-                    echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+                    echo "=== Completed sandbox cleanup-check after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
                         $MAKE distclean $MAKE_FLAGS_CLEAN -k \
                         || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
-                        echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
+
+                        echo "=== Completed sandbox cleanup after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
                     fi
                 fi
-            done
 
-            # Effectively, whatever up to one version of LibUSB support
-            # was detected (or not), was tested above among SSL builds.
-            # Here we drill deeper for envs that have more than one LibUSB,
-            # or when caller explicitly requested to only test without it,
-            # and then we only attempt the serial and/or USB options while
-            # disabling other drivers for faster turnaround.
-            ###[ "$NUT_USB_VARIANTS" = "auto" ] || \
-            ###( [ "${BUILDSTODO_USB}" -le 1 ] && [ "$NUT_USB_VARIANTS" != "no" ] ) || \
-            ( ( [ "$NUT_SSL_VARIANTS" = "auto" ] && [ "${BUILDSTODO_USB}" -gt 0 ] ) \
-             || [ "${BUILDSTODO_USB}" -gt 1 ] \
-             || [ "$NUT_USB_VARIANTS" != "auto" ] \
-            ) && \
-            (   [ "$CI_FAILFAST" != "true" ] \
-             || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
-            ) && \
-            for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
-                echo "=== Starting 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
-                case "$NUT_USB_VARIANT" in
-                    ""|auto|default)
-                        # Quietly build one scenario, whatever we can (or not)
-                        # configure regarding USB and other features
-                        NUT_USB_VARIANT=auto
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
-                              CONFIG_OPTS+=("--without-all")
-                              CONFIG_OPTS+=("--without-ssl")
-                          fi
-                          CONFIG_OPTS+=("--with-serial=auto")
-                          CONFIG_OPTS+=("--with-usb")
-                          configure_nut
-                        )
-                        ;;
-                    no)
-                        echo "=== Building without USB support (check mixed drivers coded for Serial/USB support)..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
-                              CONFIG_OPTS+=("--without-all")
-                              CONFIG_OPTS+=("--without-ssl")
-                          fi
-                          CONFIG_OPTS+=("--with-serial=auto")
-                          CONFIG_OPTS+=("--without-usb")
-                          configure_nut
-                        )
-                        ;;
-                    libusb-*)
-                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
-                              CONFIG_OPTS+=("--without-all")
-                              CONFIG_OPTS+=("--without-ssl")
-                          fi
-                          CONFIG_OPTS+=("--with-serial=auto")
-                          CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
-                          configure_nut
-                        )
-                        ;;
-                    *)
-                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
-                        ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
-                              CONFIG_OPTS+=("--without-all")
-                              CONFIG_OPTS+=("--without-ssl")
-                          fi
-                          CONFIG_OPTS+=("--with-serial=auto")
-                          CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
-                          configure_nut
-                        )
-                        ;;
-                esac || {
-                    RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[configure]"
-                    # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
-                    if [ "$CI_FAILFAST" = true ]; then
-                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
-                        break
-                    fi
-                    BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
-                    continue
-                }
-
-                echo "=== Configured 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
-                cd "${CI_BUILDDIR}"
-                # Use default target e.g. "all":
-                build_to_only_catch_errors_target && {
-                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
-                } || {
-                    RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
-                    # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' build"
-                    if [ "$CI_FAILFAST" = true ]; then
-                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
-                        break
-                    fi
-                }
-
-                build_to_only_catch_errors_check && {
-                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
-                } || {
-                    RES_ALLERRORS=$?
-                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
-                    # Help find end of build (before cleanup noise) in logs:
-                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' check"
-                    if [ "$CI_FAILFAST" = true ]; then
-                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
-                        break
-                    fi
-                }
-
-                # Note: when `expr` calculates a zero value below, it returns
-                # an "erroneous" `1` as exit code. Notes above.
-                BUILDSTODO="`expr $BUILDSTODO - 1`" || [ "$BUILDSTODO" = "0" ] || break
-
-                if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                    # For last iteration with DO_CLEAN_CHECK=no,
-                    # we would leave built products in place
-                    echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                fi
-
-                if can_clean_check ; then
-                    if [ $BUILDSTODO -gt 0 ]; then
-                        ### Avoid having to re-autogen in a loop:
-                        optional_dist_clean_check && {
-                            if [ "${DO_DIST_CLEAN_CHECK-}" != "no" ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
-                            fi
-                        } || {
-                            RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[dist_clean]"
-                        }
-                    else
-                        optional_maintainer_clean_check && {
-                            if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                                SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
-                            fi
-                        } || {
-                            RES_ALLERRORS=$?
-                            FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[maintainer_clean]"
-                        }
-                    fi
-                    echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
-                else
-                    if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean $MAKE_FLAGS_CLEAN -k \
-                        || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
-                        echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
-                    else
-                        echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
-                    fi
-                fi
-            done
-
-            # TODO: Similar loops for other variations like TESTING,
-            # MGE SHUT vs. other serial protocols...
+            done	# end of "TESTCOMBO in ${BUILDSTODO_LIST[@]}"
 
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
                 optional_maintainer_clean_check && {
                     if [ "${DO_MAINTAINER_CLEAN_CHECK-}" != no ] ; then
-                        SUCCEEDED="${SUCCEEDED} [final_maintainer_clean]"
+                        SUCCEEDED+=("[final_maintainer_clean]")
                     fi
                 } || {
                     RES_ALLERRORS=$?
-                    FAILED="${FAILED} [final_maintainer_clean]"
+                    FAILED+=("[final_maintainer_clean]")
                 }
                 echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
 
-            if [ -n "$SUCCEEDED" ]; then
-                echo "SUCCEEDED build(s) with:${SUCCEEDED}" >&2
+            if [ "${#SUCCEEDED[*]}" -gt 0 ]; then
+                echo "SUCCEEDED ${#SUCCEEDED[@]} build(s) with: ${SUCCEEDED[*]}" >&2
             fi
 
             if [ "$RES_ALLERRORS" != 0 ]; then
                 # Leading space is included in FAILED
-                echo "FAILED build(s) with code ${RES_ALLERRORS}:${FAILED}" >&2
+                echo "[Matrix] Error: FAILED ${#FAILED[@]} build(s) with code ${RES_ALLERRORS}: ${FAILED[*]}" >&2
             else
                 echo "(and no build scenarios had failed)" >&2
             fi
@@ -2330,9 +2980,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     check_gitignore "all" || exit
 
     if test -s "${SCRIPTDIR}/install-sh" \
-    && grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
+    && ${GREP} -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
     ; then
-         if grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null \
+         if ${GREP} -v '#' "${SCRIPTDIR}/install-sh" | ${EGREP} '\$mkdirprog.*-p' >/dev/null \
         ; then
             true
         else
@@ -2355,13 +3005,18 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
         (
         # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
-        # that include DISTCHECK_FLAGS if provided
-        DISTCHECK_FLAGS="`for F in "${CONFIG_OPTS[@]}" ; do echo "'$F' " ; done | tr '\n' ' '`"
+        # that include DISTCHECK_FLAGS if provided, but I am not convinced they
+        # would be honoured for distcheck-ci etc. goald which may impose their own.
+        DISTCHECK_FLAGS="`for F in \"${CONFIG_OPTS[@]}\" ; do echo \"'$F' \" ; done | tr '\n' ' '`"
         export DISTCHECK_FLAGS
+
+        # If this exports CI_CACHE_NUT_HASHDIR_CFG_OPT, the `make distcheck`
+        # handlers in the stack of calls via Makefile.am should hear it
+        get_CI_CACHE_NUT_HASHDIR_CFG_OPT_WITH_ENV "${DISTCHECK_FLAGS} DISTCHECK_TGT='$DISTCHECK_TGT'"
 
         # Tell the sub-makes (distcheck) to hush down
         MAKEFLAGS="${MAKEFLAGS-} $MAKE_FLAGS_QUIET" \
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS ${DISTCHECK_TGT}
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" CI_CACHE_NUT_HASHDIR_CFG_OPT="$CI_CACHE_NUT_HASHDIR_CFG_OPT" $PARMAKE_FLAGS ${DISTCHECK_TGT}
 
         #FILE_DESCR="DMF" FILE_REGEX='\.dmf$' FILE_GLOB='*.dmf' check_gitignore "$BUILD_TGT" || true
         check_gitignore "${DISTCHECK_TGT}" || exit
@@ -2390,8 +3045,8 @@ bindings)
 
     # NOTE: Alternative to optional_prepare_ccache()
     # FIXME: Can these be united and de-duplicated?
-    if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
-        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+    if [ x"${CI_CCACHE_USE-}" != xno ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
+        PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
@@ -2415,11 +3070,14 @@ bindings)
         # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
+
+        # This should not be in workdir anyway
+        rm -f config.cache* || true
+
         ${MAKE} realclean -k || true
+
         echo "=== Finished initial clean-up"
     fi
-
-    configure_CI_BUILDDIR
 
     # NOTE: Default NUT "configure" actually insists on some features,
     # like serial port support unless told otherwise, or docs if possible.
@@ -2441,6 +3099,10 @@ bindings)
         *) CONFIG_OPTS+=("--with-doc=skip") ;;
     esac
 
+    # If we end up building and/or installing documentation, do
+    # parse all files (even if we do not build some programs here)
+    CONFIG_OPTS+=("--enable-docs-man-for-progs-built-only=no")
+
     detect_platform_PKG_CONFIG_PATH_and_FLAGS
     if [ -n "$PKG_CONFIG_PATH" ] ; then
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
@@ -2456,10 +3118,52 @@ bindings)
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
         CONFIG_OPTS+=("--enable-inplace-runtime")
+        if [ x"${WITH_CHANGELOG}" != x ] ; then
+            CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+            # else "auto" => may become "yes" for (pre-)release builds!
+        fi
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+
+        if [ x"${WITH_CHANGELOG}" != x ] ; then
+            CONFIG_OPTS+=("--enable-docs-changelog=${WITH_CHANGELOG}")
+        else
+            # In developer iterations, avoid burning CPU every
+            # time our git index changes
+            CONFIG_OPTS+=("--enable-docs-changelog=no")
+        fi
     fi
+
+    if [ -z "${WITH_UNMAPPED_DATAPOINTS-}" ] ; then
+        if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
+            WITH_UNMAPPED_DATAPOINTS=false
+        else
+            WITH_UNMAPPED_DATAPOINTS=true
+        fi
+    fi
+
+    if [ x"${WITH_UNMAPPED_DATAPOINTS-}" = xtrue ] ; then
+        # This is assumed for non-production builds to avoid confusion
+        # for end-users (not dev/testers).
+        # See above for defaulting of this vs. inplace builds.
+        CONFIG_OPTS+=("--with-unmapped-data-points")
+    fi
+
+    if [ x"${WITH_LIBNUTPRIVATE-}" = xtrue ] ; then
+        CONFIG_OPTS+=("--enable-shared-private-libs")
+    fi
+
+    case "${NUT_SSL_VARIANTS}" in
+        ssl|nss|openssl)
+            CONFIG_OPTS+=("--with-${NUT_SSL_VARIANTS}")
+            ;;
+        yes) CONFIG_OPTS+=("--with-ssl") ;;
+        no)  CONFIG_OPTS+=("--without-ssl") ;;
+        auto) CONFIG_OPTS+=("--with-ssl=auto") ;;
+        "") ;;
+        *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+    esac
 
     if [ -n "${BUILD_DEBUGINFO-}" ]; then
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
@@ -2479,6 +3183,22 @@ bindings)
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
+
+        # Do not let autoconf-cached re-runs (re-running the configure script
+        # due to a `make` with changed *.m4, *.am or configure.ac sources)
+        # complain that CCACHE_* vars were not previously set. This hassle
+        # comes with use of AC_ARG_VAR to mark "precious" arguments:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=${CCACHE_NAMESPACE}")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=${CCACHE_BASEDIR}")
+        CONFIG_OPTS+=("CCACHE_DIR=${CCACHE_DIR}")
+        CONFIG_OPTS+=("CCACHE_PATH=${CCACHE_PATH}")
+    else
+        # Still have them declared; the configure script will probably parse
+        # them as empty/undefined and re-evaluate if situation warrants that:
+        CONFIG_OPTS+=("CCACHE_NAMESPACE=")
+        CONFIG_OPTS+=("CCACHE_BASEDIR=")
+        CONFIG_OPTS+=("CCACHE_DIR=")
+        CONFIG_OPTS+=("CCACHE_PATH=")
     fi
 
     # If detect_platform_PKG_CONFIG_PATH_and_FLAGS() customized anything here,
@@ -2498,31 +3218,28 @@ bindings)
     esac
 
     if [ "${_EXPORT_FLAGS}" = true ] ; then
-            [ -z "${CFLAGS}" ]   || export CFLAGS
-            [ -z "${CXXFLAGS}" ] || export CXXFLAGS
-            [ -z "${CPPFLAGS}" ] || export CPPFLAGS
-            [ -z "${LDFLAGS}" ]  || export LDFLAGS
+        [ -z "${CFLAGS}" ]   || export CFLAGS
+        [ -z "${CXXFLAGS}" ] || export CXXFLAGS
+        [ -z "${CPPFLAGS}" ] || export CPPFLAGS
+        [ -z "${LDFLAGS}" ]  || export LDFLAGS
     else
-            # NOTE: Passing via CONFIG_OPTS also fails
-            [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
-            [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
-            [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
-            [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
+        # NOTE: Passing via CONFIG_OPTS also fails
+        [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
+        [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
+        [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
+        [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
     fi
 
-    PATH="`echo "${PATH}" | normalize_path`"
-    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
+    PATH="`echo \"${PATH}\" | normalize_path`"
+    CCACHE_PATH="`echo \"${CCACHE_PATH}\" | normalize_path`"
 
-    RES_CFG=0
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
-    || RES_CFG=$?
-    echo "$0: configure phase complete ($RES_CFG)" >&2
-    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
+    # NOTE: Exits if fails
+    configure_nut
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
-    echo "Configuration finished, starting make" >&2
+    echo "Configuration finished, starting make in `pwd`" >&2
     if [ -n "$PARMAKE_FLAGS" ]; then
         echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
     fi
@@ -2531,7 +3248,7 @@ bindings)
     fi
 
     #$MAKE all || \
-    $MAKE $PARMAKE_FLAGS all || exit
+    $MAKE $PARMAKE_FLAGS all-quick || exit
     build_to_only_catch_errors_check
     ### if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
 
@@ -2560,10 +3277,11 @@ cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
 
     if [ "$HAVE_CCACHE" = yes ] \
+    && [ x"${CI_CCACHE_USE-}" != xno ] \
     && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
     && [ -d "${CI_CCACHE_SYMLINKDIR}" ] \
     ; then
-        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        PATH="`echo \"$PATH\" | sed -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?:,,' -e 's,:'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,' -e 's,^'\"${CI_CCACHE_SYMLINKDIR}\"'/?$,,'`"
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
         if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
@@ -2573,7 +3291,9 @@ cross-windows-mingw*)
         fi
     fi
 
-    ./autogen.sh || exit
+    ###./autogen.sh || exit
+    # Also populate CI_CACHE_NUT_HASHDIR if appropriate
+    autogen_get_CONFIGURE_SCRIPT || exit
     cd scripts/Windows || exit
 
     cmd="" # default soup of the day, as defined in the called script
@@ -2598,10 +3318,60 @@ cross-windows-mingw*)
             ;;
     esac
 
+    if [ x"${WITH_LIBNUTPRIVATE-}" = x ] ; then
+        # For Windows we want compact builds
+        # (they reach into gigabytes anyway):
+        WITH_LIBNUTPRIVATE=true
+    fi	# else we have some value from caller
+    export WITH_LIBNUTPRIVATE
+
+    export NUT_SSL_VARIANTS
+
+    if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
+        export CI_CACHE_NUT_HASHDIR
+    fi
+
+    DO_USE_AUTOCONF_CACHE="${DO_USE_AUTOCONF_CACHE}" \
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
     KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
+    ;;
+
+pkg-rpm|pkg-spec)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
+    rm -f nut.spec nut.changes || true
+    git clean -fdX || true
+    cp -f scripts/obs/nut.spec scripts/obs/nut.changes .
+    sed -e 's,^(Version:).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.spec
+    rpmbuild -ba nut.spec \
+    && find . -name '*rpm'
+    ;;
+
+pkg-deb|pkg-dsc)
+    echo "WARNING: package build recipes manipulate directly your current workspace" >&2
+    echo "         and would remove any git-ignored files, might leave trash afterwards!" >&2
+    echo "         Press Ctrl+C to abort if this is a problem" >&2
+    sleep 5
+
+    rm -rf debian config.*cdbs* nut.dsc || true
+    git clean -fdX || true
+    mkdir -p debian
+    (cd scripts/obs || exit
+    for F in debian.* ; do
+        ln -s "../scripts/obs/$F" "../../debian/`echo "$F" | sed 's/debian.//'`" || exit
+    done) || exit
+    cp -f scripts/obs/nut.dsc .
+    sed -e 's,^\(Version:\).*$,\1 '"`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh`," \
+        -i nut.dsc
+    dpkg-checkbuilddeps || sudo mk-build-debs -i
+    yes | debuild \
+    && find . -name '*deb'
     ;;
 
 *)

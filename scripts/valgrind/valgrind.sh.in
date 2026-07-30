@@ -4,8 +4,8 @@
 # NOTE: If there are system problems to suppress, re-run the test with
 #    --gen-suppressions=all option, and update the .valgrind.supp file.
 
-SCRIPTDIR="`dirname "$0"`"
-SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
+SCRIPTDIR="`dirname \"$0\"`"
+SCRIPTDIR="`cd \"$SCRIPTDIR\" && pwd`"
 
 LTEXEC=""
 [ -n "${LIBTOOL-}" ] || LIBTOOL="`command -v glibtool`" 2>/dev/null

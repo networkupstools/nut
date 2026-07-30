@@ -102,6 +102,11 @@ Here is an example output for a Dell r610 server:
 	ups.status: OL
 	ups.voltage: 12
 
+KNOWN ISSUES
+------------
+
+include::networked_hostnames.txt[]
+
 AUTHOR
 ------
 

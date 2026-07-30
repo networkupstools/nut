@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -120,6 +120,8 @@ void upsdrv_initinfo(void)
 {
 	dummy_info_t *item;
 
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+
 	switch (mode)
 	{
 		case MODE_DUMMY_ONCE:
@@ -156,24 +158,41 @@ void upsdrv_initinfo(void)
 				fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 			}
 			/* Connect to the target */
-			ups = xmalloc(sizeof(*ups));
-			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-			{
-				if(repeater_disable_strict_start == 1)
+			ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
+			{	/* scoping */
+				upscli_authconf_t	*ac_conn = NULL;
+				int	flags_ssl = UPSCLI_CONN_TRYSSL;
+				char	str_port[16];
+
+				ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+				if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+					upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+					upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+				}
+				if (upscli_connect(ups, hostname, port, flags_ssl) < 0)
 				{
-					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+					if (repeater_disable_strict_start == 1)
+					{
+						upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+					}
+					else
+					{
+						fatalx(EXIT_FAILURE, "Error: %s. "
+							"Any errors encountered starting the repeater mode result in driver termination, "
+							"perhaps you want to set the 'repeater_disable_strict_start' option?",
+							upscli_strerror(ups));
+					}
 				}
 				else
 				{
-					fatalx(EXIT_FAILURE, "Error: %s. "
-					"Any errors encountered starting the repeater mode result in driver termination, "
-					"perhaps you want to set the 'repeater_disable_strict_start' option?"
-					, upscli_strerror(ups));
+					upsdebugx(1, "Connected to %s@%s", client_upsname, hostname);
 				}
-			}
-			else
-			{
-				upsdebugx(1, "Connected to %s@%s", client_upsname, hostname);
+				if (ac_conn && ac_conn->user && ac_conn->pass) {
+					upsdebugx(1, "%s: Using authentication from configuration file", __func__);
+					if (upscli_authenticate_authconf(ups, ac_conn) < 0) {
+						fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+					}
+				}
 			}
 			if (upsclient_update_vars() < 0)
 			{
@@ -190,9 +209,9 @@ void upsdrv_initinfo(void)
 				else
 				{
 					fatalx(EXIT_FAILURE, "Error: %s. "
-					"Any errors encountered starting the repeater mode result in driver termination, "
-					"perhaps you want to set the 'repeater_disable_strict_start' option?"
-					, upscli_strerror(ups));
+						"Any errors encountered starting the repeater mode result in driver termination, "
+						"perhaps you want to set the 'repeater_disable_strict_start' option?",
+						upscli_strerror(ups));
 				}
 			}
 			/* FIXME: commands and settable variable! */
@@ -265,6 +284,8 @@ static int prepare_filepath(char *fn, size_t buflen)
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
+
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	sleep(1);
 
@@ -393,8 +414,13 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -404,23 +430,57 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_help(void)
 {
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	upscli_report_build_details();
+}
+
+static void dummy_setproctag_callback(const char *tag) {
+	const void	*cookie = nut_common_cookie();
+
+	if (cookie != upscli_upslog_cookie())
+		upscli_upslog_setproctag(xstrdup(tag), cookie);
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+	const void	*cookie = nut_common_cookie();
+
+	/* Here we actually tweak libupsclient logging more,
+	 * relying on this method being called early in main.c */
+	upscli_upslog_start_sync(upslog_start_sync(NULL), cookie);
+	upscli_upslog_set_debug_level(nut_debug_level, cookie);
+
+	/* FIXME: All other calls to setproctag() in main.c would currently
+	 * be invisible to upscli_*() as that object file has no idea about
+	 * the library in this one driver... should we introduce a callback? */
+	if (cookie != upscli_upslog_cookie()) {
+		/* Send over a copy */
+		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
+		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+
+		upsdrv_callback_setproctag = dummy_setproctag_callback;
+	}
 }
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
-	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
+	addvar(VAR_VALUE,	"authconf", "Select authentication config for repeater mode (default, none, or path to authconf file)");
+	addvar(VAR_FLAG,	"repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
 {
 	const char *val;
+
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 
 	val = dstate_getinfo("driver.parameter.mode");
 	if (val) {
@@ -439,9 +499,30 @@ void upsdrv_initups(void)
 	||   (val && !strcmp(val, "repeater"))
 	/*||   (val && !strcmp(val, "meta")) */
 	) {
+		const char	*authconf = dstate_getinfo("driver.parameter.authconf");
 		upsdebugx(1, "Repeater mode");
 		mode = MODE_REPEATER;
 		dstate_setinfo("driver.parameter.mode", "repeater");
+
+		/* Handle authconf option in repeater mode */
+		if (authconf) {
+			if (!strcmp(authconf, "none")) {
+				upsdebugx(1, "%s: Using authconf='%s': skipping auth config", __func__, authconf);
+			} else {
+				if (!strcmp(authconf, "default")) {
+					upsdebugx(1, "%s: Using authconf='%s': require a user or system provided file", __func__, authconf);
+					if (upscli_read_authconf_file(NULL, 1) < 0)
+						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
+				} else {
+					upsdebugx(1, "%s: Using authconf='%s': require this file", __func__, authconf);
+					if (upscli_read_authconf_file(authconf, 1) < 0)
+						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
+				}
+			}
+		} else {
+			upsdebugx(1, "%s: Using best-effort auth config detection", __func__);
+			upscli_read_authconf_file(NULL, 0);
+		}
 		/* FIXME: if there is at least one more => MODE_META... */
 	}
 	else
@@ -559,30 +640,37 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if ( (mode == MODE_META) || (mode == MODE_REPEATER) )
-	{
-		if (ups)
-		{
-			upscli_disconnect(ups);
-		}
-
-		if (ctx)
-		{
-			pconf_finish(ctx);
-			free(ctx);
-		}
-
-		free(client_upsname);
-		free(hostname);
+	if (ups) {
+		upscli_disconnect(ups);
 		free(ups);
+		ups = NULL;
 	}
+
+	if (client_upsname) {
+		free(client_upsname);
+		client_upsname = NULL;
+	}
+
+	if (hostname) {
+		free(hostname);
+		hostname = NULL;
+	}
+
+	if (ctx) {
+		pconf_finish(ctx);
+		free(ctx);
+		ctx = NULL;
+	}
+
+	upscli_cleanup();
+	upsdrv_callback_setproctag = NULL;
 }
 
 static int setvar(const char *varname, const char *val)
 {
 	dummy_info_t *item;
 
-	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
+	upsdebug_SET_STARTING(varname, val);
 
 	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
 	 * if (mode == MODE_REPEATER) => forward
@@ -591,7 +679,11 @@ static int setvar(const char *varname, const char *val)
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();
-		 /* FIXME: split and check values (support multiple values), à la usbhid-ups */
+		/* FIXME: split and check values (support multiple values),
+		 *  à la usbhid-ups.
+		 * UPDATE: Since NUT v2.8.3, status_set() does the splitting,
+		 *  but what about "checking values"?
+		 */
 		status_set(val);
 		status_commit();
 
@@ -760,21 +852,36 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 
 	if (now < next_update)
 	{
-		upsdebugx(1, "leaving (paused)...");
+		upsdebugx(1, "%s: leaving (paused)...", __func__);
 		return 1;
 	}
 
 	/* initialise everything, to loop back at the beginning of the file */
 	if (ctx == NULL)
 	{
+		upsdebugx(2, "%s: (re-)initialize PCONF context", __func__);
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
+		if (!ctx) {
+			upsdebugx(1, "%s: failed to malloc()", __func__);
+			return 1;
+		}
 
+		upsdebugx(5, "%s: call prepare_filepath()", __func__);
 		prepare_filepath(fn, sizeof(fn));
+
+		upsdebugx(5, "%s: got '%s', call pconf_init()", __func__, fn);
 		pconf_init(ctx, upsconf_err);
 
+		upsdebugx(5, "%s: call pconf_file_begin()", __func__);
 		if (!pconf_file_begin(ctx, fn))
 			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 				fn, ctx->errmsg);
+
+		/* we need this for parsing alarm instructions later */
+		upsdebugx(5, "%s: call status_init()", __func__);
+		status_init(); /* in case no ups.status does it */
+		upsdebugx(5, "%s: call alarm_init()", __func__);
+		alarm_init(); /* reset alarms at start of parsing */
 	}
 
 	/* Reset the next call time, so that we can loop back on the file
@@ -782,6 +889,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	next_update = -1;
 
 	/* Now start or continue parsing... */
+	upsdebugx(3, "%s: proceed parsing PCONF context", __func__);
 	while (pconf_file_next(ctx))
 	{
 		if (pconf_parse_error(ctx))
@@ -792,10 +900,14 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		}
 
 		/* Check if we have something to process */
+		upsdebugx(4, "%s: %s:%d: numargs:%" PRIuSIZE " token:%s",
+			__func__, fn, ctx->linenum, ctx->numargs,
+			(ctx->numargs < 1 ? "<null>" : ctx->arglist[0])
+			);
 		if (ctx->numargs < 1)
 			continue;
 
-		/* Process actions (only "TIMER" ATM) */
+		/* TIMER instruction */
 		if (!strncmp(ctx->arglist[0], "TIMER", 5))
 		{
 			/* TIMER <seconds> will wait "seconds" before
@@ -803,8 +915,35 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			int delay = atoi (ctx->arglist[1]);
 			time(&next_update);
 			next_update += delay;
+			upsdebugx(3, "parse_data_file: TIMER instruction with value \"%i\"", delay);
 			upsdebugx(1, "suspending execution for %i seconds...", delay);
 			break;
+		}
+
+		/* ALARM instruction */
+		if (!strncmp(ctx->arglist[0], "ALARM", 5))
+		{
+			if (ctx->numargs > 1) {
+				for (counter = 1, value_args = ctx->numargs ;
+					counter < value_args ; counter++)
+				{
+					if (counter == 1) /* don't append the first space separator */
+						snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+					else
+						snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
+				}
+				if (*var_value != '\0') {
+					alarm_set(var_value);
+					upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
+
+					continue;
+				}
+			}
+
+			alarm_init();
+			upsdebugx(3, "parse_data_file: ALARM instruction with no value (reset alarms)");
+
+			continue;
 		}
 
 		/* Remove ":" suffix, after the variable name */
@@ -857,12 +996,18 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		}
 	}
 
+	alarm_commit(); /* needs to happen first */
+	status_commit(); /* re-commit status for ALARM */
+
 	/* Cleanup parseconf if there is no pending action */
 	if (next_update == -1)
 	{
+		upsdebugx(3, "%s: clean up PCONF context: no pending action", __func__);
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
 	}
+
+	upsdebugx(3, "%s: leaving (finished)", __func__);
 	return 1;
 }

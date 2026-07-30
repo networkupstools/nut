@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.60"
+#define APCC_MIB_VERSION	"1.61"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs. sysOID for this one? */
@@ -249,7 +249,7 @@ static snmp_info_t apcc_mib[] = {
 	snmp_info_default("battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL),
 	snmp_info_default("ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL),
 	snmp_info_default("ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, apcc_testdiag_results),
-	snmp_info_default("ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL),
+	snmp_info_default("ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL),
 	snmp_info_default("output.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.1.0", "", SU_FLAG_OK | SU_FLAG_UNIQUE, NULL),
 	snmp_info_default("output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.1.0", "", SU_FLAG_OK, NULL),
 	snmp_info_default("output.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL),

@@ -1,5 +1,6 @@
 /config.h
 /config.h.in
+/.all.nut_version-generated.timestamp
 /nut_version.h
 /nut_version.h.tmp*
 /stamp-h1

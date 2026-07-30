@@ -5,6 +5,7 @@ exit
 #	ipp-event
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to manage event from IPP - Unix (NUT)
 #	It needs ipp.conf file.
@@ -40,7 +41,7 @@ fi
 #call notifier script
 $CMD_NOTIFIER "$*" &
 
-PROC="`ps -ef | grep "$DAEMON" | awk   -F" " '{print $2}'`"
+PROC="`ps -ef | grep \"$DAEMON\" | awk   -F\" \" '{print $2}'`"
 case "$1" in
 	ONBATT)
 		if [ $PROC = "" ];then

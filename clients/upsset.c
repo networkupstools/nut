@@ -1,6 +1,7 @@
 /* upsset - CGI program to manage read/write variables
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,8 +45,14 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
+
+static int	flags_ssl = UPSCLI_CONN_TRYSSL;
 
 static char	*monups, *username, *password, *function, *upscommand;
 
@@ -70,6 +77,11 @@ void parsearg(char *var, char *value)
 	uvtype_t	*last, *tmp = NULL;
 	static	int upsvc = 0;
 
+	if (var == NULL || value == NULL) {
+		upslogx(LOG_ERR, "parsearg() called with var null or value null");
+		return;
+	}
+
 	/* store variables from a SET command for the later commit */
 	if (!strncmp(var, "UPSVAR_", 7)) {
 
@@ -91,10 +103,10 @@ void parsearg(char *var, char *value)
 		tmp = last = firstuv;
 		while (tmp) {
 			last = tmp;
-			tmp = tmp->next;
+			tmp = (uvtype_t *)tmp->next;
 		}
 
-		tmp = xmalloc(sizeof(uvtype_t));
+		tmp = (uvtype_t *)xmalloc(sizeof(uvtype_t));
 		tmp->var = xstrdup(ptr);
 		tmp->value = xstrdup(value);
 		tmp->next = NULL;
@@ -170,6 +182,14 @@ static void do_hidden(const char *next)
 			next);
 }
 
+static void do_hidden_sentinel(void)
+{
+	/* MS IIS tends to not close CGI STDIN and not serve the last byte(s)
+	 * but just hangs at fgets(), so we truncate the inputs in cgilib,
+	 * and add a dummy entry here that we can afford to lose in the end */
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"zzz\" VALUE=\"sentinel\">\n");
+}
+
 /* generate SELECT chooser from hosts.conf entries */
 static void upslist_arg(size_t numargs, char **arg)
 {
@@ -202,7 +222,7 @@ static void do_pickups(const char *currfunc)
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
 
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 
 	printf("Select UPS and function:\n<BR>\n");
 
@@ -258,6 +278,8 @@ static void do_pickups(const char *currfunc)
 	do_hidden(NULL);
 
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"View\">\n");
+
+	do_hidden_sentinel();
 	printf("</FORM>\n");
 }
 
@@ -315,7 +337,7 @@ static void loginscreen(void)
 static void loginscreen(void)
 {
 	do_header("Login");
-	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
@@ -332,6 +354,7 @@ static void loginscreen(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"pickups\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Login\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset fields\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR></TABLE>\n");
 	printf("</FORM>\n");
 	printf("</TD></TR></TABLE>\n");
@@ -350,7 +373,7 @@ static void upsd_connect(void)
 		/* NOTREACHED */
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+	if (upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		error_page("showsettings", "Connect failure",
 			"Unable to connect to %s: %s",
 			monups, upscli_strerror(&ups));
@@ -426,7 +449,7 @@ static void showcmds(void)
 			return;
 		}
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -445,7 +468,7 @@ static void showcmds(void)
 			"This UPS doesn't support any instant commands.");
 
 	do_header("Instant commands");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -483,6 +506,7 @@ static void showcmds(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Issue command\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -770,6 +794,20 @@ static void do_type(const char *varname)
 			return;
 		}
 
+		if (!strcasecmp(answer[i], "NUMBER")) {
+			/* 20 is a reasonable default size for the text box */
+			do_string(varname, 20);
+			return;
+		}
+
+		/* RANGE is usually paired with NUMBER.
+		 *  We can ignore 'RANGE' and let the 'NUMBER'
+		 *  case (which should come next) handle it.
+		 */
+		if (!strcasecmp(answer[i], "RANGE")) {
+			continue;
+		}
+
 		/* ignore this one */
 		if (!strcasecmp(answer[i], "RW"))
 			continue;
@@ -845,7 +883,7 @@ static void showsettings(void)
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -860,7 +898,7 @@ static void showsettings(void)
 	}
 
 	do_header("Current settings");
-	printf("<FORM ACTION=\"upsset.cgi\" METHOD=\"POST\">\n");
+	printf("<FORM METHOD=\"POST\" ACTION=\"upsset.cgi" EXEEXT "\">\n");
 	start_table();
 
 	/* include the description from checkhost() if present */
@@ -892,6 +930,7 @@ static void showsettings(void)
 	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Save changes\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
+	do_hidden_sentinel();
 	printf("</TD></TR>\n");
 	printf("</TABLE>\n");
 	printf("</FORM>\n");
@@ -975,7 +1014,7 @@ static void savesettings(void)
 
 	while (upsvar) {
 		changed += setvar(upsvar->var, upsvar->value);
-		upsvar = upsvar->next;
+		upsvar = (uvtype_t *)upsvar->next;
 	}
 
 	if (changed == 0)
@@ -1030,6 +1069,7 @@ static void check_conf(void)
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsset_conf_err);
 
@@ -1077,32 +1117,99 @@ static void check_conf(void)
 	exit(EXIT_FAILURE);
 }
 
+static void clean_exit(void)
+{
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
+}
+
 int main(int argc, char **argv)
 {
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	char *s, str_port[16];
+	upscli_authconf_t	*ac_conn = NULL;
+	int	i;
+
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
+
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+	/* Also do not break what we receive from HTTP POST queries */
+	setmode(STDIN_FILENO, O_BINARY);
+#endif
+
+	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsset(CGI)");
+
 	username = password = function = monups = NULL;
 
-	printf("Content-type: text/html\n\n");
+	printf("Content-type: text/html\n");
+	printf("Pragma: no-cache\n");
+	printf("\n");
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	}
+
+#ifdef NUT_CGI_DEBUG_UPSSET
+# if (NUT_CGI_DEBUG_UPSSET - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSSET
+#  define NUT_CGI_DEBUG_UPSSET 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSSET;
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
+	}
 
 	/* see if the magic string is present in the config file */
 	check_conf();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
 
-	/* see if there's anything waiting .. the server my not close STDIN properly */
-	if (1) {
-		fd_set fds;
-		struct timeval tv;
+	extractpostargs();
 
-		FD_ZERO(&fds);
-		FD_SET(STDIN_FILENO, &fds);
-		tv.tv_sec = 0;
-		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-
-		if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
-			extractpostargs();
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
+		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
 	}
+
+	/* Nothing POSTed (or parsed correctly)?
+	 * TOTHINK: Consider autologin via ac_conn->user/pass fields?
+	 *  Probably no, not for a web client anyone can interact with...
+	 *  //upscli_authenticate_authconf(&ups, ac_conn); after a connect()
+	 */
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 

@@ -2,6 +2,7 @@
 
 # ups: Starts and stops the Network UPS Tools 2.6.5 built for IPP - Unix 1.40-4 on Solaris
 #       Customizations copyright (c) 2015-2017, by Eaton (R) Corporation. All rights reserved.
+#       Copyright (c) 2024-2025, by the Network UPS Tools project community.
 
 NUT_DIR="/usr/local/ups"
 NUT_RUN_DIR="/var/state/ups"

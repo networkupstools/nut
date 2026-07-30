@@ -39,6 +39,8 @@ typedef struct timespec	st_tree_timespec_t;
 #else
 typedef struct timeval	st_tree_timespec_t;
 #endif
+/* Absorb the build-time variation */
+double difftime_st_tree_timespec(st_tree_timespec_t finish, st_tree_timespec_t start);
 
 typedef struct st_tree_s {
 	char	*var;

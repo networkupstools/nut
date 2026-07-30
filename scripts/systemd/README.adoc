@@ -17,7 +17,8 @@ configuration files rather than editing the installed unit files directly
 ----
 # cat /etc/systemd/system/nut-monitor.service.d/debug.conf
 [Service]
-Environment="NUT_DEBUG_PID=yes"
+Environment="NUT_DEBUG_PID=true"
+#Environment="NUT_DEBUG_PROCNAME=true"
 ----
 ...followed up by `systemctl daemon-reload` and a restart of the unit itself.
 

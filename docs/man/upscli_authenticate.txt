@@ -1,0 +1,57 @@
+UPSCLI_AUTHENTICATE(3)
+======================
+
+NAME
+----
+
+upscli_authenticate, upscli_authenticate_authconf - Common methods to supply
+USERNAME and PASSWORD during the server dialog.
+
+SYNOPSIS
+--------
+
+----
+	#include <upsclient.h>
+
+	int upscli_authenticate(UPSCONN_t *ups,
+		const char *username, const char *password,
+		int check_os_user, int ask_password);
+
+	int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac);
+----
+
+DESCRIPTION
+-----------
+
+The *upscli_authenticate()* function takes the pointer 'ups' to a *UPSCONN_t*
+state, and attempts to submit credentials to the server.
+
+If 'username' is `NULL` and 'check_os_user' is `1`, it tries to detect the
+username from the OS and queries the user to confirm this finding or enter
+a different name on standard input.
+
+If 'password' is `NULL` and 'ask_password' is `1`, it queries for the password
+interactively.
+
+The *upscli_authenticate_authconf()* function is an equivalent wrapper for
+*upscli_authenticate()* that uses the 'user' and 'pass' fields from the
+*upscli_authconf_t* structure 'ac', without the fallback toggle arguments.
+
+RETURN VALUE
+------------
+
+The *upscli_authenticate()* and *upscli_authenticate_authconf()* functions
+return 0 on success, -1 if an error occurs during fallback input of username
+or password, or -2 if an error occurs during dialog with the data server.
+
+In case of errors (negative returns), use linkman:upscli_upserror[3] and
+linkman:upscli_strerror[3] to determine the problem code or description.
+Note that the *upscli_authenticate()* function itself reports any details
+it knows about the situation (typically to `stderr` and/or `syslog`) with
+`upslogx(LOG_ERR, ...)` calls.
+
+SEE ALSO
+--------
+linkman:upscli_connect[3],
+linkman:upscli_strerror[3],
+linkman:upscli_upserror[3]

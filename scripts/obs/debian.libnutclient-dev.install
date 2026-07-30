@@ -1,0 +1,3 @@
+usr/lib/*/libnutclient.so
+usr/lib/*/pkgconfig/libnutclient.pc
+usr/include/nutclient.h

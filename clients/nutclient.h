@@ -1,6 +1,12 @@
 /* nutclient.h - definitions for nutclient C/C++ library
 
-   Copyright (C) 2012  Emilien Kia <emilien.kia@gmail.com>
+    Copyright (C) 2012 Eaton
+
+        Author: Emilien Kia <emilien.kia@gmail.com>
+
+    Copyright (C) 2024-2026 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,8 +29,19 @@
 /* Begin of C++ nutclient library declaration */
 #ifdef __cplusplus
 
+#ifdef WITH_SSL_CXX
+# ifdef WITH_OPENSSL
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
+# elif defined(WITH_NSS) /* not WITH_OPENSSL */
+#	include <nss.h>
+#	include <ssl.h>
+# endif  /* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_SSL_CXX */
+
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 #include <set>
 #include <exception>
@@ -33,8 +50,28 @@
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE
-#define NUT_UNUSED_VARIABLE(x) (void)(x)
+# define NUT_UNUSED_VARIABLE(x) (void)(x)
 #endif
+
+/* Should be defined via autoconf in include/config.h -
+ * if that is included earlier by the program code.
+ * If not - got a fallback here:
+ */
+#ifndef NUT_PORT
+# define NUT_PORT 3493
+#endif
+
+#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+#define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS (1 << 2)	/* Can use CERTIDENT (verify private key password)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME (1 << 3)	/* Can use CERTIDENT (verify cert nickname)    */
+#define UPSCLI_SSL_CAPS_CERTIDENT (UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER	(1 << 4)	/* Can do CERTHOST IP address check */
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT	(1 << 5)	/* Can do CERTHOST hostname check */
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR	(UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER | UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT)	/* Can do CERTHOST IP address or hostname check */
+#define UPSCLI_SSL_CAPS_CERTHOST_NAME	(1 << 6)	/* Can do CERTHOST nickname check - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTHOST	(UPSCLI_SSL_CAPS_CERTHOST_ADDR | UPSCLI_SSL_CAPS_CERTHOST_NAME)
 
 namespace nut
 {
@@ -50,6 +87,638 @@ class TcpClient;
 class Device;
 class Variable;
 class Command;
+
+/**
+ * Authentication configuration for a NUT client.
+ */
+class AuthConf
+{
+public:
+	AuthConf(const std::string& section = "");
+	AuthConf(const AuthConf& source, const std::string& section = "");
+	AuthConf& operator=(const AuthConf& source);
+	~AuthConf();
+
+	/** Get the one global list of all parsed authentication configurations */
+	static std::list<AuthConf>& getAuthConfList();
+
+	/** Read the authentication configuration file (usually nutauth.conf) */
+	static int readAuthConfFile(const std::string& filename = "", int fatal_errors = 0);
+
+	/** Find the best matching authconf for a given connection string */
+	static AuthConf findAuthConf(const std::string& user, const std::string& host, const std::string& port);
+
+	/** Find the best matching authconf for a given connection string, and fill in
+	 * the missing points from higher levels (exact match => host defaults => global).
+	 * Based on `add_to_list` flag, the returned item is always new and unique and
+	 * not on the list (can adapt to changes in higher levels but must be freed by
+	 * caller), or will be edited on or added to the list (subsequent calls would
+	 * likely not add anything new, but memory management is easier, data is cached).
+	 * if all args are empty, return the global section or empty if none such in the list.
+	 */
+	static AuthConf getAuthConf(const std::string& user, const std::string& host, const std::string& port, bool add_to_list = false);
+
+	/** Merge contents of another configuration item into this one.
+	 *  Follows C upscli_merge_authconf_item() logic.
+	 */
+	void merge(const AuthConf& source);
+
+	/** Clear the global list of authentication configurations */
+	static void freeAuthConfList();
+
+	/** Allow to print the contents of this configuration item */
+	std::string to_string(bool for_debug = false, bool show_pass = false);
+	static std::string toString_line_str(const std::string &var, const std::string &val, const std::string &indent, bool for_debug);
+	static std::string toString_line_int(const std::string &var, int val, const std::string &indent, bool for_debug);
+
+	/** [@host:port] or [user@host:port], or empty for global defaults */
+	std::string section;
+
+	std::string user;
+	std::string pass;
+
+	/** Path to trusted CA certificates;
+	 * in case of NSS, this is the path to location
+	 * of the NSS DB files used for all purposes */
+	std::string certpath;
+
+	/** (OpenSSL only) Client certificate file for authentication to the server
+	 *  (client cert, CA chain, client key) */
+	std::string certfile;
+
+	/** Client certificate identity (nickname, alias) */
+	std::string certident;
+
+	/** Password for key/cert storage */
+	std::string certpasswd;
+
+	/** "openssl"/"nss" */
+	std::string ssl_backend;
+
+	/** Expected certificate subject (common name) of that
+	 * server's certificate; alternately the IP address or
+	 * host name used in the section title should match that
+	 * in the common name (CN) or subject alternate names (SAN) */
+	std::string certhost;
+	int certverify;	/* -1 = unset, 0 = off, 1 = on */
+	int forcessl;	/* -1 = unset, 0 = off, 1 = on */
+
+private:
+	static std::list<AuthConf> authconf_list;
+	static AuthConf* global_defaults;
+};
+
+/**
+ * Base class for certificate store location information
+ * (where to find the files and how to open them).
+ */
+class SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE();
+
+	SSLConfig_CERTSTORE& operator=(const SSLConfig_CERTSTORE&) = default;
+	SSLConfig_CERTSTORE(const SSLConfig_CERTSTORE&) = default;
+
+	virtual SSLConfig_CERTSTORE* clone() const;
+	virtual ~SSLConfig_CERTSTORE();
+
+	virtual bool hasCALocation() const;
+
+	/** We do not look inside the file here, so this is a check of configuration
+	 * settings (file may be absent). Note that key may be not in it but nearby. */
+	virtual bool hasCertIdentity() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const;
+};
+
+/**
+ * Helper class for OpenSSL-specific certificate store location information:
+ * file (as a single PEM) or directory (with hash-named files) for CA trust,
+ * file paths for its certificate chain as a single PEM and optionally the
+ * corresponding private key location (if stored in a separate file).
+ */
+class SSLConfig_CERTSTORE_OpenSSL : public SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE_OpenSSL(
+		const std::string& ca_path,
+		const std::string& ca_file = "",
+		const std::string& cert_file = "",
+		const std::string& key_file = "");
+
+	SSLConfig_CERTSTORE_OpenSSL(
+		const char *ca_path,
+		const char *ca_file = nullptr,
+		const char *cert_file = nullptr,
+		const char *key_file = nullptr);
+
+	SSLConfig_CERTSTORE_OpenSSL& operator=(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+	SSLConfig_CERTSTORE_OpenSSL(const SSLConfig_CERTSTORE_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTSTORE_OpenSSL* clone() const override;
+	virtual ~SSLConfig_CERTSTORE_OpenSSL() override;
+
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+
+	const std::string& getCAPath() const;
+	const char *getCAPath_c_str() const;
+
+	const std::string& getCALocation() const;
+	const char *getCALocation_c_str() const;
+
+	bool hasCALocation() const override;
+
+	/** Return certificate chain file: PEM starting with the subject's
+	 *  server or client certificate, followed by the chain of intermediate
+	 *  CA certificates (if applicable) and the highest level (root) CA.
+	 *  It should end with the private key of the subject, or one should
+	 *  be provided by another option (currently not provided for in the
+	 *  NUT config file syntax).
+	 */
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	/** We do not look inside the file here, so this is a check of configuration
+	 * settings (file may be absent). Note that key may be not in it but nearby. */
+	bool hasCertIdentity() const override;
+
+	/** Return the private key corresponding to the subject's certificate.
+	 *  May be empty if not provided to constructor.
+	 *  \see getKeyOrCertFile()
+	 */
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	/** If no separate private key file was provided to the constructor,
+	 *  return the certificate file path -- presuming the key is there.
+	 */
+	const std::string& getKeyOrCertFile() const;
+	const char *getKeyOrCertFile_c_str() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE_OpenSSL& other) const;
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const override;
+
+protected:
+	std::string	_ca_path;
+	std::string	_ca_file;
+	std::string	_cert_file;
+	std::string	_key_file;
+};
+
+/**
+ * Helper class for Mozilla NSS-specific certificate store location information:
+ * location of the certificate/key store database files, optionally a prefix
+ * for co-location of multiple databases in one directory, and the optional
+ * pass-phrase to open the private key database itself. Note that NSS (unlike
+ * JKS) databases do not have a passphrase to protect the database itself
+ * (e.g. to limit the addition of trusted CA certificates). The private key
+ * password is the same for all keys in the database (that is actually known
+ * as the "NSS database password" or "master password"); for logical
+ * consistency a copy may be stored in SSLConfig_CERTIDENT.
+ */
+class SSLConfig_CERTSTORE_NSS : public SSLConfig_CERTSTORE
+{
+public:
+	SSLConfig_CERTSTORE_NSS(
+		const std::string& certstore_path,
+		const std::string& certstore_pass = "",
+		const std::string& certstore_prefix = "");
+
+	SSLConfig_CERTSTORE_NSS(
+		const char *certstore_path,
+		const char *certstore_pass = nullptr,
+		const char *certstore_prefix = nullptr);
+
+	SSLConfig_CERTSTORE_NSS& operator=(const SSLConfig_CERTSTORE_NSS&) = default;
+	SSLConfig_CERTSTORE_NSS(const SSLConfig_CERTSTORE_NSS&) = default;
+
+	virtual SSLConfig_CERTSTORE_NSS* clone() const override;
+	virtual ~SSLConfig_CERTSTORE_NSS() override;
+
+	/** Location of the certificate/key store database files */
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	/** Pass-phrase to open the private key database */
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	/** Optional prefix for co-location of multiple databases in one directory */
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+
+	bool hasCALocation() const override;
+	bool hasCertIdentity() const override;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTSTORE_NSS& other) const;
+	virtual bool operator < (const SSLConfig_CERTSTORE& other) const override;
+
+protected:
+	std::string	_certstore_path;
+	std::string	_certstore_pass;
+	std::string	_certstore_prefix;
+};
+
+/**
+ * Helper class for basic self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase,
+ * as specified in the CERTIDENT directive in the NUT client or server
+ * configuration files.
+ */
+class SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT(
+		const std::string& cert_subj,
+		const std::string& key_pass);
+
+	SSLConfig_CERTIDENT(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const SSLConfig_CERTSTORE& certstore);
+
+	SSLConfig_CERTIDENT(
+		const char *cert_subj,
+		const char *key_pass);
+
+	SSLConfig_CERTIDENT(
+		const char *cert_subj,
+		const char *key_pass,
+		const SSLConfig_CERTSTORE& certstore);
+
+	SSLConfig_CERTIDENT(const SSLConfig_CERTIDENT&);
+	SSLConfig_CERTIDENT& operator=(const SSLConfig_CERTIDENT&);
+
+	virtual SSLConfig_CERTIDENT* clone() const;
+
+	virtual ~SSLConfig_CERTIDENT();
+
+	const std::string& getCertSubj() const;
+	const char *getCertSubj_c_str() const;
+
+	const std::string& getKeyPass() const;
+	const char *getKeyPass_c_str() const;
+
+	const SSLConfig_CERTSTORE& getCertstore() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTIDENT& other) const;
+
+protected:
+	std::string	_cert_subj;
+	std::string	_key_pass;
+
+	SSLConfig_CERTSTORE*	_certstore;
+};
+
+/**
+ * Helper class for OpenSSL-specific self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase, as well
+ * as file paths for its certificate chain as PEM and optionally the corresponding
+ * private key location (if stored in a separate file).
+ */
+class SSLConfig_CERTIDENT_OpenSSL : public SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT_OpenSSL(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const std::string& cert_file,
+		const std::string& key_file = "");
+
+	SSLConfig_CERTIDENT_OpenSSL(
+		const char *cert_subj,
+		const char *key_pass,
+		const char *cert_file,
+		const char *key_file = nullptr);
+
+	SSLConfig_CERTIDENT_OpenSSL& operator=(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+	SSLConfig_CERTIDENT_OpenSSL(const SSLConfig_CERTIDENT_OpenSSL&) = default;
+
+	virtual SSLConfig_CERTIDENT_OpenSSL* clone() const override;
+
+	virtual ~SSLConfig_CERTIDENT_OpenSSL() override;
+
+	/** Return certificate chain file: PEM starting with the subject's
+	 *  server or client certificate, followed by the chain of intermediate
+	 *  CA certificates (if applicable) and the highest level (root) CA.
+	 *  It should end with the private key of the subject, or one should
+	 *  be provided by another option (currently not provided for in the
+	 *  NUT config file syntax).
+	 */
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	/** Return the private key corresponding to the subject's certificate.
+	 *  May be empty if not provided to constructor.
+	 *  \see getKeyOrCertFile()
+	 */
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	/** If no separate private key file was provided to the constructor,
+	 *  return the certificate file path -- presuming the key is there.
+	 */
+	const std::string& getKeyOrCertFile() const;
+	const char *getKeyOrCertFile_c_str() const;
+};
+
+/**
+ * Helper class for Mozilla NSS-specific self-identification of a server or client:
+ * subject of certificate and corresponding private key pass phrase, as well as
+ * location of the certificate/key store database files, and optionally a prefix
+ * for co-location of multiple databases in one directory.
+ */
+class SSLConfig_CERTIDENT_NSS : public SSLConfig_CERTIDENT
+{
+public:
+	SSLConfig_CERTIDENT_NSS(
+		const std::string& cert_subj,
+		const std::string& key_pass,
+		const std::string& certstore_path = "",
+		const std::string& certstore_prefix = "");
+
+	SSLConfig_CERTIDENT_NSS(
+		const char *cert_subj,
+		const char *key_pass,
+		const char *certstore_path = nullptr,
+		const char *certstore_prefix = nullptr);
+
+	SSLConfig_CERTIDENT_NSS& operator=(const SSLConfig_CERTIDENT_NSS&) = default;
+	SSLConfig_CERTIDENT_NSS(const SSLConfig_CERTIDENT_NSS&) = default;
+
+	virtual SSLConfig_CERTIDENT_NSS* clone() const override;
+
+	virtual ~SSLConfig_CERTIDENT_NSS() override;
+
+	/** Location of the certificate/key store database files */
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	/** Pass-phrase to open the private key database (should be same as getKeyPass() value) */
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	/** Optional prefix for co-location of multiple databases in one directory */
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+};
+
+/**
+ * Helper class for tuned counterpart security pinning, as
+ * specified by the CERTHOST directives (maybe multiple) in
+ * the NUT client configuration files.
+ *
+ * If FORCESSL or CERTVERIFY are not set for this host (remain -1),
+ * the Socket class would use global config values as defaults.
+ *
+ * Trust to certificates issued by a certain authority is based
+ * on the SSLConfig used by the particular Socket instance.
+ */
+class SSLConfig_CERTHOST
+{
+public:
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
+	SSLConfig_CERTHOST(
+		const std::string& host_addr,
+		const std::string& cert_subj,
+		int forcessl = -1,
+		int certverify = -1,
+		uint16_t port = 0);
+
+	SSLConfig_CERTHOST(
+		const char *host_addr,
+		const char *cert_subj,
+		int forcessl = -1,
+		int certverify = -1,
+		uint16_t port = 0);
+
+	SSLConfig_CERTHOST& operator=(const SSLConfig_CERTHOST&) = default;
+	SSLConfig_CERTHOST(const SSLConfig_CERTHOST&) = default;
+
+	virtual SSLConfig_CERTHOST* clone() const;
+
+	virtual ~SSLConfig_CERTHOST();
+
+	const std::string& getHostAddr() const;
+	const char *getHostAddr_c_str() const;
+
+	uint16_t getPort() const;
+
+	const std::string& getCertSubj() const;
+	const char *getCertSubj_c_str() const;
+
+	int getForceSsl() const;
+	int getCertVerify() const;
+
+	/** Wanted for insertion into a set below */
+	virtual bool operator < (const SSLConfig_CERTHOST& other) const;
+
+protected:
+	std::string	_host_addr;
+	std::string	_cert_subj;
+	int	_forcessl;
+	int	_certverify;
+	uint16_t	_port;
+};
+
+/**
+ * Base class of SSL configuration for NUT connections.
+ * Can keep track of CERTSTORE, CERTIDENT (single) and/or CERTHOST (multiple).
+ */
+class SSLConfig
+{
+public:
+	SSLConfig(
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(
+		const SSLConfig_CERTSTORE& certstore,
+		const SSLConfig_CERTIDENT& certident,
+		bool forcessl = false,
+		int certverify = -1);
+
+	SSLConfig(const SSLConfig&);
+	SSLConfig& operator=(const SSLConfig&);
+
+	virtual ~SSLConfig();
+
+	bool getForceSsl() const;
+	void setForceSsl(bool forcessl);
+	int getCertVerify() const;
+	void setCertVerify(int certverify);
+
+	/** We only expect to have at most one CERTIDENT value
+	 *  to represent this server/client, replaced if needed */
+	void setCertIdent(const SSLConfig_CERTIDENT& certident);
+	void unsetCertIdent();
+	const SSLConfig_CERTIDENT* getCertIdent() const;
+
+	/** We only expect to have at most one CERTSTORE value
+	 *  per connection to trust others, replaced if needed */
+	void setCertStore(const SSLConfig_CERTSTORE& certident);
+	void unsetCertStore();
+	const SSLConfig_CERTSTORE* getCertStore() const;
+
+	/** Add a non-trivial CERTHOST to the list (host address
+	 *  and certificate nickname must be populated) */
+	void addCertHost(const SSLConfig_CERTHOST& certhost);
+	const std::set<const SSLConfig_CERTHOST*> getCertHosts() const;
+	/** Simplify workflow for single-server connections */
+	const SSLConfig_CERTHOST *getFirstCertHost() const;
+
+	/** NOTE: Addr would be parsed into host:port and a 0 port may become NUT_PORT */
+	const SSLConfig_CERTHOST *getCertHostByAddr(const std::string &s, uint16_t port = 0) const;
+	const SSLConfig_CERTHOST *getCertHostBySubj(const std::string &s) const;
+	const SSLConfig_CERTHOST *getCertHostByAddrOrSubj(const std::string &s, uint16_t port = 0) const;
+
+	/** Callback to apply this configuration into a TcpClient instance
+	 * (and further propagate into a Socket instance used by it).
+	 * @param client TcpClient instance to apply configuration to
+	 */
+	virtual void apply(TcpClient& client) const;
+
+	/** Just to be sure to have a pre-created immortal empty string object */
+	static const std::string _empty_str;
+
+protected:
+	bool	_forcessl;
+	int	_certverify;
+
+	/** NOTE: We only expect to have one value to represent
+	 *  this server/client, replaced if needed; here using
+	 *  a set simplifies constructor and the set-later logic */
+	std::set<const SSLConfig_CERTIDENT*>	_certidents;
+
+	/** Probably we could have many of those, eventually;
+	 *  however, it does not make sense with both libraries
+	 *  using some one store per connection => config
+	 */
+	std::set<const SSLConfig_CERTSTORE*>	_certstores;
+
+	/** We can have many of those */
+	std::set<const SSLConfig_CERTHOST*>	_certhosts;
+
+	/** Not exposed; used for consistency in destructor */
+	void unsetCertHost();
+};
+
+/**
+ * SSL configuration with added options specific for OpenSSL.
+ */
+class SSLConfig_OpenSSL : public SSLConfig
+{
+public:
+	SSLConfig_OpenSSL(
+		bool forcessl = false,
+		int certverify = -1,
+		const std::string& ca_path = "",
+		const std::string& ca_file = "",
+		const std::string& cert_file = "",
+		const std::string& key_file = "",
+		const std::string& key_pass = "",
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "",
+		const std::string& certhost_name = "");
+
+	SSLConfig_OpenSSL(
+		bool forcessl,
+		int certverify,
+		const char *ca_path,
+		const char *ca_file,
+		const char *cert_file,
+		const char *key_file,
+		const char *key_pass,
+		const char *certident_name = nullptr,
+		const char *certhost_addr = nullptr,
+		const char *certhost_name = nullptr);
+
+	const std::string& getCAPath() const;
+	const char *getCAPath_c_str() const;
+
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+
+	const std::string& getCertFile() const;
+	const char *getCertFile_c_str() const;
+
+	const std::string& getKeyFile() const;
+	const char *getKeyFile_c_str() const;
+
+	const std::string& getKeyPass() const;
+	const char *getKeyPass_c_str() const;
+
+	const std::string& getCertIdentName() const;
+	const char *getCertIdentName_c_str() const;
+
+	const std::string& getCertHostAddr() const;
+	const char *getCertHostAddr_c_str() const;
+
+	const std::string& getCertHostName() const;
+	const char *getCertHostName_c_str() const;
+
+	virtual void apply(TcpClient& client) const override;
+};
+
+/**
+ * SSL configuration with added options specific for Mozilla NSS.
+ */
+class SSLConfig_NSS : public SSLConfig
+{
+public:
+	SSLConfig_NSS(bool forcessl = false, int certverify = -1,
+		const std::string& certstore_path = "", const std::string& certstore_pass = "",
+		const std::string& certstore_prefix = "",
+		const std::string& certident_name = "",
+		const std::string& certhost_addr = "", const std::string& certhost_name = "");
+
+	SSLConfig_NSS(bool forcessl, int certverify,
+		const char *certstore_path, const char *certstore_pass,
+		const char *certstore_prefix,
+		const char *certident_name,
+		const char *certhost_addr, const char *certhost_name);
+
+/*	// No extra trust store for NSS so far - we assume its DB to hold all we need at this time
+	const std::string& getCAFile() const;
+	const char *getCAFile_c_str() const;
+*/
+
+	const std::string& getCertStorePath() const;
+	const char *getCertStorePath_c_str() const;
+
+	const std::string& getCertStorePass() const;
+	const char *getCertStorePass_c_str() const;
+
+	const std::string& getCertStorePrefix() const;
+	const char *getCertStorePrefix_c_str() const;
+
+	const std::string& getCertIdentName() const;
+	const char *getCertIdentName_c_str() const;
+
+	const std::string& getCertHostAddr() const;
+	const char *getCertHostAddr_c_str() const;
+
+	const std::string& getCertHostName() const;
+	const char *getCertHostName_c_str() const;
+
+	virtual void apply(TcpClient& client) const override;
+};
 
 /**
  * Basic nut exception.
@@ -95,6 +764,39 @@ public:
 };
 
 /**
+ * IO oriented nut exceptions specialized for SSL secured channel setup problems.
+ */
+class SSLException : public IOException
+{
+public:
+	SSLException(const std::string& msg):IOException(msg){}
+	SSLException():IOException("SSL failure"){}
+	SSLException(const SSLException&) = default;
+	SSLException& operator=(SSLException& rhs) = default;
+	virtual ~SSLException() noexcept override;
+};
+
+class SSLException_OpenSSL : public SSLException
+{
+public:
+	SSLException_OpenSSL(const std::string& msg):SSLException(std::string("OpenSSL: ") + msg){}
+	SSLException_OpenSSL():SSLException("OpenSSL: failure"){}
+	SSLException_OpenSSL(const SSLException_OpenSSL&) = default;
+	SSLException_OpenSSL& operator=(SSLException_OpenSSL& rhs) = default;
+	virtual ~SSLException_OpenSSL() noexcept override;
+};
+
+class SSLException_NSS : public SSLException
+{
+public:
+	SSLException_NSS(const std::string& msg):SSLException(std::string("NSS: ") + msg){}
+	SSLException_NSS():SSLException("NSS: failure"){}
+	SSLException_NSS(const SSLException_NSS&) = default;
+	SSLException_NSS& operator=(SSLException_NSS& rhs) = default;
+	virtual ~SSLException_NSS() noexcept override;
+};
+
+/**
  * IO oriented nut exception specialized for unknown host
  */
 class UnknownHostException : public IOException
@@ -131,21 +833,48 @@ public:
 };
 
 /**
- * Cookie given when performing async action, used to redeem result at a later date.
- */
-typedef std::string TrackingID;
-
-/**
  * Result of an async action.
  */
 typedef enum
 {
+	UNSET,
 	UNKNOWN,
 	PENDING,
 	SUCCESS,
 	INVALID_ARGUMENT,
 	FAILURE,
 } TrackingResult;
+
+/**
+ * Cookie given when performing async action, used to redeem result at a later date.
+ */
+class TrackingID
+{
+public:
+	TrackingID(const std::string& id = "", TrackingResult status = UNSET) : _id(id), _status(status), _created(std::time(nullptr)), _finished(0) {}
+
+	const std::string& id() const { return _id; }
+	std::time_t created() const { return _created; }
+	std::time_t finished() const { return _finished; }
+	double age() const { return std::difftime(std::time(nullptr), _created); }
+	double duration() const { if (_finished > 0) { return std::difftime(_finished, _created); } else { return -1; } }
+
+	bool isValid() const { return !_id.empty(); }
+	bool empty() const { return _id.empty(); }
+
+	void setStatus(TrackingResult status) { _status = status; if (status != TrackingResult::PENDING && status != TrackingResult::UNSET) { _finished = std::time(nullptr); } }
+	TrackingResult getStatus() const { return _status; }
+
+	operator std::string() const { return _id; }
+	bool operator==(const TrackingID& other) const { return _id == other._id; }
+	bool operator<(const TrackingID& other) const { return _id < other._id; }
+
+private:
+	std::string _id;
+	TrackingResult _status;
+	std::time_t _created;
+	std::time_t _finished;
+};
 
 typedef std::string Feature;
 
@@ -173,10 +902,21 @@ public:
 	virtual void authenticate(const std::string& user, const std::string& passwd) = 0;
 
 	/**
+	 * Authenticate to a NUTD server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	virtual void authenticate(const AuthConf& ac) = 0;
+
+	/**
 	 * Disconnect from the NUTD server.
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
 	virtual void logout() = 0;
+
+	/** Query the (already established) connection to UPSD for its version
+	 *  and check it against given expectations.
+	 */
+	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) = 0;
 
 	/**
 	 * Device manipulations.
@@ -270,14 +1010,14 @@ public:
 	 * \param name Variable name
 	 * \param value Variable value
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) = 0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \param values Vector of variable values
 	 */
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) = 0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/** \} */
 
 	/**
@@ -311,7 +1051,7 @@ public:
 	 * \param name Command name
 	 * \param param Additional command parameter
 	 */
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") = 0;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) = 0;
 	/** \} */
 
 	/**
@@ -319,7 +1059,10 @@ public:
 	 * \{
 	 */
 	/**
-	 * Log the current user (if authenticated) for a device.
+	 * Log the current user (if authenticated) for a device,
+	 * initially as equivalent to upsmon SECONDARY role for it.
+	 * We can further becomePrimary() if we are the system
+	 * which manages the device.
 	 * \param dev Device name.
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
@@ -335,11 +1078,14 @@ public:
 	 * \return List of clients e.g. {'127.0.0.1', 'admin-workstation.local.domain'}
 	 */
 	virtual std::set<std::string> deviceGetClients(const std::string& dev) = 0;
-	/* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
+	/** NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
 	 * For the sake of old/new server/client interoperability,
 	 * practical implementations should try to use one and fall
 	 * back to the other, and only fail if both return "ERR".
 	 */
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	virtual void deviceMaster(const std::string& dev) = 0;
 	virtual void devicePrimary(const std::string& dev) = 0;
 	virtual void deviceForcedShutdown(const std::string& dev) = 0;
@@ -354,7 +1100,38 @@ public:
 	 * Retrieve the result of a tracking ID.
 	 * \param id Tracking ID.
 	 */
+	virtual TrackingResult getTrackingResult(const std::string id) { return getTrackingResult(TrackingID(id)); }
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
+	virtual TrackingResult getTrackingResult(const char *id) { return getTrackingResult(TrackingID(std::string(id))); }
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
 	virtual TrackingResult getTrackingResult(const TrackingID& id) = 0;
+
+	/**
+	 * Enable tracking mode once.
+	 */
+	virtual void enableTrackingModeOnce(void) = 0;
+
+	/**
+	 * Check if tracking mode is enabled.
+	 */
+	virtual bool isTrackingModeEnabled(void) = 0;
+
+	/**
+	 * Wait for a tracking result.
+	 * \param id Tracking ID to wait for.
+	 * \param waitIntervalSec Interval between checks in seconds.
+	 * \param waitMaxCount Maximum number of checks.
+	 * \return The tracking result.
+	 */
+	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) = 0;
 
 	virtual bool hasFeature(const Feature& feature);
 	virtual bool isFeatureEnabled(const Feature& feature) = 0;
@@ -364,11 +1141,12 @@ public:
 
 protected:
 	Client();
+	std::string _tracking;
 };
 
 /**
  * TCP NUTD client.
- * It connect to NUTD with a TCP socket.
+ * It connects to NUTD with a TCP socket.
  */
 class TcpClient : public Client
 {
@@ -376,28 +1154,67 @@ class TcpClient : public Client
 	 * generally, but still want covered with integration tests
 	 */
 	friend class NutActiveClientTest;
+	/* The SSL options are stamped via apply() methods */
+	friend class SSLConfig;
+	friend class SSLConfig_OpenSSL;
+	friend class SSLConfig_NSS;
 
 public:
 	/**
-	 * Construct a nut TcpClient object.
+	 * Construct a NUT TcpClient object.
 	 * You must call one of TcpClient::connect() after.
 	 */
 	TcpClient();
 
 	/**
-	 * Construct a nut TcpClient object then connect it to the specified server.
+	 * Construct a NUT TcpClient object, then connect it to the
+	 * specified server right away (without any SSL options).
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, uint16_t port = 3493);
+	TcpClient(const std::string& host, uint16_t port = NUT_PORT);
+
+	/**
+	 * Construct a NUT TcpClient object with SSL options,
+	 * then connect it to the specified server right away.
+	 * \param host Server host name.
+	 * \param port Server port.
+	 * \param config SSL configuration (typically a derived
+	 *               class for OpenSSL or NSS).
+	 */
+	TcpClient(const std::string& host, uint16_t port, const SSLConfig& config);
+
 	~TcpClient() override;
+
+	/**
+	 * Set SSL configuration.
+	 * \param config SSL configuration (typically a derived
+	 *               class for OpenSSL or NSS).
+	 */
+	void setSSLConfig(const SSLConfig& config);
 
 	/**
 	 * Connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, uint16_t port = 3493);
+	void connect(const std::string& host, uint16_t port = NUT_PORT);
+
+	/**
+	 * Connect it to the specified server with explicit toggle
+	 * to allow (or not) use of SSL/TLS.
+	 * \param host Server host name.
+	 * \param port Server port.
+	 * \param tryssl Use SSL/TLS for the connection (may be
+	                  overridden by forcessl if set to true earlier).
+	 */
+	void connect(const std::string& host, uint16_t port, bool tryssl);
+
+	/**
+	 * Connect to the specified server using an AuthConf object.
+	 * \param ac AuthConf object.
+	 */
+	void connect(const AuthConf& ac);
 
 	/**
 	 * Connect to the server.
@@ -445,7 +1262,10 @@ public:
 	uint16_t getPort()const;
 
 	virtual void authenticate(const std::string& user, const std::string& passwd) override;
+	virtual void authenticate(const AuthConf& ac) override;
 	virtual void logout() override;
+
+	virtual bool isValidProtocolVersion(const std::string& version_re = std::string()) override;
 
 	virtual Device getDevice(const std::string& name) override;
 	virtual std::set<std::string> getDeviceNames() override;
@@ -457,17 +1277,17 @@ public:
 	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name) override;
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev) override;
 	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value) override;
-	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0) override;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev) override;
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name) override;
-	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="") override;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0) override;
 
 	virtual void deviceLogin(const std::string& dev) override;
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
-	 */
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	virtual void deviceMaster(const std::string& dev) override;
 	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
@@ -476,16 +1296,102 @@ public:
 
 	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
+	using Client::getTrackingResult;
+
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
+	virtual void enableTrackingModeOnce(void) override;
+	virtual bool isTrackingModeEnabled(void) override;
+	virtual TrackingResult waitTrackingResult(const TrackingID& id, int waitIntervalSec, int waitMaxCount) override;
+
+	/**
+	 * Return a bitmask of SSL capabilities supported by this build of
+	 * libnutclient, see UPSCLI_SSL_CAPS_NONE, UPSCLI_SSL_CAPS_OPENSSL,
+	 * UPSCLI_SSL_CAPS_NSS.
+	 * @see	getSslConfigured
+	 */
+	static int getSslCaps();
+
+	/**
+	 * Return a bitmask of SSL capabilities practically configured and
+	 * available for this instance of libnutclient, see UPSCLI_SSL_CAPS_NONE,
+	 * UPSCLI_SSL_CAPS_OPENSSL, UPSCLI_SSL_CAPS_NSS, and the more nuanced
+	 * values which depend on the currently applied SSLConfig (the value
+	 * is updated with each call to setSSLConfig* methods).
+	 *
+	 * Note that while we may have set both NSS and OpenSSL configurations
+	 * into the TcpClient class instance, one (or even both) may be irrelevant
+	 * due to build configuration or run-time dependency circumstances and
+	 * thus a practical (in-)ability to use that backend.
+	 *
+	 * @see getSslCaps
+	 */
+	virtual int getSslConfigured() const;
+
+	virtual bool isSSL() const;
+
+	virtual bool getSslTry() const;
+	virtual void setSslTry(bool tryssl);
+
+	virtual bool getSslForce() const;
+	virtual void setSslForce(bool forcessl);
+
+	virtual int getSslCertVerify() const;
+	virtual void setSslCertVerify(int certverify);
+
+	virtual const std::string& getSslCAPath() const;
+	virtual void setSslCAPath(const char* ca_path);
+	virtual void setSslCAPath(const std::string& ca_path);
+
+	virtual const std::string& getSslCAFile() const;
+	virtual void setSslCAFile(const char* ca_file);
+	virtual void setSslCAFile(const std::string& ca_file);
+
+	virtual const std::string& getSslCertFile() const;
+	virtual void setSslCertFile(const char* cert_file);
+	virtual void setSslCertFile(const std::string& cert_file);
+
+	virtual const std::string& getSslKeyFile() const;
+	virtual void setSslKeyFile(const char* key_file);
+	virtual void setSslKeyFile(const std::string& key_file);
+
+	virtual const std::string& getSslKeyPass() const;
+	virtual void setSslKeyPass(const char* key_pass);
+	virtual void setSslKeyPass(const std::string& key_pass);
+
+	virtual const std::string& getSslCertstorePath() const;
+	virtual void setSslCertstorePath(const char* certstore_path);
+	virtual void setSslCertstorePath(const std::string& certstore_path);
+
+	virtual const std::string& getSslCertstorePrefix() const;
+	virtual void setSslCertstorePrefix(const char* certstore_prefix);
+	virtual void setSslCertstorePrefix(const std::string& certstore_prefix);
+
+	virtual const std::string& getSslCertHostAddr() const;
+	virtual void setSslCertHostAddr(const char* certhost_addr);
+	virtual void setSslCertHostAddr(const std::string& certhost_addr);
+
+	virtual const std::string& getSslCertHostName() const;
+	virtual void setSslCertHostName(const char* certhost_name);
+	virtual void setSslCertHostName(const std::string& certhost_name);
+
+	virtual const std::string& getSslCertIdentName() const;
+	virtual void setSslCertIdentName(const char* certident_name);
+	virtual void setSslCertIdentName(const std::string& certident_name);
 
 	virtual bool isFeatureEnabled(const Feature& feature) override;
 	virtual void setFeature(const Feature& feature, bool status) override;
 
 protected:
+	/**
+	 * Refresh the value of _ssl_configured bitmask based on available
+	 * SSL configuration and build capabilities.
+	 */
+	virtual void updateSslConfigured();
+
 	std::string sendQuery(const std::string& req);
 	void sendAsyncQueries(const std::vector<std::string>& req);
 	static void detectError(const std::string& req);
-	TrackingID sendTrackingQuery(const std::string& req);
+	TrackingID sendTrackingQuery(const std::string& req, int waitIntervalSec, int waitMaxCount);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "");
 
@@ -496,9 +1402,75 @@ protected:
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
 	static std::string escape(const std::string& str);
 
+	/**
+	 * Set SSL configuration for OpenSSL
+	 * (with C-style string arguments for SSL-related file paths).
+	 * Primarily exposed for C API bridges
+	 * \param forcessl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
+	 */
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name = nullptr, const char *certhost_addr = nullptr, const char *certhost_name = nullptr);
+
+	/**
+	 * Set SSL configuration for OpenSSL.
+	 * \param forcessl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param ca_path Path to a directory with CA certificates (PEM format for OpenSSL).
+	 * \param ca_file Path to a CA certificate file (PEM format for OpenSSL).
+	 * \param cert_file Path to a client certificate file (PEM format for OpenSSL) or nickname (NSS).
+	 * \param key_file Path to a client private key file (PEM format for OpenSSL).
+	 * \param key_pass Optional passphrase to decrypt the private key.
+	 * \param certident_name Expected name in the client certificate (CN or SAN).
+	 * \param certhost_addr Remote host name or IP address to match in the certificate.
+	 * \param certhost_name Certificate nickname for the remote host to match.
+	 */
+	void setSSLConfig_OpenSSL(int forcessl, int certverify, const std::string& ca_path, const std::string& ca_file, const std::string& cert_file, const std::string& key_file, const std::string& key_pass, const std::string& certident_name = "", const std::string& certhost_addr = "", const std::string& certhost_name = "");
+
+	/**
+	 * Set SSL configuration for Mozilla NSS
+	 * (with C-style string arguments for SSL-related file paths).
+	 * \param forcessl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
+	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
+	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
+	 */
+	void setSSLConfig_NSS(int forcessl, int certverify, const char *certstore_path, const char *certstore_pass, const char *certstore_prefix, const char *certident_name, const char *certhost_addr, const char *certhost_name);
+
+	/**
+	 * Set SSL configuration for Mozilla NSS.
+	 * \param forcessl Whether to require SSL connection.
+	 * \param certverify Whether to verify the server certificate.
+	 * \param certstore_path Path to a directory with CA, server and client certificates and private keys (3-file NSS database).
+	 * \param certstore_pass Password to open the (private) key store of the database (NSS database).
+	 * \param certstore_prefix Many NSS databases can be co-located in same directory, with prefixed file names.
+	 * \param certident_name Certificate nickname for the client itself to match in the NSS database.
+	 * \param certhost_addr Remote host name or IP address to match in the certificate (NSS database).
+	 * \param certhost_name Certificate nickname for the remote host to match in the NSS database.
+	 */
+	void setSSLConfig_NSS(int forcessl, int certverify, const std::string& certstore_path, const std::string& certstore_pass, const std::string& certstore_prefix, const std::string& certident_name, const std::string& certhost_addr, const std::string& certhost_name);
+
 private:
 	std::string _host;
 	uint16_t _port;
+	/* SSL shared */
+	bool _tryssl;
+	/* SSL config pointers */
+	SSLConfig_OpenSSL* _ssl_config_openssl;
+	SSLConfig_NSS* _ssl_config_nss;
+	int _ssl_configured;
+	/* general info */
 	time_t _timeout;
 	internal::Socket* _socket;
 };
@@ -588,13 +1560,13 @@ public:
 	 * \param name Variable name.
 	 * \param value New variable value.
 	 */
-	void setVariable(const std::string& name, const std::string& value);
+	TrackingID setVariable(const std::string& name, const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0);
 	/**
 	 * Intend to set values of a variable of the device.
 	 * \param name Variable name.
 	 * \param values Vector of new variable values.
 	 */
-	void setVariable(const std::string& name, const std::vector<std::string>& values);
+	TrackingID setVariable(const std::string& name, const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0);
 
 	/**
 	 * Retrieve a Variable object representing the specified variable.
@@ -634,7 +1606,7 @@ public:
 	 * \param name Command name.
 	 * \param param Additional command parameter
 	 */
-	TrackingID executeCommand(const std::string& name, const std::string& param="");
+	TrackingID executeCommand(const std::string& name, const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0);
 
 	/**
 	 * Login current client's user for the device.
@@ -644,11 +1616,12 @@ public:
 	 * Who did a login() to this dev?
 	 */
 	std::set<std::string> getClients();
-	/* FIXME: Protocol update needed to handle master/primary alias
-	 * and probably an API bump also, to rename/alias the routine.
-	 */
+
+#if (defined __cplusplus) && (__cplusplus >= 201400)
+	[[deprecated]]
+#endif
 	void master();
-	void primary();
+	void becomePrimary();
 	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
@@ -732,13 +1705,19 @@ public:
 	/**
 	 * Intend to set a value to the variable.
 	 * \param value New variable value.
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void setValue(const std::string& value);
+	TrackingID setValue(const std::string& value, int waitIntervalSec = 0, int waitMaxCount = 0);
 	/**
 	 * Intend to set (multiple) values to the variable.
 	 * \param values Vector of new variable values.
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void setValues(const std::vector<std::string>& values);
+	TrackingID setValues(const std::vector<std::string>& values, int waitIntervalSec = 0, int waitMaxCount = 0);
 
 protected:
 	Variable(Device* dev, const std::string& name);
@@ -812,8 +1791,11 @@ public:
 	/**
 	 * Intend to execute the instant command on device.
 	 * \param param Optional additional command parameter
+	 * \param waitIntervalSec If set, wait for result for this interval (seconds)
+	 * \param waitMaxCount If set, wait for result up to this many times
+	 * \return TrackingID if tracking is enabled.
 	 */
-	void execute(const std::string& param="");
+	TrackingID execute(const std::string& param="", int waitIntervalSec = 0, int waitMaxCount = 0);
 
 protected:
 	Command(Device* dev, const std::string& name);
@@ -906,9 +1888,6 @@ int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
  * \param client Nut client handle.
  * \param dev Device name to test.
  */
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
- */
 void nutclient_device_master(NUTCLIENT_t client, const char* dev);
 void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 
@@ -995,13 +1974,31 @@ strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev,
 void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value);
 
 /**
- * Intend to set device variable  multiple values.
+ * Intend to set device variable value and wait for result.
  * \param client Nut client handle.
  * \param dev Device name.
  * \param var Variable name.
- * \param values Values to set. The cller is responsible to free it after call.
+ * \param value Value to set.
+ */
+void nutclient_set_device_variable_value_wait(NUTCLIENT_t client, const char* dev, const char* var, const char* value, int waitIntervalSec, int waitMaxCount);
+
+/**
+ * Intend to set device variable multiple values.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param values Values to set. The caller is responsible to free it after call.
  */
 void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var, const strarr values);
+
+/**
+ * Intend to set device variable multiple values and wait for result.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param var Variable name.
+ * \param values Values to set. The caller is responsible to free it after call.
+ */
+void nutclient_set_device_variable_values_wait(NUTCLIENT_t client, const char* dev, const char* var, const strarr values, int waitIntervalSec, int waitMaxCount);
 
 /**
  * Intend to retrieve device command names.
@@ -1037,6 +2034,14 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
  */
 void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="");
 
+/**
+ * Intend to execute device command and wait for result.
+ * \param client Nut client handle.
+ * \param dev Device name.
+ * \param cmd Command name.
+ */
+void nutclient_execute_device_command_wait(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="", int waitIntervalSec=-1, int waitMaxCount=-1);
+
 /** \} */
 
 
@@ -1054,9 +2059,46 @@ typedef NUTCLIENT_t NUTCLIENT_TCP_t;
  * Create a client to NUTD using a TCP connection.
  * \param host Host name to connect to.
  * \param port Host port.
+ * \param tryssl Try to use SSL/TLS for the connection.
+ * \param forcessl Fail if SSL/TLS is not available or handshake fails.
+ * \param certverify Whether to verify the server certificate.
  * \return New client or nullptr if failed.
  */
 NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, uint16_t port);
+int nutclient_tcp_get_ssl_caps(void);
+
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_OpenSSL(
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
+void nutclient_tcp_set_ssl_config_OpenSSL(NUTCLIENT_TCP_t client,
+	int forcessl = -1, int certverify = -1,
+	const char *ca_path = nullptr, const char *ca_file = nullptr,
+	const char *cert_file = nullptr, const char *key_file = nullptr,
+	const char *key_pass = nullptr, const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
+
+NUTCLIENT_TCP_t nutclient_tcp_create_client_ssl_NSS(
+	const char* host, uint16_t port, int tryssl = 0,
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
+void nutclient_tcp_set_ssl_config_NSS(NUTCLIENT_TCP_t client,
+	int forcessl = -1, int certverify = -1,
+	const char *certstore_path = nullptr, const char *certstore_pass = nullptr,
+	const char *certstore_prefix = nullptr,
+	const char *certident_name = nullptr,
+	const char *certhost_addr = nullptr,
+	const char *certhost_name = nullptr);
+
 /**
  * Test if a nut TCP client is connected.
  * \param client Nut TCP client handle.
@@ -1075,6 +2117,48 @@ void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
  * \todo Implement different error codes.
  */
 int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
+int nutclient_tcp_is_ssl(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_try(NUTCLIENT_TCP_t client, int tryssl);
+int nutclient_tcp_get_ssl_try(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_force(NUTCLIENT_TCP_t client, int forcessl);
+int nutclient_tcp_get_ssl_force(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certverify(NUTCLIENT_TCP_t client, int certverify);
+int nutclient_tcp_get_ssl_certverify(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_capath(NUTCLIENT_TCP_t client, const char* ca_path);
+const char* nutclient_tcp_get_ssl_capath(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_cafile(NUTCLIENT_TCP_t client, const char* ca_file);
+const char* nutclient_tcp_get_ssl_cafile(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certfile(NUTCLIENT_TCP_t client, const char* cert_file);
+const char* nutclient_tcp_get_ssl_certfile(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_keyfile(NUTCLIENT_TCP_t client, const char* key_file);
+const char* nutclient_tcp_get_ssl_keyfile(NUTCLIENT_TCP_t client);
+
+/* Also used for NSS certstore pass */
+void nutclient_tcp_set_ssl_keypass(NUTCLIENT_TCP_t client, const char* key_pass);
+const char* nutclient_tcp_get_ssl_keypass(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certstore_path(NUTCLIENT_TCP_t client, const char* certstore_path);
+const char* nutclient_tcp_get_ssl_certstore_path(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certstore_prefix(NUTCLIENT_TCP_t client, const char* certstore_prefix);
+const char* nutclient_tcp_get_ssl_certstore_prefix(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certident_name(NUTCLIENT_TCP_t client, const char* certident_name);
+const char* nutclient_tcp_get_ssl_certident_name(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certhost_addr(NUTCLIENT_TCP_t client, const char* certhost_addr);
+const char* nutclient_tcp_get_ssl_certhost_addr(NUTCLIENT_TCP_t client);
+
+void nutclient_tcp_set_ssl_certhost_name(NUTCLIENT_TCP_t client, const char* certhost_name);
+const char* nutclient_tcp_get_ssl_certhost_name(NUTCLIENT_TCP_t client);
+
 /**
  * Set the timeout value for the TCP connection.
  * \param timeout Timeout in seconds, negative for blocking.

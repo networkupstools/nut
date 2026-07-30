@@ -215,9 +215,10 @@ TYPE_FD sstate_connect(upstype_t *ups)
 		return ERROR_FD;
 	}
 
-	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+	ret = select_connect(fd, &sa, sizeof(sa), 1, 0);
 
 	if (ret < 0) {
+		int err = errno;
 		time_t	now;
 
 		if (strstr(sa.sun_path, "/")) {
@@ -237,6 +238,8 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			return ERROR_FD;
 
 		ups->last_connfail = now;
+		/* restore errno for logging */
+		errno = err;
 		if (strstr(ups->fn, "/")) {
 			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 				ups->name, ups->fn);
@@ -478,10 +481,22 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > arg_maxage) {
+	if (elapsed > arg_maxage + 1) {
 		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
 			__func__, ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */
+	}
+
+	if (elapsed > arg_maxage) {
+		/* Per https://github.com/networkupstools/nut/issues/661 we do
+		 * often see "is stale" and "is alive" messages in the same
+		 * second, especially on busy systems that can not dedicate
+		 * every scheduled time slot to NUT daemons and data pipes.
+		 * So data exchange frequency settings may almost race...
+		 */
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d); will declare it dead next second (delaying just in case of whole-second rounding issues)",
+			__func__, ups->name, elapsed, arg_maxage);
+		return 0;	/* probably dead */
 	}
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */

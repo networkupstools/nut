@@ -2,6 +2,7 @@
 
    Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2005  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+   Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 #include "timehead.h"
 #include "upsclient.h"
 #include "status.h"
+#include "strjson.h"
 #include "cgilib.h"
 #include "parseconf.h"
 #include "upsstats.h"
@@ -31,37 +33,74 @@
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
 
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
+static upscli_authconf_t	*ac_default = NULL;
+static int	flags_ssl = UPSCLI_CONN_TRYSSL;
+
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
+static int	output_json = 0;
+
+/* call tracing for debug */
+static int	call_depth = 0;
+#define upsdebug_call_starting0()	upsdebugx(2, "[depth=%02d+] starting %s...", call_depth++, __func__)
+#define upsdebug_call_starting1(msgfmt)	upsdebugx(2, "[depth=%02d+] starting %s " msgfmt "...", call_depth++, __func__)
+#define upsdebug_call_starting2(msgfmt, arg1)	upsdebugx(2, "[depth=%02d+] starting %s " msgfmt "...", call_depth++, __func__, arg1)
+#define upsdebug_call_starting3(msgfmt, arg1, arg2)	upsdebugx(2, "[depth=%02d+] starting %s " msgfmt "...", call_depth++, __func__, arg1, arg2)
+#define upsdebug_call_starting4(msgfmt, arg1, arg2, arg3)	upsdebugx(2, "[depth=%02d+] starting %s " msgfmt "...", call_depth++, __func__, arg1, arg2, arg3)
+
+#define upsdebug_call_starting_for_str1(arg1)	upsdebug_call_starting2("for '%s'", NUT_STRARG(arg1))
+#define upsdebug_call_starting_for_str2(arg1, arg2)	upsdebug_call_starting3("for '%s' '%s'", NUT_STRARG(arg1), NUT_STRARG(arg2))
+#define upsdebug_call_starting_for_str3(arg1, arg2, arg3)	upsdebug_call_starting4("for '%s' '%s' '%s'", NUT_STRARG(arg1), NUT_STRARG(arg2), NUT_STRARG(arg3))
+
+#define upsdebug_call_finished0()	upsdebugx(2, "[depth=%02d-] finished %s", --call_depth, __func__)
+#define upsdebug_call_finished1(msgfmt)	upsdebugx(2, "[depth=%02d-] finished %s " msgfmt, --call_depth, __func__)
+#define upsdebug_call_finished2(msgfmt, arg1)	upsdebugx(2, "[depth=%02d-] finished %s " msgfmt, --call_depth, __func__, arg1)
+#define upsdebug_call_finished3(msgfmt, arg1, arg2)	upsdebugx(2, "[depth=%02d-] finished %s " msgfmt, --call_depth, __func__, arg1, arg2)
+#define upsdebug_call_finished4(msgfmt, arg1, arg2, arg3)	upsdebugx(2, "[depth=%02d-] finished %s " msgfmt, --call_depth, __func__, arg1, arg2, arg3)
 
 	/* from cgilib's checkhost() */
 static char	*monhostdesc = NULL;
 
 static uint16_t	port;
 static char	*upsname, *hostname;
-static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
+static char	*upsimgpath = "upsimage.cgi" EXEEXT, *upsstatpath = "upsstats.cgi" EXEEXT,
+	*template_single = NULL, *template_list = NULL;
 static UPSCONN_t	ups;
+
+#define DEFAULT_TEMPLATE_SINGLE	"upsstats-single.html"
+#define DEFAULT_TEMPLATE_LIST	"upsstats.html"
 
 static FILE	*tf;
 static long	forofs = 0;
 
-static ulist_t	*ulhead = NULL, *currups = NULL;
+static ulist_t	*ulhead = NULL, *currups = NULL,
+	/* hijack the linked-list structure to store
+	 * just filenames (as "sys") so far */
+	*allowed_template_single_lhead = NULL,
+	*allowed_template_list_lhead = NULL;
 
 static int	skip_clause = 0, skip_block = 0;
 
 void parsearg(char *var, char *value)
 {
+	upsdebug_call_starting_for_str2(var, value);
+
 	/* avoid bogus junk from evil people */
-	if ((strlen(var) > MAX_CGI_STRLEN) || (strlen(value) > MAX_CGI_STRLEN))
+	if ((strlen(var) > MAX_CGI_STRLEN) || (strlen(value) > MAX_CGI_STRLEN)) {
+		upsdebug_call_finished1(": strings too long for CGI");
 		return;
+	}
 
 	if (!strcmp(var, "host")) {
 		free(monhost);
 		monhost = xstrdup(value);
-		return;
 	}
 
 	if (!strcmp(var, "refresh"))
@@ -71,23 +110,48 @@ void parsearg(char *var, char *value)
 		/* FIXME: Validate that treemode is allowed */
 		treemode = 1;
 	}
+
+	if (!strcmp(var, "json")) {
+		output_json = 1;
+	}
+
+	if (!strcmp(var, "template_single")) {
+		/* Error-checking in display_template(), when we have all options in place */
+		free(template_single);
+		template_single = xstrdup(value);
+	}
+
+	if (!strcmp(var, "template_list")) {
+		/* Error-checking in display_template(), when we have all options in place */
+		free(template_list);
+		template_list = xstrdup(value);
+	}
+
+	upsdebug_call_finished0();
 }
 
 static void report_error(void)
 {
+	upsdebug_call_starting0();
+
 	if (upscli_upserror(&ups) == UPSCLI_ERR_VARNOTSUPP)
 		printf("Not supported\n");
 	else
 		printf("[error: %s]\n", upscli_strerror(&ups));
+
+	upsdebug_call_finished0();
 }
 
 /* make sure we're actually connected to upsd */
 static int check_ups_fd(int do_report)
 {
+	upsdebug_call_starting0();
+
 	if (upscli_fd(&ups) == -1) {
 		if (do_report)
 			report_error();
 
+		upsdebug_call_finished1(": upscli_fd() failed");
 		return 0;
 	}
 
@@ -97,10 +161,12 @@ static int check_ups_fd(int do_report)
 		if (do_report)
 			printf("No UPS specified for monitoring\n");
 
+		upsdebug_call_finished1(": currups is null");
 		return 0;
 	}
 
 	/* must be OK */
+	upsdebug_call_finished0();
 	return 1;
 }
 
@@ -111,13 +177,19 @@ static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 	const	char	*query[4];
 	char	**answer;
 
-	if (!check_ups_fd(1))
+	upsdebug_call_starting_for_str2(upsname, var);
+
+	/* pass verbose to check_ups_fd */
+	if (!check_ups_fd(verbose)) {
+		upsdebug_call_finished0();
 		return 0;
+	}
 
 	if (!upsname) {
 		if (verbose)
 			printf("[No UPS name specified]\n");
 
+		upsdebug_call_finished1(": no UPS name");
 		return 0;
 	}
 
@@ -132,6 +204,8 @@ static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 	if (ret < 0) {
 		if (verbose)
 			report_error();
+
+		upsdebug_call_finished1(": upscli_get() failed");
 		return 0;
 	}
 
@@ -139,10 +213,12 @@ static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 		if (verbose)
 			printf("[Invalid response]\n");
 
+		upsdebug_call_finished1(": invalid response");
 		return 0;
 	}
 
 	snprintf(buf, buflen, "%s", answer[3]);
+	upsdebug_call_finished0();
 	return 1;
 }
 
@@ -150,31 +226,42 @@ static void parse_var(const char *var)
 {
 	char	answer[SMALLBUF];
 
-	if (!get_var(var, answer, sizeof(answer), 1))
+	upsdebug_call_starting_for_str1(var);
+
+	if (!get_var(var, answer, sizeof(answer), 1)) {
+		upsdebug_call_finished1(": get_var() failed");
 		return;
+	}
 
 	printf("%s", answer);
+	upsdebug_call_finished0();
 }
 
-static void do_status(void)
+static void do_status(const char *sep)
 {
-	int	i;
+	int	i, count = 0;
 	char	status[SMALLBUF], *ptr, *last = NULL;
 
+	upsdebug_call_starting0();
+
 	if (!get_var("ups.status", status, sizeof(status), 1)) {
+		upsdebug_call_finished1(": get_var() failed");
 		return;
 	}
 
 	for (ptr = strtok_r(status, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
-
 		/* expand from table in status.h */
 		for (i = 0; stattab[i].name != NULL; i++) {
 
 			if (!strcasecmp(ptr, stattab[i].name)) {
-				printf("%s<br>", stattab[i].desc);
+				/* Note: sep="\0" is a valid case so we do not check for *sep */
+				printf("%s%s", count ? (sep ? sep : "<br/>") : "", stattab[i].desc);
+				count++;
 			}
 		}
 	}
+
+	upsdebug_call_finished0();
 }
 
 static void do_runtime(void)
@@ -182,8 +269,12 @@ static void do_runtime(void)
 	int 	total, hours, minutes, seconds;
 	char	runtime[SMALLBUF];
 
-	if (!get_var("battery.runtime", runtime, sizeof(runtime), 1))
+	upsdebug_call_starting0();
+
+	if (!get_var("battery.runtime", runtime, sizeof(runtime), 1)) {
+		upsdebug_call_finished1(": get_var() failed");
 		return;
+	}
 
 	total = (int) strtol(runtime, (char **) NULL, 10);
 
@@ -192,7 +283,7 @@ static void do_runtime(void)
 	seconds = total % 60;
 
 	printf("%02d:%02d:%02d", hours, minutes, seconds);
-
+	upsdebug_call_finished0();
 }
 
 static int do_date(const char *buf)
@@ -201,12 +292,16 @@ static int do_date(const char *buf)
 	time_t	tod;
 	struct tm tmbuf;
 
+	upsdebug_call_starting0();
+
 	time(&tod);
 	if (strftime(datebuf, sizeof(datebuf), buf, localtime_r(&tod, &tmbuf))) {
 		printf("%s", datebuf);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
+	upsdebug_call_finished1(": failed");
 	return 0;
 }
 
@@ -214,8 +309,12 @@ static int get_img_val(const char *var, const char *desc, const char *imgargs)
 {
 	char	answer[SMALLBUF];
 
-	if (!get_var(var, answer, sizeof(answer), 1))
+	upsdebug_call_starting_for_str3(var, desc, imgargs);
+
+	if (!get_var(var, answer, sizeof(answer), 1)) {
+		upsdebug_call_finished1(": get_var() failed");
 		return 1;
+	}
 
 	printf("<IMG SRC=\"%s?host=%s&amp;display=%s",
 		upsimgpath, currups->sys, var);
@@ -225,6 +324,7 @@ static int get_img_val(const char *var, const char *desc, const char *imgargs)
 
 	printf("\" ALT=\"%s: %s\">", desc, answer);
 
+	upsdebug_call_finished0();
 	return 1;
 }
 
@@ -282,6 +382,9 @@ static void split_imgarg(char *in, char *out, size_t outlen)
 static int do_img(char *buf)
 {
 	char	*type, *ptr, imgargs[SMALLBUF];
+	int	ret = 0;
+
+	upsdebug_call_starting2("for type '%s'", buf);
 
 	memset(imgargs, '\0', sizeof(imgargs));
 
@@ -302,15 +405,21 @@ static int do_img(char *buf)
 			|| !strcmp(type, "input.L3-N.voltage")
 			|| !strcmp(type, "input.L1-L2.voltage")
 			|| !strcmp(type, "input.L2-L3.voltage")
-			|| !strcmp(type, "input.L3-L1.voltage")) {
-		return get_img_val(type, "Input voltage", imgargs);
+			|| !strcmp(type, "input.L3-L1.voltage")
+	) {
+		ret = get_img_val(type, "Input voltage", imgargs);
+		goto finish;
 	}
 
-	if (!strcmp(type, "battery.voltage"))
-		return get_img_val(type, "Battery voltage", imgargs);
+	if (!strcmp(type, "battery.voltage")) {
+		ret = get_img_val(type, "Battery voltage", imgargs);
+		goto finish;
+	}
 
-	if (!strcmp(type, "battery.charge"))
-		return get_img_val(type, "Battery charge", imgargs);
+	if (!strcmp(type, "battery.charge")) {
+		ret = get_img_val(type, "Battery charge", imgargs);
+		goto finish;
+	}
 
 	if (!strcmp(type, "output.voltage")
 			|| !strcmp(type, "output.L1-N.voltage")
@@ -318,8 +427,10 @@ static int do_img(char *buf)
 			|| !strcmp(type, "output.L3-N.voltage")
 			|| !strcmp(type, "output.L1-L2.voltage")
 			|| !strcmp(type, "output.L2-L3.voltage")
-			|| !strcmp(type, "output.L3-L1.voltage")) {
-		return get_img_val(type, "Output voltage", imgargs);
+			|| !strcmp(type, "output.L3-L1.voltage")
+	) {
+		ret = get_img_val(type, "Output voltage", imgargs);
+		goto finish;
 	}
 
 	if (!strcmp(type, "ups.load")
@@ -328,107 +439,230 @@ static int do_img(char *buf)
 			|| !strcmp(type, "output.L3.power.percent")
 			|| !strcmp(type, "output.L1.realpower.percent")
 			|| !strcmp(type, "output.L2.realpower.percent")
-			|| !strcmp(type, "output.L3.realpower.percent")) {
-		return get_img_val(type, "UPS load", imgargs);
+			|| !strcmp(type, "output.L3.realpower.percent")
+	) {
+		ret = get_img_val(type, "UPS load", imgargs);
+		goto finish;
 	}
 
-	if (!strcmp(type, "input.frequency"))
-		return get_img_val(type, "Input frequency", imgargs);
+	if (!strcmp(type, "input.frequency")) {
+		ret = get_img_val(type, "Input frequency", imgargs);
+		goto finish;
+	}
 
-	if (!strcmp(type, "output.frequency"))
-		return get_img_val(type, "Output frequency", imgargs);
+	if (!strcmp(type, "output.frequency")) {
+		ret = get_img_val(type, "Output frequency", imgargs);
+		goto finish;
+	}
 
-	if (!strcmp(type, "ups.temperature"))
-		return get_img_val(type, "UPS temperature", imgargs);
+	if (!strcmp(type, "ups.temperature")) {
+		ret = get_img_val(type, "UPS temperature", imgargs);
+		goto finish;
+	}
 
-	if (!strcmp(type, "ambient.temperature"))
-		return get_img_val(type, "Ambient temperature", imgargs);
+	if (!strcmp(type, "ambient.temperature")) {
+		ret = get_img_val(type, "Ambient temperature", imgargs);
+		goto finish;
+	}
 
-	if (!strcmp(type, "ambient.humidity"))
-		return get_img_val(type, "Ambient humidity", imgargs);
+	if (!strcmp(type, "ambient.humidity")) {
+		ret = get_img_val(type, "Ambient humidity", imgargs);
+		goto finish;
+	}
 
-	return 0;
+finish:
+	upsdebug_call_finished0();
+	return ret;
 }
 
 static void ups_connect(void)
 {
 	static ulist_t	*lastups = NULL;
 	char	*newups, *newhost;
-	uint16_t	newport;
+	uint16_t	newport = 0;
+	char	str_port[16];
+	upscli_authconf_t	*ac_current = NULL;
+
+	upsdebug_call_starting0();
 
 	/* try to minimize reconnects */
 	if (lastups) {
 
 		/* don't reconnect if these are both the same UPS */
-		if (!strcmp(lastups->sys, currups->sys)) {
+		if (currups && !strcmp(lastups->sys, currups->sys)) {
 			lastups = currups;
+			upsdebug_call_finished1(": skip: lastups same as currups");
 			return;
 		}
 
 		/* see if it's just on the same host */
 		newups = newhost = NULL;
 
-		if (upscli_splitname(currups->sys, &newups, &newhost,
-			&newport) != 0) {
+		if (currups
+		 && upscli_splitname(currups->sys, &newups, &newhost, &newport) != 0
+		) {
 			printf("Unusable UPS definition [%s]\n", currups->sys);
 			fprintf(stderr, "Unusable UPS definition [%s]\n",
 				currups->sys);
+			upsdebug_call_finished1(": Unusable UPS definition");
 			exit(EXIT_FAILURE);
 		}
 
-		if ((!strcmp(newhost, hostname)) && (port == newport)) {
+		if (currups && hostname && (!strcmp(newhost, hostname)) && (port == newport)) {
 			free(upsname);
 			upsname = newups;
 
 			free(newhost);
 			lastups = currups;
+
+			upsdebug_call_finished2(": pick next device on already connected data server [%s]", NUT_STRARG(currups->sys));
 			return;
 		}
 
 		/* not the same upsd, so disconnect */
 		free(newups);
 		free(newhost);
+
+		upsdebugx(2, "%s: not same data server as used by lastups: will connect to another", __func__);
 	}
 
 	upscli_disconnect(&ups);
 
 	free(upsname);
 	free(hostname);
+	upsname = NULL;
+	hostname = NULL;
 
-	if (upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
+	if (currups && upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
 		printf("Unusable UPS definition [%s]\n", currups->sys);
 		fprintf(stderr, "Unusable UPS definition [%s]\n", currups->sys);
+		upsdebug_call_finished1(": Unusable UPS definition");
 		exit(EXIT_FAILURE);
 	}
 
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
+	/* FIXME: Currently libupsclient allows for one SSL context shared
+	 *  by all connections, specifically the CERTIDENT of the client.
+	 *  We can have multiple CERTHOST certificates (and/or reading
+	 *  users/passwords) though. */
+	ac_current = upscli_get_authconf_item(
+		NULL, hostname,
+		snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL,
+		1);
+
+	/* Always call this, to register possible CERTHOSTs etc. */
+	if (upscli_init_authconf(ac_current) > 0) {
+		if (ac_default) {
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+
+			// Do not call on the next loop cycle, if any
+			ac_default = NULL;
+		}
+	}
+
+	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
+		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
+			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
+			upscli_strerror(&ups));
+	} else {
+		/* TOTHINK #3411: Consider autologin via ac_conn->user/pass fields?
+		 *  Probably no, not for a web client anyone can interact with...
+		 *  This one is for a read-only listing, but could something be abused?
+		 *  If it comes to that, better fall back to requiring query/form args
+		 *  like in upsset.c
+		 *  //upscli_authenticate_authconf(&ups, ac_current);
+		 */
+	}
 
 	lastups = currups;
+	upsdebug_call_finished2(": pick first device on newly connected data server [%s]",
+		currups ? NUT_STRARG(currups->sys) : "<currups=null>");
 }
 
 static void do_hostlink(void)
 {
+	upsdebug_call_starting0();
+
 	if (!currups) {
+		upsdebug_call_finished1(": no-op: no currups!");
 		return;
 	}
 
 	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
+
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
+		printf("&amp;template_list=%s", template_list);
+	}
 
 	if (refreshdelay > 0) {
 		printf("&amp;refresh=%d", refreshdelay);
 	}
 
 	printf("\">%s</a>", currups->desc);
+	upsdebug_call_finished0();
 }
 
-static void do_treelink(void)
+static void do_treelink_json(const char *text)
 {
+	upsdebug_call_starting0();
+
 	if (!currups) {
+		upsdebug_call_finished1(": no-op: no currups!");
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>", upsstatpath, currups->sys);
+	printf("<a href=\"%s?host=%s&amp;json",
+		upsstatpath, currups->sys);
+
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
+		printf("&amp;template_list=%s", template_list);
+	}
+
+	if (refreshdelay > 0) {
+		printf("&amp;refresh=%d", refreshdelay);
+	}
+
+	printf("\">%s</a>",
+		((text && *text) ? text : "JSON"));
+
+	upsdebug_call_finished0();
+}
+
+static void do_treelink(const char *text)
+{
+	upsdebug_call_starting0();
+
+	if (!currups) {
+		upsdebug_call_finished1(": no-op: no currups!");
+		return;
+	}
+
+	printf("<a href=\"%s?host=%s&amp;treemode",
+		upsstatpath, currups->sys);
+
+	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
+		printf("&amp;template_single=%s", template_single);
+	}
+
+	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
+		printf("&amp;template_list=%s", template_list);
+	}
+
+	if (refreshdelay > 0) {
+		printf("&amp;refresh=%d", refreshdelay);
+	}
+
+	printf("\">%s</a>",
+		((text && *text) ? text : "All data"));
+
+	upsdebug_call_finished0();
 }
 
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
@@ -437,25 +671,40 @@ static void do_ifsupp(const char *var, const char *val)
 {
 	char	dummy[SMALLBUF];
 
+	upsdebug_call_starting3("for '%s' ( =? '%s')", NUT_STRARG(var), NUT_STRARG(val));
+
+	if (!strcmp(var, "upsstats.use_celsius")) {
+		snprintf(dummy, sizeof(dummy), "%d", use_celsius);
+		skip_clause = 1;
+		upsdebug_call_finished1(": get_var() returned unexpected val");
+		return;
+	}
+
 	/* if not connected, act like it's not supported and skip the rest */
 	if (!check_ups_fd(0)) {
 		skip_clause = 1;
+		upsdebug_call_finished1(": check_ups_fd() failed");
 		return;
 	}
 
 	if (!get_var(var, dummy, sizeof(dummy), 0)) {
 		skip_clause = 1;
+		upsdebug_call_finished1(": get_var() failed");
 		return;
 	}
 
-	if(!val) {
+	if (!val) {
+		upsdebug_call_finished1(": ok, not checking val");
 		return;
 	}
 
-	if(strcmp(dummy, val)) {
+	if (strcmp(dummy, val)) {
 		skip_clause = 1;
+		upsdebug_call_finished1(": get_var() returned unexpected val");
 		return;
 	}
+
+	upsdebug_call_finished0();
 }
 
 static int breakargs(char *s, char **aargs)
@@ -488,15 +737,19 @@ static void do_ifeq(const char *s)
 	char	*aa[MAX_PARSE_ARGS];
 	int	nargs;
 
-	strcpy(var, s);
+	upsdebug_call_starting_for_str1(s);
+
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
 	if(nargs != 2) {
 		printf("upsstats: IFEQ: Argument error!\n");
+		upsdebug_call_finished1(": arg error");
 		return;
 	}
 
 	do_ifsupp(aa[0], aa[1]);
+	upsdebug_call_finished0();
 }
 
 /* IFBETWEEN var1 var2 var3. Skip if var3 not between var1
@@ -510,60 +763,79 @@ static void do_ifbetween(const char *s)
 	long	v1, v2, v3;
 	char	*isvalid=NULL;
 
-	strcpy(var, s);
+	upsdebug_call_starting_for_str1(s);
+
+	strncpy(var, s, sizeof(var) - 1);
 
 	nargs = breakargs(var, aa);
-	if(nargs != 3) {
+	if (nargs != 3) {
 		printf("upsstats: IFBETWEEN: Argument error!\n");
+		upsdebug_call_finished1(": Argument error");
 		return;
 	}
 
 	if (!check_ups_fd(0)) {
+		upsdebug_call_finished1(": check_ups_fd() failed");
 		return;
 	}
 
 	if (!get_var(aa[0], tmp, sizeof(tmp), 0)) {
+		upsdebug_call_finished0();
 		return;
 	}
 	v1 = strtol(tmp, &isvalid, 10);
-	if(tmp == isvalid) {
+	if (tmp == isvalid) {
+		upsdebug_call_finished0();
 		return;
 	}
 
 	if (!get_var(aa[1], tmp, sizeof(tmp), 0)) {
+		upsdebug_call_finished0();
 		return;
 	}
 	v2 = strtol(tmp, &isvalid, 10);
-	if(tmp == isvalid) {
+	if (tmp == isvalid) {
+		upsdebug_call_finished0();
 		return;
 	}
 
 	if (!get_var(aa[2], tmp, sizeof(tmp), 0)) {
+		upsdebug_call_finished0();
 		return;
 	}
 	v3 = strtol(tmp, &isvalid, 10);
-	if(tmp == isvalid) {
+	if (tmp == isvalid) {
+		upsdebug_call_finished0();
 		return;
 	}
 
-	if(v1 > v3 || v2 < v3) {
+	if (v1 > v3 || v2 < v3) {
 		skip_clause = 1;
+		upsdebug_call_finished0();
 		return;
 	}
+
+	upsdebug_call_finished0();
 }
 
 static void do_upsstatpath(const char *s) {
+	upsdebug_call_starting_for_str1(s);
 
 	if(strlen(s)) {
 		upsstatpath = strdup(s);
 	}
+
+	upsdebug_call_finished0();
 }
 
 static void do_upsimgpath(const char *s) {
+	upsdebug_call_starting_for_str1(s);
 
 	if(strlen(s)) {
 		upsimgpath = strdup(s);
 	}
+
+	upsdebug_call_finished0();
 }
 
 static void do_temp(const char *var)
@@ -571,62 +843,70 @@ static void do_temp(const char *var)
 	char	tempc[SMALLBUF];
 	double	tempf;
 
-	if (!get_var(var, tempc, sizeof(tempc), 1))
+	upsdebug_call_starting_for_str1(var);
+
+	if (!get_var(var, tempc, sizeof(tempc), 1)) {
+		upsdebug_call_finished1(": get_var() failed");
 		return;
+	}
 
 	if (use_celsius) {
 		printf("%s", tempc);
+		upsdebug_call_finished0();
 		return;
 	}
 
 	tempf = (strtod(tempc, (char **) NULL) * 1.8) + 32;
 	printf("%.1f", tempf);
+	upsdebug_call_finished0();
 }
 
 static void do_degrees(void)
 {
+	upsdebug_call_starting0();
+
 	printf("&deg;");
 
 	if (use_celsius)
 		printf("C");
 	else
 		printf("F");
+
+	upsdebug_call_finished0();
 }
 
 /* plug in the right color string (like #FF0000) for the UPS status */
 static void do_statuscolor(void)
 {
 	int	severity, i;
-	char	stat[SMALLBUF], *sp, *ptr;
+	char	stat[SMALLBUF], *ptr, *last = NULL;
+
+	upsdebug_call_starting0();
 
 	if (!check_ups_fd(0)) {
-
 		/* can't print the warning here - give a red error condition */
 		printf("#FF0000");
+		upsdebug_call_finished1(": check_ups_fd() failed");
 		return;
 	}
 
 	if (!get_var("ups.status", stat, sizeof(stat), 0)) {
 		/* status not available - give yellow as a warning */
 		printf("#FFFF00");
+		upsdebug_call_finished1(": get_var() failed");
 		return;
 	}
 
 	severity = 0;
-	sp = stat;
 
-	while (sp) {
-		ptr = strchr(sp, ' ');
-		if (ptr)
-			*ptr++ = '\0';
+	/* Use strtok_r for safety */
+	for (ptr = strtok_r(stat, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
 
 		/* expand from table in status.h */
 		for (i = 0; stattab[i].name != NULL; i++)
-			if (!strcmp(stattab[i].name, sp))
+			if (stattab[i].name && ptr && !strcmp(stattab[i].name, ptr))
 				if (stattab[i].severity > severity)
 					severity = stattab[i].severity;
-
-		sp = ptr;
 	}
 
 	switch(severity) {
@@ -635,19 +915,25 @@ static void do_statuscolor(void)
 
 		default: printf("#FF0000"); break;	/* red    : error   */
 	}
+
+	upsdebug_call_finished0();
 }
 
 static int do_command(char *cmd)
 {
+	upsdebug_call_starting_for_str1(cmd);
+
 	/* ending an if block? */
 	if (!strcmp(cmd, "ENDIF")) {
 		skip_clause = 0;
 		skip_block = 0;
+		upsdebug_call_finished1(": ENDIF");
 		return 1;
 	}
 
 	/* Skipping a block means skip until ENDIF, so... */
 	if (skip_block) {
+		upsdebug_call_finished1(": skip until ENDIF");
 		return 1;
 	}
 
@@ -658,64 +944,83 @@ static int do_command(char *cmd)
 		} else {
 			skip_block = 1;
 		}
+		upsdebug_call_finished1(": ELSE (state toggle)");
 		return 1;
 	}
 
 	/* don't do any commands if skipping a section */
 	if (skip_clause == 1) {
+		upsdebug_call_finished1(": SKIP in effect");
 		return 1;
 	}
 
 	if (!strncmp(cmd, "VAR ", 4)) {
 		parse_var(&cmd[4]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "HOST")) {
 		printf("%s", currups->sys);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "HOSTDESC")) {
 		printf("%s", currups->desc);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "RUNTIME")) {
 		do_runtime();
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	if (!strncmp(cmd, "STATUS ", 7)) {
+		do_status(&cmd[7]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "STATUS")) {
-		do_status();
+		do_status(NULL);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "STATUSCOLOR")) {
 		do_statuscolor();
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPF")) {
 		use_celsius = 0;
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPC")) {
 		use_celsius = 1;
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "DATE ", 5)) {
+		upsdebug_call_finished0();
 		return do_date(&cmd[5]);
 	}
 
 	if (!strncmp(cmd, "IMG ", 4)) {
+		upsdebug_call_finished0();
 		return do_img(&cmd[4]);
 	}
 
 	if (!strcmp(cmd, "VERSION")) {
 		printf("%s", UPS_VERSION);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
@@ -723,6 +1028,7 @@ static int do_command(char *cmd)
 		if (refreshdelay > 0) {
 			printf("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d\">", refreshdelay);
 		}
+		upsdebug_call_finished0();
 		return 1;
 	}
 
@@ -730,82 +1036,125 @@ static int do_command(char *cmd)
 		forofs = ftell(tf);
 
 		currups = ulhead;
+		upsdebugx(2, "%s: FOREACHUPS: begin with UPS [%s] [%s]", __func__, NUT_STRARG(currups->sys), NUT_STRARG(currups->desc));
+		upsdebugx(2, "%s: current skip_clause=%d skip_block=%d", __func__, skip_clause, skip_block);
 		ups_connect();
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "ENDFOR")) {
-
 		/* if not in a for, ignore this */
 		if (forofs == 0) {
+			upsdebug_call_finished1(": not in FOR");
 			return 1;
 		}
 
-		currups = currups->next;
+		upsdebugx(2, "%s: ENDFOR: done with UPS [%s] [%s]", __func__, NUT_STRARG(currups->sys), NUT_STRARG(currups->desc));
+		upsdebugx(2, "%s: current skip_clause=%d skip_block=%d", __func__, skip_clause, skip_block);
+		currups = (ulist_t *)currups->next;
 
 		if (currups) {
+			upsdebugx(2, "%s: ENDFOR: proceed with next UPS [%s]", __func__, NUT_STRARG(currups->desc));
 			fseek(tf, forofs, SEEK_SET);
 			ups_connect();
 		}
 
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "HOSTLINK")) {
 		do_hostlink();
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	if (!strncmp(cmd, "TREELINK_JSON ", 14)) {
+		do_treelink_json(&cmd[14]);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	if (!strcmp(cmd, "TREELINK_JSON")) {
+		do_treelink_json(NULL);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	if (!strncmp(cmd, "TREELINK ", 9)) {
+		do_treelink(&cmd[9]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TREELINK")) {
-		do_treelink();
+		do_treelink(NULL);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "IFSUPP ", 7)) {
 		do_ifsupp(&cmd[7], NULL);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "UPSTEMP")) {
 		do_temp("ups.temperature");
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "BATTTEMP")) {
 		do_temp("battery.temperature");
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "AMBTEMP")) {
 		do_temp("ambient.temperature");
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "DEGREES")) {
 		do_degrees();
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "IFEQ ", 5)) {
 		do_ifeq(&cmd[5]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "IFBETWEEN ", 10)) {
 		do_ifbetween(&cmd[10]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "UPSSTATSPATH ", 13)) {
 		do_upsstatpath(&cmd[13]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strncmp(cmd, "UPSIMAGEPATH ", 13)) {
 		do_upsimgpath(&cmd[13]);
+		upsdebug_call_finished0();
 		return 1;
 	}
 
+	if (!strncmp(cmd, "NUT_UPSSTATS_TEMPLATE ", 22) || !strcmp(cmd, "NUT_UPSSTATS_TEMPLATE")) {
+		upsdebugx(2, "%s: saw magic token, ignoring", __func__);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
+	upsdebug_call_finished2(": unknown cmd: '%s'", cmd);
 	return 0;
 }
 
@@ -815,8 +1164,9 @@ static void parse_line(const char *buf)
 	size_t	i, len;
 	char	do_cmd = 0;
 
-	for (i = 0; buf[i]; i += len) {
+	upsdebug_call_starting_for_str1(buf);
 
+	for (i = 0; buf[i]; i += len) {
 		len = strcspn(&buf[i], "@");
 
 		if (len == 0) {
@@ -845,21 +1195,103 @@ static void parse_line(const char *buf)
 		/* pass it trough */
 		printf("%.*s", (int)len, &buf[i]);
 	}
+
+	upsdebug_call_finished0();
 }
 
-static void display_template(const char *tfn)
+/* type = 1 for upsstats-single.html (or custom copy), 2 for upsstats.html (list) */
+static void display_template(const char *tfn, int type)
 {
 	char	fn[NUT_PATH_MAX + 1], buf[LARGEBUF];
+	ulist_t	*tmp = NULL;
+
+	upsdebug_call_starting_for_str1(tfn);
+
+	if (!tfn || !*tfn || strstr(tfn, "/") || strstr(tfn, "\\")) {
+		/* We only allow pre-configured templates in one managed location, with ".htm" in the name */
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location<br/>\n", tfn, strerror(errno));
+
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+
+		upsdebug_call_finished1(": subdir in template");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!strstr(tfn, ".htm")) {
+		/* We only allow pre-configured templates with ".htm" in the name */
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look at not a *.htm* file<br/>\n", tfn, strerror(errno));
+
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+
+		upsdebug_call_finished1(": not a *.htm* file");
+		exit(EXIT_FAILURE);
+	}
+
+	if (type == 1) {
+		/* Check if [custom] single template is allowed
+		 * (built-in/legacy default starts the list) */
+		tmp = allowed_template_single_lhead;
+		while (tmp) {
+			if (!strcmp(tmp->sys, tfn))
+				break;
+			tmp = (ulist_t *)tmp->next;
+		}
+	} else
+	if (type == 2) {
+		/* Check if [custom] list template is allowed
+		 * (built-in/legacy default starts the list) */
+		tmp = allowed_template_list_lhead;
+		while (tmp) {
+			if (!strcmp(tmp->sys, tfn))
+				break;
+			tmp = (ulist_t *)tmp->next;
+		}
+	}
+
+	if (!tmp) {
+		/* We only allow pre-configured templates permitted via hosts.conf */
+		errno = EPERM;
+		fprintf(stderr, "upsstats: Can't open %s: %s: Not authorized: template not permitted via hosts.conf<br/>\n", tfn, strerror(errno));
+
+		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+
+		upsdebug_call_finished1(": template not permitted via hosts.conf");
+		exit(EXIT_FAILURE);
+	}
 
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
-	tf = fopen(fn, "r");
+	tf = fopen(fn, "rb");
 
 	if (!tf) {
-		fprintf(stderr, "upsstats: Can't open %s: %s\n", fn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s<BR/>\n", fn, strerror(errno));
 
-		printf("Error: can't open template file (%s)\n", tfn);
+		printf("Error: can't open template file (%s)<BR/>\n", tfn);
 
+		upsdebug_call_finished1(": no template");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!fgets(buf, sizeof(buf), tf)) {
+		fprintf(stderr, "upsstats: template file %s seems to be empty (fgets failed): %s<BR/>\n", fn, strerror(errno));
+
+		printf("Error: template file %s seems to be empty<BR/>\n", tfn);
+
+		upsdebug_call_finished1(": empty template");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Test first line for a bit of expected magic */
+	if (!strncmp(buf, "@NUT_UPSSTATS_TEMPLATE", 22)) {
+		parse_line(buf);
+	} else {
+		fprintf(stderr, "upsstats: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", fn);
+
+		printf("Error: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", tfn);
+
+		upsdebug_call_finished1(": not a valid template");
 		exit(EXIT_FAILURE);
 	}
 
@@ -868,6 +1300,7 @@ static void display_template(const char *tfn)
 	}
 
 	fclose(tf);
+	upsdebug_call_finished0();
 }
 
 static void display_tree(int verbose)
@@ -876,9 +1309,12 @@ static void display_tree(int verbose)
 	const	char	*query[4];
 	char	**answer;
 
+	upsdebug_call_starting0();
+
 	if (!upsname) {
 		if (verbose)
 			printf("[No UPS name specified]\n");
+		upsdebug_call_finished1(": No UPS name specified");
 		return;
 	}
 
@@ -889,6 +1325,7 @@ static void display_tree(int verbose)
 	if (upscli_list_start(&ups, numq, query) < 0) {
 		if (verbose)
 			report_error();
+		upsdebug_call_finished1(": upscli_list_start() failed");
 		return;
 	}
 
@@ -918,6 +1355,7 @@ static void display_tree(int verbose)
 			if (verbose)
 				printf("[Invalid response]\n");
 
+			upsdebug_call_finished1(": invalid response");
 			return;
 		}
 
@@ -925,7 +1363,7 @@ static void display_tree(int verbose)
 
 		printf("<TD>%s</TD>\n", answer[2]);
 		printf("<TD>:</TD>\n");
-		printf("<TD>%s<br></TD>\n", answer[3]);
+		printf("<TD>%s</TD>\n", answer[3]);
 
 		printf("</TR>\n");
 	}
@@ -935,6 +1373,7 @@ static void display_tree(int verbose)
 
 	/* FIXME (AQ): add a save button (?), and a checkbt for showing var.desc */
 	printf("</BODY></HTML>\n");
+	upsdebug_call_finished0();
 }
 
 static void add_ups(char *sys, char *desc)
@@ -945,10 +1384,10 @@ static void add_ups(char *sys, char *desc)
 
 	while (tmp) {
 		last = tmp;
-		tmp = tmp->next;
+		tmp = (ulist_t *)tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ulist_t));
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
 
 	tmp->sys = xstrdup(sys);
 	tmp->desc = xstrdup(desc);
@@ -960,31 +1399,93 @@ static void add_ups(char *sys, char *desc)
 		ulhead = tmp;
 }
 
+static void add_allowed_template_list(char *tfn)
+{
+	ulist_t	*tmp, *last;
+
+	if (!tfn || !*tfn)
+		return;
+
+	tmp = last = allowed_template_list_lhead;
+
+	while (tmp) {
+		if (!strcmp(tmp->sys, tfn))
+			return;
+		last = tmp;
+		tmp = (ulist_t *)tmp->next;
+	}
+
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
+
+	tmp->sys = xstrdup(tfn);
+	tmp->desc = NULL;
+	tmp->next = NULL;
+
+	if (last)
+		last->next = tmp;
+	else
+		allowed_template_list_lhead = tmp;
+}
+
+static void add_allowed_template_single(char *tfn)
+{
+	ulist_t	*tmp, *last;
+
+	if (!tfn || !*tfn)
+		return;
+
+	tmp = last = allowed_template_single_lhead;
+
+	while (tmp) {
+		if (!strcmp(tmp->sys, tfn))
+			return;
+		last = tmp;
+		tmp = (ulist_t *)tmp->next;
+	}
+
+	tmp = (ulist_t *)xmalloc(sizeof(ulist_t));
+
+	tmp->sys = xstrdup(tfn);
+	tmp->desc = NULL;
+	tmp->next = NULL;
+
+	if (last)
+		last->next = tmp;
+	else
+		allowed_template_single_lhead = tmp;
+}
+
 /* called for fatal errors in parseconf like malloc failures */
 static void upsstats_hosts_err(const char *errmsg)
 {
 	upslogx(LOG_ERR, "Fatal error in parseconf(hosts.conf): %s", errmsg);
 }
 
-static void load_hosts_conf(void)
+static void load_hosts_conf(int handle_MONITOR)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
-	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);
+	snprintf(fn, sizeof(fn), "%s/hosts.conf", confpath());
+	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
 	pconf_init(&ctx, upsstats_hosts_err);
 
 	if (!pconf_file_begin(&ctx, fn)) {
 		pconf_finish(&ctx);
 
-		printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
-		printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
-		printf("<HTML><HEAD>\n");
-		printf("<TITLE>Error: can't open hosts.conf</TITLE>\n");
-		printf("</HEAD><BODY>\n");
-		printf("Error: can't open hosts.conf\n");
-		printf("</BODY></HTML>\n");
+		/* Don't print HTML here if we are in JSON mode.
+		 * The JSON function will handle the error.
+		 */
+		if (!output_json) {
+			printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+			printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+			printf("<HTML><HEAD>\n");
+			printf("<TITLE>Error: can't open hosts.conf</TITLE>\n");
+			printf("</HEAD><BODY>\n");
+			printf("Error: can't open hosts.conf\n");
+			printf("</BODY></HTML>\n");
+		}
 
 		/* leave something for the admin */
 		fprintf(stderr, "upsstats: %s\n", ctx.errmsg);
@@ -998,25 +1499,41 @@ static void load_hosts_conf(void)
 			continue;
 		}
 
+		if (ctx.numargs < 2)
+			continue;
+
+		/* CUSTOM_TEMPLATE_LIST <filename> */
+		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_LIST"))
+			add_allowed_template_list(ctx.arglist[1]);
+
+		/* CUSTOM_TEMPLATE_SINGLE <filename> */
+		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_SINGLE"))
+			add_allowed_template_single(ctx.arglist[1]);
+
 		if (ctx.numargs < 3)
 			continue;
 
 		/* MONITOR <host> <desc> */
-		if (!strcmp(ctx.arglist[0], "MONITOR"))
+		if (handle_MONITOR && !strcmp(ctx.arglist[0], "MONITOR"))
 			add_ups(ctx.arglist[1], ctx.arglist[2]);
 
 	}
 
 	pconf_finish(&ctx);
 
-	if (!ulhead) {
-		printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
-		printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
-		printf("<HTML><HEAD>\n");
-		printf("<TITLE>Error: no hosts to monitor</TITLE>\n");
-		printf("</HEAD><BODY>\n");
-		printf("Error: no hosts to monitor (check <CODE>hosts.conf</CODE>)\n");
-		printf("</BODY></HTML>\n");
+	if (!ulhead && handle_MONITOR) {
+		/* Don't print HTML here if we are in JSON mode.
+		 * The JSON function will handle the error.
+		 */
+		if (!output_json) {
+			printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+			printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+			printf("<HTML><HEAD>\n");
+			printf("<TITLE>Error: no hosts to monitor</TITLE>\n");
+			printf("</HEAD><BODY>\n");
+			printf("Error: no hosts to monitor (check <CODE>hosts.conf</CODE>)\n");
+			printf("</BODY></HTML>\n");
+		}
 
 		/* leave something for the admin */
 		fprintf(stderr, "upsstats: no hosts to monitor\n");
@@ -1026,9 +1543,12 @@ static void load_hosts_conf(void)
 
 static void display_single(void)
 {
+	upsdebug_call_starting0();
+
 	if (!checkhost(monhost, &monhostdesc)) {
 		printf("Access to that host [%s] is not authorized.\n",
 			monhost);
+		upsdebug_call_finished1(": not auth");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1041,39 +1561,320 @@ static void display_single(void)
 	if (treemode)
 		display_tree(1);
 	else
-		display_template("upsstats-single.html");
+		display_template(template_single, 1);
 
 	upscli_disconnect(&ups);
+	upsdebug_call_finished0();
+}
+
+/* ------------------------------------------------------------- */
+/* ---NEW FUNCTION FOR JSON API -------------------------------- */
+/* ------------------------------------------------------------- */
+
+/**
+ * @brief Main JSON output function.
+ * This function replaces all template logic and outputs a JSON object
+ * containing data for one or all devices.
+ */
+static void display_json(void)
+{
+	size_t	numq, numa;
+	const	char	*query[4];
+	char	**answer;
+	char	status_buf[SMALLBUF], status_copy[SMALLBUF];
+	int i;
+	int is_first_status;
+	int is_first_ups = 1;
+	int is_first_var = 1;
+	char *ptr, *last = NULL;
+
+	upsdebug_call_starting0();
+
+	/* If monhost is set, we're in single-host mode.
+	 * If not, we're in multi-host mode.
+	 * We need to load hosts.conf ONLY in multi-host mode.
+	 */
+	if (monhost) {
+		if (!checkhost(monhost, &monhostdesc)) {
+			printf("{\"error\": \"Access to host %s is not authorized.\"}", monhost);
+			upsdebug_call_finished1(": not auth");
+			return;
+		}
+		add_ups(monhost, monhostdesc);
+		currups = ulhead;
+	} else {
+		load_hosts_conf(1); /* This populates ulhead */
+		currups = ulhead;
+	}
+
+	if (!currups) {
+		/* load_hosts_conf() would have exited, but check anyway */
+		printf("{\"error\": \"No hosts to monitor.\"}");
+		upsdebug_call_finished1(": No hosts to monitor");
+		return;
+	}
+
+	/* In multi-host mode, wrap in a root object.
+	 * In single-host mode, just output the single device object.
+	 */
+	if (!monhost) {
+		printf("{\"devices\": [\n");
+	}
+
+	/* Loop through all devices (in single-host mode, this is just one) */
+	for (currups = ulhead; currups != NULL; currups = (ulist_t *)currups->next) {
+		ups_connect();
+
+		if (!is_first_ups) printf(",\n");
+
+		if (upscli_fd(&ups) == -1) {
+			printf("  {\"host\": \"");
+			json_print_esc(currups->sys);
+			printf("\", \"desc\": \"");
+			json_print_esc(currups->desc);
+			printf("\", \"error\": \"Connection failed: %s\"}", upscli_strerror(&ups));
+			is_first_ups = 0;
+			continue;
+		}
+
+		printf("  {\n"); /* Start UPS object */
+		printf("    \"host\": \"");
+		json_print_esc(currups->sys);
+		printf("\",\n");
+		printf("    \"desc\": \"");
+		json_print_esc(currups->desc);
+		printf("\",\n");
+
+		/* Add pre-processed status, as the old template did */
+		if (get_var("ups.status", status_buf, sizeof(status_buf), 0)) {
+			printf("    \"status_raw\": \"");
+			json_print_esc(status_buf);
+			printf("\",\n");
+			printf("    \"status_parsed\": [");
+
+			is_first_status = 1;
+			/* Copy status_buf as strtok_r is destructive */
+			strncpy(status_copy, status_buf, sizeof(status_copy));
+			status_copy[sizeof(status_copy) - 1] = '\0';
+
+			for (ptr = strtok_r(status_copy, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
+				for (i = 0; stattab[i].name != NULL; i++) {
+					if (stattab[i].name && ptr && !strcasecmp(stattab[i].name, ptr)) {
+						if (!is_first_status) printf(", ");
+						printf("\"");
+						json_print_esc(stattab[i].desc);
+						printf("\"");
+						is_first_status = 0;
+					}
+				}
+			}
+			printf("],\n");
+		}
+
+		printf("    \"vars\": {\n"); /* Start vars object */
+		is_first_var = 1;
+
+		/* Full tree mode: list all variables */
+		query[0] = "VAR";
+		query[1] = upsname;
+		numq = 2;
+
+		if (upscli_list_start(&ups, numq, query) < 0) {
+			printf("      \"error\": \"Failed to list variables: %s\"", upscli_strerror(&ups));
+		} else {
+			while (upscli_list_next(&ups, numq, query, &numa, &answer) == 1) {
+				if (numa < 4) continue; /* Invalid response */
+
+				if (!is_first_var) printf(",\n");
+
+				printf("      \"");
+				json_print_esc(answer[2]); /* var name */
+				printf("\": \"");
+				json_print_esc(answer[3]); /* var value */
+				printf("\"");
+
+				is_first_var = 0;
+			}
+		}
+
+		printf("\n    }\n"); /* End vars object */
+		printf("  }"); /* End UPS object */
+
+		is_first_ups = 0;
+		upscli_disconnect(&ups); /* Disconnect after each UPS */
+	}
+
+	/* Close the root object in multi-host mode */
+	if (!monhost) {
+		printf("\n]}\n");
+	}
+
+	upsdebug_call_finished0();
+}
+
+
+/* ------------------------------------------------------------- */
+/* --- END: NEW JSON FUNCTION ---------------------------------- */
+/* ------------------------------------------------------------- */
+
+static void clean_exit(void)
+{
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	upscli_cleanup();
+	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 
 int main(int argc, char **argv)
 {
-	NUT_UNUSED_VARIABLE(argc);
-	NUT_UNUSED_VARIABLE(argv);
+	char *s;
+	int i;
+
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	static WSADATA	WSAdata;
+	static int	WSA_Started = 0;
+	if (!WSA_Started) {
+		WSAStartup(2, &WSAdata);
+		atexit((void(*)(void))WSACleanup);
+		WSA_Started = 1;
+	}
+
+	/* Avoid binary output conversions, e.g.
+	 * mangling what looks like CRLF on WIN32 */
+	setmode(STDOUT_FILENO, O_BINARY);
+#endif
+
+	upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+	getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsstats(CGI)");
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+		upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	}
+
+
+#ifdef NUT_CGI_DEBUG_UPSSTATS
+# if (NUT_CGI_DEBUG_UPSSTATS - 0 < 1)
+#  undef NUT_CGI_DEBUG_UPSSTATS
+#  define NUT_CGI_DEBUG_UPSSTATS 6
+# endif
+	/* Un-comment via make flags when developer-troubleshooting: */
+	nut_debug_level = NUT_CGI_DEBUG_UPSSTATS;
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+#endif
+
+	if (nut_debug_level > 0) {
+		cgilogbit_set();
+		printf("Content-type: text/html\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
+	}
+
+	/* Built-in defaults */
+	template_single = xstrdup(DEFAULT_TEMPLATE_SINGLE);
+	template_list = xstrdup(DEFAULT_TEMPLATE_LIST);
 
 	extractcgiargs();
 
+	upsdebugx(1, "Using best-effort auth config detection");
+	upscli_read_authconf_file(NULL, 0);
+
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	atexit(clean_exit);
+
+	/* Prepare for handling in first loop through ups_connect() */
+	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+
+	/*
+	 * If json is in the query, bypass all HTML and call display_json()
+	 */
+	if (output_json) {
+		printf("Content-type: application/json; charset=utf-8\n");
+		printf("Pragma: no-cache\n");
+		printf("\n");
+
+		display_json();
+
+		/* Clean up memory */
+		free(monhost);
+		while (ulhead) {
+			currups = (ulist_t *)ulhead->next;
+			free(ulhead->sys);
+			free(ulhead->desc);
+			free(ulhead);
+			ulhead = currups;
+		}
+		free(upsname);
+		free(hostname);
+		free(template_single);
+		free(template_list);
+
+		exit(EXIT_SUCCESS);
+	}
+
+	/* --- Original HTML logic continues below --- */
 
 	printf("Content-type: text/html\n");
 	printf("Pragma: no-cache\n");
 	printf("\n");
 
-	/* if a host is specified, use upsstats-single.html instead */
+	/* if a host is specified, use upsstats-single.html instead
+	 * of listing whatever we know about with upsstats.html */
+	add_allowed_template_single(DEFAULT_TEMPLATE_SINGLE);
+	add_allowed_template_list(DEFAULT_TEMPLATE_LIST);
 	if (monhost) {
+		load_hosts_conf(0);
 		display_single();
-		exit(EXIT_SUCCESS);
+	} else {
+		/* default: multimon replacement mode */
+		load_hosts_conf(1);
+		currups = ulhead;
+		display_template(template_list, 2);
 	}
 
-	/* default: multimon replacement mode */
-
-	load_hosts_conf();
-
-	currups = ulhead;
-
-	display_template("upsstats.html");
-
+	/* Clean up memory */
+	free(monhost);
 	upscli_disconnect(&ups);
+	free(upsname);
+	free(hostname);
+	while (ulhead) {
+		currups = (ulist_t *)ulhead->next;
+		free(ulhead->sys);
+		free(ulhead->desc);
+		free(ulhead);
+		ulhead = currups;
+	}
+	free(template_single);
+	free(template_list);
+
+	/* Free storage of allowed template names (reusing same kind of structure as UPSes) */
+	while (allowed_template_single_lhead) {
+		currups = (ulist_t *)allowed_template_single_lhead->next;
+		free(allowed_template_single_lhead->sys);
+		free(allowed_template_single_lhead->desc);
+		free(allowed_template_single_lhead);
+		allowed_template_single_lhead = currups;
+	}
+
+	while (allowed_template_list_lhead) {
+		currups = (ulist_t *)allowed_template_list_lhead->next;
+		free(allowed_template_list_lhead->sys);
+		free(allowed_template_list_lhead->desc);
+		free(allowed_template_list_lhead);
+		allowed_template_list_lhead = currups;
+	}
 
 	return 0;
 }

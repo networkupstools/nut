@@ -13,8 +13,10 @@ This file attempts to standardize the various files being found
 in different installations, like `/etc/default/nut` on Debian based
 systems and `/etc/sysconfig/ups` on RedHat based systems.
 
-Distribution's init script should source this file in order to
-determine which components have to be started.
+An init (or service method) script provided by an OS distribution
+should source this file in order to determine which components have
+to be started; it may also be consulted by `nutshutdown` integration
+hook script and others.
 
 Blank lines are ignored. Lines with a hash (`#`) character at the
 first position of the line are ignored, too.  They can be used to add
@@ -138,6 +140,12 @@ between that of 'DEBUG_MIN' setting of a driver and the command-line options.
 Optionally add current process ID to tags with debug-level identifiers.
 This may be useful when many NUT daemons write to the same console or log
 file, such as in containers/plugins for Home Assistant, storage appliances...
+
+*NUT_DEBUG_PROCNAME*::
+Optionally log process name (or however the program chose to identify itself).
+This may be useful when multiple NUT daemons log into the same file or console,
+without syslog to prefix the name into each line (e.g. in tests, single init
+script systems like Home Assistant, etc.)
 
 *NUT_DEBUG_SYSLOG*::
 Optional, unset by default.

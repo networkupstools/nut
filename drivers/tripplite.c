@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.97"
+#define DRIVER_VERSION	"0.100"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -134,6 +134,8 @@ upsdrv_info_t upsdrv_info = {
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int startdelay = DEFAULT_STARTDELAY;
 static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+
+static int reconnect_ups(void);
 
 static long hex2d(char *start, unsigned int len)
 {
@@ -235,57 +237,74 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	char buf[256];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":A\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K0\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K1\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.1.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K2\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.1.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K3\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.2.load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		send_cmd(":K4\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "outlet.2.load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		send_cmd(":K5\r", buf, sizeof buf);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		do_reboot();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		soft_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		hard_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
+
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		int ipv = atoi(val);
 		if (ipv >= 0)
@@ -307,6 +326,8 @@ static int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
 		return STAT_SET_HANDLED;
 	}
+
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -386,6 +407,22 @@ void upsdrv_shutdown(void)
 		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_updateinfo(void)
 {
 	static int numfails;
@@ -401,7 +438,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Data command failed: [%" PRIiSIZE "] bytes != 21 bytes.", len);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -422,7 +462,10 @@ void upsdrv_updateinfo(void)
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Data out of bounds: [%0ld,%3d,%3ld,%02.2f]",
 					volt, temp, load, freq);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -433,7 +476,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Battery voltage out of bounds: [%02.1f]", bv);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -444,7 +490,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("InVoltMax out of bounds: [%ld]", vmax);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -455,7 +504,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("InVoltMin out of bounds: [%ld]", vmin);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -467,7 +519,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test is out of range: [%ld]", stest);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -475,7 +530,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test returned non-numeric data.");
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -483,7 +541,10 @@ void upsdrv_updateinfo(void)
 		++numfails;
 		if (numfails > MAXTRIES) {
 			ser_comm_fail("Self test out of bounds: [%ld]", stest);
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
+			numfails = 0;
 		}
 		return;
 	}
@@ -600,6 +661,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 	char msg[256];
@@ -620,6 +686,13 @@ void upsdrv_initups(void)
 	char	*val;
 
 	upsfd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	ser_set_speed(upsfd, device_path, B2400);
 
 	if ((val = getval("offdelay"))) {
@@ -641,6 +714,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }
-

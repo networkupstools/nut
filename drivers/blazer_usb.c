@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -48,6 +48,39 @@ upsdrv_info_t upsdrv_info = {
 	DRV_BETA,
 	{ NULL }
 };
+
+/* Unregistered vendor 0x0001 (commonly identified as Fry's Electronics) */
+#define NONAME0001_VENDORID	0x0001
+
+/* Unregistered vendor 0xFFFF */
+#define NONAMEFFFF_VENDORID	0xffff
+
+/* ST Microelectronics */
+#define STMICRO_VENDORID	0x0483
+
+/* Sysgration Ltd. */
+#define SYSGRATION_VENDORID	0x05b8
+
+/* Cypress Semiconductor */
+#define CYPRESS_VENDORID	0x0665
+
+/* Phoenixtec Power Co., Ltd */
+#define PHOENIXTEC_VENDORID	0x06da
+
+/* Lakeview Research */
+#define LAKEVIEW_VENDORID	0x0925
+
+/* Unitek UPS Systems */
+#define UNITEK_VENDORID	0x0f03
+
+/* GE */
+#define GE_VENDORID	0x14f0
+
+/* QinHeng Electronics */
+#define QINHENG_VENDORID	0x1a86
+
+/* Legrand */
+#define LEGRAND_VENDORID	0x1cb0
 
 #ifndef TESTING
 
@@ -116,6 +149,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	char	tmp[SMALLBUF];
 	int	ret;
 	size_t	i;
+
+	memset(tmp, 0, sizeof(tmp));
 
 	for (i = 0; i < 8; i++) {
 
@@ -201,6 +236,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	int	ret, len;
 	size_t	i;
 
+	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
 	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
@@ -390,18 +426,18 @@ static void *phoenix_subdriver(USBDevice_t *device)
 
 
 static usb_device_id_t blazer_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
-	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
-	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
-	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x06da, 0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
-	{ USB_DEVICE(0x06da, 0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
-	{ USB_DEVICE(0x06da, 0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
-	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
-	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000), &cypress_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003), &ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0601), &phoenix_subdriver },	/* Online Zinto A */
+	{ USB_DEVICE(UNITEK_VENDORID,	0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(GE_VENDORID,	0x00c9), &phoenix_subdriver },	/* GE EP series */
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -447,21 +483,27 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
 	ssize_t	ret;
+	int	reconnecting = (udev == NULL);
 
-	if (udev == NULL) {
-		dstate_setinfo("driver.state", "reconnect.trying");
+	if (reconnecting) {
+		reconnect_trying(RECONNECT_TRYING);
 
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 		if (ret < 1) {
+			/* dstate_datastale/dstate_dataok managed in blazer.c::upsdrv_updateinfo() */
 			return ret;
 		}
 
-		dstate_setinfo("driver.state", "reconnect.updateinfo");
+		reconnect_trying(RECONNECT_UPDATEINFO);
 	}
 
 	ret = (*subdriver_command)(cmd, buf, buflen);
 	if (ret >= 0) {
+		/* clean read: forget any overflow streak */
+		if (reconnecting) {
+			reconnect_trying(RECONNECT_SUCCESS);
+		}
 		return ret;
 	}
 
@@ -504,6 +546,8 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		/* Not accounting just yet with reconnect_trying(RECONNECT_TRYING),
+		 * to avoid off-by-one counter errors */
 		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
@@ -520,6 +564,14 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 #endif	/* !WIN32 */
 	default:
 		break;
+	}
+
+	if (reconnecting) {
+		/* Success after updateinfo in the bulk of this method body */
+		upsdebugx(1, "%s: libusb returned %" PRIiSIZE
+			" which was not classified as a known error, assuming reconnection succeeded",
+			__func__, ret);
+		reconnect_trying(RECONNECT_SUCCESS);
 	}
 
 	return ret;
@@ -568,17 +620,28 @@ static const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-	size_t i;
+	size_t i, len = 0, maxlen = 0;
 
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver:\n");
+
+	/* Calculate the longest subdriver name for print alignment */
+	for (i = 0; subdriver[i].name != NULL; i++) {
+		len = strlen(subdriver[i].name);
+		if (len > maxlen)
+			maxlen = len;
+	}
 
 	for (i = 0; subdriver[i].name != NULL; i++) {
-		if (i>0)
-			printf(", ");
-		printf("%s", subdriver[i].name);
+		printf("  %*s\n", (int)maxlen, subdriver[i].name);
 	}
-	printf("\n\n");
+	printf("\n");
 #endif	/* TESTING */
+}
+
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 

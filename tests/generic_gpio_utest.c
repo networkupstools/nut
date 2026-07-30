@@ -33,7 +33,7 @@
 
 extern struct gpioups_t *gpioupsfd;
 
-static int done=0;
+static int done=1;
 static int test_with_exit;
 static jmp_buf env_buffer;
 static FILE * testData;
@@ -137,15 +137,37 @@ void exit(int code)
 }
 
 int main(int argc, char **argv) {
-	int jmp_result;
+	int jmp_result, lvl;
 	char rules[128];
 	char testType[128];
 	char testDescFileNameBuf[LARGEBUF];
-	char *testDescFileName = "generic_gpio_test.txt";
+	char *testDescFileName = "generic_gpio_test.txt", *s;
 	unsigned int i;
 	unsigned long version = WITH_LIBGPIO_VERSION;
 	printf("Tests running for libgpiod library version %lu\n", version);
 
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &lvl, 10) && lvl > 0) {
+		nut_debug_level = lvl;
+	}
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS
+# pragma GCC diagnostic ignored "-Waddress"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* #if !(defined ENABLE_SHARED_PRIVATE_LIBS) || !ENABLE_SHARED_PRIVATE_LIBS */
+	default_register_upsdrv_callbacks();
+/* #endif */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE))
+# pragma GCC diagnostic pop
+#endif
+
+	done=0;
 	test_with_exit=0;
 
 	if(argc==2) {
@@ -216,7 +238,7 @@ int main(int argc, char **argv) {
 #endif
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				/* NOTE: here and below, freed by generic_gpio_close(&upsfdtest) */
 				jmp_result = setjmp(env_buffer);
 				if(jmp_result) {	/* test case  exiting */
@@ -230,11 +252,11 @@ int main(int argc, char **argv) {
 			if(!strcmp(testType, "states")) {
 				int expectedStateValue;
 				int calculatedStateValue;
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
+				upsfdtest->upsLinesStates = (int *)xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j=0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}
@@ -261,7 +283,7 @@ int main(int argc, char **argv) {
 				char chargeStatus[256];
 				char chargeLow[256];
 				char charge[256];
-				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				/* "volatile" trickery to avoid the likes of:
@@ -274,7 +296,7 @@ int main(int argc, char **argv) {
 				const char * volatile currCharge = NULL;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
+				upsfdtest->upsLinesStates = (int *)xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j = 0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}

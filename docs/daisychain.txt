@@ -4,6 +4,12 @@ NUT daisychain support notes
 ============================
 endif::external_title[]
 
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/developer-guide.chunked/daisychain.html
+// and subsequent pages (next-next-next...)
+//////////////////////////////////////////////////////////////////////////////
+
 NUT supports daisychained devices for any kind of device that proposes
 it. This chapter introduces:
 

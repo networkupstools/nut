@@ -115,7 +115,7 @@ static char ** add_port(char ** list, char * port)
 
 	/*+1 to get the number of port from the index nb_ports*/
 	/*+1 for the terminal NULL */
-	res = realloc(list, sizeof(char*) * (count + 1 + 1));
+	res = (char**)realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
 		upsdebugx(0, "%s: Failed to realloc port list", __func__);
 		return list;
@@ -133,7 +133,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 	char start_port = 0;
 	char stop_port = 0;
 	char current_port = 0;
-	char * list_sep_ptr = NULL;
+	const char * list_sep_ptr = NULL;
 	char ** ports_list = NULL;
 	char str_tmp[128];
 	char * tok;

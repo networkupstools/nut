@@ -71,6 +71,10 @@ typedef struct conn_s {
 	 * Defaults to nonblocking, for backward compatibility */
 	extern	int	do_synchronous;
 
+	/* Globally track if we are charging or losing power, and how fast */
+	extern double	previous_battery_charge_value;
+	extern st_tree_timespec_t	previous_battery_charge_timestamp;
+
 char * dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
 int vdstate_setinfo(const char *var, const char *fmt, va_list ap);
@@ -89,6 +93,7 @@ void dstate_addflags(const char *var, const int addflags);
 void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
+const st_tree_t *dstate_tree_find(const char *var);	/* Return the whole entry, or NULL */
 void dstate_addcmd(const char *cmdname);
 int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff);
 int dstate_delinfo(const char *var);

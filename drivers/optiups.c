@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION	"1.07"
+#define DRIVER_VERSION	"1.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -101,9 +101,11 @@ enum {
 typedef struct ezfill_s {
 	const char *cmd;
 	const char *var;
-	const float scale;  /*  if 0, no conversion is done and the string
-	                        is passed to dstate as is, otherwise a float
-	                        conversion with single decimal is applied */
+
+	/* if scale is 0, no conversion is done and the
+	 * string is passed to dstate as is; otherwise a
+	 * float conversion with single decimal is applied */
+	const float scale;
 } ezfill_t;
 
 /* These can be polled right into a string usable by NUT.
@@ -132,8 +134,8 @@ static ezfill_t opti_pollv_zinto[] = {
  * test with a PS-1440RM at 230V the change is only applied to PowerSeries models.
  */
 static ezfill_t opti_pollv_ps[] = {
- 	{ "OL", "ups.load", 1.0 },
- 	{ "FF", "input.frequency", 0.1 },
+	{ "OL", "ups.load", 1.0 },
+	{ "FF", "input.frequency", 0.1 },
 	{ "BT", "ups.temperature", 0 },
 };
 
@@ -234,8 +236,13 @@ static void optifill( ezfill_t *a, size_t len )
 /* Handle custom (but standardized) NUT commands */
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Ts" );
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -244,6 +251,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* You do realize this will kill power to ourself.
 		 * Would probably only be useful for killing power for
 		 * a computer with upsmon in "secondary" mode */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -257,6 +265,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -272,6 +281,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	{
 		/* This shuts down the UPS.  When the power returns to the UPS,
 		 *   it will power back up in its default state. */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -288,6 +298,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* This actually stays off as long as the batteries hold,
 		 *   if the line power comes back before the batteries die,
 		 *   the UPS will never powerup its output stage!!! */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -301,11 +312,12 @@ static int instcmd(const char *cmdname, const char *extra)
 	else if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
 		/* Aborts a shutdown that is counting down via the Cs command */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Cs-0000001" );
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -313,6 +325,8 @@ static int instcmd(const char *cmdname, const char *extra)
 static int setvar(const char *varname, const char *val)
 {
 	int status;
+
+	upsdebug_SET_STARTING(varname, val);
 
 	if (sscanf(val, "%d", &status) != 1) {
 		return STAT_SET_UNKNOWN;
@@ -326,6 +340,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -411,8 +426,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.start");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
-	if( optimodel != OPTIMODEL_ZINTO )
-	dstate_addcmd("shutdown.stop");
+	if (optimodel != OPTIMODEL_ZINTO) {
+		dstate_addcmd("shutdown.stop");
+	}
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	upsh.instcmd = instcmd;
@@ -589,6 +605,11 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	printf(HELP);
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
 }
 
 /* list flags and values that you want to receive via -x */

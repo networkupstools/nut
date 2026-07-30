@@ -11,10 +11,14 @@
 # To speed up this practical developer-testing aspect, you can just
 # `make check-NIT-sandbox{,-devel}` (optionally with custom DEBUG_SLEEP).
 #
+# Also note that it can be used not only for in-tree checks, but for
+# development of other NUT clients against even a packaged installation,
+# for a practical example see https://github.com/networkupstools/jNut
+#
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
 # Caller can export envvars to impact the script behavior, e.g.:
-#	DEBUG=true	to print debug messages, running processes, etc.
+#	DEBUG_NIT=true	to print debug messages, running processes, etc.
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
@@ -31,12 +35,29 @@
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
 #
+# NOTE: For systems where executables need an extension, like Windows,
+# you may require an EXEEXT variable to be exported (e.g. by a Makefile);
+# also on Windows the DLL shared libraries may have to be present in same
+# directory as the executable "module" (or in the current working directory).
+# Ability to run in cross-builds (e.g. NUT for Windows on Linux) may depend
+# on binary support deployed in the run-time system ( Wine, WSL... on Linux).
+#
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
 #
+# Special considerations for starting the tests as "root":
+# * See I_AM_ROOT evaluation and conditional uses in code below for the
+#   most authoritative reference.
+# * More liberal permissions to TESTDIR, STATEPATH and configuration files
+#   than when a non-root user started the test suite right away and could
+#   only constrain access to allow itself.
+# * BUILTIN_RUN_AS_USER and BUILTIN_RUN_AS_GROUP envvars would be consulted
+#   and if those accounts do not exist (e.g. in a packaging build root), a
+#   different value like "nobody" or "nogroup" would be defaulted for test.
+#
 # Copyright
-#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2026 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -58,6 +79,7 @@ LANG=C
 LC_ALL=C
 export TZ LANG LC_ALL
 
+# May flip to "false" if SSL tests are enabled
 NUT_QUIET_INIT_SSL="true"
 export NUT_QUIET_INIT_SSL
 
@@ -80,6 +102,9 @@ export NUT_DEBUG_LEVEL
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
 
+NUT_DEBUG_PROCNAME="true"
+export NUT_DEBUG_PROCNAME
+
 # Just keep upsdrvctl quiet if used in test builds or with the sandbox
 NUT_QUIET_INIT_NDE_WARNING="true"
 export NUT_QUIET_INIT_NDE_WARNING
@@ -87,7 +112,15 @@ export NUT_QUIET_INIT_NDE_WARNING
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
+# tools
+[ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
+[ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
+
 TABCHAR="`printf '\t'`"
+
+# Special case to launch a lot of drivers and stress-test the select() loops etc.
+[ -n "${DUMMY_UPS_SWARM_COUNT}" ] && [ "${DUMMY_UPS_SWARM_COUNT}" -gt 0 ] || DUMMY_UPS_SWARM_COUNT=0
+[ -n "${UPSLOG_SWARM_COUNT}" ] && [ "${UPSLOG_SWARM_COUNT}" -gt 0 ] || UPSLOG_SWARM_COUNT=0
 
 log_separator() {
     echo "" >&2
@@ -95,7 +128,7 @@ log_separator() {
 }
 
 shouldDebug() {
-    [ -n "$DEBUG" ] || [ -n "$DEBUG_SLEEP" ]
+    [ -n "$DEBUG" ] || [ -n "$DEBUG_NIT" ] || [ -n "$DEBUG_SLEEP" ]
 }
 
 log_debug() {
@@ -123,7 +156,7 @@ report_NUT_PORT() {
 
     log_info "Trying to report users of NUT_PORT=${NUT_PORT}"
     # Note: on Solarish systems, `netstat -anp` does not report PID info
-    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | grep -w "${NUT_PORT}" \
+    (netstat -an ; netstat -anp || sockstat -l) 2>/dev/null | ${GREP} -w "${NUT_PORT}" \
     || (lsof -i :"${NUT_PORT}") 2>/dev/null \
     || true
 
@@ -145,8 +178,8 @@ isBusy_NUT_PORT() {
         # IPv6:
         #   sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
-        NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
-        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
+        NUT_PORT_HEX="`printf '%04X' \"${NUT_PORT}\"`"
+        NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | ${EGREP} \":${NUT_PORT_HEX}\$\"`" \
         && [ -n "$NUT_PORT_HITS" ] \
         && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
         && return 0
@@ -156,7 +189,7 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | ${EGREP} "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
@@ -198,13 +231,77 @@ isBusy_NUT_PORT() {
 }
 
 die() {
-    echo "[FATAL] $@" >&2
+    # NOTE: the `] Error` combo seems redundant but helps troubleshoot
+    #  via `make`-oriented build logs faster
+    echo "`TZ=UTC LANG=C date` [FATAL] Error: $@" >&2
     exit 1
+}
+
+croak() {
+    # A version of die() for not-really-fatal cases (e.g. sub-shelled
+    # certificate checks) which do not irritate Jenkins warnings plugin.
+    # This does exit() so should not be called in main script context.
+    echo "`TZ=UTC LANG=C date` [GRAVE PROBLEM] $@" >&2
+    exit 1
+}
+
+die_or_croak() {
+    case "${DIE_OR_CROAK-}" in
+        die|croak) "${DIE_OR_CROAK}" "$@" ;;
+        *) die "$@" ;;
+    esac
 }
 
 # By default, keep stdout hidden but report the errors:
 [ -n "$RUNCMD_QUIET_OUT" ] || RUNCMD_QUIET_OUT=true
 [ -n "$RUNCMD_QUIET_ERR" ] || RUNCMD_QUIET_ERR=false
+execcmd() {
+    # Help set up EXEEXT and logging, but allow use for backgrounded runs.
+    # WARNING: uses `exec` and overrides NUT_DEBUG_LEVEL, so must be
+    # called as sub-shelled (by pipe, amperesand, backticks, etc.)!
+    # Do not "fix" this method to round parentheses, because the way
+    # this is works just right for remembering CHILDPID="$!" and later
+    # killing off the daemons.
+    log_debug "execcmd: asked for: $@"
+    CMDPROG=""
+    case "$1" in
+        upsc|*/upsc|upsc"${EXEEXT-}"|*/upsc"${EXEEXT-}")
+            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
+            fi
+            ;;
+        nut-scanner|*/nut-scanner|nut-scanner"${EXEEXT-}"|*/nut-scanner"${EXEEXT-}")
+            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
+                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
+            fi
+            ;;
+    esac
+
+    case "$1" in
+        *"${EXEEXT-}") CMDPROG="$1" ;;
+        *)  if [ -x "$1" ] || (command -v "$1") >/dev/null 2>/dev/null ; then
+                CMDPROG="$1"
+            else
+                if [ x"${EXEEXT-}" = x ] ; then
+                    log_warn "Did not find '$1' via 'command -v', the call below may fail"
+                    CMDPROG="$1"
+                else
+                    if [ -x "$1${EXEEXT-}" ] || (command -v "$1${EXEEXT-}") >/dev/null 2>/dev/null ; then
+                        CMDPROG="$1${EXEEXT}"
+                    else
+                        log_warn "Did not find '$1' nor '$1${EXEEXT-}' via 'command -v', the call below may fail"
+                        CMDPROG="$1"
+                    fi
+                fi
+            fi
+            ;;
+    esac
+    shift
+
+    log_debug "execcmd: running:   ${CMDPROG} $@"
+    exec "${CMDPROG}" "$@"
+}
+
 runcmd() {
     # Re-uses a couple of files in test scratch area NUT_STATEPATH
     # to store the stderr and stdout of the launched program.
@@ -218,24 +315,10 @@ runcmd() {
     CMDOUT=""
     CMDERR=""
 
-    # FIXME: Consider EXEEXT?
-    case "$0" in
-        upsc|*/upsc)
-            if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
-                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
-            fi
-            ;;
-        nut-scanner|*/nut-scanner)
-            if [ -n "${NUT_DEBUG_LEVEL_NUT_SCANNER-}" ]; then
-                NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUT_SCANNER}"
-            fi
-            ;;
-    esac
-
-    "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err" || CMDRES=$?
+    (execcmd "$@" > "${NUT_STATEPATH}/runcmd.out" 2>"${NUT_STATEPATH}/runcmd.err") || CMDRES=$?
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
-    CMDOUT="`cat "${NUT_STATEPATH}/runcmd.out"`"
-    CMDERR="`cat "${NUT_STATEPATH}/runcmd.err"`"
+    CMDOUT="`cat \"${NUT_STATEPATH}/runcmd.out\"`"
+    CMDERR="`cat \"${NUT_STATEPATH}/runcmd.err\"`"
 
     [ "$RUNCMD_QUIET_OUT" = true ] || { [ -z "$CMDOUT" ] || echo "$CMDOUT" ; }
     [ "$RUNCMD_QUIET_ERR" = true ] || { [ -z "$CMDERR" ] || echo "$CMDERR" >&2 ; }
@@ -248,25 +331,98 @@ runcmd() {
 # from the source codebase are where the script resides, e.g.
 # the $(srcdir) from the Makefile. If we are not in the source
 # tree, tests would use binaries in PATH (e.g. packaged install).
-BUILDDIR="`pwd`"
+# Note that assumptions about relative paths below may NOT FIT
+# out-of-tree builds, like NUT for Windows under Linux, so we'd
+# better trust envvars from `make`, if exported and available to us!
+BUILDDIR=""
+log_debug "Current working directory: '`pwd`'"
+if [ x"${abs_builddir-}" != x ] ; then
+    BUILDDIR="${abs_builddir-}"
+    log_debug "Trying BUILDDIR='${BUILDDIR}' from make vars"
+else
+    if [ x"${builddir-}" != x ] ; then
+        log_debug "Trying BUILDDIR='${builddir}' from make vars"
+        BUILDDIR="`cd \"${builddir}\" && pwd`"
+    fi
+fi
+if [ x"${BUILDDIR}" = x ] || [ ! -d "${BUILDDIR}" ] ; then
+    BUILDDIR="`pwd`"
+    log_info "Guessing BUILDDIR='${BUILDDIR}' from script location..."
+else
+    log_info "Using BUILDDIR='${BUILDDIR}' from make vars"
+fi
+
 TOP_BUILDDIR=""
-case "${BUILDDIR}" in
-    */tests/NIT)
-        TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
-    *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
-esac
+if [ x"${abs_top_builddir-}" != x ] ; then
+    TOP_BUILDDIR="${abs_top_builddir}"
+    log_debug "Trying TOP_BUILDDIR='${TOP_BUILDDIR}' from make vars"
+else
+    if [ x"${top_builddir-}" != x ] ; then
+        log_debug "Trying TOP_BUILDDIR='${top_builddir}' from make vars"
+        TOP_BUILDDIR="`cd \"${top_builddir}\" && pwd`"
+    fi
+fi
+if [ x"${TOP_BUILDDIR}" = x ] || [ ! -d "${TOP_BUILDDIR}" ] ; then
+    case "${BUILDDIR}" in
+        */tests/NIT)
+            TOP_BUILDDIR="`cd \"${BUILDDIR}\"/../.. && pwd`" ;;
+        *)  if [ -x ./tests/NIT/nit.sh ] ; then
+                TOP_BUILDDIR="`pwd`"
+            else
+                if [ -x ./NIT/nit.sh ] ; then
+                    TOP_BUILDDIR="`cd .. && pwd`"
+                else
+                    log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT or similar"
+                fi
+            fi
+            ;;
+    esac
+    log_info "Guessing TOP_BUILDDIR='${TOP_BUILDDIR}' from script location and/or BUILDDIR value..."
+else
+    log_info "Using TOP_BUILDDIR='${TOP_BUILDDIR}' from make vars"
+fi
 if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
-SRCDIR="`dirname "$0"`"
-SRCDIR="`cd "$SRCDIR" && pwd`"
+SRCDIR=""
+if [ x"${abs_srcdir-}" != x ] ; then
+    SRCDIR="${abs_srcdir}"
+    log_debug "Trying SRCDIR='${SRCDIR}' from make vars"
+else
+    if [ x"${srcdir-}" != x ] ; then
+        log_debug "Trying SRCDIR='${srcdir}' from make vars"
+        SRCDIR="`cd \"${srcdir}\" && pwd`"
+    fi
+fi
+if [ x"${SRCDIR}" = x ] || [ ! -d "${SRCDIR}" ] ; then
+    SRCDIR="`dirname \"$0\"`"
+    SRCDIR="`cd \"$SRCDIR\" && pwd`"
+    log_info "Guessing SRCDIR='${SRCDIR}' from script location..."
+else
+    log_info "Using SRCDIR='${SRCDIR}' from make vars"
+fi
+
 TOP_SRCDIR=""
-case "${SRCDIR}" in
-    */tests/NIT)
-        TOP_SRCDIR="`cd "${SRCDIR}"/../.. && pwd`" ;;
-    *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
-esac
+if [ x"${abs_top_srcdir-}" != x ] ; then
+    TOP_SRCDIR="${abs_top_srcdir}"
+    log_debug "Trying TOP_SRCDIR='${TOP_SRCDIR}' from make vars"
+else
+    if [ x"${top_srcdir-}" != x ] ; then
+        log_debug "Trying TOP_SRCDIR='${top_srcdir}' from make vars"
+        TOP_SRCDIR="`cd \"${top_srcdir}\" && pwd`"
+    fi
+fi
+if [ x"${TOP_SRCDIR}" = x ] || [ ! -d "${TOP_SRCDIR}" ] ; then
+    case "${SRCDIR}" in
+        */tests/NIT)
+            TOP_SRCDIR="`cd \"${SRCDIR}\"/../.. && pwd`" ;;
+        *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
+    esac
+    log_info "Guessing TOP_SRCDIR='${TOP_SRCDIR}' from script location and/or SRCDIR value..."
+else
+    log_info "Using TOP_SRCDIR='${TOP_SRCDIR}' from make vars"
+fi
 
 # Make these paths known to e.g. upsmon/upssched and handler scripts they call
 export BUILDDIR TOP_BUILDDIR SRCDIR TOP_SRCDIR
@@ -308,8 +464,9 @@ else
     LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
 fi
 
-for PROG in upsd upsc dummy-ups upsmon upslog upssched ; do
-    (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
+log_info "Locating NUT programs to test:"
+for PROG in upsd upsc dummy-ups upsdrvctl upsmon upslog upssched ; do
+    (command -v ${PROG}) || (command -v ${PROG}${EXEEXT-}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
 PID_UPSD=""
@@ -318,6 +475,256 @@ PID_UPSSCHED=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
+PIDS_DUMMYUPS_SWARM=""
+PIDS_UPSLOG_SWARM=""
+
+if [ -z "${NUT_DEFAULT_CONNECT_TIMEOUT-}" ] && [ 30 -lt "`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT}`" ] ; then
+    # upsd may take longer to walk its connections,
+    # so upsc et al should be more patient:
+    NUT_DEFAULT_CONNECT_TIMEOUT="`expr ${DUMMY_UPS_SWARM_COUNT} \* ${UPSLOG_SWARM_COUNT} / 5`"
+    export NUT_DEFAULT_CONNECT_TIMEOUT
+    log_info "Applying NUT_DEFAULT_CONNECT_TIMEOUT='$NUT_DEFAULT_CONNECT_TIMEOUT' due to DUMMY_UPS_SWARM_COUNT=$DUMMY_UPS_SWARM_COUNT and UPSLOG_SWARM_COUNT=$UPSLOG_SWARM_COUNT"
+fi
+
+[ -n "${WITH_SSL_CLIENT}" ] || { WITH_SSL_CLIENT="`upsmon -Dh 2>&1 | grep 'Using NUT libupsclient library'`" || WITH_SSL_CLIENT="none" ; }
+[ -n "${WITH_SSL_CLIENT_CERTIDENT}" ] || WITH_SSL_CLIENT_CERTIDENT="none"
+[ -n "${WITH_SSL_CLIENT_CERTHOST}" ] || WITH_SSL_CLIENT_CERTHOST="none"
+# NOTE: Currently OpenSSL/NSS builds and codepaths are exclusive of each other!
+# Interesting idea: build and test server with one and clients with the other...
+# SIDE NOTE: As of NUT v2.8.5, it seems that only upsmon client cares about SSL!
+case "${WITH_SSL_CLIENT}" in
+    *OpenSSL*" sans CERTHOST(name)"*) WITH_SSL_CLIENT_CERTHOST="addr" ;;
+    *OpenSSL*|*NSS*) WITH_SSL_CLIENT_CERTHOST="name+addr" ;;
+esac
+case "${WITH_SSL_CLIENT}" in
+    *"without SSL"*|none|"") WITH_SSL_CLIENT="none" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name" ;; # Not probable, but...
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_CLIENT="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_CLIENT="OpenSSL" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
+    *NSS*) WITH_SSL_CLIENT="NSS" ; WITH_SSL_CLIENT_CERTIDENT="name+pass" ;;
+    *) log_warn "Unexpected client SSL support reported, ignoring: ${WITH_SSL_CLIENT}" ; WITH_SSL_CLIENT="none" ;;
+esac
+log_info "Tested client binaries offer SSL support: ${WITH_SSL_CLIENT}"
+log_info "Tested client binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_CLIENT_CERTIDENT}"
+log_info "Tested client binaries offer server certificate validation with CERTHOST: ${WITH_SSL_CLIENT_CERTHOST}"
+
+[ -n "${WITH_SSL_SERVER}" ] || { WITH_SSL_SERVER="`upsd -Dh 2>&1 | grep 'NUT data server was built with'`" || WITH_SSL_SERVER="none" ; }
+[ -n "${WITH_SSL_SERVER_CLIVAL}" ] || WITH_SSL_SERVER_CLIVAL="none"
+[ -n "${WITH_SSL_SERVER_CERTIDENT}" ] || WITH_SSL_SERVER_CERTIDENT="none"
+case "${WITH_SSL_SERVER}" in
+    *"without client certificate validation"*) WITH_SSL_SERVER_CLIVAL="false" ;;
+    *"with client certificate validation"*) WITH_SSL_SERVER_CLIVAL="true" ;;
+esac
+case "${WITH_SSL_SERVER}" in
+    *"without SSL"*|none|"") WITH_SSL_SERVER="none" ;;
+    *"OpenSSL sans CERTIDENT(name)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="pass" ;;
+    *"OpenSSL sans CERTIDENT(pass)"*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name" ;; # Not probable, but...
+    *"OpenSSL sans CERTIDENT"*) WITH_SSL_SERVER="OpenSSL" ;;
+    *OpenSSL*) WITH_SSL_SERVER="OpenSSL" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
+    *NSS*) WITH_SSL_SERVER="NSS" ; WITH_SSL_SERVER_CERTIDENT="name+pass" ;;
+    *) log_warn "Unexpected server SSL support reported, ignoring: ${WITH_SSL_SERVER}" ; WITH_SSL_SERVER="none" ;;
+esac
+log_info "Tested server binaries offer SSL support: ${WITH_SSL_SERVER}"
+log_info "Tested server binaries offer own certificate validation with CERTIDENT: ${WITH_SSL_SERVER_CERTIDENT}"
+log_info "Tested server binaries offer client certificate validation: ${WITH_SSL_SERVER_CLIVAL}"
+
+if [ x"${WITH_SSL_TESTS}" = xno ] ; then
+    log_info "Disabling SSL tests (even if they are possible) due to WITH_SSL_TESTS='${WITH_SSL_TESTS}'"
+    WITH_SSL_CLIENT="none"
+    WITH_SSL_SERVER="none"
+fi
+
+case "${WITH_SSL_TESTS}" in
+    require) WITH_SSL_TESTS=required ;;
+    require-conditional) WITH_SSL_TESTS=required-conditional ;;
+    yes|best-effort|default) WITH_SSL_TESTS=best-effort ;; # go with the flow
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*|*OpenSSL*)
+        if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            WITH_SSL_TESTS=required-conditional
+        fi
+        ;;
+    *)  if [ x"${WITH_SSL_TESTS}" = xrequired ]; then
+            die "Aborting because SSL tests are required, but NUT was not built with SSL support"
+        fi
+        ;;
+esac
+
+TESTCERT_ROOTCA_NAME="NUT Mock Root CA"
+TESTCERT_ROOTCA_PASS="VeryS@cur@1337"
+TESTCERT_CLIENT_NAME="NIT upsmon"
+TESTCERT_CLIENT_PASS="MyPasSw0rD"
+TESTCERT_SERVER_NAME="NIT data server"
+TESTCERT_SERVER_PASS="TestS@rv!"
+# Continued below regarding setup of crypto material data files
+# (and possibly skipping SSL tests if we fail this setup).
+
+# Platforms vary in abilities to report this...
+I_AM_NAME=""
+get_my_user_name() {
+    if [ x"${I_AM_NAME}" != x ]; then
+        # Use cache
+        echo "${I_AM_NAME}"
+        return
+    fi
+
+    _ME="`whoami 2>/dev/null`" && [ x"${_ME}" != x ] \
+    || { _ME="`ps -ef 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || { _ME="`ps -xawwu 2>/dev/null | grep -v grep | grep $$`" && [ x"${_ME}" != x ] ; } \
+    || _ME=""
+
+    if [ x"${_ME}" != x ] ; then
+        echo "${_ME}"
+        return
+    fi
+
+    # TOTHINK: Fallback to get "my current user": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    log_warn "Current user account name was not found"
+    return 1
+}
+
+get_user_id() {
+    if _ID="`id -u ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*uid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent passwd \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # Fallback
+    if [ x"${1-}" = x ] 2>/dev/null ; then
+        if _ME="`get_my_user_name`" 2>/dev/null && [ x"${_ME}" != x ] ; then
+            _RES=0
+            get_user_id "${_ME}" || _RES=$?
+            return ${_RES}
+        fi
+    fi
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    log_warn "User ID for name '${1-}' was not found"
+    return 1
+}
+
+get_group_id() {
+    if _ID="`id -g ${1-} 2>/dev/null`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if _ID="`id ${1-} 2>/dev/null | sed -e 's,^.*gid=,,' -e 's,(.*$,,'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+    if [ x"${1-}" != x ] 2>/dev/null && _ID="`getent group \"$1\" 2>/dev/null | awk -F: '{print $3}'`" \
+        && [ "${_ID}" -ge 0 ] 2>/dev/null ; then echo "${_ID}"; return ; fi
+
+    # TOTHINK: Fallback to get "my current group": touch a file and see who owns it?
+
+    # Non-numeric (empty) stdout; non-successful exit code
+    # and "-1" to avoid "not a number" error messages
+    case "`uname -a | tr 'A-Z' 'a-z'`" in
+        *mingw*|*msys*|*win*)
+            log_warn "Group ID for name '${1-}' was not found; common Unix groups are unlikely on Windows"
+            echo "-1"
+            ;;
+        *)  # Packaging build roots may lack user/group databases too
+            log_warn "Group ID for name '${1-}' was not found"
+            echo "-1"
+            ;;
+    esac
+
+    return 1
+}
+
+I_AM_NAME="`get_my_user_name`"
+I_AM_NAME_REPORT="'${I_AM_NAME}'"
+I_AM_ROOT=false
+if [ "`get_user_id`" = 0 ] ; then
+    if [ x"${I_AM_NAME}" = x ]; then
+        log_warn "Seems we have started as UID 0, but could not detect user name: assuming 'root'"
+    else if [ x"${I_AM_NAME}" != xroot ]; then
+        log_warn "Seems we have started as UID 0, but detected user name was not 'root': '${I_AM_NAME}'"
+        I_AM_NAME_REPORT="'${I_AM_NAME}' (root?)"
+    fi; fi
+    I_AM_ROOT=true
+fi
+
+# We have a certain problem when the requested user account does not exist:
+# our `common::get_user_pwent()` aborts with `fatalx()` during such a check for
+# validity of built-in or CLI-requested account (sometimes before even looking
+# at any config files), and fails like "OS user upsd not found". Note we do not
+# currently have similar troubles for groups (and interactions with customizing
+# them seem limited to `chgrp()` of driver-upsd local socket).
+# While this should not happen in real life, it can on test or packaging
+# systems that did not provision the accounts (claimed by a NUT build) for
+# the build/test run-time environment. In this case, tweak it into something
+# we know exists (current non-root user explicitly, or a commonly available
+# name if we are running as root).
+TWEAK_RUN_AS_USER=""
+TWEAK_RUN_AS_GROUP=""
+ARG_USER=""
+if [ x"${BUILTIN_RUN_AS_USER}" != x ] ; then
+    if [ "`get_user_id \"${BUILTIN_RUN_AS_USER}\"`" -ge 0 ] 2>/dev/null; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        if $I_AM_ROOT || [ x"${I_AM_NAME}" = x"${BUILTIN_RUN_AS_USER}" ] ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems present on this system (but we would run test daemons as current unprivileged user)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        if $I_AM_ROOT ; then
+            for U in nobody daemon bin ; do
+                if [ "`get_user_id \"${U}\"`" -ge 0 ] ; then
+                    TWEAK_RUN_AS_USER="${U}"
+                    break
+                fi
+            done
+        else
+            TWEAK_RUN_AS_USER="${I_AM_NAME}"
+        fi
+
+        if [ x"${TWEAK_RUN_AS_USER}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_USER='${BUILTIN_RUN_AS_USER}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_USER}'"
+            # Needed e.g. for upsd, its config has no RUN_AS_USER setting
+            ARG_USER="-u ${TWEAK_RUN_AS_USER}"
+        fi
+    fi
+fi
+
+if [ x"${BUILTIN_RUN_AS_GROUP}" != x ] ; then
+    # Note: GID setting is not much used in NUT code at the moment:
+    # * In `drivers/main.c` we can set FS access for the pipe to data server
+    # * Otherwise in `common.c::become_user()` we try to assume the default
+    #   GID of that user account we were asked to switch into.
+    if [ "`get_group_id \"${BUILTIN_RUN_AS_GROUP}\"`" -ge 0 ] 2>/dev/null ; then
+        # Do not bother to re-evaluate more IDs to rule out aliases - many names on same ID?
+        # TOTHINK: Would need I_AM_GROUP first?..
+        if $I_AM_ROOT ; then
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system to run test daemons as"
+        else
+            log_info "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems present on this system (but we would run test daemons as current unprivileged user and untweaked group)"
+        fi
+    else
+        # The string allegedly built into NUT binaries is unknown to the
+        # account identification databases of this runtime environment...
+        for G in nobody nogroup daemon bin ; do
+            if [ "`get_group_id \"${G}\"`" -ge 0 ] ; then
+                TWEAK_RUN_AS_GROUP="${G}"
+                break
+            fi
+        done
+
+        if [ x"${TWEAK_RUN_AS_GROUP}" = x ] ; then
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, and did not find a common alternative to run test daemons as; NIT suite can fail below!"
+        else
+            log_warn "Started as ${I_AM_NAME_REPORT}, and built-in RUN_AS_GROUP='${BUILTIN_RUN_AS_GROUP}' seems absent on this system, will run test daemons as '${TWEAK_RUN_AS_GROUP}'"
+        fi
+    fi
+fi
 
 # Stash it for some later decisions
 TESTDIR_CALLER="${TESTDIR-}"
@@ -329,15 +736,17 @@ if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
     log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
     TESTDIR=""
 else
-    if [ "`id -u`" = 0 ]; then
+    if $I_AM_ROOT ; then
         case "${TESTDIR}" in
             "${HOME}"/*)
-                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                log_info "Test script was started by ${I_AM_NAME_REPORT} and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
                 TESTDIR=""
                 ;;
         esac
     else
-        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+        if mkdir -p "${TESTDIR}" && [ -w "${TESTDIR}" ] ; then
+            true
+        else
             log_info "'${TESTDIR}' could not be created/used, will mktemp"
             TESTDIR=""
         fi
@@ -352,14 +761,14 @@ if [ x"${TESTDIR}" = x ] ; then
     fi
     log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
     log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
-    TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
-    if [ "`id -u`" = 0 ]; then
+    TESTDIR="`mktemp -d \"${TMPDIR}/nit-tmp.$$.XXXXXX\"`" || die "Failed to mktemp"
+    if $I_AM_ROOT ; then
         # Cah be protected as 0700 by default
         chmod ugo+rx "${TESTDIR}"
     fi
 else
     NUT_CONFPATH="${TESTDIR}/etc"
-    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
         log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
         sleep 3
     fi
@@ -380,8 +789,8 @@ fi
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
 
-if [ "`id -u`" = 0 ]; then
-    log_info "Test script was started by 'root' - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
+if $I_AM_ROOT ; then
+    log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '${TESTDIR}/run' so unprivileged daemons may create pipes and PID files there"
     chmod 777 "${TESTDIR}/run"
 fi
 
@@ -392,17 +801,17 @@ stop_daemons() {
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     if [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED_NOW="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED_NOW="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
-    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2$PIDS_DUMMYUPS_SWARM$PIDS_UPSLOG_SWARM$PID_UPSSCHED$PID_UPSSCHED_NOW" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
-        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PID_UPSSCHED $PID_UPSSCHED_NOW || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 $PIDS_DUMMYUPS_SWARM $PIDS_UPSLOG_SWARM $PID_UPSSCHED $PID_UPSSCHED_NOW || true
     fi
 
     PID_UPSD=""
@@ -411,6 +820,8 @@ stop_daemons() {
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
+    PIDS_DUMMYUPS_SWARM=""
+    PIDS_UPSLOG_SWARM=""
 
     unset PID_UPSSCHED_NOW
 }
@@ -421,9 +832,13 @@ NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
-export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
+# Leave no ambiguity as to which nutauth.conf should be read by default:
+# "${NUT_CONFPATH}/nutauth.conf" (e.g. not fall back to user or site configs).
+# Only apply it after (re-)generating via generatecfg_nutauth() though:
+NUT_AUTHCONF_FILE="none"
+export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH NUT_AUTHCONF_FILE
 
-if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+if [ -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
     log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
     sleep 3
 fi
@@ -449,7 +864,7 @@ else
         fi
 
         log_warn "Selected NUT_PORT=$NUT_PORT seems occupied; will try another in a few seconds"
-        COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+        COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
 
         [ "$COUNTDOWN" = 0 ] || sleep 2
     done
@@ -467,7 +882,7 @@ else
             fi
 
             # Loop quickly, no sleep here
-            COUNTDOWN="`expr "$COUNTDOWN" - 1`"
+            COUNTDOWN="`expr \"$COUNTDOWN\" - 1`"
         done
 
         if [ "$COUNTDOWN" = 0 ] ; then
@@ -478,6 +893,1278 @@ fi
 export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
+
+# Adjust path spelling to run-time platform, libraries seem to want that on WIN32
+# NOTE: Windows backslashes are pre-escaped in the configure-generated value
+# NOTE: For mingw bash at least, shell globs (wildcards, not exact file names)
+#  should be separated by a forward slash in any case.
+case "${ABS_TOP_BUILDDIR}" in
+    ?":\\"*)
+        TESTCERT_PATH_SEP='\\'
+        TESTCERT_PATH_BASE="${ABS_TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+        ;;
+    "") case "${TOP_BUILDDIR}" in
+            ?":\\"*) TESTCERT_PATH_SEP='\\'
+                TESTCERT_PATH_BASE="${TOP_BUILDDIR}${TESTCERT_PATH_SEP}tests${TESTCERT_PATH_SEP}NIT${TESTCERT_PATH_SEP}tmp${TESTCERT_PATH_SEP}etc${TESTCERT_PATH_SEP}cert"
+                ;;
+            *) TESTCERT_PATH_SEP="/" ;;
+        esac
+        ;;
+    *)  TESTCERT_PATH_SEP="/"
+        ;;
+esac
+
+case "${TESTCERT_PATH_SEP}" in
+    /) TESTCERT_PATH_BASE="${NUT_CONFPATH}${TESTCERT_PATH_SEP}cert" ;;
+esac
+
+# SSL preparations: Can only do this after we learn NUT_CONFPATH
+TESTCERT_PATH_ROOTCA="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}rootca"
+TESTCERT_PATH_SERVER="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsd"
+# TOTHINK: If other NUT clients get SSL support tested,
+# should they use same or different cryptostore?..
+TESTCERT_PATH_CLIENT="${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}upsmon"
+
+# 20 years should be enough for CI? Also beyond 2038 starting now...
+TESTCERT_VALIDITY_DAYS=7305
+TESTCERT_VALIDITY_MONTHS=240
+
+discover_somehash_filter() {
+    # First, constrain hash string lengths for shorter logs and path lookups.
+    # KEEP IN SYNC WITH ci_build.sh SCRIPT!
+    cut_filter() { sed -e 's,^\(....\).*\(....\)$,\1\2,'; }
+
+    for HASH_CMD in md5sum sha1sum sha256sum shasum cksum md5; do
+        if (command -v "$HASH_CMD") >/dev/null 2>/dev/null ; then
+            somehash_filter() {
+                "$HASH_CMD" | awk '{print $1}' | cut_filter
+            }
+            return
+        fi
+    done
+
+    if (command -v openssl) >/dev/null 2>/dev/null ; then
+        for HASH_CMD in dgst digest -dgst -digest ; do
+            OUT="`echo 123 | openssl $HASH_CMD`" || OUT=""
+            # SHA256(stdin)= 5166f09ae20fc33672087a5b4a87672ea572e26d09c6c639194a7c5e506eec3a
+            case "$OUT" in
+            *stdin*)
+                somehash_filter() {
+                    openssl "$HASH_CMD" | awk '{print $NF}' | cut_filter
+                }
+                return
+                ;;
+            esac
+        done
+    fi
+
+    # Worst-case: use data size? Do not cut_filter here!
+    somehash_filter() {
+        wc -c
+    }
+}
+
+discover_somehash_filter
+somehash_files() (
+    for F in "$@" ; do
+        printf '%s\t%s\n' "`somehash_filter < \"$F\"`" "$F"
+    done
+)
+
+check_NIT_certs_NSS() {
+    # $1 = title for msg
+    # $2 = path
+    # $3 = prefix (unused now)
+
+    log_info "=== Verifying NSS ${1} DB files:"
+    (   # Older: cert8.db key3.db secmod.db
+        if [ -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] ; then
+            ls -l "${2}${TESTCERT_PATH_SEP}${3}cert8.db" "${2}${TESTCERT_PATH_SEP}${3}key3.db" "${2}${TESTCERT_PATH_SEP}${3}secmod.db" || exit
+            for F in cert8.db key3.db secmod.db ; do
+                test -s "${2}${TESTCERT_PATH_SEP}${3}${F}" || die_or_croak "File '${2}${TESTCERT_PATH_SEP}${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        # Newer: cert9.db key4.db pkcs11.txt
+        if [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] ; then
+            ls -l "${2}${TESTCERT_PATH_SEP}${3}cert9.db" "${2}${TESTCERT_PATH_SEP}${3}key4.db" "${2}${TESTCERT_PATH_SEP}${3}pkcs11.txt" || exit
+            for F in cert9.db key4.db pkcs11.txt ; do
+                test -s "${2}${TESTCERT_PATH_SEP}${3}${F}" || die_or_croak "File '${2}${TESTCERT_PATH_SEP}${3}${F}' is empty"
+            done
+            exit 0
+        fi
+
+        # See comments above about no TESTCERT_PATH_SEP for shell globs.
+        ls -l "${2}"/"${3}"*.txt || true
+        ls -l "${2}"/"${3}"*.db || exit
+    )   || die_or_croak "Could not list NSS ${1} DB files"
+
+    # NSS certutil error handling is complicated: anything unexpected means
+    # SEC_ERROR_LEGACY_DATABASE, whether that is a really old database, or
+    # insufficient permissions, or a missing directory we point to... and
+    # this mess includes the case that we have a set of files with the *NEW*
+    # database format in the specified directory (cert9.db not cert8.db)
+    # with the old (~2014) library and tool versions! (New NSS from 2020's
+    # is okay with both of these formats).
+    # NOTE: This error also shows up and is confusing in SSL init attempts
+    # of the server and client programs. It primarily bites on CI systems
+    # where the same cache is used by multiple OS releases (e.g. shared build
+    # agent home directories for Linux containers from different decades):
+    #   SEC_ERROR_LEGACY_DATABASE: The certificate/key database is in an old, unsupported format
+
+    # TBD: Consider `-P "$3"` prefix eventually
+    OUT="`certutil -d \"$2\" -L 2>&1`"
+    if [ "$?" != 0 ] ; then
+        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' \
+        && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+        && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
+        ; then
+            log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
+
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            if ls -l "${2}"/*.p12 "${2}${TESTCERT_PATH_SEP}".pwfile && (command -v pk12util) ; then
+                log_info "Will try to create older-format DB from P12 files"
+            else
+                # Assume we do not have tools for new NSS DB format files,
+                # use PEM and generate P12 instead:
+                (command -v pk12util) && (command -v openssl) && \
+                case "$1" in
+                    CA) ls -l "${2}"/*.crt || true ; ls -l "${2}"/*.pem "${2}"/*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
+                    Server|Client)
+                        ls -l "${2}"/*.pem || true ; ls -l "${2}"/*.crt "${2}"/*.key "${2}${TESTCERT_PATH_SEP}".pwfile ;;
+                    *)  die_or_croak "Unexpected cert store type, no idea how to fix that one: '$1'" ;;
+                esac || die_or_croak "Can not recreate NSS DB from PEM files: some of them are missing"
+
+                # Should not get here with usual persistent cache, so port
+                # (ideally reuse) code from below in the script if/when it
+                # really bites someone!
+                die "Can not recreate NSS DB from PEM files: code transplant needed, but is incomplete."
+            fi
+
+            certutil -N -d "${2}" -f "${2}${TESTCERT_PATH_SEP}.pwfile" \
+            || die_or_croak "Could not init NSS $1 database in $2"
+
+            case "$1" in
+                Server|Client)
+                    # Import the CA certificate, so users of this DB trust it:
+                    certutil -A -d "${2}" -f "${2}${TESTCERT_PATH_SEP}.pwfile" \
+                        -n "${TESTCERT_ROOTCA_NAME}" \
+                        -t "TC,," \
+                        -a -i "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                    || die_or_croak "Could not import the CA certificate to NSS $1 database in $2"
+                    ;;
+            esac
+
+            # TOTHINK: Cross-import server/client cert to the other's database?
+            #  Should not be needed when issued by trusted CA (may be needed for
+            #  self-signed ones, not the case in this test suite)
+
+            # Import the payload relevant for this directory
+            # Assume one P12 file in the cache dir for this type of info
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            pk12util -i "${2}"/*.p12 -d "${2}" -k "${2}${TESTCERT_PATH_SEP}".pwfile -w "${2}${TESTCERT_PATH_SEP}".pwfile \
+            || die_or_croak "Could not import $1 PKCS#12 to NSS in $2"
+
+            case "$1" in
+                CA) # Trust it as a CA in NSS DB in the CA directory
+                    certutil -M -d "${2}" -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f "${2}${TESTCERT_PATH_SEP}.pwfile" \
+                    || die_or_croak "Could not set trust on imported NSS CA"
+                    ;;
+            esac
+
+            certutil -d "$2" -L || \
+            die_or_croak "Could not parse NSS ${1} DB files in $2 after attempted re-import"
+        else
+            die_or_croak "Could not parse NSS ${1} DB files in $2"
+        fi
+    fi
+}
+
+check_NIT_certs() {
+    # Intended for loading cached/provided certificates and keys,
+    # the generator code has its own similar logic in more detail
+    log_info "Verifying that expected certificate files for testing the current SSL build are available"
+
+    ( # Sub-shelling here to keep soft failure cases handled once
+    DIE_OR_CROAK=croak
+    export DIE_OR_CROAK
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*)
+            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+            check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+            check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *OpenSSL*)
+            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+            ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}"/*.? \
+            || croak "Could not list OpenSSL CA PEM file and hash links"
+
+            ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"upsd.pem \
+            || croak "Could not list an upsd.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem \
+            || croak "Could not list an upsmon.pem"
+
+            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsd-public.pem" \
+            || croak "Could not list an upsd-public.pem"
+            ;;
+    esac
+
+    case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+        *NSS*|*OpenSSL*)
+            test -n "${TESTCERT_ROOTCA_PASS}" || croak "TESTCERT_ROOTCA_PASS is not set"
+            test -n "${TESTCERT_SERVER_PASS}" || croak "TESTCERT_SERVER_PASS is not set"
+            test -n "${TESTCERT_CLIENT_PASS}" || croak "TESTCERT_CLIENT_PASS is not set"
+
+            test -n "${TESTCERT_ROOTCA_NAME}" || croak "TESTCERT_ROOTCA_NAME is not set"
+            test -n "${TESTCERT_SERVER_NAME}" || croak "TESTCERT_SERVER_NAME is not set"
+            test -n "${TESTCERT_CLIENT_NAME}" || croak "TESTCERT_CLIENT_NAME is not set"
+            ;;
+        *)  log_info "NO-OP: Neither client nor server claim SSL capability"
+            ;;
+    esac
+    ) && {
+        log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+        return 0
+    } || {
+        if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+            die_or_croak "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
+        fi
+        log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+        if [ x"$1" = xset-none-on-fail ] ; then
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        fi
+        return 1
+    }
+}
+
+prepare_NIT_certs() {
+# Handling of optional caller-provided mock certificates path (dist tarball?)
+if [ -n "${TESTCERT_MOCK_PATH-}" ] && [ -d "${TESTCERT_MOCK_PATH}" ]; then
+    log_info "Using provided mock certificates from ${TESTCERT_MOCK_PATH}"
+    # If there is a setup script there, source it to get variables
+    if [ -f "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}TESTCERT_VARS.env" ]; then
+        . "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}TESTCERT_VARS.env"
+    fi
+
+    # Use them if they exist (note the config might point us to
+    # a new TESTCERT_MOCK_PATH location based on whatever logic,
+    # but at least files generated by this script should not):
+    if [ -d "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}rootca" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}upsd" ] \
+    && [ -d "${TESTCERT_MOCK_PATH}${TESTCERT_PATH_SEP}upsmon" ] \
+    ; then
+        mkdir -p "${TESTCERT_PATH_BASE}"
+        # See comments above about no TESTCERT_PATH_SEP for shell globs.
+        cp -prf "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \
+        cp -prfL "${TESTCERT_MOCK_PATH}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+        log_info "Mock certificates deployed from ${TESTCERT_MOCK_PATH}"
+
+        DIE_OR_CROAK=croak \
+        check_NIT_certs set-none-on-fail || {
+            log_warn "FAILED check_NIT_certs with caller-provided data, may skip SSL part of the tests"
+            return 1
+        }
+
+        return 0
+    fi
+fi
+
+# Caching logic
+# Follow precedent and variables from ci_build.sh with CI_CACHE_NUT_HASHDIR
+# (here CI_CACHE_NIT_HASHDIR based on hash of nit.sh) under provided or
+# defaulted CI_CACHE_NUT_BASEDIR, if DO_USE_NIT_TESTCERT_CACHE=yes
+[ -n "$DO_CLEAN_NUTCI_CACHE_BEFORE" ] || DO_CLEAN_NUTCI_CACHE_BEFORE="no"
+[ -n "$DO_USE_NUTCI_CACHE" ] || DO_USE_NUTCI_CACHE="auto"
+[ -n "$DO_USE_NUTCI_CACHE_DEBUG" ] || DO_USE_NUTCI_CACHE_DEBUG="no"
+[ -n "$DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE" ] || DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE="${DO_CLEAN_NUTCI_CACHE_BEFORE}"
+[ -n "$DO_USE_NIT_TESTCERT_CACHE" ] || DO_USE_NIT_TESTCERT_CACHE="${DO_USE_NUTCI_CACHE}"
+[ -n "$DO_USE_NIT_TESTCERT_CACHE_DEBUG" ] || DO_USE_NIT_TESTCERT_CACHE_DEBUG="${DO_USE_NUTCI_CACHE_DEBUG}"
+
+unset CI_CACHE_NIT_HASHDIR
+
+[ -n "${CI_CACHE_NUT_BASEDIR-}" ] || {
+    if [ -n "${HOME-}" ] && [ -d "${HOME}" ] ; then
+        CI_CACHE_NUT_BASEDIR="${HOME}${TESTCERT_PATH_SEP}.cache${TESTCERT_PATH_SEP}nut-ci"
+    fi
+}
+
+# Default value that can trickle down from ci_build.sh on some systems
+# or used with direct command-line runs of the script. By default, use
+# the cache if its dir already exists.
+if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xauto ] \
+&& [ -n "${CI_CACHE_NUT_BASEDIR-}" ] \
+&& [ -d "${CI_CACHE_NUT_BASEDIR-}" ] \
+; then
+    DO_USE_NIT_TESTCERT_CACHE="yes"
+fi
+
+if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
+    if [ -n "${CI_CACHE_NUT_BASEDIR-}" ] ; then
+        mkdir -p "${CI_CACHE_NUT_BASEDIR}" || CI_CACHE_NUT_BASEDIR=""
+    fi
+
+    if [ -n "${CI_CACHE_NUT_BASEDIR-}" ] && [ -d "${CI_CACHE_NUT_BASEDIR}" ] ; then
+        # Calculate hash of nit.sh to decide about re-generation
+        NIT_HASH="`somehash_filter < \"$0\"`"
+        CI_CACHE_NIT_HASHDIR="${CI_CACHE_NUT_BASEDIR}${TESTCERT_PATH_SEP}NIT_CERT_${NIT_HASH}"
+
+        if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+            if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}, but asked to remake them"
+            else
+                log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
+                mkdir -p "${TESTCERT_PATH_BASE}"
+                # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \\
+                cp -prfL "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+
+                # If there is a setup script there, source it to get variables
+                if [ -f "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env" ]; then
+                    BACKUP_TESTCERT_PATH_BASE="${TESTCERT_PATH_BASE}"
+                    log_info "Sourcing '${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env' ..."
+                    . "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env"
+                    TESTCERT_PATH_BASE="${BACKUP_TESTCERT_PATH_BASE}"
+                fi
+
+                DIE_OR_CROAK=croak \
+                check_NIT_certs && return
+
+                log_warn "FAILED check_NIT_certs with cached data, will generate anew. Removing:"
+                find "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" -ls || true
+                rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+            fi
+        else
+            log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
+        fi
+    else
+        log_warn "Asked to use a test certificate cache, but CI_CACHE_NUT_BASEDIR does not exist and/or could not be made"
+    fi
+else
+    log_info "Not using a test certificate cache now; if you want it, 'export DO_USE_NIT_TESTCERT_CACHE=yes'"
+fi
+
+# NOTE: We only check for command-line tooling if we need to generate
+#  certs *now* (we can use cached/tarballed ones without that).
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *NSS*)
+        (command -v certutil) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for NSS"
+            fi
+            log_warn "NUT can use NSS, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xNSS ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xNSS ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*)
+        (command -v openssl) || {
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ] ; then
+                die "Aborting because SSL tests are required, but needed third-party tooling was not found to produce the crypto credential stores for OpenSSL"
+            fi
+            log_warn "NUT can use OpenSSL, but needed third-party tooling was not found to produce the crypto credential stores"
+            if [ x"${WITH_SSL_CLIENT}" = xOpenSSL ] ; then WITH_SSL_CLIENT="none" ; fi
+            if [ x"${WITH_SSL_SERVER}" = xOpenSSL ] ; then WITH_SSL_SERVER="none" ; fi
+        }
+        ;;
+esac
+
+# Follow docs/security.txt points about setting up the crypto material
+# stores and their contents (mock a self-signed CA here where appropriate)
+# For a good summary of OpenSSL options and decent example config see e.g.
+# https://www.ibm.com/docs/en/hpvs/1.2.x?topic=server-creating-openssl-certificates-secure-build-virtual
+case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+    *OpenSSL*|*NSS*)
+        ( # Sub-shelling here to keep soft failure cases handled once,
+          # and changes of directory constrained without pushd/popd
+          # (not in all shells) or remembering of `pwd` (clumsy-ish)
+            log_info "Setting up crypto material storage for SSL capability tests under '${TESTCERT_PATH_BASE}'..."
+
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+                DIE_OR_CROAK=die
+            else
+                DIE_OR_CROAK=croak
+            fi
+            export DIE_OR_CROAK
+
+            if shouldDebug ; then
+                set -x
+            fi
+            set -e
+
+            # Be sure to avoid confusion with earlier/aborted tests!
+            # With a failsafe against wiping the system ;)
+            case "${TESTCERT_PATH_BASE-}" in
+                *cert) rm -rf "${TESTCERT_PATH_BASE}" || true ;;
+                *) log_warn "TESTCERT_PATH_BASE seems wrong: '${TESTCERT_PATH_BASE}'" ;;
+            esac
+
+            SKID="0x1234567890abcdef1234"
+
+            # Simple locking mechanism for certificate generation
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                LOCKFILE="${CI_CACHE_NIT_HASHDIR}.lock"
+                # Wait up to 300 seconds (5 minutes)
+                WAIT=0
+                while [ -e "${LOCKFILE}" ] ; do
+                    log_info "Waiting for other process to finish generating certificates (lock: ${LOCKFILE})..."
+                    sleep 5
+                    WAIT="`expr $WAIT + 5`"
+                    if [ $WAIT -gt 300 ] ; then
+                        log_warn "Lock timeout reached, proceeding anyway..."
+                        rm -f "${LOCKFILE}"
+                    fi
+                done
+
+                # Create lock
+                touch "${LOCKFILE}"
+
+                if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
+                    rm -rf "${CI_CACHE_NIT_HASHDIR}"
+                fi
+
+                # If another process finished while we were waiting,
+                # and we dit not "clean", we might find it in cache now
+                if [ -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR} after waiting"
+                    mkdir -p "${TESTCERT_PATH_BASE}"
+                    # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                    cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \
+                    cp -prfL "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
+
+                    if check_NIT_certs ; then
+                        rm -f "${LOCKFILE}"
+                        return 0
+                    fi
+
+                    log_warn "FAILED check_NIT_certs with cached data, will generate anew"
+                    rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
+                    mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+                fi
+
+                # if [ -n "${BASH_VERSION-}" ]; then
+                trap 'rm -f "${LOCKFILE}"' RETURN || true
+                # fi
+            fi
+
+            mkdir -p "${TESTCERT_PATH_ROOTCA}" || die_or_croak "Could not mkdir TESTCERT_PATH_ROOTCA"
+            (   cd "${TESTCERT_PATH_ROOTCA}" || exit
+                log_info "SSL: Preparing test Root CA..."
+                echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *NSS*)
+                        { [ -e /dev/urandom ] && \
+                            dd if=/dev/urandom of=.random bs=16 count=1
+                        } || {
+                            [ -e /dev/random ] && \
+                                dd if=/dev/random of=.random bs=16 count=1
+                        } || date > .random
+
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile \
+                        || die_or_croak "Could not init NSS CA database in `pwd`"
+
+                        # Generate a certificate for CA
+                        cscmd() {
+                            certutil -S -x \
+                                -d . -f .pwfile \
+                                -n "${TESTCERT_ROOTCA_NAME}" \
+                                -s "CN=${TESTCERT_ROOTCA_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                                -t "CT,C,C" \
+                                -m 1 \
+                                --keyUsage critical,certSigning,crlSigning,digitalSignature,nonRepudiation \
+                                -z .random \
+                                -2 \
+                                -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo y
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo '-1'
+                            #> Is this a critical extension [y/N]
+                            echo y
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die_or_croak "Could not generate NSS CA certificate ($?)"
+
+                        # Extract the CA certificate to be able to use or import it later:
+                        certutil -L -d . -f .pwfile -n "${TESTCERT_ROOTCA_NAME}" -a -o rootca.pem \
+                        || die_or_croak "Could not extract the NSS CA certificate to PEM"
+
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Extract the CA private key
+                            # (and certificate) to a PKCS#12 file, then
+                            # to PEM for use by OpenSSL-based builds
+                            # e.g. for PERL and Python test suites:
+                            pk12cmd() {
+                                pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            if pk12cmd >/dev/null 2>&1 ; then
+                                openssl pkcs12 -in rootca.p12 \
+                                    -out rootca.key -nodes -nocerts \
+                                    -passin file:.pwfile \
+                                && log_info "Exported NSS CA key to OpenSSL PEM"
+                            fi
+                        fi
+
+                        # Use this later for signing, move on to server/client requests...
+                        check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+                        ;;
+                esac
+
+                [ -s rootca.pem ] || \
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *OpenSSL*)
+                        # Generate an AES encrypted private key:
+                        openssl genrsa -aes256 -out rootca.key \
+                            -passout file:.pwfile 4096 \
+                        || die_or_croak "Could not generate an AES encrypted private key for OpenSSL CA"
+                        # Generate a certificate for CA using that key;
+                        # note that not all "openssl" versions have the
+                        # "-extfile" option for self-signed (CA) certs;
+                        # such is burden of legacy OS support (in NUT CI
+                        # farm worker population at least):
+                        cat > rootca.req.conf << EOF
+[ req ]
+distinguished_name = dn
+x509_extensions = extensions
+prompt = no
+
+[ dn ]
+commonName = ${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US
+
+[ extensions ]
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints=critical,CA:TRUE
+keyUsage=critical,digitalSignature,cRLSign,keyCertSign
+subjectKeyIdentifier=hash
+EOF
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -x509 -new -nodes -key rootca.key \
+                            -passin file:.pwfile -sha256 \
+                            -days "${TESTCERT_VALIDITY_DAYS}" \
+                            -out rootca.pem \
+                            -config rootca.req.conf \
+                        || {
+                            log_info "Retry ROOTCA without authorityKeyIdentifier extension"
+                            # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
+                            sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
+                            && openssl req -x509 -new -nodes -key rootca.key \
+                                -passin file:.pwfile -sha256 \
+                                -days "${TESTCERT_VALIDITY_DAYS}" \
+                                -out rootca.pem \
+                                -config rootca.req.conf
+                        } || die_or_croak "Could not self-sign OpenSSL CA req"
+
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
+                        && command -v certutil >/dev/null 2>&1 \
+                        && [ -s rootca.pem ] && [ -s rootca.key ] \
+                        ; then
+                            log_info "SSL: Populating NSS CA database from existing PEM files..."
+                            # Create the certificate database:
+                            certutil -N -d . -f .pwfile \
+                            || die_or_croak "Could not init NSS CA database from PEM in `pwd`"
+
+                            # Import the CA certificate and key:
+                            # First package to PKCS#12
+                            openssl pkcs12 -export \
+                                -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                -passin file:.pwfile \
+                                -name "${TESTCERT_ROOTCA_NAME}" \
+                                -passout file:.pwfile \
+                            || {
+                                log_warn "Could not package CA to PKCS#12 for NSS import, trying another way"
+                                (cat .pwfile; echo '') > .pwfile-eol
+                                openssl pkcs12 -export \
+                                    -out rootca.p12 -inkey rootca.key -in rootca.pem \
+                                    -passin file:.pwfile-eol \
+                                    -name "${TESTCERT_ROOTCA_NAME}" \
+                                    -passout file:.pwfile \
+                                || die_or_croak "Could not package CA to PKCS#12 for NSS import"
+                            }
+
+                            # Then import to NSS
+                            pk12util -i rootca.p12 -d . -k .pwfile -w .pwfile \
+                            || die_or_croak "Could not import CA PKCS#12 to NSS"
+
+                            # Trust it
+                            certutil -M -d . -n "${TESTCERT_ROOTCA_NAME}" -t "CT,C,C" -f .pwfile \
+                            || die_or_croak "Could not set trust on imported NSS CA"
+
+                            check_NIT_certs_NSS "CA" "${TESTCERT_PATH_ROOTCA}"
+                        fi
+                        ;;
+                esac
+
+                openssl_hash_CAdir() {
+                    # OpenSSL CA trust "database" should include hashes
+                    # of CA PEM certificates as symlinks to actual files:
+                    CERTHASH="`openssl x509 -subject_hash -in rootca.pem | head -1`" \
+                    && [ -n "${CERTHASH}" ] \
+                    || die_or_croak "Could not determine OpenSSL certificate hash for Root CA files"
+
+                    # NOTE: Symlinking may be prohibited or not implemented
+                    # on some platforms (e.g. Windows) or file systems, and
+                    # even if we can create a symlink, we may have trouble
+                    # copying it as such.
+                    log_info "SSL: Preparing OpenSSL CA PEM file hash-named (${CERTHASH}) copies or links"
+                    if [ x"${MSYSTEM}${MSYS2_PATH}${MSYSTEM_PREFIX}" = x ]; then
+                        ln -fs rootca.pem "${CERTHASH}".0 || ln -f rootca.pem "${CERTHASH}".0 || cp -f rootca.pem "${CERTHASH}".0
+                        ln -fs rootca.pem "${CERTHASH}" || ln -f rootca.pem "${CERTHASH}" || cp -f rootca.pem "${CERTHASH}"
+                    else
+                        # On Windows/MSYS2, less hassle to just make copies:
+                        cp -f rootca.pem "${CERTHASH}".0
+                        cp -f rootca.pem "${CERTHASH}"
+                    fi
+
+                    # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                    ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem "${TESTCERT_PATH_ROOTCA}"/"${CERTHASH}"* \
+                    || die_or_croak "Could not list OpenSSL CA PEM file and hash links"
+                }
+
+                case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
+                    *OpenSSL*)
+                        openssl_hash_CAdir
+                        ;;
+                    *)
+                        ls -l "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                        || die_or_croak "Could not list OpenSSL CA PEM file (exported from NSS)"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            openssl_hash_CAdir
+                        fi
+
+                        ;;
+                esac
+            ) || die_or_croak "Could not prepare Root CA in '${TESTCERT_PATH_ROOTCA}'"
+
+            mkdir -p "${TESTCERT_PATH_SERVER}"
+            (   cd "${TESTCERT_PATH_SERVER}" || exit
+                log_info "SSL: Preparing test server certificate..."
+                echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
+                case "${WITH_SSL_SERVER}" in
+                    NSS)
+                        # Create the certificate database:
+                        certutil -N -d . -f .pwfile \
+                        || die_or_croak "Could not init NSS Server database in `pwd`"
+
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_ROOTCA_NAME}" \
+                            -t "CT,C,C" \
+                            -a -i "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                        || die_or_croak "Could not import the CA certificate to NSS Server database"
+
+                        # Create a server certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile \
+                            -s "CN=${TESTCERT_SERVER_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                            -a -o server.req \
+                            -z "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}".random \
+                            --extKeyUsage "serverAuth,critical" \
+                            --nsCertType sslServer,critical \
+                            --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
+                            --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
+                        || die_or_croak "Could not create a NSS Server certificate request"
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        cscmd() {
+                            certutil -C -d "${TESTCERT_PATH_ROOTCA}" \
+                                -f "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}".pwfile \
+                                -c "${TESTCERT_ROOTCA_NAME}" \
+                                -a -i server.req -o server.crt \
+                                --extKeyUsage "serverAuth,critical" \
+                                --nsCertType sslServer,critical \
+                                -m 2 \
+                                -2 \
+                                -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
+                                -t "u,u,u" \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo n
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo ''
+                            #> Is this a critical extension [y/N]
+                            echo n
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die_or_croak "Could not sign a NSS Server certificate request with the NSS CA database ($?)"
+
+                        # Import the signed certificate into server database:
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_SERVER_NAME}" \
+                            -a -i server.crt -t "u,u,u" \
+                        || die_or_croak "Could not import the signed NSS Server certificate into server database"
+
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            # Add PEM and Java JKS (trust store) for good
+                            # measure, but JKS only if we prepare the cache:
+                            # it is not used in-tree now, but e.g. for
+                            # jNut tests; PEM is used in the other type
+                            # of build, as well as PERL and Python tests.
+
+                            pk12cmd() {
+                                pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            # Export private key to PEM for OpenSSL builds;
+                            # server.crt is already PEM (from signing step)
+                            mkpk12key() {
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                    openssl pkcs12 -in server.p12 \
+                                        -out server.key \
+                                        -nodes -nocerts \
+                                        -passin file:.pwfile "$@" \
+                                    && log_info "Exported NSS Server key to OpenSSL PEM"
+                                fi
+                            }
+                            mkpk12key
+
+                            # Bonus program: Java JKS (if caching)
+                            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                            && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                            && command -v keytool >/dev/null 2>&1 && [ -f server.p12 ] \
+                            ; then
+                                # Use server.p12 as source if we have it
+                                mkjks() {
+                                    keytool -importkeystore \
+                                        -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                        -destkeystore upsd.jks \
+                                        -srckeystore server.p12 \
+                                        -srcstoretype PKCS12 \
+                                        -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                        -alias "${TESTCERT_SERVER_NAME}" \
+                                        -noprompt \
+                                    && log_info "Generated Java JKS for Server"
+                                    # else openssl -legacy
+                                    # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
+                                }
+
+                                mkjks || {
+                                    mkpk12key -legacy && mkjks
+                                }
+                            fi
+                            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                            ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+
+                            cat server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem server.key > upsd.pem 2>/dev/null || true
+                        fi
+
+                        check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+                        ;;
+                    OpenSSL)
+                        # Create a server certificate request:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -new -nodes -out server.req \
+                            -newkey rsa:4096 -passout file:.pwfile \
+                            -keyout server.key \
+                            -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        || die_or_croak "Could not create a OpenSSL Server certificate request"
+                        cat > server.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+DNS.3 = nut-server-$$.localdomain
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req \
+                                -in "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key \
+                                -CAcreateserial \
+                                -out "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.crt" \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
+                                -extfile "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.v3.ext"
+                        ) || die_or_croak "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
+
+                        cat server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem server.key > upsd.pem \
+                        || die_or_croak "Could not combine an upsd.pem"
+
+                        ls -l "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"upsd.pem \
+                        || die_or_croak "Could not list an upsd.pem"
+
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Server database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die_or_croak "Could not init NSS Server database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "CT,C,C" \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                || die_or_croak "Could not import the CA certificate to NSS Server database"
+
+                                # Import Server certificate and key
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
+                                || die_or_croak "Could not package Server cert to PKCS#12 for NSS import"
+
+                                pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
+                                || die_or_croak "Could not import Server PKCS#12 to NSS"
+
+                                check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
+                            fi
+
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Bonus program: Java JKS (if caching)
+                                openssl pkcs12 -export -out server.p12 \
+                                    -inkey server.key -in server.crt \
+                                    -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                    -name "${TESTCERT_SERVER_NAME}" \
+                                    -passout file:.pwfile \
+                                && keytool -importkeystore \
+                                    -deststorepass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeypass "${TESTCERT_SERVER_PASS}" \
+                                    -destkeystore upsd.jks \
+                                    -srckeystore server.p12 \
+                                    -srcstoretype PKCS12 \
+                                    -srcstorepass "${TESTCERT_SERVER_PASS}" \
+                                    -alias "${TESTCERT_SERVER_NAME}" \
+                                    -noprompt \
+                                && log_info "Generated Java JKS for Server (from OpenSSL)"
+                                # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                                ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
+                            fi
+                        fi
+                        ;;
+                esac
+            ) || die_or_croak "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
+
+            mkdir -p "${TESTCERT_PATH_CLIENT}"
+            (   cd "${TESTCERT_PATH_CLIENT}" || exit
+                log_info "SSL: Preparing test client certificate..."
+                echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+                case "${WITH_SSL_CLIENT}" in
+                    NSS)
+                        # Create the certificate database of client key+cert store:
+                        certutil -N -d . -f .pwfile \
+                        || die_or_croak "Could not init NSS Client database in `pwd`"
+
+                        # Import the CA certificate, so users of this DB trust it:
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_ROOTCA_NAME}" \
+                            -t "TC,," \
+                            -a -i "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                        || die_or_croak "Could not import the CA certificate to NSS Client database"
+
+                        # Import server cert into client database so we can trust it (CERTHOST directive):
+                        # NOTE: Seems we must do this before requesting or signing the client cert,
+                        # otherwise (if importing server cert after doing everything about the
+                        # client one) we get an error:
+                        #  certutil: could not decode certificate: SEC_ERROR_REUSED_ISSUER_AND_SERIAL:
+                        #    You are attempting to import a cert with the same issuer/serial
+                        #    as an existing cert, but that is not the same cert.
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_SERVER_NAME}" \
+                            -a -i "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.crt" \
+                            -t ",," \
+                        || die_or_croak "Could not import the Server certificate to NSS Client database"
+
+                        # Create a client certificate request:
+                        # NOTE: IRL Each run should have a separate random seed; for tests we cut a few corners!
+                        certutil -R -d . -f .pwfile \
+                            -s "CN=${TESTCERT_CLIENT_NAME},OU=Test,O=NIT,ST=StateOfChaos,C=US" \
+                            -a -o client.req \
+                            -z "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}".random \
+                        || die_or_croak "Could not create a NSS Client certificate request"
+
+                        # Sign a certificate request with the CA certificate:
+                        # HACK NOTE: "No" for "Is this a CA certificate" question, defaults for others
+                        # Some builds of certutil fail with SIGSEGV due to infinite input from `yes ""`,
+                        # but generally we do not know how many questions are asked:
+                        cscmd() {
+                            certutil -C -d "${TESTCERT_PATH_ROOTCA}" \
+                                -f "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}".pwfile \
+                                -c "${TESTCERT_ROOTCA_NAME}" \
+                                -a -i client.req -o client.crt \
+                                --extKeyUsage "clientAuth" \
+                                --nsCertType sslClient \
+                                -m 3 \
+                                -2 \
+                                -3 \
+                                -v "${TESTCERT_VALIDITY_MONTHS}" \
+                                --extSKID
+                        }
+                        if [ x"${NUT_CERTUTIL_INTERACTIVE-}" = xtrue ] ; then
+                            cscmd
+                        else {
+                            ## Generating key.  This may take a few moments...
+                            #> Is this a CA certificate [y/N]?
+                            echo n
+                            #> Enter the path length constraint, enter to skip [<0 for unlimited path]:
+                            echo ''
+                            #> Is this a critical extension [y/N]
+                            echo n
+
+                            #> Enter value for the authKeyID extension [y/N]?
+                            echo y
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            ## Select one of the following general name type:
+                            ## [...] Any other number to finish
+                            #> Choice: >
+                            echo ''
+                            #> Enter value for the authCertSerial field, enter to omit:
+                            echo ''
+                            #> Is this a critical extension [y/N]?
+                            echo ''
+
+                            ## Adding Subject Key ID extension.
+                            #> Enter value for the key identifier fields,enter to omit:
+                            echo "${SKID}"
+                            #> Is this a critical extension [y/N]?
+                            echo n
+                            } | cscmd
+                        fi || die_or_croak "Could not sign a NSS Client certificate request with the NSS CA database ($?)"
+
+                        # Import the signed certificate into client database:
+                        certutil -A -d . -f .pwfile \
+                            -n "${TESTCERT_CLIENT_NAME}" \
+                            -a -i client.crt -t ",," \
+                        || die_or_croak "Could not import the signed NSS Client certificate into client database"
+
+                        if command -v pk12util >/dev/null 2>&1 \
+                        && command -v openssl >/dev/null 2>&1 \
+                        ; then
+                            # Add PEM and Java JKS (trust store) for good
+                            # measure, but JKS only if we prepare the cache:
+                            # it is not used in-tree now, but e.g. for
+                            # jNut tests; PEM is used in the other type
+                            # of build, as well as PERL and Python tests.
+
+                            pk12cmd() {
+                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                            }
+                            # Export private key to PEM for OpenSSL builds;
+                            # client.crt is already PEM (from signing step)
+                            mkpk12key() {
+                                if pk12cmd >/dev/null 2>&1 ; then
+                                    openssl pkcs12 -in client.p12 \
+                                        -out client.key \
+                                        -nodes -nocerts \
+                                        -passin file:.pwfile "$@" \
+                                    && log_info "Exported NSS Client key to OpenSSL PEM"
+                                fi
+                            }
+                            mkpk12key
+
+                            # Bonus program: Java JKS (if caching)
+                            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                            && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                            && command -v keytool >/dev/null 2>&1 && [ -f client.p12 ] \
+                            ; then
+                                # Use client.p12 as source if we have it
+                                mkjks() {
+                                    keytool -importkeystore \
+                                        -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                        -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                        -destkeystore upsd.jks \
+                                        -srckeystore client.p12 \
+                                        -srcstoretype PKCS12 \
+                                        -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                        -alias "${TESTCERT_CLIENT_NAME}" \
+                                        -noprompt \
+                                    && log_info "Generated Java JKS for Client"
+                                    # else openssl -legacy
+                                    # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
+                                }
+
+                                mkjks || {
+                                    mkpk12key -legacy && mkjks
+                                }
+                            fi
+                            # See comments above about no TESTCERT_PATH_SEP for shell globs.
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
+
+                            cat client.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem client.key > upsmon.pem 2>/dev/null \
+                            || true #|| die_or_croak "Could not combine an upsmon.pem"
+
+                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem \
+                            || true # || die_or_croak "Could not list an upsmon.pem"
+
+                            log_info "SSL: Exporting public data of server certificate for client use..."
+                            cat "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem > upsd-public.pem \
+                            || true #|| die_or_croak "Could not combine an upsd-public.pem"
+
+                            ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsd-public.pem" \
+                            || true #|| die_or_croak "Could not list an upsd-public.pem"
+                        fi
+
+                        check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
+                        ;;
+                    OpenSSL)
+                        # Create a client certificate request:
+                        MSYS_NO_PATHCONV=1 \
+                        openssl req -new -nodes \
+                            -out client.req -newkey rsa:4096 \
+                            -passout file:.pwfile \
+                            -keyout client.key \
+                            -subj "/CN=${TESTCERT_CLIENT_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
+                        || die_or_croak "Could not create a OpenSSL Client certificate request"
+                        cat > client.v3.ext << EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = clientAuth
+nsCertType = client
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = localhost6
+DNS.3 = nut-client-$$.localdomain
+# Cater to older Python SSL parser that only looks for DNS:
+DNS.4 = 127.0.0.1
+DNS.5 = ::1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+IP.3 = 127.1.2.`expr $$ % 200`
+EOF
+                        # Sign a certificate request with the CA certificate:
+                        (   cd "${TESTCERT_PATH_ROOTCA}"
+                            openssl x509 -req -in "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}client.req" \
+                                -passin file:.pwfile \
+                                -CA rootca.pem -CAkey rootca.key -CAcreateserial \
+                                -out "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}client.crt" \
+                                -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
+                                -extfile "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}client.v3.ext"
+                        ) || die_or_croak "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
+
+                        cat client.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem client.key > upsmon.pem \
+                        || die_or_croak "Could not combine an upsmon.pem"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}"upsmon.pem \
+                        || die_or_croak "Could not list an upsmon.pem"
+
+                        log_info "SSL: Exporting public data of server certificate for client use..."
+                        cat "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem > upsd-public.pem \
+                        || die_or_croak "Could not combine an upsd-public.pem"
+
+                        ls -l "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsd-public.pem" \
+                        || die_or_croak "Could not list an upsd-public.pem"
+
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v keytool >/dev/null 2>&1 \
+                        ; then
+                            # Bonus program: Java JKS (if caching)
+                            keytool -importcert \
+                                -file "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                -alias "${TESTCERT_ROOTCA_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && keytool -importcert \
+                                -file "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}"server.crt \
+                                -alias "${TESTCERT_SERVER_NAME}" \
+                                -keystore rootca.jks \
+                                -storepass "${TESTCERT_ROOTCA_PASS}" \
+                                -noprompt \
+                            && log_info "Generated Java JKS truststore for Client (OpenSSL)"
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
+                        fi
+
+                        # NOTE: We limit this to cache population as we do
+                        # not have non-compiled NSS backended clients so far:
+                        if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] \
+                        && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] \
+                        && command -v pk12util >/dev/null 2>&1 \
+                        ; then
+                            if command -v certutil >/dev/null 2>&1 ; then
+                                log_info "SSL: Populating NSS Client database from existing PEM files..."
+                                # Create the certificate database:
+                                certutil -N -d . -f .pwfile \
+                                || die_or_croak "Could not init NSS Client database from PEM in `pwd`"
+
+                                # Import the CA certificate, so users of this DB trust it:
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_ROOTCA_NAME}" \
+                                    -t "TC,," \
+                                    -a -i "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                || die_or_croak "Could not import the CA certificate to NSS Client database"
+
+                                # Import server cert into client database so we can trust it (CERTHOST directive):
+                                certutil -A -d . -f .pwfile \
+                                    -n "${TESTCERT_SERVER_NAME}" \
+                                    -a -i "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.crt" \
+                                    -t ",," \
+                                || die_or_croak "Could not import the Server certificate to NSS Client database"
+
+                                if [ -f client.key ] ; then
+                                    # Import Client certificate and key
+                                    openssl pkcs12 -export -out client.p12 \
+                                        -inkey client.key -in client.crt \
+                                        -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                        -name "${TESTCERT_CLIENT_NAME}" \
+                                        -passout file:.pwfile \
+                                    || die_or_croak "Could not package Client cert to PKCS#12 for NSS import"
+
+                                    pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
+                                    || die_or_croak "Could not import Client PKCS#12 to NSS"
+                                fi
+
+                                check_NIT_certs_NSS "Client" "${TESTCERT_PATH_CLIENT}"
+                            fi
+
+                            if command -v keytool >/dev/null 2>&1 ; then
+                                # Bonus program: Java JKS (if caching)
+                                pk12cmd() {
+                                    pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                                }
+                                if command -v keytool >/dev/null 2>&1 ; then
+                                    if pk12cmd >/dev/null 2>&1 ; then
+                                        keytool -importkeystore \
+                                            -deststorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeypass "${TESTCERT_CLIENT_PASS}" \
+                                            -destkeystore upsmon.jks \
+                                            -srckeystore client.p12 \
+                                            -srcstoretype PKCS12 \
+                                            -srcstorepass "${TESTCERT_CLIENT_PASS}" \
+                                            -alias "${TESTCERT_CLIENT_NAME}" \
+                                            -noprompt \
+                                        && log_info "Generated Java JKS for Client"
+                                    fi
+                                fi
+                            fi
+                            ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
+                        fi
+                        ;;
+                esac
+            ) || die_or_croak "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
+        ) && {
+            log_info "SUCCESS: Prepared crypto credential stores for SSL tests; WITH_SSL_CLIENT='${WITH_SSL_CLIENT}' WITH_SSL_SERVER='${WITH_SSL_SERVER}'"
+
+            # Populate cache if enabled
+            if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] && [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                if [ ! -d "${CI_CACHE_NIT_HASHDIR}" ] ; then
+                    log_info "Populating NIT certificate cache in ${CI_CACHE_NIT_HASHDIR}"
+                    mkdir -p "${CI_CACHE_NIT_HASHDIR}"
+                    cp -prf "${TESTCERT_PATH_BASE}"/* "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}"
+                    set | ${EGREP} '^TESTCERT[^ ]*=' | grep -v PATH \
+                    > "${CI_CACHE_NIT_HASHDIR}${TESTCERT_PATH_SEP}TESTCERT_VARS.env"
+                fi
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
+        } || {
+            if [ -n "${CI_CACHE_NIT_HASHDIR-}" ] ; then
+                rm -f "${CI_CACHE_NIT_HASHDIR}.lock"
+            fi
+            if [ x"${WITH_SSL_TESTS}" = xrequired-conditional ]; then
+                die "Aborting because SSL tests are required (due to WITH_SSL_TESTS='${WITH_SSL_TESTS}') and something failed with crypto material setup"
+            fi
+            log_warn "Something failed about setup of crypto credential stores, will skip SSL tests"
+            WITH_SSL_CLIENT="none"
+            WITH_SSL_SERVER="none"
+        }
+        ;;
+esac
+
+# This does not seem to cause NUT clients to trust nor distrust
+# (or anyhow verify) a presented server certificate, but just in case:
+#if [ "${WITH_SSL_CLIENT}" = OpenSSL ] ; then
+#    SSL_CERT_DIR="${TESTCERT_PATH_ROOTCA}"
+#    export SSL_CERT_DIR
+#
+#    SSL_CERT_FILE="${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}rootca.pem"
+#    export SSL_CERT_FILE
+#fi
+}
+
+prepare_NIT_certs
 
 # This file is not used by the test code, it is an
 # aid for "DEBUG_SLEEP=X" mode so the caller can
@@ -494,13 +2181,13 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | ${EGREP} '^(NUT_|TESTDIR|TESTCERT|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
             continue
             ;;
-        DEBUG_SLEEP|PATH|LD_LIBRARY_PATH*) printf '### ' ;;
+        DEBUG_SLEEP|PATH|LD_LIBRARY_PATH*|NUT_AUTHCONF_FILE) printf '### ' ;;
     esac
 
     case "$V" in
@@ -522,8 +2209,9 @@ LISTEN localhost $NUT_PORT
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.conf' so unprivileged daemons (after de-elevation) may read it"
+        # NOTE: No RUN_AS_USER in upsd.conf currently; tweaking via CLI args if needed
         chmod 644 "$NUT_CONFPATH/upsd.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsd.conf"
@@ -535,7 +2223,7 @@ EOF
     # both addresses in one command.
     for LH in 127.0.0.1 '::1' ; do
         if (
-           ( cat /etc/hosts || getent hosts ) | grep "$LH" \
+           ( cat /etc/hosts || getent hosts ) | ${GREP} "$LH" \
              || ping -c 1 "$LH"
         ) 2>/dev/null >/dev/null ; then
             echo "LISTEN $LH $NUT_PORT" >> "$NUT_CONFPATH/upsd.conf"
@@ -545,6 +2233,12 @@ EOF
     if [ -n "${NUT_DEBUG_MIN-}" ] ; then
         echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsd.conf" || exit
     fi
+
+    if [ "$DUMMY_UPS_SWARM_COUNT" -gt 5 ] || [ "$UPSLOG_SWARM_COUNT" -gt 5 ] ; then
+        # Enable select-group looping (especially on Windows with sysmaxconn=64);
+        # note that each upslog monitors all devices (*) so has many connections:
+        echo "MAXCONN `expr \( 3 + $DUMMY_UPS_SWARM_COUNT \) \* \( 1 + $UPSLOG_SWARM_COUNT \) + 30`" >> "$NUT_CONFPATH/upsd.conf" || exit
+    fi
 }
 
 generatecfg_upsd_nodev() {
@@ -553,9 +2247,87 @@ generatecfg_upsd_nodev() {
     || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
 }
 
+generatecfg_upsd_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsd_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsd.conf" ] ; then
+        generatecfg_upsd_trivial
+    fi
+
+    if grep CERT "$NUT_CONFPATH/upsd.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_SERVER}" in
+        none) return 0;;
+        OpenSSL)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
+            { cat << EOF
+# OpenSSL CERTFILE: PEM file with data server cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}upsd.pem"
+# OpenSSL CERTPATH: Directory with CA certificates (named by hash)
+# to check trusted clients
+CERTPATH "${TESTCERT_PATH_ROOTCA}"
+EOF
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+        NSS)
+            log_info "Adding ${WITH_SSL_SERVER} server-side SSL config to upsd.conf"
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${TESTCERT_PATH_SERVER}"
+EOF
+            } >> "$NUT_CONFPATH/upsd.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+            ;;
+    esac
+
+    # Shared features for both SSL backends:
+    { case x"${WITH_SSL_SERVER_CERTIDENT}" in
+        x"name+pass") cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" "${TESTCERT_SERVER_PASS}"
+EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_SERVER_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_SERVER_PASS}"
+EOF
+            ;;
+      esac
+
+      if [ x"${WITH_SSL_SERVER_CLIVAL}" = xtrue ]; then
+        cat << EOF
+#  - 0 to not request clients to provide any certificate
+#  - 1 to require all clients to present some certificate
+#  - 2 to require all clients to present a valid certificate
+#      (trusted by server database or CA collection)
+CERTREQUEST 2
+EOF
+      fi
+    } >> "$NUT_CONFPATH/upsd.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+
+    # FIXME: Check for old/new OS and libs to toggle this?
+    # echo "DISABLE_WEAK_SSL true" >> "$NUT_CONFPATH/upsd.conf" \
+    # || die "Failed to populate temporary FS structure for the NIT: upsd.conf"
+
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
+}
+
 ### upsd.users: ##################################################
 
 TESTPASS_ADMIN='mypass'
+TESTPASS_READER='public'
 TESTPASS_TESTER='pass words'
 TESTPASS_UPSMON_PRIMARY='P@ssW0rdAdm'
 TESTPASS_UPSMON_SECONDARY='P@ssW0rd'
@@ -566,6 +2338,10 @@ generatecfg_upsdusers_trivial() {
     password = $TESTPASS_ADMIN
     actions = SET
     instcmds = ALL
+
+[reader]
+    password = $TESTPASS_READER
+    # No actions nor instcmds allowed
 
 [tester]
     password = "${TESTPASS_TESTER}"
@@ -590,8 +2366,8 @@ generatecfg_upsdusers_trivial() {
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsd.users' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/upsd.users"
     else
         chmod 640 "$NUT_CONFPATH/upsd.users"
@@ -624,7 +2400,11 @@ generatecfg_upsmon_trivial() {
 
         NOTIFYTGT=""
         if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
-            echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
+            (echo "#!/bin/sh" ; echo "TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug \"\$@\"") > "$NUT_CONFPATH/upsmon-notify.sh" \
+            && chmod +x "$NUT_CONFPATH/upsmon-notify.sh" \
+            || exit
+
+            echo "NOTIFYCMD \"$NUT_CONFPATH/upsmon-notify.sh\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
 
             # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
             # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
@@ -636,9 +2416,9 @@ generatecfg_upsmon_trivial() {
 
         if [ -n "${NOTIFYTGT}" ]; then
             if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
-                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                ${EGREP} '# NOTIFYFLAG .*SYSLOG\+WALL$' \
                 < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
-                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
+                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1'"${TABCHAR}${NOTIFYTGT}"',' \
                 >> "$NUT_CONFPATH/upsmon.conf" || exit
             fi
         fi
@@ -656,11 +2436,15 @@ generatecfg_upsmon_trivial() {
     < "${TOP_SRCDIR-}/tests/NIT/upssched.conf.in" > "$NUT_CONFPATH/upssched.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upssched.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/upsmon.conf' and '$NUT_CONFPATH/upssched.conf' so unprivileged daemons (after de-elevation) may read them"
         chmod 644 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
     else
         chmod 640 "$NUT_CONFPATH/upsmon.conf" "$NUT_CONFPATH/upssched.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "RUN_AS_USER ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/upsmon.conf"
     fi
 
     if [ $# -gt 0 ] ; then
@@ -708,24 +2492,413 @@ generatecfg_upsmon_secondary() {
     fi
 }
 
+generatecfg_upsmon_add_SSL() {
+    # May first call one of the above consumers of generatecfg_upsmon_trivial()
+    if [ ! -s "$NUT_CONFPATH/upsmon.conf" ] ; then
+        generatecfg_upsmon_trivial
+    fi
+
+    if grep CERTPATH "$NUT_CONFPATH/upsmon.conf" >/dev/null ; then
+        # Already configured for SSL
+        return 0
+    fi
+
+    case "${WITH_SSL_CLIENT}" in
+        none) return 0;;
+        OpenSSL)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
+            { cat << EOF
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH "${TESTCERT_PATH_ROOTCA}"
+EOF
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+        NSS)
+            log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to upsmon.conf"
+            { cat << EOF
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH "${TESTCERT_PATH_CLIENT}"
+EOF
+            } >> "$NUT_CONFPATH/upsmon.conf" \
+            || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+            ;;
+    esac
+
+    # Shared features for both SSL backends:
+    { case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+        x"name+pass") cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_CLIENT_NAME}" "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+        x"name") # Really unlikely
+            cat << EOF
+# Who am I?
+CERTIDENT "${TESTCERT_CLIENT_NAME}" ""
+EOF
+            ;;
+        x"pass") cat << EOF
+# Who am I?
+CERTIDENT "" "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+      esac
+
+      if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+        cat << EOF
+# Defaults that CERTHOST may override per-server, but
+# note that this impacts also the general upsmon behavior:
+FORCESSL 1
+EOF
+
+        case x"${WITH_SSL_CLIENT_CERTHOST}" in
+        x"none") cat << EOF
+CERTVERIFY 0
+# Custom settings for a specific remote server:
+CERTHOST "localhost:${NUT_PORT}" "${TESTCERT_SERVER_NAME}" 1 0
+EOF
+            ;;
+        x"addr") cat << EOF
+CERTVERIFY 1
+# Custom settings for a specific remote server without verifying the host cert for nickname '${TESTCERT_SERVER_NAME}':
+CERTHOST "localhost:${NUT_PORT}" "" 1 1
+EOF
+            ;;
+        *) cat << EOF
+CERTVERIFY 1
+# Custom settings for a specific remote server:
+CERTHOST "localhost:${NUT_PORT}" "${TESTCERT_SERVER_NAME}" 1 1
+EOF
+            ;;
+        esac
+      fi
+    } >> "$NUT_CONFPATH/upsmon.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
+}
+
+### nutauth.conf: #############################################
+
+generatecfg_nutauth() {
+    # NOTE: Tools will by default read from whatever "${NUT_AUTHCONF_FILE}"
+    #  resolves to, but here we populate the tests' instance (not overwrite
+    #  some user configuration file, if that is somehow supplied)!
+    # NOTE: Some clients (Perl, Python) are currently limited to OpenSSL,
+    #  so we generate another file for their sake below.
+    {   cat << EOF
+# Global section for nutauth.conf, inherited and overridden per line by others
+EOF
+
+        case "${WITH_SSL_CLIENT}" in
+            none) ;;
+            OpenSSL)
+                log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
+                cat << EOF
+SSLBACKEND = "`echo ${WITH_SSL_CLIENT} | tr 'A-Z' 'a-z'`"
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH = "${TESTCERT_PATH_ROOTCA}"
+EOF
+                ;;
+            NSS)
+                log_info "Adding ${WITH_SSL_CLIENT} client-side SSL config to nutauth.conf"
+                cat << EOF
+SSLBACKEND = "`echo ${WITH_SSL_CLIENT} | tr 'A-Z' 'a-z'`"
+# NSS CERTPATH: Directory with 3-file database of cert/key store
+CERTPATH = "${TESTCERT_PATH_CLIENT}"
+EOF
+                ;;
+        esac
+
+        # Shared features for both SSL backends:
+        [ x"${WITH_SSL_CLIENT}" = xnone ] || \
+        case x"${WITH_SSL_CLIENT_CERTIDENT}" in
+            x"name+pass")
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+            ;;
+            x"name") # Really unlikely
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+# A really unlikely case: this backend does not support passphrases?..
+CERTIDENT_PASS = ""
+EOF
+            ;;
+            x"pass")
+                cat << EOF
+# SSL enabled, our cert nickname and private key password: Who am I?
+# This SSL backend can not check cert subject...
+CERTIDENT_NAME = ""
+# ...but at least can do private key passwords:
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+                ;;
+        esac
+
+        case "${WITH_SSL_CLIENT}" in
+            none)
+                cat << EOF
+# SSL not enabled: do not check server certs, do not require STARTTLS success:
+CERTVERIFY = 0
+FORCESSL = 0
+
+[@localhost:${NUT_PORT}]
+EOF
+                ;;
+            OpenSSL|NSS)
+                cat << EOF
+# Defaults that CERTHOST may override per-server, but note
+# that this impacts also the general NUT client behavior.
+# 0 for OK to fail => proceed in plaintext (should be overridden
+# by the specific localhost definition below):
+FORCESSL = 0
+
+# -1 for inheriting a better value elsewhere, e.g. in host
+#  definition below, or effectively 0 if never defined exactly:
+CERTVERIFY = -1
+
+[@localhost:${NUT_PORT}] # We also try different indentation and comment styles here
+EOF
+
+                if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                    case x"${WITH_SSL_CLIENT_CERTHOST}" in
+                        x"none") cat << EOF
+    # Custom settings for a specific remote server:
+    CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 0
+EOF
+                            ;;
+                        x"addr") cat << EOF
+    # Custom settings for a specific remote server without verifying
+    # the host cert for nickname '${TESTCERT_SERVER_NAME}':
+    # CERTHOST = ""
+# Just verify the CA matches what we trust:
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                        *) cat << EOF
+# Custom settings for a specific remote server:
+CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                    esac
+                fi
+                ;;
+      esac
+
+      # Previous clauses end somewhere in the [@localhost:${NUT_PORT}] section
+      # Keep credentials in sync with generatecfg_upsdusers_trivial()
+      cat << EOF
+    # Default credentials for access to this server
+    USERNAME = reader
+    PASS = "$TESTPASS_READER"
+
+[admin@:${NUT_PORT}]
+    # Empty host should resolve to "localhost"
+    # Unquoted password, no special characters here:
+    PASS = $TESTPASS_ADMIN
+
+[tester@localhost:${NUT_PORT}]
+	password = "${TESTPASS_TESTER}"
+
+[dummy-admin-m@localhost:${NUT_PORT}]
+    pass = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-admin@localhost:${NUT_PORT}]
+    PASSWORD = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-user-s@localhost:${NUT_PORT}]
+password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[dummy-user@localhost:${NUT_PORT}]
+    password = "${TESTPASS_UPSMON_SECONDARY}"
+
+# Currently NUT authconf parsers do not try to resolve the host name<=>numeric
+# addresses during normalization. For the sake of some test cases, we repeat
+# the above entries with 127.0.0.1 for localhost:
+[tester@127.0.0.1:${NUT_PORT}]
+	password = "${TESTPASS_TESTER}"
+
+[dummy-admin-m@127.0.0.1:${NUT_PORT}]
+    pass = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-admin@127.0.0.1:${NUT_PORT}]
+    PASSWORD = "${TESTPASS_UPSMON_PRIMARY}"
+
+[dummy-user-s@127.0.0.1:${NUT_PORT}]
+password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[dummy-user@127.0.0.1:${NUT_PORT}]
+    password = "${TESTPASS_UPSMON_SECONDARY}"
+
+[@127.0.0.1:${NUT_PORT}]
+    # Default credentials for access to this server
+    USERNAME = reader
+    PASS = "$TESTPASS_READER"
+EOF
+
+        case "${WITH_SSL_CLIENT}" in
+            none) ;;
+            OpenSSL|NSS)
+                if [ x"${WITH_SSL_SERVER}" != xnone ] ; then
+                    case x"${WITH_SSL_CLIENT_CERTHOST}" in
+                        x"none") cat << EOF
+    # Custom settings for a specific remote server:
+    CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 0
+EOF
+                            ;;
+                        x"addr") cat << EOF
+    # Custom settings for a specific remote server without verifying
+    # the host cert for nickname '${TESTCERT_SERVER_NAME}':
+    # CERTHOST = ""
+    # Just verify the CA matches what we trust:
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                        *) cat << EOF
+# Custom settings for a specific remote server:
+CERTHOST = "${TESTCERT_SERVER_NAME}"
+CERTVERIFY = 1
+	FORCESSL = 1
+EOF
+                            ;;
+                    esac
+                fi
+                ;;
+      esac
+    } > "${NUT_CONFPATH}/nutauth.conf" \
+    && chmod 640 "${NUT_CONFPATH}/nutauth.conf" \
+    || die "Failed to populate temporary FS structure for the NIT: nutauth.conf"
+
+    case "${WITH_SSL_CLIENT}" in
+        NSS)
+        {   cat << EOF
+# Global section for nutauth.conf, inherited and overridden per line by others
+SSLBACKEND = "openssl"
+# OpenSSL CERTFILE: PEM file with client cert, possibly the
+# intermediate and root CA's, and finally corresponding private key
+EOF
+
+            if [ -s "${TESTCERT_PATH_CLIENT}/upsmon.pem" ] ; then
+                cat << EOF
+CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+
+# SSL enabled, our cert nickname and private key password: Who am I?
+CERTIDENT_NAME = "${TESTCERT_CLIENT_NAME}"
+CERTIDENT_PASS = "${TESTCERT_CLIENT_PASS}"
+EOF
+            else
+                log_warn "SKIPPING tests for OpenSSL clients self-identification: '${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem' not found!"
+                cat << EOF
+#NOT-FOUND# CERTFILE = "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}upsmon.pem"
+EOF
+            fi
+
+            if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
+                cat << EOF
+# OpenSSL CERTPATH: Directory with PEM file(s), looked up by the
+#  CA subject name hash value (which must include our NUT server).
+#  Here we just use the path for PEM file that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH = "${TESTCERT_PATH_ROOTCA}"
+EOF
+            else
+                if test -s "${TESTCERT_PATH_ROOTCA}/rootca.pem" ; then
+                    cat << EOF
+# OpenSSL CERTPATH: One ROOT CA PEM file, that should be populated
+#  by the generatecfg_upsd_add_SSL() method.
+CERTPATH = "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}rootca.pem"
+EOF
+                else
+                    log_warn "SKIPPING tests for OpenSSL clients server validation: neither ${TESTCERT_PATH_ROOTCA}/rootca.pem nor a <CERTHASH>.0 file was found!"
+                    echo "#NOT-FOUND# CERTPATH = ..."
+                    # FIXME: Neuter CERTVERIFY in transplanted requirements?
+                fi
+            fi
+
+            ${EGREP} -v '^(SSLBACKEND|CERTPATH|CERTIDENT_NAME|CERTIDENT_PASS) = ' "${NUT_CONFPATH}/nutauth.conf"
+        }
+        ;;
+        *) cat "${NUT_CONFPATH}/nutauth.conf" ;;
+    esac > "${NUT_CONFPATH}/nutauth-openssl.conf" \
+        && chmod 640 "${NUT_CONFPATH}/nutauth-openssl.conf" \
+        || die "Failed to populate temporary FS structure for the NIT: nutauth-openssl.conf"
+
+    NUT_QUIET_INIT_SSL=false
+    export NUT_QUIET_INIT_SSL
+
+    NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth.conf"
+    export NUT_AUTHCONF_FILE
+}
+
 ### ups.conf: ##################################################
 
 generatecfg_ups_trivial() {
     # Populate the configs for the run
-    (   echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
-        if [ x"${TOP_BUILDDIR}" != x ]; then
-            echo "driverpath = \"${TOP_BUILDDIR}/drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
+    (   # Hints primarily for upsdrvctl:
+        echo 'maxretry = 3' > "$NUT_CONFPATH/ups.conf" || exit
+        echo 'maxstartdelay = 1' >> "$NUT_CONFPATH/ups.conf" || exit
+        if [ x"${ABS_TOP_BUILDDIR}" != x ]; then
+            # NOTE: Windows backslashes are pre-escaped in the configure-generated value
+            case "${ABS_TOP_BUILDDIR}" in
+                ?":\\"*) PATHSEP='\\' ;;
+                *) PATHSEP="/" ;;
+            esac
+            echo "driverpath = \"${ABS_TOP_BUILDDIR}${PATHSEP}drivers\"" >> "$NUT_CONFPATH/ups.conf" || exit
+        else
+            # NOTE: Escaping presumed needed below, so for PATHSEP too
+            if [ x"${TOP_BUILDDIR}" != x ]; then
+                case "${TOP_BUILDDIR}" in
+                    ?":\\"*) PATHSEP='\' ;;
+                    *) PATHSEP="/" ;;
+                esac
+                echo "driverpath = \"${TOP_BUILDDIR}${PATHSEP}drivers\"" | sed 's,\\,\\\\,g' >> "$NUT_CONFPATH/ups.conf" || exit
+            fi
         fi
+        unset PATHSEP
         if [ -n "${NUT_DEBUG_MIN-}" ] ; then
             echo "debug_min = ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/ups.conf" || exit
         fi
     ) || die "Failed to populate temporary FS structure for the NIT: ups.conf"
 
-    if [ "`id -u`" = 0 ]; then
-        log_info "Test script was started by 'root' - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
+    if $I_AM_ROOT ; then
+        log_info "Test script was started by ${I_AM_NAME_REPORT} - expanding permissions for '$NUT_CONFPATH/ups.conf' so unprivileged daemons (after de-elevation) may read it"
         chmod 644 "$NUT_CONFPATH/ups.conf"
     else
         chmod 640 "$NUT_CONFPATH/ups.conf"
+    fi
+
+    if [ x"${TWEAK_RUN_AS_USER}" != x ] ; then
+        echo "user ${TWEAK_RUN_AS_USER}" >> "$NUT_CONFPATH/ups.conf"
+    fi
+    if [ x"${TWEAK_RUN_AS_GROUP}" != x ] ; then
+        echo "group ${TWEAK_RUN_AS_GROUP}" >> "$NUT_CONFPATH/ups.conf"
     fi
 }
 
@@ -774,10 +2947,40 @@ EOF
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
             sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
             mv -f "$F.bak" "$F"
-            grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
+            ${EGREP} '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
-    fi
 
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Adding a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                case "`expr $N % 3`" in
+                    0) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example event sequence"
+    port = evolution500.seq
+EOF
+                        ;;
+                    1) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump"
+    port = epdu-managed.dev
+    mode = dummy-once
+EOF
+                        ;;
+                    2) cat << EOF
+[UPSwarm$N]
+    driver = dummy-ups
+    desc = "Example ePDU data dump (loop)"
+    port = epdu-managed.dev
+    mode = dummy-loop
+EOF
+                        ;;
+                esac
+            done >> "$NUT_CONFPATH/ups.conf"
+        fi
+    fi
 }
 
 #####################################################
@@ -787,8 +2990,25 @@ isPidAlive() {
     [ -d "/proc/$1" ] || kill -0 "$1" 2>/dev/null
 }
 
+arePidsAlive() {
+    _DEAD=""
+    for _PID in "$@" ; do
+        isPidAlive "$_PID" || _DEAD="${_DEAD} $_PID"
+    done
+    unset _PID
+    if [ -n "${_DEAD}" ]; then
+        log_error "[arePidsAlive] Some are dead:${_DEAD}"
+        unset _DEAD
+        return 1
+    fi
+    unset _DEAD
+    return 0
+}
+
 FAILED=0
 FAILED_FUNCS=""
+SKIPPED=0
+SKIPPED_FUNCS=""
 PASSED=0
 
 testcase_upsd_no_configs_at_all() {
@@ -797,7 +3017,7 @@ testcase_upsd_no_configs_at_all() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -816,7 +3036,7 @@ testcase_upsd_no_configs_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -836,7 +3056,7 @@ testcase_upsd_no_configs_in_driver_file() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG}
+    (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -858,7 +3078,7 @@ upsd_start_loop() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    execcmd upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
@@ -892,7 +3112,7 @@ upsd_start_loop() {
         if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
         fi
-        upsd ${ARG_FG} &
+        execcmd upsd ${ARG_FG} ${ARG_USER} &
         PID_UPSD="$!"
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
@@ -920,6 +3140,7 @@ testcase_upsd_allow_no_device() {
     generatecfg_upsd_nodev
     generatecfg_upsdusers_trivial
     generatecfg_ups_trivial
+    WITH_SSL_CLIENT=none WITH_SSL_SERVER=none generatecfg_nutauth
     if shouldDebug ; then
         ls -la "$NUT_CONFPATH/" || true
     fi
@@ -939,12 +3160,12 @@ testcase_upsd_allow_no_device() {
             :
         else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+            if echo "$CMDERR" | ${GREP} "Error: Server disconnected" >/dev/null ; then
                 log_warn "[testcase_upsd_allow_no_device] Retry once more to rule out very laggy systems"
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
@@ -960,6 +3181,28 @@ testcase_upsd_allow_no_device() {
             log_info "[testcase_upsd_allow_no_device] OK, empty response as expected"
             PASSED="`expr $PASSED + 1`"
         fi
+
+        log_separator
+        log_info "[testcase_upsd_allow_no_device] Query JSON listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
+        if runcmd upsc -j -l localhost:$NUT_PORT && test x"${CMDOUT}" != x ; then
+            log_debug "[testcase_upsd_allow_no_device] got a JSON reply:" "$CMDOUT"
+            JSTRIP="`echo \"${CMDOUT}\" | tr -d ' ' | tr -d '\n' | tr -d '\r'`"
+            if test x"${JSTRIP}" = x'[]' ; then
+                log_info "[testcase_upsd_allow_no_device] OK, empty-list JSON response as expected"
+                PASSED="`expr $PASSED + 1`"
+            else
+                log_error "[testcase_upsd_allow_no_device] got a reply for upsc JSON listing for empty but running server, but it was not expected (not an empty list):" "$CMDOUT" "$CMDERR"
+                FAILED="`expr $FAILED + 1`"
+                FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+                res_testcase_upsd_allow_no_device=1
+            fi
+        else
+            log_error "[testcase_upsd_allow_no_device] did not get a reply for upsc JSON listing for empty but running server:" "$CMDOUT" "$CMDERR"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+            res_testcase_upsd_allow_no_device=1
+        fi
+        log_separator
     else
         log_error "[testcase_upsd_allow_no_device] upsd was expected to be running although no devices are defined; is ups.conf populated?"
         ls -la "$NUT_CONFPATH/" || true
@@ -998,14 +3241,21 @@ testgroup_upsd_questionable_configs() {
 ### Tests in a common sandbox with driver(s) + server ###
 #########################################################
 
+# Let this be a NIT_CASE=generatecfg_sandbox
+generatecfg_sandbox() {
+    log_info "Generating configs for sandbox"
+    generatecfg_upsd_nodev
+    generatecfg_upsd_add_SSL
+    generatecfg_upsdusers_trivial
+    generatecfg_nutauth
+    generatecfg_ups_dummy
+}
+
 SANDBOX_CONFIG_GENERATED=false
 sandbox_generate_configs() {
     if $SANDBOX_CONFIG_GENERATED ; then return ; fi
 
-    log_info "Generating configs for sandbox"
-    generatecfg_upsd_nodev
-    generatecfg_upsdusers_trivial
-    generatecfg_ups_dummy
+    generatecfg_sandbox
     SANDBOX_CONFIG_GENERATED=true
 }
 
@@ -1030,7 +3280,7 @@ sandbox_start_upsd() {
 
 sandbox_start_drivers() {
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
@@ -1043,30 +3293,40 @@ sandbox_start_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_DRIVERS-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_DRIVERS}"
     fi
-    #upsdrvctl ${ARG_FG} start dummy &
-    dummy-ups -a dummy ${ARG_FG} &
+    # Run one driver instance indirectly, to test the upsdrvctl tool too:
+    execcmd upsdrvctl ${ARG_FG} ${ARG_USER} start dummy &
+    #execcmd dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 ${ARG_FG} &
+        execcmd dummy-ups -a UPS1 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 ${ARG_FG} &
+        execcmd dummy-ups -a UPS2 ${ARG_USER} ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
+
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            log_info "Starting a swarm of ${DUMMY_UPS_SWARM_COUNT} drivers"
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                execcmd dummy-ups -a UPSwarm$N ${ARG_USER} ${ARG_FG} &
+                PIDS_DUMMYUPS_SWARM="$PIDS_DUMMYUPS_SWARM $!"
+                log_debug "Tried to start dummy-ups driver for 'UPSwarm$N' as PID $!"
+            done
+        fi
     fi
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | ${EGREP} '(ups|nut|dummy|'"`basename \"$0\"`"')' | ${EGREP} -v '(ssh|startups|grep)' || true
     fi
 
     if isPidAlive "$PID_DUMMYUPS" \
-    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+    && { [ x"${TOP_SRCDIR}" != x ] && arePidsAlive "$PID_DUMMYUPS1" "$PID_DUMMYUPS2" $PIDS_DUMMYUPS_SWARM \
          || [ x"${TOP_SRCDIR}" = x ] ; } \
     ; then
         # All drivers expected for this environment are already running
@@ -1088,19 +3348,62 @@ testcase_sandbox_start_upsd_alone() {
         EXPECTED_UPSLIST="$EXPECTED_UPSLIST
 UPS1
 UPS2"
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            for N in `seq 1 $DUMMY_UPS_SWARM_COUNT` ; do
+                EXPECTED_UPSLIST="$EXPECTED_UPSLIST
+UPSwarm$N"
+            done
+        fi
         # For windows runners (strip CR if any):
-        EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
+        EXPECTED_UPSLIST="`echo \"$EXPECTED_UPSLIST\" | tr -d '\r'`"
     fi
+
+    EXPECTED_UPSLIST_JSON='[
+  "dummy"'
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON},"'
+  "UPS1",
+  "UPS2"'
+        if [ "$DUMMY_UPS_SWARM_COUNT" -gt 0 ] ; then
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON,"
+            if [ "$DUMMY_UPS_SWARM_COUNT" -gt 1 ] ; then
+                DUMMY_UPS_SWARM_COUNT_1="`expr $DUMMY_UPS_SWARM_COUNT - 1`"
+                for N in `seq 1 $DUMMY_UPS_SWARM_COUNT_1` ; do
+                    EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm$N\","
+                done
+            fi
+            EXPECTED_UPSLIST_JSON="$EXPECTED_UPSLIST_JSON
+  \"UPSwarm${DUMMY_UPS_SWARM_COUNT}\""
+        fi
+    fi
+    EXPECTED_UPSLIST_JSON="${EXPECTED_UPSLIST_JSON}"'
+]'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSLIST_JSON="`echo \"$EXPECTED_UPSLIST_JSON\" | tr -d '\r'`"
 
     log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
     res_testcase_sandbox_start_upsd_alone=0
     runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     # For windows runners (printf can do wonders, so strip CR if any):
     if [ x"${TOP_SRCDIR}" != x ]; then
-        CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
+        CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
         log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    else
+        PASSED="`expr $PASSED + 1`"
+    fi
+
+    runcmd upsc -j -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} or JSON listing failed ($?): $CMDOUT"
+    if [ x"${TOP_SRCDIR}" != x ]; then
+        CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    fi
+    if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST_JSON" ] ; then
+        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc JSON listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -1116,10 +3419,34 @@ UPS2"
         res_testcase_sandbox_start_upsd_alone=1
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
         log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    fi
+
+    log_info "[testcase_sandbox_start_upsd_alone] Query driver state from UPSD by UPSC (driver not running yet) in JSON mode"
+    runcmd upsc -j dummy@localhost:$NUT_PORT && {
+        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
+    }
+    log_debug "[testcase_sandbox_start_upsd_alone] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='{
+  "error": "Driver not connected"
+}'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null && test x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON}"; then
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc JSON query when 'Error: Driver not connected' was expected on stderr and similar in JSON object: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -1134,6 +3461,17 @@ UPS2"
     return $res_testcase_sandbox_start_upsd_alone
 }
 
+EXPECTED_UPSWAIT_JSON='{
+  "ups.status": "WAIT"
+}'
+EXPECTED_UPSWAIT_JSON2='{
+  "driver.state": "updateinfo",
+  "ups.status": "WAIT"
+}'
+# For windows runners (strip CR if any):
+EXPECTED_UPSWAIT_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+EXPECTED_UPSWAIT_JSON2="`echo \"$EXPECTED_UPSDATA_JSON2\" | tr -d '\r'`"
+
 testcase_sandbox_start_upsd_after_drivers() {
     # Historically this is a fallback from testcase_sandbox_start_drivers_after_upsd
     log_info "[testcase_sandbox_start_upsd_after_drivers] Test starting UPSD after drivers"
@@ -1145,7 +3483,7 @@ testcase_sandbox_start_upsd_after_drivers() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSD-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSD}"
     fi
-    upsd ${ARG_FG} &
+    execcmd upsd ${ARG_FG} ${ARG_USER} &
     PID_UPSD="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
@@ -1156,13 +3494,24 @@ testcase_sandbox_start_upsd_after_drivers() {
     sleep 5
 
     COUNTDOWN=90
+    GOT_REPLY=false
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
             *"ups.status: WAIT"*) ;;
-            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
+            *) log_info "[testcase_sandbox_start_upsd_after_drivers] Got output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
         esac
+
+        runcmd upsc -j dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
+            "${EXPECTED_UPSWAIT_JSON}") ;;
+            "${EXPECTED_UPSWAIT_JSON2}") ;;
+            *) log_info "[testcase_sandbox_start_upsd_after_drivers] Got JSON output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+        esac
+
+        if $GOT_REPLY ; then break ; fi
+
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
@@ -1191,6 +3540,7 @@ testcase_sandbox_start_drivers_after_upsd() {
     # 40+(drv)/50+(upsd) sec a DUMPALL is processed (regular 30-sec loop?) -
     # so tightly near a minute until we have sturdy replies.
     COUNTDOWN=90
+    GOT_REPLY=false
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping. May get:
         #   driver.state: updateinfo
@@ -1198,8 +3548,18 @@ testcase_sandbox_start_drivers_after_upsd() {
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
             *"ups.status: WAIT"*) ;;
-            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; break ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
         esac
+
+        runcmd upsc -j dummy@localhost:$NUT_PORT \
+        && case "$CMDOUT" in
+            "${EXPECTED_UPSWAIT_JSON}") ;;
+            "${EXPECTED_UPSWAIT_JSON2}") ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got JSON output:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+        esac
+
+        if $GOT_REPLY ; then break ; fi
+
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
@@ -1218,15 +3578,28 @@ testcase_sandbox_start_drivers_after_upsd() {
         log_info "[testcase_sandbox_start_drivers_after_upsd] Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
             COUNTDOWN=90
-            # TODO: Convert to runcmd()?
-            OUT=""
-            while [ x"$OUT" = x"ups.status: WAIT" ] ; do
-                OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
-                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:"; echo "$OUT"; break; }
+            GOT_REPLY=false
+
+            while [ "$COUNTDOWN" -gt 0 ]; do
+                runcmd upsc $U@localhost:$NUT_PORT ups.status \
+                && case "$CMDOUT" in
+                    WAIT) ;;
+                    *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output for $U:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+                esac
+
+                runcmd upsc -j $U@localhost:$NUT_PORT ups.status \
+                && case "$CMDOUT" in
+                    '"WAIT"') ;; # JSON string is a valid document too
+                    *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got JSON output for $U:" ; echo "$CMDOUT" ; GOT_REPLY=true ;;
+                esac
+
+                if $GOT_REPLY ; then break ; fi
+
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
+
                 # Systemic error, e.g. could not create socket file?
-                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver did not start or respond in time"
+                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver for $U did not start or respond in time"
             done
             if [ "$COUNTDOWN" -le 88 ] ; then
                 log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the $U driver to connect"
@@ -1248,6 +3621,22 @@ testcase_sandbox_upsc_query_model() {
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device: $CMDOUT"
     fi
+
+    log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device in JSON"
+    runcmd upsc -j dummy@localhost:$NUT_PORT device.model || die "[testcase_sandbox_upsc_query_model] upsd does not respond on port ${NUT_PORT} or can not get JSON output ($?): $CMDOUT"
+    log_debug "[testcase_sandbox_upsc_query_model] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='"Dummy UPS"'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    if [ x"$CMDOUT" != x"${EXPECTED_UPSDATA_JSON}" ] ; then
+        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc JSON query when 'device.model: Dummy UPS' was expected: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
+    else
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device in JSON: $CMDOUT"
+    fi
 }
 
 testcase_sandbox_upsc_query_bogus() {
@@ -1258,11 +3647,36 @@ testcase_sandbox_upsc_query_bogus() {
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
-    if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
+    if echo "$CMDERR" | ${GREP} 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
         log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
+    fi
+
+    log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info in JSON"
+    runcmd upsc -j dummy@localhost:$NUT_PORT ups.bogus.value && {
+        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
+    }
+    log_debug "[testcase_sandbox_upsc_query_bogus] got a JSON reply:" "$CMDOUT"
+    EXPECTED_UPSDATA_JSON='{"error": "Variable not supported by UPS"}'
+    EXPECTED_UPSDATA_JSON2='{
+  "error": "Variable not supported by UPS"
+}'
+    # For windows runners (strip CR if any):
+    EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
+    EXPECTED_UPSDATA_JSON2="`echo \"$EXPECTED_UPSDATA_JSON2\" | tr -d '\r'`"
+    CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
+    # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
+    if echo "$CMDERR" | ${GREP} 'Error: Variable not supported by UPS' >/dev/null && test x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON}" -o x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON2}" ; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query in JSON"
+    else
+        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc JSON query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
@@ -1282,13 +3696,23 @@ testcase_sandbox_upsc_query_timer() {
     if [ -n "${NUT_DEBUG_LEVEL_UPSLOG-}" ]; then
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSLOG}"
     fi
-    upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
+    execcmd upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
     PID_UPSLOG="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 
+    # No timeout, no kill - keep them running if requested (trap exit):
+    if [ "$UPSLOG_SWARM_COUNT" -gt 0 ] ; then
+        log_info "Starting a swarm of ${UPSLOG_SWARM_COUNT} clients"
+        for N in `seq 1 $UPSLOG_SWARM_COUNT` ; do
+            execcmd upslog -F -i 1 -N -m "*@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy-$N.log" &
+            PIDS_UPSLOG_SWARM="$PIDS_UPSLOG_SWARM $!"
+            log_debug "Tried to start upslog as PID $!"
+        done
+    fi
+
     # TODO: Any need to convert to runcmd()?
-    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
-    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
+    OUT1="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
+    OUT2="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
     OUT5=""
@@ -1297,13 +3721,13 @@ testcase_sandbox_upsc_query_timer() {
     # (pollfreq) after reading the file before wrapping around
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
-        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
+        OUT3="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
-            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            OUT4="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
             if [ x"$OUT3" = x"$OUT4" ]; then
                 sleep 8
-                OUT5="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+                OUT5="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
             fi
         fi
     fi
@@ -1312,9 +3736,9 @@ testcase_sandbox_upsc_query_timer() {
     kill -15 $PID_UPSLOG 2>/dev/null || true
     wait $PID_UPSLOG || true
 
-    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
-    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    if (${GREP} " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (${GREP} " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && ${GREP} " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | ${GREP} "OL") \
     ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
@@ -1327,28 +3751,269 @@ testcase_sandbox_upsc_query_timer() {
     #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
+PY_SHEBANG=""
+PY_RES=127
 isTestablePython() {
     # We optionally make python module (if interpreter is found):
+    case x"${PY_SHEBANG}" in
+        x"") ;; # Fall through to detection
+        *) return $PY_RES ;; # Probably resolved (if not a comment)?
+    esac
+
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
     ; then
         return 1
     fi
-    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
-    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
-        return 1
+
+    if [ x"${PYTHON}" != x ] ; then
+        PY_SHEBANG="#!${PYTHON}"
+        PY_RES=0
+        return 0
     fi
-    log_debug "=======\nDetected python shebang: '${PY_SHEBANG}'"
-    return 0
+
+    if [ x"${PYTHON_DEFAULT}" != x ] ; then
+        PYTHON="${PYTHON_DEFAULT}"
+        PY_SHEBANG="#!${PYTHON_DEFAULT}"
+        PY_RES=0
+        return 0
+    fi
+
+    PY_SHEBANG="`head -1 \"${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py\"`"
+    PY_RES=3
+    case x"${PY_SHEBANG}" in
+        x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PY_RES=0 ;; # Seems like a full path
+        x"#!"*"/env /"*)   PY_RES=0 ;; # Via /usr/bin/env or similar (macos may have a space before first slash which is beside the standard but oh well)
+        x"#!no")   PY_RES=1 ;; # Explicitly skipped
+        x"#!@")    PY_RES=2 ;; # Unresolved
+        *)         PY_RES=3 ;; # Unexpected twist
+    esac
+    if [ x"${PY_RES}" = x0 ] ; then
+        log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+        PYTHON="`echo \"${PY_SHEBANG}\" | sed 's,^#!,,'`"
+    else
+        log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+    fi
+    return $PY_RES
+}
+
+setenv_ssl_common() {
+    # arg1 = language (perl, python...)
+
+    # Envvars supported by test_nutclient.py(.in); currently OpenSSL (PEM-file) only:
+    # NUT_SSL  = ("true" == os.getenv('NUT_SSL', 'false'))
+    # NUT_FORCESSL = ("true" == os.getenv('NUT_FORCESSL', 'false'))
+    # NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'true') == 'true')
+    # NUT_CAFILE = os.getenv('NUT_CAFILE', None)
+    # NUT_CAPATH = os.getenv('NUT_CAPATH', None)
+    # NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    # NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
+
+    case "${WITH_SSL_SERVER}" in
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
+        OpenSSL|NSS)
+            log_info "Adding client-side (Open)SSL config to $1 env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+
+            NUT_SSL=true
+            NUT_FORCESSL=1
+            export NUT_SSL NUT_FORCESSL
+
+            if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
+                if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
+                    NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
+                    NUT_CERTVERIFY=1
+                    export NUT_CAPATH NUT_CERTVERIFY
+                else if test -s "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem ; then
+                    NUT_CAFILE="${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem
+                    NUT_CERTVERIFY=1
+                    export NUT_CAFILE NUT_CERTVERIFY
+                fi ; fi
+            fi
+            ;;
+    esac
+}
+
+# Executed in subshell context of test cases below
+# Same vars are also used for C++ (cppnit) tests
+setenv_ssl_python() {
+    # NOTE: Python and PERL SSL is backed by OpenSSL;
+    # they can not (currently?) use configs and files
+    # made for e.g. Mozilla NSS.
+    if [ -s "${NUT_CONFPATH}/nutauth-openssl.conf" ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_python() although '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+            setenv_ssl_common "python"
+        else
+            log_info "SKIP setenv_ssl_common(python) because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
+            export NUT_AUTHCONF_FILE
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
+        fi
+    else
+        setenv_ssl_common "python"
+        NUT_IGNORE_AUTHCONF=true
+    fi
+
+    $PYTHON << EOF
+try:
+    import ssl
+    with ssl.create_default_context(cafile="x", capath="y") as tmp:
+        pass
+except AttributeError as ae:
+    print(ae)
+    exit(1)
+except ImportError as me:
+    print(me)
+    exit(1)
+except IOError as ioe:
+    pass
+EOF
+
+    if [ "$?" != 0 ] ; then
+        log_warn "The python interpreter '$PYTHON' can not use ssl module, so we will not FORCESSL in the test"
+        NUT_FORCESSL=0
+        export NUT_FORCESSL
+        if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
+            # Let the test script and eventually module auto-detect undef => can_ssl
+            unset NUT_SSL
+        else
+            NUT_SSL=false
+            export NUT_SSL
+        fi
+    fi
+}
+
+# Executed in subshell context of test cases below
+# Same vars are also used for Python (PyNUTClient) tests
+setenv_ssl_cppnit() {
+    if [ -s "${NUT_CONFPATH}/nutauth.conf" ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_cppnit() although '${NUT_CONFPATH}/nutauth.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+        else
+            log_info "SKIP setenv_ssl_cppnit() because '${NUT_CONFPATH}/nutauth.conf' exists"
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
+
+            return 0
+        fi
+    fi
+
+    case "${WITH_SSL_CLIENT}" in
+        none)
+            NUT_SSL=false
+            NUT_FORCESSL=0
+            NUT_CERTVERIFY=0
+            export NUT_SSL NUT_FORCESSL NUT_CERTVERIFY
+            ;;
+        OpenSSL|NSS)
+            log_info "Adding client-side SSL (${WITH_SSL_CLIENT}) config to C++ env to talk to our ${WITH_SSL_SERVER}-capable upsd"
+
+            NUT_SSL=true
+            NUT_FORCESSL=1
+            export NUT_SSL NUT_FORCESSL
+
+            if [ x"${TESTCERT_PATH_ROOTCA}" != x ] && [ -e "${TESTCERT_PATH_ROOTCA}" ] ; then
+                case "${WITH_SSL_CLIENT}" in
+                OpenSSL)
+                    if { test -s "`ls -1 \"${TESTCERT_PATH_ROOTCA}\"/*.0 | head -1`" ; } >/dev/null 2>/dev/null ; then
+                        NUT_CAPATH="${TESTCERT_PATH_ROOTCA}"
+                        NUT_CERTVERIFY=1
+                        export NUT_CAPATH NUT_CERTVERIFY
+                    else if test -s "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem ; then
+                        NUT_CAFILE="${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem
+                        NUT_CERTVERIFY=1
+                        export NUT_CAFILE NUT_CERTVERIFY
+                    fi ; fi
+
+                    NUT_CERTHOST_ADDR="localhost"
+                    NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
+                    NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
+                    NUT_CERTFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    export NUT_CERTFILE NUT_KEYPASS
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+
+                    # Should not be required when appended to NUT_CERTFILE:
+                    #NUT_KEYFILE="${TESTCERT_PATH_CLIENT}/upsmon.pem"
+                    #export NUT_KEYFILE
+                    ;;
+                NSS)
+                    NUT_CERTVERIFY=1
+                    export NUT_CERTVERIFY
+
+                    NUT_CERTSTORE_PATH="${TESTCERT_PATH_CLIENT}"
+                    NUT_KEYPASS="${TESTCERT_CLIENT_PASS}"
+                    NUT_CERTSTORE_PREFIX=""
+                    NUT_CERTHOST_ADDR="localhost"
+                    NUT_CERTHOST_NAME="${TESTCERT_SERVER_NAME}"
+                    NUT_CERTIDENT_NAME="${TESTCERT_CLIENT_NAME}"
+                    export NUT_CERTSTORE_PATH NUT_KEYPASS NUT_CERTSTORE_PREFIX
+                    export NUT_CERTHOST_ADDR NUT_CERTHOST_NAME NUT_CERTIDENT_NAME
+                    ;;
+                esac
+
+                # e.g. OpenSSL too old for us to check certs with current code
+                if [ x"${WITH_SSL_CLIENT_CERTIDENT}" = x"none" ] ; then
+                    log_warn "Not checking for CERTIDENT nickname, ability not built into binaries"
+                    NUT_CERTIDENT_NAME=""
+                fi
+
+                if [ x"${WITH_SSL_CLIENT_CERTHOST}" = x"none" ] || [ x"${WITH_SSL_CLIENT_CERTHOST}" = x"addr" ] ; then
+                    log_warn "Not checking for CERTHOST nickname, ability not built into binaries"
+                    # and certificate verification
+                    #NUT_CERTVERIFY=0
+                    NUT_CERTHOST_NAME=""
+                fi
+            fi
+            ;;
+    esac
 }
 
 testcase_sandbox_python_without_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_without_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
     log_separator
     log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
-    if ( unset NUT_USER || true
-         unset NUT_PASS || true
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1360,7 +4025,11 @@ testcase_sandbox_python_without_credentials() {
 }
 
 testcase_sandbox_python_with_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_with_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     # That script says it expects data/evolution500.seq (as the UPS1 dummy)
     # but the dummy data does not currently let issue the commands and
@@ -1371,7 +4040,11 @@ testcase_sandbox_python_with_credentials() {
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1383,7 +4056,11 @@ testcase_sandbox_python_with_credentials() {
 }
 
 testcase_sandbox_python_with_upsmon_credentials() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_python_with_upsmon_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
@@ -1391,7 +4068,11 @@ testcase_sandbox_python_with_upsmon_credentials() {
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
         export NUT_USER NUT_PASS
-        "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
+        setenv_ssl_python
+        if [ -n "${NUT_DEBUG_LEVEL_PYTHON-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PYTHON}"
+        fi
+        $PYTHON "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1403,10 +4084,296 @@ testcase_sandbox_python_with_upsmon_credentials() {
 }
 
 testcases_sandbox_python() {
-    isTestablePython || return 0
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_without_credentials testcase_sandbox_python_with_credentials testcase_sandbox_python_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 3`"
+        return 0
+    }
+
     testcase_sandbox_python_without_credentials
     testcase_sandbox_python_with_credentials
     testcase_sandbox_python_with_upsmon_credentials
+}
+
+####################################
+
+setenv_ssl_perl() {
+    # NOTE: Python and PERL SSL is backed by OpenSSL;
+    # they can not (currently?) use configs and files
+    # made for e.g. Mozilla NSS.
+    if [ -s "${NUT_CONFPATH}/nutauth-openssl.conf" ] ; then
+        if [ x"${NIT_REQUIRE_SETENV_SSL}" = xtrue ]; then
+            log_info "Proceeding with setenv_ssl_perl() although '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            NUT_IGNORE_AUTHCONF=true
+            export NUT_IGNORE_AUTHCONF
+            setenv_ssl_common "perl"
+        else
+            log_info "SKIP setenv_ssl_common(perl) because '${NUT_CONFPATH}/nutauth-openssl.conf' exists"
+            NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl.conf"
+            export NUT_AUTHCONF_FILE
+
+            case "${WITH_SSL_SERVER}" in
+                OpenSSL|NSS)
+                    NUT_SSL=true
+                    export NUT_SSL
+                    ;;
+                none)
+                    NUT_SSL=false
+                    export NUT_SSL
+                    ;;
+            esac
+
+            # See detailed comments below.
+            case "${TESTCERT_PATH_ROOTCA}" in
+                ?":\\"*|?":/"*)
+                    NUT_AUTHCONF_FILE="${NUT_CONFPATH}/nutauth-openssl-perl-win.conf"
+                    log_info "Prepare a separate '${NUT_AUTHCONF_FILE}' for this platform"
+                    while read LINE ; do
+                        case "${LINE}" in
+                            *=*)
+                                KEY="`echo \"${LINE}\" | awk -F= '{print $1}'`"
+                                VAL="`echo \"${LINE}\" | awk -F= '{print $2}' | sed -e 's,^ *\"\(.*\)\"$,\1,'`"
+                                case "${VAL}" in
+                                    ?":\\"*|?":/"*)
+                                        VAL_ORIG="${VAL}"
+                                        _VAL="`realpath \"${VAL}\"`" && [ -n "${_VAL}" ] && VAL="${_VAL}" || true
+
+                                        case "${VAL}" in
+                                            ?":\\"*|?":/"*)
+                                                _VAL="`realpath \"${VAL}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_VAL}" ] && VAL="${_VAL}" || true
+                                                ;;
+                                        esac
+
+                                        if [ x"${VAL}" != x ] && [ x"${VAL}" != x"${VAL_ORIG}" ] ; then
+                                            echo "${KEY} = \"${VAL}\""
+                                        else
+                                            echo "${LINE}"
+                                        fi
+                                        ;;
+                                    *)  echo "${LINE}" ;;
+                                esac
+                                ;;
+                            *)  echo "${LINE}" ;;
+                        esac
+                    done < "${NUT_CONFPATH}/nutauth-openssl.conf" > "${NUT_AUTHCONF_FILE}"
+                    ;;
+            esac
+        fi
+    else
+        setenv_ssl_common "perl"
+        NUT_IGNORE_AUTHCONF=true
+    fi
+
+    if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
+        case "${NUT_CAPATH}" in
+            ?":\\"*|?":/"*)
+                # Perl uses a platform-dependent PATH separator,
+                # however in mingw/msys2 is uses ":" which clashes
+                # with "C:\..." that Python insists on in this var.
+                _NUT_CAPATH="`realpath \"${NUT_CAPATH}\"`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+                ;;
+        esac
+
+        # Retry another way if that failed to remove the colon:
+        case "${NUT_CAPATH}" in
+            ?":\\"*|?":/"*)
+                _NUT_CAPATH="`realpath \"${NUT_CAPATH}\" | sed -e 's,^\(.\):/,/\1/,'`" && [ -n "${_NUT_CAPATH}" ] && NUT_CAPATH="${_NUT_CAPATH}" || true
+                ;;
+        esac
+    fi
+
+    if isTestablePerl && [ -n "${PERL}" ] ; then
+        $PERL -e "use IO::Socket::SSL;" || {
+            log_warn "The perl interpreter '$PERL' can not use IO::Socket::SSL module, so we will not FORCESSL in the test"
+            NUT_FORCESSL=0
+            export NUT_FORCESSL
+            if [ x"${NUT_IGNORE_AUTHCONF}" = xtrue ] ; then
+                # Let the test script and eventually module auto-detect undef => can_ssl
+                unset NUT_SSL
+            else
+                NUT_SSL=false
+                export NUT_SSL
+            fi
+        }
+    fi
+
+    # Numeric result of equality (1) inverted vs shell success code (0), so `ne`:
+    if $PERL -e 'exit ( $^O ne "darwin" );' ; then
+        # TODO: Fix https://github.com/networkupstools/nut/issues/3404
+        log_warn "Disabling CERTVERIFY on darwin platform"
+        NUT_CERTVERIFY=0
+        export NUT_CERTVERIFY
+        #unset NUT_CERTVERIFY
+
+        if [ x"${NUT_IGNORE_AUTHCONF}" != xtrue ] && [ x"${NUT_AUTHCONF_FILE}" != x ] && [ -s "${NUT_AUTHCONF_FILE}" ] ; then
+            NUT_AUTHCONF_FILE_X="${NUT_CONFPATH}/nutauth-openssl-perl-darwin.conf"
+            sed 's,\(CERTVERIFY =\) *1,\1 0,' < "${NUT_AUTHCONF_FILE}" > "${NUT_AUTHCONF_FILE_X}" \
+            && NUT_AUTHCONF_FILE="${NUT_AUTHCONF_FILE_X}"
+        fi
+    fi
+
+    if [ x"${NUT_DEBUG_SSL_PERL}" = x ] ; then
+        log_info "Neutering NUT_DEBUG_SSL_PERL to make less noise by default"
+        NUT_DEBUG_SSL_PERL=-1
+        export NUT_DEBUG_SSL_PERL
+    fi
+}
+
+PL_SHEBANG=""
+PL_RES=127
+isTestablePerl() {
+    # Currently we use any PERL on path and do not detect it in configure script:
+    case x"${PL_SHEBANG}" in
+        x"") ;; # Fall through to detection
+        *) return $PL_RES ;; # Probably resolved (if not a comment)?
+    esac
+
+    if [ x"${TOP_SRCDIR}" = x ] \
+    || [ ! -x "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl" ] \
+    ; then
+        return 1
+    fi
+
+    if [ ! -s "${TOP_BUILDDIR}/scripts/perl/UPS/Nut.pm" ] \
+    ; then
+        return 1
+    fi
+
+    if [ x"${PERL}" != x ] ; then
+        PL_SHEBANG="#!${PERL}"
+        PL_RES=0
+        return 0
+    fi
+
+    PL_SHEBANG="`head -1 \"${TOP_SRCDIR}/scripts/perl/test_nutclient.pl\"`"
+    PL_RES=3
+    case x"${PL_SHEBANG}" in
+        x"#!"/*|x"#!"?":\\"*|x"#!"?":/"*) PL_RES=0 ;; # Seems like a full path
+        x"#!no")   PL_RES=1 ;; # Explicitly skipped
+        x"#!@")    PL_RES=2 ;; # Unresolved
+        *)         PL_RES=3 ;; # Unexpected twist
+    esac
+    if [ x"${PL_RES}" = x0 ] ; then
+        log_debug "=======\nDetected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
+        # Currently we use any PERL on path and do not detect it in configure script,
+        # so the hard-coded value may be bogus:
+        PERL="`echo \"${PL_SHEBANG}\" | sed 's,^#!,,'`"
+        if [ -x "$PERL" ] ; then : ; else PERL="`command -v perl`" ; fi
+        if [ -n "$PERL" ] && [ -x "$PERL" ] ; then : ; else PL_RES=3 ; fi
+    else
+        log_error "[isTestablePerl] Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
+    fi
+
+    PERL_OPTS_INC="-I${TOP_BUILDDIR}/scripts/perl"
+    PERL_OPTS_DEBUG=''
+    if [ x"$NIT_DEBUG_PERL" = xtrue ] ; then
+        if [ -d "${HOME}/perl5/lib/perl5" ] ; then
+            PERL_OPTS_DEBUG="-I${HOME}/perl5/lib/perl5"
+        fi
+        $PERL $PERL_OPTS_DEBUG -e 'use Devel::DumpTrace;' && PERL_OPTS_DEBUG="$PERL_OPTS_DEBUG -d:DumpTrace" \
+        || { $PERL $PERL_OPTS_DEBUG -e 'use Devel::Trace;' && PERL_OPTS_DEBUG="$PERL_OPTS_DEBUG -d:Trace" ; } \
+        || { log_warn "Could not find Devel::DumpTrace nor Devel::Trace" ; unset PERL_OPTS_DEBUG ; }
+    fi
+
+    return $PL_RES
+}
+
+testcase_sandbox_perl_without_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_without_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
+    log_separator
+    log_info "[testcase_sandbox_perl_without_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) without login credentials"
+    if (
+        unset NUT_USER || true
+        unset NUT_PASS || true
+        setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_without_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_without_credentials"
+    fi
+}
+
+testcase_sandbox_perl_with_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_with_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
+    # That script says it expects data/evolution500.seq (as the UPS1 dummy)
+    # but the dummy data does not currently let issue the commands and
+    # setvars tested from perl script.
+    log_separator
+    log_info "[testcase_sandbox_perl_with_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) with login credentials"
+    if (
+        NUT_USER='admin'
+        NUT_PASS="${TESTPASS_ADMIN}"
+        export NUT_USER NUT_PASS
+        setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_with_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_credentials"
+    fi
+}
+
+testcase_sandbox_perl_with_upsmon_credentials() {
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
+    log_separator
+    log_info "[testcase_sandbox_perl_with_upsmon_credentials] Call Perl module test suite: UPS::Nut (NUT Perl bindings) with upsmon role login credentials"
+    if (
+        NUT_USER='dummy-admin'
+        NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
+        export NUT_USER NUT_PASS
+        setenv_ssl_perl
+        if [ -n "${NUT_DEBUG_LEVEL_PERL-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_PERL}"
+        fi
+        $PERL $PERL_OPTS_INC $PERL_OPTS_DEBUG "${TOP_SRCDIR}/scripts/perl/test_nutclient.pl"
+    ) ; then
+        log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_perl_with_upsmon_credentials] UPS::Nut complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_upsmon_credentials"
+    fi
+}
+
+testcases_sandbox_perl() {
+    isTestablePerl && [ -n "${PERL}" ] || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_perl_without_credentials testcase_sandbox_perl_with_credentials testcase_sandbox_perl_with_upsmon_credentials"
+        SKIPPED="`expr ${SKIPPED} + 3`"
+        return 0
+    }
+
+    testcase_sandbox_perl_without_credentials
+    testcase_sandbox_perl_with_credentials
+    testcase_sandbox_perl_with_upsmon_credentials
 }
 
 ####################################
@@ -1423,13 +4390,21 @@ isTestableCppNIT() {
 }
 
 testcase_sandbox_cppnit_without_creds() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_without_creds"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_without_creds] Call libnutclient test suite: cppnit without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
-        "${TOP_BUILDDIR}/tests/cppnit"
+         setenv_ssl_cppnit
+         if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+         fi
+         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -1441,7 +4416,11 @@ testcase_sandbox_cppnit_without_creds() {
 }
 
 testcase_sandbox_cppnit_simple_admin() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_simple_admin"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_simple_admin] Call libnutclient test suite: cppnit with login credentials: simple admin"
@@ -1457,6 +4436,10 @@ testcase_sandbox_cppnit_simple_admin() {
         fi
         unset NUT_PRIMARY_DEVICE
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
+        setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
@@ -1469,7 +4452,11 @@ testcase_sandbox_cppnit_simple_admin() {
 }
 
 testcase_sandbox_cppnit_upsmon_primary() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_upsmon_primary"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_upsmon_primary] Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
@@ -1479,6 +4466,10 @@ testcase_sandbox_cppnit_upsmon_primary() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
@@ -1491,7 +4482,11 @@ testcase_sandbox_cppnit_upsmon_primary() {
 }
 
 testcase_sandbox_cppnit_upsmon_master() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_upsmon_master"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_cppnit_upsmon_master] Call libnutclient test suite: cppnit with login credentials: upsmon-master"
@@ -1501,6 +4496,10 @@ testcase_sandbox_cppnit_upsmon_master() {
         NUT_PRIMARY_DEVICE='dummy'
         unset NUT_SETVAR_DEVICE
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
+        setenv_ssl_cppnit
+        if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
+        fi
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
@@ -1513,7 +4512,12 @@ testcase_sandbox_cppnit_upsmon_master() {
 }
 
 testcases_sandbox_cppnit() {
-    isTestableCppNIT || return 0
+    isTestableCppNIT || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_cppnit_without_creds testcase_sandbox_cppnit_upsmon_primary testcase_sandbox_cppnit_upsmon_master testcase_sandbox_cppnit_simple_admin"
+        SKIPPED="`expr ${SKIPPED} + 4`"
+        return 0
+    }
+
     testcase_sandbox_cppnit_without_creds
     testcase_sandbox_cppnit_upsmon_primary
     testcase_sandbox_cppnit_upsmon_master
@@ -1535,7 +4539,11 @@ isTestableNutScanner() {
 }
 
 testcase_sandbox_nutscanner_list() {
-    isTestableNutScanner || return 0
+    isTestableNutScanner || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_nutscanner_list"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
 
     log_separator
     log_info "[testcase_sandbox_nutscanner_list] Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
@@ -1544,6 +4552,10 @@ testcase_sandbox_nutscanner_list() {
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
     export LD_LIBRARY_PATH
+
+    if [ -n "${NUT_DEBUG_LEVEL_NUTSCAN-}" ]; then
+        NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_NUTSCAN}"
+    fi
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
@@ -1565,14 +4577,14 @@ testcase_sandbox_nutscanner_list() {
     # the scanned buses (serial, snmp, usb, etc.)
     if (
         test -n "$CMDOUT" \
-        && echo "$CMDOUT" | grep -E '^\[nutdev-nut1\]$' \
-        && echo "$CMDOUT" | grep 'port = "dummy@' \
+        && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut1\]$' \
+        && echo "$CMDOUT" | ${GREP} 'port = "dummy@' \
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
-            echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
+            echo "$CMDOUT" | ${EGREP} 'dummy@.*'":${NUT_PORT}" \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
                 return 1
@@ -1582,10 +4594,10 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
-            echo "$CMDOUT" | grep -E '^\[nutdev-nut2\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS1@' \
-            && echo "$CMDOUT" | grep -E '^\[nutdev-nut3\]$' \
-            && echo "$CMDOUT" | grep 'port = "UPS2@' \
+            echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut2\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS1@' \
+            && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut3\]$' \
+            && echo "$CMDOUT" | ${GREP} 'port = "UPS2@' \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
                 return 1
@@ -1595,9 +4607,9 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             PORTS_WANT=1
         else
-            PORTS_WANT=3
+            PORTS_WANT="`expr 3 + $DUMMY_UPS_SWARM_COUNT`"
         fi
-        PORTS_SEEN="`echo "$CMDOUT" | grep -Ec 'port *='`"
+        PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 
         if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
             log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
@@ -1607,7 +4619,7 @@ testcase_sandbox_nutscanner_list() {
         log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
+        if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
             log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
             log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
@@ -1615,10 +4627,17 @@ testcase_sandbox_nutscanner_list() {
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
     fi
+
+    NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
 }
 
 testcases_sandbox_nutscanner() {
-    isTestableNutScanner || return 0
+    isTestableNutScanner || {
+        SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_nutscanner_list"
+        SKIPPED="`expr ${SKIPPED} + 1`"
+        return 0
+    }
+
     testcase_sandbox_nutscanner_list
 }
 
@@ -1638,7 +4657,7 @@ upsmon_start_loop() {
         # but the sample script honours NUT_DEBUG_LEVEL_UPSSCHED if set
         NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSMON}"
     fi
-    upsmon ${ARG_FG} &
+    execcmd upsmon ${ARG_FG} ${ARG_USER} &
     PID_UPSMON="$!"
     NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_ORIG}"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
@@ -1665,6 +4684,7 @@ sandbox_start_upsmon_master() {
 
     sandbox_generate_configs
     generatecfg_upsmon_master "$@"
+    generatecfg_upsmon_add_SSL
 
     log_info "Starting UPSMON as master for sandbox"
 
@@ -1680,6 +4700,7 @@ testgroup_sandbox() {
     testcase_sandbox_upsc_query_timer
     testcases_sandbox_python
     testcases_sandbox_cppnit
+    testcases_sandbox_perl
     testcases_sandbox_nutscanner
 
     log_separator
@@ -1690,6 +4711,15 @@ testgroup_sandbox_python() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_python
+
+    log_separator
+    sandbox_forget_configs
+}
+
+testgroup_sandbox_perl() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_perl
 
     log_separator
     sandbox_forget_configs
@@ -1736,9 +4766,46 @@ testgroup_sandbox_upsmon_master() {
 
 case "${NIT_CASE}" in
     isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
-    cppnit) testgroup_sandbox_cppnit ;;
-    python) testgroup_sandbox_python ;;
-    nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
+    cppnit)
+        if isTestableCppNIT ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_cppnit"
+            testgroup_sandbox_cppnit
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    python)
+        if isTestablePython && [ -n "${PYTHON}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_python"
+            testgroup_sandbox_python
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    perl)
+        if isTestablePerl && [ -n "${PERL}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_perl"
+            testgroup_sandbox_perl
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
+    nutscanner|nut-scanner)
+        if isTestableNutScanner && [ -n "${PERL}" ] ; then
+            log_separator
+            log_info "Running NIT_CASE='$NIT_CASE': testgroup_sandbox_nutscanner"
+            testgroup_sandbox_nutscanner
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE:missing-prerequisites"
+        fi
+        ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
         log_warn "========================================================"
         log_warn "You asked to run just a specific testcase* or testgroup*"
@@ -1747,6 +4814,7 @@ case "${NIT_CASE}" in
         log_warn "========================================================"
         # NOTE: Not quoted, can have further arguments
         # e.g. NIT_CASE="testgroup_sandbox_upsmon_master 1"
+        log_info "Running NIT_CASE='$NIT_CASE'"
         eval ${NIT_CASE}
         ;;
     generatecfg_*|is*)
@@ -1758,6 +4826,7 @@ case "${NIT_CASE}" in
         log_warn "Notably, NUT_CONFPATH='$NUT_CONFPATH' now"
         log_warn "========================================================"
         # NOTE: Not quoted, can have further arguments
+        log_info "Running NIT_CASE='$NIT_CASE'"
         eval ${NIT_CASE}
         if [ $? = 0 ] ; then
             PASSED="`expr $PASSED + 1`"
@@ -1765,7 +4834,9 @@ case "${NIT_CASE}" in
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE"
         fi
-        unset DEBUG_SLEEP
+        case "${NIT_CASE}" in
+            is*) unset DEBUG_SLEEP ;;
+        esac
         ;;
     "") # Default test groups:
         testgroup_upsd_invalid_configs
@@ -1776,9 +4847,12 @@ case "${NIT_CASE}" in
 esac
 
 log_separator
-log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED"
+log_info "OVERALL: PASSED=$PASSED FAILED=$FAILED SKIPPED=$SKIPPED"
 if [ -n "$FAILED_FUNCS" ]; then
-    for F in $FAILED_FUNCS ; do echo "$F" ; done | sort | uniq -c
+    for F in $FAILED_FUNCS ; do echo "[F] $F" ; done | sort | uniq -c
+fi
+if [ -n "$SKIPPED_FUNCS" ]; then
+    for F in $SKIPPED_FUNCS ; do echo "[S] $F" ; done | sort | uniq -c
 fi
 
 # Allow to leave the sandbox daemons running for a while,
@@ -1789,15 +4863,15 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     fi
 
     if [ -z "$PID_UPSSCHED" ] && [ -s "$NUT_PIDPATH/upssched.pid" ] ; then
-        PID_UPSSCHED="`head -1 "$NUT_PIDPATH/upssched.pid"`"
+        PID_UPSSCHED="`head -1 \"$NUT_PIDPATH/upssched.pid\"`"
     fi
 
     log_separator
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
-        V="`echo "$V" | tr -d "'"`"
+    set | ${EGREP} '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+        V="`echo \"$V\" | tr -d \"'\"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
             printf "%s='%s'\nexport %s\n" "$K" "$V" "$K"

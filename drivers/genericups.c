@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.41"
+#define DRIVER_VERSION	"1.43"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -180,6 +180,22 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	upsdebugx(4, "%s: exit", __func__);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_initinfo(void)
 {
 	char	*v;
@@ -194,7 +210,7 @@ void upsdrv_initinfo(void)
 	}
 
 	/*
-	 User wants to override the input signal definitions. See also upsdrv_initups().
+	 * User wants to override the input signal definitions. See also upsdrv_initups().
 	 */
 	if ((v = getval("OL")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_ol, &upstab[upstype].val_ol);
@@ -231,7 +247,8 @@ void upsdrv_updateinfo(void)
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
 		ser_comm_fail("Status read failed");
-		dstate_datastale();
+		if (!reconnect_ups())
+			dstate_datastale();
 		return;
 	}
 
@@ -319,7 +336,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	flags = upstab[upstype].line_sd;
@@ -328,7 +345,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "No shutdown command defined for this model!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	if (flags == TIOCM_ST) {
@@ -338,7 +355,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 # endif
 #else	/* WIN32 */
 		NUT_WIN32_INCOMPLETE_DETAILED("Need to send a BREAK at this point, but not addressed for WIN32 yet");
@@ -365,7 +382,7 @@ void upsdrv_shutdown(void)
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
-	        return;
+		return;
 	}
 
 	if (getval("sdtime")) {
@@ -408,6 +425,11 @@ void upsdrv_help(void)
 	listtypes();
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "upstype", "Set UPS type (required)");
@@ -432,6 +454,12 @@ void upsdrv_initups(void)
 
 	upsfd = ser_open(device_path);
 
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	if (tcgetattr(upsfd, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 	}
@@ -444,10 +472,10 @@ void upsdrv_initups(void)
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions?
-	 This must be done here, since we might go to upsdrv_shutdown()
-	 immediately. Input signal definition override is handled in
-	 upsdrv_initinfo()
+	 * See if the user wants to override the output signal definitions?
+	 * This must be done here, since we might go to upsdrv_shutdown()
+	 * immediately. Input signal definition override is handled in
+	 * upsdrv_initinfo()
 	 */
 	if ((v = getval("CP")) != NULL) {
 		parse_output_signals(v, &upstab[upstype].line_norm);
@@ -470,5 +498,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

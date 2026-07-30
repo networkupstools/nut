@@ -60,6 +60,7 @@
 #define YDN23_H_SEEN 1
 
 #include "serial.h"
+#include "nut_stdint.h"
 
 #ifndef htole16
 # ifdef WORDS_BIGENDIAN
@@ -238,7 +239,7 @@ static inline void ydn23_frame_init(
 {
 	if (dlen > YDN23_FRAME_INFO_SIZE) {
 		upslogx(LOG_WARNING,
-			"frame not big enough, required %d got %zu, truncated",
+			"frame not big enough, required %d got %" PRIuSIZE ", truncated",
 			YDN23_FRAME_INFO_SIZE, dlen);
 		dlen = YDN23_FRAME_INFO_SIZE;
 	}
@@ -280,8 +281,9 @@ static inline int ydn23_frame_send(TYPE_FD_SER fd, struct ydn23_frame *frame)
 		}
 	}
 
-	ret = ser_send_buf(fd, frame->CHKSUM,
-			   ((char *) &frame->infolen) - frame->CHKSUM);
+	ret = ser_send_buf(
+		fd, frame->CHKSUM,
+		((char *) &frame->infolen) - frame->CHKSUM);
 	if (ret <= 0) {
 		upslogx(LOG_WARNING, "ydn23_frame_send: %s", ret ? strerror(errno) : "timeout");
 		return ret;

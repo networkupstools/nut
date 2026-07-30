@@ -14,6 +14,8 @@
 /_install_pkgprotodir/
 Makefile
 Makefile.in
+tags
+.all.*-generated.timestamp
 
 ## Parent directory only
 /aclocal.m4
@@ -21,6 +23,7 @@ Makefile.in
 /autom4te.cache/
 /ChangeLog
 /ChangeLog.adoc
+/compile
 /config.guess
 /config.log
 /config.log.inplace-outer
@@ -49,6 +52,7 @@ Makefile.in
 /VERSION_FORCED
 /VERSION_FORCED_SEMVER
 /install-sh
+/.libs-dev-PATH
 /libtool
 /ltmain.sh
 /missing

@@ -68,13 +68,14 @@ values, and multiply by 3.
 
 *FINALDELAY* 'seconds'::
 
-When running in primary mode, upsmon waits this long after sending the
-NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
-runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
+When handling a forced shutdown (FSD) due to a critical UPS state or
+explicit user signal, `upsmon` waits this long after sending the
+NOTIFY_SHUTDOWN message to warn the users.  After the timer elapses,
+it then runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
 +
-If you need to let your users do something in between those events,
-increase this number.  Remember, at this point your UPS battery is
-almost depleted, so don't make this too big.
+If you need to let your users (or the NOTIFYCMD script) do something
+in between those events, increase this number.  Remember, at this point
+your UPS battery is almost depleted, so don't make this too big.
 +
 Alternatively, you can set this very low so you don't wait around when
 it's time to shut down.  Some UPSes don't give much warning for low
@@ -212,11 +213,11 @@ same as when `max=1`), and a zero value means to never repeat the message
 Note that this throttle only applies to one latest-active error state per
 monitored device.
 
-*NOTIFYCMD* 'command'::
+*NOTIFYCMD* 'command' ['arg1' 'arg2' ...]::
 
 upsmon calls this to send messages when things happen.
 +
-This command is called with the full text of the message as one
+This command is called with the full text of the message as one last
 argument.  The environment string NOTIFYTYPE will contain the type
 string of whatever caused this event to happen.
 +
@@ -229,15 +230,22 @@ NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 Making this some sort of shell script might not be a bad idea.  For
 more information and ideas, see docs/scheduling.txt
 +
-Remember, this command also needs to be one element in the configuration file,
-so if your command has spaces, then wrap it in quotes.
+The first (possibly only) token of the value is interpreted as a complete
+path to an externally stored executable script (e.g. not an inline scriptlet)
+or program file without further arguments (which may be passed in explicitly
+# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
+Remember, this command also needs to be one element in the configuration
+file, so if your command path has spaces, then wrap it in quotes.
 +
-+NOTIFYCMD "/path/to/script --foo --bar"+
+------
+NOTIFYCMD "/path to/script"
+NOTIFYCMD "/path to/script" "--debug" "-v"
+------
 +
-This script is run in the background--that is, upsmon forks before it
-calls out to start it.  This means that your NOTIFYCMD may have multiple
-instances running simultaneously if a lot of stuff happens all at once.
-Keep this in mind when designing complicated notifiers.
+This script is run in the background -- that is, linkman:upsmon[8] normally
+forks before it calls out to start it.  This means that your NOTIFYCMD may
+have multiple instances running simultaneously if a lot of stuff happens all
+at once. Keep this in mind when designing complicated notifiers.
 
 *NOTIFYMSG* 'type' 'message'::
 
@@ -270,6 +278,8 @@ COMMOK;; Communications established with the UPS
 COMMBAD;; Communications lost to the UPS
 
 SHUTDOWN;; The system is being shutdown
+
+SHUTDOWN_HOSTSYNC;; This primary system began the shutdown, and is waiting for secondaries
 
 REPLBATT;; The UPS battery is bad and needs to be replaced
 
@@ -361,6 +371,10 @@ Second, there is a point of diminishing returns if you set it too low.
 While upsd normally has all of the data available to it instantly, most
 drivers only refresh the UPS status once every 2 seconds.  Polling any
 more than that usually doesn't get you the information any faster.
++
+NOTE: This setting is different from a `pollfreq` supported by some of
+the NUT driver programs, such as linkman:usbhid-ups[8] (about how often
+the driver polls a particular device).
 
 *POLLFREQALERT* 'seconds'::
 
@@ -384,7 +398,8 @@ may be called for this effect, if NUT configuration files remain readable
 at that point (file systems mostly unmounted or changed to read-only).
 +
 Historically it was often `/etc/killpower` but nowadays you may want it
-in a temporary filesystem (e.g. under `/run` or `/run/nut` location).
+in a temporary filesystem (e.g. under `(/var)/run` or even a dedicated
+`(/var)/run/nut` location).
 +
 Note that double backslashes must be used for Windows paths, e.g.
 `C:\\Temp\\killpower` (modern Windows may also accept forward slashes
@@ -421,7 +436,7 @@ supplies in such cases, and a zero makes the effect of detected "OFF" state
 immediate. Built-in default value is 30 (seconds), to put an "OFF" state into
 effect (decrease known-fed supplies count) if it persists for this many seconds.
 +
-NOTE: so far we support the device reporting an "OFF" state which usually
+NOTE: So far we support the device reporting an "OFF" state which usually
 means completely un-powering the load; a bug-tracker issue was logged to
 design similar support for just some manageable outlets or outlet groups.
 
@@ -489,27 +504,46 @@ state as not volatile and make it treat the `ALARM` status as any other.
 
 *RUN_AS_USER* 'username'::
 
-upsmon normally runs the bulk of the monitoring duties under another user
-ID after dropping root privileges.  On most systems this means it runs
-as "nobody", since that's the default from compile-time.
+upsmon normally splits into two processes, keeping a small part which remains
+owned by `root` to initiate the system shutdown by calling `SHUTDOWNCMD`
+when/if the time comes, and runs the bulk of the monitoring duties under
+another user ID after dropping root privileges.  On most custom-built systems
+this means it runs as "nobody", since that's the default from compile-time;
+packages often deliver a "nut" or "ups" user to run NUT service daemons.
 +
-The catch is that "nobody" can't read your upsmon.conf, since by default
-it is installed so that only root can open it.  This means you won't be
-able to reload the configuration file, since it will be unavailable.
+The catch is that the system-default "nobody" can't read your upsmon.conf
+file, since by default it is installed so that only `root` can open it
+(because this file can contain sensitive data like remote NUT data server
+credentials). This means you won't be able to reload the configuration file,
+since it will be unavailable to the unprivileged part of the `upsmon` daemon.
 +
 The solution is to create a new user just for upsmon, then make it run
-as that user.  I suggest "nutmon", but you can use anything that isn't
-already taken on your system.  Just create a regular user with no special
-privileges and an impossible password.
+as that user.  It may be the same account as that used for the NUT drivers
+or data server, but does not have to be.  On systems with higher concerns
+about security and privilege separation we suggest "nutmon", but you can
+use anything that isn't already taken on your system.  Just create a regular
+user with no special privileges and an impossible password.
 +
 Then, tell upsmon to run as that user, and make `upsmon.conf` readable by it.
 Your reloads will work, and your config file will stay secure.
 +
 This file should not be writable by the upsmon user, as it would be
-possible to exploit a hole, change the SHUTDOWNCMD to something
-malicious, then wait for upsmon to be restarted.
+possible to exploit a hole, change the `SHUTDOWNCMD` to something
+malicious, then wait for upsmon to be restarted.  So typically you
+would also create a group for NUT daemons (which the user would be
+a member of) and allow that group read-only access to `root`-owned
+configuration files.
++
+That said, other variants may be possible -- e.g. run all of `upsmon` as
+a single process initially started and owned by `nut` and call a shutdown
+script prefixed by `sudo`, `pfexec` or other RBAC tools. This however adds
+more "moving parts" and fragility (e.g. the `sudoers` settings may live in
+LDAP, and that server could be unavailable at shutdown when the rack is half
+powered off, at just the time you need it here), and is not available on
+all platforms -- so such setups are something users explore on their own
+so far (we would welcome posts on NUT Wiki or links to blogs though).
 
-*SHUTDOWNCMD* 'command'::
+*SHUTDOWNCMD* 'command' ['arg1' 'arg2' ...]::
 
 upsmon runs this command when the system needs to be brought down.  If
 it is a secondary, it will do that immediately whenever the current
@@ -518,11 +552,24 @@ overall power value drops below the MINSUPPLIES value above.
 When upsmon is a primary, it will allow any secondaries to log out before
 starting the local shutdown procedure.
 +
-Note that the command needs to be one element in the config file.  If
-your shutdown command includes spaces, then put it in quotes to keep it
-together, i.e.:
-
+Note that historically (before NUT v2.8.6 release) the command needed to
+be one element in the config file.  If your shutdown command included spaces,
+then you should have put it in quotes to keep it together, i.e.:
++
+------
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
+------
++
+Now unlike some others, this directive still allows to pass both the command
+and its arguments as a single quoted token, but it also supports a multi-token
+syntax to pass each argument as a separate token.
+These lines should be equivalent with NUT v2.8.6 or newer:
++
+------
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+SHUTDOWNCMD "/sbin/shutdown" "-h" "+0"
+SHUTDOWNCMD /sbin/shutdown -h +0
+------
 
 *SHUTDOWNEXIT* 'boolean|number'::
 
@@ -554,9 +601,10 @@ or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
 and exiting the daemon. Zero means immediate exit (default), negative
 values mean never exiting on its own accord.
 
-*CERTPATH* 'certificate file or database'::
+*CERTPATH* 'certificate database'::
 
-When compiled with SSL support, you can enter the certificate path here.
+When compiled with SSL support, you can enter the certificate database
+path here.
 +
   With NSS:;;
     Certificates are stored in a dedicated database (data split in 3 files).
@@ -566,24 +614,58 @@ When compiled with SSL support, you can enter the certificate path here.
     the server certificate presented by the upsd server. The files each
     contain one CA certificate. The files are looked up by the CA subject
     name hash value, which must hence be available.
++
+Alternatively, with OpenSSL the `CERTPATH` can specify a particular
+    PEM file with a collection of multiple CA certificates, e.g.
++
+  CERTPATH /etc/ssl/certs/ca-certificates.crt
+
+*CERTFILE 'certificate file'*::
+
+When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
+you can enter the client certificate file here.
+No-op in NSS builds which use `CERTPATH` for all purposes.
++
+The certificates must be in PEM format and must be sorted starting with
+the subject's certificate (client certificate), followed by intermediate
+CA certificates (if applicable) and the highest level (root) CA.
+It should end with the client's private key corresponding to the certificate.
+See `docs/security.txt` in NUT sources, or the Security chapter of the NUT
+User manual, for more information on the SSL support in NUT.
 
 *CERTIDENT* 'certificate name' 'database password'::
 
-When compiled with SSL support with NSS, you can specify the certificate
-name to retrieve from database to authenticate itself and the password
-required to access certificate related private key.
+When compiled with SSL support, you can specify the certificate name to
+retrieve from the database, for the client to authenticate itself, and
+the password required to access the private key related to that certificate.
 +
-NOTE: Be sure to enclose "certificate name" in double-quotes if you
+Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+Now this feature is supported with both OpenSSL (fully with 1.1.0 or
+newer, just for private key password with older 1.0.2+ library and an
+empty "certificate name") and NSS backends.
++
+NOTE: Be sure to enclose the "certificate name" in double-quotes if you
 are using a value with spaces in it.
 
 *CERTHOST* 'hostname' 'certificate name' 'certverify' 'forcessl'::
 
-When compiled with SSL support with NSS, you can specify security directive
+When compiled with SSL support, you can specify the security directive
 for each server you can contact.
 +
-Each entry maps server name with the expected certificate name and flags
-indicating if the server certificate is verified and if the connection
-must be secure.
+Each entry maps a server name with the expected certificate name and flags
+indicating if the server certificate must be "verified" (should the secure
+connection attempt be aborted upon mismatch or inability to verify?), and if
+the connection must be "secured" (should there be no fallback to plain-text?)
++
+Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.
++
+For a data server with non-default port, it should be specified as a
+colon-separated part of 'hostname', e.g.
++
+------
+CERTHOST "localhost:34930" "My nut server" 1 1
+------
 +
 NOTE: Be sure to enclose "certificate name" in double-quotes if you
 are using a value with spaces in it.
@@ -599,8 +681,8 @@ This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
 +
-When compiled with NSS support of SSL, can be overridden for host
-specified with a CERTHOST directive.
+When compiled with NSS support of SSL (also OpenSSL since NUT release v2.8.6),
+this can be overridden for certain hosts specified with a `CERTHOST` directive.
 
 *FORCESSL* '0 | 1'::
 
@@ -612,8 +694,8 @@ that nobody can sniff your sessions without a large effort. Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 +
-When compiled with NSS support of SSL, can be overridden for host
-specified with a CERTHOST directive.
+When compiled with NSS support of SSL (also OpenSSL since NUT release v2.8.6),
+this can be overridden for certain hosts specified with a `CERTHOST` directive.
 
 *DEBUG_MIN* 'INTEGER'::
 
@@ -622,7 +704,7 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 +
-NOTE: if the running daemon receives a `reload` command, presence of the
+NOTE: If the running daemon receives a `reload` command, presence of the
 `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
 debugging verbosity in the running service daemon (it is recommended to
 comment it away or set the minimum to explicit zero when done, to avoid

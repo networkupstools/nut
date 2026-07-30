@@ -34,8 +34,8 @@
 #define        inline  __inline
 #endif
 
-#define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.12"
+#define DRIVER_NAME	"Best Fortress UPS driver"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -73,6 +73,8 @@ static const char *shutdown_delay = "20";
 
 static int instcmd (const char *cmdname, const char *extra);
 static int upsdrv_setvar (const char *varname, const char *val);
+static int reconnect_ups(void);
+void upsdrv_cleanup(void);
 
 /* Rated maximum VA output as configured by the user. */
 static int maxload = 0;
@@ -93,21 +95,21 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("output.voltamps", "0");
 
 	/* tunable via front panel: (european voltage level)
-	   parameter        factory default  range
-	   INFO_LOWXFER     196 V   p7=nnn   160-210
-	   INFO_HIGHXFER    254 V   p8=nnn   215-274
-	   INFO_LOBATTIME   2 min   p2=n     1-5
-
-	   comm mode    p6=0 dumb DONT USE (will lose access to parameter setting!)
-	        p6=1 B1200
-	        p6=2 B2400
-	        P6=3 B4800
-	        p6=4 B9600
-	   maybe cycle through speeds to autodetect?
-
-	   echo off     e0
-	   echo on      e1
-	*/
+	 * parameter        factory default  range
+	 * INFO_LOWXFER     196 V   p7=nnn   160-210
+	 * INFO_HIGHXFER    254 V   p8=nnn   215-274
+	 * INFO_LOBATTIME   2 min   p2=n     1-5
+	 *
+	 * comm mode    p6=0 dumb DONT USE (will lose access to parameter setting!)
+	 *      p6=1 B1200
+	 *      p6=2 B2400
+	 *      P6=3 B4800
+	 *      p6=4 B9600
+	 * maybe cycle through speeds to autodetect?
+	 *
+	 * echo off     e0
+	 * echo on      e1
+	 */
 	dstate_setinfo("input.transfer.low", "%s", "");
 	dstate_setflags("input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("input.transfer.low", 3);
@@ -119,6 +121,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.runtime.low", "%s", "");
 	dstate_setflags("battery.runtime.low", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("battery.runtime.low", 3);
+
+	/* Set early so that it is in place for shutdown. */
+	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = upsdrv_setvar;
@@ -261,8 +266,9 @@ static ssize_t upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 {
 	ssize_t nread;
 
-	nread = ser_get_line(upsfd, buf, bufsize - 1, ec, ic,
-			     SER_WAIT_SEC, SER_WAIT_USEC);
+	nread = ser_get_line(
+		upsfd, buf, bufsize - 1, ec, ic,
+		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	/* \todo is buf null terminated? */
 	upsdebugx(4, "%s: read %" PRIiSIZE " <%s>", __func__, nread, buf);
@@ -299,7 +305,7 @@ void upsdrv_updateinfo(void)
 		do {
 			if ((recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
 				upsdebugx(1, "%s: upsrecv failed, "
-					  "retrying without counting", __func__);
+					"retrying without counting", __func__);
 				upsflushin (0, 0, "\r ");
 				upssend ("f\r");
 				while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
@@ -307,37 +313,37 @@ void upsdrv_updateinfo(void)
 		} while (temp[2] == 0);
 
 		upsdebugx(3, "%s: received %" PRIiSIZE " bytes (try %i)",
-			  __func__, recv, retry);
+			__func__, recv, retry);
 
 		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
-		   000000000001000000000000012201210000001200014500000280600000990025000000000301BE
-		   000000000001000000000000012401230000001200014800000280600000990025000000000301B7
-		   |Vi||Vo|    |Io||Psou|    |Vb||f| |tr||Ti|            CS
-		   000000000001000000000000023802370000000200004700000267500000990030000000000301BD
-		   1    1    2    2    3    3    4    4    5    5    6    6    7    7   78
-		   0    5    0    5    0    5    0    5    0    5    0    5    0    5    0    5   90
+		 * 000000000001000000000000012201210000001200014500000280600000990025000000000301BE
+		 * 000000000001000000000000012401230000001200014800000280600000990025000000000301B7
+		 * |Vi||Vo|    |Io||Psou|    |Vb||f| |tr||Ti|            CS
+		 * 000000000001000000000000023802370000000200004700000267500000990030000000000301BD
+		 * 1    1    2    2    3    3    4    4    5    5    6    6    7    7   78
+		 * 0    5    0    5    0    5    0    5    0    5    0    5    0    5    0    5   90
 		 */
 
 		/* last bytes are a checksum:
-		   interpret response as hex string, sum of all bytes must be zero
+		 * interpret response as hex string, sum of all bytes must be zero
 		 */
 		checksum_ok = ( (checksum (temp+2) & 0xff) == 0 );
 		/* setinfo (INFO_, ""); */
 
 		if (!checksum_ok) {
 			upsdebug_hex(5, "upsdrv_updateinfo: "
-				     "checksum failure buffer hex",
-				     temp, (size_t)recv);
+				"checksum failure buffer hex",
+				temp, (size_t)recv);
 			upsdebug_ascii(5, "upsdrv_updateinfo: "
-				       "checksum failure buffer ascii",
-				       temp, (size_t)recv);
+				"checksum failure buffer ascii",
+				temp, (size_t)recv);
 		}
 
 
 		/* I can't figure out why this is missing the first two chars.
-		   But the first two chars are not used, so just set them to zero
-		   when missing. */
+		 * But the first two chars are not used, so just set them to zero
+		 * when missing. */
 		len = strlen(temp+2);
 		temp[0] = '0';
 		temp[1] = '0';
@@ -349,7 +355,7 @@ void upsdrv_updateinfo(void)
 		if (checksum_ok) break;
 
 		upsdebugx(1, "%s: failed to read status try %d",
-			  __func__, retry);
+			__func__, retry);
 		sleep(SER_WAIT_SEC);
 	}
 
@@ -357,7 +363,9 @@ void upsdrv_updateinfo(void)
 		/* \todo: Analyze/fix code and rewrite message. */
 		upsdebugx(2, "%s: pointer to data not initialized after processing",
 			__func__);
-		dstate_datastale();
+		if (!reconnect_ups()) {
+			dstate_datastale();
+		}
 		return;
 	}
 
@@ -386,9 +394,9 @@ void upsdrv_updateinfo(void)
 	low_batt = fromhex(p[21]) & 8 || fromhex(p[20]) & 1;
 	is_off = p[11] == '0';
 	trimming = p[33] == '1';
-	boosting = 0; /* FIXME, don't know which bit gets set
-			 (brownouts are very rare here and I can't
-			 simulate one) */
+	boosting = 0;	/* FIXME, don't know which bit gets set
+			 * (brownouts are very rare here and
+			 * I can't simulate one) */
 
 	status_init();
 	if (low_batt)
@@ -461,7 +469,10 @@ static void autorestart (int restart)
 static int upsdrv_setvar (const char *var, const char * data) {
 	int parameter;
 	size_t len = strlen(data);
-	upsdebugx(1, "%s: %s %s (%" PRIuSIZE " bytes)", __func__, var, data, len);
+
+	upsdebug_SET_STARTING(var, data);
+	upsdebugx(1, "%s: (%" PRIuSIZE " bytes)", __func__, len);
+
 	if (strcmp("input.transfer.low", var) == 0) {
 		parameter = 7;
 	}
@@ -478,15 +489,17 @@ static int upsdrv_setvar (const char *var, const char * data) {
 		 * exist.  If the former, change to LOG_ERR and if the
 		 * latter change to LOG_DEBUG.
 		 */
-		upslogx(LOG_INFO, "%s: unsettable variable %s", __func__, var);
+		upslog_SET_UNKNOWN(var, data);
 		return STAT_SET_UNKNOWN;
 	}
+
 	ups_setsuper (1);
 	assert (len < INT_MAX);
 	if (setparam (parameter, (int)len, data)) {
 		dstate_setinfo (var, "%*s", (int)len, data);
 	}
 	ups_setsuper (0);
+
 	return STAT_SET_HANDLED;
 }
 
@@ -521,8 +534,13 @@ void upsdrv_shutdown(void)
 
 static int instcmd (const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
-		upslogx(LOG_CRIT, "%s: %s: OFF/stayoff in 1s",
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: %s: OFF/stayoff in 1s",
 			__func__, cmdname);
 		autorestart (0);
 		upssend ("OFF1\r");
@@ -540,7 +558,9 @@ static int instcmd (const char *cmdname, const char *extra)
 			grace = "30";
 		}
 
-		upslogx(LOG_CRIT, "%s: OFF/restart in %s seconds", __func__, grace);
+		/* upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra); */
+		upslogx(LOG_INSTCMD_POWERSTATE, "%s: OFF/restart in %s seconds",
+			__func__, grace);
 
 		/* Start again, overriding front panel setting. */
 		autorestart (1);
@@ -551,13 +571,18 @@ static int instcmd (const char *cmdname, const char *extra)
 		upsdebugx(2, "%s: %s: end", __func__, cmdname);
 		return STAT_INSTCMD_HANDLED;
 	}
+
 	/* \todo Software error or user error? */
-	upslogx(LOG_ERR, "%s: unknown command [%s] [%s]",
-		__func__, cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -603,7 +628,7 @@ void upsdrv_initups(void)
 	}
 
 	upsfd = ser_open(device_path);
-	if (INVALID_FD(upsfd)) {
+	if (INVALID_FD_SER(upsfd)) {
 		upslogx(LOG_WARNING, "%s: failed to open %s",
 			__func__, device_path);
 		/* \todo: Deal with the failure */
@@ -613,15 +638,33 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, speed);
 
 	upsdebugx(1, "%s: opened %s speed %s upsfd %d",
-		  __func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
-
-	/* Set early so that it is in place for shutdown. */
-	dstate_setinfo("ups.delay.shutdown", "%s", shutdown_delay);
+		__func__, device_path, speed_val ? speed_val : "DEFAULT", upsfd);
 
 	upsdebugx(1, "%s: end", __func__);
 }
 
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
+
 void upsdrv_cleanup(void)
 {
-	upsdebugx(1, "%s: begin/end", __func__);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

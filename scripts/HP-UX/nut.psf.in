@@ -133,7 +133,7 @@ product
 		title		"libups-nut-perl"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 644 -g bin -o bin @top_srcdir@/scripts/perl/Nut.pm	@prefix@/share/perl5/UPS/Nut.pm
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/perl/UPS/Nut.pm	@prefix@/share/perl5/UPS/Nut.pm
 	end
 # ----------------------------------------	
 

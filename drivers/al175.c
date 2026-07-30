@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -118,7 +118,7 @@ static raw_data_t raw_xmalloc(size_t size)
 {
 	raw_data_t data;
 
-	data.buf	= xmalloc(size);
+	data.buf	= (byte_t *)xmalloc(size);
 	data.buf_size	= size;
 
 	data.begin	= data.buf;
@@ -253,14 +253,14 @@ static void reverse_bits(byte_t *buf, size_t count)
 
 	while (count!=0) {
 		x = *buf;
-		x = (byte_t)( (x & 0x80) >> 7 )  |
-		    (byte_t)( (x & 0x40) >> 5 )  |
-		    (byte_t)( (x & 0x20) >> 3 )  |
-		    (byte_t)( (x & 0x10) >> 1 )  |
-		    (byte_t)( (x & 0x08) << 1 )  |
-		    (byte_t)( (x & 0x04) << 3 )  |
-		    (byte_t)( (x & 0x02) << 5 )  |
-		    (byte_t)( (x & 0x01) << 7 );
+		x = (byte_t)( (x & 0x80) >> 7 )
+		  | (byte_t)( (x & 0x40) >> 5 )
+		  | (byte_t)( (x & 0x20) >> 3 )
+		  | (byte_t)( (x & 0x10) >> 1 )
+		  | (byte_t)( (x & 0x08) << 1 )
+		  | (byte_t)( (x & 0x04) << 3 )
+		  | (byte_t)( (x & 0x02) << 5 )
+		  | (byte_t)( (x & 0x01) << 7 );
 		*buf = x;
 
 		++buf;
@@ -327,7 +327,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 
 
 	/* it's caller responsibility to allocate enough space.
-	   else it is a bug in the program */
+	 * else it is a bug in the program */
 	if ( (out+11+count+2) > (dest->buf + dest->buf_size) )
 		fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
@@ -1003,9 +1003,11 @@ static int al175_read(byte_t *dst, size_t addr, size_t count)
 	if (err==-1)
 		return -1;
 
-	if ((rx_data.end - rx_data.begin) < 0 ||
-	    (size_t)(rx_data.end - rx_data.begin) != count)
+	if ((rx_data.end - rx_data.begin) < 0
+	 || (size_t)(rx_data.end - rx_data.begin) != count
+	) {
 		return -1;
+	}
 
 	if ( (io.addr != addr) || (io.len != count) ) {
 		upsdebugx(3, "%s: io_head mismatch\t(%" PRIxSIZE ",%" PRIxSIZE " != %" PRIxSIZE ",%" PRIxSIZE ")",
@@ -1276,7 +1278,7 @@ void upsdrv_shutdown(void)
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
+	 * it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
@@ -1284,7 +1286,7 @@ void upsdrv_shutdown(void)
 		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
+	 * for toggling power are frequently different for OL vs. OB */
 
 	/* OL: this must power cycle the load if possible */
 
@@ -1295,7 +1297,9 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	int err;
 
-	upsdebugx(1, "INSTCMD: %s", cmdname);
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	io_new_transaction(/*timeout=*/5);
 
@@ -1305,21 +1309,28 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		err = START_BATTERY_TEST(24, 1);
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		err = STOP_BATTERY_TEST();
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* no help */
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -2,6 +2,7 @@
 #	init
 #
 #	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#	Copyright (c) 2024-2025, by the Network UPS Tools project community.
 #
 #	A shell script to command UPSes to disable delayed power off of outlet
 #	groups, which could have ben requested as part of the emergency shutdown
@@ -69,7 +70,7 @@ fi
 
 # TODO: Here we want to refine the list to only MONITORed UPSes that power us?
 # Convert to parsing of "ipp-status -p" which reports all needed details
-upslist="`"$NUT_UPSC" -l`"
+upslist="`\"$NUT_UPSC\" -l`"
 echo "$upslist"
 for u in $upslist; do
 	echo "Disabling poweroff for UPS outlet-groups on '$u' ..."

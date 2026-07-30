@@ -1,0 +1,75 @@
+NUTSCAN_SET_DEBUG_LEVEL(3)
+==========================
+
+NAME
+----
+
+nutscan_upslog_set_debug_level, nutscan_upslog_get_debug_level,
+nutscan_upslog_cookie, nutscan_upslog_setprocname,
+nutscan_upslog_setproctag, nutscan_upslog_getproctag,
+nutscan_upslog_start_sync - manipulate
+the possibly separate (identified via cookie) debugging level and
+sub-process tags for NUT common code in the nutscan library;
+propagate to `libupsclient` if already loaded.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	const void *nutscan_upslog_cookie(void);
+
+	void nutscan_set_debug_level(int level), const void *cookie;
+	int  nutscan_get_debug_level(void);
+
+	void nutscan_setprocname(const char *full_procname, const void *cookie);
+	void nutscan_setproctag(const char *tag, const void *cookie);
+	const char *nutscan_getproctag(void);
+
+	struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie);
+------
+
+DESCRIPTION
+-----------
+
+The NUT common library code is included in several other
+libraries, often with their private copies of variables,
+so we want to synchronize them.
+
+It can get even more confusing with libnutprivate-common being a shared
+dynamically loaded library instance behind both the program and libnutscan
+(and maybe further libupsclient), hence the cookies: direct NUT-common code
+consumers like NUT in-tree clients can use their `nut_common_cookie()` value
+to pass into methods here. Third-party clients may safely pass 'NULL'.
+
+The *nutscan_set_debug_level()* function sets internal debug verbosity
+for common NUT code in the library and optionally into the loaded
+`libupsclient` (*nutscan_init()* function must be called at least once
+before this then).
+
+If internal `upslog_start` value is not yet set, we can set it with
+*nutscan_upslog_start_sync()* from *tv (or current time if tv==NULL),
+otherwise the method is no-op (keep and report the original setting).
+
+Returns the pointer to the currently set value, so it
+can be propagated or used in difftime() computations.
+
+NOTE: In WIN32 builds also enforces line-buffering for
+stdout and stderr streams.
+
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-init.h' file.
+
+For legacy reasons, the `nut_debug_level` (or its copy from the NUT common
+library objects linked into `libnutscan`) and `setproctag()` method are
+also exposed, but should not be used directly; may be removed in later
+releases.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init[3], linkman:upscli_set_debug_level[3]

@@ -1,0 +1,34 @@
+UPSCLI_REPORT_BUILD_DETAILS(3)
+==============================
+
+NAME
+----
+
+upscli_report_build_details - Print a debug message to report details of the
+current libupsclient build such as its source-code version and SSL capabilities
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	void upscli_report_build_details(void);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_report_build_details*() function prints a debug log message at
+verbosity '1' to summarize details about the currently used build of the
+linkman:upsclient[3] library, including its SSL support.
+
+RETURN VALUE
+------------
+
+There is no return value.
+
+SEE ALSO
+--------
+
+linkman:upscli_ssl_caps[3], linkman:upscli_ssl_caps_descr[3]

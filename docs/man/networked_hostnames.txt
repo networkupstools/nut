@@ -1,0 +1,20 @@
+//////////////////////////////////////////////////////////////////
+// This snippet is included into networked driver documentation //
+// typically under KNOWN ISSUES/BUGS (the "-----" section type) //
+//////////////////////////////////////////////////////////////////
+
+Using host names for UPS NMC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An UPS network management card may be assigned a fixed/static IP address or
+a dynamic one (e.g. by DHCP) in your network.  Due to this, you may want or
+have to use a dynamic naming service to access the UPS.  Note that this may
+become a problem specifically during large outages and shutdowns, when your
+DHCP/DNS server might already go down while the driver needs to resolve the
+name involved (especially during late-shutdown hooks, when a new instance
+of the driver program might start just to tell the UPS to power off or to
+power-cycle).
+
+It may be wise to ensure your OS name service client can cache the UPS name
+sufficiently long, or to use fixed IP addressing (and an entry in `/etc/hosts`
+for good measure, so you only have one spot to eventually re-configure this).

@@ -34,7 +34,7 @@ int main(void) {
 #endif
 
 	upsdebugx(0, "D: checking with libc handling of NULL (can segfault for some libc implementations):");
-	upsdebugx(0, "D:   '%s' vs '%s'", s1, s2);
+	upsdebugx(0, "D:   '%s' vs. '%s'", s1, s2);
 
 /* This explicitly does not work with -Wformat, due to verbatim NULL without a var:
  * nutlogtest.c:20:5: error: reading through null pointer (argument 4) [-Werror=format=]
@@ -44,7 +44,7 @@ int main(void) {
  *   upsdebugx(0, "D: '%s' vs. '%s'", NUT_STRARG((char *)NULL), (char *)NULL);
  */
 
-	upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs '%s'", NUT_STRARG(s2), s2);
+	upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs. '%s'", NUT_STRARG(s2), s2);
 
 #ifdef NUT_STRARG
 #undef NUT_STRARG
@@ -60,7 +60,7 @@ int main(void) {
  *      45 |     upsdebugx(0, "D: checking with NUT_STRARG macro: '%s' vs. '%s'", NUT_STRARG(s2), s2);
  *         |                                                               ^~
  */
-	upsdebugx(0, "D: checking that macro wrap trick works: '%s' vs '%s'", NUT_STRARG(s2), s2);
+	upsdebugx(0, "D: checking that macro wrap trick works: '%s' vs. '%s'", NUT_STRARG(s2), s2);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
 #  pragma GCC diagnostic pop

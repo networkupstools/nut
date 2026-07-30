@@ -4,8 +4,9 @@
 # Everyone deserves credit, including those who haven't added any code.
 # Ideas, clues, and helping out on the mailing lists all count too.
 #
-# This is a blatant ripoff of the fields found in the Linux kernel's CREDITS
-# file.  If we need more data, those fields can always be added later.
+# This is a blatant ripoff of the fields found in the CREDITS file of
+# the Linux kernel. If we need more data, those fields can always be
+# added later.
 #
 # N = name, E = email, W = web address, D = description, P = PGP info,
 # S = snailmail address, etc.
@@ -195,3 +196,15 @@ N: zakx
 E: zakx@zakx.de
 D: Updating device support docs after unnecessarily writing a redundant
 D: driver first
+
+N: desertwitch
+E: dezertwitsh@gmail.com
+D: Primarily contributions to upsmon, PR discussions, as well as small-scale
+D: QOL improvements throughout both UPS driver code and other project parts.
+P: 4096R/06FD918F FDE5 DBCF 1792 4276 532B FBCA DDA4 D1A9 06FD 918F
+
+N: Marco Trevisan (Treviño)
+E: mail@3v1n0.net
+W: https://3v1n0.net
+D: Author of the nutdrv_hashx driver
+P: rsa4096/D4C501DA 48EB 797A 0817 5093 9449 C2F5 0996 635F

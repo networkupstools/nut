@@ -14,6 +14,7 @@
 /qa-guide.xml
 /solaris-usb.xml
 /cables.xml
+/docinfo.xml.sh
 /docinfo.xml
 /docinfo-since-v*.xml*
 /*-docinfo.xml*
@@ -32,3 +33,4 @@ docinfo.xml.in.tmp
 /.check-pdf
 /.check-html-single
 /.check-html-chunked
+/asciidoc.conf

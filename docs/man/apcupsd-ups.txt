@@ -41,6 +41,14 @@ For instance:
 		port = localhost
 		desc = "apcupsd client"
 
+For IPv6 addresses, use square brackets for the hostname part (so colons in
+it are not mistaken to be the port, especially if using the default one):
+
+	[apcupsd]
+		driver = apcupsd-ups
+		port = "[::1]:3551"
+		desc = "apcupsd client"
+
 BACKGROUND
 ----------
 

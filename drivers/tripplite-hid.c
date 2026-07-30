@@ -248,8 +248,8 @@ static info_lkp_t tripplite_ioamp[] = {
 /* TRIPPLITE usage table */
 static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown:
-	   00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
-	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
+	 * 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
+	 * ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
 	{ "TLCustom",	0xffff0010 },
 	{ "TLDelayBeforeStartup",	0xffff0056 }, /* in minutes */
@@ -278,7 +278,7 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	{ "TLOutletsStatusMask",		0xffff0096 },
 
 	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
-	   following 4 items, on some OMNI1000LCD devices. */
+	 * following 4 items, on some OMNI1000LCD devices. */
 	{ "TLCharging",			0x00840044 },  /* conflicts with HID spec! */
 	/* conflicts with HID spec (and HP implementation) for TrippLite!
 	 * Refer to tripplite_discharging_info */
@@ -529,8 +529,8 @@ static int tripplite_claim(HIDDevice_t *hd) {
 			if (hd->ProductID == 0x0001) {
 				/* e.g. SMART550USB, SMART3000RM2U */
 				upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-						 "Please use the tripplite_usb driver instead.\n",
-						 hd->VendorID, hd->ProductID);
+					"Please use the tripplite_usb driver instead.\n",
+					hd->VendorID, hd->ProductID);
 				return 0;
 			}
 

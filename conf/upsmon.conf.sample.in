@@ -9,6 +9,9 @@
 # MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
 # and a POWERDOWNFLAG if this machine is a "primary" system connected to
 # the UPS and drives its late-shutdown power-off command in an emergency.
+# You should also define a SHUTDOWNCMD (like the example below, or something
+# special for your deployment) if MINSUPPLIES is at least 1 and you MONITOR
+# an UPS. A NOTIFYCMD integrating with `upssched` is a common situation too.
 
 # --------------------------------------------------------------------------
 # RUN_AS_USER <userid>
@@ -144,12 +147,19 @@
 MINSUPPLIES 1
 
 # --------------------------------------------------------------------------
-# SHUTDOWNCMD "<command>"
+# SHUTDOWNCMD "<command>" ["<arg1>" "<arg2>" ...]
 #
 # upsmon runs this command when the system needs to be brought down.
 #
 # This should work just about everywhere ... if it doesn't, well, change it,
 # perhaps to a more complicated custom script.
+#
+# Unlike some others, this directive still allows to pass both the command
+# and its arguments as a single quoted token. It also supports a multi-token
+# syntax to pass each argument as a separate token:
+# SHUTDOWNCMD "/sbin/shutdown -h +0"
+# SHUTDOWNCMD "/sbin/shutdown" "-h" "+0"
+# SHUTDOWNCMD /sbin/shutdown -h +0
 #
 # Note that while you experiment with the initial setup and want to test how
 # your configuration reacts to power state changes and ultimately when power
@@ -158,9 +168,11 @@ MINSUPPLIES 1
 # such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
 # to plug the UPS back into the wall in a timely fashion.
 #
-# For Windows setup use something like:
+# For Windows setup you should escape backslashes (or use forward slashes in
+# recent OS releases). To shut down, use something like:
 # SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
-# If you have command line using space character you have to add double quote to them, like this:
+# If you have a command line using space characters, you have to add double
+# quote to them, like this:
 # SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
 # Or use the old DOS 8.3 file name, like this:
 # SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
@@ -201,12 +213,16 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #SHUTDOWNEXIT yes
 
 # --------------------------------------------------------------------------
-# NOTIFYCMD <command>
+# NOTIFYCMD <command> ["<arg1>" "<arg2>" ...]
 #
 # upsmon calls this to send messages when things happen
 #
+# The first (possibly only) token of the value is interpreted as a complete
+# path to an externally stored executable script (e.g. not an inline scriptlet)
+# or program file without further arguments (which may be passed in explicitly
+# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 # This command is called with the full text of the message (from NOTIFYMSG)
-# as one argument.
+# as one last argument, with further details passed as environment variables.
 #
 # The environment string NOTIFYTYPE will contain the type string of
 # whatever caused this event to happen.
@@ -232,6 +248,10 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 #
 # Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
+#
+# NOTE: This setting is different from a `pollfreq` supported by some of
+# the NUT driver programs, such as usbhid-ups (about how often the driver
+# polls a particular device).
 
 POLLFREQ 5
 
@@ -323,6 +343,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG COMMOK	"Communications with UPS %s established"
 # NOTIFYMSG COMMBAD	"Communications with UPS %s lost"
 # NOTIFYMSG SHUTDOWN	"Auto logout and shutdown proceeding"
+# NOTIFYMSG SHUTDOWN_HOSTSYNC	"Shutdown initiated; primary system is waiting for secondaries to log out or time out"
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
@@ -392,6 +413,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG COMMOK	SYSLOG+WALL
 # NOTIFYFLAG COMMBAD	SYSLOG+WALL
 # NOTIFYFLAG SHUTDOWN	SYSLOG+WALL
+# NOTIFYFLAG SHUTDOWN_HOSTSYNC	SYSLOG+WALL
 # NOTIFYFLAG REPLBATT	SYSLOG+WALL
 # NOTIFYFLAG NOCOMM	SYSLOG+WALL
 # NOTIFYFLAG NOPARENT	SYSLOG+WALL
@@ -403,8 +425,16 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
 # NOTIFYFLAG ECO	SYSLOG+WALL
 # NOTIFYFLAG NOTECO	SYSLOG+WALL
+#
 # NOTIFYFLAG ALARM	SYSLOG+WALL
 # NOTIFYFLAG NOTALARM	SYSLOG+WALL
+#
+# NOTIFYFLAG OVER	SYSLOG+WALL
+# NOTIFYFLAG NOTOVER	SYSLOG+WALL
+# NOTIFYFLAG TRIM	SYSLOG+WALL
+# NOTIFYFLAG NOTTRIM	SYSLOG+WALL
+# NOTIFYFLAG BOOST	SYSLOG+WALL
+# NOTIFYFLAG NOTBOOST	SYSLOG+WALL
 #
 # NOTIFYFLAG OTHER	SYSLOG+WALL
 # NOTIFYFLAG NOTOTHER	SYSLOG+WALL
@@ -524,10 +554,10 @@ NOCOMMWARNTIME 300
 # --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system
 #
-# On a primary, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
-# before executing your SHUTDOWNCMD.  If you need to do something in between
-# those events, increase this number.  Remember, at this point your UPS is
-# almost depleted, so don't make this too high.  If needed, on high-end UPS
+# In FSD handling, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
+# message before executing your SHUTDOWNCMD.  If you need to do something in
+# between those events, increase this number.  Remember, at this point your UPS
+# is almost depleted, so don't make this too high.  If needed, on high-end UPS
 # devices you can usually configure when the low-battery state is announced
 # based on estimated remaining run-time or on charge level of the batteries.
 #
@@ -563,7 +593,8 @@ ALARMCRITICAL 1
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)
 #
-# When compiled with SSL support, you can enter the certificate path here.
+# When compiled with SSL support, you can enter the certificate database
+# path here.
 #
 # With NSS:
 # Certificates are stored in a dedicated database (split into 3 files).
@@ -579,6 +610,28 @@ ALARMCRITICAL 1
 #
 # CERTPATH /usr/ssl/certs
 #
+# Alternatively, with OpenSSL the CERTPATH can specify a particular
+# PEM file with a collection of multiple CA certificates.
+#
+# CERTPATH /etc/ssl/certs/ca-certificates.crt
+#
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTFILE <certificate file>
+# CERTFILE /usr/local/ups/etc/upsmon.pem
+#
+# When compiled with SSL support with OpenSSL backend (since NUT v2.8.6),
+# you can enter the client certificate file here.
+# No-op in NSS builds which use `CERTPATH` for all purposes.
+#
+# The certificates must be in PEM format and must be sorted starting with
+# the subject's certificate (client certificate), followed by intermediate
+# CA certificates (if applicable) and the highest level (root) CA. It should
+# end with the client's private key. See 'docs/security.txt' or the Security
+# chapter of NUT user manual for more information on the SSL support in NUT.
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -586,26 +639,41 @@ ALARMCRITICAL 1
 # CERTIDENT - self certificate name and database password
 # CERTIDENT <certificate name> <database password>
 #
-# When compiled with SSL support with NSS, you can specify the certificate
-# name to retrieve from database to authenticate itself and the password
-# required to access certificate related private key.
+# When compiled with SSL support, you can specify the certificate name to
+# retrieve from the database, for the client to authenticate itself, and
+# the password required to access the private key related to that certificate.
+#
+# Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+# Now this feature is supported with both OpenSSL (fully with 1.1.0 or
+# newer, just for private key password with older 1.0.2+ library and an
+# empty "certificate name") and NSS backends.
 #
 # CERTIDENT "my nut monitor" "MyPasSw0rD"
 #
-# See 'docs/security.txt' or the Security chapter of NUT user manual
+# See 'docs/security.txt' or the Security chapter of the NUT User manual
 # for more information on the SSL support in NUT.
 
 # --------------------------------------------------------------------------
-# CERTHOST - security properties for an host
+# CERTHOST - security properties for a host
 # CERTHOST <hostname> <certificate name> <certverify> <forcessl>
 #
-# When compiled with SSL support with NSS, you can specify security directive
+# When compiled with SSL support, you can specify the security directive
 # for each server you can contact.
-# Each entry maps server name with the expected certificate name and flags
-# indicating if the server certificate is verified and if the connection
-# must be secure.
+#
+# Each entry maps a server name with the expected certificate name and flags
+# indicating if the server certificate must be "verified" (should the secure
+# connection attempt be aborted upon mismatch or inability to verify?), and if
+# the connection must be "secured" (should there be no fallback to plain-text?)
+# For both of these integer values, `1` means required, `0` means not required,
+# and `-1` means to use the global configuration.
+#
+# Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
+# Now this feature is supported with both OpenSSL >= 1.1.0 and NSS backends.
 #
 # CERTHOST localhost "My nut server" 1 1
+#
+# For a data server with non-default port, it should be specified, e.g.
+# CERTHOST "localhost:34930" "My nut server" 1 1
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
@@ -621,8 +689,9 @@ ALARMCRITICAL 1
 # This effectively forces the use of SSL, so don't use this unless
 # all of your upsd hosts are ready for SSL and have their certificates
 # in order.
-# When compiled with NSS support of SSL, can be overridden for host
-# specified with a CERTHOST directive.
+# When compiled with NSS support of SSL (also OpenSSL since NUT release
+# v2.8.6), this can be overridden for certain hosts specified with a
+# `CERTHOST` directive.
 
 
 # --------------------------------------------------------------------------
@@ -635,8 +704,10 @@ ALARMCRITICAL 1
 # that nobody can sniff your sessions without a large effort.  Setting
 # this will make upsmon drop connections if the remote upsd doesn't
 # support SSL, so don't use it unless all of them have it running.
-# When compiled with NSS support of SSL, can be overridden for host
-# specified with a CERTHOST directive.
+# When compiled with NSS support of SSL (also OpenSSL since NUT release
+# v2.8.6), this can be overridden for certain hosts specified with a
+# `CERTHOST` directive.
+
 
 # --------------------------------------------------------------------------
 # DEBUG_MIN - specify minimal debugging level for upsmon daemon

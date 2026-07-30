@@ -17,6 +17,13 @@
 # enabling upsset in this configuration file.  If you can't do this in
 # your web server, then you should *not* run this program.
 #
+# Note that NUT for Windows builds may use IIS as their web server.
+# The programs and configurations on the platform may have to include
+# the `.exe` extension, and if you use a copy of the program and DLL
+# files in its `cgi-bin` directory, you may have to somehow provide
+# a `NUT_CONFPATH` environment variable to point to NUT configuration
+# files located elsewhere.
+#
 # For Apache, the .htaccess file can be used in the directory with the
 # programs.  You'll need something like this for older versions:
 #

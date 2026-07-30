@@ -2,7 +2,7 @@
 
    Copyright (C)
      1998       Russell Kroll <rkroll@exploits.org>
-     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,6 +42,10 @@
 #include "nut_stdint.h"
 #include "upslog.h"
 #include "str.h"
+
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
 
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
@@ -99,7 +103,7 @@ static struct logtarget_t *add_logfile(const char *logfn_arg)
 	if (!logfn_arg || !(*logfn_arg))
 		return p;
 
-	p = xcalloc(1, sizeof(struct monhost_ups_t));
+	p = (struct logtarget_t *)xcalloc(1, sizeof(struct logtarget_t));
 	p->logfn = xstrdup(logfn_arg);
 	p->logfile = NULL;
 
@@ -114,9 +118,10 @@ static void reopen_log(void)
 {
 	struct	logtarget_t	*p;
 
-	for (p = logfile_anchor;
-	     p != NULL;
-	     p = p->next
+	for (
+		p = logfile_anchor;
+		p != NULL;
+		p = p->next
 	) {
 		/* Never opened, e.g. removed asterisk entry */
 		if (!p->logfile)
@@ -128,8 +133,8 @@ static void reopen_log(void)
 		}
 
 		if ((p->logfile = freopen(
-		    p->logfn, "a",
-		    p->logfile)) == NULL
+			p->logfn, "a",
+			p->logfile)) == NULL
 		) {
 			fatal_with_errno(EXIT_FAILURE,
 				"could not reopen logfile %s", p->logfn);
@@ -189,6 +194,9 @@ static void setup_signals(void)
 static void help(const char *prog)
 	__attribute__((noreturn));
 
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+hDs:l:i:d:Nf:u:Vp:FBm:W:A:";
+
 static void help(const char *prog)
 {
 	print_banner_once(prog, 2);
@@ -199,28 +207,35 @@ static void help(const char *prog)
 
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
-	printf("  -N            - Prefix \"%%UPSHOST%%%%t\" before the format (default/custom)");
-	printf("		- Useful when logging many systems into same target.\n");
+	printf("  -N		- Prefix \"%%UPSHOST%%%%t\" before the format (default/custom):\n");
+	printf("		  useful when logging many systems into same target.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
 	printf("  -D		- raise debugging level (and stay foreground by default)\n");
 	printf("  -F		- stay foregrounded even if logging into a file\n");
 	printf("  -B		- stay backgrounded even if logging to stdout or debugging\n");
-	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
-	printf("                - NOTE: PID file is written regardless of fore/back-grounding\n");
+	printf("  -p <pidbase>	- Base name for PID file (defaults to \"%s\")\n", prog);
+	printf("             	- NOTE: PID file is written regardless of fore/back-grounding\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
+	printf("        	- Specify '*' as upsname to query all devices on the host\n");
 	printf("  -m <tuple>	- Monitor UPS <ups,logfile>\n");
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("		- NOTE: You can use '-' as logfile for stdout\n");
 	printf("		  and it would not imply foregrounding\n");
 	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
+	printf("		- Example: -m '*,-' to view updates of all known local devices\n");
+	printf("		- Example: -m '*@1.2.3.4,-' to view updates of all known remote\n");
+	printf("		  devices served by NUT data server with IP address 1.2.3.4\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("\nCommon arguments:\n");
 	printf("  -V         - display the version of this software\n");
 	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
-	       UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
 	printf("  -h         - display this help text\n");
 	printf("\n");
 	printf("Some valid format string escapes:\n");
@@ -234,6 +249,7 @@ static void help(const char *prog)
 	printf("%s\n", DEFAULT_LOGFORMAT);
 
 	nut_report_config_flags();
+	upscli_report_build_details();
 
 	printf("\n%s", suggest_doc_links(prog, NULL));
 
@@ -369,7 +385,7 @@ static void add_call(void (*fptr)(const char *arg, const struct monhost_ups_t *m
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(flist_t));
+	tmp = (flist_t *)xmalloc(sizeof(flist_t));
 
 	tmp->fptr = fptr;
 
@@ -502,12 +518,20 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upslog");
 	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
+	char	*nutauth = NULL, str_port[16];
+	upscli_authconf_t	*ac_default = NULL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
@@ -516,25 +540,70 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
+	 */
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
+	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	setproctag(prog);
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:W:")) != -1) {
-		switch(i) {
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+
+		switch (opt_ret)
+		{
+			case 'D': break;	/* See nut_debug_level handled above */
+
+			case 'A':
+				nutauth = optarg;
+				break;
+
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
 
-			case 'D':
-				nut_debug_level++;
-				break;
-
 			case 'm': { /* var scope */
 					char *m_arg, *s;
 
 					monhost_ups_prev = monhost_ups_current;
-					monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+					monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 					if (monhost_ups_anchor == NULL)
 						monhost_ups_anchor = monhost_ups_current;
 					else
@@ -563,6 +632,7 @@ int main(int argc, char **argv)
 					free(s);
 				} /* var scope */
 				break;
+
 			case 's':
 				monhost = optarg;
 				break;
@@ -642,9 +712,26 @@ int main(int argc, char **argv)
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.",
-					(char)i);
+					(char)opt_ret);
 
 		}
+	}
+
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				upscli_read_authconf_file(NULL, 1);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				upscli_read_authconf_file(nutauth, 1);
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -676,7 +763,7 @@ int main(int argc, char **argv)
 	if (argc >= 4) {
 		/* read out the remaining argv entries to the format string */
 
-		logformat = xmalloc(LARGEBUF);
+		logformat = (char *)xmalloc(LARGEBUF);
 		memset(logformat, '\0', LARGEBUF);
 		logformat_allocated = 1;
 
@@ -688,13 +775,13 @@ int main(int argc, char **argv)
 	if (monhost || logfn) {
 		/* Both data points must be defined, no defaults */
 		if (!monhost)
-			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>");
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 		if (!logfn)
-			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>");
+			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
-		monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
+		monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
 		if (monhost_ups_anchor == NULL) {
 			/* Become the single-entry list */
 			monhost_ups_anchor = monhost_ups_current;
@@ -722,7 +809,7 @@ int main(int argc, char **argv)
 		char	*s = xstrdup(logformat);
 		if (s) {
 			if (!logformat_allocated) {
-				logformat = xmalloc(LARGEBUF);
+				logformat = (char *)xmalloc(LARGEBUF);
 				if (!logformat)
 					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
 				memset(logformat, '\0', LARGEBUF);
@@ -737,13 +824,17 @@ int main(int argc, char **argv)
 
 	/* shouldn't happen */
 	if (!monhost_len)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
+	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 	/* Split the system specs in a common fashion for tuples and legacy args */
-	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
+		upscli_authconf_t	*ac_current;
+
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
@@ -754,6 +845,21 @@ int main(int argc, char **argv)
 			NUT_STRARG(monhost_ups_current->hostname),
 			monhost_ups_current->port
 			);
+
+		/* FIXME [#3494]: Currently libupsclient allows for *one* SSL context
+		 *  shared by all connections, specifically the CERTIDENT of the client.
+		 *  We can have multiple CERTHOST certificates (and/or reading
+		 *  users/passwords) though. */
+		ac_current = upscli_get_authconf_item(NULL, monhost_ups_current->hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, monhost_ups_current->port) > 0 ? str_port : NULL, 1);
+		/* Always call this, to register possible CERTHOSTs etc. */
+		if (upscli_init_authconf(ac_current) > 0) {
+			if (ac_default) {
+				upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+
+				// Do not call on the next loop cycle, if any
+				ac_default = NULL;
+			}
+		}
 
 		/* Revise the list if some UPS name was an asterisk
 		 * (query the data server) */
@@ -773,9 +879,9 @@ int main(int argc, char **argv)
 				monhost_ups_current->port
 			);
 
-			conn = xmalloc(sizeof(*conn));
+			conn = (UPSCONN_t *)xmalloc(sizeof(*conn));
 
-			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
+			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
 
@@ -801,7 +907,13 @@ int main(int argc, char **argv)
 				found++;
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
-				mu = xmalloc(sizeof(struct monhost_ups_t));
+				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
+				if (mu == NULL) {
+					upslogx(LOG_ERR, "Failed to get memory for monitoring host structure. Not adding %s@%s:%" PRIu16,
+						answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
+					continue;
+				}
+
 				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
 					answer[1],
 					monhost_ups_current->hostname,
@@ -869,12 +981,13 @@ int main(int argc, char **argv)
 	/* might happen if we only queried remote hosts and found nothing,
 	 * just in case we missed something above */
 	if (!monhost_len || !monhost_ups_anchor)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>; consider -m '*,-' to view updates of all known local devices");
 
 	/* Report the logged systems, open the log files as needed */
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		printf("logging status of %s to %s (%is intervals)\n",
 			monhost_ups_current->monhost,
@@ -886,9 +999,9 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
 
-		monhost_ups_current->ups = xmalloc(sizeof(UPSCONN_t));
+		monhost_ups_current->ups = (UPSCONN_t *)xmalloc(sizeof(UPSCONN_t));
 
-		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0)
+		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
@@ -961,9 +1074,10 @@ int main(int argc, char **argv)
 			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		for (monhost_ups_current = monhost_ups_anchor;
-		     monhost_ups_current != NULL;
-		     monhost_ups_current = monhost_ups_current->next
+		for (
+			monhost_ups_current = monhost_ups_anchor;
+			monhost_ups_current != NULL;
+			monhost_ups_current = monhost_ups_current->next
 		) {
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
@@ -972,7 +1086,7 @@ int main(int argc, char **argv)
 					monhost_ups_current->ups,
 					monhost_ups_current->hostname,
 					monhost_ups_current->port,
-					UPSCLI_CONN_TRYSSL);
+					flags_ssl);
 			}
 
 			run_flist(monhost_ups_current);
@@ -992,12 +1106,21 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
+
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
+	for (
+		monhost_ups_current = monhost_ups_anchor;
+		monhost_ups_current != NULL;
+		monhost_ups_current = monhost_ups_current->next
 	) {
 		/* we might have several systems logged into same file;
 		 * take care to not close stdout though */
@@ -1016,6 +1139,10 @@ int main(int argc, char **argv)
 		logformat = NULL;
 	}
 
+	fflush(stdout);
+	fflush(stderr);
+
+	upscli_cleanup();
 	exit(EXIT_SUCCESS);
 }
 
@@ -1023,6 +1150,9 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	NUT_UNUSED_VARIABLE(upsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

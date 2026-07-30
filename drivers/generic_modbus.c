@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.11"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -68,9 +68,6 @@ int upscmd(const char *cmd, const char *arg);
 
 /* read signal status */
 int get_signal_state(devstate_t state);
-
-/* count the time elapsed since start */
-long time_elapsed(struct timeval *start);
 
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
 
@@ -350,6 +347,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
@@ -538,31 +540,6 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	return rval;
 }
 
-/* returns the time elapsed since start in milliseconds */
-long time_elapsed(struct timeval *start)
-{
-	long rval;
-	struct timeval end;
-
-	rval = gettimeofday(&end, NULL);
-	if (rval < 0) {
-		upslog_with_errno(LOG_ERR, "time_elapsed");
-	}
-	if (start->tv_usec < end.tv_usec) {
-		suseconds_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
-		end.tv_usec -= 1000000 * nsec;
-		end.tv_sec += nsec;
-	}
-	if (start->tv_usec - end.tv_usec > 1000000) {
-		suseconds_t nsec = (start->tv_usec - end.tv_usec) / 1000000;
-		end.tv_usec += 1000000 * nsec;
-		end.tv_sec -= nsec;
-	}
-	rval = (end.tv_sec - start->tv_sec) * 1000 + (end.tv_usec - start->tv_usec) / 1000;
-
-	return rval;
-}
-
 /* instant command triggered by upsd */
 int upscmd(const char *cmd, const char *arg)
 {
@@ -571,20 +548,26 @@ int upscmd(const char *cmd, const char *arg)
 	struct timeval start;
 	long etime;
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(arg);
+	upsdebug_INSTCMD_STARTING(cmd, arg);
+
 	if (!strcasecmp(cmd, "load.off")) {
-		if (sigar[FSD_T].addr != NOTUSED &&
-		    (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
+		if (sigar[FSD_T].addr != NOTUSED
+		 && (sigar[FSD_T].type == COIL || sigar[FSD_T].type == HOLDING)
 		) {
 			data = 1 ^ sigar[FSD_T].noro;
 			rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 			if (rval == -1) {
-				upslogx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
+				upsdebugx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s",
 					modbus_strerror(errno),
 					(unsigned int)(sigar[FSD_T].addr),
 					sigar[FSD_T].type,
 					device_path
 				);
-				upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+
+				upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", cmd, NUT_STRARG(arg));
 				rval = STAT_INSTCMD_FAILED;
 			} else {
 				upsdebugx(2, "load.off: addr: 0x%x, data: %d",
@@ -600,18 +583,19 @@ int upscmd(const char *cmd, const char *arg)
 				}
 
 				/* wait for FSD_pulse_duration ms */
-				while ((etime = time_elapsed(&start)) < FSD_pulse_duration);
+				while ((etime = elapsed_since_timeval(&start)) < FSD_pulse_duration);
 
 				data = 0 ^ sigar[FSD_T].noro;
 				rval = register_write(mbctx, sigar[FSD_T].addr, sigar[FSD_T].type, &data);
 				if (rval == -1) {
-					upslogx(LOG_ERR, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s\n",
+					upsdebugx(2, "ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %u, path:%s\n",
 						modbus_strerror(errno),
 						(unsigned int)(sigar[FSD_T].addr),
 						sigar[FSD_T].type,
 						device_path
 					);
-					upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
+
+					upslogx(LOG_INSTCMD_FAILED, "load.off: failed (communication error) [%s] [%s]", cmd, NUT_STRARG(arg));
 					rval = STAT_INSTCMD_FAILED;
 				} else {
 					upsdebugx(2, "load.off: addr: 0x%x, data: %d, elapsed time: %lims",
@@ -623,9 +607,8 @@ int upscmd(const char *cmd, const char *arg)
 				}
 			}
 		} else {
-			upslogx(LOG_NOTICE,"load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
-				cmd,
-				arg
+			upslogx(LOG_INSTCMD_FAILED, "load.off: failed (FSD address undefined or invalid register type)  [%s] [%s]",
+				NUT_STRARG(cmd), NUT_STRARG(arg)
 			);
 			rval = STAT_INSTCMD_FAILED;
 		}
@@ -634,6 +617,7 @@ int upscmd(const char *cmd, const char *arg)
 		 * "shutdown.stayoff" or "shutdown.return"? */
 		int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
 
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmd, arg);
 		/* retry sending shutdown command on error */
 		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
 			rval = gettimeofday(&start, NULL);
@@ -642,19 +626,19 @@ int upscmd(const char *cmd, const char *arg)
 			}
 
 			/* wait for an increasing time interval before sending shutdown command */
-			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			while ((etime = elapsed_since_timeval(&start)) < ( FSD_REPEAT_INTRV / cnt));
 			upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
 			cnt--;
 		}
 		switch (rval) {
 			case STAT_INSTCMD_FAILED:
 			case STAT_INSTCMD_INVALID:
-				upslogx(LOG_ERR, "shutdown failed");
+				upslogx(LOG_INSTCMD_FAILED, "shutdown failed");
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			case STAT_INSTCMD_UNKNOWN:
-				upslogx(LOG_ERR, "shutdown not supported");
+				upslogx(LOG_INSTCMD_UNKNOWN, "shutdown not supported");
 				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
@@ -665,7 +649,7 @@ int upscmd(const char *cmd, const char *arg)
 				break;
 		}
 	} else {
-		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
+		upslog_INSTCMD_UNKNOWN(cmd, arg);
 		rval = STAT_INSTCMD_UNKNOWN;
 	}
 	return rval;
@@ -676,7 +660,7 @@ int get_signal_state(devstate_t state)
 {
 	int rval = -1;
 	int reg_val;
-	regtype_t rtype = 0;    /* register type */
+	regtype_t rtype = (regtype_t)0;    /* register type */
 	int addr = -1;          /* register address */
 
 	/* assign register address and type  */
@@ -843,7 +827,7 @@ void get_config_vars(void)
 
 	/* check if OL register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OL_regtype")) {
-		sigar[OL_T].type = (unsigned int)strtol(getval("OL_regtype"), NULL, 10);
+		sigar[OL_T].type = (regtype_t)(unsigned int)strtol(getval("OL_regtype"), NULL, 10);
 		if (sigar[OL_T].type < COIL || sigar[OL_T].type > HOLDING) {
 			sigar[OL_T].type = INPUT_B;
 		}
@@ -864,7 +848,7 @@ void get_config_vars(void)
 
 	/* check if OB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("OB_regtype")) {
-		sigar[OB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[OB_T].type = (regtype_t)(unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[OB_T].type < COIL || sigar[OB_T].type > HOLDING) {
 			sigar[OB_T].type = INPUT_B;
 		}
@@ -885,7 +869,7 @@ void get_config_vars(void)
 
 	/* check if LB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("LB_regtype")) {
-		sigar[LB_T].type = (unsigned int)strtol(getval("OB_regtype"), NULL, 10);
+		sigar[LB_T].type = (regtype_t)(unsigned int)strtol(getval("OB_regtype"), NULL, 10);
 		if (sigar[LB_T].type < COIL || sigar[LB_T].type > HOLDING) {
 			sigar[LB_T].type = INPUT_B;
 		}
@@ -906,7 +890,7 @@ void get_config_vars(void)
 
 	/* check if HB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("HB_regtype")) {
-		sigar[HB_T].type = (unsigned int)strtol(getval("HB_regtype"), NULL, 10);
+		sigar[HB_T].type = (regtype_t)(unsigned int)strtol(getval("HB_regtype"), NULL, 10);
 		if (sigar[HB_T].type < COIL || sigar[HB_T].type > HOLDING) {
 			sigar[HB_T].type = INPUT_B;
 		}
@@ -927,7 +911,7 @@ void get_config_vars(void)
 
 	/* check if RB register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("RB_regtype")) {
-		sigar[RB_T].type = (unsigned int)strtol(getval("RB_regtype"), NULL, 10);
+		sigar[RB_T].type = (regtype_t)(unsigned int)strtol(getval("RB_regtype"), NULL, 10);
 		if (sigar[RB_T].type < COIL || sigar[RB_T].type > HOLDING) {
 			sigar[RB_T].type = INPUT_B;
 		}
@@ -948,7 +932,7 @@ void get_config_vars(void)
 
 	/* check if CHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("CHRG_regtype")) {
-		sigar[CHRG_T].type = (unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
+		sigar[CHRG_T].type = (regtype_t)(unsigned int)strtol(getval("CHRG_regtype"), NULL, 10);
 		if (sigar[CHRG_T].type < COIL || sigar[CHRG_T].type > HOLDING) {
 			sigar[CHRG_T].type = INPUT_B;
 		}
@@ -969,7 +953,7 @@ void get_config_vars(void)
 
 	/* check if DISCHRG register type is set and get the value otherwise set to INPUT_B */
 	if (testvar("DISCHRG_regtype")) {
-		sigar[DISCHRG_T].type = (unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
+		sigar[DISCHRG_T].type = (regtype_t)(unsigned int)strtol(getval("DISCHRG_regtype"), NULL, 10);
 		if (sigar[DISCHRG_T].type < COIL || sigar[DISCHRG_T].type > HOLDING) {
 			sigar[DISCHRG_T].type = INPUT_B;
 		}
@@ -990,7 +974,7 @@ void get_config_vars(void)
 
 	/* check if FSD register type is set and get the value otherwise set to COIL */
 	if (testvar("FSD_regtype")) {
-		sigar[FSD_T].type = (unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
+		sigar[FSD_T].type = (regtype_t)(unsigned int)strtol(getval("FSD_regtype"), NULL, 10);
 		if (sigar[FSD_T].type < COIL || sigar[FSD_T].type > HOLDING) {
 			sigar[FSD_T].type = COIL;
 		}
@@ -1055,9 +1039,9 @@ modbus_t *modbus_new(const char *port)
 		if (mb == NULL) {
 			upslogx(LOG_ERR, "modbus_new_rtu: Unable to open serial port context\n");
 		}
-	} else if ((sp = strchr(port, ':')) != NULL) {
-		char *tcp_port = xmalloc(sizeof(sp));
-		strcpy(tcp_port, sp + 1);
+	} else if ((sp = (char*)strchr(port, ':')) != NULL) {
+		char	*tcp_port = (char*)xmalloc(sizeof(sp));
+		strncpy(tcp_port, sp + 1, sizeof(sp));
 		*sp = '\0';
 		mb = modbus_new_tcp(port, (int)strtoul(tcp_port, NULL, 10));
 		if (mb == NULL) {
@@ -1079,7 +1063,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(2, "modbus_reconnect, trying to reconnect to modbus server");
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1140,5 +1124,5 @@ void modbus_reconnect(void)
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
 
-	dstate_setinfo("driver.state", "quiet");
+	reconnect_trying(RECONNECT_SUCCESS);
 }

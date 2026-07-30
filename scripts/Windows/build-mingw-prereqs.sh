@@ -19,6 +19,24 @@
 #   ARCH="`uname -s`-`uname -p`" ./scripts/Windows/build-mingw-prereqs.sh
 
 prepareEnv() {
+	[ -n "${GREP}" ] || {
+		GREP="`command -v grep`" \
+		&& [ x"${GREP}" != x ] \
+		|| { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; }
+	}
+	export GREP
+
+	[ -n "${EGREP}" ] || {
+		if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then
+			EGREP="$GREP -E"
+		else
+			EGREP="`command -v egrep`"
+		fi \
+		&& [ x"${EGREP}" != x ] \
+		|| { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; }
+	}
+	export EGREP
+
 	[ -n "${MAKE-}" ] || {
 		(command -v gmake) 2>/dev/null >/dev/null \
 		&& MAKE="gmake" \
@@ -52,7 +70,7 @@ prepareEnv() {
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/$MINGW_PREFIX"
 			# Normalize away extra slashes, they confuse at least MSYS2 tools
-			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
+			PREFIX="`echo \"${PREFIX}\" | sed 's,//*,/,g'`"
 			case "${PATH}" in
 				"${PREFIX}/bin"|"${PREFIX}/bin:"*|*":${PREFIX}/bin:"*|*":${PREFIX}/bin") ;;
 				*) PATH="${PREFIX}/bin:${PATH}" ;;
@@ -72,7 +90,7 @@ prepareEnv() {
 			esac
 			export ARCH PATH PREFIX
 
-			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
+			if (command -v sudo) ; then true ; else sudo() ( "$@" ) ; fi
 		else
 			if [ -z "${ARCH-}" ] ; then
 				# TODO: Select by args, envvars, directory presence...
@@ -84,7 +102,7 @@ prepareEnv() {
 			HOST_FLAG="--host=$ARCH"
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/usr"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/${ARCH}"
-			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
+			PREFIX="`echo \"${PREFIX}\" | sed 's,//*,/,g'`"
 
 			export ARCH PREFIX
 
@@ -182,23 +200,32 @@ provide_netsnmp() (
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	yes "" | ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
+	# NOTE: --disable-daemon may be from a different version,
+	# just in case present here to simplify variant builds.
+	date -u || true
+	yes "" | time ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
 		--with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" \
 		--disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
+		--disable-applications --disable-manuals --disable-mibs --disable-scripts \
 		--enable-shared || { cat config.log ; exit 1; }
 
-	$MAKE LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" || exit
+	date -u || true
+	time $MAKE LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" || exit
 
 	# Beside leaving a pre-install location for future runs,
 	# this may build some more artifacts:
+	date -u || true
 	rm -rf "`pwd`/.inst" || echo ""
-	$MAKE DESTDIR="`pwd`/.inst" install || exit
+	time $MAKE DESTDIR="`pwd`/.inst" install || exit
 
 	# Summarize what we have got
+	date -u || true
 	find ./ -type f -name "*.dll" -o -name "*.dll.a";
 
-	$SUDO $MAKE install
+	date -u || true
+	time $SUDO $MAKE install
+	date -u || true
 	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
@@ -224,7 +251,7 @@ provide_libmodbus_git() (
 			# there's nothing to change (avoid re-packaging of CI artifact cache)
 			cd "${DEP_DIRNAME}" && \
 			LOCAL_HASH="`git log -1 --format='%H'`" && \
-			OTHER_HASH="`git ls-remote "${DEP_GITREPO}" | grep -E '(refs/(heads|tags)/'"${DEP_VERSION}"'$|^'"${DEP_VERSION}"')' | awk '{print $1}'`" && \
+			OTHER_HASH="`git ls-remote \"${DEP_GITREPO}\" | ${EGREP} '(refs/(heads|tags)/'\"${DEP_VERSION}\"'$|^'\"${DEP_VERSION}\"')' | awk '{print $1}'`" && \
 			if [ x"${LOCAL_HASH}" = x"${OTHER_HASH}" ] ; then
 				echo "FETCH: Current git commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 			else
@@ -232,7 +259,7 @@ provide_libmodbus_git() (
 				git fetch --tags && \
 				git fetch --all && \
 				git checkout "${DEP_VERSION}" && \
-				_GITDIFF="`git diff "origin/${DEP_VERSION}"`" && \
+				_GITDIFF="`git diff \"origin/${DEP_VERSION}\"`" && \
 				if [ -n "${_GITDIFF}" ] ; then
 					# Ensure rebase etc. or fail
 					git pull && \
@@ -304,28 +331,36 @@ provide_libmodbus_git() (
 	mkdir -p "./${DEP_DIRNAME}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	"${DLDIR}/${DEP_DIRNAME}/configure" --prefix="${PREFIX}" --with-libusb --enable-static --disable-shared --enable-Werror \
+	date -u || true
+	time "${DLDIR}/${DEP_DIRNAME}/configure" --prefix="${PREFIX}" --with-libusb --enable-static --disable-shared --enable-Werror \
 		|| { cat config.log ; exit 1 ; }
 
-	$MAKE || exit
-	$MAKE check || echo "WARNING: make check is flaky or failed outright" >&2
+	date -u || true
+	time $MAKE || exit
+
+	date -u || true
+	time $MAKE check || echo "WARNING: make check is flaky or failed outright" >&2
 
 	# Beside leaving a pre-install location for future runs,
 	# this may build some more artifacts:
+	date -u || true
 	rm -rf "`pwd`/.inst" || echo ""
-	$MAKE DESTDIR="`pwd`/.inst" install || exit
+	time $MAKE DESTDIR="`pwd`/.inst" install || exit
 
 	# Summarize what we have got
+	date -u || true
 	find ./ -type f -name "*.dll" -o -name "*.a"
 
-	$SUDO $MAKE install
+	date -u || true
+	time $SUDO $MAKE install
+	date -u || true
 	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
 prepareEnv || exit
 
 echo "Prepared environment for $0:" >&2
-set | grep -E '^(ARCH|PREFIX|PREFIX_ROOT|PATH|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_PATH|BUILD_FLAG|HOST_FLAG|MINGW_CHOST|MINGW_PREFIX|MSYS2_PATH)=' >&2
+set | ${EGREP} '^(ARCH|PREFIX|PREFIX_ROOT|PATH|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_PATH|BUILD_FLAG|HOST_FLAG|MINGW_CHOST|MINGW_PREFIX|MSYS2_PATH)=' >&2
 
 # TODO: Loop, params, help, etc...
 # For now, let it pass "-f" to the builder

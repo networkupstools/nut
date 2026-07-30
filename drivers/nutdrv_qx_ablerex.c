@@ -26,7 +26,7 @@
 
 #include "nutdrv_qx_ablerex.h"
 
-#define ABLEREX_VERSION "Ablerex 0.01"
+#define ABLEREX_VERSION "Ablerex 0.02"
 
 static int Q5_Vbc = -1;
 static int ablerexQ5Vb = -1;
@@ -65,7 +65,11 @@ static int ablerex_Q5(item_t *item, char *value, const size_t valuelen) {
 	upsdebugx(2, "Q5_InvW: %d", Q5_InvW);
 #endif
 	dstate_setinfo("output.frequency", "%.1f", 0.1 * Q5_Fout);
-	dstate_setinfo("ups.alarm", "%d", Q5_Err);
+
+	/* alarm init and commit happens in main driver */
+	snprintf(value, valuelen, "%d", Q5_Err);
+	alarm_set(value);
+
 	dstate_setinfo("output.current", "%.1f", 0.1 * Q5_O_Cur);
 
 	snprintf(value, valuelen, "%.1f", Q5_Fout * 0.1);

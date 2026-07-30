@@ -15,7 +15,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CC compiler family is GCC],
     [nut_cv_GCC],
     [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
-        [AS_IF([echo "${CC_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CC_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GCC=yes],[nut_cv_GCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
@@ -23,7 +23,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CXX compiler family is GCC],
     [nut_cv_GXX],
     [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
-        [AS_IF([echo "${CXX_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GXX=yes],[nut_cv_GXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
@@ -31,28 +31,28 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CPP preprocessor family is GCC],
     [nut_cv_GPP],
     [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
-        [AS_IF([echo "${CPP_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | ${GREP} 'Free Software Foundation' > /dev/null],
             [nut_cv_GPP=yes],[nut_cv_GPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
   AS_IF([test "x$GCC" = "x" && test "$nut_cv_GCC" = yes],   [GCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -i gcc | head -1`" \
+    CC_VERSION="`echo \"${CC_VERSION_FULL}\" | ${GREP} -i gcc | head -1`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$GXX" = "x" && test "$nut_cv_GXX" = yes],   [GXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -i -E 'g++|gcc' | head -1`" \
+    CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | ${EGREP} -i 'g++|gcc' | head -1`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -i -E 'cpp|gcc' | head -1`" \
+    CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | ${EGREP} -i 'cpp|gcc' | head -1`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 
   AC_CACHE_CHECK([if CC compiler family is clang],
     [nut_cv_CLANGCC],
     [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
-        [AS_IF([echo "${CC_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CC_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGCC=yes],[nut_cv_CLANGCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
@@ -60,7 +60,7 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CXX compiler family is clang],
     [nut_cv_CLANGXX],
     [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
-        [AS_IF([echo "${CXX_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGXX=yes],[nut_cv_CLANGXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
@@ -68,27 +68,33 @@ if test -z "${nut_compiler_family_seen}"; then
   AC_CACHE_CHECK([if CPP preprocessor family is clang],
     [nut_cv_CLANGPP],
     [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
-        [AS_IF([echo "${CPP_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | ${EGREP} '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGPP=yes],[nut_cv_CLANGPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
   AS_IF([test "x$CLANGCC" = "x" && test "$nut_cv_CLANGCC" = yes],   [CLANGCC=yes
-    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CC_VERSION="`echo \"${CC_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CC_VERSION}" || CC_VERSION=""
     ])
   AS_IF([test "x$CLANGXX" = "x" && test "$nut_cv_CLANGXX" = yes],   [CLANGXX=yes
-    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CXX_VERSION}" || CXX_VERSION=""
     ])
   AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes
-    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | ${GREP} -v \"Dir:\" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
     && test -n "${CPP_VERSION}" || CPP_VERSION=""
     ])
 
-  AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo "${CC_VERSION_FULL}" | head -1`"])
-  AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo "${CXX_VERSION_FULL}" | head -1`"])
-  AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo "${CPP_VERSION_FULL}" | head -1`"])
+  AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo \"${CC_VERSION_FULL}\" | head -1`"])
+  AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo \"${CXX_VERSION_FULL}\" | head -1`"])
+  AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo \"${CPP_VERSION_FULL}\" | head -1`"])
+
+  dnl Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+  dnl but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+  CC_VERSION_NUMBER="`echo \"${CC_VERSION}\"   | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
+  CXX_VERSION_NUMBER="`echo \"${CXX_VERSION}\" | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
+  CPP_VERSION_NUMBER="`echo \"${CPP_VERSION}\" | sed -e 's,^.* \(@<:@0-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@@<:@^ ),@:>@*\).*$,\1,' -e 's, .*$,,' | ${EGREP} '^@<:@0-9@:>@' | head -1`"
 fi
 ])
 
@@ -105,6 +111,10 @@ dnl NOTE: this option should not be passed via the fourth argument of the macro,
 dnl or it ends up in the flags too, possibly during the "pop"; have to use the
 dnl GOOD_FLAG instead :\
     COMPILERFLAG="$1"
+dnl GCC will silently accept warning disable options, but then if there is an issue, warn about the option, i.e.
+dnl "cc1: note: unrecognized command-line option '-Wno-unknown-warning-option' may have been intended to silence earlier diagnostics"
+dnl Instead try the enable option to check if it is valid
+    COMPILERTESTFLAG="`echo $1 | sed 's/^-Wno-/-W/'`"
 
 dnl We also try to run an actual build since tools called from that might
 dnl complain if they are forwarded unknown flags accepted by the front-end.
@@ -113,14 +123,22 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_MSG_NOTICE([Starting check compile flag for '${COMPILERFLAG}'; now CFLAGS='${CFLAGS}' and CXXFLAGS='${CXXFLAGS}'])
 
     AC_LANG_PUSH([C])
+dnl Use a simple program with out previous #defines so we don't cause errors on clang with -Wreserved-identifier
+    m4_pushdef([AC_LANG_CONFTEST(C)], [m4_ifdef([AC_LANG_DEFINES_PROVIDED], [AC_LANG_DEFINES_PROVIDED])
+cat << _ACEOF > conftest.$ac_ext
+int main(void) { return 0; }
+_ACEOF
+    ])
     GOOD_FLAG=no
-    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+    # CFLAGS="-Werror $CFLAGS"
+    AX_CHECK_COMPILE_FLAG([${COMPILERTESTFLAG}],
         [CFLAGS="-Werror $NUT_SAVED_CFLAGS ${COMPILERFLAG}"
          AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CC linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [GOOD_FLAG=yes],[])
          AC_MSG_RESULT([${GOOD_FLAG}])
         ], [], [])
+    m4_popdef([AC_LANG_CONFTEST(C)])
     AC_LANG_POP([C])
     AS_IF([test x"${GOOD_FLAG}" = xyes],
         [CFLAGS="$NUT_SAVED_CFLAGS ${COMPILERFLAG}"],
@@ -129,14 +147,22 @@ dnl complain if they are forwarded unknown flags accepted by the front-end.
     AC_MSG_NOTICE([${GOOD_FLAG} for C '${COMPILERFLAG}'; now CFLAGS=${CFLAGS}])
 
     AC_LANG_PUSH([C++])
+dnl Use a simple program with out previous #defines so we don't cause errors on clang with -Wreserved-identifier
+    m4_pushdef([AC_LANG_CONFTEST(C++)], [m4_ifdef([AC_LANG_DEFINES_PROVIDED], [AC_LANG_DEFINES_PROVIDED])
+cat << _ACEOF > conftest.$ac_ext
+int main(void) { return 0; }
+_ACEOF
+    ])
     GOOD_FLAG=no
-    AX_CHECK_COMPILE_FLAG([${COMPILERFLAG}],
+    # CXXFLAGS="-Werror $CXXFLAGS"
+    AX_CHECK_COMPILE_FLAG([${COMPILERTESTFLAG}],
         [CXXFLAGS="-Werror $NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"
          AC_MSG_CHECKING([whether the flag '${COMPILERFLAG}' is still supported in CXX linker mode])
          AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
             [GOOD_FLAG=yes],[])
          AC_MSG_RESULT([${GOOD_FLAG}])
         ], [], [])
+    m4_popdef([AC_LANG_CONFTEST(C++)])
     AC_LANG_POP([C++])
     AS_IF([test x"${GOOD_FLAG}" = xyes],
         [CXXFLAGS="$NUT_SAVED_CXXFLAGS ${COMPILERFLAG}"],

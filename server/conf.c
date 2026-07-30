@@ -1,6 +1,8 @@
 /* conf.c - configuration handlers for upsd
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2001		Russell Kroll <rkroll@exploits.org>
+	2019 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,6 +27,7 @@
 #include "netssl.h"
 #include "nut_stdint.h"
 #include <ctype.h>
+#include <errno.h>
 
 static ups_t	*upstable = NULL;
 int	num_ups = 0;
@@ -54,7 +57,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	}
 
 	/* grab some memory and add the info */
-	temp = xcalloc(1, sizeof(*temp));
+	temp = (upstype_t*)xcalloc(1, sizeof(*temp));
 	temp->fn = xstrdup(fn);
 	temp->name = xstrdup(name);
 
@@ -263,21 +266,45 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-#ifdef WITH_OPENSSL
-	/* CERTFILE <dir> */
+#if defined(WITH_SSL)
+# ifdef WITH_OPENSSL
+	/* CERTFILE <dir>
+	 * Specific PEM file with server/CA[...]/private-key
+	 * chain used to identify this server
+	 */
 	if (!strcmp(arg[0], "CERTFILE")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-#elif (defined WITH_NSS) /* WITH_OPENSSL */
-	/* CERTPATH <dir> */
+
+# elif (defined WITH_NSS) /* WITH_OPENSSL */
+
+	if (!strcmp(arg[0], "CERTFILE")) {
+		upsdebugx(1, "%s is not supported in this SSL build: --without-openssl", arg[0]);
+		return 0;
+	}
+
+# endif	/* WITH_OPENSSL || WITH_NSS */
+
+	/* Options with one argument that are common for both SSL backends follow.
+	 * See below for [NSS] handling of `CERTIDENT <name> <passwd>` with 2 arguments.
+	 */
+
+	/* CERTPATH <dir>
+	 * NSS: database files live here, storing both server, CA and client info
+	 *   as needed.
+	 * OpenSSL: CERTPATH may be needed to know the CA(s) for client validation
+	 *   (if a different one issued those certs than the one used by server?)
+	 *   Directory with CA PEM files, hash-encoded (originally or as symlinks).
+	 */
 	if (!strcmp(arg[0], "CERTPATH")) {
-		free(certfile);
-		certfile = xstrdup(arg[1]);
+		free(certpath);
+		certpath = xstrdup(arg[1]);
 		return 1;
 	}
-#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+
+# ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
 		if (isdigit((size_t)arg[1][0])) {
@@ -285,14 +312,29 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 1;
 		}
 		else {
+			if (!strcmp(arg[1], "NO")) {
+				certrequest = NETSSL_CERTREQ_NO;	/* 0 */
+				return 1;
+			}
+			if (!strcmp(arg[1], "REQUEST")) {
+				certrequest = NETSSL_CERTREQ_REQUEST;	/* 1 */
+				return 1;
+			}
+			if (!strcmp(arg[1], "REQUIRE")) {
+				certrequest = NETSSL_CERTREQ_REQUIRE;	/* 2 */
+				return 1;
+			}
 			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
 			return 0;
 		}
 	}
-#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
-#endif /* WITH_OPENSSL | WITH_NSS */
+# else	/* !WITH_CLIENT_CERTIFICATE_VALIDATION */
+	if (!strcmp(arg[0], "CERTREQUEST")) {
+		upslogx(LOG_ERR, "CERTREQUEST is not supported in this SSL build: --without-ssl-client-validation");
+		return 0;
+	}
+# endif	/* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	/* DISABLE_WEAK_SSL <bool> */
 	if (!strcmp(arg[0], "DISABLE_WEAK_SSL")) {
 		if (parse_boolean(arg[1], &disable_weak_ssl))
@@ -301,7 +343,18 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		upslogx(LOG_ERR, "DISABLE_WEAK_SSL has non boolean value (%s)!", arg[1]);
 		return 0;
 	}
-#endif /* WITH_OPENSSL | WITH_NSS */
+
+#else	/* !WITH_SSL */
+
+	if (!strcmp(arg[0], "CERTREQUEST") || !strcmp(arg[0], "CERTPATH")
+	 || !strcmp(arg[0], "CERTIDENT") || !strcmp(arg[0], "CERTFILE")
+	 || !strcmp(arg[0], "DISABLE_WEAK_SSL")
+	) {
+		upsdebugx(1, "%s is not supported in this non-SSL build", arg[0]);
+		return 0;
+	}
+
+#endif	/* WITH_SSL */
 
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
@@ -318,7 +371,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* LISTEN <address> [<port>] */
 	if (!strcmp(arg[0], "LISTEN")) {
 		if (numargs < 3)
-			listen_add(arg[1], string_const(PORT));
+			listen_add(arg[1], string_const(NUT_PORT));
 		else
 			listen_add(arg[1], arg[2]);
 		return 1;
@@ -334,8 +387,9 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 1;
 	}
 
-#ifdef WITH_NSS
+#if defined(WITH_NSS) || defined(WITH_OPENSSL)
 	/* CERTIDENT <name> <passwd> */
+	/* Note: warning logs about rejection of the keyword for non-SSL builds is handled above */
 	if (!strcmp(arg[0], "CERTIDENT")) {
 		free(certname);
 		certname = xstrdup(arg[1]);
@@ -343,7 +397,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		certpasswd = xstrdup(arg[2]);
 		return 1;
 	}
-#endif /* WITH_NSS */
+#endif /* WITH_NSS || WITH_OPENSSL */
 
 	/* not recognized */
 	return 0;
@@ -367,7 +421,12 @@ void load_upsdconf(int reloading)
 
 	pconf_init(&ctx, upsd_conf_err);
 
+retry:
 	if (!pconf_file_begin(&ctx, fn)) {
+		if (errno == EMFILE && reloading == 2) {
+			close_oldest_client();
+			goto retry;
+		}
 		pconf_finish(&ctx);
 
 		if (!reloading)
@@ -438,6 +497,24 @@ void load_upsdconf(int reloading)
 	pconf_finish(&ctx);
 }
 
+static int load_upsconf(int reloading) {
+	int	ret;
+
+	ret = read_upsconf(0);	/* 0 = do not abort fatally just yet */
+	if (ret == -1) {
+		if (errno == EMFILE && reloading == 2) {
+			upsdebugx(1, "%s: close an oldest client connection and try reading config again", __func__);
+			close_oldest_client();
+			ret = read_upsconf(1);	/* 1 = may abort upon fundamental errors */
+		} else {
+			/* Not fatalx(), the method above already reported the problem */
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return ret;
+}
+
 /* callback during parsing of ups.conf */
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -475,7 +552,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 
 	/* if not listed, create a new entry and prepend it to the list */
 	if (temp == NULL) {
-		temp = xcalloc(1, sizeof(*temp));
+		temp = (ups_t*)xcalloc(1, sizeof(*temp));
 		temp->upsname = xstrdup(upsname);
 		temp->next = upstable;
 		upstable = temp;
@@ -601,12 +678,19 @@ static int check_file(const char *fn)
 {
 	char	chkfn[NUT_PATH_MAX];
 	FILE	*f;
+	int	retries = 0;
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
 
+retry:
 	f = fopen(chkfn, "r");
 
 	if (!f) {
+		if (errno == EMFILE && retries < 10) {
+			close_oldest_client();
+			retries++;
+			goto retry;
+		}
 		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
 		return 0;	/* failed */
 	}
@@ -634,11 +718,11 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	read_upsconf(1);		/* 1 = may abort upon fundamental errors */
+	load_upsconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */
-	load_upsdconf(1);		/* 1 = reloading */
+	load_upsdconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
 
 	/* now delete all UPS entries that didn't get reloaded */
 

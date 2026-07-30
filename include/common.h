@@ -38,7 +38,7 @@
 #endif	/* WIN32 */
 
 /* Need this on AIX when using xlc to get alloca */
-#ifdef _AIX
+#if defined(_AIX) && defined(__IBMC__)
 #pragma alloca
 #endif /* _AIX */
 
@@ -50,23 +50,24 @@
 #include <sys/stat.h>
 
 #ifdef HAVE_SYS_SIGNAL_H
-#include <sys/signal.h>
+# include <sys/signal.h>
 #endif
 #ifdef HAVE_SIGNAL_H
-#include <signal.h>
+# include <signal.h>
 #endif
 
 #include <stdlib.h>
 
 #ifdef HAVE_STRINGS_H
-#include <strings.h>	/* for strncasecmp() and strcasecmp() */
+# include <strings.h>	/* for strncasecmp() and strcasecmp() */
 #endif
 #ifdef HAVE_STRING_H
-#include <string.h>	/* for strdup() and many others */
+# include <string.h>	/* for strdup() and many others */
 #endif
 
 #ifndef WIN32
 # include <syslog.h>
+# include <sys/un.h>
 #else	/* WIN32 */
 # include <winsock2.h>
 # include <windows.h>
@@ -105,6 +106,7 @@
 #include "attribute.h"
 #include "proto.h"
 #include "str.h"
+#include "nut_stdint.h"
 
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
 # include <regex.h>
@@ -114,6 +116,13 @@
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
+#endif
+
+#ifndef MAX
+# define	MAX(p,q)	(((p) >= (q)) ? (p) : (q))
+#endif
+#ifndef MIN
+# define	MIN(p,q)	(((p) <= (q)) ? (p) : (q))
 #endif
 
 /* POSIX requires these, and most but not all systems use same
@@ -137,7 +146,7 @@ extern "C" {
  * including pipes for driver-upsd communications: */
 # define TYPE_FD int
 # define ERROR_FD (-1)
-# define VALID_FD(a) (a>=0)
+# define VALID_FD(a) ((a)>=0)
 
 /* Type of what NUT serial/SHUT methods juggle: */
 # define TYPE_FD_SER TYPE_FD
@@ -157,15 +166,20 @@ extern "C" {
  */
 # define TYPE_FD HANDLE
 # define ERROR_FD (INVALID_HANDLE_VALUE)
-# define VALID_FD(a) (a!=INVALID_HANDLE_VALUE)
+# define VALID_FD(a) ((a)!=INVALID_HANDLE_VALUE)
 
 # ifndef INVALID_SOCKET
-#  define INVALID_SOCKET -1
+#  define INVALID_SOCKET ((SOCKET)(-1))
 # endif
 
+/* Bitness-dependent "pointer-sized unsigned integer" (usually 32 or 64 bits) */
 # define TYPE_FD_SOCK SOCKET
 # define ERROR_FD_SOCK INVALID_SOCKET
-# define VALID_FD_SOCK(a) (a!=INVALID_SOCKET)
+/* Valid range for SOCKET is 0..(INVALID_SOCKET-1) and there is no special
+ * check for "-1" (may be or not be coincidental by casting and/or definition
+ * in existing headers) nor generally negative values, as in Unix socket API.
+ */
+# define VALID_FD_SOCK(a) ((a)!=INVALID_SOCKET)
 
 typedef struct serial_handler_s {
 	HANDLE handle;
@@ -180,7 +194,7 @@ typedef struct serial_handler_s {
 
 # define TYPE_FD_SER serial_handler_t *
 # define ERROR_FD_SER (NULL)
-# define VALID_FD_SER(a) (a!=NULL)
+# define VALID_FD_SER(a) ((a)!=NULL)
 
 /* difftime returns erroneous value so we use this macro */
 # undef difftime
@@ -229,6 +243,16 @@ const char *describe_NUT_VERSION_once(void);
  */
 const char *suggest_doc_links(const char *progname, const char *progconf);
 
+/* For drivers that failed to start because they could not hold on to a
+ * device, on systems where the nut-driver-enumerator could produce units
+ * that conflict with a manually-launched driver program, suggest that
+ * this may be the case. Has some work on systems where NDE can be used
+ * (currently where SMF or SystemD were considered during build), no-op
+ * on others.
+ * We define this in one spot, to change conditions or wording easily.
+ */
+void suggest_NDE_conflict(void);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
@@ -262,6 +286,38 @@ void open_syslog(const char *progname);
 
 /* close ttys and become a daemon */
 void background(void);
+
+/* Support functions for backgrounding */
+int background_fork(void);
+void background_child(void);
+
+/* allow tagging the (forked) process in logs to ease debugging */
+const char *getproctag(void);
+/* save a copy of tag, or call with NULL to clean and free the internal buffer;
+ * if using this feature in a particular NUT program at all - it automatically
+ * registers with atexit() to do such clean-up in exit handling.
+ *
+ * WARNING: first call to this method also caches the getprocname(getpid())
+ * so if you want to see debug logs from that - only call this after setting
+ * the nut_debug_level (by parsing CLI arguments and/or NUT_DEBUG_LEVEL envvar).
+ */
+void setproctag(const char *tag);
+
+/* These are exported for internal use between NUT libraries (common,
+ * libupsclient, libnutscan...) and not intended for arbitrary consumers,
+ * except maybe those that have a chance to be linked with both common
+ * and some of the other libraries, with or without libnutprivate-common
+ * as a single dynamically loaded object behind them. To make sense of
+ * it, every instance has a cookie so they can compare notes; it can be
+ * passed to relevant public libraries' methods.
+ */
+const void *nut_common_cookie(void);
+/* Gets caller-allocated string which this method frees if not NULL (in atexit()),
+ * typically returned by getmyprocname() */
+void setmyprocname(const char *s);
+/* Returns NULL or a string from getprocname(myPid) that the caller should free() */
+const char *getmyprocname(void);
+const char *getmyprocbasename(void);
 
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name);
@@ -299,14 +355,20 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
  *	0	Process name identified, does not seem to match
  *	1+	Process name identified, and seems to match with
  *		varying precision
- * Generally speaking, if (checkprocname(...)) then ok to proceed
+ * Generally speaking, if (checkprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int checkprocname(pid_t pid, const char *progname);
-/* compareprocname() does the bulk of work for checkprocname()
- * and returns same values. The "pid" argument is used for logging.
- * Generally speaking, if (compareprocname(...)) then ok to proceed
+int checkprocnames(pid_t pid, const char **prognames);
+/* compareprocname*() methods do the bulk of work for checkprocname*()
+ * and return same values. The "pid" argument is used for logging.
+ * Generally speaking, if (compareprocname(...)) then ok to proceed.
+ * Singular for programs with a single expected executable name,
+ * plural for programs with expected aliases (e.g. "old"/new" migrations).
  */
 int compareprocname(pid_t pid, const char *procname, const char *progname);
+int compareprocnames(pid_t pid, const char *procname, const char **prognames);
 /* Helper for the above methods and some others. If it returns true (1),
  * work about PID-name comparison should be quickly skipped.
  */
@@ -355,17 +417,24 @@ int	str_contains_token(const char *string, const char *token);
  * checking for uniqueness and going to add a newly seen token.
  * If such callback returns 0, abort the addition of token and return -3.
  */
-int	str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
-			    int (*callback_always)(char *, size_t, const char *),
-			    int (*callback_unique)(char *, size_t, const char *)
+int	str_add_unique_token(
+	char *tgt,
+	size_t tgtsize,
+	const char *token,
+	int (*callback_always)(char *, size_t, const char *),
+	int (*callback_unique)(char *, size_t, const char *)
 );
 
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
+/* Check filesystem permissions for files/dirs we deem secretive */
+void check_perms(const char *fn);
+
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
+int sendsignalpidaliases(pid_t pid, int sig, const char **prognames, int check_current_progname);
 
 /* open <pidfn> and get the pid
  * returns zero or more for successfully retrieved value,
@@ -390,12 +459,40 @@ pid_t parsepidfile(const char *pidfn);
  * named driver programs does not request it)
  */
 int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
+int sendsignalfnaliases(const char *pidfn, int sig, const char **prognames, int check_current_progname);
 #else	/* WIN32 */
 /* No progname here - communications via named pipe */
 int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
+int sendsignalfnaliases(const char *pidfn, const char * sig, const char **prognames_ignored, int check_current_progname_ignored);
 #endif	/* WIN32 */
 
+/* return a pointer to character inside the file that starts a basename
+ * caller should strdup() a copy to retain beyond the lifetime of "file" */
 const char *xbasename(const char *file);
+/* like above, but also strip platform-specific EXEEXT if present,
+ * e.g. convert ".../upsd.exe" => "upsd"; returns a newly allocated
+ * string that the caller must free() eventually, or NULL in case
+ * of errors (e.g. NULL or empty input or xbasename() output. */
+char *xbasename_no_ext(const char *file);
+/* like above with fallback support; always returns a new allocation,
+ * even if a copy of inputs or "UNDEFINED" if can not determine the
+ * value (and fallback is NULL) */
+char *xbasename_no_ext_default(const char *file, const char *fallback);
+
+/* Used in main() and similar methods to set a "const char *progname" from
+ * argv[0] in a way that this may be either a pointer to sub-string of
+ * that argv[0] or to the fallback (if not NULL) without wasting RAM for
+ * copies, or to a variable automatically cleaned by the NUT common
+ * library at exit. Uses logic similar to xbasename_no_ext_default()
+ * internally to strip EXEEXT on platforms that have it.
+ * Call with getprogname_argv0_default(NULL, NULL) would return the
+ * previously saved value, or "UNDEFINED" if never set yet. */
+const char *getprogname_argv0_default(const char *file, const char *fallback);
+
+/* enable writing upslog_with_errno() and upslogx() type messages to
+ * the stdout instead of stderr, and end them with HTML <BR/> tag,
+ * to help troubleshoot NUT CGI programs specifically */
+void cgilogbit_set(void);
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
@@ -417,11 +514,17 @@ const char * rootpidpath(void);
 void check_unix_socket_filename(const char *fn);
 
 #ifdef NUT_WANT_INET_NTOP_XX
-/* NOT THREAD SAFE!
- * Helpers to convert one IP address to string from different structure types
- * Return pointer to internal buffer, or NULL and errno upon errors */
-const char *inet_ntopSS(struct sockaddr_storage *s);
-const char *inet_ntopAI(struct addrinfo *ai);
+/* Helpers to convert one IP address to string from different structure types
+ * Return pointer to internal buffer (in NOT THREAD SAFE! methods named as such)
+ * or caller-provided buffer or an allocated buffer that caller must free (in
+ * the "x" methods), or NULL and errno upon errors */
+const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz);
+const char *inet_ntopSS_thread_unsafe(struct sockaddr_storage *s);
+const char *xinet_ntopSS(struct sockaddr_storage *s);
+
+const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz);
+const char *inet_ntopAI_thread_unsafe(struct addrinfo *ai);
+const char *xinet_ntopAI(struct addrinfo *ai);
 #endif	/* NUT_WANT_INET_NTOP_XX */
 
 /* Provide integration for systemd inhibitor interface (where available,
@@ -460,12 +563,43 @@ typedef enum eupsnotify_state {
 	NOTIFY_STATE_RELOADING,
 	NOTIFY_STATE_STOPPING,
 	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
-	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_WATCHDOG,	/* Ping the framework that we are still alive */
+	NOTIFY_STATE_EXTEND_TIMEOUT	/* Ping the framework that we are still alive when starting/stopping */
 } upsnotify_state_t;
 const char *str_upsnotify_state(upsnotify_state_t state);
 /* Note: here fmt may be null, then the STATUS message would not be sent/added */
 int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+
+/* Exposed to code consumers (NUT daemons) for NOTIFY_STATE_EXTEND_TIMEOUT
+ * By default upsnotify_extend_timeout_usec == 0 so the
+ * upsnotify() method would fall back to current WATCHDOG_USEC
+ * if available, or to upsnotify_extend_timeout_usec_default.
+ * NOTE: It seems that internally in systemd, UINT64_MAX or
+ *  ((uint64_t)-1) means "infinity". Internally systemd uses
+ *  uint64_t as their usec_t (at least currently) but this
+ *  does not seem to be a public API/contract. De-facto the
+ *  value did not have any effect; however INT64_MAX did work
+ *  (presumably as almost 300K years, did not check that long).
+ *  More at https://github.com/systemd/systemd/issues/39535
+ * Whatever value gets applied, it should exceed the relevant
+ * loop cycle duration at that point in daemon life time.
+ */
+#define UPSNOTIFY_EXTEND_TIMEOUT_USEC_INFINITY	((uint64_t)INT64_MAX)
+extern uint64_t upsnotify_extend_timeout_usec_default, upsnotify_extend_timeout_usec;
+
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep and report the original setting).
+ * Returns the pointer to the currently set value, so it
+ * can be propagated or used in difftime() computations.
+ * NOTE: In WIN32 builds also enforces line-buffering for
+ * stdout and stderr streams.
+ */
+struct timeval *upslog_start_sync(struct timeval *tv);
 
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */
@@ -489,6 +623,7 @@ void s_upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void s_upsdebug_hex(int level, const char *msg, const void *buf, size_t len);
 void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len);
+void s_upsdebug_ascii_compact(int level, const char *msg, const void *buf, size_t len);
 /* These macros should help avoid run-time overheads
  * passing data for messages nobody would ever see.
  *
@@ -511,6 +646,8 @@ void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len);
 	do { if (nut_debug_level >= (level)) { s_upsdebug_hex((level), msg, buf, len); } } while(0)
 #define upsdebug_ascii(level, msg, buf, len) \
 	do { if (nut_debug_level >= (level)) { s_upsdebug_ascii((level), msg, buf, len); } } while(0)
+#define upsdebug_ascii_compact(level, msg, buf, len) \
+	do { if (nut_debug_level >= (level)) { s_upsdebug_ascii_compact((level), msg, buf, len); } } while(0)
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
@@ -545,6 +682,13 @@ char *xstrdup(const char *string);
 int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap);
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/* Define a missing va_copy using __va_copy, if available: */
+#ifndef HAVE_VA_COPY
+# ifdef HAVE___VA_COPY
+#  define va_copy(dest, src) __va_copy(dest, src)
+# endif
+#endif
 
 /* Mitigate the inherent insecurity of dynamically constructed formatting
  * strings vs. a fixed vararg list with its amounts and types of variables
@@ -621,6 +765,7 @@ int match_regex_hex(const regex_t *preg, const int n);
 
 /* Note: different method signatures instead of TYPE_FD_SER due to "const" */
 #ifndef WIN32
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #else	/* WIN32 */
@@ -660,12 +805,12 @@ char * get_libname(const char* base_libname);
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
-#include <getopt.h>
+# include <getopt.h>
 #else
-#ifdef NEED_GETOPT_DECLS
+# ifdef NEED_GETOPT_DECLS
 extern char *optarg;
 extern int optind;
-#endif /* NEED_GETOPT_DECLS */
+# endif /* NEED_GETOPT_DECLS */
 #endif /* HAVE_GETOPT_H */
 
 /* logging flags: bitmask! */
@@ -674,6 +819,12 @@ extern int optind;
 #define UPSLOG_SYSLOG		0x0002
 #define UPSLOG_STDERR_ON_FATAL	0x0004
 #define UPSLOG_SYSLOG_ON_FATAL	0x0008
+
+/* Special cases, primarily for NUT CGI programs to dump logs
+ *  in a way better usable when troubleshooting with a browser:
+ */
+#define UPSLOG_STDOUT		0x0010
+#define UPSLOG_CGI_BR		0x0020
 
 #ifndef HAVE_SETEUID
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
@@ -708,6 +859,10 @@ extern int optind;
 #define UPSD_PIPE_NAME TEXT("upsd")
 
 char * getfullpath(char * relative_path);
+
+/* e.g. getfullpath2(CONFPATH, PATH_ETC) */
+char * getfullpath2(char * cfg_path, char * fallback_path);
+
 #define PATH_ETC	"\\..\\etc"
 #define PATH_VAR_RUN "\\..\\var\\run"
 #define PATH_SHARE "\\..\\share"
@@ -721,6 +876,9 @@ double difftimeval(struct timeval x, struct timeval y);
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 double difftimespec(struct timespec x, struct timespec y);
 #endif
+
+/* count the time elapsed since start in milliseconds */
+long elapsed_since_timeval(struct timeval *start);
 
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */
