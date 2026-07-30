@@ -1112,6 +1112,125 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	return (int)len;
 }
 
+/* OMRON communication subdriver
+ * Same transport as ippon above, except that the control transfer carries a
+ * 16-byte HID Output report, the size declared by the report descriptor of the
+ * BN150T. Only that model has been tested. */
+#define	OMRON_REPORT_SIZE	16
+
+static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	char	tmp[64];
+	char	*p;
+	size_t	tmplen;
+	int	ret;
+	size_t	i, len;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	/* Send command
+	 * NOTE: the whole buffer is zeroed first, so that the padding sent
+	 * after a command shorter than the chunk length is defined. */
+	memset(tmp, 0, sizeof(tmp));
+	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
+	memcpy(tmp, cmd, tmplen);
+
+	/* Advance by a whole report, not by the transferred count: a report is
+	 * only meaningful to the device as a unit, so a partial transfer cannot
+	 * be resumed at a byte offset. This also keeps &tmp[i] plus a full
+	 * report inside tmp[]. */
+	for (i = 0; i < tmplen; i += OMRON_REPORT_SIZE) {
+
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i],
+			OMRON_REPORT_SIZE, 1000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)",
+				(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				ret);
+			return ret;
+		}
+
+		if (ret != OMRON_REPORT_SIZE) {
+			upsdebugx(3, "send: short transfer (%d of %d bytes)",
+				ret, OMRON_REPORT_SIZE);
+			return -1;
+		}
+
+	}
+
+	p = memchr(tmp, '\r', tmplen);
+	upsdebugx(3, "send: %.*s", (int)(p ? (size_t)(p - tmp) : tmplen), tmp);
+
+	/* Read the reply in one transfer of at most 64 bytes */
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)tmp, sizeof(tmp), 1000);
+
+	/* Any errors here mean that we are unable to read a reply
+	 * (which will happen after successfully writing a command
+	 * to the UPS) */
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s (%d)",
+			(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			ret);
+		return ret;
+	}
+
+	/* The transfer length is not the payload length: the reply is
+	 * terminated by 0x0D, so the payload has to be measured here. */
+
+	for (i = 0, len = 0; i < (size_t)ret; i++) {
+
+		if (tmp[i] != '\r')
+			continue;
+
+		len = ++i;
+		break;
+
+	}
+
+	/* Just in case there wasn't any '\r', fall back to the string length
+	 * within what was actually read: tmp[] holds no terminating NUL when
+	 * the device fills the whole buffer. */
+	if (!len) {
+		p = memchr(tmp, '\0', (size_t)ret);
+		len = p ? (size_t)(p - tmp) : (size_t)ret;
+	}
+
+	upsdebug_hex(5, "read", tmp, len);
+	upsdebugx(3, "read: %.*s",
+		(int)(len && tmp[len - 1] == '\r' ? len - 1 : len), tmp);
+
+	len = len < buflen ? len : buflen - 1;
+
+	memset(buf, 0, buflen);
+	memcpy(buf, tmp, len);
+
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (len && memchr(buf, '\r', len) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (len < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[len++] = '\r';
+			buf[len] = 0;
+		}
+	}
+
+	if (len > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, len);
+		return -1;
+	}
+	return (int)len;
+}
+
 static int 	hunnox_protocol(int asking_for)
 {
 	char	buf[1030];
@@ -3240,6 +3359,7 @@ void	upsdrv_shutdown(void)
 			{ "phoenixtec", &phoenixtec_command },
 			{ "phoenix", &phoenix_command },
 			{ "ippon", &ippon_command },
+			{ "omron", &omron_command },
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
 			{ "hunnox", &hunnox_command },
