@@ -41,6 +41,11 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * `nut-scanner` tool updates:
+      - Mutexes used in parallelized scans were not properly released on
+        failure code paths (impacts likely all 2.8.x until now). [PR #3551]
+
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
 
@@ -58,10 +63,17 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+
  - `dummy-ups` driver updates:
-   * Added `authconf` driver parameter for repeater mode to control
-     authentication configuration discovery. It accepts `default`, `none`,
-     or a specific authconf file path. [issue #3329]
+    * Added `authconf` driver parameter for repeater mode to control
+      authentication configuration discovery. It accepts `default`, `none`,
+      or a specific authconf file path. [issue #3329]
+
+ - `nhs_ser` driver updates:
+    * Modernized serial communication and added validated settings for baud
+      rate, data bits, parity, stop bits, flow control, per-byte read timeout,
+      and transmission pacing. Also improved serial resource handling and
+      reconnection behavior. [issue #3510, PR #3543]
 
  - `nutdrv_qx` driver updates:
     * Only claim a USB device as "supported" during discovery out of the box
@@ -119,6 +131,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Completed support for NUT standard USB configuration options, and fixed
       some problems possible when iterating devices. [issue #1768, PR #3477]
 
+ - `riello_usb`, `riello_ser` driver updates:
+    * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
@@ -137,6 +152,12 @@ https://github.com/networkupstools/nut/milestone/13
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
 
+ - `upsdrvctl` tool updates:
+    * Previously when looping to start a driver (and initially failing), we
+      checked if it completed the start-up during cool-down delay only when
+      called to start multiple (all) drivers at once. There is no reason to
+      not do so for single-driver runs -- addressed with this release. [#3302]
+
  - common code:
     * Refactored `common::background()` method used by numerous NUT daemons
       to handle parent and child code paths by separately addressable methods.
@@ -144,6 +165,10 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
+      is", complete with a confusing blank line where `\n` ended the message.
+      This is now passed through newly introduced `upsdebug_ascii_compact()`
+      method for better readability and more compact logs. [PR #3525]
     * When dealing with driver `AF_UNIX` sockets (non-WIN32), use non-blocking
       `connect()` to ensure a timeout if something does not respond. [PR #3456]
     * Windows driver state named pipes now use explicit security attributes
@@ -156,6 +181,24 @@ https://github.com/networkupstools/nut/milestone/13
       chunks populated only partially with bytes we intended. These buffers are
       now more diligently pre-zeroed as their siblings were in other code paths,
       to avoid sending host stack garbage to a device. [#3529]
+    * Introduced a `reconnect_max_tries` setting for NUT drivers, so they can
+      be configured to exit after the specified number of reconnection attempts
+      (so that the OS service management facility can completely recycle the
+      driver program). Multiple drivers were updated to use the new facility
+      to consistently report `reconnect_trying()` states instead of what they
+      did before, including: `adelsystem_cbi`, `apc_modbus`, `apcsmart`,
+      `bcmxcp_usb`, `blazer_usb`, `generic_modbus`, `nhs_ser`, `nutdrv_qx`,
+      `powerman-pdu`, `powervar_cx_usb`, `richcomm_usb`, `riello_usb`,
+      `tripplite_usb`, `usbhid-ups` (it is possible that for now some of them
+      would log the situation twice, with old methods and the new, and that
+      some would abort the program if reconnection attempt fails). [PR #3541]
+    * `belkin`, `bestfortress`, `genericups`, `powerpanel`, `tripplite` drivers
+      introduced attempts to reconnect in case of failure, instead of just
+      exiting right away or remaining in data stale mode indefinitely, also
+      using `reconnect_trying()` for consistent reporting. They now track
+      serial port file descriptor validity a bit more diligently. [PR #3541]
+    * USB drivers: fixed an out-of-bounds read of the candidate HID report
+      descriptor lengths, which could cause a segmentation fault. [PR #3550]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
@@ -251,6 +294,7 @@ https://github.com/networkupstools/nut/milestone/13
  - `upssched` client/tool updates:
     * Fixed handling of `NOTIFYMSG` from command line if other arguments are
       present (e.g. debugging with `-DDDDDD`). [issues #3105, #3525, PR #3527]
+    * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
     * Fixed Qt tray tooltips to render in plain text, not rich text which
@@ -259,6 +303,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed both Python 2 and 3 variants to handle automatic client reconnection
       (e.g. after system suspend/resume, network interruption, or NUT server
       restart). [issue #3509, PR #3523]
+    * Added support for `nutauth.conf` files as source of configuration about
+      default/server/user access credentials and SSL setup. [#issue #3514]
+    * Fixed TAB/SHIFT-TAB focus change order through login page. [PR #3533]
+    * Updated formal version of all three client variants to `2.1.0`. [#3514,
+      #3509]
 
  - `upssched` client/tool updates:
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]

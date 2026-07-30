@@ -112,6 +112,39 @@ typedef struct vartab_s {
 void addvar(int vartype, const char *name, const char *desc);
 void addvar_reloadable(int vartype, const char *name, const char *desc);
 
+typedef enum reconnect_state {
+	RECONNECT_SUCCESS = 0,
+	RECONNECT_TRYING,
+	RECONNECT_UPDATEINFO
+} reconnect_state_t;
+/** Called by a driver to either:
+ * - enter/continue a reconnection loop (trying=RECONNECT_TRYING=1, and with
+ *   certain configuration of `reconnect_max_tries>=0` can `set_exit_flag()`),
+ * - signal impending success (trying=RECONNECT_UPDATEINFO=2), or
+ * - end it due to successful reconnection (trying=RECONNECT_SUCCESS=0).
+ *
+ * Sets the `driver.state` to "reconnect.trying" (1) or "quiet" (0)
+ * respectively; if some drivers re-evaluate complete device data
+ * after reconnection has technically succeeded but before becoming
+ * generally available again, they are welcome to set `driver.state`
+ * to "reconnect.updateinfo" (2).
+ *
+ * Returns how many attempts remain before driver exits (-1 if it won't,
+ * 0 if exiting now).
+ */
+int reconnect_trying(reconnect_state_t trying);
+
+/** Return 1 if driver can now report custom reconnection start/progress
+ *  details, with common information to be logged by reconnect_trying(),
+ *  otherwise 0. If `throttle_hit!=0`, check if `reconnect_report_freq>0`
+ *  and `reconnect_count%reconnect_report_freq == 0` to allow a progress
+ *  report to be logged.
+ *
+ *  This method should be called before reconnect_trying(RECONNECT_TRYING)
+ *  bumps the counters involved.
+ */
+int may_log_reconnect_trying(int throttle_hit);
+
 /* Several helpers for driver configuration reloading follow:
  * * testval_reloadable() checks if we are currently reloading (or initially
  *   loading) the configuration, and if strings oldval==newval or not,

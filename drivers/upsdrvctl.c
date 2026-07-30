@@ -823,7 +823,7 @@ static int forkexec_parent_analyze(DWORD res, const ups_t *ups)
 
 #ifndef WIN32
 	if (waitret == -1) {
-		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+		upslogx(LOG_WARNING, "Startup timer elapsed and the child process did not change state, continuing...");
 		exec_timeout++;
 		*puexectimeout = 1;
 		return 0;
@@ -857,7 +857,7 @@ static int forkexec_parent_analyze(DWORD res, const ups_t *ups)
 		/* all ok, no-op */
 	} else
 	if (res == WAIT_TIMEOUT) {
-		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+		upslogx(LOG_WARNING, "Startup timer elapsed and the child process did not change state, continuing...");
 		*pupid = 0;	/* For WIN32, just a flag (not "-1" has a meaning) */
 		*puexectimeout = 1;
 		return 0;
@@ -974,6 +974,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			alarm(0);
 
 			/* Bump timeout or error counts if appropriate */
+			upsdebugx(2, "%s[POSIX]: revising the result with forkexec_parent_analyze()", __func__);
 			forkexec_parent_analyze(waitret, wstat, ups);
 
 			return;
@@ -1092,6 +1093,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			0);
 	}
 
+	upsdebugx(2, "%s[WIN32]: revising the result with forkexec_parent_analyze()", __func__);
 	forkexec_parent_analyze(res, ups);
 
 	return;
@@ -1448,8 +1450,8 @@ static void start_driver(const ups_t *ups)
 
 
 	while (drv_maxretry > 0) {
-		int cur_exec_error = exec_error;
-		int cur_exec_timeout = exec_timeout;
+		int	cur_exec_error = exec_error;
+		int	cur_exec_timeout = exec_timeout;
 
 		upsdebugx(2, "%s: %i remaining attempts", __func__, drv_maxretry);
 		debugcmdline(2, "exec: ", argv);
@@ -1458,28 +1460,38 @@ static void start_driver(const ups_t *ups)
 		if (!testmode) {
 			forkexec(argv, ups);
 			upsdebugx(3, "%s: forkexec() finished", __func__);
+		} else {
+			upsdebugx(3, "%s: forkexec() skipped due to testmode", __func__);
 		}
+
+		upsdebugx(4, "%s: before forkexec: cur_exec_error=%d cur_exec_timeout=%d, "
+			"after forkexec: exec_error=%d exec_timeout=%d",
+			__func__, cur_exec_error, cur_exec_timeout,
+			exec_error, exec_timeout);
 
 		/* driver command succeeded */
 		if (cur_exec_error == exec_error && cur_exec_timeout == exec_timeout) {
+			upsdebugx(3, "%s: not retrying any more, status did not change", __func__);
 			drv_maxretry = 0;
 			exec_error = initial_exec_error;
 			exec_timeout = initial_exec_timeout;
 		}
 		else {
 		/* otherwise, retry if still needed */
-			if (drv_maxretry > 0)
+			if (drv_maxretry > 0) {
 				if (drv_retrydelay >= 0) {
-					upsdebugx(3, "%s: retrying after %u seconds",
+					upsdebugx(3, "%s: something failed, retrying after %u seconds",
 						__func__, (unsigned int)drv_retrydelay);
 					sleep ((unsigned int)drv_retrydelay);
 
-					if (upscount > 1 && ups->exceeded_timeout) {
+					if (ups->exceeded_timeout) {
 						/* Final checks, similar to those in forkexec() */
 #ifndef WIN32
 						int	wstat;
 						pid_t	waitret;
 
+						upsdebugx(3, "%s: re-evaluate the previously started driver "
+							"after the delay, before we would retry starting it", __func__);
 						waitret = waitpid(ups->pid, &wstat, WNOHANG);
 						if (forkexec_parent_analyze(waitret, wstat, ups) > 0)
 #else
@@ -1493,10 +1505,17 @@ static void start_driver(const ups_t *ups)
 							drv_maxretry = 0;
 							exec_error = initial_exec_error;
 							exec_timeout = initial_exec_timeout;
+						} else {
+							upsdebugx(3, "%s: driver %s [%s] did not complete startup "
+								"while we were sleeping to retry", __func__,
+								ups->driver, ups->upsname);
 						}
 					}
 
 				}
+			} else {
+				upsdebugx(3, "%s: not retrying any more, maybe the startup timer is too tight and these retry cycles are what precludes the driver from starting?", __func__);
+			}
 		}
 	}
 }
@@ -1515,8 +1534,9 @@ static void help(const char *arg_progname)
 	printf("usage: %s [OPTIONS] (start | stop | shutdown | status) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
+	printf("For scripting with 'status' and 'list', you may want NUT_QUIET_INIT_BANNER=true\n");
 
-	printf("Common options:\n");
+	printf("\nCommon options:\n");
 	printf("  -h			display this help\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
@@ -1529,8 +1549,8 @@ static void help(const char *arg_progname)
 
 	printf("\nListing known driver(s):\n");
 	printf("  -l | list		list all device driver confgurations that can be managed\n");
-	printf("  -l | list <ups>	only try to list the specified device driver confgurations\n");
-	printf("              		(error out if the device name is unresolved)\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confguration\n");
+	printf("              		(check it is known, error out if the device name is unresolved)\n");
 
 	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");

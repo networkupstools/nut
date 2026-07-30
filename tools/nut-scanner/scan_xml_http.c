@@ -738,6 +738,9 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 						thread_count * sizeof(nutscan_thread_t));
 					if (new_thread_array == NULL) {
 						upsdebugx(1, "%s: Failed to realloc thread array", __func__);
+# ifdef HAVE_PTHREAD_TRYJOIN
+						pthread_mutex_unlock(&threadcount_mutex);
+# endif /* HAVE_PTHREAD_TRYJOIN */
 						break;
 					}
 					else {

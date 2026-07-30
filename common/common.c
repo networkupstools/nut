@@ -5022,7 +5022,9 @@ static const char* ascii_symb[] = {
 	"US"    /*  0x1F    */
 };
 
-/* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
+/* dump message msg and len bytes from buf to upsdebugx(level) in ascii,
+ * spelling each ASCII character in its own quotes and special characters
+ * by code . */
 void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len)
 {
 	char line[256];
@@ -5045,6 +5047,52 @@ void s_upsdebug_ascii(int level, const char *msg, const void *buf, size_t len)
 			n = snprintfcat(line, sizeof(line), "%02Xh ", ch);
 		else
 			n = snprintfcat(line, sizeof(line), "'%c' ", ch);
+
+		if (n < 0) goto failed;
+	}
+
+	s_upsdebugx(level, "%s", line);
+	return;
+
+failed:
+	s_upsdebugx(level, "%s", "Failed to print an ASCII data dump for debug");
+}
+
+/* dump message msg and len bytes from buf to upsdebugx(level) in ascii,
+ * spelling a streak of ASCII characters together and special characters
+ * by code in brackets. */
+void s_upsdebug_ascii_compact(int level, const char *msg, const void *buf, size_t len)
+{
+	char line[256];
+	int n;	/* number of characters currently in line */
+	size_t i;	/* number of bytes output from buffer */
+	unsigned char ch, prev_ascii = 0;
+
+	if (nut_debug_level < level)
+		return;	/* save cpu cycles */
+
+	n = snprintf(line, sizeof(line), "%s", msg);
+	if (n < 0) goto failed;
+
+	for (i=0; i<len; ++i) {
+		ch = ((const unsigned char *)buf)[i];
+
+		if (ch < 0x20) {
+			n = snprintfcat(line, sizeof(line), "%s<%s> ",
+				prev_ascii ? "' " : "",
+				ascii_symb[ch]);
+			prev_ascii = 0;
+		} else if (ch >= 0x80) {
+			n = snprintfcat(line, sizeof(line), "%s<0x%02X> ",
+				prev_ascii ? "' " : "",
+				ch);
+			prev_ascii = 0;
+		} else {
+			n = snprintfcat(line, sizeof(line), "%s%c",
+				prev_ascii ? "" : "'",
+				ch);
+			prev_ascii = 1;
+		}
 
 		if (n < 0) goto failed;
 	}

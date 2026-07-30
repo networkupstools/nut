@@ -29,10 +29,13 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);
+static int reconnect_ups(void);
+void upsdrv_initups(void);
+void upsdrv_cleanup(void);
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -223,9 +226,17 @@ void upsdrv_updateinfo(void)
 		if (retry < MAXTRIES) {
 			upsdebugx(1, "Communications with UPS lost: status read failed!");
 			retry++;
-		} else {	/* too many retries */
-			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed!");
+			return;
+		}
+
+		if (may_log_reconnect_trying(0))
+			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed; attempting reconnect");
+
+		if (!reconnect_ups()) {
 			dstate_datastale();
+		} else {
+			/* Do not extra-log below */
+			retry = 0;
 		}
 		return;
 	}
@@ -499,6 +510,13 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
+
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* set DTR to low and RTS to high */
@@ -510,17 +528,24 @@ void upsdrv_initups(void)
 	ser_flush_io(upsfd);
 }
 
-void upsdrv_initinfo(void)
+static int init_driver_state(int fatal_on_failure)
 {
 	ssize_t	res;
 	char	temp[SMALLBUF], st[SMALLBUF];
 
 	res = init_communication();
 	if (res < 0) {
-		fatalx(EXIT_FAILURE,
-			"Unable to detect an Belkin Smart protocol UPS on port %s\n"
-			"Check the cabling, port name or model name and try again", device_path
-			);
+		if (fatal_on_failure) {
+			fatalx(EXIT_FAILURE,
+				"Unable to detect an Belkin Smart protocol UPS on port %s\n"
+				"Check the cabling, port name or model name and try again", device_path
+				);
+		}
+
+		if (may_log_reconnect_trying(1))
+			upslogx(LOG_WARNING, "Unable to re-establish communication with the Belkin UPS on port %s", device_path);
+
+		return 0;
 	}
 
 	dstate_setinfo("ups.mfr", "BELKIN");
@@ -564,9 +589,39 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.stop");
 
 	upsh.instcmd = instcmd;
+	return 1;
+}
+
+void upsdrv_initinfo(void)
+{
+	if (!init_driver_state(1)) {
+		return;
+	}
+}
+
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+
+	if (INVALID_FD_SER(upsfd) || !init_driver_state(0)) {
+		dstate_datastale();
+		return 0;
+	}
+
+	/* TOTHINK: Any data refresh and reconnect_trying(RECONNECT_UPDATEINFO) here? */
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
 }
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

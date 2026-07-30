@@ -73,6 +73,7 @@ import socket
 import time
 import re
 import os
+import sys
 
 ssl_available = False
 try:
@@ -119,6 +120,15 @@ class AuthConf:
     __debug = False
 
     @staticmethod
+    def setDebug(val):
+        AuthConf.__debug = val
+
+    @staticmethod
+    def printDebug(msg):
+        if AuthConf.__debug:
+            sys.stderr.write( "[DEBUG] %s\n" % str(msg) )
+
+    @staticmethod
     def getAuthConfList():
         """ Get the one global list of all parsed authentication configurations """
         return AuthConf.__authconf_list
@@ -130,10 +140,14 @@ class AuthConf:
         AuthConf.__global_defaults = None
 
     def __init__(self, section=""):
-        self.section = section
+        self.section = AuthConf.normalizeSection(section) if section else section
         ''' `@host:port` or `user@host:port`, or None for global; note that host may be an IPv6 address enclosed in brackets '''
 
         self.user = None
+        if self.section and '@' in self.section:
+            section_user = self.section.split('@', 1)[0]
+            if section_user:
+                self.user = section_user
         self.password = None
 
         self.certpath = None
@@ -160,6 +174,49 @@ class AuthConf:
         self.forcessl = -1
         ''' -1 = unset, 0 = off, 1 = on '''
 
+    @staticmethod
+    def normalizeSection(section):
+        """Return the canonical user@host:port spelling of an authconf section."""
+        if section.startswith('[') and section.endswith(']'):
+            inner = section[1:-1]
+            if '@' in inner or ':' not in inner or inner.startswith('['):
+                section = inner
+        user = None
+        addr = section
+        if '@' in section:
+            user, addr = section.split('@', 1)
+
+        host = addr
+        port = None
+        if addr.startswith('['):
+            close_bracket = addr.find(']')
+            if close_bracket < 0:
+                raise PyNUTError("Invalid authconf section: '%s'" % section)
+            host = addr[1:close_bracket]
+            suffix = addr[close_bracket + 1:]
+            if suffix:
+                if not suffix.startswith(':'):
+                    raise PyNUTError("Invalid authconf section: '%s'" % section)
+                port = suffix[1:]
+        elif ':' in addr:
+            host, port = addr.split(':', 1)
+
+        if not host:
+            host = 'localhost'
+        if not port:
+            port = '3493'
+        elif not port.isdigit():
+            try:
+                port = str(socket.getservbyname(port, 'tcp'))
+            except socket.error:
+                pass
+
+        host_part = host
+        if ':' in host and not (host.startswith('[') and host.endswith(']')):
+            host_part = '[%s]' % host
+
+        return "%s@%s:%s" % (user if user else '', host_part, port)
+
     def __str__(self):
         sb = []
         for key in self.__dict__:
@@ -172,55 +229,77 @@ class AuthConf:
         return self.__str__()
 
     @staticmethod
-    def readAuthConfFile(filename=None, fatal_errors=False, global_scope=True):
+    def readAuthConfFile(filename=None, fatal_errors=False, verbose_missing_hinted=False, verbose_missing_default=None, global_scope=True):
         """ Read the authentication configuration file (usually nutauth.conf) """
+        if verbose_missing_default is None:
+            verbose_missing_default = verbose_missing_hinted
+
         if filename is None:
             # Matches C implementation logic for default path
             s = os.environ.get("NUT_AUTHCONF_FILE")
-            if s and os.path.exists(s):
+            if s and os.path.exists(s) and os.path.isfile(s):
                 filename = s
             else:
+                if s and verbose_missing_hinted:
+                    sys.stderr.write("Warning: location pointed to by NUT_AUTHCONF_FILE environment variable does not exist or is not a file: %s\n" % s)
                 s = os.environ.get("NUT_AUTHCONF_PATH")
                 if s and os.path.exists(os.path.join(s, "nutauth.conf")):
                     filename = os.path.join(s, "nutauth.conf")
                 else:
+                    if s and verbose_missing_hinted:
+                        sys.stderr.write("Warning: location pointed to by NUT_AUTHCONF_PATH environment variable does not exist or does not contain a nutauth.conf file: %s\n" % s)
                     s = os.environ.get("HOME")
                     if s:
                         p = os.path.join(s, ".config", "nut", "nutauth.conf")
                         if os.path.exists(p):
                             filename = p
                         else:
+                            if verbose_missing_default:
+                                sys.stderr.write("Warning: User-default nutauth.conf file not found: %s\n" % p)
                             p = os.path.join(s, ".nutauth.conf")
                             if os.path.exists(p):
                                 filename = p
+                            else:
+                                if verbose_missing_default:
+                                    sys.stderr.write("Warning: User-default nutauth.conf file not found: %s\n" % p)
 
             if filename is None:
                 filename = os.path.join(os.environ.get("NUT_CONFPATH", "@CONFPATH@"), "nutauth.conf")
+                if not os.path.isfile(filename) and verbose_missing_default:
+                    sys.stderr.write("Warning: System-default NUT_CONFPATH directory does not exist or does not contain a nutauth.conf file: %s\n" % filename)
 
-        if not os.path.exists(filename):
+        if not os.path.exists(filename) or not os.path.isfile(filename):
+            msg = "Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename))
+            if verbose_missing_default:
+                sys.stderr.write("%s\n" % msg)
             if fatal_errors:
-                raise PyNUTError("Can't open a user/site-provided default nutauth.conf file" if filename is None else ("Could not open %s" % (filename)))
+                raise PyNUTError(msg)
             return AuthConf.__authconf_list
 
         current_ac = AuthConf.__global_defaults if global_scope else None
 
         try:
-            if AuthConf.__debug:
-                print( "[DEBUG] readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
+            AuthConf.printDebug( "readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
             with open(filename, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith('#'):
                         continue
 
-                    if line.startswith('[') and line.endswith(']'):
+                    if line.startswith('['):
+                        # Chomp any trailing comments:
+                        if '#' in line:
+                            line = line[:line.index('#')].strip()
+
+                        if not line.endswith(']'):
+                            raise PyNUTError("Invalid section header in '%s': '%s'" % (filename, line))
+
                         sectname = line[1:-1]
 
-                        if AuthConf.__debug:
-                            if current_ac is None:
-                                print( "[DEBUG] readAuthConfFile(): starting [%s]" % (sectname) )
-                            else:
-                                print( "[DEBUG] readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
+                        if current_ac is None:
+                            AuthConf.printDebug( "readAuthConfFile(): starting [%s]" % (sectname) )
+                        else:
+                            AuthConf.printDebug( "readAuthConfFile(): starting [%s]; completed reading {%s}" % (sectname, str(current_ac)) )
 
                         if sectname in ("_global_defaults", "", "*"):
                             if AuthConf.__global_defaults is None:
@@ -228,6 +307,7 @@ class AuthConf:
                                 AuthConf.__authconf_list.append(AuthConf.__global_defaults)
                             current_ac = AuthConf.__global_defaults
                         else:
+                            sectname = AuthConf.normalizeSection(sectname)
                             # Check if section already exists
                             current_ac = None
                             for ac in AuthConf.__authconf_list:
@@ -250,8 +330,7 @@ class AuthConf:
                             inc_file = inc_file[1:-1]
 
                         is_required = (inc_type == "INCLUDE_REQUIRED")
-                        if AuthConf.__debug:
-                            print( "[DEBUG] readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
+                        AuthConf.printDebug( "readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
                         AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
                         continue
 
@@ -272,8 +351,7 @@ class AuthConf:
                                 if AuthConf.__global_defaults is None:
                                     AuthConf.__global_defaults = AuthConf("")
                                     AuthConf.__authconf_list.append(AuthConf.__global_defaults)
-                                    if AuthConf.__debug:
-                                        print( "[DEBUG] readAuthConfFile(): starting [] (global defaults) section handling" )
+                                    AuthConf.printDebug( "readAuthConfFile(): starting [] (global defaults) section handling" )
 
                                 current_ac = AuthConf.__global_defaults
                             else:
@@ -281,10 +359,9 @@ class AuthConf:
                                 # in global scope when that directive was seen
                                 continue
 
-                        if AuthConf.__debug:
-                            print( "[DEBUG] readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
-                                current_ac.section, str(key), str(value), str(keyUC)
-                            ))
+                        AuthConf.printDebug( "readAuthConfFile(): KEY=VAL line for [%s]: '%s' = '%s' (keyUC='%s')" %(
+                            current_ac.section, str(key), str(value), str(keyUC)
+                        ))
 
                         if keyUC == 'USER' or keyUC == 'USERNAME':
                             if current_ac.user is None or current_ac.user == "":
@@ -311,12 +388,16 @@ class AuthConf:
                             print( "[WARNING] Unsupported keyword in NUT auth configuration file: '%s'" % key )
         except Exception as e:
             msgErr = "Error reading '%s': %s" % (filename, str(e))
-            if AuthConf.__debug:
-                print( "[DEBUG] readAuthConfFile(): %s" % (msgErr) )
+            AuthConf.printDebug( "readAuthConfFile(): %s" % (msgErr) )
             if fatal_errors:
                 raise PyNUTError(msgErr)
 
         return AuthConf.__authconf_list
+
+    def clone(self):
+        ac = AuthConf(self.section)
+        ac.merge(self)
+        return ac
 
     def merge(self, source):
         """ Merge contents of another configuration item into this one. """
@@ -372,13 +453,13 @@ class AuthConf:
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
             host_part = "[%s]" % host_part
 
-        target_user_host_port = ""
-        if user: target_user_host_port += "%s@" % user
-        target_user_host_port += host_part
+        target_user_host_port = "%s@%s" % (user if user else '', host_part)
         if norm_port: target_user_host_port += ":%s" % str(norm_port)
+        target_user_host_port = AuthConf.normalizeSection(target_user_host_port)
 
         target_host_port = "@%s" % host_part
         if norm_port: target_host_port += ":%s" % str(norm_port)
+        target_host_port = AuthConf.normalizeSection(target_host_port)
 
         res = AuthConf(target_user_host_port)
 
@@ -440,28 +521,44 @@ class AuthConf:
         if (':' in host_part or '[' in host_part or ']' in host_part) and not host_part.startswith('['):
             host_part = "[%s]" % host_part
 
+        if AuthConf.__debug:
+            print ("[DEBUG] findAuthConf(): looking for user [%s], host [%s]=>[%s], port [%s]" % (
+                str(user), str(host), str(host_part), str(port)
+            ))
+
         # Try to match [user@host:port], then [host:port], then [host], then [*]
         # This is a simplified version of the C logic
         for ac in auth_configs:
             section = ac.section
 
+            if AuthConf.__debug:
+                print ("[DEBUG] findAuthConf(): Processing section: [%s]" % (section))
+
             # 1. Exact match user@host:port
-            target = ""
-            if user: target += "%s@" % user
-            target += host_part
+            target = "%s@%s" % (user if user else '', host_part)
             if norm_port: target += ":%s" % str(norm_port)
+            target = AuthConf.normalizeSection(target)
 
             if section == target:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit exact match user@host:port by section name [%s]" % (target))
                 return ac
 
             # 2. Match host:port
-            if not user and section == ("%s:%s" % (host_part, str(norm_port))):
+            target = ("%s:%s" % (host_part, str(norm_port)))
+            if not user and section == target:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit host:port by section name [%s]" % (target))
                 return ac
 
             # 3. Match host
             if not user and not norm_port and section == host_part:
+                if AuthConf.__debug:
+                    print ("[DEBUG] findAuthConf(): hit host by section name [%s]" % (host_part))
                 return ac
 
+        if AuthConf.__debug:
+            print ("[DEBUG] findAuthConf(): return global_defaults")
         return AuthConf.__global_defaults
 
 class PyNUTError( Exception ) :
@@ -475,7 +572,7 @@ class PyNUTClient :
     def from_authconf(cls, authconf, **kwargs):
         """ Create a PyNUTClient from an AuthConf object """
         # Extract host and port from authconf.section if possible
-        host = "127.0.0.1"
+        host = "localhost"
         port = 3493
 
         # Simple split, could be more robust
@@ -503,6 +600,8 @@ class PyNUTClient :
                     host = addr_part # Should not happen in well-formed authconf
             elif ':' in addr_part:
                 host, port_str = addr_part.split(':', 1)
+                if not host:
+                    host = "localhost"
                 try:
                     port = int(port_str)
                 except ValueError:

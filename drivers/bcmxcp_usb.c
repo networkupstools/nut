@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.28"
+#define SUBDRIVER_VERSION "0.29"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -385,7 +385,7 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	dstate_setinfo("driver.state", "reconnect.trying");
+	reconnect_trying(RECONNECT_TRYING);
 
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
@@ -396,7 +396,12 @@ void upsdrv_reconnect(void)
 
 	upsdrv_initups();
 
-	dstate_setinfo("driver.state", "quiet");
+	if (upsdev) {
+		reconnect_trying(RECONNECT_SUCCESS);
+		/* dstate_dataok() is called in bcmxcp.c::upsdrv_updateinfo() */
+	} else {
+		dstate_datastale();
+	}
 }
 
 /* USB functions */
