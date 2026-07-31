@@ -520,7 +520,7 @@ NUTDRV_QX_SUBDRIVERS =	\
  nutdrv_qx_innovatae.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
- nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_omron.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
  nutdrv_qx_voltronic.c common_voltronic-crc.c	\
  nutdrv_qx_voltronic-axpert.c nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c	\
  nutdrv_qx_zinto.c	\
@@ -547,7 +547,7 @@ dist_noinst_HEADERS = \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
  nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_innovatae.h	\
  nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
- nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_omron.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx.h common_voltronic-crc.h nutdrv_qx_voltronic.h	\
  nutdrv_qx_voltronic-axpert.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h \
  nutdrv_qx_zinto.h \
