@@ -231,6 +231,13 @@ the same one `Bit5', counting from the other end -- but the body of that branch
 is commented out in both vendor releases. Its meaning on this hardware is not
 established.
 
+The last character (index 7) of the status field, which 'q1' maps to
+*ups.beeper.status*, is not published either. OMRON's own driver never reads
+that character: it takes the beeper state from a different query, which this
+subdriver does not implement. In that query `0' means enabled, whereas 'q1'
+would map an index-7 `0' to disabled. Whether index 7 reports the beeper state
+on this hardware is not established.
+
 Among the UPS-specific instant commands this protocol exposes only
 *shutdown.return*, *shutdown.stayoff* and *shutdown.stop*. OMRON's own driver
 has no equivalent of the 'q1' *load.on*, *load.off*, `test.battery.*` or
@@ -239,16 +246,38 @@ and *beeper.enable* / *beeper.disable*, which this subdriver does not expose
 either. The driver core registers further commands of its own on top of the
 subdriver's, such as *shutdown.default* and *driver.killpower*.
 
-Autodetection additionally requires OMRON's USB vendor ID, because the claim
+Autodetection is restricted to OMRON's USB vendor ID, because the claim
 function of this protocol checks no more of the device than the 'q1' one does,
 and would otherwise take over every device that the generic 'q1' fallback
-exists to serve. A device reached over a serial link therefore has to be given
-`protocol = omron` explicitly.
+exists to serve. The OMRON protocol is tried before command-based protocol
+probes; a non-OMRON USB device is rejected from this candidate without a
+transfer. A device reached over a serial link has no USB vendor ID and
+therefore has to be given `protocol = omron` explicitly.
 
 Over USB this protocol is normally paired with the *omron* value of the
 *subdriver* option, which selects the matching transport; both were added for
-the same device. For the tested unit that is
+the same device. The registered BN150T USB ID can select both automatically,
+but specifying both remains recommended for an unambiguous configuration. For
+the tested unit the explicit settings are
 `protocol = omron`, `subdriver = omron`, `vendorid = 0590`, `productid = 00b7`.
+
+Where the battery readings come from, which is not the same for all of them:
+
+- *battery.charge* and *battery.runtime* are normally read from the device
+  through OMRON extension queries of their own, so they do not depend on the
+  *runtimecal* guesswork described under
+  <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>.
+- *battery.voltage.low* and *battery.voltage.high* are **not** device readings.
+  The device does not report those two thresholds at all. It reports a nominal
+  battery voltage, and the driver derives the pair from that, in the same way
+  it does for any other device that reports a nominal and no thresholds. The
+  current *battery.voltage* is a real reading, and comes from `Q1` rather than
+  from any of this.
+- If one of those queries fails during a poll, its variable falls back to the
+  driver's estimate for that cycle, or - for *battery.runtime* with no
+  *runtimecal* set - keeps its previous value while the driver still reports
+  the data as good. A stale reading is not distinguishable from a fresh one by
+  a client.
 
 NOTE: Only the BN150T has been tested, over USB, and only its polling path.
 None of the shutdown commands has ever been sent to real hardware; they follow

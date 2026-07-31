@@ -93,6 +93,8 @@
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
+	/* Vendor-ID-gated before command-based protocol probes */
+	&omron_subdriver,
 	&voltronic_subdriver,
 	&voltronic_axpert_subdriver,
 	&voltronic_qs_subdriver,
@@ -112,7 +114,6 @@ static subdriver_t	*subdriver_list[] = {
 	&q2_subdriver,
 	&q6_subdriver,
 	&gtec_subdriver,
-	&omron_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -1115,9 +1116,12 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 }
 
 /* OMRON communication subdriver
- * Same transport as ippon above, except that the control transfer carries a
- * 16-byte HID Output report, the size declared by the report descriptor of the
- * BN150T. Only that model has been tested. */
+ * Based on the ippon transport above, with three differences: the control
+ * transfer carries a 16-byte HID Output report, the size declared by the
+ * report descriptor of the BN150T; sending advances per report and treats a
+ * short transfer as an error; and the reply is searched for its end only
+ * within what was actually read, since tmp[] holds no terminating NUL when
+ * the device fills it. Only the BN150T has been tested. */
 #define	OMRON_REPORT_SIZE	16
 
 static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)

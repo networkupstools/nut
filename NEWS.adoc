@@ -95,13 +95,21 @@ https://github.com/networkupstools/nut/milestone/13
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
     * Added an `omron` USB subdriver and an `omron` protocol subdriver for
       the OMRON BN150T, and registered its USB ID `0590:00b7`. The transport
-      matches `ippon` except that the control transfer carries a 16-byte HID
-      Output report. The polling data mapping follows `q1` but does not publish
+      is based on `ippon`, with a 16-byte HID Output report and stricter
+      handling of short transfers and of replies with no terminating CR.
+      The base `Q1` mapping follows `q1` but does not publish
       the third character (index 2) of the eight-character `Q1` status field,
-      which this hardware reports as always set and for which OMRON's own
-      driver has no active handling either; the shutdown commands are in
-      OMRON's form. Ported from the GPL driver source published by OMRON; only
-      the BN150T was tested, and only its polling path. [issue #3112]
+      which this hardware reported as set on every observed poll (on mains,
+      idle and unloaded) and for which OMRON's own driver has no active
+      handling either, nor the last character (index 7), which `q1` would
+      publish as the beeper status but OMRON's own driver does not read at
+      all; the shutdown commands are in OMRON's form. On top of that it adds
+      the OMRON extension queries for
+      battery charge, runtime and temperature, output frequency, firmware
+      (`ups.firmware` and `ups.firmware.aux`), serial number, battery date and
+      the nominal power and battery voltage ratings. Ported from the GPL driver
+      source published by OMRON; only the BN150T was tested, and only its
+      polling path. [issue #3112]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying
