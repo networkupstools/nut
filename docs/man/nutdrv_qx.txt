@@ -30,7 +30,7 @@ refers to this large family of similar dialects as the 'Megatec Q*' or
 
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power',
+'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'OMRON', 'Powercool', 'Voltronic Power',
 'SKE' (rebranded by many, many -- have I said many? -- others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
@@ -88,7 +88,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'omron', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -168,8 +168,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, OMRON, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ignoresab*::
 Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
@@ -215,6 +215,54 @@ MASTERGUARD PROTOCOL
 Make the claim function verify it's talking to the specified 'slave address' (*ups.id*).
 Safeguard against talking to the wrong one of several identical UPSes on the same USB bus.
 Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
+
+
+OMRON PROTOCOL
+~~~~~~~~~~~~~~
+
+This protocol is a variant of the 'q1' one, ported from the GPL driver source
+published by OMRON, and differs from 'q1' in the following ways.
+
+The third character (index 2) of the eight-character `Q1` status field, which
+'q1' maps to *BYPASS*, is not published at all. The tested device reports it as
+set continuously while running on mains, idle and unloaded. OMRON's own driver
+has no active handling for that character either: it does test it -- calling
+the same one `Bit5', counting from the other end -- but the body of that branch
+is commented out in both vendor releases. Its meaning on this hardware is not
+established.
+
+Among the UPS-specific instant commands this protocol exposes only
+*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*. OMRON's own driver
+has no equivalent of the 'q1' *load.on*, *load.off*, `test.battery.*` or
+*beeper.toggle* commands; what it defines instead is per-outlet load control
+and *beeper.enable* / *beeper.disable*, which this subdriver does not expose
+either. The driver core registers further commands of its own on top of the
+subdriver's, such as *shutdown.default* and *driver.killpower*.
+
+Autodetection additionally requires OMRON's USB vendor ID, because the claim
+function of this protocol checks no more of the device than the 'q1' one does,
+and would otherwise take over every device that the generic 'q1' fallback
+exists to serve. A device reached over a serial link therefore has to be given
+`protocol = omron` explicitly.
+
+Over USB this protocol is normally paired with the *omron* value of the
+*subdriver* option, which selects the matching transport; both were added for
+the same device. For the tested unit that is
+`protocol = omron`, `subdriver = omron`, `vendorid = 0590`, `productid = 00b7`.
+
+NOTE: Only the BN150T has been tested, over USB, and only its polling path.
+None of the shutdown commands has ever been sent to real hardware; they follow
+the vendor source. Other OMRON models are untested.
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
+Note that OMRON's shutdown commands carry no return-delay field, so this
+setting does not reach the device.
+
+*offdelay*::
+The acceptable range is +12..600+ seconds.
+The value reaches the device in OMRON's own encoding: a six-second-step form
+below one minute, and a whole-minute form at one minute and above.
 
 
 INNOVART31, INNOVART33, INNOVATAE, Q1, Q2, Q6 PROTOCOLS
@@ -399,7 +447,7 @@ include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
+You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *omron*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
@@ -513,6 +561,12 @@ Perform a quick (10 second) battery test.
 *test.battery.stop*::
 Stop a running battery test.
 (Not available on some hardware)
+
+NOTE: Of the commands above, the 'omron' protocol offers only
+*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*; see
+<<_omron_protocol,OMRON PROTOCOL>> above for why the others are left out.
+Commands registered by the driver core rather than by a protocol subdriver,
+such as *shutdown.default*, are unaffected by that.
 
 
 BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, ZINTO PROTOCOLS

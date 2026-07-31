@@ -1144,6 +1144,8 @@
 "NUT"	"ups"	"5"	"all supported NUT devices, through remote upsd"	""	"dummy-ups"
 "NUT"	"ups"	"5"	"Simulated devices"	""	"dummy-ups"
 
+"OMRON"	"ups"	"4"	"BN150T"	"USB (USB ID 0590:00b7)"	"nutdrv_qx port=auto vendorid=0590 productid=00b7 protocol=omron subdriver=omron"	# https://github.com/networkupstools/nut/issues/3112 ; ported from the GPL driver source published by OMRON. Only the polling path was verified on hardware.
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"

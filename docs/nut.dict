@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3793 utf-8
+personal_ws-1.1 en 3795 utf-8
 AAC
 AAS
 ABI
@@ -899,6 +899,7 @@ OIDs
 OLHVT
 OMNIVS
 OMNIVSINT
+OMRON
 ONF
 ONV
 OO
@@ -2894,6 +2895,7 @@ oldmac
 oldmge
 oldnut
 omnios
+omron
 onbatt
 onbattery
 onbattwarn
