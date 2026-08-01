@@ -22,10 +22,6 @@ PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
 
 https://github.com/networkupstools/nut/milestone/13
 
- - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
-   the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly (porting from 42ITy project)
-
  - (expected) Porting of patches suggested by different distribution packages
 
  - (expected) C code clean-up/consistency (string format security, work with
@@ -135,6 +131,14 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `riello_usb`, `riello_ser` driver updates:
     * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+
+ - `snmp-ups` driver updates:
+    * Dynamic Mapping Files (DMF) feature finally imported from the sibling
+      link:42ity.org[42ITy] project, to allow the driver binaries to be
+      built once and data mappings to be loaded and modernized on the fly.
+      This technology is first applied to `snmp-ups`, but may be extended
+      later to `usbhid-ups`, `netxml-ups`, `nutdrv_qx` and other drivers that
+      extensively map dialects of generally same protocol. [#182, #1316]
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
