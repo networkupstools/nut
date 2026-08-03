@@ -227,10 +227,11 @@ differs from 'q1' in the following ways.
 
 The third character (index 2) of the eight-character `Q1` status field, which
 'q1' maps to *BYPASS*, is not published at all. The tested device reports it as
-set continuously while running on mains, idle and unloaded. Neither OMRON
+set during stable mains operation, both normally and in ECO mode, and clear
+while on battery; it also varied during startup/calibration. Neither OMRON
 driver version has active handling for that character. Both test it -- calling
 the same one `Bit5', counting from the other end -- but the body of that branch
-is commented out in both the 1.00 and 1.02 sources. Its meaning on this
+is commented out in both the 1.00 and 1.02 sources. Its exact meaning on this
 hardware is not established.
 
 The last character (index 7) of the status field, which 'q1' maps to
@@ -281,9 +282,15 @@ Where the battery readings come from, which is not the same for all of them:
   the data as good. A stale reading is not distinguishable from a fresh one by
   a client.
 
-NOTE: Only the BN150T has been tested, over USB, and only its polling path.
-None of the shutdown commands has ever been sent to real hardware; they follow
-the OMRON 1.00 and 1.02 driver sources. Other OMRON models are untested.
+NOTE: Only the BN150T has been tested, over USB. Polling and all three direct
+shutdown commands were exercised with its output unloaded. *shutdown.return*
+was verified on battery, including automatic output recovery after utility
+returned; *shutdown.stayoff* kept the output off with utility present until
+manual recovery; and *shutdown.stop* cancelled pending 120-second shutdowns.
+The shared *shutdown.default*, *driver.killpower* and driver `-k' paths were not
+exercised; their pre-existing failure-reporting limitation is tracked in
+link:https://github.com/networkupstools/nut/issues/3553[issue #3553].
+Other OMRON models and serial connections are untested.
 
 *ondelay*::
 The acceptable range is +0..599940+ seconds.

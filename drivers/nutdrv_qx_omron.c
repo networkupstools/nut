@@ -21,25 +21,27 @@
  * NOTE:
  * This subdriver is the 'q1' subdriver plus the OMRON-specific corrections
  * listed below. It has been tested on a BN150T (USB 0590:00b7) only; other
- * OMRON models are untested. What was exercised on that unit is the reading
- * side: Q1 polling, the capability queries and the extension queries. No
- * instant command has ever been sent to it, so every instant-command byte
- * string below rests on the OMRON 1.00 and 1.02 driver sources alone. Version
+ * OMRON models are untested. Q1 polling, the capability and extension queries,
+ * and shutdown.stop/return/stayoff were exercised on that unit with its output
+ * unloaded. The observed command sequences and acknowledgements matched the
+ * OMRON 1.00 and 1.02 driver sources from which they were derived. Version
  * 1.00 was distributed in the Synology DSM 7.3-86009 GPL sources, and version
- * 1.02 in the QNAP QTS 5.2.3 GPL sources.
+ * 1.02 in the QNAP QTS 5.2.3 GPL sources. Only the direct instant commands were
+ * exercised; the shared shutdown.default, driver.killpower and driver -k paths were not.
  *
  * Differences from 'q1':
  *
  * - The third status bit of the Q1 reply ("Bypass/Boost or Buck Active",
- *   index 2 of the status field) is not published. On a BN150T running on
- *   mains, idle and with nothing connected to its output, that bit reads 1 on
- *   every poll, and 'q1' maps it unconditionally to the BYPASS status - which
- *   in NUT means that protection has been bypassed, i.e. an abnormal state.
+ *   index 2 of the status field) is not published. On stable mains operation,
+ *   including ECO mode, that bit reads 1; it read 0 while on battery, and also
+ *   varied during startup/calibration. 'q1' maps it unconditionally to the
+ *   BYPASS status. In NUT that means protection has been bypassed, i.e. an
+ *   abnormal state.
  *   Neither OMRON driver version evaluates this bit: the block that would
  *   decide between TRIM/BYPASS/BOOST is commented out in its entirety,
  *   identically in the 1.00 and 1.02 sources.
- *   What the bit actually reports on this hardware is unknown - resolving it
- *   needs an observed on-battery event - so nothing is published for it.
+ *   What the bit actually reports on this hardware remains unknown, so nothing
+ *   is published for it.
  *
  * - The instant commands that neither OMRON driver version implements are not
  *   registered: test.battery.start, test.battery.start.deep,
@@ -186,9 +188,11 @@ static int	omron_start_auto(const int on)
  * runs first, exactly as both OMRON sources order it, and its failure aborts
  * the command before anything is sent to power the unit down.
  *
- * NOTE: no shutdown command has ever been sent to this hardware, and the byte
- * strings below have not been confirmed by observation - only by reading the
- * OMRON 1.00 and 1.02 sources. Treat a first real shutdown as an experiment.
+ * The two delay encodings and all three direct shutdown operations have been
+ * confirmed on an unloaded BN150T: An/S.2 and Af/Sf.2 performed 12-second
+ * shutdowns, An/S02 and Af/Sf02 were scheduled and cancelled with C, and every
+ * transaction was acknowledged with "OK". The byte strings were originally
+ * derived from the OMRON 1.00 and 1.02 sources.
  */
 static int	omron_process_command(item_t *item, char *value, const size_t valuelen)
 {
@@ -622,13 +626,14 @@ static item_t	omron_qx2nut[] = {
 
 /* Testing table
  *
- * The query answers are replies captured from BN150T hardware runs. The
- * instant-command answers are synthetic fixtures: no instant command has ever
- * been sent to real hardware, so no instant-command reply has been observed.
- * The OMRON 1.00 and 1.02 drivers accept a reply whose first two bytes are
- * "OK". That is the test omron_command_answer() applies to the shutdown rows
- * and An/Af prologue item alike. "OK\r" is the plain form, while "OKn\r" is
- * a synthetic prefix-acceptance case, not an observed reply.
+ * The query answers are replies captured from BN150T hardware runs. Plain
+ * "OK\r" replies were also observed for An, Af, C, S02, Sf02, S.2 and Sf.2.
+ * The table uses S.5/Sf.5 for the default 30-second delay; those exact command
+ * strings were not sent to hardware, but the same short-delay form was
+ * observed with .2. The OMRON 1.00 and 1.02 drivers accept a reply whose first
+ * two bytes are "OK". That is the test omron_command_answer() applies to the
+ * shutdown rows and An/Af prologue item alike. "OKn\r" remains a synthetic
+ * prefix-acceptance case, not an observed reply.
  *
  * Both delay forms of each shutdown command are listed: ".n" for an
  * ups.delay.shutdown below 60 seconds (the default, 30, gives ".5") and "nn"
