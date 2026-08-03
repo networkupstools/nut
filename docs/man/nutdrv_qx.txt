@@ -220,31 +220,33 @@ Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will cont
 OMRON PROTOCOL
 ~~~~~~~~~~~~~~
 
-This protocol is a variant of the 'q1' one, ported from the GPL driver source
-published by OMRON, and differs from 'q1' in the following ways.
+This protocol is a variant of the 'q1' one, ported from two OMRON-authored GPL
+driver sources: version 1.00 distributed in the Synology DSM 7.3-86009 GPL
+sources, and version 1.02 distributed in the QNAP QTS 5.2.3 GPL sources. It
+differs from 'q1' in the following ways.
 
 The third character (index 2) of the eight-character `Q1` status field, which
 'q1' maps to *BYPASS*, is not published at all. The tested device reports it as
-set continuously while running on mains, idle and unloaded. OMRON's own driver
-has no active handling for that character either: it does test it -- calling
+set continuously while running on mains, idle and unloaded. Neither OMRON
+driver version has active handling for that character. Both test it -- calling
 the same one `Bit5', counting from the other end -- but the body of that branch
-is commented out in both vendor releases. Its meaning on this hardware is not
-established.
+is commented out in both the 1.00 and 1.02 sources. Its meaning on this
+hardware is not established.
 
 The last character (index 7) of the status field, which 'q1' maps to
-*ups.beeper.status*, is not published either. OMRON's own driver never reads
-that character: it takes the beeper state from a different query, which this
-subdriver does not implement. In that query `0' means enabled, whereas 'q1'
-would map an index-7 `0' to disabled. Whether index 7 reports the beeper state
-on this hardware is not established.
+*ups.beeper.status*, is not published either. Neither OMRON driver version
+reads that character. Both take the beeper state from a different query, which
+this subdriver does not implement. In that query `0' means enabled, whereas
+'q1' would map an index-7 `0' to disabled. Whether index 7 reports the beeper
+state on this hardware is not established.
 
 Among the UPS-specific instant commands this protocol exposes only
-*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*. OMRON's own driver
-has no equivalent of the 'q1' *load.on*, *load.off*, `test.battery.*` or
-*beeper.toggle* commands; what it defines instead is per-outlet load control
-and *beeper.enable* / *beeper.disable*, which this subdriver does not expose
-either. The driver core registers further commands of its own on top of the
-subdriver's, such as *shutdown.default* and *driver.killpower*.
+*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*. Neither OMRON driver
+version has an equivalent of the 'q1' *load.on*, *load.off*, `test.battery.*`
+or *beeper.toggle* commands; both define per-outlet load control and
+*beeper.enable* / *beeper.disable* instead, which this subdriver does not
+expose either. The driver core registers further commands of its own on top of
+the subdriver's, such as *shutdown.default* and *driver.killpower*.
 
 Autodetection is restricted to OMRON's USB vendor ID, because the claim
 function of this protocol checks no more of the device than the 'q1' one does,
@@ -281,7 +283,7 @@ Where the battery readings come from, which is not the same for all of them:
 
 NOTE: Only the BN150T has been tested, over USB, and only its polling path.
 None of the shutdown commands has ever been sent to real hardware; they follow
-the vendor source. Other OMRON models are untested.
+the OMRON 1.00 and 1.02 driver sources. Other OMRON models are untested.
 
 *ondelay*::
 The acceptable range is +0..599940+ seconds.

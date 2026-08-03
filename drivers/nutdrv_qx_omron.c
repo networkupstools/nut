@@ -24,7 +24,9 @@
  * OMRON models are untested. What was exercised on that unit is the reading
  * side: Q1 polling, the capability queries and the extension queries. No
  * instant command has ever been sent to it, so every instant-command byte
- * string below rests on the vendor source alone.
+ * string below rests on the OMRON 1.00 and 1.02 driver sources alone. Version
+ * 1.00 was distributed in the Synology DSM 7.3-86009 GPL sources, and version
+ * 1.02 in the QNAP QTS 5.2.3 GPL sources.
  *
  * Differences from 'q1':
  *
@@ -33,25 +35,26 @@
  *   mains, idle and with nothing connected to its output, that bit reads 1 on
  *   every poll, and 'q1' maps it unconditionally to the BYPASS status - which
  *   in NUT means that protection has been bypassed, i.e. an abnormal state.
- *   OMRON's own driver deliberately does not evaluate this bit either: the
- *   block that would decide between TRIM/BYPASS/BOOST is commented out in its
- *   entirety, identically in the 1.00 and 1.02 releases of the vendor source.
+ *   Neither OMRON driver version evaluates this bit: the block that would
+ *   decide between TRIM/BYPASS/BOOST is commented out in its entirety,
+ *   identically in the 1.00 and 1.02 sources.
  *   What the bit actually reports on this hardware is unknown - resolving it
  *   needs an observed on-battery event - so nothing is published for it.
  *
- * - The instant commands that OMRON's own driver does not implement are not
+ * - The instant commands that neither OMRON driver version implements are not
  *   registered: test.battery.start, test.battery.start.deep,
- *   test.battery.start.quick and test.battery.stop (the vendor source has no
- *   T or TL command at all), load.on, load.off, and beeper.toggle (no Q
- *   command; the vendor uses Bn/Bf to enable/disable the beeper instead).
+ *   test.battery.start.quick and test.battery.stop (neither source has a T or
+ *   TL command), load.on, load.off, and beeper.toggle (no Q command; both
+ *   sources use Bn/Bf to enable/disable the beeper instead).
  *   Registering an instant command publishes it to NUT clients as something
  *   the device can perform, so listing commands that may not exist is a defect
  *   in its own right.
  *
- * - The shutdown commands use OMRON's own byte strings rather than the Megatec
- *   ones, and shutdown.return / shutdown.stayoff are two transactions, not one:
- *   the auto-restart flag is set first and its failure aborts the command. See
- *   omron_start_auto() and omron_process_command() below.
+ * - The shutdown commands use the byte strings implemented by the OMRON 1.00
+ *   and 1.02 drivers rather than the Megatec ones. shutdown.return and
+ *   shutdown.stayoff are two transactions, not one: the auto-restart flag is
+ *   set first and its failure aborts the command. See omron_start_auto() and
+ *   omron_process_command() below.
  *
  * - A command accepted by the UPS is acknowledged with "OK", not with the "ACK"
  *   that the Megatec-derived subdrivers expect.
@@ -75,20 +78,20 @@
 #define OMRON_USB_VENDORID	"0590"
 
 /* What the UPS answers to a command it accepted. The Megatec-derived
- * subdrivers expect "ACK"; OMRON acknowledges with "OK" and its own driver
- * tests it with strncmp(buf, "OK", 2). */
+ * subdrivers expect "ACK"; OMRON acknowledges with "OK", and driver versions
+ * 1.00 and 1.02 both test it with strncmp(buf, "OK", 2). */
 #define OMRON_ACCEPTED		"OK"
 
 /* Answer preprocess for the instant commands and the An/Af prologue
  *
- * The vendor tests exactly the first two bytes of the reply against "OK", for
- * An/Af and for the shutdown commands alike. nutdrv_qx's instcmd() differs on
- * both sides of that test: it treats an empty reply as success, which would
- * report a shutdown as accepted when nothing acknowledged it, and it then
- * compares the whole extracted reply against 'accepted', which would fail an
- * acknowledgement the vendor accepts, such as "OKn". Enforce the vendor's
- * test here, and normalise the answer to the acknowledgement alone so that
- * the exact compares downstream see the reply they expect. */
+ * Both OMRON sources test exactly the first two bytes of the reply against
+ * "OK", for An/Af and for the shutdown commands alike. nutdrv_qx's instcmd()
+ * differs on both sides of that test: it treats an empty reply as success,
+ * which would report a shutdown as accepted when nothing acknowledged it, and
+ * it then compares the whole extracted reply against "accepted", which would
+ * fail an acknowledgement both OMRON sources accept, such as "OKn". Enforce
+ * that shared test here, and normalise the answer to the acknowledgement alone
+ * so that the exact compares downstream see the reply they expect. */
 static int	omron_command_answer(item_t *item, const int len)
 {
 	if (len < 2 || strncmp(item->answer, OMRON_ACCEPTED, 2)) {
@@ -107,29 +110,29 @@ static int	omron_command_answer(item_t *item, const int len)
 	return (int)strlen(item->answer);
 }
 
-/* Set the UPS's auto-restart flag ahead of a shutdown command
+/* Set the UPS auto-restart flag ahead of a shutdown command
  *
- * "An" enables restarting when mains returns, "Af" disables it. The vendor
- * driver sends the matching one *before* the shutdown command itself, and
- * abandons the instant command if the UPS answers it with anything other than
- * "OK"; identical code in both releases. Without it, shutdown.return can leave
- * a unit whose auto-restart flag happens to be off dead after mains returns.
+ * "An" enables restarting when mains returns, "Af" disables it. Both OMRON
+ * driver versions send the matching one *before* the shutdown command itself,
+ * and abandon the instant command if the UPS answers with anything other than
+ * "OK". Without it, shutdown.return can leave a unit whose auto-restart flag
+ * happens to be off dead after mains returns.
  *
- * This is also NUT's documented convention, not just OMRON's: docs/nut-names.txt
- * states that shutdown commands set ups.start.auto to the matching value first.
- * nutdrv_qx implements that in the instcmd() fallback path, but the fallback
- * only runs for commands *absent* from the subdriver table, so a subdriver that
- * registers shutdown.return itself has to do this for itself.
+ * This is also the documented NUT convention: docs/nut-names.txt states that
+ * shutdown commands set ups.start.auto to the matching value first. nutdrv_qx
+ * implements that in the instcmd() fallback path, but the fallback only runs
+ * for commands *absent* from the subdriver table, so a subdriver that registers
+ * shutdown.return itself has to do this for itself.
  *
- * Divergence from the vendor, deliberate. The vendor has three outcomes: it
- * skips the prologue entirely when its CF capability bitmap says the command
- * is unsupported; it abandons the shutdown on an explicit non-"OK" answer; and
- * it proceeds to shut down anyway when the transfer itself fails or nothing
- * comes back, because the guard around the reply test has no else branch.
- * This driver has no CF gating, and it abandons the shutdown in all three of
- * transfer failure, no answer, and non-"OK" answer. A shutdown that did not
- * happen is visible in the logs and reversible; a shutdown whose auto-restart
- * state is unknown may need someone at the front panel. */
+ * This implementation deliberately diverges from both OMRON sources. Their
+ * shared implementation has three outcomes: it skips the prologue when its CF
+ * capability bitmap says the command is unsupported; it abandons the shutdown
+ * on an explicit non-"OK" answer; and it proceeds to shut down when the
+ * transfer itself fails or nothing comes back, because the guard around the
+ * reply test has no else branch. This driver has no CF gating and abandons the
+ * shutdown in all three cases. A shutdown that did not happen is visible in
+ * the logs and reversible; a shutdown whose auto-restart state is unknown may
+ * need someone at the front panel. */
 static int	omron_start_auto(const int on)
 {
 	/* A throwaway item, deliberately not a row of omron_qx2nut[]: this
@@ -174,18 +177,18 @@ static int	omron_start_auto(const int on)
  * both, and appends the R field as soon as ups.delay.start is non-zero, which
  * it is by default - hence this replacement rather than a reuse of it.
  *
- * Mirrors on_shutdown_return() and on_shutdown_stayoff() of the vendor driver,
- * which are identical in the 1.00 and 1.02 releases. ups.delay.start has no
+ * Mirrors on_shutdown_return() and on_shutdown_stayoff() in the OMRON 1.00 and
+ * 1.02 sources; their implementations are identical. ups.delay.start has no
  * effect on these commands; it stays in the table because upsdrv_shutdown()
  * looks it up before dispatching.
  *
  * The two-command shutdown sequence lives here as well: omron_start_auto()
- * runs first, exactly as the vendor orders it, and its failure aborts the
- * command before anything is sent to power the unit down.
+ * runs first, exactly as both OMRON sources order it, and its failure aborts
+ * the command before anything is sent to power the unit down.
  *
- * NOTE: no shutdown command has ever been sent to this hardware, and the
- * byte strings below have not been confirmed by observation - only by reading
- * the vendor source. Treat a first real shutdown as an experiment.
+ * NOTE: no shutdown command has ever been sent to this hardware, and the byte
+ * strings below have not been confirmed by observation - only by reading the
+ * OMRON 1.00 and 1.02 sources. Treat a first real shutdown as an experiment.
  */
 static int	omron_process_command(item_t *item, char *value, const size_t valuelen)
 {
@@ -259,14 +262,14 @@ static int	omron_reject_nak(item_t *item, const int len)
 
 /* Check a whole reply against the characters it may contain
  *
- * The core's own guard is skipped for any item with a preprocess, so a reply
- * of acceptable length that is otherwise corrupt would reach dstate as a
- * plausible value. Every OMRON extension below that publishes a parsed reading
- * therefore validates its whole reply before converting any of it: through
- * this function, against the character set the vendor uses for that command,
- * except for the UN rows, which match a positional template instead.
- * ups.serial is the exception: the vendor accepts any character in that reply,
- * and the only check made here is omron_reject_nak(). */
+ * The core guard is skipped for any item with a preprocess, so a reply of
+ * acceptable length that is otherwise corrupt would reach dstate as a plausible
+ * value. Every OMRON extension below that publishes a parsed reading therefore
+ * validates its whole reply before converting it. This function uses the
+ * character set defined for that command in the corresponding OMRON source;
+ * the UN rows instead match a positional template. ups.serial is the exception:
+ * both OMRON sources accept any character in that reply, so its only check here
+ * is omron_reject_nak(). */
 static int	omron_check_charset(item_t *item, const char *accept)
 {
 	if (item->value[0] == '\0'
@@ -282,9 +285,9 @@ static int	omron_check_charset(item_t *item, const char *accept)
 
 /* Parse a whole reply as one decimal number
  *
- * The character set is the vendor's for that command, which also keeps
- * strtod() away from "nan", "inf" and exponent notation; on top of it the
- * conversion has to consume the entire value and stay in range. */
+ * The OMRON-source character set for each command also keeps strtod() away from
+ * "nan", "inf" and exponent notation. The conversion must additionally consume
+ * the entire value and stay in range. */
 static int	omron_strict_decimal(item_t *item, const char *accept, double *reading)
 {
 	char	*end = NULL;
@@ -308,8 +311,8 @@ static int	omron_strict_decimal(item_t *item, const char *accept, double *readin
  *
  * TPb answers with an explicit sign, e.g. "+22.5". It is validated as a signed
  * decimal and republished at one decimal place, which also removes the leading
- * '+' that no other reading in this table carries. The vendor publishes the
- * reply as it arrives. */
+ * "+" that no other reading in this table carries. Both OMRON sources publish
+ * the reply as it arrives. */
 static int	omron_process_signed(item_t *item, char *value, const size_t valuelen)
 {
 	double	reading;
@@ -324,8 +327,8 @@ static int	omron_process_signed(item_t *item, char *value, const size_t valuelen
 
 /* battery.charge out of the Bl ? reply
  *
- * Vendor character set for this command: digits only, no sign and no decimal
- * point. A percentage outside 0..100 is a corrupt reply, not a reading. */
+ * The OMRON-source character set for this command allows digits only, with no
+ * sign or decimal point. A value outside 0..100 is corrupt, not a reading. */
 static int	omron_process_charge(item_t *item, char *value, const size_t valuelen)
 {
 	double	reading;
@@ -346,7 +349,7 @@ static int	omron_process_charge(item_t *item, char *value, const size_t valuelen
 
 /* output.frequency out of the Lf ? reply
  *
- * Vendor character set for this command: digits and '.', so no sign either. */
+ * The OMRON-source character set allows digits and ".", with no sign. */
 static int	omron_process_frequency(item_t *item, char *value, const size_t valuelen)
 {
 	double	reading;
@@ -366,7 +369,7 @@ static int	omron_process_frequency(item_t *item, char *value, const size_t value
  * is matched against a positional template first - exact field widths, every
  * separator and unit in place, nothing after the last one - which is what makes
  * the fixed offsets safe to use. The nominal battery voltage is published
- * without the leading zero the vendor prints. */
+ * without the leading zero the OMRON sources print. */
 static int	omron_process_un(item_t *item, char *value, const size_t valuelen)
 {
 	/* 'd' stands for a digit, everything else is itself */
@@ -431,10 +434,10 @@ static int	omron_process_runtime(item_t *item, char *value, const size_t valuele
 
 /* battery.date out of the BRR reply
  *
- * The reply is eight digits, YYYYMMDD. It is checked for being exactly that
- * and for forming a date that exists, then published as ISO rather than in the
- * vendor's MM/DD/YY, which drops the century. The variable is QX_FLAG_STATIC,
- * so a wrong value published once is never refreshed. */
+ * The reply is eight digits, YYYYMMDD. It is checked for being exactly that and
+ * for forming a date that exists, then published as ISO rather than the
+ * MM/DD/YY form used by the OMRON sources, which drops the century. The variable
+ * is QX_FLAG_STATIC, so a wrong value published once is never refreshed. */
 static int	omron_process_batt_date(item_t *item, char *value, const size_t valuelen)
 {
 	static const int	monthlen[12] = {
@@ -572,8 +575,8 @@ static item_t	omron_qx2nut[] = {
 
 	/* OMRON extensions
 	 *
-	 * Commands and reply lengths are the vendor's own. Its lengths are
-	 * minimums, not the exact lengths this hardware returns.
+	 * Commands and reply lengths come from the corresponding OMRON source. The
+	 * specified lengths are minimums, not exact hardware reply lengths.
 	 *
 	 * All eight read commands, the shape of their replies and the values this
 	 * table publishes from them have been exercised on a BN150T. The reply
@@ -621,12 +624,11 @@ static item_t	omron_qx2nut[] = {
  *
  * The query answers are replies captured from BN150T hardware runs. The
  * instant-command answers are synthetic fixtures: no instant command has ever
- * been sent to real hardware, so no instant-command reply has ever been
- * observed. The vendor drivers accept a reply whose first two bytes are "OK",
- * which is the test omron_command_answer() applies for the shutdown command
- * rows and the An/Af prologue item alike; "OK\r" is the plain form of that,
- * and the "OKn\r" entry is a synthetic prefix-acceptance case, not an observed
- * reply.
+ * been sent to real hardware, so no instant-command reply has been observed.
+ * The OMRON 1.00 and 1.02 drivers accept a reply whose first two bytes are
+ * "OK". That is the test omron_command_answer() applies to the shutdown rows
+ * and An/Af prologue item alike. "OK\r" is the plain form, while "OKn\r" is
+ * a synthetic prefix-acceptance case, not an observed reply.
  *
  * Both delay forms of each shutdown command are listed: ".n" for an
  * ups.delay.shutdown below 60 seconds (the default, 30, gives ".5") and "nn"
@@ -699,11 +701,11 @@ subdriver_t	omron_subdriver = {
 	NULL,
 	blazer_makevartable_light,
 	OMRON_ACCEPTED,
-	/* Rejected: no NAK has ever been observed from this hardware, and the
-	 * vendor tests the first three characters only, so the exact form
-	 * guessed here is unverified while nutdrv_qx compares the whole answer.
-	 * The places where a wrong guess could matter carry a prefix test of
-	 * their own: omron_reject_nak() and omron_command_answer(). */
+	/* Rejected: no NAK has ever been observed from this hardware. Both OMRON
+	 * sources test only the first three characters, so the exact form guessed
+	 * here is unverified while nutdrv_qx compares the whole answer. The places
+	 * where a wrong guess could matter carry their own prefix test:
+	 * omron_reject_nak() and omron_command_answer(). */
 	"NAK\r",
 #ifdef TESTING
 	omron_testing,
