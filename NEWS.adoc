@@ -145,6 +145,15 @@ https://github.com/networkupstools/nut/milestone/13
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+    * `idowell-hid` subdriver now repairs a firmware bug in those GoldenMate
+      LiFePO4 packs, which encode the four-byte Logical Maximum of
+      `UPS.PowerSummary.RunTimeToEmpty` with reversed byte order in report
+      0x02. The resulting value does not fit a signed 32-bit `long`, so on
+      platforms where `long` is 32-bit (notably Windows) it wrapped negative,
+      and the following `UPS.PowerSummary.Voltage` item inherited the same
+      broken maximum from HID global state. Both `battery.runtime` and
+      `battery.voltage` then read as nonsense; platforms with a 64-bit `long`
+      were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
 
