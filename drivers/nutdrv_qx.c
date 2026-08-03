@@ -1115,13 +1115,11 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	return (int)len;
 }
 
-/* OMRON communication subdriver
- * Based on the ippon transport above, with three differences: the control
- * transfer carries a 16-byte HID Output report, the size declared by the
- * report descriptor of the BN150T; sending advances per report and treats a
- * short transfer as an error; and the reply is searched for its end only
- * within what was actually read, since tmp[] holds no terminating NUL when
- * the device fills it. Only the BN150T has been tested. */
+/* OMRON USB transport
+ * The BN150T declares a 16-byte HID Output report. Each write sends one
+ * complete report and rejects a short transfer. Reply parsing searches for a
+ * terminator only within the bytes actually received because a full-length
+ * reply need not contain a terminating NUL. Only the BN150T has been tested. */
 #define	OMRON_REPORT_SIZE	16
 
 static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
@@ -1203,9 +1201,8 @@ static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 	}
 
-	/* Just in case there wasn't any '\r', fall back to the string length
-	 * within what was actually read: tmp[] holds no terminating NUL when
-	 * the device fills the whole buffer. */
+	/* If no CR was received, use a NUL found within the received bytes;
+	 * otherwise treat every received byte as payload. */
 	if (!len) {
 		p = memchr(tmp, '\0', (size_t)ret);
 		len = p ? (size_t)(p - tmp) : (size_t)ret;
