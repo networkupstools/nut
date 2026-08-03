@@ -486,7 +486,7 @@ USB INTERFACE ONLY
 include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
-Select a serial-over-USB subdriver to use.
+Select a USB communication subdriver to use.
 You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *omron*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of

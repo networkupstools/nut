@@ -1150,9 +1150,12 @@ static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	 * report inside tmp[]. */
 	for (i = 0; i < tmplen; i += OMRON_REPORT_SIZE) {
 
+		/* The HID specification encodes Output report type 2 with report ID 0
+		 * as 0x0200. OMRON-authored driver versions 1.00 and 1.02 instead use
+		 * 0x0002, which was verified on the BN150T; preserve the tested value. */
 		ret = usb_control_msg(udev,
 			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i],
+			0x09, 0x0002, 0, (usb_ctrl_charbuf)&tmp[i],
 			OMRON_REPORT_SIZE, 1000);
 
 		if (ret <= 0) {
