@@ -807,7 +807,7 @@ void overlapped_setup(serial_handler_t *sh)
 	memset(&sh->io_status, 0, sizeof(sh->io_status));
 	sh->io_status.hEvent = CreateEvent(
 		NULL,	/* Security */
-		TRUE,	/* auto-reset */
+		TRUE,	/* manual-reset */
 		FALSE,	/* initial state = non signaled */
 		NULL	/* no name */
 	);
@@ -817,7 +817,7 @@ void overlapped_setup(serial_handler_t *sh)
 int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 {
 	int	tot;
-	DWORD	num;
+	DWORD	error, num;
 	HANDLE	w4;
 	DWORD	minchars = sh->vmin_ ? sh->vmin_ : ulen;
 
@@ -887,17 +887,57 @@ int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 							"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
+						/*
+						 * CancelIo() only requests cancellation. Wait for the
+						 * pending WaitCommEvent() operation to finish before
+						 * reusing the OVERLAPPED structure or returning.
+						 */
+						if (!CancelIo(sh->handle)) {
+							upsdebugx(3,
+								"w32_serial_read : CancelIo failed with error %lu",
+								(unsigned long)GetLastError());
+						}
+
+						error = ERROR_SUCCESS;
+						if (!GetOverlappedResult(
+								sh->handle, &sh->io_status, &num, TRUE)) {
+							error = GetLastError();
+						}
+
+						sh->overlapped_armed = 0;
+						ResetEvent(sh->io_status.hEvent);
+
+						if (error != ERROR_SUCCESS &&
+								error != ERROR_OPERATION_ABORTED) {
+							upsdebugx(4,
+								"w32_serial_read : overlapped wait completed with "
+								"error %lu",
+								(unsigned long)error);
+							SetLastError(error);
+							errno = EIO;
+							return -1;
+						}
+
 						if (!tot) {
-							CancelIo(sh->handle);
-							sh->overlapped_armed = 0;
-							ResetEvent(sh->io_status.hEvent);
 							upsdebugx(4,
 								"w32_serial_read : timeout %d ms elapsed",
 								(int)timeout);
 							SetLastError(WAIT_TIMEOUT);
-							errno = 0;
+							errno = ETIMEDOUT;
 							return 0;
 						}
+
+						/*
+						 * Follow POSIX-style read() semantics: once data has been
+						 * transferred, report a successful short read.
+						 */
+						upsdebugx(4,
+							"w32_serial_read : timeout after receiving "
+							"%d characters, returning a short read",
+							tot);
+						SetLastError(ERROR_SUCCESS);
+						errno = 0;
+						return tot;
 					default:
 						goto err;
 				}
@@ -962,7 +1002,7 @@ int w32_serial_write(serial_handler_t *sh, const void *ptr, size_t len)
 	memset(&write_status, 0, sizeof(write_status));
 	write_status.hEvent = CreateEvent(
 		NULL,	/* Security */
-		TRUE,	/* auto-reset */
+		TRUE,	/* manual-reset */
 		FALSE,	/* initial state = non signaled */
 		NULL	/* no name */
 	);
