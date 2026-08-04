@@ -236,7 +236,7 @@ FOSS projects. Keeping the lights shining in such a large non-regression
 build matrix is a big undertaking!
 
 ifndef::pdf_format[]
-image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="NUT GitHub Star History Chart"]
+image:https://api.star-history.com/chart?repos=networkupstools/nut&type=date&legend=top-left&sealed_token=iDZMtSkVu7UYoFINquasilp31wbMWTJsdvKQTkyoSh_A1HljdJjEkXnm3OL3WRmPpfnfxHzrLNR8iwtfx5qvTvbslEZ3g7bofVAaoCgjQ4geTxHo99ACOvxWVilZOMy3ZGcIQ-3KWJQJFsQMUm4cqrq_N0jzu2J70Y6gK1m5pMdeIrHajmw6kZZyUt4N[link="https://star-history.com/?repos=networkupstools%2Fnut&type=date" alt="NUT GitHub Star History Chart"]
 endif::pdf_format[]
 
 See <<acknowledgements-ci-ops,acknowledgements of organizations which help
