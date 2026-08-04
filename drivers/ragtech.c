@@ -219,6 +219,7 @@ static struct ragtech_model fallback_model = {
 	0xFF, "Unknown", 0, 6.3700, 0.5550, 0.0670, 115, 115, 0.7
 };
 static double iout_calib = 16.0;	/* read from reg 0xF3 at init */
+static int iout_calib_override;		/* ups.conf "iout_calib" was given */
 static uint8_t osc53, osc57;		/* read from 0x202..0x203 at init */
 static int shutdown_enabled;		/* opt-in via ups.conf "allow_shutdown" */
 static unsigned int va_override = 0;	/* ups.conf "va" override (0 = use model table) */
@@ -513,9 +514,18 @@ void upsdrv_initinfo(void)
 		(unsigned int)(model->bmult > 0.1 ? 24 : 12));
 	dstate_setinfo("ups.firmware", "%.1f", reply[OFF_V_VERSION - 1] * 0.1);
 
+	/* The ups.conf value must win: upsdrv_initups() runs before this
+	 * function, so assigning the register value unconditionally here used
+	 * to discard the user's override and leave it with no effect at all. */
 	if (ragtech_read(0x00F3, 1, &calib) == 1 && calib > 0) {
-		iout_calib = (double)calib;
-		upsdebugx(1, "iout_calib from reg 0xF3 = %u", calib);
+		if (iout_calib_override) {
+			upsdebugx(1, "reg 0xF3 reports iout_calib = %u, "
+				  "overridden by ups.conf value %g",
+				  calib, iout_calib);
+		} else {
+			iout_calib = (double)calib;
+			upsdebugx(1, "iout_calib from reg 0xF3 = %u", calib);
+		}
 	}
 	if (ragtech_read(0x0202, 2, osc) == 2) {
 		osc53 = osc[0];
@@ -692,8 +702,10 @@ void upsdrv_initups(void)
 	v = getval("iout_calib");
 	if (v) {
 		double parsed = atof(v);
-		if (parsed > 0.0)
+		if (parsed > 0.0) {
 			iout_calib = parsed;
+			iout_calib_override = 1;
+		}
 	}
 
 	v = getval("va");
