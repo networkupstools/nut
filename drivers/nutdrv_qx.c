@@ -1173,7 +1173,7 @@ static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 	}
 
-	p = memchr(tmp, '\r', tmplen);
+	p = (char *)memchr(tmp, '\r', tmplen);
 	upsdebugx(3, "send: %.*s", (int)(p ? (size_t)(p - tmp) : tmplen), tmp);
 
 	/* Read the reply in one transfer of at most 64 bytes */
@@ -1207,7 +1207,7 @@ static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	/* If no CR was received, use a NUL found within the received bytes;
 	 * otherwise treat every received byte as payload. */
 	if (!len) {
-		p = memchr(tmp, '\0', (size_t)ret);
+		p = (char *)memchr(tmp, '\0', (size_t)ret);
 		len = p ? (size_t)(p - tmp) : (size_t)ret;
 	}
 
