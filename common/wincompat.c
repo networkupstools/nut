@@ -898,6 +898,15 @@ int w32_serial_read(serial_handler_t *sh, void *ptr, size_t ulen, DWORD timeout)
 							errno = 0;
 							return 0;
 						}
+						CancelIo(sh->handle);
+						sh->overlapped_armed = 0;
+						ResetEvent(sh->io_status.hEvent);
+						upsdebugx(4,
+							"w32_serial_read : timeout after receiving %d characters, returning partial data",
+							tot);
+						SetLastError(ERROR_SUCCESS);
+						errno = 0;
+						return tot;
 					default:
 						goto err;
 				}
