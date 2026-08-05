@@ -60,7 +60,7 @@ Debugging information
 
 The `upsdebug_with_errno()`, `upsdebugx()`, `upsdebug_hex()` and
 `upsdebug_ascii()` routines use the global `nut_debug_level`, so you
-don't have to mess around with `printf()`'s and `if`'s yourself.
+don't have to mess around with `printf()` and `if` clauses yourself.
 Use them.
 
 Memory allocation
@@ -979,9 +979,9 @@ different rules to be satisfied, and those are sometimes at odds:
 
 * a `switch` should definitively handle all cases, so must have a `default`
   label -- this works well for general numeric variables;
-* an `enum`'s valid values are known at compile time, and each must be handled
-  explicitly (even if implemented as many `case value:` labels preceding the
-  same code block), so...
+* valid values of an `enum` type are known at compile time, and each must
+  be handled explicitly (even if implemented as many `case value:` labels
+  preceding the same code block), so...
 * ...a `default` label is redundant (should never be reachable) in a `switch`
   that handles all `enum` values -- but this notion is a head-on crash vs. the
   first rule above.

@@ -673,7 +673,7 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      [PR #3237]
    * Extended processing of `MAXCONN` setting to allow larger values than the
      operating system allows, by only waiting for that amount of Unix sockets
-     or Windows `HANDLE`'s at a time, and moving on to another chunk.
+     or Windows `HANDLE` objects at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
      environment variable (e.g. in tests). For the other side of the coin, the
      NIT script now supports an optional `DUMMY_UPS_SWARM_COUNT` environment
@@ -1912,7 +1912,7 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      - Numeric literals and macros are `int` by default
      - Results of math with unsigned types like `uint16_t`, done in some
        cases, are up-scaled into `int` by default
-     - `char`'s, `unsigned` or not, seem to be also up-scaled into `int`
+     - `char` values, `unsigned` or not, seem to be also up-scaled into `int`
 
  - Updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
@@ -2662,9 +2662,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
    * Also `upsmon` should now recognize `OFF` and `BYPASS` flags in `ups.status`
      and report that these states begin or end. The `OFF` state usually means
-     than an administrative action happened to power off the load, but the UPS
+     that an administrative action happened to power off the load, but the UPS
      device is still alive and communicating (USB, SNMP, etc.); corresponding
-     `MONITOR`'ed amount of power sources are considered not being "fed" for
+     amount of power sources we `MONITOR` are considered not being "fed" for
      the power value calculation purposes. The `BYPASS` state is now treated
      similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
      communications fail, it is considered dead. This may have unintended
