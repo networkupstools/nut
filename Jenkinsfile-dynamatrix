@@ -352,7 +352,7 @@ set | sort -n """
      * directly and ci_build.sh with stricter warnings, in particular.
      */
     dynacfgPipeline.slowBuild = [
-        [name: 'Default autotools driven build with default warning levels (gnu99/gnu++11)',
+        [name: 'Default autotools driven build and distcheck-ci with default warning levels (gnu99/gnu++11)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -393,7 +393,7 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-minimal
 
-        ,[name: 'Default autotools driven build with max warnings and varied C/C++ revisions (allowed to fail)',
+        ,[name: 'Default autotools driven build and distcheck-ci with max warnings and varied C/C++ revisions (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -440,7 +440,7 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-Wall
 
-        ,[name: 'Default autotools driven build with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11, must pass where enabled)',
+        ,[name: 'Default autotools driven build and distcheck-ci with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11, must pass where enabled)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
