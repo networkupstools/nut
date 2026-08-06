@@ -93,6 +93,24 @@ https://github.com/networkupstools/nut/milestone/13
       an initialization failure with certain UPS models (e.g., SVC
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
+    * Added an `omron` USB subdriver and an `omron` protocol subdriver for
+      the OMRON BN150T, and registered its USB ID `0590:00b7`. The transport
+      uses a 16-byte HID Output report and validates transfer and reply
+      lengths. The base `Q1` mapping follows `q1` but omits two status
+      characters. Index 2 was set during stable operation on mains, both in
+      normal mode and in ECO mode, and was clear while on battery; neither OMRON
+      driver version handles it. Index 7, which `q1` would publish as the
+      beeper status, is not read by either OMRON driver version. The shutdown
+      commands use OMRON's form. The subdriver also adds extension queries for
+      battery charge, runtime and temperature, output frequency, firmware
+      (`ups.firmware` and `ups.firmware.aux`), serial number, battery date and
+      nominal power and battery voltage ratings. The implementation was ported
+      from OMRON-authored GPL driver version 1.00 distributed in the Synology
+      DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS
+      5.2.3 GPL sources. Polling and the direct shutdown commands were verified
+      on an unloaded BN150T over USB; other OMRON models and serial connections
+      are untested.
+      [issue #3112]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying

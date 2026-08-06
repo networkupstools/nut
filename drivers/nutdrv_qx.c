@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.53"
+#define DRIVER_VERSION	"0.54"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -78,6 +78,7 @@
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
+#include "nutdrv_qx_omron.h"
 #include "nutdrv_qx_q1.h"
 #include "nutdrv_qx_q2.h"
 #include "nutdrv_qx_q6.h"
@@ -92,6 +93,8 @@
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
+	/* Vendor-ID-gated before command-based protocol probes */
+	&omron_subdriver,
 	&voltronic_subdriver,
 	&voltronic_axpert_subdriver,
 	&voltronic_qs_subdriver,
@@ -1089,6 +1092,128 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 	upsdebug_hex(5, "read", tmp, (size_t)len);
 	upsdebugx(3, "read: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	len = len < buflen ? len : buflen - 1;
+
+	memset(buf, 0, buflen);
+	memcpy(buf, tmp, len);
+
+	/* If the reply lacks the expected terminating CR, add it (if there's enough space) */
+	if (len && memchr(buf, '\r', len) == NULL) {
+		upsdebugx(4, "%s: the reply lacks the expected terminating CR.", __func__);
+		if (len < buflen - 1) {
+			upsdebugx(4, "%s: adding missing terminating CR.", __func__);
+			buf[len++] = '\r';
+			buf[len] = 0;
+		}
+	}
+
+	if (len > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, len);
+		return -1;
+	}
+	return (int)len;
+}
+
+/* OMRON USB transport
+ * The BN150T declares a 16-byte HID Output report. Each write sends one
+ * complete report and rejects a short transfer. Reply parsing searches for a
+ * terminator only within the bytes actually received because a full-length
+ * reply need not contain a terminating NUL. Only the BN150T has been tested. */
+#define	OMRON_REPORT_SIZE	16
+
+static int	omron_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	char	tmp[64];
+	char	*p;
+	size_t	tmplen;
+	int	ret;
+	size_t	i, len;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	/* Send command
+	 * NOTE: the whole buffer is zeroed first, so that the padding sent
+	 * after a command shorter than the chunk length is defined. */
+	memset(tmp, 0, sizeof(tmp));
+	tmplen = cmdlen > sizeof(tmp) ? sizeof(tmp) : cmdlen;
+	memcpy(tmp, cmd, tmplen);
+
+	/* Advance by a whole report, not by the transferred count: a report is
+	 * only meaningful to the device as a unit, so a partial transfer cannot
+	 * be resumed at a byte offset. This also keeps &tmp[i] plus a full
+	 * report inside tmp[]. */
+	for (i = 0; i < tmplen; i += OMRON_REPORT_SIZE) {
+
+		/* The HID specification encodes Output report type 2 with report ID 0
+		 * as 0x0200. OMRON-authored driver versions 1.00 and 1.02 instead use
+		 * 0x0002, which was verified on the BN150T; preserve the tested value. */
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x0002, 0, (usb_ctrl_charbuf)&tmp[i],
+			OMRON_REPORT_SIZE, 1000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)",
+				(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+				ret);
+			return ret;
+		}
+
+		if (ret != OMRON_REPORT_SIZE) {
+			upsdebugx(3, "send: short transfer (%d of %d bytes)",
+				ret, OMRON_REPORT_SIZE);
+			return -1;
+		}
+
+	}
+
+	p = (char *)memchr(tmp, '\r', tmplen);
+	upsdebugx(3, "send: %.*s", (int)(p ? (size_t)(p - tmp) : tmplen), tmp);
+
+	/* Read the reply in one transfer of at most 64 bytes */
+	ret = usb_interrupt_read(udev,
+		0x81,
+		(usb_ctrl_charbuf)tmp, sizeof(tmp), 1000);
+
+	/* Any errors here mean that we are unable to read a reply
+	 * (which will happen after successfully writing a command
+	 * to the UPS) */
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s (%d)",
+			(ret != LIBUSB_ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out",
+			ret);
+		return ret;
+	}
+
+	/* The transfer length is not the payload length: the reply is
+	 * terminated by 0x0D, so the payload has to be measured here. */
+
+	for (i = 0, len = 0; i < (size_t)ret; i++) {
+
+		if (tmp[i] != '\r')
+			continue;
+
+		len = ++i;
+		break;
+
+	}
+
+	/* If no CR was received, use a NUL found within the received bytes;
+	 * otherwise treat every received byte as payload. */
+	if (!len) {
+		p = (char *)memchr(tmp, '\0', (size_t)ret);
+		len = p ? (size_t)(p - tmp) : (size_t)ret;
+	}
+
+	upsdebug_hex(5, "read", tmp, len);
+	upsdebugx(3, "read: %.*s",
+		(int)(len && tmp[len - 1] == '\r' ? len - 1 : len), tmp);
 
 	len = len < buflen ? len : buflen - 1;
 
@@ -2456,6 +2581,15 @@ static void	*ippon_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+/* Note: the "omron_subdriver" name is taken by the subdriver_t structure */
+static void	*omron_usb_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	subdriver_command = &omron_command;
+	return NULL;
+}
+
 static void	*krauler_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
@@ -2539,6 +2673,9 @@ typedef struct {
 /* ST Microelectronics */
 #define STMICRO_VENDORID	0x0483
 
+/* OMRON Corporation */
+#define OMRON_VENDORID	0x0590
+
 /* Sysgration Ltd. */
 #define SYSGRATION_VENDORID	0x05b8
 
@@ -2580,6 +2717,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* NOTE: VID:PID may be used by non-UPS devices with CH340/341 chips! But also Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
 	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b7),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN150T */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
@@ -3240,6 +3378,7 @@ void	upsdrv_shutdown(void)
 			{ "phoenixtec", &phoenixtec_command },
 			{ "phoenix", &phoenix_command },
 			{ "ippon", &ippon_command },
+			{ "omron", &omron_command },
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
 			{ "hunnox", &hunnox_command },

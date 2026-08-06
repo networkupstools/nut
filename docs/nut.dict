@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3793 utf-8
+personal_ws-1.1 en 3800 utf-8
 AAC
 AAS
 ABI
@@ -287,6 +287,7 @@ DS
 DSA
 DSHUTD
 DSL
+DSM
 DTE
 DTrace
 DUMPALL
@@ -899,6 +900,8 @@ OIDs
 OLHVT
 OMNIVS
 OMNIVSINT
+OMRON
+OMRON's
 ONF
 ONV
 OO
@@ -1097,6 +1100,7 @@ QLDL
 QMD
 QMF
 QMOD
+QNAP
 QOL
 QP
 QPAR
@@ -1104,6 +1108,7 @@ QPD
 QQ
 QQQ
 QRI
+QTS
 QVFW
 QWS
 QinHeng
@@ -1354,6 +1359,7 @@ Sy
 Sycon
 Symmetra
 Symmetras
+Synology
 SyntaxWarning
 Sysgration
 SyslogIdentifier
@@ -2894,6 +2900,7 @@ oldmac
 oldmge
 oldnut
 omnios
+omron
 onbatt
 onbattery
 onbattwarn

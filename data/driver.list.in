@@ -1144,6 +1144,8 @@
 "NUT"	"ups"	"5"	"all supported NUT devices, through remote upsd"	""	"dummy-ups"
 "NUT"	"ups"	"5"	"Simulated devices"	""	"dummy-ups"
 
+"OMRON"	"ups"	"4"	"BN150T"	"USB (USB ID 0590:00b7)"	"nutdrv_qx port=auto vendorid=0590 productid=00b7 protocol=omron subdriver=omron"	# https://github.com/networkupstools/nut/issues/3112 ; ported from OMRON-authored GPL driver version 1.00 distributed in the Synology DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS 5.2.3 GPL sources. Polling and direct shutdown commands were verified on an unloaded BN150T over USB; other models are untested.
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"
