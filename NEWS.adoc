@@ -70,6 +70,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Added `modbus_retries` option to configure the number of read retry
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
+    * It should now properly handle mismatches of criteria passed to the
+      regular expression matcher (e.g. serial number) allowing several USB
+      devices to be monitored without conflict. [#2609]
 
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
@@ -1834,7 +1837,6 @@ This requirement compromises usability of `make distcheck` on platforms without
  - `gamatronic` driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
    some of the devices supported by this driver. [#2427]
-
 
  - `upsd` updates:
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
