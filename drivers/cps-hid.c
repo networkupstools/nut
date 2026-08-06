@@ -485,6 +485,10 @@ static int cps_claim(HIDDevice_t *hd) {
  * voltage limits as being more appropriate.
  */
 
+
+
+
+
 static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
 	int	retval = 0;
@@ -622,29 +626,15 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				 && input_pData->Size > 1
 				 && input_pData->Size <= sizeof(long)*8
 				) {
-					/* Note: usually values are signed, but
-					 * here we are about compensating for
-					 * poorly encoded maximums, so limit by
-					 * 2^(size)-1, e.g. for "size==16" the
-					 * limit should be "2^16 - 1 = 65535";
-					 * note that in HIDParse() we likely
-					 * set 65535 here in that case. See
-					 * also comments there (hidparser.c)
-					 * discussing signed/unsigned nuances.
-					 */
-					/* long sizeMax = (1L << (input_pData->Size - 1)) - 1; */
 					long sizeMax = (1L << (input_pData->Size)) - 1;
 					if (input_logmax > sizeMax) {
 						input_logmax = sizeMax;
 					}
 				}
-
 				if (output_logmax_assumed
 				 && output_pData->Size > 1
 				 && output_pData->Size <= sizeof(long)*8
 				) {
-					/* See comment above */
-					/* long sizeMax = (1L << (output_pData->Size - 1)) - 1; */
 					long sizeMax = (1L << (output_pData->Size)) - 1;
 					if (output_logmax > sizeMax) {
 						output_logmax = sizeMax;
@@ -670,43 +660,20 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		}
 	}
 
-	/* Fix for nominal power reporting getting clipped by a too restrictive LogMax. */
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 24 /* 0x18 */, USAGE_POW_CONFIG_ACTIVE_POWER))) {
 		long power_logmax = pData->LogMax;
-
-		upsdebugx(4, "Original Report Descriptor: ConfigActivePower "
-			"LogMin: %ld LogMax: %ld",
-			pData->LogMin, power_logmax);
-
 		if (power_logmax < CPS_NOMINALPWR_LOGMAX) {
-			/* Set a generous maximum value that will not restrict UPS reporting.
-			*
-			* Current findings suggest that the values sent by the UPS are
-			* accurate, but then get clipped by a too strict LogMax threshold:
-			* https://github.com/networkupstools/nut/issues/2917#issuecomment-2832243477
-			*/
 			pData->LogMax = CPS_NOMINALPWR_LOGMAX;
-
 			upsdebugx(3, "Fixing Report Descriptor: "
 				"set ConfigActivePower LogMax = %ld",
 				pData->LogMax);
-
 			retval = 1;
 		}
 	}
 
-	if (!retval) {
-		/* We did not `return 1` above, so... */
-		upsdebugx(3,
-			"SKIPPED Report Descriptor fix for UPS: "
-			"Vendor: %04x, Product: %04x "
-			"(problematic conditions not matched)",
-			(unsigned int)vendorID,
-			(unsigned int)productID);
-	}
-
 	return retval;
 }
+
 
 subdriver_t cps_subdriver = {
 	CPS_HID_VERSION,
