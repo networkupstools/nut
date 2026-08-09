@@ -41,7 +41,7 @@
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static upscli_authconf_t	*ac_default = NULL;
-static int	flags_ssl = UPSCLI_CONN_TRYSSL;
+static int	flags_ssl = UPSCLI_CONN_TRYSSL, flags_ssl_default = UPSCLI_CONN_TRYSSL;
 
 static char	*monhost = NULL;
 static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
@@ -552,13 +552,15 @@ static void ups_connect(void)
 	/* Always call this, to register possible CERTHOSTs etc. */
 	if (upscli_init_authconf(ac_current) > 0) {
 		if (ac_default) {
-			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl_default);
 
 			// Do not call on the next loop cycle, if any
 			ac_default = NULL;
 		}
 	}
 
+	flags_ssl = flags_ssl_default;
+	upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
 	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",

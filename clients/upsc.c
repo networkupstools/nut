@@ -557,9 +557,12 @@ int main(int argc, char **argv)
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
 	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
-	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
-		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
-		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+	if (ac_conn) {
+		if (upscli_init_authconf(ac_conn) > 0) {
+			upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+		}
+		upscli_authconf_update_conn_flags(ac_conn, &flags_ssl);
 	}
 
 	ups = (UPSCONN_t *)xmalloc(sizeof(*ups));
