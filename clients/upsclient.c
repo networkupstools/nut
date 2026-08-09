@@ -1017,9 +1017,11 @@ int upscli_init2(int certverify, const char *certpath,
 
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	if (certname) {
+		free(sslcertname);
 		sslcertname = xstrdup(certname);
 	}
 	if (certpasswd) {
+		free(sslcertpasswd);
 		sslcertpasswd = xstrdup(certpasswd);
 	}
 #else	/* neither backend: */
