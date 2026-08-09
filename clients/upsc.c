@@ -515,10 +515,10 @@ int main(int argc, char **argv)
 			int	parsed = -1;
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
-				parsed = upscli_read_authconf_file(NULL, 0);
+				parsed = upscli_read_authconf_file(NULL, 0, -1);
 			} else {
 				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
-				parsed = upscli_read_authconf_file(nutauth, 0);
+				parsed = upscli_read_authconf_file(nutauth, 0, -1);
 			}
 			if (parsed < 0) {
 				fatalx_error_json_simple(0, "Failed to parse auth config file");
@@ -526,7 +526,7 @@ int main(int argc, char **argv)
 		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
-		upscli_read_authconf_file(NULL, 0);
+		upscli_read_authconf_file(NULL, 0, 1);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {

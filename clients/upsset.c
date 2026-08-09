@@ -1192,7 +1192,7 @@ int main(int argc, char **argv)
 	check_conf();
 
 	upsdebugx(1, "Using best-effort auth config detection");
-	upscli_read_authconf_file(NULL, 0);
+	upscli_read_authconf_file(NULL, 0, 1);
 
 	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);

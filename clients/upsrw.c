@@ -735,15 +735,15 @@ int main(int argc, char **argv)
 		} else {
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
-				upscli_read_authconf_file(NULL, 1);
+				upscli_read_authconf_file(NULL, 1, -1);
 			} else {
 				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
-				upscli_read_authconf_file(nutauth, 1);
+				upscli_read_authconf_file(nutauth, 1, -1);
 			}
 		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
-		upscli_read_authconf_file(NULL, 0);
+		upscli_read_authconf_file(NULL, 0, 1);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
