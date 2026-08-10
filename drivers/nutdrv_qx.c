@@ -730,12 +730,20 @@ static int				langid_fix = -1;
 
 static int	(*subdriver_command)(const char *cmd, size_t cmdlen, char *buf, size_t buflen) = NULL;
 
+static bool_t	cypress_0665_5161_quirk = FALSE;
+
+#define CYPRESS_0665_5161_FLUSH_REPORTS	10
+#define CYPRESS_0665_5161_FLUSH_TIMEOUT	25
+#define CYPRESS_REPLY_TIMEOUT			1000
+#define CYPRESS_0665_5161_REPLY_TIMEOUT	3000
+
 /* Cypress communication subdriver */
 static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
 	size_t	tmplen;
 	int	ret = 0;
+	int	reply_timeout = CYPRESS_REPLY_TIMEOUT;
 	size_t	i;
 
 	if (buflen > INT_MAX) {
@@ -743,6 +751,36 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
+	}
+
+	/* Some USB devices with Cypress 0665:5161 can leave a reply from a previous
+	 * command queued on the interrupt endpoint. Do not apply this device quirk
+	 * to other Cypress-based UPSes.
+	 */
+	if (cypress_0665_5161_quirk) {
+		reply_timeout = CYPRESS_0665_5161_REPLY_TIMEOUT;
+
+		/* Read once more than the number of reports we accept, so a timeout
+		 * confirms that the endpoint is empty. Do not send a command if it
+		 * remains busy: its reply could not be associated reliably.
+		 */
+		for (i = 0; i <= CYPRESS_0665_5161_FLUSH_REPORTS; i++) {
+			ret = usb_interrupt_read(udev, 0x81,
+				(usb_ctrl_charbuf)tmp, 8, CYPRESS_0665_5161_FLUSH_TIMEOUT);
+
+			if (ret == LIBUSB_ERROR_TIMEOUT)
+				break;
+
+			if (ret <= 0)
+				return ret;
+
+			if (i == CYPRESS_0665_5161_FLUSH_REPORTS) {
+				upsdebugx(1, "cypress: input endpoint stayed busy before %s", cmd);
+				return LIBUSB_ERROR_BUSY;
+			}
+
+			upsdebugx(3, "cypress: discarded stale input report before %s", cmd);
+		}
 	}
 
 	/* Send command */
@@ -779,7 +817,7 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev,
 			0x81,
-			(usb_ctrl_charbuf)&buf[i], 8, 1000);
+			(usb_ctrl_charbuf)&buf[i], 8, reply_timeout);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
@@ -2561,6 +2599,16 @@ static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
 
+	cypress_0665_5161_quirk = FALSE;
+	subdriver_command = &cypress_command;
+	return NULL;
+}
+
+static void	*cypress_0665_5161_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	cypress_0665_5161_quirk = TRUE;
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -2705,7 +2753,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
 	{ USB_DEVICE(LEGRAND_VENDORID,	0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
-	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_0665_5161_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */

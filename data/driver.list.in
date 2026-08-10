@@ -1682,6 +1682,7 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
+"VOLT Polska"	"ups"	"2"	"RackUPS 1200VA/720W 2x7Ah"	"USB (USB ID 0665:5161)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2534
 "Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"nutdrv_qx"
