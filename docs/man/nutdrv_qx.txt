@@ -503,6 +503,15 @@ You must provide *value* (+0x409+ or +0x4095+), according to your device entry i
 *noscanlangid*::
 If this flag is set, don't autoscan valid range for langid.
 
+*cypress_drain_quirk =* 'value'::
+Some devices using the `cypress` subdriver, e.g. VOLT Polska identified as Cypress
+USB ID `0665:5161`, were seen to retain stale bytes in their USB buffer, returning
+old "garbage" as response to new queries and so corrupting discovery attempts.
+The `nutdrv_qx` driver can drain the USB buffer and use longer timeouts to communicate
+with such devices, but such a change may potentially misfire on other devices with
+same USB ID (Belkin, Voltronic).  This option allows to explicitly enable or disable
+this behavior; by default it is chosen according to device self-identification.
+
 
 IMPLEMENTATION NOTES
 ^^^^^^^^^^^^^^^^^^^^
