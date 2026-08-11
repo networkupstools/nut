@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.54"
+#define DRIVER_VERSION	"0.55"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -730,6 +730,8 @@ static int				langid_fix = -1;
 
 static int	(*subdriver_command)(const char *cmd, size_t cmdlen, char *buf, size_t buflen) = NULL;
 
+/* -1: let the driver guess by USB ID; 0/1: explicit disable/enable */
+static int	cypress_drain_quirk_setting = -1;
 static bool_t	cypress_0665_5161_quirk = FALSE;
 
 #define CYPRESS_0665_5161_FLUSH_REPORTS	10
@@ -2599,7 +2601,11 @@ static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
 
-	cypress_0665_5161_quirk = FALSE;
+	switch (cypress_drain_quirk_setting) {
+		case 0: cypress_0665_5161_quirk = FALSE; break;
+		case 1: cypress_0665_5161_quirk = TRUE; break;
+		default: cypress_0665_5161_quirk = FALSE;
+	}
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -2608,7 +2614,11 @@ static void	*cypress_0665_5161_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
 
-	cypress_0665_5161_quirk = TRUE;
+	switch (cypress_drain_quirk_setting) {
+		case 0: cypress_0665_5161_quirk = FALSE; break;
+		case 1: cypress_0665_5161_quirk = TRUE; break;
+		default: cypress_0665_5161_quirk = TRUE;
+	}
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -3554,6 +3564,10 @@ void	upsdrv_makevartable(void)
 		"Apply the language ID workaround to the krauler subdriver "
 		"(0x409 or 0x4095)");
 	addvar(VAR_FLAG, "noscanlangid", "Don't autoscan valid range for langid");
+
+	addvar(VAR_VALUE, "cypress_drain_quirk",
+		"Enable or disable USB buffer drain from stale data for devices "
+		"with cypress subdriver (default: enabled for 0665:5161)");
 #endif	/* QX_USB */
 
 #ifdef QX_SERIAL
@@ -3753,7 +3767,8 @@ void	upsdrv_initups(void)
 		getval("product") ||
 		getval("serial") ||
 		getval("bus") ||
-		getval("langid_fix")
+		getval("langid_fix") ||
+		getval("cypress_drain_quirk")
 # if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		|| getval("busport")
 # endif
@@ -3890,6 +3905,21 @@ void	upsdrv_initups(void)
 				upsdebugx(2,
 					"Language ID workaround enabled (using '0x%x')",
 					(unsigned int)langid_fix);
+			}
+		}
+
+		if ((val = getval("cypress_drain_quirk"))) {
+			if (!strcmp(val, "1") || !strcasecmp(val, "on") || !strcasecmp(val, "yes") || !strcasecmp(val, "true")) {
+				upsdebugx(2, "cypress_drain_quirk explicitly enabled: %s", val);
+				cypress_drain_quirk_setting = 1;
+			} else if (!strcmp(val, "0") || !strcasecmp(val, "off") || !strcasecmp(val, "no") || !strcasecmp(val, "false")) {
+				upsdebugx(2, "cypress_drain_quirk explicitly disabled: %s", val);
+				cypress_drain_quirk_setting = 0;
+			} else if (!strcmp(val, "-1") || !strcasecmp(val, "null")) {
+				upsdebugx(2, "cypress_drain_quirk ignored (driver will choose by USB ID): %s", val);
+				cypress_drain_quirk_setting = -1;
+			} else {
+				upslogx(LOG_NOTICE, "Error enabling cypress_drain_quirk: unsupported value, ignored");
 			}
 		}
 
