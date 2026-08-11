@@ -3752,6 +3752,7 @@ void	upsdrv_initups(void)
 	char	*subdrv;
 # endif
 #endif
+	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
 
@@ -3813,7 +3814,6 @@ void	upsdrv_initups(void)
 		};
 
 		int		i;
-		const char	*val;
 		struct termios	tio;
 
 		/* Open and lock the serial port and set the speed to 2400 baud. */
