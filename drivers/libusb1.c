@@ -47,7 +47,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.54"
+#define USB_DRIVER_VERSION	"0.55"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -787,6 +787,12 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
 			rdlens[0] = rdlen1;
 			rdlens[1] = rdlen2;
+		}
+		else if ((curDevice->VendorID == 0x3746) && (curDevice->ProductID == 0xffff)
+			&& (rdlen1 != rdlen2)) {
+			upsdebugx(1, "EcoFlow device. Trying longer report descriptor first");
+			rdlens[0] = rdlen1 > rdlen2 ? rdlen1 : rdlen2;
+			rdlens[1] = rdlen1 > rdlen2 ? rdlen2 : rdlen1;
 		}
 		else {
 			rdlens[0] = rdlen2 >= 0 ? rdlen2 : rdlen1;
