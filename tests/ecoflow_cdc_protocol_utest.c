@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "ecoflow-cdc-protocol.h"
+#include "nut_float.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -79,9 +80,9 @@ int main(void)
 	check(parsed == 0, "captured response parses");
 	check(metrics.has_design_capacity_mah && metrics.design_capacity_mah == 12800,
 		"design capacity parses");
-	check(metrics.has_system_temperature && metrics.system_temperature == 26,
+	check(metrics.has_system_temperature && f_equal(metrics.system_temperature, 26),
 		"system temperature parses");
-	check(metrics.has_battery_temperature && metrics.battery_temperature == 28,
+	check(metrics.has_battery_temperature && f_equal(metrics.battery_temperature, 28),
 		"battery temperature parses");
 	check(metrics.has_output_power && fabs(metrics.output_power - 258.768) < 0.01,
 		"total output power parses");
@@ -93,7 +94,7 @@ int main(void)
 		"rated output power parses");
 	check(metrics.has_ac_output_power && fabs(metrics.ac_output_power - 258.768) < 0.01,
 		"AC output power parses as an absolute value");
-	check(metrics.has_ac_output_frequency && metrics.ac_output_frequency == 60,
+	check(metrics.has_ac_output_frequency && f_equal(metrics.ac_output_frequency, 60),
 		"AC output frequency parses");
 	check(!metrics.has_charging_runtime, "not-charging sentinel is not published");
 	check(metrics.has_ems_version && metrics.ems_version[0] == 0x23 &&

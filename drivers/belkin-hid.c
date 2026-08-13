@@ -32,7 +32,7 @@
 #include "usb-common.h"
 #include "nut_float.h"	/* For fabs() */
 
-#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.23"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.24"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d

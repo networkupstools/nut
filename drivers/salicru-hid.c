@@ -33,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define SALICRU_HID_VERSION	"Salicru HID 0.4"
+#define SALICRU_HID_VERSION	"Salicru HID 0.5"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Salicru */

@@ -28,7 +28,7 @@
 
 #include <ctype.h>	/* isdigit() */
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.75"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.76"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */

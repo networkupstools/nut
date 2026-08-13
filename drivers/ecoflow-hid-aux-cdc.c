@@ -1,4 +1,4 @@
-/* ecoflow-cdc.c - optional EcoFlow CDC companion for usbhid-ups
+/* ecoflow-hid-aux-cdc.c - optional EcoFlow CDC companion for usbhid-ups
  *
  * Copyright (C) 2026 Network UPS Tools contributors
  *
@@ -9,7 +9,7 @@
  */
 
 #include "config.h"
-#include "ecoflow-cdc.h"
+#include "ecoflow-hid-aux-cdc.h"
 #include "ecoflow-cdc-protocol.h"
 #include "main.h"
 
@@ -237,7 +237,7 @@ static void ecoflow_cdc_makevartable(void)
 		"Optional EcoFlow CDC serial port used to enrich HID telemetry");
 }
 
-subdriver_aux_t ecoflow_cdc_aux = {
+subdriver_aux_t ecoflow_hid_aux_cdc = {
 	ecoflow_cdc_makevartable,
 	ecoflow_cdc_initups,
 	ecoflow_cdc_initinfo,
