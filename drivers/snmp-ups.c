@@ -181,7 +181,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.40"
+#define DRIVER_VERSION	"1.41"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
