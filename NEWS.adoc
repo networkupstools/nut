@@ -71,6 +71,12 @@ https://github.com/networkupstools/nut/milestone/13
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
 
+ - `blazer_usb` driver updates:
+    * Bounded Ippon USB reply parsing by the number of bytes actually received,
+      preventing out-of-bounds reads when a full-size reply contains neither
+      the expected carriage return nor a zero byte. Same defect as the one fixed
+      in the `nutdrv_qx` Ippon subdriver, which this code predates.
+
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
       authentication configuration discovery. It accepts `default`, `none`,
