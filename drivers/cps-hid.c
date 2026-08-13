@@ -717,4 +717,5 @@ subdriver_t cps_subdriver = {
 	cps_format_mfr,
 	cps_format_serial,
 	cps_fix_report_desc,
+	NULL,
 };

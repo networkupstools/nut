@@ -795,4 +795,5 @@ subdriver_t powercom_subdriver = {
 	powercom_format_mfr,
 	powercom_format_serial,
 	fix_report_desc,
+	NULL,
 };

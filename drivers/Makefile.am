@@ -346,8 +346,11 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-h
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
  legrand-hid.c salicru-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c ecoflow-cdc.c ecoflow-cdc-protocol.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS_LIBUSB)
+if WITH_SERIAL
+usbhid_ups_LDADD += libdummy_serial.la $(SERLIBS)
+endif WITH_SERIAL
 
 powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c
 powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1

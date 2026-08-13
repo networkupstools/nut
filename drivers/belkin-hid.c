@@ -713,4 +713,5 @@ subdriver_t belkin_subdriver = {
 	belkin_format_mfr,
 	belkin_format_serial,
 	fix_report_desc,
+	NULL,
 };

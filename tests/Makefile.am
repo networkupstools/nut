@@ -113,6 +113,12 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += ecoflow_cdc_protocol_utest
+ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
+	$(top_srcdir)/drivers/ecoflow-cdc-protocol.c \
+	$(top_srcdir)/drivers/ecoflow-cdc-protocol.h
+ecoflow_cdc_protocol_utest_LDADD = -lm
+
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
 #nutbooltest_LDADD = $(NUT_LIBCOMMON)

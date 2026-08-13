@@ -1292,6 +1292,7 @@ void upsdrv_tweak_prognames(void)
 void upsdrv_makevartable(void)
 {
 	char temp [MAX_STRING_SIZE];
+	size_t i;
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
@@ -1372,6 +1373,13 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "notification",
 		"Set notification type (ignored, only for backward compatibility)");
 #endif	/* SHUT_MODE / USB */
+
+	for (i = 0; subdriver_list[i] != NULL; i++) {
+		if (subdriver_list[i]->aux != NULL &&
+		    subdriver_list[i]->aux->makevartable != NULL) {
+			subdriver_list[i]->aux->makevartable();
+		}
+	}
 }
 
 #define	MAX_EVENT_NUM	32
@@ -1556,6 +1564,10 @@ void upsdrv_updateinfo(void)
 	buzzmode_commit();
 	status_commit();
 
+	if (subdriver->aux != NULL && subdriver->aux->updateinfo != NULL) {
+		subdriver->aux->updateinfo();
+	}
+
 	dstate_dataok();
 
 #ifdef DEBUG
@@ -1699,6 +1711,10 @@ void upsdrv_initinfo(void)
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
+
+	if (subdriver->aux != NULL && subdriver->aux->initinfo != NULL) {
+		subdriver->aux->initinfo();
+	}
 }
 
 void upsdrv_initups(void)
@@ -1979,12 +1995,21 @@ void upsdrv_initups(void)
 		lbrb_log_delay_without_calibrating = 1;
 	}
 
+	if (subdriver->aux != NULL && subdriver->aux->initups != NULL) {
+		subdriver->aux->initups();
+	}
+
 	upsdebugx(1, "%s: finished", __func__);
 }
 
 void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "upsdrv_cleanup...");
+
+	if (subdriver != NULL && subdriver->aux != NULL &&
+	    subdriver->aux->cleanup != NULL) {
+		subdriver->aux->cleanup();
+	}
 
 	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);

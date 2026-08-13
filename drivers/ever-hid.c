@@ -783,4 +783,5 @@ subdriver_t ever_subdriver = {
 	ever_format_mfr,
 	ever_format_serial,
 	fix_report_desc,
+	NULL,
 };

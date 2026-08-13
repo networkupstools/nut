@@ -235,4 +235,5 @@ subdriver_t legrand_subdriver = {
 	legrand_format_mfr,
 	legrand_format_serial,
 	fix_report_desc,
+	NULL,
 };
