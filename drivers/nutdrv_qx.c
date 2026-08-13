@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.54"
+#define DRIVER_VERSION	"0.55"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -1021,6 +1021,7 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[64];
+	char	*p;
 	size_t	tmplen;
 	int	ret;
 	size_t	i, len;
@@ -1076,22 +1077,19 @@ static int	ippon_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 	 * Empty response will look like 0x00 0x0D, otherwise
 	 * it will be data string terminated by 0x0D. */
 
-	for (i = 0, len = 0; i < (size_t)ret; i++) {
-
-		if (tmp[i] != '\r')
-			continue;
-
-		len = ++i;
-		break;
-
+	p = (char *)memchr(tmp, '\r', (size_t)ret);
+	if (p) {
+		len = (size_t)(p - tmp) + 1;
+	} else {
+		/* If no CR was received, use a NUL found within the received bytes;
+		 * otherwise treat every received byte as payload. */
+		p = (char *)memchr(tmp, '\0', (size_t)ret);
+		len = p ? (size_t)(p - tmp) : (size_t)ret;
 	}
 
-	/* Just in case there wasn't any '\r', fallback to string length, if any */
-	if (!len)
-		len = strlen(tmp);
-
-	upsdebug_hex(5, "read", tmp, (size_t)len);
-	upsdebugx(3, "read: %.*s", (int)strcspn(tmp, "\r"), tmp);
+	upsdebug_hex(5, "read", tmp, len);
+	upsdebugx(3, "read: %.*s",
+		(int)(len && tmp[len - 1] == '\r' ? len - 1 : len), tmp);
 
 	len = len < buflen ? len : buflen - 1;
 

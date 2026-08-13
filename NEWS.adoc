@@ -83,6 +83,9 @@ https://github.com/networkupstools/nut/milestone/13
       reconnection behavior. [issue #3510, PR #3543]
 
  - `nutdrv_qx` driver updates:
+    * Bounded Ippon USB reply parsing by the number of bytes actually received,
+      preventing out-of-bounds reads when a full-size reply contains neither
+      the expected carriage return nor a zero byte.
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
