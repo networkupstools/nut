@@ -1236,6 +1236,7 @@
 
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 "PowerShield"	"ups"	"2"	"PSDR800"	"USB"	"nutdrv_qx protocol=voltronic-qs"
+"PowerShield"	"ups"	"4"	"Centurion RT 1000VA (PSCERT1000)"	"SNMP v2c, PSSNMPV4 card"	"snmp-ups mibs=voltronic"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
