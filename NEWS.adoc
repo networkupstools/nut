@@ -70,6 +70,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Added `modbus_retries` option to configure the number of read retry
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
+    * Three fixes for the read-retry loop added in PR #3414:
+      the loop ignored `exit_flag`, causing `upsdrvctl` to kill the driver
+      and wedge the device if it was killed mid-exchange; now we retry on more
+      failure causes than just a timeout; quieter retry logging to avoid
+      severe syslog/journal thrashing. [PR #3571, #3414]
 
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
