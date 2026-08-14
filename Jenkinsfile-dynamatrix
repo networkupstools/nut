@@ -177,7 +177,7 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.axisCombos_WINDOWS = [~/OS_FAMILY=windows/]
     dynacfgPipeline.axisCombos_NOT_WINDOWS = [~/OS_FAMILY=(?!windows)/]
 
-    // TODO: some cross-build enviroments like Linux with mingw?
+    // TODO: some cross-build environments like Linux with mingw?
     // Currently done as an explicit scenario below...
     dynacfgPipeline.axisCombos_WINDOWS_CROSS = [~/OS_FAMILY=(mingw|mingw32|mingw64|msys2)/]
     dynacfgPipeline.axisCombos_NOT_WINDOWS_CROSS = [~/OS_FAMILY=(?!(mingw|mingw32|mingw64|msys2))/]
@@ -440,6 +440,7 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-Wall
 
+        // MASTER-0
         ,[name: 'Default autotools driven build and distcheck-ci with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11, must pass where enabled)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
@@ -503,6 +504,7 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-everywhere
 
+        // MASTER-1
         ,[name: 'Various non-docs non-distchecked target builds with main and ~newest supported C/C++ revisions and fatal warnings (default level) (must pass on all platforms)',
          // FIXME: Mostly overlaps (is a subset of) BUILD_TYPE=default-all-errors
          // scenarios below, for NUT nowadays - it is also without docs and distcheck.
@@ -634,6 +636,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-2
         ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) with distcheck for main supported C/C++ revision (GNU C99/C++98 standard, must pass)',
          // NOTE: Here we constrain distcheck builds (more CI stress load)
          // to run as few combos as possible; arguably this filter config
@@ -696,6 +699,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-3
         ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) without distcheck for other C/C++ revisions (must pass)',
          // NOTE: We reduce the build load here since the Makefile recipes
          // (for distcheck part) are deemed tested above with the supported
@@ -773,6 +777,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-4
         ,[name: 'Various build combos with Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard',
          // This is a recipe (and target OS) test for ability to use helper
          // scripts with various Python interpreter versions.
@@ -813,6 +818,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-5
         ,[name: 'An out-of-tree build with all docs types on capable systems and with fatal warnings (default level), and a distcheck (must pass), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers (maybe
@@ -864,6 +870,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-6
         ,[name: 'A build with manpage docs on all systems that did not build "all docs" and with fatal warnings (default level), and a distcheck (allowed to fail - e.g. no tools even for that), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
          // the docs without error; it should not iterate compilers; see above
@@ -908,6 +915,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-7
         ,[name: 'Various GNU C99+/C++11+ standard builds with fatal warnings (auto level), without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
@@ -944,6 +952,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-8
         ,[name: 'Strict-C and GNU C89/C++98 standard builds with fatal warnings (auto level) and GCC toolkits, without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimentalANSI,
@@ -1141,6 +1150,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-9
         ,[name: 'Various GNU C99+/C++98+ standard out-of-tree builds with fatal warnings (hard level) with GCC, without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
          // FIXME: Does this supplant in-tree default-warnings builds above?
          // Can they be just disabled by default now (subject in the future
@@ -1344,6 +1354,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
+        // MASTER-10
         ,[name: (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? '' : 'Strict-C and ') + 'GNU C99/C++11 standard builds with fatal warnings (hard level) on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
