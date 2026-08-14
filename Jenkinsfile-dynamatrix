@@ -916,7 +916,7 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         // MASTER-7
-        ,[name: 'Various GNU C99+/C++11+ standard builds with fatal warnings (auto level), without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
+        ,[name: 'Various GNU C99+/C++11+ standard builds with fatal warnings (auto level) and non-GCC toolkits, without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -946,6 +946,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_COMPILER_GCC]	// checking non-GCC builds; GCC is covered in more detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
