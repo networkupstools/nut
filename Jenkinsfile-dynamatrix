@@ -207,6 +207,23 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.axisCombos_ARCH64x32
         ]
 
+    dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK =
+        [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
+        // Here we picked just OSes and compilers (gcc or clang),
+        // so exclude systems which have e.g. gcc-4.2.1 which claims
+        // type range comparison warnings despite pragma fencing.
+        // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
+        + [[~/OS_DISTRO=macos/]]
+        // MacOS (at least agents prepared with HomeBrew packages)
+        // requires a few pkg-config and CFLAGS pre-sets which are
+        // done in ci_build.sh and defeat the purpose of this stage.
+        // So it is easier and more honest to just skip it.
+        + [[~/OS_DISTRO=netbsd/]]
+        // NetBSD versions on the build agent (9.2, 11.0) have issues
+        // with pkgsrc (lacking -R for some libs, e.g. Shared object
+        // "libssl.so.3" not found), so autotools builds are tricky;
+        // ci_build.sh imposes some fixes - so see notes for macos.
+
     dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
@@ -386,7 +403,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
-                    + [[~/OS_DISTRO=(macos|netbsd)/]]	// commented in detail below
+                    + dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -433,7 +450,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
-                    + [[~/OS_DISTRO=(macos|netbsd)/]]	// commented in detail below
+                    + dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -483,22 +500,8 @@ set | sort -n """
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 dynamatrixAxesLabels: [~/^OS_DISTRO/, 'COMPILER'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
-                    + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
-                    // Here we picked just OSes and compilers (gcc or clang),
-                    // so exclude systems which have e.g. gcc-4.2.1 which claims
-                    // type range comparison warnings despite pragma fencing.
-                    // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
-                    + [[~/OS_DISTRO=macos/]]
-                    // MacOS (at least agents prepared with HomeBrew packages)
-                    // requires a few pkg-config and CFLAGS pre-sets which are
-                    // done in ci_build.sh and defeat the purpose of this stage.
-                    // So it is easier and more honest to just skip it.
-                    + [[~/OS_DISTRO=netbsd/]]
-                    // NetBSD versions on the build agent (9.2, 11.0) have issues
-                    // with pkgsrc (lacking -R for some libs, e.g. Shared object
-                    // "libssl.so.3" not found), so autotools builds are tricky;
-                    // ci_build.sh imposes some fixes - so see notes for macos.
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
