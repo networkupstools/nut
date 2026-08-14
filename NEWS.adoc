@@ -185,8 +185,10 @@ https://github.com/networkupstools/nut/milestone/13
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
-    * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes.
-      [PR #3570]
+    * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes,
+      developed and tested against a PowerShield Centurion RT 1000VA
+      (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
+      PR #3570]
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we
