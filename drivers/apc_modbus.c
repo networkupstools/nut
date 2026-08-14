@@ -43,7 +43,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1044,7 +1044,9 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 			return 1;
 		}
 
-		upsdebugx(1, "%s: Read of %d:%d failed on attempt %d: %s (%s)", __func__, addr, addr + nb, attempt, modbus_strerror(saved_errno), device_path);
+		upsdebugx(1, "%s: Read of %d:%d failed on attempt %d: %s (%s)",
+			__func__, addr, addr + nb, attempt,
+			modbus_strerror(saved_errno), device_path);
 
 		/* ETIMEDOUT means no reply arrived (yet). EMBBADSLAVE, EMBBADCRC and
 		 * EMBBADDATA mean one did arrive but does not belong to this request:
@@ -1055,9 +1057,10 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 		 * can succeed. Anything else is the device answering us properly -- a
 		 * Modbus exception, say -- and will not improve on a retry. */
 		if (saved_errno != ETIMEDOUT
-		    && saved_errno != EMBBADSLAVE
-		    && saved_errno != EMBBADCRC
-		    && saved_errno != EMBBADDATA) {
+		&&  saved_errno != EMBBADSLAVE
+		&&  saved_errno != EMBBADCRC
+		&&  saved_errno != EMBBADDATA
+		) {
 			break;
 		}
 	}
@@ -1073,7 +1076,8 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 	 * not failing, and saved_errno may not have been set at all. */
 	if (!exit_flag) {
 		upslogx(LOG_ERR, "%s: Read of %d:%d failed after %d attempt(s): %s (%s)",
-			__func__, addr, addr + nb, attempt, modbus_strerror(saved_errno), device_path);
+			__func__, addr, addr + nb, attempt,
+			modbus_strerror(saved_errno), device_path);
 	}
 
 	_apc_modbus_close(0);
