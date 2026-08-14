@@ -824,11 +824,11 @@ set | sort -n """
         // MASTER-5
         ,[name: 'An out-of-tree build with all docs types on capable systems and with fatal warnings (default level), and a distcheck (must pass), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
-         // the docs without error; it should not iterate compilers (maybe
-         // iterate docs tools though, if we were to support many backends?)
+         //  the docs without error; it should not iterate compilers (maybe
+         //  iterate docs tools though, if we were to support many backends?)
          // FIXME: Check for overlap regarding distcheck with "autotools-driven
-         // builds" and "all driver types... with distcheck" as it currently
-         // is named above.
+         //  builds" (MASTER-0) as it is currently named above: consider only
+         //  picking systems which that scenario excludes?
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -845,6 +845,7 @@ set | sort -n """
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
+                    // all=auto, distcheck-ci
                     'BUILD_TYPE': ['default-withdoc']
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -876,10 +877,10 @@ set | sort -n """
         // MASTER-6
         ,[name: 'A build with manpage docs on all systems that did not build "all docs" and with fatal warnings (default level), and a distcheck (allowed to fail - e.g. no tools even for that), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
-         // the docs without error; it should not iterate compilers; see above
+         //  the docs without error; it should not iterate compilers; see above
          // FIXME: Check for overlap regarding distcheck with "autotools-driven
-         // builds" and "all driver types... with distcheck" as it currently
-         // is named above.
+         //  builds" (MASTER-0) as it is currently named above: consider only
+         //  picking systems which that scenario excludes?
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -896,6 +897,7 @@ set | sort -n """
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
+                    // all=auto, distcheck-ci
                     'BUILD_TYPE': ['default-withdoc:man']
                     ],
                 dynamatrixAxesCommonEnv: [
