@@ -637,7 +637,7 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         // MASTER-2
-        ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) with distcheck for main supported C/C++ revision (GNU C99/C++98 standard, must pass)',
+        ,[name: 'A non-docs build with all driver types on capable systems and fatal warnings (default level) with distcheck for main supported C/C++ revision (GNU C99/C++98 standard, must pass)',
          // NOTE: Here we constrain distcheck builds (more CI stress load)
          // to run as few combos as possible; arguably this filter config
          // is more about recipes distributing those drivers than about
@@ -657,9 +657,7 @@ set | sort -n """
          // hacks about PKG_CONFIG_PATH etc. which ci_build.sh ensures.
          // Maybe move part of the complexity there, and only cover the remaining
          // platforms here.
-         // FIXME: Check for overlap regarding distcheck with "all/manpage" builds
-         // below (but only exclude nodes here if appliesToChangedFilesRegex_DOC
-         // or appliesToChangedFilesRegex_TXT matched, respectively).
+         // FIXME: See comments in "MASTER-4" (Python iterator) about dedup potential.
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -679,6 +677,7 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
+                    // with distcheck, without docs/spellcheck:
                     'BUILD_TYPE': ['default-alldrv']
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -700,7 +699,7 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         // MASTER-3
-        ,[name: 'A build with all driver types on capable systems and fatal warnings (default level) without distcheck for other C/C++ revisions (must pass)',
+        ,[name: 'A non-docs build with all driver types on capable systems and fatal warnings (default level) without distcheck for other C/C++ revisions (must pass)',
          // NOTE: We reduce the build load here since the Makefile recipes
          // (for distcheck part) are deemed tested above with the supported
          // C/C++ standard revision
@@ -778,9 +777,13 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         // MASTER-4
-        ,[name: 'Various build combos with Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard',
+        ,[name: 'Various non-docs build combos with Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard',
          // This is a recipe (and target OS) test for ability to use helper
          // scripts with various Python interpreter versions.
+         // TODO: De-duplicate vs. "MASTER-2" by introducing `default:PYTHON*` labels
+         //  so we know which scenarios we have covered there by default.
+         //  Note that here we exclude old gcc which is deemed okay there,
+         //  and do not iterate compiler implementations/versions at all.
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
