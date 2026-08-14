@@ -1044,7 +1044,18 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 
 		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(saved_errno), device_path);
 
-		if (saved_errno != ETIMEDOUT) {
+		/* ETIMEDOUT means no reply arrived (yet). EMBBADSLAVE, EMBBADCRC and
+		 * EMBBADDATA mean one did arrive but does not belong to this request:
+		 * typically a deferred reply to an earlier exchange that was abandoned,
+		 * which on a serial line would have been discarded but on a packetised
+		 * transport is still queued. Both are transient states of the wire, and
+		 * reading the stale frame has already consumed it, so the next attempt
+		 * can succeed. Anything else is the device answering us properly -- a
+		 * Modbus exception, say -- and will not improve on a retry. */
+		if (saved_errno != ETIMEDOUT
+		    && saved_errno != EMBBADSLAVE
+		    && saved_errno != EMBBADCRC
+		    && saved_errno != EMBBADDATA) {
 			break;
 		}
 	}
