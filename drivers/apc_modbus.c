@@ -1023,6 +1023,16 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 	int saved_errno;
 
 	while (retries-- > 0) {
+		/* Stop retrying if the driver has been asked to exit. upsdrvctl gives
+		 * a driver 5 seconds to honour SIGTERM before sending SIGKILL, and
+		 * retries * response_timeout can exceed that comfortably. On some UPS
+		 * hardware a SIGKILL mid-exchange leaves the device unable to serve
+		 * Modbus until its USB cable is physically reseated, so being slow to
+		 * exit is not merely untidy. */
+		if (exit_flag) {
+			break;
+		}
+
 		_apc_modbus_interframe_delay();
 
 		res = modbus_read_registers(ctx, addr, nb, dest);
