@@ -916,7 +916,7 @@ set | sort -n """
         ] // one slowBuild filter configuration
 
         // MASTER-7
-        ,[name: 'Various GNU C99+/C++11+ standard builds with fatal warnings (auto level) and non-GCC toolkits, without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
+        ,[name: 'Various GNU C99+/C++98+ standard out-of-tree builds with fatal warnings (auto level) and non-GCC toolkits, without distcheck and docs, iterating a sub-matrix for BUILD_TYPE=default-all-errors (must pass)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -937,6 +937,9 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     // Build in a subdirectory to check that out-of-dir
+                     // builds are healthy too
+                     'CI_BUILDDIR=obj',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
