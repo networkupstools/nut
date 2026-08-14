@@ -504,14 +504,14 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-everywhere
 
-        // MASTER-1
+        // ex-MASTER-1
         ,[name: 'Various non-docs non-distchecked target builds with main and ~newest supported C/C++ revisions and fatal warnings (default level) (must pass on all platforms)',
          // FIXME: Mostly overlaps (is a subset of) BUILD_TYPE=default-all-errors
          // scenarios below, for NUT nowadays - it is also without docs and distcheck.
          // One notable difference is that here we check C++98 and there we start
          // with C++11 (but there is a separate filter for C89/C++98 gnu+strict).
          // Another difference may be about excludeCombos for old-GCC and/or non-GCC compilers.
-         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         disabled: true, // dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
@@ -931,7 +931,7 @@ set | sort -n """
                 // It has a separate slowBuild filter configuration below.
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': ['default-all-errors'],
                     ],
