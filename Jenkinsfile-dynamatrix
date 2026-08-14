@@ -208,21 +208,27 @@ import org.nut.dynamatrix.*;
         ]
 
     dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK =
-        [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
+        [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]] +
         // Here we picked just OSes and compilers (gcc or clang),
         // so exclude systems which have e.g. gcc-4.2.1 which claims
         // type range comparison warnings despite pragma fencing.
         // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
-        + [[~/OS_DISTRO=macos/]]
+        [[~/OS_DISTRO=macos/]] +
         // MacOS (at least agents prepared with HomeBrew packages)
         // requires a few pkg-config and CFLAGS pre-sets which are
         // done in ci_build.sh and defeat the purpose of this stage.
         // So it is easier and more honest to just skip it.
-        + [[~/OS_DISTRO=netbsd/]]
+        [[~/OS_DISTRO=netbsd/]]
         // NetBSD versions on the build agent (9.2, 11.0) have issues
         // with pkgsrc (lacking -R for some libs, e.g. Shared object
         // "libssl.so.3" not found), so autotools builds are tricky;
         // ci_build.sh imposes some fixes - so see notes for macos.
+
+    // This combo is used to *run* (with ci_build.sh) only scenarios
+    // skipped by excludeCombos_AUTOTOOLS_REQUIRE_TWEAK.
+    // Might not be exact, but reduces workload still.
+    dynacfgPipeline.excludeCombos_AUTOTOOLS_NOT_REQUIRE_TWEAK =
+        [[~/OS_DISTRO=(?!(openbsd-6\.|macos|netbsd))/]]
 
     dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
@@ -829,9 +835,9 @@ set | sort -n """
          // TODO: This is a recipe (and target OS) test for ability to build
          //  the docs without error; it should not iterate compilers (maybe
          //  iterate docs tools though, if we were to support many backends?)
-         // FIXME: Check for overlap regarding distcheck with "autotools-driven
-         //  builds" (MASTER-0) as it is currently named above: consider only
-         //  picking systems which that scenario excludes?
+         // NOTE: There may be overlap regarding distcheck with "autotools-driven
+         //  builds" (MASTER-0) but here we also validate out-of-tree dist+doc
+         //  ability. In practice there are about 5 hits as of 2026.
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -881,9 +887,6 @@ set | sort -n """
         ,[name: 'A build with manpage docs on all systems that did not build "all docs" and with fatal warnings (default level), and a distcheck (allowed to fail - e.g. no tools even for that), using default compiler with GNU C99/C++98 standard',
          // TODO: This is a recipe (and target OS) test for ability to build
          //  the docs without error; it should not iterate compilers; see above
-         // FIXME: Check for overlap regarding distcheck with "autotools-driven
-         //  builds" (MASTER-0) as it is currently named above: consider only
-         //  picking systems which that scenario excludes?
          disabled: dynacfgPipeline.disableSlowBuildCIBuild,
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
@@ -918,6 +921,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
+                    + dynacfgPipeline.excludeCombos_AUTOTOOLS_NOT_REQUIRE_TWEAK // skip systems covered with "autotools-driven builds" (MASTER-0)
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
