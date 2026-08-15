@@ -533,13 +533,13 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-nodoc']
-                    // BUILD_TYPE=default-withdoc:man
-                    // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
-                    // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes',
+                     'BUILD_TYPE=default-nodoc'
+                     // BUILD_TYPE=default-withdoc:man
+                     // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
+                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                      //,'BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -574,13 +574,13 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-tgt:distcheck-valgrind']
-                    // BUILD_TYPE=default-withdoc:man
-                    // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
-                    // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes',
+                     'BUILD_TYPE=default-tgt:distcheck-valgrind'
+                     // BUILD_TYPE=default-withdoc:man
+                     // BUILD_TYPE=default-tgt:distcheck-light == --with-all=auto --with-ssl=auto --with-doc=auto
+                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                      //,'BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -626,10 +626,10 @@ set | sort -n """
                     // in the Makefile to create two analysis XMLs now:
                     'CSTDVERSION_${KEY}': [ ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-tgt:cppcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no', 'BUILD_WARNFATAL=yes'
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no', 'BUILD_WARNFATAL=yes',
+                     'BUILD_TYPE=default-tgt:cppcheck'
                      //,'BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -686,11 +686,11 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    // with distcheck, without docs/spellcheck:
-                    'BUILD_TYPE': ['default-alldrv']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes',
+                     // with distcheck, without docs/spellcheck:
+                     'BUILD_TYPE=default-alldrv'
                      //,'BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -726,10 +726,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ /*['c': '99', 'cxx': '98'],*/ ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-alldrv:no-distcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes',
+                     'BUILD_TYPE=default-alldrv:no-distcheck'
                      //,'BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -762,10 +762,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-alldrv']
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-alldrv',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -809,10 +809,10 @@ set | sort -n """
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-alldrv']
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-alldrv',
                      'BUILD_WARNFATAL=yes'
                      //,'BUILD_WARNOPT=medium'
                     ]
@@ -854,8 +854,6 @@ set | sort -n """
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    // all=auto, distcheck-ci
-                    'BUILD_TYPE': ['default-withdoc']
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -866,6 +864,8 @@ set | sort -n """
                      // make sure we do not rely on hard-links, relative paths,
                      // etc.)
                      'CI_BUILDDIR=obj',
+                     // all=auto, distcheck-ci
+                     'BUILD_TYPE=default-withdoc',
                      'BUILD_WARNFATAL=yes'
                      //,'BUILD_WARNOPT=minimal'
                     ]
@@ -903,11 +903,11 @@ set | sort -n """
                     //'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    // all=auto, distcheck-ci
-                    'BUILD_TYPE': ['default-withdoc:man']
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     // all=auto, distcheck-ci
+                     'BUILD_TYPE=default-withdoc:man',
                      'BUILD_WARNFATAL=yes'
                      //,'BUILD_WARNOPT=minimal'
                     ]
@@ -945,13 +945,13 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      // Build in a subdirectory to check that out-of-dir
                      // builds are healthy too
                      'CI_BUILDDIR=obj',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
@@ -987,10 +987,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
                     'CSTDVARIANT': ['c', 'gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=auto'
                     ]
                     ],
@@ -1022,10 +1022,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
                     ]
                     ],
@@ -1060,10 +1060,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=no','BUILD_WARNOPT=auto'
                     ]
                     ],
@@ -1103,10 +1103,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -1144,10 +1144,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
                     ]
                     ],
@@ -1184,7 +1184,6 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -1192,6 +1191,7 @@ set | sort -n """
                      // Build in a subdirectory to check that out-of-dir
                      // builds are healthy too
                      'CI_BUILDDIR=obj',
+                     'BUILD_TYPE=default-all-errors',
                      // NOTE: "gcc-hard" warnings are still not as picky
                      // as "clang-hard" and do not differ much from the
                      // "gcc-medium" definition currently:
@@ -1226,11 +1226,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['c'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [],
                 dynamatrixAxesCommonEnvCartesian: [
-                    [ ['LANG=C','LC_ALL=C','TZ=UTC'] ],
+                    [ ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'] ],
                     [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
                     ],
                 allowedFailure: [
@@ -1267,11 +1266,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ 'ansi' ],
                     'CSTDVARIANT': ['c'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [],
                 dynamatrixAxesCommonEnvCartesian: [
-                    [ ['LANG=C','LC_ALL=C','TZ=UTC'] ],
+                    [ ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'] ],
                     [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
                     ],
                 allowedFailure: [
@@ -1305,11 +1303,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ 'ansi' ],
                     'CSTDVARIANT': ['c'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [],
                 dynamatrixAxesCommonEnvCartesian: [
-                    [ ['LANG=C','LC_ALL=C','TZ=UTC'] ],
+                    [ ['LANG=C','LC_ALL=C','TZ=UTC', 'BUILD_TYPE=default-all-errors'] ],
                     [ ['BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'], ['BUILD_WARNFATAL=no','BUILD_WARNOPT=minimal'] ]
                     ],
                 allowedFailure: [
@@ -1343,10 +1340,10 @@ set | sort -n """
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
                     'CSTDVARIANT': ['c', 'gnu'],
-                    'BUILD_TYPE': ['default-all-errors'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=default-all-errors',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard',
                      'CPPFLAGS=-fms-extensions'
                     ]
@@ -1387,12 +1384,12 @@ set | sort -n """
                     'BITS': [64, 32],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
                     'CSTDVARIANT': ['gnu'] + (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? [] : ['c']),
-                    'BUILD_TYPE': ['cross-windows-mingw'],
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      // Note: warnings options are currently ignored in ci_build.sh
                      // for this BUILD_TYPE (technically in build-mingw-nut.sh)
+                     'BUILD_TYPE=cross-windows-mingw',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
                     ]
                     ],
