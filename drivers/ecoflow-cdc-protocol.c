@@ -14,13 +14,17 @@
 
 #include "config.h"
 #include "ecoflow-cdc-protocol.h"
+#include "nut_float.h"
 
-#include <math.h>
 #include <string.h>
 
 #define ECOFLOW_CDC_PREAMBLE 0x03aaU
 #define ECOFLOW_CDC_XOR_OFFSET 18U
 #define ECOFLOW_CDC_SEGMENT_OFFSET 22U
+#define ECOFLOW_CDC_FLOAT_SIGN 0x80000000U
+#define ECOFLOW_CDC_FLOAT_EXPONENT 0x7f800000U
+#define ECOFLOW_CDC_FLOAT_FRACTION 0x007fffffU
+#define ECOFLOW_CDC_FLOAT_IMPLICIT_BIT 0x00800000U
 
 static uint16_t load_le16(const uint8_t *data)
 {
@@ -49,13 +53,36 @@ static void store_le32(uint8_t *data, uint32_t value)
 	data[3] = (uint8_t)((value >> 24) & 0xffU);
 }
 
-static float load_le_float(const uint8_t *data)
+static int load_le_float(const uint8_t *data, double *value)
 {
 	uint32_t bits = load_le32(data);
-	float value;
+	uint32_t fraction = bits & ECOFLOW_CDC_FLOAT_FRACTION;
+	int exponent = (int)((bits & ECOFLOW_CDC_FLOAT_EXPONENT) >> 23);
+	double decoded;
 
-	memcpy(&value, &bits, sizeof(value));
-	return value;
+	/* EcoFlow encodes these values as IEEE-754 binary32.  Decode the wire
+	 * representation directly so parsing does not depend on the host's
+	 * isfinite() implementation or native float representation. */
+	if (exponent == 0xff)
+		return 0;
+	if (exponent == 0)
+		decoded = ldexp((double)fraction, -149);
+	else
+		decoded = ldexp((double)(fraction | ECOFLOW_CDC_FLOAT_IMPLICIT_BIT),
+			exponent - 150);
+	if ((bits & ECOFLOW_CDC_FLOAT_SIGN) != 0U)
+		decoded = -decoded;
+
+	*value = decoded;
+	return 1;
+}
+
+static int load_le_float_absolute(const uint8_t *data, double *value)
+{
+	if (!load_le_float(data, value))
+		return 0;
+	*value = fabs(*value);
+	return 1;
 }
 
 uint16_t ecoflow_cdc_crc16(const uint8_t *data, size_t length)
@@ -100,8 +127,6 @@ size_t ecoflow_cdc_build_request(uint32_t sequence, uint8_t *buffer, size_t size
 static void parse_segment(uint16_t type, const uint8_t *data, size_t length,
 	ecoflow_cdc_metrics_t *metrics)
 {
-	float value;
-
 	switch (type) {
 	case 3:
 		if (length == 4) {
@@ -117,27 +142,25 @@ static void parse_segment(uint16_t type, const uint8_t *data, size_t length,
 			metrics->battery_temperature = data[1];
 		}
 		break;
-#define ECOFLOW_PARSE_FLOAT(segment, member, absolute) \
+#define ECOFLOW_PARSE_FLOAT(segment, member, loader) \
 	case segment: \
-		if (length == 4) { \
-			value = load_le_float(data); \
-			if (isfinite(value)) { \
-				metrics->has_##member = 1; \
-				metrics->member = (absolute) ? fabs(value) : value; \
-			} \
+		if (length == 4 \
+		 && loader(data, &metrics->member) \
+		) { \
+			metrics->has_##member = 1; \
 		} \
 		break
-	ECOFLOW_PARSE_FLOAT(7, output_power, 0);
-	ECOFLOW_PARSE_FLOAT(8, input_power, 0);
-	ECOFLOW_PARSE_FLOAT(9, ac_input_power, 0);
-	ECOFLOW_PARSE_FLOAT(11, ac_input_voltage, 0);
-	ECOFLOW_PARSE_FLOAT(12, solar_input_power, 0);
-	ECOFLOW_PARSE_FLOAT(14, ac_output_power, 1);
-	ECOFLOW_PARSE_FLOAT(16, dc_output_power, 1);
-	ECOFLOW_PARSE_FLOAT(17, usb_a_output_power, 1);
-	ECOFLOW_PARSE_FLOAT(18, usb_c_output_power, 1);
-	ECOFLOW_PARSE_FLOAT(20, extra_battery_input_power, 0);
-	ECOFLOW_PARSE_FLOAT(21, extra_battery_output_power, 1);
+	ECOFLOW_PARSE_FLOAT(7, output_power, load_le_float);
+	ECOFLOW_PARSE_FLOAT(8, input_power, load_le_float);
+	ECOFLOW_PARSE_FLOAT(9, ac_input_power, load_le_float);
+	ECOFLOW_PARSE_FLOAT(11, ac_input_voltage, load_le_float);
+	ECOFLOW_PARSE_FLOAT(12, solar_input_power, load_le_float);
+	ECOFLOW_PARSE_FLOAT(14, ac_output_power, load_le_float_absolute);
+	ECOFLOW_PARSE_FLOAT(16, dc_output_power, load_le_float_absolute);
+	ECOFLOW_PARSE_FLOAT(17, usb_a_output_power, load_le_float_absolute);
+	ECOFLOW_PARSE_FLOAT(18, usb_c_output_power, load_le_float_absolute);
+	ECOFLOW_PARSE_FLOAT(20, extra_battery_input_power, load_le_float);
+	ECOFLOW_PARSE_FLOAT(21, extra_battery_output_power, load_le_float_absolute);
 #undef ECOFLOW_PARSE_FLOAT
 	case 10:
 		if (length == 4) {

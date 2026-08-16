@@ -42,6 +42,75 @@ static size_t decode_hex(const char *hex, uint8_t *output, size_t output_size)
 	return length;
 }
 
+static uint16_t load_le16(const uint8_t *data)
+{
+	return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8));
+}
+
+static void store_le32(uint8_t *data, uint32_t value)
+{
+	data[0] = (uint8_t)(value & 0xffU);
+	data[1] = (uint8_t)((value >> 8) & 0xffU);
+	data[2] = (uint8_t)((value >> 16) & 0xffU);
+	data[3] = (uint8_t)((value >> 24) & 0xffU);
+}
+
+static void refresh_crc(uint8_t *frame, size_t length)
+{
+	uint16_t crc = ecoflow_cdc_crc16(frame, length - 2);
+
+	frame[length - 2] = (uint8_t)(crc & 0xffU);
+	frame[length - 1] = (uint8_t)((crc >> 8) & 0xffU);
+}
+
+static uint8_t *find_segment_data(uint8_t *frame, size_t length,
+	uint16_t wanted_type, size_t wanted_length)
+{
+	size_t offset = 22;
+	size_t payload_end;
+
+	if (length < offset + 2)
+		return NULL;
+	payload_end = length - 2;
+	while (offset < payload_end) {
+		uint16_t type;
+		size_t segment_length;
+
+		if (payload_end - offset < 3)
+			return NULL;
+		type = load_le16(frame + offset);
+		segment_length = frame[offset + 2];
+		offset += 3;
+		if (segment_length > payload_end - offset)
+			return NULL;
+		if (type == wanted_type && segment_length == wanted_length)
+			return frame + offset;
+		offset += segment_length;
+	}
+
+	return NULL;
+}
+
+static int parse_modified_float(const uint8_t *source, size_t length,
+	uint16_t type, uint32_t value, ecoflow_cdc_metrics_t *metrics)
+{
+	uint8_t frame[ECOFLOW_CDC_MAX_FRAME_SIZE];
+	uint8_t *segment_data;
+
+	if (length > sizeof(frame))
+		return -8;
+	memcpy(frame, source, length);
+	segment_data = find_segment_data(frame, length, type, 4);
+	if (segment_data == NULL)
+		return -8;
+
+	/* The captured response uses sequence zero, so segment bytes are not
+	 * changed by the protocol's sequence-byte XOR encoding. */
+	store_le32(segment_data, value);
+	refresh_crc(frame, length);
+	return ecoflow_cdc_parse_frame(frame, length, 0, metrics);
+}
+
 int main(void)
 {
 	static const char request_hex[] =
@@ -99,6 +168,23 @@ int main(void)
 	check(!metrics.has_charging_runtime, "not-charging sentinel is not published");
 	check(metrics.has_ems_version && metrics.ems_version[0] == 0x23 &&
 		metrics.ems_version[3] == 0x02, "EMS version bytes parse");
+
+	parsed = parse_modified_float(response, response_length, 7, 0xc3816254U, &metrics);
+	check(parsed == 0, "negative finite response parses");
+	check(metrics.has_output_power && fabs(metrics.output_power + 258.768) < 0.01,
+		"signed power remains signed");
+
+	parsed = parse_modified_float(response, response_length, 7, 0x7fc00000U, &metrics);
+	check(parsed == 0, "response containing NaN parses");
+	check(!metrics.has_output_power, "NaN power is not published");
+
+	parsed = parse_modified_float(response, response_length, 8, 0x7f800000U, &metrics);
+	check(parsed == 0, "response containing positive infinity parses");
+	check(!metrics.has_input_power, "positive infinity is not published");
+
+	parsed = parse_modified_float(response, response_length, 14, 0xff800000U, &metrics);
+	check(parsed == 0, "response containing negative infinity parses");
+	check(!metrics.has_ac_output_power, "negative infinity is not published");
 
 	check(ecoflow_cdc_parse_frame(response, response_length, 1, &metrics) == -5,
 		"sequence mismatch is rejected");
