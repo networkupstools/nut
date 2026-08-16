@@ -1057,7 +1057,9 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 		 * can succeed. Anything else is the device answering us properly -- a
 		 * Modbus exception, say -- and will not improve on a retry. */
 		if (saved_errno != ETIMEDOUT
+#ifdef EMBBADSLAVE
 		&&  saved_errno != EMBBADSLAVE
+#endif
 		&&  saved_errno != EMBBADCRC
 		&&  saved_errno != EMBBADDATA
 		) {
