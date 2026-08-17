@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3801 utf-8
+personal_ws-1.1 en 3805 utf-8
 AAC
 AAS
 ABI
@@ -987,12 +987,15 @@ PROGS
 PROTVER
 PRs
 PSA
+PSCERT
 PSD
 PSDR
+PSEMD
 PSF
 PSFn
 PSGPSER
 PSSENTR
+PSSNMPV
 PSUs
 PSW
 PSX

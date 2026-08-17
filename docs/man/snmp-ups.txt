@@ -70,6 +70,14 @@ RMCARD202 and RMCARD301
 *huawei*::
 Huawei UPS5000-E, perhaps others
 
+*voltronic*::
+Voltronic enterprise 43943 agents, including the PowerShield Centurion RT
+with a PSSNMPV4 card.  This mapping uses the higher-precision private MIB and
+falls back to RFC1628 only where the private value is unavailable.  Optional
+PSEMD environmental objects are not mapped pending validation with a connected
+sensor.  Delayed shutdown, startup and beeper commands are exposed but must be
+tested with the protected load removed before operational use.
+
 *tripplite*::
 TrippLite UPSes; at this time this is the IETF MIB mapping with just
 the Tripplite entry point OID to verify the device vendor, and a real
