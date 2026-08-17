@@ -101,7 +101,21 @@ static int RunBuiltInTests(char *argv[]) {
 		{.buf = "16 0c 00 00 00", .Offset = 7, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0},
 		{.buf = "16 0c 00 00 00", .Offset = 8, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0},
 		{.buf = "16 0c 00 00 00", .Offset = 9, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0},
-		{.buf = "16 0c 00 00 00", .Offset = 10, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0}
+		{.buf = "16 0c 00 00 00", .Offset = 10, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0},
+		/* CyberPower 0764:0601 issue #3089: values transmitted by the UPS are
+		 * correct, but the declared Logical Maximums are smaller, so GetValue()
+		 * masks/clamps them away. Widen the declared LogMax (cps-hid.c
+		 * cps_fix_report_desc()) and the wire values must come through:
+		 *   input.voltage       225 (0x00E1) with LogMax 70  -> 70,  with 511 -> 225
+		 *   input.voltage.nominal 230 (0xE6) with LogMax 70  -> 70,  with 255 -> 230
+		 *   battery.voltage     480 (0x01E0) with LogMax 255 -> 224, with 4096 -> 480
+		 */
+		{.buf = "00 e1 00", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 70, .expectedValue = 70},
+		{.buf = "00 e1 00", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 511, .expectedValue = 225},
+		{.buf = "00 e6", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 70, .expectedValue = 70},
+		{.buf = "00 e6", .Offset = 0, .Size = 8, .LogMin = 0, .LogMax = 255, .expectedValue = 230},
+		{.buf = "00 e0 01", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 255, .expectedValue = 224},
+		{.buf = "00 e0 01", .Offset = 0, .Size = 16, .LogMin = 0, .LogMax = 4096, .expectedValue = 480}
 	};
 
 	/* See comments below about rdlen calculation emulation for tests */
