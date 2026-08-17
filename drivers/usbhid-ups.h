@@ -225,6 +225,14 @@ typedef struct {
  * range of models. */
 
 typedef struct {
+	void (*makevartable)(void);    /* subdriver-specific ups.conf options */
+	void (*initups)(void);         /* called after the HID device is opened */
+	void (*initinfo)(void);        /* called after the initial HID data walk */
+	void (*updateinfo)(void);      /* called after each successful HID update */
+	void (*cleanup)(void);         /* called before the HID device is closed */
+} subdriver_aux_t;
+
+typedef struct {
 	const char *name;                  /* name of this subdriver */
 	int (*claim)(HIDDevice_t *hd); /* return 1 if device covered by
 				      * this subdriver */
@@ -234,6 +242,7 @@ typedef struct {
 	const char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
 	const char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
 	int	(*fix_report_desc)(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);		/* Function called to potentially remedy defects in the parsed Report Descriptor caused by buggy HID contents*/
+	subdriver_aux_t *aux;          /* optional companion transport/hooks */
 } subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */

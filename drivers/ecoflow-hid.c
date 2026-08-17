@@ -25,10 +25,11 @@
 
 #include "usbhid-ups.h"
 #include "ecoflow-hid.h"
+#include "ecoflow-hid-aux-cdc.h"
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.01"
+#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.02"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* EcoFlow */
@@ -281,4 +282,5 @@ subdriver_t ecoflow_subdriver = {
 	ecoflow_format_mfr,
 	ecoflow_format_serial,
 	fix_report_desc,	/* may optionally be customized, see cps-hid.c for example */
+	&ecoflow_hid_aux_cdc,
 };
