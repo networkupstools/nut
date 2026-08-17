@@ -991,7 +991,7 @@ static int parse_authconf_file(const char *filename, int fatal_errors, int globa
 	return 1;
 }
 
-int upscli_read_authconf_file(const char *filename, int fatal_errors)
+int upscli_read_authconf_file(const char *filename, int fatal_errors, int debug_level)
 {
 	char	fn[NUT_PATH_MAX + 1];
 
@@ -1064,7 +1064,11 @@ found:
 			if (fatal_errors) {
 				fatalx(EXIT_FAILURE, "Can't open a user/site-provided default nutauth.conf file");
 			} else {
-				upslogx(LOG_WARNING, "Can't open a user/site-provided default nutauth.conf file");
+				if (debug_level < 0) {
+					upslogx(LOG_WARNING, "Can't open a user/site-provided default nutauth.conf file");
+				} else {
+					upsdebugx(debug_level, "Can't open a user/site-provided default nutauth.conf file");
+				}
 				return -1;
 			}
 		}
