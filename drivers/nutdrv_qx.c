@@ -2279,6 +2279,9 @@ static struct {
 	uint16_t out_wMaxPacketSize;
 } armac_endpoint_cache = { .initialized = FALSE, .ok = FALSE };
 
+static bool_t richcomm_svc_baud_initialized = FALSE;
+static bool_t richcomm_svc_session_initialized = FALSE;
+
 static void load_armac_endpoint_cache(void)
 {
 #if WITH_LIBUSB_1_0
@@ -2379,16 +2382,82 @@ static void load_armac_endpoint_cache(void)
  */
 #define ARMAC_READ_SIZE_FOR_CONTROL 8
 #define ARMAC_READ_SIZE_FOR_INTERRUPT 64
-static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+/* V-1000F returns LIBUSB_ERROR_OVERFLOW when asked for 8 bytes. */
+#define RICHCOMM_SVC_READ_SIZE_FOR_CONTROL 6
+
+static int	richcomm_svc_initialize(void)
+{
+	char	report[64];
+	int	ret;
+	size_t	offset;
+
+	if (!richcomm_svc_baud_initialized) {
+		report[0] = (char)0x80;
+		report[1] = (char)0xd0;
+		report[2] = 0x00;
+		report[3] = 0x00;
+
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x0200, 0,
+			(usb_ctrl_charbuf)report, 4, 5000);
+		if (ret <= 0) {
+			upsdebugx(1, "richcomm-svc: failed to configure 2400-baud transport: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
+			return ret;
+		}
+		if (ret != 4) {
+			upsdebugx(1, "richcomm-svc: short baud-rate report transfer (%d of 4 bytes)", ret);
+			return -1;
+		}
+
+		richcomm_svc_baud_initialized = TRUE;
+		usleep(100000);
+	}
+
+	if (richcomm_svc_session_initialized) {
+		return 1;
+	}
+
+	/* SVC V-1000F (0925:1234) requires this 64-byte session-opening
+	 * sequence before its USB-to-UART bridge accepts Megatec commands. */
+	report[0] = 0x40;
+	for (offset = 1; offset < sizeof(report); offset++) {
+		report[offset] = (char)(offset * 73u + 29u);
+	}
+
+	for (offset = 0; offset < sizeof(report); offset += 4) {
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x0200, 0,
+			(usb_ctrl_charbuf)(report + offset), 4, 5000);
+		if (ret <= 0) {
+			upsdebugx(1, "richcomm-svc: failed to send session-opening report: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
+			return ret;
+		}
+		if (ret != 4) {
+			upsdebugx(1, "richcomm-svc: short session-opening report transfer (%d of 4 bytes)", ret);
+			return -1;
+		}
+	}
+
+	richcomm_svc_session_initialized = TRUE;
+	upsdebugx(3, "richcomm-svc: session-opening sequence sent");
+	usleep(100000);
+	return 1;
+}
+
+static int	armac_command_internal(const char *cmd, size_t cmdlen, char *buf, size_t buflen, bool_t use_richcomm_svc)
 {
 	char	tmpbuf[ARMAC_READ_SIZE_FOR_INTERRUPT];
 	int	ret = 0;
-	size_t	i, bufpos;
+	size_t	i, bufpos, idle_reports = 0;
 	const size_t	cmdstrlen = strnlen(cmd, cmdlen);	/* Length of cmd string (excluding terminating '\0'), or cmdlen if the string is too long */
 	const size_t	cmddatalen = cmdstrlen >= cmdlen ? cmdlen : cmdstrlen + 1;	/* Amount of useful/valid data bytes in cmd string (max=cmdlen, or length of cmd+'\0' if the string is short enough) */
 	const size_t	tmplen = cmddatalen > sizeof(tmpbuf) ? sizeof(tmpbuf) : cmddatalen;	/* How much of cmd[] we can copy into tmp[] so it fits (and remains useful), including the terminating '\0' */
 	bool_t	use_interrupt = FALSE;
-	int	read_size = ARMAC_READ_SIZE_FOR_CONTROL;
+	int	read_size = use_richcomm_svc ? RICHCOMM_SVC_READ_SIZE_FOR_CONTROL : ARMAC_READ_SIZE_FOR_CONTROL;
 
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
@@ -2414,6 +2483,13 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 	if (!armac_endpoint_cache.initialized) {
 		load_armac_endpoint_cache();
+	}
+
+	if (use_richcomm_svc) {
+		ret = richcomm_svc_initialize();
+		if (ret <= 0) {
+			return ret;
+		}
 	}
 
 	for (i = 0; unsupported[i] != NULL; i++) {
@@ -2532,6 +2608,15 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		 */
 		bytes_available = (unsigned char)tmpbuf[0] & 0x3f;
 		if (bytes_available == 0) {
+			/* This bridge can emit idle HID reports before UART data. */
+			if (use_richcomm_svc && bufpos == 0) {
+				if (++idle_reports > 5) {
+					upsdebugx(4, "richcomm-svc: no UART reply after idle HID reports");
+					break;
+				}
+				upsdebugx(4, "richcomm-svc: ignoring idle HID report before response");
+				continue;
+			}
 			/* End of transfer */
 			break;
 		}
@@ -2594,6 +2679,18 @@ end_of_message:
 		);
 
 	return (int)bufpos;
+}
+
+static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	return armac_command_internal(cmd, cmdlen, buf, buflen, FALSE);
+}
+
+static int	richcomm_svc_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	/* The bridge needs one-time transport initialization, then uses the
+	 * existing Armac command framing with the Megatec protocol. */
+	return armac_command_internal(cmd, cmdlen, buf, buflen, TRUE);
 }
 
 
@@ -3445,6 +3542,7 @@ void	upsdrv_shutdown(void)
 			{ "snr", &snr_command },
 			{ "ablerex", &ablerex_command },
 			{ "armac", &armac_command },
+			{ "richcomm-svc", &richcomm_svc_command },
 			{ "gtec", &gtec_command },
 			{ NULL, NULL }
 		};
@@ -4152,6 +4250,11 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 
 			if (ret < 1) {
 				return ret;
+			}
+
+			if (subdriver_command == &richcomm_svc_command) {
+				richcomm_svc_baud_initialized = FALSE;
+				richcomm_svc_session_initialized = FALSE;
 			}
 
 			reconnect_trying(RECONNECT_UPDATEINFO);

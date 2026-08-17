@@ -511,17 +511,17 @@ void upsdrv_initups(void)
 			} else {
 				if (!strcmp(authconf, "default")) {
 					upsdebugx(1, "%s: Using authconf='%s': require a user or system provided file", __func__, authconf);
-					if (upscli_read_authconf_file(NULL, 1) < 0)
+					if (upscli_read_authconf_file(NULL, 1, -1) < 0)
 						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
 				} else {
 					upsdebugx(1, "%s: Using authconf='%s': require this file", __func__, authconf);
-					if (upscli_read_authconf_file(authconf, 1) < 0)
+					if (upscli_read_authconf_file(authconf, 1, -1) < 0)
 						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
 				}
 			}
 		} else {
 			upsdebugx(1, "%s: Using best-effort auth config detection", __func__);
-			upscli_read_authconf_file(NULL, 0);
+			upscli_read_authconf_file(NULL, 0, 1);
 		}
 		/* FIXME: if there is at least one more => MODE_META... */
 	}

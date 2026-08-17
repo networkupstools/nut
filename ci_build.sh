@@ -2061,6 +2061,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
             # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
             # value, and we defaulted to strict "distcheck" above
+            # Check the actual logic below though, currently these sub-matrix
+            # builds do not call distcheck (they can however do a parallel-check)
             ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
 
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then

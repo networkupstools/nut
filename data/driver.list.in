@@ -1236,6 +1236,7 @@
 
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 "PowerShield"	"ups"	"2"	"PSDR800"	"USB"	"nutdrv_qx protocol=voltronic-qs"
+"PowerShield"	"ups"	"4"	"Centurion RT 1000VA (PSCERT1000)"	"SNMP v2c, PSSNMPV4 card"	"snmp-ups mibs=voltronic"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
@@ -1453,6 +1454,7 @@
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
 "SVC"	"ups"	"2"	"VP-1250-LCD 1250VA"	"(USB ID 0925:1234, armac subdriver, megatec protocol)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/pull/3485
+"SVC"	"ups"	"1"	"V-1000F"	"USB (USB ID 0925:1234, product UPS USB MON V1.4)"	"nutdrv_qx port=auto vendorid=0925 productid=1234 protocol=megatec subdriver=richcomm-svc"	# https://github.com/networkupstools/nut/issues/3562 ; polling and quick battery test verified on physical hardware; deep battery tests and load or shutdown commands untested
 
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"

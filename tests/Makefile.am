@@ -113,6 +113,12 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += ecoflow_cdc_protocol_utest
+ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
+	$(top_srcdir)/drivers/ecoflow-cdc-protocol.h
+nodist_ecoflow_cdc_protocol_utest_SOURCES = ecoflow-cdc-protocol.c
+ecoflow_cdc_protocol_utest_LDADD = -lm
+
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
 #nutbooltest_LDADD = $(NUT_LIBCOMMON)
@@ -130,12 +136,15 @@ test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c
+LINKED_SOURCE_FILES = hidparser.c ecoflow-cdc-protocol.c
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hidparser.c" '$@'
+
+ecoflow-cdc-protocol.c: $(top_srcdir)/drivers/ecoflow-cdc-protocol.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/ecoflow-cdc-protocol.c" '$@'
 
 if WITH_USB
 TESTS += getvaluetest getexponenttest-belkin-hid

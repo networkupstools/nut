@@ -1014,7 +1014,11 @@ SPELLCHECK_AUTO_ONE = ( \
 # single-byte accented characters here and there, they seem okay):
 if HAVE_PERL
 SOURCE_CHECK_UNICODE = { \
-	echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	if [ x'$(SPELLCHECK_SRCDIR)' = x. ] ; then \
+		echo "  CHECK-SOURCE-NONASCII	`pwd`/ => $(SPELLCHECK_SRC)"; \
+	else \
+		echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	fi ; \
 	( cd $(SPELLCHECK_SRCDIR) && @PERL@ $(abs_top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) ) || exit ; \
 	}
 

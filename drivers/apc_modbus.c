@@ -43,7 +43,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1020,11 +1020,23 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 {
 	int res;
 	int retries = modbus_retries;
-	int saved_errno;
+	int saved_errno = 0;
+	int attempt = 0;
 
 	while (retries-- > 0) {
+		/* Stop retrying if the driver has been asked to exit. upsdrvctl gives
+		 * a driver 5 seconds to honour SIGTERM before sending SIGKILL, and
+		 * retries * response_timeout can exceed that comfortably. On some UPS
+		 * hardware a SIGKILL mid-exchange leaves the device unable to serve
+		 * Modbus until its USB cable is physically reseated, so being slow to
+		 * exit is not merely untidy. */
+		if (exit_flag) {
+			break;
+		}
+
 		_apc_modbus_interframe_delay();
 
+		attempt++;
 		res = modbus_read_registers(ctx, addr, nb, dest);
 		saved_errno = errno;
 		_apc_modbus_interframe_delay_reset();
@@ -1032,11 +1044,42 @@ static int _apc_modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t 
 			return 1;
 		}
 
-		upslogx(LOG_ERR, "%s: Read of %d:%d failed: %s (%s)", __func__, addr, addr + nb, modbus_strerror(saved_errno), device_path);
+		upsdebugx(1, "%s: Read of %d:%d failed on attempt %d: %s (%s)",
+			__func__, addr, addr + nb, attempt,
+			modbus_strerror(saved_errno), device_path);
 
-		if (saved_errno != ETIMEDOUT) {
+		/* ETIMEDOUT means no reply arrived (yet). EMBBADSLAVE, EMBBADCRC and
+		 * EMBBADDATA mean one did arrive but does not belong to this request:
+		 * typically a deferred reply to an earlier exchange that was abandoned,
+		 * which on a serial line would have been discarded but on a packetised
+		 * transport is still queued. Both are transient states of the wire, and
+		 * reading the stale frame has already consumed it, so the next attempt
+		 * can succeed. Anything else is the device answering us properly -- a
+		 * Modbus exception, say -- and will not improve on a retry. */
+		if (saved_errno != ETIMEDOUT
+#ifdef EMBBADSLAVE
+		&&  saved_errno != EMBBADSLAVE
+#endif
+		&&  saved_errno != EMBBADCRC
+		&&  saved_errno != EMBBADDATA
+		) {
 			break;
 		}
+	}
+
+	/* Only now is this a failure: the retries are gone, or the error was one
+	 * they cannot help, and the connection is about to be closed. Individual
+	 * attempts are logged at debug level instead, because the retry loop
+	 * exists precisely so that a recovered attempt is not an error. Logging
+	 * each one at LOG_ERR misreports a working driver, and on a device that
+	 * needs retries routinely it buries every other message in the system log.
+	 *
+	 * Nothing is logged when exit_flag broke the loop: the driver is stopping,
+	 * not failing, and saved_errno may not have been set at all. */
+	if (!exit_flag) {
+		upslogx(LOG_ERR, "%s: Read of %d:%d failed after %d attempt(s): %s (%s)",
+			__func__, addr, addr + nb, attempt,
+			modbus_strerror(saved_errno), device_path);
 	}
 
 	_apc_modbus_close(0);
