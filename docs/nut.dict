@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3807 utf-8
+personal_ws-1.1 en 3809 utf-8
 AAC
 AAS
 ABI
@@ -340,6 +340,8 @@ EG
 EINVAL
 EL
 ELCD
+ELCDSL
+ELCDSXL
 EMI
 EMP
 EMPDT
