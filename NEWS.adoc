@@ -101,6 +101,12 @@ https://github.com/networkupstools/nut/milestone/13
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
+    * Added a `cypress_0665_5161_subdriver` initialization method for devices
+      with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
+      a quirk to drain stale bytes from USB buffers of the device before our
+      driver sends queries, and use a longer timeout. If this change breaks
+      your device, please add `cypress_drain_quirk = 0` in your `ups.conf`
+      and let us know. [issue #2534, PR #3563]
     * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
       (when a device returns all-spaces in that part of the `I` query response)
       out of the box and not ignore the device as unsupported, by adding the

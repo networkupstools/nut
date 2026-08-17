@@ -79,6 +79,15 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   This was revised to follow the new common setting `reconnect_max_tries`,
   which defaults to trying indefinitely now. [#3541]
 
+- Deployments using `nutdrv_qx` driver with `cypress` subdriver may be impacted
+  by a fix which added a `cypress_0665_5161_subdriver` initialization method for
+  devices with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
+  a special quirk to drain stale bytes from USB buffers of the device before our
+  driver sends queries, and use a longer timeout. If this change breaks your
+  device, please add `cypress_drain_quirk = 0` in your `ups.conf` and let us
+  know. [issue #2534, PR #3563]
+
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 
