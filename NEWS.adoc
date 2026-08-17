@@ -49,6 +49,11 @@ https://github.com/networkupstools/nut/milestone/13
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
 
+ - USB drivers now prefer the longer of conflicting HID report descriptor
+   lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
+   complete descriptor available on affected River 3 Plus firmware while
+   retaining the shorter length as a fallback.
+
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
