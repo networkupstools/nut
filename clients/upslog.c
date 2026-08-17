@@ -531,7 +531,7 @@ int main(int argc, char **argv)
 	const char	*user = NULL;
 	char	*nutauth = NULL, str_port[16];
 	upscli_authconf_t	*ac_default = NULL;
-	int	flags_ssl = UPSCLI_CONN_TRYSSL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL, flags_ssl_default = UPSCLI_CONN_TRYSSL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
@@ -723,15 +723,15 @@ int main(int argc, char **argv)
 		} else {
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
-				upscli_read_authconf_file(NULL, 1);
+				upscli_read_authconf_file(NULL, 1, -1);
 			} else {
 				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
-				upscli_read_authconf_file(nutauth, 1);
+				upscli_read_authconf_file(nutauth, 1, -1);
 			}
 		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
-		upscli_read_authconf_file(NULL, 0);
+		upscli_read_authconf_file(NULL, 0, 1);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -854,12 +854,14 @@ int main(int argc, char **argv)
 		/* Always call this, to register possible CERTHOSTs etc. */
 		if (upscli_init_authconf(ac_current) > 0) {
 			if (ac_default) {
-				upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+				upscli_authconf_update_conn_flags(ac_default, &flags_ssl_default);
 
 				// Do not call on the next loop cycle, if any
 				ac_default = NULL;
 			}
 		}
+		flags_ssl = flags_ssl_default;
+		upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
 
 		/* Revise the list if some UPS name was an asterisk
 		 * (query the data server) */

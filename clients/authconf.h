@@ -57,9 +57,11 @@ void upscli_free_authconf_list(void);
  * If filename==NULL, tries to locate per-user ${HOME}/.config/nut/nutauth.conf
  * and ${HOME}/.nutauth.conf, or site default ${nutconfdir}/nutauth.conf
  * (whichever is found first); then one can follow `INCLUDE` trail if needed.
- * Returns -1 on error, 1 on success
+ * Ultimate error, if file was not found, is posted at specified debug_level>=0
+ * or logged as LOG_WARNING if negative.
+ * Returns -1 on error, 1 on success.
  */
-int upscli_read_authconf_file(const char *filename, int fatal_errors);
+int upscli_read_authconf_file(const char *filename, int fatal_errors, int debug_level);
 
 /** All p_* args must be non-NULL pointers to `char *` string variables
  * which may be freed and re-allocated to return normalized values
