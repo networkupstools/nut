@@ -28,7 +28,7 @@
 #include "liebert-hid.h"
 #include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.41"
+#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.42"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
@@ -190,4 +190,5 @@ subdriver_t liebert_subdriver = {
 	liebert_format_mfr,
 	liebert_format_serial,
 	fix_report_desc,
+	NULL,
 };

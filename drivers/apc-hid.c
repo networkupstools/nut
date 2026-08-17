@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.101"
+#define APC_HID_VERSION "APC HID 0.102"
 
 /* APC */
 #define APC_VENDORID	0x051d
@@ -621,4 +621,5 @@ subdriver_t apc_subdriver = {
 	apc_format_mfr,
 	apc_format_serial,
 	apc_fix_report_desc,
+	NULL,
 };

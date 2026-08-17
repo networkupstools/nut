@@ -12,7 +12,8 @@ SYNOPSIS
 ------
 	#include <authconf.h>
 
-	int upscli_read_authconf_file(const char *filename, int fatal_errors);
+	int upscli_read_authconf_file(const char *filename, int fatal_errors,
+		int debug_level);
 ------
 
 DESCRIPTION
@@ -30,6 +31,12 @@ tries per-user `${HOME}/.config/nut/nutauth.conf` or `${HOME}/.nutauth.conf`,
 or a site default `${NUT_CONFDIR}/nutauth.conf` (whichever is found first).
 Such a file may `INCLUDE` further configurations (e.g. hop from a per-user
 file to load server-wide defaults), if desired.
+
+If 'filename' is `NULL` and the file is not found in a default location, the
+method posts an `upslogx(LOG_WARNING, ...)` about this if `debug_level < 0`
+or logs an `upsdebugx(debug_level, ...)` message (note that level zero usually
+goes to `stderr` right away). This allows to reduce console noise during
+"best-effort" attempts to use the file if present.
 
 The file structure is similar to *ups.conf*, with global defaults and
 per-server sections named like `[@localhost:12345]` for host defaults,

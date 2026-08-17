@@ -73,6 +73,7 @@
 #include "hpe-pdu-mib.h"
 #include "hpe-pdu3-cis-mib.h"
 #include "vertiv-mib.h"
+#include "voltronic-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -130,6 +131,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
 	&vertiv,		/* This struct comes from : vertiv-mib.c */
+	&voltronic,		/* This struct comes from : voltronic-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
@@ -179,7 +181,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.40"
+#define DRIVER_VERSION	"1.41"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

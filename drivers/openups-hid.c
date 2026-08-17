@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.50"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.51"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
@@ -388,4 +388,5 @@ subdriver_t openups_subdriver = {
 	openups_format_mfr,
 	openups_format_serial,
 	fix_report_desc,
+	NULL,
 };
