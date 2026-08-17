@@ -88,6 +88,11 @@ https://github.com/networkupstools/nut/milestone/13
       reconnection behavior. [issue #3510, PR #3543]
 
  - `nutdrv_qx` driver updates:
+    * Added the `richcomm-svc` USB communication subdriver for older
+      session-initialized Richcomm bridges. It configures the bridge before
+      reusing the existing Armac command framing and Megatec protocol. Polling
+      and a quick battery test were verified with an SVC V-1000F
+      (`0925:1234`, `UPS USB MON V1.4`). [issue #3562]
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
