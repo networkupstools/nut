@@ -986,7 +986,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
-                    'CSTDVARIANT': ['c', 'gnu'],
+                    'CSTDVARIANT': ['c', 'gnu'],    // NOTE: Actual use of Strict-C subject to excludeCombos below
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -995,11 +995,13 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
+                    dynacfgPipeline.axisCombos_STRICT_C,    // TODO: Disallow failures once it works in some combos
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
-                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT
+                    + [dynacfgPipeline.axisCombos_STRICT_C] // TODO: revise to match the purpose of this filter
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
