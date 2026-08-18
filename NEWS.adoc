@@ -48,6 +48,10 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
+      when explicitly specifying same `--with-user` *OR* `--with-group` name
+      as would be default for current platform (so one was treated as not-set
+      and failed a sanity check). [issue #3513]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
