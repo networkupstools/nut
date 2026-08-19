@@ -1695,6 +1695,15 @@ int upscli_cleanup(void)
 
 	upscli_free_host_cert_list();
 	upscli_free_authconf_list();
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	free(sslcertname);
+	sslcertname = NULL;
+
+	free(sslcertpasswd);
+	sslcertpasswd = NULL;
+#endif
+
 	upscli_initialized = 0;
 	return 1;
 }
@@ -3399,7 +3408,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 			ups->openssl_cert_verify_data->hostname = NULL;
 		}
 
-		memset(&(ups->openssl_cert_verify_data), 0, sizeof(ups->openssl_cert_verify_data));
+		memset(ups->openssl_cert_verify_data, 0, sizeof(*(ups->openssl_cert_verify_data)));
 		free(ups->openssl_cert_verify_data);
 		ups->openssl_cert_verify_data = NULL;
 	}
