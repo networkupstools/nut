@@ -856,7 +856,7 @@ int main(int argc, char **argv)
 			if (ac_default) {
 				upscli_authconf_update_conn_flags(ac_default, &flags_ssl_default);
 
-				// Do not call on the next loop cycle, if any
+				/* Do not call on the next loop cycle, if any */
 				ac_default = NULL;
 			}
 		}

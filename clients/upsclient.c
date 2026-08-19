@@ -3362,7 +3362,7 @@ int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re)
 			);
 	}
 
-	// TODO: Regex
+	/* TODO: Regex */
 	return (!strcmp(version_re, version));
 }
 
