@@ -96,6 +96,28 @@ check-NIT-sandbox-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	BUILTIN_RUN_AS_USER='$(RUN_AS_USER)' BUILTIN_RUN_AS_GROUP='$(RUN_AS_GROUP)' \
 	$(MAKE) $(AM_MAKEFLAGS) check-NIT-devel
 
+if HAVE_VALGRIND
+memcheck_warn = true
+else !HAVE_VALGRIND
+memcheck_warn = echo "  WARNING	$@: valgrind was not detected on this system by configure script, test may fail" >&2
+endif !HAVE_VALGRIND
+
+memcheck-NIT:
+	@$(memcheck_warn)
+	+DO_MEMCHECK=true $(MAKE) $(AM_MAKEFLAGS) check-NIT
+
+memcheck-NIT-devel:
+	@$(memcheck_warn)
+	+DO_MEMCHECK=true $(MAKE) $(AM_MAKEFLAGS) check-NIT-devel
+
+memcheck-NIT-sandbox:
+	@$(memcheck_warn)
+	+DO_MEMCHECK=true $(MAKE) $(AM_MAKEFLAGS) check-NIT-sandbox
+
+memcheck-NIT-sandbox-devel:
+	@$(memcheck_warn)
+	+DO_MEMCHECK=true $(MAKE) $(AM_MAKEFLAGS) check-NIT-sandbox-devel
+
 SPELLCHECK_SRC = README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.

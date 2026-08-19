@@ -298,8 +298,20 @@ execcmd() {
     esac
     shift
 
-    log_debug "execcmd: running:   ${CMDPROG} $@"
-    exec "${CMDPROG}" "$@"
+    # NOTE: Ability to use valgrind depends on the platform!
+    #  NUT CI farm build agent labels and ci_build.sh allow
+    #  us to know where it is safe to call this script. YMMV!
+    # NOTE: Process initialization can take half a minute or
+    #  so under valgrind, impacting our many `upsc` calls!
+    EXECWRAP=""
+    if [ x"${DO_MEMCHECK}" = xtrue ]; then
+        if [ -x "${TOP_BUILDDIR}/scripts/valgrind/valgrind.sh" ] ; then
+            EXECWRAP="${TOP_BUILDDIR}/scripts/valgrind/valgrind.sh"
+        fi
+    fi
+
+    log_debug "execcmd: running:   ${EXECWRAP} ${CMDPROG} $@"
+    exec $EXECWRAP "${CMDPROG}" "$@"
 }
 
 runcmd() {
