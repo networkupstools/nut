@@ -867,8 +867,14 @@ int main(int argc, char **argv)
 	) {
 		upscli_authconf_t	*ac_current;
 
-		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		/* We may be here after rewinding from asterisk-resolved
+		 * devices on a host, parsing to get their authconf etc. */
+		if (!(monhost_ups_current->upsname) || !(monhost_ups_current->hostname)) {
+			free(monhost_ups_current->upsname);
+			free(monhost_ups_current->hostname);
+			if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+				fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+			}
 		}
 
 		upsdebugx(1, "Checking parse of '%s' => '%s' '%s' '%" PRIu16 "'",
@@ -990,6 +996,9 @@ int main(int argc, char **argv)
 				free(monhost_ups_current->ups);
 			}
 
+			/* After detachment, rewind monhost_ups_current to the
+			 * first entry we have resolved in this loop, to gather
+			 * authconf for each such device, etc. */
 			upsdebugx(2, "%s: detach asterisky monhost_ups_current", __func__);
 			if (monhost_ups_prev) {
 				monhost_ups_prev->next = monhost_ups_current->next;
