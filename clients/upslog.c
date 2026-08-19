@@ -142,6 +142,24 @@ static void reopen_log(void)
 	}
 }
 
+static void cleanup_logtarget(void)
+{
+	struct	logtarget_t	*tmp = logfile_anchor, *cur;
+
+	while (tmp) {
+		cur = tmp;
+		tmp = cur->next;
+
+		free((void*)(cur->logfn));
+		/* we might have several systems logged into same file, so
+		 * we close it here once rather than take chances at monhost
+		 * list cleanup; anyway take care to not close stdout */
+		if (cur->logfile && cur->logfile != stdout)
+			fclose(cur->logfile);
+		free(cur);
+	}
+}
+
 #ifndef WIN32
 static void set_reopen_flag(int sig)
 {
@@ -508,6 +526,19 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 	fflush(monhost_ups_print->logtarget->logfile);
 }
 
+static void cleanup_flist(void)
+{
+	flist_t	*tmp = fhead, *cur;
+
+	while (tmp) {
+		cur = tmp;
+		tmp = tmp->next;
+
+		free((void*)(cur->arg));
+		free(cur);
+	}
+}
+
 	/* -s <monhost>
 	 * -l <log file>
 	 * -m <monhost,logfile>
@@ -813,6 +844,7 @@ int main(int argc, char **argv)
 				if (!logformat)
 					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
 				memset(logformat, '\0', LARGEBUF);
+				logformat_allocated = 1;
 			}
 			snprintf(logformat, LARGEBUF, "%%UPSHOST%%%%t%s", s);
 			free(s);
@@ -1124,15 +1156,6 @@ int main(int argc, char **argv)
 		monhost_ups_current != NULL;
 		monhost_ups_current = monhost_ups_current->next
 	) {
-		/* we might have several systems logged into same file;
-		 * take care to not close stdout though */
-		if (monhost_ups_current->logtarget->logfile
-		&&  monhost_ups_current->logtarget->logfile != stdout
-		) {
-			fclose(monhost_ups_current->logtarget->logfile);
-			monhost_ups_current->logtarget->logfile = NULL;
-		}
-
 		upscli_disconnect(monhost_ups_current->ups);
 	}
 
@@ -1140,6 +1163,8 @@ int main(int argc, char **argv)
 		free(logformat);
 		logformat = NULL;
 	}
+	cleanup_flist();
+	cleanup_logtarget();
 
 	fflush(stdout);
 	fflush(stderr);
