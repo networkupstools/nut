@@ -65,7 +65,7 @@
 
 	static	flist_t	*fhead = NULL;
 
-	/* FIXME: To be valgrind-clean, free these at exit */
+	/* To be valgrind-clean, we free these lists at exit */
 	static	struct	logtarget_t *logfile_anchor = NULL;
 	static	struct	monhost_ups_t *monhost_ups_anchor = NULL;
 	static	struct	monhost_ups_t *monhost_ups_current = NULL;
@@ -1158,8 +1158,10 @@ int main(int argc, char **argv)
 	for (
 		monhost_ups_current = monhost_ups_anchor;
 		monhost_ups_current != NULL;
-		monhost_ups_current = monhost_ups_current->next
+		/* iteration handled below */
 	) {
+		struct monhost_ups_t	*mu = monhost_ups_current;
+
 		upscli_disconnect(monhost_ups_current->ups);
 		free(monhost_ups_current->ups);
 
@@ -1171,6 +1173,9 @@ int main(int argc, char **argv)
 		free(monhost_ups_current->monhost);
 		free(monhost_ups_current->upsname);
 		free(monhost_ups_current->hostname);
+
+		monhost_ups_current = mu->next;
+		free(mu);
 	}
 
 	if (logformat_allocated) {
