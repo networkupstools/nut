@@ -983,8 +983,12 @@ int main(int argc, char **argv)
 				free(monhost_ups_current->upsname);
 			if (monhost_ups_current->hostname)
 				free(monhost_ups_current->hostname);
-			if (monhost_ups_current->ups)
+
+			/* Should be NULL, but just in case... */
+			if (monhost_ups_current->ups) {
+				upscli_disconnect(monhost_ups_current->ups);
 				free(monhost_ups_current->ups);
+			}
 
 			upsdebugx(2, "%s: detach asterisky monhost_ups_current", __func__);
 			if (monhost_ups_prev) {
