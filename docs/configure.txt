@@ -13,7 +13,8 @@ As many other projects relying on GNU autotools for build recipe automation,
 NUT sources deliver a `configure` script which is used to set up numerous
 nuances relevant for your build of the project.  Most of the configuration
 requirements are passed by `--with-something` or `--enable-something` options
-(allegedly, not always used consistently with autotools naming recommendations),
+(allegedly, not always used consistently with autotools naming recommendations
+for `--with-DEPENDENCY_PACKAGE` and `--enable-PROJECT_FEATURE` semantics),
 and with environment variables like `CFLAGS` typically also passed as command
 line options.
 
