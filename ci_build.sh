@@ -2821,6 +2821,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 ) || {
                     RES_ALLERRORS=$?
                     FAILED+=("TESTCOMBO=${TESTCOMBO}[configure]")
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' configure"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== [Matrix] Error: Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
@@ -2910,6 +2912,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         } || {
                             RES_ALLERRORS=$?
                             FAILED+=("TESTCOMBO=${TESTCOMBO}[dist_clean]")
+                            # Help find end of build (before cleanup noise) in logs:
+                            echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' dist_clean"
                         }
                     else
                         optional_maintainer_clean_check && {
@@ -2919,6 +2923,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         } || {
                             RES_ALLERRORS=$?
                             FAILED+=("TESTCOMBO=${TESTCOMBO}[maintainer_clean]")
+                            # Help find end of build (before cleanup noise) in logs:
+                            echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' maintainer_clean"
                         }
                     fi
                     echo "=== Completed sandbox cleanup-check after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
@@ -2944,6 +2950,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 } || {
                     RES_ALLERRORS=$?
                     FAILED+=("[final_maintainer_clean]")
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' final_maintainer_clean"
                 }
                 echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi
