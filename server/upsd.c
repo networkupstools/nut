@@ -1247,6 +1247,10 @@ static void upsd_cleanup(void)
 	free(certname);
 	free(certpasswd);
 
+#if defined(WITH_SSL)
+	free(certpath);
+#endif
+
 	free(fds);
 	free(handler);
 
