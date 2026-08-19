@@ -1161,6 +1161,16 @@ int main(int argc, char **argv)
 		monhost_ups_current = monhost_ups_current->next
 	) {
 		upscli_disconnect(monhost_ups_current->ups);
+		free(monhost_ups_current->ups);
+
+		upsdebugx(1, "FREEING: [%s] => [%s] @ [%s]",
+			NUT_STRARG(monhost_ups_current->monhost),
+			NUT_STRARG(monhost_ups_current->upsname),
+			NUT_STRARG(monhost_ups_current->hostname)
+			);
+		free(monhost_ups_current->monhost);
+		free(monhost_ups_current->upsname);
+		free(monhost_ups_current->hostname);
 	}
 
 	if (logformat_allocated) {
