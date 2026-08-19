@@ -904,6 +904,10 @@ check-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
 
+memcheck-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} memcheck
+
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
