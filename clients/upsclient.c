@@ -217,7 +217,8 @@ static SSL_CTX	*ssl_ctx = NULL;
 #endif	/* WITH_OPENSSL */
 
 #ifdef WITH_NSS
-static int verify_certificate = 1;
+static int	verify_certificate = 1;
+static int	nss_initialized = 0;
 #endif	/* WITH_NSS */
 
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
@@ -1260,6 +1261,7 @@ int upscli_init2(int certverify, const char *certpath,
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+	nss_initialized = 1;
 
 	PK11_SetPasswordFunc(nss_password_callback);
 
@@ -1673,17 +1675,22 @@ int upscli_cleanup(void)
 #endif /* WITH_OPENSSL */
 
 #ifdef WITH_NSS
-	/* Called to force cache clearing to prevent NSS shutdown failures.
-	 * http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslfnc.html#1138601
-	 */
-	SSL_ClearSessionCache();
-	NSS_Shutdown();
-	PR_Cleanup();
-	/* Called to release memory arena used by NSS/NSPR.
-	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
-	 * https://developer.mozilla.org/en/NSS_Memory_allocation
-	 */
-	PL_ArenaFinish();
+	/* Avoid first calling NSS to shut it down - this confuses
+	 * the library and leaves allocated memory in its code path */
+	if (nss_initialized) {
+		/* Called to force cache clearing to prevent NSS shutdown failures.
+		 * http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslfnc.html#1138601
+		 */
+		SSL_ClearSessionCache();
+		NSS_Shutdown();
+		PR_Cleanup();
+		/* Called to release memory arena used by NSS/NSPR.
+		 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
+		 * https://developer.mozilla.org/en/NSS_Memory_allocation
+		 */
+		PL_ArenaFinish();
+		nss_initialized = 0;
+	}
 #endif /* WITH_NSS */
 
 	upscli_free_host_cert_list();
