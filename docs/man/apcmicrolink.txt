@@ -70,17 +70,21 @@ A minimal USB configuration (see *USB MODE* below):
 [apc-microlink]
     driver = apcmicrolink
     port = auto
-    porttype = usb
 ----
 
 Optional settings
 ~~~~~~~~~~~~~~~~~
 
-*porttype*='serial|usb'::
-Select whether the Microlink protocol is reached over a serial port or
-tunneled through USB HID. The default is `serial`. See *USB MODE* below
-for the USB case; this option, and everything else USB-specific in this
-man page, only applies to builds with USB support enabled.
+*port*='device|auto'::
+For serial devices, the path to the serial port (e.g. `/dev/ttyUSB0`). For
+USB devices, `auto` (the default handling in NUT for USB drivers). See
+*USB MODE* below; USB mode requires builds with USB support enabled, and
+`port=auto` is equivalent to specifying any of the USB matching options
+below (`vendorid`, `productid`, `vendor`, `product`, `serial`, `bus`)
+without an explicit `port` value -- either is enough to select USB mode. If
+`port` is set to anything other than `auto` while USB matching options are
+also given, the `port` value is ignored (with a warning) in favor of USB
+mode.
 
 *baudrate*='num'::
 Set the serial line speed. The default is `9600`. Serial mode only.
@@ -169,7 +173,7 @@ Driver-assisted shutdown is not yet implemented.
 USB MODE
 --------
 
-Support for reaching the Microlink protocol over USB HID (`porttype = usb`)
+Support for reaching the Microlink protocol over USB HID (`port = auto`)
 is newer and less exercised than the serial path, and should be considered
 experimental even relative to the rest of this already-experimental driver.
 As of this writing it has been built and tested against a single APC

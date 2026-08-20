@@ -142,7 +142,9 @@ static const struct {
 static microlink_object_t objects[256];
 static speed_t microlink_baudrate = MLINK_DEFAULT_BAUDRATE;
 static int session_ready = 0;
+#ifdef WITH_USB
 static int is_usb = 0;
+#endif /* WITH_USB */
 static unsigned char rxbuf[MLINK_MAX_FRAME * 2];
 static size_t rxbuf_len = 0;
 static unsigned int parsed_frames = 0;
@@ -2977,32 +2979,43 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initups(void)
 {
-	char *val;
+	int use_usb = 0;
 
 	microlink_read_config();
 
-	val = getval("porttype");
-	is_usb = 0;
+#ifdef WITH_USB
+	/* Follow the same "port=auto means USB" convention as nutdrv_qx:
+	 * any USB-matching option, or an explicit port=auto, selects USB;
+	 * anything else in "port" is a serial device path. */
+	if (
+		!strcasecmp(device_path, "auto") ||
+		getval("vendorid") || getval("productid") ||
+		getval("vendor") || getval("product") ||
+		getval("serial") || getval("bus") || getval("device")
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		|| getval("busport")
+#endif
+	) {
+		use_usb = 1;
 
-	if (val != NULL && !strcasecmp(val, "usb")) {
-#ifdef WITH_USB
-		is_usb = 1;
-		microlink_usb_open();
-#else
-		fatalx(EXIT_FAILURE, "apcmicrolink: driver was not compiled with USB support");
-#endif /* WITH_USB */
-	} else if (val != NULL && strcasecmp(val, "serial")) {
-		fatalx(EXIT_FAILURE, "apcmicrolink: invalid porttype '%s' (expected serial%s)",
-			val,
-#ifdef WITH_USB
-			" or usb"
-#else
-			""
-#endif /* WITH_USB */
-			);
+		if (strcasecmp(device_path, "auto")) {
+			upslogx(LOG_WARNING, "apcmicrolink: port='%s' would be ignored, "
+				"since other options indicate USB mode", device_path);
+		}
 	}
 
-	if (!is_usb) {
+	is_usb = use_usb;
+	if (use_usb) {
+		microlink_usb_open();
+	}
+#else
+	if (!strcasecmp(device_path, "auto")) {
+		fatalx(EXIT_FAILURE, "apcmicrolink: port=auto requires USB support, "
+			"but this driver was not compiled with USB support");
+	}
+#endif /* WITH_USB */
+
+	if (!use_usb) {
 		upsfd = ser_open(device_path);
 		ser_set_speed(upsfd, device_path, microlink_baudrate);
 		ser_set_dtr(upsfd, 1);
@@ -3011,7 +3024,7 @@ void upsdrv_initups(void)
 
 static void microlink_register_outlet_commands(void)
 {
-	size_t outlet_group_count, g;
+	size_t outlet_group_count, switched_group_count = 0, g;
 	int i;
 	char cmd[64];
 
@@ -3025,9 +3038,12 @@ static void microlink_register_outlet_commands(void)
 	dstate_setinfo("outlet.group.count", "%u", (unsigned int)outlet_group_count);
 
 	for (g = 0; g < outlet_group_count; g++) {
+		int is_switched = microlink_outlet_group_is_switched(g);
+
 		snprintf(cmd, sizeof(cmd), "outlet.group.%zu.switchable", g);
-		dstate_setinfo(cmd, "%s",
-			microlink_outlet_group_is_switched(g) ? "yes" : "no");
+		dstate_setinfo(cmd, "%s", is_switched ? "yes" : "no");
+		if (is_switched)
+			switched_group_count++;
 	}
 
 	dstate_addcmd("load.off");
@@ -3053,8 +3069,7 @@ static void microlink_register_outlet_commands(void)
 	outlet_commands_registered = 1;
 	upslogx(LOG_NOTICE, "apcmicrolink: registered %zu outlet group(s) "
 		"(%zu switchable) and their instant commands",
-		outlet_group_count,
-		outlet_group_count > 0 ? outlet_group_count - 1 : 0);
+		outlet_group_count, switched_group_count);
 }
 
 void upsdrv_initinfo(void)
@@ -3144,25 +3159,26 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	int good = 0;
+	time_t now = time(NULL);
 
 	if (!session_ready) {
 		int tried_reset = 0;
 
 		if (microlink_fallback_since == 0)
-			microlink_fallback_since = time(NULL);
+			microlink_fallback_since = now;
 
-		if (time(NULL) < microlink_session_next_retry) {
+		if (now < microlink_session_next_retry) {
 			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
 			microlink_datastale_or_fallback();
 			return;
 		}
 
 #ifdef WITH_USB
-		if (time(NULL) - microlink_fallback_since >= MLINK_USB_RESET_AFTER_SEC) {
+		if (now - microlink_fallback_since >= MLINK_USB_RESET_AFTER_SEC) {
 			upslogx(LOG_NOTICE, "apcmicrolink: Microlink tunnel unresponsive for "
 				"%ld s - attempting USB device reset to recover",
-				(long)(time(NULL) - microlink_fallback_since));
-			microlink_fallback_since = time(NULL);
+				(long)(now - microlink_fallback_since));
+			microlink_fallback_since = now;
 			tried_reset = 1;
 			if (microlink_usb_reset_and_reopen())
 				microlink_start_session();
@@ -3173,7 +3189,7 @@ void upsdrv_updateinfo(void)
 			microlink_start_session_impl(1);
 
 		if (!session_ready) {
-			microlink_session_next_retry = time(NULL) + MLINK_SESSION_RETRY_INTERVAL_SEC;
+			microlink_session_next_retry = now + MLINK_SESSION_RETRY_INTERVAL_SEC;
 			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
 			microlink_datastale_or_fallback();
 			return;
@@ -3233,14 +3249,11 @@ void upsdrv_shutdown(void)
 void upsdrv_makevartable(void)
 {
 #ifdef WITH_USB
-	addvar(VAR_VALUE, "porttype", "Microlink port type (serial, usb, default=serial)");
 	microlink_usb_addvars();
 	addvar(VAR_VALUE, "hid_fallback",
 		"Publish ups.status/battery.charge/battery.runtime from standard HID "
 		"Power Device usages when the Microlink tunnel has nothing fresh, "
 		"instead of going stale (USB only; yes/no, default yes)");
-#else
-	addvar(VAR_VALUE, "porttype", "Microlink port type (serial, default=serial)");
 #endif /* WITH_USB */
 	addvar(VAR_VALUE, "baudrate", "Serial port baud rate (e.g. 9600, 19200, 38400)");
 	addvar(VAR_VALUE, "showinternals",

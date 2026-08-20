@@ -104,3 +104,4 @@ __pycache__/
 *.stackdump
 *.core
 core
+docs/config.log

@@ -67,8 +67,9 @@ https://github.com/networkupstools/nut/milestone/13
    APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
 
  - `apcmicrolink` driver updates:
-    * Added `porttype = usb` support, tunneling the Microlink protocol
-      over USB HID for models with no serial port. Tested against APC
+    * Added USB HID support (`port = auto`, matching the usual NUT
+      USB-driver convention), tunneling the Microlink protocol over
+      USB HID for models with no serial port. Tested against APC
       Smart-UPS 500 (SCL500RMI1UC) by a single tester; considered
       experimental even relative to the rest of this already-experimental
       driver. See linkman:apcmicrolink[8] for USB-mode caveats, including
