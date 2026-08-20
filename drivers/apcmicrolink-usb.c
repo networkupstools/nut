@@ -348,8 +348,11 @@ int microlink_usb_reset_and_reopen(void)
 
 	if (udev) {
 		/* Send USB bus reset. The handle is invalid afterward regardless
-		 * of the return value -- close it unconditionally. */
-		libusb_reset_device(udev);
+		 * of the return value -- close it unconditionally. usb_reset()
+		 * is NUT's usb-common.h abstraction (libusb_reset_device on
+		 * libusb-1.0, usb_reset on libusb-0.1); calling libusb_reset_device
+		 * directly breaks NUT_USB_VARIANT=0.1 builds. */
+		usb_reset(udev);
 		comm_driver->close_dev(udev);
 		udev = NULL;
 	}
