@@ -120,7 +120,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -138,7 +138,16 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 	/* TODO: Range-check before cast */
 	return (int)i;
 }
@@ -206,7 +215,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -224,7 +233,16 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 	/* TODO: Range-check before cast */
 	return (int)i;
 }
