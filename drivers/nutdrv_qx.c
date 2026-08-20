@@ -796,7 +796,16 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 
 	if (i > INT_MAX) {
 		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
@@ -1008,7 +1017,16 @@ static int	phoenix_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 
 	if (i > INT_MAX) {
 		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
@@ -1855,10 +1873,20 @@ static int	fuji_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 
 	/* As Fuji units return the reply in 8-byte chunks always padded to the 8th byte with 0x00, we need to calculate and return the length of the actual response here. */
-	return (int)strlen(buf);
+	/* Bounded by the bytes actually received: a reply that fills the buffer need not be padded at all. */
+	return (int)strnlen(buf, i);
 }
 
 /* Phoenixtec (Masterguard) communication subdriver */
@@ -2217,7 +2245,16 @@ static int	gtec_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen
 
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 
 	if (i > INT_MAX) {
 		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
