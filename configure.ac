@@ -1718,12 +1718,25 @@ AS_IF([test x"${ac_cv_printfmt_zu}" = xyes],
     [AC_MSG_WARN([Desired C library support for printf("%zu", size_t) not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CHECK_HEADER([stdarg.h],
+    [AC_DEFINE([HAVE_STDARG_H], [1],
+        [Define to 1 if you have <stdarg.h>.])])
+
+AC_CHECK_HEADER([sys/stdarg.h],
+    [AC_DEFINE([HAVE_SYS_STDARG_H], [1],
+        [Define to 1 if you have <sys/stdarg.h>.])])
+
 AC_CACHE_CHECK([for va_copy(dest,src)],
   [ac_cv_have_va_copy],
   [
     AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
-        [[#include <stdarg.h>
+        [[#ifdef HAVE_STDARG_H
+          # include <stdarg.h>
+          #endif
+          #ifdef HAVE_SYS_STDARG_H
+          # include <sys/stdarg.h>
+          #endif
           void check_va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
@@ -1744,7 +1757,12 @@ AC_CACHE_CHECK([for __va_copy(dest,src)],
   [
     AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
-        [[#include <stdarg.h>
+        [[#ifdef HAVE_STDARG_H
+          # include <stdarg.h>
+          #endif
+          #ifdef HAVE_SYS_STDARG_H
+          # include <sys/stdarg.h>
+          #endif
           void check___va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
@@ -2024,7 +2042,7 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS(sys/modem.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks

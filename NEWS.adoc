@@ -240,6 +240,9 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Some operating systems provide in `sys/stdarg.h` definitions that others
+      access through common `stdarg.h` -- code updated to try including both.
+      [PR #3577]
     * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
       is", complete with a confusing blank line where `\n` ended the message.
       This is now passed through newly introduced `upsdebug_ascii_compact()`
