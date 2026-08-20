@@ -66,6 +66,25 @@ https://github.com/networkupstools/nut/milestone/13
    the APC Microlink protocol on serial port connections. Tested against
    APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
 
+ - `apcmicrolink` driver updates:
+    * Added `porttype = usb` support, tunneling the Microlink protocol
+      over USB HID for models with no serial port. Tested against APC
+      Smart-UPS 500 (SCL500RMI1UC) by a single tester; considered
+      experimental even relative to the rest of this already-experimental
+      driver. See linkman:apcmicrolink[8] for USB-mode caveats, including
+      a udev rule needed to keep the kernel's `usbhid` driver from
+      claiming the device.
+    * USB mode: if the Microlink tunnel does not respond during startup,
+      the driver now starts up on standard-HID-PDC fallback data
+      (`ups.status`/`battery.charge`/`battery.runtime`) instead of
+      refusing to start; outlet-group data and instant commands become
+      available automatically once the tunnel connects, with no driver
+      restart needed.
+    * Added `load.cycle` and per-outlet-group instant commands
+      (`outlet.group.N.load.*`, `outlet.group.N.shutdown.*`), and the
+      `outlet.group.N.switchable` variable to distinguish switchable
+      groups from an unswitched main bank.
+
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
     * Decode `RunTimeCalibrationStatus_BF` into
