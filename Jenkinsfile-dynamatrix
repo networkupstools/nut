@@ -1005,6 +1005,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT
                     //+ [dynacfgPipeline.axisCombos_STRICT_C] // TODO: revise to match the purpose of this filter
+                    + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/, ~/GCCVER=[01234].+/]]	// Does not trust pragmas to quiesce known "infractions" which are not problems
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
