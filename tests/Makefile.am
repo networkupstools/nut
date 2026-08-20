@@ -147,7 +147,7 @@ ecoflow-cdc-protocol.c: $(top_srcdir)/drivers/ecoflow-cdc-protocol.c
 	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/ecoflow-cdc-protocol.c" '$@'
 
 if WITH_USB
-TESTS += getvaluetest getexponenttest-belkin-hid
+TESTS += getvaluetest getexponenttest-belkin-hid fixreportdesctest-tripplite-hid
 
 # We only need to call a few methods, not use the whole source - so
 # not linking it as a getvaluetest_SOURCE file (has too many deps):
@@ -160,6 +160,11 @@ getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
+
+fixreportdesctest-tripplite-hid.c: $(top_srcdir)/drivers/tripplite-hid.c
+fixreportdesctest_tripplite_hid_SOURCES = fixreportdesctest-tripplite-hid.c
+fixreportdesctest_tripplite_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+fixreportdesctest_tripplite_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
