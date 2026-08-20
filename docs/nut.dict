@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3800 utf-8
+personal_ws-1.1 en 3807 utf-8
 AAC
 AAS
 ABI
@@ -987,12 +987,15 @@ PROGS
 PROTVER
 PRs
 PSA
+PSCERT
 PSD
 PSDR
+PSEMD
 PSF
 PSFn
 PSGPSER
 PSSENTR
+PSSNMPV
 PSUs
 PSW
 PSX
@@ -1030,6 +1033,7 @@ PnP
 Poettering
 Pohle
 PointBre
+Polska
 Pos
 Potrans
 Poush
@@ -1050,6 +1054,7 @@ PowerPC
 PowerPS
 PowerPal
 PowerPanel
+PowerChute
 PowerShare
 PowerShell
 PowerShield
@@ -1380,6 +1385,7 @@ TESTCERT
 TESTPASS
 TEoQ
 TGS
+TIMEJUMP
 TIMELEFT
 TIOCM
 TIOCMBIC
@@ -2121,6 +2127,7 @@ ePDUs
 eaton
 ec
 eco
+ecoflow
 ecomode
 edb
 editorconfig

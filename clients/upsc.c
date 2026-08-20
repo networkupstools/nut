@@ -515,10 +515,10 @@ int main(int argc, char **argv)
 			int	parsed = -1;
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
-				parsed = upscli_read_authconf_file(NULL, 0);
+				parsed = upscli_read_authconf_file(NULL, 0, -1);
 			} else {
 				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
-				parsed = upscli_read_authconf_file(nutauth, 0);
+				parsed = upscli_read_authconf_file(nutauth, 0, -1);
 			}
 			if (parsed < 0) {
 				fatalx_error_json_simple(0, "Failed to parse auth config file");
@@ -526,7 +526,7 @@ int main(int argc, char **argv)
 		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
-		upscli_read_authconf_file(NULL, 0);
+		upscli_read_authconf_file(NULL, 0, 1);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -557,9 +557,12 @@ int main(int argc, char **argv)
 		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
 	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
-	if (ac_conn && upscli_init_authconf(ac_conn) > 0) {
-		upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
-		upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+	if (ac_conn) {
+		if (upscli_init_authconf(ac_conn) > 0) {
+			upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+		}
+		upscli_authconf_update_conn_flags(ac_conn, &flags_ssl);
 	}
 
 	ups = (UPSCONN_t *)xmalloc(sizeof(*ups));

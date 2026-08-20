@@ -730,12 +730,22 @@ static int				langid_fix = -1;
 
 static int	(*subdriver_command)(const char *cmd, size_t cmdlen, char *buf, size_t buflen) = NULL;
 
+/* -1: let the driver guess by USB ID; 0/1: explicit disable/enable */
+static int	cypress_drain_quirk_setting = -1;
+static bool_t	cypress_0665_5161_quirk = FALSE;
+
+#define CYPRESS_0665_5161_FLUSH_REPORTS	10
+#define CYPRESS_0665_5161_FLUSH_TIMEOUT	25
+#define CYPRESS_REPLY_TIMEOUT			1000
+#define CYPRESS_0665_5161_REPLY_TIMEOUT	3000
+
 /* Cypress communication subdriver */
 static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
 	size_t	tmplen;
 	int	ret = 0;
+	int	reply_timeout = CYPRESS_REPLY_TIMEOUT;
 	size_t	i;
 
 	if (buflen > INT_MAX) {
@@ -743,6 +753,36 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 			"reducing buflen to (INT_MAX-1)",
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
+	}
+
+	/* Some USB devices with Cypress 0665:5161 can leave a reply from a previous
+	 * command queued on the interrupt endpoint. Do not apply this device quirk
+	 * to other Cypress-based UPSes.
+	 */
+	if (cypress_0665_5161_quirk) {
+		reply_timeout = CYPRESS_0665_5161_REPLY_TIMEOUT;
+
+		/* Read once more than the number of reports we accept, so a timeout
+		 * confirms that the endpoint is empty. Do not send a command if it
+		 * remains busy: its reply could not be associated reliably.
+		 */
+		for (i = 0; i <= CYPRESS_0665_5161_FLUSH_REPORTS; i++) {
+			ret = usb_interrupt_read(udev, 0x81,
+				(usb_ctrl_charbuf)tmp, 8, CYPRESS_0665_5161_FLUSH_TIMEOUT);
+
+			if (ret == LIBUSB_ERROR_TIMEOUT)
+				break;
+
+			if (ret <= 0)
+				return ret;
+
+			if (i == CYPRESS_0665_5161_FLUSH_REPORTS) {
+				upsdebugx(1, "cypress: input endpoint stayed busy before %s", cmd);
+				return LIBUSB_ERROR_BUSY;
+			}
+
+			upsdebugx(3, "cypress: discarded stale input report before %s", cmd);
+		}
 	}
 
 	/* Send command */
@@ -779,7 +819,7 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev,
 			0x81,
-			(usb_ctrl_charbuf)&buf[i], 8, 1000);
+			(usb_ctrl_charbuf)&buf[i], 8, reply_timeout);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
@@ -2274,6 +2314,9 @@ static struct {
 	uint16_t out_wMaxPacketSize;
 } armac_endpoint_cache = { .initialized = FALSE, .ok = FALSE };
 
+static bool_t richcomm_svc_baud_initialized = FALSE;
+static bool_t richcomm_svc_session_initialized = FALSE;
+
 static void load_armac_endpoint_cache(void)
 {
 #if WITH_LIBUSB_1_0
@@ -2374,16 +2417,82 @@ static void load_armac_endpoint_cache(void)
  */
 #define ARMAC_READ_SIZE_FOR_CONTROL 8
 #define ARMAC_READ_SIZE_FOR_INTERRUPT 64
-static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+/* V-1000F returns LIBUSB_ERROR_OVERFLOW when asked for 8 bytes. */
+#define RICHCOMM_SVC_READ_SIZE_FOR_CONTROL 6
+
+static int	richcomm_svc_initialize(void)
+{
+	char	report[64];
+	int	ret;
+	size_t	offset;
+
+	if (!richcomm_svc_baud_initialized) {
+		report[0] = (char)0x80;
+		report[1] = (char)0xd0;
+		report[2] = 0x00;
+		report[3] = 0x00;
+
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x0200, 0,
+			(usb_ctrl_charbuf)report, 4, 5000);
+		if (ret <= 0) {
+			upsdebugx(1, "richcomm-svc: failed to configure 2400-baud transport: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
+			return ret;
+		}
+		if (ret != 4) {
+			upsdebugx(1, "richcomm-svc: short baud-rate report transfer (%d of 4 bytes)", ret);
+			return -1;
+		}
+
+		richcomm_svc_baud_initialized = TRUE;
+		usleep(100000);
+	}
+
+	if (richcomm_svc_session_initialized) {
+		return 1;
+	}
+
+	/* SVC V-1000F (0925:1234) requires this 64-byte session-opening
+	 * sequence before its USB-to-UART bridge accepts Megatec commands. */
+	report[0] = 0x40;
+	for (offset = 1; offset < sizeof(report); offset++) {
+		report[offset] = (char)(offset * 73u + 29u);
+	}
+
+	for (offset = 0; offset < sizeof(report); offset += 4) {
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x0200, 0,
+			(usb_ctrl_charbuf)(report + offset), 4, 5000);
+		if (ret <= 0) {
+			upsdebugx(1, "richcomm-svc: failed to send session-opening report: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout", ret);
+			return ret;
+		}
+		if (ret != 4) {
+			upsdebugx(1, "richcomm-svc: short session-opening report transfer (%d of 4 bytes)", ret);
+			return -1;
+		}
+	}
+
+	richcomm_svc_session_initialized = TRUE;
+	upsdebugx(3, "richcomm-svc: session-opening sequence sent");
+	usleep(100000);
+	return 1;
+}
+
+static int	armac_command_internal(const char *cmd, size_t cmdlen, char *buf, size_t buflen, bool_t use_richcomm_svc)
 {
 	char	tmpbuf[ARMAC_READ_SIZE_FOR_INTERRUPT];
 	int	ret = 0;
-	size_t	i, bufpos;
+	size_t	i, bufpos, idle_reports = 0;
 	const size_t	cmdstrlen = strnlen(cmd, cmdlen);	/* Length of cmd string (excluding terminating '\0'), or cmdlen if the string is too long */
 	const size_t	cmddatalen = cmdstrlen >= cmdlen ? cmdlen : cmdstrlen + 1;	/* Amount of useful/valid data bytes in cmd string (max=cmdlen, or length of cmd+'\0' if the string is short enough) */
 	const size_t	tmplen = cmddatalen > sizeof(tmpbuf) ? sizeof(tmpbuf) : cmddatalen;	/* How much of cmd[] we can copy into tmp[] so it fits (and remains useful), including the terminating '\0' */
 	bool_t	use_interrupt = FALSE;
-	int	read_size = ARMAC_READ_SIZE_FOR_CONTROL;
+	int	read_size = use_richcomm_svc ? RICHCOMM_SVC_READ_SIZE_FOR_CONTROL : ARMAC_READ_SIZE_FOR_CONTROL;
 
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
@@ -2409,6 +2518,13 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 
 	if (!armac_endpoint_cache.initialized) {
 		load_armac_endpoint_cache();
+	}
+
+	if (use_richcomm_svc) {
+		ret = richcomm_svc_initialize();
+		if (ret <= 0) {
+			return ret;
+		}
 	}
 
 	for (i = 0; unsupported[i] != NULL; i++) {
@@ -2527,6 +2643,15 @@ static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t bufle
 		 */
 		bytes_available = (unsigned char)tmpbuf[0] & 0x3f;
 		if (bytes_available == 0) {
+			/* This bridge can emit idle HID reports before UART data. */
+			if (use_richcomm_svc && bufpos == 0) {
+				if (++idle_reports > 5) {
+					upsdebugx(4, "richcomm-svc: no UART reply after idle HID reports");
+					break;
+				}
+				upsdebugx(4, "richcomm-svc: ignoring idle HID report before response");
+				continue;
+			}
 			/* End of transfer */
 			break;
 		}
@@ -2591,11 +2716,41 @@ end_of_message:
 	return (int)bufpos;
 }
 
+static int	armac_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	return armac_command_internal(cmd, cmdlen, buf, buflen, FALSE);
+}
+
+static int	richcomm_svc_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
+{
+	/* The bridge needs one-time transport initialization, then uses the
+	 * existing Armac command framing with the Megatec protocol. */
+	return armac_command_internal(cmd, cmdlen, buf, buflen, TRUE);
+}
+
 
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
 
+	switch (cypress_drain_quirk_setting) {
+		case 0: cypress_0665_5161_quirk = FALSE; break;
+		case 1: cypress_0665_5161_quirk = TRUE; break;
+		default: cypress_0665_5161_quirk = FALSE;
+	}
+	subdriver_command = &cypress_command;
+	return NULL;
+}
+
+static void	*cypress_0665_5161_subdriver(USBDevice_t *device)
+{
+	NUT_UNUSED_VARIABLE(device);
+
+	switch (cypress_drain_quirk_setting) {
+		case 0: cypress_0665_5161_quirk = FALSE; break;
+		case 1: cypress_0665_5161_quirk = TRUE; break;
+		default: cypress_0665_5161_quirk = TRUE;
+	}
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -2740,7 +2895,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
 	{ USB_DEVICE(LEGRAND_VENDORID,	0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
-	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_0665_5161_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
@@ -3422,6 +3577,7 @@ void	upsdrv_shutdown(void)
 			{ "snr", &snr_command },
 			{ "ablerex", &ablerex_command },
 			{ "armac", &armac_command },
+			{ "richcomm-svc", &richcomm_svc_command },
 			{ "gtec", &gtec_command },
 			{ NULL, NULL }
 		};
@@ -3541,6 +3697,10 @@ void	upsdrv_makevartable(void)
 		"Apply the language ID workaround to the krauler subdriver "
 		"(0x409 or 0x4095)");
 	addvar(VAR_FLAG, "noscanlangid", "Don't autoscan valid range for langid");
+
+	addvar(VAR_VALUE, "cypress_drain_quirk",
+		"Enable or disable USB buffer drain from stale data for devices "
+		"with cypress subdriver (default: enabled for 0665:5161)");
 #endif	/* QX_USB */
 
 #ifdef QX_SERIAL
@@ -3725,6 +3885,7 @@ void	upsdrv_initups(void)
 	char	*subdrv;
 # endif
 #endif
+	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
 
@@ -3740,7 +3901,8 @@ void	upsdrv_initups(void)
 		getval("product") ||
 		getval("serial") ||
 		getval("bus") ||
-		getval("langid_fix")
+		getval("langid_fix") ||
+		getval("cypress_drain_quirk")
 # if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		|| getval("busport")
 # endif
@@ -3785,7 +3947,6 @@ void	upsdrv_initups(void)
 		};
 
 		int		i;
-		const char	*val;
 		struct termios	tio;
 
 		/* Open and lock the serial port and set the speed to 2400 baud. */
@@ -3877,6 +4038,21 @@ void	upsdrv_initups(void)
 				upsdebugx(2,
 					"Language ID workaround enabled (using '0x%x')",
 					(unsigned int)langid_fix);
+			}
+		}
+
+		if ((val = getval("cypress_drain_quirk"))) {
+			if (!strcmp(val, "1") || !strcasecmp(val, "on") || !strcasecmp(val, "yes") || !strcasecmp(val, "true")) {
+				upsdebugx(2, "cypress_drain_quirk explicitly enabled: %s", val);
+				cypress_drain_quirk_setting = 1;
+			} else if (!strcmp(val, "0") || !strcasecmp(val, "off") || !strcasecmp(val, "no") || !strcasecmp(val, "false")) {
+				upsdebugx(2, "cypress_drain_quirk explicitly disabled: %s", val);
+				cypress_drain_quirk_setting = 0;
+			} else if (!strcmp(val, "-1") || !strcasecmp(val, "null")) {
+				upsdebugx(2, "cypress_drain_quirk ignored (driver will choose by USB ID): %s", val);
+				cypress_drain_quirk_setting = -1;
+			} else {
+				upslogx(LOG_NOTICE, "Error enabling cypress_drain_quirk: unsupported value, ignored");
 			}
 		}
 
@@ -4109,6 +4285,11 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 
 			if (ret < 1) {
 				return ret;
+			}
+
+			if (subdriver_command == &richcomm_svc_command) {
+				richcomm_svc_baud_initialized = FALSE;
+				richcomm_svc_session_initialized = FALSE;
 			}
 
 			reconnect_trying(RECONNECT_UPDATEINFO);

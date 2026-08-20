@@ -49,6 +49,11 @@ https://github.com/networkupstools/nut/milestone/13
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
 
+ - USB drivers now prefer the longer of conflicting HID report descriptor
+   lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
+   complete descriptor available on affected River 3 Plus firmware while
+   retaining the shorter length as a fallback.
+
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
@@ -70,6 +75,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Added `modbus_retries` option to configure the number of read retry
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
+    * Three fixes for the read-retry loop added in PR #3414:
+      the loop ignored `exit_flag`, causing `upsdrvctl` to kill the driver
+      and wedge the device if it was killed mid-exchange; now we retry on more
+      failure causes than just a timeout; quieter retry logging to avoid
+      severe syslog/journal thrashing. [PR #3571, #3414]
 
  - `blazer_usb` driver updates:
     * Bounded USB reply parsing by the number of bytes actually received, in
@@ -90,6 +100,11 @@ https://github.com/networkupstools/nut/milestone/13
       reconnection behavior. [issue #3510, PR #3543]
 
  - `nutdrv_qx` driver updates:
+    * Added the `richcomm-svc` USB communication subdriver for older
+      session-initialized Richcomm bridges. It configures the bridge before
+      reusing the existing Armac command framing and Megatec protocol. Polling
+      and a quick battery test were verified with an SVC V-1000F
+      (`0925:1234`, `UPS USB MON V1.4`). [issue #3562]
     * Bounded USB reply parsing by the number of bytes actually received, in
       the `ippon`, `cypress`, `phoenix`, `fuji` and `gtec` transports,
       preventing out-of-bounds reads when a reply fills the buffer without
@@ -99,6 +114,12 @@ https://github.com/networkupstools/nut/milestone/13
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
+    * Added a `cypress_0665_5161_subdriver` initialization method for devices
+      with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
+      a quirk to drain stale bytes from USB buffers of the device before our
+      driver sends queries, and use a longer timeout. If this change breaks
+      your device, please add `cypress_drain_quirk = 0` in your `ups.conf`
+      and let us know. [issue #2534, PR #3563]
     * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
       (when a device returns all-spaces in that part of the `I` query response)
       out of the box and not ignore the device as unsupported, by adding the
@@ -175,6 +196,18 @@ https://github.com/networkupstools/nut/milestone/13
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
+    * `apc-hid` subdriver: mapped `shutdown.return` to
+      `UPS.APCGeneralCollection.APCDelayBeforeReboot` with value "1", for
+      newer APC Back-UPS devices (e.g. Back-UPS BX750MI) where that usage
+      is the only shutdown-capable one. Their firmware accepts but never
+      executes the value "10" written by the previously only matching
+      command `shutdown.reboot`, so the built-in shutdown sequence reported
+      success without ever powering the load off. The value "1" is what APC
+      PowerChute writes (confirmed by decoding USB captures of the vendor
+      software, and by live tests on another unit): the load is cycled after
+      a fixed ~2 minute grace, the command is executed only while on battery,
+      and output returns when wall power is present, even if AC came back
+      during the grace period. [issue #2683, PR #3566]
     * `idowell-hid` subdriver now also supports GoldenMate 1000VA/800W LiFePO4
       battery packs (`0x06da:0xffff`), which carry the same `-BMS-` firmware and
       HID descriptor as the existing `0x075d:0x0300` device. The shared
@@ -198,6 +231,10 @@ https://github.com/networkupstools/nut/milestone/13
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
+    * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes,
+      developed and tested against a PowerShield Centurion RT 1000VA
+      (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
+      PR #3570]
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we

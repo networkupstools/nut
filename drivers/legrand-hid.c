@@ -28,7 +28,7 @@
 #include "main.h"
 #include "usb-common.h"
 
-#define LEGRAND_HID_VERSION	"Legrand HID 0.2"
+#define LEGRAND_HID_VERSION	"Legrand HID 0.3"
 
 /* Legrand */
 #define LEGRAND_VENDORID	0x1cb0
@@ -235,4 +235,5 @@ subdriver_t legrand_subdriver = {
 	legrand_format_mfr,
 	legrand_format_serial,
 	fix_report_desc,
+	NULL,
 };

@@ -34,6 +34,7 @@ At the present time, usbhid-ups supports:
  - some APC models,
  - some Belkin models,
  - some Cyber Power Systems models,
+ - some EcoFlow models,
  - some Powercom models,
  - some PowerWalker models,
  - some TrippLite models.
@@ -76,6 +77,18 @@ expression.
 +
 NOTE: When using this option, it is mandatory to also specify the *vendorid*
 and *productid* matching parameters.
+
+*ecoflow_cdc_port*='path'::
+For supported EcoFlow devices which expose both HID and CDC ACM interfaces,
+optionally open the CDC serial port and enrich the HID data with power,
+frequency, temperature, capacity and per-output telemetry.  HID remains the
+authoritative source for UPS status, battery charge and runtime, and a CDC
+failure does not mark the HID data stale.
++
+Use a persistent device path where available, for example a path below
+`/dev/serial/by-id/`, rather than a transient name such as `/dev/ttyACM0`.
+The CDC interface uses 115200 baud and is polled read-only.  This option is
+available when NUT is built with serial support.
 
 *lowbatt*='num'::
 Set the percentage at which the UPS will consider the battery charge as

@@ -487,7 +487,7 @@ include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a USB communication subdriver to use.
-You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *omron*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
+You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *omron*, *phoenix*, *phoenixtec*, *richcomm-svc*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
@@ -503,6 +503,15 @@ You must provide *value* (+0x409+ or +0x4095+), according to your device entry i
 *noscanlangid*::
 If this flag is set, don't autoscan valid range for langid.
 
+*cypress_drain_quirk =* 'value'::
+Some devices using the `cypress` subdriver, e.g. VOLT Polska identified as Cypress
+USB ID `0665:5161`, were seen to retain stale bytes in their USB buffer, returning
+old "garbage" as response to new queries and so corrupting discovery attempts.
+The `nutdrv_qx` driver can drain the USB buffer and use longer timeouts to communicate
+with such devices, but such a change may potentially misfire on other devices with
+same USB ID (Belkin, Voltronic).  This option allows to explicitly enable or disable
+this behavior; by default it is chosen according to device self-identification.
+
 
 IMPLEMENTATION NOTES
 ^^^^^^^^^^^^^^^^^^^^
@@ -513,6 +522,31 @@ an old release of "PowerManagerII" software, which doesn't seem to be Armac
 specific: its banner is "2004 Richcomm Technologies, Inc. Dec 27 2005 ver 1.1."
 Maybe other Richcomm UPSes would work with this -- maybe better than with
 the older standalone `richcomm_usb` driver.
+
+*'richcomm-svc' subdriver*::
+This USB communication subdriver supports older session-initialized Richcomm
+USB-to-UART bridges. It was developed and tested with an SVC V-1000F whose
+USB ID is `0925:1234` and product string is `UPS USB MON V1.4`.
++
+The bridge must be configured for 2400 baud and receive a session-opening
+sequence before it accepts Megatec commands. After that initialization this
+subdriver reuses the Armac command framing and the existing Megatec protocol,
+with the 6-byte interrupt reads required by this hardware.
+Because `0925:1234` is shared by devices with different communication details,
+this mode is not selected automatically. Configure it explicitly, for example:
++
+----
+[svc-v1000f]
+    driver = "nutdrv_qx"
+    port = "auto"
+    subdriver = "richcomm-svc"
+    protocol = "megatec"
+    vendorid = "0925"
+    productid = "1234"
+----
++
+Polling and `test.battery.start.quick` were verified on physical hardware.
+Deep battery tests and load or shutdown commands were not tested.
 
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.

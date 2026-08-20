@@ -31,7 +31,7 @@
 #include "usb-common.h"
 #include "hidparser.h" /* for FindObject_with_ID_Node() */
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.22"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.23"
 /* FIXME: experimental flag to be put in upsdrv_info */
 /* v0.21 GoldenMate LiFePO4 packs reuse the shared Phoenixtec VID (0x06da):
  *       claim only those (by -BMS-/Smart-Battery firmware strings) and defer
@@ -304,4 +304,5 @@ subdriver_t idowell_subdriver = {
 	idowell_format_mfr,
 	idowell_format_serial,
 	idowell_fix_report_desc,
+	NULL,
 };
