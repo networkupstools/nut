@@ -351,7 +351,9 @@ static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_DEFAULT
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
 #pragma GCC diagnostic ignored "-Wunreachable-code-break"
 #endif
@@ -1988,7 +1990,9 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_ENUM
 # pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 # pragma GCC diagnostic ignored "-Wunreachable-code"
 #endif

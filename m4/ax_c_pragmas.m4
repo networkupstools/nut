@@ -758,6 +758,60 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcovered-switch-default" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wswitch-default"],
+    [ax_cv__pragma__gcc__diags_ignored_switch_default],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wswitch-default"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_switch_default=yes],
+      [ax_cv__pragma__gcc__diags_ignored_switch_default=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_switch_default" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_DEFAULT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wswitch-default"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wswitch-default" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_switch_default_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wswitch-default"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_switch_default_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_switch_default_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_switch_default_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_DEFAULT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wswitch-default" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wswitch-enum"],
+    [ax_cv__pragma__gcc__diags_ignored_switch_enum],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_switch_enum=yes],
+      [ax_cv__pragma__gcc__diags_ignored_switch_enum=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_switch_enum" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_ENUM], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wswitch-enum"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wswitch-enum" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_switch_enum_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wswitch-enum"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_switch_enum_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_switch_enum_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_switch_enum_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_ENUM_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wswitch-enum" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wextra-semi-stmt"],
     [ax_cv__pragma__gcc__diags_ignored_extra_semi_stmt],
     [AC_COMPILE_IFELSE(
