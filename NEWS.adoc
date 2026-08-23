@@ -230,7 +230,7 @@ https://github.com/networkupstools/nut/milestone/13
       (`09ae:2012`), which now reports `ups.realpower: 512.0` at `ups.load: 56`
       against its 900 W rating. Note this is a behaviour change for units that
       report a non-zero `ActivePower`: the reading moves from `ups.power` to
-      `ups.realpower`.
+      `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
