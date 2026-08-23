@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3864 utf-8
+personal_ws-1.1 en 3866 utf-8
 AAC
 AAS
 ABI
@@ -271,6 +271,7 @@ DEVNAME
 DEVREL
 DEXP
 DF
+DHAVE
 DHEA
 DIGYS
 DIRNAME
@@ -1399,6 +1400,7 @@ TESTEDINDEX
 TESTPASS
 TEoQ
 TGS
+TIMEGM
 TIMEJUMP
 TIMELEFT
 TIOCM
@@ -3191,10 +3193,10 @@ renderer
 renderers
 renice
 repindex
+replug
 repo
 reportId
 reposurgeon
-replug
 repotec
 req
 resetter

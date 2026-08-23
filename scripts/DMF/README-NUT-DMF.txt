@@ -37,12 +37,14 @@ location, but you can craft one in the source tree:
 :; ln -fs ../../drivers/apc-mib.c
 
 # If configure script did not succeed, header was not generated
+:; CFLAGS_EXTRA=""
 :; if [ ! -s ../../include/config.h ] ; then \
     rm -f config.h ; touch config.h ; \
+    CFLAGS_EXTRA="-DHAVE_STDARG_H=1 -DHAVE_TIMEGM=1" ; \
    fi
 
 # Run the parser:
-:; CFLAGS="-I../../drivers -I../../include -I." \
+:; CFLAGS="-I../../drivers -I../../include -I. ${CFLAGS_EXTRA}" \
    DEBUG_NUT_CPP=true DEBUG=1 \
    ./dmfify-mib.sh apc-mib.c
 ----
