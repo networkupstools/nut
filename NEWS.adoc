@@ -235,6 +235,14 @@ https://github.com/networkupstools/nut/milestone/13
       were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
+    * `cps-hid` subdriver: widened under-declared Logical Maximums for
+      `UPS.Input.Voltage`, `UPS.Input.ConfigVoltage`, `UPS.PowerSummary.Voltage`
+      and `UPS.PowerSummary.ConfigVoltage` on CyberPower HID devices (e.g.
+      PR3000ELCDSL/PR3000ELCDSXL, USB ID `0764:0601`), which transmit correct
+      values but declare maximums below them, so NUT masked/clamped them to
+      wrong readings (`input.voltage` 70, `battery.voltage` 22.4 instead of
+      ~225 / ~48 V). The fixes mirror the established `cps_fix_report_desc()`
+      and `apc-hid` patterns for this device family. [issue #3089]
     * `tripplite-hid` subdriver now recovers the output power reading, which was
       published as a constant `0.0`. Two defects combined: the HID `ActivePower`
       usages were mapped to `ups.power`, which `docs/nut-names.txt` defines as
