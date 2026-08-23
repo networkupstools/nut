@@ -215,6 +215,25 @@ https://github.com/networkupstools/nut/milestone/13
       were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
+    * `tripplite-hid` subdriver now recovers the output power reading, which was
+      published as a constant `0.0`. Two defects combined: the HID `ActivePower`
+      usages were mapped to `ups.power`, which `docs/nut-names.txt` defines as
+      apparent power (VA) rather than real power (W); and on the tested
+      SMART1500LCD the firmware declares its `ActivePower` item with the HID PDC
+      unit for watts/VA (`0x0000D121`) while leaving the Unit Exponent at 0, so
+      `get_unit_expo()` applied a factor of 1e-7 and a genuine 520 W reading
+      arrived as 5.2e-05, which the `%.1f` format then rendered as `0.0`.
+      Both `ActivePower` usages now map to `ups.realpower`, matching the
+      `cps-hid` and `mge-hid` subdrivers; `ups.power` is mapped to the
+      corresponding `ApparentPower` usages and `ups.realpower.nominal` to
+      `UPS.Flow.ConfigActivePower`. A new `tripplite_fix_report_desc()` supplies
+      the exponent the firmware omits; it is deliberately limited to the
+      `ActivePower` item, since no Tripp Lite descriptor is known to expose an
+      `ApparentPower` item with the same defect. Verified on a SMART1500LCD
+      (`09ae:2012`), which now reports `ups.realpower: 512.0` at `ups.load: 56`
+      against its 900 W rating. Note this is a behaviour change for units that
+      report a non-zero `ActivePower`: the reading moves from `ups.power` to
+      `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
