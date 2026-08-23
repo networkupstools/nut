@@ -85,6 +85,7 @@ do_filter() {
         -e 's/__signed__/signed/g' \
         -e 's/__unsigned__/unsigned/g' \
         -e 's/__THROW;$/;/' \
+        -e 's/ __cdecl / /' \
         -e 's/__END_DECLS//g' \
         -e 's/__BEGIN_DECLS//g' \
         -e 's/void'"${SPACETAB}"'(\*signal(int, void (\*)(int)))(int);//g' \
