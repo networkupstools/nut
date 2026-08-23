@@ -76,6 +76,8 @@ do_filter() {
         -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
         -e 's/__attribute__'"${SPACETAB}"'*((__availability__([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
         -e 's/__attribute__'"${SPACETAB}"'*((__deprecated__("[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__format__([^()]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__format__([^()]*([^()]*)[^()]*)))'"${SPACETAB}"'*/ /g' \
         -e 's/__attribute__'"${SPACETAB}"'*((__warning__'"${SPACETAB}"'*('"${SPACETAB}"'*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
         -e 's/__attribute__'"${SPACETAB}"'*__DARWIN_ALIAS([^()]*)'"${SPACETAB}"'*/ /g' \
         -e 's/__attribute_malloc__\([ ;]\)/\1/g' \
