@@ -311,7 +311,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 			}
 		}
 #else	/* #if WITH_LIBGPIO_VERSION >= 0x00020000 */
-		int64_t poll_timeout = 1000000000;	//	in nanoseconds
+		int64_t poll_timeout = 1000000000;	/* in nanoseconds */
 		if(gpioupsfdlocal->initial) {
 			poll_timeout = 35000000000;
 		} else {

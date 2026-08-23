@@ -28,6 +28,9 @@
 /getexponenttest-belkin-hid
 /getexponenttest-belkin-hid.log
 /getexponenttest-belkin-hid.trs
+/fixreportdesctest-tripplite-hid
+/fixreportdesctest-tripplite-hid.log
+/fixreportdesctest-tripplite-hid.trs
 /getvaluetest
 /getvaluetest.log
 /getvaluetest.trs

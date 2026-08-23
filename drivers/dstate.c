@@ -26,7 +26,12 @@
 
 #include <stdio.h>
 #ifndef WIN32
-# include <stdarg.h>
+# ifdef HAVE_STDARG_H
+#  include <stdarg.h>
+# endif
+# ifdef HAVE_SYS_STDARG_H
+#  include <sys/stdarg.h>
+# endif
 # include <sys/stat.h>
 # include <pwd.h>
 # include <sys/types.h>

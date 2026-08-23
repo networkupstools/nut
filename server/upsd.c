@@ -614,6 +614,9 @@ static void client_disconnect(nut_ctype_t *client)
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
 
+	/* Avoid re-closing twice in ssl_finish() below: */
+	client->sock_fd = ERROR_FD_SOCK;
+
 #ifdef WIN32
 	CloseHandle(client->Event);
 #endif	/* WIN32 */
@@ -1243,6 +1246,10 @@ static void upsd_cleanup(void)
 	free(certfile);
 	free(certname);
 	free(certpasswd);
+
+#if defined(WITH_SSL)
+	free(certpath);
+#endif
 
 	free(fds);
 	free(handler);

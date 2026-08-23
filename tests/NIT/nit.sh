@@ -298,8 +298,20 @@ execcmd() {
     esac
     shift
 
-    log_debug "execcmd: running:   ${CMDPROG} $@"
-    exec "${CMDPROG}" "$@"
+    # NOTE: Ability to use valgrind depends on the platform!
+    #  NUT CI farm build agent labels and ci_build.sh allow
+    #  us to know where it is safe to call this script. YMMV!
+    # NOTE: Process initialization can take half a minute or
+    #  so under valgrind, impacting our many `upsc` calls!
+    EXECWRAP=""
+    if [ x"${DO_MEMCHECK}" = xtrue ]; then
+        if [ -x "${TOP_BUILDDIR}/scripts/valgrind/valgrind.sh" ] ; then
+            EXECWRAP="${TOP_BUILDDIR}/scripts/valgrind/valgrind.sh"
+        fi
+    fi
+
+    log_debug "execcmd: running:   ${EXECWRAP} ${CMDPROG} $@"
+    exec $EXECWRAP "${CMDPROG}" "$@"
 }
 
 runcmd() {
@@ -3019,7 +3031,7 @@ testcase_upsd_no_configs_at_all() {
     fi
     (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
-        log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
+        log_error "[testcase_upsd_no_configs_at_all] Error: upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_at_all"
     else
@@ -3038,7 +3050,7 @@ testcase_upsd_no_configs_driver_file() {
     fi
     (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
-        log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
+        log_error "[testcase_upsd_no_configs_driver_file] Error: upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_driver_file"
     else
@@ -3058,7 +3070,7 @@ testcase_upsd_no_configs_in_driver_file() {
     fi
     (execcmd upsd ${ARG_FG} ${ARG_USER})
     if [ "$?" = 0 ]; then
-        log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
+        log_error "[testcase_upsd_no_configs_in_driver_file] Error: upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_in_driver_file"
     else
@@ -3130,7 +3142,7 @@ upsd_start_loop() {
         return
     fi
 
-    log_error "[${TESTCASE}] Port ${NUT_PORT} is not listening and/or UPSD PID $PID_UPSD is not alive"
+    log_error "[${TESTCASE}] Error: Port ${NUT_PORT} is not listening and/or UPSD PID $PID_UPSD is not alive"
     return 1
 }
 
@@ -3173,7 +3185,7 @@ testcase_upsd_allow_no_device() {
             [ "$CMDRES" = 0 ] || die "[testcase_upsd_allow_no_device] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
         fi
         if [ -n "$CMDOUT" ] ; then
-            log_error "[testcase_upsd_allow_no_device] got reply for upsc listing when none was expected: $CMDOUT"
+            log_error "[testcase_upsd_allow_no_device] Error: got reply for upsc listing when none was expected: $CMDOUT"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
             res_testcase_upsd_allow_no_device=1
@@ -3191,20 +3203,20 @@ testcase_upsd_allow_no_device() {
                 log_info "[testcase_upsd_allow_no_device] OK, empty-list JSON response as expected"
                 PASSED="`expr $PASSED + 1`"
             else
-                log_error "[testcase_upsd_allow_no_device] got a reply for upsc JSON listing for empty but running server, but it was not expected (not an empty list):" "$CMDOUT" "$CMDERR"
+                log_error "[testcase_upsd_allow_no_device] Error: got a reply for upsc JSON listing for empty but running server, but it was not expected (not an empty list):" "$CMDOUT" "$CMDERR"
                 FAILED="`expr $FAILED + 1`"
                 FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
                 res_testcase_upsd_allow_no_device=1
             fi
         else
-            log_error "[testcase_upsd_allow_no_device] did not get a reply for upsc JSON listing for empty but running server:" "$CMDOUT" "$CMDERR"
+            log_error "[testcase_upsd_allow_no_device] Error: did not get a reply for upsc JSON listing for empty but running server:" "$CMDOUT" "$CMDERR"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
             res_testcase_upsd_allow_no_device=1
         fi
         log_separator
     else
-        log_error "[testcase_upsd_allow_no_device] upsd was expected to be running although no devices are defined; is ups.conf populated?"
+        log_error "[testcase_upsd_allow_no_device] Error: upsd was expected to be running although no devices are defined; is ups.conf populated?"
         ls -la "$NUT_CONFPATH/" || true
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
@@ -3219,7 +3231,7 @@ testcase_upsd_allow_no_device() {
     if [ "$res_testcase_upsd_allow_no_device" = 0 ] ; then
         log_info "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
     else
-        log_error "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
+        log_error "[testcase_upsd_allow_no_device] Error: upsd exit-code was: $UPSD_RES"
     fi
     if [ "$UPSD_RES" != 0 ]; then
         return $UPSD_RES
@@ -3390,7 +3402,7 @@ UPSwarm$N"
         CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
-        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] Error: got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -3403,7 +3415,7 @@ UPSwarm$N"
         CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST_JSON" ] ; then
-        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc JSON listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] Error: got this reply for upsc JSON listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -3422,7 +3434,7 @@ UPSwarm$N"
     if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] Error: got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -3446,7 +3458,7 @@ UPSwarm$N"
     if echo "$CMDERR" | ${GREP} 'Error: Driver not connected' >/dev/null && test x"${CMDOUT}" = x"${EXPECTED_UPSDATA_JSON}"; then
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc JSON query when 'Error: Driver not connected' was expected on stderr and similar in JSON object: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] Error: got some other reply for upsc JSON query when 'Error: Driver not connected' was expected on stderr and similar in JSON object: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
         res_testcase_sandbox_start_upsd_alone=1
@@ -3455,7 +3467,7 @@ UPSwarm$N"
     if [ "$res_testcase_sandbox_start_upsd_alone" = 0 ]; then
         log_info "[testcase_sandbox_start_upsd_alone] PASSED: got just the failures expected for data server alone (driver not running yet)"
     else
-        log_error "[testcase_sandbox_start_upsd_alone] got some unexpected failures, see above"
+        log_error "[testcase_sandbox_start_upsd_alone] Error: got some unexpected failures, see above"
     fi
 
     return $res_testcase_sandbox_start_upsd_alone
@@ -3570,7 +3582,7 @@ testcase_sandbox_start_drivers_after_upsd() {
 
     if [ "$COUNTDOWN" -le 1 ] ; then
         # Should not get to this, except on very laggy systems maybe
-        log_error "[testcase_sandbox_start_drivers_after_upsd] Query failed, retrying with UPSD started after drivers"
+        log_error "[testcase_sandbox_start_drivers_after_upsd] Error: Query failed, retrying with UPSD started after drivers"
         testcase_sandbox_start_upsd_after_drivers
     fi
 
@@ -3614,7 +3626,7 @@ testcase_sandbox_upsc_query_model() {
     log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device"
     runcmd upsc dummy@localhost:$NUT_PORT device.model || die "[testcase_sandbox_upsc_query_model] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
-        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_model] Error: got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
@@ -3630,7 +3642,7 @@ testcase_sandbox_upsc_query_model() {
     EXPECTED_UPSDATA_JSON="`echo \"$EXPECTED_UPSDATA_JSON\" | tr -d '\r'`"
     CMDOUT="`echo \"$CMDOUT\" | tr -d '\r'`"
     if [ x"$CMDOUT" != x"${EXPECTED_UPSDATA_JSON}" ] ; then
-        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc JSON query when 'device.model: Dummy UPS' was expected: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_model] Error: got this reply for upsc JSON query when 'device.model: Dummy UPS' was expected: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
@@ -3642,7 +3654,7 @@ testcase_sandbox_upsc_query_model() {
 testcase_sandbox_upsc_query_bogus() {
     log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info"
     runcmd upsc dummy@localhost:$NUT_PORT ups.bogus.value && {
-        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_bogus] Error: upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
@@ -3651,14 +3663,14 @@ testcase_sandbox_upsc_query_bogus() {
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
-        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
+        log_error "[testcase_sandbox_upsc_query_bogus] Error: got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
 
     log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info in JSON"
     runcmd upsc -j dummy@localhost:$NUT_PORT ups.bogus.value && {
-        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_bogus] Error: upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
@@ -3676,7 +3688,7 @@ testcase_sandbox_upsc_query_bogus() {
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query in JSON"
     else
-        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc JSON query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
+        log_error "[testcase_sandbox_upsc_query_bogus] Error: got some other reply for upsc JSON query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
@@ -3743,7 +3755,7 @@ testcase_sandbox_upsc_query_timer() {
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_upsc_query_timer] ups.status did not flip over time"
+        log_error "[testcase_sandbox_upsc_query_timer] Error: ups.status did not flip over time"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
@@ -3792,7 +3804,7 @@ isTestablePython() {
         log_debug "=======\nDetected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
         PYTHON="`echo \"${PY_SHEBANG}\" | sed 's,^#!,,'`"
     else
-        log_error "[isTestablePython] Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
+        log_error "[isTestablePython] Error: Detected python shebang: '${PY_SHEBANG}' (result=${PY_RES})"
     fi
     return $PY_RES
 }
@@ -4018,7 +4030,7 @@ testcase_sandbox_python_without_credentials() {
         log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_python_without_credentials] PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_without_credentials] Error: PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_without_credentials"
     fi
@@ -4049,7 +4061,7 @@ testcase_sandbox_python_with_credentials() {
         log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_python_with_credentials] PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_credentials] Error: PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_credentials"
     fi
@@ -4077,7 +4089,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
         log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_python_with_upsmon_credentials] PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_upsmon_credentials] Error: PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_upsmon_credentials"
     fi
@@ -4261,7 +4273,7 @@ isTestablePerl() {
         if [ -x "$PERL" ] ; then : ; else PERL="`command -v perl`" ; fi
         if [ -n "$PERL" ] && [ -x "$PERL" ] ; then : ; else PL_RES=3 ; fi
     else
-        log_error "[isTestablePerl] Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
+        log_error "[isTestablePerl] Error: Detected perl shebang: '${PL_SHEBANG}' (result=${PL_RES})"
     fi
 
     PERL_OPTS_INC="-I${TOP_BUILDDIR}/scripts/perl"
@@ -4299,7 +4311,7 @@ testcase_sandbox_perl_without_credentials() {
         log_info "[testcase_sandbox_perl_without_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_perl_without_credentials] UPS::Nut complained, check above"
+        log_error "[testcase_sandbox_perl_without_credentials] Error: UPS::Nut complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_without_credentials"
     fi
@@ -4330,7 +4342,7 @@ testcase_sandbox_perl_with_credentials() {
         log_info "[testcase_sandbox_perl_with_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_perl_with_credentials] UPS::Nut complained, check above"
+        log_error "[testcase_sandbox_perl_with_credentials] Error: UPS::Nut complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_credentials"
     fi
@@ -4358,7 +4370,7 @@ testcase_sandbox_perl_with_upsmon_credentials() {
         log_info "[testcase_sandbox_perl_with_upsmon_credentials] PASSED: UPS::Nut did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_perl_with_upsmon_credentials] UPS::Nut complained, check above"
+        log_error "[testcase_sandbox_perl_with_upsmon_credentials] Error: UPS::Nut complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_perl_with_upsmon_credentials"
     fi
@@ -4409,7 +4421,7 @@ testcase_sandbox_cppnit_without_creds() {
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_cppnit_without_creds] cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_without_creds] Error: cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_without_creds"
     fi
@@ -4445,7 +4457,7 @@ testcase_sandbox_cppnit_simple_admin() {
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_cppnit_simple_admin] cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_simple_admin] Error: cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_simple_admin"
     fi
@@ -4475,7 +4487,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_cppnit_upsmon_primary] cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_primary] Error: cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_primary"
     fi
@@ -4505,7 +4517,7 @@ testcase_sandbox_cppnit_upsmon_master() {
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "[testcase_sandbox_cppnit_upsmon_master] cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_master] Error: cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_master"
     fi
@@ -4586,7 +4598,7 @@ testcase_sandbox_nutscanner_list() {
         else
             echo "$CMDOUT" | ${EGREP} 'dummy@.*'":${NUT_PORT}" \
             || {
-                log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
+                log_error "[testcase_sandbox_nutscanner_list] Error: dummy@... not found" >&2
                 return 1
             }
         fi
@@ -4599,7 +4611,7 @@ testcase_sandbox_nutscanner_list() {
             && echo "$CMDOUT" | ${EGREP} '^\[nutdev-nut3\]$' \
             && echo "$CMDOUT" | ${GREP} 'port = "UPS2@' \
             || {
-                log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
+                log_error "[testcase_sandbox_nutscanner_list] Error: something about UPS1/UPS2 not found" >&2
                 return 1
             }
         fi
@@ -4612,7 +4624,7 @@ testcase_sandbox_nutscanner_list() {
         PORTS_SEEN="`echo \"$CMDOUT\" | ${EGREP} -c 'port *='`"
 
         if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
-            log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
+            log_error "[testcase_sandbox_nutscanner_list] Error: Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
             return 1
         fi
     ) >/dev/null ; then
@@ -4622,7 +4634,7 @@ testcase_sandbox_nutscanner_list() {
         if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
             log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
-            log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
+            log_error "[testcase_sandbox_nutscanner_list] Error: nut-scanner complained or did not return all expected data, check above"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
@@ -4671,7 +4683,7 @@ upsmon_start_loop() {
         return
     fi
 
-    log_error "[${TESTCASE}] UPSMON PID $PID_UPSMON is not alive after a short while"
+    log_error "[${TESTCASE}] Error: UPSMON PID $PID_UPSMON is not alive after a short while"
     return 1
 }
 

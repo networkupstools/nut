@@ -616,7 +616,7 @@ all-recursive/scripts: all/scripts/Windows @dotMAKE@
 DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind --with-debuginfo CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time, which
 # may be passed down from caller and/or one of distcheck-* rules below.
@@ -904,6 +904,10 @@ check-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
 
+memcheck-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} memcheck
+
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
@@ -992,6 +996,7 @@ maintainer-asciidocs:
 	  fi; \
 	 )
 
+memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
 check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
