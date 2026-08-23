@@ -165,7 +165,7 @@ getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
 fixreportdesctest-tripplite-hid.c: $(top_srcdir)/drivers/tripplite-hid.c
 fixreportdesctest_tripplite_hid_SOURCES = fixreportdesctest-tripplite-hid.c
 fixreportdesctest_tripplite_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-fixreportdesctest_tripplite_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
+fixreportdesctest_tripplite_hid_LDADD = $(NUT_LIBCOMMON) -lm libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
