@@ -151,6 +151,9 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 /* the functions in this next group operate on buffered reports, but
    operate on individual items, not whole reports. */
 
+
+
+
 /* refresh the report with the given id in the report buffer rbuf.  If
    the report is not yet in the buffer, or if it is older than "age"
    seconds, then the report is freshly read from the USB
@@ -262,6 +265,49 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 0 and
    store the answer in *value. On failure, return -1 and set errno. */
+
+static long debug_maybe_fix_cps_voltage_raw_value(reportbuf_t *rbuf, HIDData_t *hiddata, long raw_value)
+{
+	usb_ctrl_repindex id;
+	long reconstructed;
+	unsigned int b1, b2;
+
+	if (!rbuf || !hiddata) {
+		return raw_value;
+	}
+
+	if (!(hiddata->ReportID == 0x0F || hiddata->ReportID == 0x12)) {
+		return raw_value;
+	}
+
+	if (hiddata->Offset != 0 || hiddata->Size != 16) {
+		return raw_value;
+	}
+
+	id = hiddata->ReportID;
+
+	if (rbuf->len[id] < 3) {
+		return raw_value;
+	}
+
+	b1 = (unsigned int)rbuf->data[id][1];
+	b2 = (unsigned int)rbuf->data[id][2];
+	reconstructed = (long)(b1 | (b2 << 8));
+
+	/* Heuristic for CPS 0764:0601 family:
+	 * some devices expose UPS.Input.Voltage / UPS.Output.Voltage with
+	 * descriptor metadata that leads GetValue() to return only the low byte
+	 * (e.g. 0x0c -> 12) while the two payload bytes actually hold the real
+	 * voltage in 0.1V units (e.g. 0x090c -> 2316 => 231.6V after exponent).
+	 */
+	if (raw_value >= 0 && raw_value <= 255 &&
+	    reconstructed >= 1000 && reconstructed <= 3000) {
+		return reconstructed;
+	}
+
+	return raw_value;
+}
+
 static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, time_t age)
 {
 	int id = pData->ReportID;
@@ -273,6 +319,7 @@ static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 	}
 
 	GetValue(rbuf->data[id], pData, Value);
+	*Value = debug_maybe_fix_cps_voltage_raw_value(rbuf, pData, *Value);
 
 	return 0;
 }
