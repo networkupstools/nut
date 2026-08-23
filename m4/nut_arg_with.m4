@@ -47,8 +47,12 @@ AC_DEFUN([NUT_ARG_WITH_CUSTOM_DEFAULT_HELP],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--with-$1], [$3 (default: $5)])],
                 [AS_HELP_STRING([--with-$1], [$3 (default: $4)])])]),
-        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"],
-        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"
+         [nut_withGiven_]m4_translit([$1], [-], [_])="yes"
+        ],
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"
+         [nut_withGiven_]m4_translit([$1], [-], [_])="no"
+        ]
     )
 ])
 
@@ -85,8 +89,12 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS],
 [
     AC_ARG_WITH([$1],
         [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
-        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"],
-        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="${withval}"
+         [nut_withGiven_]m4_translit([$1], [-], [_])="yes"
+        ],
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"
+         [nut_withGiven_]m4_translit([$1], [-], [_])="no"
+        ]
     )
 ])
 
@@ -96,9 +104,13 @@ AC_DEFUN([NUT_ARG_WITH_LIBOPTS_INVALID_YESNO],
         [AS_HELP_STRING([@<:@--with-$1=$2@:>@], [$3 (default: $4)])],
         [AS_CASE([${withval}],
             [yes|no], [AC_MSG_ERROR([invalid option --with(out)-$1 - see docs/configure.txt])],
-                [[nut_with_]m4_translit([$1], [-], [_])="${withval}"]
+                [[nut_with_]m4_translit([$1], [-], [_])="${withval}"
+                 [nut_withGiven_]m4_translit([$1], [-], [_])="yes"
+                ]
         )],
-        [[nut_with_]m4_translit([$1], [-], [_])="$4"]
+        [[nut_with_]m4_translit([$1], [-], [_])="$4"
+         [nut_withGiven_]m4_translit([$1], [-], [_])="no"
+        ]
     )
 ])
 
@@ -197,8 +209,12 @@ AC_DEFUN([NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP],
             [m4_ifval([$5],
                 [AS_HELP_STRING([--enable-$1], [$3 (default: $5)])],
                 [AS_HELP_STRING([--enable-$1], [$3 (default: $4)])])]),
-        [[nut_enable_]m4_translit([$1], [-], [_])="${enableval}"],
-        [[nut_enable_]m4_translit([$1], [-], [_])="$4"]
+        [[nut_enable_]m4_translit([$1], [-], [_])="${enableval}"
+         [nut_enableGiven_]m4_translit([$1], [-], [_])="yes"
+        ],
+        [[nut_enable_]m4_translit([$1], [-], [_])="$4"
+         [nut_enableGiven_]m4_translit([$1], [-], [_])="no"
+        ]
     )
 ])
 

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3807 utf-8
+personal_ws-1.1 en 3808 utf-8
 AAC
 AAS
 ABI
@@ -1039,6 +1039,7 @@ Potrans
 Poush
 PowerAlert
 PowerCOM
+PowerChute
 PowerCom
 PowerES
 PowerGuide
@@ -1054,7 +1055,6 @@ PowerPC
 PowerPS
 PowerPal
 PowerPanel
-PowerChute
 PowerShare
 PowerShell
 PowerShield
@@ -3358,6 +3358,7 @@ startdelay
 startup
 statepath
 stayoff
+stdarg
 stderr
 stdint
 stdlib

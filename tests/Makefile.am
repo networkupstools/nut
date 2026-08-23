@@ -34,7 +34,8 @@ check_PROGRAMS = $(TESTS)
 check_SCRIPTS =
 
 # NUT Integration Testing suite
-check-NIT check-NIT-devel: @dotMAKE@
+memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building

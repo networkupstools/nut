@@ -50,8 +50,13 @@ extern "C" {
 
 /* varargs declarations: */
 
-#if defined(HAVE_STDARG_H)
-# include <stdarg.h>
+#if defined(HAVE_STDARG_H) || defined(HAVE_SYS_STDARG_H)
+# ifdef HAVE_STDARG_H
+#  include <stdarg.h>
+# endif
+# ifdef HAVE_SYS_STDARG_H
+#  include <sys/stdarg.h>
+# endif
 # define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
 # define VA_LOCAL_DECL   va_list ap
 # define VA_START(f)     va_start(ap, f)

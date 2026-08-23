@@ -60,6 +60,15 @@
    ...
 }
 {
+   <libssl_asn1_decoder>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:ossl_algorithm_do_all
+   ...
+   fun:asn1_item_embed_d2i
+}
+{
    <libssl_init_SSL_CTX>
    Memcheck:Leak
    ...

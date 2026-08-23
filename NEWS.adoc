@@ -48,6 +48,10 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
+      when explicitly specifying same `--with-user` *OR* `--with-group` name
+      as would be default for current platform (so one was treated as not-set
+      and failed a sanity check). [issue #3513]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
@@ -135,8 +139,7 @@ https://github.com/networkupstools/nut/milestone/13
       DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS
       5.2.3 GPL sources. Polling and the direct shutdown commands were verified
       on an unloaded BN150T over USB; other OMRON models and serial connections
-      are untested.
-      [issue #3112]
+      are untested. [issue #3112, PR #3554]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying
@@ -236,6 +239,9 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Some operating systems provide in `sys/stdarg.h` definitions that others
+      access through common `stdarg.h` -- code updated to try including both.
+      [PR #3577]
     * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
       is", complete with a confusing blank line where `\n` ended the message.
       This is now passed through newly introduced `upsdebug_ascii_compact()`
