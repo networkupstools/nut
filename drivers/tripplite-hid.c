@@ -175,14 +175,16 @@ static const char *tripplite_chemistry_fun(double value)
 
 	model = dstate_getinfo("ups.productid");
 
-	/* Workaround for AVR 550U firmware bug */
-	if (!strcmp(model, "1003")) {
-		return "unknown";
-	}
+	if (model) {
+		/* Workaround for AVR 550U firmware bug */
+		if (!strcmp(model, "1003")) {
+			return "unknown";
+		}
 
-	/* Workaround for OMNI1000LCD firmware bug */
-	if (!strcmp(model, "2005")) {
-		return "unknown";
+		/* Workaround for OMNI1000LCD firmware bug */
+		if (!strcmp(model, "2005")) {
+			return "unknown";
+		}
 	}
 
 	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
