@@ -51,16 +51,16 @@ usb_communication_subdriver_t   usb_subdriver = {0};
 #pragma GCC diagnostic pop
 #endif
 
+#include "tripplite-hid.c"
+/* from drivers/tripplite-hid.c we test:
+static int tripplite_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg);
+ */
+
 /* Owned by usbhid-ups.c in a real build; the subdriver honors it.
  * Marked extern so the compiler does not bother if it is static or shared by object files.
  */
 extern int disable_fix_report_desc;
 int disable_fix_report_desc = 0;
-
-#include "tripplite-hid.c"
-/* from drivers/tripplite-hid.c we test:
-static int tripplite_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg);
- */
 
 /* Lookup tables and helpers owned by usbhid-ups.c / libhid.c in a real
  * build. The repair under test does not consult them; they are referenced
