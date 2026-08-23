@@ -7,6 +7,10 @@
 /driver_methods_utest
 /driver_methods_utest.log
 /driver_methods_utest.trs
+/ecoflow-cdc-protocol.c
+/ecoflow_cdc_protocol_utest
+/ecoflow_cdc_protocol_utest.log
+/ecoflow_cdc_protocol_utest.trs
 /gpiotest
 /gpiotest.log
 /gpiotest.trs
