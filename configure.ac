@@ -1718,12 +1718,25 @@ AS_IF([test x"${ac_cv_printfmt_zu}" = xyes],
     [AC_MSG_WARN([Desired C library support for printf("%zu", size_t) not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CHECK_HEADER([stdarg.h],
+    [AC_DEFINE([HAVE_STDARG_H], [1],
+        [Define to 1 if you have <stdarg.h>.])])
+
+AC_CHECK_HEADER([sys/stdarg.h],
+    [AC_DEFINE([HAVE_SYS_STDARG_H], [1],
+        [Define to 1 if you have <sys/stdarg.h>.])])
+
 AC_CACHE_CHECK([for va_copy(dest,src)],
   [ac_cv_have_va_copy],
   [
     AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
-        [[#include <stdarg.h>
+        [[#ifdef HAVE_STDARG_H
+          # include <stdarg.h>
+          #endif
+          #ifdef HAVE_SYS_STDARG_H
+          # include <sys/stdarg.h>
+          #endif
           void check_va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
@@ -1744,7 +1757,12 @@ AC_CACHE_CHECK([for __va_copy(dest,src)],
   [
     AX_RUN_OR_LINK_IFELSE(
       [AC_LANG_PROGRAM(
-        [[#include <stdarg.h>
+        [[#ifdef HAVE_STDARG_H
+          # include <stdarg.h>
+          #endif
+          #ifdef HAVE_SYS_STDARG_H
+          # include <sys/stdarg.h>
+          #endif
           void check___va_copy(const char *fmt, ...) {
             va_list ap1, ap2;
             va_start(ap1, fmt);
@@ -2024,7 +2042,7 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS(sys/modem.h varargs.h, [], [], [AC_INCLUDES_DEFAULT])
 
 
 dnl pthread related checks
@@ -6368,16 +6386,16 @@ NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([user], [USERNAME], [(Unprivileged) user for pr
 AS_CASE([${nut_with_user}],
 	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)],
 	["${RUN_AS_USER}"], [
-		 nut_user_given=no
-		 AC_MSG_RESULT([default])
+		 AS_IF([test x"${nut_withGiven_user}" = xyes],
+			[AC_MSG_RESULT([specified])],	dnl Just happens to be same as default
+			[AC_MSG_RESULT([default])])
 		],
 		[RUN_AS_USER="${nut_with_user}"
-		 nut_user_given=yes
 		 AC_MSG_RESULT([specified])
 		]
 )
 NUT_REPORT_SETTING([User to run as],
-    RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
+	RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 
 dnl Note: Technically daemons "run as" the primary GID of the user they de-levate into;
 dnl but in simpler setups (stipulated by common packaging) this one is the "run as" GID too
@@ -6387,21 +6405,21 @@ NUT_ARG_WITH_CUSTOM_DEFAULT_HELP([group], [GROUPNAME], [(Unprivileged) group mem
 AS_CASE([${nut_with_group}],
 	[yes|no], [AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)],
 	["${RUN_AS_GROUP}"], [
-		 nut_group_given=no
-		 AC_MSG_RESULT([default])
+		 AS_IF([test x"${nut_withGiven_group}" = xyes],
+			[AC_MSG_RESULT([specified])],	dnl Just happens to be same as default
+			[AC_MSG_RESULT([default])])
 		],
 		[RUN_AS_GROUP="${nut_with_group}"
-		 nut_group_given=yes
 		 AC_MSG_RESULT([specified])
 		]
 )
 NUT_REPORT_SETTING([Group of user to own state files],
-    RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership for state files of drivers normally started as root])
+	RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership for state files of drivers normally started as root])
 
 dnl check that --with-user is given if --with-group is given.
-if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
+if test "${nut_withGiven_user}" = "yes" -a "${nut_withGiven_group}" = "no"; then
 	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
-elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
+elif test "${nut_withGiven_user}" = "no" -a "${nut_withGiven_group}" = "yes"; then
 	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
 fi
 

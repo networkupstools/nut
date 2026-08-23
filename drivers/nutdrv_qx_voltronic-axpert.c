@@ -68,7 +68,7 @@
 #define TESTING_AXPERT_INSTCMD		TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
 
 /* Warning: unlocks a method not used in any code path: */
-#define TESTING_AXPERT_FUNC_PROCESS_SIGN	0 // TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT
+#define TESTING_AXPERT_FUNC_PROCESS_SIGN	0	/* TESTING_AXPERT_UNMAPPED_MAPPINGS_DEFAULT */
 
 /* Support functions */
 static int	voltronic_sunny_claim(void);

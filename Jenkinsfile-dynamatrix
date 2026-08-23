@@ -207,22 +207,25 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.axisCombos_ARCH64x32
         ]
 
-    dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK =
-        [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]] +
-        // Here we picked just OSes and compilers (gcc or clang),
-        // so exclude systems which have e.g. gcc-4.2.1 which claims
-        // type range comparison warnings despite pragma fencing.
-        // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
-        [[~/OS_DISTRO=macos/]] +
-        // MacOS (at least agents prepared with HomeBrew packages)
-        // requires a few pkg-config and CFLAGS pre-sets which are
-        // done in ci_build.sh and defeat the purpose of this stage.
-        // So it is easier and more honest to just skip it.
-        [[~/OS_DISTRO=netbsd/]]
-        // NetBSD versions on the build agent (9.2, 11.0) have issues
-        // with pkgsrc (lacking -R for some libs, e.g. Shared object
-        // "libssl.so.3" not found), so autotools builds are tricky;
-        // ci_build.sh imposes some fixes - so see notes for macos.
+    dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK = [
+            [~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/],
+            // Here we picked just OSes and compilers (gcc or clang),
+            // so exclude systems which have e.g. gcc-4.2.1 which claims
+            // type range comparison warnings despite pragma fencing.
+            // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
+
+            [~/OS_DISTRO=macos/],
+            // MacOS (at least agents prepared with HomeBrew packages)
+            // requires a few pkg-config and CFLAGS pre-sets which are
+            // done in ci_build.sh and defeat the purpose of this stage.
+            // So it is easier and more honest to just skip it.
+
+            [~/OS_DISTRO=netbsd/],
+            // NetBSD versions on the build agent (9.2, 11.0) have issues
+            // with pkgsrc (lacking -R for some libs, e.g. Shared object
+            // "libssl.so.3" not found), so autotools builds are tricky;
+            // ci_build.sh imposes some fixes - so see notes for macos.
+        ]
 
     // This combo is used to *run* (with ci_build.sh) only scenarios
     // skipped by excludeCombos_AUTOTOOLS_REQUIRE_TWEAK.
@@ -986,7 +989,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
                     'CSTDVERSION_${KEY}': [ ['c': '89', 'cxx': '98'] ],
-                    'CSTDVARIANT': ['c', 'gnu'],
+                    'CSTDVARIANT': ['c', 'gnu'],    // NOTE: Actual use of Strict-C subject to excludeCombos below
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -995,11 +998,14 @@ set | sort -n """
                     ]
                     ],
                 allowedFailure: [
+                    dynacfgPipeline.axisCombos_STRICT_C,    // TODO: Disallow failures once it works in some combos
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
-                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT
+                    //+ [dynacfgPipeline.axisCombos_STRICT_C] // TODO: revise to match the purpose of this filter
+                    + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/, ~/GCCVER=[01234].+/]]	// Does not trust pragmas to quiesce known "infractions" which are not problems
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)

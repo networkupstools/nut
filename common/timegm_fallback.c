@@ -18,17 +18,17 @@ static int days_from_epoch_1970(int y, int m, int d)
 {
     y -= m <= 2;
     int era = y / 400;
-    int yoe = y - era * 400;                                   // [0, 399]
-    int doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;  // [0, 365]
-    int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           // [0, 146096]
+    int yoe = y - era * 400;                                   /* [0, 399]    */
+    int doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;  /* [0, 365]    */
+    int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           /* [0, 146096] */
     return era * 146097 + doe - 719468;
 }
 
 /* It does not modify broken-down time */
-time_t timegm_fallback(struct tm const* t)     
+time_t timegm_fallback(struct tm const* t)
 {
     int year = t->tm_year + 1900;
-    int month = t->tm_mon;          // 0-11
+    int month = t->tm_mon;          /* 0-11 */
     int days_since_epoch_1970;
 
     if (month > 11)

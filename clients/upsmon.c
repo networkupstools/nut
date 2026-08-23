@@ -42,6 +42,9 @@
 #ifdef HAVE_STDARG_H
 # include <stdarg.h>
 #endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
 
 /* name-swap in libupsclient consumer to simplify the look of code base */
 #define builtin_setproctag(x)	setproctag(x)

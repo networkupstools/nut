@@ -1,6 +1,8 @@
 /* apcmicrolink.c - APC Microlink protocol driver
  *
- * Copyright (C) 2026 Lukas Schmid <lukas.schmid@netcube.li>
+ * Copyright (C)
+ *   2026 Lukas Schmid <lukas.schmid@netcube.li>
+ *   2026 Nicolai 'nmbro' Brogaard <nicolai.brogaard+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +26,12 @@
 #include "apc_common.h"
 #include "apcmicrolink.h"
 #include "apcmicrolink-maps.h"
+#ifdef WITH_USB
+#include "apcmicrolink-usb.h"
+#endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -41,6 +46,54 @@ upsdrv_info_t upsdrv_info = {
 #define MLINK_INIT_BYTE			0xFD
 #define MLINK_HANDSHAKE_RETRIES	3
 #define MLINK_READ_TIMEOUT_USEC	100000
+/* Confirmed against real SCL500RMI1UC hardware over USB: unlike serial,
+ * where a reply to the first poll after init/next-byte typically arrives
+ * within MLINK_READ_TIMEOUT_USEC, the USB HID interrupt pipe on this
+ * device carries other unrelated Input reports interleaved with our own
+ * (see apcmicrolink-usb.c), and the first genuine Report 0x89 reply after
+ * a fresh session init has been observed taking upwards of a second to
+ * appear - so a 100ms budget starves the handshake before it ever sees
+ * real data. Give the USB path a longer per-round budget.
+ *
+ * A prior attempt raised this to 20s on the theory that a cold session-init
+ * reply, which can itself take 13-14s to arrive, just needed more room to
+ * land. Live testing showed the opposite: the follow-up next-byte polls
+ * that come right after a successful init can then fail three consecutive
+ * 20s rounds with zero replies at all, not just a slow one - so whatever
+ * gates a reply isn't simply "wait long enough per attempt", and the longer
+ * timeout only turned a ~10s failed-startup cost into ~81s with no gain in
+ * success rate. Left at 1s; do not raise this without new evidence that a
+ * longer per-round budget improves the poll success rate, not just the
+ * session-init rate. */
+#define MLINK_USB_READ_TIMEOUT_USEC	1000000
+/* Confirmed against real hardware: this device's USB HID interrupt pipe
+ * also carries other, unrelated Input reports (see apcmicrolink-usb.c),
+ * so an occasional poll round finds nothing at all within
+ * MLINK_USB_READ_TIMEOUT_USEC even mid-session - give the USB path more
+ * consecutive-timeout tolerance than serial's tight retry count before
+ * treating it as a real communication failure. */
+#define MLINK_USB_HANDSHAKE_RETRIES	10
+
+/* How stale a standard-HID-PDC fallback snapshot is allowed
+ * to be before it's still considered good enough to publish. Those
+ * reports arrive roughly once a second when the device is behaving
+ * normally, so this is generous margin for a missed cycle or two without
+ * being so long that a genuinely wedged device (or a truly unplugged one)
+ * could leave stale fallback data looking current. */
+#define MLINK_HID_FALLBACK_MAX_AGE_SEC	10
+/* How long to wait between individual Microlink session-start probes when
+ * retrying from upsdrv_updateinfo() after a fallback start. Each probe
+ * sends one INIT_BYTE and listens for up to MLINK_USB_READ_TIMEOUT_USEC.
+ * At 1 s per probe this constant is the inter-probe gap; combined they
+ * give a probe rate of 1 / (1 + MLINK_SESSION_RETRY_INTERVAL_SEC) Hz
+ * (~1/6 Hz at the default 5 s). Intentionally slower than the startup
+ * burst so the device gets a quiescent window to finish its own init. */
+#define MLINK_SESSION_RETRY_INTERVAL_SEC	5
+/* Seconds of continuous Microlink fallback before a USB device reset is
+ * attempted. Pre-backdating microlink_fallback_since by this amount on a
+ * fallback startup means the first upsdrv_updateinfo() call triggers
+ * immediately rather than after another full interval of waiting. */
+#define MLINK_USB_RESET_AFTER_SEC		60
 
 #define MLINK_DESC_OP_USAGE_SIZE	0xFC
 #define MLINK_DESC_OP_COLLECTION	0xFD
@@ -89,6 +142,9 @@ static const struct {
 static microlink_object_t objects[256];
 static speed_t microlink_baudrate = MLINK_DEFAULT_BAUDRATE;
 static int session_ready = 0;
+#ifdef WITH_USB
+static int is_usb = 0;
+#endif /* WITH_USB */
 static unsigned char rxbuf[MLINK_MAX_FRAME * 2];
 static size_t rxbuf_len = 0;
 static unsigned int parsed_frames = 0;
@@ -97,12 +153,44 @@ static int poll_primed = 0;
 static int authentication_sent = 0;
 static microlink_page0_state_t page0;
 static int descriptor_ready = 0;
+static int outlet_commands_registered = 0;
+static time_t microlink_session_next_retry = 0;
+static time_t microlink_fallback_since = 0;
+/* main.c's read_upsconf() applies the user's "pollinterval" ups.conf setting
+ * (or its own 2s default) to the global poll_interval before calling
+ * upsdrv_initinfo() - captured here so a successfully-connected session can
+ * restore that value instead of hardcoding one, after the "not ready" paths
+ * below have temporarily lowered poll_interval to pace their own retries. */
+static time_t microlink_configured_poll_interval = 2;
 static size_t descriptor_usage_count = 0;
 static size_t descriptor_blob_len = 0;
 static microlink_descriptor_usage_t descriptor_usages[MLINK_DESCRIPTOR_MAX_USAGES];
 static unsigned char descriptor_blob[MLINK_DESCRIPTOR_MAX_BLOB];
 static int show_internals = -1;
 static int show_unmapped = -1;
+static const char *const outlet_suffixes[] = {
+	"load.off",
+	"load.on",
+	"load.cycle",
+	"load.off.delay",
+	"load.on.delay",
+	"shutdown.default",
+	"shutdown.return",
+	"shutdown.stayoff",
+	"shutdown.reboot",
+	"shutdown.reboot.graceful",
+	NULL
+};
+/* Whether to publish ups.status/battery.charge/battery.runtime from the
+ * standard-HID-PDC fallback source when the Microlink tunnel itself has
+ * nothing to offer, instead of going straight to Data stale. USB-only; defaults on -
+ * for most users, a status derived from a slightly different source is
+ * more useful than a gap, especially for "are we on battery" specifically.
+ * Some users doing data gathering may want the opposite (an honest gap in
+ * the record rather than a value with different provenance/precision
+ * mixed into the same series) - "hid_fallback=no" opts back out to the
+ * original behavior. */
+static int hid_fallback_enabled = 1;
 typedef enum microlink_command_source_e {
 	MLINK_CMD_SOURCE_RJ45 = 0,
 	MLINK_CMD_SOURCE_USB,
@@ -263,7 +351,9 @@ static uint64_t microlink_command_source_bit(microlink_command_domain_t domain)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_DEFAULT
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
 #pragma GCC diagnostic ignored "-Wunreachable-code-break"
 #endif
@@ -370,6 +460,20 @@ static void microlink_read_config(void)
 		}
 	}
 
+	if (testvar("hid_fallback")) {
+		int parsed = 0;
+
+		value = getval("hid_fallback");
+		if (value == NULL) {
+			hid_fallback_enabled = 1;
+		} else if (microlink_parse_bool(value, &parsed)) {
+			hid_fallback_enabled = parsed;
+		} else {
+			fatalx(EXIT_FAILURE, "apcmicrolink: invalid hid_fallback value '%s'",
+				value);
+		}
+	}
+
 	if (testvar("cmdsrc")) {
 		value = getval("cmdsrc");
 		if (value == NULL) {
@@ -389,6 +493,16 @@ static int microlink_timeout_expired(const st_tree_timespec_t *start,
 
 	state_get_timestamp(&now);
 	return difftime_st_tree_timespec(now, *start) >= timeout;
+}
+
+static unsigned int microlink_handshake_retries(void)
+{
+#ifdef WITH_USB
+	if (is_usb) {
+		return MLINK_USB_HANDSHAKE_RETRIES;
+	}
+#endif /* WITH_USB */
+	return MLINK_HANDSHAKE_RETRIES;
 }
 
 static int microlink_prime_poll(void)
@@ -720,6 +834,15 @@ static const microlink_desc_value_map_t *microlink_find_desc_value_by_var(const 
 	}
 
 	return NULL;
+}
+
+/* Group 0 maps to the 2:4.3E descriptor page: the "Unswitched Group" on
+ * APC UPS devices -- outlets that follow the UPS output but have no
+ * independent on/off control. Groups 1+ map to 2:4.3D[i] pages and are
+ * the independently switchable outlet banks (with timers, etc.). */
+static int microlink_outlet_group_is_switched(size_t group_idx)
+{
+	return group_idx > 0;
 }
 
 static size_t microlink_outlet_group_count(void)
@@ -1867,7 +1990,9 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_ENUM
 # pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 # pragma GCC diagnostic ignored "-Wunreachable-code"
 #endif
@@ -2287,6 +2412,12 @@ static int microlink_send_write(unsigned char id, unsigned char offset,
 	frame[framelen++] = cb1;
 	microlink_trace_frame(2, "TX write", frame, framelen);
 
+#ifdef WITH_USB
+	if (is_usb) {
+		return microlink_usb_send_bytes(frame, framelen);
+	}
+#endif /* WITH_USB */
+
 	if (ser_send_buf(upsfd, frame, framelen) != (ssize_t)framelen) {
 		return 0;
 	}
@@ -2297,6 +2428,13 @@ static int microlink_send_write(unsigned char id, unsigned char offset,
 static int microlink_send_simple(unsigned char byte)
 {
 	microlink_trace_frame(2, "TX ctrl", &byte, 1);
+
+#ifdef WITH_USB
+	if (is_usb) {
+		return microlink_usb_send_bytes(&byte, 1);
+	}
+#endif /* WITH_USB */
+
 	return ser_send_buf(upsfd, &byte, 1) == 1;
 }
 
@@ -2490,6 +2628,13 @@ static int microlink_receive_once(void)
 	unsigned char frame[MLINK_MAX_FRAME];
 	size_t framelen = 0;
 	st_tree_timespec_t start;
+	useconds_t read_timeout_usec = MLINK_READ_TIMEOUT_USEC;
+
+#ifdef WITH_USB
+	if (is_usb) {
+		read_timeout_usec = MLINK_USB_READ_TIMEOUT_USEC;
+	}
+#endif /* WITH_USB */
 
 	state_get_timestamp(&start);
 
@@ -2501,13 +2646,21 @@ static int microlink_receive_once(void)
 			return microlink_process_frame(frame, framelen);
 		}
 
-		ret = ser_get_char(upsfd, &ch, 0, MLINK_READ_TIMEOUT_USEC);
+#ifdef WITH_USB
+		if (is_usb) {
+			ret = microlink_usb_get_char(&ch, (long)read_timeout_usec);
+		} else
+#endif /* WITH_USB */
+		{
+			ret = ser_get_char(upsfd, &ch, 0, read_timeout_usec);
+		}
+
 		if (ret < 0) {
 			return 0;
 		}
 
 		if (ret == 0) {
-			if (microlink_timeout_expired(&start, 0, MLINK_READ_TIMEOUT_USEC)) {
+			if (microlink_timeout_expired(&start, 0, read_timeout_usec)) {
 				return 0;
 			}
 			continue;
@@ -2542,7 +2695,7 @@ static int microlink_poll_once(void)
 	return 0;
 }
 
-static int microlink_start_session(void)
+static int microlink_start_session_impl(unsigned int max_attempts)
 {
 	unsigned int attempt;
 
@@ -2553,9 +2706,17 @@ static int microlink_start_session(void)
 	descriptor_ready = 0;
 	descriptor_usage_count = 0;
 	descriptor_blob_len = 0;
-	ser_flush_io(upsfd);
 
-	for (attempt = 0; attempt < MLINK_HANDSHAKE_RETRIES; attempt++) {
+#ifdef WITH_USB
+	if (is_usb) {
+		microlink_usb_flush_io();
+	} else
+#endif /* WITH_USB */
+	{
+		ser_flush_io(upsfd);
+	}
+
+	for (attempt = 0; attempt < max_attempts; attempt++) {
 		if (!microlink_send_simple(MLINK_INIT_BYTE)) {
 			return 0;
 		}
@@ -2570,6 +2731,11 @@ static int microlink_start_session(void)
 	return 0;
 }
 
+static int microlink_start_session(void)
+{
+	return microlink_start_session_impl(microlink_handshake_retries());
+}
+
 static int microlink_reconnect_session(void)
 {
 	upsdebugx(1, "microlink: reconnecting session after %u consecutive timeouts",
@@ -2578,12 +2744,120 @@ static int microlink_reconnect_session(void)
 	return microlink_start_session();
 }
 
+static void microlink_publish_load(void)
+{
+	const char *realpower_str = dstate_getinfo("ups.realpower");
+	const char *nominal_str = dstate_getinfo("ups.realpower.nominal");
+	double realpower, nominal;
+	char *end;
+
+	/* The Microlink descriptor blob has no direct load-percentage field on
+	 * this hardware, at either the UPS-total or per-outlet-group level -
+	 * derive it client-side from the already-mapped real-power reading
+	 * against its nominal rating, same as the value PowerChute/other
+	 * tools show. */
+	if (realpower_str == NULL || nominal_str == NULL) {
+		return;
+	}
+
+	realpower = strtod(realpower_str, &end);
+	if (end == realpower_str) {
+		return;
+	}
+
+	nominal = strtod(nominal_str, &end);
+	if (end == nominal_str || nominal <= 0.0) {
+		return;
+	}
+
+	dstate_setinfo("ups.load", "%.0f", (realpower / nominal) * 100.0);
+}
+
 static void microlink_publish_identity(void)
 {
 	dstate_setinfo("ups.mfr", "APC");
 	dstate_setinfo("device.mfr", "APC");
 	dstate_setinfo("device.type", "ups");
 	microlink_publish_descriptor_exports();
+	microlink_publish_load();
+}
+
+/* Standard-HID-PDC fallback: publish ups.status/battery.charge/
+ * battery.runtime from a source that keeps arriving on this device's
+ * interrupt pipe independent of Microlink tunnel health, rather than
+ * going straight to Data stale when the tunnel itself has nothing.
+ * USB-only, and only when this device was found (at open time) to expose
+ * the needed usages. Returns 1 if it published something, 0 if the
+ * fallback isn't available/enabled/fresh enough right now (caller should
+ * fall back to its own normal stale handling in that case). */
+static int microlink_publish_hid_fallback(void)
+{
+#ifdef WITH_USB
+	int ac_present = 0, discharging = 0, below_rcl = 0;
+	long charge = -1, runtime = -1;
+
+	if (!is_usb || !hid_fallback_enabled) {
+		return 0;
+	}
+
+	if (!microlink_usb_get_hid_fallback(MLINK_HID_FALLBACK_MAX_AGE_SEC,
+			&ac_present, &discharging, &below_rcl, &charge, &runtime)) {
+		return 0;
+	}
+
+	status_init();
+	if (discharging || !ac_present) {
+		status_set("OB");
+	} else {
+		status_set("OL");
+	}
+	if (below_rcl) {
+		status_set("LB");
+	}
+	status_commit();
+
+	if (charge >= 0) {
+		dstate_setinfo("battery.charge", "%ld", charge);
+	}
+	if (runtime >= 0) {
+		dstate_setinfo("battery.runtime", "%ld", runtime);
+	}
+	dstate_setinfo("experimental.hid_fallback.active", "%u", 1U);
+
+	return 1;
+#else
+	return 0;
+#endif /* WITH_USB */
+}
+
+/* Mark the fallback as NOT currently in use, when this device is known to
+ * support it at all - so "experimental.hid_fallback.active" is always a
+ * reliable answer to "is right now's data coming from the fallback path",
+ * not a flag that only ever gets set and never cleared. */
+static void microlink_publish_hid_fallback_inactive(void)
+{
+#ifdef WITH_USB
+	if (!is_usb || !hid_fallback_enabled) {
+		return;
+	}
+
+	if (!microlink_usb_hid_fallback_supported()) {
+		return;
+	}
+
+	dstate_setinfo("experimental.hid_fallback.active", "%u", 0U);
+#endif /* WITH_USB */
+}
+
+/* If the Microlink tunnel has nothing fresh right now, fall back to the
+ * standard-HID-PDC source instead of an unconditional Data stale. */
+static void microlink_datastale_or_fallback(void)
+{
+	if (microlink_publish_hid_fallback()) {
+		dstate_dataok();
+	} else {
+		dstate_datastale();
+	}
 }
 
 static void microlink_publish_status(void)
@@ -2709,29 +2983,102 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initups(void)
 {
+	int use_usb = 0;
+
 	microlink_read_config();
-	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, microlink_baudrate);
-	ser_set_dtr(upsfd, 1);
+
+#ifdef WITH_USB
+	/* Follow the same "port=auto means USB" convention as nutdrv_qx:
+	 * any USB-matching option, or an explicit port=auto, selects USB;
+	 * anything else in "port" is a serial device path. */
+	if (
+		!strcasecmp(device_path, "auto") ||
+		getval("vendorid") || getval("productid") ||
+		getval("vendor") || getval("product") ||
+		getval("serial") || getval("bus") || getval("device")
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		|| getval("busport")
+#endif
+	) {
+		use_usb = 1;
+
+		if (strcasecmp(device_path, "auto")) {
+			upslogx(LOG_WARNING, "apcmicrolink: port='%s' would be ignored, "
+				"since other options indicate USB mode", device_path);
+		}
+	}
+
+	is_usb = use_usb;
+	if (use_usb) {
+		microlink_usb_open();
+	}
+#else
+	if (!strcasecmp(device_path, "auto")) {
+		fatalx(EXIT_FAILURE, "apcmicrolink: port=auto requires USB support, "
+			"but this driver was not compiled with USB support");
+	}
+#endif /* WITH_USB */
+
+	if (!use_usb) {
+		upsfd = ser_open(device_path);
+		ser_set_speed(upsfd, device_path, microlink_baudrate);
+		ser_set_dtr(upsfd, 1);
+	}
+}
+
+static void microlink_register_outlet_commands(void)
+{
+	size_t outlet_group_count, switched_group_count = 0, g;
+	int i;
+	char cmd[64];
+
+	if (outlet_commands_registered)
+		return;
+
+	outlet_group_count = microlink_outlet_group_count();
+	if (outlet_group_count == 0)
+		return;
+
+	dstate_setinfo("outlet.group.count", "%u", (unsigned int)outlet_group_count);
+
+	for (g = 0; g < outlet_group_count; g++) {
+		int is_switched = microlink_outlet_group_is_switched(g);
+
+		snprintf(cmd, sizeof(cmd), "outlet.group.%zu.switchable", g);
+		dstate_setinfo(cmd, "%s", is_switched ? "yes" : "no");
+		if (is_switched)
+			switched_group_count++;
+	}
+
+	dstate_addcmd("load.off");
+	dstate_addcmd("load.on");
+	dstate_addcmd("load.cycle");
+	dstate_addcmd("load.off.delay");
+	dstate_addcmd("load.on.delay");
+	dstate_addcmd("shutdown.default");
+	dstate_addcmd("shutdown.return");
+	dstate_addcmd("shutdown.stayoff");
+	dstate_addcmd("shutdown.reboot");
+	dstate_addcmd("shutdown.reboot.graceful");
+
+	for (g = 0; g < outlet_group_count; g++) {
+		if (!microlink_outlet_group_is_switched(g))
+			continue;
+		for (i = 0; outlet_suffixes[i] != NULL; i++) {
+			snprintf(cmd, sizeof(cmd), "outlet.group.%zu.%s", g, outlet_suffixes[i]);
+			dstate_addcmd(cmd);
+		}
+	}
+
+	outlet_commands_registered = 1;
+	upslogx(LOG_NOTICE, "apcmicrolink: registered %zu outlet group(s) "
+		"(%zu switchable) and their instant commands",
+		outlet_group_count, switched_group_count);
 }
 
 void upsdrv_initinfo(void)
 {
-	int i;
-	size_t outlet_group_count, g;
-	static const char *const outlet_suffixes[] = {
-		"load.off",
-		"load.on",
-		"load.cycle",
-		"load.off.delay",
-		"load.on.delay",
-		"shutdown.default",
-		"shutdown.return",
-		"shutdown.stayoff",
-		"shutdown.reboot",
-		"shutdown.reboot.graceful",
-		NULL
-	};
+	int microlink_ready = 0;
 
 	memset(objects, 0, sizeof(objects));
 	session_ready = 0;
@@ -2742,22 +3089,62 @@ void upsdrv_initinfo(void)
 	authentication_sent = 0;
 	memset(&page0, 0, sizeof(page0));
 	descriptor_ready = 0;
-	poll_interval = 0;
-	if (!microlink_start_session()) {
-		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s", device_path);
-	}
+	outlet_commands_registered = 0;
+	microlink_session_next_retry = 0;
+	microlink_fallback_since = 0;
+	/* Capture the user's configured pollinterval (or main.c's own default)
+	 * before anything below has a chance to lower poll_interval to pace
+	 * connection retries - a successfully connected session restores this
+	 * value rather than busy-polling at 0s once the tunnel is up, since
+	 * ups.status/battery.charge/outlet state don't change fast enough to
+	 * need that. */
+	microlink_configured_poll_interval = poll_interval;
 
-	while (!microlink_startup_ready()) {
-		if (!microlink_poll_once() && consecutive_timeouts >= MLINK_HANDSHAKE_RETRIES) {
-			fatalx(EXIT_FAILURE,
-				"apcmicrolink: timed out waiting for Microlink startup readiness on %s",
-				device_path);
+	if (microlink_start_session()) {
+		microlink_ready = 1;
+		while (microlink_ready && !microlink_startup_ready()) {
+			if (!microlink_poll_once() && consecutive_timeouts >= microlink_handshake_retries()) {
+				microlink_ready = 0;
+			}
 		}
 	}
 
-	microlink_publish_identity();
-	microlink_publish_status();
-	microlink_publish_runtime();
+	/* Historically this was a hard fatalx() in both failure cases above,
+	 * refusing to start at all whenever the Microlink handshake failed -
+	 * on this device that handshake is intermittently unreliable enough
+	 * (session startup can take 90s+ to become responsive) that this was
+	 * the single biggest source of "driver won't even start" complaints.
+	 * If the standard-HID-PDC fallback is available, start up on that
+	 * instead of refusing to start at all:
+	 * ups.status/battery.charge/battery.runtime come from the fallback
+	 * source, everything descriptor-derived (identity strings, outlet
+	 * groups and their commands) is simply not published yet, and
+	 * `session_ready` stays 0 so upsdrv_updateinfo()'s normal retry logic
+	 * keeps trying the real Microlink handshake on every subsequent poll.
+	 * Outlet-group commands are registered by microlink_register_outlet_commands(),
+	 * which is called both here (for a clean startup) and from upsdrv_updateinfo()
+	 * (for the post-fallback transition), so no driver restart is needed. */
+	if (microlink_ready) {
+		microlink_publish_identity();
+		microlink_publish_status();
+		microlink_publish_runtime();
+		microlink_publish_hid_fallback_inactive();
+	} else if (microlink_publish_hid_fallback()) {
+		session_ready = 0;
+		/* Pre-backdate so upsdrv_updateinfo() can try a USB reset immediately
+		 * rather than waiting a full MLINK_USB_RESET_AFTER_SEC from now: the
+		 * startup handshake already spent microlink_handshake_retries() x 1s
+		 * probing with no response, proving the device is already stalled. */
+		microlink_fallback_since = time(NULL) - MLINK_USB_RESET_AFTER_SEC;
+		upslogx(LOG_WARNING, "apcmicrolink: could not complete Microlink startup on %s - "
+			"starting up with standard-HID fallback data only (ups.status/"
+			"battery.charge/battery.runtime); outlet-group data and commands "
+			"will become available automatically once the Microlink session connects",
+			device_path);
+	} else {
+		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
+			"(no standard-HID fallback available on this device either)", device_path);
+	}
 
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
@@ -2768,30 +3155,7 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("bypass.start");
 	dstate_addcmd("bypass.stop");
 
-	outlet_group_count = microlink_outlet_group_count();
-	if (outlet_group_count > 0) {
-		char cmd[64];
-
-		dstate_setinfo("outlet.group.count", "%u", (unsigned int)outlet_group_count);
-
-		dstate_addcmd("load.off");
-		dstate_addcmd("load.on");
-		dstate_addcmd("load.cycle");
-		dstate_addcmd("load.off.delay");
-		dstate_addcmd("load.on.delay");
-		dstate_addcmd("shutdown.default");
-		dstate_addcmd("shutdown.return");
-		dstate_addcmd("shutdown.stayoff");
-		dstate_addcmd("shutdown.reboot");
-		dstate_addcmd("shutdown.reboot.graceful");
-
-		for (g = 0; g < outlet_group_count; g++) {
-			for (i = 0; outlet_suffixes[i] != NULL; i++) {
-				snprintf(cmd, sizeof(cmd), "outlet.group.%zu.%s", g, outlet_suffixes[i]);
-				dstate_addcmd(cmd);
-			}
-		}
-	}
+	microlink_register_outlet_commands();
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 }
@@ -2799,19 +3163,52 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	int good = 0;
+	time_t now = time(NULL);
 
-	if (!session_ready && !microlink_start_session()) {
-		dstate_datastale();
-		return;
+	if (!session_ready) {
+		int tried_reset = 0;
+
+		if (microlink_fallback_since == 0)
+			microlink_fallback_since = now;
+
+		if (now < microlink_session_next_retry) {
+			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
+			microlink_datastale_or_fallback();
+			return;
+		}
+
+#ifdef WITH_USB
+		if (now - microlink_fallback_since >= MLINK_USB_RESET_AFTER_SEC) {
+			upslogx(LOG_NOTICE, "apcmicrolink: Microlink tunnel unresponsive for "
+				"%ld s - attempting USB device reset to recover",
+				(long)(now - microlink_fallback_since));
+			microlink_fallback_since = now;
+			tried_reset = 1;
+			if (microlink_usb_reset_and_reopen())
+				microlink_start_session();
+		}
+#endif
+
+		if (!tried_reset)
+			microlink_start_session_impl(1);
+
+		if (!session_ready) {
+			microlink_session_next_retry = now + MLINK_SESSION_RETRY_INTERVAL_SEC;
+			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
+			microlink_datastale_or_fallback();
+			return;
+		}
+		microlink_fallback_since = 0;
+		poll_interval = microlink_configured_poll_interval;
 	}
 
 	if (microlink_poll_once()) {
 		good = 1;
 	}
 
-	if (!good && consecutive_timeouts >= MLINK_HANDSHAKE_RETRIES) {
+	if (!good && consecutive_timeouts >= microlink_handshake_retries()) {
 		if (!microlink_reconnect_session()) {
-			dstate_datastale();
+			microlink_datastale_or_fallback();
 			return;
 		}
 		good = 1;
@@ -2820,21 +3217,25 @@ void upsdrv_updateinfo(void)
 	if (!good) {
 		if (parsed_frames == 0) {
 			session_ready = 0;
-			dstate_datastale();
+			microlink_datastale_or_fallback();
 			return;
 		}
 
+		microlink_register_outlet_commands();
 		microlink_publish_identity();
 		microlink_publish_status();
 		microlink_publish_runtime();
+		microlink_publish_hid_fallback_inactive();
 		dstate_dataok();
 		return;
 	}
 
 	ser_comm_good();
+	microlink_register_outlet_commands();
 	microlink_publish_identity();
 	microlink_publish_status();
 	microlink_publish_runtime();
+	microlink_publish_hid_fallback_inactive();
 	dstate_dataok();
 }
 
@@ -2851,6 +3252,13 @@ void upsdrv_shutdown(void)
 
 void upsdrv_makevartable(void)
 {
+#ifdef WITH_USB
+	microlink_usb_addvars();
+	addvar(VAR_VALUE, "hid_fallback",
+		"Publish ups.status/battery.charge/battery.runtime from standard HID "
+		"Power Device usages when the Microlink tunnel has nothing fresh, "
+		"instead of going stale (USB only; yes/no, default yes)");
+#endif /* WITH_USB */
 	addvar(VAR_VALUE, "baudrate", "Serial port baud rate (e.g. 9600, 19200, 38400)");
 	addvar(VAR_VALUE, "showinternals",
 		"Show Microlink internal runtime values (yes/no, default follows debug mode)");
@@ -2870,6 +3278,13 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_cleanup(void)
 {
+#ifdef WITH_USB
+	if (is_usb) {
+		microlink_usb_close();
+		return;
+	}
+#endif /* WITH_USB */
+
 	if (VALID_FD(upsfd)) {
 		ser_close(upsfd, device_path);
 		upsfd = ERROR_FD;

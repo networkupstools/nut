@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3809 utf-8
+personal_ws-1.1 en 3818 utf-8
 AAC
 AAS
 ABI
@@ -66,6 +66,7 @@ Antonino
 Apodaca
 AppData
 AppVeyor
+ApparentPower
 ArgumentList
 Arjen
 Arkadiusz
@@ -151,6 +152,7 @@ Bourne
 Boutell's
 Brabec
 Breiland
+Brogaard
 Brownell
 Bs
 BuildBot
@@ -877,6 +879,7 @@ NetXML
 Netman
 NetworkUPSTools
 Neus
+Nicolai
 Niels
 Niemueller
 Niklas
@@ -1041,6 +1044,7 @@ Potrans
 Poush
 PowerAlert
 PowerCOM
+PowerChute
 PowerCom
 PowerES
 PowerGuide
@@ -1056,7 +1060,6 @@ PowerPC
 PowerPS
 PowerPal
 PowerPanel
-PowerChute
 PowerShare
 PowerShell
 PowerShield
@@ -1195,6 +1198,7 @@ Ryabov
 Rzepecki
 SAI
 SASU
+SCL
 SCM
 SCO
 SCR
@@ -2042,6 +2046,7 @@ dereference
 desc
 deschis
 descr
+descriptor's
 desde
 desertwitch
 designator
@@ -2827,6 +2832,7 @@ nlb
 nlogic
 nls
 nm
+nmbro
 nn
 nnn
 noAuthNoPriv
@@ -3150,6 +3156,7 @@ repindex
 repo
 reportId
 reposurgeon
+replug
 repotec
 req
 resetter
@@ -3360,6 +3367,7 @@ startdelay
 startup
 statepath
 stayoff
+stdarg
 stderr
 stdint
 stdlib
@@ -3577,6 +3585,7 @@ unmapped
 unmounts
 unpowered
 unstash
+unswitched
 updateinfo
 upexia
 upower

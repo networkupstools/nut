@@ -48,6 +48,10 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
+      when explicitly specifying same `--with-user` *OR* `--with-group` name
+      as would be default for current platform (so one was treated as not-set
+      and failed a sanity check). [issue #3513]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
@@ -65,6 +69,26 @@ https://github.com/networkupstools/nut/milestone/13
  - Introduced an experimental `apcmicrolink` driver for devices with
    the APC Microlink protocol on serial port connections. Tested against
    APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
+
+ - Contributed `apcmicrolink` driver updates [PR #3579]:
+    * Added USB HID support (`port = auto`, matching the usual NUT
+      USB-driver convention), tunneling the Microlink protocol over
+      USB HID for models with no serial port. Tested against APC
+      Smart-UPS 500 (SCL500RMI1UC) by a single tester; considered
+      experimental even relative to the rest of this already-experimental
+      driver. See linkman:apcmicrolink[8] for USB-mode caveats, including
+      a udev rule needed to keep the kernel's `usbhid` driver from
+      claiming the device.
+    * USB mode: if the Microlink tunnel does not respond during startup,
+      the driver now starts up on standard-HID-PDC fallback data
+      (`ups.status`/`battery.charge`/`battery.runtime`) instead of
+      refusing to start; outlet-group data and instant commands become
+      available automatically once the tunnel connects, with no driver
+      restart needed.
+    * Added `load.cycle` and per-outlet-group instant commands
+      (`outlet.group.N.load.*`, `outlet.group.N.shutdown.*`), and the
+      `outlet.group.N.switchable` variable to distinguish switchable
+      groups from an unswitched main bank.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
@@ -135,8 +159,7 @@ https://github.com/networkupstools/nut/milestone/13
       DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS
       5.2.3 GPL sources. Polling and the direct shutdown commands were verified
       on an unloaded BN150T over USB; other OMRON models and serial connections
-      are untested.
-      [issue #3112]
+      are untested. [issue #3112, PR #3554]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying
@@ -220,6 +243,25 @@ https://github.com/networkupstools/nut/milestone/13
       wrong readings (`input.voltage` 70, `battery.voltage` 22.4 instead of
       ~225 / ~48 V). The fixes mirror the established `cps_fix_report_desc()`
       and `apc-hid` patterns for this device family. [issue #3089]
+    * `tripplite-hid` subdriver now recovers the output power reading, which was
+      published as a constant `0.0`. Two defects combined: the HID `ActivePower`
+      usages were mapped to `ups.power`, which `docs/nut-names.txt` defines as
+      apparent power (VA) rather than real power (W); and on the tested
+      SMART1500LCD the firmware declares its `ActivePower` item with the HID PDC
+      unit for watts/VA (`0x0000D121`) while leaving the Unit Exponent at 0, so
+      `get_unit_expo()` applied a factor of 1e-7 and a genuine 520 W reading
+      arrived as 5.2e-05, which the `%.1f` format then rendered as `0.0`.
+      Both `ActivePower` usages now map to `ups.realpower`, matching the
+      `cps-hid` and `mge-hid` subdrivers; `ups.power` is mapped to the
+      corresponding `ApparentPower` usages and `ups.realpower.nominal` to
+      `UPS.Flow.ConfigActivePower`. A new `tripplite_fix_report_desc()` supplies
+      the exponent the firmware omits; it is deliberately limited to the
+      `ActivePower` item, since no Tripp Lite descriptor is known to expose an
+      `ApparentPower` item with the same defect. Verified on a SMART1500LCD
+      (`09ae:2012`), which now reports `ups.realpower: 512.0` at `ups.load: 56`
+      against its 900 W rating. Note this is a behaviour change for units that
+      report a non-zero `ActivePower`: the reading moves from `ups.power` to
+      `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
@@ -244,6 +286,9 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Some operating systems provide in `sys/stdarg.h` definitions that others
+      access through common `stdarg.h` -- code updated to try including both.
+      [PR #3577]
     * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
       is", complete with a confusing blank line where `\n` ended the message.
       This is now passed through newly introduced `upsdebug_ascii_compact()`

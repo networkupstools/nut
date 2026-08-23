@@ -387,6 +387,11 @@ sub find_usbdevs
 			if($nameFile=~/(.+)-hid\.c$/) {
 				$driver="usbhid-ups";
 			}
+			# apcmicrolink's USB transport lives in apcmicrolink-usb.c, but
+			# the invocable driver is "apcmicrolink" (port=auto for USB mode)
+			elsif ($nameFile eq "apcmicrolink-usb.c") {
+				$driver="apcmicrolink";
+			}
 			# generic matching rule *.c => *
 			elsif ($nameFile =~ /(.+)\.c$/) {
 				$driver=$1;

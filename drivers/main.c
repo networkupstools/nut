@@ -3534,6 +3534,8 @@ sockname_ownership_finished:
 				update_count++;
 		}
 		else {
+			/* NOTE: this doubles as (up to) poll_interval sleep
+			 * between update loop cycles */
 			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
 				handle_reload_flag();

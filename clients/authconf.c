@@ -794,7 +794,19 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 					current_section->certverify,
 					current_section->forcessl);
 			}
-		}
+
+			free(normalized_sect_name);
+			free(sect_name);
+			free(sect_user);
+			free(sect_host);
+			free(sect_port);
+
+			normalized_sect_name = NULL;
+			sect_name = NULL;
+			sect_user = NULL;
+			sect_host = NULL;
+			sect_port = NULL;
+		}	/* finished handling a section */
 
 		current_section_ignored = 0;
 
@@ -803,19 +815,17 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 		/* we would remove the LAST seen bracket (there may be some in text, in case of IPv6 addresses) */
 		end_bracket = strrchr(sect_name, ']');
 		if (!end_bracket || !strcmp(sect_name, "_global_defaults")) {
-			free(sect_name);
-
 			if (global_scope) {
 				/* Subsequent lines will (re-)populate global_defaults */
 				current_section = NULL;
-				return;
+				goto section_header_cleanup_return;
 			}
 
 			current_section_ignored = 1;
 			upslogx(LOG_WARNING, "%s: Invalid nutauth section header format "
 				"in a non-global context, section contents will be ignored: %s",
 				__func__, arg[0]);
-			return;
+			goto section_header_cleanup_return;
 		}
 
 		/* forget trailing ']' and any characters after it (comments etc.)...
@@ -841,7 +851,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 				"section-scope for [%s], section contents will be ignored",
 				normalized_sect_name, current_section->section);
 			current_section_ignored = 1;
-			return;
+			goto section_header_cleanup_return;
 		}
 
 		/* Find if section already exists */
@@ -876,6 +886,7 @@ static void handle_authconf_args(size_t numargs, char **arg, int global_scope)
 			 */
 		}
 
+section_header_cleanup_return:
 		free(normalized_sect_name);
 		free(sect_name);
 		free(sect_user);
