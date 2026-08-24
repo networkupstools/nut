@@ -51,11 +51,6 @@ int input_phases, output_phases, bypass_phases;
 	static char *function_text = NULL;
 #endif
 
-/* Currently not defined in recipes outside */
-#ifndef WITH_DMF_SETVAR
-# define WITH_DMF_SETVAR 0
-#endif
-
 /*DEBUGGING*/
 void
 print_snmp_memory_struct(snmp_info_t *self)
