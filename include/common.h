@@ -45,7 +45,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdarg.h>
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
 #include <sys/types.h>	/* suseconds_t among other things */
 #include <sys/stat.h>
 

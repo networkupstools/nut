@@ -81,6 +81,7 @@
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS SMT/SMX/SURTD"	"Microlink models with RJ45 socket - they *require* AP9620 SmartSlot expansion card and smart cable"	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS SMT/SMX Microlink"	"Microlink serial driver"	"apcmicrolink"
+"APC"	"ups"	"1"	"Smart-UPS 500"	"Microlink over USB HID tunnel"	"apcmicrolink port=auto"
 "APC"	"ups"	"3"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS BK650M2-CH"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/1970
 "APC"	"ups"	"3"	"Back-UPS (USB)"	"USB"	"usbhid-ups"
@@ -1144,6 +1145,8 @@
 "NUT"	"ups"	"5"	"all supported NUT devices, through remote upsd"	""	"dummy-ups"
 "NUT"	"ups"	"5"	"Simulated devices"	""	"dummy-ups"
 
+"OMRON"	"ups"	"4"	"BN150T"	"USB (USB ID 0590:00b7)"	"nutdrv_qx port=auto vendorid=0590 productid=00b7 protocol=omron subdriver=omron"	# https://github.com/networkupstools/nut/issues/3112 ; ported from OMRON-authored GPL driver version 1.00 distributed in the Synology DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS 5.2.3 GPL sources. Polling and direct shutdown commands were verified on an unloaded BN150T over USB; other models are untested.
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"
@@ -1234,6 +1237,7 @@
 
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 "PowerShield"	"ups"	"2"	"PSDR800"	"USB"	"nutdrv_qx protocol=voltronic-qs"
+"PowerShield"	"ups"	"4"	"Centurion RT 1000VA (PSCERT1000)"	"SNMP v2c, PSSNMPV4 card"	"snmp-ups mibs=voltronic"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
@@ -1451,6 +1455,7 @@
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
 "SVC"	"ups"	"2"	"VP-1250-LCD 1250VA"	"(USB ID 0925:1234, armac subdriver, megatec protocol)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/pull/3485
+"SVC"	"ups"	"1"	"V-1000F"	"USB (USB ID 0925:1234, product UPS USB MON V1.4)"	"nutdrv_qx port=auto vendorid=0925 productid=1234 protocol=megatec subdriver=richcomm-svc"	# https://github.com/networkupstools/nut/issues/3562 ; polling and quick battery test verified on physical hardware; deep battery tests and load or shutdown commands untested
 
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
@@ -1680,6 +1685,7 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
+"VOLT Polska"	"ups"	"2"	"RackUPS 1200VA/720W 2x7Ah"	"USB (USB ID 0665:5161)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2534
 "Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"nutdrv_qx"

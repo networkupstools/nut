@@ -34,7 +34,8 @@ check_PROGRAMS = $(TESTS)
 check_SCRIPTS =
 
 # NUT Integration Testing suite
-check-NIT check-NIT-devel: @dotMAKE@
+memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building
@@ -113,6 +114,12 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += ecoflow_cdc_protocol_utest
+ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
+	$(top_srcdir)/drivers/ecoflow-cdc-protocol.h
+nodist_ecoflow_cdc_protocol_utest_SOURCES = ecoflow-cdc-protocol.c
+ecoflow_cdc_protocol_utest_LDADD = -lm
+
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
 #nutbooltest_LDADD = $(NUT_LIBCOMMON)
@@ -130,15 +137,18 @@ test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c
+LINKED_SOURCE_FILES = hidparser.c ecoflow-cdc-protocol.c
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hidparser.c" '$@'
 
+ecoflow-cdc-protocol.c: $(top_srcdir)/drivers/ecoflow-cdc-protocol.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/ecoflow-cdc-protocol.c" '$@'
+
 if WITH_USB
-TESTS += getvaluetest getexponenttest-belkin-hid
+TESTS += getvaluetest getexponenttest-belkin-hid fixreportdesctest-tripplite-hid
 
 # We only need to call a few methods, not use the whole source - so
 # not linking it as a getvaluetest_SOURCE file (has too many deps):
@@ -151,6 +161,11 @@ getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
+
+fixreportdesctest-tripplite-hid.c: $(top_srcdir)/drivers/tripplite-hid.c
+fixreportdesctest_tripplite_hid_SOURCES = fixreportdesctest-tripplite-hid.c
+fixreportdesctest_tripplite_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+fixreportdesctest_tripplite_hid_LDADD = $(NUT_LIBCOMMON) -lm libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c

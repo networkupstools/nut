@@ -8,7 +8,8 @@ NUT is now also available for the Microsoft Windows platform.
 
 This methodology (and Windows support in general) are currently experimental,
 so pull requests are welcome to tie up some loose ends (add more prerequisites,
-test and fix programs, re-enable some code just commented away by `ifdef`'s...)
+test and fix programs, re-enable some code just commented away by `#ifdef`
+directives...)
 
 [NOTE]
 ======

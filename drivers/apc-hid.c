@@ -32,7 +32,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.101"
+#define APC_HID_VERSION "APC HID 0.102"
 
 /* APC */
 #define APC_VENDORID	0x051d
@@ -457,6 +457,13 @@ static hid_info_t apc_hid2nut[] = {
 	{ "load.on.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
 	{ "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+	/* used by APC Back-UPS BX series (e.g. BX750MI), where this usage is the
+	 * only shutdown-capable one: value "1" is what APC PowerChute writes
+	 * (fixed ~2 min grace, executed only while on battery, output returns
+	 * when wall power is present, even if AC came back during the grace);
+	 * the "10" written by shutdown.reboot above is ACKed but never executed
+	 * by that firmware. See issue #2683. */
+	{ "shutdown.return", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
 	/* used by APC BackUPS CS */
 	{ "shutdown.return", 0, 0, "UPS.Output.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
 
@@ -614,4 +621,5 @@ subdriver_t apc_subdriver = {
 	apc_format_mfr,
 	apc_format_serial,
 	apc_fix_report_desc,
+	NULL,
 };

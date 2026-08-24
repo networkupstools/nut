@@ -83,7 +83,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
-#include <stdarg.h>
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

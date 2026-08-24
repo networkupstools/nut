@@ -3,6 +3,7 @@
 
 # Unix/Linux script files should be LF always:
 *.sh text eol=lf
+*.pl text eol=lf
 *.m4 text eol=lf
 *.ac text eol=lf
 *.am text eol=lf

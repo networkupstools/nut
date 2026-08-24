@@ -30,7 +30,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.6"
+#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.7"
 
 /* Delta UPS */
 #define DELTA_VENDORID	0x05dd
@@ -320,4 +320,5 @@ subdriver_t delta_ups_subdriver = {
 	delta_ups_format_mfr,
 	delta_ups_format_serial,
 	fix_report_desc,
+	NULL,
 };

@@ -33,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define EVER_HID_VERSION	"Ever HID 0.10"
+#define EVER_HID_VERSION	"Ever HID 0.11"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Ever */
@@ -783,4 +783,5 @@ subdriver_t ever_subdriver = {
 	ever_format_mfr,
 	ever_format_serial,
 	fix_report_desc,
+	NULL,
 };

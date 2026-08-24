@@ -19,6 +19,8 @@ LTEXEC=""
 
 # TODO: Also wrap tool=callgrind e.g. via $0 symlink name?
 
+# Avoid going to the internet just to run tests:
+DEBUGINFOD_URLS=: DEBUGINFOD_TIMEOUT=1 DEBUGINFOD_MAXTIME=1 \
 exec ${LTEXEC} \
 ${VALGRIND} \
 	--tool=memcheck --verbose \

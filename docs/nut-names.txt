@@ -916,9 +916,9 @@ outlet collection apply to outlet.group, especially for the indexing 'n'
 and "outlet.group.count".
 
 Most of the data published for outlets also apply to outlet.group,
-including: id, name (similar as outlet "desc"), color, status, current and
-voltage (including status, alarm and thresholds). Other actions and settings
-also apply ({delay,timer}.{shutdown,start})
+including: id, name (similar as outlet "desc"), color, status, switchable,
+current and voltage (including status, alarm and thresholds). Other actions
+and settings also apply ({delay,timer}.{shutdown,start})
 
 Some specific data to outlet groups exists:
 

@@ -29,8 +29,9 @@
 #include "idowell-hid.h"
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
+#include "hidparser.h" /* for FindObject_with_ID_Node() */
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.21"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.23"
 /* FIXME: experimental flag to be put in upsdrv_info */
 /* v0.21 GoldenMate LiFePO4 packs reuse the shared Phoenixtec VID (0x06da):
  *       claim only those (by -BMS-/Smart-Battery firmware strings) and defer
@@ -206,6 +207,94 @@ static int idowell_claim(HIDDevice_t *hd)
 	}
 }
 
+/* idowell_fix_report_desc: correct a firmware bug in GoldenMate LiFePO4 packs.
+ *
+ * These devices declare the same data points twice: once as Feature items in
+ * ReportID 0x01 (with sane Logical Maximum values) and again as Input items in
+ * ReportID 0x02. In ReportID 0x02 the firmware encodes the 4-byte Logical
+ * Maximum for UPS.PowerSummary.RunTimeToEmpty with the bytes in the wrong
+ * order: it emits "27 ff ff ff fe" (0xFEFFFFFF) where 0xFFFFFFFE was intended.
+ *
+ * 0xFEFFFFFF does not fit a signed 32-bit long, so on LLP64 platforms (Windows,
+ * where long is 32-bit) the generic "LogMax < LogMin" recovery in HIDParse()
+ * stores it back as the negative value -16777217. Per the HID spec, Logical
+ * values persist in global state, so the following UPS.PowerSummary.Voltage
+ * Input item inherits the same broken maximum. Both readings then come out as
+ * nonsense (battery.runtime = -16777217, battery.voltage = -167772.2) while the
+ * ReportID 0x01 Feature copies of the very same usages read correctly.
+ *
+ * Rather than invent limits, we copy the values this device itself declares for
+ * the same usages in ReportID 0x01: 0x75FFFFFF for RunTimeToEmpty (32-bit) and
+ * 65535 for Voltage (16-bit).
+ */
+#define IDOWELL_RUNTIME_LOGMAX	0x75FFFFFFL
+#define IDOWELL_VOLTAGE_LOGMAX	65535L
+
+static int idowell_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
+	HIDData_t	*pData;
+	int	retval = 0;
+
+	int	vendorID = pDev->VendorID;
+	int	productID = pDev->ProductID;
+
+	if (!((vendorID == PHOENIXTEC_VENDORID && productID == 0xffff)
+	   || (vendorID == IDOWELL_VENDORID && productID == 0x0300))) {
+		upsdebugx(3, "NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x (vendor/product not matched)",
+			(unsigned int)vendorID, (unsigned int)productID);
+		return 0;
+	}
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3, "NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			(unsigned int)vendorID, (unsigned int)productID);
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: "
+		"Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID, (unsigned int)productID);
+
+	/* Only touch items whose maximum is demonstrably broken (below the
+	 * minimum), so a firmware revision that encodes this correctly is
+	 * left alone. */
+	if ((pData = FindObject_with_ID_Node(pDesc_arg, 0x02,
+			USAGE_BAT_RUN_TIME_TO_EMPTY))) {
+		upsdebugx(4, "Original Report Descriptor: ReportID 0x02 "
+			"RunTimeToEmpty LogMin: %ld LogMax: %ld",
+			pData->LogMin, pData->LogMax);
+
+		if (pData->LogMax < pData->LogMin) {
+			pData->LogMax = IDOWELL_RUNTIME_LOGMAX;
+			pData->assumed_LogMax = true;
+			upsdebugx(3, "Fixing Report Descriptor: set ReportID 0x02 "
+				"RunTimeToEmpty LogMax = %ld",
+				(long)IDOWELL_RUNTIME_LOGMAX);
+			retval++;
+		}
+	}
+
+	if ((pData = FindObject_with_ID_Node(pDesc_arg, 0x02,
+			USAGE_POW_VOLTAGE))) {
+		upsdebugx(4, "Original Report Descriptor: ReportID 0x02 "
+			"Voltage LogMin: %ld LogMax: %ld",
+			pData->LogMin, pData->LogMax);
+
+		if (pData->LogMax < pData->LogMin) {
+			pData->LogMax = IDOWELL_VOLTAGE_LOGMAX;
+			pData->assumed_LogMax = true;
+			upsdebugx(3, "Fixing Report Descriptor: set ReportID 0x02 "
+				"Voltage LogMax = %ld",
+				(long)IDOWELL_VOLTAGE_LOGMAX);
+			retval++;
+		}
+	}
+
+	return retval;
+}
+
 subdriver_t idowell_subdriver = {
 	IDOWELL_HID_VERSION,
 	idowell_claim,
@@ -214,5 +303,6 @@ subdriver_t idowell_subdriver = {
 	idowell_format_model,
 	idowell_format_mfr,
 	idowell_format_serial,
-	fix_report_desc,
+	idowell_fix_report_desc,
+	NULL,
 };

@@ -2066,6 +2066,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
             # Use "distcheck-ci" if caller did not ask for any DISTCHECK_TGT
             # value, and we defaulted to strict "distcheck" above
+            # Check the actual logic below though, currently these sub-matrix
+            # builds do not call distcheck (they can however do a parallel-check)
             ( [ -n "${ORIG_DISTCHECK_TGT}" ] || [ x"${DISTCHECK_TGT}" != x"distcheck" ] ) || DISTCHECK_TGT="distcheck-ci"
 
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
@@ -2830,6 +2832,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 ) || {
                     RES_ALLERRORS=$?
                     FAILED+=("TESTCOMBO=${TESTCOMBO}[configure]")
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' configure"
                     # TOTHINK: Do we want to try clean-up if we likely have no Makefile?
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== [Matrix] Error: Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
@@ -2919,6 +2923,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         } || {
                             RES_ALLERRORS=$?
                             FAILED+=("TESTCOMBO=${TESTCOMBO}[dist_clean]")
+                            # Help find end of build (before cleanup noise) in logs:
+                            echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' dist_clean"
                         }
                     else
                         optional_maintainer_clean_check && {
@@ -2928,6 +2934,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         } || {
                             RES_ALLERRORS=$?
                             FAILED+=("TESTCOMBO=${TESTCOMBO}[maintainer_clean]")
+                            # Help find end of build (before cleanup noise) in logs:
+                            echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' maintainer_clean"
                         }
                     fi
                     echo "=== Completed sandbox cleanup-check after TESTCOMBO=${TESTCOMBO}, $BUILDSTODO build variants remaining"
@@ -2953,6 +2961,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 } || {
                     RES_ALLERRORS=$?
                     FAILED+=("[final_maintainer_clean]")
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== [Matrix] Error: FAILED 'TESTCOMBO=${TESTCOMBO}' final_maintainer_clean"
                 }
                 echo "=== Completed sandbox maintainer-cleanup-check after all builds"
             fi

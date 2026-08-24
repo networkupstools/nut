@@ -44,6 +44,20 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
+      when explicitly specifying same `--with-user` *OR* `--with-group` name
+      as would be default for current platform (so one was treated as not-set
+      and failed a sanity check). [issue #3513]
+
+ - USB drivers now prefer the longer of conflicting HID report descriptor
+   lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
+   complete descriptor available on affected River 3 Plus firmware while
+   retaining the shorter length as a fallback.
+
+ - Windows serial compatibility: fixed timeout handling to return data
+   already received as a successful short read, while safely canceling
+   and completing pending overlapped I/O before reusing its state.
+   [issue #3452, PR #3560]
 
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
@@ -51,6 +65,26 @@ https://github.com/networkupstools/nut/milestone/13
  - Introduced an experimental `apcmicrolink` driver for devices with
    the APC Microlink protocol on serial port connections. Tested against
    APC Smart-UPS 750 (SMT750RMI2UC). [PR #3406]
+
+ - Contributed `apcmicrolink` driver updates [PR #3579]:
+    * Added USB HID support (`port = auto`, matching the usual NUT
+      USB-driver convention), tunneling the Microlink protocol over
+      USB HID for models with no serial port. Tested against APC
+      Smart-UPS 500 (SCL500RMI1UC) by a single tester; considered
+      experimental even relative to the rest of this already-experimental
+      driver. See linkman:apcmicrolink[8] for USB-mode caveats, including
+      a udev rule needed to keep the kernel's `usbhid` driver from
+      claiming the device.
+    * USB mode: if the Microlink tunnel does not respond during startup,
+      the driver now starts up on standard-HID-PDC fallback data
+      (`ups.status`/`battery.charge`/`battery.runtime`) instead of
+      refusing to start; outlet-group data and instant commands become
+      available automatically once the tunnel connects, with no driver
+      restart needed.
+    * Added `load.cycle` and per-outlet-group instant commands
+      (`outlet.group.N.load.*`, `outlet.group.N.shutdown.*`), and the
+      `outlet.group.N.switchable` variable to distinguish switchable
+      groups from an unswitched main bank.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
@@ -61,6 +95,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Added `modbus_retries` option to configure the number of read retry
       attempts on timeout errors, simplifying error recovery. [PR #3414]
     * Increased default TCP response timeout to 2000 ms. [PR #3418]
+    * Three fixes for the read-retry loop added in PR #3414:
+      the loop ignored `exit_flag`, causing `upsdrvctl` to kill the driver
+      and wedge the device if it was killed mid-exchange; now we retry on more
+      failure causes than just a timeout; quieter retry logging to avoid
+      severe syslog/journal thrashing. [PR #3571, #3414]
 
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
@@ -74,9 +113,20 @@ https://github.com/networkupstools/nut/milestone/13
       reconnection behavior. [issue #3510, PR #3543]
 
  - `nutdrv_qx` driver updates:
+    * Added the `richcomm-svc` USB communication subdriver for older
+      session-initialized Richcomm bridges. It configures the bridge before
+      reusing the existing Armac command framing and Megatec protocol. Polling
+      and a quick battery test were verified with an SVC V-1000F
+      (`0925:1234`, `UPS USB MON V1.4`). [issue #3562]
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
+    * Added a `cypress_0665_5161_subdriver` initialization method for devices
+      with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
+      a quirk to drain stale bytes from USB buffers of the device before our
+      driver sends queries, and use a longer timeout. If this change breaks
+      your device, please add `cypress_drain_quirk = 0` in your `ups.conf`
+      and let us know. [issue #2534, PR #3563]
     * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
       (when a device returns all-spaces in that part of the `I` query response)
       out of the box and not ignore the device as unsupported, by adding the
@@ -89,6 +139,23 @@ https://github.com/networkupstools/nut/milestone/13
       an initialization failure with certain UPS models (e.g., SVC
       VP-1250-LCD) that return a 7-byte report instead of the standard 6 bytes,
       allowing the Megatec payload to be successfully reconstructed. [PR #3485]
+    * Added an `omron` USB subdriver and an `omron` protocol subdriver for
+      the OMRON BN150T, and registered its USB ID `0590:00b7`. The transport
+      uses a 16-byte HID Output report and validates transfer and reply
+      lengths. The base `Q1` mapping follows `q1` but omits two status
+      characters. Index 2 was set during stable operation on mains, both in
+      normal mode and in ECO mode, and was clear while on battery; neither OMRON
+      driver version handles it. Index 7, which `q1` would publish as the
+      beeper status, is not read by either OMRON driver version. The shutdown
+      commands use OMRON's form. The subdriver also adds extension queries for
+      battery charge, runtime and temperature, output frequency, firmware
+      (`ups.firmware` and `ups.firmware.aux`), serial number, battery date and
+      nominal power and battery voltage ratings. The implementation was ported
+      from OMRON-authored GPL driver version 1.00 distributed in the Synology
+      DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS
+      5.2.3 GPL sources. Polling and the direct shutdown commands were verified
+      on an unloaded BN150T over USB; other OMRON models and serial connections
+      are untested. [issue #3112, PR #3554]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying
@@ -143,20 +210,72 @@ https://github.com/networkupstools/nut/milestone/13
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
+    * `apc-hid` subdriver: mapped `shutdown.return` to
+      `UPS.APCGeneralCollection.APCDelayBeforeReboot` with value "1", for
+      newer APC Back-UPS devices (e.g. Back-UPS BX750MI) where that usage
+      is the only shutdown-capable one. Their firmware accepts but never
+      executes the value "10" written by the previously only matching
+      command `shutdown.reboot`, so the built-in shutdown sequence reported
+      success without ever powering the load off. The value "1" is what APC
+      PowerChute writes (confirmed by decoding USB captures of the vendor
+      software, and by live tests on another unit): the load is cycled after
+      a fixed ~2 minute grace, the command is executed only while on battery,
+      and output returns when wall power is present, even if AC came back
+      during the grace period. [issue #2683, PR #3566]
     * `idowell-hid` subdriver now also supports GoldenMate 1000VA/800W LiFePO4
       battery packs (`0x06da:0xffff`), which carry the same `-BMS-` firmware and
       HID descriptor as the existing `0x075d:0x0300` device. The shared
       Phoenixtec vendor ID (`0x06da`) is gated by device strings so the other
       devices on that ID still fall through to `liebert-hid` / `mge-hid`.
       [issue #3501, PR #3502]
+    * `idowell-hid` subdriver now repairs a firmware bug in those GoldenMate
+      LiFePO4 packs, which encode the four-byte Logical Maximum of
+      `UPS.PowerSummary.RunTimeToEmpty` with reversed byte order in report
+      0x02. The resulting value does not fit a signed 32-bit `long`, so on
+      platforms where `long` is 32-bit (notably Windows) it wrapped negative,
+      and the following `UPS.PowerSummary.Voltage` item inherited the same
+      broken maximum from HID global state. Both `battery.runtime` and
+      `battery.voltage` then read as nonsense; platforms with a 64-bit `long`
+      were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
+    * `cps-hid` subdriver: widened under-declared Logical Maximums for
+      `UPS.Input.Voltage`, `UPS.Input.ConfigVoltage`, `UPS.PowerSummary.Voltage`
+      and `UPS.PowerSummary.ConfigVoltage` on CyberPower HID devices (e.g.
+      PR3000ELCDSL/PR3000ELCDSXL, USB ID `0764:0601`), which transmit correct
+      values but declare maximums below them, so NUT masked/clamped them to
+      wrong readings (`input.voltage` 70, `battery.voltage` 22.4 instead of
+      ~225 / ~48 V). The fixes mirror the established `cps_fix_report_desc()`
+      and `apc-hid` patterns for this device family. [issue #3089]
+    * `tripplite-hid` subdriver now recovers the output power reading, which was
+      published as a constant `0.0`. Two defects combined: the HID `ActivePower`
+      usages were mapped to `ups.power`, which `docs/nut-names.txt` defines as
+      apparent power (VA) rather than real power (W); and on the tested
+      SMART1500LCD the firmware declares its `ActivePower` item with the HID PDC
+      unit for watts/VA (`0x0000D121`) while leaving the Unit Exponent at 0, so
+      `get_unit_expo()` applied a factor of 1e-7 and a genuine 520 W reading
+      arrived as 5.2e-05, which the `%.1f` format then rendered as `0.0`.
+      Both `ActivePower` usages now map to `ups.realpower`, matching the
+      `cps-hid` and `mge-hid` subdrivers; `ups.power` is mapped to the
+      corresponding `ApparentPower` usages and `ups.realpower.nominal` to
+      `UPS.Flow.ConfigActivePower`. A new `tripplite_fix_report_desc()` supplies
+      the exponent the firmware omits; it is deliberately limited to the
+      `ActivePower` item, since no Tripp Lite descriptor is known to expose an
+      `ApparentPower` item with the same defect. Verified on a SMART1500LCD
+      (`09ae:2012`), which now reports `ups.realpower: 512.0` at `ups.load: 56`
+      against its 900 W rating. Note this is a behaviour change for units that
+      report a non-zero `ActivePower`: the reading moves from `ups.power` to
+      `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
+    * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes,
+      developed and tested against a PowerShield Centurion RT 1000VA
+      (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
+      PR #3570]
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we
@@ -171,6 +290,9 @@ https://github.com/networkupstools/nut/milestone/13
       track of some libusb resources when forking the daemon. [#3437]
     * Revised 'dstate' machinery to track socket connections closed mid-way
       through a call, to avoid access after `free()`. [#3302]
+    * Some operating systems provide in `sys/stdarg.h` definitions that others
+      access through common `stdarg.h` -- code updated to try including both.
+      [PR #3577]
     * Debug logging in `dstate.c` and `upssched.c` reported sent buffers "as
       is", complete with a confusing blank line where `\n` ended the message.
       This is now passed through newly introduced `upsdebug_ascii_compact()`
@@ -677,7 +799,7 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      [PR #3237]
    * Extended processing of `MAXCONN` setting to allow larger values than the
      operating system allows, by only waiting for that amount of Unix sockets
-     or Windows `HANDLE`'s at a time, and moving on to another chunk.
+     or Windows `HANDLE` objects at a time, and moving on to another chunk.
      The system-provided value can be further limited by `NUT_SYSMAXCONN_LIMIT`
      environment variable (e.g. in tests). For the other side of the coin, the
      NIT script now supports an optional `DUMMY_UPS_SWARM_COUNT` environment
@@ -1916,7 +2038,7 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      - Numeric literals and macros are `int` by default
      - Results of math with unsigned types like `uint16_t`, done in some
        cases, are up-scaled into `int` by default
-     - `char`'s, `unsigned` or not, seem to be also up-scaled into `int`
+     - `char` values, `unsigned` or not, seem to be also up-scaled into `int`
 
  - Updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
@@ -2666,9 +2788,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
    * Also `upsmon` should now recognize `OFF` and `BYPASS` flags in `ups.status`
      and report that these states begin or end. The `OFF` state usually means
-     than an administrative action happened to power off the load, but the UPS
+     that an administrative action happened to power off the load, but the UPS
      device is still alive and communicating (USB, SNMP, etc.); corresponding
-     `MONITOR`'ed amount of power sources are considered not being "fed" for
+     amount of power sources we `MONITOR` are considered not being "fed" for
      the power value calculation purposes. The `BYPASS` state is now treated
      similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
      communications fail, it is considered dead. This may have unintended
