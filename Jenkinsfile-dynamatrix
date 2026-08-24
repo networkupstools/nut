@@ -1082,7 +1082,7 @@ set | sort -n """
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT
                     //+ [dynacfgPipeline.axisCombos_STRICT_C] // TODO: revise to match the purpose of this filter
                     + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/, ~/GCCVER=[01234].+/]]	// Does not trust pragmas to quiesce known "infractions" which are not problems
-                    + [[~/OS_DISTRO=freebsd-15\./, ~/CSTDVARIANT=c/]]	// Disabled `long long` pre-C99 precludes use of `strto{,u}ll()` [#3583]
+                    + [[~/OS_DISTRO=freebsd-15(\.\d+|)$/, ~/CSTDVARIANT=c/]]	// Disabled `long long` pre-C99 precludes use of `strto{,u}ll()` [#3583]
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
