@@ -321,6 +321,10 @@ https://github.com/networkupstools/nut/milestone/13
       exiting right away or remaining in data stale mode indefinitely, also
       using `reconnect_trying()` for consistent reporting. They now track
       serial port file descriptor validity a bit more diligently. [PR #3541]
+    * The `hidparser.c` code (used primarily in USB drivers) risked a heap
+      out-of-bounds write if the device would report too many descriptors.
+      A similar problem could lead to "HID path too long" messages and loss
+      of readings from the device. [PR #3586]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
