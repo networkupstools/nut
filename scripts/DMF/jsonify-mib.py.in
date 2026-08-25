@@ -471,10 +471,10 @@ def s_json2c (fout, MIB_name, js):
 #include "nut_float.h"
 #include "nut_stdint.h"
 
-// for setvar field
+/* for setvar field */
 int input_phases, output_phases, bypass_phases;
 
-// avoid macro-conflict with snmp-ups
+/* avoid macro-conflict with snmp-ups */
 #ifdef PACKAGE_VERSION
 # undef PACKAGE_VERSION
 # undef PACKAGE_NAME
@@ -485,7 +485,7 @@ int input_phases, output_phases, bypass_phases;
 #endif
 #include "%s.c"
 
-// Replicate what drivers/main.c exports
+/* Replicate what drivers/main.c exports */
 int do_synchronous = 0;
 
 /* Just in case some builds do not refer to it, declare as non-static */
@@ -602,7 +602,7 @@ int main (void) {
                 fprintf (stderr, "%(k)s_TEST[%%" PRIuSIZE "].oid2info=<%%p>\\n", i, (void*)%(k)s_TEST[i].oid2info);
             return 1;
         }
-        // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
+        /* assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar); */
     }
     if (do_debug)
         fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
