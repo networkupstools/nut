@@ -323,7 +323,7 @@ https://github.com/networkupstools/nut/milestone/13
       serial port file descriptor validity a bit more diligently. [PR #3541]
     * The `hidparser.c` code (used primarily in USB drivers) risked a heap
       out-of-bounds write if a device reported a HID report descriptor with
-      more usage items than the parser's fixed stack could hold. A similar
+      more usage items than the fixed stack in the parser could hold. A similar
       problem could lead to "HID path too long" messages and loss of
       readings from the device. [PR #3586]
 
