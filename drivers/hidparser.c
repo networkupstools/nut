@@ -202,6 +202,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_COLLECTION:
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
+			if (pParser->Data.Path.Size >= PATH_SIZE) {
+				upslogx(LOG_ERR, "%s: HID path too long, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
 
@@ -224,6 +229,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Get Index if any */
 			if (pParser->Value >= 0x80) {
+				if (pParser->Data.Path.Size >= PATH_SIZE) {
+					upslogx(LOG_ERR, "%s: HID path too long, "
+						"aborting report descriptor parsing", __func__);
+					return -1;
+				}
 				pParser->Data.Path.Node[pParser->Data.Path.Size] = 0x00ff0000 | (pParser->Value & 0x7F);
 				pParser->Data.Path.Size++;
 			}
@@ -232,10 +242,19 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_END_COLLECTION :
+			/* An End Collection with no matching Collection would wrap
+			 * the unsigned Path.Size around to 255 and index far past
+			 * Path.Node[PATH_SIZE] on the next line. */
+			if (pParser->Data.Path.Size == 0) {
+				upslogx(LOG_ERR, "%s: unbalanced HID End Collection, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Size--;
 
 			/* Remove Index if any */
-			if((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000) == 0x00ff0000) {
+			if((pParser->Data.Path.Size > 0)
+			&& ((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000) == 0x00ff0000)) {
 				pParser->Data.Path.Size--;
 			}
 
@@ -259,6 +278,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			}
 
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
+			if (pParser->Data.Path.Size >= PATH_SIZE) {
+				upslogx(LOG_ERR, "%s: HID path too long, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
 
