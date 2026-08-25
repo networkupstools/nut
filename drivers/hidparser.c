@@ -176,6 +176,19 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_USAGE:
+			/* The usage stack is a fixed-size array. Refuse to walk past
+			 * it instead of merely complaining about it after the fact
+			 * (see the USAGE_TAB_SIZE report at the end of this loop).
+			 * -1 is the established "no more items" return, and
+			 * Parse_ReportDesc() breaks out of its loop on ret < 0, so
+			 * everything parsed up to here is kept and the remainder of
+			 * the descriptor is dropped. */
+			if (pParser->UsageSize >= USAGE_TAB_SIZE) {
+				upslogx(LOG_ERR, "%s: HID Usage stack overflow, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
+
 			/* Copy global or local UPage if any, in Usage stack */
 			if ((pParser->Item & SIZE_MASK) > 2) {
 				pParser->UsageTab[pParser->UsageSize] = pParser->Value;
@@ -197,7 +210,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 				int	j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					pParser->UsageTab[j] = pParser->UsageTab[j+1];
+					/* With UsageSize now allowed to reach
+					 * USAGE_TAB_SIZE, the last slot has no
+					 * successor to shift down. Unused slots
+					 * are zero (see ResetLocalState). */
+					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+						? pParser->UsageTab[j+1] : 0;
 				}
 
 				/* Remove Usage */
@@ -249,7 +267,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 				int j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					pParser->UsageTab[j] = pParser->UsageTab[j+1];
+					/* With UsageSize now allowed to reach
+					 * USAGE_TAB_SIZE, the last slot has no
+					 * successor to shift down. Unused slots
+					 * are zero (see ResetLocalState). */
+					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+						? pParser->UsageTab[j+1] : 0;
 				}
 
 				/* Remove Usage */
