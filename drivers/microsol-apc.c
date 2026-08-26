@@ -162,6 +162,8 @@ void scan_received_pack_model_specific(void)
 	real_power_curve_2 = REAL_POWER_CURVE_SELECTOR_A2[model_index][relay_state] * real_power + REAL_POWER_CURVE_SELECTOR_B2[model_index][relay_state];
 	real_power_curve_3 = REAL_POWER_CURVE_SELECTOR_A3[model_index][relay_state] * real_power + REAL_POWER_CURVE_SELECTOR_B3[model_index][relay_state];
 
+	/* NOTE: Use of fabs() matches the type of `double apparent_power` as
+	 * defined in microsol-common.c, although others here are `float`: */
 	power_difference_1 = fabs(real_power_curve_1 - apparent_power);
 	power_difference_2 = fabs(real_power_curve_2 - apparent_power);
 	power_difference_3 = fabs(real_power_curve_3 - apparent_power);
