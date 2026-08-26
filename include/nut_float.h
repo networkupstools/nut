@@ -52,6 +52,9 @@
  * after 1.0 which is not equal to 1.0" for the discrete maths involved; no talk
  * about exactly comparing it to zero or whether it is the smallest representable
  * non-zero value...
+ *
+ * NOTE: On some systems, use of these maths methods may require linking the
+ * consuming binaries with libm (-lm).
  */
 #define f_equal(x, y) ( fabsf((float)(x) - (float)(y)) <= FLT_EPSILON )
 #define d_equal(x, y) ( fabs((double)(x) - (double)(y)) <= DBL_EPSILON )

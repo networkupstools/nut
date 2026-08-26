@@ -433,7 +433,7 @@ snmp_ups_LDFLAGS = $(AM_LDFLAGS)
 # DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
 snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
- $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS)
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) -lm
 if ENABLE_SHARED_PRIVATE_LIBS
 snmp_ups_dmf_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 else !ENABLE_SHARED_PRIVATE_LIBS
