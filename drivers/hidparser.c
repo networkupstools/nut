@@ -203,7 +203,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		case ITEM_COLLECTION:
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
 			if (pParser->Data.Path.Size >= PATH_SIZE) {
-				upslogx(LOG_ERR, "%s: HID path too long, "
+				upsdebugx(1, "%s: HID path too long, "
 					"aborting report descriptor parsing", __func__);
 				return -1;
 			}
@@ -230,7 +230,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			/* Get Index if any */
 			if (pParser->Value >= 0x80) {
 				if (pParser->Data.Path.Size >= PATH_SIZE) {
-					upslogx(LOG_ERR, "%s: HID path too long, "
+					upsdebugx(1, "%s: HID path too long, "
 						"aborting report descriptor parsing", __func__);
 					return -1;
 				}
@@ -279,7 +279,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
 			if (pParser->Data.Path.Size >= PATH_SIZE) {
-				upslogx(LOG_ERR, "%s: HID path too long, "
+				upsdebugx(1, "%s: HID path too long, "
 					"aborting report descriptor parsing", __func__);
 				return -1;
 			}
