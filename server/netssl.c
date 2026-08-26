@@ -1233,6 +1233,17 @@ void ssl_init(void)
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_set_cipher_list failed");
+	} else {
+		SSL	*tmp_ssl = SSL_new(ssl_ctx);
+		STACK_OF(SSL_CIPHER)	*ciphers = SSL_get_ciphers(tmp_ssl);
+		int	ii;
+
+		for (ii = 0; ii < sk_SSL_CIPHER_num(ciphers); ii++) {
+			const SSL_CIPHER	*c = sk_SSL_CIPHER_value(ciphers, ii);
+			upsdebugx(6, "%s: upsd enabled cipher: %s", __func__, SSL_CIPHER_get_name(c));
+		}
+
+		SSL_free(tmp_ssl);
 	}
 
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
