@@ -105,6 +105,13 @@ https://github.com/networkupstools/nut/milestone/13
       failure causes than just a timeout; quieter retry logging to avoid
       severe syslog/journal thrashing. [PR #3571, #3414]
 
+ - `blazer_usb` driver updates:
+    * Bounded USB reply parsing by the number of bytes actually received, in
+      the `ippon`, `cypress` and `phoenix` transports, preventing out-of-bounds
+      reads when a reply fills the buffer without containing the expected
+      carriage return or a zero byte. The same defects were fixed in the
+      corresponding `nutdrv_qx` transports, which this code predates.
+
  - `dummy-ups` driver updates:
     * Added `authconf` driver parameter for repeater mode to control
       authentication configuration discovery. It accepts `default`, `none`,
@@ -122,6 +129,12 @@ https://github.com/networkupstools/nut/milestone/13
       reusing the existing Armac command framing and Megatec protocol. Polling
       and a quick battery test were verified with an SVC V-1000F
       (`0925:1234`, `UPS USB MON V1.4`). [issue #3562]
+    * Bounded USB reply parsing by the number of bytes actually received, in
+      the `ippon`, `cypress`, `phoenix`, `fuji` and `gtec` transports,
+      preventing out-of-bounds reads when a reply fills the buffer without
+      containing the expected carriage return or a zero byte. Beyond the debug
+      logging, the affected length also reached the reply returned to the
+      caller in the `ippon` and `fuji` transports.
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
