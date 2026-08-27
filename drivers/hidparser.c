@@ -159,13 +159,30 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 	while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) {
 		/* Get new pParser->Item if current pParser->Count is empty */
 		if (pParser->Count == 0) {
+			uint8_t	ItemDataSize;
+
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
+			ItemDataSize = ItemSize[pParser->Item & SIZE_MASK];
+
+			/* The item prefix promises ItemDataSize more bytes, and
+			 * nothing so far has checked that the descriptor still
+			 * holds them. A descriptor ending part-way through an
+			 * item would read up to 4 bytes past the end of the
+			 * caller's buffer. Pos is <= ReportDescSize here - the
+			 * loop condition tested it before the increment above -
+			 * so the subtraction cannot wrap. */
+			if ((size_t)ItemDataSize > pParser->ReportDescSize - pParser->Pos) {
+				upsdebugx(1, "%s: truncated HID item, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
+
+			for (i = 0; i < ItemDataSize; i++) {
 				pParser->Value += (uint32_t)(pParser->ReportDesc[(pParser->Pos)+i]) << (8*i);
 			}
 			/* Pos on next item */
-			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
+			pParser->Pos += ItemDataSize;
 		}
 
 		switch (pParser->Item & ITEM_MASK)
