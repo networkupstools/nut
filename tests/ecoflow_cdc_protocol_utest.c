@@ -149,21 +149,21 @@ int main(void)
 	check(parsed == 0, "captured response parses");
 	check(metrics.has_design_capacity_mah && metrics.design_capacity_mah == 12800,
 		"design capacity parses");
-	check(metrics.has_system_temperature && f_equal(metrics.system_temperature, 26.0),
+	check(metrics.has_system_temperature && f_equal_1e_2(metrics.system_temperature, 26.0),
 		"system temperature parses");
-	check(metrics.has_battery_temperature && f_equal(metrics.battery_temperature, 28.0),
+	check(metrics.has_battery_temperature && f_equal_1e_2(metrics.battery_temperature, 28.0),
 		"battery temperature parses");
-	check(metrics.has_output_power && f_equal(metrics.output_power, 258.768),
+	check(metrics.has_output_power && f_equal_1e_2(metrics.output_power, 258.768),
 		"total output power parses");
-	check(metrics.has_input_power && f_equal(metrics.input_power, 29.204),
+	check(metrics.has_input_power && f_equal_1e_2(metrics.input_power, 29.204),
 		"total input power parses");
-	check(metrics.has_solar_input_power && f_equal(metrics.solar_input_power, 29.204),
+	check(metrics.has_solar_input_power && f_equal_1e_2(metrics.solar_input_power, 29.204),
 		"solar input power parses");
 	check(metrics.has_rated_output_power && metrics.rated_output_power == 600,
 		"rated output power parses");
-	check(metrics.has_ac_output_power && f_equal(metrics.ac_output_power, 258.768),
+	check(metrics.has_ac_output_power && f_equal_1e_2(metrics.ac_output_power, 258.768),
 		"AC output power parses as an absolute value");
-	check(metrics.has_ac_output_frequency && f_equal(metrics.ac_output_frequency, 60.0),
+	check(metrics.has_ac_output_frequency && f_equal_1e_2(metrics.ac_output_frequency, 60.0),
 		"AC output frequency parses");
 	check(!metrics.has_charging_runtime, "not-charging sentinel is not published");
 	check(metrics.has_ems_version && metrics.ems_version[0] == 0x23 &&
@@ -171,7 +171,7 @@ int main(void)
 
 	parsed = parse_modified_float(response, response_length, 7, 0xc3816254U, &metrics);
 	check(parsed == 0, "negative finite response parses");
-	check(metrics.has_output_power && f_equal(metrics.output_power, -258.768),
+	check(metrics.has_output_power && f_equal_1e_2(metrics.output_power, -258.768),
 		"signed power remains signed");
 
 	parsed = parse_modified_float(response, response_length, 7, 0x7fc00000U, &metrics);
