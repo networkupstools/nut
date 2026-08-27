@@ -688,6 +688,7 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
         # might upset other scripts that use PyNUTClient, and/or
         # their imposed timeouts might confuse NUT expectations:
         self.__timeout     = NUT_DEFAULT_CONNECT_TIMEOUT if (timeout is None or type(timeout) not in [float, int] or timeout < 0.0) else timeout
+        self.try_DEFAULT_SECLEVEL = -1
 
         # CERTHOST handling: if provided as a list, convert to a dictionary
         self.__certhost = {}
@@ -885,6 +886,8 @@ if something goes wrong.
                 if hasattr(self, "__expected_server_certname") and self.__expected_server_certname:
                     wrap_server_hostname = self.__expected_server_certname
 
+                if self.try_DEFAULT_SECLEVEL < 0:
+                    self.try_DEFAULT_SECLEVEL=2
                 for i in range(5, 0, -1):
                     try:
                         self.__srv_handler = self.__ssl_context.wrap_socket(
@@ -902,6 +905,31 @@ if something goes wrong.
                             time.sleep(1)
                         else:
                             raise te
+                    except ssl.SSLError as se:
+                        # On some systems upsd gets built against openssl-1.x.y
+                        # and Python (3.14+) against openssl-3, and disables
+                        # some older ciphers so there is no overlap. Try to
+                        # decrease default security level => increase selection.
+                        if "SSLV3_ALERT_HANDSHAKE_FAILURE" in str(se) and self.try_DEFAULT_SECLEVEL >= 0:
+                            try:
+                                #self.__ssl_context.set_ciphers("ECDHE-RSA-AES256-GCM-SHA384")
+                                if self.__debug:
+                                    print( "[DEBUG] Tweak SSL context ciphers to DEFAULT:@SECLEVEL=%d" % self.try_DEFAULT_SECLEVEL)
+                                self.__ssl_context.set_ciphers("DEFAULT:@SECLEVEL=%d" % self.try_DEFAULT_SECLEVEL)
+                            except Exception as ex:
+                                if self.__debug:
+                                    print( "[DEBUG] FAILED to tweak SSL context ciphers: %s" % str(ex) )
+
+                            self.try_DEFAULT_SECLEVEL = self.try_DEFAULT_SECLEVEL - 1
+
+                            try:
+                                self.disconnect()
+                            except Exception as ee:
+                                pass
+                            self.__connect()
+                            return
+                        else:
+                            raise se
 
                 # Make sure handshake succeeded or abort early
                 # (there is currently no way for the server to
