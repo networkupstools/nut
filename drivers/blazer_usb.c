@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -120,7 +120,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -138,7 +138,16 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 	/* TODO: Range-check before cast */
 	return (int)i;
 }
@@ -206,7 +215,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += (size_t)ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -224,7 +233,16 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	if (nut_debug_level >= 3) {
+		/* Bound the display by the bytes actually received: the reply
+		 * need not contain a CR. An embedded NUL still stops "%.*s".
+		 * The guard mirrors the upsdebugx() macro, so the scan stays
+		 * off the normal, non-debugging path. */
+		const char	*cr = (const char *)memchr(buf, '\r', i);
+
+		upsdebugx(3, "read: %.*s",
+			(int)(cr ? (size_t)(cr - buf) : i), buf);
+	}
 	/* TODO: Range-check before cast */
 	return (int)i;
 }
@@ -233,6 +251,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 static int ippon_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[64];
+	const char	*cr, *nul;
 	int	ret, len;
 	size_t	i;
 
@@ -273,9 +292,31 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * Empty response will look like 0x00 0x0D, otherwise it will be
 	 * data string terminated by 0x0D.
 	 */
-	len = (int)strcspn(tmp, "\r");
+	cr = (const char *)memchr(tmp, '\r', (size_t)ret);
+	nul = (const char *)memchr(tmp, '\0', (size_t)ret);
+
+	/*
+	 * Bounded equivalent of strcspn(tmp, "\r"): stop at whichever of CR or
+	 * NUL comes first, but never look past the bytes actually received. A
+	 * full-size reply need not contain either one, and scanning on would
+	 * read beyond tmp.
+	 */
+	if (cr && (!nul || cr < nul)) {
+		len = (int)(cr - tmp);
+	} else if (nul) {
+		len = (int)(nul - tmp);
+	} else {
+		len = ret;
+	}
+
 	upsdebugx(3, "read: %.*s", len, tmp);
-	if (len > 0) {
+
+	/*
+	 * Include the terminator in the reported length, as before. When
+	 * neither was received there is nothing to add, and len already spans
+	 * the whole reply.
+	 */
+	if (len > 0 && len < ret) {
 		len ++;
 	}
 	snprintf(buf, buflen, "%.*s", len, tmp);
