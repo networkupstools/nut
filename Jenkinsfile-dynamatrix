@@ -851,7 +851,7 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Various build combos with DMF and Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard, and a distcheck for them',
+        ,[name: 'Various build combos with DMF regeneration and Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard, and a distcheck for them',
          // TODO: This is a recipe (and target OS) test for ability to build,
          // re-generate and sanity-check Dynamic Mapping Format files, as well
          // as recipe/helper scripts with various Python interpreter versions.
@@ -878,6 +878,56 @@ set | sort -n """
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
                     'CSTDVARIANT': ['gnu'],
                     'BUILD_TYPE': [
+                        'default-tgt:distcheck-dmf-warnings'
+                        ]
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=medium'
+                    ]
+                    ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_WINDOWS
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
+                excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
+                    [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'Various build combos with DMF-related permutations and Python versions for helper scripts and fatal warnings (default level), using default compiler with GNU C99/C++98 standard, and a distcheck for them',
+         // TODO: This is a recipe (and target OS) test for ability to build,
+         // re-generate and sanity-check Dynamic Mapping Format files, as well
+         // as recipe/helper scripts with various Python interpreter versions.
+         // DMF requires Python (2.7+ and 3.x should be okay) with pycparser,
+         // LUA, NEON, xmllint and so a special nut-builder:DMF agent label.
+         // These build agents should also expose a filename for the PYTHON
+         // versions they provide (basename in PATH or full pathname), same
+         // as for iterating MAKE implementations (also checked to ensure
+         // the special Makefile recipes do work).
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         branchRegexTarget: ~/fightwarn/,
+         //branchRegexTarget: dynacfgPipeline.branchStableRegex,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_DMF_PY,
+         'getParStages': { def dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                commonLabelExpr: "nut-builder:DMF",
+                // TOTHINK: Should we also vary compilers here?
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'MAKE', 'PYTHON'],
+                requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:DMF||nut-builder:DMF)"],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    //'BITS': [32, 64],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'] ],
+                    'CSTDVARIANT': ['gnu'],
+                    'BUILD_TYPE': [
                         'default-tgt:distcheck-dmf-features-REGEN_NO',
                         'default-tgt:distcheck-dmf-features-LTDL_YES',
                         'default-tgt:distcheck-dmf-features-LTDL_NO',
@@ -885,9 +935,9 @@ set | sort -n """
                         'default-tgt:distcheck-dmf-features-LUA_YESNO',
                         'default-tgt:distcheck-dmf-features-LUA_NO',
                         'default-tgt:distcheck-dmf-features-REGEN_YES',
-                        'default-tgt:distcheck-dmf-all-yes',
+                        //'default-tgt:distcheck-dmf-all-yes',	// regen + lua
                         'default-tgt:distcheck-dmf-no',
-                        'default-tgt:distcheck-dmf-warnings'
+                        //'default-tgt:distcheck-dmf-warnings'	// all + warnings
                         ]
                     ],
                 dynamatrixAxesCommonEnv: [
