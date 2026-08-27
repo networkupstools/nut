@@ -200,6 +200,11 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.42", "experimental.battery.sku",
 	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	/* Battery pack serial (distinct from battery.sku's part number and
+	 * the chassis's ups.serial/device.serial at 2:4.9.40). Verified
+	 * against the physical battery label on a real unit - exact match. */
+	{ "2:4.5.9.40", "experimental.battery.serial",
+	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.48", "battery.date",        MLINK_DESC_DATE,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.74", "battery.lifetime.status",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, battery_lifetime_status_map },
@@ -275,6 +280,15 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	                                      MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.F.69",  "experimental.statistics.ups.totaltime",
 	                                      MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+
+	/* Internal protocol state, not telemetry - hence microlink.diag, not
+	 * ups/battery/experimental. MLINK_DESC_SLAVE_PASSWORD: the register
+	 * microlink_authenticate() writes its random SPC challenge to. Device
+	 * echoes back whatever was last written (verified across 4 restarts,
+	 * 4 different challenges) - useful for auth debugging, but NOT proof
+	 * auth was accepted (a register that echoes any write looks the same). */
+	{ "2:4.8.5",   "microlink.diag.slave_password_echo",
+	                                      MLINK_DESC_HEX,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 };
 
 const size_t microlink_desc_value_map_count =

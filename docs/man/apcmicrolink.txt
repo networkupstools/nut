@@ -202,9 +202,28 @@ starts up anyway using those for `ups.status`/`battery.charge`/
 `battery.runtime` (see the `hid_fallback` option above) instead of
 refusing to start. Outlet-group data and instant commands, which depend
 on the full Microlink descriptor, become available automatically once the
-tunnel connects -- no driver restart is needed. If the tunnel stays
-unresponsive, the driver periodically attempts a USB device reset to try
-to recover it.
+tunnel connects, with no driver restart needed. If the device disappears
+from the bus (unplug, power cycle), the driver resets and reopens it. It
+does not reset a device that is still present but not answering the
+tunnel, because that does not help.
+
+libusb backend
+~~~~~~~~~~~~~~
+
+USB mode has only been tested against libusb-1.0. Builds against
+libusb-0.1 log a warning once at startup and then carry on, but that
+path is untested for this driver. On at least one system the installed
+libusb-0.1 library's interrupt IN read ignored its configured timeout,
+so the driver hung waiting for a reply instead of timing out and
+retrying. If USB mode stops responding, check that NUT was built with
+`--with-usb=libusb-1.0` before looking further.
+
+With libusb-1.0 and pthreads the driver keeps one read request
+outstanding on a dedicated thread, so it picks up a reply whenever the
+device sends one. Without both, it reads only while already waiting for
+a reply. The tested device can take several seconds to answer and pushes
+unrelated reports on the same pipe meanwhile, so replies that arrive
+outside that window are missed.
 
 Kernel usbhid conflict
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -216,7 +235,9 @@ cannot claim it and will fail to start; and if `usbhid` reclaims the
 interface after a USB reset or re-enumeration event *while this driver is
 already running* (observed on the tested hardware), every following
 interrupt transfer this driver attempts will be rejected by the kernel
-until the driver process is restarted.
+until the driver process is restarted. The driver detects this, logs a
+warning, and backs off between attempts instead of retrying at full
+speed. It cannot recover on its own.
 
 Neither this driver nor NUT's shared USB layer (`nut_libusb.c`) attempts
 to detach `usbhid` on its own. A udev rule that unbinds `usbhid` from the

@@ -131,6 +131,17 @@ static void nut_libusb_cleanup_atexit(void)
 	nut_usb_ctx_initialized = false;
 }
 
+/* Accessor for the libusb context this backend owns, so callers that need
+ * to submit/manage their own async transfers against an already-open
+ * usb_dev_handle (e.g. a driver-specific always-outstanding interrupt-IN
+ * read) can pump its event loop with the correct context instead of
+ * guessing at libusb's implicit default one. Returns NULL before the first
+ * nut_libusb_open() call. */
+libusb_context *nut_libusb_get_context(void)
+{
+	return nut_usb_ctx_initialized ? nut_usb_ctx : NULL;
+}
+
 static void nut_libusb_close(libusb_device_handle *udev);
 
 /*! Add USB-related driver variables with addvar() and dstate_setinfo().

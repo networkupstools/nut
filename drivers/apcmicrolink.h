@@ -13,6 +13,17 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
+
+/* Named wrapper for time(NULL) - a bare time(NULL) inline in an expression
+ * reads less clearly than a named call. Safe to use anywhere a plain
+ * time(NULL) would be, including inside a short-circuited condition: it is
+ * still just a function call evaluated at that exact point, not a hoisted
+ * value, so it introduces no new call where one didn't already happen. */
+static inline time_t microlink_now(void)
+{
+	return time(NULL);
+}
 
 #define MLINK_MAX_FRAME				256
 #define MLINK_MAX_PAYLOAD			(MLINK_MAX_FRAME - 3)
