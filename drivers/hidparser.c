@@ -176,6 +176,19 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_USAGE:
+			/* The usage stack is a fixed-size array. Refuse to walk past
+			 * it instead of merely complaining about it after the fact
+			 * (see the USAGE_TAB_SIZE report at the end of this loop).
+			 * -1 is the established "no more items" return, and
+			 * Parse_ReportDesc() breaks out of its loop on ret < 0, so
+			 * everything parsed up to here is kept and the remainder of
+			 * the descriptor is dropped. */
+			if (pParser->UsageSize >= USAGE_TAB_SIZE) {
+				upslogx(LOG_ERR, "%s: HID Usage stack overflow, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
+
 			/* Copy global or local UPage if any, in Usage stack */
 			if ((pParser->Item & SIZE_MASK) > 2) {
 				pParser->UsageTab[pParser->UsageSize] = pParser->Value;
@@ -189,6 +202,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 		case ITEM_COLLECTION:
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
+			if (pParser->Data.Path.Size >= PATH_SIZE) {
+				upsdebugx(1, "%s: HID path too long, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
 
@@ -197,7 +215,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 				int	j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					pParser->UsageTab[j] = pParser->UsageTab[j+1];
+					/* With UsageSize now allowed to reach
+					 * USAGE_TAB_SIZE, the last slot has no
+					 * successor to shift down. Unused slots
+					 * are zero (see ResetLocalState). */
+					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+						? pParser->UsageTab[j+1] : 0;
 				}
 
 				/* Remove Usage */
@@ -206,6 +229,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Get Index if any */
 			if (pParser->Value >= 0x80) {
+				if (pParser->Data.Path.Size >= PATH_SIZE) {
+					upsdebugx(1, "%s: HID path too long, "
+						"aborting report descriptor parsing", __func__);
+					return -1;
+				}
 				pParser->Data.Path.Node[pParser->Data.Path.Size] = 0x00ff0000 | (pParser->Value & 0x7F);
 				pParser->Data.Path.Size++;
 			}
@@ -214,10 +242,19 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_END_COLLECTION :
+			/* An End Collection with no matching Collection would wrap
+			 * the unsigned Path.Size around to 255 and index far past
+			 * Path.Node[PATH_SIZE] on the next line. */
+			if (pParser->Data.Path.Size == 0) {
+				upslogx(LOG_ERR, "%s: unbalanced HID End Collection, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Size--;
 
 			/* Remove Index if any */
-			if((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000) == 0x00ff0000) {
+			if((pParser->Data.Path.Size > 0)
+			&& ((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000) == 0x00ff0000)) {
 				pParser->Data.Path.Size--;
 			}
 
@@ -241,6 +278,11 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			}
 
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
+			if (pParser->Data.Path.Size >= PATH_SIZE) {
+				upsdebugx(1, "%s: HID path too long, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
 
@@ -249,7 +291,12 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 				int j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					pParser->UsageTab[j] = pParser->UsageTab[j+1];
+					/* With UsageSize now allowed to reach
+					 * USAGE_TAB_SIZE, the last slot has no
+					 * successor to shift down. Unused slots
+					 * are zero (see ResetLocalState). */
+					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+						? pParser->UsageTab[j+1] : 0;
 				}
 
 				/* Remove Usage */
