@@ -1234,6 +1234,19 @@ void ssl_init(void)
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize OpenSSL backend: SSL_CTX_set_cipher_list failed");
 	} else {
+		/* Pragmas due to macro'd definition details of sk_SSL_CIPHER* etc.
+		 * upsetting some compilers (e.g. older clang in C99 mode)
+		 */
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		SSL	*tmp_ssl = SSL_new(ssl_ctx);
 		STACK_OF(SSL_CIPHER)	*ciphers = SSL_get_ciphers(tmp_ssl);
 		int	ii;
@@ -1244,6 +1257,12 @@ void ssl_init(void)
 		}
 
 		SSL_free(tmp_ssl);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 	}
 
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
