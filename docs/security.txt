@@ -641,8 +641,8 @@ If the flag `forcessl` is set to `1`, and `upsd` answers that it can not
 connect with SSL, the connection closes.
 
 If the flag `certverify` is set to `1` and the connection is done in SSL,
-`upsd`'s certificate is verified and its name must be the specified
-`"certificate name"`.
+the certificate presented by `upsd` is verified and its name must be the
+specified value of `"certificate name"`.
 
 To prevent security leaks, you should set all `certverify` and `forcessl`
 flags to `1` (force SSL connection and validate all certificates for all
@@ -659,10 +659,11 @@ name is its hostname.
 upsmon (optional): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Like `upsd`, `upsmon` may need to authenticate itself (`upsd`'s `CERTREQUEST`
-directive set to `REQUEST` or `REQUIRE`).
+Like `upsd`, `upsmon` may need to authenticate itself to the data server
+with a client certificate (if `CERTREQUEST` directive in `upsd.conf` was
+set to `REQUEST` or `REQUIRE`).
 
-It must access to a certificate (and its private key) in a certificate
+The client must access to a certificate (and its private key) in a certificate
 database configuring `CERTPATH` and `CERTIDENT` in `upsmon.conf` in the
 same way as `upsd`.
 

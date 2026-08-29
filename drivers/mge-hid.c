@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.59"
+#define MGE_HID_VERSION		"MGE HID 1.60"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -2590,4 +2590,5 @@ subdriver_t mge_subdriver = {
 	mge_format_mfr,
 	mge_format_serial,
 	fix_report_desc,
+	NULL,
 };

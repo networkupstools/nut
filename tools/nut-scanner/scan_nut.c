@@ -70,7 +70,7 @@ static int (*nut_upscli_init_authconf)(upscli_authconf_t *ac);
 static upscli_authconf_t *(*nut_upscli_find_authconf_item)(const char *user,
 					const char *host, const char *port);
 static void (*nut_upscli_free_authconf_item)(upscli_authconf_t *ac);
-static int (*nut_upscli_read_authconf_file)(const char *filename, int fatal_errors);
+static int (*nut_upscli_read_authconf_file)(const char *filename, int fatal_errors, int debug_level);
 static int (*nut_upscli_authenticate_authconf)(UPSCONN_t *ups, upscli_authconf_t *ac);
 static void (*nut_upscli_get_default_connect_timeout)(struct timeval *ptv);
 static void (*nut_upscli_free_host_cert)(const char *hostname, const char *certname);
@@ -679,10 +679,10 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			int	parsed = -1;
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "%s: Using nutauth='%s': require a user or system provided NUT auth config file", __func__, nutauth);
-				parsed = (*nut_upscli_read_authconf_file)(NULL, 0);
+				parsed = (*nut_upscli_read_authconf_file)(NULL, 0, -1);
 			} else {
 				upsdebugx(1, "%s: Using nutauth='%s': require this NUT auth config file", __func__, nutauth);
-				parsed = (*nut_upscli_read_authconf_file)(nutauth, 0);
+				parsed = (*nut_upscli_read_authconf_file)(nutauth, 0, -1);
 			}
 			if (parsed < 0) {
 				upslogx(LOG_ERR, "A NUT auth config file '%s' was required, but we failed to parse it", nutauth);
@@ -692,7 +692,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 	} else {
 		if (nut_upscli_read_authconf_file) {
 			upsdebugx(1, "%s: Using best-effort NUT auth config detection", __func__);
-			(*nut_upscli_read_authconf_file)(NULL, 0);
+			(*nut_upscli_read_authconf_file)(NULL, 0, 1);
 		} else {
 			upsdebugx(1, "%s: NOT using best-effort NUT auth config detection: upscli_read_authconf_file() not available", __func__);
 		}

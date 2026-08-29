@@ -244,6 +244,11 @@ upsdrvctl_LDADD = libdummy_upsdrvquery.la $(LDADD_COMMON)
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
 apcmicrolink_SOURCES = apcmicrolink.c apcmicrolink-maps.c apc_common.c
+apcmicrolink_LDADD = $(LDADD_DRIVERS_SERIAL)
+if WITH_USB
+apcmicrolink_SOURCES += apcmicrolink-usb.c hidparser.c
+apcmicrolink_LDADD += $(LDADD_DRIVERS_LIBUSB)
+endif WITH_USB
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
 apcsmart_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
@@ -354,8 +359,12 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-h
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
  legrand-hid.c salicru-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c ecoflow-hid-aux-cdc.c ecoflow-cdc-protocol.c $(USBHID_UPS_SUBDRIVERS)
+if WITH_SERIAL
+usbhid_ups_LDADD = libdummy_serial.la $(LDADD_DRIVERS_LIBUSB) $(SERLIBS)
+else
 usbhid_ups_LDADD = $(LDADD_DRIVERS_LIBUSB)
+endif
 
 powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c
 powervar_cx_usb_CFLAGS = $(AM_CFLAGS) -DPVAR_USB=1
@@ -413,7 +422,7 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  mge-mib.c \
  netvision-mib.c \
  raritan-pdu-mib.c raritan-px2-mib.c \
- vertiv-mib.c \
+ vertiv-mib.c voltronic-mib.c \
  xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
@@ -424,7 +433,7 @@ snmp_ups_LDFLAGS = $(AM_LDFLAGS)
 # DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
 snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
- $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS)
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) -lm
 if ENABLE_SHARED_PRIVATE_LIBS
 snmp_ups_dmf_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 else !ENABLE_SHARED_PRIVATE_LIBS
@@ -555,7 +564,7 @@ NUTDRV_QX_SUBDRIVERS =	\
  nutdrv_qx_innovatae.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
- nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_omron.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c	\
  nutdrv_qx_voltronic.c common_voltronic-crc.c	\
  nutdrv_qx_voltronic-axpert.c nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c	\
  nutdrv_qx_zinto.c	\
@@ -578,17 +587,19 @@ dist_noinst_HEADERS = \
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
- apc_common.h apcmicrolink-maps.h apcmicrolink.h apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
+ apc_common.h apcmicrolink-maps.h apcmicrolink.h apcmicrolink-usb.h apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
  nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_innovart33.h nutdrv_qx_innovatae.h	\
  nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
- nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_omron.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx.h common_voltronic-crc.h nutdrv_qx_voltronic.h	\
  nutdrv_qx_voltronic-axpert.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h \
  nutdrv_qx_zinto.h \
  upsdrvquery.h \
- xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h vertiv-mib.h eaton-ats30-mib.h \
- apc-pdu-mib.h apc-epdu-mib.h ecoflow-hid.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
+ xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h vertiv-mib.h voltronic-mib.h eaton-ats30-mib.h \
+ apc-pdu-mib.h apc-epdu-mib.h \
+ ecoflow-cdc-protocol.h ecoflow-hid-aux-cdc.h ecoflow-hid.h \
+ ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
  hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h ydn23.h
 

@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -444,7 +444,7 @@ static void dummy_setproctag_callback(const char *tag) {
 	const void	*cookie = nut_common_cookie();
 
 	if (cookie != upscli_upslog_cookie())
-		upscli_upslog_setproctag(xstrdup(tag), cookie);
+		upscli_upslog_setproctag(tag, cookie);
 }
 
 /* optionally tweak prognames[] entries */
@@ -463,7 +463,7 @@ void upsdrv_tweak_prognames(void)
 	if (cookie != upscli_upslog_cookie()) {
 		/* Send over a copy */
 		upscli_upslog_setprocname(xstrdup(getmyprocname()), cookie);
-		upscli_upslog_setproctag(xstrdup(getproctag()), cookie);
+		upscli_upslog_setproctag(getproctag(), cookie);
 
 		upsdrv_callback_setproctag = dummy_setproctag_callback;
 	}
@@ -511,17 +511,17 @@ void upsdrv_initups(void)
 			} else {
 				if (!strcmp(authconf, "default")) {
 					upsdebugx(1, "%s: Using authconf='%s': require a user or system provided file", __func__, authconf);
-					if (upscli_read_authconf_file(NULL, 1) < 0)
+					if (upscli_read_authconf_file(NULL, 1, -1) < 0)
 						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
 				} else {
 					upsdebugx(1, "%s: Using authconf='%s': require this file", __func__, authconf);
-					if (upscli_read_authconf_file(authconf, 1) < 0)
+					if (upscli_read_authconf_file(authconf, 1, -1) < 0)
 						fatalx(EXIT_FAILURE, "Failed to parse auth configuration file");
 				}
 			}
 		} else {
 			upsdebugx(1, "%s: Using best-effort auth config detection", __func__);
-			upscli_read_authconf_file(NULL, 0);
+			upscli_read_authconf_file(NULL, 0, 1);
 		}
 		/* FIXME: if there is at least one more => MODE_META... */
 	}

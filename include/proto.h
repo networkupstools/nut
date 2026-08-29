@@ -44,48 +44,53 @@ extern "C" {
 
 /* Define this as a fall through, HAVE_STDARG_H is probably already set */
 
-#ifndef HAVE_VARARGS_H
-#define HAVE_VARARGS_H
-#endif
+# ifndef HAVE_VARARGS_H
+#  define HAVE_VARARGS_H	1
+# endif
 
 /* varargs declarations: */
 
-#if defined(HAVE_STDARG_H)
-# include <stdarg.h>
-# define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
-# define VA_LOCAL_DECL   va_list ap
-# define VA_START(f)     va_start(ap, f)
-# define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
-# define VA_END          va_end(ap)
-#else
-# if defined(HAVE_VARARGS_H)
-#  include <varargs.h>
-#  undef HAVE_STDARGS
+# if (defined(HAVE_STDARG_H) || defined(HAVE_SYS_STDARG_H)) && (HAVE_STDARG_H || HAVE_SYS_STDARG_H)
+#  ifdef HAVE_STDARG_H
+#   include <stdarg.h>
+#  endif
+#  ifdef HAVE_SYS_STDARG_H
+#   include <sys/stdarg.h>
+#  endif
+#  define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
 #  define VA_LOCAL_DECL   va_list ap
-#  define VA_START(f)     va_start(ap)      /* f is ignored! */
-#  define VA_SHIFT(v,t) v = va_arg(ap,t)
-#  define VA_END        va_end(ap)
+#  define VA_START(f)     va_start(ap, f)
+#  define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
+#  define VA_END          va_end(ap)
 # else
+#  if defined(HAVE_VARARGS_H) && HAVE_VARARGS_H
+#   include <varargs.h>
+#   undef HAVE_STDARGS
+#   define VA_LOCAL_DECL   va_list ap
+#   define VA_START(f)     va_start(ap)      /* f is ignored! */
+#   define VA_SHIFT(v,t) v = va_arg(ap,t)
+#   define VA_END        va_end(ap)
+#  else
 /*XX ** NO VARARGS ** XX*/
+#  endif
 # endif
-#endif
 
-#ifdef __cplusplus
+# ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
-#endif
+# endif
 
-#if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
+# if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
 int snprintf (char *str, size_t count, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
-#endif
+# endif
 
-#if !defined (HAVE_VSNPRINTF)
+# if !defined (HAVE_VSNPRINTF)
 int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
-#endif
+# endif
 
-#endif
+#endif	/* !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF) */
 
 #ifndef HAVE_SETENV
 int nut_setenv(const char *name, const char *value, int overwrite);
@@ -102,24 +107,24 @@ static inline int unsetenv(const char *name) {
 #endif
 
 #ifdef __hpux
-#ifdef HAVE_SYS_MODEM_H
-#include <sys/modem.h>
-#endif
+# ifdef HAVE_SYS_MODEM_H
+#  include <sys/modem.h>
+# endif
 /* See sys/termio.h and sys/modem.h
    The following serial bits are not defined by HPUX.
    The numbers are octal like I found in BSD.
    TIOCM_ST is used in genericups.[ch] for the Powerware 3115.
    These defines make it compile, but I have no idea if it works.
  */
-#define         TIOCM_LE        0001            /* line enable */
-#define         TIOCM_ST        0010            /* secondary transmit */
-#define         TIOCM_SR        0020            /* secondary receive */
-#endif
+# define         TIOCM_LE        0001            /* line enable */
+# define         TIOCM_ST        0010            /* secondary transmit */
+# define         TIOCM_SR        0020            /* secondary receive */
+#endif	/* __hpux */
 
 #ifdef HAVE_GETPASSPHRASE
-#define GETPASS getpassphrase
+# define GETPASS getpassphrase
 #else
-#define GETPASS getpass
+# define GETPASS getpass
 #endif
 
 #ifdef __Lynx__

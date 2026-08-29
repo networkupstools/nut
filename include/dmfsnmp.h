@@ -115,11 +115,16 @@
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
+#ifndef WITH_DMF_SETVAR
+/* Experimental feature, may be not completed yet */
+# define WITH_DMF_SETVAR	0
+#endif
+
 #ifdef WANT_DMF_FUNCTIONS
 # ifndef WITH_DMF_FUNCTIONS
 #  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
 # endif
-#endif
+#endif	/* WANT/WITH_DMF_FUNCTIONS */
 
 #ifndef WITH_DMF_LUA
 # define WITH_DMF_LUA 0
@@ -132,7 +137,7 @@
 # if ! WITH_DMF_FUNCTIONS
 #  error "Explicitly not WITH_DMF_FUNCTIONS, but WITH_DMF_LUA - fatal conflict"
 # endif
-#endif
+#endif	/* WITH_DMF_LUA */
 
 #if WITH_DMF_LUA
 /* NOTE: as of this initial code-drop, the DMF+LUA implementation is
@@ -143,7 +148,7 @@
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
-#endif
+#endif	/* WITH_DMF_LUA */
 
 /*
  *      HEADER FILE
@@ -236,8 +241,8 @@
 
 #if WITH_DMF_FUNCTIONS
 /* Additional snmp_info attribute to reference dynamic functions to produce calculated values */
-#define TYPE_FUNCTIONSET "functionset"
-#endif
+# define TYPE_FUNCTIONSET "functionset"
+#endif	/* WITH_DMF_FUNCTIONS */
 
 
 /* Aggregate the data storage and variables needed to
@@ -261,7 +266,7 @@ typedef struct {
 	char *language;		/* Practical default is "lua-5.1" */
 	char *code;
 } dmf_function_t;
-#endif
+#endif	/* WITH_DMF_FUNCTIONS */
 
 /* Initialize the data for dmf.c */
 mibdmf_parser_t *
@@ -379,7 +384,7 @@ info_lkp_t *
 	, long (*nuf_s2l)(const char *nut_value)
 	, long (*fun_s2l)(const char *snmp_value)
 	, const char *(*nuf_vp2s)(void *raw_nut_value)
-#endif /* WITH_SNMP_LKP_FUN */
+#endif	/* WITH_SNMP_LKP_FUN */
 	);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
@@ -412,7 +417,7 @@ void
 
 void
 	function_node_handler(alist_t *list, const char **attrs);
-#endif
+#endif	/* WITH_DMF_FUNCTIONS */
 
 /* Same for snmp structure instances */
 /* Note: The DMF (XML) structure contains a "functionset" reference and
@@ -426,10 +431,12 @@ snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
 		info_lkp_t *lookup
-//, int *setvar
+#if WITH_DMF_SETVAR
+		, int *setvar
+#endif	/* WITH_DMF_SETVAR */
 #if WITH_DMF_FUNCTIONS
-,char **function_language, char **function_code
-#endif
+		,char **function_language, char **function_code
+#endif	/* WITH_DMF_FUNCTIONS */
 );
 
 void
@@ -489,7 +496,7 @@ int
 #if WITH_DMF_FUNCTIONS
 char *
 	snmp_info_type_to_main_function_name(const char * info_type);
-#endif
+#endif	/* WITH_DMF_FUNCTIONS */
 
 #define DMF_SNMP_H
 #endif /* DMF_SNMP_H */

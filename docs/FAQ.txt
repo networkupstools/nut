@@ -465,7 +465,7 @@ you deem fit.
 One approach was proposed in discussion with Lennart Poettering of systemd
 fame, that operating system concepts constructed with (immutable) run-time
 images are actually layered like onions, with code in another file system
-(usually an initrd) picking the run-time image to use and `chroot`'ing into
+(usually an initrd) picking the run-time image to use and `chroot`-ing into
 it... and possibly regaining control when the run-time operating environment
 exits.  Sort of like containers, where the operating system which you interact
 with is the inside of the container, and you do not directly see its hypervisor.

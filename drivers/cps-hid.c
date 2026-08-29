@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.85"
+#define CPS_HID_VERSION      "CyberPower HID 0.87"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID	0x0764
@@ -52,6 +52,22 @@
 
 /* Should be a realistic max value covering most affected UPS. */
 #define CPS_NOMINALPWR_LOGMAX 2048
+
+/* Should be enough for battery voltages (sent in 0.1 V units on
+ * some affected models, i.e. a 48 V string is transmitted as 480). */
+#define CPS_BATTVOLT_LOGMAX 4096
+
+/* Is a physical-to-logical scaling in effect for this item?
+ * Mirrors the rescale predicate of logical_to_physical()
+ * (drivers/libhid.c): scaling is active only when both Physical
+ * bounds are defined and not both zero. Widening LogMax below would
+ * change already-correct values on such items, so they must not be
+ * touched by the report descriptor fix-ups. */
+static int cps_phys_scale_active(const HIDData_t *Data)
+{
+	return (Data->have_PhyMax && Data->have_PhyMin) &&
+	       !(Data->PhyMax == 0 && Data->PhyMin == 0);
+}
 
 /*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
@@ -544,29 +560,62 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				upsdebugx(3, "Fixing Report Descriptor: "
 					"set Output Voltage LogMin = %d, LogMax = %d",
 					CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
-
-				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
-					long input_logmin = pData->LogMin;
-					long input_logmax = pData->LogMax;
-					upsdebugx(4, "Original Report Descriptor: input "
-						"LogMin: %ld LogMax: %ld",
-						input_logmin, input_logmax);
-
-					/* TOTHINK: Should this be still about
-					 * the *HIGH* Voltage Transfer? Or LOW?
-					 */
-					if (hvt_logmin == input_logmin && hvt_logmax == input_logmax) {
-						pData->LogMin = CPS_VOLTAGE_LOGMIN;
-						pData->LogMax = CPS_VOLTAGE_LOGMAX;
-						upsdebugx(3, "Fixing Report Descriptor: "
-							"set Input Voltage LogMin = %d, LogMax = %d",
-							CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
-					}
-				}
-
 				retval = 1;
 			}
 		}
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
+			long input_logmin = pData->LogMin;
+			long input_logmax = pData->LogMax;
+			upsdebugx(4, "Original Report Descriptor: input "
+				"LogMin: %ld LogMax: %ld",
+				input_logmin, input_logmax);
+
+			/* TOTHINK: Should this be still about
+			 * the *HIGH* Voltage Transfer? Or LOW?
+			 */
+			if ((hvt_logmin == input_logmin && hvt_logmax == input_logmax) ||
+				(hvt_logmax > input_logmax)) {
+				if (cps_phys_scale_active(pData)) {
+					upsdebugx(3, "SKIPPING Report Descriptor fix for "
+						"Input Voltage: physical scaling in effect");
+				} else {
+					pData->LogMin = CPS_VOLTAGE_LOGMIN;
+					pData->LogMax = CPS_VOLTAGE_LOGMAX;
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input Voltage LogMin = %d, LogMax = %d",
+						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
+					retval = 1;
+				}
+			}
+		}
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 14 /* 0x0E */, USAGE_POW_CONFIG_VOLTAGE))) {
+			long cvoltage_logmax = pData->LogMax;
+			upsdebugx(4, "Original Report Descriptor: input ConfigVoltage "
+				"LogMin: %ld LogMax: %ld",
+				pData->LogMin, cvoltage_logmax);
+
+			/* UPS.Input.ConfigVoltage is byte-sized; some EU models declare
+			 * its LogMax far below the real mains voltage, so NUT clamps
+			 * the nominal input voltage to it. If the HVT item implies a
+			 * higher mains voltage, widen it to the natural ceiling for a
+			 * byte-sized value (mirrors apc-hid.c).
+			 */
+			if (hvt_logmax > cvoltage_logmax) {
+				if (cps_phys_scale_active(pData)) {
+					upsdebugx(3, "SKIPPING Report Descriptor fix for "
+						"Input ConfigVoltage: physical scaling in effect");
+				} else {
+					pData->LogMax = 255;
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input ConfigVoltage LogMax = %ld",
+						pData->LogMax);
+					retval = 1;
+				}
+			}
+		}
+
 	}
 
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 18 /* 0x12 */, USAGE_POW_VOLTAGE))) {
@@ -695,6 +744,61 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		}
 	}
 
+	/* Fix for battery voltage reporting getting clipped by a too restrictive LogMax. */
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 10 /* 0x0A */, USAGE_POW_VOLTAGE))) {
+		long battvolt_logmax = pData->LogMax;
+
+		upsdebugx(4, "Original Report Descriptor: battery voltage "
+			"LogMin: %ld LogMax: %ld",
+			pData->LogMin, battvolt_logmax);
+
+		if (battvolt_logmax < CPS_BATTVOLT_LOGMAX) {
+			/* Current findings suggest that the values sent by the UPS
+			 * are accurate, but then get clipped by a too strict
+			 * LogMax threshold (e.g. 255 while a 48 V battery string
+			 * is sent as 480 in 0.1 V units):
+			 * https://github.com/networkupstools/nut/issues/3089
+			 */
+			if (cps_phys_scale_active(pData)) {
+				upsdebugx(3, "SKIPPING Report Descriptor fix for "
+					"Battery Voltage: physical scaling in effect");
+			} else {
+				pData->LogMax = CPS_BATTVOLT_LOGMAX;
+
+				upsdebugx(3, "Fixing Report Descriptor: "
+					"set Battery Voltage LogMax = %ld",
+					pData->LogMax);
+
+				retval = 1;
+			}
+		}
+	}
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 9 /* 0x09 */, USAGE_POW_CONFIG_VOLTAGE))) {
+		long battvolt_nom_logmax = pData->LogMax;
+
+		upsdebugx(4, "Original Report Descriptor: battery ConfigVoltage "
+			"LogMin: %ld LogMax: %ld",
+			pData->LogMin, battvolt_nom_logmax);
+
+		if (battvolt_nom_logmax < CPS_BATTVOLT_LOGMAX) {
+			/* Nominal battery voltage gets clipped the same way on
+			 * affected models; see the battery voltage fix above.
+			 */
+			if (cps_phys_scale_active(pData)) {
+				upsdebugx(3, "SKIPPING Report Descriptor fix for "
+					"Battery ConfigVoltage: physical scaling in effect");
+			} else {
+				pData->LogMax = CPS_BATTVOLT_LOGMAX;
+
+				upsdebugx(3, "Fixing Report Descriptor: "
+					"set Battery ConfigVoltage LogMax = %ld",
+					pData->LogMax);
+
+				retval = 1;
+			}
+		}
+	}
+
 	if (!retval) {
 		/* We did not `return 1` above, so... */
 		upsdebugx(3,
@@ -717,4 +821,5 @@ subdriver_t cps_subdriver = {
 	cps_format_mfr,
 	cps_format_serial,
 	cps_fix_report_desc,
+	NULL,
 };

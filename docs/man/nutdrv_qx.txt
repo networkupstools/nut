@@ -30,7 +30,7 @@ refers to this large family of similar dialects as the 'Megatec Q*' or
 
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power',
+'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'OMRON', 'Powercool', 'Voltronic Power',
 'SKE' (rebranded by many, many -- have I said many? -- others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
@@ -88,7 +88,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'omron', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -168,8 +168,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, OMRON, Q1, Q2, Q6, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ignoresab*::
 Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
@@ -215,6 +215,94 @@ MASTERGUARD PROTOCOL
 Make the claim function verify it's talking to the specified 'slave address' (*ups.id*).
 Safeguard against talking to the wrong one of several identical UPSes on the same USB bus.
 Note that when changing *ups.id* (through linkman:upsrw[8]) the driver will continue to talk to the UPS with the new 'slave address', but won't claim it again on restart until the *slave_addr* parameter is adjusted.
+
+
+OMRON PROTOCOL
+~~~~~~~~~~~~~~
+
+This protocol is a variant of the 'q1' protocol. Its implementation is based
+on two OMRON-authored GPL driver sources: version 1.00 distributed in the
+Synology DSM 7.3-86009 GPL sources, and version 1.02 distributed in the QNAP
+QTS 5.2.3 GPL sources. It differs from 'q1' in the following ways.
+
+The third character (index 2) of the eight-character `Q1` status field, which
+'q1' maps to *BYPASS*, is not published at all. The tested device reports it as
+set during stable mains operation, both in normal mode and in ECO mode, and clear
+while on battery; it also varied during startup/calibration. Neither OMRON
+driver version has active handling for that character. Both test the same
+character -- naming it `Bit5' when counting from the other end -- but the body
+of that branch is commented out in both the 1.00 and 1.02 sources. Its exact
+meaning on this hardware is not established.
+
+The last character (index 7) of the status field, which 'q1' maps to
+*ups.beeper.status*, is not published either. Neither OMRON driver version
+reads that character. Both take the beeper state from a different query, which
+this subdriver does not implement. In that query `0' means enabled, whereas
+'q1' would map an index-7 `0' to disabled. Whether index 7 reports the beeper
+state on this hardware is not established.
+
+Among the UPS-specific instant commands this protocol exposes only
+*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*. Neither OMRON driver
+version has an equivalent of the 'q1' *load.on*, *load.off*, `test.battery.*`
+or *beeper.toggle* commands; both define per-outlet load control and
+*beeper.enable* / *beeper.disable* instead. This subdriver does not expose
+those commands. The driver core registers additional commands independently of
+the subdriver, such as *shutdown.default* and *driver.killpower*.
+
+Autodetection is restricted to OMRON's USB vendor ID because this protocol's
+claim check is as permissive as the 'q1' check. Without the vendor-ID check,
+the subdriver could claim devices intended for the generic 'q1' fallback. The
+OMRON protocol is tried before command-based protocol probes; a non-OMRON USB
+device is rejected by this candidate without a transfer. A device reached over
+a serial link has no USB vendor ID and therefore must be configured with
+`protocol = omron` explicitly.
+
+Over USB, this protocol is normally paired with the *omron* value of the
+*subdriver* option, which selects the matching transport. The protocol and
+transport were added together for this device. The registered BN150T USB ID
+can select both automatically, but specifying both remains recommended to make
+the configuration unambiguous. For the tested unit the explicit settings are
+`protocol = omron`, `subdriver = omron`, `vendorid = 0590`, `productid = 00b7`.
+
+The battery variables have different data sources:
+
+- *battery.charge* and *battery.runtime* are normally obtained from separate
+  OMRON extension queries, so they do not depend on the
+  *runtimecal* guesswork described under
+  <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>.
+- *battery.voltage.low* and *battery.voltage.high* are **not** device readings.
+  The device does not report those two thresholds at all. It reports a nominal
+  battery voltage, and the driver derives the pair from that, in the same way
+  it does for any other device that reports a nominal voltage but no
+  thresholds. The current *battery.voltage* is read directly from `Q1` and
+  does not use these derived thresholds.
+- If the charge or runtime query fails during a poll, the corresponding
+  variable falls back to the driver's estimate for that cycle. If the runtime
+  query fails and no *runtimecal* value is set, the driver retains the previous
+  *battery.runtime* value while continuing to mark the data as good. A client
+  cannot distinguish that stale reading from a fresh one.
+
+NOTE: Only the BN150T has been tested, and only over USB. Polling and all
+three direct shutdown commands were exercised with its output unloaded.
+*shutdown.return* was verified on battery, including automatic output recovery
+after utility returned; *shutdown.stayoff* kept the output off with utility
+present until manual recovery; and *shutdown.stop* cancelled pending
+120-second shutdowns.
+The shared *shutdown.default* and *driver.killpower* commands and the driver's
+`-k' path were not exercised. Their pre-existing failure-reporting limitation
+is tracked in
+link:https://github.com/networkupstools/nut/issues/3553[issue #3553].
+Other OMRON models and serial connections are untested.
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
+Note that OMRON's shutdown commands carry no return-delay field, so this
+setting does not reach the device.
+
+*offdelay*::
+The acceptable range is +12..600+ seconds.
+The value reaches the device in OMRON's own encoding: a six-second-step form
+below one minute, and a whole-minute form at one minute and above.
 
 
 INNOVART31, INNOVART33, INNOVATAE, Q1, Q2, Q6 PROTOCOLS
@@ -398,8 +486,8 @@ USB INTERFACE ONLY
 include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
-Select a serial-over-USB subdriver to use.
-You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
+Select a USB communication subdriver to use.
+You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *omron*, *phoenix*, *phoenixtec*, *richcomm-svc*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
@@ -415,6 +503,15 @@ You must provide *value* (+0x409+ or +0x4095+), according to your device entry i
 *noscanlangid*::
 If this flag is set, don't autoscan valid range for langid.
 
+*cypress_drain_quirk =* 'value'::
+Some devices using the `cypress` subdriver, e.g. VOLT Polska identified as Cypress
+USB ID `0665:5161`, were seen to retain stale bytes in their USB buffer, returning
+old "garbage" as response to new queries and so corrupting discovery attempts.
+The `nutdrv_qx` driver can drain the USB buffer and use longer timeouts to communicate
+with such devices, but such a change may potentially misfire on other devices with
+same USB ID (Belkin, Voltronic).  This option allows to explicitly enable or disable
+this behavior; by default it is chosen according to device self-identification.
+
 
 IMPLEMENTATION NOTES
 ^^^^^^^^^^^^^^^^^^^^
@@ -425,6 +522,31 @@ an old release of "PowerManagerII" software, which doesn't seem to be Armac
 specific: its banner is "2004 Richcomm Technologies, Inc. Dec 27 2005 ver 1.1."
 Maybe other Richcomm UPSes would work with this -- maybe better than with
 the older standalone `richcomm_usb` driver.
+
+*'richcomm-svc' subdriver*::
+This USB communication subdriver supports older session-initialized Richcomm
+USB-to-UART bridges. It was developed and tested with an SVC V-1000F whose
+USB ID is `0925:1234` and product string is `UPS USB MON V1.4`.
++
+The bridge must be configured for 2400 baud and receive a session-opening
+sequence before it accepts Megatec commands. After that initialization this
+subdriver reuses the Armac command framing and the existing Megatec protocol,
+with the 6-byte interrupt reads required by this hardware.
+Because `0925:1234` is shared by devices with different communication details,
+this mode is not selected automatically. Configure it explicitly, for example:
++
+----
+[svc-v1000f]
+    driver = "nutdrv_qx"
+    port = "auto"
+    subdriver = "richcomm-svc"
+    protocol = "megatec"
+    vendorid = "0925"
+    productid = "1234"
+----
++
+Polling and `test.battery.start.quick` were verified on physical hardware.
+Deep battery tests and load or shutdown commands were not tested.
 
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
@@ -513,6 +635,12 @@ Perform a quick (10 second) battery test.
 *test.battery.stop*::
 Stop a running battery test.
 (Not available on some hardware)
+
+NOTE: Of the commands above, the 'omron' protocol offers only
+*shutdown.return*, *shutdown.stayoff* and *shutdown.stop*; see
+<<_omron_protocol,OMRON PROTOCOL>> above for why the others are left out.
+Commands registered independently by the driver core, such as
+*shutdown.default*, remain available.
 
 
 BESTUPS, INNOVART31, INNOVART33, INNOVATAE, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, Q2, Q6, ZINTO PROTOCOLS

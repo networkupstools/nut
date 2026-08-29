@@ -1,6 +1,6 @@
 # Network UPS Tools: main docs
 
-# FIXME: There is a lot of shell-scripting below which gets processed by
+# NOTE: There is a lot of shell-scripting below which gets processed by
 # whatever system shell there is. While bash handles expressions like
 #   VAL="`cmd "some params"`"
 # in a way that "some params" are a single token passed to "cmd" as an
@@ -976,7 +976,11 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		     && echo "----- ^^^" >&2 ; \
 		     exit $$RES; } ; \
 	 if $(EGREP) '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
-		echo "FAILED: Admonition block should contain a sentence, not starting with a lower-case letter" >&2 ; \
+		echo "FAILED: ASCIIDOC nuance: Admonition block should contain a sentence, not starting with a lower-case letter: '$${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}'" >&2 ; \
+		exit 2 ; \
+	 fi ; \
+	 if $(EGREP) '[^ \t]`'"'" '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
+		echo "FAILED: ASCIIDOC nuance: Closing monospace backtick should not be followed by an apostrophe, that makes it an internal backtick and keeps monospace context in place: '$${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}'" >&2 ; \
 		exit 2 ; \
 	 fi ; \
 	 touch '$@'
@@ -1011,7 +1015,11 @@ SPELLCHECK_AUTO_ONE = ( \
 # single-byte accented characters here and there, they seem okay):
 if HAVE_PERL
 SOURCE_CHECK_UNICODE = { \
-	echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	if [ x'$(SPELLCHECK_SRCDIR)' = x. ] ; then \
+		echo "  CHECK-SOURCE-NONASCII	`pwd`/ => $(SPELLCHECK_SRC)"; \
+	else \
+		echo "  CHECK-SOURCE-NONASCII	$(SPELLCHECK_SRCDIR)/ => $(SPELLCHECK_SRC)"; \
+	fi ; \
 	( cd $(SPELLCHECK_SRCDIR) && @PERL@ $(abs_top_srcdir)/tools/check-source-nonascii.pl $(SPELLCHECK_SRC) ) || exit ; \
 	}
 

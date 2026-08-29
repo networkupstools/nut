@@ -52,10 +52,19 @@
  * after 1.0 which is not equal to 1.0" for the discrete maths involved; no talk
  * about exactly comparing it to zero or whether it is the smallest representable
  * non-zero value...
+ *
+ * NOTE: On some systems, use of these maths methods may require linking the
+ * consuming binaries with libm (-lm).
  */
 #define f_equal(x, y) ( fabsf((float)(x) - (float)(y)) <= FLT_EPSILON )
 #define d_equal(x, y) ( fabs((double)(x) - (double)(y)) <= DBL_EPSILON )
 #define ld_equal(x, y) ( fabsl((long double)(x) - (long double)(y)) <= LDBL_EPSILON )
+
+/* Variants with higher tolerance, e.g. to use with ecoflow-cdc-protocol code
+ * which parses wire bits into floats, or similar use-cases */
+#define f_equal_1e_2(x, y) ( fabsf((float)(x) - (float)(y)) <= 0.01 )
+#define d_equal_1e_2(x, y) ( fabs((double)(x) - (double)(y)) <= 0.01 )
+#define ld_equal_1e_2(x, y) ( fabsl((long double)(x) - (long double)(y)) <= 0.01 )
 
 #ifndef HAVE_STRTOF
 /* Use fallback from libcommon */

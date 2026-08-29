@@ -24,7 +24,12 @@
 #include "config.h"	/* must be first */
 
 #include <stdio.h>
-#include <stdarg.h>
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #ifndef WIN32

@@ -62,20 +62,25 @@
 /* Define this as a fall through, HAVE_STDARG_H is probably already set */
 
 #ifndef HAVE_VARARGS_H
-#define HAVE_VARARGS_H
+# define HAVE_VARARGS_H	1
 #endif
 
 /* varargs declarations: */
 
-#if defined(HAVE_STDARG_H)
-# include <stdarg.h>
+#if (defined(HAVE_STDARG_H) || defined(HAVE_SYS_STDARG_H)) && (HAVE_STDARG_H || HAVE_SYS_STDARG_H)
+# if defined(HAVE_STDARG_H) && HAVE_STDARG_H
+#  include <stdarg.h>
+# endif
+# if defined(HAVE_SYS_STDARG_H) && HAVE_SYS_STDARG_H
+#  include <sys/stdarg.h>
+# endif
 # define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
 # define VA_LOCAL_DECL   va_list ap
 # define VA_START(f)     va_start(ap, f)
 # define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
 # define VA_END          va_end(ap)
 #else
-# if defined(HAVE_VARARGS_H)
+# if defined(HAVE_VARARGS_H) && HAVE_VARARGS_H
 #  include <varargs.h>
 #  undef HAVE_STDARGS
 #  define VA_LOCAL_DECL   va_list ap
@@ -88,15 +93,15 @@
 #endif
 
 #ifdef HAVE_LONG_DOUBLE
-#define LDOUBLE long double
+# define LDOUBLE long double
 #else
-#define LDOUBLE double
+# define LDOUBLE double
 #endif
 
 #ifdef HAVE_LONG_LONG_INT
-#define LLONG long long
+# define LLONG long long
 #else
-#define LLONG long
+# define LLONG long
 #endif
 
 /*int snprintf (char *str, size_t count, const char *fmt, ...);*/

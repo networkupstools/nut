@@ -614,6 +614,9 @@ static void client_disconnect(nut_ctype_t *client)
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
 
+	/* Avoid re-closing twice in ssl_finish() below: */
+	client->sock_fd = ERROR_FD_SOCK;
+
 #ifdef WIN32
 	CloseHandle(client->Event);
 #endif	/* WIN32 */
@@ -1243,6 +1246,10 @@ static void upsd_cleanup(void)
 	free(certfile);
 	free(certname);
 	free(certpasswd);
+
+#if defined(WITH_SSL)
+	free(certpath);
+#endif
 
 	free(fds);
 	free(handler);
@@ -1914,9 +1921,9 @@ static void mainloop(void)
 				__func__,
 				(handler[i].type==DRIVER ? "DRIVER" :
 				(handler[i].type==CLIENT ? "CLIENT" :
-				(handler[i].type==SERVER ? "SERVER"  :
+				(handler[i].type==SERVER ? "SERVER" :
 				"<unknown>"))),
-				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
+				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name   :
 				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
 				(handler[i].type==SERVER ? "" :
 				""))),
@@ -1975,19 +1982,20 @@ static void mainloop(void)
 
 		if (fds[i].revents & POLLIN) {
 
-			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %ld]",
+			upsdebugx(3, "%s: Incoming %s from %s [%s%sFD %ld%s]",
 				__func__,
 				(handler[i].type==SERVER ? "connection" : "data"),
 				(handler[i].type==DRIVER ? "DRIVER" :
 				(handler[i].type==CLIENT ? "CLIENT" :
-				(handler[i].type==SERVER ? "SERVER"  :
+				(handler[i].type==SERVER ? "SERVER" :
 				"<unknown>"))),
-				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name  :
+				(handler[i].type==DRIVER ? ((upstype_t *)handler[i].data)->name   :
 				(handler[i].type==CLIENT ? ((nut_ctype_t *)handler[i].data)->addr :
 				(handler[i].type==SERVER ? "" :
 				""))),
 				(handler[i].type==DRIVER || handler[i].type==CLIENT ? ", " : ""),
-				(long int)fds[i].fd
+				(long int)fds[i].fd,
+				(handler[i].type==CLIENT ? ( ((nut_ctype_t *)handler[i].data)->ssl_connected ? ", encrypted" : ", plaintext") : "")
 				);
 
 			switch(handler[i].type)

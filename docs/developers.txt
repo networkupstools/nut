@@ -60,7 +60,7 @@ Debugging information
 
 The `upsdebug_with_errno()`, `upsdebugx()`, `upsdebug_hex()` and
 `upsdebug_ascii()` routines use the global `nut_debug_level`, so you
-don't have to mess around with `printf()`'s and `if`'s yourself.
+don't have to mess around with `printf()` and `if` clauses yourself.
 Use them.
 
 Memory allocation
@@ -743,8 +743,8 @@ int open_subspace(char *ship, int privacy)
 -------------------------------------------------------------------------------
 
 The basic idea is that we try to group things into functions, and then
-find ways to drop out of them when we can't go any further.  There's
-another way to program this involving a big else chunk and a bunch of
+find ways to drop out of them when we can't go any further.  There is
+another way to program this, involving a big `else` chunk and a bunch of
 braces, and it can be hard to follow.  You can read this from top to
 bottom and have a pretty good idea of what's going on without having to
 track too much `{ }` nesting and indenting.
@@ -771,22 +771,49 @@ the people out there.
 Note that tabs apply only to *indenting*.  Alignment of text after any
 non-tab character has appeared on the line must be done by spaces in
 order for it to remain at the same alignment when someone views tabs at
-a different widths.
+a different width.
 
-One common example for this is multi-line if condition:
+Indentation and line-breaking of conditional clauses
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One common example of this is indentation of multi-line `if`, `while`,
+`switch` etc. conditions -- with the additional aspect that we find
+it easier to read indented code with a visually clear boundary of
+where the opening clause ends and a scoped code section starts.
+So for multi-line clauses, the final parenthesis and opening brace
+tend to go onto their own line with the original indentation level:
 
 --------------------------------------------------------------------------------
+	/* Clumsy markup */
 	if (something &&
 	    something_else) {
+	    scoped_code();
+	}
 --------------------------------------------------------------------------------
 
-which may be written without mixing tabs and spaces to indent, as:
+which may be written without mixing spaces after tabs to indent, as:
 
 --------------------------------------------------------------------------------
+	/* Preferred markup */
 	if (something
 	&&  something_else
 	) {
+	    scoped_code();
+	}
 --------------------------------------------------------------------------------
+
+A single-line clause for a scoped block surrounded with curly braces remains
+indented as it was (no need to dedicate a line to the parenthesis and opening
+brace here):
+
+--------------------------------------------------------------------------------
+	if (A && B) {
+	    scoped_code();
+	}
+--------------------------------------------------------------------------------
+
+Indentation of macro or struct "tables"
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Another example is tables of definitions that are better aligned with
 (non-leading) spaces at least between names and values not too many
@@ -797,6 +824,9 @@ offsets divisible by 4 or 8 (consistently for the whole table):
 #define SHORT_MACRO                         1	/* flag comment */
 #define SOMETHING_WITH_A_VERY_LONG_NAME     255	/* flag comment */
 --------------------------------------------------------------------------------
+
+Indentation of pre-processor macros and pragmas
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 While at it, we encourage indentation of nested preprocessor macros
 and pragmas, by adding a single space character for each inner level,
@@ -812,9 +842,11 @@ worse, ignore only some of them but not others).
 --------------------------------------------------------------------------------
 #ifdef WITH_SSL
 # ifdef WITH_NSS
+#  include <nss.h>
 	/* some code for NSS */
 # endif	/* WITH_NSS */
 # ifdef WITH_OPENSSL
+#  include <openssl.h>
 #  ifndef WIN32
 	/* some code for OpenSSL on POSIX systems */
 #  else	/* not WIN32 */
@@ -826,13 +858,17 @@ worse, ignore only some of them but not others).
 #endif	/* WITH_SSL */
 --------------------------------------------------------------------------------
 
+General notes
+^^^^^^^^^^^^^
+
 If you write something that uses leading spaces, you may get away with
 it in a driver that's relatively secluded.  However, if we have to work
 on that code, expect it to get reformatted according to the above.
 
-Patches to existing code that don't conform to the coding style being
-used in that file will probably be dropped.  If it's something we really
-need, it will be grudgingly reformatted before being included.
+Patches for existing code that don't conform to the coding style being
+used in that file will probably be dropped or sent back for stylish re-work.
+If it's something we really need, it will be grudgingly reformatted before
+being included.
 
 When in doubt, have a look at Linus's take on this topic in the Linux
 kernel -- link:https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst[Documentation/CodingStyle].
@@ -841,16 +877,18 @@ He's done a far better job of explaining this.
 Line breaks
 ~~~~~~~~~~~
 
-It is better to have lines that are longer than 80 characters than to
-wrap lines in random places. This makes it easier to work with tools
+It is sometimes better to have lines that are longer than 80 characters than
+to wrap lines in random places. This makes it easier to work with tools
 such as `grep`, and it also lets each developer choose their own
 window size and tab setting without being stuck to one particular
-choice.
+choice.  Breaking long conditionals at boolean operators, or long debug
+logging calls between parameters, are examples of "not-random" places to
+wrap a line.
 
 Of course, this does not mean that lines should be made unnecessarily
 long when there is a better alternative (see the note on
-`pretentiousVariableNamingSchemes` above).  Certainly there should not
-be more than one statement per line. Please do not use
+`pretentiousVariableNamingSchemes` above).  Certainly, there should not
+be more than one statement per line. Please do not use markup like:
 
 -------------------------------------------------------------------------------
 if (condition) break;
@@ -865,10 +903,11 @@ if (condition) {
 -------------------------------------------------------------------------------
 
 NOTE: Earlier revisions of coding style might suggest avoiding braces if just
-one line is added as condition/loop/etc. handling code. Current approach is to
-welcome them even for single lines: on one hand, this confirms the intention
-that only this line is the conditional code; on another, this minimizes the
-context differences for later code comparisons, relocation, refactoring, etc.
+one line is added as condition/loop/etc. handling code. The current approach
+is to welcome them even for single lines: on one hand, this confirms the
+intention that only this line is the conditional code; on another, this
+minimizes the context differences for later code comparisons, relocation,
+refactoring, etc.
 
 Un-used variables and function arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -979,9 +1018,9 @@ different rules to be satisfied, and those are sometimes at odds:
 
 * a `switch` should definitively handle all cases, so must have a `default`
   label -- this works well for general numeric variables;
-* an `enum`'s valid values are known at compile time, and each must be handled
-  explicitly (even if implemented as many `case value:` labels preceding the
-  same code block), so...
+* valid values of an `enum` type are known at compile time, and each must
+  be handled explicitly (even if implemented as many `case value:` labels
+  preceding the same code block), so...
 * ...a `default` label is redundant (should never be reachable) in a `switch`
   that handles all `enum` values -- but this notion is a head-on crash vs. the
   first rule above.

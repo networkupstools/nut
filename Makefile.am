@@ -630,12 +630,12 @@ all-recursive/scripts: all/scripts/Windows all/scripts/DMF @dotMAKE@
 DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --enable-docs-man-for-progs-built-only=no --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
-DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind --with-debuginfo CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
 # The checks for DMF builds involve several distinct combinations of options
 # that the recipes should accept as valid. We generally skip items tested
 # previously, since the rebuild-tests take a lot of time even so.
-DISTCHECK_DMF_COMMON_FLAGS =  --with-all=no --with-dmf=yes --with-snmp=yes --with-neon=yes --with-dev=yes --with-snmp_dmf=yes --with-doc=skip -C
+DISTCHECK_DMF_COMMON_FLAGS =  --with-all=no --with-dmf=yes --with-snmp=yes --with-neon=yes --with-dev=yes --with-snmp_dmf=yes --with-doc=skip
 DISTCHECK_DMF_NOREGEN_FLAGS = --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 DISTCHECK_DMF_WITH_LTDL_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-libltdl=yes
 DISTCHECK_DMF_WITH_LTDL_NO_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-libltdl=no
@@ -648,7 +648,7 @@ DISTCHECK_DMF_WITH_REGEN_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) --with-dmfsnm
 # validation of DMF files from C sources
 DISTCHECK_DMF_ALL = $(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS) --with-snmp_dmf_lua=yes --with-libltdl=yes
 # Also have a way to test legacy code structure with no DMF support built in
-DISTCHECK_DMF_NO = --with-all=auto --with-dmf=no --with-doc=skip --with-dev=yes -C
+DISTCHECK_DMF_NO = --with-all=auto --with-dmf=no --with-doc=skip --with-dev=yes
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time, which
 # may be passed down from caller and/or one of distcheck-* rules below.
@@ -1010,6 +1010,10 @@ check-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
 
+memcheck-quick: @dotMAKE@
+	+@$(SET_PARMAKES_OPT); \
+	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} memcheck
+
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
@@ -1098,6 +1102,7 @@ maintainer-asciidocs:
 	  fi; \
 	 )
 
+memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
 check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 

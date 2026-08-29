@@ -6,10 +6,11 @@
 # This script is a postprocessor of C preprocessor - removes __attribute__
 # declarations and other extended constructs, which are not compatible with
 # pycparser; also make sure to use no compiler optimizations (-O0 in gcc).
+# Currently requires shell, sed, perl, awk...
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
-#    Copyright (C) 2022 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
+#    Copyright (C) 2022 - 2026 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 # Note: on MacOS you would really want 'clang -E' here,
@@ -30,6 +31,10 @@
 [ -n "${GREP}" ] || { GREP="`command -v grep`" && [ x"${GREP}" != x ] || { echo "$0: FAILED to locate GREP tool" >&2 ; exit 1 ; } ; }
 [ -n "${EGREP}" ] || { if ( [ x"`echo a | $GREP -E '(a|b)'`" = xa ] ) 2>/dev/null ; then EGREP="$GREP -E" ; else EGREP="`command -v egrep`" ; fi && [ x"${EGREP}" != x ] || { echo "$0: FAILED to locate EGREP tool" >&2 ; exit 1 ; } ; }
 
+# \t in sed is not always portable, better use raw char value
+TABCHAR="`printf '\t'`"
+SPACETAB="[ $TABCHAR]"
+
 set -o pipefail
 #set -exv
 
@@ -39,71 +44,69 @@ if [ x"${DEBUG-}" = x -o x"${DEBUG-}" = x1 -o x"${V-}" = x1 ] ; then
 fi
 
 do_filter() {
+    if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
+        cat
+        return
+    fi
 
-if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
-    cat
-    return
-fi
+    # NOTE: "Directives not supported yet" in practice means #include <...>
+    # ones which were hidden by ifdef's but now pop up in pre-processed text
+    # somehow... So we filter those out too.
 
-# NOTE: "Directives not supported yet" in practice means #include <...>
-# ones which were hidden by ifdef's but now pop up in pre-processed text
-# somehow... So we filter those out too.
-
-# \t in sed is not always portable, better use raw char value
-TABCHAR="`printf '\t'`"
-SPACETAB="[ $TABCHAR]"
-
-# tee temp-cpp-orig.tmp | \
-sed \
-    -e '/^'"${SPACETAB}"'*$/d' \
-    -e '/^'"${SPACETAB}"'*#'"${SPACETAB}"'*include/d' \
-    -e 's/^'"${SPACETAB}"'*;/;/g' | \
-perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
-sed \
-    -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
-    -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*$/ /g' \
-    -e 's/(__typeof_*'"${SPACETAB}"'*([^()]*))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*(('"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((__malloc__,'"${SPACETAB}"'*__alloc_size__'"${SPACETAB}"'*([0-9]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*,[0-9]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((format_arg([0-9]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*(([^()]*))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*,[^()]*)))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((__availability__([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((__deprecated__("[^"]*")))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((__warning__'"${SPACETAB}"'*('"${SPACETAB}"'*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*__DARWIN_ALIAS([^()]*)'"${SPACETAB}"'*/ /g' \
-    -e 's/__attribute_malloc__\([ ;]\)/\1/g' \
-    -e 's/__inline__/inline/g' \
-    -e 's/__signed__/signed/g' \
-    -e 's/__unsigned__/unsigned/g' \
-    -e 's/__THROW;$/;/' \
-    -e 's/__END_DECLS//g' \
-    -e 's/__BEGIN_DECLS//g' \
-    -e 's/void'"${SPACETAB}"'(\*signal(int, void (\*)(int)))(int);//g' \
-    -e 's/static'"${SPACETAB}"'__inline/static/g' \
-    -e 's/static'"${SPACETAB}"'*;/;/g' \
-    -e 's/__extern_inline/extern/g' \
-    -e 's/extern'"${SPACETAB}"'__inline/extern/g' \
-    -e 's/_Float[0-9]*x*/float/g' \
-    -e 's/__uint128_t/__uint64_t/g' \
-    -e 's/\^'"${SPACETAB}"'_*_Nonnull/*/g' \
-    -e 's/__restrict//g' \
-    -e 's/_*_Nullable//g' \
-    -e 's/_*_Nonnull//g' \
-    -e 's/_Thread_local//g' \
-    -e 's/'"${SPACETAB}"'__thread'"${SPACETAB}"'/ /g' \
-    -e 's/__extension__//g' \
-    -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
-    -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
-    -e 's/__NORETURN_*//g' \
-    -e 's/__builtin_va_list/int/g' \
-| ${EGREP} -v 'typedef [^;]* float;'
+    # tee temp-cpp-orig.tmp | \
+    sed \
+        -e '/^'"${SPACETAB}"'*$/d' \
+        -e '/^'"${SPACETAB}"'*#'"${SPACETAB}"'*include/d' \
+        -e 's/^'"${SPACETAB}"'*;/;/g' | \
+    perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
+    sed \
+        -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
+        -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*$/ /g' \
+        -e 's/(__typeof_*'"${SPACETAB}"'*([^()]*))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*(('"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__malloc__,'"${SPACETAB}"'*__alloc_size__'"${SPACETAB}"'*([0-9]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*,[0-9]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((format_arg([0-9]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*(([^()]*))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*,[^()]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__availability__([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__deprecated__("[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__format__([^()]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__format__([^()]*([^()]*)[^()]*)))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*((__warning__'"${SPACETAB}"'*('"${SPACETAB}"'*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute__'"${SPACETAB}"'*__DARWIN_ALIAS([^()]*)'"${SPACETAB}"'*/ /g' \
+        -e 's/__attribute_malloc__\([ ;]\)/\1/g' \
+        -e 's/__inline__/inline/g' \
+        -e 's/__signed__/signed/g' \
+        -e 's/__unsigned__/unsigned/g' \
+        -e 's/__THROW;$/;/' \
+        -e 's/ __cdecl / /' \
+        -e 's/__END_DECLS//g' \
+        -e 's/__BEGIN_DECLS//g' \
+        -e 's/void'"${SPACETAB}"'(\*signal(int, void (\*)(int)))(int);//g' \
+        -e 's/static'"${SPACETAB}"'__inline/static/g' \
+        -e 's/static'"${SPACETAB}"'*;/;/g' \
+        -e 's/__extern_inline/extern/g' \
+        -e 's/extern'"${SPACETAB}"'__inline/extern/g' \
+        -e 's/_Float[0-9]*x*/float/g' \
+        -e 's/__uint128_t/__uint64_t/g' \
+        -e 's/\^'"${SPACETAB}"'_*_Nonnull/*/g' \
+        -e 's/__restrict//g' \
+        -e 's/_*_Nullable//g' \
+        -e 's/_*_Nonnull//g' \
+        -e 's/_Thread_local//g' \
+        -e 's/'"${SPACETAB}"'__thread'"${SPACETAB}"'/ /g' \
+        -e 's/__extension__//g' \
+        -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
+        -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
+        -e 's/__NORETURN_*//g' \
+        -e 's/__builtin_va_list/int/g' \
+    | ${EGREP} -v 'typedef [^;]* float;'
 } # // end of do_filter()
 
 

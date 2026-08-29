@@ -4,7 +4,7 @@ APCMICROLINK(8)
 NAME
 ----
 
-apcmicrolink - Driver for APC Smart-UPS units using the Microlink serial protocol
+apcmicrolink - Driver for APC Smart-UPS units using the Microlink protocol (serial or USB)
 
 SYNOPSIS
 --------
@@ -23,7 +23,9 @@ DESCRIPTION
 
 The *apcmicrolink* driver talks the APC Microlink protocol used by newer
 serial-connected Smart-UPS families such as SMT and SMX units with the
-Microlink RJ45 serial port.
+Microlink RJ45 serial port. It can also reach the same protocol tunneled
+over USB HID on models that have no serial port at all -- see *USB MODE*
+below.
 
 This driver is currently experimental. It discovers most values from the
 device descriptor blob at runtime and maps supported Microlink objects onto
@@ -35,12 +37,15 @@ SUPPORTED HARDWARE
 ------------------
 
 This driver is intended for APC Smart-UPS models that expose the Microlink
-serial protocol, notably SMT and SMX units with the vendor Microlink serial
-cable.
+protocol, whether over the RJ45 serial cable or tunneled through USB HID.
 
 Tested support currently targets:
 
-* APC Smart-UPS SMT/SMX Microlink models
+* APC Smart-UPS SMT/SMX Microlink models (serial)
+* APC Smart-UPS 500 / SCL500RMI1UC (USB) -- see *USB MODE* below; this is
+  the only USB Microlink model tested so far, by a single user/tester.
+  SCL500RMI1UC is the European regional SKU of the SCL500RM1UC family;
+  the non-European SCL500RM1UC is expected, but not confirmed, to match.
 
 Other APC Microlink devices may work if they expose a compatible descriptor
 layout.
@@ -51,7 +56,7 @@ CONFIGURATION
 
 The driver is configured via linkman:ups.conf[5].
 
-A minimal configuration:
+A minimal serial configuration:
 
 ----
 [apc-microlink]
@@ -59,11 +64,30 @@ A minimal configuration:
     port = /dev/ttyUSB0
 ----
 
+A minimal USB configuration (see *USB MODE* below):
+
+----
+[apc-microlink]
+    driver = apcmicrolink
+    port = auto
+----
+
 Optional settings
 ~~~~~~~~~~~~~~~~~
 
+*port*='device|auto'::
+For serial devices, the path to the serial port (e.g. `/dev/ttyUSB0`). For
+USB devices, `auto` (the default handling in NUT for USB drivers). See
+*USB MODE* below; USB mode requires builds with USB support enabled, and
+`port=auto` is equivalent to specifying any of the USB matching options
+below (`vendorid`, `productid`, `vendor`, `product`, `serial`, `bus`)
+without an explicit `port` value -- either is enough to select USB mode. If
+`port` is set to anything other than `auto` while USB matching options are
+also given, the `port` value is ignored (with a warning) in favor of USB
+mode.
+
 *baudrate*='num'::
-Set the serial line speed. The default is `9600`.
+Set the serial line speed. The default is `9600`. Serial mode only.
 
 *showinternals*='yes|no'::
 Publish additional internal Microlink runtime values. By default this follows
@@ -77,6 +101,17 @@ when debug logging is on.
 *cmdsrc*='rj45|usb|localuser|smartslot1|internalnetwork1'::
 Select the Microlink command source used for outgoing command writes. The
 default is `rj45`.
+
+*hid_fallback*='yes|no'::
+USB mode only. While the Microlink tunnel itself has nothing fresh to
+report (including while it is still trying to connect after startup, see
+*USB MODE* below), publish `ups.status`/`battery.charge`/`battery.runtime`
+from the standard HID Power Device usages this device also exposes on the
+same interrupt pipe, instead of letting that data go stale. The default is
+`yes`. Set to `no` to get an honest data gap instead of a value sourced
+from a different (less precise) channel than the rest of the Microlink data.
+
+include::nut_usb_addvars.txt[]
 
 
 IMPLEMENTED FEATURES
@@ -109,6 +144,22 @@ this can include values such as:
 * `outlet.group.N.lowruntimewarning`
 * `outlet.group.N.name`
 
+On the tested Smart-UPS 500 (SCL500RMI1UC), the vendor's own documentation
+lists these factory-default values for the delay/timer fields above:
+
+* `outlet.group.N.delay.start` ("Turn On Delay"): 0 sec
+* `outlet.group.N.delay.shutdown` ("Turn Off Delay"): 0 sec on the
+  unswitched/main group, 90 sec on switched groups
+* `outlet.group.N.delay.reboot` ("Reboot Duration"): 8 sec
+* `outlet.group.N.minimumreturnruntime` ("Minimum Return Time"): 0 sec
+
+`outlet.group.N.switchable` (`yes`/`no`) is published read-only for every
+outlet group, and instant commands for switching a group's load are only
+registered for groups where it is `yes` -- some Microlink UPS models expose
+one unswitched group (typically group 0) alongside one or more independently
+switchable groups, and the unswitched group has no on/off/cycle/shutdown
+commands to offer.
+
 Supported instant commands currently include:
 
 * `test.battery.start`
@@ -119,18 +170,96 @@ Supported instant commands currently include:
 Driver-assisted shutdown is not yet implemented.
 
 
+USB MODE
+--------
+
+Support for reaching the Microlink protocol over USB HID (`port = auto`)
+is newer and less exercised than the serial path, and should be considered
+experimental even relative to the rest of this already-experimental driver.
+As of this writing it has been built and tested against a single APC
+Smart-UPS 500 (SCL500RMI1UC) by a single tester, over an extended session
+that included intentional fault injection (USB replug, driver restarts
+mid-handshake, forced fallback). It has not been tested against any other
+USB Microlink model, nor by anyone besides that tester.
+
+How it works
+~~~~~~~~~~~~
+
+The UPS tunnels the same Microlink byte protocol that `apcmicrolink` speaks
+over RS232, but through two HID vendor-page reports on a generic HID vendor
+tunnel, using genuine interrupt IN/OUT transfers rather than HID
+Get/Set_Report control transfers (the tested device does not react to the
+latter at all). Device matching uses the usual NUT USB
+vendorid/productid/vendor/product/serial/bus/device options described
+above; see linkmanext:lsusb[8] or `-DD` for finding the values to match.
+
+Session startup over USB is intermittently unreliable on the tested
+hardware -- the device can take upwards of 90 seconds to become responsive
+to the tunnel handshake after power-up or a USB replug. If the handshake
+does not complete during driver startup, and the device also exposes
+standard HID Power Device usages (as the tested model does), the driver
+starts up anyway using those for `ups.status`/`battery.charge`/
+`battery.runtime` (see the `hid_fallback` option above) instead of
+refusing to start. Outlet-group data and instant commands, which depend
+on the full Microlink descriptor, become available automatically once the
+tunnel connects -- no driver restart is needed. If the tunnel stays
+unresponsive, the driver periodically attempts a USB device reset to try
+to recover it.
+
+Kernel usbhid conflict
+~~~~~~~~~~~~~~~~~~~~~~
+
+The Linux kernel's generic `usbhid` input driver will also claim this kind
+of device by default, since from the USB descriptor's point of view it is
+just another HID device. If `usbhid` holds the interface, this driver
+cannot claim it and will fail to start; and if `usbhid` reclaims the
+interface after a USB reset or re-enumeration event *while this driver is
+already running* (observed on the tested hardware), every following
+interrupt transfer this driver attempts will be rejected by the kernel
+until the driver process is restarted.
+
+Neither this driver nor NUT's shared USB layer (`nut_libusb.c`) attempts
+to detach `usbhid` on its own. A udev rule that unbinds `usbhid` from the
+UPS's vendor/product ID avoids this. For example, for VID:PID `051d:0003`
+(APC Smart-UPS 500 / SCL500RMI1UC):
+
+----
+SUBSYSTEM=="usb", DRIVER=="usbhid", ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0003", RUN+="/bin/sh -c 'echo -n $kernel > /sys/bus/usb/drivers/usbhid/unbind'"
+----
+
+Save this as e.g.
+`/etc/udev/rules.d/70-nut-apcmicrolink-usbhid-blacklist.rules`, adjusting
+the `idVendor`/`idProduct` match for your own device (see
+linkmanext:lsusb[8]), then reload with:
+
+----
+:; udevadm control --reload-rules
+:; udevadm trigger --subsystem-match=usb
+----
+
+Any other Microlink-over-USB model that the kernel's `usbhid` driver also
+claims by default would need the same treatment, with its own IDs
+substituted.
+
+
 CABLING
 -------
 
 Use the APC Microlink serial cable appropriate for the UPS. USB-to-serial
 adapters can work if they present a standard TTY device to the operating
-system.
+system. For USB Microlink models with no serial port at all, see *USB
+MODE* above instead.
+
+For USB mode on the tested Smart-UPS 500 (SCL500RMI1UC), connectivity uses
+the APC/Schneider Electric cable model 940-0504 (USB A to USB A), not a
+standard USB A-to-B cable.
 
 
 AUTHORS
 -------
 
 * Lukas Schmid <lukas.schmid@netcube.li>
+* Nicolai 'nmbro' Brogaard <nicolai.brogaard+nut@gmail.com>
 
 
 SEE ALSO

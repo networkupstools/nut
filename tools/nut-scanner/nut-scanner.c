@@ -31,7 +31,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 

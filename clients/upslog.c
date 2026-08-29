@@ -65,7 +65,7 @@
 
 	static	flist_t	*fhead = NULL;
 
-	/* FIXME: To be valgrind-clean, free these at exit */
+	/* To be valgrind-clean, we free these lists at exit */
 	static	struct	logtarget_t *logfile_anchor = NULL;
 	static	struct	monhost_ups_t *monhost_ups_anchor = NULL;
 	static	struct	monhost_ups_t *monhost_ups_current = NULL;
@@ -139,6 +139,24 @@ static void reopen_log(void)
 			fatal_with_errno(EXIT_FAILURE,
 				"could not reopen logfile %s", p->logfn);
 		}
+	}
+}
+
+static void cleanup_logtarget(void)
+{
+	struct	logtarget_t	*tmp = logfile_anchor, *cur;
+
+	while (tmp) {
+		cur = tmp;
+		tmp = cur->next;
+
+		free((void*)(cur->logfn));
+		/* we might have several systems logged into same file, so
+		 * we close it here once rather than take chances at monhost
+		 * list cleanup; anyway take care to not close stdout */
+		if (cur->logfile && cur->logfile != stdout)
+			fclose(cur->logfile);
+		free(cur);
 	}
 }
 
@@ -508,6 +526,19 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 	fflush(monhost_ups_print->logtarget->logfile);
 }
 
+static void cleanup_flist(void)
+{
+	flist_t	*tmp = fhead, *cur;
+
+	while (tmp) {
+		cur = tmp;
+		tmp = tmp->next;
+
+		free((void*)(cur->arg));
+		free(cur);
+	}
+}
+
 	/* -s <monhost>
 	 * -l <log file>
 	 * -m <monhost,logfile>
@@ -531,7 +562,7 @@ int main(int argc, char **argv)
 	const char	*user = NULL;
 	char	*nutauth = NULL, str_port[16];
 	upscli_authconf_t	*ac_default = NULL;
-	int	flags_ssl = UPSCLI_CONN_TRYSSL;
+	int	flags_ssl = UPSCLI_CONN_TRYSSL, flags_ssl_default = UPSCLI_CONN_TRYSSL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 	/* For legacy single-ups -s/-l args: */
@@ -723,15 +754,15 @@ int main(int argc, char **argv)
 		} else {
 			if (!strcmp(nutauth, "default")) {
 				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
-				upscli_read_authconf_file(NULL, 1);
+				upscli_read_authconf_file(NULL, 1, -1);
 			} else {
 				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
-				upscli_read_authconf_file(nutauth, 1);
+				upscli_read_authconf_file(nutauth, 1, -1);
 			}
 		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
-		upscli_read_authconf_file(NULL, 0);
+		upscli_read_authconf_file(NULL, 0, 1);
 	}
 
 	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
@@ -813,6 +844,7 @@ int main(int argc, char **argv)
 				if (!logformat)
 					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
 				memset(logformat, '\0', LARGEBUF);
+				logformat_allocated = 1;
 			}
 			snprintf(logformat, LARGEBUF, "%%UPSHOST%%%%t%s", s);
 			free(s);
@@ -835,8 +867,14 @@ int main(int argc, char **argv)
 	) {
 		upscli_authconf_t	*ac_current;
 
-		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
-			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		/* We may be here after rewinding from asterisk-resolved
+		 * devices on a host, parsing to get their authconf etc. */
+		if (!(monhost_ups_current->upsname) || !(monhost_ups_current->hostname)) {
+			free(monhost_ups_current->upsname);
+			free(monhost_ups_current->hostname);
+			if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+				fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+			}
 		}
 
 		upsdebugx(1, "Checking parse of '%s' => '%s' '%s' '%" PRIu16 "'",
@@ -854,12 +892,14 @@ int main(int argc, char **argv)
 		/* Always call this, to register possible CERTHOSTs etc. */
 		if (upscli_init_authconf(ac_current) > 0) {
 			if (ac_default) {
-				upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+				upscli_authconf_update_conn_flags(ac_default, &flags_ssl_default);
 
-				// Do not call on the next loop cycle, if any
+				/* Do not call on the next loop cycle, if any */
 				ac_default = NULL;
 			}
 		}
+		flags_ssl = flags_ssl_default;
+		upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
 
 		/* Revise the list if some UPS name was an asterisk
 		 * (query the data server) */
@@ -949,9 +989,16 @@ int main(int argc, char **argv)
 				free(monhost_ups_current->upsname);
 			if (monhost_ups_current->hostname)
 				free(monhost_ups_current->hostname);
-			if (monhost_ups_current->ups)
-				free(monhost_ups_current->ups);
 
+			/* Should be NULL, but just in case... */
+			if (monhost_ups_current->ups) {
+				upscli_disconnect(monhost_ups_current->ups);
+				free(monhost_ups_current->ups);
+			}
+
+			/* After detachment, rewind monhost_ups_current to the
+			 * first entry we have resolved in this loop, to gather
+			 * authconf for each such device, etc. */
 			upsdebugx(2, "%s: detach asterisky monhost_ups_current", __func__);
 			if (monhost_ups_prev) {
 				monhost_ups_prev->next = monhost_ups_current->next;
@@ -1120,24 +1167,32 @@ int main(int argc, char **argv)
 	for (
 		monhost_ups_current = monhost_ups_anchor;
 		monhost_ups_current != NULL;
-		monhost_ups_current = monhost_ups_current->next
+		/* iteration handled below */
 	) {
-		/* we might have several systems logged into same file;
-		 * take care to not close stdout though */
-		if (monhost_ups_current->logtarget->logfile
-		&&  monhost_ups_current->logtarget->logfile != stdout
-		) {
-			fclose(monhost_ups_current->logtarget->logfile);
-			monhost_ups_current->logtarget->logfile = NULL;
-		}
+		struct monhost_ups_t	*mu = monhost_ups_current;
 
 		upscli_disconnect(monhost_ups_current->ups);
+		free(monhost_ups_current->ups);
+
+		upsdebugx(1, "FREEING: [%s] => [%s] @ [%s]",
+			NUT_STRARG(monhost_ups_current->monhost),
+			NUT_STRARG(monhost_ups_current->upsname),
+			NUT_STRARG(monhost_ups_current->hostname)
+			);
+		free(monhost_ups_current->monhost);
+		free(monhost_ups_current->upsname);
+		free(monhost_ups_current->hostname);
+
+		monhost_ups_current = mu->next;
+		free(mu);
 	}
 
 	if (logformat_allocated) {
 		free(logformat);
 		logformat = NULL;
 	}
+	cleanup_flist();
+	cleanup_logtarget();
 
 	fflush(stdout);
 	fflush(stderr);
