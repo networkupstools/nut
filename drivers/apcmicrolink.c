@@ -200,6 +200,7 @@ static time_t last_poll_success = 0;
 static int poll_primed = 0;
 static int authentication_sent = 0;
 static microlink_page0_state_t page0;
+static int warned_implicit_stuffing = 0;
 static int descriptor_ready = 0;
 static int outlet_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
@@ -2484,6 +2485,25 @@ static void microlink_cache_object(const unsigned char *frame, size_t len)
 			(unsigned int)page0.width,
 			page0.count,
 			(unsigned int)page0.flags);
+
+		/* Nothing in this parser implements byte stuffing; it is only
+		 * published as microlink.flag.implicit_stuffing. No device seen
+		 * so far sets the bit, so rather than guess at an unexercised
+		 * unstuffing routine, say plainly that frames will be read as if
+		 * it were clear - which is what any resulting checksum failures
+		 * would otherwise be blamed on. */
+		if ((page0.flags & MLINK_PAGE0_FLAG_IMPLICIT_STUFFING) != 0U
+		&&  !warned_implicit_stuffing
+		) {
+			warned_implicit_stuffing = 1;
+			upslogx(LOG_WARNING, "microlink: this device requests implicit byte "
+				"stuffing (page0 flags 0x%02X), which this driver does not "
+				"implement - frames are parsed as if stuffing were disabled, "
+				"so expect checksum failures or missing data. Please report "
+				"this at https://github.com/networkupstools/nut/issues/ with "
+				"a debug log, as no device known to this driver sets that bit.",
+				(unsigned int)page0.flags);
+		}
 	}
 }
 
