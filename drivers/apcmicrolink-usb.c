@@ -925,7 +925,13 @@ static void LIBUSB_CALL microlink_usb_async_cb(struct libusb_transfer *transfer)
 		async_xfer_active = 0;
 		pthread_mutex_unlock(&async_lock);
 		return;
+	case LIBUSB_TRANSFER_COMPLETED:
+	case LIBUSB_TRANSFER_ERROR:
+	case LIBUSB_TRANSFER_TIMED_OUT:
+	case LIBUSB_TRANSFER_STALL:
+	case LIBUSB_TRANSFER_OVERFLOW:
 	default:
+		/* Anything else - resubmit below and keep listening. */
 		break;
 	}
 
