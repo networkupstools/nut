@@ -16,6 +16,7 @@ SUBDIRS = . NIT
 all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 
 TESTS =
 noinst_LTLIBRARIES =
