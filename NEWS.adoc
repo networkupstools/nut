@@ -105,6 +105,11 @@ https://github.com/networkupstools/nut/milestone/13
       distinct from `ups.serial`) and `microlink.diag.slave_password_echo`
       (auth troubleshooting visibility only, not proof that
       authentication was accepted).
+    * A page 0 whose announced frame width disagrees with the width of
+      the frame that carried it is now rejected instead of cached. Such
+      a page redefined the length the frame parser demanded, after which
+      nothing checksum-validated again and the session could not
+      recover. Affects both transports. [issue #3587]
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

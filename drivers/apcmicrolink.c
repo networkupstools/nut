@@ -2433,15 +2433,37 @@ static void microlink_cache_object(const unsigned char *frame, size_t len)
 {
 	unsigned int id;
 	microlink_object_t *obj;
+	size_t datalen;
 
 	if (len < 3) {
 		return;
 	}
 
 	id = frame[0];
+	datalen = len - 3;
+
+	/* Page 0 announces the width every later frame is parsed with, so a
+	 * corrupt copy is unrecoverable: the bogus width becomes the length
+	 * the parser demands, no frame ever checksum-validates again, and the
+	 * session dies without the device having done anything wrong. A real
+	 * page 0 arrives in a frame of exactly the width it announces, so
+	 * reject any copy that contradicts itself instead of caching it.
+	 *
+	 * Seen live on a Smart-UPS X 1500 (FW 03.8): after its last populated
+	 * page the device sent STOP-filled pages and restarted its page index,
+	 * and the resulting checksum-valid "page 0" announced width 247 inside
+	 * a 16-byte frame. */
+	if (id == MLINK_OBJ_PROTOCOL && datalen >= 3 && (size_t)frame[2] != datalen) {
+		upsdebugx(1, "microlink: ignoring implausible page0 - announces width "
+			"%u but arrived in a %" PRIuSIZE "-byte frame; keeping the "
+			"previous page0 (width %" PRIuSIZE ")",
+			(unsigned int)frame[2], datalen, page0.width);
+		return;
+	}
+
 	obj = microlink_get_object_mut(id);
 	obj->seen = 1;
-	obj->len = len - 3;
+	obj->len = datalen;
 	memcpy(obj->data, frame + 1, obj->len);
 
 	if (id == MLINK_OBJ_PROTOCOL && obj->len >= 3) {
