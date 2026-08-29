@@ -54,8 +54,9 @@ typedef struct {
 	uint8_t		Count;				/* Store local report count	*/
 
 	uint16_t	UPage;				/* Global UPage			*/
-	HIDNode_t	UsageTab[USAGE_TAB_SIZE];	/* Usage stack			*/
-	uint8_t		UsageSize;			/* Design number of usage used	*/
+	HIDNode_t	*UsageTab;			/* Usage stack			*/
+	size_t		UsageTabSize;			/* Slots allocated in UsageTab	*/
+	size_t		UsageSize;			/* Design number of usage used	*/
 } HIDParser_t;
 
 /* return 1 + the position of the leftmost "1" bit of an int, or 0 if
@@ -89,7 +90,8 @@ static inline unsigned int hibit(unsigned long x)
 static void ResetLocalState(HIDParser_t* pParser)
 {
 	pParser->UsageSize = 0;
-	memset(pParser->UsageTab, 0, sizeof(pParser->UsageTab));
+	memset(pParser->UsageTab, 0,
+		pParser->UsageTabSize * sizeof(*pParser->UsageTab));
 }
 
 /*
@@ -159,13 +161,30 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 	while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) {
 		/* Get new pParser->Item if current pParser->Count is empty */
 		if (pParser->Count == 0) {
+			uint8_t	ItemDataSize;
+
 			pParser->Item = pParser->ReportDesc[pParser->Pos++];
 			pParser->Value = 0;
-			for (i = 0; i < ItemSize[pParser->Item & SIZE_MASK]; i++) {
+			ItemDataSize = ItemSize[pParser->Item & SIZE_MASK];
+
+			/* The item prefix promises ItemDataSize more bytes, and
+			 * nothing so far has checked that the descriptor still
+			 * holds them. A descriptor ending part-way through an
+			 * item would read up to 4 bytes past the end of the
+			 * caller's buffer. Pos is <= ReportDescSize here - the
+			 * loop condition tested it before the increment above -
+			 * so the subtraction cannot wrap. */
+			if ((size_t)ItemDataSize > pParser->ReportDescSize - pParser->Pos) {
+				upsdebugx(1, "%s: truncated HID item, "
+					"aborting report descriptor parsing", __func__);
+				return -1;
+			}
+
+			for (i = 0; i < ItemDataSize; i++) {
 				pParser->Value += (uint32_t)(pParser->ReportDesc[(pParser->Pos)+i]) << (8*i);
 			}
 			/* Pos on next item */
-			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
+			pParser->Pos += ItemDataSize;
 		}
 
 		switch (pParser->Item & ITEM_MASK)
@@ -176,14 +195,15 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 
 		case ITEM_USAGE:
-			/* The usage stack is a fixed-size array. Refuse to walk past
-			 * it instead of merely complaining about it after the fact
-			 * (see the USAGE_TAB_SIZE report at the end of this loop).
-			 * -1 is the established "no more items" return, and
-			 * Parse_ReportDesc() breaks out of its loop on ret < 0, so
-			 * everything parsed up to here is kept and the remainder of
-			 * the descriptor is dropped. */
-			if (pParser->UsageSize >= USAGE_TAB_SIZE) {
+			/* The usage stack is sized from the descriptor length and
+			 * every Usage item costs at least its one prefix byte, so
+			 * this cannot fire for a descriptor that fits in the length
+			 * we were handed. It stays as a backstop. -1 is the
+			 * established "no more items" return, and Parse_ReportDesc()
+			 * breaks out of its loop on ret < 0, so everything parsed up
+			 * to here is kept and the remainder of the descriptor is
+			 * dropped. */
+			if (pParser->UsageSize >= pParser->UsageTabSize) {
 				upslogx(LOG_ERR, "%s: HID Usage stack overflow, "
 					"aborting report descriptor parsing", __func__);
 				return -1;
@@ -212,14 +232,14 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if (pParser->UsageSize > 0) {
-				int	j;
+				size_t	j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					/* With UsageSize now allowed to reach
-					 * USAGE_TAB_SIZE, the last slot has no
+					/* With UsageSize allowed to reach
+					 * UsageTabSize, the last slot has no
 					 * successor to shift down. Unused slots
 					 * are zero (see ResetLocalState). */
-					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+					pParser->UsageTab[j] = (j + 1 < pParser->UsageTabSize)
 						? pParser->UsageTab[j+1] : 0;
 				}
 
@@ -288,14 +308,14 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 			/* Unstack UPage/Usage from UsageTab (never remove the last) */
 			if(pParser->UsageSize > 0) {
-				int j;
+				size_t j;
 
 				for (j = 0; j < pParser->UsageSize; j++) {
-					/* With UsageSize now allowed to reach
-					 * USAGE_TAB_SIZE, the last slot has no
+					/* With UsageSize allowed to reach
+					 * UsageTabSize, the last slot has no
 					 * successor to shift down. Unused slots
 					 * are zero (see ResetLocalState). */
-					pParser->UsageTab[j] = (j + 1 < USAGE_TAB_SIZE)
+					pParser->UsageTab[j] = (j + 1 < pParser->UsageTabSize)
 						? pParser->UsageTab[j+1] : 0;
 				}
 
@@ -495,7 +515,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		upslogx(LOG_ERR, "%s: HID path too long", __func__);
 	if(pParser->ReportDescSize >= REPORT_DSC_SIZE)
 		upslogx(LOG_ERR, "%s: Report descriptor too big", __func__);
-	if(pParser->UsageSize >= USAGE_TAB_SIZE)
+	if(pParser->UsageSize >= pParser->UsageTabSize)
 		upslogx(LOG_ERR, "%s: HID Usage too high", __func__);
 
 	/* FIXME: comparison is always false due to limited range of data type [-Werror=type-limits]
@@ -774,6 +794,22 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 	parser->ReportDesc = (const unsigned char *)ReportDesc;
 	parser->ReportDescSize = (const size_t)n;
 
+	/* Size the usage stack from the descriptor itself. Every Usage item
+	 * costs at least its one prefix byte, so n slots can always hold every
+	 * usage an n-byte descriptor is able to push, and a device reporting
+	 * more than USAGE_TAB_SIZE usages is no longer truncated. The old
+	 * fixed size stays as the floor, so small descriptors keep the
+	 * capacity they have always had. */
+	parser->UsageTabSize = ((size_t)n > (size_t)USAGE_TAB_SIZE)
+		? (size_t)n : (size_t)USAGE_TAB_SIZE;
+	parser->UsageTab = (HIDNode_t *)calloc(parser->UsageTabSize,
+		sizeof(*parser->UsageTab));
+	if (!parser->UsageTab) {
+		free(parser);
+		Free_ReportDesc(pDesc_var);
+		return NULL;
+	}
+
 	for (pDesc_var->nitems = 0; pDesc_var->nitems < MAX_REPORT; pDesc_var->nitems += (size_t)ret) {
 		uint8_t	id;
 		size_t	max;
@@ -802,6 +838,7 @@ HIDDesc_t *Parse_ReportDesc(const usb_ctrl_charbuf ReportDesc, const usb_ctrl_ch
 	if ((pDesc_var->nitems == MAX_REPORT) && (parser->Pos < parser->ReportDescSize))
 		upslogx(LOG_ERR, "ERROR in %s: Too many HID objects", __func__);
 
+	free(parser->UsageTab);
 	free(parser);
 
 	if (pDesc_var->nitems == 0) {

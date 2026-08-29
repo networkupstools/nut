@@ -339,6 +339,11 @@ https://github.com/networkupstools/nut/milestone/13
       more usage items than the fixed stack in the parser could hold. A similar
       problem could lead to "HID path too long" messages and loss of
       readings from the device. [PR #3586]
+    * The `hidparser.c` code was further updated to use not a fixed 50-entry
+      "usage table" buffer for resource descriptor parsing, but one aligned
+      with the actual size detected during device discovery. This should
+      avoid potential truncation introduced by the fix above (and avoid
+      the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
     * Complete support for actions documented in `docs/net-protocol.txt`
