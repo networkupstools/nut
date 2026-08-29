@@ -119,13 +119,49 @@ upsdrv_info_t upsdrv_info = {
  * if this stops matching observed reconnect behavior. */
 #define MLINK_USB_MIDSESSION_IDLE_SEC	30
 
-/* How stale a standard-HID-PDC fallback snapshot is allowed
- * to be before it's still considered good enough to publish. Those
- * reports arrive roughly once a second when the device is behaving
- * normally, so this is generous margin for a missed cycle or two without
- * being so long that a genuinely wedged device (or a truly unplugged one)
- * could leave stale fallback data looking current. */
-#define MLINK_HID_FALLBACK_MAX_AGE_SEC	10
+/* How stale a standard-HID-PDC fallback snapshot is allowed to be and still
+ * be considered good enough to publish.
+ *
+ * The two streams share one interrupt endpoint and do not run in parallel:
+ * a usbmon capture of an SCL500RMI1UC showed the PDC reports arriving every
+ * 6.0s while the tunnel was idle, then stopping for 19.2s the moment the
+ * driver started a session and the device answered tunnel traffic. A window
+ * of 10s expired inside that gap, so the fallback went unpublishable exactly
+ * when the tunnel was also producing nothing usable, and ups.status went
+ * empty once per cycle. 30s clears the observed gap with margin while still
+ * being short enough that a genuinely unplugged device does not leave stale
+ * fallback data looking current. */
+#define MLINK_HID_FALLBACK_MAX_AGE_SEC	30
+
+/* How long the Microlink side may go without delivering real polled data
+ * before the standard-HID-PDC fallback takes over, when one is available.
+ * Completing the session handshake does not reset this - a device can answer
+ * the handshake on every retry while its tunnel stays mute, which is exactly
+ * the case this exists to catch. Kept above MLINK_HID_FALLBACK_MAX_AGE_SEC so
+ * the fallback snapshot we switch to is always fresher than the Microlink
+ * data we are abandoning. */
+#define MLINK_DATA_STALE_SEC	45
+
+/* Why the standard-HID-PDC fallback is (or is not) being published right now.
+ * Only used to log handovers once per transition - see
+ * microlink_log_fallback_reason(). */
+#define MLINK_FB_REASON_NONE	0
+#define MLINK_FB_REASON_STALE	1
+#define MLINK_FB_REASON_EMPTY	2
+
+/* How often to repeat the "tunnel is answering but reporting nothing" warning
+ * while that state persists. The condition can toggle on every poll, so this
+ * is deliberately coarse - it is a "your UPS needs attention" notice, not a
+ * per-poll trace. */
+#define MLINK_DEGENERATE_WARN_INTERVAL_SEC	3600
+
+/* How long the Microlink source has to look plausible again, continuously,
+ * before the driver hands back to it. Without this the two sources swap on
+ * alternate polls whenever the device dribbles out an occasional status flag
+ * between all-zero ones, and ups.status oscillates every couple of seconds -
+ * measured at 56 handovers in 3 minutes on a degraded SCL500RMI1UC. A stable
+ * status matters more to upsmon than using the freshest possible source. */
+#define MLINK_FALLBACK_DWELL_SEC	30
 /* How long to wait between individual Microlink session-start probes when
  * retrying from upsdrv_updateinfo() after a fallback start. Each probe
  * sends one INIT_BYTE and listens for up to MLINK_USB_READ_TIMEOUT_USEC, so
@@ -197,6 +233,18 @@ static size_t rxbuf_len = 0;
 static unsigned int parsed_frames = 0;
 static unsigned int consecutive_timeouts = 0;
 static time_t last_poll_success = 0;
+/* Distinct from last_poll_success, which microlink_start_session() also
+ * refreshes on a bare handshake: this only ever advances when real polled
+ * data arrives. See microlink_data_stale(). */
+static time_t last_microlink_data = 0;
+/* When the "tunnel answers but reports nothing" warning was last emitted;
+ * 0 while the condition is not in effect. */
+static time_t degenerate_warned_at = 0;
+/* Fallback hysteresis: whether the standard-HID source currently owns the
+ * published status, and since when the Microlink source has been looking
+ * plausible again (0 = not currently recovering). */
+static int fallback_engaged = 0;
+static time_t fallback_recover_since = 0;
 static int poll_primed = 0;
 static int authentication_sent = 0;
 static microlink_page0_state_t page0;
@@ -561,6 +609,33 @@ static unsigned int microlink_handshake_retries(void)
  * budget than the initial handshake (see MLINK_USB_MIDSESSION_IDLE_SEC);
  * serial keeps the original poll-count behavior, since the too-short-tolerance
  * problem was only observed and characterized on USB. */
+/* 1 if the Microlink side has not delivered real polled data recently.
+ * Deliberately ignores the session handshake: a device that answers the
+ * handshake but never sends another frame used to look healthy here, so the
+ * driver kept republishing its last values - all zeroes, with an empty
+ * ups.status - for days, while usable standard-HID-PDC reports were arriving
+ * on the same endpoint the whole time. */
+static int microlink_data_stale(time_t now)
+{
+	if (last_microlink_data == 0) {
+		return 1;
+	}
+	return difftime(now, last_microlink_data) >= MLINK_DATA_STALE_SEC;
+}
+
+/* 1 if this device could publish standard-HID-PDC fallback data, whether or
+ * not any has been decoded yet. microlink_publish_hid_fallback() answers the
+ * narrower "is there a fresh snapshot right now"; this answers "is it worth
+ * staying alive and waiting for one". */
+static int microlink_hid_fallback_possible(void)
+{
+#ifdef WITH_USB
+	return (is_usb && hid_fallback_enabled && microlink_usb_hid_fallback_supported());
+#else
+	return 0;
+#endif /* WITH_USB */
+}
+
 static int microlink_midsession_timed_out(time_t now)
 {
 #ifdef WITH_USB
@@ -2818,6 +2893,7 @@ static int microlink_poll_once(time_t now)
 	if (microlink_receive_once()) {
 		consecutive_timeouts = 0;
 		last_poll_success = now;
+		last_microlink_data = now;
 		poll_primed = 0;
 		return 1;
 	}
@@ -2963,6 +3039,20 @@ static int microlink_publish_hid_fallback(void)
 		return 0;
 	}
 
+	/* Publish the measurements before committing the status, not after.
+	 * dstate's status_commit() infers CHRG/DISCHRG from a change in
+	 * battery.charge when the driver reports neither, and by this point
+	 * microlink_publish_runtime() has already written the degenerate
+	 * Microlink value. Committing first let dstate compare that value
+	 * against the previous fallback one and synthesize a DISCHRG that
+	 * contradicted the OL we were setting in the same breath. */
+	if (charge >= 0) {
+		dstate_setinfo("battery.charge", "%ld", charge);
+	}
+	if (runtime >= 0) {
+		dstate_setinfo("battery.runtime", "%ld", runtime);
+	}
+
 	status_init();
 	if (discharging || !ac_present) {
 		status_set("OB");
@@ -2972,14 +3062,14 @@ static int microlink_publish_hid_fallback(void)
 	if (below_rcl) {
 		status_set("LB");
 	}
+	/* Report the charging state explicitly rather than leaving dstate to
+	 * guess it from charge movement: the PDC stream tells us directly. */
+	if (discharging) {
+		status_set("DISCHRG");
+	} else if (charge >= 0 && charge < 100) {
+		status_set("CHRG");
+	}
 	status_commit();
-
-	if (charge >= 0) {
-		dstate_setinfo("battery.charge", "%ld", charge);
-	}
-	if (runtime >= 0) {
-		dstate_setinfo("battery.runtime", "%ld", runtime);
-	}
 	dstate_setinfo("experimental.hid_fallback.active", "%u", 1U);
 
 	return 1;
@@ -3006,6 +3096,134 @@ static void microlink_publish_hid_fallback_inactive(void)
 	dstate_setinfo("experimental.hid_fallback.active", "%u", 0U);
 #endif /* WITH_USB */
 }
+
+/* Log a handover to or away from the standard-HID-PDC fallback, with the
+ * reason. Runs on every poll, so it stays silent unless the reason actually
+ * changed - otherwise a device that sits in one state would repeat this line
+ * every couple of seconds forever. */
+static void microlink_log_fallback_reason(int reason, time_t now)
+{
+	static int last_reason = -1;
+
+	if (reason == last_reason) {
+		return;
+	}
+	last_reason = reason;
+
+	switch (reason) {
+	case MLINK_FB_REASON_STALE:
+		upsdebugx(1, "microlink: publishing standard-HID fallback data - no "
+			"Microlink data for %.0f s (threshold %d s)",
+			(last_microlink_data == 0)
+				? 0.0 : difftime(now, last_microlink_data),
+			MLINK_DATA_STALE_SEC);
+		break;
+
+	case MLINK_FB_REASON_EMPTY:
+		upsdebugx(1, "microlink: publishing standard-HID fallback data - the "
+			"Microlink data is arriving but yielded no ups.status flags");
+		break;
+
+	case MLINK_FB_REASON_NONE:
+	default:
+		upsdebugx(1, "microlink: publishing Microlink data again, standard-HID "
+			"fallback no longer needed");
+		break;
+	}
+}
+
+/* Hand over to the standard-HID-PDC snapshot when the Microlink data just
+ * published did not yield a single ups.status flag. Returns 1 if it took over.
+ *
+ * Staleness alone does not catch this: a device can answer every poll on time
+ * and still report an all-zero status word (seen live on an SCL500RMI1UC stuck
+ * in "SystemInitialization" - full page walks, fresh frames, every measurement
+ * zero). An empty ups.status is indistinguishable from a dead UPS to upsmon,
+ * so where a real one is available from the HID PDC stream, publish that
+ * instead of nothing. */
+/* 1 if the Microlink data just published looks like a real reading rather
+ * than the all-zero state a stalled device reports.
+ *
+ * Only ups.status is safe to judge this from. microlink_publish_status()
+ * rewrites it on every poll, so it always reflects the Microlink source
+ * alone. Other variables are not rewritten unconditionally, so a leftover
+ * value the fallback itself published on the previous poll can still be
+ * sitting there - testing battery.charge here made the fallback read its own
+ * output back, conclude the Microlink side had recovered, and hand over to a
+ * source that was still publishing nothing. */
+static int microlink_data_plausible(void)
+{
+	const char *status = dstate_getinfo("ups.status");
+
+	return (status != NULL
+		&& (strstr(status, "OL") != NULL || strstr(status, "OB") != NULL));
+}
+
+/* Decide whether the standard-HID-PDC snapshot should own this poll's status,
+ * and publish it if so. Returns 1 if it took over.
+ *
+ * Asymmetric on purpose: the fallback takes over as soon as the Microlink
+ * source stops looking plausible, but only hands back once Microlink has
+ * looked plausible continuously for MLINK_FALLBACK_DWELL_SEC. A UPS status
+ * that flips every couple of seconds is worse than one that lags a real
+ * recovery by half a minute.
+ */
+static int microlink_fallback_takes_over(time_t now)
+{
+	if (microlink_data_plausible()) {
+		if (!fallback_engaged) {
+			fallback_recover_since = 0;
+			return 0;
+		}
+
+		if (fallback_recover_since == 0) {
+			fallback_recover_since = now;
+		}
+
+		if (difftime(now, fallback_recover_since) < MLINK_FALLBACK_DWELL_SEC
+		 && microlink_publish_hid_fallback()
+		) {
+			return 1;
+		}
+
+		fallback_engaged = 0;
+		fallback_recover_since = 0;
+		dstate_setinfo("microlink.diag.status_degenerate", "%u", 0U);
+		microlink_log_fallback_reason(MLINK_FB_REASON_NONE, now);
+		return 0;
+	}
+
+	fallback_recover_since = 0;
+
+	if (!microlink_publish_hid_fallback()) {
+		return 0;
+	}
+
+	/* Worth saying out loud, not just at debug level: the tunnel is healthy
+	 * at the protocol layer - frames arrive, checksums pass, page walks
+	 * complete - and the device is still reporting an all-zero state, so
+	 * every derived measurement reads 0 and nothing sets a status flag.
+	 * Observed live on an SCL500RMI1UC; a USB bus reset does not clear it
+	 * (tested), and it survived driver restarts for days, so the user needs
+	 * to know that only power-cycling the UPS itself is likely to help. */
+	dstate_setinfo("microlink.diag.status_degenerate", "%u", 1U);
+
+	if (degenerate_warned_at == 0
+	 || difftime(now, degenerate_warned_at) >= MLINK_DEGENERATE_WARN_INTERVAL_SEC
+	) {
+		degenerate_warned_at = now;
+		upslogx(LOG_WARNING, "apcmicrolink: the Microlink tunnel is responding "
+			"normally but the device is reporting an all-zero state (no status "
+			"flags, all measurements 0) - publishing standard-HID data instead. "
+			"A USB bus reset does not clear this; the UPS itself likely needs a "
+			"power cycle. Reported once per hour while it lasts.");
+	}
+
+	fallback_engaged = 1;
+	microlink_log_fallback_reason(MLINK_FB_REASON_EMPTY, now);
+	return 1;
+}
+
 
 /* If the Microlink tunnel has nothing fresh right now, fall back to the
  * standard-HID-PDC source instead of an unconditional Data stale. */
@@ -3303,9 +3521,23 @@ void upsdrv_initinfo(void)
 			"battery.charge/battery.runtime); outlet-group data and commands "
 			"will become available automatically once the Microlink session connects",
 			device_path);
+	} else if (microlink_hid_fallback_possible()) {
+		/* The usages are there, no report carrying them has just happened
+		 * to arrive yet. They stream independently of the Microlink tunnel,
+		 * so waiting costs nothing and dying here threw away a device that
+		 * could report ups.status within seconds. */
+		session_ready = 0;
+		microlink_fallback_since = microlink_now() - (time_t)microlink_handshake_retries();
+		upslogx(LOG_WARNING, "apcmicrolink: could not complete Microlink startup on %s - "
+			"this device does expose standard HID Power Device usages, but none "
+			"have been decoded yet; starting up anyway and publishing "
+			"ups.status/battery.charge/battery.runtime from them as soon as they "
+			"arrive. Outlet-group data and commands will become available "
+			"automatically once the Microlink session connects", device_path);
 	} else {
 		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
-			"(no standard-HID fallback available on this device either)", device_path);
+			"and this device exposes no standard HID Power Device usages to fall "
+			"back on", device_path);
 	}
 
 	dstate_addcmd("test.battery.start");
@@ -3385,6 +3617,15 @@ void upsdrv_updateinfo(void)
 		good = 1;
 	}
 
+	/* A reconnect only proves the device still answers the handshake, not
+	 * that the tunnel is delivering anything. Where it is not, prefer the
+	 * fallback over republishing whatever the Microlink cache last held. */
+	if (good && microlink_data_stale(now) && microlink_publish_hid_fallback()) {
+		microlink_log_fallback_reason(MLINK_FB_REASON_STALE, now);
+		dstate_dataok();
+		return;
+	}
+
 	if (!good) {
 		if (parsed_frames == 0) {
 			session_ready = 0;
@@ -3396,6 +3637,10 @@ void upsdrv_updateinfo(void)
 		microlink_publish_identity();
 		microlink_publish_status();
 		microlink_publish_runtime();
+		if (microlink_fallback_takes_over(now)) {
+			dstate_dataok();
+			return;
+		}
 		microlink_publish_hid_fallback_inactive();
 		dstate_dataok();
 		return;
@@ -3406,6 +3651,10 @@ void upsdrv_updateinfo(void)
 	microlink_publish_identity();
 	microlink_publish_status();
 	microlink_publish_runtime();
+	if (microlink_fallback_takes_over(now)) {
+		dstate_dataok();
+		return;
+	}
 	microlink_publish_hid_fallback_inactive();
 	dstate_dataok();
 }
