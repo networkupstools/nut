@@ -7478,6 +7478,11 @@ AC_CONFIG_FILES([
  Makefile
 ])
 
+AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt5:scripts/python/app/NUT-Monitor-py3qt.in],
+    [chmod +x scripts/python/app/NUT-Monitor-py3qt5])
+AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt6:scripts/python/app/NUT-Monitor-py3qt.in],
+    [chmod +x scripts/python/app/NUT-Monitor-py3qt6])
+
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
  docs/docinfo.xml.sh
@@ -7489,8 +7494,6 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/augeas/gen-nutupsconf-aug.py
  scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
- scripts/python/app/NUT-Monitor-py3qt5
- scripts/python/app/NUT-Monitor-py3qt6
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
