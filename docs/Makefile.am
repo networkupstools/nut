@@ -454,21 +454,7 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		ls -lad $@ $< || true ; \
 		stat $@ $< || true ; \
 	 fi ; \
-	 cat '$<' | { $(SED) \
-		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
-		-e 's%\[\([^]]*\)](\(https*://[^ ]*\))%link:\2[\1]%g' \
-		-e 's%\(link:https*://github.com/[^ ]*\)\.\.\.\([^ ]*\)%\1..\2%g' \
-		-e 's%\(\[\#*\)\(GHSA-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]\)\(\]\)%[link:https://github.com/networkupstools/nut/security/advisories/\2[\2]]%g' \
-		-e 's%\(advisory\) *\#*\(GHSA-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]\)\([^A-Za-z0-9]\|$$\))%link:https://github.com/networkupstools/nut/security/advisories/\2[\1 \2]\3%g' \
-		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
-		-e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
-		-e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
-		-e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
-		-e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
-		-e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
-		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
-		-e 's,\(https*://[^ \+]*\)[\]*[+],\1%2B,g' \
-	 ; } > "$@.tmp.$$$$" \
+	 $(top_srcdir)/tools/asciidoc-github-links.pl < '$<' > "$@.tmp.$$$$" \
 	 && test -s "$@.tmp.$$$$" \
 	 && mv -f "$@.tmp.$$$$" '$@' \
 	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
