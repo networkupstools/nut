@@ -94,7 +94,7 @@ while (<>) {
     }%ges;
 
     # 5. single [#GHSA-...]
-    s%(\[#?)(${ghsa_id_re})(\])%{ "[link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $2 . "]]" }%ge;
+    s%(^|[^A-Za-z0-9])\[#?(${ghsa_id_re})\]%{ $1 . "[link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $2 . "]]" }%ge;
 
     # 6. "advisory GHSA-..." or "advisory #GHSA-..." (multiple words / space separated, can be broken across lines)
     s%\b(advisory)\s*\#?(${ghsa_id_re})(${end_ghsa_id_re})%{ "link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $1 . " " . $2 . "]" . $3 }%ge;
@@ -105,22 +105,25 @@ while (<>) {
     # 8. PR #123 or pull request #123 (multi-word "pull request" can be broken across lines)
     s%\b(PR|pull\s+request)\s*\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_prj}/${gh_uripart_pull}/" . $2 . "[" . $1 . " ##" . $2 . "]" . $3 }%ge;
 
-    # 9. [[ ,]#123
-    s%([[,\s])\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "link:${gh_url_prj}/${gh_uripart_issue}/" . $2 . "[##" . $2 . "]" . $3 }%ge;
+    # 9. " #123" or ",#123"
+    s%([,\s])\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "link:${gh_url_prj}/${gh_uripart_issue}/" . $2 . "[##" . $2 . "]" . $3 }%ge;
 
-    # 10. issue networkupstools/foo#123
+    # 10. "...[#123..."
+    s%(^|\D)\[\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "[link:${gh_url_prj}/${gh_uripart_issue}/" . $2 . "[##" . $2 . "]" . $3 }%ge;
+
+    # 11. issue networkupstools/foo#123
     s%\b(issue)\s+${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_issue . "/" . $3 . "[" . $1 . " " . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 11. PR networkupstools/foo#123 or pull request networkupstools/foo#123 (multi-word)
+    # 12. PR networkupstools/foo#123 or pull request networkupstools/foo#123 (multi-word)
     s%\b(PR|pull\s+request)\s+${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_pull . "/" . $3 . "[" . $1 . " " . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 12. [ ,]networkupstools/foo#123
+    # 13. [ ,]networkupstools/foo#123
     s%([,\s])${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_issue . "/" . $3 . "[" . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 13. ##123 -> #123
+    # 14. ##123 -> #123
     s/\#(\#${issue_id_re})/$1/g;
 
-    # 14. URL plus sign encoding
+    # 15. URL plus sign encoding
     s/(${gh_schema_re}[^ \+]*)([\]]*\+)/$1%2B/g;
 
     print $_;
