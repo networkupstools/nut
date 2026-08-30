@@ -912,6 +912,16 @@ static void LIBUSB_CALL microlink_usb_async_cb(struct libusb_transfer *transfer)
 		return;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SWITCH_DEFAULT
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
+#endif
 	switch (transfer->status) {
 	case LIBUSB_TRANSFER_CANCELLED:
 	case LIBUSB_TRANSFER_NO_DEVICE:
@@ -930,10 +940,15 @@ static void LIBUSB_CALL microlink_usb_async_cb(struct libusb_transfer *transfer)
 	case LIBUSB_TRANSFER_TIMED_OUT:
 	case LIBUSB_TRANSFER_STALL:
 	case LIBUSB_TRANSFER_OVERFLOW:
-	default:
-		/* Anything else - resubmit below and keep listening. */
+		/* Resubmit below and keep listening. */
 		break;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	if (libusb_submit_transfer(transfer) != 0) {
 		upsdebugx(1, "microlink_usb: failed to resubmit async interrupt-IN "
