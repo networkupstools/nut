@@ -64,13 +64,19 @@ jobs:
         "/": _
 
     - name: Debug PR/branch identification
+      env:
+        github_event_pull_request_number: ${{ github.event.pull_request.number }}
+        PR_ref_short: ${{ format('PR-{0}', github.event.pull_request.number) }}
+        github_head_ref: ${{ github.head_ref }}
+        github_ref: ${{ github.ref }}
+        github_ref_name: ${{ github.ref_name }}
       run: |
         echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
-        echo "github.event.pull_request.number='${{ github.event.pull_request.number }}'" || true
-        echo "format('PR-{0}', github.event.pull_request.number)='${{ format('PR-{0}', github.event.pull_request.number) }}'" || true
-        echo "github.head_ref='${{ github.head_ref }}'" || true
-        echo "github.ref='${{ github.ref }}'" || true
-        echo "github.ref_name='${{ github.ref_name }}'" || true
+        echo "github.event.pull_request.number='${github_event_pull_request_number}'" || true
+        echo "format('PR-{0}', github.event.pull_request.number)='${PR_ref_short}'" || true
+        echo "github.head_ref='${github_head_ref}'" || true
+        echo "github.ref='${github_ref}'" || true
+        echo "github.ref_name='${github_ref_name}'" || true
 
     # Make build identification more useful (so we use no fallbacks in script)
     - name: Try to get more Git metadata
