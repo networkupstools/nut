@@ -122,6 +122,27 @@ https://github.com/networkupstools/nut/milestone/13
       rate, data bits, parity, stop bits, flow control, per-byte read timeout,
       and transmission pacing. Also improved serial resource handling and
       reconnection behavior. [issue #3510, PR #3543]
+    * Reworked incoming serial framing to use the total packet length declared
+      by byte `[1]`, instead of treating every `0xFF` as a new packet and every
+      `0xFE` as its end. A leading `0xFF` now starts a frame only while the
+      reader is idle; subsequent `0xFF` and `0xFE` values are preserved as
+      payload or checksum data. The frame is completed at its declared length
+      and accepted only when that final byte is `0xFE`. Declared lengths are
+      also bounded by the receive buffer before further bytes are stored.
+      This prevents valid 18-byte and 50-byte HWINFO replies containing an
+      internal `0xFF` from being split into unrecognized fragments, allowing
+      the driver to obtain model, firmware, serial number and battery-pack
+      information instead of repeatedly requesting HWINFO and delaying normal
+      polling. [issue #3592]
+    * Added the legacy five-byte compatibility initialization request
+      (`FF 05 01 06 FE`) as a third fallback. The driver first makes six
+      extended initialization attempts, then selects randomly among the
+      extended, normal and compatibility requests so older or otherwise
+      compatibility-dependent NHS units can answer with their supported
+      protocol variant.
+    * Consolidated the NHS model-code metadata into an indexed lookup table,
+      preserving the existing model descriptions and nominal VA mappings while
+      making unknown-code handling explicit.
 
  - `nutdrv_qx` driver updates:
     * Added the `richcomm-svc` USB communication subdriver for older
