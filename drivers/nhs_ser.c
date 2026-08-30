@@ -1426,7 +1426,11 @@ static void interpret_pkt_hwinfo(void) {
 	char	hw_scratch_buf[1024];	/* General-purpose string buffer */
 	unsigned int	i = 0;
 
-	if (!lastpktdata.checksum_ok) {
+	/* @freechurros identified in issue #3592 that this function used to
+	 * inspect lastpktdata here. Validate the HWINFO packet being interpreted,
+	 * otherwise a valid HWINFO received before the first DATA packet is lost.
+	 */
+	if (!lastpkthwinfo.checksum_ok) {
 		upslogx(LOG_WARNING, "%s: bad lastpkthwinfo.checksum", __func__);
 		return;
 	}	/* end if */
@@ -1817,14 +1821,18 @@ static void interpret_pkt_data(void) {
 		dstate_setinfo("battery.runtime", "%u", autonomy_secs);
 	}	/* end if */
 
-	/* Battery charger status */
+	/* Battery charger status
+	 * @freechurros reported in issue #3592 that Home Assistant rejects the
+	 * former upper-case strings. Use the lower-case vocabulary documented in
+	 * docs/nut-names.txt for interoperability with NUT clients.
+	 */
 	if (lastpktdata.s_charger_on)
-		dstate_setinfo("battery.charger.status", "%s", "CHARGING");
+		dstate_setinfo("battery.charger.status", "%s", "charging");
 	else {
 		if (lastpktdata.s_battery_mode)
-			dstate_setinfo("battery.charger.status", "%s", "DISCHARGING");
+			dstate_setinfo("battery.charger.status", "%s", "discharging");
 		else
-			dstate_setinfo("battery.charger.status", "%s", "RESTING");
+			dstate_setinfo("battery.charger.status", "%s", "resting");
 	}	/* end else */
 
 	if (debug_pkt_data) {
@@ -1916,7 +1924,11 @@ void upsdrv_updateinfo(void) {
 	 */
 	read_result = ser_get_char(serial_fd, &chr, timeout_sec, timeout_usec);
 	while (read_result > 0) {
-		/* A 0xFF byte starts a packet only while the reader is idle. After
+		/* The length-aware framing and the need to preserve marker values inside
+		 * packet payloads were demonstrated by raw captures contributed by
+		 * @freechurros in issue #3592.
+		 *
+		 * A 0xFF byte starts a packet only while the reader is idle. After
 		 * the packet starts, byte [1] declares its total size, including the
 		 * initial 0xFF, checksum and final 0xFE. Any 0xFF or 0xFE received
 		 * before the declared final position belongs to the packet contents.
@@ -1961,6 +1973,14 @@ void upsdrv_updateinfo(void) {
 										dstate_dataok();
 									}	/* end if */
 								}	/* end if */
+								else {
+									/* @freechurros noted in issue #3592 that
+									 * periodic HWINFO replies after discovery are valid
+									 * and should not look like unrecognized packets in
+									 * operational logs.
+									 */
+									upsdebugx(4, "%s: HWINFO packet already known, ignoring", __func__);
+								}	/* end else */
 								break;
 
 							case 21:
@@ -1974,6 +1994,11 @@ void upsdrv_updateinfo(void) {
 
 							default:
 								upslogx(LOG_WARNING, "Incoming packet size not recognized, discarding!");
+								/* Suggested by @freechurros in issue #3592: expose the
+								 * rejected bytes when raw packet debugging is enabled so
+								 * future framing variants can be diagnosed from the log.
+								 */
+								pdatapacket(datapacket, datapacketsize);
 								break;
 						}	/* end switch */
 					}	/* end else */

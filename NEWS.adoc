@@ -133,7 +133,15 @@ https://github.com/networkupstools/nut/milestone/13
       internal `0xFF` from being split into unrecognized fragments, allowing
       the driver to obtain model, firmware, serial number and battery-pack
       information instead of repeatedly requesting HWINFO and delaying normal
-      polling. [issue #3592]
+      polling. The raw packet captures and protocol analysis which made this
+      correction possible were contributed by GitHub user `freechurros`.
+      [issue #3592]
+    * Applied follow-up hardware-test feedback from `freechurros`: corrected
+      `interpret_pkt_hwinfo()` to validate the HWINFO checksum instead of the
+      DATA checksum, quietly ignored already-known periodic HWINFO replies,
+      exposed unrecognized packets through `debug_pkt_raw`, and published the
+      documented lower-case `battery.charger.status` values for compatibility
+      with Home Assistant. [issue #3592]
     * Added the legacy five-byte compatibility initialization request
       (`FF 05 01 06 FE`) as a third fallback. The driver first makes six
       extended initialization attempts, then selects randomly among the
