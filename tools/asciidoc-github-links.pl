@@ -124,7 +124,10 @@ while (<>) {
     s/\#(\#${issue_id_re})/$1/g;
 
     # 15. URL plus sign encoding
-    s/(${gh_schema_re}[^ \+]*)([\]]*\+)/$1%2B/g;
+    s/(${gh_schema_re}[^\s\+]*)([\]]*\+)/{
+        "$1%2B";
+        # printf stderr "[%2B]: Matched for '$1'\n";
+    }/ge;
 
     print $_;
 }
