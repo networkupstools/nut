@@ -118,4 +118,10 @@ typedef struct usb_communication_subdriver_s {
 
 extern usb_communication_subdriver_t	usb_subdriver;
 
+#if WITH_LIBUSB_1_0
+/* Defined in libusb1.c only - the libusb-0.1 backend has no equivalent
+ * context object to hand out. See its definition for the intended use. */
+libusb_context *nut_libusb_get_context(void);
+#endif /* WITH_LIBUSB_1_0 */
+
 #endif /* NUT_LIBUSB_H_SEEN */

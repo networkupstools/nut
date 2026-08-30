@@ -69,6 +69,34 @@ static const microlink_value_map_t retransfer_delay_map[] = {
 	{ 0, NULL }
 };
 
+/* Sensitivity, confirmed by watching PowerChute write this usage on a live
+ * SCL500RMI1UC: its dropdown offers exactly these three, and they came back
+ * as 1, 2 and 4. Value strings follow the lowercase convention the other NUT
+ * drivers use for input.sensitivity (apc-ats-mib, cps-hid, belkinunv);
+ * "reduced" is kept rather than remapped onto anyone else's "medium",
+ * because that is what the device and PowerChute both call it. */
+static const microlink_value_map_t input_sensitivity_map[] = {
+	{ 1UL, "normal" },
+	{ 2UL, "reduced" },
+	{ 4UL, "low" },
+	{ 0, NULL }
+};
+
+/* Audible alarm. Both values were observed round-tripping on real hardware -
+ * PowerChute wrote 0xC2 to silence the alarm and 0xC1 to restore it.
+ *
+ * NUT also defines a "muted" state, but there is no third value to map here:
+ * muting is a transient command on a different usage (2:4.B.3B, the
+ * user-interface command register this driver targets for beeper.mute and
+ * test.panel.start), not a setting. PowerChute offers only enabled/disabled
+ * for the same reason. If a device does report a distinct muted value it will
+ * be published as-is rather than mislabelled. */
+static const microlink_value_map_t beeper_status_map[] = {
+	{ 193UL, "enabled" },
+	{ 194UL, "disabled" },
+	{ 0, NULL }
+};
+
 static const microlink_value_map_t output_voltage_setting_map[] = {
 	{ (1UL << 0),  "VAC100" },
 	{ (1UL << 1),  "VAC120" },
@@ -105,6 +133,20 @@ static const microlink_value_map_t language_map[] = {
 	{ 0, NULL }
 };
 
+/* Self-test schedule. The four members PowerChute offers were read straight
+ * out of its own <select> on a live SCL500RMI1UC, which spells out what the
+ * terse names mean:
+ *
+ *   Never            -> "Never"
+ *   OnStartUpOnly    -> "On UPS start-up"
+ *   OnStartUp7Since  -> "UPS start-up and every 7 days since last test"
+ *   OnStartUp14Since -> "UPS start-up and every 14 days since last test"
+ *
+ * So "Since" counts from the last completed test. The two "Plus" members come
+ * from the published descriptor rather than from PowerChute, which does not
+ * offer them; they presumably count from power-on instead. Either way the
+ * recurring period is the 7 or 14 in the name, which is what
+ * microlink_publish_test_interval() needs. */
 static const microlink_value_map_t battery_test_interval_map[] = {
 	{ (1U << 0),  "Never" },
 	{ (1U << 1),  "OnStartUpOnly" },
@@ -170,7 +212,7 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	/* Inventory / identity */
 	{ "2:4.9.40", "ups.serial",          MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.9.40", "device.serial",       MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
-	{ "2:4.9.42", "experimental.device.sku",
+	{ "2:4.9.42", "device.part",
 	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.9.44", "ups.model",           MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.82",   "ups.id",              MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, NULL },
@@ -179,26 +221,67 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	{ "2:4.9.19", "ups.mfr.date",        MLINK_DESC_DATE,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "3:4A",     "ups.firmware",        MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 
-	/* Status / health */
-	{ "2:4.A",    "experimental.device.status",
-	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_status_map },
-	{ "2:11",     "ups.test.result",     MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_test_status_map },
-	{ "2:13",     "experimental.ups.calibration.result",
-	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
-	{ "2:4.5.11", "experimental.battery.test.result",
+	/* Status / health.
+	 *
+	 * No entry here for the device status word at "2:4.A": it is already
+	 * consumed through microlink_desc_publish_map above, where the same
+	 * apc_status_map turns it into ups.status flags (and apc_alarm_map into
+	 * alarms). That map yields exactly the standard NUT tokens - OL, OB,
+	 * BYPASS, OFF, TEST, OVER - so publishing it a second time as its own
+	 * variable produced a strictly worse copy of ups.status, which also
+	 * carries LB and the charger flags. */
+	{ "2:4.B.3A", "ups.beeper.status",   MLINK_DESC_ENUM_MAP,      MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, beeper_status_map },
+	/* The self test a user means by "ups.test.result" is the battery one at
+	 * 2:4.5.11, not 2:11. Verified by running a self test from PowerChute on
+	 * a live SCL500RMI1UC and watching both: 2:4.5.11 stepped Pending ->
+	 * InProgress -> Passed exactly as PowerChute's "Last Self Test Status"
+	 * did, while 2:11 never moved off None. PowerChute starts that test by
+	 * writing 1 to its companion command register 2:4.5.10.
+	 *
+	 * 2:11 is kept rather than dropped. Attribute IDs in this protocol are
+	 * scope-relative - the same .11 means "test result" on whichever object
+	 * it hangs off, exactly as .69 means "total time" under the battery,
+	 * input, output and UPS collections alike. So 2:11 is the UPS-scope test
+	 * result and 2:4.5.11 the battery-scope one, and a model built
+	 * differently could well populate the UPS-scope one instead. It gets an
+	 * experimental name here, and microlink_publish_test_result() promotes
+	 * it to ups.test.result on any device that lacks the battery-scope
+	 * usage. */
+	{ "2:4.5.11", "ups.test.result",     MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_test_status_map },
+	{ "2:11",     "experimental.microlink.ups.test.result",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_test_status_map },
+	{ "2:13",     "experimental.microlink.ups.calibration.result",
+	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
 	{ "2:4.5.13", "experimental.ups.calibration.result",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
 	{ "2:B",      "input.transfer.reason",
 	                                      MLINK_DESC_ENUM_MAP,      MLINK_DESC_SIGNED,   0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, ups_status_change_cause_map },
-	{ "2:4.5.18", "ups.test.interval",   MLINK_DESC_ENUM_MAP,      MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, battery_test_interval_map },
+	/* Not ups.test.interval: nut-names.txt defines that as an interval in
+	 * seconds, and this usage is a schedule enum - two of whose members
+	 * ("Never", "OnStartUpOnly") have no interval at all. The enum is kept
+	 * whole under an experimental name, and microlink_publish_test_interval()
+	 * derives the standard seconds value from it where one exists. */
+	{ "2:4.5.18", "experimental.microlink.battery.test.schedule",
+	                                      MLINK_DESC_ENUM_MAP,      MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, battery_test_interval_map },
 	{ "2:4.5.19", "battery.date.maintenance",
 	                                      MLINK_DESC_DATE,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.22", "ups.temperature",     MLINK_DESC_FIXED_POINT,   MLINK_DESC_SIGNED,   7, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.22", "battery.temperature", MLINK_DESC_FIXED_POINT,   MLINK_DESC_SIGNED,   7, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.31", "battery.lowruntimewarning",
 	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
-	{ "2:4.5.42", "experimental.battery.sku",
+	/* PowerChute's "Number Of Times On Battery". No standard NUT name for a
+	 * transfer count, so it joins the driver's existing statistics group. */
+	{ "2:4.5.F.59", "experimental.statistics.battery.transfers",
+	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	/* PowerChute's battery "Firmware Revision", distinct from ups.firmware. */
+	{ "2:4.5.9.4A", "experimental.battery.firmware",
+	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	{ "2:4.5.42", "experimental.battery.part",
+	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	/* Battery pack serial (distinct from experimental.battery.part's part number and
+	 * the chassis's ups.serial/device.serial at 2:4.9.40). Verified
+	 * against the physical battery label on a real unit - exact match. */
+	{ "2:4.5.9.40", "experimental.battery.serial",
 	                                      MLINK_DESC_STRING,        MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.48", "battery.date",        MLINK_DESC_DATE,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.5.74", "battery.lifetime.status",
@@ -212,18 +295,26 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	{ "2:4.6.25", "input.voltage",       MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 6, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.6.27", "input.frequency",     MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 7, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.6.BA", "input.transfer.delay", MLINK_DESC_ENUM_MAP,     MLINK_DESC_SIGNED,   0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, retransfer_delay_map },
+	{ "3:25",     "input.sensitivity",   MLINK_DESC_ENUM_MAP,     MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, input_sensitivity_map },
 	{ "2:4.7.D",  "input.transfer.high",  MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.E",  "input.transfer.low",   MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.25", "output.voltage",      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 6, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.26", "output.current",      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 5, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.27", "output.frequency",    MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 7, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
-	{ "2:4.7.28", "ups.realpower",       MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 8, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	/* 2:4.7.28 and 2:4.7.49 are percentages, not absolute units - they are
+	 * what PowerChute shows as "UPS Load 19.1 %" and "Load Power 22.2 % VA".
+	 * Publish the real-power one straight into ups.load, which NUT already
+	 * defines as a percentage, and let microlink_publish_derived_power()
+	 * turn both into ups.realpower (W) and ups.power (VA) against their
+	 * nominal ratings. */
+	{ "2:4.7.28", "ups.load",            MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 8, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.2A", "ups.realpower.nominal",
 	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.2B", "ups.power.nominal",   MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.7.2C", "experimental.output.voltage.setting",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RW, MLINK_NAME_INDEX_NONE, output_voltage_setting_map },
-	{ "2:4.7.49", "ups.power",           MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 8, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+	{ "2:4.7.49", "experimental.ups.load.apparent",
+	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 8, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "3:17",     "ups.efficiency",      MLINK_DESC_FIXED_POINT_MAP, MLINK_DESC_SIGNED, 7, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_efficiency_map },
 	{ "3:26",     "experimental.output.energy",
 	                                      MLINK_DESC_FIXED_POINT,   MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
@@ -275,6 +366,15 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	                                      MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 	{ "2:4.F.69",  "experimental.statistics.ups.totaltime",
 	                                      MLINK_DESC_FIXED_POINT,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
+
+	/* Internal protocol state, not telemetry - hence microlink.diag, not
+	 * ups/battery/experimental. MLINK_DESC_SLAVE_PASSWORD: the register
+	 * microlink_authenticate() writes its random SPC challenge to. Device
+	 * echoes back whatever was last written (verified across 4 restarts,
+	 * 4 different challenges) - useful for auth debugging, but NOT proof
+	 * auth was accepted (a register that echoes any write looks the same). */
+	{ "2:4.8.5",   "experimental.microlink.diag.slave_password_echo",
+	                                      MLINK_DESC_HEX,          MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, NULL },
 };
 
 const size_t microlink_desc_value_map_count =

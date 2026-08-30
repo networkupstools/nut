@@ -89,6 +89,67 @@ https://github.com/networkupstools/nut/milestone/13
       (`outlet.group.N.load.*`, `outlet.group.N.shutdown.*`), and the
       `outlet.group.N.switchable` variable to distinguish switchable
       groups from an unswitched main bank.
+    * USB mode: reworked the interrupt-IN read path to use a permanently
+      outstanding asynchronous transfer serviced by a dedicated thread, so
+      device replies are no longer missed while the driver is between
+      polls. Several long-run stability fixes go with it: a USB bus reset
+      is now triggered only on a genuine disconnect rather than on a retry
+      count, the cached page 0 contents are no longer wiped on every
+      session (re)start, the read queue is no longer flushed on every
+      session retry, and the authentication challenge is randomized.
+      Also warns once when built against the untested libusb-0.1 backend,
+      and backs off instead of spinning when the kernel's `usbhid` driver
+      has reclaimed the interface.
+    * Mapped two further descriptor usages:
+      `experimental.battery.serial` (the battery pack's own serial number,
+      distinct from `ups.serial`) and `microlink.diag.slave_password_echo`
+      (auth troubleshooting visibility only, not proof that
+      authentication was accepted).
+    * A page 0 whose announced frame width disagrees with the width of
+      the frame that carried it is now rejected instead of cached. Such
+      a page redefined the length the frame parser demanded, after which
+      nothing checksum-validated again and the session could not
+      recover. Affects both transports. [issue #3587]
+
+ - Contributed `apcmicrolink` driver updates [PR #3591]. The driver
+   remains experimental, but USB sessions should hold up better, and
+   fall back more readily to standard HID PDC data when the Microlink
+   tunnel is unstable or unavailable:
+    * USB mode: the standard-HID-PDC fallback now engages whenever the
+      Microlink tunnel stops producing usable data, not only when it
+      fails to answer during startup. A device that answers every poll
+      while reporting an all-zero state previously left `ups.status`
+      empty indefinitely. The driver hands back to Microlink data once
+      that source looks plausible again, with hysteresis so the two do
+      not swap on alternate polls.
+    * The Microlink tunnel is now polled for a full page pass per update
+      cycle, instead of one record per `pollinterval`. The device does
+      not acknowledge its authentication handshake until roughly 20
+      exchanges after the response is sent, and serves no measurement
+      page until it does, so the slower cadence could leave every
+      measured value reading 0 on a device that was answering normally.
+      Publishes `experimental.microlink.diag.auth_status` and
+      `experimental.microlink.diag.auth_refused`, and warns when the
+      handshake goes unacknowledged.
+    * The driver now closes the Microlink session with a STOP when it
+      exits. Without it the device could answer a later client's session
+      request mid-walk rather than at page 0, and would not re-synchronize
+      until re-enumerated.
+    * `2:4.7.28` and `2:4.7.49` are percentages of the nominal ratings
+      rather than absolute readings. `ups.load` is now published from the
+      former, with `ups.realpower` and `ups.power` derived against the
+      nominal ratings, instead of both reading two orders of magnitude
+      low. `ups.test.result` now comes from the battery-scope usage that
+      a self test actually updates, and `ups.test.interval` is derived
+      from the self-test schedule enumeration.
+    * Newly mapped: `input.sensitivity`, `ups.beeper.status`,
+      `experimental.battery.firmware` and
+      `experimental.statistics.battery.transfers`.
+    * Driver-specific diagnostic variables moved from `microlink.*` to
+      `experimental.microlink.*`.
+    * Documented the Microlink descriptor format that the driver parses,
+      for anyone extending its variable maps. See the NUT Developer
+      Guide.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

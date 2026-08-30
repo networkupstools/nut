@@ -72,7 +72,15 @@ int microlink_usb_hid_fallback_supported(void);
  * Returns 1 on success (udev valid, HID descriptor re-parsed), 0 on failure
  * (udev left NULL). If udev is already NULL, skips the reset and just tries
  * to reopen. The regex_matcher is never freed or modified. Call this when
- * the Microlink tunnel has been unresponsive for an extended period. */
+ * microlink_usb_device_gone() reports a genuine disconnect - a live-but-
+ * unresponsive device is a different problem this doesn't fix (confirmed
+ * by testing: it recovers a real unplug/power-cycle, not a stalled tunnel). */
 int microlink_usb_reset_and_reopen(void);
+
+/* 1 if a read, write, or async transfer has reported the USB device
+ * genuinely gone (unplugged, power-cycled) since the last successful
+ * microlink_usb_open(); 0 otherwise. This is the signal to act on, not a
+ * retry count - a live-but-stalled device never benefits from a reset. */
+int microlink_usb_device_gone(void);
 
 #endif /* APCMICROLINK_USB_H */
