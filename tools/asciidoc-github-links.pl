@@ -49,34 +49,78 @@ while (<>) {
     # 3. link ellipsis ...
     s/(link:${gh_schema_re}${gh_hostname_re}\/[^ ]*)\.\.\.([^ ]*)/$1..$2/g;
 
-    # 4. single [#GHSA-...]
-    s%(\[#*)(${ghsa_id_re})(\])%{ "[link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $2 . "]]" }%ge;
+    # 4. Lists of references: PRs/issues/advisories token followed by
+    # comma and/or space-separated identifiers, with state memory
+    s%\b(PRs|issues|advisories)\b(.*)%{
+        my $plural = $1;
+        my $rest = $2;
+        my $out = "";
 
-    # 5. "advisory GHSA-..." or "advisory #GHSA-..." (multiple words / space separated, can be broken across lines)
-    s%\b(advisory)\s*\#*(${ghsa_id_re})(${end_ghsa_id_re})%{ "link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $1 . " " . $2 . "]" . $3 }%ge;
+        while ($rest ne "") {
+            my $uripart =
+                ($plural eq 'PRs') ? $gh_uripart_pull :
+                ($plural eq 'issues') ? $gh_uripart_issue :
+                $gh_uripart_secadv;
 
-    # 6. issue #123
+            $out .= $plural;
+            my $id_matcher = $plural eq 'advisories' ? qr/\#?(${ghsa_id_re})/ : qr/\#(${issue_id_re})/;
+            while ($rest =~ s/^(\s*(?:[;,]\s*)?)${id_matcher}//s) {
+                my $sep = $1;
+                my $id = $2;
+
+                $out .= $sep;
+                if ($id =~ /^${ghsa_id_re}/) {
+                    $out .= "link:${gh_url_prj}/${uripart}/" . $id . "[" . $id . "]";
+                }
+                else {
+                    my $num = $id;
+                    $num =~ s/^\#+//;
+                    $out .= "link:${gh_url_prj}/${uripart}/" . $num . "[#" . $num . "]";
+                }
+            }
+
+            if ($rest =~ s/^([;,]?\s*)(PRs|issues|advisories)(.*)//s) {
+                my $sep = $1;
+                $plural = $2;
+                $rest = $3;
+
+                $out .= $sep;
+            } else {
+                last;
+            }
+        }
+
+        $out . $rest;
+    }%ges;
+
+    # 5. single [#GHSA-...]
+    s%(\[#?)(${ghsa_id_re})(\])%{ "[link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $2 . "]]" }%ge;
+
+    # 6. "advisory GHSA-..." or "advisory #GHSA-..." (multiple words / space separated, can be broken across lines)
+    s%\b(advisory)\s*\#?(${ghsa_id_re})(${end_ghsa_id_re})%{ "link:${gh_url_prj}/${gh_uripart_secadv}/" . $2 . "[" . $1 . " " . $2 . "]" . $3 }%ge;
+
+    # 7. issue #123
     s%\b(issue)\s*\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_prj}/${gh_uripart_issue}/" . $2 . "[" . $1 . " ##" . $2 . "]" . $3 }%ge;
 
-    # 7. PR #123 or pull request #123 (multi-word "pull request" can be broken across lines)
+    # 8. PR #123 or pull request #123 (multi-word "pull request" can be broken across lines)
     s%\b(PR|pull\s+request)\s*\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_prj}/${gh_uripart_pull}/" . $2 . "[" . $1 . " ##" . $2 . "]" . $3 }%ge;
 
-    # 8. [[ ,]#123
+    # 9. [[ ,]#123
     s%([[,\s])\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "link:${gh_url_prj}/${gh_uripart_issue}/" . $2 . "[##" . $2 . "]" . $3 }%ge;
 
-    # 9. issue networkupstools/foo#123
+    # 10. issue networkupstools/foo#123
     s%\b(issue)\s+${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_issue . "/" . $3 . "[" . $1 . " " . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 10. PR networkupstools/foo#123 or pull request networkupstools/foo#123 (multi-word)
+    # 11. PR networkupstools/foo#123 or pull request networkupstools/foo#123 (multi-word)
     s%\b(PR|pull\s+request)\s+${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_pull . "/" . $3 . "[" . $1 . " " . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 11. [ ,]networkupstools/foo#123
+    # 12. [ ,]networkupstools/foo#123
     s%([,\s])${gh_orgname}\/([^ \s]+)\#(${issue_id_re})(${end_issue_id_re})%{ $1 . "link:${gh_url_org}/" . $2 . "/" . $gh_uripart_issue . "/" . $3 . "[" . $2 . "##" . $3 . "]" . $4 }%ge;
 
-    # 12. ##123 -> #123
+    # 13. ##123 -> #123
     s/\#(\#${issue_id_re})/$1/g;
 
-    # 13. URL plus sign encoding
+    # 14. URL plus sign encoding
     s/(${gh_schema_re}[^ \+]*)([\]]*\+)/$1%2B/g;
 
     print $_;
