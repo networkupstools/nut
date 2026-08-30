@@ -449,15 +449,20 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 		fi ; \
 		exit 0 ; \
 	 fi ; \
-	 echo "  DOC-ASCIIDOC-GITHUB-LINKS	Parsing GitHub link patterns $< => $@"; \
-	 if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
-		ls -lad $@ $< || true ; \
-		stat $@ $< || true ; \
-	 fi ; \
-	 $(top_srcdir)/tools/asciidoc-github-links.pl < '$<' > "$@.tmp.$$$$" \
-	 && test -s "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" '$@' \
-	 || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; }
+	 if perl -e 1; then \
+	    echo "  DOC-ASCIIDOC-GITHUB-LINKS	Parsing GitHub link patterns $< => $@"; \
+	    if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+		    ls -lad $@ $< || true ; \
+		    stat $@ $< || true ; \
+	    fi ; \
+	    $(top_srcdir)/tools/asciidoc-github-links.pl < '$<' > "$@.tmp.$$$$" \
+	    && test -s "$@.tmp.$$$$" \
+	    && mv -f "$@.tmp.$$$$" '$@' \
+	    || { RES="$$?" ; rm -f "$@.tmp.$$$$" ; exit $$RES ; } ; \
+	 else \
+	    echo "  DOC-ASCIIDOC-GITHUB-LINKS	SKIP: perl not available" >&2 ; \
+	    cat '$<' > '$@' ; \
+	 fi
 	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
 		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
 	 fi
