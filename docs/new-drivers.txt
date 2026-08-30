@@ -981,3 +981,7 @@ include::snmp-subdrivers.txt[]
 [[nutdrv_qx-subdrivers]]
 
 include::nutdrv_qx-subdrivers.txt[]
+
+[[apcmicrolink-descriptors]]
+
+include::apcmicrolink-descriptors.txt[]
