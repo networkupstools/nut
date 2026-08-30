@@ -133,7 +133,7 @@ https://github.com/networkupstools/nut/milestone/13
       handshake goes unacknowledged.
     * The driver now closes the Microlink session with a STOP when it
       exits. Without it the device could answer a later client's session
-      request mid-walk rather than at page 0, and would not resynchronize
+      request mid-walk rather than at page 0, and would not re-synchronize
       until re-enumerated.
     * `2:4.7.28` and `2:4.7.49` are percentages of the nominal ratings
       rather than absolute readings. `ups.load` is now published from the
