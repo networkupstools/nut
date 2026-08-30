@@ -14,9 +14,9 @@ my $gh_orgname = "networkupstools";
 my $gh_prjname = "nut";
 
 # NOTE: Schema in regexes would vary, but in injected URLs must be specific
-my $gh_schema_re = "[Hh][Tt][Tt][Pp][Ss]?://";
+my $gh_schema_re = qr/[Hh][Tt][Tt][Pp][Ss]?:\/\//;
 my $gh_schema = "https://";
-my $gh_hostname_re = "github\.com";
+my $gh_hostname_re = qr/github\.com/;
 my $gh_hostname = "github.com";
 
 # URI parts (under a project base URI) for singular item; note not all are
@@ -27,12 +27,11 @@ my $gh_uripart_pull = "pull";
 my $gh_uripart_issue = "issues";
 my $gh_uripart_secadv = "security/advisories";
 
-my $issue_id_re = "[1-9][0-9]*";
-my $ghsa_id_re = "GHSA-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]";
-# NOTE: Here backslashed dollars are a way to store the literal dollar
-# character in the string to be used for regex below:
-my $end_issue_id_re = "[^0-9]|\$";
-my $end_ghsa_id_re = "[^A-Za-z0-9]|\$";
+my $issue_id_re = qr/[1-9][0-9]*/;
+my $ghsa_id_re = qr/GHSA-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]-[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]/;
+
+my $end_issue_id_re = qr/[^0-9]|$/;
+my $end_ghsa_id_re = qr/[^A-Za-z0-9]|$/;
 
 # Values for easier substitution below:
 my $gh_url_site = "${gh_schema}${gh_hostname}";
