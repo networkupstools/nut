@@ -977,7 +977,7 @@ static int microlink_usb_async_start(void)
 	ep_in = USB_ENDPOINT_IN + usb_subdriver.hid_ep_in;
 
 	/* Heap-allocated per instance - see async_xfer's declaration. */
-	buf = xmalloc(MLINK_USB_REPORT_TOTAL_LEN);
+	buf = (unsigned char *)xmalloc(MLINK_USB_REPORT_TOTAL_LEN);
 
 	async_xfer = libusb_alloc_transfer(0);
 	if (!async_xfer) {
