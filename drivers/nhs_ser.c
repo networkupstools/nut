@@ -382,8 +382,7 @@ static TYPE_FD_SER reconnect_ups_if_needed(void);
 static int write_serial(int fd, const char * dados, int size);
 #endif
 static int write_serial_int(TYPE_FD_SER fd, const unsigned int *data, size_t size);
-static bool send_initialization_packet(
-	const char *description, const unsigned int *data, size_t size);
+static bool send_initialization_packet(const unsigned int *data, size_t size, TYPE_FD_SER fd);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
@@ -1348,38 +1347,27 @@ static float get_vin_perc(char * var) {
  * A failed or partial write closes and invalidates the descriptor so the next
  * update cycle knows that it must reopen the port before communicating again.
  */
-static bool send_initialization_packet(
-	const char *description, const unsigned int *data, size_t size)
-{
+static bool send_initialization_packet(const unsigned int *data, size_t size, TYPE_FD_SER fd) {
 	int	written;
 
-	if (INVALID_FD_SER(serial_fd)) {
-		upslogx(LOG_WARNING,
-			"%s: serial port %s is not open before the %s initialization request; trying to reopen it",
-			__func__, porta, description);
-		if (INVALID_FD_SER(reconnect_ups_if_needed())) {
-			upslogx(LOG_WARNING,
-				"%s: unable to send the %s initialization request because serial port %s could not be reopened",
-				__func__, description, porta);
+	if (INVALID_FD_SER(fd)) {
+		upslogx(LOG_WARNING, "%s: serial port %s is not open before the initialization request; trying to reopen it", __func__, porta);
+		fd = reconnect_ups_if_needed();
+		if (INVALID_FD_SER(fd)) {
+			upslogx(LOG_WARNING, "%s: unable to send the initialization request because serial port %s could not be reopened", __func__, porta);
 			dstate_datastale();
 			return false;
 		}	/* end if */
 	}	/* end if */
 
-	upsdebugx(3,
-		"%s: sending %s initialization request (%" PRIuSIZE " bytes) on %s",
-		__func__, description, size, porta);
+	upsdebugx(3, "%s: sending initialization request (%" PRIuSIZE " bytes) on %s", __func__, size, porta);
 	errno = 0;
-	written = write_serial_int(serial_fd, data, size);
+	written = write_serial_int(fd, data, size);
 	if (written < 0 || (size_t)written != size) {
 		if (errno != 0)
-			upslog_with_errno(LOG_WARNING,
-				"%s: failed to send the %s initialization request on %s",
-				__func__, description, porta);
+			upslog_with_errno(LOG_WARNING, "%s: failed to send the initialization request on %s", __func__, porta);
 		else
-			upslogx(LOG_WARNING,
-				"%s: failed to send the complete %s initialization request on %s; wrote %d of %" PRIuSIZE " bytes",
-				__func__, description, porta, written, size);
+			upslogx(LOG_WARNING, "%s: failed to send the complete initialization request on %s; wrote %d of %" PRIuSIZE " bytes", __func__, porta, written, size);
 
 		/* Mark the connection unusable. upsdrv_updateinfo() will invoke the
 		 * normal reopen procedure before its next read or retry.
@@ -1389,8 +1377,7 @@ static bool send_initialization_packet(
 		return false;
 	}	/* end if */
 
-	upsdebugx(3, "%s: %s initialization request sent successfully on %s",
-		__func__, description, porta);
+	upsdebugx(3, "%s: initialization request sent successfully on %s", __func__, porta);
 	return true;
 }
 
@@ -1410,13 +1397,13 @@ void upsdrv_initinfo(void) {
 	upsdebugx(3, "%s: starting...", __func__);
 
 	/* TODO: Any instant commands? */
-	if (!send_initialization_packet("long", string_initialization_long, 9))
+	if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
 		return;
 	usleep(250000);
-	if (!send_initialization_packet("short", string_initialization_short, 9))
+	if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
 		return;
 	usleep(250000);
-	if (!send_initialization_packet("compatibility", string_initialization_comptmode, 5))
+	if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
 		return;
 
 	upsdebugx(3, "%s: initialization commands sent", __func__);
