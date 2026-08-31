@@ -2,7 +2,7 @@
 
    Copyright (C)
 	2016  Emilien Kia <emilien.kia@gmail.com>
-	2020 - 2025  Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,7 +79,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION( NutClientTest );
 
 #include "../clients/nutclient.h"
 #include "../clients/nutclientmem.h"
-#include "../clients/upsclient.h"
 
 namespace nut {
 
@@ -222,22 +221,42 @@ void NutClientTest::test_copy_assignment_dev() {
 }
 
 void NutClientTest::test_ssl_context_registry() {
-	UPSCONN_t ups;
-	memset(&ups, 0, sizeof(ups));
+	/* Test the C++ API for per-connection SSL context management */
+	nut::TcpClient client;
 
-	void *ctx = reinterpret_cast<void *>(0x1234);
-	void *previous = upscli_set_ssl_context(&ups, ctx);
+	//std::cerr << "Starting test_ssl_context_registry" << std::endl;
 
-	CPPUNIT_ASSERT_MESSAGE("Expected no previous SSL context", previous == nullptr);
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the registered SSL context to be returned",
-		ctx, upscli_get_ssl_context(&ups));
+	/* Initially, no custom SSL context should be set */
+	void *initial = client.getSSLContext();
+	CPPUNIT_ASSERT_MESSAGE("Expected no initial SSL context", initial == nullptr);
 
-	void *replacement = reinterpret_cast<void *>(0x5678);
-	previous = upscli_set_ssl_context(&ups, replacement);
+	//std::cerr << "Setting custom SSL context" << std::endl;
+
+	/* Set a custom SSL context (using a test pointer) */
+	void *test_ctx = reinterpret_cast<void *>(0x1234);
+	void *previous = client.setSSLContext(test_ctx);
+
+	CPPUNIT_ASSERT_MESSAGE("Expected no previous SSL context on first set", previous == nullptr);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the registered SSL context to be returned by getter",
+		test_ctx, client.getSSLContext());
+
+	//std::cerr << "Updating SSL context" << std::endl;
+
+	/* Update the SSL context and verify the old one is returned */
+	void *replacement_ctx = reinterpret_cast<void *>(0x5678);
+	previous = client.setSSLContext(replacement_ctx);
+
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the previous SSL context to be returned on update",
-		ctx, previous);
+		test_ctx, previous);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the updated SSL context to be stored",
-		replacement, upscli_get_ssl_context(&ups));
+		replacement_ctx, client.getSSLContext());
+
+	/* Clear the fake context before the client is destroyed:
+	 * ~Socket() calls SSL_CTX_free() on a non-null context, and
+	 * our test pointers above are not real SSL_CTX objects. */
+	client.setSSLContext(nullptr);
+
+	//std::cerr << "Finished test_ssl_context_registry" << std::endl;
 }
 
 void NutClientTest::test_copy_constructor_cmd() {
