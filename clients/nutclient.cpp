@@ -827,11 +827,13 @@ static void nss_error(const char* text)
 
 	if (status == SECFailure) {
 		if (sock && sock->_ssl_config && !sock->_ssl_config->getCertIdentName().empty()) {
-			cert = PK11_FindCertFromNickname(sock->_ssl_config->getCertIdentName().c_str(), nullptr);
+			/* Pass "sock" through as wincx, so nss_password_callback()
+			 * can resolve this same connection's per-Socket password. */
+			cert = PK11_FindCertFromNickname(sock->_ssl_config->getCertIdentName().c_str(), sock);
 			if (cert == nullptr) {
 				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
 			} else {
-				privKey = PK11_FindKeyByAnyCert(cert, nullptr);
+				privKey = PK11_FindKeyByAnyCert(cert, sock);
 				if (privKey == nullptr) {
 					nss_error("GetClientAuthData / PK11_FindKeyByAnyCert");
 					CERT_DestroyCertificate(cert);
