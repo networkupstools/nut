@@ -7,6 +7,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2026 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -158,9 +159,12 @@ main (void)
 	if (nut_debug_level)
 		printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n");
 #endif
-	if(aux){
-		while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
+	if(aux) {
+		while((iterator < mibdmf_get_list_size(dmp))
+		  &&  !(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))
+		) {
 			iterator++;
+		}
 
 		if(element) {
 			if (nut_debug_level) {
