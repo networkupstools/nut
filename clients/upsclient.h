@@ -131,6 +131,15 @@ typedef struct {
 #endif /* WITH_OPENSSL */
 	char	ssl_ctx_owned;	/* if not 0, we own the SSL_CTX and should free it on cleanup (if applicable) - meaning nobody else refers to that memory */
 
+	/* Optional per-connection client certificate identity override, consulted
+	 * (at least) by the NSS backend's GetClientAuthData()/nss_password_callback()
+	 * so one process can present different client certificates to different
+	 * servers even while sharing one process-wide NSS certificate/key database.
+	 * NULL means fall back to the library-wide CERTIDENT set via upscli_init*().
+	 * See upscli_set_ssl_certident(). */
+	char	*certident_name;
+	char	*certident_pass;
+
 }	UPSCONN_t;
 
 const char *upscli_strerror(UPSCONN_t *ups);
@@ -178,6 +187,19 @@ int upscli_cleanup(void);
 
 void *upscli_set_ssl_context(UPSCONN_t *ups, void *ssl_ctx);
 void *upscli_get_ssl_context(UPSCONN_t *ups);
+
+/* Set (or clear, with NULL args) a per-connection client certificate identity,
+ * to let one process present different client certificates to different
+ * servers even when they share one process-wide NSS certificate/key database
+ * (OpenSSL builds should prefer a distinct SSL context via upscli_set_ssl_context()
+ * instead, since OpenSSL supports a fully separate SSL_CTX per connection).
+ * Strings are copied internally; safe to free/reuse the arguments afterwards.
+ * Returns 0 on success, -1 on error (e.g. NULL ups). */
+int upscli_set_ssl_certident(UPSCONN_t *ups, const char *certident_name, const char *certident_pass);
+
+/* Get the per-connection client certificate nickname set via
+ * upscli_set_ssl_certident(), or NULL if none was set for this connection. */
+const char *upscli_get_ssl_certident_name(UPSCONN_t *ups);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */

@@ -1703,6 +1703,30 @@ void *upscli_get_ssl_context(UPSCONN_t *ups)
 	return ups->ssl_ctx;
 }
 
+int upscli_set_ssl_certident(UPSCONN_t *ups, const char *certident_name, const char *certident_pass)
+{
+	if (!ups) {
+		return -1;
+	}
+
+	free(ups->certident_name);
+	ups->certident_name = certident_name ? xstrdup(certident_name) : NULL;
+
+	free(ups->certident_pass);
+	ups->certident_pass = certident_pass ? xstrdup(certident_pass) : NULL;
+
+	return 0;
+}
+
+const char *upscli_get_ssl_certident_name(UPSCONN_t *ups)
+{
+	if (!ups) {
+		return NULL;
+	}
+
+	return ups->certident_name;
+}
+
 int upscli_cleanup(void)
 {
 #ifdef WITH_OPENSSL
@@ -3439,6 +3463,12 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	free(ups->host);
 	ups->host = NULL;
+
+	free(ups->certident_name);
+	ups->certident_name = NULL;
+
+	free(ups->certident_pass);
+	ups->certident_pass = NULL;
 
 #ifdef WITH_OPENSSL
 	if (ups->openssl_cert_verify_data != NULL) {
