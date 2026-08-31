@@ -162,7 +162,6 @@ static void ups2000_device_identification(void);
 static size_t ups2000_read_serial(uint8_t *buf, size_t buf_len);
 static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val);
-static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src);
 static uint16_t crc16(uint8_t *buffer, size_t buffer_length);
 static time_t time_seek(time_t t, int seconds);
 
@@ -1731,8 +1730,12 @@ static int ups2000_shutdown_guaranteed_return(uint16_t offdelay, uint16_t ondela
 	val[0] = (offdelay * 10) / 60;
 	val[1] = ondelay / 60;
 
-	r = ups2000_write_registers(modbus_ctx, 1047 + 10000, 2, val);
-	if (r != 2)
+	r = ups2000_write_register(modbus_ctx, 1047 + 10000, val[0]);
+	if (r != 1)
+		return STAT_INSTCMD_FAILED;
+
+	r = ups2000_write_register(modbus_ctx, 1048 + 10000, val[1]);
+	if (r != 1)
 		return STAT_INSTCMD_FAILED;
 
 	return STAT_INSTCMD_HANDLED;
@@ -2061,7 +2064,14 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 }
 
 
-static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *src)
+/*
+ * Huawei UPS2000 doesn't officially support multiple-register writes (Modbus
+ * command 0x10), the official datasheet only supports single-register writes
+ * (Modbus command 0x06). Multiple-register writes worked on some models, but
+ * this turned out to be undefined behavior, it doesn't work with all models.
+ * This is why this function is not symmetric to ups2000_read_registers().
+ */
+static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val)
 {
 	int i;
 	int r = -1;
@@ -2072,34 +2082,28 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 			"Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
-		r = modbus_write_registers(ctx, addr, nb, src);
+		r = modbus_write_register(ctx, addr, val);
 
 		/* generic retry for modbus write failures. */
-		if (retry_status == RETRY_ENABLE && r != nb) {
-			upslogx(LOG_WARNING, "modbus_write_registers() failed (%d, errno %d): %s",
+		if (retry_status == RETRY_ENABLE && r != 1) {
+			upslogx(LOG_WARNING, "modbus_write_register() failed (%d, errno %d): %s",
 				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a write failure. Retrying...", addr);
 			sleep(1);
 			continue;
 		}
-		else if (r == nb)
+		else if (r == 1)
 			retry_status = RETRY_ENABLE;
 
 		return r;
 	}
 
 	/* Give up */
-	upslogx(LOG_ERR, "modbus_write_registers() failed (%d, errno %d): %s",
+	upslogx(LOG_ERR, "modbus_write_register() failed (%d, errno %d): %s",
 		r, errno, modbus_strerror(errno));
 	upslogx(LOG_ERR, "Register %04d has a fatal write failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
-}
-
-
-static int ups2000_write_register(modbus_t *ctx, int addr, uint16_t val)
-{
-	return ups2000_write_registers(ctx, addr, 1, &val);
 }
 
 
