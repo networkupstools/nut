@@ -377,10 +377,13 @@ static float calculate_efficiency(float vacoutrms, float vacinrms);
 static void parse_serial_options(void);
 static void close_serial_port(void);
 static TYPE_FD_SER openfd(const char *portarg, int requested_baudrate);
+static TYPE_FD_SER reconnect_ups_if_needed(void);
 #if 0
 static int write_serial(int fd, const char * dados, int size);
 #endif
 static int write_serial_int(TYPE_FD_SER fd, const unsigned int *data, size_t size);
+static bool send_initialization_packet(
+	const char *description, const unsigned int *data, size_t size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
@@ -1339,6 +1342,58 @@ static float get_vin_perc(char * var) {
 		return DEFAULTPERC;
 }
 
+/*
+ * Send one hardware-discovery request only through a valid serial descriptor.
+ * If the descriptor is already invalid, try the driver's bounded reopen path.
+ * A failed or partial write closes and invalidates the descriptor so the next
+ * update cycle knows that it must reopen the port before communicating again.
+ */
+static bool send_initialization_packet(
+	const char *description, const unsigned int *data, size_t size)
+{
+	int	written;
+
+	if (INVALID_FD_SER(serial_fd)) {
+		upslogx(LOG_WARNING,
+			"%s: serial port %s is not open before the %s initialization request; trying to reopen it",
+			__func__, porta, description);
+		if (INVALID_FD_SER(reconnect_ups_if_needed())) {
+			upslogx(LOG_WARNING,
+				"%s: unable to send the %s initialization request because serial port %s could not be reopened",
+				__func__, description, porta);
+			dstate_datastale();
+			return false;
+		}	/* end if */
+	}	/* end if */
+
+	upsdebugx(3,
+		"%s: sending %s initialization request (%" PRIuSIZE " bytes) on %s",
+		__func__, description, size, porta);
+	errno = 0;
+	written = write_serial_int(serial_fd, data, size);
+	if (written < 0 || (size_t)written != size) {
+		if (errno != 0)
+			upslog_with_errno(LOG_WARNING,
+				"%s: failed to send the %s initialization request on %s",
+				__func__, description, porta);
+		else
+			upslogx(LOG_WARNING,
+				"%s: failed to send the complete %s initialization request on %s; wrote %d of %" PRIuSIZE " bytes",
+				__func__, description, porta, written, size);
+
+		/* Mark the connection unusable. upsdrv_updateinfo() will invoke the
+		 * normal reopen procedure before its next read or retry.
+		 */
+		close_serial_port();
+		dstate_datastale();
+		return false;
+	}	/* end if */
+
+	upsdebugx(3, "%s: %s initialization request sent successfully on %s",
+		__func__, description, porta);
+	return true;
+}
+
 void upsdrv_initinfo(void) {
 	/* From docs/new-drivers.txt:
 	 * Try to detect what kind of UPS is out there,
@@ -1355,6 +1410,16 @@ void upsdrv_initinfo(void) {
 	upsdebugx(3, "%s: starting...", __func__);
 
 	/* TODO: Any instant commands? */
+	if (!send_initialization_packet("long", string_initialization_long, 9))
+		return;
+	usleep(250000);
+	if (!send_initialization_packet("short", string_initialization_short, 9))
+		return;
+	usleep(250000);
+	if (!send_initialization_packet("compatibility", string_initialization_comptmode, 5))
+		return;
+
+	upsdebugx(3, "%s: initialization commands sent", __func__);
 
 	upsdebugx(3, "%s: finished", __func__);
 }
@@ -1407,6 +1472,14 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 		if (VALID_FD_SER(serial_fd)) {
 			if (retries > MAXTRIES && may_log_reconnect_trying(1))
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
+
+			/* A reopened serial port may now be connected to a different UPS.
+			 * Invalidate the cached discovery result and restart the initialization
+			 * sequence so model-specific data is obtained without restarting NUT.
+			 */
+			lastpkthwinfo.checksum_ok = false;
+			send_extended = 0;
+			checktime = 2000000;
 			retries = 0;
 			reconnect_trying(RECONNECT_SUCCESS);
 		}	/* end if */
@@ -1905,6 +1978,7 @@ void upsdrv_updateinfo(void) {
 	useconds_t	timeout_usec;
 	ssize_t	read_result;
 	int	randval = 0;
+	pkt_hwinfo	received_hwinfo;
 
 	upsdebugx(3, "%s: starting...", __func__);
 
@@ -1965,22 +2039,19 @@ void upsdrv_updateinfo(void) {
 						switch (datapacketsize) {
 							case 18:
 							case 50:
-								if (!lastpkthwinfo.checksum_ok) {
-									lastpkthwinfo = mount_hwinfo(datapacket, datapacketsize);
+								received_hwinfo = mount_hwinfo(datapacket, datapacketsize);
 
-									if (lastpkthwinfo.checksum_ok) {
-										interpret_pkt_hwinfo();
-										dstate_dataok();
-									}	/* end if */
+								/* Always accept a new valid HWINFO packet. The UPS may be
+								 * replaced while the driver remains active, so retaining only
+								 * the first packet would leave model-specific data stale until
+								 * NUT is restarted. Preserve the last valid data if the newly
+								 * received packet has a bad checksum.
+								 */
+								if (received_hwinfo.checksum_ok) {
+									lastpkthwinfo = received_hwinfo;
+									interpret_pkt_hwinfo();
+									dstate_dataok();
 								}	/* end if */
-								else {
-									/* @freechurros noted in issue #3592 that
-									 * periodic HWINFO replies after discovery are valid
-									 * and should not look like unrecognized packets in
-									 * operational logs.
-									 */
-									upsdebugx(4, "%s: HWINFO packet already known, ignoring", __func__);
-								}	/* end else */
 								break;
 
 							case 21:
