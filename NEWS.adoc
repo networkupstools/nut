@@ -105,6 +105,10 @@ https://github.com/networkupstools/nut/milestone/13
       failure causes than just a timeout; quieter retry logging to avoid
       severe syslog/journal thrashing. [PR #3571, #3414]
 
+ - `bestups` driver updates:
+    * Fixed Megatec Q1 parser to expect specific response format and avoid
+      blind `scanf()` usage. [#GHSA-hwqr-5pjj-3m25]
+
  - `blazer_usb` driver updates:
     * Bounded USB reply parsing by the number of bytes actually received, in
       the `ippon`, `cypress` and `phoenix` transports, preventing out-of-bounds
