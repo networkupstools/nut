@@ -375,6 +375,16 @@ to endless read failures and permanent data stalls.
 Driver v0.12 (NUT v2.8.5) fixed support for Microsoft Windows,
 Windows was previously unsupported due to a file locking bug.
 
+Driver v0.14 (NUT v2.8.6) fixed two serious problems that affected all
+previous NUT versions, upgrading is strongly recommended. Due to a broken
+instant command handler, it was impossible to send some instant commands
+to the UPS, including *bypass.start*, *shutdown.return*, *shutdown.reboot*,
+and *shutdown.reboot.graceful*, any attempt to use them will fail with an
+"reg1 is negative" error in the syslog. Due to a separate Modbus compatibility
+problem, the negative impact is worse on some UPS models: it was not possible
+to *write to any registers at all*, meaning that changing any *variable* or
+sending any *instant command* is impossible.
+
 See *Historical bugs* at the bottom of this manual for links.
 
 Battery status has a non-fatal read failure
@@ -491,6 +501,12 @@ https://github.com/networkupstools/nut/issues/3244
 
 * Commit: call ser_close() before modbus_connect(), fix #3244:
 https://github.com/networkupstools/nut/commit/db2e148503d654726d5520d68e20e71117335813
+
+* Issue 3593: huawei-ups2000: shutdown commands never power off the UPS on firmware V2R1C1SPC50 - the unit ignores Modbus function 0x10 writes; only 0x06 works
+https://github.com/networkupstools/nut/issues/3593
+
+* Issue 3603: huawei-ups2000: bypass.start, shutdown.return, shutdown.reboot, and shutdown.reboot.graceful are broken in all NUT versions
+https://github.com/networkupstools/nut/issues/3603
 
 Windows Drivers:
 ~~~~~~~~~~~~~~~~
