@@ -290,13 +290,18 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	/* Prefer the per-connection identity (if any) over the library-wide default,
+	 * so different connections in one process can use different client certs
+	 * from the same shared NSS certificate/key database. */
+	UPSCONN_t	*ups = (UPSCONN_t *)arg;
+	const char	*passwd = (ups && ups->certident_pass) ? ups->certident_pass : sslcertpasswd;
+
 	NUT_UNUSED_VARIABLE(retry);
-	NUT_UNUSED_VARIABLE(arg);
 
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
-		sslcertpasswd ? "" : "not ");
-	return sslcertpasswd ? PL_strdup(sslcertpasswd) : NULL;
+		passwd ? "" : "not ");
+	return passwd ? PL_strdup(passwd) : NULL;
 }
 
 /** Detail the currently raised NSS error code if possible, and debug-log
