@@ -277,6 +277,8 @@ https://github.com/networkupstools/nut/milestone/13
       `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
+    * `apc` subdriver: exposed `ambient.temperature` from universal I/O
+      sensors used with APC Network Management Card 3. [issue #3250]
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
