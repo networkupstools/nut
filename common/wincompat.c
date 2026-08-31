@@ -531,19 +531,129 @@ static const char	*named_pipe_name=NULL;
 OVERLAPPED		pipe_connection_overlapped;
 pipe_conn_t		*pipe_connhead = NULL;
 
-void init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd)
+PACL init_pipe_security(SECURITY_ATTRIBUTES *sa, SECURITY_DESCRIPTOR *sd)
 {
-	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
-		fatal_with_errno(EXIT_FAILURE, "InitializeSecurityDescriptor failed");
+	HANDLE	token = NULL;
+	TOKEN_USER	*token_user = NULL;
+	DWORD	token_user_size = 0;
+	BYTE	administrators_sid[SECURITY_MAX_SID_SIZE];
+	DWORD	administrators_sid_size = sizeof(administrators_sid);
+	BYTE	system_sid[SECURITY_MAX_SID_SIZE];
+	DWORD	system_sid_size = sizeof(system_sid);
+	DWORD	acl_size;
+	PACL	acl = NULL;
+	DWORD	error = ERROR_SUCCESS;
+	const char	*failed_operation = NULL;
+	const DWORD	pipe_rights = GENERIC_READ | GENERIC_WRITE | FILE_CREATE_PIPE_INSTANCE;
+
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
+		error = GetLastError();
+		failed_operation = "OpenProcessToken";
+		goto fail;
 	}
 
-	if (!SetSecurityDescriptorDacl(sd, TRUE, NULL, FALSE)) {
-		fatal_with_errno(EXIT_FAILURE, "SetSecurityDescriptorDacl failed");
+	if (GetTokenInformation(token, TokenUser, NULL, 0, &token_user_size)
+	||  GetLastError() != ERROR_INSUFFICIENT_BUFFER
+	) {
+		error = GetLastError();
+		failed_operation = "GetTokenInformation(size)";
+		goto fail;
+	}
+
+	token_user = xmalloc(token_user_size);
+	if (!GetTokenInformation(token, TokenUser, token_user, token_user_size, &token_user_size)) {
+		error = GetLastError();
+		failed_operation = "GetTokenInformation";
+		goto fail;
+	}
+
+	if (!CloseHandle(token)) {
+		error = GetLastError();
+		failed_operation = "CloseHandle";
+		goto fail;
+	}
+	token = NULL;
+
+	if (!IsValidSid(token_user->User.Sid)) {
+		error = ERROR_INVALID_SID;
+		failed_operation = "IsValidSid(TokenUser)";
+		goto fail;
+	}
+
+	if (!CreateWellKnownSid(WinBuiltinAdministratorsSid, NULL,
+		administrators_sid, &administrators_sid_size)
+	) {
+		error = GetLastError();
+		failed_operation = "CreateWellKnownSid(Administrators)";
+		goto fail;
+	}
+
+	if (!CreateWellKnownSid(WinLocalSystemSid, NULL,
+		system_sid, &system_sid_size)
+	) {
+		error = GetLastError();
+		failed_operation = "CreateWellKnownSid(LocalSystem)";
+		goto fail;
+	}
+
+	acl_size = sizeof(ACL)
+		+ 3 * (sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD))
+		+ GetLengthSid(token_user->User.Sid)
+		+ GetLengthSid(administrators_sid)
+		+ GetLengthSid(system_sid);
+	acl = xcalloc(1, acl_size);
+
+	if (!InitializeAcl(acl, acl_size, ACL_REVISION)) {
+		error = GetLastError();
+		failed_operation = "InitializeAcl";
+		goto fail;
+	}
+
+	if (!AddAccessAllowedAce(acl, ACL_REVISION, pipe_rights, token_user->User.Sid)) {
+		error = GetLastError();
+		failed_operation = "AddAccessAllowedAce(TokenUser)";
+		goto fail;
+	}
+
+	if (!AddAccessAllowedAce(acl, ACL_REVISION, pipe_rights, administrators_sid)) {
+		error = GetLastError();
+		failed_operation = "AddAccessAllowedAce(Administrators)";
+		goto fail;
+	}
+
+	if (!AddAccessAllowedAce(acl, ACL_REVISION, pipe_rights, system_sid)) {
+		error = GetLastError();
+		failed_operation = "AddAccessAllowedAce(LocalSystem)";
+		goto fail;
+	}
+
+	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
+		error = GetLastError();
+		failed_operation = "InitializeSecurityDescriptor";
+		goto fail;
+	}
+
+	if (!SetSecurityDescriptorDacl(sd, TRUE, acl, FALSE)) {
+		error = GetLastError();
+		failed_operation = "SetSecurityDescriptorDacl";
+		goto fail;
 	}
 
 	sa->nLength = sizeof(*sa);
 	sa->lpSecurityDescriptor = sd;
 	sa->bInheritHandle = FALSE;
+
+	free(token_user);
+	return acl;
+
+fail:
+	if (token != NULL) {
+		CloseHandle(token);
+	}
+	free(token_user);
+	free(acl);
+	fatalx(EXIT_FAILURE, "%s failed: %lu", failed_operation, (unsigned long)error);
+	return NULL;
 }
 
 void pipe_create(const char * pipe_name)
@@ -552,6 +662,7 @@ void pipe_create(const char * pipe_name)
 	char	pipe_full_name[NUT_PATH_MAX + 1];
 	SECURITY_ATTRIBUTES	pipe_sa;
 	SECURITY_DESCRIPTOR	pipe_sd;
+	PACL	pipe_acl;
 
 	/* save pipe name for further use in pipe_connect */
 	if (pipe_name == NULL) {
@@ -570,7 +681,7 @@ void pipe_create(const char * pipe_name)
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
 	memset(&pipe_connection_overlapped, 0, sizeof(pipe_connection_overlapped));
-	init_pipe_security(&pipe_sa, &pipe_sd);
+	pipe_acl = init_pipe_security(&pipe_sa, &pipe_sd);
 
 	upsdebugx(2, "%s: creating NAMED_PIPE (listener): '%s'", __func__, pipe_full_name);
 	pipe_connection_handle = CreateNamedPipe(
@@ -586,6 +697,7 @@ void pipe_create(const char * pipe_name)
 		LARGEBUF,		/* input buffer size */
 		0,			/* client time-out */
 		&pipe_sa);		/* default security attribute */
+	free(pipe_acl);
 
 	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR, "Error creating named pipe");
