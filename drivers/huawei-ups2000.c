@@ -1446,14 +1446,17 @@ static int ups2000_delay_set(const char *var, const char *string)
  *
  * 3. Calling "*handler_func" and passing "reg1". This is
  * used to handle commands that needs additional processing.
- * If "reg1" is not necessary or unsuitable, "-1" is used.
+ * If "reg1" is not necessary or unsuitable, "0" is used.
  */
-#define REG_NULL  -1, -1
+#define REG_NULL  0, -1
 #define FUNC_NULL NULL
 
 static struct ups2000_cmd_t {
 	const char *cmd;
-	const int16_t reg1, val1, reg2, val2;
+	const uint16_t reg1;
+	const int16_t val1;
+	const uint16_t reg2;
+	const int16_t val2;
 	int (*const handler_func)(const uint16_t);
 } ups2000_cmd[] =
 {
@@ -1471,7 +1474,7 @@ static struct ups2000_cmd_t {
 	{ "shutdown.return",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_return          },
 	{ "shutdown.reboot",          REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot          },
 	{ "shutdown.reboot.graceful", REG_NULL, REG_NULL, ups2000_instcmd_shutdown_reboot_graceful },
-	{ NULL, -1, -1, -1, -1, NULL },
+	{ NULL, 0, -1, 0, -1, NULL },
 };
 
 
@@ -1510,15 +1513,9 @@ static int instcmd(const char *cmd, const char *extra)
 
 	if (cmd_action->handler_func) {
 		/* handled by a function */
-		if (cmd_action->reg1 < 0) {
-			/* FIXME: ...INSTCMD_CONVERSION_FAILED ? */
-			upslogx(LOG_INSTCMD_UNKNOWN, "instcmd: command [%s] reg1 is negative", cmd);
-			return STAT_INSTCMD_UNKNOWN;
-		} else {
-			status = cmd_action->handler_func((uint16_t)cmd_action->reg1);
-		}
+		status = cmd_action->handler_func(cmd_action->reg1);
 	}
-	else if (cmd_action->reg1 >= 0 && cmd_action->val1 >= 0) {
+	else if (cmd_action->reg1 > 0 && cmd_action->val1 >= 0) {
 		/* handled by a register write */
 		int r = ups2000_write_register(modbus_ctx,
 			10000 + cmd_action->reg1,
@@ -1532,7 +1529,7 @@ static int instcmd(const char *cmd, const char *extra)
 		 * if the previous write succeeds and there is an additional
 		 * register to write.
 		 */
-		if (r == 1 && cmd_action->reg2 >= 0 && cmd_action->val2 >= 0) {
+		if (r == 1 && cmd_action->reg2 > 0 && cmd_action->val2 >= 0) {
 			r = ups2000_write_register(modbus_ctx,
 				10000 + cmd_action->reg2,
 				(uint16_t)cmd_action->val2);
@@ -1558,6 +1555,12 @@ static int ups2000_instcmd_load_on(const uint16_t reg)
 {
 	int r;
 	const char *status;
+
+	if (reg == 0) {
+		upslogx(LOG_INSTCMD_FAILED,
+			"invalid register in LUT, please file a bug report!");
+		return STAT_INSTCMD_FAILED;
+	}
 
 	/* force refresh UPS status */
 	status_init();
@@ -1650,6 +1653,12 @@ static int ups2000_instcmd_beeper_toggle(const uint16_t reg)
 	int r;
 	const char *string;
 
+	if (reg == 0) {
+		upslogx(LOG_INSTCMD_FAILED,
+			"invalid register in LUT, please file a bug report!");
+		return STAT_INSTCMD_FAILED;
+	}
+
 	r = ups2000_beeper_get(reg);
 	if (r != 0)
 		return STAT_INSTCMD_FAILED;
@@ -1677,6 +1686,12 @@ static int ups2000_instcmd_shutdown_stayoff(const uint16_t reg)
 {
 	uint16_t val;
 	int r;
+
+	if (reg == 0) {
+		upslogx(LOG_INSTCMD_FAILED,
+			"invalid register in LUT, please file a bug report!");
+		return STAT_INSTCMD_FAILED;
+	}
 
 	r = setvar("ups.start.auto", "no");
 	if (r != STAT_SET_HANDLED)
