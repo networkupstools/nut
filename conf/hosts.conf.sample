@@ -46,6 +46,20 @@
 
 # -----------------------------------------------------------------------
 #
+# Optional `nutauth.conf` file location to use for this client.
+# Such a file allows the single upsstats.cgi client process to
+# assume different certificate identities per connection, and
+# helps it trust (and be trusted by) NUT data servers in separate
+# security management realms.
+#
+# AUTHCONF <filename>
+#
+# Examples:
+#
+# AUTHCONF "nutauth-cgi.conf"
+
+# -----------------------------------------------------------------------
+#
 # Allowed custom template file (adapted copy of upsstats.html) for listing
 # your devices, which must be located in the same configuration directory
 # and contain `.htm` in the file name.

@@ -385,6 +385,10 @@ https://github.com/networkupstools/nut/milestone/13
       by different entities (e.g. certificate authorities and client/server
       realms). In-tree multiple-connection clients (`upsmon`, `upsstats.cgi`,
       `upslog`) were updated to use this feature. [issue #3439]
+    * To support the ability of multiple SSL authentication details for
+      `upsmon` and `upsstats.cgi`, their configuration files were extended
+      with `AUTHCONF` keyword which can point to the `nutauth.conf` file
+      they should use. [issue #3439]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
@@ -417,6 +421,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Added support for best-effort use of `nutauth.conf` files from default
       locations described above (no way to choose the location, other than
       by web-server environment variables for CGI calls). [#3329]
+    * `upsstats.cgi` additionally has a new `AUTHCONF` configuration option
+      that can be passed via its `hosts.conf` file, as detailed above. [#3439]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify

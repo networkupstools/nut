@@ -601,6 +601,23 @@ FINALDELAY 5
 
 ALARMCRITICAL 1
 
+# -----------------------------------------------------------------------
+#
+# Optional `nutauth.conf` file location to use for this client.
+# When compiled with SSL support, this file allows to flexibly customize
+# values historically covered by CERTPATH, CERTFILE, CERTIDENT, CERTHOST,
+# CERTVERIFY and FORCESSL options listed below (taking them, if specified,
+# as the preferred global default settings). Notably, the AUTHCONF file
+# allows the single upsmon client process to assume different certificate
+# identities per connection, and helps it trust (and be trusted by) NUT data
+# servers in separate security management realms.
+#
+# AUTHCONF <filename>
+#
+# Examples:
+#
+# AUTHCONF "nutauth-upsmon.conf"
+
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)
 #
