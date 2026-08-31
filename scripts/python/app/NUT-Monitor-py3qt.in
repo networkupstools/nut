@@ -37,16 +37,20 @@
 #            Revise localisation, inject PACKAGE_VERSION and NUT_WEBSITE_BASE
 #            into the About dialog contents
 #
+# 2025-05-08 Sebastian Kuttnig - Version 2.0.3
+#            Port to Python 3 with PyQt6.
+#
 # 2026-07-18 Jim Klimov and "developersorli" - Version 2.1.0
 #            Added support for NUT authconf files (credentials, SSL)
 #            Added support for reconnections (client sleep, server restart)
 #            Fixed TAB/SHIFT-TAB focus change order through login page
 #
-
-import PyQt5.uic
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+# 2026-09-01 user01010111 - Version 2.2.0
+#            Share one Python implementation across PyQt5 and PyQt6.
+#
+# The configure.ac recipe uses this template to generate the legacy
+# NUT-Monitor-py3qt5 and NUT-Monitor-py3qt6 command names. The invoked
+# filename selects the Qt backend.
 
 import sys
 import socket
@@ -55,53 +59,110 @@ import os, os.path
 import stat
 import platform
 import time
-import threading
 import optparse
 import configparser
 import locale
 import gettext
 
+program_name = os.path.basename(sys.argv[0])
+if program_name.endswith("-py3qt5"):
+    qt_version = 5
+elif program_name.endswith("-py3qt6"):
+    qt_version = 6
+else:
+    qt_request = os.getenv("NUT_MONITOR_QT", "auto")
+    if qt_request == "5":
+        qt_version = 5
+    elif qt_request == "6":
+        qt_version = 6
+    elif qt_request in ("", "auto"):
+        try:
+            import PyQt6.uic
+            qt_version = 6
+        except ImportError:
+            qt_version = 5
+    else:
+        sys.stderr.write("Unsupported value of NUT_MONITOR_QT='%s'; expected 'auto', '5' or '6'\n" % qt_request)
+        sys.exit(2)
+
+if qt_version == 6:
+    import PyQt6.uic as qt_uic
+    from PyQt6.QtCore import *
+    from PyQt6.QtGui import *
+    from PyQt6.QtWidgets import *
+
+    QT_HORIZONTAL = Qt.Orientation.Horizontal
+    QT_ASCENDING_ORDER = Qt.SortOrder.AscendingOrder
+    QT_ITEM_FLAGS = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemNeverHasChildren
+    DIALOG_ACCEPTED = QDialog.DialogCode.Accepted
+    DIALOG_BUTTON_OK = QDialogButtonBox.StandardButton.Ok
+    MESSAGE_BUTTON_YES = QMessageBox.StandardButton.Yes
+    MESSAGE_BUTTON_NO = QMessageBox.StandardButton.No
+    LINE_EDIT_NORMAL = QLineEdit.EchoMode.Normal
+    STYLE_MESSAGE_INFO = QStyle.StandardPixmap.SP_MessageBoxInformation
+    DIALOG_HELP_ROLE = QDialogButtonBox.ButtonRole.HelpRole
+    TRAY_TRIGGER = QSystemTrayIcon.ActivationReason.Trigger
+    TRAY_INFO = QSystemTrayIcon.MessageIcon.Information
+else:
+    import PyQt5.uic as qt_uic
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+    from PyQt5.QtWidgets import *
+
+    QT_HORIZONTAL = Qt.Horizontal
+    QT_ASCENDING_ORDER = Qt.AscendingOrder
+    QT_ITEM_FLAGS = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemNeverHasChildren
+    DIALOG_ACCEPTED = QDialog.Accepted
+    DIALOG_BUTTON_OK = QDialogButtonBox.Ok
+    MESSAGE_BUTTON_YES = QMessageBox.Yes
+    MESSAGE_BUTTON_NO = QMessageBox.No
+    LINE_EDIT_NORMAL = QLineEdit.Normal
+    STYLE_MESSAGE_INFO = QStyle.SP_MessageBoxInformation
+    DIALOG_HELP_ROLE = QDialogButtonBox.HelpRole
+    TRAY_TRIGGER = QSystemTrayIcon.Trigger
+    TRAY_INFO = QSystemTrayIcon.Information
+
 # Try local development/accompanying packaging first,
 # then system installation
 sys_path_orig = sys.path.copy()
 try:
-	# Try "module" path relative to this program script:
-	mod_path = os.path.sep.join([
-		os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-		"..", "module"])
-	### sys.stderr.write("[D] mod_path: %s\n" % mod_path)
-	if os.path.isfile(os.path.sep.join([mod_path, "PyNUT.py"])):
-		# Insert into the system path at index 1 to ensure that it
-		# resolves after the main script but before anything else:
-		sys.path.insert(1, mod_path)
-		### sys.stderr.write("[D] sys.path: %s\n" % sys.path)
+    # Try "module" path relative to this program script:
+    mod_path = os.path.sep.join([
+        os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+        "..", "module"])
+    ### sys.stderr.write("[D] mod_path: %s\n" % mod_path)
+    if os.path.isfile(os.path.sep.join([mod_path, "PyNUT.py"])):
+        # Insert into the system path at index 1 to ensure that it
+        # resolves after the main script but before anything else:
+        sys.path.insert(1, mod_path)
+        ### sys.stderr.write("[D] sys.path: %s\n" % sys.path)
 
-	# Try our chances with the default or augmented path
-	import PyNUT
+    # Try our chances with the default or augmented path
+    import PyNUT
 except Exception as ignored:
-	# ModuleNotFoundError, path/parsing, et al
-	# Try our chances with the default path:
-	sys.path = sys_path_orig
+    # ModuleNotFoundError, path/parsing, et al
+    # Try our chances with the default path:
+    sys.path = sys_path_orig
 
-	try:
-		# This path is for "default python interpreter", possibly customized
-		# and MIGHT be dist-packages or site-packages for a different python
-		# version. Keep it at lowest priority!
-		mod_path = "%s" % "@PYTHON_SITE_PACKAGES@"
-		if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
-			sys.path.append(mod_path)
+    try:
+        # This path is for "default python interpreter", possibly customized
+        # and MIGHT be dist-packages or site-packages for a different python
+        # version. Keep it at lowest priority!
+        mod_path = "%s" % "@PYTHON_SITE_PACKAGES@"
+        if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+            sys.path.append(mod_path)
 
-		mod_path = "%s" % "@PYTHON2_SITE_PACKAGES@"
-		if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
-			sys.path.insert(1, mod_path)
+        mod_path = "%s" % "@PYTHON3_SITE_PACKAGES@"
+        if mod_path != "" and os.path.isdir(mod_path) and mod_path not in sys.path:
+            sys.path.insert(1, mod_path)
 
-		### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
-		import PyNUT
+        ### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+        import PyNUT
 
-	except Exception as ignored:
-		sys.path = sys_path_orig
-		### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
-		import PyNUT
+    except Exception as ignored:
+        sys.path = sys_path_orig
+        ### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+        import PyNUT
 
 # We would seek locale files relative to script dir
 os.chdir(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
@@ -128,14 +189,14 @@ class interface :
     __favorites_file                 = None
     __favorites_path                 = ""
     __fav_menu_items                 = list()
-    __window_visible                 = True
     __ui_file                        = None
     __connected                      = False
+    __online                         = None
     __ups_handler                    = None
     __ups_commands                   = None
     __ups_vars                       = None
     __ups_rw_vars                    = None
-    __gui_thread                     = None
+    __gui_updater                    = None
     __current_ups                    = None
 
     __login_manually_edited          = False
@@ -157,13 +218,13 @@ class interface :
 
         self.__app = QApplication( argv )
         try:
-            self.__app.setDesktopFileName("nut-monitor-py3qt5")
+            self.__app.setDesktopFileName("nut-monitor-py3qt%d" % qt_version)
         except Exception as ex:
             pass
 
         self.__ui_file = self.__find_res_file( 'ui', "window1.ui" )
 
-        self.__widgets["interface"]                   = PyQt5.uic.loadUi( self.__ui_file )
+        self.__widgets["interface"]                   = qt_uic.loadUi( self.__ui_file )
         self.__widgets["main_window"]                 = self.__widgets["interface"]
         self.__widgets["status_bar"]                  = self.__widgets["interface"].statusbar2
         self.__widgets["ups_host_entry"]              = self.__widgets["interface"].entry1
@@ -201,7 +262,7 @@ class interface :
         self.__widgets["ups_status_image"].setPixmap( QPixmap( self.__find_res_file( "pixmaps", "on_line.png" ) ) )
 
         # Connect interface callbacks actions
-        self.__widgets["main_window"].destroyed.connect( self.quit )
+        self.__app.aboutToQuit.connect( self.quit )
         self.__widgets["interface"].imagemenuitem1.triggered.connect( self.gui_about_dialog )
         self.__widgets["interface"].imagemenuitem5.triggered.connect( self.quit )
         self.__widgets["ups_host_entry"].textChanged.connect( self.__check_gui_fields )
@@ -228,16 +289,16 @@ class interface :
         self.__widgets["ups_vars_tree"].setRootIsDecorated( False )
 
         # Column 0
-        store.setHeaderData( 0, Qt.Horizontal, '' )
+        store.setHeaderData( 0, QT_HORIZONTAL, '' )
 
         # Column 1
-        store.setHeaderData( 1, Qt.Horizontal, _('Var name') )
+        store.setHeaderData( 1, QT_HORIZONTAL, _('Var name') )
 
         # Column 2
-        store.setHeaderData( 2, Qt.Horizontal, _('Value') )
+        store.setHeaderData( 2, QT_HORIZONTAL, _('Value') )
         self.__widgets["ups_vars_tree"].header().setStretchLastSection( True )
 
-        self.__widgets["ups_vars_tree"].sortByColumn( 1, Qt.AscendingOrder )
+        self.__widgets["ups_vars_tree"].sortByColumn( 1, QT_ASCENDING_ORDER )
         self.__widgets["ups_vars_tree_store"] = store
 
         self.__widgets["ups_vars_tree"].setMinimumSize( 0, 50 )
@@ -420,6 +481,9 @@ class interface :
 
         login = self.__widgets["ups_authentication_login"].text()
         ac_no_user = PyNUT.AuthConf.getAuthConf(host=host, port=port)
+        ''' Merged result of authconf lookup without requesting a particular username.
+         This can still contain some user/pass data, if there
+         is some default for that host, or a global default '''
 
         # If not manually edited and was suggested, check if it still matches authconf for current host/port/user
         if not self.__login_manually_edited and not self.__auth_suggestions_suppressed:
@@ -540,13 +604,15 @@ class interface :
 
     #-------------------------------------------------------------------
     # This method is used to show/hide the main window when user clicks on the tray icon
-    def tray_activated( self, widget=None, data=None ) :
-        if self.__window_visible :
-            self.__widgets["main_window"].hide()
-        else :
-            self.__widgets["main_window"].show()
-
-        self.__window_visible = not self.__window_visible
+    def tray_activated(self, reason):
+        if reason == TRAY_TRIGGER:
+            win = self.__widgets["main_window"]
+            if win.isVisible():
+                win.hide()
+            else:
+                win.show()
+                win.raise_()
+                win.activateWindow()
 
     #-------------------------------------------------------------------
     # Change the status icon and tray icon
@@ -665,19 +731,19 @@ class interface :
     # displays a dialog to enable user to select the name of the favorite
     def __gui_add_favorite( self, widget=None ) :
         dialog_ui_file = self.__find_res_file( 'ui', "dialog1.ui" )
-        dialog = PyQt5.uic.loadUi( dialog_ui_file )
+        dialog = qt_uic.loadUi( dialog_ui_file )
 
         # Define interface callbacks actions
         def check_entry(val):
             if self.__gui_add_favorite_check_gui_fields(val):
-                dialog.buttonBox.button(QDialogButtonBox.Ok).setEnabled( True )
+                dialog.buttonBox.button(DIALOG_BUTTON_OK).setEnabled( True )
             else:
-                dialog.buttonBox.button(QDialogButtonBox.Ok).setEnabled( False )
+                dialog.buttonBox.button(DIALOG_BUTTON_OK).setEnabled( False )
         dialog.entry4.textChanged.connect( check_entry )
 
         self.__widgets["main_window"].setEnabled( False )
         rc = dialog.exec()
-        if rc == QDialog.Accepted :
+        if rc == DIALOG_ACCEPTED :
             fav_data = {}
             fav_data["host"] = self.__widgets["ups_host_entry"].text()
             fav_data["port"] = "%d" % self.__widgets["ups_port_entry"].value()
@@ -700,7 +766,7 @@ class interface :
     # Method called when user wants to delete an entry from favorites
     def __gui_delete_favorite( self, widget=None ) :
         dialog_ui_file = self.__find_res_file( 'ui', "dialog2.ui" )
-        dialog = PyQt5.uic.loadUi( dialog_ui_file )
+        dialog = qt_uic.loadUi( dialog_ui_file )
 
         # Remove the dummy combobox entry on list
         dialog.combobox2.removeItem( 0 )
@@ -717,11 +783,10 @@ class interface :
         fav_name = dialog.combobox2.currentText()
         self.__widgets["main_window"].setEnabled( True )
 
-        if ( rc == QDialog.Accepted ) :
+        if ( rc == DIALOG_ACCEPTED ) :
             # Remove entry, show confirmation dialog
-            resp = QMessageBox.question( None, self.__widgets["main_window"].windowTitle(), _("Are you sure that you want to remove this favorite ?"), QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes )
-
-            if ( resp == QMessageBox.Yes ) :
+            resp = QMessageBox.question( None, self.__widgets["main_window"].windowTitle(), _("Are you sure that you want to remove this favorite ?"), MESSAGE_BUTTON_YES | MESSAGE_BUTTON_NO, MESSAGE_BUTTON_YES )
+            if ( resp == MESSAGE_BUTTON_YES ) :
                 del self.__favorites[ fav_name ]
                 self.__gui_refresh_favorites_menu()
                 self.__save_favorites()
@@ -761,10 +826,10 @@ class interface :
         cmd    = self.__ups_commands[ offset ].decode('ascii')
 
         self.__widgets["main_window"].setEnabled( False )
-        resp = QMessageBox.question( None, self.__widgets["main_window"].windowTitle(), _("Are you sure that you want to send '%s' to the device ?") % cmd, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes )
+        resp = QMessageBox.question( None, self.__widgets["main_window"].windowTitle(), _("Are you sure that you want to send '%s' to the device ?") % cmd, MESSAGE_BUTTON_YES | MESSAGE_BUTTON_NO, MESSAGE_BUTTON_YES )
         self.__widgets["main_window"].setEnabled( True )
 
-        if ( resp == QMessageBox.Yes ) :
+        if ( resp == MESSAGE_BUTTON_YES ) :
             try :
                 self.__ups_handler.RunUPSCommand( self.__current_ups, cmd )
                 self.gui_status_message( _("Sent '{0}' command to {1}").format( cmd, self.__current_ups ) )
@@ -786,10 +851,18 @@ class interface :
                     cur_val = self.__ups_rw_vars.get(ups_var).decode('ascii')
 
                     self.__widgets["main_window"].setEnabled( False )
-                    new_val, rc = QInputDialog.getText( None, self.__widgets["main_window"].windowTitle(), _("Enter a new value for the variable.<br><br>{0} = {1} <font color=\"#606060\"><i>(current value)</i></font>").format( ups_var, cur_val), QLineEdit.Normal, cur_val )
+
+                    new_val, ok = QInputDialog.getText(
+                        self.__widgets["main_window"],
+                        _("Edit Variable"),
+                        _("Enter a new value for the variable:\n\n{0} = {1} (current value)").format( ups_var.decode('ascii'), cur_val ),
+                        LINE_EDIT_NORMAL,
+                        cur_val
+                    )
+
                     self.__widgets["main_window"].setEnabled( True )
 
-                    if ( rc ) :
+                    if ( ok ):
                         try :
                             self.__ups_handler.SetRWVar( ups=self.__current_ups, var=ups_var.decode('ascii'), value=new_val )
                             self.gui_status_message( _("Updated variable on %s") % self.__current_ups )
@@ -825,11 +898,11 @@ class interface :
         items.sort()
 
         for current in items :
-            menu_item = QAction( current )
+            menu_item = QAction( current, self.__widgets["main_window"] )
             self.__fav_menu_items.append( menu_item )
             self.__widgets["menu_favorites"].addAction( menu_item )
 
-            menu_item.triggered.connect( lambda: self.__gui_load_favorite( current ) )
+            menu_item.triggered.connect( lambda _, name=current: self.__gui_load_favorite(name) )
 
         if len( items ) > 0 :
             self.__widgets["menu_favorites_del"].setEnabled( True )
@@ -931,7 +1004,7 @@ class interface :
         self.__widgets["main_window"].adjustSize()
         dialog_ui_file = self.__find_res_file( 'ui', "aboutdialog1.ui" )
 
-        dialog = PyQt5.uic.loadUi( dialog_ui_file )
+        dialog = qt_uic.loadUi( dialog_ui_file )
         dialog.icon.setPixmap( QPixmap( self.__find_icon_file() ) )
         ### sys.stderr.write("gui_about_dialog(): dialog=%s\n" % str(dir(dialog)))
         ### sys.stderr.write("gui_about_dialog(): label=%s\n" % str(dir(dialog.label)))
@@ -949,15 +1022,15 @@ class interface :
 
         credits_button = QPushButton( dialog )
         credits_button.setText( _("C&redits") )
-        credits_button.setIcon( dialog.style().standardIcon( QStyle.SP_MessageBoxInformation ) )
+        credits_button.setIcon( dialog.style().standardIcon( STYLE_MESSAGE_INFO ) )
         credits_button.clicked.connect( self.gui_about_credits )
 
         licence_button = QPushButton( dialog )
         licence_button.setText( _("&Licence") )
         licence_button.clicked.connect( self.gui_about_licence )
 
-        dialog.buttonBox.addButton( credits_button, QDialogButtonBox.HelpRole )
-        dialog.buttonBox.addButton( licence_button, QDialogButtonBox.HelpRole )
+        dialog.buttonBox.addButton( credits_button, DIALOG_HELP_ROLE )
+        dialog.buttonBox.addButton( licence_button, DIALOG_HELP_ROLE )
 
         self.__widgets["main_window"].setEnabled( False )
         dialog.exec()
@@ -1016,7 +1089,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             else :
                 icon = None
 
-            self.__widgets["status_icon"].showMessage( "NUT Monitor", message, icon )
+            self.__widgets["status_icon"].showMessage(
+                "NUT Monitor",
+                message,
+                icon if icon else TRAY_INFO,
+                5000
+            )
         except Exception:
             pass
 
@@ -1089,7 +1167,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         self.__widgets["ups_commands_combo"].setCurrentIndex( 0 )
 
-        # Update UPS vars manually before the thread
+        # Update UPS vars manually before the updater
         self.__ups_vars    = self.__ups_handler.GetUPSVars( self.__current_ups )
         self.__ups_rw_vars = self.__ups_handler.GetRWVars( self.__current_ups )
         self.__gui_update_ups_vars_view()
@@ -1098,9 +1176,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         # FIXME: For some reason, calling this immediately doesn't work right
         QTimer.singleShot(10, self.__widgets["main_window"].adjustSize)
 
-        # Start the GUI updater thread
-        self.__gui_thread = gui_updater( self )
-        self.__gui_thread.start()
+        # Start the GUI updater
+        self.__gui_updater = gui_updater( self )
+        self.__gui_updater.start()
 
         self.gui_status_message( _("Connected to '{0}' on {1}").format( self.__current_ups, host ) )
 
@@ -1122,17 +1200,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                 icon = QIcon( icon_file )
                 item_icon = QStandardItem(icon, '')
-                item_icon.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemNeverHasChildren)
+                item_icon.setFlags(QT_ITEM_FLAGS)
                 item_var_name = QStandardItem( k.decode('ascii') )
-                item_var_name.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemNeverHasChildren)
+                item_var_name.setFlags(QT_ITEM_FLAGS)
                 item_var_val = QStandardItem( v.decode('ascii') )
-                item_var_val.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemNeverHasChildren)
+                item_var_val.setFlags(QT_ITEM_FLAGS)
                 self.__widgets["ups_vars_tree_store"].appendRow( (item_icon, item_var_name, item_var_val) )
             self.__widgets["ups_vars_tree"].resizeColumnToContents( 0 )
             self.__widgets["ups_vars_tree"].resizeColumnToContents( 1 )
 
 
     def gui_init_unconnected( self ) :
+
+        if not self.__widgets.get("main_window") or not self.__widgets.get("status_icon"):
+            return
+
         self.__connected = False
         self.__widgets["ups_connect"].show()
         self.__widgets["ups_disconnect"].hide()
@@ -1150,8 +1232,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     def disconnect_from_ups( self, widget=None ) :
         self.gui_init_unconnected()
 
-        # Stop the GUI updater thread
-        self.__gui_thread.stop_thread()
+        # Stop the GUI updater
+        self.__gui_updater.stop_thread()
 
         del self.__ups_handler
         self.gui_status_message( _("Disconnected from '%s'") % self.__current_ups )
@@ -1169,8 +1251,8 @@ class gui_updater :
     __reconnect_attempted = False
 
     def __init__( self, parent_class ) :
-        threading.Thread.__init__( self )
         self.__parent_class = parent_class
+        self.__reconnect_attempted = False
 
     def start( self ) :
         self.__timer = QTimer()
@@ -1323,6 +1405,8 @@ class gui_updater :
                     # Reconnection already in progress, just ignore this update
                     pass
                 else:
+                    self.__parent_class._interface__online = None
+                    self.__parent_class.change_status_icon( "warning", blink=True )
                     self.__parent_class.gui_status_message( _("Error from '{0}' ({1})").format( ups, sys.exc_info()[1] ) )
                     self.__parent_class.gui_status_notification( _("Error from '{0}'\n{1}").format( ups, sys.exc_info()[1] ), "warning.png" )
 
@@ -1352,7 +1436,7 @@ class gui_updater :
             ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
             if ac:
                 ac = ac.clone()
-                if self.__widgets["ups_authentication_check"].isChecked() :
+                if self.__parent_class._interface__widgets["ups_authentication_check"].isChecked() :
                     # If the user entered something, honor that.
                     # Otherwise, re-use what we suggested.
                     ac.user = login
