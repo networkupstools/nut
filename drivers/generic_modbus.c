@@ -433,21 +433,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
-# pragma GCC diagnostic ignored "-Wcovered-switch-default"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunreachable-code"
-# pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
+#include "nut-pragmas-covered-switch-default.h"
 		/* All enum cases defined as of the time of coding
 		 * have been covered above. Handle later definitions,
 		 * memory corruptions and buggy inputs below...
@@ -455,12 +441,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 		default:
 			upsdebugx(2, "ERROR: register_read: invalid register type %u", type);
 			break;
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-covered-switch-default-end.h"
 	}
 	if (rval == -1) {
 		upslogx(LOG_ERR, "ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s",
