@@ -1,0 +1,412 @@
+= SSL Context Architecture Analysis for Multi-Server Per-Connection Support
+
+== Overview
+
+This document addresses architectural questions about per-connection SSL context support, examining OpenSSL vs NSS capabilities, current implementation gaps, and proposing a context registry/caching system.
+
+---
+
+== Question 1: NSS Context Object Capabilities
+
+=== OpenSSL Model
+
+* *Context Object*: `SSL_CTX` - a reusable configuration object
+  - Created once with specific CA bundles, client certs, verification modes, etc.
+  - Multiple `SSL_new(ssl_ctx)` calls create distinct connection objects from same context
+  - Different SSL_CTX objects can coexist in memory simultaneously
+  - Each connection can use a different SSL_CTX if needed
+
+=== NSS Model
+
+* *Context Object*: NO equivalent to `SSL_CTX`
+  - Instead: `PRFileDesc*` - purely connection-specific (wraps a socket FD)
+  - NSS initialization (`NSS_Init()`, `PR_Init()`, `NSS_SetDomesticPolicy()`) is *one-time global*
+  - All connections share the same global NSS database, policy, and configuration
+  - `SSL_ImportFD(NULL, socket)` creates per-connection NSS SSL FD, but uses global NSS state
+
+=== Key Architectural Difference
+
+[cols="1,1,1"]
+|===
+| Aspect | OpenSSL | NSS
+
+| Context Object
+| `SSL_CTX` (reusable)
+| None - only global state
+
+| CA Bundles
+| Per-context
+| Global only (NSS_Init)
+
+| Client Certs
+| Per-context
+| Global only (NSS database)
+
+| Re-initialization
+| Supported
+| NOT supported
+
+| Per-connection variants
+| Yes
+| No (except callback hooks)
+|===
+
+=== NSS Limitation Impact
+
+* *Cannot simultaneously use different CA bundles* for different server connections
+* *Cannot have per-connection client certificates* (must use global NSS DB)
+* *Verification modes are global* (set via `SSL_OptionSetDefault()`)
+* Workaround needed: Thread-local NSS initialization or external process isolation
+
+---
+
+== Question 2: Current `nutclient.cpp` Per-Connection Context Handling
+
+=== Current State: CORRECT (checked mark)
+
+The code at `clients/nutclient.cpp:1419` properly checks:
+
+[source,cpp]
+----
+if (!_ssl_ctx) {
+    // Create SSL_CTX for this Socket instance
+    _ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+    // ... configure this context ...
+}
+----
+
+Then at `clients/nutclient.cpp:1591`:
+
+[source,cpp]
+----
+_ssl = SSL_new(_ssl_ctx);  // Uses instance member, not global
+----
+
+=== Verification of Flow
+
+. Socket class has instance member: `SSL_CTX* _ssl_ctx;` (line 301)
+. Each Socket instance creates/owns its own SSL_CTX
+. Socket destructor frees it: lines 908-910
+. No reversion to global context - GOOD (checked mark)
+
+=== BUT: Problem in C API Layer
+
+The C API in `upsclient.c` at `upsclient.c:2244` still has the fallback pattern:
+
+[source,c]
+----
+ups->ssl = SSL_new((SSL_CTX *)(ups->ssl_ctx ? ups->ssl_ctx : ssl_ctx));
+----
+
+This is correct for backward compatibility. However:
+
+* If `ups->ssl_ctx` is NULL, it falls back to global `ssl_ctx`
+* Global `ssl_ctx` was created by `upscli_init2()` and cannot be changed without re-init
+
+=== Conclusion
+
+* (checked mark) C++ Socket layer: Correctly uses per-connection context
+* (checked mark) C API layer: Correctly falls back to global if no per-connection context
+* (warning mark) Problem: Global context is locked after first init
+
+---
+
+== Question 3: Plain C Code Re-Entry Problem
+
+=== Current Issue: CONFIRMED
+
+*File*: `clients/upsclient.c`
+*Problem Location*: Lines 1041-1044
+
+[source,c]
+----
+if (upscli_initialized == 1) {
+    upslogx(LOG_WARNING, "upscli already initialized");
+    return -1;  // <- BLOCKS ANY RE-INITIALIZATION
+}
+----
+
+=== Why This Blocks Per-Connection Contexts
+
+Current flow:
+
+----
+1. Program calls upscli_init(certverify=1, certpath="/etc/nut/server1-ca.pem")
+   └─ Creates global ssl_ctx with server1's CA bundle
+   └─ Sets upscli_initialized = 1
+
+2. Program wants to connect to different server with server2's CA
+   └─ Calls upscli_init(certverify=1, certpath="/etc/nut/server2-ca.pem")
+   └─ X Returns -1 (already initialized)
+   └─ Cannot create separate context for server2
+----
+
+=== Side Effects of the Lock
+
+* *OpenSSL*: Only one global SSL_CTX exists for entire process
+* *NSS*: Even worse - NSS_Init() can only be called once
+  - Line 1299: `status = NSS_Init(certstore_path);`
+  - Calling again will fail or corrupt state
+
+=== Root Cause
+
+The one-time initialization was designed for single-connection programs. Multi-server support requires:
+
+. *Lazy initialization* - Only initialize global defaults when first actually needed
+. *Per-connection initialization* - Allow custom contexts per connection
+. *Context registry* - Cache and reuse contexts for same config
+
+---
+
+== Question 4: Context Registry/Caching System Design
+
+=== Proposed Architecture
+
+==== 4.1 C Struct for Context Metadata
+
+[source,c]
+----
+typedef struct upscli_ssl_context_config_s {
+    /* Configuration keys for lookup */
+    char *ca_path;      /* NULL if using default */
+    char *ca_file;      /* NULL if using default */
+    char *certfile;     /* NULL if none */
+    char *certpasswd;   /* NULL if none */
+    
+    /* OpenSSL-specific */
+    #ifdef WITH_OPENSSL
+    SSL_CTX *ssl_ctx;   /* The actual context object */
+    int cert_verify;    /* SSL_VERIFY_* mode */
+    #endif
+    
+    /* NSS-specific */
+    #ifdef WITH_NSS
+    char *nss_db_path;  /* NSS database location (if different from ca_path) */
+    int nss_initialized; /* Whether NSS was init'd for this config */
+    #endif
+    
+    /* Reference counting */
+    unsigned int refcount;  /* Number of connections using this */
+    time_t created_at;      /* For cache eviction if needed */
+    
+} upscli_ssl_context_config_t;
+----
+
+==== 4.2 Registry Structure
+
+[source,c]
+----
+typedef struct {
+    upscli_ssl_context_config_t **configs;  /* Array of context configs */
+    size_t count;                           /* Number of registered contexts */
+    size_t capacity;                        /* Allocated capacity */
+    
+    #ifdef WITH_OPENSSL
+    SSL_CTX *default_ssl_ctx;  /* Global fallback for backward compat */
+    #endif
+    
+    #ifdef WITH_NSS
+    int default_nss_initialized;  /* Was NSS initialized globally? */
+    #endif
+    
+} upscli_ssl_context_registry_t;
+----
+
+==== 4.3 Registry API Functions
+
+[source,c]
+----
+/* Initialize the registry (called once on first use) */
+upscli_ssl_context_registry_t *upscli_get_ssl_registry(void);
+
+/* Look up or create a context for given configuration */
+upscli_ssl_context_config_t *upscli_get_or_create_ssl_context(
+    const char *ca_path,
+    const char *ca_file,
+    const char *certfile,
+    const char *certpasswd,
+    int cert_verify
+);
+
+/* Increment reference count */
+void upscli_ssl_context_acquire(upscli_ssl_context_config_t *cfg);
+
+/* Decrement reference count, free if unused */
+void upscli_ssl_context_release(upscli_ssl_context_config_t *cfg);
+
+/* Clear registry on program exit */
+void upscli_ssl_context_registry_cleanup(void);
+----
+
+==== 4.4 Integration with UPSCONN_t
+
+[source,c]
+----
+typedef struct {
+    /* ... existing fields ... */
+    
+    /* Replace: SSL_CTX *ssl_ctx; */
+    /* With: Reference to registry entry */
+    upscli_ssl_context_config_t *ssl_context_cfg;
+    
+    /* Keep for backward compat: */
+    char ssl_ctx_owned;  /* Still used if ssl_ctx is malloc'd directly */
+    
+} UPSCONN_t;
+----
+
+=== 4.5 Workflow Example: Multi-Server Connection
+
+*Before (Current - Broken):*
+
+[source,c]
+----
+/* Connection 1: Server with CA bundle 1 */
+upscli_init(1, "/etc/nut/server1-ca.pem", NULL, NULL);  // OK
+upscli_connect(&ups1, "server1.example.com", 3493);
+
+/* Connection 2: Server with CA bundle 2 */
+upscli_init(1, "/etc/nut/server2-ca.pem", NULL, NULL);  // ERROR: already initialized
+// X Cannot connect with different CA
+----
+
+*After (With Registry):*
+
+[source,c]
+----
+/* Connection 1: Server with CA bundle 1 */
+cfg1 = upscli_get_or_create_ssl_context(
+    "/etc/nut/server1-ca.pem", NULL, NULL, NULL, 1);
+upscli_set_connection_ssl_context(&ups1, cfg1);
+upscli_connect(&ups1, "server1.example.com", 3493);
+
+/* Connection 2: Server with CA bundle 2 */
+cfg2 = upscli_get_or_create_ssl_context(
+    "/etc/nut/server2-ca.pem", NULL, NULL, NULL, 1);
+upscli_set_connection_ssl_context(&ups2, cfg2);
+upscli_connect(&ups2, "server2.example.com", 3493);
+
+/* Connection 3: Server with CA bundle 1 (reuses cached context) */
+cfg1_again = upscli_get_or_create_ssl_context(
+    "/etc/nut/server1-ca.pem", NULL, NULL, NULL, 1);  // Returns cached cfg1
+----
+
+=== 4.6 Benefits of Registry Approach
+
+. *No Re-Entry Problem*: Each context is independent
+. *Memory Efficient*: Same config shared across multiple connections
+. *Lazy Initialization*: Only init global defaults if no per-connection context
+. *Backward Compatible*: Programs using `upscli_init()` still work
+. *NSS Safe*: Can isolate NSS operations per context via thread-local or separate init
+. *Clear Lifecycle*: Reference counting tracks who owns what
+
+=== 4.7 NSS-Specific Considerations
+
+For NSS, the registry needs special handling:
+
+* *Option A (Process-level)*: Keep one global NSS init, accept single CA database
+* *Option B (Thread-local)*: Use thread-local storage for different NSS inits per thread
+* *Option C (Child processes)*: Fork for different NSS configs (expensive)
+
+*Recommendation*: Implement Option A as minimum (NSS limitation), but document that:
+
+* OpenSSL supports multiple per-connection contexts (full multi-server support)
+* NSS supports multiple connections but with shared global config
+* Applications should check `WITH_OPENSSL` vs `WITH_NSS` if multi-config needed
+
+=== 4.8 API Entry Point
+
+New C API function to set per-connection context (on UPSCONN_t after creation, before connect):
+
+[source,c]
+----
+/* Set SSL context configuration for this connection
+ * Returns 0 on success, -1 if context cannot be created
+ * Optionally takes an upscli_authconf_t to use pre-configured values
+ */
+int upscli_set_ssl_context_from_authconf(
+    UPSCONN_t *ups,
+    upscli_authconf_t *ac
+);
+
+/* Or for direct control: */
+int upscli_set_ssl_context_params(
+    UPSCONN_t *ups,
+    const char *ca_path,
+    const char *ca_file,
+    const char *certfile,
+    const char *certpasswd,
+    int cert_verify
+);
+----
+
+---
+
+== Implementation Roadmap
+
+=== Phase 1: Remove Re-Entry Block (High Priority)
+
+* Change `upscli_initialized` check from `if == 1 return -1` to `if == 1 return 0` (no-op)
+* Document that calling `upscli_init*()` multiple times is now allowed but only first call takes effect
+* *Impact*: Allows applications to call init multiple times safely
+
+=== Phase 2: Build Registry (Medium Priority)
+
+* Implement `upscli_ssl_context_registry_t` and registry functions
+* Store in static variable (thread-safe with mutexes if needed later)
+* Add `upscli_get_or_create_ssl_context()` function
+
+=== Phase 3: Integrate with UPSCONN_t (High Priority)
+
+* Add `ssl_context_cfg` field (or modify `ssl_ctx` storage)
+* Update `upscli_sslinit()` to use registry-managed contexts
+* Update C++ Socket class if needed
+
+=== Phase 4: C++ API Exposure (Medium Priority)
+
+* Add TcpClient method to set context by config parameters
+* Integrate with SSLConfig class if applicable
+
+=== Phase 5: Testing (High Priority)
+
+* Unit tests for registry lookup/create/release
+* Integration tests with multiple simultaneous connections
+* Tests for both OpenSSL and NSS backends
+
+---
+
+== Summary Table
+
+[cols="1,1,1,1"]
+|===
+| Question | Status | Current Gap | Recommendation
+
+| NSS context capabilities
+| OK
+| No per-connection configs possible
+| Document NSS limitation, handle via registry
+
+| nutclient.cpp per-connection handling
+| OK
+| None at C++ level
+| Already implemented correctly
+
+| upsclient.c re-entry block
+| CRITICAL ISSUE
+| Cannot re-init for different configs
+| Remove re-entry check or make it no-op
+
+| Context registry system
+| NOT IMPLEMENTED
+| Needed for production
+| Implement registry as Phase 2-3
+|===
+
+---
+
+== References
+
+* OpenSSL SSL_CTX: link:https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_new.html[]
+* NSS Initialization: link:https://wiki.mozilla.org/NSS:Initialization[]
+* Mozilla NSS SSL Guide: link:https://wiki.mozilla.org/NSS:SSL_Functions[]
+* NUT Authentication Config: `clients/authconf.h`
