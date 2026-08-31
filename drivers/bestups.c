@@ -68,6 +68,9 @@ static int parse_q1(const char *buf, ssize_t ret, q1_data_t *data)
 {
 	size_t	i;
 
+	/* Q1 must return 46 bytes starting with a (
+	 * and a particular space-separated text field layout
+	 */
 	if ((ret != 46) || (buf[0] != '(')
 	||  (buf[6] != ' ') || (buf[12] != ' ') || (buf[18] != ' ')
 	||  (buf[22] != ' ') || (buf[27] != ' ') || (buf[32] != ' ')
@@ -88,16 +91,22 @@ static int parse_q1(const char *buf, ssize_t ret, q1_data_t *data)
 
 	memcpy(data->involt, buf + 1, sizeof(data->involt) - 1);
 	data->involt[sizeof(data->involt) - 1] = '\0';
+
 	memcpy(data->outvolt, buf + 13, sizeof(data->outvolt) - 1);
 	data->outvolt[sizeof(data->outvolt) - 1] = '\0';
+
 	memcpy(data->loadpct, buf + 19, sizeof(data->loadpct) - 1);
 	data->loadpct[sizeof(data->loadpct) - 1] = '\0';
+
 	memcpy(data->acfreq, buf + 23, sizeof(data->acfreq) - 1);
 	data->acfreq[sizeof(data->acfreq) - 1] = '\0';
+
 	memcpy(data->battvolt, buf + 28, sizeof(data->battvolt) - 1);
 	data->battvolt[sizeof(data->battvolt) - 1] = '\0';
+
 	memcpy(data->upstemp, buf + 33, sizeof(data->upstemp) - 1);
 	data->upstemp[sizeof(data->upstemp) - 1] = '\0';
+
 	memcpy(data->pstat, buf + 38, sizeof(data->pstat) - 1);
 	data->pstat[sizeof(data->pstat) - 1] = '\0';
 
