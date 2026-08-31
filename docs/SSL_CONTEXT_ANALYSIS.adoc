@@ -449,3 +449,213 @@ moving into `upscli_ssl_context_config_t`, with globals retained only as the def
 |===
 
 I (CoPilot) verified this is backward-safe by checking every call site's convention (`> 0` in most clients, `< 0` in `upsmon.c`) -- since no existing caller ever calls init twice, the new `0` case can never be triggered by unmodified programs.
+
+== Round 2: Follow-up Design Refinements
+
+=== R1. Is `ssl_ctx_owned` still needed?
+
+*No.* Confirmed by inspection: `ups->ssl_ctx_owned` is only ever read (in the
+cleanup path at `upsclient.c:3477`) and is *never set to 1 anywhere* in the
+current code. `upscli_set_ssl_context()` (the setter added in this branch) does
+not touch it either. It is dead weight left over from an earlier iteration.
+
+Once the registry owns contexts via reference counting, per-connection
+ownership tracking becomes unnecessary: a connection just holds a pointer
+(reference) into the registry and calls `upscli_ssl_context_release()` on
+disconnect; the registry itself decides whether to actually free the backing
+`SSL_CTX`. *Plan*: remove the `ssl_ctx_owned` field from `UPSCONN_t` entirely
+when the registry lands (safe to remove now since `ssl_ctx`/`ssl_ctx_owned`
+were only added in this unreleased branch - not yet part of any tagged NUT
+release, so there is no ABI compatibility burden for this specific field).
+
+=== R2. Where does the body of `upscli_init2()` go?
+
+It becomes the *create* branch of `upscli_get_or_create_ssl_context()`.
+Concretely:
+
+. `upscli_get_or_create_ssl_context(certverify, certpath, certname, certpasswd, certfile)`
+  builds a lookup key from its arguments, searches the registry, and:
+  * *on hit*: returns the existing `upscli_ssl_context_config_t*` (bumping refcount);
+  * *on miss*: runs (almost verbatim) the body currently in `upscli_init2()`
+    (OpenSSL: `SSL_CTX_new()` + `SSL_CTX_load_verify_locations()` + cert/key loading
+    + CERTIDENT check; NSS: `PR_Init()`/`NSS_Init()`/`NSS_SetDomesticPolicy()`/
+    `SSL_OptionSetDefault()` calls, but see R4 below for what stays global for NSS)
+    to build a new registry entry, then returns it.
+. `upscli_init2()` itself becomes a thin legacy wrapper:
++
+[source,c]
+----
+int upscli_init2(int certverify, const char *certpath, const char *certname,
+                  const char *certpasswd, const char *certfile)
+{
+    upscli_ssl_context_config_t *cfg;
+    int is_new_default;
+
+    cfg = upscli_get_or_create_ssl_context_ex(certverify, certpath,
+            certname, certpasswd, certfile, &is_new_default);
+    if (!cfg) {
+        return -1;
+    }
+
+    if (!default_ssl_context_cfg) {
+        /* First ever successful init: this becomes THE ambient default */
+        default_ssl_context_cfg = cfg;
+        return 1;
+    }
+
+    if (cfg == default_ssl_context_cfg) {
+        /* Same args as the existing default: fully legacy-compatible no-op */
+        return 1;
+    }
+
+    /* Different args, default already set: new cache entry was made
+     * available (or already existed) but does NOT replace the ambient
+     * default used by connections that never call
+     * upscli_set_ssl_context(). Caller must fetch it explicitly. */
+    return 0;
+}
+----
+. `upscli_init()` and `upscli_init_authconf()` are unchanged wrappers around
+  `upscli_init2()`, as they are today - no signature or behavior change for
+  correctly-written existing callers (see R3).
+
+=== R3. Legacy API compatibility check (v2.8.5 tag vs. `origin/master`)
+
+Checked directly:
+
+* *`git show v2.8.5:clients/upsclient.h`*: only `upscli_init(certverify, certpath, certname, certpasswd)`
+  exists. No `upscli_init2()`, no `upscli_init_authconf()`, no `authconf.h` at all.
+  => `upscli_init()` signature is the hard ABI/API floor we must never break.
+* *`git show origin/master:clients/upsclient.h`*: already has `upscli_init()`,
+  `upscli_init2()`, and `upscli_init_authconf()` (the `authconf` subsystem is a
+  `master`-only, post-2.8.5 addition). No `ssl_ctx`/`ssl_ctx_owned` field exists
+  on `master` - those are new, unreleased additions from this branch.
+* *All in-tree callers of `upscli_init_authconf()`* (`upsc.c`, `upscmd.c`,
+  `upsimage.c`, `upslog.c`, `upsrw.c`, `upsset.c`, `upsstats.c`, `dummy-ups.c`,
+  `scan_nut.c`) use the pattern `if (upscli_init_authconf(ac_conn) > 0)`.
+* *`upsmon.c:4305`* is the one outlier, using `if (upscli_init2(...) < 0)` to
+  decide whether to abort ("SSL was required") or just warn and continue.
+
+*Conclusion*: every in-tree caller invokes the `upscli_init*()` family exactly
+*once* per process, at startup, before any connection is made. None of them
+calls it a second time with different arguments. This means:
+
+* Keeping `upscli_init()` / `upscli_init2()` / `upscli_init_authconf()` symbol
+  names and signatures exactly as they are today is sufficient for full
+  backward compatibility.
+* The only behavior that must not change for a single call is: on success it
+  must configure the ambient/global default the same way as today, so that a
+  plain `upscli_connect()` + `upscli_sslinit()` (with no explicit per-connection
+  context set) continues to pick up the requested CA/cert/policy exactly like
+  before.
+* The new "0 means a different cached context was made, but the default
+  was not touched" return value (R6) is a new, additive case that cannot be
+  triggered by any existing in-tree caller (since they never call init twice),
+  so it cannot regress current behavior.
+
+=== R4. NSS: Option A, plus a real per-connection nuance
+
+We still go with *Option A* for the parts of NSS that are unavoidably
+process-global: `PR_Init()`, `NSS_Init()`/`NSS_NoDB_Init()`,
+`NSS_SetDomesticPolicy()`, and the `SSL_OptionSetDefault()` protocol-version/
+compat flags. These can only be set up once per process. Document this
+plainly: with NSS, all connections in one process share one CA/trust
+database and one global policy; if different trust roots per server are
+really needed, run separate processes, since NSS does not expose an
+`SSL_CTX`-like reusable object.
+
+However, inspection of the existing NSS callback code shows client identity
+already carries the connection (`UPSCONN_t *arg`) through as callback
+userdata:
+
+* `SSL_AuthCertificateHook(ups->ssl, AuthCertificate, CERT_GetDefaultCertDB())`
+* `SSL_BadCertHook(ups->ssl, BadCertHandler, ups)` - and `BadCertHandler()`
+  already does a per-connection lookup via `upscli_find_host_port_cert(arg->host, arg->port, 1)`
+  for CERTHOST-style pinning (see `upsclient.c:464-481`).
+* `SSL_GetClientAuthDataHook(ups->ssl, GetClientAuthData, ups)` - but
+  `GetClientAuthData()` currently ignores its own `arg` and instead reads the
+  process-global `sslcertname`/`sslcertpasswd` (`upsclient.c:490-492`).
+
+That last one is the actual bug/gap: the plumbing for a per-connection client
+certificate nickname + password already exists (the `arg` is the `ups`), it is
+just not used. Once `certname`/`certpasswd` move from process globals to
+context fields (R5), `GetClientAuthData(UPSCONN_t *arg, ...)` can resolve
+`arg->ssl_context_cfg->certident` / `->certpasswd` first, falling back to the
+global default context's values only if `arg` has no explicit context. So for
+NSS: trust roots/policy are unavoidably global (Option A), but per-connection
+client certificate identity is achievable and should be fixed as part of this work.
+
+==== Threaded workaround example (documentation only, not different DB per thread)
+
+Because NSS's DB/policy is process-global, a multi-threaded client that truly
+needs different trust roots per server has no in-process solution; the closest
+usable pattern (still sharing the one NSS DB and policy) is to serialize
+switching the client cert identity nickname around the handshake if two
+threads must present different client certificates from the same NSS DB:
+
+[source,c]
+----
+/* Illustrative only - assumes both certs live in the SAME NSS cert/key DB,
+ * which is the only DB NSS_Init() loaded for this whole process. */
+pthread_mutex_lock(&nss_identity_switch_mutex);
+upscli_set_ssl_context(ups, per_thread_cfg); /* selects certident/certpasswd */
+upscli_sslinit(ups, verifycert);             /* GetClientAuthData() reads ups->ssl_context_cfg */
+pthread_mutex_unlock(&nss_identity_switch_mutex);
+----
+
+This is not full isolation (CA bundle and protocol policy are still shared
+process-wide), so it must be documented as a partial workaround, not a full
+substitute for OpenSSL's per-connection `SSL_CTX`.
+
+=== R5. Move `sslcertname` / `sslcertpasswd` from globals to context fields
+
+Agreed and confirmed necessary. Both are currently `static char *` process
+globals (`upsclient.c:234-235`) read from many places: the NSS password
+callback (`nss_password_callback`, line ~298), `GetClientAuthData()` (cert
+nickname lookup, line ~491), the OpenSSL default-password callback
+(`openssl_password_callback`, line ~546-550), and the OpenSSL CERTIDENT
+subject-matching code inside `upscli_init2()` itself (lines ~1209-1259).
+
+*Plan*: move both into `upscli_ssl_context_config_t` (the registry entry),
+alongside `ca_path`/`ca_file`/`certfile`. Keep two process-global `char *`
+variables only as a cache of the default context's copies (so existing
+code that reads the bare globals - e.g. the OpenSSL/NSS password callbacks,
+which don't currently receive a context pointer as userdata in every call path -
+continues to work unmodified for the legacy single-default-context case).
+Where a connection (`UPSCONN_t *`) is already threaded through as callback
+userdata (`GetClientAuthData`, `BadCertHandler`, `openssl_password_callback`'s
+`userdata` argument), prefer the per-connection context's copies first.
+
+=== R6. Practical effect of "unblocking" - return code contract
+
+Simply changing `return -1` to `return 0` on repeat calls would be a no-op
+that helps nobody: the second call still would not have prepared anything
+usable for the caller's new arguments. The registry only becomes useful if the
+repeat call actually does the work (looks up or builds a context) and the
+return value tells the caller whether the ambient legacy default changed.
+Concretely, `upscli_init()`/`upscli_init2()`/`upscli_init_authconf()` should return:
+
+[cols="1,3,4"]
+|===
+| Return | Meaning | Legacy caller sees...
+
+| `1`
+| Success, and this call's context is (now, or already was) the ambient default used by connections with no explicit per-connection context - i.e. this is either the very first successful init, or a repeat call whose arguments exactly match the existing default.
+| Success (same as always: `> 0` and `>= 0` checks both pass).
+
+| `0`
+| Success in the sense that a context now exists in the registry for these arguments (fresh or cache hit) and is retrievable via `upscli_get_or_create_ssl_context()`, but it is NOT the ambient default (a different default was already set by an earlier call) - so nothing changed for connections that do not opt in explicitly.
+| Callers using `> 0` (all of upsc/upscmd/upsimage/upslog/upsrw/upsset/upsstats/dummy-ups/scan_nut) treat this the same as failure/no-SSL, which is correct for them since they never call it twice. `upsmon.c`'s `< 0` check treats it as "not a hard failure," also correct, and moot in practice since upsmon never calls it twice either.
+
+| `-1`
+| Hard failure: bad arguments, or the backend failed to build the context (cert/key load failure, NSS init failure, etc.) - same meaning as today.
+| Failure, exactly as today.
+|===
+
+This exactly matches the proposed semantics: *1 for "already cached and is/becomes
+the default"*, and a distinct non-negative-but-not-1 code (0) to tell a
+semi-updated caller "go fetch the handle yourself, the implicit default was
+left alone." Verified safe against every current in-tree call site because
+none of them ever calls the `upscli_init*()` family more than once per process.
+
+---
