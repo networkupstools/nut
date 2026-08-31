@@ -1601,20 +1601,7 @@ static int microlink_publish_descriptor_entry(const char *name, const char *path
 	}
 
 	/* Keep the per-type export logic centralized but short. */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
-# pragma GCC diagnostic ignored "-Wcovered-switch-default"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wcovered-switch-default"
-# pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-covered-switch-default.h"
 	switch (entry->type) {
 	case MLINK_DESC_STRING:
 		return microlink_set_descriptor_string_info(name, data, size);
@@ -1640,12 +1627,7 @@ static int microlink_publish_descriptor_entry(const char *name, const char *path
 	default:
 		return 0;
 	}
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-covered-switch-default-end.h"
 }
 
 static size_t microlink_parse_descriptor_collection(const unsigned char *blob, size_t blob_len,
