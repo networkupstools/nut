@@ -410,3 +410,42 @@ int upscli_set_ssl_context_params(
 * NSS Initialization: link:https://wiki.mozilla.org/NSS:Initialization[]
 * Mozilla NSS SSL Guide: link:https://wiki.mozilla.org/NSS:SSL_Functions[]
 * NUT Authentication Config: `clients/authconf.h`
+
+== Follow-up discussion for proposed changes
+
+Design documents are updated. Here's a summary of the refined plan:
+
+=== Answers to your questions
+
+*1. `ssl_ctx_owned` removal -- confirmed correct.*
+Verified it's dead code: only read at `upsclient.c:3477`, never
+set to `1` anywhere. The registry will own contexts via refcounting
+instead, so this field goes away entirely (safe -- it was only added
+in this unreleased branch).
+
+*2. Where `upscli_init2()`'s body goes.*
+It becomes the "create" branch of `upscli_get_or_create_ssl_context()`.
+The `upscli_init2()` itself shrinks to a thin wrapper that calls the
+registry and decides whether the result becomes/matches the ambient default (see #5 below).
+
+*3. Legacy compatibility -- verified against tags.*
+- `v2.8.5`: only `upscli_init()` exists.
+- `origin/master`: already has `upscli_init2()`, `upscli_init_authconf()`, and `authconf.h` (post-2.8.5 additions), but no `ssl_ctx`/`ssl_ctx_owned` (those are new on this branch).
+- Checked every in-tree caller: all of them call the `upscli_init*()` family **exactly once** per process at startup. This is the key fact that makes the return-code scheme safe (see #5).
+
+*4. NSS Option A -- confirmed, plus a bonus finding.*
+Global NSS state (`PR_Init`/`NSS_Init`/policy) genuinely can't be per-connection. But I found that `GetClientAuthData()` and `BadCertHandler()` already receive the `UPSCONN_t *` as callback userdata -- `BadCertHandler` already does per-connection CERTHOST lookups, but `GetClientAuthData` currently ignores `arg` and reads the global `sslcertname` instead. So **per-connection client certificate identity is achievable for NSS** even though CA trust/policy stays global. Added a threaded workaround example (mutex-serialized nickname switching) with an explicit caveat that it's not full isolation.
+
+*5. `sslcertname`/`sslcertpasswd` → context fields -- agreed*,
+moving into `upscli_ssl_context_config_t`, with globals retained only as the default context's cached copies for callback paths that don't thread a context pointer through yet.
+
+*6. Return code contract -- your hypothesis is exactly right:*
+[cols="1,1"]
+|===
+| Return | Meaning
+| `1` | Success; this call's context is/becomes the ambient default (first-ever call, or repeat with identical args)
+| `0` | Success; a *new/cached* non-default context now exists, retrievable via `upscli_get_or_create_ssl_context()`, but the ambient default was left untouched
+| `-1` | Hard failure (unchanged)
+|===
+
+I (CoPilot) verified this is backward-safe by checking every call site's convention (`> 0` in most clients, `< 0` in `upsmon.c`) -- since no existing caller ever calls init twice, the new `0` case can never be triggered by unmodified programs.
