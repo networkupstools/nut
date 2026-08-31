@@ -212,17 +212,50 @@ static int upscli_default_connect_timeout_initialized = 0;
 # endif
 #endif
 
-#ifdef WITH_OPENSSL
-/* Default SSL context (for legacy compatibility and apps that only
- * make one connection per process); see ups->ssl_ctx if your app
- * wants to connect to different NUT servers under separate management
- * (CA realms, client certificates, etc.) simultaneously. */
-static SSL_CTX	*ssl_ctx = NULL;
-#endif	/* WITH_OPENSSL */
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+/* One set of SSL/crypto material configuration (CA bundle, client cert
+ * identity, verify mode). Built and cached by upscli_get_or_create_ssl_context()
+ * and upscli_get_or_create_ssl_context_authconf(); attached to a connection
+ * via upscli_set_ssl_context(). May be shared/reused by several connections
+ * (see refcount), so the same process can connect to multiple NUT servers
+ * under separate management realms (CA bundles, client certs) simultaneously.
+ *
+ * NOTE: OpenSSL has a reusable per-context SSL_CTX; Mozilla NSS does not
+ *  (its trust database and policy are process-wide via NSS_Init(), callable
+ *  only once) - see notes at upscli_get_or_create_ssl_context() for how NSS
+ *  connections still get a per-connection client certificate identity.
+ */
+typedef struct upscli_ssl_context_config_s {
+	int	certverify;
+	char	*certpath;
+	char	*certname;	/* CERTIDENT nickname/subject */
+	char	*certpasswd;
+	char	*certfile;	/* OpenSSL-only: client cert+key PEM; unused for NSS */
+
+# ifdef WITH_OPENSSL
+	SSL_CTX	*ssl_ctx;
+# endif
+
+	unsigned int	refcount;
+	struct upscli_ssl_context_config_s	*next;
+} upscli_ssl_context_config_t;
+
+static upscli_ssl_context_config_t	*ssl_context_registry = NULL;
+
+/* Ambient default used by connections that never call upscli_set_ssl_context():
+ * legacy-compatible behavior for upscli_init()/upscli_init2()/upscli_init_authconf().
+ */
+static upscli_ssl_context_config_t	*default_ssl_context_cfg = NULL;
+#endif	/* WITH_OPENSSL | WITH_NSS */
 
 #ifdef WITH_NSS
 static int	verify_certificate = 1;
 static int	nss_initialized = 0;
+/* Remembers the CERTPATH which the (single, process-global) NSS trust database
+ * was actually initialized with, purely so that later contexts with a different
+ * CERTPATH can get an accurate one-time warning about the backend limitation.
+ */
+static char	*nss_first_certpath = NULL;
 #endif	/* WITH_NSS */
 
 #if defined(WITH_OPENSSL) || defined(WITH_NSS)
@@ -231,8 +264,6 @@ static pthread_mutex_t mutex_host_cert;
 # endif	/* HAVE_PTHREAD */
 
 static HOST_CERT_t *first_host_cert = NULL;
-static char* sslcertname = NULL;
-static char* sslcertpasswd = NULL;
 #endif	/* WITH_OPENSSL | WITH_NSS */
 
 
@@ -290,13 +321,19 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
-	/* Prefer the per-connection identity (if any) over the library-wide default,
+	/* Prefer the per-connection context (if any) over the ambient default,
 	 * so different connections in one process can use different client certs
 	 * from the same shared NSS certificate/key database. */
 	UPSCONN_t	*ups = (UPSCONN_t *)arg;
-	const char	*passwd = (ups && ups->certident_pass) ? ups->certident_pass : sslcertpasswd;
+	upscli_ssl_context_config_t	*cfg = ups ? (upscli_ssl_context_config_t *)ups->ssl_ctx : NULL;
+	const char	*passwd;
 
 	NUT_UNUSED_VARIABLE(retry);
+
+	if (!cfg) {
+		cfg = default_ssl_context_cfg;
+	}
+	passwd = cfg ? cfg->certpasswd : NULL;
 
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
@@ -493,12 +530,18 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 	SECKEYPrivateKey *privKey;
 	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
 	if (status == SECFailure) {
-		/* Prefer the per-connection identity (if any) over the library-wide
+		/* Prefer the per-connection context (if any) over the ambient
 		 * default, so different connections in one process can present
 		 * different client certs from the same shared NSS DB. Pass "arg"
 		 * (this connection) through as wincx, so nss_password_callback()
 		 * can likewise resolve a per-connection password. */
-		const char	*certname = (arg && arg->certident_name) ? arg->certident_name : sslcertname;
+		upscli_ssl_context_config_t	*cfg = arg ? (upscli_ssl_context_config_t *)arg->ssl_ctx : NULL;
+		const char	*certname;
+
+		if (!cfg) {
+			cfg = default_ssl_context_cfg;
+		}
+		certname = cfg ? cfg->certname : NULL;
 
 		if (certname != NULL) {
 			cert = PK11_FindCertFromNickname(certname, arg);
@@ -941,6 +984,515 @@ int upscli_authconf_update_conn_flags(const upscli_authconf_t *ac, int *flags)
 	return 1;
 }
 
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+/* Zero out a secret/sensitive string in place (up to its current length)
+ * before freeing it, so it does not linger readable in freed heap memory. */
+static void upscli_wipe_free_str(char **str)
+{
+	if (str && *str) {
+		memset(*str, 0, strlen(*str));
+		free(*str);
+		*str = NULL;
+	}
+}
+
+static int upscli_str_eq_nullable(const char *a, const char *b)
+{
+	if (a == b) {
+		return 1;
+	}
+	if (!a || !b) {
+		return 0;
+	}
+	return strcmp(a, b) == 0;
+}
+
+static void upscli_ssl_context_config_free(upscli_ssl_context_config_t *cfg)
+{
+	if (!cfg) {
+		return;
+	}
+
+#ifdef WITH_OPENSSL
+	if (cfg->ssl_ctx) {
+		SSL_CTX_free(cfg->ssl_ctx);
+		cfg->ssl_ctx = NULL;
+	}
+#endif
+
+	/* Sensitive material first, then names/paths which are less secret
+	 * but still worth scrubbing rather than just free()ing verbatim. */
+	upscli_wipe_free_str(&cfg->certpasswd);
+	upscli_wipe_free_str(&cfg->certname);
+	upscli_wipe_free_str(&cfg->certpath);
+	upscli_wipe_free_str(&cfg->certfile);
+
+	free(cfg);
+}
+
+static upscli_ssl_context_config_t *upscli_ssl_context_config_find(
+	int certverify, const char *certpath, const char *certname,
+	const char *certpasswd, const char *certfile)
+{
+	upscli_ssl_context_config_t	*cfg;
+
+	for (cfg = ssl_context_registry; cfg; cfg = cfg->next) {
+		if (cfg->certverify == certverify
+		 && upscli_str_eq_nullable(cfg->certpath, certpath)
+		 && upscli_str_eq_nullable(cfg->certname, certname)
+		 && upscli_str_eq_nullable(cfg->certpasswd, certpasswd)
+		 && upscli_str_eq_nullable(cfg->certfile, certfile)
+		) {
+			return cfg;
+		}
+	}
+
+	return NULL;
+}
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
+/** Look up (by exact argument match) or build a new SSL/crypto context
+ * configuration (CA bundle, client cert identity, verify mode), caching it
+ * in a process-wide registry so repeat calls with the same arguments are
+ * cheap and return the same handle. The returned opaque handle can be
+ * attached to a connection via upscli_set_ssl_context(); if never attached
+ * to any connection, it still becomes the ambient default the first time
+ * (see upscli_init2()).
+ *
+ * NOTE: For NSS builds, the trust database/policy set up by NSS_Init() et al
+ * is process-global and can only be established once (upstream library
+ * constraint); a later call with a different certpath can not actually
+ * change that global trust database and only logs a warning about it.
+ * What IS genuinely per-connection for NSS is the client certificate identity
+ * (certname/certpasswd), consulted by GetClientAuthData()/nss_password_callback()
+ * for whichever context is attached to a given connection (or the ambient
+ * default if none was explicitly attached). To work with multiple trusted
+ * certificate authorities in one process, the sysadmin should prepare a
+ * single NSS DB with all of them.
+ *
+ * Returns an opaque handle on success, or NULL on hard failure.
+ */
+void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
+	const char *certname, const char *certpasswd, const char *certfile)
+{
+#if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(certpath);
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certpasswd);
+	NUT_UNUSED_VARIABLE(certfile);
+	upslogx(LOG_ERR, "%s called but SSL wasn't compiled in", __func__);
+	return NULL;
+#else
+	upscli_ssl_context_config_t	*cfg;
+	const char	*quiet_init_ssl;
+# ifdef WITH_OPENSSL
+	long	ret;
+	int	ssl_mode = SSL_VERIFY_NONE;
+# elif defined(WITH_NSS)	/* WITH_OPENSSL */
+	SECStatus	status;
+# endif	/* WITH_OPENSSL | WITH_NSS */
+
+	cfg = upscli_ssl_context_config_find(certverify, certpath, certname, certpasswd, certfile);
+	if (cfg) {
+		cfg->refcount++;
+		upsdebugx(2, "%s: reusing cached SSL context configuration", __func__);
+		return cfg;
+	}
+
+	cfg = (upscli_ssl_context_config_t *)xcalloc(1, sizeof(*cfg));
+	cfg->certverify = certverify;
+	cfg->certpath = certpath ? xstrdup(certpath) : NULL;
+	cfg->certname = certname ? xstrdup(certname) : NULL;
+	cfg->certpasswd = certpasswd ? xstrdup(certpasswd) : NULL;
+	cfg->certfile = certfile ? xstrdup(certfile) : NULL;
+	cfg->refcount = 1;
+
+	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+	if (quiet_init_ssl != NULL) {
+		if (*quiet_init_ssl == '\0'
+			|| (strncmp(quiet_init_ssl, "true", 4)
+			&&  strncmp(quiet_init_ssl, "TRUE", 4)
+			&&  strncmp(quiet_init_ssl, "1", 1) )
+		) {
+			if (strncmp(quiet_init_ssl, "false", 5)
+			&&  strncmp(quiet_init_ssl, "FALSE", 5)
+			&&  strncmp(quiet_init_ssl, "0", 1) )
+				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+			quiet_init_ssl = NULL;
+		}
+	}
+
+# ifdef WITH_OPENSSL
+
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+	SSL_load_error_strings();
+	SSL_library_init();
+
+	cfg->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+#  else
+	cfg->ssl_ctx = SSL_CTX_new(TLS_client_method());
+#  endif
+
+	if (!cfg->ssl_ctx) {
+		upslogx(LOG_ERR, "Can not initialize SSL context");
+		upscli_ssl_context_config_free(cfg);
+		return NULL;
+	}
+
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+	/* set minimum protocol TLSv1 */
+	SSL_CTX_set_options(cfg->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#  else
+	ret = SSL_CTX_set_min_proto_version(cfg->ssl_ctx, TLS1_VERSION);
+	if (ret != 1) {
+		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
+		upscli_ssl_context_config_free(cfg);
+		return NULL;
+	}
+#  endif
+
+	if (!certpath) {
+		if (certverify == 1) {
+			upslogx(LOG_ERR, "Can not verify certificate if any is specified: no CERTPATH was given");
+			/* Failed: checking the server cert is mandatory, but no
+			 * collection of trusted CA/server cert files was given */
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+	} else {
+		switch (certverify)
+		{
+		case 0:
+			ssl_mode = SSL_VERIFY_NONE;
+			break;
+		default:
+			ssl_mode = SSL_VERIFY_PEER;
+			break;
+		}
+
+		ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, NULL, certpath);
+		if (ret != 1) {
+			ssl_debug();
+			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
+
+			/* Can it be a specific PEM file? */
+			if ((ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, certpath, NULL)) != 1) {
+				ssl_debug();
+				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				upscli_ssl_context_config_free(cfg);
+				return NULL;
+			} else {
+				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
+			}
+		} else {
+			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
+		}
+
+		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+		openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
+			"openssl_cert_verify_data index (client)",
+			NULL, NULL, NULL);
+
+		SSL_CTX_set_verify(cfg->ssl_ctx, ssl_mode, openssl_cert_verify_callback);
+
+		/* Let the openssl_cert_verify_callback() catch any verify_depth
+		 * error, so that we get an appropriate error in the logfile;
+		 * see more around SSL_connect(). */
+		SSL_CTX_set_verify_depth(cfg->ssl_ctx, verify_depth + 1);
+	}
+
+	if (cfg->certpasswd) {
+#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
+		/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros */
+		SSL_CTX_set_default_passwd_cb(cfg->ssl_ctx, openssl_password_callback);
+#    if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_CTX_set_default_passwd_cb_userdata(cfg->ssl_ctx, (void*)cfg->certpasswd);
+#    endif	/* else callback uses global variable */
+#   else	/* Not SSL_CTX_* methods */
+		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
+		 * the `SSL_CTX*` variants were added in 1.1.
+		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
+		 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
+		 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
+		 *
+		 * But to use those, we would need to get that SSL* (connection-oriented,
+		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
+		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
+		 *
+		 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
+		 */
+#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
+		/* Theoretical solution - didn't find a build system where such methods
+		 * would actually be available, so this could be tested and used */
+		SSL	*ssl_tmp = SSL_new(cfg->ssl_ctx);
+		/* OpenSSL 0.9.6+ at least? */
+		SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
+#     if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
+		SSL_set_default_passwd_cb_userdata(ssl_tmp, (void*)cfg->certpasswd);
+#     endif
+		SSL_free(ssl_tmp);
+
+#    else	/* Not SSL_* methods either */
+
+		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
+		upscli_ssl_context_config_free(cfg);
+		return NULL;
+#    endif
+#   endif	/* ...SET_DEFAULT_PASSWD_CB */
+	}	/* else: CERTIDENT did not pass a password, nothing to check */
+
+	if (cfg->certfile) {
+		/* Note: same certfile PEM for cert and private key,
+		 * which is optionally protected by cfg->certpasswd */
+		int	ssl_ret;
+		if ((ssl_ret = SSL_CTX_use_certificate_chain_file(cfg->ssl_ctx, cfg->certfile)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client certificate from %s", cfg->certfile);
+			ssl_debug();
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+		if ((ssl_ret = SSL_CTX_use_PrivateKey_file(cfg->ssl_ctx, cfg->certfile, SSL_FILETYPE_PEM)) != 1) {
+			upslogx(LOG_ERR, "Failed to load client private key from %s", cfg->certfile);
+			ssl_debug();
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+		if ((ssl_ret = SSL_CTX_check_private_key(cfg->ssl_ctx)) != 1) {
+			upslogx(LOG_ERR, "Failed to check client private key from %s", cfg->certfile);
+			ssl_debug();
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+
+		if (cfg->certname && *cfg->certname) {
+#   if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
+			/* Roughly OpenSSL 1.0.2+ */
+			X509	*x509 = SSL_CTX_get0_certificate(cfg->ssl_ctx);
+			if (x509) {
+				/* Check if cfg->certname matches the host (CN or SAN) */
+				if (X509_check_host(x509, (const char *)cfg->certname, 0, 0, NULL) != 1
+				 && X509_check_ip_asc(x509, (const char *)cfg->certname, 0) != 1
+				) {
+					char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
+					char	*subject_CN = (subject ? (char*)strstr(subject, "CN=") + 3 : NULL);
+					size_t	certname_len = strlen(cfg->certname);
+
+					upsdebugx(4, "%s: My certificate subject: '%s'; CN: '%s'; CERTIDENT: [%" PRIuSIZE "]'%s'",
+						__func__, NUT_STRARG(subject), NUT_STRARG(subject_CN),
+						certname_len, NUT_STRARG(cfg->certname));
+
+					/* Check if cfg->certname matches the whole subject or just .../CN=.../ part as a string */
+					if (!subject || !(
+						strcmp(subject, cfg->certname) == 0
+						|| (subject_CN && !strncmp(subject_CN, cfg->certname, certname_len)
+							&& (subject_CN[certname_len] == '\0'
+								|| subject_CN[certname_len] == '/'
+								|| subject_CN[certname_len] == ','
+								|| (subject_CN[certname_len] == '\\' && subject_CN[certname_len + 1] == '/')) )
+					)) {
+						/* This way or that, the names differ */
+						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
+							subject ? subject : "unknown", cfg->certname);
+						if (subject) {
+							OPENSSL_free(subject);
+						}
+						upslogx(LOG_ERR, "Unexpected certificate provided");
+						upscli_ssl_context_config_free(cfg);
+						return NULL;
+					} else {
+						upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", cfg->certname);
+					}
+				} else {
+					upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", cfg->certname);
+				}
+			}
+#   else	/* Missing X509 methods wanted above */
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", cfg->certname);
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+#   endif	/* Got ways to check CERTIDENT? */
+		}	/* else: CERTIDENT did not pass a name, nothing to check */
+	} else {
+		if (cfg->certname && *cfg->certname) {
+			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", cfg->certname);
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+	}
+
+# elif defined(WITH_NSS) /* WITH_OPENSSL */
+
+	if (!nss_initialized) {
+		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+		nss_initialized = 1;
+
+		PK11_SetPasswordFunc(nss_password_callback);
+
+		if (certfile) {
+			upsdebugx(1, "%s: certfile is not used for NSS init, ignored", __func__);
+		}
+
+		if (certpath) {
+			if (quiet_init_ssl != NULL) {
+				upsdebugx(1, "Init SSL with certificate database located at %s", certpath);
+			} else {
+				upslogx(LOG_INFO, "Init SSL with certificate database located at %s", certpath);
+			}
+			status = NSS_Init(certpath);
+			nss_first_certpath = xstrdup(certpath);
+		} else {
+			if (quiet_init_ssl != NULL) {
+				upsdebugx(1, "Init SSL without certificate database");
+			} else {
+				upslogx(LOG_NOTICE, "Init SSL without certificate database");
+			}
+			status = NSS_NoDB_Init(NULL);
+		}
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not initialize SSL context");
+			nss_error("upscli_get_or_create_ssl_context / NSS_[NoDB]_Init");
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+
+		status = NSS_SetDomesticPolicy();
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not initialize SSL policy");
+			nss_error("upscli_get_or_create_ssl_context / NSS_SetDomesticPolicy");
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+
+		SSL_ClearSessionCache();
+
+		status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not enable SSLv3");
+			nss_error("upscli_get_or_create_ssl_context / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not enable TLSv1");
+			nss_error("upscli_get_or_create_ssl_context / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+		status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
+			nss_error("upscli_get_or_create_ssl_context / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
+			upscli_ssl_context_config_free(cfg);
+			return NULL;
+		}
+		verify_certificate = certverify;
+	} else {
+		/* NSS trust database and policy are process-global and can only
+		 * be set up once; this additional context can still carry its
+		 * own client certificate identity (certname/certpasswd), which
+		 * IS genuinely per-connection for NSS (see GetClientAuthData()). */
+		if (certfile) {
+			upsdebugx(1, "%s: certfile is not used for NSS, ignored", __func__);
+		}
+		if (certpath && !upscli_str_eq_nullable(certpath, nss_first_certpath)) {
+			upslogx(LOG_WARNING, "NSS trust database is process-global and was already "
+				"initialized with a different CERTPATH; ignoring CERTPATH for this "
+				"additional SSL context (only its client certificate identity, if any, "
+				"will be honored per-connection)");
+		}
+	}
+# else
+	/* Note: historically we do not return with error here,
+	 * and nowadays have the default timeout handling etc.,
+	 * just fall through to below and treat as initialized.
+	 * There's nothing to retry to change that state anyway.
+	 */
+	if (certverify || certpath || certname || certpasswd || certfile) {
+		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+	}
+# endif /* WITH_OPENSSL | WITH_NSS */
+
+	cfg->next = ssl_context_registry;
+	ssl_context_registry = cfg;
+
+	upsdebugx(1, "%s: completed (new SSL context configuration cached)", __func__);
+	return cfg;
+#endif	/* WITH_OPENSSL | WITH_NSS */
+}
+
+/** Equivalent of upscli_get_or_create_ssl_context() taking parameters from an
+ * upscli_authconf_t, also registering any CERTHOST setting it carries (like
+ * upscli_init_authconf() does). Returns an opaque handle, or NULL on error. */
+void *upscli_get_or_create_ssl_context_authconf(upscli_authconf_t *ac)
+{
+	if (!ac) {
+		upsdebugx(1, "%s: SKIP: NULL authconf pointer", __func__);
+		return NULL;
+	}
+
+	upsdebugx(5, "%s: got an authconf pointer", __func__);
+	if (nut_debug_level > 5) {
+		upscli_dump_authconf_item(stderr, ac, 1, 0);
+	}
+
+	if (ac->certhost && ac->section) {
+		const char	*host_port = strchr(ac->section, '@');
+
+		if (!host_port) {
+			host_port = ac->section;
+		} else {
+			host_port++;
+		}
+
+		upscli_add_host_cert(host_port, ac->certhost, ac->certverify, ac->forcessl);
+	}
+
+	return upscli_get_or_create_ssl_context(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
+}
+
+/** Shared tail of upscli_init2()/upscli_init_authconf(): given a context handle
+ * (or NULL on failure to build one), decide the legacy-compatible return code.
+ * @return
+ * -  1 : success, and this call's context is (now, or already was) the ambient
+ *        default used by connections that never call upscli_set_ssl_context()
+ * -  0 : success, but a DIFFERENT default was already set by an earlier call;
+ *        this context was cached (or found) and is retrievable via
+ *        upscli_get_or_create_ssl_context()/_authconf(), but was not made
+ *        the ambient default
+ * - -1 : hard failure (bad arguments, or the backend failed to build it)
+ */
+static int upscli_init2_finish(void *cfgv)
+{
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	upscli_ssl_context_config_t	*cfg = (upscli_ssl_context_config_t *)cfgv;
+
+	if (!cfg) {
+		return -1;
+	}
+
+	if (!default_ssl_context_cfg) {
+		default_ssl_context_cfg = cfg;
+		upscli_initialized = 1;
+		upsdebugx(1, "%s: completed (new ambient default)", __func__);
+		return 1;
+	}
+
+	if (cfg == default_ssl_context_cfg) {
+		upsdebugx(1, "%s: completed (matches existing ambient default)", __func__);
+		return 1;
+	}
+
+	upsdebugx(1, "%s: completed (new cached context, ambient default unchanged)", __func__);
+	return 0;
+#else
+	upscli_initialized = 1;
+	NUT_UNUSED_VARIABLE(cfgv);
+	return 1;
+#endif
+}
+
 /** Initialize SSL support with specific requirements.
  * Call this or a related method before upscli_sslinit() to initiate STARTTLS
  * in a connection to the server.
@@ -979,29 +1531,14 @@ int upscli_init(int certverify, const char *certpath,
  */
 int upscli_init_authconf(upscli_authconf_t *ac)
 {
-	if (!ac) {
-		upsdebugx(1, "%s: SKIP: NULL authconf pointer", __func__);
-		return -1;
+	if (upscli_default_connect_timeout_initialized == 0) {
+		/* There may be an envvar waiting to be parsed */
+		upsdebugx(1, "%s: upscli_default_connect_timeout was not initialized, checking now",
+			__func__);
+		upscli_init_default_connect_timeout(NULL, NULL, NULL);
 	}
 
-	upsdebugx(5, "%s: got an authconf pointer", __func__);
-	if (nut_debug_level > 5) {
-		upscli_dump_authconf_item(stderr, ac, 1, 0);
-	}
-
-	if (ac->certhost && ac->section) {
-		const char	*host_port = strchr(ac->section, '@');
-
-		if (!host_port) {
-			host_port = ac->section;
-		} else {
-			host_port++;
-		}
-
-		upscli_add_host_cert(host_port, ac->certhost, ac->certverify, ac->forcessl);
-	}
-
-	return upscli_init2(ac->certverify, ac->certpath, ac->certident, ac->certpasswd, ac->certfile);
+	return upscli_init2_finish(upscli_get_or_create_ssl_context_authconf(ac));
 }
 
 /** Initialize SSL support with specific requirements.
@@ -1024,37 +1561,6 @@ int upscli_init2(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd,
 					const char *certfile)
 {
-	const char	*quiet_init_ssl;
-#ifdef WITH_OPENSSL
-	long	ret;
-	int	ssl_mode = SSL_VERIFY_NONE;
-#elif defined(WITH_NSS)	/* WITH_OPENSSL */
-	SECStatus	status;
-#endif	/* WITH_OPENSSL | WITH_NSS */
-
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
-	if (certname) {
-		free(sslcertname);
-		sslcertname = xstrdup(certname);
-	}
-	if (certpasswd) {
-		free(sslcertpasswd);
-		sslcertpasswd = xstrdup(certpasswd);
-	}
-#else	/* neither backend: */
-	/* See comment above */
-	NUT_UNUSED_VARIABLE(certverify);
-	NUT_UNUSED_VARIABLE(certpath);
-	NUT_UNUSED_VARIABLE(certname);
-	NUT_UNUSED_VARIABLE(certpasswd);
-	NUT_UNUSED_VARIABLE(certfile);
-#endif	/* WITH_OPENSSL | WITH_NSS */
-
-	if (upscli_initialized == 1) {
-		upslogx(LOG_WARNING, "upscli already initialized");
-		return -1;
-	}
-
 	if (upscli_default_connect_timeout_initialized == 0) {
 		/* There may be an envvar waiting to be parsed */
 		upsdebugx(1, "%s: upscli_default_connect_timeout was not initialized, checking now",
@@ -1062,299 +1568,9 @@ int upscli_init2(int certverify, const char *certpath,
 		upscli_init_default_connect_timeout(NULL, NULL, NULL);
 	}
 
-	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
-	if (quiet_init_ssl != NULL) {
-		if (*quiet_init_ssl == '\0'
-			|| (strncmp(quiet_init_ssl, "true", 4)
-			&&  strncmp(quiet_init_ssl, "TRUE", 4)
-			&&  strncmp(quiet_init_ssl, "1", 1) )
-		) {
-			if (strncmp(quiet_init_ssl, "false", 5)
-			&&  strncmp(quiet_init_ssl, "FALSE", 5)
-			&&  strncmp(quiet_init_ssl, "0", 1) )
-				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
-			quiet_init_ssl = NULL;
-		}
-	}
-
-#ifdef WITH_OPENSSL
-
-# if OPENSSL_VERSION_NUMBER < 0x10100000L
-	SSL_load_error_strings();
-	SSL_library_init();
-
-	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-# else
-	ssl_ctx = SSL_CTX_new(TLS_client_method());
-# endif
-
-	if (!ssl_ctx) {
-		upslogx(LOG_ERR, "Can not initialize SSL context");
-		return -1;
-	}
-
-# if OPENSSL_VERSION_NUMBER < 0x10100000L
-	/* set minimum protocol TLSv1 */
-	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-# else
-	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
-	if (ret != 1) {
-		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
-		upscli_cleanup();
-		return -1;
-	}
-# endif
-
-	if (!certpath) {
-		if (certverify == 1) {
-			upslogx(LOG_ERR, "Can not verify certificate if any is specified: no CERTPATH was given");
-			/* Failed: checking the server cert is mandatory, but no
-			 * collection of trusted CA/server cert files was given */
-			upscli_cleanup();
-			return -1;
-		}
-	} else {
-		switch (certverify)
-		{
-		case 0:
-			ssl_mode = SSL_VERIFY_NONE;
-			break;
-		default:
-			ssl_mode = SSL_VERIFY_PEER;
-			break;
-		}
-
-		ret = SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath);
-		if (ret != 1) {
-			ssl_debug();
-			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
-
-			/* Can it be a specific PEM file? */
-			if ((ret = SSL_CTX_load_verify_locations(ssl_ctx, certpath, NULL)) != 1) {
-				ssl_debug();
-				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
-				upscli_cleanup();
-				return -1;
-			} else {
-				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
-			}
-		} else {
-			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
-		}
-
-		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
-		openssl_cert_verify_data_index = SSL_get_ex_new_index(0,
-			"openssl_cert_verify_data index (client)",
-			NULL, NULL, NULL);
-
-		SSL_CTX_set_verify(ssl_ctx, ssl_mode, openssl_cert_verify_callback);
-
-		/* Let the openssl_cert_verify_callback() catch any verify_depth
-		 * error, so that we get an appropriate error in the logfile;
-		 * see more around SSL_connect(). */
-		SSL_CTX_set_verify_depth(ssl_ctx, verify_depth + 1);
-	}
-
-	if (sslcertpasswd) {
-#  if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB
-		/* Roughly OpenSSL 1.1.0+ or 1.0.2+ with patched distros */
-		SSL_CTX_set_default_passwd_cb(ssl_ctx, openssl_password_callback);
-#   if defined(HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_CTX_SET_DEFAULT_PASSWD_CB_USERDATA
-		SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, (void*)sslcertpasswd);
-#   endif	/* else callback uses global variable */
-#  else	/* Not SSL_CTX_* methods */
-		/* Per https://docs.openssl.org/3.5/man3/SSL_CTX_set_default_passwd_cb,
-		 * the `SSL_CTX*` variants were added in 1.1.
-		 * The SSL_set_default_passwd_cb() and SSL_set_default_passwd_cb_userdata()
-		 * for `SSL*` argument were around since the turn of millennium, approx 0.9.6+
-		 * per https://github.com/openssl/openssl/commit/66ebbb6a56bc1688fa37878e4feec985b0c260d7
-		 *
-		 * But to use those, we would need to get that SSL* (connection-oriented,
-		 * maybe from socket FD or dummy SSL_new() with subsequent SSL_shutdown()
-		 * and SSL_free(?); that would also unlock us using the ssl_error() elsewhere.
-		 *
-		 * Alternately load PEM "manually", see e.g. Apache httpd sources before 2015.
-		 */
-#   if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB) && HAVE_SSL_SET_DEFAULT_PASSWD_CB
-		/* Theoretical solution - didn't find a build system where such methods
-		 * would actually be available, so this could be tested and used */
-		SSL	*ssl_tmp = SSL_new(ssl_ctx);
-		/* OpenSSL 0.9.6+ at least? */
-		SSL_set_default_passwd_cb(ssl_tmp, openssl_password_callback);
-#    if defined(HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA) && HAVE_SSL_SET_DEFAULT_PASSWD_CB_USERDATA
-		SSL_set_default_passwd_cb_userdata(ssl_tmp, (void*)sslcertpasswd);
-#    endif
-		SSL_free(ssl_tmp);
-
-#   else	/* Not SSL_* methods either */
-
-		upslogx(LOG_ERR, "Private key password support not implemented for OpenSSL < ~0.9.6..~1.1 yet");
-		upscli_cleanup();
-		return -1;
-#   endif
-#  endif	/* ...SET_DEFAULT_PASSWD_CB */
-	}	/* else: CERTIDENT did not pass a password, nothing to check */
-
-	if (certfile) {
-		/* Note: same certfile PEM for cert and private key,
-		 * which is optionally protected by sslcertpasswd */
-		int	ssl_ret;
-		if ((ssl_ret = SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile)) != 1) {
-			upslogx(LOG_ERR, "Failed to load client certificate from %s", certfile);
-			ssl_debug();
-			upscli_cleanup();
-			return -1;
-		}
-		if ((ssl_ret = SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM)) != 1) {
-			upslogx(LOG_ERR, "Failed to load client private key from %s", certfile);
-			ssl_debug();
-			upscli_cleanup();
-			return -1;
-		}
-		if ((ssl_ret = SSL_CTX_check_private_key(ssl_ctx)) != 1) {
-			upslogx(LOG_ERR, "Failed to check client private key from %s", certfile);
-			ssl_debug();
-			upscli_cleanup();
-			return -1;
-		}
-
-		if (sslcertname && *sslcertname) {
-#  if (defined(HAVE_SSL_CTX_GET0_CERTIFICATE) && HAVE_SSL_CTX_GET0_CERTIFICATE) && (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST) && (defined(HAVE_X509_CHECK_IP_ASC) && HAVE_X509_CHECK_IP_ASC) && (defined(HAVE_X509_NAME_ONELINE) && HAVE_X509_NAME_ONELINE)
-			/* Roughly OpenSSL 1.0.2+ */
-			X509	*x509 = SSL_CTX_get0_certificate(ssl_ctx);
-			if (x509) {
-				/* Check if sslcertname matches the host (CN or SAN) */
-				if (X509_check_host(x509, (const char *)sslcertname, 0, 0, NULL) != 1
-				 && X509_check_ip_asc(x509, (const char *)sslcertname, 0) != 1
-				) {
-					char	*subject = X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0);
-					char	*subject_CN = (subject ? (char*)strstr(subject, "CN=") + 3 : NULL);
-					size_t	sslcertname_len = strlen(sslcertname);
-
-					upsdebugx(4, "%s: My certificate subject: '%s'; CN: '%s'; CERTIDENT: [%" PRIuSIZE "]'%s'",
-						__func__, NUT_STRARG(subject), NUT_STRARG(subject_CN),
-						sslcertname_len, NUT_STRARG(sslcertname));
-
-					/* Check if sslcertname matches the whole subject or just .../CN=.../ part as a string */
-					if (!subject || !(
-						strcmp(subject, sslcertname) == 0
-						|| (subject_CN && !strncmp(subject_CN, sslcertname, sslcertname_len)
-							&& (subject_CN[sslcertname_len] == '\0'
-								|| subject_CN[sslcertname_len] == '/'
-								|| subject_CN[sslcertname_len] == ','
-								|| (subject_CN[sslcertname_len] == '\\' && subject_CN[sslcertname_len + 1] == '/')) )
-					)) {
-						/* This way or that, the names differ */
-						upslogx(LOG_ERR, "Certificate subject (%s) does not match CERTIDENT name (%s)",
-							subject ? subject : "unknown", sslcertname);
-						if (subject) {
-							OPENSSL_free(subject);
-						}
-						upslogx(LOG_ERR, "Unexpected certificate provided");
-						upscli_cleanup();
-						return -1;
-					} else {
-						upsdebugx(2, "Certificate subject verified against CERTIDENT subject name (%s)", sslcertname);
-					}
-				} else {
-					upsdebugx(2, "Certificate subject verified against CERTIDENT host name (%s)", sslcertname);
-				}
-			}
-#  else	/* Missing X509 methods wanted above */
-			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': not supported in this OpenSSL build (too old)", sslcertname);
-			upscli_cleanup();
-			return -1;
-#  endif	/* Got ways to check CERTIDENT? */
-		}	/* else: CERTIDENT did not pass a name, nothing to check */
-	} else {
-		if (sslcertname && *sslcertname) {
-			upslogx(LOG_ERR, "Can not verify CERTIDENT '%s': no CERTFILE was provided", sslcertname);
-			upscli_cleanup();
-			return -1;
-		}
-	}
-
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
-
-	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-	nss_initialized = 1;
-
-	PK11_SetPasswordFunc(nss_password_callback);
-
-	if (certfile) {
-		upsdebugx(1, "%s: certfile is not used for NSS init, ignored", __func__);
-	}
-
-	if (certpath) {
-		if (quiet_init_ssl != NULL) {
-			upsdebugx(1, "Init SSL with certificate database located at %s", certpath);
-		} else {
-			upslogx(LOG_INFO, "Init SSL with certificate database located at %s", certpath);
-		}
-		status = NSS_Init(certpath);
-	} else {
-		if (quiet_init_ssl != NULL) {
-			upsdebugx(1, "Init SSL without certificate database");
-		} else {
-			upslogx(LOG_NOTICE, "Init SSL without certificate database");
-		}
-		status = NSS_NoDB_Init(NULL);
-	}
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL context");
-		nss_error("upscli_init / NSS_[NoDB]_Init");
-		upscli_cleanup();
-		return -1;
-	}
-
-	status = NSS_SetDomesticPolicy();
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL policy");
-		nss_error("upscli_init / NSS_SetDomesticPolicy");
-		upscli_cleanup();
-		return -1;
-	}
-
-	SSL_ClearSessionCache();
-
-	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not enable SSLv3");
-		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
-		upscli_cleanup();
-		return -1;
-	}
-	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not enable TLSv1");
-		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
-		upscli_cleanup();
-		return -1;
-	}
-	status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
-		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
-		upscli_cleanup();
-		return -1;
-	}
-	verify_certificate = certverify;
-#else
-	/* Note: historically we do not return with error here,
-	 * and nowadays have the default timeout handling etc.,
-	 * just fall through to below and treat as initialized.
-	 * There's nothing to retry to change that state anyway.
-	 */
-	if (certverify || certpath || certname || certpasswd || certfile) {
-		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
-	}
-#endif /* WITH_OPENSSL | WITH_NSS */
-
-	upscli_initialized = 1;
-
-	upsdebugx(1, "%s: completed", __func__);
-	return 1;
+	return upscli_init2_finish(upscli_get_or_create_ssl_context(certverify, certpath, certname, certpasswd, certfile));
 }
+
 
 static uint16_t get_port_from_string(const char *str_port)
 {
@@ -1703,38 +1919,23 @@ void *upscli_get_ssl_context(UPSCONN_t *ups)
 	return ups->ssl_ctx;
 }
 
-int upscli_set_ssl_certident(UPSCONN_t *ups, const char *certident_name, const char *certident_pass)
-{
-	if (!ups) {
-		return -1;
-	}
-
-	free(ups->certident_name);
-	ups->certident_name = certident_name ? xstrdup(certident_name) : NULL;
-
-	free(ups->certident_pass);
-	ups->certident_pass = certident_pass ? xstrdup(certident_pass) : NULL;
-
-	return 0;
-}
-
-const char *upscli_get_ssl_certident_name(UPSCONN_t *ups)
-{
-	if (!ups) {
-		return NULL;
-	}
-
-	return ups->certident_name;
-}
-
 int upscli_cleanup(void)
 {
-#ifdef WITH_OPENSSL
-	if (ssl_ctx) {
-		SSL_CTX_free(ssl_ctx);
-		ssl_ctx = NULL;
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	/* Free the whole SSL context registry (assumes all connections were
+	 * already disconnected, so nothing still refers to these entries). */
+	{
+		upscli_ssl_context_config_t	*cfg = ssl_context_registry, *next;
+
+		while (cfg) {
+			next = cfg->next;
+			upscli_ssl_context_config_free(cfg);
+			cfg = next;
+		}
+		ssl_context_registry = NULL;
+		default_ssl_context_cfg = NULL;
 	}
-#endif /* WITH_OPENSSL */
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 #ifdef WITH_NSS
 	/* Avoid first calling NSS to shut it down - this confuses
@@ -1753,18 +1954,12 @@ int upscli_cleanup(void)
 		PL_ArenaFinish();
 		nss_initialized = 0;
 	}
+
+	upscli_wipe_free_str(&nss_first_certpath);
 #endif /* WITH_NSS */
 
 	upscli_free_host_cert_list();
 	upscli_free_authconf_list();
-
-#if defined(WITH_OPENSSL) || defined(WITH_NSS)
-	free(sslcertname);
-	sslcertname = NULL;
-
-	free(sslcertpasswd);
-	sslcertpasswd = NULL;
-#endif
 
 	upscli_initialized = 0;
 	return 1;
@@ -2269,15 +2464,23 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 # ifdef WITH_OPENSSL
 
-	if (ups->ssl_ctx) {
-		upsdebugx(3, "%s: Using per-connection SSL context", __func__);
-	} else	/* try using global default SSL context (legacy-compatible) */
-	if (!ssl_ctx) {
-		upsdebugx(3, "%s: SSL context is not available", __func__);
-		return 0;
-	}
+	{
+		upscli_ssl_context_config_t	*cfg = (upscli_ssl_context_config_t *)ups->ssl_ctx;
 
-	ups->ssl = SSL_new((SSL_CTX *)(ups->ssl_ctx ? ups->ssl_ctx : ssl_ctx));
+		if (cfg) {
+			upsdebugx(3, "%s: Using per-connection SSL context", __func__);
+		} else {
+			/* try using the ambient default SSL context (legacy-compatible) */
+			cfg = default_ssl_context_cfg;
+		}
+
+		if (!cfg || !cfg->ssl_ctx) {
+			upsdebugx(3, "%s: SSL context is not available", __func__);
+			return 0;
+		}
+
+		ups->ssl = SSL_new(cfg->ssl_ctx);
+	}
 	if (!ups->ssl) {
 		upsdebugx(3, "%s: Can not create SSL socket", __func__);
 		return 0;
@@ -3464,12 +3667,6 @@ int upscli_disconnect(UPSCONN_t *ups)
 	free(ups->host);
 	ups->host = NULL;
 
-	free(ups->certident_name);
-	ups->certident_name = NULL;
-
-	free(ups->certident_pass);
-	ups->certident_pass = NULL;
-
 #ifdef WITH_OPENSSL
 	if (ups->openssl_cert_verify_data != NULL) {
 		if (ups->openssl_cert_verify_data->hostname_allocated
@@ -3516,17 +3713,17 @@ int upscli_disconnect(UPSCONN_t *ups)
 		ups->ssl = NULL;
 	}
 
-	if (ups->ssl_ctx && ups->ssl_ctx_owned) {
-		SSL_CTX_free(ups->ssl_ctx);
-		ups->ssl_ctx = NULL;
-		ups->ssl_ctx_owned = 0;
-	}
+	/* ups->ssl_ctx is a reference into the SSL context registry (shared,
+	 * possibly reused by other connections); it is owned and freed by
+	 * upscli_cleanup(), not per-connection - just drop our reference. */
+	ups->ssl_ctx = NULL;
 #elif defined(WITH_NSS) /* !WITH_OPENSSL */
 	if (ups->ssl) {
 		PR_Shutdown(ups->ssl, PR_SHUTDOWN_BOTH);
 		PR_Close(ups->ssl);
 		ups->ssl = NULL;
 	}
+	ups->ssl_ctx = NULL;
 #endif	/* WITH_OPENSSL | WITH_NSS */
 
 	shutdown(ups->fd, shutdown_how);

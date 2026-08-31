@@ -114,31 +114,19 @@ typedef struct {
 	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
 	 * same for different builds, and add new data items in the end! */
 
-	/* SSL context (trusted CA, own cert, etc.) may be global (NULL here)
-	 * or shared (owned by us or reference to an instance owned and freed
-	 * elsewhere). This allows the same client to connect to multiple
-	 * data servers whose crypto is under different management realms.
-	 *
-	 * NOTE: OpenSSL has this concept, Mozilla NSS currently does not
-	 *  (its context is process-wide via NSS_Init() callable once).
-	 */
+	/* SSL context configuration (trusted CA, client cert identity, verify mode):
+	 * NULL means use the ambient default set by upscli_init*(); a non-NULL
+	 * opaque pointer (obtained via upscli_get_or_create_ssl_context()) attaches
+	 * a cached context config to this connection for per-connection client cert
+	 * identity on NSS, or per-connection SSL_CTX on OpenSSL. The context is
+	 * shared and NOT owned by this connection; it is freed only by upscli_cleanup(). */
 #ifdef WITH_OPENSSL
 	openssl_cert_verify_data_t	*openssl_cert_verify_data;
-	SSL_CTX	*ssl_ctx;
+	void	*ssl_ctx;	/* really: (upscli_ssl_context_config_t*) - opaque handle */
 #else
 	void	*extra_reserved;
-	void	*ssl_ctx;	/* essentially padding for struct size in different build variants */
+	void	*ssl_ctx;	/* padding for struct size in different build variants */
 #endif /* WITH_OPENSSL */
-	char	ssl_ctx_owned;	/* if not 0, we own the SSL_CTX and should free it on cleanup (if applicable) - meaning nobody else refers to that memory */
-
-	/* Optional per-connection client certificate identity override, consulted
-	 * (at least) by the NSS backend's GetClientAuthData()/nss_password_callback()
-	 * so one process can present different client certificates to different
-	 * servers even while sharing one process-wide NSS certificate/key database.
-	 * NULL means fall back to the library-wide CERTIDENT set via upscli_init*().
-	 * See upscli_set_ssl_certident(). */
-	char	*certident_name;
-	char	*certident_pass;
 
 }	UPSCONN_t;
 
@@ -192,18 +180,17 @@ int upscli_cleanup(void);
 void *upscli_set_ssl_context(UPSCONN_t *ups, void *ssl_ctx);
 void *upscli_get_ssl_context(UPSCONN_t *ups);
 
-/* Set (or clear, with NULL args) a per-connection client certificate identity,
- * to let one process present different client certificates to different
- * servers even when they share one process-wide NSS certificate/key database
- * (OpenSSL builds should prefer a distinct SSL context via upscli_set_ssl_context()
- * instead, since OpenSSL supports a fully separate SSL_CTX per connection).
- * Strings are copied internally; safe to free/reuse the arguments afterwards.
- * Returns 0 on success, -1 on error (e.g. NULL ups). */
-int upscli_set_ssl_certident(UPSCONN_t *ups, const char *certident_name, const char *certident_pass);
+/* Get or create a cached SSL context configuration (CA bundle, client cert
+ * identity, verify mode) from the process-wide registry. Takes parameters
+ * identical to upscli_init2(). Returns an opaque handle for use with
+ * upscli_set_ssl_context(), or NULL on hard failure. Cheap on repeat calls
+ * with identical arguments (cached hit). See design notes in SSL_CONTEXT_ANALYSIS.* */
+void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
+	const char *certname, const char *certpasswd, const char *certfile);
 
-/* Get the per-connection client certificate nickname set via
- * upscli_set_ssl_certident(), or NULL if none was set for this connection. */
-const char *upscli_get_ssl_certident_name(UPSCONN_t *ups);
+/* Equivalent, taking parameters from an upscli_authconf_t (also registers
+ * any CERTHOST from the authconf, like upscli_init_authconf() does). */
+void *upscli_get_or_create_ssl_context_authconf(upscli_authconf_t *ac);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
