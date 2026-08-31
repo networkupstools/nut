@@ -26,7 +26,8 @@ PYTHON_DEFAULT = @PYTHON_DEFAULT@
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
   gitlog2changelog.py.in gitlog2version.sh semver-compare.sh \
-  nut-snmpinfo.py.in driver-list-format.sh check-source-nonascii.pl
+  nut-snmpinfo.py.in driver-list-format.sh check-source-nonascii.pl \
+  asciidoc-github-links.pl
 
 # These files are generated for nut-scanner builds (and cleaned as any others),
 # and can change as respective SNMP/USB subdriver sources are iterated by a
@@ -163,6 +164,20 @@ dist-hook:
 		echo "Skipping the USB helper files regeneration in DIST dir."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
+
+# Using $? here for "sources newer than target",
+# note that $< is not portable in non-suffix rules:
+check-asciidoc-github-links: $(top_srcdir)/tools/asciidoc-github-links.pl
+	@echo "Checking for perl support of github links parser..."
+	@if perl -e 1; then \
+		OUT="`echo 'Some changes. [#333, PRs #123, #345; issues #789, #99, advisories GHSA-1234-5678-90ab, #12345]' | perl '$?'`" || exit ; \
+		test x"$$OUT" = x'Some changes. [link:https://github.com/networkupstools/nut/issues/333[#333], PRs link:https://github.com/networkupstools/nut/pull/123[#123], link:https://github.com/networkupstools/nut/pull/345[#345]; issues link:https://github.com/networkupstools/nut/issues/789[#789], link:https://github.com/networkupstools/nut/issues/99[#99], advisories link:https://github.com/networkupstools/nut/security/advisories/GHSA-1234-5678-90ab[GHSA-1234-5678-90ab], link:https://github.com/networkupstools/nut/issues/12345[#12345]]' || exit ; \
+		echo "OK: $? returned expected output" ; \
+	 else \
+		echo "SKIPPED: perl not available"; \
+	 fi
+
+check-local: check-asciidoc-github-links
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
