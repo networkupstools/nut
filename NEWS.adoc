@@ -379,6 +379,12 @@ https://github.com/networkupstools/nut/milestone/13
       report the ability to check `CERTIDENT` information. [#3331]
     * Introduced support for "authconf" files to store and convey NUT client
       authentication details. [issue #3329]
+    * Added C/C++ client support for multiple independent OpenSSL contexts
+      in the same process, or using multiple NSS client certificates with
+      its single context, for ability to connect to NUT data servers managed
+      by different entities (e.g. certificate authorities and client/server
+      realms). In-tree multiple-connection clients (`upsmon`, `upsstats.cgi`,
+      `upslog`) were updated to use this feature. [issue #3439]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
