@@ -68,7 +68,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - The PyQt5 and PyQt6 NUT-Monitor commands now share one Python 3
    implementation. The dispatcher accepts `NUT_MONITOR_QT=5` or
-   `NUT_MONITOR_QT=6` to require a particular backend.
+   `NUT_MONITOR_QT=6` to require a particular backend. [PR #3596]
 
  - Introduced an experimental `apcmicrolink` driver for devices with
    the APC Microlink protocol on serial port connections. Tested against
