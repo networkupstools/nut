@@ -180,6 +180,10 @@ struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
 /* NOTE: init effectively only runs once; re-runs quickly skip out */
 /* Legacy init function, prefer upscli_init2() with support for OpenSSL
  * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
+/* Return values:
+ *   1 on success (upscli_connect and upscli_sslinit can be used),
+ *  -1 on hard error (failed to read crypto material, etc.)
+ */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
 int upscli_init_authconf(upscli_authconf_t *ac);
