@@ -280,6 +280,9 @@ public:
 	void startTLS();
 	bool isSSL()const;
 
+	void *setSSLContext(void *ssl_ctx);
+	void *getSSLContext() const;
+
 	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
@@ -912,6 +915,18 @@ Socket::~Socket()
 void Socket::setTimeout(time_t timeout)
 {
 	_tv.tv_sec = timeout;
+}
+
+void *Socket::setSSLContext(void *ssl_ctx)
+{
+	void *previous = _ssl_ctx;
+	_ssl_ctx = static_cast<SSL_CTX*>(ssl_ctx);
+	return previous;
+}
+
+void *Socket::getSSLContext() const
+{
+	return _ssl_ctx;
 }
 
 void Socket::setDebugConnect(bool d)
@@ -3819,6 +3834,22 @@ void SSLConfig_NSS::apply(TcpClient& client) const
 void TcpClient::setSSLConfig(const SSLConfig& config)
 {
 	config.apply(*this);
+}
+
+void *TcpClient::setSSLContext(void *ssl_ctx)
+{
+	if (!_socket) {
+		return nullptr;
+	}
+	return _socket->setSSLContext(ssl_ctx);
+}
+
+void *TcpClient::getSSLContext() const
+{
+	if (!_socket) {
+		return nullptr;
+	}
+	return _socket->getSSLContext();
 }
 
 void TcpClient::setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name, const char *certhost_addr, const char *certhost_name)
