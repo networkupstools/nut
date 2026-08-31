@@ -71,6 +71,14 @@ extern "C" {
 #include "parseconf.h"
 #include "authconf.h"
 
+/* Forward declaration: SSL context configuration handle (opaque outside
+ * of upsclient.c; size and contents are dependent on build configuration).
+ * Obtained via upscli_get_or_create_ssl_context() method, and used with
+ * upscli_set_ssl_context(). Holds cached CA bundles, client cert identity,
+ * verify mode, and SSL backend dependent data - shared across connections.
+ */
+typedef struct upscli_ssl_context_config_s upscli_ssl_context_config_t;
+
 #ifdef WITH_OPENSSL
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
 typedef struct {
@@ -114,18 +122,21 @@ typedef struct {
 	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
 	 * same for different builds, and add new data items in the end! */
 
-	/* SSL context configuration (trusted CA, client cert identity, verify mode):
-	 * NULL means use the ambient default set by upscli_init*(); a non-NULL
-	 * opaque pointer (obtained via upscli_get_or_create_ssl_context()) attaches
-	 * a cached context config to this connection for per-connection client cert
-	 * identity on NSS, or per-connection SSL_CTX on OpenSSL. The context is
-	 * shared and NOT owned by this connection; it is freed only by upscli_cleanup(). */
+	/* SSL context configuration: cached CA bundle(s), client certificate
+	 * identity, and certificate verification mode. When built with SSL
+	 * support, NULL means to use the ambient default set by upscli_init*();
+	 * non-NULL is an opaque handle (from upscli_get_or_create_ssl_context())
+	 * to a shared registry entry. Per-connection (NSS, single context per
+	 * process) or per-context (OpenSSL) client certificate identity is
+	 * resolved via this registry. The connection does NOT own this entry;
+	 * it is freed only by upscli_cleanup() after all connections are
+	 * disconnected. As far as clients are concerned, this is a void-like
+	 * pointer that they get from one method and pass on to another. */
+	upscli_ssl_context_config_t	*ssl_ctx;
 #ifdef WITH_OPENSSL
 	openssl_cert_verify_data_t	*openssl_cert_verify_data;
-	void	*ssl_ctx;	/* really: (upscli_ssl_context_config_t*) - opaque handle */
 #else
-	void	*extra_reserved;
-	void	*ssl_ctx;	/* padding for struct size in different build variants */
+	void	*extra_reserved;	/* padding for struct size compatibility across build variants */
 #endif /* WITH_OPENSSL */
 
 }	UPSCONN_t;

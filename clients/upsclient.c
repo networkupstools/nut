@@ -225,7 +225,7 @@ static int upscli_default_connect_timeout_initialized = 0;
  *  only once) - see notes at upscli_get_or_create_ssl_context() for how NSS
  *  connections still get a per-connection client certificate identity.
  */
-typedef struct upscli_ssl_context_config_s {
+struct upscli_ssl_context_config_s {
 	int	certverify;
 	char	*certpath;
 	char	*certname;	/* CERTIDENT nickname/subject */
@@ -238,7 +238,7 @@ typedef struct upscli_ssl_context_config_s {
 
 	unsigned int	refcount;
 	struct upscli_ssl_context_config_s	*next;
-} upscli_ssl_context_config_t;
+};
 
 static upscli_ssl_context_config_t	*ssl_context_registry = NULL;
 
