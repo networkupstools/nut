@@ -3025,6 +3025,21 @@ static int try_connect(utype_t *ups)
 		flags |= UPSCLI_CONN_CERTVERIF;
 	}
 
+	/* Set up per-connection SSL context if available for this specific UPS.
+	 * This allows different UPS devices to use different client certificates
+	 * even when connecting through the same process. */
+	{
+		char str_port[16];
+		upscli_authconf_t *ac = upscli_get_authconf_item(NULL, ups->hostname,
+			snprintf(str_port, sizeof(str_port), "%" PRIu16, ups->port) > 0 ? str_port : NULL, 1);
+		if (ac) {
+			void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+			if (ssl_ctx) {
+				upscli_set_ssl_context(&ups->conn, ssl_ctx);
+			}
+		}
+	}
+
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
 	if (ret < 0) {

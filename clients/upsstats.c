@@ -540,10 +540,8 @@ static void ups_connect(void)
 		exit(EXIT_FAILURE);
 	}
 
-	/* FIXME: Currently libupsclient allows for one SSL context shared
-	 *  by all connections, specifically the CERTIDENT of the client.
-	 *  We can have multiple CERTHOST certificates (and/or reading
-	 *  users/passwords) though. */
+	/* NOTE: Per-connection SSL contexts now supported via registry.
+	 *  Each connection can have different CERTHOST and/or client certificates. */
 	ac_current = upscli_get_authconf_item(
 		NULL, hostname,
 		snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL,
@@ -561,6 +559,15 @@ static void ups_connect(void)
 
 	flags_ssl = flags_ssl_default;
 	upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
+
+	/* Set up per-connection SSL context if available */
+	{
+		void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac_current);
+		if (ssl_ctx) {
+			upscli_set_ssl_context(&ups, ssl_ctx);
+		}
+	}
+
 	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
