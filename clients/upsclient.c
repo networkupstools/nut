@@ -493,13 +493,20 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 	SECKEYPrivateKey *privKey;
 	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
 	if (status == SECFailure) {
-		if (sslcertname != NULL) {
-			cert = PK11_FindCertFromNickname(sslcertname, NULL);
+		/* Prefer the per-connection identity (if any) over the library-wide
+		 * default, so different connections in one process can present
+		 * different client certs from the same shared NSS DB. Pass "arg"
+		 * (this connection) through as wincx, so nss_password_callback()
+		 * can likewise resolve a per-connection password. */
+		const char	*certname = (arg && arg->certident_name) ? arg->certident_name : sslcertname;
+
+		if (certname != NULL) {
+			cert = PK11_FindCertFromNickname(certname, arg);
 			if(cert==NULL)	{
 				upslogx(LOG_ERR, "Can not find self-certificate");
 				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
 			}else{
-				privKey = PK11_FindKeyByAnyCert(cert, NULL);
+				privKey = PK11_FindKeyByAnyCert(cert, arg);
 				if(privKey==NULL){
 					upslogx(LOG_ERR, "Can not find private key related to self-certificate");
 					nss_error("GetClientAuthData / PK11_FindKeyByAnyCert");
