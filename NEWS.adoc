@@ -277,6 +277,10 @@ https://github.com/networkupstools/nut/milestone/13
       `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
+    * Fixed a NULL pointer dereference when setting exact outlet mappings
+      without a corresponding numbered outlet template, and restored handling
+      of exact server-side outlet variables and commands. [issue #3360,
+      PR #3610]
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec

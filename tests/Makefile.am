@@ -212,6 +212,46 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+if WITH_SNMP
+SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c \
+	apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
+	baytech-mib.c baytech-rpc3nc-mib.c bestpower-mib.c \
+	compaq-mib.c cyberpower-mib.c \
+	delta_ups-mib.c \
+	eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
+	eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c eaton-pdu-nlogic-mib.c \
+	eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
+	eaton-ups-pwnm2-mib.c eaton-ups-pxg-mib.c \
+	emerson-avocent-pdu-mib.c \
+	hpe-pdu-mib.c hpe-pdu3-cis-mib.c huawei-mib.c \
+	ietf-mib.c \
+	mge-mib.c \
+	netvision-mib.c \
+	raritan-pdu-mib.c raritan-px2-mib.c \
+	vertiv-mib.c voltronic-mib.c \
+	xppc-mib.c
+
+LINKED_SOURCE_FILES += $(SNMP_UPS_TEST_DRIVER_SOURCES)
+
+$(SNMP_UPS_TEST_DRIVER_SOURCES):
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/$@" '$@'
+
+TESTS += snmp-ups-setvar-test
+snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c
+nodist_snmp_ups_setvar_test_SOURCES = $(SNMP_UPS_TEST_DRIVER_SOURCES)
+snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS)
+snmp_ups_setvar_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
+snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
+if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_setvar_test_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+endif WITH_SNMP
+
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp

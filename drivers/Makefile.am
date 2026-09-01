@@ -430,23 +430,6 @@ endif !WITH_OPENSSL
   snmp_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 
-if WITH_SNMP
-TESTS = snmp-ups-setvar-test
-check_PROGRAMS = $(TESTS)
-snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c $(snmp_ups_SOURCES)
-snmp_ups_setvar_test_CFLAGS = $(snmp_ups_CFLAGS)
-snmp_ups_setvar_test_LDADD = libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
-snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
-if WITH_SSL
-if !WITH_OPENSSL
-  snmp_ups_setvar_test_CFLAGS += -UNETSNMP_USE_OPENSSL
-endif !WITH_OPENSSL
-  snmp_ups_setvar_test_CFLAGS += $(LIBSSL_CFLAGS)
-  snmp_ups_setvar_test_LDADD += $(LIBSSL_LIBS)
-  snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
-endif WITH_SSL
-endif WITH_SNMP
-
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
