@@ -869,6 +869,8 @@ Socket::Socket():
 # endif
 # ifdef WITH_OPENSSL
 	_ssl_ctx(nullptr),
+# elif defined(WITH_NSS)
+	_nss_initialized(false),
 # endif
 # if defined(WITH_OPENSSL)
 	_verify_depth(9),	/* openssl default */
@@ -921,14 +923,23 @@ void Socket::setTimeout(time_t timeout)
 
 void *Socket::setSSLContext(void *ssl_ctx)
 {
+#ifdef WITH_OPENSSL
 	void *previous = _ssl_ctx;
 	_ssl_ctx = static_cast<SSL_CTX*>(ssl_ctx);
 	return previous;
+#else
+	NUT_UNUSED_VARIABLE(ssl_ctx);
+	return nullptr;
+#endif
 }
 
 void *Socket::getSSLContext() const
 {
+#ifdef WITH_OPENSSL
 	return _ssl_ctx;
+#else
+	return nullptr;
+#endif
 }
 
 void Socket::setDebugConnect(bool d)
