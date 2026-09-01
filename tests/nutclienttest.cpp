@@ -230,6 +230,17 @@ void NutClientTest::test_ssl_context_registry() {
 	void *initial = client.getSSLContext();
 	CPPUNIT_ASSERT_MESSAGE("Expected no initial SSL context", initial == nullptr);
 
+	/* Without OpenSSL support, Socket::setSSLContext()/getSSLContext() are
+	 * stubs that never store the pointer, so skip the round-trip checks. */
+	if (!(nut::TcpClient::getSslCaps() & UPSCLI_SSL_CAPS_OPENSSL)) {
+		void *test_ctx = reinterpret_cast<void *>(0x1234);
+		CPPUNIT_ASSERT_MESSAGE("Expected no previous SSL context from stub setter",
+			client.setSSLContext(test_ctx) == nullptr);
+		CPPUNIT_ASSERT_MESSAGE("Expected stub getter to never report a stored SSL context",
+			client.getSSLContext() == nullptr);
+		return;
+	}
+
 	//std::cerr << "Setting custom SSL context" << std::endl;
 
 	/* Set a custom SSL context (using a test pointer) */
