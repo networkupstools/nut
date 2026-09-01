@@ -3957,6 +3957,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	snmp_info_flags_t vartype = 0;
 	int daisychain_device_number = -1;
+	bool_t is_template_instance = FALSE;
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	const char *val_practical = NULL;
@@ -4042,9 +4043,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_INVALID : (int)STAT_SET_INVALID);
 	}
 
-	/* Check if it is outlet / outlet.group, or standard variable */
-	if (strncmp(tmp_varname, "outlet", 6)) {
-		su_info_p = su_find_info(tmp_varname);
+	/* Check for an exact match before treating outlet names as templates */
+	su_info_p = su_find_info(tmp_varname);
+	if (su_info_p || strncmp(tmp_varname, "outlet", 6)) {
 		/* what if e.g. "device.x.contact" is not found as a "contact"? */
 		if (!su_info_p && strcmp(tmp_varname, varname)) {
 			upsdebugx(2,
@@ -4117,9 +4118,14 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(3, "%s: searching for template\"%s\"", __func__, item_varname);
 		tmp_info_p = su_find_info(item_varname);
 		free(item_varname);
+		if (!tmp_info_p) {
+			free(tmp_varname);
+			return (mode==SU_MODE_INSTCMD ? (int)STAT_INSTCMD_UNKNOWN : (int)STAT_SET_UNKNOWN);
+		}
 
 		/* for an snmp_info_t instance */
 		su_info_p = instantiate_info(tmp_info_p, su_info_p);
+		is_template_instance = TRUE;
 
 		/* check if default value is also a template */
 		if ((su_info_p->dfl != NULL) &&
@@ -4197,7 +4203,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
-		free_info(su_info_p);
+		if (is_template_instance)
+			free_info(su_info_p);
 
 		if (tmp_varname != NULL)
 			free(tmp_varname);
@@ -4216,6 +4223,16 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	val_practical = val ? val : su_info_p->dfl;
+	if (mode == SU_MODE_SETVAR
+	&&  (su_info_p->info_flags & ST_FLAG_RW)
+	&&  (su_info_p->flags & SU_FLAG_ABSENT)
+	&&  su_info_p->OID == NULL
+	) {
+		dstate_setinfo(varname, "%s", val_practical);
+		retval = STAT_SET_HANDLED;
+		goto cleanup;
+	}
+
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, val_practical);
 	}
@@ -4279,8 +4296,9 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		}
 	}
 
+cleanup:
 	/* Free template (outlet and outlet.group) */
-	if (!strncmp(tmp_varname, "outlet", 6))
+	if (is_template_instance)
 		free_info(su_info_p);
 	free(tmp_varname);
 
