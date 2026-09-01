@@ -4333,6 +4333,7 @@ int main(int argc, char *argv[])
 			: "!");
 		fflush(stdout);
 	} else {
+		/* NOTE: shutdowncmd_concat is constructed without built-in quotes for reporting */
 		upsdebugx(1, "will use a shutdown command (SHUTDOWNCMD): '%s'",
 			NUT_STRARG(shutdowncmd_concat));
 	}
@@ -4341,7 +4342,8 @@ int main(int argc, char *argv[])
 		printf("Warning: no custom notification command defined, just so you know\n");
 		fflush(stdout);
 	} else {
-		upsdebugx(1, "will use custom notification command (NOTIFYCMD): '%s'",
+		/* NOTE: notifycmd_concat is constructed with built-in quotes for reporting */
+		upsdebugx(1, "will use custom notification command (NOTIFYCMD): %s",
 			NUT_STRARG(notifycmd_concat));
 	}
 
