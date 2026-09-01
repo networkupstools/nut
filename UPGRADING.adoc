@@ -87,6 +87,16 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   device, please add `cypress_drain_quirk = 0` in your `ups.conf` and let us
   know. [issue #2534, PR #3563]
 
+- The `huawei-ups2000` driver fixed two serious problems that affected all
+  previous NUT versions. All `huawei-ups2000` users are strongly recommended
+  to upgrade to NUT 2.8.6, all previous versions are considered too unreliable
+  to use. Due to a Modbus compatibility problem, it was not possible to *write
+  to any registers at all* on some UPS models, meaning that changing any
+  *variable* or sending any *instant command* was impossible. Furthermore, due
+  to a broken instant command handler, some instant commands would always fail
+  with a `reg1 is negative` error (even with a compatible UPS), including
+  `bypass.start`, `shutdown.return`, `shutdown.reboot`, and
+  `shutdown.reboot.graceful`. [issue #3593, #3603, PR #3604].
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------
