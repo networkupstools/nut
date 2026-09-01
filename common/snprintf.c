@@ -118,7 +118,8 @@ static void dopr (char *buffer, size_t maxlen, const char *format,
 static void fmtstr (char *buffer, size_t *currlen, size_t maxlen,
                     char *value, int flags, int min, int max);
 static void fmtint (char *buffer, size_t *currlen, size_t maxlen,
-                    LLONG value, int base, int min, int max, int flags);
+                    unsigned LLONG uvalue, int negative,
+                    int base, int min, int max, int flags);
 static void fmtfp (char *buffer, size_t *currlen, size_t maxlen,
                    LDOUBLE fvalue, int min, int max, int flags);
 static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c );
@@ -175,6 +176,7 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
 {
   char ch;
   LLONG value;
+  unsigned LLONG uvalue;
   LDOUBLE fvalue;
   char *strvalue;
   int min;
@@ -313,39 +315,40 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
           value = va_arg (args, LLONG);
         else
           value = va_arg (args, int);
-        fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
+        fmtint (buffer, &currlen, maxlen, (unsigned LLONG)value,
+                (value < 0), 10, min, max, flags);
         break;
       case 'o':
         flags |= DP_F_UNSIGNED;
         if (cflags == DP_C_SHORT)
 #ifdef C89PLUS
-          value = (unsigned short int)va_arg (args, unsigned int);
+          uvalue = (unsigned short int)va_arg (args, unsigned int);
 #else
-          value = va_arg (args, unsigned short int);
+          uvalue = va_arg (args, unsigned short int);
 #endif
         else if (cflags == DP_C_LONG)
-          value = (long)va_arg (args, unsigned long int);
+          uvalue = va_arg (args, unsigned long int);
         else if (cflags == DP_C_LLONG)
-          value = (LLONG)va_arg (args, unsigned LLONG);
+          uvalue = va_arg (args, unsigned LLONG);
         else
-          value = (long)va_arg (args, unsigned int);
-        fmtint (buffer, &currlen, maxlen, value, 8, min, max, flags);
+          uvalue = va_arg (args, unsigned int);
+        fmtint (buffer, &currlen, maxlen, uvalue, 0, 8, min, max, flags);
         break;
       case 'u':
         flags |= DP_F_UNSIGNED;
         if (cflags == DP_C_SHORT)
 #ifdef C89PLUS
-          value = (unsigned short int)va_arg (args, unsigned int);
+          uvalue = (unsigned short int)va_arg (args, unsigned int);
 #else
-          value = va_arg (args, unsigned short int);
+          uvalue = va_arg (args, unsigned short int);
 #endif
         else if (cflags == DP_C_LONG)
-          value = (long)va_arg (args, unsigned long int);
+          uvalue = va_arg (args, unsigned long int);
         else if (cflags == DP_C_LLONG)
-          value = (LLONG)va_arg (args, unsigned LLONG);
+          uvalue = va_arg (args, unsigned LLONG);
         else
-          value = (long)va_arg (args, unsigned int);
-        fmtint (buffer, &currlen, maxlen, value, 10, min, max, flags);
+          uvalue = va_arg (args, unsigned int);
+        fmtint (buffer, &currlen, maxlen, uvalue, 0, 10, min, max, flags);
         break;
       case 'X':
         flags |= DP_F_UP;
@@ -355,17 +358,17 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         flags |= DP_F_UNSIGNED;
         if (cflags == DP_C_SHORT)
 #ifdef C89PLUS
-          value = (unsigned short int)va_arg (args, unsigned int);
+          uvalue = (unsigned short int)va_arg (args, unsigned int);
 #else
-          value = va_arg (args, unsigned short int);
+          uvalue = va_arg (args, unsigned short int);
 #endif
         else if (cflags == DP_C_LONG)
-          value = (long)va_arg (args, unsigned long int);
+          uvalue = va_arg (args, unsigned long int);
         else if (cflags == DP_C_LLONG)
-          value = (LLONG)va_arg (args, unsigned LLONG);
+          uvalue = va_arg (args, unsigned LLONG);
         else
-          value = (long)va_arg (args, unsigned int);
-        fmtint (buffer, &currlen, maxlen, value, 16, min, max, flags);
+          uvalue = va_arg (args, unsigned int);
+        fmtint (buffer, &currlen, maxlen, uvalue, 0, 16, min, max, flags);
         break;
       case 'f':
         if (cflags == DP_C_LDOUBLE)
@@ -407,7 +410,8 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       case 'p':
         strvalue = va_arg (args, void *);
         flags |= DP_F_UNSIGNED;
-        fmtint (buffer, &currlen, maxlen, (LLONG) strvalue, 16, min, max, flags);
+        fmtint (buffer, &currlen, maxlen,
+                (unsigned LLONG)(size_t) strvalue, 0, 16, min, max, flags);
         break;
       case 'n':
         if (cflags == DP_C_SHORT)
@@ -504,11 +508,11 @@ static void fmtstr (char *buffer, size_t *currlen, size_t maxlen,
 /* Have to handle DP_F_NUM (ie 0x and 0 alternates) */
 
 static void fmtint (char *buffer, size_t *currlen, size_t maxlen,
-                    LLONG value, int base, int min, int max, int flags)
+                    unsigned LLONG uvalue, int negative,
+                    int base, int min, int max, int flags)
 {
   int signvalue = 0;
-  unsigned LLONG uvalue;
-  char convert[sizeof(value) * CHAR_BIT + 1];
+  char convert[sizeof(uvalue) * CHAR_BIT + 1];
   int place = 0;
   int spadlen = 0; /* amount to space pad */
   int zpadlen = 0; /* amount to zero pad */
@@ -517,13 +521,13 @@ static void fmtint (char *buffer, size_t *currlen, size_t maxlen,
   if (max < 0)
     max = 0;
 
-  uvalue = value;
-
   if(!(flags & DP_F_UNSIGNED))
   {
-    if( value < 0 ) {
+    if( negative ) {
       signvalue = '-';
-      /* Negate as unsigned to handle LLONG_MIN without overflow. */
+      /* uvalue holds the signed argument converted to unsigned
+       * (defined modulo arithmetic); unsigned negation yields its
+       * magnitude without overflow, even for LLONG_MIN. */
       uvalue = -uvalue;
     }
     else
@@ -946,6 +950,12 @@ static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
   static int pointer_num;
 #ifdef HAVE_LONG_LONG_INT
   LLONG llong_nums[] = { ((LLONG)1 << 32) + 1, LLONG_MIN };
+  char *ullong_fmt[] = { "%llu", "%llx", "%llo", NULL };
+  unsigned LLONG ullong_nums[] = {
+    ULLONG_MAX,
+    (unsigned LLONG)1 << (sizeof(unsigned LLONG) * CHAR_BIT - 1),
+    ULLONG_MAX
+  };
 #endif
   char *ptr1;
   char *ptr2;
@@ -983,6 +993,26 @@ static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
       num++;
     }
 
+  snprintf (buf1, sizeof (buf1), "%u", UINT_MAX);
+  sprintf (buf2, "%u", UINT_MAX);
+  if (strcmp (buf1, buf2))
+  {
+    printf("snprintf doesn't match Format: %%u\n\tsnprintf = %s\n\tsprintf  = %s\n",
+        buf1, buf2);
+    fail++;
+  }
+  num++;
+
+  snprintf (buf1, sizeof (buf1), "%lu", ULONG_MAX);
+  sprintf (buf2, "%lu", ULONG_MAX);
+  if (strcmp (buf1, buf2))
+  {
+    printf("snprintf doesn't match Format: %%lu\n\tsnprintf = %s\n\tsprintf  = %s\n",
+        buf1, buf2);
+    fail++;
+  }
+  num++;
+
   snprintf (buf1, sizeof (buf1), "%p", (void *)&pointer_num);
   sprintf (buf2, "%p", (void *)&pointer_num);
   ptr1 = buf1;
@@ -1018,6 +1048,19 @@ static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
     {
       printf("snprintf doesn't match Format: %%lld\n\tsnprintf = %s\n\tsprintf  = %s\n",
           buf1, buf2);
+      fail++;
+    }
+    num++;
+  }
+
+  for (x = 0; ullong_fmt[x] != NULL; x++)
+  {
+    snprintf (buf1, sizeof (buf1), ullong_fmt[x], ullong_nums[x]);
+    sprintf (buf2, ullong_fmt[x], ullong_nums[x]);
+    if (strcmp (buf1, buf2))
+    {
+      printf("snprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
+          ullong_fmt[x], buf1, buf2);
       fail++;
     }
     num++;
