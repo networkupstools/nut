@@ -471,6 +471,10 @@ https://github.com/networkupstools/nut/milestone/13
       with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - Recipes, CI and helper script updates not classified above:
+    * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
+      minimal friction. [#3608]
+    * Introduced `SECURITY.md` for rules about responsible disclosure of
+      potentially exploitable bugs. [#3470]
     * Introduced `ci_build.sh` settings and respective CI workflow settings
       to optionally re-use a `config.cache` file from older runs, and similar
       logic for NIT `nit.sh` to re-use generated certificate and private key

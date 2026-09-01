@@ -260,7 +260,7 @@ libtool: $(LIBTOOL_DEPS)
 # by automake. Note that the INSTALL file is (re-)imposed by autotools
 # runs and is essentially a manual on configure script general usage, so
 # NUT's actual installation notes have had to use a different filename.
-EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
+EXTRA_DIST = AGENTS.md LICENSE-GPL2 LICENSE-GPL3 LICENSE-DCO MAINTAINERS
 
 # Since the renaming of documentation to `*.adoc` extension to help IDE
 # and GitHub UIs to render the source files in a pretty fashion, we need
