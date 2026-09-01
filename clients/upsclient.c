@@ -3047,6 +3047,9 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	tryssl = (flags & UPSCLI_CONN_TRYSSL) != 0 ? 1 : 0;
 
 	if (tryssl || forcessl) {
+		upsdebugx(4, "%s: Attempting SSL connection to %s:%"
+			PRIu16 " (certverify=%d, forcessl=%d, tryssl=%d)",
+			__func__, ups->host, ups->port, certverify, forcessl, tryssl);
 		ret = upscli_sslinit(ups, certverify);
 		if (forcessl && ret != 1) {
 			upslogx(LOG_ERR, "Can not connect to NUT server %s in SSL, disconnect", host);
