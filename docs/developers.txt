@@ -4,6 +4,8 @@ Information for developers
 This document is intended to explain some of the more useful things
 within the tree, and provide a standard for working on the code.
 
+NOTE: Contributors using a coding agent should ensure it reads `AGENTS.md` in the repository root. Tools which do not detect that file automatically should be pointed to it explicitly.
+
 General stuff -- common subdirectory
 ------------------------------------
 
