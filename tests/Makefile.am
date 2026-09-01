@@ -15,7 +15,7 @@ SUBDIRS = . NIT
 # handle that properly
 all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
-EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 
 TESTS =
@@ -52,6 +52,9 @@ $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la \
 $(top_builddir)/clients/libnutclient.la \
 $(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/clients/upslog: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
@@ -310,9 +313,15 @@ memcheck:
 	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
+CHECK_LOCAL_TARGETS = become-user-root-warning-test
 if WITH_VALGRIND
-check-local: memcheck
+CHECK_LOCAL_TARGETS += memcheck
 endif WITH_VALGRIND
+
+check-local: $(CHECK_LOCAL_TARGETS)
+
+become-user-root-warning-test: $(top_builddir)/clients/upslog
+	$(AM_V_at)$(SHELL) $(srcdir)/become-user-root-warning-test.sh
 
 dummy:
 
