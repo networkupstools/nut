@@ -523,6 +523,7 @@ static void fmtint (char *buffer, size_t *currlen, size_t maxlen,
   {
     if( value < 0 ) {
       signvalue = '-';
+      /* Negate as unsigned to handle LLONG_MIN without overflow. */
       uvalue = -uvalue;
     }
     else
