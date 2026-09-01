@@ -54,8 +54,8 @@ $(top_builddir)/clients/libnutclient.la \
 $(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-$(top_builddir)/clients/upslog: dummy @dotMAKE@
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+$(top_builddir)/clients/upslog$(EXEEXT): dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) upslog$(EXEEXT)
 
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
@@ -320,8 +320,8 @@ endif WITH_VALGRIND
 
 check-local: $(CHECK_LOCAL_TARGETS)
 
-become-user-root-warning-test: $(top_builddir)/clients/upslog
-	$(AM_V_at)$(SHELL) $(srcdir)/become-user-root-warning-test.sh
+become-user-root-warning-test: $(top_builddir)/clients/upslog$(EXEEXT)
+	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/become-user-root-warning-test.sh
 
 dummy:
 

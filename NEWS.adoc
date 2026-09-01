@@ -293,6 +293,8 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * POSIX daemons now warn if their real or effective UID remains zero after
+      the common credential switch. [issue #3471, PR #3609]
     * Refactored `common::background()` method used by numerous NUT daemons
       to handle parent and child code paths by separately addressable methods.
       This got used in the shared drivers `main` code file to preclude losing
