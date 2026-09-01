@@ -920,14 +920,6 @@ int main(int argc, char **argv)
 
 			conn = (UPSCONN_t *)xmalloc(sizeof(*conn));
 
-			/* Set up per-connection SSL context if available */
-			{
-				void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac_current);
-				if (ssl_ctx) {
-					upscli_set_ssl_context(conn, ssl_ctx);
-				}
-			}
-
 			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0) {
 				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
 			}
@@ -1054,15 +1046,6 @@ int main(int argc, char **argv)
 		}
 
 		monhost_ups_current->ups = (UPSCONN_t *)xmalloc(sizeof(UPSCONN_t));
-
-		/* Set up per-connection SSL context if available for this specific system */
-		{
-			upscli_authconf_t *ac = upscli_get_authconf_item(NULL, monhost_ups_current->hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, monhost_ups_current->port) > 0 ? str_port : NULL, 1);
-			void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
-			if (ssl_ctx) {
-				upscli_set_ssl_context(monhost_ups_current->ups, ssl_ctx);
-			}
-		}
 
 		if (upscli_connect(monhost_ups_current->ups, monhost_ups_current->hostname, monhost_ups_current->port, flags_ssl) < 0)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",

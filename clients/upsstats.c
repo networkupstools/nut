@@ -560,14 +560,6 @@ static void ups_connect(void)
 	flags_ssl = flags_ssl_default;
 	upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
 
-	/* Set up per-connection SSL context if available */
-	{
-		void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac_current);
-		if (ssl_ctx) {
-			upscli_set_ssl_context(&ups, ssl_ctx);
-		}
-	}
-
 	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",

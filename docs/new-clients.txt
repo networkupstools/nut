@@ -61,9 +61,15 @@ settings for each server.
 ------
   upscli_authconf_t *ac = upscli_get_authconf_item(NULL, hostname, port_str, 1);
   void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+
+  /* NOTE: this clause is just an example of what happens
+   * under the hood; actually the upscli_tryconnect() method
+   * clears "conn" and finds or creates the suitable cached
+   * context by itself, anew every time. */
   if (ssl_ctx) {
       upscli_set_ssl_context(conn, ssl_ctx);
   }
+
   upscli_connect(conn, hostname, port, flags);
 ------
 

@@ -2425,12 +2425,50 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 # endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
+	if (!ups) {
+		return -1;
+	}
+
+	if (!ups->ssl_ctx) {
+		/* Could be flushed in upscli_tryconnect() */
+		char	str_port[16];
+		upscli_authconf_t *ac = upscli_get_authconf_item(NULL, ups->host,
+			snprintf(str_port, sizeof(str_port), "%" PRIu16, ups->port) > 0 ? str_port : NULL, 1);
+
+		upsdebugx(3, "%s: %s authconf entry for [%s:%s]",
+			__func__, ac ? "Found" : "No", ups->host, str_port);
+
+		if (ac) {
+			/* Set up per-connection SSL context (if available) for
+			 * this specific data server. This allows differently
+			 * hosted UPS devices to use different client certificates
+			 * even when connecting through the same process. */
+			void	*ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+
+			upsdebugx(3, "%s: %s SSL context for [%s:%s]",
+				__func__, ssl_ctx ? "Using" : "NOT using",
+				ups->host, str_port);
+			if (ssl_ctx) {
+				upscli_set_ssl_context(ups, ssl_ctx);
+			} else {
+				if (ac->certverify || ac->certpath || ac->certident || ac->certpasswd || ac->certfile) {
+					upslogx(LOG_WARNING, "Failed upscli_get_or_create_ssl_context_authconf() for [%s:%s] while SSL was required", ups->host, str_port);
+					upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_get_or_create_ssl_context_authconf() while SSL was required");
+					exit(EXIT_FAILURE);
+				}
+				upslogx(LOG_WARNING, "Failed upscli_get_or_create_ssl_context_authconf() for [%s:%s] but SSL ability was not required", ups->host, str_port);
+			}
+		}
+	}
+
 	/* Intend to initialize upscli with no ssl db if not already done.
 	 * Compatibility stuff for old clients which do not initialize them.
 	 */
-	if (upscli_initialized==0) {
-		upsdebugx(3, "upscli not initialized, "
-			"force initialisation without SSL configuration");
+	if (!(ups->ssl_ctx) && !upscli_initialized) {
+		upsdebugx(3, "%s: upscli not initialized, "
+			"force initialisation without SSL configuration", __func__);
+		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
+			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);
 	}
 
