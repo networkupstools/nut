@@ -50,12 +50,17 @@ $(abs_top_builddir)/common/libcommon.la: $(top_builddir)/common/libcommon.la
 
 $(abs_top_builddir)/drivers/dstate.o: $(top_builddir)/drivers/dstate.o
 
+# TODO: Support for libnutprivate* / ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/drivers/dstate.o \
 $(top_builddir)/common/libnutwincompat.la \
+$(top_builddir)/common/libnutdmfstdlib.la \
 $(top_builddir)/common/libnutdmfsnmp.la: @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+LDADD_DMFSTDLIB = $(top_builddir)/common/libnutdmfstdlib.la
 
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
 LN_S_R = @LN_S_R@ -f
@@ -609,7 +614,8 @@ noinst_PROGRAMS += dmf-test
 dmf_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
@@ -683,7 +689,8 @@ noinst_PROGRAMS += dmf-lua-test
 dmf_lua_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_lua_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_lua_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) \
@@ -701,7 +708,8 @@ noinst_PROGRAMS += dmf-fun-test
 dmf_fun_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_fun_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \

@@ -33,6 +33,7 @@
 
 #include "dmfsnmp.h"
 #include "dmfcore.h"
+#include "dmf_stdlib.h"
 
 /*
  *
@@ -344,13 +345,12 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 			}else
 				lua_pcall(self->luaContext,0,0,0);
 # else
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+			dmf_stdlib_log_unsupported_function(self->info_type,
 				self->function_language ? self->function_language : "LUA");
 # endif /* WITH_DMF_LUA */
 		} /* if function_language resolved to "lua*" */
 		else {
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
-				self->function_language);
+			dmf_stdlib_log_unsupported_function(self->info_type, self->function_language);
 		} /* if language is recognized */
 	} /* if code is present */
 	else { /* No code - clean up */
@@ -362,13 +362,12 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 # if WITH_DMF_LUA
 			self->luaContext = NULL;
 # else
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+			dmf_stdlib_log_unsupported_function(self->info_type,
 				self->function_language ? self->function_language : "LUA");
 # endif /* WITH_DMF_LUA */
 		} /* if function_language resolved to "lua*" */
 		else {
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
-				self->function_language);
+			dmf_stdlib_log_unsupported_function(self->info_type, self->function_language);
 		} /* if language is recognized */
 	} /* no code is present */
 #endif /* WITH_DMF_FUNCTIONS */
