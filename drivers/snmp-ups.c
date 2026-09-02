@@ -3497,9 +3497,19 @@ int lua_C_gateway(lua_State *L) {
 	const char	*lua_info_type = lua_tostring(L, 1);
 	int	lua_current_device_number = lua_tointeger(L, 2);
 	const char	*value = NULL;
-	size_t	bufsz = (strlen(lua_info_type) + 12) * sizeof(char);
-	char	*buf = (char *) malloc(bufsz);
+	size_t	bufsz = 0;
+	char	*buf = NULL;
 
+	if (!lua_info_type) {
+		upsdebugx(1, "%s: missing info_type argument", __func__);
+		return -1;
+	}
+
+	/* FIXME: This allocation is a bit fragile: it sizes a buffer
+	 *  from the variable name length, but the function does not
+	 *  validate the Lua argument list before using it. */
+	bufsz = (strlen(lua_info_type) + 12) * sizeof(char);
+	buf = (char *) malloc(bufsz);
 	if (!buf) {
 		upsdebugx(1, "%s: failed to allocate a buffer", __func__);
 		return -1;

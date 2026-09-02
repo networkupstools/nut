@@ -33,6 +33,7 @@
 
 #include "dmfsnmp.h"
 #include "dmfcore.h"
+#include "dmf_stdlib.h"
 
 /*
  *
@@ -203,7 +204,7 @@ snmp_info_type_to_main_function_name(const char * info_type)
 	int j = 0;
 
 	assert(info_type);
-	result = (char *) calloc(strlen(info_type), sizeof(char));
+	result = (char *) calloc(strlen(info_type) + 1, sizeof(char));
 	while(info_type[i]){
 		if(info_type[i] != '.'){
 			result[j] = info_type[i];
@@ -224,7 +225,7 @@ get_param_by_name (const char *name, const char **items)
 	iname = 0;
 	while (items[iname]) {
 		if (strcmp (items[iname],name) == 0) {
-			return strdup(items[iname+1]);
+			return xstrdup(items[iname+1]);
 		}
 		iname += 2;
 	}
@@ -246,7 +247,7 @@ info_lkp_new (int oid, const char *value
 	assert (self);
 	self->oid_value = oid;
 	if (value)
-		self->info_value = strdup (value);
+		self->info_value = xstrdup (value);
 #if WITH_SNMP_LKP_FUN
 	/* TOTHINK: consider WITH_DMF_FUNCTIONS too? */
 	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
@@ -284,11 +285,11 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
 	alarms_info_t *self = (alarms_info_t*) calloc(1, sizeof (alarms_info_t));
 	assert (self);
 	if(oid)
-		self->OID = strdup (oid);
+		self->OID = xstrdup (oid);
 	if(status)
-		self->status_value = strdup (status);
+		self->status_value = xstrdup (status);
 	if(alarm)
-		self->alarm_value = strdup (alarm);
+		self->alarm_value = xstrdup (alarm);
 	return self;
 }
 
@@ -302,20 +303,25 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 #if WITH_DMF_FUNCTIONS
 	, char **function_language, char **function_code
 #endif
+	, const char *conversion, const char *conversion_args
 )
 {
 	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
 	assert (self);
 	if(name)
-		self->info_type = strdup (name);
+		self->info_type = xstrdup (name);
 	self->info_len = multiplier;
 	if(oid)
-		self->OID = strdup (oid);
+		self->OID = xstrdup (oid);
 	if(dfl)
-		self->dfl = strdup (dfl);
+		self->dfl = xstrdup (dfl);
 	self->info_flags = info_flags;
 	self->flags = flags;
 	self->oid2info = lookup;
+	if(conversion)
+		self->conversion = xstrdup (conversion);
+	if(conversion_args)
+		self->conversion_args = xstrdup (conversion_args);
 #if WITH_DMF_SETVAR
 	self->setvar = setvar;
 #endif	/* WITH_DMF_SETVAR */
@@ -344,13 +350,12 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 			}else
 				lua_pcall(self->luaContext,0,0,0);
 # else
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+			dmf_stdlib_log_unsupported_function(self->info_type,
 				self->function_language ? self->function_language : "LUA");
 # endif /* WITH_DMF_LUA */
 		} /* if function_language resolved to "lua*" */
 		else {
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
-				self->function_language);
+			dmf_stdlib_log_unsupported_function(self->info_type, self->function_language);
 		} /* if language is recognized */
 	} /* if code is present */
 	else { /* No code - clean up */
@@ -362,13 +367,12 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 # if WITH_DMF_LUA
 			self->luaContext = NULL;
 # else
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+			dmf_stdlib_log_unsupported_function(self->info_type,
 				self->function_language ? self->function_language : "LUA");
 # endif /* WITH_DMF_LUA */
 		} /* if function_language resolved to "lua*" */
 		else {
-			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
-				self->function_language);
+			dmf_stdlib_log_unsupported_function(self->info_type, self->function_language);
 		} /* if language is recognized */
 	} /* no code is present */
 #endif /* WITH_DMF_FUNCTIONS */
@@ -383,15 +387,15 @@ info_mib2nut_new (const char *name, const char *version,
 	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
 	if(name)
-		self->mib_name = strdup (name);
+		self->mib_name = xstrdup (name);
 	if(version)
-		self->mib_version = strdup (version);
+		self->mib_version = xstrdup (version);
 	if(oid_power_status)
-		self->oid_pwr_status = strdup (oid_power_status);
+		self->oid_pwr_status = xstrdup (oid_power_status);
 	if(oid_auto_check)
-		self->oid_auto_check = strdup (oid_auto_check);
+		self->oid_auto_check = xstrdup (oid_auto_check);
 	if(sysOID)
-		self->sysOID = strdup (sysOID);
+		self->sysOID = xstrdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
 
@@ -402,12 +406,12 @@ info_mib2nut_new (const char *name, const char *version,
 dmf_function_t *
 function_new (const char *name, const char *language){
 	dmf_function_t *self = (dmf_function_t*) calloc(1, sizeof(dmf_function_t));
-	self->name = strdup (name);
+	self->name = xstrdup (name);
 	if (language == NULL) {
-		self->language = strdup ("lua-5.1");
+		self->language = xstrdup ("lua-5.1");
 		upsdebugx(1, "Language not specified for DMF function %s, assuming %s by default", self->name, self->language);
 	} else {
-		self->language = strdup (language);
+		self->language = xstrdup (language);
 		upsdebugx(1, "Language was specified for DMF function %s : %s", self->name, self->language);
 	}
 	return self;
@@ -1035,6 +1039,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 #if WITH_DMF_SETVAR
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 #endif	/* WITH_DMF_SETVAR */
+	arg[7] = get_param_by_name(SNMP_CONVERSION, attrs);
+	arg[8] = get_param_by_name(SNMP_CONVERSION_ARGS, attrs);
 
 #if WITH_DMF_FUNCTIONS
 	arg[6] = get_param_by_name(TYPE_FUNCTIONSET, attrs);
@@ -1483,7 +1489,7 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 	{
 		alist_t *sub_element = alist_get_last_element(list);
 		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(sub_element);
-		func->code = strdup(function_text);
+		func->code = xstrdup(function_text);
 		free(function_text);
 		function_text = NULL;
 	}
@@ -1544,6 +1550,9 @@ mibdmf_parse_begin_cb(void *parsed_data)
 		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() was called with parsed_data==NULL");
 		return ERR;
 	}
+	/* Reset the "saw an unsupported dynamic-language function" flag for
+	 * this source (file/string); see mibdmf_parse_finish_cb() below. */
+	dmf_stdlib_reset_unsupported_function_flag();
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
 	if (mibdmf_get_aux_list(dmp)==NULL) {
@@ -1562,6 +1571,21 @@ mibdmf_parse_finish_cb(void *parsed_data, int result)
 	if (dmp==NULL) {
 		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() was called with parsed_data==NULL");
 		return ECANCELED;
+	}
+
+	/* Strict policy: if any mapping entry in this source referenced a
+	 * dynamic-language function this build can not honor, reject the
+	 * whole file/string instead of silently keeping the static-table
+	 * entries that did parse (the 'drop' policy just skips the entry
+	 * and lets the rest of the file load normally). */
+	if (result == 0 && dmf_stdlib_had_unsupported_function()
+	&& dmf_stdlib_get_function_policy() == DMF_FUNCTION_POLICY_STRICT
+	) {
+		upslogx(LOG_ERR, "mibdmf_parse_finish_cb(): rejecting this DMF source: "
+			"at least one mapping entry referenced a dynamic-language function "
+			"not supported by this build (set NUT_DMF_FUNCTION_POLICY=drop to "
+			"only skip such entries instead)");
+		result = ECANCELED;
 	}
 
 	/* Extend or truncate the tables to the current amount of known entries
