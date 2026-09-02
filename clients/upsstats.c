@@ -91,8 +91,15 @@ static int	skip_clause = 0, skip_block = 0;
 
 static void init_authconf(void) {
 	if (authconf_configured) {
-		upsdebugx(1, "Using configured auth config file: %s", authconf_configured);
-		upscli_read_authconf_file(authconf_configured, 1, -1);
+		if (!strcmp(authconf_configured, "none")) {
+			upsdebugx(1, "Using AUTHCONF='%s': skipping auth config", authconf_configured);
+		} else if (!strcmp(authconf_configured, "default")) {
+			upsdebugx(1, "Using AUTHCONF='%s': require a user or system provided file", authconf_configured);
+			upscli_read_authconf_file(NULL, 1, -1);
+		} else {
+			upsdebugx(1, "Using configured auth config file: %s", authconf_configured);
+			upscli_read_authconf_file(authconf_configured, 1, -1);
+		}
 	} else {
 		upsdebugx(1, "Using best-effort auth config detection");
 		upscli_read_authconf_file(NULL, 0, 1);
@@ -1519,7 +1526,7 @@ static void load_hosts_conf(int handle_MONITOR)
 		if (ctx.numargs < 2)
 			continue;
 
-		/* AUTHCONF <filename> */
+		/* AUTHCONF (<filename> | "default" | "none") */
 		if (!strcmp(ctx.arglist[0], "AUTHCONF")) {
 			free(authconf_configured);
 			authconf_configured = xstrdup(ctx.arglist[1]);

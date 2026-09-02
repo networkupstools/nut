@@ -2557,7 +2557,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
-	/* AUTHCONF <path-to-file> */
+	/* AUTHCONF (<path-to-file> | "default" | "none") */
 	if (!strcmp(arg[0], "AUTHCONF")) {
 		free(authconf_configured);
 		authconf_configured = xstrdup(arg[1]);
@@ -2817,8 +2817,15 @@ static void loadconfig(void)
 		 * loading a file now would at best populate any missing points.
 		 */
 		if (authconf_configured) {
-			upsdebugx(1, "Using configured auth config file: %s", authconf_configured);
-			upscli_read_authconf_file(authconf_configured, 1, -1);
+			if (!strcmp(authconf_configured, "none")) {
+				upsdebugx(1, "Using AUTHCONF='%s': skipping auth config", authconf_configured);
+			} else if (!strcmp(authconf_configured, "default")) {
+				upsdebugx(1, "Using AUTHCONF='%s': require a user or system provided file", authconf_configured);
+				upscli_read_authconf_file(NULL, 1, -1);
+			} else {
+				upsdebugx(1, "Using configured auth config file: %s", authconf_configured);
+				upscli_read_authconf_file(authconf_configured, 1, -1);
+			}
 		} else {
 			upsdebugx(1, "Using best-effort auth config detection");
 			upscli_read_authconf_file(NULL, 0, 1);
