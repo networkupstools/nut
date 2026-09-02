@@ -50,7 +50,7 @@ dmf_stdlib_had_unsupported_function(void)
 dmf_function_policy_t
 dmf_stdlib_get_function_policy(void)
 {
-	const char *s = getenv("NUT_DMF_FUNCTION_POLICY");
+	const char	*s = getenv("NUT_DMF_FUNCTION_POLICY");
 
 	if (s) {
 		if (!strcasecmp(s, "drop"))
@@ -68,7 +68,7 @@ dmf_stdlib_get_function_policy(void)
 dmf_function_policy_t
 dmf_stdlib_log_unsupported_function(const char *context, const char *capability)
 {
-	dmf_function_policy_t policy = dmf_stdlib_get_function_policy();
+	dmf_function_policy_t	policy = dmf_stdlib_get_function_policy();
 
 	dmf_stdlib_unsupported_function_seen = 1;
 
@@ -82,7 +82,28 @@ dmf_stdlib_log_unsupported_function(const char *context, const char *capability)
 			capability ? capability : "<unknown>");
 		break;
 	case DMF_FUNCTION_POLICY_STRICT:
-	default:
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+	default:	/* Must not occur. */
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		upslogx(LOG_ERR,
 			"DMF: rejecting mapping table - entry '%s' requires capability '%s' "
 			"which is not supported/recognized by this build "
@@ -98,7 +119,7 @@ dmf_stdlib_log_unsupported_function(const char *context, const char *capability)
 const char *
 nut_scale_format_static(double value, double factor, const char *fmt)
 {
-	static char buf[32];
+	static char	buf[32];
 
 	if (!fmt || !*fmt)
 		fmt = "%0.1f";
@@ -106,15 +127,15 @@ nut_scale_format_static(double value, double factor, const char *fmt)
 	/* NOTE: caller-provided fmt is expected to be a single numeric
 	 * conversion (as used throughout the codebase for this pattern);
 	 * we do not validate it further here. */
-	snprintf(buf, sizeof(buf), fmt, value * factor);
+	snprintf_dynamic(buf, sizeof(buf), fmt, "%f", value * factor);
 	return buf;
 }
 
 const char *
 nut_temperature_deci_to_celsius_static(long value_deci, int unit)
 {
-	static char buf[32];
-	long celsius_value = value_deci;
+	static char	buf[32];
+	long	celsius_value = value_deci;
 
 	memset(buf, 0, sizeof(buf));
 
@@ -142,8 +163,8 @@ nut_temperature_deci_to_celsius_static(long value_deci, int unit)
 const char *
 nut_usdate_to_isodate_static(const char *usdate)
 {
-	static char buf[32];
-	struct tm tm;
+	static char	buf[32];
+	struct tm	tm;
 
 	if (!usdate)
 		return NULL;
@@ -168,7 +189,7 @@ nut_usdate_to_isodate_static(const char *usdate)
 const char *
 nut_phase_name_static(int index, int total_phases)
 {
-	static char buf[8];
+	static char	buf[8];
 
 	if (index < 1)
 		return NULL;
@@ -197,7 +218,7 @@ nut_phase_name_static(int index, int total_phases)
 const char *
 nut_phase_pair_name_static(int n1, int n2)
 {
-	static char buf[16];
+	static char	buf[16];
 
 	if (n1 < 1 || n1 > 3 || n2 < 0 || n2 > 3)
 		return NULL;
@@ -215,9 +236,9 @@ const char *
 nut_dmf_apply_conversion(const char *dmf_name, const char *args,
 	double raw_number, const char *raw_string, const char *context)
 {
-	char argbuf[128];
-	char *save = NULL;
-	char *tok1 = NULL, *tok2 = NULL;
+	char	argbuf[128];
+	char	*save = NULL;
+	char	*tok1 = NULL, *tok2 = NULL;
 
 	if (!dmf_name)
 		return NULL;
@@ -230,13 +251,13 @@ nut_dmf_apply_conversion(const char *dmf_name, const char *args,
 	}
 
 	if (!strcmp(dmf_name, "scale_format")) {
-		double factor = tok1 ? atof(tok1) : 1.0;
-		const char *fmt = tok2 ? tok2 : "%0.1f";
+		double	factor = tok1 ? atof(tok1) : 1.0;
+		const char	*fmt = tok2 ? tok2 : "%0.1f";
 		return nut_scale_format_static(raw_number, factor, fmt);
 	}
 
 	if (!strcmp(dmf_name, "temperature_deci_to_celsius")) {
-		int unit = NUT_STDLIB_TEMP_CELSIUS;
+		int	unit = NUT_STDLIB_TEMP_CELSIUS;
 		if (tok1) {
 			if (!strcasecmp(tok1, "kelvin"))
 				unit = NUT_STDLIB_TEMP_KELVIN;
@@ -255,12 +276,12 @@ nut_dmf_apply_conversion(const char *dmf_name, const char *args,
 	}
 
 	if (!strcmp(dmf_name, "phase_name")) {
-		int total_phases = tok1 ? atoi(tok1) : 1;
+		int	total_phases = tok1 ? atoi(tok1) : 1;
 		return nut_phase_name_static((int) raw_number, total_phases);
 	}
 
 	if (!strcmp(dmf_name, "phase_pair_name")) {
-		int n2 = tok1 ? atoi(tok1) : 0;
+		int	n2 = tok1 ? atoi(tok1) : 0;
 		return nut_phase_pair_name_static((int) raw_number, n2);
 	}
 

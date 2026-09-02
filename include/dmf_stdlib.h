@@ -87,12 +87,12 @@ int dmf_stdlib_had_unsupported_function(void);
 
 /* --- Generic numeric scale/format helper ---
  * Multiply "value" by "factor" and format the result with the given
- * printf-style "fmt" (e.g. "%0.1f", "%.2f"). Returns a pointer to an
- * internal static buffer (like the rest of this codebase's similar
- * helpers) - NOT thread-safe, do not hold the pointer across another
- * call from the same thread. Covers the very common "timesN"/"/N"
- * driver-local helpers (legrand_times10, mge_powerfactor_conversion,
- * mge_battery_capacity_fun, etc). */
+ * printf-style "fmt" (e.g. "%0.1f", "%.2f" -- must be a variant of "%f").
+ * Returns a pointer to an internal static buffer (like the rest of this
+ * codebase's similar helpers) - NOT thread-safe, do not hold the pointer
+ * across another call from the same thread. Covers the very common "times N"
+ * or "divide by N" driver-local helpers (mge_powerfactor_conversion,
+ * mge_battery_capacity_fun, legrand_times10, etc). */
 const char *nut_scale_format_static(double value, double factor, const char *fmt);
 
 /* --- Temperature conversion ---
