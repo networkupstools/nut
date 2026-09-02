@@ -603,6 +603,7 @@ values mean never exiting on its own accord.
 
 *AUTHCONF* 'filename'::
 Optional linkman:nutauth.conf[5] file location to use for this client.
+A non-absolute path is treated as relative to NUT configuration directory.
 +
 When compiled with SSL support, this file allows to flexibly customize
 values historically covered by 'CERTPATH', 'CERTFILE', 'CERTIDENT',

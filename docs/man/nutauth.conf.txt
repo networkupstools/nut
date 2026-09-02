@@ -169,6 +169,9 @@ Included files are supported via the `INCLUDE` directive for optionally
 present files, and `INCLUDE_REQUIRED` for files that must be there
 (otherwise the program exits with a fatal error).
 
+WARNING: Any non-absolute paths would be resolved relatively to the NUT
+configuration file location.
+
 Global-scope includes may modify global default items, as well as define
 new sections or overlay items in existing sections.
 
