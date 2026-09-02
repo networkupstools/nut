@@ -29,6 +29,24 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* Sticky flag for "reject whole file" support under the strict policy;
+ * intentionally process-global (not thread-local) like several other
+ * bits of DMF parser state (e.g. 'functions_aux', 'temperature_unit') -
+ * DMF parsing is not currently re-entrant/threaded. */
+static int dmf_stdlib_unsupported_function_seen = 0;
+
+void
+dmf_stdlib_reset_unsupported_function_flag(void)
+{
+	dmf_stdlib_unsupported_function_seen = 0;
+}
+
+int
+dmf_stdlib_had_unsupported_function(void)
+{
+	return dmf_stdlib_unsupported_function_seen;
+}
+
 dmf_function_policy_t
 dmf_stdlib_get_function_policy(void)
 {
@@ -48,27 +66,29 @@ dmf_stdlib_get_function_policy(void)
 }
 
 dmf_function_policy_t
-dmf_stdlib_log_unsupported_function(const char *context, const char *language)
+dmf_stdlib_log_unsupported_function(const char *context, const char *capability)
 {
 	dmf_function_policy_t policy = dmf_stdlib_get_function_policy();
+
+	dmf_stdlib_unsupported_function_seen = 1;
 
 	switch (policy) {
 	case DMF_FUNCTION_POLICY_DROP:
 		upslogx(LOG_WARNING,
-			"DMF: dropping mapping entry for '%s' - dynamic-language "
-			"function in '%s' is not supported by this build "
+			"DMF: dropping mapping entry for '%s' - requested capability '%s' "
+			"is not supported/recognized by this build "
 			"(NUT_DMF_FUNCTION_POLICY=drop)",
 			context ? context : "<unknown>",
-			language ? language : "<unknown>");
+			capability ? capability : "<unknown>");
 		break;
 	case DMF_FUNCTION_POLICY_STRICT:
 	default:
 		upslogx(LOG_ERR,
-			"DMF: rejecting mapping table - entry '%s' uses dynamic-language "
-			"function in '%s' which is not supported by this build "
+			"DMF: rejecting mapping table - entry '%s' requires capability '%s' "
+			"which is not supported/recognized by this build "
 			"(set NUT_DMF_FUNCTION_POLICY=drop to only skip this entry)",
 			context ? context : "<unknown>",
-			language ? language : "<unknown>");
+			capability ? capability : "<unknown>");
 		break;
 	}
 

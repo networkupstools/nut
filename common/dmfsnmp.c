@@ -1543,6 +1543,9 @@ mibdmf_parse_begin_cb(void *parsed_data)
 		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() was called with parsed_data==NULL");
 		return ERR;
 	}
+	/* Reset the "saw an unsupported dynamic-language function" flag for
+	 * this source (file/string); see mibdmf_parse_finish_cb() below. */
+	dmf_stdlib_reset_unsupported_function_flag();
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
 	if (mibdmf_get_aux_list(dmp)==NULL) {
@@ -1561,6 +1564,21 @@ mibdmf_parse_finish_cb(void *parsed_data, int result)
 	if (dmp==NULL) {
 		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() was called with parsed_data==NULL");
 		return ECANCELED;
+	}
+
+	/* Strict policy: if any mapping entry in this source referenced a
+	 * dynamic-language function this build can not honor, reject the
+	 * whole file/string instead of silently keeping the static-table
+	 * entries that did parse (the 'drop' policy just skips the entry
+	 * and lets the rest of the file load normally). */
+	if (result == 0 && dmf_stdlib_had_unsupported_function()
+	&& dmf_stdlib_get_function_policy() == DMF_FUNCTION_POLICY_STRICT
+	) {
+		upslogx(LOG_ERR, "mibdmf_parse_finish_cb(): rejecting this DMF source: "
+			"at least one mapping entry referenced a dynamic-language function "
+			"not supported by this build (set NUT_DMF_FUNCTION_POLICY=drop to "
+			"only skip such entries instead)");
+		result = ECANCELED;
 	}
 
 	/* Extend or truncate the tables to the current amount of known entries

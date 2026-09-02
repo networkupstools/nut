@@ -65,13 +65,25 @@ typedef enum {
 dmf_function_policy_t dmf_stdlib_get_function_policy(void);
 
 /* Log (at LOG_ERR for strict policy, LOG_WARNING for drop policy) that
- * a DMF mapping entry referencing "language" could not be honored in
- * "context" (e.g. a mapping name or file name). Returns the policy that
- * was in effect at the time of the call, so the caller can decide
- * whether to abort processing of the current file/mapping or just
- * skip the one entry. */
+ * a DMF mapping entry could not be honored in "context" (e.g. a mapping
+ * name or file name) because it requires "capability" (a dynamic-language
+ * name such as "lua", or an unrecognized 'conversion=' method name) that
+ * this build does not support/recognize. Returns the policy that was in
+ * effect at the time of the call, so the caller can decide whether to
+ * abort processing of the current file/mapping or just skip the one
+ * entry. */
 dmf_function_policy_t dmf_stdlib_log_unsupported_function(
-	const char *context, const char *language);
+	const char *context, const char *capability);
+
+/* Reset the sticky "an unsupported function was encountered" flag; call
+ * this once at the start of parsing a DMF source (file/string/dir entry).
+ * Used together with dmf_stdlib_had_unsupported_function() to implement
+ * "reject the whole file" behavior for the strict policy. */
+void dmf_stdlib_reset_unsupported_function_flag(void);
+
+/* Returns non-zero if dmf_stdlib_log_unsupported_function() was called at
+ * least once since the last dmf_stdlib_reset_unsupported_function_flag(). */
+int dmf_stdlib_had_unsupported_function(void);
 
 /* --- Generic numeric scale/format helper ---
  * Multiply "value" by "factor" and format the result with the given
