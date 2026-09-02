@@ -50,17 +50,30 @@ $(abs_top_builddir)/common/libcommon.la: $(top_builddir)/common/libcommon.la
 
 $(abs_top_builddir)/drivers/dstate.o: $(top_builddir)/drivers/dstate.o
 
-# TODO: Support for libnutprivate* / ENABLE_SHARED_PRIVATE_LIBS
+# TODO: Support for libnutprivate* / ENABLE_SHARED_PRIVATE_LIBS for the
+# other libs referenced above (libcommon.la, libcommonstr.la, dstate.o,
+# libnutwincompat.la, libnutdmfsnmp.la) - only libnutdmfstdlib.la (below)
+# currently follows the same pattern as tests/Makefile.am.
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/drivers/dstate.o \
 $(top_builddir)/common/libnutwincompat.la \
-$(top_builddir)/common/libnutdmfstdlib.la \
 $(top_builddir)/common/libnutdmfsnmp.la: @dotMAKE@
+	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: @dotMAKE@
+	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+# Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libnutdmfstdlib.la: @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
 LDADD_DMFSTDLIB = $(top_builddir)/common/libnutdmfstdlib.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
 LN_S_R = @LN_S_R@ -f
