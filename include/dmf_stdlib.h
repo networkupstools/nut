@@ -122,6 +122,24 @@ const char *nut_phase_name_static(int index, int total_phases);
  * out-of-range input. */
 const char *nut_phase_pair_name_static(int n1, int n2);
 
+/* --- DMF XML "conversion" attribute dispatcher ---
+ * Apply the named stdlib conversion (one of the DMF_STDLIB_METHODS()
+ * "dmf_name" entries below, e.g. "scale_format") to a raw value coming
+ * from a DMF mapping entry, given its (optional) comma-separated
+ * "args" as found in the DMF XML "conversion_args" attribute:
+ *   scale_format:                  args = "factor[,fmt]"
+ *   temperature_deci_to_celsius:   args = "unit" (celsius|kelvin|fahrenheit)
+ *   usdate_to_isodate:             args ignored, uses raw_string
+ *   phase_name:                    args = "total_phases"
+ *   phase_pair_name:               args = "n2" (raw_number is n1)
+ * "context" is used only for logging (e.g. the mapping's info_type).
+ * Returns a pointer to an internal static buffer, or NULL if dmf_name
+ * is not a recognized method (in which case this also logs via
+ * dmf_stdlib_log_unsupported_function() and applies the current
+ * dmf_function_policy_t, same as an unsupported LUA language would). */
+const char *nut_dmf_apply_conversion(const char *dmf_name, const char *args,
+	double raw_number, const char *raw_string, const char *context);
+
 /* --- Introspection / self-documentation ---
  * A read-only description of each of the methods above, primarily so
  * that:

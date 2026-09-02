@@ -211,6 +211,67 @@ nut_phase_pair_name_static(int n1, int n2)
 	return buf;
 }
 
+const char *
+nut_dmf_apply_conversion(const char *dmf_name, const char *args,
+	double raw_number, const char *raw_string, const char *context)
+{
+	char argbuf[128];
+	char *save = NULL;
+	char *tok1 = NULL, *tok2 = NULL;
+
+	if (!dmf_name)
+		return NULL;
+
+	if (args) {
+		snprintf(argbuf, sizeof(argbuf), "%s", args);
+		tok1 = strtok_r(argbuf, ",", &save);
+		if (tok1)
+			tok2 = strtok_r(NULL, ",", &save);
+	}
+
+	if (!strcmp(dmf_name, "scale_format")) {
+		double factor = tok1 ? atof(tok1) : 1.0;
+		const char *fmt = tok2 ? tok2 : "%0.1f";
+		return nut_scale_format_static(raw_number, factor, fmt);
+	}
+
+	if (!strcmp(dmf_name, "temperature_deci_to_celsius")) {
+		int unit = NUT_STDLIB_TEMP_CELSIUS;
+		if (tok1) {
+			if (!strcasecmp(tok1, "kelvin"))
+				unit = NUT_STDLIB_TEMP_KELVIN;
+			else if (!strcasecmp(tok1, "fahrenheit"))
+				unit = NUT_STDLIB_TEMP_FAHRENHEIT;
+			else if (!strcasecmp(tok1, "celsius"))
+				unit = NUT_STDLIB_TEMP_CELSIUS;
+			else
+				unit = NUT_STDLIB_TEMP_UNKNOWN;
+		}
+		return nut_temperature_deci_to_celsius_static((long) raw_number, unit);
+	}
+
+	if (!strcmp(dmf_name, "usdate_to_isodate")) {
+		return nut_usdate_to_isodate_static(raw_string);
+	}
+
+	if (!strcmp(dmf_name, "phase_name")) {
+		int total_phases = tok1 ? atoi(tok1) : 1;
+		return nut_phase_name_static((int) raw_number, total_phases);
+	}
+
+	if (!strcmp(dmf_name, "phase_pair_name")) {
+		int n2 = tok1 ? atoi(tok1) : 0;
+		return nut_phase_pair_name_static((int) raw_number, n2);
+	}
+
+	/* Unknown conversion name: log via the same policy machinery used
+	 * for an unsupported dynamic-language function - this also sets the
+	 * sticky flag so the strict policy can reject the whole DMF source,
+	 * catching typos in 'conversion="..."' the same way. */
+	dmf_stdlib_log_unsupported_function(context, dmf_name);
+	return NULL;
+}
+
 #define DMF_STDLIB_METHOD_ENTRY(cname, dname, desc, args, ret) \
 	{ #cname, dname, desc, args, ret },
 
