@@ -225,7 +225,7 @@ get_param_by_name (const char *name, const char **items)
 	iname = 0;
 	while (items[iname]) {
 		if (strcmp (items[iname],name) == 0) {
-			return strdup(items[iname+1]);
+			return xstrdup(items[iname+1]);
 		}
 		iname += 2;
 	}
@@ -247,7 +247,7 @@ info_lkp_new (int oid, const char *value
 	assert (self);
 	self->oid_value = oid;
 	if (value)
-		self->info_value = strdup (value);
+		self->info_value = xstrdup (value);
 #if WITH_SNMP_LKP_FUN
 	/* TOTHINK: consider WITH_DMF_FUNCTIONS too? */
 	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
@@ -285,11 +285,11 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
 	alarms_info_t *self = (alarms_info_t*) calloc(1, sizeof (alarms_info_t));
 	assert (self);
 	if(oid)
-		self->OID = strdup (oid);
+		self->OID = xstrdup (oid);
 	if(status)
-		self->status_value = strdup (status);
+		self->status_value = xstrdup (status);
 	if(alarm)
-		self->alarm_value = strdup (alarm);
+		self->alarm_value = xstrdup (alarm);
 	return self;
 }
 
@@ -308,12 +308,12 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
 	assert (self);
 	if(name)
-		self->info_type = strdup (name);
+		self->info_type = xstrdup (name);
 	self->info_len = multiplier;
 	if(oid)
-		self->OID = strdup (oid);
+		self->OID = xstrdup (oid);
 	if(dfl)
-		self->dfl = strdup (dfl);
+		self->dfl = xstrdup (dfl);
 	self->info_flags = info_flags;
 	self->flags = flags;
 	self->oid2info = lookup;
@@ -382,15 +382,15 @@ info_mib2nut_new (const char *name, const char *version,
 	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
 	if(name)
-		self->mib_name = strdup (name);
+		self->mib_name = xstrdup (name);
 	if(version)
-		self->mib_version = strdup (version);
+		self->mib_version = xstrdup (version);
 	if(oid_power_status)
-		self->oid_pwr_status = strdup (oid_power_status);
+		self->oid_pwr_status = xstrdup (oid_power_status);
 	if(oid_auto_check)
-		self->oid_auto_check = strdup (oid_auto_check);
+		self->oid_auto_check = xstrdup (oid_auto_check);
 	if(sysOID)
-		self->sysOID = strdup (sysOID);
+		self->sysOID = xstrdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
 
@@ -401,12 +401,12 @@ info_mib2nut_new (const char *name, const char *version,
 dmf_function_t *
 function_new (const char *name, const char *language){
 	dmf_function_t *self = (dmf_function_t*) calloc(1, sizeof(dmf_function_t));
-	self->name = strdup (name);
+	self->name = xstrdup (name);
 	if (language == NULL) {
-		self->language = strdup ("lua-5.1");
+		self->language = xstrdup ("lua-5.1");
 		upsdebugx(1, "Language not specified for DMF function %s, assuming %s by default", self->name, self->language);
 	} else {
-		self->language = strdup (language);
+		self->language = xstrdup (language);
 		upsdebugx(1, "Language was specified for DMF function %s : %s", self->name, self->language);
 	}
 	return self;
@@ -1482,7 +1482,7 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 	{
 		alist_t *sub_element = alist_get_last_element(list);
 		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(sub_element);
-		func->code = strdup(function_text);
+		func->code = xstrdup(function_text);
 		free(function_text);
 		function_text = NULL;
 	}
