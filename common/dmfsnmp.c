@@ -204,7 +204,7 @@ snmp_info_type_to_main_function_name(const char * info_type)
 	int j = 0;
 
 	assert(info_type);
-	result = (char *) calloc(strlen(info_type), sizeof(char));
+	result = (char *) calloc(strlen(info_type) + 1, sizeof(char));
 	while(info_type[i]){
 		if(info_type[i] != '.'){
 			result[j] = info_type[i];
