@@ -198,6 +198,13 @@
 #define SNMP_DEFAULT "default"
 #define SNMP_LOOKUP "lookup"
 #define SNMP_SETVAR "setvar"
+/* Names a dmf_stdlib.h conversion method (e.g. "scale_format") plus its
+ * comma-separated parameters, applied to the raw SNMP value. Unlike
+ * 'functionset'/LUA, this only dispatches to a fixed, pre-registered C
+ * function by name - no dynamic code execution is involved, so it is
+ * always available (not gated by WITH_DMF_FUNCTIONS). */
+#define SNMP_CONVERSION "conversion"
+#define SNMP_CONVERSION_ARGS "conversion_args"
 /* Info_flags */
 #define SNMP_INFOFLAG_WRITABLE "writable"
 #define SNMP_INFOFLAG_STRING "string"
@@ -437,6 +444,7 @@ snmp_info_t *
 #if WITH_DMF_FUNCTIONS
 		,char **function_language, char **function_code
 #endif	/* WITH_DMF_FUNCTIONS */
+		, const char *conversion, const char *conversion_args
 );
 
 void

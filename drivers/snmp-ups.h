@@ -316,6 +316,13 @@ typedef struct {
 	lua_State *luaContext;
 # endif /* WITH_DMF_LUA  */
 #endif /* WITH_DMF_FUNCTIONS */
+	/* DMF "conversion" attribute: names a dmf_stdlib.h method (and its
+	 * comma-separated parameters) to apply to the raw SNMP value in
+	 * place of the oid2info lookup/multiplier logic. Always present
+	 * (not gated by WITH_DMF_FUNCTIONS): unlike LUA/'functionset', this
+	 * only dispatches to a fixed, pre-registered C function by name. */
+	const char *conversion;
+	const char *conversion_args;
 } snmp_info_t;
 
 #if WITH_DMF_FUNCTIONS

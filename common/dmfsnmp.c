@@ -303,6 +303,7 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 #if WITH_DMF_FUNCTIONS
 	, char **function_language, char **function_code
 #endif
+	, const char *conversion, const char *conversion_args
 )
 {
 	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
@@ -317,6 +318,10 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->info_flags = info_flags;
 	self->flags = flags;
 	self->oid2info = lookup;
+	if(conversion)
+		self->conversion = xstrdup (conversion);
+	if(conversion_args)
+		self->conversion_args = xstrdup (conversion_args);
 #if WITH_DMF_SETVAR
 	self->setvar = setvar;
 #endif	/* WITH_DMF_SETVAR */
@@ -1034,6 +1039,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 #if WITH_DMF_SETVAR
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 #endif	/* WITH_DMF_SETVAR */
+	arg[7] = get_param_by_name(SNMP_CONVERSION, attrs);
+	arg[8] = get_param_by_name(SNMP_CONVERSION_ARGS, attrs);
 
 #if WITH_DMF_FUNCTIONS
 	arg[6] = get_param_by_name(TYPE_FUNCTIONSET, attrs);
