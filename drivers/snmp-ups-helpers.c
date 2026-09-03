@@ -26,6 +26,7 @@
 
 /* NUT SNMP common functions */
 #include "common.h"	/* includes "config.h" which must be the first header */
+#include "dmf_stdlib.h"
 /*
 #include "config.h"
 #include "main.h"
@@ -52,31 +53,15 @@
  * of other compilation units, so separated into a stand-alone file
  **********************************************************************/
 
-static char su_scratch_buf[255];
-
 /* Temperature handling, to convert back to Celsius */
 int temperature_unit = TEMPERATURE_UNKNOWN;
 
 /* Convert a US formated date (mm/dd/yyyy) to an ISO 8601 Calendar date (yyyy-mm-dd) */
 const char *su_usdate_to_isodate_info_fun(void *raw_date)
 {
-	const char *usdate = (char *)raw_date;
-	struct tm tm;
-	memset(&tm, 0, sizeof(struct tm));
-	memset(&su_scratch_buf, 0, sizeof(su_scratch_buf));
-
-	upsdebugx(3, "%s: US date = %s", __func__, usdate);
-
-	/* Try to convert from US date string to time */
-	/* Note strptime returns NULL upon failure, and a ptr to the last
-	 * null char of the string upon success. Just try blindly the conversion! */
-	strptime(usdate, "%m/%d/%Y", &tm);
-	if (strftime(su_scratch_buf, 254, "%F", &tm) != 0) {
-		upsdebugx(3, "%s: successfully reformated: %s", __func__, su_scratch_buf);
-		return su_scratch_buf;
-	}
-
-	return NULL;
+	/* Delegate to the shared dmf_stdlib implementation, reused verbatim
+	 * by DMF XML mappings and (where enabled) LUA glue code. */
+	return nut_usdate_to_isodate_static((const char *)raw_date);
 }
 
 info_lkp_t su_convert_to_iso_date_info[] = {
@@ -90,28 +75,17 @@ info_lkp_t su_convert_to_iso_date_info[] = {
 const char *su_temperature_read_fun(void *raw_snmp_value)
 {
 	const long snmp_value = *((long*)raw_snmp_value);
-	long celsius_value = snmp_value;
 
-	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
+	/* Delegate to the shared dmf_stdlib implementation; NUT_STDLIB_TEMP_*
+	 * values are numerically identical to the historical TEMPERATURE_*
+	 * macros used by 'temperature_unit' (see snmp-ups.h). */
+	const char *result = nut_temperature_deci_to_celsius_static(snmp_value, temperature_unit);
 
-	switch (temperature_unit) {
-		case TEMPERATURE_KELVIN:
-			celsius_value = (snmp_value / 10) - 273.15;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_CELSIUS:
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
-			break;
-		case TEMPERATURE_FAHRENHEIT:
-			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
-			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
-			break;
-		case TEMPERATURE_UNKNOWN:
-		default:
-			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
-			break;
-	}
-	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
-	return su_scratch_buf;
+	if (!result)
+		upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
+	else
+		upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), result);
+
+	return result;
 }
 #endif	/* WITH_SNMP_LKP_FUN_DUMMY */

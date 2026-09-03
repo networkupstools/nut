@@ -23,6 +23,16 @@ CLEANFILES =
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 lib_LTLIBRARIES =
 
+# Shared "standard library" of DMF-related data-conversion helpers
+# (numeric scaling, temperature, dates, phase naming). Built for every
+# configuration (does not depend on WITH_DMF/WITH_NEON/WITH_SNMP etc.)
+# so that both classically-compiled mapping-table drivers (e.g. plain
+# snmp-ups, usbhid-ups subdrivers) and DMF-enabled binaries can link
+# against the very same implementation instead of duplicating it.
+noinst_LTLIBRARIES += libnutdmfstdlib.la
+libnutdmfstdlib_la_SOURCES = dmf_stdlib.c
+libnutdmfstdlib_la_CFLAGS = $(AM_CFLAGS)
+
 if ENABLE_SHARED_PRIVATE_LIBS
 ### Hopefully we can bundle this code together and
 ### install this somewhat away from the public eye?..
@@ -37,6 +47,11 @@ if ENABLE_SHARED_PRIVATE_LIBS
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_SOURCES =
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LIBADD = libcommonclient.la libcommonversion-private.la
 
+  lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_SOURCES =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_LIBADD = libnutdmfstdlib.la \
+    libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs
 ### tucked into an existing deployment); see libtool
@@ -45,11 +60,13 @@ if ENABLE_SHARED_PRIVATE_LIBS
 ### especially when bumping "age" into loss of compatibility with old releases!
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS = -version-info 1:0:0
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS = -version-info 1:0:0
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_LDFLAGS = -version-info 1:0:0
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_all_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_common_client_la_LDFLAGS += -no-undefined
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 endif ENABLE_SHARED_PRIVATE_LIBS
 
@@ -280,7 +297,7 @@ if WITH_DMF
   libnutdmfsnmp_la_LDFLAGS =
 # Note: no LTLIBOBJS here, so we do not conflict when linked along with
 # other libraries we build (typically consumed with libcommonstr.la)
-  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS)
+  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS) libnutdmfstdlib.la
 
 if WITH_LIBLTDL
 # NOTE: the C macro WITH_LIBLTDL=1 will probably be defined by config.h

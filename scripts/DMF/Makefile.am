@@ -50,12 +50,40 @@ $(abs_top_builddir)/common/libcommon.la: $(top_builddir)/common/libcommon.la
 
 $(abs_top_builddir)/drivers/dstate.o: $(top_builddir)/drivers/dstate.o
 
+# TODO: Support for libnutprivate* / ENABLE_SHARED_PRIVATE_LIBS for the
+# other libs referenced above (libcommon.la, libcommonstr.la, dstate.o,
+# libnutwincompat.la, libnutdmfsnmp.la) - only libnutdmfstdlib.la (below)
+# currently follows the same pattern as tests/Makefile.am.
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/drivers/dstate.o \
 $(top_builddir)/common/libnutwincompat.la \
-$(top_builddir)/common/libnutdmfsnmp.la: @dotMAKE@
+$(top_builddir)/common/libnutdmfstdlib.la \
+$(top_builddir)/common/libnutdmfsnmp.la: dummy @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutdmfsnmp.la: $(top_builddir)/common/libnutdmfstdlib.la
+
+if ENABLE_SHARED_PRIVATE_LIBS
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: dummy @dotMAKE@
+	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+
+# Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: \
+    $(top_builddir)/common/libnutdmfstdlib.la \
+    $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+
+# Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+LDADD_DMFSTDLIB = $(top_builddir)/common/libnutdmfstdlib.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
 LN_S_R = @LN_S_R@ -f
@@ -609,7 +637,8 @@ noinst_PROGRAMS += dmf-test
 dmf_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
@@ -683,7 +712,8 @@ noinst_PROGRAMS += dmf-lua-test
 dmf_lua_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_lua_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_lua_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) \
@@ -701,7 +731,8 @@ noinst_PROGRAMS += dmf-fun-test
 dmf_fun_test_SOURCES = $(DMFTEST_SRC)
 nodist_dmf_fun_test_SOURCES = $(DMFTEST_SRC_ADD)
 dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommonstr.la
+	$(top_builddir)/common/libcommonstr.la \
+	$(LDADD_DMFSTDLIB)
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
