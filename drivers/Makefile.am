@@ -20,6 +20,8 @@ $(top_builddir)/common/libnutdmfstdlib.la \
 $(top_builddir)/clients/libupsclient.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+$(top_builddir)/common/libnutdmfsnmp.la: $(top_builddir)/common/libnutdmfstdlib.la
+
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files).
@@ -30,8 +32,8 @@ $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.
 
 if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -89,14 +91,25 @@ endif WITH_USB
   LDADD_DRIVERS_LIBUSB = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
-  LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+  $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: \
+    $(top_builddir)/common/libnutdmfstdlib.la \
+    $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_LDFLAGS += -no-undefined
-endif HAVE_WINDOWS
+
+  # We actually don't pull this one in for the drivers, at least not
+  # on systems like Windows where DLLs must have all symbols, so
+  # copies of libcommon from different linking paths conflict.
+  # So we would rather link that into the DLL all drivers see...
+  LDADD_DMFSTDLIB =
+  LDADD_DRIVERS += $(top_builddir)/common/libnutdmfstdlib.la
+else !HAVE_WINDOWS
+  LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+endif !HAVE_WINDOWS
 
 else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la

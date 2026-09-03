@@ -54,22 +54,32 @@ $(abs_top_builddir)/drivers/dstate.o: $(top_builddir)/drivers/dstate.o
 # other libs referenced above (libcommon.la, libcommonstr.la, dstate.o,
 # libnutwincompat.la, libnutdmfsnmp.la) - only libnutdmfstdlib.la (below)
 # currently follows the same pattern as tests/Makefile.am.
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/drivers/dstate.o \
 $(top_builddir)/common/libnutwincompat.la \
-$(top_builddir)/common/libnutdmfsnmp.la: @dotMAKE@
+$(top_builddir)/common/libnutdmfstdlib.la \
+$(top_builddir)/common/libnutdmfsnmp.la: dummy @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libnutdmfsnmp.la: $(top_builddir)/common/libnutdmfstdlib.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: @dotMAKE@
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: dummy @dotMAKE@
 	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+
 # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: \
+    $(top_builddir)/common/libnutdmfstdlib.la \
+    $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
 else !ENABLE_SHARED_PRIVATE_LIBS
-$(top_builddir)/common/libnutdmfstdlib.la: @dotMAKE@
-	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
 LDADD_DMFSTDLIB = $(top_builddir)/common/libnutdmfstdlib.la
