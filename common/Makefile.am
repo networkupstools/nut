@@ -49,7 +49,10 @@ if ENABLE_SHARED_PRIVATE_LIBS
 
   lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_SOURCES =
-  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_LIBADD = libnutdmfstdlib.la
+  # NOTE: Mention-order matters at least for Windows:
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_dmfstdlib_la_LIBADD = \
+    libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+    libnutdmfstdlib.la
 
 ### Avoid unexpected linking across NUT generations
 ### far apart (e.g. custom rebuilds of new programs

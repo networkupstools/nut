@@ -27,11 +27,12 @@ $(top_builddir)/clients/libupsclient.la: dummy @dotMAKE@
 # (or the shared libnutprivate equivalent), and that in turn libparseconf.la:
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
 $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutdmfsnmp.la: $(top_builddir)/common/libnutdmfstdlib.la
 
 if ENABLE_SHARED_PRIVATE_LIBS
 $(top_builddir)/common/libcommonversion-private.la \
-$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -52,6 +53,7 @@ if ENABLE_SHARED_PRIVATE_LIBS
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LIBADD = \
 	libdummy_upsdrvquery.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 	libdummy_main.la
+  # NOTE: On some platforms we stick libnutdmfstdlib.la into this library too
 
 if WITH_SERIAL
   lib_LTLIBRARIES += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
@@ -89,14 +91,27 @@ endif WITH_USB
   LDADD_DRIVERS_LIBUSB = libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-libusb.la $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
-  LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+  $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la: \
+    $(top_builddir)/common/libnutdmfstdlib.la \
+    $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_serial_la_LDFLAGS += -no-undefined
   libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_libusb_la_LDFLAGS += -no-undefined
-endif HAVE_WINDOWS
+
+  # We actually don't pull this one in separately for the specific drivers,
+  # at least not on systems like Windows where DLLs must have all symbols,
+  # so copies of libcommon from different linking paths conflict.
+  # So we would rather link that into the DLL all drivers see...
+  LDADD_DMFSTDLIB =
+  libnutprivate_@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@_drivers_common_la_LIBADD += \
+    $(top_builddir)/common/libnutdmfstdlib.la
+else !HAVE_WINDOWS
+  # Only use this (shared) library for programs that utilize its methods:
+  LDADD_DMFSTDLIB = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-dmfstdlib.la
+endif !HAVE_WINDOWS
 
 else !ENABLE_SHARED_PRIVATE_LIBS
 # by default, link programs in this directory with libcommon.la
@@ -109,8 +124,17 @@ else !ENABLE_SHARED_PRIVATE_LIBS
   LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
   LDADD_DRIVERS_LIBUSB = libdummy_libusb.la $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-# Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+  # Shared "standard library" of DMF-related data-conversion helpers (see common/dmf_stdlib.c)
+#if HAVE_WINDOWS
+  # We actually don't pull this one in separately for the specific drivers,
+  # at least not on systems like Windows where DLLs must have all symbols,
+  # so copies of libcommon from different linking paths conflict.
+  # So we would rather link that into the libdummy_main.la which all drivers see...
+#  LDADD_DMFSTDLIB =
+#else !HAVE_WINDOWS
+  # Only use this (shared) library for programs that utilize its methods:
   LDADD_DMFSTDLIB = $(top_builddir)/common/libnutdmfstdlib.la
+#endif !HAVE_WINDOWS
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 if WITH_SERIAL
@@ -376,9 +400,9 @@ usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_SOURCES += ecoflow-hid-aux-cdc.c ecoflow-cdc-protocol.c
 if WITH_SERIAL
 # Ordering matters, at least for linking on Windows/MSYS2 - do not conflate!
-usbhid_ups_LDADD = libdummy_serial.la $(LDADD_DRIVERS_LIBUSB) $(SERLIBS) $(LDADD_DMFSTDLIB)
+usbhid_ups_LDADD = libdummy_serial.la $(LDADD_DMFSTDLIB) $(LDADD_DRIVERS_LIBUSB) $(SERLIBS)
 else
-usbhid_ups_LDADD = $(LDADD_DRIVERS_LIBUSB) $(LDADD_DMFSTDLIB)
+usbhid_ups_LDADD = $(LDADD_DMFSTDLIB) $(LDADD_DRIVERS_LIBUSB)
 endif
 
 powervar_cx_usb_SOURCES = powervar_cx_usb.c powervar_cx.c
@@ -442,13 +466,13 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0 -DWITH_DMF_FUNCTIONS=0
-snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) $(LDADD_DMFSTDLIB) -lm
+snmp_ups_LDADD = $(LDADD_DMFSTDLIB) $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
 snmp_ups_LDFLAGS = $(AM_LDFLAGS)
 
 # DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
-snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
- $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) $(LDADD_DMFSTDLIB) -lm
+snmp_ups_dmf_LDADD = $(LDADD_DMFSTDLIB) $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) -lm
 if ENABLE_SHARED_PRIVATE_LIBS
 snmp_ups_dmf_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 else !ENABLE_SHARED_PRIVATE_LIBS
