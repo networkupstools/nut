@@ -131,7 +131,11 @@ SEE ALSO
 
 linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3],
-linkman:upscli_init_default_connect_timeout[3], linkman:upscli_fd[3],
+linkman:upscli_fd[3],
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
+linkman:upscli_init_default_connect_timeout[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_ssl_caps[3],
 linkman:upscli_ssl_caps_descr[3],

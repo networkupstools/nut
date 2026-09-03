@@ -160,6 +160,7 @@ Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
   Require use of the specified linkman:nutauth.conf[5] file (fail if absent,
   not accessible, or has content errors when parsed) to specify connection
   security settings and/or credentials for this run.
+  A non-absolute path is treated as relative to NUT configuration directory.
 +
 NOTE: Credentials are not currently required for read-only access to NUT.
 +
@@ -228,10 +229,13 @@ Since NUT v2.8.3, the single-UPS options are added to the list of tuples,
 so both legacy and new options can be reliably used to monitor multiple
 devices in the same run.
 
-Since this client can establish multiple connections, keep in mind that
-currently it can only identify itself with some one (first seen) client
-certificate, if `CERTIDENT` settings are used in the linkman:nutauth.conf[5]
-file. Multiple `CERTHOST` directives for specially trusted servers can be used.
+As this client can establish multiple connections, since NUT v2.8.6 release it
+supports per-connection SSL contexts for independent certificate verification
+and client certificate identities. This allows *upslog* to securely log data
+from multiple UPS servers managed by different entities (different CAs or
+security realms). Configuration is specified via linkman:nutauth.conf[5]
+using CERTPATH, CERTVERIFY, CERTNAME, and CERTHOST directives, and is
+automatically applied per-connection.
 
 SEE ALSO
 --------
@@ -245,7 +249,15 @@ Clients:
 ~~~~~~~~
 
 linkman:upsc[8], linkman:upscmd[8],
-linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8],
+linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
+
+Client libraries and utilities:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+linkman:upsclient[3], linkman:upscli_init[3], linkman:upscli_cleanup[3],
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
 linkman:nutauth.conf[5]
 
 Internet resources:

@@ -379,6 +379,19 @@ https://github.com/networkupstools/nut/milestone/13
       report the ability to check `CERTIDENT` information. [#3331]
     * Introduced support for "authconf" files to store and convey NUT client
       authentication details. [issue #3329]
+    * Added C/C++ client support for multiple independent OpenSSL contexts
+      in the same process, or using multiple NSS client certificates with
+      its single context, for ability to connect to NUT data servers managed
+      by different entities (e.g. certificate authorities and client/server
+      realms). In-tree multiple-connection clients (`upsmon`, `upsstats.cgi`,
+      `upslog`) were updated to use this feature. [issue #3439]
+    * To support the ability of multiple SSL authentication details for
+      `upsmon` and `upsstats.cgi`, their configuration files were extended
+      with `AUTHCONF` keyword which can point to the `nutauth.conf` file
+      they should use, or pass the special values `default` (require a
+      user- or system-provided `nutauth.conf` file) or `none` (skip
+      authconf discovery entirely), matching the `-A` option semantics
+      of command-line NUT clients. [issue #3439]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
@@ -394,10 +407,10 @@ https://github.com/networkupstools/nut/milestone/13
       SSL settings in the client which previously only did best-effort attempts
       at secure communications without an individual certificate, and only
       anonymously for reading. The new `-A filename` option defaults to trying
-      to use a `nutauth.conf` file (if found in one of the default locations)
-      but not failing if one is not usable; specific values can require use of
-      such a file (`default`) or to not even try reading one (`none`).
-      [issues #3329, #3411]
+      to use a `nutauth.conf` file (if NOT specified here, but rather found in
+      one of the default locations) but not failing if one is not usable; any
+      specific values can require use of such a file (`default`) or to not even
+      try reading one (`none`). [issues #3329, #3411]
 
  - `upslog` client/tool updates:
     * Added support for best-effort use of `nutauth.conf` files from default
@@ -411,6 +424,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Added support for best-effort use of `nutauth.conf` files from default
       locations described above (no way to choose the location, other than
       by web-server environment variables for CGI calls). [#3329]
+    * `upsstats.cgi` additionally has a new `AUTHCONF` configuration option
+      that can be passed via its `hosts.conf` file, as detailed above. [#3439]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify

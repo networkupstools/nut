@@ -554,6 +554,8 @@ SRC_DEV_PAGES = \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
 	upscli_ssl_caps.txt \
+	upscli_get_or_create_ssl_context.txt \
+	upscli_set_ssl_context.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
 	upscli_upslog_set_debug_level.txt \
@@ -718,6 +720,16 @@ UPSCLI_SSL_CAPS_DEPS = \
 
 $(UPSCLI_SSL_CAPS_DEPS): upscli_ssl_caps.$(MAN_SECTION_API)
 
+UPSCLI_GET_OR_CREATE_SSL_CONTEXT_DEPS = \
+	upscli_get_or_create_ssl_context_authconf.$(MAN_SECTION_API)
+
+$(UPSCLI_GET_OR_CREATE_SSL_CONTEXT_DEPS): upscli_get_or_create_ssl_context.$(MAN_SECTION_API)
+
+UPSCLI_SET_SSL_CONTEXT_DEPS = \
+	upscli_get_ssl_context.$(MAN_SECTION_API)
+
+$(UPSCLI_SET_SSL_CONTEXT_DEPS): upscli_set_ssl_context.$(MAN_SECTION_API)
+
 UPSCLI_UPSLOG_SET_DEBUG_LEVEL_DEPS = \
 	upscli_upslog_cookie.$(MAN_SECTION_API) \
 	upscli_upslog_get_debug_level.$(MAN_SECTION_API) \
@@ -759,6 +771,10 @@ INST_MAN_DEV_API_PAGES = \
 	upscli_ssl.$(MAN_SECTION_API) \
 	upscli_ssl_caps.$(MAN_SECTION_API) \
 	$(UPSCLI_SSL_CAPS_DEPS) \
+	upscli_get_or_create_ssl_context.$(MAN_SECTION_API) \
+	$(UPSCLI_GET_OR_CREATE_SSL_CONTEXT_DEPS) \
+	upscli_set_ssl_context.$(MAN_SECTION_API) \
+	$(UPSCLI_SET_SSL_CONTEXT_DEPS) \
 	upscli_strerror.$(MAN_SECTION_API) \
 	upscli_upserror.$(MAN_SECTION_API) \
 	upscli_upslog_set_debug_level.$(MAN_SECTION_API) \
@@ -939,6 +955,8 @@ INST_HTML_DEV_MANS = \
 	upscli_splitname.html \
 	upscli_ssl.html \
 	upscli_ssl_caps.html \
+	upscli_get_or_create_ssl_context.html \
+	upscli_set_ssl_context.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
 	upscli_upslog_set_debug_level.html \

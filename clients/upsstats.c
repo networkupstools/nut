@@ -40,6 +40,7 @@
 /* network timeout for initial connection, in seconds */
 #define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
+static char	*authconf_configured = NULL;
 static upscli_authconf_t	*ac_default = NULL;
 static int	flags_ssl = UPSCLI_CONN_TRYSSL, flags_ssl_default = UPSCLI_CONN_TRYSSL;
 
@@ -87,6 +88,28 @@ static ulist_t	*ulhead = NULL, *currups = NULL,
 	*allowed_template_list_lhead = NULL;
 
 static int	skip_clause = 0, skip_block = 0;
+
+static void init_authconf(void) {
+	if (authconf_configured) {
+		if (!strcmp(authconf_configured, "none")) {
+			upsdebugx(1, "Using AUTHCONF='%s': skipping auth config", authconf_configured);
+		} else if (!strcmp(authconf_configured, "default")) {
+			upsdebugx(1, "Using AUTHCONF='%s': require a user or system provided file", authconf_configured);
+			upscli_read_authconf_file(NULL, 1, -1);
+		} else {
+			upsdebugx(1, "Using configured auth config file: %s", authconf_configured);
+			upscli_read_authconf_file(authconf_configured, 1, -1);
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0, 1);
+	}
+
+	/* Prepare for handling in first loop through ups_connect() */
+	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+
+	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+}
 
 void parsearg(char *var, char *value)
 {
@@ -540,10 +563,8 @@ static void ups_connect(void)
 		exit(EXIT_FAILURE);
 	}
 
-	/* FIXME: Currently libupsclient allows for one SSL context shared
-	 *  by all connections, specifically the CERTIDENT of the client.
-	 *  We can have multiple CERTHOST certificates (and/or reading
-	 *  users/passwords) though. */
+	/* NOTE: Per-connection SSL contexts now supported via registry.
+	 *  Each connection can have different CERTHOST and/or client certificates. */
 	ac_current = upscli_get_authconf_item(
 		NULL, hostname,
 		snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL,
@@ -561,6 +582,7 @@ static void ups_connect(void)
 
 	flags_ssl = flags_ssl_default;
 	upscli_authconf_update_conn_flags(ac_current, &flags_ssl);
+
 	if (currups && upscli_connect(&ups, hostname, port, flags_ssl) < 0) {
 		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
 			currups ? NUT_STRARG(currups->sys) : "<currups=null>",
@@ -1504,6 +1526,12 @@ static void load_hosts_conf(int handle_MONITOR)
 		if (ctx.numargs < 2)
 			continue;
 
+		/* AUTHCONF (<filename> | "default" | "none") */
+		if (!strcmp(ctx.arglist[0], "AUTHCONF")) {
+			free(authconf_configured);
+			authconf_configured = xstrdup(ctx.arglist[1]);
+		}
+
 		/* CUSTOM_TEMPLATE_LIST <filename> */
 		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_LIST"))
 			add_allowed_template_list(ctx.arglist[1]);
@@ -1518,7 +1546,6 @@ static void load_hosts_conf(int handle_MONITOR)
 		/* MONITOR <host> <desc> */
 		if (handle_MONITOR && !strcmp(ctx.arglist[0], "MONITOR"))
 			add_ups(ctx.arglist[1], ctx.arglist[2]);
-
 	}
 
 	pconf_finish(&ctx);
@@ -1597,6 +1624,7 @@ static void display_json(void)
 	 * We need to load hosts.conf ONLY in multi-host mode.
 	 */
 	if (monhost) {
+		init_authconf();	/* best-effort */
 		if (!checkhost(monhost, &monhostdesc)) {
 			printf("{\"error\": \"Access to host %s is not authorized.\"}", monhost);
 			upsdebug_call_finished1(": not auth");
@@ -1606,6 +1634,7 @@ static void display_json(void)
 		currups = ulhead;
 	} else {
 		load_hosts_conf(1); /* This populates ulhead */
+		init_authconf();	/* require AUTHCONF, else best-effort */
 		currups = ulhead;
 	}
 
@@ -1727,6 +1756,8 @@ static void clean_exit(void)
 	fflush(stderr);
 
 	upscli_cleanup();
+	free(authconf_configured);
+
 	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 
@@ -1790,14 +1821,7 @@ int main(int argc, char **argv)
 
 	extractcgiargs();
 
-	upsdebugx(1, "Using best-effort auth config detection");
-	upscli_read_authconf_file(NULL, 0, 1);
-
-	upscli_init_default_connect_timeout(NULL, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT);
 	atexit(clean_exit);
-
-	/* Prepare for handling in first loop through ups_connect() */
-	ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
 
 	/*
 	 * If json is in the query, bypass all HTML and call display_json()
@@ -1838,10 +1862,12 @@ int main(int argc, char **argv)
 	add_allowed_template_list(DEFAULT_TEMPLATE_LIST);
 	if (monhost) {
 		load_hosts_conf(0);
+		init_authconf();	/* require AUTHCONF, else best-effort */
 		display_single();
 	} else {
 		/* default: multimon replacement mode */
 		load_hosts_conf(1);
+		init_authconf();	/* require AUTHCONF, else best-effort */
 		currups = ulhead;
 		display_template(template_list, 2);
 	}
