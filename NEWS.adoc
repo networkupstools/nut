@@ -248,6 +248,11 @@ https://github.com/networkupstools/nut/milestone/13
       were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
+    * `mge-hid` subdriver: extended the `mge_model_names[]` list for the
+      Eaton 5P Gen2 series (largely guessing, feedback and PRs for
+      adaptation to actual string values reported by devices via USB are
+      welcome), so these devices would now report `battery.voltage` and
+      `battery.voltage.nominal`. [#2380]
     * `cps-hid` subdriver: widened under-declared Logical Maximums for
       `UPS.Input.Voltage`, `UPS.Input.ConfigVoltage`, `UPS.PowerSummary.Voltage`
       and `UPS.PowerSummary.ConfigVoltage` on CyberPower HID devices (e.g.
