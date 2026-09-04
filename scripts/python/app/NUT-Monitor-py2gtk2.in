@@ -1301,7 +1301,7 @@ class gui_updater( threading.Thread ) :
             ac = PyNUT.AuthConf.getAuthConf(host=host, port=port, user=login)
             if ac:
                 ac = ac.clone()
-                if self.__widgets["ups_authentication_check"].get_active() :
+                if self.__parent_class._interface__widgets["ups_authentication_check"].get_active() :
                     # If the user entered something, honor that.
                     # Otherwise, re-use what we suggested.
                     ac.user = login
