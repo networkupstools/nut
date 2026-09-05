@@ -98,6 +98,7 @@
 #endif
 
 static mib2nut_info_t *mib2nut[] = {
+#ifndef SNMP_UPS_SETOID_TEST
 	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
 	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
@@ -141,6 +142,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&tripplite_ietf,	/* This struct comes from : ietf-mib.c */
 	&ietf,				/* This struct comes from : ietf-mib.c */
 	/* end of structure. */
+#endif	/* !SNMP_UPS_SETOID_TEST */
 	NULL
 };
 
@@ -1693,6 +1695,7 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	return do_nut_snmp_get_int(OID, pval, 1);
 }
 
+#ifndef SNMP_UPS_SETOID_TEST
 bool_t nut_snmp_set(const char *OID, char type, const char *value)
 {
 	int status;
@@ -1731,6 +1734,7 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 	snmp_free_pdu(response);
 	return ret;
 }
+#endif	/* !SNMP_UPS_SETOID_TEST */
 
 bool_t nut_snmp_set_str(const char *OID, const char *value)
 {

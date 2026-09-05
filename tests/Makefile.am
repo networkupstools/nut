@@ -213,23 +213,7 @@ driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
 if WITH_SNMP
-SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c \
-	apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
-	baytech-mib.c baytech-rpc3nc-mib.c bestpower-mib.c \
-	compaq-mib.c cyberpower-mib.c \
-	delta_ups-mib.c \
-	eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
-	eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c eaton-pdu-nlogic-mib.c \
-	eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
-	eaton-ups-pwnm2-mib.c eaton-ups-pxg-mib.c \
-	emerson-avocent-pdu-mib.c \
-	hpe-pdu-mib.c hpe-pdu3-cis-mib.c huawei-mib.c \
-	ietf-mib.c \
-	mge-mib.c \
-	netvision-mib.c \
-	raritan-pdu-mib.c raritan-px2-mib.c \
-	vertiv-mib.c voltronic-mib.c \
-	xppc-mib.c
+SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
 
 LINKED_SOURCE_FILES += $(SNMP_UPS_TEST_DRIVER_SOURCES)
 
@@ -239,7 +223,7 @@ $(SNMP_UPS_TEST_DRIVER_SOURCES):
 TESTS += snmp-ups-setvar-test
 snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c
 nodist_snmp_ups_setvar_test_SOURCES = $(SNMP_UPS_TEST_DRIVER_SOURCES)
-snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS)
+snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS) -DSNMP_UPS_SETOID_TEST=1
 snmp_ups_setvar_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
 snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
 if WITH_SSL
