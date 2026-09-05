@@ -212,6 +212,30 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+if WITH_SNMP
+SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
+
+LINKED_SOURCE_FILES += $(SNMP_UPS_TEST_DRIVER_SOURCES)
+
+$(SNMP_UPS_TEST_DRIVER_SOURCES):
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/$@" '$@'
+
+TESTS += snmp-ups-setvar-test
+snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c
+nodist_snmp_ups_setvar_test_SOURCES = $(SNMP_UPS_TEST_DRIVER_SOURCES)
+snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS) -DSNMP_UPS_SETOID_TEST=1
+snmp_ups_setvar_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
+snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
+if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_setvar_test_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+endif WITH_SNMP
+
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
