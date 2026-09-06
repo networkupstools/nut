@@ -150,6 +150,19 @@ https://github.com/networkupstools/nut/milestone/13
     * Documented the Microlink descriptor format that the driver parses,
       for anyone extending its variable maps. See the NUT Developer
       Guide.
+    * `outlet.group.count` and the per-outlet-group commands/variables no
+      longer require an unswitched "main" outlet group to be present;
+      devices with only switched groups now expose them correctly.
+      [issue #3587]
+    * `ups.beeper.status` is decoded as a bitmask instead of matching
+      exact enum values, so devices that set additional unrelated bits
+      alongside the enabled/disabled bit report the correct status
+      instead of a raw number. [issue #3587]
+    * `beeper.mute` is replaced by `beeper.enable`/`beeper.disable`: the
+      register it wrote had no confirmed effect, while decompiling
+      PowerChute shows its actual beeper on/off control is a persistent
+      setting on the same usage `ups.beeper.status` reads, not a
+      temporary mute/re-arm action.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
