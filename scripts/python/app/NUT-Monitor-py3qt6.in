@@ -160,7 +160,7 @@ class interface :
 
         self.__app = QApplication( argv )
         try:
-            self.__app.setDesktopFileName("nut-monitor-py3qt5")
+            self.__app.setDesktopFileName("nut-monitor-py3qt6")
         except Exception as ex:
             pass
 
