@@ -1405,8 +1405,22 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 		value = APC_BATTERY_TEST_CMD_ABORT;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
 		value = APC_USER_IF_CMD_SHORT_TEST;
-	} else if (!strcasecmp(nut_cmdname, "beeper.mute")) {
-		value = APC_USER_IF_CMD_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS;
+	} else if (!strcasecmp(nut_cmdname, "beeper.enable")) {
+		/* Not a "user interface command" bit like the rest of this table -
+		 * PowerChute's own CompositeAudibleAlarm class (decompiled) writes
+		 * a plain persistent value (1=enabled, 2=disabled) straight to the
+		 * device's alarm-setting usage (2:4.B.3A, the same one
+		 * ups.beeper.status reads), not a command register. This driver
+		 * used to expose beeper.mute here instead, writing
+		 * APC_USER_IF_CMD_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS to 2:4.B.3B
+		 * (ported from apc_modbus's command set by analogy) - that had no
+		 * confirmed effect on real Microlink hardware, and "mute" is
+		 * documented as a temporary silence that self-clears, which this
+		 * persistent setting never was. beeper.enable/disable name what
+		 * the device actually supports. */
+		value = 1;
+	} else if (!strcasecmp(nut_cmdname, "beeper.disable")) {
+		value = 2;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start")) {
 		value = APC_RUNTIME_CAL_CMD_START;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.stop")) {
@@ -1425,8 +1439,11 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_BATTERY_TEST);
 		*result = microlink_send_command_descriptor_mask_value("2:10", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
-	} else if (!strcasecmp(nut_cmdname, "test.panel.start") || !strcasecmp(nut_cmdname, "beeper.mute")) {
+	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
 		*result = microlink_send_command_descriptor_mask_value("2:4.B.3B", value)
+			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
+	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
+		*result = microlink_send_command_descriptor_mask_value("2:4.B.3A", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start") || !strcasecmp(nut_cmdname, "calibrate.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_RUNTIME_CAL);
@@ -3909,7 +3926,8 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("test.panel.start");
-	dstate_addcmd("beeper.mute");
+	dstate_addcmd("beeper.enable");
+	dstate_addcmd("beeper.disable");
 	dstate_addcmd("calibrate.start");
 	dstate_addcmd("calibrate.stop");
 	dstate_addcmd("bypass.start");

@@ -167,6 +167,8 @@ Supported instant commands currently include:
 * `test.battery.stop`
 * `test.panel.start`
 * `test.panel.stop`
+* `beeper.enable`
+* `beeper.disable`
 
 Driver-assisted shutdown is not yet implemented.
 
