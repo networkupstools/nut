@@ -82,18 +82,27 @@ static const microlink_value_map_t input_sensitivity_map[] = {
 	{ 0, NULL }
 };
 
-/* Audible alarm. Both values were observed round-tripping on real hardware -
- * PowerChute wrote 0xC2 to silence the alarm and 0xC1 to restore it.
+/* Audible alarm. This is a bitmask, not an exact-value enum - confirmed by
+ * decompiling PowerChute's own CompositeAudibleAlarm class, which checks
+ * (value & 0x01) for enabled and (value & 0x02) for disabled. An earlier
+ * version of this map matched the exact values 0xC1/0xC2 observed
+ * round-tripping on one SCL500RM1UC, which happens to always carry two
+ * extra bits (0xC0) alongside the enabled/disabled bit on that specific
+ * unit. A second device (APC Smart-UPS X1500, SMX1500RM2U) reported 0x09
+ * instead - bit 0 (enabled) plus bit 3, PowerChute's unrelated
+ * "advanced menu" UI flag - which never matched either exact value, even
+ * though the enabled bit was correctly set. Matching by bit instead of by
+ * exact value fixes that device and is unaffected on the first.
  *
  * NUT also defines a "muted" state, but there is no third value to map here:
  * muting is a transient command on a different usage (2:4.B.3B, the
  * user-interface command register this driver targets for beeper.mute and
  * test.panel.start), not a setting. PowerChute offers only enabled/disabled
- * for the same reason. If a device does report a distinct muted value it will
- * be published as-is rather than mislabelled. */
+ * for the same reason. If a device does report a distinct muted bit it will
+ * be published alongside enabled/disabled rather than mislabelled. */
 static const microlink_value_map_t beeper_status_map[] = {
-	{ 193UL, "enabled" },
-	{ 194UL, "disabled" },
+	{ 0x01UL, "enabled" },
+	{ 0x02UL, "disabled" },
 	{ 0, NULL }
 };
 
@@ -230,7 +239,7 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	 * BYPASS, OFF, TEST, OVER - so publishing it a second time as its own
 	 * variable produced a strictly worse copy of ups.status, which also
 	 * carries LB and the charger flags. */
-	{ "2:4.B.3A", "ups.beeper.status",   MLINK_DESC_ENUM_MAP,      MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, beeper_status_map },
+	{ "2:4.B.3A", "ups.beeper.status",   MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, beeper_status_map },
 	/* The self test a user means by "ups.test.result" is the battery one at
 	 * 2:4.5.11, not 2:11. Verified by running a self test from PowerChute on
 	 * a live SCL500RMI1UC and watching both: 2:4.5.11 stepped Pending ->
