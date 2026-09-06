@@ -159,10 +159,10 @@ https://github.com/networkupstools/nut/milestone/13
       alongside the enabled/disabled bit report the correct status
       instead of a raw number. [issue #3587]
     * `beeper.mute` is replaced by `beeper.enable`/`beeper.disable`: the
-      register it wrote had no confirmed effect, while decompiling
-      PowerChute shows its actual beeper on/off control is a persistent
-      setting on the same usage `ups.beeper.status` reads, not a
-      temporary mute/re-arm action.
+      register it wrote had no confirmed effect, and the actual beeper
+      on/off control used by PowerChute is a persistent setting on the
+      same usage `ups.beeper.status` reads, not a temporary mute/re-arm
+      action.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
