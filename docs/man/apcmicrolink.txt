@@ -156,9 +156,10 @@ lists these factory-default values for the delay/timer fields above:
 `outlet.group.N.switchable` (`yes`/`no`) is published read-only for every
 outlet group, and instant commands for switching a group's load are only
 registered for groups where it is `yes` -- some Microlink UPS models expose
-one unswitched group (typically group 0) alongside one or more independently
+one unswitched group (group 0) alongside one or more independently
 switchable groups, and the unswitched group has no on/off/cycle/shutdown
-commands to offer.
+commands to offer. Other models have no unswitched group at all: their
+outlet groups start numbering at 1, and `outlet.group.0` is not published.
 
 Supported instant commands currently include:
 

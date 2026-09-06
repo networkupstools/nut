@@ -1032,25 +1032,46 @@ static int microlink_outlet_group_is_switched(size_t group_idx)
 	return group_idx > 0;
 }
 
-static size_t microlink_outlet_group_count(void)
+/* Highest possible switched-group array index (2:4.3D[0..3]), i.e. group
+ * indices 1-4. Shared by every loop below so the bound only lives once. */
+#define MLINK_OUTLET_MAX_SWITCHED_INDEX 4
+
+static size_t microlink_outlet_switched_group_count(void)
 {
-	size_t group_count = 1;
+	size_t switched_count = 0;
 	char path[32];
 	size_t i;
 
-	if (microlink_find_descriptor_usage("2:4.3E.B6") == NULL) {
-		return 0;
-	}
-
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < MLINK_OUTLET_MAX_SWITCHED_INDEX; i++) {
 		snprintf(path, sizeof(path), "2:4.3D[%zu].B6", i);
 		if (microlink_find_descriptor_usage(path) == NULL) {
 			break;
 		}
-		group_count++;
+		switched_count++;
 	}
 
-	return group_count;
+	return switched_count;
+}
+
+/* Whether this specific group index actually exists on the connected
+ * device. Not every device carries an unswitched main group: some expose
+ * only switched banks, in which case 2:4.3E.B6 (group 0) is absent while
+ * 2:4.3D[0..] (groups 1+) are present. Switched groups are always
+ * contiguous from index 0 of that array, so any index within the count
+ * microlink_outlet_switched_group_count() found is real. */
+static int microlink_outlet_group_exists(size_t group_idx)
+{
+	if (group_idx == 0) {
+		return microlink_find_descriptor_usage("2:4.3E.B6") != NULL;
+	}
+
+	return group_idx <= microlink_outlet_switched_group_count();
+}
+
+static size_t microlink_outlet_group_count(void)
+{
+	return microlink_outlet_switched_group_count()
+		+ (microlink_outlet_group_exists(0) ? 1 : 0);
 }
 
 static uint64_t microlink_outlet_target_bits_for_group(size_t group_idx)
@@ -1071,12 +1092,15 @@ static uint64_t microlink_outlet_target_bits_for_group(size_t group_idx)
 	}
 }
 
-static uint64_t microlink_outlet_all_targets(size_t group_count)
+static uint64_t microlink_outlet_all_targets(void)
 {
 	uint64_t targets = 0;
 	size_t i;
 
-	for (i = 0; i < group_count; i++) {
+	for (i = 0; i <= MLINK_OUTLET_MAX_SWITCHED_INDEX; i++) {
+		if (!microlink_outlet_group_exists(i)) {
+			continue;
+		}
 		targets |= microlink_outlet_target_bits_for_group(i);
 	}
 
@@ -1313,7 +1337,7 @@ static int microlink_handle_outlet_cmd(const char *nut_cmdname, const char *extr
 
 	if (strncmp(nut_cmdname, "load.", 5) == 0 || strncmp(nut_cmdname, "shutdown.", 9) == 0) {
 		suffix = (strcmp(nut_cmdname, "shutdown.default") == 0) ? "shutdown.return" : nut_cmdname;
-		target_bits = microlink_outlet_all_targets(group_count);
+		target_bits = microlink_outlet_all_targets();
 	} else if (strncmp(nut_cmdname, "outlet.group.", 13) == 0) {
 		const char *p = nut_cmdname + 13;
 
@@ -1322,7 +1346,11 @@ static int microlink_handle_outlet_cmd(const char *nut_cmdname, const char *extr
 			return 0;
 		}
 
-		if (group_idx >= group_count) {
+		/* Not a simple range check: some devices have switched groups
+		 * but no unswitched "main" group 0 (see microlink_outlet_group_exists()),
+		 * so group_idx < group_count is not the same question as "does
+		 * this particular index exist". */
+		if (!microlink_outlet_group_exists(group_idx)) {
 			upslogx(LOG_ERR, "%s: Invalid outlet group index %zu in command [%s]",
 				__func__, group_idx, nut_cmdname);
 			*result = STAT_INSTCMD_INVALID;
@@ -3750,9 +3778,13 @@ static void microlink_register_outlet_commands(void)
 
 	dstate_setinfo("outlet.group.count", "%u", (unsigned int)outlet_group_count);
 
-	for (g = 0; g < outlet_group_count; g++) {
-		int is_switched = microlink_outlet_group_is_switched(g);
+	for (g = 0; g <= MLINK_OUTLET_MAX_SWITCHED_INDEX; g++) {
+		int is_switched;
 
+		if (!microlink_outlet_group_exists(g))
+			continue;
+
+		is_switched = microlink_outlet_group_is_switched(g);
 		snprintf(cmd, sizeof(cmd), "outlet.group.%zu.switchable", g);
 		dstate_setinfo(cmd, "%s", is_switched ? "yes" : "no");
 		if (is_switched)
@@ -3770,7 +3802,9 @@ static void microlink_register_outlet_commands(void)
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
 
-	for (g = 0; g < outlet_group_count; g++) {
+	for (g = 0; g <= MLINK_OUTLET_MAX_SWITCHED_INDEX; g++) {
+		if (!microlink_outlet_group_exists(g))
+			continue;
 		if (!microlink_outlet_group_is_switched(g))
 			continue;
 		for (i = 0; outlet_suffixes[i] != NULL; i++) {
