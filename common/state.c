@@ -301,8 +301,8 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 		/* refresh even if "skip-writing" same info value */
 		st_tree_node_refresh_timestamp(node);
 
-		/* updating an existing entry */
-		if (!strcasecmp(node->raw, val)) {
+		/* Compare literal values; only variable names ignore case. */
+		if (!strcmp(node->raw, val)) {
 			return 0;	/* no change */
 		}
 

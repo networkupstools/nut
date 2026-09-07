@@ -439,6 +439,10 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * The common state store now retains value changes which differ only in
+      letter case, including updates to opaque strings such as `device.contact`.
+      Variable names remain case-insensitive and immutable values remain
+      protected from changes. [issue #3622]
     * POSIX daemons now warn if their real or effective UID remains zero after
       the common credential switch. [issue #3471, PR #3609]
     * Refactored `common::background()` method used by numerous NUT daemons

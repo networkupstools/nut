@@ -124,6 +124,10 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += statetest
+statetest_SOURCES = statetest.c
+statetest_LDADD = $(NUT_LIBCOMMON)
+
 TESTS += ecoflow_cdc_protocol_utest
 ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
 	$(top_srcdir)/drivers/ecoflow-cdc-protocol.h
