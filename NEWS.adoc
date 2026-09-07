@@ -480,6 +480,12 @@ https://github.com/networkupstools/nut/milestone/13
       Directory names are based on hashes of strings that identify the content,
       which are size-limited to some 8 characters.
       [issues #3108, #3390, #1711, #3526, PR #3109]
+    * Introduced `tools/asciidoc-github-links.pl` to simplify `docs/Makefile.am`
+      generation of `*.adoc-parsed` files with substituted GitHub links, and to
+      allow that logic to be executed separately from `make` and potentially be
+      re-used by other projects. Added support for lists of PRs/issues as used
+      in this document, and support for GitHub Security Advisories (GHSA).
+      [PR #3594, issue #1953]
     * Rearranged the GHA job to prepare Dist and Docs Tarballs. [PR #3460]
     * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
