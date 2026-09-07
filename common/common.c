@@ -983,6 +983,8 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+	intmax_t final_uid;
+	intmax_t final_euid;
 
 	if (!pw) {
 		upsdebugx(1, "Can not become_user(<null>), skipped");
@@ -1019,8 +1021,16 @@ void become_user(struct passwd *pw)
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
 
+	final_uid = getuid();
+	final_euid = geteuid();
+	if ((final_uid == 0) || (final_euid == 0)) {
+		upslogx(LOG_WARNING, "Warning: running as root (UID=%jd EUID=%jd)",
+			final_uid, final_euid);
+		return;
+	}
+
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
-		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
+		pw->pw_name, final_uid, (intmax_t)getgid());
 #else	/* WIN32 */
 	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
