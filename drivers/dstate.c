@@ -200,8 +200,9 @@ static TYPE_FD sock_open(const char *fn)
 #else /* WIN32 */
 	SECURITY_ATTRIBUTES	pipe_sa;
 	SECURITY_DESCRIPTOR	pipe_sd;
+	PACL	pipe_acl;
 
-	init_pipe_security(&pipe_sa, &pipe_sd);
+	pipe_acl = init_pipe_security(&pipe_sa, &pipe_sd);
 
 	upsdebugx(6, "%s: opening NAMED_PIPE for listening: '%s'",
 		__func__, fn);
@@ -218,6 +219,7 @@ static TYPE_FD sock_open(const char *fn)
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
 		&pipe_sa);
+	free(pipe_acl);
 
 	if (INVALID_FD(fd)) {
 		upsdebugx(1, "%s: Can't create a state socket "
@@ -657,8 +659,9 @@ static void sock_connect(TYPE_FD sock)
 #else /* WIN32 */
 	SECURITY_ATTRIBUTES	pipe_sa;
 	SECURITY_DESCRIPTOR	pipe_sd;
+	PACL	pipe_acl;
 
-	init_pipe_security(&pipe_sa, &pipe_sd);
+	pipe_acl = init_pipe_security(&pipe_sa, &pipe_sd);
 
 	/* We have detected a connection on the opened pipe.
 	 * So we start by saving its handle and creating
@@ -682,6 +685,7 @@ static void sock_connect(TYPE_FD sock)
 		ST_SOCK_BUF_LEN,	/* input buffer size */
 		0,			/* client time-out */
 		&pipe_sa);
+	free(pipe_acl);
 
 	if (INVALID_FD(sockfd)) {
 		upsdebugx(1, "%s: Can't open state socket "
