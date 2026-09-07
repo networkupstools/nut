@@ -25,6 +25,61 @@
 #include "cgilib.h"
 #include "parseconf.h"
 
+void html_print_esc(const char *in)
+{
+	if (!in)
+		return;
+
+	while (*in) {
+		switch (*in) {
+			case '&':
+				printf("&amp;");
+				break;
+			case '<':
+				printf("&lt;");
+				break;
+			case '>':
+				printf("&gt;");
+				break;
+			case '"':
+				printf("&quot;");
+				break;
+			case '\'':
+				printf("&#39;");
+				break;
+			default:
+				putchar((unsigned char)*in);
+				break;
+		}
+
+		in++;
+	}
+}
+
+void url_print_esc(const char *in)
+{
+	static const char hex[] = "0123456789ABCDEF";
+	unsigned char ch;
+
+	if (!in)
+		return;
+
+	while (*in) {
+		ch = (unsigned char)*in++;
+
+		if ((ch >= 'A' && ch <= 'Z')
+		 || (ch >= 'a' && ch <= 'z')
+		 || (ch >= '0' && ch <= '9')
+		 || ch == '-' || ch == '.' || ch == '_' || ch == '~') {
+			putchar(ch);
+		} else {
+			putchar('%');
+			putchar(hex[ch >> 4]);
+			putchar(hex[ch & 0x0f]);
+		}
+	}
+}
+
 static char *unescape(char *buf)
 {
 	size_t	i, buflen;

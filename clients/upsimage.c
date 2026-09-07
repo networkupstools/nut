@@ -714,14 +714,6 @@ int main(int argc, char **argv)
 	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
-	if (nut_debug_level > 0) {
-		cgilogbit_set();
-		printf("Content-type: text/html\n");
-		printf("Pragma: no-cache\n");
-		printf("\n");
-		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
-	}
-
 	extractcgiargs();
 
 	upsdebugx(1, "Using best-effort auth config detection");

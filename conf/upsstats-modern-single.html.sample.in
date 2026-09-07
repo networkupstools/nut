@@ -51,7 +51,7 @@
 
 @IFSUPP battery.voltage.nominal@
   --x-nut-battery-voltage-mode: "nominal";
-  --x-nut-battery-voltage-nominal: @VAR battery.voltage.nominal@;
+  --x-nut-battery-voltage-nominal: @VARNUM battery.voltage.nominal@;
   --x-nut-battery-voltage-graphmin: round(down, calc(var(--x-nut-battery-voltage-nominal) * 0.8), 0.1);
   --x-nut-battery-voltage-graphmax: round(up, calc(var(--x-nut-battery-voltage-nominal) * 1.2), 0.1);
 
@@ -325,7 +325,7 @@
 
 @IFSUPP input.voltage.nominal@
   --x-nut-input-voltage-mode: "nominal";
-  --x-nut-input-voltage-nominal: @VAR input.voltage.nominal@;
+  --x-nut-input-voltage-nominal: @VARNUM input.voltage.nominal@;
   --x-nut-input-voltage-graphmin: round(down, calc(var(--x-nut-input-voltage-nominal) * 0.8), 10);
   --x-nut-input-voltage-graphmax: round(up, calc(var(--x-nut-input-voltage-nominal) * 1.2), 10);
 
@@ -537,7 +537,7 @@
 
 @IFSUPP output.voltage.nominal@
   --x-nut-output-voltage-mode: "nominal";
-  --x-nut-output-voltage-nominal:  @VAR output.voltage.nominal@;
+  --x-nut-output-voltage-nominal:  @VARNUM output.voltage.nominal@;
   --x-nut-output-voltage-graphmin: round(down, calc(var(--x-nut-output-voltage-nominal) * 0.8), 10);
   --x-nut-output-voltage-graphmax: round(up, calc(var(--x-nut-output-voltage-nominal) * 1.2), 10);
 @ELSE@
@@ -723,7 +723,7 @@ on @HOST@</div>
 <div class="threshold-battery"></div>
 <div class="bar-wrapper">
 <div class="label-top">Charge</div>
-<div class="bar-bg"><div class="bar-fill" style="height: @VAR battery.charge@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: @VARNUM battery.charge@%;"></div></div>
 <div class="label-bottom">@VAR battery.charge@ %</div>
 </div>
 <div class="y-axis">
@@ -737,7 +737,7 @@ on @HOST@</div>
 <div class="threshold-battery"></div>
 <div class="bar-wrapper">
 <div class="label-top">Voltage</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR battery.voltage@ - var(--x-nut-battery-voltage-graphmin)) / (var(--x-nut-battery-voltage-graphmax) - var(--x-nut-battery-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM battery.voltage@ - var(--x-nut-battery-voltage-graphmin)) / (var(--x-nut-battery-voltage-graphmax) - var(--x-nut-battery-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR battery.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -757,7 +757,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L1-L2</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L1-L2.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L1-L2.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L1-L2.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -766,7 +766,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L2-L3</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L2-L3.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L2-L3.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L2-L3.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -775,7 +775,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L3-L1</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L3-L1.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L3-L1.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L3-L1.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -791,7 +791,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L1-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L1-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L1-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L1-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -800,7 +800,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L2-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L2-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L2-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L2-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -809,7 +809,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Input L3-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.L3-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.L3-N.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.L3-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -823,7 +823,7 @@ on @HOST@</div>
 <div class="threshold-voltage"></div>
 <div class="bar-wrapper">
 <div class="label-top">Input</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR input.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM input.voltage@ - var(--x-nut-input-voltage-graphmin)) / (var(--x-nut-input-voltage-graphmax) - var(--x-nut-input-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR input.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -837,7 +837,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L1-L2</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L1-L2.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L1-L2.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L1-L2.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -846,7 +846,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L2-L3</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L2-L3.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L2-L3.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L2-L3.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -855,7 +855,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L3-L1</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L3-L1.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L3-L1.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L3-L1.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -870,7 +870,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L1-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L1-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L1-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L1-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -879,7 +879,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L2-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L2-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L2-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L2-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -888,7 +888,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Output L3-N</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.L3-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.L3-N.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.L3-N.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -902,7 +902,7 @@ on @HOST@</div>
 <div class="threshold-voltage"></div>
 <div class="bar-wrapper">
 <div class="label-top">Output</div>
-<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VAR output.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill" style="height: calc( ( (@VARNUM output.voltage@ - var(--x-nut-output-voltage-graphmin)) / (var(--x-nut-output-voltage-graphmax) - var(--x-nut-output-voltage-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR output.voltage@ V</div>
 </div>
 <div class="y-axis">
@@ -921,7 +921,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L1</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.power.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L1.power.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -930,7 +930,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L2</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.power.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L2.power.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -939,7 +939,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L3</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.power.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.power.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L3.power.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -953,7 +953,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L1</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.realpower.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L1.realpower.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -962,7 +962,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L2</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.realpower.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L2.realpower.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -971,7 +971,7 @@ on @HOST@</div>
 
 <div class="bar-wrapper">
 <div class="label-top">Load L3</div>
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR output.L1.realpower.percent@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM output.L1.realpower.percent@%;"></div></div>
 <div class="label-bottom">@VAR output.L3.realpower.percent@ %</div>
 </div>
 <div class="y-axis">
@@ -983,7 +983,7 @@ on @HOST@</div>
 @IFSUPP ups.load@
 <div class="bar-group">
 <div class="bar-wrapper">
-<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VAR ups.load@%;"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-blue" style="height: @VARNUM ups.load@%;"></div></div>
 <div class="label-bottom">@VAR ups.load@ %</div>
 </div>
 <div class="y-axis">
@@ -1001,7 +1001,7 @@ on @HOST@</div>
 <div class="bar-group">
 <div class="bar-wrapper">
 <div class="label-top">Temp</div>
-<div class="bar-bg"><div class="bar-fill fill-warn" style="height: calc( ( (@VAR ambient.temperature@ - var(--x-nut-temperature-graphmin)) / (var(--x-nut-temperature-graphmax) - var(--x-nut-temperature-graphmin)) ) * 100%);"></div></div>
+<div class="bar-bg"><div class="bar-fill fill-warn" style="height: calc( ( (@VARNUM ambient.temperature@ - var(--x-nut-temperature-graphmin)) / (var(--x-nut-temperature-graphmax) - var(--x-nut-temperature-graphmin)) ) * 100%);"></div></div>
 <div class="label-bottom">@VAR ambient.temperature@ &deg;</div>
 </div>
 <div class="y-axis">

@@ -152,7 +152,9 @@ static void do_header(const char *title)
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
 	printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
 	printf("<HTML>\n");
-	printf("<HEAD><TITLE>upsset: %s</TITLE></HEAD>\n", title);
+	printf("<HEAD><TITLE>upsset: ");
+	html_print_esc(title);
+	printf("</TITLE></HEAD>\n");
 
 	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n");
 
@@ -172,14 +174,18 @@ static void start_table(void)
 /* propagate login details across pages - no cookies here! */
 static void do_hidden(const char *next)
 {
-	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"username\" VALUE=\"%s\">\n",
-		username);
-	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"password\" VALUE=\"%s\">\n",
-		password);
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"username\" VALUE=\"");
+	html_print_esc(username);
+	printf("\">\n");
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"password\" VALUE=\"");
+	html_print_esc(password);
+	printf("\">\n");
 
-	if (next)
-		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"%s\">\n",
-			next);
+	if (next) {
+		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"");
+		html_print_esc(next);
+		printf("\">\n");
+	}
 }
 
 static void do_hidden_sentinel(void)
@@ -198,13 +204,17 @@ static void upslist_arg(size_t numargs, char **arg)
 
 	/* MONITOR <ups> <description> */
 	if (!strcmp(arg[0], "MONITOR")) {
-		printf("<OPTION VALUE=\"%s\"", arg[1]);
+		printf("<OPTION VALUE=\"");
+		html_print_esc(arg[1]);
+		printf("\"");
 
 		if (monups)
 			if (!strcmp(monups, arg[1]))
 				printf("SELECTED");
 
-		printf(">%s</OPTION>\n", arg[2]);
+		printf(">");
+		html_print_esc(arg[2]);
+		printf("</OPTION>\n");
 	}
 }
 
@@ -316,7 +326,9 @@ static void error_page(const char *next, const char *title,
 
 	start_table();
 	printf("<TR><TH COLSPAN=2 BGCOLOR=\"#60B0B0\">\n");
-	printf("Error: %s\n", msg);
+	printf("Error: ");
+	html_print_esc(msg);
+	printf("\n");
 	printf("</TH></TR>\n");
 
 	printf("<TR><TD ALIGN=\"CENTER\" COLSPAN=2>\n");
@@ -400,7 +412,11 @@ static void print_cmd(const char *cmd)
 
 	/* CMDDESC <upsname> <cmdname> <desc> */
 
-	printf("<OPTION VALUE=\"%s\">%s</OPTION>\n", cmd, answer[3]);
+	printf("<OPTION VALUE=\"");
+	html_print_esc(cmd);
+	printf("\">");
+	html_print_esc(answer[3]);
+	printf("</OPTION>\n");
 }
 
 /* generate a list of instant commands */
@@ -472,9 +488,11 @@ static void showcmds(void)
 	start_table();
 
 	/* include the description from checkhost() if present */
-	if (desc)
-		printf("<TR><TH BGCOLOR=\"#60B0B0\"COLSPAN=2>%s</TH></TR>\n",
-			desc);
+	if (desc) {
+		printf("<TR><TH BGCOLOR=\"#60B0B0\"COLSPAN=2>");
+		html_print_esc(desc);
+		printf("</TH></TR>\n");
+	}
 
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 	printf("<TD>Instant commands</TD>\n");
@@ -503,7 +521,9 @@ static void showcmds(void)
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
 	printf("<TD COLSPAN=\"2\" ALIGN=\"CENTER\">\n");
 	do_hidden("docmd");
-	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"");
+	html_print_esc(monups);
+	printf("\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Issue command\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
 	do_hidden_sentinel();
@@ -592,8 +612,9 @@ static void docmd(void)
 
 		start_table();
 
-		printf("<TR><TD>Error sending command: %s\n</TD></TR>",
-			upscli_strerror(&ups));
+		printf("<TR><TD>Error sending command: ");
+		html_print_esc(upscli_strerror(&ups));
+		printf("\n</TD></TR>");
 
 		printf("<TR><TD ALIGN=\"CENTER\" COLSPAN=2>\n");
 		do_pickups("showcmds");
@@ -613,8 +634,9 @@ static void docmd(void)
 
 		start_table();
 
-		printf("<TR><TD>Error reading command response: %s\n</TD></TR>",
-			upscli_strerror(&ups));
+		printf("<TR><TD>Error reading command response: ");
+		html_print_esc(upscli_strerror(&ups));
+		printf("\n</TD></TR>");
 
 		printf("<TR><TD ALIGN=\"CENTER\" COLSPAN=2>\n");
 		do_pickups("showcmds");
@@ -633,8 +655,11 @@ static void docmd(void)
 	start_table();
 
 	printf("<TR><TD><PRE>\n");
-	printf("Sending command: %s\n", upscommand);
-	printf("Response: %s\n", buf);
+	printf("Sending command: ");
+	html_print_esc(upscommand);
+	printf("\nResponse: ");
+	html_print_esc(buf);
+	printf("\n");
 	printf("</PRE></TD></TR>\n");
 
 	printf("<TR><TD ALIGN=\"CENTER\" COLSPAN=2>\n");
@@ -683,8 +708,11 @@ static void do_string(const char *varname, int maxlen)
 		return;
 	}
 
-	printf("<INPUT TYPE=\"TEXT\" NAME=\"UPSVAR_%s\" VALUE=\"%s\" "
-		"SIZE=\"%d\">\n", varname, val, maxlen);
+	printf("<INPUT TYPE=\"TEXT\" NAME=\"UPSVAR_");
+	html_print_esc(varname);
+	printf("\" VALUE=\"");
+	html_print_esc(val);
+	printf("\" SIZE=\"%d\">\n", maxlen);
 }
 
 static void do_enum(const char *varname)
@@ -724,7 +752,9 @@ static void do_enum(const char *varname)
 
 	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 
-	printf("<SELECT NAME=\"UPSVAR_%s\">\n", varname);
+	printf("<SELECT NAME=\"UPSVAR_");
+	html_print_esc(varname);
+	printf("\">\n");
 
 	while (ret == 1) {
 
@@ -738,12 +768,16 @@ static void do_enum(const char *varname)
 			return;
 		}
 
-		printf("<OPTION VALUE=\"%s\" ", answer[3]);
+		printf("<OPTION VALUE=\"");
+		html_print_esc(answer[3]);
+		printf("\" ");
 
 		if (!strcmp(answer[3], val))
 			printf(" SELECTED");
 
-		printf(">%s</OPTION>\n", answer[3]);
+		printf(">");
+		html_print_esc(answer[3]);
+		printf("</OPTION>\n");
 
 		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 	}
@@ -816,11 +850,9 @@ static void do_type(const char *varname)
 	}
 }
 
-static void print_rw(const char *arg_upsname, const char *varname)
+static void print_rw(const char *varname)
 {
 	const	char	*tmp;
-
-	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", arg_upsname);
 
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
@@ -829,9 +861,9 @@ static void print_rw(const char *arg_upsname, const char *varname)
 	tmp = get_data("DESC", varname);
 
 	if ((tmp) && (strcmp(tmp, "Unavailable") != 0))
-		printf("%s", tmp);
+		html_print_esc(tmp);
 	else
-		printf("%s", varname);
+		html_print_esc(varname);
 
 	printf("</TD>\n");
 
@@ -902,9 +934,11 @@ static void showsettings(void)
 	start_table();
 
 	/* include the description from checkhost() if present */
-	if (desc)
-		printf("<TR><TH BGCOLOR=\"#60B0B0\"COLSPAN=2>%s</TH></TR>\n",
-			desc);
+	if (desc) {
+		printf("<TR><TH BGCOLOR=\"#60B0B0\"COLSPAN=2>");
+		html_print_esc(desc);
+		printf("</TH></TR>\n");
+	}
 
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
 	printf("<TH>Setting</TH>\n");
@@ -917,7 +951,7 @@ static void showsettings(void)
 	while (ltmp) {
 		lnext = ltmp->next;
 
-		print_rw(upsname, ltmp->name);
+		print_rw(ltmp->name);
 
 		free(ltmp->name);
 		free(ltmp);
@@ -927,7 +961,9 @@ static void showsettings(void)
 	printf("<TR BGCOLOR=\"#60B0B0\">\n");
 	printf("<TD COLSPAN=\"2\" ALIGN=\"CENTER\">\n");
 	do_hidden("savesettings");
-	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"%s\">\n", monups);
+	printf("<INPUT TYPE=\"HIDDEN\" NAME=\"monups\" VALUE=\"");
+	html_print_esc(monups);
+	printf("\">\n");
 	printf("<INPUT TYPE=\"SUBMIT\" VALUE=\"Save changes\">\n");
 	printf("<INPUT TYPE=\"RESET\" VALUE=\"Reset\">\n");
 	do_hidden_sentinel();
@@ -955,7 +991,9 @@ static int setvar(const char *var, const char *val)
 	tmp = get_data("VAR", var);
 
 	if (!tmp) {
-		printf("Can't get old value for %s, aborting SET\n", var);
+		printf("Can't get old value for ");
+		html_print_esc(var);
+		printf(", aborting SET\n");
 		return 0;
 	}
 
@@ -963,23 +1001,35 @@ static int setvar(const char *var, const char *val)
 	if (!strcmp(tmp, val))
 		return 0;
 
-	printf("set %s to %s (was %s)\n", var, val, tmp);
+	printf("set ");
+	html_print_esc(var);
+	printf(" to ");
+	html_print_esc(val);
+	printf(" (was ");
+	html_print_esc(tmp);
+	printf(")\n");
 
 	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n",
 		upsname, var, pconf_encode(val, enc, sizeof(enc)));
 
 	if (upscli_sendline(&ups, buf, strlen(buf)) < 0) {
-		printf("Error: SET failed: %s\n", upscli_strerror(&ups));
+		printf("Error: SET failed: ");
+		html_print_esc(upscli_strerror(&ups));
+		printf("\n");
 		return 0;
 	}
 
 	if (upscli_readline(&ups, buf, sizeof(buf)) < 0) {
-		printf("Error: SET failed: %s\n", upscli_strerror(&ups));
+		printf("Error: SET failed: ");
+		html_print_esc(upscli_strerror(&ups));
+		printf("\n");
 		return 0;
 	}
 
 	if (strncmp(buf, "OK", 2) != 0) {
-		printf("Unexpected response: %s\n", buf);
+		printf("Unexpected response: ");
+		html_print_esc(buf);
+		printf("\n");
 		return 0;
 	}
 
@@ -1183,11 +1233,6 @@ int main(int argc, char **argv)
 	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
-	if (nut_debug_level > 0) {
-		cgilogbit_set();
-		printf("<p>NUT CGI Debugging enabled, level: %d</p>\n\n", nut_debug_level);
-	}
-
 	/* see if the magic string is present in the config file */
 	check_conf();
 
@@ -1236,7 +1281,9 @@ int main(int argc, char **argv)
 	if (!strcmp(function, "docmd"))
 		docmd();
 
-	printf("Error: Unhandled function name [%s]\n", function);
+	printf("Error: Unhandled function name [");
+	html_print_esc(function);
+	printf("]\n");
 
 	return 0;
 }
