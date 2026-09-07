@@ -38,6 +38,12 @@ void extractpostargs(void);
 /* see if a host is allowed per the hosts.conf */
 int checkhost(const char *host, char **desc);
 
+/* print a string safely in HTML text or quoted attribute contexts */
+void html_print_esc(const char *in);
+
+/* print an RFC 3986 URI component */
+void url_print_esc(const char *in);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

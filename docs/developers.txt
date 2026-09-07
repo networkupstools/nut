@@ -1064,6 +1064,21 @@ document):
 #endif
 ----
 
+Some frequently repeated pragma combinations, including the example above,
+were off-loaded into pairs of `include/nut-pragmas-*.h` files to begin and
+end a quiesced block of source code, e.g.:
+
+----
+	switch(...) {
+		...
+#include "nut-pragmas-covered-switch-default.h"
+		default:
+			/* Must not occur. */
+			break;
+#include "nut-pragmas-covered-switch-default-end.h"
+	}
+----
+
 
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~

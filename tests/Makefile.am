@@ -90,6 +90,12 @@ NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
 
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
+TESTS += test_cgilib
+test_cgilib_SOURCES = test_cgilib.c
+nodist_test_cgilib_SOURCES = cgilib.c
+test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+test_cgilib_LDADD = $(NUT_LIBCOMMON)
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
@@ -138,7 +144,10 @@ test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c ecoflow-cdc-protocol.c
+LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c
+
+cgilib.c: $(top_srcdir)/clients/cgilib.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/clients/cgilib.c" '$@'
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
@@ -200,7 +209,7 @@ else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
 endif !WITH_GPIO
 
-CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
+CLEANFILES += cgilib.c generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 TESTS += driver_methods_utest
