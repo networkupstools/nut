@@ -24,7 +24,7 @@
 
 #include "xppc-mib.h"
 
-#define XPPC_MIB_VERSION  "0.41"
+#define XPPC_MIB_VERSION  "0.42"
 
 #define XPPC_SYSOID       ".1.3.6.1.4.1.935"
 
@@ -66,7 +66,7 @@ static info_lkp_t xpcc_power_info[] = {
 	info_lkp_default(5, "OFF"),	/* sleeping */
 	info_lkp_default(6, "BYPASS"),	/* onBypass */
 	info_lkp_default(7, ""),	/* rebooting */
-	info_lkp_default(8, "OFF"),	/* standBy */
+	info_lkp_default(8, "OL"),	/* line-interactive inverter standby, not UPS/output standby */
 	info_lkp_default(9, "OL TRIM"),	/* onBuck */
 	info_lkp_sentinel
 };
