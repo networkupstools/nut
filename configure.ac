@@ -7478,6 +7478,10 @@ AC_CONFIG_FILES([
  Makefile
 ])
 
+dnl NOTE: Since PR https://github.com/networkupstools/nut/pull/3596 we again
+dnl  have only one Python3 source file, which covers two (here identical)
+dnl  build products. They may be delivered as sym-/hard-links, if the target
+dnl  platform offers both Qt5 and Qt6 implementations to care about.
 AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt5:scripts/python/app/NUT-Monitor-py3qt.in],
     [chmod +x scripts/python/app/NUT-Monitor-py3qt5])
 AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt6:scripts/python/app/NUT-Monitor-py3qt.in],
