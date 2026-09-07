@@ -1194,6 +1194,23 @@ public:
 	void setSSLConfig(const SSLConfig& config);
 
 	/**
+	 * Set a per-connection SSL context (advanced usage).
+	 * Allows a specific connection to use its own SSL context instead of
+	 * the library's default shared context. This enables clients to connect
+	 * to multiple servers with different CA trust domains or client certificates
+	 * simultaneously within the same process.
+	 * \param ssl_ctx Opaque SSL context (SSL_CTX* for OpenSSL, etc.)
+	 * \return Previous SSL context if one was set, nullptr otherwise.
+	 */
+	void *setSSLContext(void *ssl_ctx);
+
+	/**
+	 * Get the per-connection SSL context if one has been set.
+	 * \return The SSL context set via setSSLContext(), or nullptr if none.
+	 */
+	void *getSSLContext() const;
+
+	/**
 	 * Connect it to the specified server.
 	 * \param host Server host name.
 	 * \param port Server port.

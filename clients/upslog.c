@@ -884,10 +884,9 @@ int main(int argc, char **argv)
 			monhost_ups_current->port
 			);
 
-		/* FIXME [#3494]: Currently libupsclient allows for *one* SSL context
-		 *  shared by all connections, specifically the CERTIDENT of the client.
-		 *  We can have multiple CERTHOST certificates (and/or reading
-		 *  users/passwords) though. */
+		/* NOTE [#3494]: Per-connection SSL contexts now supported via registry.
+		 *  Each connection can have a different CERTHOST and/or client certificate,
+		 *  even when connecting to different servers. */
 		ac_current = upscli_get_authconf_item(NULL, monhost_ups_current->hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, monhost_ups_current->port) > 0 ? str_port : NULL, 1);
 		/* Always call this, to register possible CERTHOSTs etc. */
 		if (upscli_init_authconf(ac_current) > 0) {

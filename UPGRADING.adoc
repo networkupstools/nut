@@ -69,10 +69,23 @@ Changes from 2.8.5 to 2.8.6
   for reading like `upsc`.
 +
 The new `-A filename` option defaults to trying to use a `nutauth.conf` file
-  (if found in one of the default locations) but not failing if one is not
-  usable; specific values can require use of such a file or to not even try
-  reading one ('none' as the legacy default). See the updated manual pages
-  for more details. [issues #3329, #3411]
+  (if NOT specified here, but rather found in one of the default locations)
+  but not failing if one is not usable; any specific values can require use
+  of such a file or to not even try reading one ('none' as the legacy default).
+  See the updated manual pages for more details. [issues #3329, #3411]
+
+- The `upsmon` and `upsstats.cgi` clients capable of connections to multiple
+  NUT data servers, potentially in separately managed security realms, now
+  support an `AUTHCONF` option in their configuration files to specify the
+  SSL details to be used with each such server. Legacy `upsmon` configuration
+  keywords like `CERTPATH`, `CERTFILE`, `CERTIDENT`, `CERTHOST`, `CERTVERIFY`
+  and `FORCESSL` act as a "global defaults" section in `nutauth.conf` terms,
+  and any actual `nutauth.conf` file entries gets loaded on top of these data.
+  The default behavior (when `AUTHCONF` remains unspecified) is a best-effort
+  attempt to load the file from one of the standard locations. If your NUT
+  deployment defines an e.g. `/etc/nut/nutauth.conf` file which would be
+  loaded automatically, but its contents conflict with what `upsmon` needs
+  to know, please specify `AUTHCONF = none` in `upsmon.conf`. [issue #3439]
 
 - The `powervar_cx_usb`, `tripplite_usb` drivers used a built-in limit on
   reconnection attempts after which they exited ('60' and '10' respectively).

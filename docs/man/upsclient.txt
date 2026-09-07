@@ -33,6 +33,38 @@ linkman:upscli_add_host_cert[3] before initializing a connection to it.
 In the same way, just before exiting, and after all upscli usage, you must
 call linkman:upscli_cleanup[3] to flush cache files and perform other cleanup.
 
+SSL CONTEXT CONFIGURATION
+-------------------------
+
+The NUT upsclient library supports multiple independent SSL contexts within a
+single process, enabling simultaneous connections to multiple NUT servers with
+different certificate authorities and assuming different client certificate
+identities.
+
+A process-wide registry caches SSL context configurations, keyed by parameters
+(CA path, verify mode, client certificate identity, etc.).
+
+Contexts are created by linkman:upscli_get_or_create_ssl_context[3] or
+linkman:upscli_get_or_create_ssl_context_authconf[3] and attached to individual
+connections via linkman:upscli_set_ssl_context[3] before calling
+linkman:upscli_connect[3].
+
+For most applications, the default context created by linkman:upscli_init[3]
+legacy method, or linkman:upscli_init2[3] or linkman:upscli_init_authconf[3]
+methods added in NUT v2.8.6, is sufficient for connections to a single NUT
+data server or multiple servers sharing a common security management realm.
+
+Truly multi-server applications (e.g., `upsmon`, `upslog`, `upsstats.cgi`)
+can however benefit from per-connection contexts when servers are managed
+by different entities (different CAs or client certificate realms).
+
+* NUT builds against OpenSSL support independent `SSL_CTX` objects per server
+  that can be used by `SSL` objects for individual connections, for complete
+  multi-realm isolation.
+* NUT builds against Mozilla NSS share a process-global certificate database
+  (so the NSS DB files prepared by sysadmin must include all CAs and other
+  data), but support per-connection client certificate identity selection.
+
 NETWORK FUNCTIONS
 -----------------
 
@@ -88,6 +120,9 @@ linkman:upscli_init[3], linkman:upscli_cleanup[3],
 linkman:upscli_add_host_cert[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3],
 linkman:upscli_fd[3],
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
 linkman:upscli_getvar[3], linkman:upscli_list_next[3],
 linkman:upscli_list_start[3], linkman:upscli_readline[3],
 linkman:upscli_sendline[3],

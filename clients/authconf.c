@@ -966,8 +966,24 @@ section_header_cleanup_return:
 static int parse_authconf_file(const char *filename, int fatal_errors, int global_scope)
 {
 	PCONF_CTX_t	ctx;
+	char		fn[NUT_PATH_MAX + 1];
+	const char	*filename_to_use = filename;
 
-	check_perms(filename);
+	if (filename[0] != '/'
+#ifdef WIN32
+	 && filename[1] != ':'
+#endif	/* WIN32 */
+	) {
+		int path_len = snprintf(fn, sizeof(fn), "%s/%s", confpath(), filename);
+		if (path_len < 1 || (size_t)path_len >= sizeof(fn)
+		) {
+			upslogx(LOG_ERR, "Could not construct path for authconf file: %s", filename);
+			return -1;
+		}
+		filename_to_use = fn;
+	}
+
+	check_perms(filename_to_use);
 
 	if (!pconf_init(&ctx, authconf_err)) {
 		if (fatal_errors) {
@@ -976,11 +992,11 @@ static int parse_authconf_file(const char *filename, int fatal_errors, int globa
 		return -1;
 	}
 
-	if (!pconf_file_begin(&ctx, filename)) {
+	if (!pconf_file_begin(&ctx, filename_to_use)) {
 		if (fatal_errors) {
-			fatalx(EXIT_FAILURE, "Can't open %s: %s", filename, ctx.errmsg);
+			fatalx(EXIT_FAILURE, "Can't open %s: %s", filename_to_use, ctx.errmsg);
 		} else {
-			upslogx(LOG_WARNING, "Can't open %s: %s", filename, ctx.errmsg);
+			upslogx(LOG_WARNING, "Can't open %s: %s", filename_to_use, ctx.errmsg);
 			pconf_finish(&ctx);
 			return -1;
 		}
@@ -988,7 +1004,7 @@ static int parse_authconf_file(const char *filename, int fatal_errors, int globa
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s", filename, ctx.linenum, ctx.errmsg);
+			upslogx(LOG_ERR, "Parse error: %s:%d: %s", filename_to_use, ctx.linenum, ctx.errmsg);
 			continue;
 		}
 		handle_authconf_args(ctx.numargs, ctx.arglist, global_scope);

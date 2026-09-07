@@ -8,6 +8,10 @@
 # Such a file may `INCLUDE` further configurations (e.g. hop from a
 # per-user file to load server-wide defaults) if desired.
 #
+# Some clients provided by the NUT project or third-party consumers can
+# additionally define command-line options (`-A`) or configuration file
+# keywords (`AUTHCONF`) to specify a preferred copy of this file.
+#
 # While it usually suffices to have one client certificate for all servers,
 # it may be that some remote system owned/managed by a different department
 # would insist on *themselves* issuing (and revoking) certificates for their

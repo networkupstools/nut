@@ -280,6 +280,9 @@ public:
 	void startTLS();
 	bool isSSL()const;
 
+	void *setSSLContext(void *ssl_ctx);
+	void *getSSLContext() const;
+
 	void setTimeout(time_t timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
@@ -295,12 +298,13 @@ private:
 #ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
 	SSL* _ssl;
+	SSL_CTX* _ssl_ctx;
 	openssl_cert_verify_data_t	openssl_cert_verify_data;
 	int _verify_depth;
 	static int _openssl_cert_verify_data_index;
-	static SSL_CTX* _ssl_ctx;
 # elif defined(WITH_NSS)
 	PRFileDesc* _ssl;
+	bool _nss_initialized;
 # endif
 #endif
 	bool _debugConnect;
@@ -342,7 +346,6 @@ private:
 
 #ifdef WITH_SSL_CXX
 # ifdef WITH_OPENSSL
-SSL_CTX* Socket::_ssl_ctx = nullptr;
 int Socket::_openssl_cert_verify_data_index = 0;
 
 /* Adapted from https://stackoverflow.com/a/42477707 with references to
@@ -824,11 +827,13 @@ static void nss_error(const char* text)
 
 	if (status == SECFailure) {
 		if (sock && sock->_ssl_config && !sock->_ssl_config->getCertIdentName().empty()) {
-			cert = PK11_FindCertFromNickname(sock->_ssl_config->getCertIdentName().c_str(), nullptr);
+			/* Pass "sock" through as wincx, so nss_password_callback()
+			 * can resolve this same connection's per-Socket password. */
+			cert = PK11_FindCertFromNickname(sock->_ssl_config->getCertIdentName().c_str(), sock);
 			if (cert == nullptr) {
 				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
 			} else {
-				privKey = PK11_FindKeyByAnyCert(cert, nullptr);
+				privKey = PK11_FindKeyByAnyCert(cert, sock);
 				if (privKey == nullptr) {
 					nss_error("GetClientAuthData / PK11_FindKeyByAnyCert");
 					CERT_DestroyCertificate(cert);
@@ -861,6 +866,11 @@ Socket::Socket():
 #ifdef WITH_SSL_CXX
 # if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	_ssl(nullptr),
+# endif
+# ifdef WITH_OPENSSL
+	_ssl_ctx(nullptr),
+# elif defined(WITH_NSS)
+	_nss_initialized(false),
 # endif
 # if defined(WITH_OPENSSL)
 	_verify_depth(9),	/* openssl default */
@@ -898,11 +908,38 @@ Socket::Socket():
 Socket::~Socket()
 {
 	disconnect();
+#ifdef WITH_OPENSSL
+	if (_ssl_ctx) {
+		SSL_CTX_free(_ssl_ctx);
+		_ssl_ctx = nullptr;
+	}
+#endif
 }
 
 void Socket::setTimeout(time_t timeout)
 {
 	_tv.tv_sec = timeout;
+}
+
+void *Socket::setSSLContext(void *ssl_ctx)
+{
+#ifdef WITH_OPENSSL
+	void *previous = _ssl_ctx;
+	_ssl_ctx = static_cast<SSL_CTX*>(ssl_ctx);
+	return previous;
+#else
+	NUT_UNUSED_VARIABLE(ssl_ctx);
+	return nullptr;
+#endif
+}
+
+void *Socket::getSSLContext() const
+{
+#ifdef WITH_OPENSSL
+	return _ssl_ctx;
+#else
+	return nullptr;
+#endif
 }
 
 void Socket::setDebugConnect(bool d)
@@ -1658,10 +1695,8 @@ void Socket::startTLS()
 
 # elif defined(WITH_NSS)
 	/* NSS implementation following upsclient.c logic */
-	static bool nss_initialized = false;
-
 	/* FIXME: Support several NSS databases, use prefix parameters? */
-	if (!nss_initialized) {
+	if (!_nss_initialized) {
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 		PK11_SetPasswordFunc(nss_password_callback);
 
@@ -1682,7 +1717,7 @@ void Socket::startTLS()
 		if (status != SECSuccess) {
 			throw nut::SSLException_NSS("NSS initialization failed");
 		}
-		nss_initialized = true;
+		_nss_initialized = true;
 	}
 
 	PRFileDesc *socket = PR_ImportTCPSocket(static_cast<int>(_sock));
@@ -3812,6 +3847,22 @@ void SSLConfig_NSS::apply(TcpClient& client) const
 void TcpClient::setSSLConfig(const SSLConfig& config)
 {
 	config.apply(*this);
+}
+
+void *TcpClient::setSSLContext(void *ssl_ctx)
+{
+	if (!_socket) {
+		return nullptr;
+	}
+	return _socket->setSSLContext(ssl_ctx);
+}
+
+void *TcpClient::getSSLContext() const
+{
+	if (!_socket) {
+		return nullptr;
+	}
+	return _socket->getSSLContext();
 }
 
 void TcpClient::setSSLConfig_OpenSSL(int forcessl, int certverify, const char *ca_path, const char *ca_file, const char *cert_file, const char *key_file, const char *key_pass, const char *certident_name, const char *certhost_addr, const char *certhost_name)

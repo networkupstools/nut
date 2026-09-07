@@ -43,6 +43,28 @@ is not authorized", check that file first.
 
 SSL access may be further managed by linkman:nutauth.conf[5] file.
 
+SSL/TLS CONFIGURATION
+---------------------
+
+*upsstats.cgi* supports per-server SSL/TLS certificate verification and
+client certificate authentication when monitoring multiple UPS devices.
+SSL/TLS configuration is defined via linkman:hosts.conf[5] and
+linkman:nutauth.conf[5] using CERTPATH, CERTVERIFY, CERTNAME, and CERTHOST
+directives.
+
+When monitoring multiple UPS servers managed by different entities
+(different CAs or security realms), *upsstats.cgi* automatically uses
+per-connection SSL contexts, allowing independent certificate verification
+and client certificate identities for each monitored UPS.
+
+OpenSSL builds support independent per-connection certificate authorities,
+while NSS builds support per-connection client certificate selection from a
+shared process-global database.
+
+See linkman:nutauth.conf[5] for detailed SSL/TLS configuration options, and
+linkman:upscli_get_or_create_ssl_context[3] for information on the registry
+mechanism used to manage per-connection SSL contexts.
+
 TEMPLATES
 ---------
 
@@ -117,7 +139,11 @@ SEE ALSO
 --------
 
 linkman:upsimage.cgi[8],
-linkman:nutauth.conf[5]
+linkman:upsclient[3], linkman:upscli_init[3], linkman:upscli_cleanup[3],
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
+linkman:hosts.conf[5], linkman:nutauth.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

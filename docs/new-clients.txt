@@ -48,6 +48,34 @@ upsclient functions.
 link:https://www.networkupstools.org/projects.html[Other programs] not included
 in this package may also use this library, such as wmnut.
 
+Multiple SSL contexts in one process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When a client needs to talk to several NUT servers that use different trust
+roots, client certificate identities, or security realms, create a dedicated
+SSL context for each connection instead of reusing a single process-wide
+default. The libupsclient registry keeps those contexts cached and returns a
+matching entry for identical parameters, while still allowing independent
+settings for each server.
+
+------
+  upscli_authconf_t *ac = upscli_get_authconf_item(NULL, hostname, port_str, 1);
+  void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+
+  /* NOTE: this clause is just an example of what happens
+   * under the hood; actually the upscli_tryconnect() method
+   * clears "conn" and finds or creates the suitable cached
+   * context by itself, anew every time. */
+  if (ssl_ctx) {
+      upscli_set_ssl_context(conn, ssl_ctx);
+  }
+
+  upscli_connect(conn, hostname, port, flags);
+------
+
+This pattern is used by the in-tree multi-server clients such as `upsmon`,
+`upslog`, and `upsstats.cgi`.
+
 High level library: libnutclient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
