@@ -805,8 +805,9 @@ static TYPE_FD open_sock(void)
 #else /* WIN32 */
 	SECURITY_ATTRIBUTES	pipe_sa;
 	SECURITY_DESCRIPTOR	pipe_sd;
+	PACL	pipe_acl;
 
-	init_pipe_security(&pipe_sa, &pipe_sd);
+	pipe_acl = init_pipe_security(&pipe_sa, &pipe_sd);
 
 	fd = CreateNamedPipe(
 			pipefn,		/* pipe name */
@@ -821,6 +822,7 @@ static TYPE_FD open_sock(void)
 			BUF_LEN,	/* input buffer size */
 			0,		/* client time-out */
 			&pipe_sa);	/* default security attributes */
+	free(pipe_acl);
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -1046,13 +1048,14 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	conn_t	*conn, *tmp, *last;
 	SECURITY_ATTRIBUTES	pipe_sa;
 	SECURITY_DESCRIPTOR	pipe_sd;
+	PACL	pipe_acl;
 
 	/* We have detected a connection on the opened pipe. So we start
 	 * by saving its handle and creating a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sockfd;
 
-	init_pipe_security(&pipe_sa, &pipe_sd);
+	pipe_acl = init_pipe_security(&pipe_sa, &pipe_sd);
 
 	/* sock is the handle of the connection pending pipe */
 	acc = CreateNamedPipe(
@@ -1068,6 +1071,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 			BUF_LEN,	/* input buffer size */
 			0,		/* client time-out */
 			&pipe_sa);	/* default security attribute */
+	free(pipe_acl);
 
 	if (INVALID_FD(acc)) {
 		fatal_with_errno(EXIT_FAILURE,

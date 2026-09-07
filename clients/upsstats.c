@@ -159,8 +159,11 @@ static void report_error(void)
 
 	if (upscli_upserror(&ups) == UPSCLI_ERR_VARNOTSUPP)
 		printf("Not supported\n");
-	else
-		printf("[error: %s]\n", upscli_strerror(&ups));
+	else {
+		printf("[error: ");
+		html_print_esc(upscli_strerror(&ups));
+		printf("]\n");
+	}
 
 	upsdebug_call_finished0();
 }
@@ -256,6 +259,67 @@ static void parse_var(const char *var)
 		return;
 	}
 
+	html_print_esc(answer);
+	upsdebug_call_finished0();
+}
+
+static int is_css_number(const char *value)
+{
+	const unsigned char *ptr = (const unsigned char *)value;
+	int digits = 0;
+
+	if (!ptr || !*ptr)
+		return 0;
+
+	if (*ptr == '+' || *ptr == '-')
+		ptr++;
+
+	while (*ptr >= '0' && *ptr <= '9') {
+		digits = 1;
+		ptr++;
+	}
+
+	if (*ptr == '.') {
+		ptr++;
+		while (*ptr >= '0' && *ptr <= '9') {
+			digits = 1;
+			ptr++;
+		}
+	}
+
+	if (!digits)
+		return 0;
+
+	if (*ptr == 'e' || *ptr == 'E') {
+		ptr++;
+		if (*ptr == '+' || *ptr == '-')
+			ptr++;
+		if (*ptr < '0' || *ptr > '9')
+			return 0;
+		while (*ptr >= '0' && *ptr <= '9')
+			ptr++;
+	}
+
+	return (*ptr == '\0');
+}
+
+static void parse_number(const char *var)
+{
+	char answer[SMALLBUF];
+
+	upsdebug_call_starting_for_str1(var);
+
+	if (!get_var(var, answer, sizeof(answer), 0)) {
+		upsdebug_call_finished1(": get_var() failed");
+		return;
+	}
+
+	if (!is_css_number(answer)) {
+		upsdebugx(1, "%s: refusing non-numeric value for '%s'", __func__, NUT_STRARG(var));
+		upsdebug_call_finished1(": invalid number");
+		return;
+	}
+
 	printf("%s", answer);
 	upsdebug_call_finished0();
 }
@@ -331,6 +395,7 @@ static int do_date(const char *buf)
 static int get_img_val(const char *var, const char *desc, const char *imgargs)
 {
 	char	answer[SMALLBUF];
+	char	args[SMALLBUF], *arg, *eq, *last = NULL;
 
 	upsdebug_call_starting_for_str3(var, desc, imgargs);
 
@@ -339,13 +404,32 @@ static int get_img_val(const char *var, const char *desc, const char *imgargs)
 		return 1;
 	}
 
-	printf("<IMG SRC=\"%s?host=%s&amp;display=%s",
-		upsimgpath, currups->sys, var);
+	printf("<IMG SRC=\"");
+	html_print_esc(upsimgpath);
+	printf("?host=");
+	url_print_esc(currups->sys);
+	printf("&amp;display=");
+	url_print_esc(var);
 
-	if ((imgargs) && (strlen(imgargs) > 0))
-		printf("&amp;%s", imgargs);
+	if (imgargs && *imgargs) {
+		snprintf(args, sizeof(args), "%s", imgargs);
+		for (arg = strtok_r(args, "&", &last); arg != NULL; arg = strtok_r(NULL, "&", &last)) {
+			eq = strchr(arg, '=');
+			if (!eq)
+				continue;
+			*eq++ = '\0';
+			printf("&amp;");
+			url_print_esc(arg);
+			printf("=");
+			url_print_esc(eq);
+		}
+	}
 
-	printf("\" ALT=\"%s: %s\">", desc, answer);
+	printf("\" ALT=\"");
+	html_print_esc(desc);
+	printf(": ");
+	html_print_esc(answer);
+	printf("\">");
 
 	upsdebug_call_finished0();
 	return 1;
@@ -371,7 +455,7 @@ static void check_imgarg(char *arg, char *out, size_t outlen)
 			if (strlen(out) == 0)
 				snprintf(out, outlen, "%s=%s", arg, ep);
 			else
-				snprintfcat(out, outlen, "&amp;%s=%s", arg, ep);
+				snprintfcat(out, outlen, "&%s=%s", arg, ep);
 			return;
 		}
 	}
@@ -524,7 +608,9 @@ static void ups_connect(void)
 		if (currups
 		 && upscli_splitname(currups->sys, &newups, &newhost, &newport) != 0
 		) {
-			printf("Unusable UPS definition [%s]\n", currups->sys);
+			printf("Unusable UPS definition [");
+			html_print_esc(currups->sys);
+			printf("]\n");
 			fprintf(stderr, "Unusable UPS definition [%s]\n",
 				currups->sys);
 			upsdebug_call_finished1(": Unusable UPS definition");
@@ -557,7 +643,9 @@ static void ups_connect(void)
 	hostname = NULL;
 
 	if (currups && upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
-		printf("Unusable UPS definition [%s]\n", currups->sys);
+		printf("Unusable UPS definition [");
+		html_print_esc(currups->sys);
+		printf("]\n");
 		fprintf(stderr, "Unusable UPS definition [%s]\n", currups->sys);
 		upsdebug_call_finished1(": Unusable UPS definition");
 		exit(EXIT_FAILURE);
@@ -611,21 +699,28 @@ static void do_hostlink(void)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
+	printf("<a href=\"");
+	html_print_esc(upsstatpath);
+	printf("?host=");
+	url_print_esc(currups->sys);
 
 	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
-		printf("&amp;template_single=%s", template_single);
+		printf("&amp;template_single=");
+		url_print_esc(template_single);
 	}
 
 	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
-		printf("&amp;template_list=%s", template_list);
+		printf("&amp;template_list=");
+		url_print_esc(template_list);
 	}
 
 	if (refreshdelay > 0) {
 		printf("&amp;refresh=%d", refreshdelay);
 	}
 
-	printf("\">%s</a>", currups->desc);
+	printf("\">");
+	html_print_esc(currups->desc);
+	printf("</a>");
 	upsdebug_call_finished0();
 }
 
@@ -638,23 +733,27 @@ static void do_treelink_json(const char *text)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;json",
-		upsstatpath, currups->sys);
+	printf("<a href=\"");
+	html_print_esc(upsstatpath);
+	printf("?host=");
+	url_print_esc(currups->sys);
+	printf("&amp;json");
 
 	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
-		printf("&amp;template_single=%s", template_single);
+		printf("&amp;template_single=");
+		url_print_esc(template_single);
 	}
 
 	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
-		printf("&amp;template_list=%s", template_list);
+		printf("&amp;template_list=");
+		url_print_esc(template_list);
 	}
 
 	if (refreshdelay > 0) {
 		printf("&amp;refresh=%d", refreshdelay);
 	}
 
-	printf("\">%s</a>",
-		((text && *text) ? text : "JSON"));
+	printf("\">%s</a>", ((text && *text) ? text : "JSON"));
 
 	upsdebug_call_finished0();
 }
@@ -668,15 +767,20 @@ static void do_treelink(const char *text)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode",
-		upsstatpath, currups->sys);
+	printf("<a href=\"");
+	html_print_esc(upsstatpath);
+	printf("?host=");
+	url_print_esc(currups->sys);
+	printf("&amp;treemode");
 
 	if (template_single && strcmp(template_single, DEFAULT_TEMPLATE_SINGLE)) {
-		printf("&amp;template_single=%s", template_single);
+		printf("&amp;template_single=");
+		url_print_esc(template_single);
 	}
 
 	if (template_list && strcmp(template_list, DEFAULT_TEMPLATE_LIST)) {
-		printf("&amp;template_list=%s", template_list);
+		printf("&amp;template_list=");
+		url_print_esc(template_list);
 	}
 
 	if (refreshdelay > 0) {
@@ -875,7 +979,7 @@ static void do_temp(const char *var)
 	}
 
 	if (use_celsius) {
-		printf("%s", tempc);
+		html_print_esc(tempc);
 		upsdebug_call_finished0();
 		return;
 	}
@@ -984,14 +1088,20 @@ static int do_command(char *cmd)
 		return 1;
 	}
 
+	if (!strncmp(cmd, "VARNUM ", 7)) {
+		parse_number(&cmd[7]);
+		upsdebug_call_finished0();
+		return 1;
+	}
+
 	if (!strcmp(cmd, "HOST")) {
-		printf("%s", currups->sys);
+		html_print_esc(currups->sys);
 		upsdebug_call_finished0();
 		return 1;
 	}
 
 	if (!strcmp(cmd, "HOSTDESC")) {
-		printf("%s", currups->desc);
+		html_print_esc(currups->desc);
 		upsdebug_call_finished0();
 		return 1;
 	}
@@ -1236,7 +1346,9 @@ static void display_template(const char *tfn, int type)
 		errno = EPERM;
 		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look not exactly in the managed location<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+		printf("Error: can't open template file (");
+		html_print_esc(tfn);
+		printf("): Not authorized<br/>\n");
 
 		upsdebug_call_finished1(": subdir in template");
 		exit(EXIT_FAILURE);
@@ -1247,7 +1359,9 @@ static void display_template(const char *tfn, int type)
 		errno = EPERM;
 		fprintf(stderr, "upsstats: Can't open %s: %s: asked to look at not a *.htm* file<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+		printf("Error: can't open template file (");
+		html_print_esc(tfn);
+		printf("): Not authorized<br/>\n");
 
 		upsdebug_call_finished1(": not a *.htm* file");
 		exit(EXIT_FAILURE);
@@ -1279,7 +1393,9 @@ static void display_template(const char *tfn, int type)
 		errno = EPERM;
 		fprintf(stderr, "upsstats: Can't open %s: %s: Not authorized: template not permitted via hosts.conf<br/>\n", tfn, strerror(errno));
 
-		printf("Error: can't open template file (%s): Not authorized<br/>\n", tfn);
+		printf("Error: can't open template file (");
+		html_print_esc(tfn);
+		printf("): Not authorized<br/>\n");
 
 		upsdebug_call_finished1(": template not permitted via hosts.conf");
 		exit(EXIT_FAILURE);
@@ -1292,7 +1408,9 @@ static void display_template(const char *tfn, int type)
 	if (!tf) {
 		fprintf(stderr, "upsstats: Can't open %s: %s<BR/>\n", fn, strerror(errno));
 
-		printf("Error: can't open template file (%s)<BR/>\n", tfn);
+		printf("Error: can't open template file (");
+		html_print_esc(tfn);
+		printf(")<BR/>\n");
 
 		upsdebug_call_finished1(": no template");
 		exit(EXIT_FAILURE);
@@ -1301,7 +1419,9 @@ static void display_template(const char *tfn, int type)
 	if (!fgets(buf, sizeof(buf), tf)) {
 		fprintf(stderr, "upsstats: template file %s seems to be empty (fgets failed): %s<BR/>\n", fn, strerror(errno));
 
-		printf("Error: template file %s seems to be empty<BR/>\n", tfn);
+		printf("Error: template file ");
+		html_print_esc(tfn);
+		printf(" seems to be empty<BR/>\n");
 
 		upsdebug_call_finished1(": empty template");
 		exit(EXIT_FAILURE);
@@ -1313,7 +1433,9 @@ static void display_template(const char *tfn, int type)
 	} else {
 		fprintf(stderr, "upsstats: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", fn);
 
-		printf("Error: template file %s does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n", tfn);
+		printf("Error: template file ");
+		html_print_esc(tfn);
+		printf(" does not start with NUT_UPSSTATS_TEMPLATE command<BR/>\n");
 
 		upsdebug_call_finished1(": not a valid template");
 		exit(EXIT_FAILURE);
@@ -1356,7 +1478,9 @@ static void display_tree(int verbose)
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
 	printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
 	printf("<HTML>\n");
-	printf("<HEAD><TITLE>upsstat: data tree of %s</TITLE></HEAD>\n", currups->desc);
+	printf("<HEAD><TITLE>upsstat: data tree of ");
+	html_print_esc(currups->desc);
+	printf("</TITLE></HEAD>\n");
 
 	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n");
 
@@ -1367,7 +1491,9 @@ static void display_tree(int verbose)
 
 	/* include the description from checkhost() if present */
 	printf("<TR><TH COLSPAN=3 BGCOLOR=\"#50A0A0\">\n");
-	printf("<FONT SIZE=\"+2\">%s</FONT>\n", currups->desc);
+	printf("<FONT SIZE=\"+2\">");
+	html_print_esc(currups->desc);
+	printf("</FONT>\n");
 	printf("</TH></TR>\n");
 
 	printf("<TR><TH COLSPAN=3 BGCOLOR=\"#60B0B0\"></TH></TR>\n");
@@ -1385,9 +1511,13 @@ static void display_tree(int verbose)
 
 		printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"LEFT\">\n");
 
-		printf("<TD>%s</TD>\n", answer[2]);
+		printf("<TD>");
+		html_print_esc(answer[2]);
+		printf("</TD>\n");
 		printf("<TD>:</TD>\n");
-		printf("<TD>%s</TD>\n", answer[3]);
+		printf("<TD>");
+		html_print_esc(answer[3]);
+		printf("</TD>\n");
 
 		printf("</TR>\n");
 	}
@@ -1575,8 +1705,9 @@ static void display_single(void)
 	upsdebug_call_starting0();
 
 	if (!checkhost(monhost, &monhostdesc)) {
-		printf("Access to that host [%s] is not authorized.\n",
-			monhost);
+		printf("Access to that host [");
+		html_print_esc(monhost);
+		printf("] is not authorized.\n");
 		upsdebug_call_finished1(": not auth");
 		exit(EXIT_FAILURE);
 	}
@@ -1626,7 +1757,9 @@ static void display_json(void)
 	if (monhost) {
 		init_authconf();	/* best-effort */
 		if (!checkhost(monhost, &monhostdesc)) {
-			printf("{\"error\": \"Access to host %s is not authorized.\"}", monhost);
+			printf("{\"error\": \"Access to host ");
+			json_print_esc(monhost);
+			printf(" is not authorized.\"}");
 			upsdebug_call_finished1(": not auth");
 			return;
 		}
@@ -1663,7 +1796,9 @@ static void display_json(void)
 			json_print_esc(currups->sys);
 			printf("\", \"desc\": \"");
 			json_print_esc(currups->desc);
-			printf("\", \"error\": \"Connection failed: %s\"}", upscli_strerror(&ups));
+			printf("\", \"error\": \"Connection failed: ");
+			json_print_esc(upscli_strerror(&ups));
+			printf("\"}");
 			is_first_ups = 0;
 			continue;
 		}
@@ -1711,7 +1846,9 @@ static void display_json(void)
 		numq = 2;
 
 		if (upscli_list_start(&ups, numq, query) < 0) {
-			printf("      \"error\": \"Failed to list variables: %s\"", upscli_strerror(&ups));
+			printf("      \"error\": \"Failed to list variables: ");
+			json_print_esc(upscli_strerror(&ups));
+			printf("\"");
 		} else {
 			while (upscli_list_next(&ups, numq, query, &numa, &answer) == 1) {
 				if (numa < 4) continue; /* Invalid response */
@@ -1807,6 +1944,11 @@ int main(int argc, char **argv)
 	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
+	/* TOTHINK: ifdef this away from common builds?..
+	 * WARNING: Debug logs are likely not HTML-safe,
+	 * as in html_print_esc() use-cases, and anyway
+	 * will explode the page markup!
+	 */
 	if (nut_debug_level > 0) {
 		cgilogbit_set();
 		printf("Content-type: text/html\n");

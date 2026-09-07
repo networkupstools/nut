@@ -983,6 +983,8 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+	intmax_t final_uid;
+	intmax_t final_euid;
 
 	if (!pw) {
 		upsdebugx(1, "Can not become_user(<null>), skipped");
@@ -1019,8 +1021,16 @@ void become_user(struct passwd *pw)
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
 
+	final_uid = getuid();
+	final_euid = geteuid();
+	if ((final_uid == 0) || (final_euid == 0)) {
+		upslogx(LOG_WARNING, "Warning: running as root (UID=%jd EUID=%jd)",
+			final_uid, final_euid);
+		return;
+	}
+
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
-		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
+		pw->pw_name, final_uid, (intmax_t)getgid());
 #else	/* WIN32 */
 	/* NUT_WIN32_INCOMPLETE_MAYBE_NOT_APPLICABLE(); */
 	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
@@ -3157,30 +3167,11 @@ const char *str_upsnotify_state(upsnotify_state_t state) {
 			 * when starting/stopping
 			 */
 			return "NOTIFY_STATE_EXTEND_TIMEOUT";
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
-# pragma GCC diagnostic ignored "-Wcovered-switch-default"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunreachable-code"
-# pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
+#include "nut-pragmas-covered-switch-default.h"
 		default:
 			/* Must not occur. */
 			return "NOTIFY_STATE_UNDEFINED";
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-covered-switch-default-end.h"
 	}
 }
 
@@ -3596,21 +3587,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				}
 				break;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
-# pragma GCC diagnostic ignored "-Wcovered-switch-default"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-# pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunreachable-code"
-# pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
+#include "nut-pragmas-covered-switch-default.h"
 				/* All enum cases defined as of the time of coding
 				 * have been covered above. Handle later definitions,
 				 * memory corruptions and buggy inputs below...
@@ -3623,12 +3600,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					upsdebugx(6, "%s: unknown state but have a status message provided", __func__);
 					ret = (int)msglen;
 				}
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-covered-switch-default-end.h"
 		}
 
 		if ((ret < 0) || (ret >= (int) sizeof(buf))) {

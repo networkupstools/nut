@@ -52,7 +52,7 @@
 # endif
 #endif	/* WIN32 */
 
-#define MGE_HID_VERSION		"MGE HID 1.60"
+#define MGE_HID_VERSION		"MGE HID 1.61"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -1830,6 +1830,20 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5P", "850", EATON_5P, "5P 850" },
 	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
 	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
+
+	/* Eaton 5P Gen2, names assumed per VA numbers and form factors
+	 * ("iR" rack, "i" tower) of the Gen2 range; see also
+	 * https://github.com/networkupstools/nut/issues/2380
+	 * Fixes for actual product/model names reported via USB are welcome
+	 */
+	{ "Eaton 5P", "650iR G2", EATON_5P, NULL },
+	{ "Eaton 5P", "850iR G2", EATON_5P, NULL },
+	{ "Eaton 5P", "1150iR G2", EATON_5P, NULL },
+	{ "Eaton 5P", "1550iR G2", EATON_5P, NULL },
+	{ "Eaton 5P", "650i G2", EATON_5P, NULL },
+	{ "Eaton 5P", "850i G2", EATON_5P, NULL },
+	{ "Eaton 5P", "1150i G2", EATON_5P, NULL },
+	{ "Eaton 5P", "1550i G2", EATON_5P, NULL },
 
 	/* Eaton 5PX, names assumed per VA numbers in
 	 * https://www.eaton.com/gb/en-gb/catalog/backup-power-ups-surge-it-power-distribution/eaton-5px-ups-emea.html#tab-2

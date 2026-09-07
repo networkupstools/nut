@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.61"
+#define APCC_MIB_VERSION	"1.62"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs. sysOID for this one? */
@@ -289,6 +289,9 @@ static snmp_info_t apcc_mib[] = {
 	snmp_info_default("output.L2.power.minimum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.2", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL),
 	snmp_info_default("output.L3.power.minimum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.3", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL),
 	snmp_info_default("output.voltage.nominal", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL),
+
+	/* Universal I/O ambient sensor */
+	snmp_info_default("ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.25.1.2.1.6.1.1", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL),
 
 	/* Measure-UPS ambient variables */
 	/* Environmental sensors (AP9612TH and others) */
