@@ -1212,7 +1212,13 @@ which is of little concern for Python2 but is important in Python3
 
         for line in result.split( b"\n" ) :
             if line[:3] == b"UPS" :
-                ups, desc = line[4:-1].split( b'"' )
+                fields = re.match( b'([^"]*)"((?:[^"\\\\]|\\\\.)*)"$', line[4:] )
+                if fields is None :
+                    raise ValueError( "Invalid UPS list entry" )
+                ups, desc = fields.groups()
+                # NUT escapes the next byte literally, including quotes,
+                # backslashes and '#'. Consume each escape exactly once.
+                desc = re.sub( b'\\\\(.)', b'\\1', desc )
                 ups_list[ ups.replace( b" ", b"" ) ] = desc
 
         return( ups_list )

@@ -494,6 +494,10 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * `PyNUTClient`: fixed `GetUPSList()` rejecting UPS descriptions containing
+      escaped quotes. Description escapes are decoded once, preserving byte
+      keys and values and allowing `GetUPSNames()` to work with these entries.
+      [issue #3620]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among

@@ -14,13 +14,18 @@
 all: PyNUTClient
 
 check-local:
+	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no ; then \
+		PYTHONPATH="$(builddir)" $(PYTHON_DEFAULT) "$(srcdir)/test_upslist.py"; \
+	else \
+		echo "SKIP: LIST UPS tests require a configured Python interpreter"; \
+	fi
 	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
 
 # NOT tying into "make check" because a lot of stars must align for this test:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini MANIFEST.in
+EXTRA_DIST = tox.ini MANIFEST.in test_upslist.py
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON_DEFAULT = @PYTHON_DEFAULT@
