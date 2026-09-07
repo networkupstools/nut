@@ -590,6 +590,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
+    * The PyQt5 and PyQt6 `NUT-Monitor` commands now share one Python 3
+      implementation. The dispatcher accepts `NUT_MONITOR_QT=5` or
+      `NUT_MONITOR_QT=6` to require a particular backend. [PR #3596]
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]

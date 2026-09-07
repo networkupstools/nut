@@ -15,7 +15,7 @@ SYNOPSIS
 
 *NUT-Monitor-py3qt6*
 
-[PREFER_PY2=true] [PYTHON2=python2.7] [PYTHON3=python3.14w] *NUT-Monitor*
+[PREFER_PY2=true] [NUT_MONITOR_QT=auto|5|6] [PYTHON2=python2.7] [PYTHON3=python3.14w] *NUT-Monitor*
 
 DESCRIPTION
 -----------
@@ -30,11 +30,11 @@ as part of NUT; also releases of the module are published as a PyPI package.
 * `NUT-Monitor-py2gtk2` is an implementation that relies on a Python 2.x
   interpreter (tested with 2.6 or 2.7 generation) and GTK2 UI library;
 
-* `NUT-Monitor-py3qt5` is an implementation that relies on a Python 3.x
-  interpreter and QT5 UI library;
+* `NUT-Monitor-py3qt5` runs the shared Python 3.x implementation with the
+  QT5 UI library;
 
-* `NUT-Monitor-py3qt6` is an implementation that relies on a Python 3.x
-  interpreter and QT6 UI library;
+* `NUT-Monitor-py3qt6` runs the shared Python 3.x implementation with the
+  QT6 UI library;
 
 * `NUT-Monitor` is a shell script to pick at run-time the best implementation.
   In older NUT releases, this was the file name used by the Python 2.x variant
@@ -81,6 +81,12 @@ program would be tried first when probing for available prerequisites.
 The `PREFER_PY2=true` or `PREFER_PY2=false` environment variable value
 can be used to select the implementation of the client to use if both
 ecosystems are usable on the current system.
+
+The `NUT_MONITOR_QT=5` or `NUT_MONITOR_QT=6` environment variable requires
+that Python 3 backend when using the `NUT-Monitor` dispatcher. The default
+value `auto` prefers Qt6 and falls back to Qt5. The explicit
+`NUT-Monitor-py3qt5` and `NUT-Monitor-py3qt6` commands always select their
+named backend.
 
 Note that the implementation for Python 2.x / GTK2 is slightly better
 regarding localization; functionally they should be equivalent.
