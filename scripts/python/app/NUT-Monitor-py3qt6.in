@@ -160,7 +160,7 @@ class interface :
 
         self.__app = QApplication( argv )
         try:
-            self.__app.setDesktopFileName("nut-monitor-py3qt5")
+            self.__app.setDesktopFileName("nut-monitor-py3qt6")
         except Exception as ex:
             pass
 
@@ -337,7 +337,7 @@ class interface :
         path = os.path.join( os.path.dirname( sys.argv[0] ), filename )
         if os.path.exists(path):
             return path
-        path = QStandardPaths.locate(QStandardPaths.AppDataLocation, filename)
+        path = QStandardPaths.locate(QStandardPaths.StandardLocation.AppDataLocation, filename)
         if os.path.exists(path):
             return path
         raise RuntimeError("Cannot find %s resource %s" % (ftype, filename))
@@ -355,14 +355,14 @@ class interface :
             return path
 
         # Normally icons should be installed to OS location by packaging:
-        path = QStandardPaths.locate(QStandardPaths.GenericDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
+        path = QStandardPaths.locate(QStandardPaths.StandardLocation.GenericDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
         if os.path.exists(path):
             return path
 
         # Fall back to NUT-specific area where `make install` might put them,
         # e.g. /usr/share/nut/nut-monitor/icons/... or some such, if not the
         # same location as checked in first attempt above:
-        path = QStandardPaths.locate(QStandardPaths.AppDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
+        path = QStandardPaths.locate(QStandardPaths.StandardLocation.AppDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
         if os.path.exists(path):
             return path
 
