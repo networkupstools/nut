@@ -50,8 +50,9 @@
 #            Added support for reconnections (client sleep, server restart)
 #            Fixed TAB/SHIFT-TAB focus change order through login page
 #
-# 2026-09-01 user01010111 - Version 2.2.0
+# 2026-09-01 user01010111, executorrr86, Laurent Bigonville - Version 2.2.0
 #            Share one Python implementation across PyQt5 and PyQt6.
+#            Fixed a desktop integration issue and a reconnection failure.
 #
 
 import sys
