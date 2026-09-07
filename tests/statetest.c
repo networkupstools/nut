@@ -121,6 +121,9 @@ static void check_strings(size_t numflags, char **flags, int expected_flags)
 	check(!strcmp(state_getinfo(root, "battery.charge"), "100"), "sibling corrupted");
 	check(node_count(root) == 5, "name matching created duplicate nodes");
 	node = state_tree_find(root, "DEVICE.CONTACT");
+	if (!node) {
+		fatalx(EXIT_FAILURE, "device.contact node missing");
+	}
 	check(!strcmp(node->var, "device.contact"), "stored variable name changed");
 
 	/* The internal immutable bit is set by driver override handling;
