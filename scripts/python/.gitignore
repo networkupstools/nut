@@ -2,3 +2,6 @@
 # to re-exec the real client with its full path name (so that it knows its
 # resource directory location):
 /NUT-Monitor
+/test-suite.log
+/app/NUT-Monitor-test.sh.trs
+/app/NUT-Monitor-test.sh.log
