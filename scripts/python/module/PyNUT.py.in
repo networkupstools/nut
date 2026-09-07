@@ -815,7 +815,7 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
 
     def disconnect(self):
         """ Disconnects from the server cleanly """
-        if hasattr(self, '__srv_handler') and self.__srv_handler:
+        if self.__srv_handler:
             try:
                 self.__send(b"LOGOUT\n")
             except:

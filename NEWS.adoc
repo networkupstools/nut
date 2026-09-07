@@ -22,6 +22,10 @@ PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
 
 https://github.com/networkupstools/nut/milestone/13
 
+ - `PyNUTClient.disconnect()` now attempts to send `LOGOUT`, closes the
+   socket and clears its reference while the client remains alive. Cleanup
+   remains harmless when repeated or when socket operations fail. [issue #3619]
+
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
