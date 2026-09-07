@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -274,20 +274,13 @@ static int command_write_sequence(unsigned char *command, size_t command_length,
 	return bytes_read;
 }
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
-# pragma GCC diagnostic push
-#endif
-#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
 void upsdrv_initinfo(void)
 {
 	unsigned char my_answer[255];
 	char serial[13];
 	int res, i;
+	size_t serial_length;
+	const size_t serial_max_length = sizeof(serial) - 1;
 
 	/* Reset comms */
 	send_zeros();
@@ -352,6 +345,9 @@ void upsdrv_initinfo(void)
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+	if (res < 8 || (size_t)res > 7 + serial_max_length)
+		fatalx(EXIT_FAILURE, "Invalid UPS info response length: %d", res);
+	serial_length = (size_t)(res - 7);
 	/* the manufacturer is hard coded into the driver, the model type is in the second
 		byte of the answer, the third byte identifies the model version */
 	dstate_setinfo("ups.mfr", "Meta System");
@@ -570,31 +566,10 @@ void upsdrv_initinfo(void)
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
 	}
 
-	/* Get the serial number; res >=0 per check above */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
- * means support of contexts both inside and outside function body, so the push
- * above and pop below (outside this finction) are not used.
- */
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-/* Note that the individual warning pragmas for use inside function bodies
- * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
- */
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-	if (res < 7 || (unsigned long long int)res >= SIZE_MAX)
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
-		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-	memcpy(serial, my_answer + 7, (size_t)(res - 7));
+	/* Get the serial number */
+	memcpy(serial, my_answer + 7, serial_length);
 	/* serial number start from the 8th byte */
-	serial[12]='\0';		/* terminate string */
+	serial[serial_length] = '\0';		/* terminate string */
 	dstate_setinfo("ups.serial", "%s", serial);
 
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
@@ -618,9 +593,6 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = instcmd;
 }
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
-# pragma GCC diagnostic pop
-#endif
 
 void upsdrv_updateinfo(void)
 {
