@@ -2919,8 +2919,10 @@ generatecfg_ups_dummy() {
 
     cat > "$NUT_CONFPATH/dummy.seq" << EOF
 ups.status: OB
+device.contact: Operations
 TIMER 5
 ups.status: OL
+device.contact: operations
 TIMER 5
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: dummy.seq"
@@ -3649,6 +3651,34 @@ testcase_sandbox_upsc_query_model() {
         PASSED="`expr $PASSED + 1`"
         log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device in JSON: $CMDOUT"
     fi
+}
+
+testcase_sandbox_upsc_query_case() {
+    log_info "[testcase_sandbox_upsc_query_case] Check successive case-only contact updates"
+    CASE_PREVIOUS=""
+    CASE_TRANSITIONS=0
+    CASE_TRIES=0
+    while [ "$CASE_TRIES" -lt 30 ]; do
+        runcmd upsc dummy@localhost:$NUT_PORT device.contact || die "[testcase_sandbox_upsc_query_case] upsc failed: $CMDOUT"
+        case "$CMDOUT" in
+            Operations|operations) ;;
+            *) break ;;
+        esac
+        if [ -n "$CASE_PREVIOUS" ] && [ x"$CMDOUT" != x"$CASE_PREVIOUS" ]; then
+            CASE_TRANSITIONS="`expr $CASE_TRANSITIONS + 1`"
+        fi
+        if [ "$CASE_TRANSITIONS" -ge 2 ]; then
+            PASSED="`expr $PASSED + 1`"
+            log_info "[testcase_sandbox_upsc_query_case] PASSED: contact changed case in both directions"
+            return
+        fi
+        CASE_PREVIOUS="$CMDOUT"
+        CASE_TRIES="`expr $CASE_TRIES + 1`"
+        sleep 1
+    done
+    log_error "[testcase_sandbox_upsc_query_case] Error: contact did not change case in both directions"
+    FAILED="`expr $FAILED + 1`"
+    FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_case"
 }
 
 testcase_sandbox_upsc_query_bogus() {
@@ -4710,6 +4740,7 @@ testgroup_sandbox() {
     testcase_sandbox_upsc_query_model
     testcase_sandbox_upsc_query_bogus
     testcase_sandbox_upsc_query_timer
+    testcase_sandbox_upsc_query_case
     testcases_sandbox_python
     testcases_sandbox_cppnit
     testcases_sandbox_perl
