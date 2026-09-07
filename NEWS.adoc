@@ -89,6 +89,80 @@ https://github.com/networkupstools/nut/milestone/13
       (`outlet.group.N.load.*`, `outlet.group.N.shutdown.*`), and the
       `outlet.group.N.switchable` variable to distinguish switchable
       groups from an unswitched main bank.
+    * USB mode: reworked the interrupt-IN read path to use a permanently
+      outstanding asynchronous transfer serviced by a dedicated thread, so
+      device replies are no longer missed while the driver is between
+      polls. Several long-run stability fixes go with it: a USB bus reset
+      is now triggered only on a genuine disconnect rather than on a retry
+      count, the cached page 0 contents are no longer wiped on every
+      session (re)start, the read queue is no longer flushed on every
+      session retry, and the authentication challenge is randomized.
+      Also warns once when built against the untested libusb-0.1 backend,
+      and backs off instead of spinning when the kernel's `usbhid` driver
+      has reclaimed the interface.
+    * Mapped two further descriptor usages:
+      `experimental.battery.serial` (the battery pack's own serial number,
+      distinct from `ups.serial`) and `microlink.diag.slave_password_echo`
+      (auth troubleshooting visibility only, not proof that
+      authentication was accepted).
+    * A page 0 whose announced frame width disagrees with the width of
+      the frame that carried it is now rejected instead of cached. Such
+      a page redefined the length the frame parser demanded, after which
+      nothing checksum-validated again and the session could not
+      recover. Affects both transports. [issue #3587]
+
+ - Contributed `apcmicrolink` driver updates [PR #3591]. The driver
+   remains experimental, but USB sessions should hold up better, and
+   fall back more readily to standard HID PDC data when the Microlink
+   tunnel is unstable or unavailable:
+    * USB mode: the standard-HID-PDC fallback now engages whenever the
+      Microlink tunnel stops producing usable data, not only when it
+      fails to answer during startup. A device that answers every poll
+      while reporting an all-zero state previously left `ups.status`
+      empty indefinitely. The driver hands back to Microlink data once
+      that source looks plausible again, with hysteresis so the two do
+      not swap on alternate polls.
+    * The Microlink tunnel is now polled for a full page pass per update
+      cycle, instead of one record per `pollinterval`. The device does
+      not acknowledge its authentication handshake until roughly 20
+      exchanges after the response is sent, and serves no measurement
+      page until it does, so the slower cadence could leave every
+      measured value reading 0 on a device that was answering normally.
+      Publishes `experimental.microlink.diag.auth_status` and
+      `experimental.microlink.diag.auth_refused`, and warns when the
+      handshake goes unacknowledged.
+    * The driver now closes the Microlink session with a STOP when it
+      exits. Without it the device could answer a later client's session
+      request mid-walk rather than at page 0, and would not re-synchronize
+      until re-enumerated.
+    * `2:4.7.28` and `2:4.7.49` are percentages of the nominal ratings
+      rather than absolute readings. `ups.load` is now published from the
+      former, with `ups.realpower` and `ups.power` derived against the
+      nominal ratings, instead of both reading two orders of magnitude
+      low. `ups.test.result` now comes from the battery-scope usage that
+      a self test actually updates, and `ups.test.interval` is derived
+      from the self-test schedule enumeration.
+    * Newly mapped: `input.sensitivity`, `ups.beeper.status`,
+      `experimental.battery.firmware` and
+      `experimental.statistics.battery.transfers`.
+    * Driver-specific diagnostic variables moved from `microlink.*` to
+      `experimental.microlink.*`.
+    * Documented the Microlink descriptor format that the driver parses,
+      for anyone extending its variable maps. See the NUT Developer
+      Guide.
+    * `outlet.group.count` and the per-outlet-group commands/variables no
+      longer require an unswitched "main" outlet group to be present;
+      devices with only switched groups now expose them correctly.
+      [issue #3587]
+    * `ups.beeper.status` is decoded as a bitmask instead of matching
+      exact enum values, so devices that set additional unrelated bits
+      alongside the enabled/disabled bit report the correct status
+      instead of a raw number. [issue #3587]
+    * `beeper.mute` is replaced by `beeper.enable`/`beeper.disable`: the
+      register it wrote had no confirmed effect, and the actual beeper
+      on/off control used by PowerChute is a persistent setting on the
+      same usage `ups.beeper.status` reads, not a temporary mute/re-arm
+      action.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
@@ -105,6 +179,10 @@ https://github.com/networkupstools/nut/milestone/13
       failure causes than just a timeout; quieter retry logging to avoid
       severe syslog/journal thrashing. [PR #3571, #3414]
 
+ - `bestups` driver updates:
+    * Fixed Megatec Q1 parser to expect specific response format and avoid
+      blind `scanf()` usage. [#GHSA-hwqr-5pjj-3m25]
+
  - `blazer_usb` driver updates:
     * Bounded USB reply parsing by the number of bytes actually received, in
       the `ippon`, `cypress` and `phoenix` transports, preventing out-of-bounds
@@ -117,11 +195,65 @@ https://github.com/networkupstools/nut/milestone/13
       authentication configuration discovery. It accepts `default`, `none`,
       or a specific authconf file path. [issue #3329]
 
+ - `huawei-ups2000` driver updates:
+    * Fixed a Modbus compatibility problem that made changing any variables
+      or sending any instant commands impossible with some UPS models. This
+      was caused by the use of `modbus_write_registers()` (Modbus command
+      `0x10`), which is not officially supported, making any register write
+      impossible on some models. All uses of `modbus_write_registers()` have
+      been changed to `modbus_write_register()` (Modbus command `0x06`) to
+      avoid this problem. [issue #3593, PR #3604].
+
+    * Fixed a serious problem previously existed in all NUT versions that
+      made many instant commands unusable, including `bypass.start`,
+      `shutdown.return`, `shutdown.reboot`, and `shutdown.reboot.graceful`.
+      Any attempt to use them would fail, with an error logged to `syslog`:
+      `reg1 is negative`. [issue #3603, PR #3604].
+
+ - `metasys` driver updates:
+    * Fixed parsing of UPS serial number string from the response, now taking
+      care to constrain permitted lengths and offsets. [#GHSA-6p5c-r2jg-r9mj]
+
  - `nhs_ser` driver updates:
     * Modernized serial communication and added validated settings for baud
       rate, data bits, parity, stop bits, flow control, per-byte read timeout,
       and transmission pacing. Also improved serial resource handling and
       reconnection behavior. [issue #3510, PR #3543]
+    * Reworked incoming serial framing to use the total packet length declared
+      by byte `[1]`, instead of treating every `0xFF` as a new packet and every
+      `0xFE` as its end. A leading `0xFF` now starts a frame only while the
+      reader is idle; subsequent `0xFF` and `0xFE` values are preserved as
+      payload or checksum data. The frame is completed at its declared length
+      and accepted only when that final byte is `0xFE`. Declared lengths are
+      also bounded by the receive buffer before further bytes are stored.
+      This prevents valid 18-byte and 50-byte HWINFO replies containing an
+      internal `0xFF` from being split into unrecognized fragments, allowing
+      the driver to obtain model, firmware, serial number and battery-pack
+      information instead of repeatedly requesting HWINFO and delaying normal
+      polling. The raw packet captures and protocol analysis which made this
+      correction possible were contributed by GitHub user `freechurros`.
+      [issue #3592]
+    * Applied follow-up hardware-test feedback from `freechurros`: corrected
+      `interpret_pkt_hwinfo()` to validate the HWINFO checksum instead of the
+      DATA checksum, exposed unrecognized packets through `debug_pkt_raw`, and
+      published the documented lower-case `battery.charger.status` values for
+      compatibility with Home Assistant. [issue #3592]
+    * Send the long, short and compatibility hardware-discovery requests from
+      `upsdrv_initinfo()`, checking the serial descriptor before every request.
+      Failed or partial writes now mark data stale and invalidate the port so
+      the normal update cycle reopens it before further communication.
+    * Refresh cached model-specific data from every valid HWINFO packet and
+      restart discovery after a serial reconnection, allowing a replaced UPS
+      to be identified without restarting the driver.
+    * Added the legacy five-byte compatibility initialization request
+      (`FF 05 01 06 FE`) as a third fallback. The driver first makes six
+      extended initialization attempts, then selects randomly among the
+      extended, normal and compatibility requests so older or otherwise
+      compatibility-dependent NHS units can answer with their supported
+      protocol variant.
+    * Consolidated the NHS model-code metadata into an indexed lookup table,
+      preserving the existing model descriptions and nominal VA mappings while
+      making unknown-code handling explicit.
 
  - `nutdrv_qx` driver updates:
     * Added the `richcomm-svc` USB communication subdriver for older
@@ -248,6 +380,11 @@ https://github.com/networkupstools/nut/milestone/13
       were unaffected. [PR #3555]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
+    * `mge-hid` subdriver: extended the `mge_model_names[]` list for the
+      Eaton 5P Gen2 series (largely guessing, feedback and PRs for
+      adaptation to actual string values reported by devices via USB are
+      welcome), so these devices would now report `battery.voltage` and
+      `battery.voltage.nominal`. [#2380]
     * `cps-hid` subdriver: widened under-declared Logical Maximums for
       `UPS.Input.Voltage`, `UPS.Input.ConfigVoltage`, `UPS.PowerSummary.Voltage`
       and `UPS.PowerSummary.ConfigVoltage` on CyberPower HID devices (e.g.
@@ -277,10 +414,19 @@ https://github.com/networkupstools/nut/milestone/13
       `ups.realpower`. [issue #3580, PR #3581]
 
  - `snmp-ups` driver updates:
+    * Fixed a NULL pointer dereference when setting exact outlet mappings
+      without a corresponding numbered outlet template, and restored handling
+      of exact server-side outlet variables and commands. [issue #3360,
+      PR #3610]
+    * `apc` subdriver: exposed `ambient.temperature` from universal I/O
+      sensors used with APC Network Management Card 3. [issue #3250]
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [#2608]
+    * Mapped `standby(8)` from XPPC output status to `OL` rather than `OFF`,
+      because line-interactive devices use it for inverter standby while their
+      UPS output remains online on utility power. [issue #3512]
     * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes,
       developed and tested against a PowerShield Centurion RT 1000VA
       (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
@@ -293,6 +439,8 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * POSIX daemons now warn if their real or effective UID remains zero after
+      the common credential switch. [issue #3471, PR #3609]
     * Refactored `common::background()` method used by numerous NUT daemons
       to handle parent and child code paths by separately addressable methods.
       This got used in the shared drivers `main` code file to preclude losing
@@ -451,6 +599,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed both Python 2 and 3 variants to handle automatic client reconnection
       (e.g. after system suspend/resume, network interruption, or NUT server
       restart). [issue #3509, PR #3523]
+    * Fixed wrong lookup into UI widgets which broke reconnection. [PR #3616]
+    * Fixed some issues with Qt6 startup and desktop file integration. [#3624]
     * Added support for `nutauth.conf` files as source of configuration about
       default/server/user access credentials and SSL setup. [#issue #3514]
     * Fixed TAB/SHIFT-TAB focus change order through login page. [PR #3533]
@@ -474,6 +624,10 @@ https://github.com/networkupstools/nut/milestone/13
       with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - Recipes, CI and helper script updates not classified above:
+    * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
+      minimal friction. [#3608]
+    * Introduced `SECURITY.md` for rules about responsible disclosure of
+      potentially exploitable bugs. [#3470]
     * Introduced `ci_build.sh` settings and respective CI workflow settings
       to optionally re-use a `config.cache` file from older runs, and similar
       logic for NIT `nit.sh` to re-use generated certificate and private key
@@ -483,6 +637,12 @@ https://github.com/networkupstools/nut/milestone/13
       Directory names are based on hashes of strings that identify the content,
       which are size-limited to some 8 characters.
       [issues #3108, #3390, #1711, #3526, PR #3109]
+    * Introduced `tools/asciidoc-github-links.pl` to simplify `docs/Makefile.am`
+      generation of `*.adoc-parsed` files with substituted GitHub links, and to
+      allow that logic to be executed separately from `make` and potentially be
+      re-used by other projects. Added support for lists of PRs/issues as used
+      in this document, and support for GitHub Security Advisories (GHSA).
+      [PR #3594, issue #1953]
     * Rearranged the GHA job to prepare Dist and Docs Tarballs. [PR #3460]
     * Updated `scripts/Windows/dllldd.sh` helper script to better detect DLL
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS

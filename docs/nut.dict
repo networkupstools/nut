@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3818 utf-8
+personal_ws-1.1 en 3827 utf-8
 AAC
 AAS
 ABI
@@ -449,6 +449,7 @@ GES
 GETADDRINFO
 GETPID
 GHA
+GHSA
 GID
 GIO
 GITREV
@@ -1506,6 +1507,7 @@ Ut
 V'ger
 VALIGN
 VARDESC
+VARNUM
 VARTYPE
 VENDORNAME
 VER
@@ -2238,6 +2240,7 @@ fosshost
 fp
 fprintf
 freebsd
+freechurros
 freedesktop
 freeipmi
 freetype
@@ -2372,6 +2375,7 @@ hwdb
 hwinfo
 hwmon
 hwmonX
+hwqr
 hypervisor
 hypervisors
 iBox
@@ -2735,6 +2739,7 @@ mips
 mirrorlist
 mis
 misconfigured
+mj
 mk
 mkdb
 mkdir
@@ -3004,6 +3009,7 @@ pinouts
 pipedebug
 pipename
 pixmaps
+pjj
 pkg
 pkgconf
 pkgconfig
@@ -3112,6 +3118,7 @@ qemu
 qs
 queequeg
 quiesce
+quiesced
 qx
 qx's
 qxflags
@@ -3153,10 +3160,10 @@ renderer
 renderers
 renice
 repindex
+replug
 repo
 reportId
 reposurgeon
-replug
 repotec
 req
 resetter
@@ -3215,6 +3222,7 @@ salicru
 sbin
 sbindir
 sc
+scanf
 scanopts
 scd
 sched
@@ -3758,6 +3766,7 @@ xAAAA
 xCC
 xD
 xF
+xFE
 xFF
 xXXXX
 xYYYY

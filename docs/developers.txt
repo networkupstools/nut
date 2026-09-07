@@ -4,6 +4,10 @@ Information for developers
 This document is intended to explain some of the more useful things
 within the tree, and provide a standard for working on the code.
 
+NOTE: Contributors using a coding agent should ensure it reads `AGENTS.md` in
+the repository root. Tools which do not detect that file automatically should
+be pointed to it explicitly.
+
 General stuff -- common subdirectory
 ------------------------------------
 
@@ -1062,6 +1066,21 @@ document):
    || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
+----
+
+Some frequently repeated pragma combinations, including the example above,
+were off-loaded into pairs of `include/nut-pragmas-*.h` files to begin and
+end a quiesced block of source code, e.g.:
+
+----
+	switch(...) {
+		...
+#include "nut-pragmas-covered-switch-default.h"
+		default:
+			/* Must not occur. */
+			break;
+#include "nut-pragmas-covered-switch-default-end.h"
+	}
 ----
 
 

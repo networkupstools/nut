@@ -266,6 +266,11 @@ battery or having a low battery are red.
 Insert the current value of the status variable varname on the host being
 monitored, or "Not supported".
 
+*@VARNUM* 'varname'*@*::
+Insert the current value of the status variable varname only if it is a
+plain decimal number. Use this command instead of `VAR` when a value is
+inserted into a CSS numeric context.
+
 *@RUNTIME@*::
 Inserts the current runtime, in `hh:mm:ss` format.
 

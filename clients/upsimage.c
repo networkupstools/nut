@@ -714,6 +714,11 @@ int main(int argc, char **argv)
 	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
 #endif
 
+	/* TOTHINK: ifdef this away from common builds?..
+	 * WARNING: Debug logs are likely not HTML-safe,
+	 * as in html_print_esc() use-cases, and anyway
+	 * will explode the image contents!
+	 */
 	if (nut_debug_level > 0) {
 		cgilogbit_set();
 		printf("Content-type: text/html\n");

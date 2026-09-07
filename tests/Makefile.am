@@ -15,7 +15,7 @@ SUBDIRS = . NIT
 # handle that properly
 all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
-EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 
 TESTS =
@@ -54,6 +54,9 @@ $(top_builddir)/clients/libnutclient.la \
 $(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+$(top_builddir)/clients/upslog$(EXEEXT): dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) upslog$(EXEEXT)
+
 # Builds from root dir arrange stuff decently. Make sure parallel builds
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files):
@@ -89,6 +92,12 @@ $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.
 NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
 
 endif !ENABLE_SHARED_PRIVATE_LIBS
+
+TESTS += test_cgilib
+test_cgilib_SOURCES = test_cgilib.c
+nodist_test_cgilib_SOURCES = cgilib.c
+test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+test_cgilib_LDADD = $(NUT_LIBCOMMON)
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(NUT_LIBCOMMON)
@@ -138,7 +147,10 @@ test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c ecoflow-cdc-protocol.c
+LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c
+
+cgilib.c: $(top_srcdir)/clients/cgilib.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/clients/cgilib.c" '$@'
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
@@ -200,7 +212,7 @@ else !WITH_GPIO
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
 endif !WITH_GPIO
 
-CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
+CLEANFILES += cgilib.c generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 TESTS += driver_methods_utest
@@ -211,6 +223,30 @@ driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_G
 endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
+if WITH_SNMP
+SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
+
+LINKED_SOURCE_FILES += $(SNMP_UPS_TEST_DRIVER_SOURCES)
+
+$(SNMP_UPS_TEST_DRIVER_SOURCES):
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/$@" '$@'
+
+TESTS += snmp-ups-setvar-test
+snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c
+nodist_snmp_ups_setvar_test_SOURCES = $(SNMP_UPS_TEST_DRIVER_SOURCES)
+snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS) -DSNMP_UPS_SETOID_TEST=1
+snmp_ups_setvar_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
+snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
+if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_setvar_test_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+endif WITH_SNMP
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
@@ -310,9 +346,15 @@ memcheck:
 	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
+CHECK_LOCAL_TARGETS = become-user-root-warning-test
 if WITH_VALGRIND
-check-local: memcheck
+CHECK_LOCAL_TARGETS += memcheck
 endif WITH_VALGRIND
+
+check-local: $(CHECK_LOCAL_TARGETS)
+
+become-user-root-warning-test: $(top_builddir)/clients/upslog$(EXEEXT)
+	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/become-user-root-warning-test.sh
 
 dummy:
 
