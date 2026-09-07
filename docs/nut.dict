@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3819 utf-8
+personal_ws-1.1 en 3827 utf-8
 AAC
 AAS
 ABI
@@ -2375,6 +2375,7 @@ hwdb
 hwinfo
 hwmon
 hwmonX
+hwqr
 hypervisor
 hypervisors
 iBox
@@ -2738,6 +2739,7 @@ mips
 mirrorlist
 mis
 misconfigured
+mj
 mk
 mkdb
 mkdir
@@ -3007,6 +3009,7 @@ pinouts
 pipedebug
 pipename
 pixmaps
+pjj
 pkg
 pkgconf
 pkgconfig
@@ -3219,6 +3222,7 @@ salicru
 sbin
 sbindir
 sc
+scanf
 scanopts
 scd
 sched
