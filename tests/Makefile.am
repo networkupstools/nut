@@ -17,6 +17,7 @@ all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
+EXTRA_DIST += pynut-commands-test.py
 
 TESTS =
 noinst_LTLIBRARIES =
@@ -347,6 +348,13 @@ memcheck:
 endif !HAVE_VALGRIND
 
 CHECK_LOCAL_TARGETS = become-user-root-warning-test
+if HAVE_PYTHON_DEFAULT
+CHECK_LOCAL_TARGETS += pynut-commands-test
+
+pynut-commands-test:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON_DEFAULT@ $(srcdir)/pynut-commands-test.py
+endif HAVE_PYTHON_DEFAULT
+
 if WITH_VALGRIND
 CHECK_LOCAL_TARGETS += memcheck
 endif WITH_VALGRIND
