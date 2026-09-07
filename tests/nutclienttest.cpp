@@ -47,6 +47,10 @@ class NutClientTest : public CppUnit::TestFixture
 		CPPUNIT_TEST( test_nutclientstub_dev );
 	CPPUNIT_TEST_SUITE_END();
 
+private:
+	/* Fed by caller via envvars: */
+	int env_NUT_DEBUG_LEVEL = 0;
+
 public:
 	void setUp() override;
 	void tearDown() override;
@@ -89,6 +93,13 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset);
 
 void NutClientTest::setUp()
 {
+	/* NUT_DEBUG_LEVEL etc. env vars are provided by external test suite driver */
+	char * s;
+
+	s = std::getenv("NUT_DEBUG_LEVEL");
+	if (s) {
+		env_NUT_DEBUG_LEVEL = atoi(s);
+	}
 }
 
 void NutClientTest::tearDown()
@@ -224,7 +235,9 @@ void NutClientTest::test_ssl_context_registry() {
 	/* Test the C++ API for per-connection SSL context management */
 	nut::TcpClient client;
 
-	//std::cerr << "Starting test_ssl_context_registry" << std::endl;
+	/* NOTE: Currently this is a boolean toggle, not a numeric verbosity level */
+	if (env_NUT_DEBUG_LEVEL > 0)
+		std::cerr << "Starting test_ssl_context_registry" << std::endl;
 
 	/* Initially, no custom SSL context should be set */
 	void *initial = client.getSSLContext();
@@ -241,7 +254,8 @@ void NutClientTest::test_ssl_context_registry() {
 		return;
 	}
 
-	//std::cerr << "Setting custom SSL context" << std::endl;
+	if (env_NUT_DEBUG_LEVEL > 0)
+		std::cerr << "Setting custom SSL context" << std::endl;
 
 	/* Set a custom SSL context (using a test pointer) */
 	void *test_ctx = reinterpret_cast<void *>(0x1234);
@@ -251,7 +265,8 @@ void NutClientTest::test_ssl_context_registry() {
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected the registered SSL context to be returned by getter",
 		test_ctx, client.getSSLContext());
 
-	//std::cerr << "Updating SSL context" << std::endl;
+	if (env_NUT_DEBUG_LEVEL > 0)
+		std::cerr << "Updating SSL context" << std::endl;
 
 	/* Update the SSL context and verify the old one is returned */
 	void *replacement_ctx = reinterpret_cast<void *>(0x5678);
@@ -267,7 +282,8 @@ void NutClientTest::test_ssl_context_registry() {
 	 * our test pointers above are not real SSL_CTX objects. */
 	client.setSSLContext(nullptr);
 
-	//std::cerr << "Finished test_ssl_context_registry" << std::endl;
+	if (env_NUT_DEBUG_LEVEL > 0)
+		std::cerr << "Finished test_ssl_context_registry" << std::endl;
 }
 
 void NutClientTest::test_copy_constructor_cmd() {
