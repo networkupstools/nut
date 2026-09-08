@@ -608,6 +608,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
 
  - `upsd` data server updates:
+    * Validate complete numeric values and conversion ranges for `MAXAGE`,
+      `TRACKINGDELAY`, `MAXCONN` and `CERTREQUEST` in `upsd.conf`, retaining
+      the previous setting when conversion fails. Preserve public types
+      and avoid overflow in the `MAXAGE` grace-second calculation at the
+      maximum signed integer value. [issue #676]
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]
     * If the `MAXCONN` requested in the configuration file exceeds the OS

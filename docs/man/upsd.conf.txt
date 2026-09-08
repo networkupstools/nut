@@ -42,6 +42,13 @@ IMPORTANT NOTES
 CONFIGURATION DIRECTIVES
 ------------------------
 
+The numeric arguments to `MAXAGE`, `TRACKINGDELAY`, `MAXCONN` and
+`CERTREQUEST` must be complete non-negative decimal integers, beginning
+with a digit. Leading zeroes and trailing whitespace are accepted; signs,
+leading whitespace inside quotes, fractions and trailing non-whitespace
+characters are not. Invalid or overflowing conversions are logged and
+ignored, leaving the previous setting unchanged.
+
 *MAXAGE 'seconds'*::
 
 `upsd` usually allows a driver to stop responding for up to 15 seconds
@@ -50,12 +57,16 @@ time to process updates but is otherwise operational, you can use `MAXAGE`
 to make `upsd` wait longer.
 +
 Most users should leave this at the default value.
++
+The value must fit in the platform's signed `int` range. Zero is accepted.
 
 *TRACKINGDELAY 'seconds'*::
 
 When instant commands and variables setting status tracking is enabled, status
 execution information are kept during this amount of time, and then cleaned up.
 This defaults to 3600 (1 hour).
++
+The value must fit in the platform's signed `int` range. Zero is accepted.
 
 *ALLOW_NO_DEVICE 'Boolean'*::
 
@@ -150,6 +161,10 @@ This defaults to maximum number allowed on your system.  Each UPS, each
 `LISTEN` address and each client count as one connection.  If the server
 runs out of connections, it will no longer accept new incoming client
 connections.  Only set this if you know exactly what you're doing.
++
+Zero selects the system default. The value must fit both the platform's
+signed `long` range and its connection-count range. Operating
+system and allocation limits may impose a lower maximum.
 +
 Note that on some platforms there may be a smaller amount of file descriptors
 or handles that can be polled in one operation, the server would then poll
