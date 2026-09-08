@@ -68,9 +68,10 @@ int tracking_set(const char *id, const char *value)
 
 char *tracking_get(const char *id)
 {
+	static char result[] = "unexpected tracking_get";
 	NUT_UNUSED_VARIABLE(id);
 	unexpected_call("tracking_get");
-	return NULL;
+	return result;
 }
 
 static char config_dir[128], config_file[160];
