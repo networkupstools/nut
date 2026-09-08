@@ -1428,6 +1428,7 @@ void ssl_init(void)
 	) {
 		upslogx(LOG_ERR, "Invalid certificate requirement");
 		fatalx(EXIT_FAILURE, "SSL configuration was specified, but NUT server failed to initialize NSS backend.");
+	}
 
 	if (certrequest == NETSSL_CERTREQ_REQUEST	/* 1 */
 	 || certrequest == NETSSL_CERTREQ_REQUIRE	/* 2 */

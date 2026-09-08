@@ -99,6 +99,15 @@ nodist_test_cgilib_SOURCES = cgilib.c
 test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 test_cgilib_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += test_upsdconf
+test_upsdconf_SOURCES = test_upsdconf.c
+test_upsdconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/server
+test_upsdconf_LDADD = $(NUT_LIBCOMMON) $(NETLIBS)
+test_upsdconf_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/server/conf.c $(top_srcdir)/server/sstate.c
+if WITH_SSL
+test_upsdconf_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
