@@ -17,6 +17,14 @@ Makefile.in
 tags
 .all.*-generated.timestamp
 
+## Common manual shortcuts for devs and maintainers
+/_Build*
+/_Cfg*
+/_Inst*
+/NIT.env
+/build*/
+/.relver/
+
 ## Parent directory only
 /aclocal.m4
 /ar-lib
