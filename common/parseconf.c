@@ -283,26 +283,9 @@ static int findeol(PCONF_CTX_t *ctx)
 	return STATE_FINDEOL;
 }
 
-/* set up the error reporting details */
-static void pconf_seterr(PCONF_CTX_t *ctx, const char *errmsg)
-{
-	snprintf(ctx->errmsg, PCONF_ERR_LEN, "%s", errmsg);
-
-	ctx->error = 1;
-}
-
 /* quote characters inside a word bounded by "quotes" */
 static int quotecollect(PCONF_CTX_t *ctx)
 {
-	/* user is trying to break us */
-	if (ctx->ch == '#') {
-		pconf_seterr(ctx, "Unbalanced word due to unescaped # in quotes");
-		endofword(ctx);
-
-		/* this makes us drop all the way out of the caller */
-		return STATE_PARSEERR;
-	}
-
 	/* another " means we're done with this word */
 	if (ctx->ch == '"') {
 		endofword(ctx);

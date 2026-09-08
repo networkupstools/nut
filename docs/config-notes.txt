@@ -35,8 +35,10 @@ Details about the configuration files
 Generalities
 ~~~~~~~~~~~~
 
-All configuration files within this package are parsed with a common
-state machine, which means they all can use a number of extras described here.
+Most configuration files within this package are parsed with a common
+state machine, which means they can use a number of extras described here.
+The service configuration file linkman:nut.conf[5] has its own syntax
+requirements, described in its manual page.
 
 First, most of the programs use an upper-case word to declare a
 configuration directive.  This may be something like MONITOR, NOTIFYCMD,
@@ -45,13 +47,19 @@ or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 Next, the parser does not care about whitespace between words.  If you
 like to indent things with tabs or spaces, feel free to do it here.
 
-If you need to set a value to something containing spaces, it has to be
-contained within "quotes" to keep the parser from splitting up the line.
+If you need to set a value to something containing spaces, put it within
+double quotes or escape each space with a backslash to keep the parser
+from splitting up the line.
 That is, you want to use something like this:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
-Without the quotes, it would only see the first word on the line.
+Without quoting or escaping the spaces, a directive expecting one value
+would only see the first word of that value.
+
+Double quotes must begin at the start of a token. A closing double quote
+completes the token: `"one"two` yields two tokens, `one` and `two`.
+Single quotes (apostrophes) are ordinary characters and do not group words.
 
 OK, so let's say you really need to embed that kind of quote within your
 configuration directive for some reason.  You can do that too.
@@ -65,15 +73,18 @@ string, you just escape it.
 
 	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
 
-The `\` can actually be used to escape any character, but you only really
-need it for `\`, `"`, and `#` as they have special meanings to the parser.
+The `\` can actually be used to escape any permitted character, inside or
+outside double quotes. It quotes the next character once: `\n` means the
+letter `n`, not a newline. It is useful for `\`, `"`, and, outside double
+quotes, spaces, `=`, and `#`, which have special meanings to the parser.
 
 When using file names with space characters, you may end up having tricky
 things since you need to write them inside `""` which must be escaped:
 
 	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
 
-`#` is the comment character.  Anything after an unescaped `#` is ignored.
+Outside double quotes, `#` is the comment character. Anything after an
+unescaped `#` is ignored until the end of the physical line.
 
 Something like this...
 
@@ -81,11 +92,16 @@ Something like this...
 
 will actually turn into `identity = my`, since the `#` stops the
 parsing. If you really need to have a `#` in your configuration, then
-escape it.
+escape it or put the value inside double quotes.
 
 	identity = my\#1ups
 
-Much better.
+or:
+
+	identity = "my#1ups"
+
+Older versions of the parser required `\#` even inside double quotes.
+That spelling remains supported for compatibility with those versions.
 
 The `=` character should be used with care too. There should be only one
 "simple" `=` character in a line: between the parameter name and its value.

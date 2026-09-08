@@ -4728,6 +4728,40 @@ testgroup_sandbox_python() {
     sandbox_forget_configs
 }
 
+testgroup_sandbox_parseconf() {
+    # Start a fresh sandbox so these punctuation fixtures do not change
+    # the model, timer and language-binding tests' expected data.
+    if ! isTestablePython || [ -z "${PYTHON}" ]; then
+        if [ x"${NIT_CASE}" = xtestgroup_sandbox_parseconf ]; then
+            log_error "[testgroup_sandbox_parseconf] Python with the json module is required"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testgroup_sandbox_parseconf:missing-python"
+        else
+            log_warn "[testgroup_sandbox_parseconf] SKIPPED: Python is unavailable"
+            SKIPPED="`expr $SKIPPED + 1`"
+            SKIPPED_FUNCS="$SKIPPED_FUNCS testgroup_sandbox_parseconf"
+        fi
+        return
+    fi
+
+    stop_daemons
+    sandbox_forget_configs
+    sandbox_generate_configs
+    $PYTHON "${TOP_SRCDIR}/tests/NIT/parseconf-test.py" prepare "$NUT_CONFPATH" \
+        || die "[testgroup_sandbox_parseconf] Could not prepare parser fixtures"
+    testcase_sandbox_start_drivers_after_upsd
+
+    if $PYTHON "${TOP_SRCDIR}/tests/NIT/parseconf-test.py" \
+        "${TOP_BUILDDIR}/clients/upsc${EXEEXT}" "$NUT_PORT" ; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testgroup_sandbox_parseconf] PASSED: exact text and decoded JSON values"
+    else
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testgroup_sandbox_parseconf"
+    fi
+    sandbox_forget_configs
+}
+
 testgroup_sandbox_perl() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
@@ -4854,6 +4888,7 @@ case "${NIT_CASE}" in
         testgroup_upsd_invalid_configs
         testgroup_upsd_questionable_configs
         testgroup_sandbox
+        testgroup_sandbox_parseconf
         ;;
     *)  die "Unsupported NIT_CASE='$NIT_CASE' was requested" ;;
 esac
