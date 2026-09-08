@@ -58,6 +58,13 @@ https://github.com/networkupstools/nut/milestone/13
    complete descriptor available on affected River 3 Plus firmware while
    retaining the shorter length as a fallback.
 
+ - `nut-driver-enumerator` now decodes `ups.conf` values using NUT token
+   syntax, preserving quoted hashes and escaped characters and ignoring
+   trailing comments. For example, `port = "auto" # comment` now selects
+   USB media for `nutdrv_qx`. Normalized configuration output retains
+   quotes and backslashes; changed section checksums can cause a one-time
+   reconciliation after upgrading.
+
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.

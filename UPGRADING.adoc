@@ -31,6 +31,14 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- `nut-driver-enumerator` now preserves quotes and backslashes in normalized
+  configuration output and decodes values once using NUT token syntax.
+  Value queries omit trailing comments, take the first value token and
+  treat single quotes literally. Corrected parsing can change media
+  dependencies. Section checksums may change on upgrade and trigger the
+  usual reconciliation, including driver restarts; subsequent checks of
+  unchanged configuration remain stable.
+
 - PLANNED: Keep track of any further API clean-up?
 
 - Potentially a breaking change for C++ clients that rushed to use the new
