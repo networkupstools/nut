@@ -4095,6 +4095,74 @@ testcase_sandbox_python_with_upsmon_credentials() {
     fi
 }
 
+testcase_sandbox_python_escaping() {
+    log_separator
+    log_info "[testcase_sandbox_python_escaping] Check escaped data and credentials with PyNUT"
+    if $PYTHON - "${TOP_BUILDDIR}/scripts/python/module" << 'PY'
+import os
+import sys
+
+sys.path.insert(0, sys.argv[1])
+import PyNUT
+
+port = int(os.environ['NUT_PORT'])
+value = b'Rack\'s "A" #1 \\n'
+text = value.decode('ascii')
+client = PyNUT.PyNUTClient(host='127.0.0.1', port=port, timeout=3)
+try:
+    assert client.GetUPSList() == {b'dummy': value, b'ordinary': b'Ordinary UPS'}
+    assert sorted(client.GetUPSNames()) == ['dummy', 'ordinary']
+    for result in (client.GetUPSVars('dummy'), client.GetRWVars('dummy')):
+        assert result[b'ups.model'] == value, result
+        assert result[b'ups.mfr'] == b'Ordinary Manufacturer', result
+        assert all(isinstance(k, bytes) and isinstance(v, bytes) for k, v in result.items())
+    description = client.GetVariableDescription('dummy', 'ups.model')
+    assert description == text and isinstance(description, type(text)), description
+    assert client.GetVariableDescription('dummy', 'ups.mfr') == 'Ordinary variable'
+    commands = client.GetUPSCommands('dummy')
+    assert commands[b'load.off'] == value, commands
+    assert all(isinstance(k, bytes) and isinstance(v, bytes) for k, v in commands.items())
+finally:
+    client.disconnect()
+
+PyNUT.AuthConf.freeAuthConfList()
+PyNUT.AuthConf.readAuthConfFile(os.path.join(os.environ['NUT_CONFPATH'], 'escape-auth.conf'), fatal_errors=True)
+auth = PyNUT.AuthConf.getAuthConf(host='127.0.0.1', port=port)
+assert auth.user == "nit'escape" and auth.password == text
+client = PyNUT.PyNUTClient.from_authconf(auth, timeout=3)
+try:
+    # USERNAME/PASSWORD alone acknowledge receipt; LOGIN verifies the credentials.
+    assert client.DeviceLogin('dummy') == 'OK'
+finally:
+    client.disconnect()
+
+client = PyNUT.PyNUTClient(host='127.0.0.1', port=port, login='nit-plain', password='ordinary', timeout=3)
+try:
+    assert client.DeviceLogin('ordinary') == 'OK'
+finally:
+    client.disconnect()
+
+client = PyNUT.PyNUTClient(host='127.0.0.1', port=port, login=auth.user, password='wrong', timeout=3)
+try:
+    try:
+        client.DeviceLogin('dummy')
+    except PyNUT.PyNUTError as error:
+        assert str(error) == 'ERR ACCESS-DENIED', str(error)
+    else:
+        raise AssertionError('Incorrect password was accepted')
+finally:
+    client.disconnect()
+print('Escaped values, descriptions, INCLUDE credentials and authentication passed')
+PY
+    then
+        PASSED="`expr $PASSED + 1`"
+    else
+        log_error "[testcase_sandbox_python_escaping] Error: PyNUT regression check failed"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_escaping"
+    fi
+}
+
 testcases_sandbox_python() {
     isTestablePython && [ -n "${PYTHON}" ] || {
         SKIPPED_FUNCS="${SKIPPED_FUNCS} testcase_sandbox_python_without_credentials testcase_sandbox_python_with_credentials testcase_sandbox_python_with_upsmon_credentials"
@@ -4717,6 +4785,7 @@ testgroup_sandbox() {
 
     log_separator
     sandbox_forget_configs
+    testgroup_sandbox_python_escaping
 }
 
 testgroup_sandbox_python() {
@@ -4724,6 +4793,93 @@ testgroup_sandbox_python() {
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_python
 
+    log_separator
+    sandbox_forget_configs
+    testgroup_sandbox_python_escaping
+}
+
+testgroup_sandbox_python_escaping() {
+    isTestablePython && [ -n "${PYTHON}" ] || {
+        SKIPPED_FUNCS="$SKIPPED_FUNCS testcase_sandbox_python_escaping"
+        SKIPPED="`expr $SKIPPED + 1`"
+        return 0
+    }
+
+    # This fixture replaces the ordinary sandbox only after its other tests finish.
+    stop_daemons
+    generatecfg_upsd_trivial
+    generatecfg_ups_trivial
+    printf 'DATAPATH "%s"\n' "$NUT_CONFPATH" >> "$NUT_CONFPATH/upsd.conf" \
+        || die "Failed to configure the temporary cmdvartab path"
+    cat >> "$NUT_CONFPATH/ups.conf" << 'EOF'
+[dummy]
+    driver = dummy-ups
+    desc = "Rack's \"A\" \#1 \\n"
+    port = escaping.dev
+    mode = dummy-once
+[ordinary]
+    driver = dummy-ups
+    desc = "Ordinary UPS"
+    port = escaping.dev
+    mode = dummy-once
+EOF
+    [ $? = 0 ] || die "Failed to populate escaping ups.conf"
+    cat > "$NUT_CONFPATH/escaping.dev" << 'EOF'
+ups.status: OL
+ups.mfr: Ordinary Manufacturer
+ups.model: "Rack's \"A\" \#1 \\n"
+EOF
+    [ $? = 0 ] || die "Failed to populate escaping dummy data"
+    cat > "$NUT_CONFPATH/cmdvartab" << 'EOF'
+VARDESC ups.model "Rack's \"A\" \#1 \\n"
+VARDESC ups.mfr "Ordinary variable"
+CMDDESC load.off "Rack's \"A\" \#1 \\n"
+EOF
+    [ $? = 0 ] || die "Failed to populate escaping cmdvartab"
+    cat > "$NUT_CONFPATH/upsd.users" << 'EOF'
+[nit'escape]
+    password = "Rack's \"A\" \#1 \\n"
+    upsmon secondary
+[nit-plain]
+    password = ordinary
+    upsmon secondary
+EOF
+    [ $? = 0 ] || die "Failed to populate escaping upsd.users"
+    printf 'INCLUDE_REQUIRED "%s/escape credentials.conf"\n' "$NUT_CONFPATH" \
+        > "$NUT_CONFPATH/escape-auth.conf" || die "Failed to populate escaping INCLUDE"
+    printf '[@127.0.0.1:%s]\n' "$NUT_PORT" > "$NUT_CONFPATH/escape credentials.conf" \
+        || die "Failed to populate escaping authconf section"
+    cat >> "$NUT_CONFPATH/escape credentials.conf" << 'EOF'
+USERNAME = nit'escape
+PASSWORD = "Rack's \"A\" \#1 \\n"
+EOF
+    [ $? = 0 ] || die "Failed to populate escaping credentials"
+    if $I_AM_ROOT ; then
+        chmod 644 "$NUT_CONFPATH/upsd.users"
+    else
+        chmod 640 "$NUT_CONFPATH/upsd.users"
+    fi
+    chmod 644 "$NUT_CONFPATH/escaping.dev" "$NUT_CONFPATH/cmdvartab"
+    chmod 600 "$NUT_CONFPATH/escape-auth.conf" "$NUT_CONFPATH/escape credentials.conf"
+
+    SANDBOX_CONFIG_GENERATED=true
+    sandbox_start_upsd || die "Failed to start escaping sandbox upsd"
+    execcmd dummy-ups -a dummy ${ARG_USER} ${ARG_FG} &
+    PID_DUMMYUPS="$!"
+    execcmd dummy-ups -a ordinary ${ARG_USER} ${ARG_FG} &
+    PID_DUMMYUPS1="$!"
+    COUNTDOWN=20
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        if runcmd upsc -A none -W 2 dummy@localhost:$NUT_PORT ups.mfr \
+        && [ x"$CMDOUT" = x"Ordinary Manufacturer" ]; then
+            break
+        fi
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+    done
+    [ "$COUNTDOWN" -gt 0 ] || die "Escaping dummy driver did not become ready"
+
+    testcase_sandbox_python_escaping
     log_separator
     sandbox_forget_configs
 }

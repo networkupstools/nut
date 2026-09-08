@@ -31,6 +31,19 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- `PyNUTClient` now decodes NUT escapes in server descriptions and values
+  exactly once. Applications which worked around the old behavior by
+  removing escape characters themselves should stop doing so. The existing
+  bytes/string return types are unchanged. [PR #3629]
+
+- Python's `nutauth.conf` reader now follows NUT quoting rules: single
+  quotes are literal characters, not string delimiters. Replace single
+  quotes used for grouping with double quotes, and quote or escape spaces
+  within values. Backslashes introduce literal characters rather than
+  being retained, and unquoted hashes begin comments. Pass unescaped
+  usernames and passwords to `PyNUTClient`; the client handles their wire
+  escaping. [PR #3629]
+
 - PLANNED: Keep track of any further API clean-up?
 
 - Potentially a breaking change for C++ clients that rushed to use the new

@@ -75,6 +75,82 @@ import re
 import os
 import sys
 
+
+def _nut_parse(lines):
+    """Yield logical lines of NUT tokens, preserving the input string type.
+
+    Like parseconf, quotes only open at a token boundary, single quotes
+    are literal, and a backslash consumes the next character exactly once.
+    Keep protocol bytes intact; this is not a Unicode or shell decoder.
+    """
+    fields = []
+    word = []
+    started = quoted = escaped = comment = False
+    for line in lines:
+        empty = line[:0]
+        for index in range(len(line)):
+            char = line[index:index + 1]
+            code = ord(char)
+            if comment:
+                if code == 10:
+                    yield fields
+                    fields = []
+                    comment = False
+                continue
+            if escaped:
+                if code != 10:
+                    word.append(char)
+                escaped = False
+                continue
+            if quoted:
+                if code == 34:
+                    fields.append(empty.join(word))
+                    word = []
+                    started = quoted = False
+                elif code == 92:
+                    escaped = True
+                elif code != 10:
+                    word.append(char)
+                continue
+            if code == 92:
+                started = escaped = True
+            elif code == 34 and not started:
+                started = quoted = True
+            elif code in (9, 10, 11, 12, 13, 32, 35, 61):
+                if started:
+                    fields.append(empty.join(word))
+                    word = []
+                    started = False
+                if code == 35:
+                    comment = True
+                elif code == 61:
+                    fields.append(char)
+                elif code == 10:
+                    yield fields
+                    fields = []
+            else:
+                word.append(char)
+                started = True
+    if quoted or escaped:
+        raise ValueError("Incomplete NUT quoted string or escape")
+    if started:
+        fields.append(empty.join(word))
+    if fields:
+        yield fields
+
+
+def _nut_tokens(line):
+    """Parse a single NUT response line or field."""
+    return next(_nut_parse([line]), [])
+
+
+def _nut_quote(value):
+    """Encode one ASCII protocol argument, including for older NUT peers."""
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise ValueError("Control character in NUT argument")
+    return '"' + re.sub(r'([\\\\"#])', r'\\\1', value) + '"'
+
+
 ssl_available = False
 try:
     import ssl
@@ -281,16 +357,12 @@ class AuthConf:
         try:
             AuthConf.printDebug( "readAuthConfFile(): Reading NUT AuthConf data from '%s'" % (filename) )
             with open(filename, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
+                for fields in _nut_parse(f):
+                    if not fields:
                         continue
+                    line = fields[0]
 
                     if line.startswith('['):
-                        # Chomp any trailing comments:
-                        if '#' in line:
-                            line = line[:line.index('#')].strip()
-
                         if not line.endswith(']'):
                             raise PyNUTError("Invalid section header in '%s': '%s'" % (filename, line))
 
@@ -321,30 +393,19 @@ class AuthConf:
                         continue
 
                     # INCLUDE support
-                    m = re.match(r'^(INCLUDE(?:_REQUIRED)?)\s+(.*)$', line, re.I)
-                    if m:
-                        inc_type = m.group(1).upper()
-                        inc_file = m.group(2).strip()
-                        if (inc_file.startswith('"') and inc_file.endswith('"')) or \
-                           (inc_file.startswith("'") and inc_file.endswith("'")):
-                            inc_file = inc_file[1:-1]
+                    inc_type = fields[0].upper()
+                    if inc_type in ('INCLUDE', 'INCLUDE_REQUIRED') and len(fields) >= 2:
+                        inc_file = fields[1]
 
                         is_required = (inc_type == "INCLUDE_REQUIRED")
                         AuthConf.printDebug( "readAuthConfFile(): INCLUDE '%s'" % (inc_file) )
                         AuthConf.readAuthConfFile(inc_file, is_required, (current_ac is None or current_ac == AuthConf.__global_defaults))
                         continue
 
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        key = key.strip()
-                        keyUC = key.strip().upper()
-                        value = value.strip()
-
-                        # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
-                        # Remove quotes if present
-                        if (value.startswith('"') and value.endswith('"')) or \
-                           (value.startswith("'") and value.endswith("'")):
-                            value = value[1:-1]
+                    if len(fields) >= 2 and fields[1] == '=':
+                        key = fields[0]
+                        keyUC = key.upper()
+                        value = fields[2] if len(fields) >= 3 else ''
 
                         if current_ac is None:
                             if global_scope:
@@ -952,24 +1013,16 @@ if something goes wrong.
                     self.__use_ssl = False
 
         if self.__login != None :
-            self.__send( ("USERNAME %s\n" % self.__login).encode('ascii') )
+            self.__send( ("USERNAME %s\n" % _nut_quote(self.__login)).encode('ascii') )
             result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
                 raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         if self.__password != None :
-            self.__send( ("PASSWORD %s\n" % self.__password).encode('ascii') )
+            self.__send( ("PASSWORD %s\n" % _nut_quote(self.__password)).encode('ascii') )
             result = self.__read_until( b"\n" )
             if result[:2] != b"OK" :
-                if result == b"ERR INVALID-ARGUMENT\n" :
-                    # Quote the password (if it has whitespace etc)
-                    # TODO: Escape special chard like NUT does?
-                    self.__send( ("PASSWORD \"%s\"\n" % self.__password).encode('ascii') )
-                    result = self.__read_until( b"\n" )
-                    if result[:2] != b"OK" :
-                        raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
-                else:
-                    raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
+                raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
         # NOTE: no-op if "None"
         self.__tracking = self.SetTrackingMode(self.__tracking_wanted)
@@ -1128,7 +1181,7 @@ if something goes wrong.
         if result[:4] == b"DESC" :
             # DESC <ups> <var> "<description>"
             off = len( ("DESC %s %s " % ( ups, var )).encode('ascii') )
-            return result[off:-1].split(b'"')[1].decode('ascii')
+            return _nut_tokens(result[off:-1])[0].decode('ascii')
         else :
             raise PyNUTError( result.replace( b"\n", b"" ).decode('ascii') )
 
@@ -1149,7 +1202,7 @@ if something goes wrong.
         end_offset = 0 - ( len( ("END LIST ENUM %s %s\n" % ( ups, var )).encode('ascii') ) + 1 )
 
         for current in result[:end_offset].split( b"\n" ) :
-            enum_list.append( current[offset:].split( b'"' )[1].decode('ascii') )
+            enum_list.append( _nut_tokens(current[offset:])[0].decode('ascii') )
 
         return enum_list
 
@@ -1171,8 +1224,8 @@ if something goes wrong.
 
         for current in result[:end_offset].split( b"\n" ) :
             # RANGE <ups> <var> "<min>" "<max>"
-            ranges = current[offset:].split( b'"' )
-            range_list.append( { 'min' : ranges[1].decode('ascii'), 'max' : ranges[3].decode('ascii') } )
+            ranges = _nut_tokens(current[offset:])
+            range_list.append( { 'min' : ranges[0].decode('ascii'), 'max' : ranges[1].decode('ascii') } )
 
         return range_list
 
@@ -1212,13 +1265,11 @@ which is of little concern for Python2 but is important in Python3
 
         for line in result.split( b"\n" ) :
             if line[:3] == b"UPS" :
-                fields = re.match( b'([^"]*)"((?:[^"\\\\]|\\\\.)*)"$', line[4:] )
+                fields = re.match( b'([^"]*)("(?:[^"\\\\]|\\\\.)*")$', line[4:] )
                 if fields is None :
                     raise ValueError( "Invalid UPS list entry" )
                 ups, desc = fields.groups()
-                # NUT escapes the next byte literally, including quotes,
-                # backslashes and '#'. Consume each escape exactly once.
-                desc = re.sub( b'\\\\(.)', b'\\1', desc )
+                desc = _nut_tokens(desc)[0]
                 ups_list[ ups.replace( b" ", b"" ) ] = desc
 
         return( ups_list )
@@ -1259,8 +1310,7 @@ available vars.
         end_offset = 0 - ( len( ("END LIST VAR %s\n" % ups).encode('ascii') ) + 1 )
 
         for current in result[:end_offset].split( b"\n" ) :
-            var  = current[ offset: ].split( b'"' )[0].replace( b" ", b"" )
-            data = current[ offset: ].split( b'"' )[1]
+            var, data = _nut_tokens(current[offset:])
             ups_vars[ var ] = data
 
         return( ups_vars )
@@ -1302,7 +1352,7 @@ of the command as value
         end_offset = 0 - ( len( ("END LIST CMD %s\n" % ups).encode('ascii') ) + 1 )
 
         for current in result[:end_offset].split( b"\n" ) :
-            var  = current[ offset: ].split( b'"' )[0].replace( b" ", b"" )
+            var = _nut_tokens(current[offset:])[0]
 
             # For each var we try to get the available description
             try :
@@ -1313,7 +1363,9 @@ of the command as value
                     raise PyNUTError
                 else :
                     off  = len( ("CMDDESC %s %s " % ( ups, command )).encode('ascii') )
-                    desc = temp[off:-1].split(b'"')[1]
+                    if temp[off:off + 1] != b'"':
+                        raise PyNUTError
+                    desc = _nut_tokens(temp[off:-1])[0]
             except :
                 desc = var
 
@@ -1341,8 +1393,7 @@ The result is presented as a dictionary containing 'key->val' pairs
 
         try :
             for current in result[:end_offset].split( b"\n" ) :
-                var  = current[ offset: ].split( b'"' )[0].replace( b" ", b"" )
-                data = current[ offset: ].split( b'"' )[1]
+                var, data = _nut_tokens(current[offset:])
                 rw_vars[ var ] = data
 
         except :

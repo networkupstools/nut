@@ -15,9 +15,11 @@ all: PyNUTClient
 
 check-local:
 	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no ; then \
-		PYTHONPATH="$(builddir)" $(PYTHON_DEFAULT) "$(srcdir)/test_upslist.py"; \
+		for TEST in test_upslist.py test_protocol.py ; do \
+			PYTHONPATH="$(builddir)" $(PYTHON_DEFAULT) "$(srcdir)/$$TEST" || exit $$? ; \
+		done ; \
 	else \
-		echo "SKIP: LIST UPS tests require a configured Python interpreter"; \
+		echo "SKIP: PyNUT parser tests require a configured Python interpreter"; \
 	fi
 	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
 
@@ -25,7 +27,7 @@ check-local:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini MANIFEST.in test_upslist.py
+EXTRA_DIST = tox.ini MANIFEST.in test_upslist.py test_protocol.py
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON_DEFAULT = @PYTHON_DEFAULT@
