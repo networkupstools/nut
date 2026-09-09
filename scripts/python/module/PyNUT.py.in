@@ -689,6 +689,10 @@ certhost    : Optional dict or list of dict/lists: {hostname: [certname, certver
         # their imposed timeouts might confuse NUT expectations:
         self.__timeout     = NUT_DEFAULT_CONNECT_TIMEOUT if (timeout is None or type(timeout) not in [float, int] or timeout < 0.0) else timeout
         self.try_DEFAULT_SECLEVEL = -1
+        # Limit how many times we fully reconnect after a STARTTLS handshake timeout
+        # to avoid infinite recursion on persistently broken environments.
+        self.__starttls_retry_budget_default = 5
+        self.__starttls_retry_budget = self.__starttls_retry_budget_default
 
         # CERTHOST handling: if provided as a list, convert to a dictionary
         self.__certhost = {}
@@ -894,17 +898,26 @@ if something goes wrong.
                             self.__srv_handler,
                             server_hostname=wrap_server_hostname
                         )
+                        # On success, reset timeout retry budget for future sessions
+                        self.__starttls_retry_budget = self.__starttls_retry_budget_default
                         break
                     except TimeoutError as te:
                         if self.__debug:
-                            print( "[DEBUG] STARTTLS handshake timed out%s: %s" %(
-                                ("" if (i < 1) else (", retrying (%d)" % i)),
-                                str(te)) )
-
-                        if (i > 1):
-                            time.sleep(1)
-                        else:
-                            raise te
+                            print( "[DEBUG] STARTTLS handshake timed out: %s" % (str(te)) )
+                        # If we still have budget to fully retry, tear down and reconnect
+                        if self.__starttls_retry_budget > 0:
+                            if self.__debug:
+                                print( "[DEBUG] STARTTLS timeout: fully retrying connection (%d retries left)" % (self.__starttls_retry_budget) )
+                            self.__starttls_retry_budget -= 1
+                            try:
+                                self.disconnect()
+                            except Exception:
+                                pass
+                            # Fully restart the connection including plaintext greeting and STARTTLS
+                            self.__connect()
+                            return
+                        # Otherwise, give up and raise the original timeout
+                        raise te
                     except ssl.SSLError as se:
                         # On some systems upsd gets built against openssl-1.x.y
                         # and Python (3.14+) against openssl-3, and disables
@@ -941,6 +954,9 @@ if something goes wrong.
                     if self.__force_ssl:
                         raise PyNUTError("STARTTLS setup claimed to succeed, but protocol version check in the secured session failed, and SSL is required")
                     # TODO: Drop SSL context or restart the connection as plaintext if SSL is not required?
+                else:
+                    # Successful secure connection path: reset retry budget
+                    self.__starttls_retry_budget = self.__starttls_retry_budget_default
             else :
                 if self.__debug :
                     print( "[DEBUG] STARTTLS failed: %s" % result )
@@ -950,6 +966,8 @@ if something goes wrong.
                     if self.__debug:
                         print( "[DEBUG] STARTTLS failed, but not forced, continuing insecurely" )
                     self.__use_ssl = False
+                    # Not using TLS now; reset retry budget for any later attempts
+                    self.__starttls_retry_budget = self.__starttls_retry_budget_default
 
         if self.__login != None :
             self.__send( ("USERNAME %s\n" % self.__login).encode('ascii') )
