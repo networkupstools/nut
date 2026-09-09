@@ -6,7 +6,6 @@ use UPS::Nut;
 use FileHandle;
 use File::Path;
 use Cwd;
-use POSIX ();
 
 my ($checks, $failures) = (0, 0);
 sub check {
@@ -140,8 +139,10 @@ die "mkdir $tmp: $!" unless $created_tmp;
 my $child;
 END {
     if ($child) { kill 'TERM', $child; waitpid($child, 0); }
-    chdir($cwd) if defined $cwd;
-    rmtree($tmp) if $created_tmp && -d $tmp;
+    if ($created_tmp) {
+        chdir($cwd) if defined $cwd;
+        rmtree($tmp) if -d $tmp;
+    }
 }
 sub write_file {
     my ($name, $text) = @_;
@@ -150,13 +151,24 @@ sub write_file {
     close($fh) or die "close $name: $!";
 }
 chdir($tmp) or die "chdir: $!";
+# Check include dispatch without creating a Windows-invalid filename.
+write_file('include-escapes.conf', <<'CONF');
+INCLUDE_REQUIRED "part \"\#\\name.conf"
+CONF
+my $include;
+my $read_authconf = \&UPS::Nut::AuthConf::readAuthConfFile;
+{
+    local *UPS::Nut::AuthConf::readAuthConfFile = sub { $include = $_[1]; return (); };
+    $read_authconf->('UPS::Nut::AuthConf', 'include-escapes.conf', 1);
+}
+equal($include, 'part "#\\name.conf', 'include path quote and backslash decoding');
 # Relative includes have historically resolved against cwd.
-write_file('part "#\\name.conf', "PASSWORD=\"included\\\\n\"\n");
+write_file('part #name.conf', "PASSWORD=\"included\\\\n\"\n");
 write_file('scope.conf', "PASSWORD=ignored\n");
 write_file('auth.conf', <<'CONF');
 USERNAME=global
 PASSWORD=first
-INCLUDE_REQUIRED "part \"\#\\name.conf" # trailing comment
+INCLUDE_REQUIRED "part \#na\me.conf" # trailing comment
 [admin@localhost:12345] # section comment
 PASSWORD = "say \"yes\" \\n # literal"
 INCLUDE scope.conf
@@ -201,9 +213,12 @@ my @dialog = (
     ['LIST UPS', ["BE", "GIN LIST UPS\nUPS test \"a\\", "\"b\\\\c\"\nUPS second \"two words\"\nEND LIST U", "PS\n"]],
     ['LOGOUT', ["OK Goodbye\n"]],
 );
+# Flush TAP before fork; normal child exit also works with Windows pseudofork.
+$| = 1;
 $child = fork();
 die "fork: $!" unless defined $child;
 if (!$child) {
+    $created_tmp = 0; # Only the parent owns temporary-directory cleanup.
     my $status = eval {
         $SIG{ALRM} = sub { die "server timeout\n"; };
         alarm(15);
@@ -221,7 +236,7 @@ if (!$child) {
         1;
     };
     print STDERR $@ unless $status;
-    POSIX::_exit($status ? 0 : 1);
+    exit($status ? 0 : 1);
 }
 close($listener);
 $SIG{ALRM} = sub { die "client timeout\n"; };
