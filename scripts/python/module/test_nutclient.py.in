@@ -7,8 +7,13 @@ import PyNUT
 import sys
 import os
 import socket
-import unittest
 
+HAVE_UNITTEST = False
+try:
+    import unittest
+    HAVE_UNITTEST = True
+except ModuleNotFoundError as ignored:
+    pass
 
 class DisconnectSocket:
     """ Record cleanup attempts, including operations which fail. """
@@ -31,7 +36,8 @@ class DisconnectSocket:
         return b"ERR ACCESS-DENIED\n"
 
 
-class DisconnectTest(unittest.TestCase):
+if HAVE_UNITTEST:
+  class DisconnectTest(unittest.TestCase):
     def check_cleanup(self, send_error=False, close_error=False, destructor=False):
         client = PyNUT.PyNUTClient(connect_now=False)
         sock = DisconnectSocket(send_error, close_error)
@@ -158,9 +164,12 @@ class DisconnectTest(unittest.TestCase):
 
 
 def testsuite_disconnect():
-    suite = unittest.TestLoader().loadTestsFromTestCase(DisconnectTest)
-    return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
-
+    if HAVE_UNITTEST:
+        suite = unittest.TestLoader().loadTestsFromTestCase(DisconnectTest)
+        return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+    else:
+        print("SKIP: testsuite_disconnect(): module unittest is not available")
+        return 1
 
 def test_splitaddr(addr, expected_host, expected_port):
     ac = PyNUT.AuthConf(addr)
