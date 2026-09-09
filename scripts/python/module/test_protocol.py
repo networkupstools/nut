@@ -164,6 +164,10 @@ class AuthConfTest(unittest.TestCase):
         PyNUT.AuthConf.readAuthConfFile(filename, fatal_errors=True)
         return PyNUT.AuthConf.getAuthConf(host='localhost', port=3493)
 
+    def config_path(self, name):
+        return os.path.join(self.directory, name).replace('\\', '\\\\').replace(
+            '"', '\\"').replace('#', '\\#')
+
     def test_value_syntax(self):
         for source, expected in [
             ('ordinary', 'ordinary'), ('""', ''),
@@ -196,19 +200,33 @@ class AuthConfTest(unittest.TestCase):
         self.assertEqual(result.certpath, '/global path')
 
     def test_included_filenames(self):
-        self.write_config('include "q"#1\\part.conf', 'PASSWORD="from include"\n')
-        encoded = os.path.join(self.directory, 'include \\"q\\"\\#1\\\\part.conf')
+        self.write_config('include #1.conf', 'PASSWORD="from include"\n')
+        encoded = self.config_path('include #1.conf')
         result = self.read_config('INCLUDE_REQUIRED "' + encoded + '" # comment\n')
         self.assertEqual(result.password, 'from include')
         PyNUT.AuthConf.freeAuthConfList()
         self.write_config("owner's file.conf", 'CERTPATH="included path"\n')
-        encoded = os.path.join(self.directory, "owner's\\ file.conf")
+        encoded = self.config_path("owner's file.conf").replace(' ', '\\ ')
         result = self.read_config('INCLUDE ' + encoded + '\nPASSWORD=local\n')
         self.assertEqual(result.certpath, 'included path')
         self.assertEqual(result.password, 'local')
 
+    def test_included_filename_decoding(self):
+        # Record the include path without creating a Windows-invalid filename.
+        filename = self.write_config('nutauth.conf',
+            'INCLUDE_REQUIRED "include \\"q\\"\\#1\\\\part.conf" # comment\n')
+        original = PyNUT.AuthConf.readAuthConfFile
+        included = []
+        try:
+            PyNUT.AuthConf.readAuthConfFile = staticmethod(
+                lambda name, required, *args: included.append((name, required)))
+            original(filename, fatal_errors=True)
+        finally:
+            PyNUT.AuthConf.readAuthConfFile = staticmethod(original)
+        self.assertEqual(included, [('include "q"#1\\part.conf', True)])
+
     def test_optional_and_required_missing_include(self):
-        missing = os.path.join(self.directory, 'missing.conf')
+        missing = self.config_path('missing.conf')
         result = self.read_config('INCLUDE "' + missing + '"\nPASSWORD=local\n')
         self.assertEqual(result.password, 'local')
         PyNUT.AuthConf.freeAuthConfList()
