@@ -3800,6 +3800,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     fi
 fi
 
+dnl Options regarding NUT-Monitor GUI app:
 AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
 AS_IF([test x"${nut_enable_configure_debug}" = xyes], [
     AC_MSG_NOTICE([(CONFIGURE-DEVEL-DEBUG) nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
@@ -3937,6 +3938,44 @@ if test "${nut_with_pynut}" = force ; then
     fi
 fi
 
+dnl Check test dependency for scripts handling the PyNUT module itself:
+nut_with_python_unittest_py2="no"
+nut_with_python_unittest_py3="no"
+nut_with_python_unittest_py="no"
+dnl NOTE: Maybe we would remove this "if" layer, if there would appear more
+dnl Pythonic things to `unittest` eventually (hence the abstracted varnames):
+if test "${nut_with_pynut}" = yes ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" -a -n "${PYTHON2}" ; then
+        AC_MSG_CHECKING([if we have Python2 prerequisites for PyNUT unit testing])
+        if ${PYTHON2} -c "import unittest;" 1>&5 2>&5 ; then
+            nut_with_python_unittest_py2="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+        fi
+    fi
+
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
+        AC_MSG_CHECKING([if we have Python3 prerequisites for PyNUT unit testing])
+        if ${PYTHON3} -c "import unittest;" 1>&5 2>&5 ; then
+            nut_with_python_unittest_py3="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+        fi
+    fi
+
+    if test -n "${PYTHON_VERSION_INFO_REPORT}" -a -n "${PYTHON}" ; then
+        AC_MSG_CHECKING([if we have Python (default version) prerequisites for PyNUT unit testing])
+        if ${PYTHON} -c "import unittest;" 1>&5 2>&5 ; then
+            nut_with_python_unittest_py="yes"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+        fi
+    fi
+fi
+
 NUT_REPORT_PROGRAM([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
 					[WITH_NUT_MONITOR], [Define to enable NUT-Monitor desktop application installation])
 
@@ -3955,6 +3994,11 @@ AM_CONDITIONAL(WITH_PYNUT_PY,  test "${nut_with_pynut_py}" = "yes"  -a "${nut_wi
 AM_CONDITIONAL(WITH_PYNUT_PY2, test "${nut_with_pynut_py2}" = "yes" -a "${nut_with_pynut}" = yes)
 AM_CONDITIONAL(WITH_PYNUT_PY3, test "${nut_with_pynut_py3}" = "yes" -a "${nut_with_pynut}" = yes)
 AM_CONDITIONAL(WITH_PYNUT_APP, test "${nut_with_pynut}" = "app")
+
+dnl Can and should we test the module here?
+AM_CONDITIONAL(WITH_PYNUT_UNITTEST_PY,  test "${nut_with_python_unittest_py}" = "yes"  -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_UNITTEST_PY2, test "${nut_with_python_unittest_py2}" = "yes" -a "${nut_with_pynut}" = yes)
+AM_CONDITIONAL(WITH_PYNUT_UNITTEST_PY3, test "${nut_with_python_unittest_py3}" = "yes" -a "${nut_with_pynut}" = yes)
 
 AC_SUBST([nut_with_nut_monitor_dir], [${nut_with_nut_monitor_dir}])
 AC_SUBST([nut_with_nut_monitor_py2gtk2], [${nut_with_nut_monitor_py2gtk2}])
