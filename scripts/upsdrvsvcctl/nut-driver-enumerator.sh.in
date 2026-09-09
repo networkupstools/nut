@@ -616,7 +616,7 @@ upsconf_getValue() {
                         if (c == "\"") break
                         if (c ~ /^[ -\177]$/) value = value c
                     } else if (c == "#") break
-                    else if (c ~ /^[[:space:]]$/) {
+                    else if (c ~ /^[ \t\r\n\013\014]$/) {
                         if (started) break
                     } else if (c == "=" && started) break
                     else if (c == "\"" && !started) {
