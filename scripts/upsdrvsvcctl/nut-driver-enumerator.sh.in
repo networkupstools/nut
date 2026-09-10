@@ -638,7 +638,7 @@ upsconf_getValue() {
         RES_L=0
         VALUE=""
 
-        VALUE="$(printf '%s\n' "$SECTION_CONTENT" | upsconf_getValue_awk "$1")" || RES_L=$?
+        VALUE="`printf '%s\n' \"${SECTION_CONTENT}\" | upsconf_getValue_awk \"$1\"`" || RES_L=$?
 
         [ "$RES_L" = 0 ] || { RES="$RES_L" ; log_error "Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" ; }
 
@@ -1422,7 +1422,7 @@ upslist_normalizeFile() {
     # Store a normalized version of NUT configuration file contents.
     # Also use a SDP subset with just section, driver and port info
     # for faster parsing when determining driver-required media etc.
-    UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
+    UPSCONF_DATA="`upslist_normalizeFile_filter < \"${UPSCONF}\"`" \
         && [ "${#UPSCONF_DATA}" != 0 ] \
         && UPSCONF_DATA_SDP="`$EGREP '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
@@ -1455,7 +1455,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="$(printf '%s\n' "$UPSCONF_DATA_SDP" | $EGREP '^\[[^'"$TABCHAR"'\ ]*\]$' | $SED 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1)" \
+        UPSLIST_FILE="`printf '%s\n' \"$UPSCONF_DATA_SDP\" | $EGREP '^\[[^'\"$TABCHAR\"'\ ]*\]$' | $SED 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1`" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents"
