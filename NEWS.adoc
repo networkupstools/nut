@@ -42,6 +42,10 @@ https://github.com/networkupstools/nut/milestone/13
    to patterns defined in link:docs/nut-names.txt[]
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * PyNUT: `GetUPSCommands()` now requests command descriptions with the
+      advertised identifiers on Python 3 and uses those identifiers when
+      extracting the response. Returned keys and descriptions remain byte
+      sequences. [issue #3621]
     * `nut-scanner` tool updates:
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]

@@ -1300,12 +1300,13 @@ of the command as value
 
             # For each var we try to get the available description
             try :
-                self.__send( ("GET CMDDESC %s %s\n" % ( ups, var )).encode('ascii') )
+                command = var.decode('ascii')
+                self.__send( ("GET CMDDESC %s %s\n" % ( ups, command )).encode('ascii') )
                 temp = self.__read_until( b"\n" )
                 if temp[:7] != b"CMDDESC" :
                     raise PyNUTError
                 else :
-                    off  = len( ("CMDDESC %s %s " % ( ups, var )).encode('ascii') )
+                    off  = len( ("CMDDESC %s %s " % ( ups, command )).encode('ascii') )
                     desc = temp[off:-1].split(b'"')[1]
             except :
                 desc = var
