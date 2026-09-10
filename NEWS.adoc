@@ -58,6 +58,11 @@ https://github.com/networkupstools/nut/milestone/13
    complete descriptor available on affected River 3 Plus firmware while
    retaining the shorter length as a fallback.
 
+ - `usbhid-ups` `legrand-hid` subdriver: `beeper.disable` now sends
+   `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"), so the
+   buzzer stays off across alarms; added `beeper.mute` and
+   `ups.beeper.status`. [issue #3638]
+
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
