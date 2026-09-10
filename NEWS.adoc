@@ -620,6 +620,14 @@ https://github.com/networkupstools/nut/milestone/13
       aspect of that, it should now abort with an explanation (and not proceed
       with insecure start-up like it could do before). [issue #3331, PR #3435]
 
+ - The `nut-driver-enumerator.sh` script (NDE) updates:
+    * The shell/awk based parser now decodes `ups.conf` values using NUT token
+      syntax, preserving quoted hashes and escaped characters and ignoring
+      trailing comments. For example, `port = "auto" # comment` now properly
+      selects USB media for `nutdrv_qx`. The normalized configuration output
+      retains quotes and backslashes; changed section checksums can cause a
+      one-time reconciliation after upgrading. [PR #3635]
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
