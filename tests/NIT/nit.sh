@@ -4731,13 +4731,14 @@ testgroup_sandbox_python() {
 testgroup_sandbox_parseconf() {
     # Start a fresh sandbox so these punctuation fixtures do not change
     # the model, timer and language-binding tests' expected data.
-    if ! isTestablePython || [ -z "${PYTHON}" ]; then
+    if ! isTestablePython || [ -z "${PYTHON}" ] \
+    || ! $PYTHON -c 'import json' >/dev/null 2>&1 ; then
         if [ x"${NIT_CASE}" = xtestgroup_sandbox_parseconf ]; then
             log_error "[testgroup_sandbox_parseconf] Python with the json module is required"
             FAILED="`expr $FAILED + 1`"
-            FAILED_FUNCS="$FAILED_FUNCS testgroup_sandbox_parseconf:missing-python"
+            FAILED_FUNCS="$FAILED_FUNCS testgroup_sandbox_parseconf:missing-prerequisites"
         else
-            log_warn "[testgroup_sandbox_parseconf] SKIPPED: Python is unavailable"
+            log_warn "[testgroup_sandbox_parseconf] SKIPPED: Python with the json module is unavailable"
             SKIPPED="`expr $SKIPPED + 1`"
             SKIPPED_FUNCS="$SKIPPED_FUNCS testgroup_sandbox_parseconf"
         fi
