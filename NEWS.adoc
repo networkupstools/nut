@@ -494,6 +494,10 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * The Perl `UPS::Nut` module now decodes quoted values and backslash
+      escapes in query/list replies and `nutauth.conf` entries, and quotes
+      authentication arguments. Single quotes in configuration are literal.
+      Command descriptions now accept the server's `CMDDESC` response.
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among

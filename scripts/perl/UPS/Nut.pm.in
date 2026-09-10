@@ -9,8 +9,10 @@
 # ### changelog: 1.60: JK 2026-04-08: Added basic STARTTLS, as well as TRACKING support, LIST CLIENT, LIST RANGE, GET UPSDESC and PRIMARY/MASTER aliasing.
 # ### changelog: 1.61: JK 2026-04-08: Make TrackingID a class, similar to C++.
 # ### changelog: 1.62: JK 2026-04-10: Added a testing script nearby; revised API and NUT protocol support, notably TRACKING and STARTTLS.
+# ### changelog: 1.63: Decode NUT protocol and AuthConf tokens once; encode authentication arguments; accept CMDDESC replies.
 
 package UPS::Nut;
+use 5.005;
 use strict;
 # Absent on antique versions like perl-5.005 (Solaris 8)
 eval "use warnings FATAL => 'all';";
@@ -30,7 +32,7 @@ my $_eol = "\n";
 BEGIN {
   use Exporter ();
   use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-  $VERSION     = 1.62;
+  $VERSION     = 1.63;
   @ISA         = qw(Exporter IO::Socket::INET);
   @EXPORT      = qw();
   @EXPORT_OK   = qw();
@@ -348,7 +350,7 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
 }
 
 sub Authenticate { # Announce to the UPS who we are to set up the proper
-                   # management level.  See upsd.conf man page for details.
+                   # management level.  See upsd.users man page for details.
 
 # Contributor: Wayne Wylupski
   my $self = shift; # myself
@@ -365,10 +367,10 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
 
   # only attempt authentication if username and password given
   if (defined $user and defined $pass) {
-    $ans = $self->_send("USERNAME $user");
+    $ans = $self->_send("USERNAME " . _encode_arg($user));
     if (defined $ans && $ans =~ /^OK/) { # username OK, send password
 
-      $ans = $self->_send("PASSWORD $pass");
+      $ans = $self->_send("PASSWORD " . _encode_arg($pass));
       if (defined $ans && $ans =~ /^OK/) {
         $self->{authenticated} = 1;
         return 1
@@ -404,6 +406,56 @@ sub Logout { # logout of upsd and close connection
 # internal functions.  These are only used by UPS::Nut internally, so
 # please don't use them otherwise.  If you really think an internal
 # function should be externalized, let me know.
+
+# NUT parseconf grammar, shared with AuthConf. An incomplete quoted word or
+# escape returns undef so a configuration reader can supply the next line.
+# Keep Perl string bytes intact; this is not shell or language escape syntax.
+sub _tokenize {
+  my $line = shift;
+  my @words;
+  my ($word, $started, $quoted, $escaped, $continued) = ('', 0, 0, 0, 0);
+  foreach my $ch (split(//, $line)) {
+    $continued = 0;
+    if ($escaped) {
+      $escaped = 0;
+      $continued = ($ch eq "\n");
+      $word .= $ch unless $continued;
+    } elsif ($ch eq '\\') {
+      $started = 1;
+      $escaped = 1;
+    } elsif ($quoted) {
+      if ($ch eq '"') {
+        push @words, $word;
+        ($word, $started, $quoted) = ('', 0, 0);
+      } else {
+        $word .= $ch unless $ch eq "\n";
+      }
+    } elsif ($ch eq '#') {
+      last;
+    } elsif ($ch eq "\n") {
+      last;
+    } elsif ($ch =~ /[ \t\r\f\x0b=]/) {
+      push @words, $word if $started;
+      ($word, $started) = ('', 0);
+      push @words, '=' if $ch eq '=';
+    } elsif ($ch eq '"' && !$started) {
+      ($started, $quoted) = (1, 1);
+    } else {
+      $word .= $ch;
+      $started = 1;
+    }
+  }
+  return undef if $quoted || $escaped || $continued;
+  push @words, $word if $started;
+  return \@words;
+}
+
+sub _encode_arg {
+  my $value = shift;
+  # Keep escaping # for compatibility with older upsd parsers.
+  $value =~ s/([\\"#])/\\$1/g;
+  return '"' . $value . '"';
+}
 
 sub _initialize {
 # Author: Kit Peters
@@ -629,13 +681,16 @@ sub GetVar { # request a variable from the UPS
   elsif ($ans =~ /^VAR/) {
     my $checkvar; # to make sure the var we asked for is the var we got.
     my $retval; # returned value for requested VAR
-    (undef, undef, $checkvar, $retval) = split(' ', $ans, 4);
-        # get checkvar and retval from the answer
+    my $fields = _tokenize($ans);
+    unless (defined $fields && @$fields >= 4) {
+      $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
+      return undef;
+    }
+    (undef, undef, $checkvar, $retval) = @$fields;
     if ($checkvar ne $var) { # did not get expected var
       $self->_debug($self->{err} = "Requested $var, received $checkvar");
       return undef;
     }
-    $retval =~ s/^"(.*)"$/$1/;
     return $retval; # return the requested value
   }
   else { # unrecognized response
@@ -875,10 +930,8 @@ sub GetUPSDesc {
     return undef;
   };
   if ($ans =~ /^UPSDESC/) {
-    my @fields = split(' ', $ans, 3);
-    my $desc = $fields[2];
-    $desc =~ s/^"(.*)"$/$1/;
-    return $desc;
+    my $fields = _tokenize($ans);
+    return $fields->[2] if defined $fields && @$fields >= 3;
   }
 
   $self->_debug($self->{err} = "Error: $ans");
@@ -943,8 +996,9 @@ sub ListRange {
     while ($line = $self->_getline) {
       last if $line =~ /^END LIST RANGE/;
       # RANGE <ups> <var> "<min>" "<max>"
-      if ($line =~ /^RANGE \S+ \S+ "([^"]+)" "([^"]+)"/) {
-        push(@$retval, { min => $1, max => $2 });
+      my $fields = _tokenize($line);
+      if (defined $fields && @$fields >= 5 && $fields->[0] eq 'RANGE') {
+        push(@$retval, { min => $fields->[3], max => $fields->[4] });
       }
     }
     return $retval;
@@ -973,10 +1027,14 @@ sub _get_list {
     my $line;
     while ($line = $self->_getline) {
       last if $line =~ /^END LIST/;
-      my @fields = split(' ', $line, $valueidx+1);
-      (my $value = $fields[$valueidx]) =~ s/^"(.*)"$/$1/;
+      my $fields = _tokenize($line);
+      unless (defined $fields && @$fields > $valueidx) {
+        $self->_debug($self->{err} = "Unrecognized response from upsd: $line");
+        return undef;
+      }
+      my $value = $fields->[$valueidx];
       if ($keyidx) {
-        $retval->{$fields[$keyidx]} = $value;
+        $retval->{$fields->[$keyidx]} = $value;
       }
       else {
         push(@$retval, $value);
@@ -1021,9 +1079,12 @@ sub GetDesc {
   }
   elsif ($ans =~ /^DESC/) { # command successful
     $self->_debug("$req command sent successfully.");
-    (undef, undef, undef, $ans) = split(' ', $ans, 4);
-    $ans =~ s/^"(.*)"$/$1/;
-    return $ans;
+    my $fields = _tokenize($ans);
+    unless (defined $fields && @$fields >= 4) {
+      $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
+      return undef;
+    }
+    return $fields->[3];
   }
   else { # unrecognized response
     $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
@@ -1090,11 +1151,14 @@ sub GetCmdDesc {
     $self->_debug($self->{err} = "Error: $ans");
     return undef;
   }
-  elsif ($ans =~ /^DESC/) { # command successful
+  elsif ($ans =~ /^CMDDESC/) { # command successful
     $self->_debug("$req command sent successfully.");
-    (undef, undef, undef, $ans) = split(' ', $ans, 4);
-    $ans =~ s/^"(.*)"$/$1/;
-    return $ans;
+    my $fields = _tokenize($ans);
+    unless (defined $fields && @$fields >= 4) {
+      $self->_debug($self->{err} = "Unrecognized response from upsd: $ans");
+      return undef;
+    }
+    return $fields->[3];
   }
   else { # unrecognized response
     $self->_debug($self->{err} = "Can't send $req. Unrecognized response from upsd: $ans");
@@ -1298,6 +1362,18 @@ the Network UPS Tools package version 1.5 and above
 Note that it only talks to upsd for you in a Perl-ish way.
 It does not monitor the UPS continuously.
 
+Values returned by the query and list methods are decoded once using NUT
+quoting rules. Double quotes delimit a word only at its start; backslash
+quotes the next character, and single quotes are literal. Callers should
+not manually unescape these values. GetType() still returns one scalar
+containing the space-separated type flags.
+
+AuthConf uses the same rules for sections, KEY=VALUE entries and INCLUDE
+paths, including comments outside double quotes and backslash-newline
+continuations. Relative include paths still resolve against the current
+working directory. Single quotes no longer delimit configuration values;
+use double quotes for values containing spaces.
+
 =head1 CONSTRUCTOR
 
 Shown with defaults: new UPS::Nut( NAME => "default",
@@ -1312,7 +1388,7 @@ Shown with defaults: new UPS::Nut( NAME => "default",
 * HOST is the host running upsd
 * PORT is the port that upsd is running on
 * USERNAME and PASSWORD are those that you use to login to upsd.  This
-  gives you the right to do certain things, as specified in upsd.conf.
+  gives you the right to do certain things, as specified in upsd.users.
 * DEBUG turns on debugging output, set to 1 or 0
 * DEBUGOUT is de thing you do when de s*** hits the fan.  Actually, it's
   the filename where you want debugging output to go.  If it's not
@@ -1391,7 +1467,8 @@ constructor.
 
 With NUT certain operations are only available if the user has the
 privilege. The program has to authenticate with one of the accounts
-defined in upsd.conf.
+defined in upsd.users. Pass literal username and password values, without
+adding protocol quotes or escapes; Authenticate() encodes both arguments.
 
 =item Login($username, $password)
 
@@ -1684,8 +1761,8 @@ sub readAuthConfFile {
         return ();
     }
 
-    my $fh;
-    if (!open($fh, '<', $filename)) {
+    my $fh = FileHandle->new($filename, 'r');
+    if (!defined $fh) {
         my $errMsg = "Error opening $filename: $!";
         die $errMsg if $fatal_errors;
         $class->_debug("readAuthConfFile(): " . $errMsg);
@@ -1700,11 +1777,22 @@ sub readAuthConfFile {
     $current_ac = $global_defaults_ref if $global_scope;
 
     while (my $line = <$fh>) {
-        chomp $line;
-        $line =~ s/^\s+|\s+$//g;
-        next if !$line || $line =~ /^#/;
+        my $fields = UPS::Nut::_tokenize($line);
+        while (!defined $fields) {
+            my $next = <$fh>;
+            last unless defined $next;
+            $line .= $next;
+            $fields = UPS::Nut::_tokenize($line);
+        }
+        if (!defined $fields) {
+            my $errMsg = "Incomplete word in $filename";
+            die $errMsg if $fatal_errors;
+            $class->_debug("readAuthConfFile(): " . $errMsg);
+            last;
+        }
+        next unless @$fields;
 
-        if ($line =~ /^\[(.*)\]$/) {
+        if ($fields->[0] =~ /^\[(.*)\]$/) {
             my $sectname = $1;
             if ($class->getDebug()) {
                 if (defined $current_ac) {
@@ -1742,23 +1830,17 @@ sub readAuthConfFile {
         }
 
         # INCLUDE support
-        if ($line =~ /^INCLUDE(?:_REQUIRED)?\s+(.*)$/i) {
-            my $inc_file = $1;
-            $inc_file =~ s/^["']|["']$//g;
-            my $is_required = ($line =~ /^INCLUDE_REQUIRED/i);
+        if ($fields->[0] =~ /^INCLUDE(?:_REQUIRED)?$/i && @$fields >= 2) {
+            my $inc_file = $fields->[1];
+            my $is_required = ($fields->[0] =~ /^INCLUDE_REQUIRED$/i);
             $class->_debug("readAuthConfFile(): INCLUDE '$inc_file'");
             $class->readAuthConfFile($inc_file, $is_required, (!defined $current_ac || $current_ac == $global_defaults_ref));
             next;
         }
 
-        if ($line =~ /^([^=]+)=(.*)$/) {
-            my ($key, $value) = ($1, $2);
-            $key =~ s/^\s+|\s+$//g;
+        if (@$fields >= 3 && $fields->[1] eq '=') {
+            my ($key, $value) = ($fields->[0], $fields->[2]);
             my $keyUC = uc($key);
-
-            # FIXME: NUT parseconf for possibly escaped values is a bit more complicated than this:
-            $value =~ s/^\s+|\s+$//g;
-            $value =~ s/^["']|["']$//g;
 
             if (!defined $current_ac) {
                 if ($global_scope) {
