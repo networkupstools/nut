@@ -4809,7 +4809,16 @@ testgroup_sandbox_python_escaping() {
     stop_daemons
     generatecfg_upsd_trivial
     generatecfg_ups_trivial
-    printf 'DATAPATH "%s"\n' "$NUT_CONFPATH" >> "$NUT_CONFPATH/upsd.conf" \
+    # MSYS converts process arguments, but not paths written into config files.
+    ESCAPING_CONFPATH="$NUT_CONFPATH"
+    if command -v cygpath >/dev/null 2>&1 ; then
+        ESCAPING_CONFPATH="$(cygpath -m "$NUT_CONFPATH")" \
+            || die "Failed to convert the escaping fixture path"
+    fi
+    ESCAPING_CONFPATH="$(printf '%s' "$ESCAPING_CONFPATH" | \
+        sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/#/\\#/g')" \
+        || die "Failed to escape the fixture path for NUT configuration"
+    printf 'DATAPATH "%s"\n' "$ESCAPING_CONFPATH" >> "$NUT_CONFPATH/upsd.conf" \
         || die "Failed to configure the temporary cmdvartab path"
     cat >> "$NUT_CONFPATH/ups.conf" << 'EOF'
 [dummy]
@@ -4845,7 +4854,7 @@ EOF
     upsmon secondary
 EOF
     [ $? = 0 ] || die "Failed to populate escaping upsd.users"
-    printf 'INCLUDE_REQUIRED "%s/escape credentials.conf"\n' "$NUT_CONFPATH" \
+    printf 'INCLUDE_REQUIRED "%s/escape credentials.conf"\n' "$ESCAPING_CONFPATH" \
         > "$NUT_CONFPATH/escape-auth.conf" || die "Failed to populate escaping INCLUDE"
     printf '[@127.0.0.1:%s]\n' "$NUT_PORT" > "$NUT_CONFPATH/escape credentials.conf" \
         || die "Failed to populate escaping authconf section"
