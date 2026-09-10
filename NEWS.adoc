@@ -42,6 +42,10 @@ https://github.com/networkupstools/nut/milestone/13
    to patterns defined in link:docs/nut-names.txt[]
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * PyNUT: `GetUPSCommands()` now requests command descriptions with the
+      advertised identifiers on Python 3 and uses those identifiers when
+      extracting the response. Returned keys and descriptions remain byte
+      sequences. [issue #3621]
     * `nut-scanner` tool updates:
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]
@@ -494,6 +498,12 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * `PyNUTClient`: fixed parsing of escaped descriptions and values in
+      server replies, including `GetUPSList()` and its consumers. Shared
+      parsing also handles `nutauth.conf` values, comments and included
+      filenames using NUT syntax. Authentication arguments are escaped
+      before transmission. Existing response types are preserved; single
+      quotes in configuration values are now literal. [issue #3620, PR #3629]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
@@ -608,6 +618,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
 
  - `upsd` data server updates:
+    * Escape variable and command descriptions from `cmdvartab` when sending
+      `DESC` and `CMDDESC` responses, so embedded quotes, backslashes and
+      hashes are decoded correctly by clients. [PR #3629]
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]
     * If the `MAXCONN` requested in the configuration file exceeds the OS

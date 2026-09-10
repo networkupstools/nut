@@ -86,6 +86,13 @@ should be double-quoted and/or use escape sequences, like in other NUT files.
 
 Blank lines and characters after an un-quoted hash (`#`) are ignored.
 
+Single quotes are literal characters; only double quotes group a value
+containing spaces. A backslash escapes the following character once,
+including a space, quote, backslash or hash. It does not introduce C or
+Python escape sequences. These rules also apply to `INCLUDE` filenames.
+For compatibility with older NUT parsers, escape a hash with a backslash
+even inside double quotes.
+
 Example:
 
 	# Global defaults
