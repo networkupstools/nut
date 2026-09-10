@@ -367,8 +367,15 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-h
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c powervar-hid.c delta_ups-hid.c ecoflow-hid.c ever-hid.c \
  legrand-hid.c salicru-hid.c
-usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c ecoflow-hid-aux-cdc.c ecoflow-cdc-protocol.c $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c hidparser.c $(USBHID_UPS_SUBDRIVERS)
+# NOTE: some Ecoflow devices include USB HID and USB CDC ACM (serial)
+#  interfaces, and since PR https://github.com/networkupstools/nut/pull/3569
+#  the `usbhid-ups` driver can tap into those (HID part of the controller
+#  takes a while to boot after reconnection). The code is safe to build
+#  with and without serial support (logs meaningful errors if without).
+usbhid_ups_SOURCES += ecoflow-hid-aux-cdc.c ecoflow-cdc-protocol.c
 if WITH_SERIAL
+# Ordering matters, at least for linking on Windows/MSYS2 - do not conflate!
 usbhid_ups_LDADD = libdummy_serial.la $(LDADD_DRIVERS_LIBUSB) $(SERLIBS) $(LDADD_DMFSTDLIB)
 else
 usbhid_ups_LDADD = $(LDADD_DRIVERS_LIBUSB) $(LDADD_DMFSTDLIB)
