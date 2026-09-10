@@ -13,7 +13,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2025 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2026 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -732,9 +732,9 @@ upsconf_getDriverMedia() {
             CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
-                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`printf '%s\n' "${CURR_PORT}" | $SED 's,@.*$,,'`" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost,drivers=`printf '%s\n' \"${CURR_PORT}\" | $SED 's,@.*$,,'`" ; return ;;
                 *@"`hostname`"*)  # Technically also local host, but via public host name (so networking must be up)
-                    printf '%s\n%s\n' "$CURR_DRV" "network,drivers=`printf '%s\n' "${CURR_PORT}" | $SED 's,@.*$,,'`" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network,drivers=`printf '%s\n' \"${CURR_PORT}\" | $SED 's,@.*$,,'`" ; return ;;
                 *@*)  # Might be local host via public IP address, but harder to detect portably
                     printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
                 *)  # Assume DEV/SEQ file:
@@ -808,7 +808,7 @@ smf_validFullUnitName() {
     esac
 }
 smf_validInstanceName() {
-    echo "MD5_`calc_md5 "$1"`"
+    echo "MD5_`calc_md5 \"$1\"`"
 }
 smf_validInstanceSuffixName() {
     case "$1" in
@@ -866,7 +866,7 @@ smf_registerInstance() {
                              for OTHERDEV in $UPSLIST_FILE ; do
                                 case "${DEPDRV}" in
                                     *-"${OTHERDEV}")
-                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        OTHERDRV="'`echo \"${OTHERLIST}\" | awk '($1 == \"'\"${OTHERDEV}\"'\") { print $2 }'`'" || OTHERDRV="<N/A>"
                                         log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
                                         ;;
                                 esac
@@ -1087,7 +1087,7 @@ systemd_validFullUnitName() {
     esac
 }
 systemd_validInstanceName() {
-    echo "MD5_`calc_md5 "$1"`"
+    echo "MD5_`calc_md5 \"$1\"`"
 }
 systemd_validInstanceSuffixName() {
     echo "$1" | $SED -e 's,^.*@,,' -e 's,\.service$,,'
@@ -1152,7 +1152,7 @@ systemd_registerInstance() {
                              for OTHERDEV in $UPSLIST_FILE ; do
                                 case "${DEPDRV}" in
                                     *-"${OTHERDEV}")
-                                        OTHERDRV="'`echo "${OTHERLIST}" | awk '($1 == "'"${OTHERDEV}"'") { print $2 }'`'" || OTHERDRV="<N/A>"
+                                        OTHERDRV="'`echo \"${OTHERLIST}\" | awk '($1 == \"'\"${OTHERDEV}\"'\") { print $2 }'`'" || OTHERDRV="<N/A>"
                                         log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
                                         ;;
                                 esac
@@ -1631,7 +1631,7 @@ nut_driver_enumerator_main() {
 
     if [ "$RESTART_ALL" = yes ] ; then
         # Save new checksum of global config
-        $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
+        $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ''`"
     fi
 
     if [ "${#UPSLIST_FILE}" != 0 ]; then
@@ -1708,7 +1708,7 @@ nut_driver_enumerator_full_reconfigure() {
     fi
 
     # Save new checksum of global config
-    $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
+    $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ''`"
 
     # Service units were manipulated, including saving of checksums;
     # refresh the service management daemon if needed
