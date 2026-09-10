@@ -141,8 +141,32 @@ This definition file, specified by the `port` argument in the example above,
 is generally named `something.dev` or `something.seq`. It contains a list of
 all valid variables and associated values (you can later use `upsrw`
 only to modify values of these variables), and has the same format as an
-linkman:upsc[8] data dump (`<varname>: <value>`). This means you can easily
-create definition files from an existing UPS using `upsc > file.dev`.
+linkman:upsc[8] data dump (`<varname>: <value>`). You can use
+`upsc > file.dev` as a starting point for a definition file.
+
+Values are read with the common NUT configuration parser. Unquoted value
+tokens are joined with a single space; double quotes preserve spaces
+inside a token. Single quotes (apostrophes) are literal characters.
+An unescaped `#` outside double quotes starts a comment, while a `#`
+inside double quotes is literal. For example:
+
+	outlet.1.desc: Outlet #1
+	outlet.2.desc: "Outlet \#2"
+	outlet.3.desc: "Outlet #3"
+	outlet.4.desc: Outlet \#4
+
+These values become `Outlet`, `Outlet #2`, `Outlet #3`, and `Outlet #4`,
+respectively. Older versions of the parser require `\#` even inside
+double quotes. Backslashes quote the next permitted character once, so
+`\n` becomes `n`, while `\\` becomes a single literal backslash.
+A backslash followed by a physical newline continues the logical line.
+An unescaped `=` outside double quotes is a separate token; quote or
+escape it when it is part of a value.
+
+The default `upsc` output does not add quoting or escaping. Before reading
+such a dump back with *dummy-ups*, quote or escape values containing these
+special characters as needed. Its JSON output preserves string values
+unambiguously, but JSON is not a *dummy-ups* definition file format.
 
 Note that the Network UPS project provides an extensive
 link:https://www.networkupstools.org/ddl/index.html[DDL (Devices Dumps Library)]

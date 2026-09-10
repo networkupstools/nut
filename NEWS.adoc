@@ -439,6 +439,12 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * The configuration and protocol parser now accepts a literal `#`
+      inside double quotes, including in UPS and `dummy-ups` outlet
+      descriptions. Unquoted `#` still starts a comment, and escaped
+      hashes remain supported. Encoded output continues to escape hashes
+      for older peers; default `upsc` text output is unchanged.
+      [issues #607, #1306]
     * POSIX daemons now warn if their real or effective UID remains zero after
       the common credential switch. [issue #3471, PR #3609]
     * Refactored `common::background()` method used by numerous NUT daemons
