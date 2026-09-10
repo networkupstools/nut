@@ -41,8 +41,11 @@ Command reference
 
 Multi-word elements are contained within "quotes" for easier parsing.
 Embedded quotes are escaped with backslashes.  Embedded backslashes are
-also escaped by representing them as \\.  This protocol is intended to
+also escaped by representing them as `\\`.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
+
+It is an ASCII text-based line-oriented protocol, with end of each line
+signaled by a single `\n` (`0x0D`) character.
 
 
 Revision history
