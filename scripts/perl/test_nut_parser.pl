@@ -204,6 +204,9 @@ check(!@missing, 'AuthConf missing optional file');
 my $ok = eval { UPS::Nut::AuthConf->readAuthConfFile('absent.conf', 1); 1; };
 check(!$ok && $@ ne '', 'AuthConf missing required file');
 
+# Load optional TLS support before starting the socket fixture watchdogs.
+eval "require IO::Socket::SSL; 1";
+
 # Exercise the real socket implementation, constructor and buffered getline.
 my $listener = IO::Socket::INET->new(LocalAddr => '127.0.0.1', LocalPort => 0, Listen => 1, Proto => 'tcp', ReuseAddr => 1) or die "listen: $!";
 my $port = $listener->sockport();
