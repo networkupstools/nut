@@ -3938,14 +3938,15 @@ if test "${nut_with_pynut}" = force ; then
     fi
 fi
 
-dnl Check test dependency for scripts handling the PyNUT module itself:
+dnl Check test dependency only for interpreters with PyNUT prerequisites.
+dnl A default interpreter shared with Python2 or Python3 is tested there.
 nut_with_python_unittest_py2="no"
 nut_with_python_unittest_py3="no"
 nut_with_python_unittest_py="no"
 dnl NOTE: Maybe we would remove this "if" layer, if there would appear more
 dnl Pythonic things to `unittest` eventually (hence the abstracted varnames):
 if test "${nut_with_pynut}" = yes ; then
-    if test -n "${PYTHON2_VERSION_INFO_REPORT}" -a -n "${PYTHON2}" ; then
+    if test "${nut_with_pynut_py2}" = yes ; then
         AC_MSG_CHECKING([if we have Python2 prerequisites for PyNUT unit testing])
         if ${PYTHON2} -c "import unittest;" 1>&5 2>&5 ; then
             nut_with_python_unittest_py2="yes"
@@ -3955,7 +3956,7 @@ if test "${nut_with_pynut}" = yes ; then
         fi
     fi
 
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" -a -n "${PYTHON3}" ; then
+    if test "${nut_with_pynut_py3}" = yes ; then
         AC_MSG_CHECKING([if we have Python3 prerequisites for PyNUT unit testing])
         if ${PYTHON3} -c "import unittest;" 1>&5 2>&5 ; then
             nut_with_python_unittest_py3="yes"
@@ -3965,7 +3966,7 @@ if test "${nut_with_pynut}" = yes ; then
         fi
     fi
 
-    if test -n "${PYTHON_VERSION_INFO_REPORT}" -a -n "${PYTHON}" ; then
+    if test "${nut_with_pynut_py}" = yes ; then
         AC_MSG_CHECKING([if we have Python (default version) prerequisites for PyNUT unit testing])
         if ${PYTHON} -c "import unittest;" 1>&5 2>&5 ; then
             nut_with_python_unittest_py="yes"
