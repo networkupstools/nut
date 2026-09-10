@@ -28,7 +28,7 @@
 #include "main.h"
 #include "usb-common.h"
 
-#define LEGRAND_HID_VERSION	"Legrand HID 0.3"
+#define LEGRAND_HID_VERSION	"Legrand HID 0.31"
 
 /* Legrand */
 #define LEGRAND_VENDORID	0x1cb0
@@ -180,8 +180,10 @@ static hid_info_t legrand_hid2nut[] = {
 	{ "test.battery.stop", 0, 0, "UPS.Output.Test", NULL, "3", HU_TYPE_CMD, NULL },
 
 	/* Buzzer */
+	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
-	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
