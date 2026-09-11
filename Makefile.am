@@ -1001,8 +1001,20 @@ maintainer-asciidocs:
 # Neither file is directly used by the `make` process nor scripts, but they
 # are often useful for interactive use of `make check-NIT*` goals or for
 # `gdb` runs and so on. Some IDEs might offer to source them, too.
+# NOTE: "test -L" confirms a symlink exists (we assume it points where it
+#  should) regardless of target existence, and "test -e" confirms a target
+#  file exists after dereference. We DO NOT (re-)create the symlink if either
+#  the target exists and contains expected contents, or the it is "dangling".
 NIT.env:
-	test -e $@ || $(LN_S) $(builddir)/tests/NIT/tmp/etc/NIT.env || true
+	@if test -L $@ || test -h $@; then \
+	    if test -e $@ ; then \
+	        if $(GREP) 'NUT_PORT=' < $@ > /dev/null ; then \
+	            exit 0; \
+	        fi ; \
+	    else exit 0; fi ; \
+	 fi ; \
+	 $(RM_F) $@ ; \
+	 $(LN_S) $(builddir)/tests/NIT/tmp/etc/NIT.env $@ || true
 
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
 check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: NIT.env .libs-dev-PATH @dotMAKE@
