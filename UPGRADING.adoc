@@ -73,6 +73,9 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   usable; specific values can require use of such a file or to not even try
   reading one ('none' as the legacy default). See the updated manual pages
   for more details. [issues #3329, #3411]
++
+NOTE: In a future NUT release, the default `configure` script handling for the
+`--with-ssl-client-validation=auto` option may be changed from `no` to `yes`.
 
 - The `powervar_cx_usb`, `tripplite_usb` drivers used a built-in limit on
   reconnection attempts after which they exited ('60' and '10' respectively).

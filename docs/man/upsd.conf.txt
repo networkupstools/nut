@@ -218,9 +218,8 @@ by default, see `docs/security.txt` in NUT sources), you can specify whether
 Up until NUT release v2.8.5 this was a no-op when built with OpenSSL.
 Now this feature is supported with both OpenSSL and NSS backends.
 +
-WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
-#3329] is solved, not all stock NUT clients may even have a way to present
-some certain certificate.
+NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
+third-party NUT clients to even have a way to present some certain certificate.
 +
 Possible values are:
 +
