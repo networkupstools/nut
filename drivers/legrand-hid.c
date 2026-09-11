@@ -27,6 +27,7 @@
 #include "legrand-hid.h"
 #include "main.h"
 #include "usb-common.h"
+#include "dmf_stdlib.h"
 
 #define LEGRAND_HID_VERSION	"Legrand HID 0.3"
 
@@ -74,9 +75,8 @@ static usage_tables_t legrand_utab[] = {
 
 static const char *legrand_times10(double value)
 {
-	static char buf[20];
-	snprintf(buf, sizeof(buf), "%0.1f", value * 10);
-	return buf;
+	/* Deduplicated: delegates to the shared dmf_stdlib scale/format helper */
+	return nut_scale_format_static(value, 10, "%0.1f");
 }
 
 static info_lkp_t legrand_times10_info[] = {
@@ -86,9 +86,7 @@ static info_lkp_t legrand_times10_info[] = {
 
 static const char *legrand_times100k(double value)
 {
-	static char buf[20];
-	snprintf(buf, sizeof(buf), "%0.1f", value * 100000);
-	return buf;
+	return nut_scale_format_static(value, 100000, "%0.1f");
 }
 
 static info_lkp_t legrand_times100k_info[] = {
@@ -98,9 +96,7 @@ static info_lkp_t legrand_times100k_info[] = {
 
 static const char *legrand_times1M(double value)
 {
-	static char buf[20];
-	snprintf(buf, sizeof(buf), "%0.1f", value * 1000000);
-	return buf;
+	return nut_scale_format_static(value, 1000000, "%0.1f");
 }
 
 static info_lkp_t legrand_times1M_info[] = {
@@ -110,9 +106,7 @@ static info_lkp_t legrand_times1M_info[] = {
 
 static const char *legrand_times10M(double value)
 {
-	static char buf[20];
-	snprintf(buf, sizeof(buf), "%0.1f", value * 10000000);
-	return buf;
+	return nut_scale_format_static(value, 10000000, "%0.1f");
 }
 
 static info_lkp_t legrand_times10M_info[] = {
