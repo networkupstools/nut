@@ -206,8 +206,8 @@
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 #
-# WARNING: Until https://github.com/networkupstools/nut/issues/3329 is solved,
-# not all stock NUT clients even have a way to present some certain certificate.
+# NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
+# third-party NUT clients to even have a way to present some certain certificate.
 
 # =======================================================================
 # DISABLE_WEAK_SSL <Boolean>
