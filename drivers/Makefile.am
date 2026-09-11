@@ -657,13 +657,13 @@ libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DBUILD_FOR_SHARED_PRI
 
 else !ENABLE_SHARED_PRIVATE_LIBS
 
-libdummy_main_la_LDFLAGS = -no-undefined -static
-libdummy_main_stub_la_LDFLAGS = -no-undefined -static
-libdummy_serial_la_LDFLAGS = -no-undefined -static
-libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
+libdummy_main_la_LDFLAGS = -no-undefined
+libdummy_main_stub_la_LDFLAGS = -no-undefined
+libdummy_serial_la_LDFLAGS = -no-undefined
+libdummy_upsdrvquery_la_LDFLAGS = -no-undefined
 
 libdummy_libusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-libdummy_libusb_la_LDFLAGS = -no-undefined -static
+libdummy_libusb_la_LDFLAGS = -no-undefined
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
 # The libdummy_mockdrv.la is used for unit-tests to mock a driver
