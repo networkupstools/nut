@@ -638,7 +638,9 @@ dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
 if HAVE_WINDOWS
+if !ENABLE_SHARED_PRIVATE_LIBS
   dmf_test_LDADD  += $(top_builddir)/common/libnutwincompat.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
 
   # The test program does not use networking code, but linking of
   # common.c, wincompat.c etc. (at least on Windows) may require
@@ -710,6 +712,12 @@ dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
+if HAVE_WINDOWS
+if !ENABLE_SHARED_PRIVATE_LIBS
+  dmf_lua_test_LDADD  += $(top_builddir)/common/libnutwincompat.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+  dmf_lua_test_LDADD  += $(NETLIBS)
+endif HAVE_WINDOWS
 if WITH_LIBXML2
   dmf_lua_test_LDADD  += $(LIBXML2_LIBS)
   dmf_lua_test_CFLAGS += $(LIBXML2_CFLAGS)
@@ -729,6 +737,12 @@ dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) $(DMFSNMP_LKP_
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
 
+if HAVE_WINDOWS
+if !ENABLE_SHARED_PRIVATE_LIBS
+  dmf_fun_test_LDADD  += $(top_builddir)/common/libnutwincompat.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+  dmf_fun_test_LDADD  += $(NETLIBS)
+endif HAVE_WINDOWS
 if WITH_LIBXML2
   dmf_fun_test_LDADD  += $(LIBXML2_LIBS)
   dmf_fun_test_CFLAGS += $(LIBXML2_CFLAGS)
