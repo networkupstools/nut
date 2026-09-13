@@ -156,7 +156,13 @@ inside double quotes is literal. For example:
 	outlet.4.desc: Outlet \#4
 
 These values become `Outlet`, `Outlet #2`, `Outlet #3`, and `Outlet #4`,
-respectively. Older versions of the parser require `\#` even inside
+respectively. The last example has two value tokens, `Outlet` and `#4`,
+which *dummy-ups* joins with a space. Escaping that space makes one token
+with the same value:
+
+	outlet.4.desc: Outlet\ \#4
+
+Older versions of the parser require `\#` even inside
 double quotes. Backslashes quote the next permitted character once, so
 `\n` becomes `n`, while `\\` becomes a single literal backslash.
 A backslash followed by a physical newline continues the logical line.

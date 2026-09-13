@@ -283,6 +283,16 @@ static int findeol(PCONF_CTX_t *ctx)
 	return STATE_FINDEOL;
 }
 
+#if 0
+/* Retained for future syntax errors; quoted hashes are now valid. */
+static void pconf_seterr(PCONF_CTX_t *ctx, const char *errmsg)
+{
+	snprintf(ctx->errmsg, PCONF_ERR_LEN, "%s", errmsg);
+
+	ctx->error = 1;
+}
+#endif
+
 /* quote characters inside a word bounded by "quotes" */
 static int quotecollect(PCONF_CTX_t *ctx)
 {

@@ -54,6 +54,10 @@ That is, you want to use something like this:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
+or, with each space escaped:
+
+	SHUTDOWNCMD /sbin/shutdown\ -h\ +0
+
 Without quoting or escaping the spaces, a directive expecting one value
 would only see the first word of that value.
 
