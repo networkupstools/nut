@@ -2552,12 +2552,32 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
                         done
                     fi
-                    # FIXME: Actually we want to vary validation=yes/no not arbitrarily
-                    #  but for each enabled NUT_SSL_VARIANT (yes/openssl/nss)
+                    # If more than one SSL client validation value is requested,
+                    # ensure we try both values for each enabled SSL backend
+                    # (values other than 'no'). For SSL=no, validation is irrelevant.
                     if [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -gt 1 ]; then
-                        for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
-                            BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                        TMP_COMBO_LIST=()
+                        HAVE_ENABLED_SSL=false
+                        for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                            if [ "${SSLVAL}" = no ] ; then
+                                # Preserve the SSL=no case once
+                                TMP_COMBO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                continue
+                            fi
+                            HAVE_ENABLED_SSL=true
+                            for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                TMP_COMBO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                            done
                         done
+                        if [ "${HAVE_ENABLED_SSL}" = true ] ; then
+                            # Replace the list so far to enforce SSL×Validation coverage
+                            BUILDSTODO_LIST=("${TMP_COMBO_LIST[@]}")
+                        else
+                            # No enabled SSL backends requested, just iterate validation values
+                            for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                            done
+                        fi
                     fi
                     if [ "$BUILDSTODO_USB" -gt 1 ]; then
                         # Effectively, whatever up to one version of LibUSB support
@@ -2608,16 +2628,48 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
                     # FIXME: Can this be eval'ed?
                     # First populate the longer set of variants:
+                    DID_COMBINE_SSL_AND_VALIDATION=false
                     case "${BUILDSTODO_MAX_TYPE}" in
                         BUILDSTODO_SSL)
-                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
-                                BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
-                            done
+                            if [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -gt 1 ] ; then
+                                # Build SSL×Validation pairs per enabled SSL backend
+                                for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    if [ "$SSLVAL" = no ] ; then
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                        continue
+                                    fi
+                                    for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                                    done
+                                done
+                                DID_COMBINE_SSL_AND_VALIDATION=true
+                                BUILDSTODO_MAX="${#BUILDSTODO_LIST[@]}"
+                            else
+                                for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                                done
+                            fi
                             ;;
                         BUILDSTODO_SSL_CLIENT_VALIDATION)
-                            for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
-                                BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
-                            done
+                            if [ "$BUILDSTODO_SSL" -ge 1 ] ; then
+                                # Build SSL×Validation pairs per enabled SSL backend
+                                for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    if [ "$SSLVAL" = no ] ; then
+                                        # Keep a single SSL=no entry without validation
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                        continue
+                                    fi
+                                    for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                                    done
+                                done
+                                DID_COMBINE_SSL_AND_VALIDATION=true
+                                BUILDSTODO_MAX="${#BUILDSTODO_LIST[@]}"
+                            else
+                                for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                                done
+                            fi
                             ;;
                         BUILDSTODO_USB)
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
@@ -2639,11 +2691,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     case "${BUILDSTODO_MAX_TYPE}" in
                         BUILDSTODO_SSL)
                             i=$(($RANDOM % $BUILDSTODO_MAX))
-                            [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
-                            for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
-                                BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
-                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
-                            done
+                            if ! $DID_COMBINE_SSL_AND_VALIDATION ; then
+                                [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
+                                for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                    i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                                done
+                            fi
 
                             [ "$BUILDSTODO_USB" -le 1 ] || \
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
@@ -2667,11 +2721,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             ;;
                         BUILDSTODO_SSL_CLIENT_VALIDATION)
                             i=$(($RANDOM % $BUILDSTODO_MAX))
-                            [ "$BUILDSTODO_SSL" -le 1 ] || \
-                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
-                                BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
-                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
-                            done
+                            if ! $DID_COMBINE_SSL_AND_VALIDATION ; then
+                                [ "$BUILDSTODO_SSL" -le 1 ] || \
+                                for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                    i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                                done
+                            fi
 
                             [ "$BUILDSTODO_USB" -le 1 ] || \
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
