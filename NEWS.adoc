@@ -505,6 +505,10 @@ https://github.com/networkupstools/nut/milestone/13
       query (for protocol version) to verify that handshake succeeded.
       This change impacted also the classic C `libupsclient` library.
       [issue #3387, PR #3402]
+    * `PyNUTClient.disconnect()` now attempts to send `LOGOUT`, closes the
+      socket and clears its reference while the client remains alive. Such
+      cleanup remains harmless when repeated or when socket operations fail.
+      [issue #3619, PR #3627]
     * Updated OpenSSL code paths in the `libupsclient` C library to support
       features earlier only available with NSS builds, like specifying the
       client certificate+key, optionally with password, and pinning expected
