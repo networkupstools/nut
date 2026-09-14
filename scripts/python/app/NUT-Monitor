@@ -19,6 +19,14 @@ case "${PREFER_PY2-}" in
         ;;
 esac
 
+case "${NUT_MONITOR_QT-auto}" in
+    ""|auto) NUT_MONITOR_QT=auto ;;
+    5|6) ;;
+    *)  echo "Unsupported value of NUT_MONITOR_QT='$NUT_MONITOR_QT'; expected 'auto', '5' or '6'" >&2
+        exit 2
+        ;;
+esac
+
 # Detect which variant of NUT-Monitor we can run on the local system:
 [ -s "$0"-py2gtk2 -a -x "$0"-py2gtk2 ] && PYTHON_PY2GTK2_SHEBANG="`head -1 \"$0\"-py2gtk2 | sed 's,^#!,,'`" || PYTHON_PY2GTK2_SHEBANG=""
 [ -s "$0"-py3qt5 -a  -x "$0"-py3qt5 ]  && PYTHON_PY3QT5_SHEBANG="`head -1 \"$0\"-py3qt5 | sed 's,^#!,,'`"   || PYTHON_PY3QT5_SHEBANG=""
@@ -75,28 +83,31 @@ for P in "$PYTHON_PY2GTK2" "$PYTHON_PY3QT5" "$PYTHON_PY3QT6" ; do
     fi
 done
 
-if [ -n "$PYTHON_PY2GTK2" ] && [ -n "$PYTHON_PY3QT5" ] && [ -n "$PYTHON_PY3QT6" ] ; then
-    if $PREFER_PY2 ; then
-        echo "Starting $0-py2gtk2 variant..." >&2
-        exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
-    else
-        echo "Starting $0-py3qt6 variant..." >&2
-        exec $PYTHON_PY3QT6 "$0"-py3qt6 "$@"
-    fi
-else
-    if [ -n "$PYTHON_PY2GTK2" ] ; then
-        echo "Starting $0-py2gtk2 variant..." >&2
-        exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
-    fi
-    if [ -n "$PYTHON_PY3QT6" ] ; then
-        echo "Starting $0-py3qt6 variant..." >&2
-        exec $PYTHON_PY3QT6 "$0"-py3qt6 "$@"
-    fi
-    if [ -n "$PYTHON_PY3QT5" ] ; then
-        echo "Starting $0-py3qt5 variant..." >&2
-        exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
-    fi
+case "$NUT_MONITOR_QT" in
+    5) PYTHON_PY2GTK2=""; PYTHON_PY3QT6="" ;;
+    6) PYTHON_PY2GTK2=""; PYTHON_PY3QT5="" ;;
+esac
+
+if [ -n "$PYTHON_PY2GTK2" ] && $PREFER_PY2 ; then
+    echo "Starting $0-py2gtk2 variant..." >&2
+    exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
+fi
+if [ -n "$PYTHON_PY3QT6" ] ; then
+    echo "Starting $0-py3qt6 variant..." >&2
+    exec $PYTHON_PY3QT6 "$0"-py3qt6 "$@"
+fi
+if [ -n "$PYTHON_PY3QT5" ] ; then
+    echo "Starting $0-py3qt5 variant..." >&2
+    exec $PYTHON_PY3QT5 "$0"-py3qt5 "$@"
+fi
+if [ -n "$PYTHON_PY2GTK2" ] ; then
+    echo "Starting $0-py2gtk2 variant..." >&2
+    exec $PYTHON_PY2GTK2 "$0"-py2gtk2 "$@"
 fi
 
-echo "ERROR: No usable Python interpreter version (with needed modules) was found" >&2
+if [ "$NUT_MONITOR_QT" = auto ] ; then
+    echo "ERROR: No usable Python interpreter version (with needed modules) was found" >&2
+else
+    echo "ERROR: Requested PyQt$NUT_MONITOR_QT implementation is not usable" >&2
+fi
 exit 1

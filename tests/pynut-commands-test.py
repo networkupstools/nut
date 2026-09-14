@@ -1,3 +1,6 @@
+# NOTE: No shebang, not marked executable. The Python interpreter setup and
+# execution is driven by NUT tests/Makefile.am goals. Works for Py2 and Py3.
+#
 # Regression checks for PyNUT command enumeration (no running server needed).
 # Run with PYTHONPATH pointing to the configured scripts/python/module directory.
 
