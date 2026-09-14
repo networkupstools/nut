@@ -460,10 +460,10 @@ const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 	return ups->cmdlist;
 }
 
-int sstate_dead(upstype_t *ups, int arg_maxage)
+int sstate_dead(upstype_t *ups, unsigned int arg_maxage)
 {
 	time_t	now;
-	double	elapsed;
+	double	elapsed, dbl_maxage = (double)arg_maxage;
 
 	/* an unconnected ups is always dead */
 	if ((!ups) || INVALID_FD(ups->sock_fd)) {
@@ -478,23 +478,24 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 	/* Somewhere beyond a third of the maximum time - prod it to make it talk
 	 * Note this helps detect drivers that died without closing the connection
 	 */
-	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
+	if ((elapsed > (dbl_maxage / 3)) && (difftime(now, ups->last_ping) > (dbl_maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > arg_maxage + 1.0) {
-		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
+	if (elapsed > dbl_maxage + 1.0) {
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %u)",
 			__func__, ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */
 	}
 
-	if (elapsed > arg_maxage) {
+	if (elapsed > dbl_maxage) {
 		/* Per https://github.com/networkupstools/nut/issues/661 we do
 		 * often see "is stale" and "is alive" messages in the same
 		 * second, especially on busy systems that can not dedicate
 		 * every scheduled time slot to NUT daemons and data pipes.
 		 * So data exchange frequency settings may almost race...
 		 */
-		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d); will declare it dead next second (delaying just in case of whole-second rounding issues)",
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %u); "
+			"will declare it dead next second (delaying just in case of whole-second rounding issues)",
 			__func__, ups->name, elapsed, arg_maxage);
 		return 0;	/* probably dead */
 	}

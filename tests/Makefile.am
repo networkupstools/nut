@@ -410,8 +410,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
-#	$(AM_V_at)rm -rf $(builddir)/.deps
+clean-local:
+	$(AM_V_at)rm -rf $(builddir)/test_upsdconf-*/
 
 # Helper for only the enabled libs to get built:
 all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)
