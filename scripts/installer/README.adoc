@@ -1,0 +1,71 @@
+NUT Installer (command-line)
+============================
+
+This directory contains scripts and data used for NUT packaging
+marketed earlier as Eaton IPSS Unix (or IPP for Unix, or UPP),
+a freely available download. Most of the work was done on behalf
+of Eaton by Frederic Bohe, Vaclav Krpec, Arnaud Quette and Jim Klimov.
+
+This includes the package (tarball) creation script which relies on
+presence of third-party library binaries in a `$ARCH/libs` directory,
+pre-built package files (courtesy of NUT `make package` recipes),
+and init-scripts from NUT source tree (originally expected as a `nut`
+subdirectory, can be a symlink to `../..`; currently copies stored in
+the `$ARCH` subdirectories; eventually should be taken from NUT sources
+during build, or from packages), as well as an interactive text-mode
+installer script to set up the package on a target deployment covering
+package (re-)installation, initial device discovery, password setup,
+etc., and helper scripts for status overview and shutdown handling.
+
+Example `$ARCH` related directory layout in original posting (binary
+files mentioned below are not provided into NUT Git source code base);
+these are the contents `make_package.sh` script expects to work with
+(you can see the names mentioned in `find ... | grep -v ...` filters):
+
+* `aix/` example for AIX 6 and 7 based IPSS Unix releases:
+  * `libs/`: `libcrypto.a`, `libcrypto.so`, etc...
+  * `nut-2.6.5-1.aix6.1.ppc.rpm` and `nut-client-2.6.5-1.aix6.1.ppc.rpm`
+    package files
+  * `nutconf` binary for the platform
+  * `aix_init` script
+  * `ipp-os-shutdown.conf.sample`
+
+* `hpux/` for PA-RISC:
+  * `libs/`: `libcrypto.sl`, `libexpat.sl`, `libiconv.sl`, `libintl.sl`,
+    `libltdl.sl`, `libneon.sl`, `libnetsnmp.sl.30`, `libssl.sl`, `libz.sl`
+    * Notably, `libnutscan.sl.1` (other platforms did not carry a copy)
+  * `nut.depot.tar.gz` package file
+  * `nutconf` binary for the platform
+  * `ipp-os-shutdown.conf.sample`
+
+* Solaris (SPARC and X86) spread across 3 directories:
+  * `solcmn/` with common platform-independent files:
+    * `ipp-os-shutdown.conf.sample`
+    * `solaris_init` script
+
+  * `solari` with SPARC binaries:
+    * `libs/`: `libcrypto.so.0.9.8`, `libz.so`, etc.
+    * `NUT_solaris_sparc_package2.6.5.local` package file
+    * `nutconf` binary for the platform
+
+  * `solint` with X86 binaries:
+    * `libs/`: `libcrypto.so.1.0.0`, `libgcc_s.so.1`, `libltdl.so.7`,
+      `libneon.so.27`, `libnetsnmp.so.15`, `libproxy.so.0`,
+      `libssl.so.1.0.0`, `libstdc++.so.6`, `libwrap.so.1`
+    * `NUT_solaris_i386_package2.6.5.local` package file
+    * `nutconf` binary for the platform
+
+The installer relies on `nutconf` tool (emulating dummy script for
+tests provided here), which is part of NUT sources.
+
+Note that heavy use of `LD_LIBRARY_PATH` in these scripts may become
+counterproductive when the package is installed on a system that is
+too many versions away from the intended target (e.g. mixing up the
+symbols during dynamic linking), so while this contribution here is
+published "as is", more work would be needed to make it useful in
+modern environments. Helper scripts should be quickly useful though.
+
+Developed (pre-?)2013-2018 by Eaton; contributed to NUT and re-licensed
+under same terms as NUT in 2022 by Eaton.
+
+Maintained since 2024 by Jim Klimov <jimklimov+nut@gmail.com>

@@ -56,12 +56,19 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	val = sstate_getinfo(ups, var);
 
 	if (!val) {
+		/* Technically, this includes state tree entries
+		 * with a defined name but null value so far.
+		 * FIXME? Use sstate_getnode() to differentiate
+		 *  the cases? Any practical use for this?
+		 */
 		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
 		return;
 	}
 
 	/* make sure this variable is writable (RW) */
 	if ((sstate_getflags(ups, var) & ST_FLAG_RW) == 0) {
+		upsdebugx(3, "%s: UPS [%s]: value of %s is read-only",
+			__func__, ups->name, var);
 		send_err(client, NUT_ERR_READONLY);
 		return;
 	}
@@ -69,7 +76,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	/* see if the new value is allowed for this variable */
 
 	if (sstate_getflags(ups, var) & ST_FLAG_STRING) {
-		int	aux;
+		long	aux;
 
 		aux = sstate_getaux(ups, var);
 
@@ -82,7 +89,13 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 			return;
 		}
 
+		/* FIXME? Should this cast to "long"?
+		 * An int-size string is quite a lot already,
+		 * even on architectures with a moderate INTMAX
+		 */
 		if (aux < (int) strlen(newval)) {
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in STRING:%ld %s: %s",
+				__func__, ups->name, aux, var, newval);
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
 		}
@@ -105,6 +118,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not a value known in the pre-defined enumeration */
+			upsdebugx(3, "%s: UPS [%s]: Not a value known in ENUM %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
@@ -128,6 +144,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not in range */
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in RANGE %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
@@ -166,7 +185,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		sendback(client, "OK\n");
 }
 
-void net_set(nut_ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, size_t numarg, const char **arg)
 {
 	char	tracking_id[UUID4_LEN] = "";
 
@@ -205,7 +224,11 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 			/* then only disable the general one if no other clients use it!
 			 * Note: don't call tracking_free() since we want info to
 			 * persist, and tracking_cleanup() takes care of cleaning */
-			tracking_disable();
+			if (tracking_disable()) {
+				upsdebugx(2, "%s: TRACKING disabled for one client, more remain.", __func__);
+			} else {
+				upsdebugx(2, "%s: TRACKING disabled for last client.", __func__);
+			}
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);

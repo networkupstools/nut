@@ -1,0 +1,49 @@
+NUTSCAN_IP_RANGES_ITER_INC(3)
+=============================
+
+NAME
+----
+
+nutscan_ip_ranges_iter_inc - Proceed with iteration of an IP address range
+using a `nutscan_ip_range_list_iter_t` structure.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	char * nutscan_ip_ranges_iter_inc(nutscan_ip_range_list_iter_t *irliter);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_ip_ranges_iter_inc()* function can walk an iterator from
+the specified `nutscan_ip_range_list_iter_t` helper object, prepared by
+linkman:nutscan_ip_ranges_iter_init[3] from a `nutscan_ip_range_list_t`
+structure.
+
+This function skips work if:
+
+* the structure pointer is `NULL` (`NULL` is returned);
+* the structure pointer's `ip_range` list is `NULL` (`NULL` is returned),
+* the structure pointer's `ip_range_iter` pointer is `NULL` (`NULL` is
+  returned).
+
+Returns the next IP address from the currently iterated registered IP
+address range, or switches iteration to the next range if no addresses
+remained in the current one. The caller SHOULD NOT free this string
+while iterating.
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-ip.h' file.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init_ip_ranges[3], linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_cidr_to_ip[3],
+linkman:nutscan_ip_ranges_iter_init[3]

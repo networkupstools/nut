@@ -1,0 +1,444 @@
+#!@PYTHON_DEFAULT@
+# -*- coding: utf-8 -*-
+
+# This source code is provided for testing/debuging purpose ;)
+
+import PyNUT
+import sys
+import os
+import socket
+
+HAVE_UNITTEST = False
+try:
+    import unittest
+    HAVE_UNITTEST = True
+except ModuleNotFoundError as ignored:
+    pass
+
+class DisconnectSocket:
+    """ Record cleanup attempts, including operations which fail. """
+    def __init__(self, send_error=False, close_error=False):
+        self.events = []
+        self.send_error = send_error
+        self.close_error = close_error
+
+    def sendall(self, data):
+        self.events.append(data)
+        if self.send_error:
+            raise socket.error("send failed")
+
+    def close(self):
+        self.events.append("close")
+        if self.close_error:
+            raise socket.error("close failed")
+
+    def recv(self, size):
+        return b"ERR ACCESS-DENIED\n"
+
+
+if HAVE_UNITTEST:
+  class DisconnectTest(unittest.TestCase):
+    def check_cleanup(self, send_error=False, close_error=False, destructor=False):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        sock = DisconnectSocket(send_error, close_error)
+        client._PyNUTClient__srv_handler = sock
+        if destructor:
+            client.__del__()
+        else:
+            client.disconnect()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+
+    def test_retained_client(self):
+        self.check_cleanup()
+
+    def test_send_failure(self):
+        self.check_cleanup(send_error=True)
+
+    def test_close_failure(self):
+        self.check_cleanup(close_error=True)
+
+    def test_send_and_close_failure(self):
+        self.check_cleanup(send_error=True, close_error=True)
+
+    def test_destructor(self):
+        for send_error in [False, True]:
+            for close_error in [False, True]:
+                self.check_cleanup(send_error, close_error, destructor=True)
+
+    def test_deferred_client(self):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_partial_initialization(self):
+        class PartialClient(PyNUT.PyNUTClient):
+            def __init__(self):
+                pass
+        client = PartialClient()
+        # Before an instance socket is assigned, the class default is None.
+        self.assertFalse('_PyNUTClient__srv_handler' in client.__dict__)
+        client.disconnect()
+        client.__del__()
+
+    def test_socket_is_none(self):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        client._PyNUTClient__srv_handler = None
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_subclass(self):
+        class Client(PyNUT.PyNUTClient):
+            __srv_handler = None
+        client = Client(connect_now=False)
+        sock = DisconnectSocket()
+        client._PyNUTClient__srv_handler = sock
+        client.disconnect()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_connection_failure(self):
+        def fail_connect(*args):
+            raise socket.error("connection failed")
+        create_connection = socket.create_connection
+        client = PyNUT.PyNUTClient(connect_now=False)
+        try:
+            socket.create_connection = fail_connect
+            self.assertRaises(socket.error, client.__init__)
+            client.disconnect()
+            client.__del__()
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+        finally:
+            socket.create_connection = create_connection
+
+    def test_authentication_failure(self):
+        sock = DisconnectSocket()
+        create_connection = socket.create_connection
+        client = PyNUT.PyNUTClient(connect_now=False)
+        try:
+            socket.create_connection = lambda *args: sock
+            self.assertRaises(PyNUT.PyNUTError, client.__init__, login="test")
+            client.__del__()
+            self.assertEqual(sock.events, [b"USERNAME test\n", b"LOGOUT\n", "close"])
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+        finally:
+            socket.create_connection = create_connection
+
+    def test_local_socket(self):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client = None
+        peer = None
+        sock = None
+        try:
+            listener.settimeout(3)
+            listener.bind(('127.0.0.1', 0))
+            listener.listen(1)
+            client = PyNUT.PyNUTClient(host='127.0.0.1',
+                port=listener.getsockname()[1], timeout=3, tracking=None)
+            peer, addr = listener.accept()
+            peer.settimeout(3)
+            sock = client._PyNUTClient__srv_handler
+            client.disconnect()
+            self.assertRaises(socket.error, sock.getpeername)
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+            data = b''
+            while True:
+                chunk = peer.recv(32)
+                if not chunk:
+                    break
+                data += chunk
+            self.assertEqual(data, b"LOGOUT\n")
+            client.disconnect()
+            client.__del__()
+        finally:
+            if sock is not None:
+                sock.close()
+            if peer is not None:
+                peer.close()
+            listener.close()
+
+
+def testsuite_disconnect():
+    if HAVE_UNITTEST:
+        suite = unittest.TestLoader().loadTestsFromTestCase(DisconnectTest)
+        return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+    else:
+        print("SKIP: testsuite_disconnect(): module unittest is not available")
+        return 1
+
+def test_splitaddr(addr, expected_host, expected_port):
+    ac = PyNUT.AuthConf(addr)
+    client = PyNUT.PyNUTClient.from_authconf(ac, connect_now=False)
+    # Note: host in PyNUTClient is __host, but we can't access it easily if it's private.
+    # Looking at the code, we might need to add a getter or use _PyNUTClient__host
+    host = client._PyNUTClient__host
+    port = client._PyNUTClient__port
+
+    if host == expected_host and port == expected_port:
+        print("OK: {%s} -> {%s}:{%s}" % (str(addr), str(host), str(port)))
+    else:
+        print("FAIL: {%s} -> expected {%s}:{%s}, got {%s}:{%s}" % (str(addr), str(expected_host), str(expected_port), str(host), str(port)))
+        return 1
+    return 0
+
+def testsuite_splitaddr():
+    errors = 0
+    errors += test_splitaddr("localhost", "localhost", 3493)
+    errors += test_splitaddr("localhost:12345", "localhost", 12345)
+    errors += test_splitaddr("127.0.0.1", "127.0.0.1", 3493)
+    errors += test_splitaddr("127.0.0.1:12345", "127.0.0.1", 12345)
+    # IPv6 addresses we expect NOT bracketed when to be used for Python socket API (not URLs etc.):
+    errors += test_splitaddr("[::1]", "::1", 3493)
+    errors += test_splitaddr("[::1]:12345", "::1", 12345)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]", "fe80::215:5dff:fea4:f780", 3493)
+    errors += test_splitaddr("[fe80::215:5dff:fea4:f780]:3495", "fe80::215:5dff:fea4:f780", 3495)
+
+    if errors:
+        print("Some Python splitaddr tests FAILED")
+        return False
+
+    print("All Python splitaddr tests passed!")
+    return True
+
+if __name__ == "__main__" :
+    if not testsuite_disconnect():
+        sys.exit(1)
+    # Run the self-contained cleanup tests without requiring a NUT server.
+    if '--disconnect' in sys.argv:
+        sys.exit(0)
+
+    NUT_HOST = os.getenv('NUT_HOST', '127.0.0.1')
+    NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
+    NUT_USER = os.getenv('NUT_USER', None)
+    NUT_PASS = os.getenv('NUT_PASS', None)
+    NUT_SSL  = os.getenv('NUT_SSL', None)
+    if NUT_SSL is not None:
+        NUT_SSL = (NUT_SSL in ["true", "1"])
+    NUT_FORCESSL = (os.getenv('NUT_FORCESSL', 'false') in ["true", "1"])
+    NUT_CERTVERIFY = (os.getenv('NUT_CERTVERIFY', 'false') in ["true", "1"])
+    NUT_CAFILE = os.getenv('NUT_CAFILE', None)
+    NUT_CAPATH = os.getenv('NUT_CAPATH', None)
+    NUT_CERTFILE = os.getenv('NUT_CERTFILE', None)
+    NUT_CERTIDENT = os.getenv('NUT_CERTIDENT', None)
+    NUT_KEYFILE = os.getenv('NUT_KEYFILE', None)
+    NUT_KEYPASS = os.getenv('NUT_KEYPASS', None)
+
+    NUT_DEBUG = ("true" == os.getenv('DEBUG', 'false') or os.getenv('NUT_DEBUG_LEVEL', None) is not None)
+
+    NUT_IGNORE_AUTHCONF = (os.getenv('NUT_IGNORE_AUTHCONF', 'false') in ["true", "1"])
+    if not NUT_IGNORE_AUTHCONF:
+        # Load from nutauth.conf
+        ### PyNUT.AuthConf.__debug = NUT_DEBUG
+        ac = PyNUT.AuthConf.getAuthConf(user=NUT_USER, host=NUT_HOST, port=NUT_PORT)
+        if ac:
+            if NUT_DEBUG:
+                print ("[DEBUG] NUT AuthConf settings extracted for section [%s]: {%s}\n" % (ac.section, str(ac)))
+
+            NUT_USER = ac.user or NUT_USER
+            NUT_PASS = ac.password or NUT_PASS
+            if ac.certpath:
+                if os.path.isdir(ac.certpath):
+                    NUT_CAPATH = ac.certpath
+                else:
+                    NUT_CAFILE = ac.certpath
+            # (OpenSSL only) Client certificate file for authentication to the server
+            NUT_CERTFILE = ac.certfile or NUT_CERTFILE
+            NUT_CERTIDENT = ac.certident or NUT_CERTIDENT
+            NUT_KEYPASS = ac.certpasswd or NUT_KEYPASS
+            if NUT_SSL is not False:
+                # If test runner has explicitly set NUT_SSL=False,
+                # ignore the value required in the authconf
+                if ac.certverify != -1:
+                    NUT_CERTVERIFY = (ac.certverify == 1)
+                if ac.forcessl != -1:
+                    NUT_FORCESSL = (ac.forcessl == 1)
+
+    if NUT_SSL is None:
+        NUT_SSL = (NUT_FORCESSL is True)
+
+    # Account "unexpected" failures (more due to coding than circumstances)
+    # e.g. lack of protected access when no credentials were passed is okay
+    failed = []
+
+    print( "PyNUTClient test..." )
+    #nut    = PyNUT.PyNUTClient( debug=True, port=NUT_PORT )
+    #nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=True, host=NUT_HOST, port=NUT_PORT )
+    #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True, port=NUT_PORT )
+    try:
+        nut    = PyNUT.PyNUTClient( login=NUT_USER, password=NUT_PASS, debug=NUT_DEBUG, host=NUT_HOST, port=NUT_PORT,
+                                    use_ssl=NUT_SSL, force_ssl=NUT_FORCESSL, cert_verify=NUT_CERTVERIFY,
+                                    ca_file=NUT_CAFILE, ca_path=NUT_CAPATH,
+                                    cert_file=NUT_CERTFILE, cert_ident=NUT_CERTIDENT,
+                                    key_file=NUT_KEYFILE, key_pass=NUT_KEYPASS)
+    except:
+        ex = str(sys.exc_info()[1])
+        print( "EXCEPTION during initialization: %s" % ex )
+        if (NUT_SSL and (ex == 'ERR FEATURE-NOT-CONFIGURED' or ex == 'ERR FEATURE-NOT-SUPPORTED')):
+            print( "(anticipated error: server does not support STARTTLS)" )
+            sys.exit(0)
+        else:
+            raise
+
+    print( 80*"-" + "\nTesting 'GetUPSList' :")
+    result = nut.GetUPSList( )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    # [dummy]
+    # driver = dummy-ups
+    # desc = "Test device"
+    # port = /src/nut/data/evolution500.seq
+    print( 80*"-" + "\nTesting 'GetUPSVars' for 'dummy' (should be registered in ups.conf) :")
+    result = nut.GetUPSVars( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'CheckUPSAvailable' :")
+    result = nut.CheckUPSAvailable( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'GetUPSCommands' :")
+    result = nut.GetUPSCommands( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'GetRWVars' :")
+    result = nut.GetRWVars( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'RunUPSCommand' (Test front panel) :")
+    try :
+        result = nut.RunUPSCommand( "UPS1", "test.panel.start" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (ex != 'ERR CMD-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('RunUPSCommand')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'SetUPSVar' (set ups.id to test):")
+    try :
+        result = nut.SetRWVar( "UPS1", "ups.id", "test" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (ex != 'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('SetUPSVar')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'SetRWVar' with TRACKING for 'driver.debug' (1s interval, 10s timeout):")
+    try :
+        # Note: UPS1 is often used in NUT tests as a common device name
+        # Also try 'dummy' which is used in this test script
+        target_ups = "UPS1"
+        try:
+            nut.GetUPSVars(target_ups)
+        except:
+            target_ups = "dummy"
+
+        tid = nut.SetRWVar( target_ups, "driver.debug", "1", wait_interval_sec=1, wait_max_count=10 )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+
+        if isinstance(tid, PyNUT.TrackingID):
+            print( "Got TRACKING ID: %s, created: %s, age: %0.2fs" % (str(tid), tid.created(), tid.age()) )
+            result = str(tid)
+        else:
+            result = tid
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (ex != 'ERR VAR-NOT-SUPPORTED' and (NUT_USER is not None and ex != 'ERR ACCESS-DENIED') ):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('SetUPSVar-Tracking')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    # testing who has an upsmon-like log-in session to a device
+    print( 80*"-" + "\nTesting 'ListClients' for 'dummy' (should be registered in ups.conf) before test client is connected :")
+    try :
+        result = nut.ListClients( "dummy" )
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        result = result + "\nTEST-CASE FAILED"
+        failed.append('ListClients-dummy-before')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for missing device (should raise an exception) :")
+    try :
+        result = nut.ListClients( "MissingBogusDummy" )
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (ex == 'ERR UNKNOWN-UPS'):
+            result = result + "\n(anticipated error: bogus device name was tested)"
+        else:
+            result = result + "\nTEST-CASE FAILED"
+            failed.append('ListClients-MissingBogusDummy')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    loggedIntoDummy = False
+    print( 80*"-" + "\nTesting 'DeviceLogin' for 'dummy' (should be registered in ups.conf; current credentials should have an upsmon role in upsd.users) :")
+    try :
+        result = nut.DeviceLogin( "dummy" )
+        if (NUT_USER is None):
+            raise AssertionError("Secure operation should have failed due to lack of credentials, but did not")
+        loggedIntoDummy = True
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        if (NUT_USER is None and ex == 'ERR USERNAME-REQUIRED'):
+            result = result + "\n(anticipated error: no credentials were provided)"
+        else:
+            if (NUT_USER is not None and ex != 'ERR ACCESS-DENIED'):
+                result = result + "\nTEST-CASE FAILED"
+                failed.append('DeviceLogin-dummy')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting 'ListClients' for None (should list all devices and sessions to them, if any -- e.g. one established above) :")
+    try :
+        result = nut.ListClients( )
+        if (type(result) is not dict):
+            raise TypeError("ListClients() did not return a dict")
+        else:
+            if (loggedIntoDummy):
+                if (len(result) < 1):
+                    raise ValueError("ListClients() returned an empty dict where at least one client was expected on b'dummy'")
+                if (type(result[b'dummy']) is not list):
+                    raise TypeError("ListClients() did not return a dict whose b'dummy' keyed value is a list")
+                if (len(result[b'dummy']) < 1):
+                    raise ValueError("ListClients() returned a dict where at least one client was expected on b'dummy' but none were reported")
+    except :
+        ex = str(sys.exc_info()[1])
+        result = "EXCEPTION: " + ex
+        result = result + "\nTEST-CASE FAILED"
+        failed.append('ListClients-dummy-after')
+    print( "\033[01;33m%s\033[0m\n" % result )
+
+    print( 80*"-" + "\nTesting authconf section name parser" )
+    if not testsuite_splitaddr():
+        failed.append('testsuite_splitaddr')
+
+    print( 80*"-" + "\nTesting 'PyNUT' instance teardown (end of test script)" )
+    # No more tests AFTER this line; add them above the teardown message
+
+    if (len(failed) > 0):
+        print ( "SOME TEST CASES FAILED in an unexpected manner: %s" % failed )
+        sys.exit(1)

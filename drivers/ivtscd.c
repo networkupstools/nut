@@ -18,11 +18,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -49,10 +52,11 @@ static struct {
 	float	temperature;
 } battery;
 
-static int ivt_status(void)
+static ssize_t ivt_status(void)
 {
 	char	reply[SMALLBUF];
-	int	ret, i, j = 0;
+	int	i, j = 0;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
 
@@ -73,7 +77,7 @@ static int ivt_status(void)
 
 	upsdebugx(3, "send: F");
 	sleep(1);	/* allow controller some time to digest this */
-	
+
 	/*
 	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\n
 	 */
@@ -90,7 +94,7 @@ static int ivt_status(void)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r\n"), reply);
-	upsdebug_hex(4, "  \\_", reply, ret);
+	upsdebug_hex(4, "  \\_", reply, (size_t)ret);
 
 	for (i = 0; i < ret; i++) {
 		switch(reply[i])
@@ -112,21 +116,25 @@ static int ivt_status(void)
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
 
-	upsdebugx(3, "Parsed %d parameters from reply", ret);
+	upsdebugx(3, "Parsed %" PRIiSIZE " parameters from reply", ret);
 	return ret;
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {
 		ser_send(upsfd, "L");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
-		
+
 void upsdrv_initinfo(void)
 {
 	if (ivt_status() < 7) {
@@ -179,8 +187,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	while (1) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
+	/* FIXME: This driver (and solar device?) does not seem to
+	 *  really support a shutdown. It also blocks in this method
+	 *  until battery.voltage.act becomes(?) greater than nominal,
+	 *  meaning power is back, and then exits the driver.
+	 *  All in all, looks odd.
+	 */
+	while (1) {
 		if (ivt_status() < 7) {
 			continue;
 		}
@@ -189,11 +205,20 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Power is back!");
+		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
+		upslogx(LOG_ERR, "Power is back!");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
 	}
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

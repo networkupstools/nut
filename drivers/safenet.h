@@ -18,6 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#ifndef NUT_SAFENET_H_SEEN
+#define NUT_SAFENET_H_SEEN 1
+
 /*
  * The following commands where traced on the serial port. From these, the
  * COM_POLL_STAT command is just an example of how this command looks.
@@ -58,3 +61,5 @@ struct safenet {
 	char	systemtest;
 	char	dunno_10;
 };
+
+#endif	/* NUT_SAFENET_H_SEEN */

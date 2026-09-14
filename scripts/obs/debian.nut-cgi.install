@@ -1,0 +1,6 @@
+debian/tmp/etc/nut/hosts.conf
+debian/tmp/etc/nut/upsset.conf
+debian/tmp/etc/nut/upsstats.html
+debian/tmp/etc/nut/upsstats-single.html
+debian/tmp/usr/lib/cgi-bin/
+debian/tmp/usr/share/nut/www

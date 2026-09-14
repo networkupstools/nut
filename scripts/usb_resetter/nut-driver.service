@@ -1,0 +1,14 @@
+[Unit]
+Description=Network UPS Tools - power device driver controller
+After=local-fs.target network.target
+StopWhenUnneeded=no
+
+
+[Service]
+ExecStartPre=-/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/nut-client.conf
+ExecStartPre=/usr/local/bin/usb_resetter --reset-hub --device 0665:5161
+ExecStart=/usr/sbin/upsdrvctl start
+ExecStop=/usr/sbin/upsdrvctl stop
+Type=forking
+Restart=on-failure
+RestartSec=5s

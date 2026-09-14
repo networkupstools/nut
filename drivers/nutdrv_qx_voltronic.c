@@ -20,16 +20,17 @@
  */
 
 #include "main.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "nutdrv_qx.h"
-
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.06"
+#define VOLTRONIC_VERSION "Voltronic 0.14"
 
 /* Support functions */
 static int	voltronic_claim(void);
 static void	voltronic_makevartable(void);
-static void	voltronic_massive_unskip(const int protocol);
+static void	voltronic_massive_unskip(const long protocol);
 
 /* Range/enum functions */
 static int	voltronic_batt_low(char *value, const size_t len);
@@ -86,7 +87,7 @@ static char	*bypass_alarm,
 		*limited_runtime_on_battery;
 
 /* ups.conf settings */
-static int	max_bypass_volt,
+static long	max_bypass_volt,
 		min_bypass_volt,
 		battery_number,
 		output_phase_angle,
@@ -131,9 +132,10 @@ static info_rw_t	voltronic_r_batt_low[] = {
 /* Preprocess range value for battery low voltage */
 static int	voltronic_batt_low(char *value, const size_t len)
 {
-	int		val = strtol(value, NULL, 10);
+	long		val = strtol(value, NULL, 10);
 	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
 			*ocn = dstate_getinfo("output.current.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!ovn || !ocn) {
 		upsdebugx(2, "%s: unable to get the value of output voltage nominal/output current nominal", __func__);
@@ -211,10 +213,11 @@ static info_rw_t	voltronic_r_bypass_volt_max[] = {
 /* Preprocess range value for Bypass Mode maximum voltage */
 static int	voltronic_bypass_volt_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!involtnom) {
 		upsdebugx(2, "%s: unable to get input.voltage.nominal", __func__);
@@ -267,7 +270,7 @@ static int	voltronic_bypass_volt_max(char *value, const size_t len)
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -300,7 +303,7 @@ static int	voltronic_bypass_volt_max(char *value, const size_t len)
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -365,10 +368,11 @@ static info_rw_t	voltronic_r_bypass_volt_min[] = {
 /* Preprocess range value for Bypass Mode minimum voltage */
 static int	voltronic_bypass_volt_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!involtnom) {
 		upsdebugx(2, "%s: unable to get input.voltage.nominal", __func__);
@@ -394,7 +398,7 @@ static int	voltronic_bypass_volt_min(char *value, const size_t len)
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 10 || protocol == 13 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -511,10 +515,11 @@ static info_rw_t	voltronic_r_bypass_freq_max[] = {
 /* Preprocess range value for Bypass Mode maximum frequency */
 static int	voltronic_bypass_freq_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -609,10 +614,11 @@ static info_rw_t	voltronic_r_bypass_freq_min[] = {
 /* Preprocess range value for Bypass Mode minimum frequency */
 static int	voltronic_bypass_freq_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -723,10 +729,11 @@ static info_rw_t	voltronic_r_eco_freq_min[] = {
 /* Preprocess range value for ECO Mode minimum frequency */
 static int	voltronic_eco_freq_min(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -843,10 +850,11 @@ static info_rw_t	voltronic_r_eco_freq_max[] = {
 /* Preprocess range value for ECO Mode maximum frequency */
 static int	voltronic_eco_freq_max(char *value, const size_t len)
 {
-	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -1001,7 +1009,7 @@ static item_t	voltronic_qx2nut[] = {
 	{ "input.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	32,	34,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "output.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	36,	38,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	/* redundant with value from QRI */
 /*	{ "battery_number",		ST_FLAG_RW,	voltronic_r_batt_numb,	"QMD\r",	"",	48,	'(',	"",	40,	41,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	NULL,	NULL,	voltronic_batt_numb },	*//* redundant with value from QBV */
-/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	*//* as *per battery* vs *per pack* reported by QRI */
+/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	*//* as *per battery* vs. *per pack* reported by QRI */
 
 	/* Query UPS for ratings
 	 * > [F\r]
@@ -1068,7 +1076,7 @@ static item_t	voltronic_qx2nut[] = {
 	{ "ups.load",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	29,	31,	"%.0f",	0,	NULL,	NULL,	NULL },
 /*	{ "unknown.1",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	33,	37,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 /*	{ "unknown.2",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	39,	43,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
-	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 /*	{ "unknown.3",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	51,	55,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 	{ "ups.temperature",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	57,	61,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.type",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	63,	64,	"%s",	QX_FLAG_SEMI_STATIC,	NULL,	NULL,	voltronic_status },
@@ -1120,13 +1128,21 @@ static item_t	voltronic_qx2nut[] = {
 	 * < [(026.5 02 01 068 255\r]
 	 *    012345678901234567890
 	 *    0         1         2
+	 *
+	 * NOTE: PowerWalker VFI 1500 CG PF1 as of
+	 * https://github.com/networkupstools/nut/issues/2765
+	 * reported a longer last component, so we do not expect
+	 * an exact ending location here, just "to end of reply":
+	 * < [(041.0 03 01 100 00037\r]
+	 *    01234567890123456789012
+	 *    0         1         2
 	 */
 
-	{ "battery.voltage",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	1,	5,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	1,	5,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "battery_number",	ST_FLAG_RW,	voltronic_r_batt_numb,	"QBV\r",	"",	21,	'(',	"",	7,	9,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	NULL,	NULL,	voltronic_batt_numb },	/* Number of batteries that make a pack */
 	{ "battery.packs",	ST_FLAG_RW,	voltronic_r_batt_packs,	"QBV\r",	"",	21,	'(',	"",	10,	11,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE,	NULL,	NULL,	NULL },	/* Number of battery packs in parallel */
 	{ "battery.charge",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	13,	15,	"%.0f",	0,	NULL,	NULL,	NULL },
-	{ "battery.runtime",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	17,	19,	"%.0f",	0,	NULL,	NULL,	voltronic_batt_runtime },
+	{ "battery.runtime",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	17,	0,	"%.0f",	0,	NULL,	NULL,	voltronic_batt_runtime },
 
 	/* Query UPS for last seen min/max load level
 	 * > [QLDL\r]
@@ -1669,40 +1685,61 @@ static testing_t	voltronic_testing[] = {
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
 static int	voltronic_claim(void)
 {
+	int	query_result;
 
 	/* We need at least QGS and QPI to run this subdriver */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
 
-	/* Don't know what happened */
-	if (!item)
+	/* Don't know what happened - should have looked up in the mapping table here! */
+	if (!item) {
+		upsdebug_with_errno(4, "%s: did not find 'input.voltage' in mapping table", __func__);
 		return 0;
+	}
 
 	/* No reply/Unable to get value */
-	if (qx_process(item, NULL))
-		return 0;
+	if ((query_result = qx_process(item, NULL))) {
+		upsdebug_with_errno(4, "%s: failed (%d) to get 'input.voltage'", __func__, query_result);
+
+		if (errno == ETIMEDOUT) {
+			upsdebugx(2, "%s: Sometimes the device is laggy, and we could have posted many queries and the buffer is full of replies to them (or it is still producing the answers); try to sleep, flush it and ask again", __func__);
+			usleep(5000000);	/* arbitrary 5s delay for the device to maybe produce answers to earlier voltage requests */
+			upsdebugx(2, "%s: Retry the query now, buffers will be flushed then", __func__);
+			query_result = qx_process(item, NULL);
+		}
+
+		if (query_result) {
+			/* Not a known timeout/zero-read initially, or still a bad response */
+			return 0;
+		}
+	}
 
 	/* Unable to process value */
-	if (ups_infoval_set(item) != 1)
+	if ((query_result = ups_infoval_set(item)) != 1) {
+		upsdebug_with_errno(4, "%s: failed (%d) to set infoval for 'input.voltage'", __func__, query_result);
 		return 0;
+	}
 
 	/* UPS Protocol */
 	item = find_nut_info("ups.firmware.aux", 0, 0);
 
 	/* Don't know what happened */
 	if (!item) {
+		upsdebug_with_errno(4, "%s: did not find 'ups.firmware.aux' in mapping table", __func__);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
 
 	/* No reply/Unable to get value */
-	if (qx_process(item, NULL)) {
+	if ((query_result = qx_process(item, NULL))) {
+		upsdebug_with_errno(4, "%s: failed (%d) to get 'ups.firmware.aux'", __func__, query_result);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
 
 	/* Unable to process value/Protocol out of range */
-	if (ups_infoval_set(item) != 1) {
+	if ((query_result = ups_infoval_set(item)) != 1) {
+		upsdebug_with_errno(4, "%s: failed (%d) to set infoval for 'ups.firmware.aux'", __func__, query_result);
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
@@ -1749,7 +1786,7 @@ static void	voltronic_makevartable(void)
 }
 
 /* Unskip vars according to protocol used by the UPS */
-static void	voltronic_massive_unskip(const int protocol)
+static void	voltronic_massive_unskip(const long protocol)
 {
 	item_t	*item;
 
@@ -1847,6 +1884,8 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 {
 	double	val;
 
+	/* upsdebug_SET_STARTING(item->info_type, value); */
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
@@ -1878,42 +1917,42 @@ static int	voltronic_process_setvar(item_t *item, char *value, const size_t valu
 
 	} else if (!strcasecmp(item->info_type, "max_bypass_freq")) {
 
-		if (val == max_bypass_freq) {
+		if (d_equal(val, max_bypass_freq)) {
 			upslogx(LOG_INFO, "%s is already set to %.1f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "min_bypass_freq")) {
 
-		if (val == min_bypass_freq) {
+		if (d_equal(val, min_bypass_freq)) {
 			upslogx(LOG_INFO, "%s is already set to %.1f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "max_bypass_volt")) {
 
-		if (val == max_bypass_volt) {
+		if (d_equal(val, max_bypass_volt)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "min_bypass_volt")) {
 
-		if (val == min_bypass_volt) {
+		if (d_equal(val, min_bypass_volt)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	} else if (!strcasecmp(item->info_type, "battery_number")) {
 
-		if (val == battery_number) {
+		if (d_equal(val, battery_number)) {
 			upslogx(LOG_INFO, "%s is already set to %.0f", item->info_type, val);
 			return -1;
 		}
 
 	}
 
-	snprintf(value, valuelen, item->command, val);
+	snprintf_dynamic(value, valuelen, item->command, "%f", val);
 
 	return 0;
 }
@@ -1923,6 +1962,8 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 {
 	char	buf[SMALLBUF] = "";
 
+	/* upsdebug_INSTCMD_STARTING(item->info_type, value); */
+
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -1930,24 +1971,24 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		 * Accepted values for n: .2 -> .9 , 01 -> 99
 		 * Accepted values for m: 0001 -> 9999 */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
-			ondelay = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
+				ondelay = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
 
 		if (ondelay == 0) {
 
 			if (offdelay < 60) {
-				snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
+				snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
 			} else {
-				snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+				snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 			}
 
 		} else if (offdelay < 60) {
 
-			snprintf(buf, sizeof(buf), ".%dR%04d", offdelay / 6, ondelay);
+			snprintf(buf, sizeof(buf), ".%ldR%04ld", offdelay / 6, ondelay);
 
 		} else {
 
-			snprintf(buf, sizeof(buf), "%02dR%04d", offdelay / 60, ondelay);
+			snprintf(buf, sizeof(buf), "%02ldR%04ld", offdelay / 60, ondelay);
 
 		}
 
@@ -1957,12 +1998,12 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		 * Shutdown after n minutes and stay off
 		 * Accepted values for n: .2 -> .9 , 01 -> 99 */
 
-		int	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
+		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10);
 
 		if (offdelay < 60) {
-			snprintf(buf, sizeof(buf), ".%d", offdelay / 6);
+			snprintf(buf, sizeof(buf), ".%ld", offdelay / 6);
 		} else {
-			snprintf(buf, sizeof(buf), "%02d", offdelay / 60);
+			snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 		}
 
 	} else if (!strcasecmp(item->info_type, "test.battery.start")) {
@@ -1970,17 +2011,21 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		/* Accepted values for test time: .2 -> .9 (.2=12sec ..), 01 -> 99 (minutes)
 		 * -> you have to invoke test.battery.start + number of seconds [12..5940] */
 
-		int	delay;
+		long	delay;
 
 		if (strlen(value) != strspn(value, "0123456789")) {
-			upslogx(LOG_ERR, "%s: non numerical value [%s]", item->info_type, value);
+			upslogx(LOG_ERR,
+				"%s: non numerical value [%s]",
+				item->info_type, value);
 			return -1;
 		}
 
-		delay = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
+		delay = (strlen(value) > 0) ? strtol(value, NULL, 10) : 600;
 
 		if ((delay < 12) || (delay > 5940)) {
-			upslogx(LOG_ERR, "%s: battery test time '%d' out of range [12..5940] seconds", item->info_type, delay);
+			upslogx(LOG_ERR,
+				"%s: battery test time '%ld' out of range [12..5940] seconds",
+				item->info_type, delay);
 			return -1;
 		}
 
@@ -1988,13 +2033,13 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 		if (delay < 60) {
 
 			delay = delay / 6;
-			snprintf(buf, sizeof(buf), ".%d", delay);
+			snprintf(buf, sizeof(buf), ".%ld", delay);
 
 		/* test time > 1 minute */
 		} else {
 
 			delay = delay / 60;
-			snprintf(buf, sizeof(buf), "%02d", delay);
+			snprintf(buf, sizeof(buf), "%02ld", delay);
 
 		}
 
@@ -2040,12 +2085,13 @@ static int	voltronic_process_command(item_t *item, char *value, const size_t val
 
 	} else {
 
-		/* Don't know what happened */
+		/* Don't know what happened: unknown entry for pre-processing? */
+		/* upslog_INSTCMD_UNKNOWN(item->info_type, value); */
 		return -1;
 
 	}
 
-	snprintf(value, valuelen, item->command, buf);
+	snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	return 0;
 }
@@ -2360,7 +2406,7 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 	if (!val)
 		return -1;
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", val);
 
 	/* This item doesn't have a NUT var and we were not asked by the user to change its value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
@@ -2382,12 +2428,12 @@ static int	voltronic_capability(item_t *item, char *value, const size_t valuelen
 static int	voltronic_capability_set(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strcasecmp(value, "yes")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 		return 0;
 	}
 
 	if (!strcasecmp(value, "no")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 		return 0;
 	}
 
@@ -2418,7 +2464,7 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_
 		{ "advanced_eco_mode",		advanced_eco_mode },
 		{ "constant_phase_angle",	constant_phase_angle },
 		{ "limited_runtime_on_battery",	limited_runtime_on_battery },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	for (i = 0; capability[i].type; i++) {
@@ -2443,9 +2489,9 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_
 	}
 
 	if (!strcasecmp(value, "disabled")) {
-		snprintf(value, valuelen, item->command, "D");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "D");
 	} else if (!strcasecmp(value, "enabled")) {
-		snprintf(value, valuelen, item->command, "E");
+		snprintf_dynamic(value, valuelen, item->command, "%s", "E");
 	} else {
 		/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
 		upslogx(LOG_ERR, "%s: [%s] is not within acceptable values [enabled/disabled]", item->info_type, value);
@@ -2463,8 +2509,11 @@ static int	voltronic_capability_reset(item_t *item, char *value, const size_t va
 		return -1;
 
 	/* UPS capability options can be reset only when the UPS is in 'Standby Mode' (=OFF) (from QMOD) */
-	if (!(qx_status() & STATUS(OFF))) {
-		upslogx(LOG_ERR, "%s: UPS capability options can be reset only when the UPS is in Standby Mode (i.e. ups.status = 'OFF').", item->info_type);
+	if (!((unsigned int)(qx_status()) & STATUS(OFF))) {
+		upslogx(LOG_ERR,
+			"%s: UPS capability options can be reset only when the "
+			"UPS is in Standby Mode (i.e. ups.status = 'OFF').",
+			item->info_type);
 		return -1;
 	}
 
@@ -2476,8 +2525,8 @@ static int	voltronic_capability_reset(item_t *item, char *value, const size_t va
 /* Voltage limits for ECO Mode */
 static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 {
-	const int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
-	int		ovn;
+	const long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+	int			ovn;
 	const char	*outvoltnom;
 	char		buf[SMALLBUF];
 	item_t		*unskip;
@@ -2493,11 +2542,13 @@ static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 	} min;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2,
+			"%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(item->value, NULL));
 
 	outvoltnom = dstate_getinfo("output.voltage.nominal");
 
@@ -2508,7 +2559,15 @@ static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 		return 0;
 	}
 
-	ovn = strtol(outvoltnom, NULL, 10);
+	{ /* scoping */
+		long l = strtol(outvoltnom, NULL, 10);
+		if (l > INT_MAX || l < 0) {
+			/* See comments above */
+			upsdebugx(2, "%s: unable to get output voltage nominal: %ld", __func__, l);
+			return 0;
+		}
+		ovn = (int)l;
+	}
 
 	/* For P01/P09 */
 	if (protocol == 1 || protocol == 9) {
@@ -2655,7 +2714,7 @@ static int	voltronic_eco_freq(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", strtod(item->value, NULL));
 
 	/* Unskip input.transfer.{high,low} setvar */
 	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
@@ -2703,7 +2762,7 @@ static int	voltronic_bypass(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", val);
 
 	/* No user-provided value to change.. */
 	if (!getval(item->info_type))
@@ -2727,13 +2786,20 @@ static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen)
 	item_t	*unskip;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2, "%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
 	battery_number = strtol(item->value, NULL, 10);
 
-	snprintf(value, valuelen, item->dfl, battery_number);
+	if (battery_number > INT_MAX) {
+		upsdebugx(2, "%s: battery number out of range [%s: %s]",
+			__func__, item->info_type, item->value);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)battery_number);
 
 	/* No user-provided value to change.. */
 	if (!getval(item->info_type))
@@ -2764,7 +2830,7 @@ static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuel
 	/* Battery runtime is reported by the UPS in minutes, NUT expects seconds */
 	runtime = strtod(item->value, NULL) * 60;
 
-	snprintf(value, valuelen, item->dfl, runtime);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", runtime);
 
 	return 0;
 }
@@ -2772,7 +2838,7 @@ static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuel
 /* Protocol used by the UPS */
 static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	int	protocol;
+	long	protocol;
 
 	if (strncasecmp(item->value, "PI", 2)) {
 		upsdebugx(2, "%s: invalid start characters [%.2s]", __func__, item->value);
@@ -2805,12 +2871,12 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 
 	default:
 
-		upslogx(LOG_ERR, "Protocol [PI%02d] is not supported by this driver", protocol);
+		upslogx(LOG_ERR, "Protocol [PI%02ld] is not supported by this driver", protocol);
 		return -1;
 
 	}
 
-	snprintf(value, valuelen, "P%02d", protocol);
+	snprintf(value, valuelen, "P%02ld", protocol);
 
 	/* Unskip vars according to protocol */
 	voltronic_massive_unskip(protocol);
@@ -2822,14 +2888,14 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
  * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in qx2nut array: this function processes the reply to QFS query */
 static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
-	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+	long	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
-	char	alarm[SMALLBUF];
+	char	alarm[LARGEBUF]; /* can snprintf()/strncpy() SMALLBUF plus markup into here */
 
 	upslogx(LOG_INFO, "Checking for faults..");
 
 	if (!strcasecmp(item->value, "OK")) {
-		snprintf(value, valuelen, item->dfl, "No fault found");
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", "No fault found");
 		upslogx(LOG_INFO, "%s", value);
 		item->qxflags |= QX_FLAG_SKIP;
 		return 0;
@@ -2852,98 +2918,98 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 			{
 			case 1:
 
-				strcpy(alarm, "Fan failure.");
+				strncpy(alarm, "Fan failure.", sizeof(alarm));
 				break;
 
 			case 2:
 
-				strcpy(alarm, "Over temperature fault.");
+				strncpy(alarm, "Over temperature fault.", sizeof(alarm));
 				break;
 
 			case 3:
 
-				strcpy(alarm, "Battery voltage is too high.");
+				strncpy(alarm, "Battery voltage is too high.", sizeof(alarm));
 				break;
 
 			case 4:
 
-				strcpy(alarm, "Battery voltage too low.");
+				strncpy(alarm, "Battery voltage too low.", sizeof(alarm));
 				break;
 
 			case 5:
 
-				strcpy(alarm, "Inverter relay short-circuited.");
+				strncpy(alarm, "Inverter relay short-circuited.", sizeof(alarm));
 				break;
 
 			case 6:
 
-				strcpy(alarm, "Inverter voltage over maximum value.");
+				strncpy(alarm, "Inverter voltage over maximum value.", sizeof(alarm));
 				break;
 
 			case 7:
 
-				strcpy(alarm, "Overload fault.");
+				strncpy(alarm, "Overload fault.", sizeof(alarm));
 				update_status("OVER");
 				break;
 
 			case 8:
 
-				strcpy(alarm, "Bus voltage exceeds its upper limit.");
+				strncpy(alarm, "Bus voltage exceeds its upper limit.", sizeof(alarm));
 				break;
 
 			case 9:
 
-				strcpy(alarm, "Bus soft start fail.");
+				strncpy(alarm, "Bus soft start fail.", sizeof(alarm));
 				break;
 
 			case 10:
 
-				strcpy(alarm, "Unknown fault [Fault code: 10]");
+				strncpy(alarm, "Unknown fault [Fault code: 10]", sizeof(alarm));
 				break;
 
 			case 51:
 
-				strcpy(alarm, "Over current fault.");
+				strncpy(alarm, "Over current fault.", sizeof(alarm));
 				break;
 
 			case 52:
 
-				strcpy(alarm, "Bus voltage below its under limit.");
+				strncpy(alarm, "Bus voltage below its under limit.", sizeof(alarm));
 				break;
 
 			case 53:
 
-				strcpy(alarm, "Inverter soft start fail.");
+				strncpy(alarm, "Inverter soft start fail.", sizeof(alarm));
 				break;
 
 			case 54:
 
-				strcpy(alarm, "Self test fail.");
+				strncpy(alarm, "Self test fail.", sizeof(alarm));
 				break;
 
 			case 55:
 
-				strcpy(alarm, "Output DC voltage exceeds its upper limit.");
+				strncpy(alarm, "Output DC voltage exceeds its upper limit.", sizeof(alarm));
 				break;
 
 			case 56:
 
-				strcpy(alarm, "Battery open fault.");
+				strncpy(alarm, "Battery open fault.", sizeof(alarm));
 				break;
 
 			case 57:
 
-				strcpy(alarm, "Current sensor fault.");
+				strncpy(alarm, "Current sensor fault.", sizeof(alarm));
 				break;
 
 			case 58:
 
-				strcpy(alarm, "Battery short.");
+				strncpy(alarm, "Battery short.", sizeof(alarm));
 				break;
 
 			case 59:
 
-				strcpy(alarm, "Inverter voltage below its lower limit.");
+				strncpy(alarm, "Inverter voltage below its lower limit.", sizeof(alarm));
 				break;
 
 			default:
@@ -2966,22 +3032,22 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 			{
 			case 'A':
 
-				strcpy(alarm, "L1 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L1 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			case 'B':
 
-				strcpy(alarm, "L2 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L2 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			case 'C':
 
-				strcpy(alarm, "L3 inverter negative power out of acceptable range.");
+				strncpy(alarm, "L3 inverter negative power out of acceptable range.", sizeof(alarm));
 				break;
 
 			default:
 
-				strcpy(alarm, "Bus voltage not within default setting.");
+				strncpy(alarm, "Bus voltage not within default setting.", sizeof(alarm));
 				break;
 
 			}
@@ -2990,183 +3056,183 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 
 		case 2:
 
-			strcpy(alarm, "Bus voltage over maximum value.");
+			strncpy(alarm, "Bus voltage over maximum value.", sizeof(alarm));
 			break;
 
 		case 3:
 
-			strcpy(alarm, "Bus voltage below minimum value.");
+			strncpy(alarm, "Bus voltage below minimum value.", sizeof(alarm));
 			break;
 
 		case 4:
 
-			strcpy(alarm, "Bus voltage differences out of acceptable range.");
+			strncpy(alarm, "Bus voltage differences out of acceptable range.", sizeof(alarm));
 			break;
 
 		case 5:
 
-			strcpy(alarm, "Bus voltage of slope rate drops too fast.");
+			strncpy(alarm, "Bus voltage of slope rate drops too fast.", sizeof(alarm));
 			break;
 
 		case 6:
 
-			strcpy(alarm, "Over current in PFC input inductor.");
+			strncpy(alarm, "Over current in PFC input inductor.", sizeof(alarm));
 			break;
 
 		case 11:
 
-			strcpy(alarm, "Inverter voltage not within default setting.");
+			strncpy(alarm, "Inverter voltage not within default setting.", sizeof(alarm));
 			break;
 
 		case 12:
 
-			strcpy(alarm, "Inverter voltage over maximum value.");
+			strncpy(alarm, "Inverter voltage over maximum value.", sizeof(alarm));
 			break;
 
 		case 13:
 
-			strcpy(alarm, "Inverter voltage below minimum value.");
+			strncpy(alarm, "Inverter voltage below minimum value.", sizeof(alarm));
 			break;
 
 		case 14:
 
-			strcpy(alarm, "Inverter short-circuited.");
+			strncpy(alarm, "Inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 15:
 
-			strcpy(alarm, "L2 phase inverter short-circuited.");
+			strncpy(alarm, "L2 phase inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 16:
 
-			strcpy(alarm, "L3 phase inverter short-circuited.");
+			strncpy(alarm, "L3 phase inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 17:
 
-			strcpy(alarm, "L1L2 inverter short-circuited.");
+			strncpy(alarm, "L1L2 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 18:
 
-			strcpy(alarm, "L2L3 inverter short-circuited.");
+			strncpy(alarm, "L2L3 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 19:
 
-			strcpy(alarm, "L3L1 inverter short-circuited.");
+			strncpy(alarm, "L3L1 inverter short-circuited.", sizeof(alarm));
 			break;
 
 		case 21:
 
-			strcpy(alarm, "Battery SCR short-circuited.");
+			strncpy(alarm, "Battery SCR short-circuited.", sizeof(alarm));
 			break;
 
 		case 22:
 
-			strcpy(alarm, "Line SCR short-circuited.");
+			strncpy(alarm, "Line SCR short-circuited.", sizeof(alarm));
 			break;
 
 		case 23:
 
-			strcpy(alarm, "Inverter relay open fault.");
+			strncpy(alarm, "Inverter relay open fault.", sizeof(alarm));
 			break;
 
 		case 24:
 
-			strcpy(alarm, "Inverter relay short-circuited.");
+			strncpy(alarm, "Inverter relay short-circuited.", sizeof(alarm));
 			break;
 
 		case 25:
 
-			strcpy(alarm, "Input and output wires oppositely connected.");
+			strncpy(alarm, "Input and output wires oppositely connected.", sizeof(alarm));
 			break;
 
 		case 26:
 
-			strcpy(alarm, "Battery oppositely connected.");
+			strncpy(alarm, "Battery oppositely connected.", sizeof(alarm));
 			break;
 
 		case 27:
 
-			strcpy(alarm, "Battery voltage is too high.");
+			strncpy(alarm, "Battery voltage is too high.", sizeof(alarm));
 			break;
 
 		case 28:
 
-			strcpy(alarm, "Battery voltage too low.");
+			strncpy(alarm, "Battery voltage too low.", sizeof(alarm));
 			break;
 
 		case 29:
 
-			strcpy(alarm, "Failure for battery fuse being open-circuited.");
+			strncpy(alarm, "Failure for battery fuse being open-circuited.", sizeof(alarm));
 			break;
 
 		case 31:
 
-			strcpy(alarm, "CAN-bus communication fault.");
+			strncpy(alarm, "CAN-bus communication fault.", sizeof(alarm));
 			break;
 
 		case 32:
 
-			strcpy(alarm, "Host signal circuit fault.");
+			strncpy(alarm, "Host signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 33:
 
-			strcpy(alarm, "Synchronous signal circuit fault.");
+			strncpy(alarm, "Synchronous signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 34:
 
-			strcpy(alarm, "Synchronous pulse signal circuit fault.");
+			strncpy(alarm, "Synchronous pulse signal circuit fault.", sizeof(alarm));
 			break;
 
 		case 35:
 
-			strcpy(alarm, "Parallel cable disconnected.");
+			strncpy(alarm, "Parallel cable disconnected.", sizeof(alarm));
 			break;
 
 		case 36:
 
-			strcpy(alarm, "Load unbalanced.");
+			strncpy(alarm, "Load unbalanced.", sizeof(alarm));
 			break;
 
 		case 41:
 
-			strcpy(alarm, "Over temperature fault.");
+			strncpy(alarm, "Over temperature fault.", sizeof(alarm));
 			break;
 
 		case 42:
 
-			strcpy(alarm, "Communication failure between CPUs in control board.");
+			strncpy(alarm, "Communication failure between CPUs in control board.", sizeof(alarm));
 			break;
 
 		case 43:
 
-			strcpy(alarm, "Overload fault.");
+			strncpy(alarm, "Overload fault.", sizeof(alarm));
 			update_status("OVER");
 			break;
 
 		case 44:
 
-			strcpy(alarm, "Fan failure.");
+			strncpy(alarm, "Fan failure.", sizeof(alarm));
 			break;
 
 		case 45:
 
-			strcpy(alarm, "Charger failure.");
+			strncpy(alarm, "Charger failure.", sizeof(alarm));
 			break;
 
 		case 46:
 
-			strcpy(alarm, "Model fault.");
+			strncpy(alarm, "Model fault.", sizeof(alarm));
 			break;
 
 		case 47:
 
-			strcpy(alarm, "MCU communication fault.");
+			strncpy(alarm, "MCU communication fault.", sizeof(alarm));
 			break;
 
 		default:
@@ -3178,7 +3244,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-	snprintf(value, valuelen, item->dfl, alarm);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	upslogx(LOG_INFO, "Fault found: %s", alarm);
 
 	item->qxflags |= QX_FLAG_SKIP;
@@ -3189,7 +3255,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 /* Warnings reported by the UPS */
 static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 {
-	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
+	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[4096] = "", warns[4096] = "";
 	int	i;
 
 	if (strspn(item->value, "01") != strlen(item->value)) {
@@ -3214,300 +3280,300 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 			{
 			case 0:
 
-				strcpy(warn, "Battery disconnected.");
+				strncpy(warn, "Battery disconnected.", sizeof(warn));
 				break;
 
 			case 1:
 
-				strcpy(warn, "Neutral not connected.");
+				strncpy(warn, "Neutral not connected.", sizeof(warn));
 				break;
 
 			case 2:
 
-				strcpy(warn, "Site fault.");
+				strncpy(warn, "Site fault.", sizeof(warn));
 				break;
 
 			case 3:
 
-				strcpy(warn, "Phase sequence incorrect.");
+				strncpy(warn, "Phase sequence incorrect.", sizeof(warn));
 				break;
 
 			case 4:
 
-				strcpy(warn, "Phase sequence incorrect in bypass.");
+				strncpy(warn, "Phase sequence incorrect in bypass.", sizeof(warn));
 				break;
 
 			case 5:
 
-				strcpy(warn, "Input frequency unstable in bypass.");
+				strncpy(warn, "Input frequency unstable in bypass.", sizeof(warn));
 				break;
 
 			case 6:
 
-				strcpy(warn, "Battery overcharged.");
+				strncpy(warn, "Battery overcharged.", sizeof(warn));
 				break;
 
 			case 7:
 
-				strcpy(warn, "Low battery.");
+				strncpy(warn, "Low battery.", sizeof(warn));
 				update_status("LB");
 				break;
 
 			case 8:
 
-				strcpy(warn, "Overload alarm.");
+				strncpy(warn, "Overload alarm.", sizeof(warn));
 				update_status("OVER");
 				break;
 
 			case 9:
 
-				strcpy(warn, "Fan alarm.");
+				strncpy(warn, "Fan alarm.", sizeof(warn));
 				break;
 
 			case 10:
 
-				strcpy(warn, "EPO enabled.");
+				strncpy(warn, "EPO enabled.", sizeof(warn));
 				break;
 
 			case 11:
 
-				strcpy(warn, "Unable to turn on UPS.");
+				strncpy(warn, "Unable to turn on UPS.", sizeof(warn));
 				break;
 
 			case 12:
 
-				strcpy(warn, "Over temperature alarm.");
+				strncpy(warn, "Over temperature alarm.", sizeof(warn));
 				break;
 
 			case 13:
 
-				strcpy(warn, "Charger alarm.");
+				strncpy(warn, "Charger alarm.", sizeof(warn));
 				break;
 
 			case 14:
 
-				strcpy(warn, "Remote auto shutdown.");
+				strncpy(warn, "Remote auto shutdown.", sizeof(warn));
 				break;
 
 			case 15:
 
-				strcpy(warn, "L1 input fuse not working.");
+				strncpy(warn, "L1 input fuse not working.", sizeof(warn));
 				break;
 
 			case 16:
 
-				strcpy(warn, "L2 input fuse not working.");
+				strncpy(warn, "L2 input fuse not working.", sizeof(warn));
 				break;
 
 			case 17:
 
-				strcpy(warn, "L3 input fuse not working.");
+				strncpy(warn, "L3 input fuse not working.", sizeof(warn));
 				break;
 
 			case 18:
 
-				strcpy(warn, "Positive PFC abnormal in L1.");
+				strncpy(warn, "Positive PFC abnormal in L1.", sizeof(warn));
 				break;
 
 			case 19:
 
-				strcpy(warn, "Negative PFC abnormal in L1.");
+				strncpy(warn, "Negative PFC abnormal in L1.", sizeof(warn));
 				break;
 
 			case 20:
 
-				strcpy(warn, "Positive PFC abnormal in L2.");
+				strncpy(warn, "Positive PFC abnormal in L2.", sizeof(warn));
 				break;
 
 			case 21:
 
-				strcpy(warn, "Negative PFC abnormal in L2.");
+				strncpy(warn, "Negative PFC abnormal in L2.", sizeof(warn));
 				break;
 
 			case 22:
 
-				strcpy(warn, "Positive PFC abnormal in L3.");
+				strncpy(warn, "Positive PFC abnormal in L3.", sizeof(warn));
 				break;
 
 			case 23:
 
-				strcpy(warn, "Negative PFC abnormal in L3.");
+				strncpy(warn, "Negative PFC abnormal in L3.", sizeof(warn));
 				break;
 
 			case 24:
 
-				strcpy(warn, "Abnormal in CAN-bus communication.");
+				strncpy(warn, "Abnormal in CAN-bus communication.", sizeof(warn));
 				break;
 
 			case 25:
 
-				strcpy(warn, "Abnormal in synchronous signal circuit.");
+				strncpy(warn, "Abnormal in synchronous signal circuit.", sizeof(warn));
 				break;
 
 			case 26:
 
-				strcpy(warn, "Abnormal in synchronous pulse signal circuit.");
+				strncpy(warn, "Abnormal in synchronous pulse signal circuit.", sizeof(warn));
 				break;
 
 			case 27:
 
-				strcpy(warn, "Abnormal in host signal circuit.");
+				strncpy(warn, "Abnormal in host signal circuit.", sizeof(warn));
 				break;
 
 			case 28:
 
-				strcpy(warn, "Male connector of parallel cable not connected well.");
+				strncpy(warn, "Male connector of parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 29:
 
-				strcpy(warn, "Female connector of parallel cable not connected well.");
+				strncpy(warn, "Female connector of parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 30:
 
-				strcpy(warn, "Parallel cable not connected well.");
+				strncpy(warn, "Parallel cable not connected well.", sizeof(warn));
 				break;
 
 			case 31:
 
-				strcpy(warn, "Battery connection not consistent in parallel systems.");
+				strncpy(warn, "Battery connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 32:
 
-				strcpy(warn, "AC connection not consistent in parallel systems.");
+				strncpy(warn, "AC connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 33:
 
-				strcpy(warn, "Bypass connection not consistent in parallel systems.");
+				strncpy(warn, "Bypass connection not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 34:
 
-				strcpy(warn, "UPS model types not consistent in parallel systems.");
+				strncpy(warn, "UPS model types not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 35:
 
-				strcpy(warn, "Capacity of UPSes not consistent in parallel systems.");
+				strncpy(warn, "Capacity of UPSes not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 36:
 
-				strcpy(warn, "Auto restart setting not consistent in parallel systems.");
+				strncpy(warn, "Auto restart setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 37:
 
-				strcpy(warn, "Battery cell over charge.");
+				strncpy(warn, "Battery cell over charge.", sizeof(warn));
 				break;
 
 			case 38:
 
-				strcpy(warn, "Battery protection setting not consistent in parallel systems.");
+				strncpy(warn, "Battery protection setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 39:
 
-				strcpy(warn, "Battery detection setting not consistent in parallel systems.");
+				strncpy(warn, "Battery detection setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 40:
 
-				strcpy(warn, "Bypass not allowed setting not consistent in parallel systems.");
+				strncpy(warn, "Bypass not allowed setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 41:
 
-				strcpy(warn, "Converter setting not consistent in parallel systems.");
+				strncpy(warn, "Converter setting not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 42:
 
-				strcpy(warn, "High loss point for frequency in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for frequency in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 43:
 
-				strcpy(warn, "Low loss point for frequency in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for frequency in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 44:
 
-				strcpy(warn, "High loss point for voltage in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for voltage in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 45:
 
-				strcpy(warn, "Low loss point for voltage in bypass mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for voltage in bypass mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 46:
 
-				strcpy(warn, "High loss point for frequency in AC mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for frequency in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 47:
 
-				strcpy(warn, "Low loss point for frequency in AC mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for frequency in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 48:
 
-				strcpy(warn, "High loss point for voltage in AC mode not consistent in parallel systems.");
+				strncpy(warn, "High loss point for voltage in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 49:
 
-				strcpy(warn, "Low loss point for voltage in AC mode not consistent in parallel systems.");
+				strncpy(warn, "Low loss point for voltage in AC mode not consistent in parallel systems.", sizeof(warn));
 				break;
 
 			case 50:
 
-				strcpy(warn, "Warning for locking in bypass mode after 3 consecutive overloads within 30 min.");
+				strncpy(warn, "Warning for locking in bypass mode after 3 consecutive overloads within 30 min.", sizeof(warn));
 				break;
 
 			case 51:
 
-				strcpy(warn, "Warning for three-phase AC input current unbalance.");
+				strncpy(warn, "Warning for three-phase AC input current unbalance.", sizeof(warn));
 				break;
 
 			case 52:
 
-				strcpy(warn, "Warning for a three-phase input current unbalance detected in battery mode.");
+				strncpy(warn, "Warning for a three-phase input current unbalance detected in battery mode.", sizeof(warn));
 				break;
 
 			case 53:
 
-				strcpy(warn, "Warning for Inverter inter-current unbalance.");
+				strncpy(warn, "Warning for Inverter inter-current unbalance.", sizeof(warn));
 				break;
 
 			case 54:
 
-				strcpy(warn, "Programmable outlets cut off pre-alarm.");
+				strncpy(warn, "Programmable outlets cut off pre-alarm.", sizeof(warn));
 				break;
 
 			case 55:
 
-				strcpy(warn, "Warning for Battery replace.");
+				strncpy(warn, "Warning for Battery replace.", sizeof(warn));
 				update_status("RB");
 				break;
 
 			case 56:
 
-				strcpy(warn, "Abnormal warning on input phase angle.");
+				strncpy(warn, "Abnormal warning on input phase angle.", sizeof(warn));
 				break;
 
 			case 57:
 
-				strcpy(warn, "Warning!! Cover of maintain switch is open.");
+				strncpy(warn, "Warning!! Cover of maintain switch is open.", sizeof(warn));
 				break;
 
 			case 61:
 
-				strcpy(warn, "EEPROM operation error.");
+				strncpy(warn, "EEPROM operation error.", sizeof(warn));
 				break;
 
 			default:
@@ -3569,7 +3635,7 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 
 		/* Removing leading comma from unk */
 		snprintf(warns, sizeof(warns), "Unknown warnings [bit:%s]", unk+1);
-		strcpy(bitwarns, warns);
+		strncpy(bitwarns, warns, sizeof(bitwarns));
 
 	} else {
 
@@ -3595,13 +3661,28 @@ static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 /* Working mode reported by the UPS */
 static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 {
-	char	*status = NULL, *alarm = NULL;
+	char	*status = NULL, *alarm = NULL, *buzzword = NULL;
+
+	if (nut_debug_level > 3) {
+		char	buf[SMALLBUF];
+		size_t	buflen;
+
+		/* Just in case item->value is somehow not NUL-terminated */
+		memset(buf, 0, sizeof(buf));
+		buflen = snprintf(buf, sizeof(buf), "%s", item->value);
+		if (buflen > 0 && buf[buflen - 1] == '\n')
+			buf[buflen - 1] = '\0';
+		upsdebugx(4, "%s: entering, item->info_type='%s', full item->value='%s'%s",
+			__func__, NUT_STRARG(item->info_type), buf,
+			(buflen + 3 > sizeof(buf) ? " (truncated)" : "")
+			);
+	}
 
 	switch (item->value[0])
 	{
 	case 'P':
 
-		alarm = "UPS is going ON";
+		alarm = "UPS is going ON.";
 		break;
 
 	case 'S':
@@ -3636,12 +3717,23 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 
 	case 'E':
 
-		alarm = "UPS is in ECO Mode.";
+		/* From man page: When input voltage/frequency are within acceptable
+		 * range, the UPS will bypass voltage to output for energy saving.
+		 * PFC and INVERTER are still active at this mode. */
+
+		/* FIXME: Any char for advanced ECO mode? (PFC and INVERTER are off, the UPS will bypass voltage to output for energy saving)*/
+		buzzword = "vendor:voltronic:ECO-inverter-on";
+		upsdebugx(2, "%s: UPS is in ECO Mode", __func__);
 		break;
 
 	case 'C':
 
-		alarm = "UPS is in Converter Mode.";
+		/* From man page: When input frequency is within 40 Hz to 70 Hz,
+		 * the UPS can be set at a constant output frequency, 50 Hz or 60 Hz.
+		 * The UPS will still charge battery under this mode. */
+
+		buzzword = "vendor:voltronic:freq-converter-on";
+		upsdebugx(2, "%s: UPS is in Converter Mode", __func__);
 		break;
 
 	case 'D':
@@ -3658,14 +3750,16 @@ static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 	}
 
 	if (alarm && !strcasecmp(item->info_type, "ups.alarm")) {
-
-		snprintf(value, valuelen, item->dfl, alarm);
-
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", alarm);
 	} else if (status && !strcasecmp(item->info_type, "ups.status")) {
-
-		snprintf(value, valuelen, item->dfl, status);
-
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 	}
+
+	if (buzzword)
+		buzzmode_set(buzzword);
+
+	upsdebugx(4, "%s: done, item->value[0]='%c' determined status='%s' alarm='%s' buzzword='%s'",
+		__func__, item->value[0], NUT_STRARG(status), NUT_STRARG(alarm), NUT_STRARG(buzzword));
 
 	return 0;
 }
@@ -3676,7 +3770,8 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 	char	*val = "";
 
 	if (strspn(item->value, "01") != strlen(item->value)) {
-		upsdebugx(3, "%s: unexpected value %s@%d->%s", __func__, item->value, item->from, item->value);
+		upsdebugx(3, "%s: unexpected value %s@%d->%s",
+			__func__, item->value, item->from, item->value);
 		return -1;
 	}
 
@@ -3685,7 +3780,7 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 	case 63:	/* UPS Type - ups.type */
 
 		{
-			int	type = strtol(item->value, NULL, 10);
+			long	type = strtol(item->value, NULL, 10);
 
 			if (!type)		/* 00 -> Offline */
 				val = "offline";
@@ -3694,7 +3789,8 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 			else if (type == 10)	/* 10 -> Online */
 				val = "online";
 			else {
-				upsdebugx(2, "%s: invalid type [%s: %s]", __func__, item->info_type, item->value);
+				upsdebugx(2, "%s: invalid type [%s: %s]",
+					__func__, item->info_type, item->value);
 				return -1;
 			}
 		}
@@ -3735,7 +3831,7 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 				val = "TRIM";
 			} else if (vo < 1.05 * vi) {
 
-				int	prot = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
+				long	prot = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
 				if (!prot || prot == 8) {	/* ups.alarm */
 
@@ -3859,7 +3955,7 @@ static int	voltronic_output_powerfactor(item_t *item, char *value, const size_t 
 	/* UPS report a value expressed in % so -> output.powerfactor*100 e.g. opf = 0,8 -> ups = 80 */
 	opf = strtod(item->value, NULL) * 0.01;
 
-	snprintf(value, valuelen, item->dfl, opf);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", opf);
 
 	return 0;
 }
@@ -3873,7 +3969,8 @@ static int	voltronic_serial_numb(item_t *item, char *value, const size_t valuele
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, item->value);
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
+
 	return 0;
 }
 
@@ -3907,18 +4004,12 @@ static int	voltronic_outlet(item_t *item, char *value, const size_t valuelen)
 	}
 
 	if (strstr(item->info_type, "switchable")) {
-
-		snprintf(value, valuelen, item->dfl, switchable);
-
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", switchable);
 	} else if (strstr(item->info_type, "status")) {
-
-		snprintf(value, valuelen, item->dfl, status);
-
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", status);
 	} else {
-
 		/* Don't know what happened */
 		return -1;
-
 	}
 
 	/* Unskip outlet.n.delay.shutdown */
@@ -3973,7 +4064,7 @@ static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuel
 	/* UPS reports minutes, NUT expects seconds */
 	val = strtod(item->value, NULL) * 60;
 
-	snprintf(value, valuelen, item->dfl, val);
+	snprintf_dynamic(value, valuelen, item->dfl, "%f", val);
 
 	/* Unskip outlet.n.delay.shutdown setvar */
 	snprintf(buf, sizeof(buf), "outlet.%c.delay.shutdown", number);
@@ -3992,12 +4083,18 @@ static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuel
 /* *SETVAR* Outlet delay time */
 static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t valuelen)
 {
-	int	delay = strtol(value, NULL, 10);
+	long	delay = strtol(value, NULL, 10);
+
+	if ((delay/60) > INT_MAX) {
+		upsdebugx(2, "%s: invalid delay %ld sec set for UPS [%s]",
+			__func__, delay, item->value);
+		return -1;
+	}
 
 	/* From seconds to minute */
 	delay = delay / 60;
 
-	snprintf(value, valuelen, item->command, delay);
+	snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
 
 	return 0;
 }
@@ -4005,18 +4102,23 @@ static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t va
 /* Type of battery */
 static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 
 	if ((item->value[0] != '0') || (strspn(item->value+1, "012") != 1)) {
-
-		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]", __func__, item->value);
+		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]",
+			__func__, item->value);
 		return -1;
-
 	}
 
 	val = strtol(item->value, NULL, 10);
 
-	snprintf(value, valuelen, item->dfl, item->info_rw[val].value);
+	if (val < 0 || (uintmax_t)val > SIZE_MAX) {
+		upsdebugx(2, "%s: invalid battery type reported by the UPS [%s]",
+			__func__, item->value);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->info_rw[(size_t)val].value);
 
 	return 0;
 }
@@ -4026,6 +4128,9 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4034,7 +4139,7 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should already be checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}
@@ -4047,18 +4152,24 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 /* *NONUT* Actual device grid working range type for P31 UPSes */
 static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen)
 {
-	int	val;
+	long	val;
 
 	if ((item->value[0] != '0') || (strspn(item->value+1, "01") != 1)) {
-
-		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]", __func__, item->value);
+		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]",
+			__func__, item->value);
 		return -1;
-
 	}
 
 	val = strtol(item->value, NULL, 10);
 
-	snprintf(value, valuelen, item->dfl, item->info_rw[val].value);
+	if (val < 0 || (uintmax_t)val > SIZE_MAX) {
+		upsdebugx(2, "%s: invalid device grid working range reported by the UPS [%s]",
+			__func__, item->value);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", item->info_rw[(size_t)val].value);
+
 	work_range_type = val;
 
 	return 0;
@@ -4069,6 +4180,9 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4077,7 +4191,7 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}
@@ -4095,10 +4209,11 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 /* *NONUT* UPS actual input/output phase angles */
 static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 {
-	int	angle;
+	long	angle;
 
 	if (strspn(item->value, "0123456789 .") != strlen(item->value)) {
-		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		upsdebugx(2, "%s: non numerical value [%s: %s]",
+			__func__, item->info_type, item->value);
 		return -1;
 	}
 
@@ -4126,7 +4241,13 @@ static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 
 	}
 
-	snprintf(value, valuelen, item->dfl, angle);
+	if (angle < 0 || angle > INT_MAX) {
+		upsdebugx(2, "%s: phase angle out of range [%s: %ld]",
+			__func__, item->value, angle);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)angle);
 
 	return 0;
 }
@@ -4136,6 +4257,9 @@ static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4144,7 +4268,7 @@ static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}

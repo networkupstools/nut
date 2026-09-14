@@ -1,6 +1,6 @@
 /*
  * powerpanel.h - Model specific data/definitions for CyberPower text/binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -33,10 +33,11 @@
 #define SER_WAIT_USEC	250000
 
 typedef struct {
-	const char	*version;
+	const char	*version; /* TODO: Rename: this is a subdriver type: "text" or "binary" */
+	const char	*versionString; /* TODO: Rename: this is the actual subdriver version */
 	int	(*instcmd)(const char *cmdname, const char *extra);
 	int	(*setvar)(const char *varname, const char *val);
-	int	(*initups)(void);
+	ssize_t	(*initups)(void);
 	void	(*initinfo)(void);
 	int	(*updateinfo)(void);
 } subdriver_t;

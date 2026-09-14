@@ -25,9 +25,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION "1.01"
+#define DRIVER_VERSION	"1.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -61,7 +62,7 @@ upsdrv_info_t upsdrv_info = {
    "It works even with a pl2303 usb-serial converter."                          "\n" \
    "**********************************************************"                 "\n"
 
-/* See http://www.networkupstools.org/protocols/optiups.html and the end of this
+/* See https://www.networkupstools.org/protocols/optiups.html and the end of this
  * file for more information on the cable and the OPTI-UPS serial protocol used on
  * at least the older OPTI UPS models (420E, 820ES).
  */
@@ -76,96 +77,114 @@ upsdrv_info_t upsdrv_info = {
 #define OPTI_POWERUP		"powerup"
 
 /* All serial commands put their response in the same buffer space */
-static char _buf[256];
+static char opti_buf[256];
 
 /* Model */
 static int optimodel = 0;
 enum {
 	OPTIMODEL_DEFAULT = 0,
-	OPTIMODEL_ZINTO =1
+	OPTIMODEL_ZINTO = 1,
+	OPTIMODEL_PS = 2
 };
 
 
 /* Status bits returned by the "AG" command */
 enum {
-	OPTISBIT_NOOUTPUT = 2,
-	OPTISBIT_OVERLOAD = 8,
-	OPTISBIT_REPLACE_BATTERY = 16,
-	OPTISBIT_ON_BATTERY_POWER = 32,
-	OPTISBIT_LOW_BATTERY = 64
+	OPTISBIT_NOOUTPUT = 2L,
+	OPTISBIT_OVERLOAD = 8L,
+	OPTISBIT_REPLACE_BATTERY = 16L,
+	OPTISBIT_ON_BATTERY_POWER = 32L,
+	OPTISBIT_LOW_BATTERY = 64L
 };
 
 /* Helper struct for the optifill() function */
 typedef struct ezfill_s {
 	const char *cmd;
 	const char *var;
+
+	/* if scale is 0, no conversion is done and the
+	 * string is passed to dstate as is; otherwise a
+	 * float conversion with single decimal is applied */
 	const float scale;
 } ezfill_t;
 
 /* These can be polled right into a string usable by NUT.
  * Others such as "AG" and "BV" require some transformation of the return value */
-static ezfill_t _pollv[] = {
-	{ "NV", "input.voltage" },
+static ezfill_t opti_pollv[] = {
+	{ "NV", "input.voltage", 0 },
 	{ "OL", "ups.load", 1.0 },
-	{ "OV", "output.voltage" },
+	{ "OV", "output.voltage", 0 },
 	{ "FF", "input.frequency", 0.1 },
-	{ "BT", "ups.temperature" },
+	{ "BT", "ups.temperature", 0 },
 };
-static ezfill_t _pollv_zinto[] = {
+static ezfill_t opti_pollv_zinto[] = {
 	{ "NV", "input.voltage", 2.0 },
 	{ "OL", "ups.load", 1.0 },
 	{ "OV", "output.voltage", 2.0 },
 	{ "OF", "output.frequency", 0.1 },
 	{ "NF", "input.frequency", 0.1 },
-	{ "BT", "ups.temperature" },
+	{ "BT", "ups.temperature", 0 },
+};
+
+/* When on a 220-2400V mains supply, the NV and OV commands return 115V values. FV
+ * returns a value that matches the DIP switch settings for 120/240V models, so
+ * it can be used to scale the valus from NV and OV.
+ *
+ * I suspect this will be the case for other Opti-UPS models, but as I can only
+ * test with a PS-1440RM at 230V the change is only applied to PowerSeries models.
+ */
+static ezfill_t opti_pollv_ps[] = {
+	{ "OL", "ups.load", 1.0 },
+	{ "FF", "input.frequency", 0.1 },
+	{ "BT", "ups.temperature", 0 },
 };
 
 /* model "IO" is parsed differently in upsdrv_initinfo() */
-static ezfill_t _initv[] = {
-	{ "IM", "ups.mfr" },
-	{ "IZ", "ups.serial" },
-	{ "IS", "ups.firmware" },
+static ezfill_t opti_initv[] = {
+	{ "IM", "ups.mfr", 0 },
+	{ "IZ", "ups.serial", 0 },
+	{ "IS", "ups.firmware", 0 },
 };
 
 /* All serial reads of the OPTI-UPS go through here.  We always expect a CR/LF terminated
  *   response.  Unknown/Unimplemented commands return ^U (0x15).  Actions that complete
  *   successfully return ^F (0x06). */
-static inline int optireadline(void)
+static inline ssize_t optireadline(void)
 {
-	int r;
+	ssize_t r;
 	usleep(150000);
-	r = ser_get_line(upsfd, _buf, sizeof(_buf), ENDCHAR, IGNCHARS, 0, 500000 );
-	_buf[sizeof(_buf)-1] = 0;
+	r = ser_get_line(upsfd, opti_buf, sizeof(opti_buf), ENDCHAR, IGNCHARS, 0, 500000 );
+	opti_buf[sizeof(opti_buf)-1] = 0;
 	if ( r > 0 )
 	{
-		if ( r < (int)sizeof(_buf) )
-			_buf[r] = 0;
-		if ( _buf[0] == 0x15 )
+		if ( r < (int)sizeof(opti_buf) )
+			opti_buf[r] = 0;
+		if ( opti_buf[0] == 0x15 )
 		{
 			r=-2;
 			upsdebugx(1, "READ: <unsupported command>");
 		}
-		if ( _buf[0] == 0x06 )
+		if ( opti_buf[0] == 0x06 )
 		{
 			upsdebugx(2, "READ: <command done>");
 		}
 		else
 		{
-			upsdebugx(2, "READ: \"%s\"", _buf );
+			upsdebugx(2, "READ: \"%s\"", opti_buf );
 		}
 	}
 	else
-		upsdebugx(1, "READ ERROR: %d", r );
+		upsdebugx(1, "READ ERROR: %" PRIiSIZE, r);
 	return r;
 }
 
-/* Send a command and read the response.  Command response is in global _buf.
+/* Send a command and read the response.  Command response is in global opti_buf.
  *   Return
  *      > 0 implies success.
  *      -1  serial timeout
  *      -2  unknown/unimplemented command
  */
-static inline int optiquery( const char *cmd )
+static inline ssize_t optiquery( const char *cmd )
 {
 	upsdebugx(2, "SEND: \"%s\"", cmd );
 	ser_send( upsfd, "%s", cmd );
@@ -175,9 +194,10 @@ static inline int optiquery( const char *cmd )
 }
 
 /* Uses the ezfill_t structure to map UPS commands to the NUT variable destinations */
-static void optifill( ezfill_t *a, int len )
+static void optifill( ezfill_t *a, size_t len )
 {
-	int i, r;
+	size_t i;
+	ssize_t r;
 
 	/* Some things are easy to poll and store */
 	for ( i=0; i<len; ++i )
@@ -203,12 +223,12 @@ static void optifill( ezfill_t *a, int len )
 		}
 		if ( a[i].scale > 1e-20 )
 		{
-			float f = strtol( _buf, NULL, 10 ) * a[i].scale;
+			float f = strtol( opti_buf, NULL, 10 ) * a[i].scale;
 			dstate_setinfo( a[i].var, "%.1f", f );
 		}
 		else
 		{
-			dstate_setinfo( a[i].var, "%s", _buf);
+			dstate_setinfo( a[i].var, "%s", opti_buf);
 		}
 	}
 }
@@ -216,15 +236,22 @@ static void optifill( ezfill_t *a, int len )
 /* Handle custom (but standardized) NUT commands */
 static int instcmd(const char *cmdname, const char *extra)
 {
-        if (!strcasecmp(cmdname, "test.failure.start"))
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Ts" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 	else if (!strcasecmp(cmdname, "load.off"))
 	{
-		/* You do realize this will kill power to ourself.  Would probably only
-		 *   be useful for killing power for a slave computer */
+		/* You do realize this will kill power to ourself.
+		 * Would probably only be useful for killing power for
+		 * a computer with upsmon in "secondary" mode */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -234,10 +261,11 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 		optiquery( "Ct0" );
 		optiquery( "Cs00000000" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 	else if (!strcasecmp(cmdname, "load.on"))
 	{
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -247,12 +275,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 		optiquery( "Ct0" );
 		optiquery( "Cu00000000" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 	else if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		/* This shuts down the UPS.  When the power returns to the UPS,
 		 *   it will power back up in its default state. */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -262,13 +291,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 		optiquery( "Ct1" );
 		optiquery( "Cs00000010" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 	else if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		/* This actually stays off as long as the batteries hold,
 		 *   if the line power comes back before the batteries die,
 		 *   the UPS will never powerup its output stage!!! */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		if ( optimodel == OPTIMODEL_ZINTO )
 		{
 			optiquery( "Ct1" );
@@ -277,17 +307,18 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 		optiquery( "Ct0" );
 		optiquery( "Cs00000010" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 	else if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		/* Aborts a shutdown that is couting down via the Cs command */
+		/* Aborts a shutdown that is counting down via the Cs command */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		optiquery( "Cs-0000001" );
-                return STAT_INSTCMD_HANDLED;
-        }
+		return STAT_INSTCMD_HANDLED;
+	}
 
-        upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-        return STAT_INSTCMD_UNKNOWN;
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* Handle variable setting */
@@ -295,11 +326,13 @@ static int setvar(const char *varname, const char *val)
 {
 	int status;
 
+	upsdebug_SET_STARTING(varname, val);
+
 	if (sscanf(val, "%d", &status) != 1) {
 		return STAT_SET_UNKNOWN;
 	}
 
-	if (strcasecmp(varname, "outlet.1.switch") == 0) {    
+	if (strcasecmp(varname, "outlet.1.switch") == 0) {
 		status = status==1 ? 1 : 0;
 		dstate_setinfo( "outlet.1.switch", "%d", status);
 		optiquery(status ? "Oi11" : "Oi10");
@@ -307,12 +340,13 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
 void upsdrv_initinfo(void)
 {
-	int r;
+	ssize_t r;
 
 	/* If an Zinto Online-USV is off, switch it on first. */
 	/* It sends only "2" when off, without "\r\n", and doesn't */
@@ -321,8 +355,8 @@ void upsdrv_initinfo(void)
 	if ( testvar(OPTI_POWERUP) && optiquery( "AG" ) < 1 )
 	{
 		ser_send( upsfd, "AG\r\n" );
-		r = ser_get_char(upsfd, &_buf[0], 1, 0);
-		if ( r == 1 && _buf[0] == '2' )
+		r = ser_get_char(upsfd, &opti_buf[0], 1, 0);
+		if ( r == 1 && opti_buf[0] == '2' )
 		{
 			upslogx( LOG_WARNING, "ups was off, switching it on" );
 			optiquery( "Ct1" );
@@ -334,7 +368,7 @@ void upsdrv_initinfo(void)
 
 	/* Autodetect an Online-USV (only Zinto D is known to work) */
 	r = optiquery( "IM" );
-	if ( r > 0 && !strcasecmp(_buf, "ONLINE") )
+	if ( r > 0 && !strcasecmp(opti_buf, "ONLINE") )
 	{
 		optimodel = OPTIMODEL_ZINTO;
 		optiquery( "Om11" );
@@ -342,53 +376,61 @@ void upsdrv_initinfo(void)
 		optiquery( "ON" );
 	}
 
-	optifill( _initv, sizeof(_initv)/sizeof(_initv[0]) );
+	/* Autodetect an Opti-UPS PS series */
+	r = optiquery( "IO" );
+	if ( r > 0 && !strncasecmp(opti_buf, "PS-", 3) )
+	{
+		optimodel = OPTIMODEL_PS;
+	}
+
+	optifill( opti_initv, SIZEOF_ARRAY(opti_initv) );
 
 	/* Parse out model into longer string -- is this really USEFUL??? */
 	r = optiquery( "IO" );
-	if ( r < 1 ) 
+	if ( r < 1 )
 		fatal_with_errno(EXIT_FAILURE, "can't retrieve model" );
 	else
 	{
-		switch ( _buf[r-1] )
+		switch ( opti_buf[r-1] )
 		{
 			case 'E':
 			case 'P':
 			case 'V':
-				dstate_setinfo("ups.model", "Power%cS %s", _buf[r-1], _buf );
+				dstate_setinfo("ups.model", "Power%cS %s", opti_buf[r-1], opti_buf );
 				break;
 			default:
-				dstate_setinfo("ups.model", "%s", _buf );
+				dstate_setinfo("ups.model", "%s", opti_buf );
 				break;
 		}
 	}
 
 	/* Parse out model into longer string */
 	r = optiquery( "IM" );
-	if ( r > 0 && !strcasecmp(_buf, "ONLINE") )
+	if ( r > 0 && !strcasecmp(opti_buf, "ONLINE") )
 	{
 		dstate_setinfo("ups.mfr", "ONLINE USV-Systeme AG");
 		r = optiquery( "IO" );
-		if ( r < 1 ) 
+		if ( r < 1 )
 			fatal_with_errno(EXIT_FAILURE, "can't retrieve model" );
-		switch ( _buf[0] )
+		switch ( opti_buf[0] )
 		{
 			case 'D':
-				dstate_setinfo("ups.model", "Zinto %s", _buf );
+				dstate_setinfo("ups.model", "Zinto %s", opti_buf );
 				break;
 			default:
-				dstate_setinfo("ups.model", "%s", _buf );
+				dstate_setinfo("ups.model", "%s", opti_buf );
 				break;
 		}
 	}
 
-        dstate_addcmd("test.failure.start");
-        dstate_addcmd("load.off");
-        dstate_addcmd("load.on");
-        if( optimodel != OPTIMODEL_ZINTO )
-        	dstate_addcmd("shutdown.stop");
-        dstate_addcmd("shutdown.return");
-        dstate_addcmd("shutdown.stayoff");
+	dstate_addcmd("test.failure.start");
+	dstate_addcmd("load.off");
+	dstate_addcmd("load.on");
+	if (optimodel != OPTIMODEL_ZINTO) {
+		dstate_addcmd("shutdown.stop");
+	}
+	dstate_addcmd("shutdown.return");
+	dstate_addcmd("shutdown.stayoff");
 	upsh.instcmd = instcmd;
 
 	if ( optimodel == OPTIMODEL_ZINTO )
@@ -402,20 +444,20 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("outlet.1.switch", "%d", 1);
 		dstate_setflags("outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("outlet.1.switch", 1);
-		upsh.setvar = setvar;	
+		upsh.setvar = setvar;
 	}
 }
 
 void upsdrv_updateinfo(void)
 {
-	int r = optiquery( "AG" );
+	ssize_t r = optiquery( "AG" );
 
 	/* Online-UPS send only "2" when off, without "\r\n" */
 	if ( r < 1 && optimodel == OPTIMODEL_ZINTO )
 	{
 		ser_send( upsfd, "AG\r\n" );
-		r = ser_get_char(upsfd, &_buf[0], 1, 0);
-		if ( r == 1 && _buf[0] == '2' )
+		r = ser_get_char(upsfd, &opti_buf[0], 1, 0);
+		if ( r == 1 && opti_buf[0] == '2' )
 		{
 			status_init();
 			status_set("OFF");
@@ -431,24 +473,24 @@ void upsdrv_updateinfo(void)
 	}
 	else
 	{
-		int s = strtol( _buf, NULL, 16 );
+		long s = strtol( opti_buf, NULL, 16 );
 		status_init();
 		if ( s & OPTISBIT_OVERLOAD )
-	 	 	status_set("OVER");
+			status_set("OVER");
 		if ( s & OPTISBIT_REPLACE_BATTERY )
-	 	 	status_set("RB");
+			status_set("RB");
 		if ( s & OPTISBIT_ON_BATTERY_POWER )
-	 	 	status_set("OB");
+			status_set("OB");
 		else
-	 	 	status_set("OL");
+			status_set("OL");
 		if ( s & OPTISBIT_NOOUTPUT )
 			status_set("OFF");
 		if ( s & OPTISBIT_LOW_BATTERY )
-	 	 	status_set("LB");
+			status_set("LB");
 		if ( testvar(OPTI_FAKELOW) )  /* FOR TESTING */
-	 	 	status_set("LB");
-	        status_commit();
-	 	dstate_dataok();
+			status_set("LB");
+		status_commit();
+		dstate_dataok();
 	}
 
 	/* Get out of here now if minimum polling is desired */
@@ -457,9 +499,32 @@ void upsdrv_updateinfo(void)
 
 	/* read some easy settings */
 	if ( optimodel == OPTIMODEL_ZINTO )
-		optifill( _pollv_zinto, sizeof(_pollv_zinto)/sizeof(_pollv_zinto[0]) );
+		optifill( opti_pollv_zinto, SIZEOF_ARRAY(opti_pollv_zinto) );
+	else if ( optimodel == OPTIMODEL_PS ) {
+		short inV, outV, fV;
+
+		optifill( opti_pollv_ps, SIZEOF_ARRAY(opti_pollv_ps) );
+
+		r = optiquery( "NV" );
+		str_to_short ( opti_buf, &inV, 10 );
+		r = optiquery( "OV" );
+		str_to_short ( opti_buf, &outV, 10 );
+
+		r = optiquery( "FV" );
+		if ( r >= 1 )
+		{
+			str_to_short ( opti_buf, &fV, 10 );
+			if ( fV > 180 )
+			{
+				inV = inV * 2;
+				outV = outV * 2;
+			}
+		}
+		dstate_setinfo( "input.voltage", "%d", inV );
+		dstate_setinfo( "output.voltage", "%d", outV );
+	}
 	else
-		optifill( _pollv, sizeof(_pollv)/sizeof(_pollv[0]) );
+		optifill( opti_pollv, SIZEOF_ARRAY(opti_pollv) );
 
 	/* Battery voltage is harder */
 	r = optiquery( "BV" );
@@ -467,11 +532,19 @@ void upsdrv_updateinfo(void)
 		upslogx( LOG_WARNING, "cannot retrieve battery voltage" );
 	else
 	{
-		float p, v = strtol( _buf, NULL, 10 ) / 10.0;
+		float p, v = strtol( opti_buf, NULL, 10 ) / 10.0;
 		dstate_setinfo("battery.voltage", "%.1f", v );
 
-		/* battery voltage range: 10.4 - 13.0 VDC */
-		p = ((v  - 10.4) / 2.6) * 100.0;
+		if (v > 20)
+		{
+			/* battery voltage range: 20.8 - 26.0 VDC */
+			p = ((v  - 20.8) / 5.2) * 100.0;
+		}
+		else
+		{
+			/* battery voltage range: 10.4 - 13.0 VDC */
+			p = ((v  - 10.4) / 2.6) * 100.0;
+		}
 		if ( p > 100.0 )
 			p = 100.0;
 		dstate_setinfo("battery.charge", "%.1f", p );
@@ -480,20 +553,23 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */
 
 	/* If get no response, assume on battery & battery low */
-	int s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
+	long	s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
 
-	int r = optiquery( "AG" );
+	ssize_t		r = optiquery( "AG" );
 	if ( r < 1 )
 	{
 		upslogx(LOG_ERR, "can't retrieve ups status during shutdown" );
 	}
 	else
 	{
-		s = strtol( _buf, NULL, 16 );
+		s = strtol( opti_buf, NULL, 16 );
 	}
 
 	/* Turn output stage back on if power returns - but really means
@@ -519,7 +595,7 @@ void upsdrv_shutdown(void)
 	}
 
 	/* Just cycling power, schedule output stage to come back on in 60 seconds */
-	if ( !(s&OPTISBIT_ON_BATTERY_POWER) )
+	if ( !(s & OPTISBIT_ON_BATTERY_POWER) )
 		optiquery( "Cu00000600" );
 
 	/* Shutdown in 8 seconds */
@@ -531,12 +607,17 @@ void upsdrv_help(void)
 	printf(HELP);
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_FLAG, OPTI_MINPOLL, "Only poll for critical status variables");
 	addvar(VAR_FLAG, OPTI_FAKELOW, "Fake a low battery status" );
-	addvar(VAR_FLAG, OPTI_NOWARN_NOIMP, "Supress warnings of unsupported commands");
+	addvar(VAR_FLAG, OPTI_NOWARN_NOIMP, "Suppress warnings of unsupported commands");
 	addvar(VAR_FLAG, OPTI_POWERUP, "(Zinto D) Power-up UPS at start (cannot identify a powered-down Zinto D)");
 }
 
@@ -572,7 +653,7 @@ void upsdrv_cleanup(void)
  * OF - output stage frequency (in 0.1 Hz) <600>
  * OV - output stage voltage <118>
  * OL - output stage load <027>
- * 
+ *
  * FV - Input voltage <120>
  * FF - Input Frequency (0.1Hz) <600>
  * FO - Output volts <120>
@@ -590,7 +671,7 @@ void upsdrv_cleanup(void)
  *         bit 3: 1 = overload
  *         bit 4: 1 = replace battery
  *         bit 5: 1 = on battery, 0 = on line
- *         bit 6: 1 = low battery 
+ *         bit 6: 1 = low battery
  * TR - Test results <00>
  *         00 = Unknown
  *         01 = Passed
@@ -598,7 +679,7 @@ void upsdrv_cleanup(void)
  *         03 = Error
  *         04 = Aborted
  *         05 = In Progress
- *         06 = No test init 
+ *         06 = No test init
  *
  *******************************************
  * ACTIONS

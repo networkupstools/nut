@@ -258,4 +258,3 @@ had some shielding issues from the manufacturer that could maybe cause
 |  NOTE: Solder a wire to the metal shell for use as a FRAME-GND  |
 |                                                                 |
 +-----------------------------------------------------------------+
-

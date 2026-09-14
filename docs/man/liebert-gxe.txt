@@ -1,0 +1,63 @@
+LIEBERT-GXE(8)
+===============
+
+NAME
+----
+
+liebert-gxe - Driver for Liebert GXE series UPS, using the YDN23 serial protocol
+
+SYNOPSIS
+--------
+
+*liebert-gxe* -h
+
+*liebert-gxe* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+liebert-gxe driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+Tested to work on the following units:
+
+* Liebert GXE 01k00TS1101C00
++
+NOTE: This UPS has an RS-232 port and a USB port. The USB port has an
+ACM interface which functions as a serial port for the host operating
+system. Both ports can be used managing the device.
+
+This is an experimental driver.  You have been warned.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in linkman:ups.conf[5]:
+
+*addr=*'num'::
+Set the address of the UPS -- 01 (default) ~ 99.
+
+*retry=*'num'::
+Set the max times of read failures. (UPS sometimes ignores the incoming
+command and causes driver stales. The driver will ignore *retry* failures if
+occurred in a row. However, this does increase the latency if a real stale
+happened. Default to 3)
+
+AUTHORS
+-------
+
+* Gong Zhile <goodspeed at mailo.cat>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

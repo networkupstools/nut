@@ -1,0 +1,4 @@
+# For interpreted languages:
+paths:
+  - scripts/python/module
+  - scripts/python/app

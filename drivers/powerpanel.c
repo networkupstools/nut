@@ -1,6 +1,6 @@
 /*
  * powerpanel.c - Model specific routines for CyberPower text/binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -36,7 +36,7 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -49,6 +49,22 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 /* FIXME: add a sub version for binary and text subdrivers? */
+
+static int reconnect_ups(void)
+{
+	reconnect_trying(RECONNECT_TRYING);
+
+	upsdrv_cleanup();
+	upsdrv_initups();
+	if (INVALID_FD_SER(upsfd))
+		return 0;
+
+	reconnect_trying(RECONNECT_UPDATEINFO);
+	upsdrv_initinfo();
+
+	reconnect_trying(RECONNECT_SUCCESS);
+	return 1;
+}
 
 void upsdrv_initinfo(void)
 {
@@ -84,12 +100,18 @@ void upsdrv_updateinfo(void)
 	if (subdriver[mode]->updateinfo() < 0) {
 		ser_comm_fail("Status read failed!");
 
+		/* First retry a few times by just re-issuing queries, maybe
+		 * there was some line noise; if that fails - try reconnecting.
+		 */
 		if (retry < 3) {
 			retry++;
 		} else {
-			dstate_datastale();
+			if (!reconnect_ups()) {
+				dstate_datastale();
+			}
 		}
 
+		/* Even if reconnected, go on to another updateinfo() cycle */
 		return;
 	}
 
@@ -102,7 +124,10 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int	i, ret;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	i, ret = -1;
 
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power
@@ -118,14 +143,13 @@ void upsdrv_shutdown(void)
 	 * we can't read status or it is telling us we're on battery.
 	 */
 	for (i = 0; i < MAXTRIES; i++) {
-
 		ret = subdriver[mode]->updateinfo();
 		if (ret >= 0) {
 			break;
 		}
 	}
 
-	if (ret) {
+	if (ret > 0) {
 		/*
 		 * When on battery, the 'shutdown.stayoff' command will make
 		 * the UPS switch back on when the power returns.
@@ -134,7 +158,7 @@ void upsdrv_shutdown(void)
 			upslogx(LOG_INFO, "Waiting for power to return...");
 			return;
 		}
-	} else {
+	} else if (ret == 0) {
 		/*
 		 * Apparently, the power came back already, so we just need to reboot.
 		 */
@@ -153,6 +177,12 @@ void upsdrv_initups(void)
 
 	version = getval("protocol");
 	upsfd = ser_open(device_path);
+
+	if (INVALID_FD_SER(upsfd)) {
+		upslogx(LOG_WARNING, "%s: failed to open %s",
+			__func__, device_path);
+		/* \todo: Deal with the failure */
+	}
 
 	ser_set_rts(upsfd, 0);
 
@@ -184,6 +214,11 @@ void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup");
@@ -197,6 +232,11 @@ void upsdrv_makevartable(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_set_dtr(upsfd, 0);
-	ser_close(upsfd, device_path);
+	upsdebugx(1, "%s: begin", __func__);
+	if (VALID_FD_SER(upsfd)) {
+		ser_set_dtr(upsfd, 0);
+		ser_close(upsfd, device_path);
+		upsfd = ERROR_FD_SER;	/* invalidate the closed upsfd */
+	}
+	upsdebugx(1, "%s: end", __func__);
 }

@@ -6,17 +6,22 @@ NAME
 
 microdowell - Driver for Microdowell Enterprise UPS series
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*microdowell* -h
+
+*microdowell* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 Microdowell driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver was developed for the Enterprise Nxx and Bxx models. Other
-Microdowell models may work, too.
+
+This driver was developed for the Enterprise Nxx and Bxx models.
+Other Microdowell models may work, too.
 
 EXTRA ARGUMENTS
 ---------------
@@ -26,6 +31,7 @@ linkman:ups.conf[5].
 
 AUTHOR
 ------
+
 Elio Corbolante <eliocor@microdowell.com>
 
 SEE ALSO
@@ -33,8 +39,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

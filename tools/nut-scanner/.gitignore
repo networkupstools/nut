@@ -1,3 +1,6 @@
 /nut-scanner
 /nutscan-snmp.h
 /nutscan-usb.h
+/serial.c
+/bcmxcp_ser.c
+/README

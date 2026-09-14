@@ -1,0 +1,9 @@
+- how to distribute the nut-scanner and its library? Ie, a single package,
+  or using the nut-{xml,snmp,...} packages.
+  this requires libusb (0.1), Net SNMP, FreeIPMi, Avahi, libupsclient and Neon!
+- consider an SSL/TLS set of packages (ie nut-ssl, ...)
+  or help the port to NSS
+- install the device-recorder.sh script (with libupsclient-dev or a more
+  generic nut-dev that depends?)
+- address the /var/www issue with upstream
+- audit and solve the lintian reports...

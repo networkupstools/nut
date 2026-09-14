@@ -1,4 +1,4 @@
-/* 
+/*
    bestfcom.c - model specific routines for Best Power F-Command ups models
 
    This module is yet another rewritten mangle of the bestuferrups
@@ -45,7 +45,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups/Fortress driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -83,7 +83,7 @@ upsdrv_info_t upsdrv_info = {
 #include <unistd.h>
 
 /* Blob of UPS configuration data from the formatconfig string */
-struct {
+static struct {
 	int valid;			/* set to 1 when this is filled in */
 
 	float  idealbvolts;		/* various interesting battery voltages */
@@ -103,6 +103,7 @@ struct {
 static int inverter_status;
 
 /* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 /* Set up all the funky shared memory stuff used to communicate with upsd */
 void  upsdrv_initinfo (void)
@@ -114,24 +115,24 @@ void  upsdrv_initinfo (void)
 	*/
 	dstate_setinfo("ups.mfr", "%s", "Best Power");
 	switch(fc.model) {
-	  case MExxxx:
-		dstate_setinfo("ups.model", "%s ME%d", fc.name, fc.va);
-		break;
-	  case MDxxxx:
-		dstate_setinfo("ups.model", "%s MD%d", fc.name, fc.va);
-		break;
-	  case FDxxxx:
-		dstate_setinfo("ups.model", "%s FD%d", fc.name, fc.va);
-		break;
-	  case FExxxx:
-		dstate_setinfo("ups.model", "%s FE%d", fc.name, fc.va);
-		break;
-	  case LIxxxx:
-		dstate_setinfo("ups.model", "%s LI%d", fc.name, fc.va);
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
-	} 
+		case MExxxx:
+			dstate_setinfo("ups.model", "%s ME%d", fc.name, fc.va);
+			break;
+		case MDxxxx:
+			dstate_setinfo("ups.model", "%s MD%d", fc.name, fc.va);
+			break;
+		case FDxxxx:
+			dstate_setinfo("ups.model", "%s FD%d", fc.name, fc.va);
+			break;
+		case FExxxx:
+			dstate_setinfo("ups.model", "%s FE%d", fc.name, fc.va);
+			break;
+		case LIxxxx:
+			dstate_setinfo("ups.model", "%s LI%d", fc.name, fc.va);
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
+	}
 
 	dstate_setinfo("ups.power.nominal", "%d", fc.va);
 	dstate_setinfo("ups.realpower.nominal", "%d", fc.watts);
@@ -158,11 +159,17 @@ void  upsdrv_initinfo (void)
 		fc.fullvolts,
 		fc.lowvolts,
 		fc.emptyvolts);
+
+	/* commands ----------------------------------------------- */
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 
 /* atoi() without the freebie octal conversion */
-int bcd2i (const char *bcdstring, const int bcdlen)
+static int bcd2i (const char *bcdstring, const int bcdlen)
 {
 	int i, digit, total = 0, factor = 1;
 	for (i = 1; i < bcdlen; i++)
@@ -181,7 +188,8 @@ int bcd2i (const char *bcdstring, const int bcdlen)
 #define POLL_ALERT "{"
 static void alert_handler(char ch)
 {
-	char buf[256];
+	char buf[SMALLBUF];
+	NUT_UNUSED_VARIABLE(ch);
 
 	/* Received an Inverter status alarm :
 	 * "\r\n{Inverter:     On}\r\n=>"
@@ -195,10 +203,10 @@ static void alert_handler(char ch)
 time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 ----------------------------------------------------
 */
-static int execute(const char *cmd, char *result, int resultsize)
+static ssize_t execute(const char *cmd, char *result, size_t resultsize)
 {
-	int ret;
-	char buf[256];
+	ssize_t ret;
+	char buf[SMALLBUF];
 	unsigned char ch;
 
 	/* Check for the Inverter status alarm if pending :
@@ -250,11 +258,32 @@ void upsdrv_updateinfo(void)
 
 	if (! fc.valid) {
 		upsdebugx(1, "upsupdate run before ups_ident() read ups config");
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+		/* NOTE: This assert() always fails because of "0":
+		 * error: will never be executed [-Werror,-Wunreachable-code]
+		 *   ((0) ? (void) (0) : __assert_fail ("0", "bestfcom.c", 254, __PRETTY_FUNCTION__));
+		 *                  ^
+		 */
 		assert(0);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 	}
 
 	if (execute("f\r", fstring, sizeof(fstring)) >= 80) {
-		int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0, 
+		int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0,
 			alstat=0, vaout=0;
 
 		double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
@@ -269,7 +298,7 @@ void upsdrv_updateinfo(void)
 
 		/* Charger status.	0=off 1=on */
 		charger = bcd2i(&fstring[18], 2);
-		
+
 		/* Input Voltage. integer number */
 		vin	 = bcd2i(&fstring[24], 4);
 
@@ -277,7 +306,7 @@ void upsdrv_updateinfo(void)
 		vout = bcd2i(&fstring[28], 4);
 
 		/* Battery voltage.	 int times 10 */
-		vbatt = ((double)bcd2i(&fstring[50], 4) / 10.0);
+		vbatt = ((double)(bcd2i(&fstring[50], 4)) / 10.0);
 
 		/* Alarm status reg 1.	Bitmask */
 		alstat = bcd2i(&fstring[20], 2);
@@ -286,14 +315,14 @@ void upsdrv_updateinfo(void)
 		alstat = alstat | (bcd2i(&fstring[22], 2) << 8);
 
 		/* AC line frequency */
-		acfreq = ((double)bcd2i(&fstring[54], 4) / 100.0);
+		acfreq = ((double)(bcd2i(&fstring[54], 4)) / 100.0);
 
 		/* Runtime remaining (UPS reports minutes) */
 		btimeleft = bcd2i(&fstring[58], 4) * 60;
 
 		if (fc.model != FDxxxx) {
 			/* Iout.  int times 10 */
-			ampsout = ((double)bcd2i(&fstring[36], 4) / 10.0);
+			ampsout = ((double)(bcd2i(&fstring[36], 4)) / 10.0);
 
 			/* Volt-amps out.  int	*/
 			vaout = bcd2i(&fstring[40], 6);
@@ -304,40 +333,40 @@ void upsdrv_updateinfo(void)
 		}
 
 		if (fc.model != LIxxxx) {
-			upstemp = (double) bcd2i(&fstring[62], 4);
+			upstemp = (double)(bcd2i(&fstring[62], 4));
 		}
 
 		/* Percent Load */
 		switch(fc.model) {
-		  case LIxxxx:
-		  case FDxxxx:
-		  case FExxxx:
-		  case MExxxx:
-			if (execute("d 16\r", tmp, sizeof(tmp)) > 0) {
-				int l;
-				sscanf(tmp, "16 FullLoad%% %d", &l);
-				loadpercent = (double) l;
-			}
-			break;
-		  case MDxxxx:
-			if (execute("d 22\r", tmp, sizeof(tmp)) > 0) {
-				int l;
-				sscanf(tmp, "22 FullLoad%% %d", &l);
-				loadpercent = (double) l;
-			}
-			break;
-		  default: /* Will never happen, caught in upsdrv_initups() */
-			fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
+			case LIxxxx:
+			case FDxxxx:
+			case FExxxx:
+			case MExxxx:
+				if (execute("d 16\r", tmp, sizeof(tmp)) > 0) {
+					int l;
+					sscanf(tmp, "16 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			case MDxxxx:
+				if (execute("d 22\r", tmp, sizeof(tmp)) > 0) {
+					int l;
+					sscanf(tmp, "22 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			default: /* Will never happen, caught in upsdrv_initups() */
+				fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
 		}
 
 		/* Compute battery percent left based on battery voltages. */
-		battpercent = ((vbatt - fc.emptyvolts) 
+		battpercent = ((vbatt - fc.emptyvolts)
 					   / (fc.idealbvolts - fc.emptyvolts) * 100.0);
-		if (battpercent < 0.0) 
+		if (battpercent < 0.0)
 			battpercent = 0.0;
 		else if (battpercent > 100.0)
 			battpercent = 100.0;
-		
+
 		/* Compute status string */
 		{
 			int lowbatt, lowvolts, overload, replacebatt, boosting, trimming;
@@ -353,7 +382,7 @@ void upsdrv_updateinfo(void)
 			lowvolts = (vbatt <= fc.lowvolts);
 
 			status_init();
-			 
+
 			if (inverter) {
 				if (inverter_status < 1) {
 					upsdebugx(1, "Inverter On, charger: %d battery time left: %d",
@@ -427,7 +456,7 @@ static void ups_sync(void)
 	char buf[256];
 
 	/* A bit better sanity might be good here. As is, we expect the
-	 human to observe the time being totally not a time. */
+	 * human to observe the time being totally not a time. */
 
 	if (execute("time\r", buf, sizeof(buf)) > 0) {
 		upsdebugx(1, "UPS Time: %s", buf);
@@ -439,12 +468,39 @@ static void ups_sync(void)
 	ser_get_line(upsfd, buf, sizeof(buf), '>', "\012", 3, 0);
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
+		/* NB: hard-wired password */
+		ser_send(upsfd, "pw377\r");
+		/* power off in 10 seconds and restart when line power returns,
+		 * FE7K required a min of 5 seconds for off to function */
+		ser_send(upsfd, "o 10 a\r");
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	/* NB: hard-wired password */
-	ser_send(upsfd, "pw377\r");
-	ser_send(upsfd, "off 1 a\r");	/* power off in 1 second and restart when line power returns */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* list flags and values that you want to receive via -x */
@@ -453,6 +509,11 @@ void upsdrv_makevartable(void)
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -477,10 +538,10 @@ static void sync_serial(void) {
 static void setup_serial(void)
 {
 	struct termios tio;
-			 
+
 	if (tcgetattr(upsfd, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
-				 
+
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
 	tio.c_cflag = (CS8 | CREAD | HUPCL | CLOCAL);
@@ -525,11 +586,11 @@ Version:  8.07
 Released: 08/01/1995
 */
 
-void upsdrv_init_nofc(void)
+static void upsdrv_init_nofc(void)
 {
 	char tmp[256], rstring[1024];
 
-	/* This is a Best UPS	
+	/* This is a Best UPS
 	 * Set initial values for old Fortress???
 	 */
 
@@ -545,7 +606,7 @@ void upsdrv_init_nofc(void)
 	upsdebugx(2, "id response: %s", rstring);
 
 	/* Better way to identify this unit is using "d 15\r", which results in
-	   "15 M#	 MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
+	 * "15 M#	 MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
 	if (strstr(rstring, "Unit ID \"C1K")){
 		fc.model = MDxxxx;
 		snprintf(fc.name, sizeof(fc.name), "%s", "Micro Ferrups");
@@ -577,7 +638,8 @@ void upsdrv_init_nofc(void)
 		}
 	} else
 	if (strstr(rstring, "Model:	   FE")
-	    || strstr(rstring, "Model:    FE")){
+	    || strstr(rstring, "Model:    FE"))
+	{
 		fc.model = FExxxx;
 		fc.type = FERRUPS;
 		snprintf(fc.name, sizeof(fc.name), "%s", "Ferrups");
@@ -586,56 +648,55 @@ void upsdrv_init_nofc(void)
 		/* How does the old Fortress respond to this? */
 		upsdebugx(2, "Old Best Fortress???");
 		/* fc.model = FORTRESS; */
-	} 
+	}
 
 	if (fc.model == UNKNOWN) {
 		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
 	}
 
 	switch(fc.model) {
-	  case MExxxx:
-	  case MDxxxx:
-	  case FDxxxx:
-		/* determine shutdown battery voltage */
-		if (execute("d 27\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "27 LowBatt %f", &fc.emptyvolts);
-		}
-		/* determine near low battery voltage */
-		if (execute("d 30\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "30 NLBatt %f", &fc.lowvolts);
-		}
-		/* determine fully charged battery voltage */
-		if (execute("d 28\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "28 Hi Batt %f", &fc.fullvolts);
-		}
-		fc.fullvolts = 13.70;
-		/* determine "ideal" voltage by a guess */
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		break;
-	  case FExxxx:
-		if (execute("d 45\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "45 RatedVA %d", &fc.va);			/* 4300  */
-		}
-		if (execute("d 46\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "46 RatedW %d", &fc.watts);		/* 3000  */
-		}
-		if (execute("d 65\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "65 LoBatV %f", &fc.emptyvolts);	/* 41.00 */
-		}
-		if (execute("d 66\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "66 NLBatV %f", &fc.lowvolts);		/* 44.00 */
-		}
-		if (execute("d 67\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "67 HiBatV %f", &fc.fullvolts);	/* 59.60 */
-		}
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		if (fc.va < 1.0) {
-			fatalx(EXIT_FAILURE, "Error determining Ferrups UPS rating.");
-		}
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
-		break;
+		case MExxxx:
+		case MDxxxx:
+		case FDxxxx:
+			/* determine shutdown battery voltage */
+			if (execute("d 27\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "27 LowBatt %f", &fc.emptyvolts);
+			}
+			/* determine near low battery voltage */
+			if (execute("d 30\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "30 NLBatt %f", &fc.lowvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 28\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "28 Hi Batt %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 13.70;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case FExxxx:
+			if (execute("d 45\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "45 RatedVA %d", &fc.va);			/* 4300  */
+			}
+			if (execute("d 46\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "46 RatedW %d", &fc.watts);		/* 3000  */
+			}
+			if (execute("d 65\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "65 LoBatV %f", &fc.emptyvolts);	/* 41.00 */
+			}
+			if (execute("d 66\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "66 NLBatV %f", &fc.lowvolts);		/* 44.00 */
+			}
+			if (execute("d 67\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "67 HiBatV %f", &fc.fullvolts);	/* 59.60 */
+			}
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			if (fc.va < 1.0) {
+				fatalx(EXIT_FAILURE, "Error determining Ferrups UPS rating.");
+			}
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
 	}
 	fc.valid = 1;
 }
@@ -657,7 +718,7 @@ Model: [0,1] => 00 = unk, 01 = Patriot/SPS, 02 = FortressII, 03 = Ferrups, 04 = 
        [2,3] => 00 = LI520, 01 = LI720, 02 = LI1020, 03 = LI1420, 07 = ???
 */
 
-void upsdrv_init_fc(const char *fcstring)
+static void upsdrv_init_fc(const char *fcstring)
 {
 	char tmp[256];
 
@@ -709,24 +770,24 @@ void upsdrv_init_fc(const char *fcstring)
 	}
 
 	switch(fc.model) {
-	  case LIxxxx:
-		fc.va = bcd2i(&fcstring[11], 5);
-		fc.watts = bcd2i(&fcstring[16], 5);
+		case LIxxxx:
+			fc.va = bcd2i(&fcstring[11], 5);
+			fc.watts = bcd2i(&fcstring[16], 5);
 
-		/* determine shutdown battery voltage */
-		fc.emptyvolts= ((double)bcd2i(&fcstring[57], 4) / 10.0);
+			/* determine shutdown battery voltage */
+			fc.emptyvolts= ((double)(bcd2i(&fcstring[57], 4)) / 10.0);
 
-		/* determine fully charged battery voltage */
-		fc.lowvolts= ((double)bcd2i(&fcstring[53], 4) / 10.0);
+			/* determine fully charged battery voltage */
+			fc.lowvolts= ((double)(bcd2i(&fcstring[53], 4)) / 10.0);
 
-		/* determine fully charged battery voltage */
-		fc.fullvolts= ((double)bcd2i(&fcstring[49], 4) / 10.0);
+			/* determine fully charged battery voltage */
+			fc.fullvolts= ((double)(bcd2i(&fcstring[49], 4)) / 10.0);
 
-		/* determine "ideal" voltage by a guess */
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_fc()", tmp);
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_fc()", tmp);
 	}
 	fc.valid = 1;
 }

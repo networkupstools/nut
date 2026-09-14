@@ -1,0 +1,38 @@
+name: "GHA-00: Pre-clean"
+
+on:
+  push:
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+    tags:
+      - v*
+  pull_request_target:
+    # The branches below must be a subset of the branches above
+    # Note that for PRs this runs the copy of workflow in the
+    # target branch (and only then gets some of the permissions
+    # listed below), and identification/naming of PR source vs.
+    # a pushed branch (e.g. master updated by a PR merge) is
+    # tricky.
+    branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
+  workflow_dispatch:
+    # Allow manually running the action, e.g. if disabled after some quietness in the source
+
+permissions:
+  checks: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pr-deleter
+        if: github.event.pull_request.number > 0
+        uses: maheshrayas/action-pr-comment-delete@v3.0
+        with:
+          github_token: '${{ secrets.GITHUB_TOKEN }}'
+          org:   networkupstools	# '${{context.repo.owner}}'
+          repo:  nut	# '${{context.repo.repo}}'
+          user:  'AppVeyorBot'
+          # user:  'github-actions[bot]' #commented by the userid
+          issue: '${{github.event.number}}'

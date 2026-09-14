@@ -6,59 +6,96 @@ NAME
 
 libnutclient_variables, nutclient_get_device_variables,
 nutclient_get_device_rw_variables, nutclient_has_device_variable,
-nutclient_get_device_variable_description, nutclient_get_device_variable_values,
+nutclient_get_device_variable_description,
+nutclient_get_device_variable_values,
 nutclient_set_device_variable_value, nutclient_set_device_variable_values -
-Variable related functions in Network UPS Tools high-level client access library
+Variable related functions in Network UPS Tools high-level client access
+library
 
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
 
-	strarr nutclient_get_device_variables(NUTCLIENT_t client, const char* dev);
-	strarr nutclient_get_device_rw_variables(NUTCLIENT_t client, const char* dev);
-	int nutclient_has_device_variable(NUTCLIENT_t client, const char* dev, const char* var);
-	char* nutclient_get_device_variable_description(NUTCLIENT_t client, const char* dev, const char* var);
-	strarr nutclient_get_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var);
-	void nutclient_set_device_variable_value(NUTCLIENT_t client, const char* dev, const char* var, const char* value);
-	void nutclient_set_device_variable_values(NUTCLIENT_t client, const char* dev, const char* var, const strarr values);
+	typedef char** strarr;
+
+	strarr nutclient_get_device_variables(NUTCLIENT_t client,
+		const char* dev);
+
+	strarr nutclient_get_device_rw_variables(NUTCLIENT_t client,
+		const char* dev);
+
+	int nutclient_has_device_variable(NUTCLIENT_t client,
+		const char* dev, const char* var);
+
+	char* nutclient_get_device_variable_description(NUTCLIENT_t client,
+		const char* dev, const char* var);
+
+	strarr nutclient_get_device_variable_values(NUTCLIENT_t client,
+		const char* dev, const char* var);
+
+	void nutclient_set_device_variable_value(NUTCLIENT_t client,
+		const char* dev, const char* var, const char* value);
+
+	void nutclient_set_device_variable_values(NUTCLIENT_t client,
+		const char* dev, const char* var, const strarr values);
+------
 
 DESCRIPTION
 -----------
 
 These functions allow to manage variables of devices.
 
-The *nutclient_get_device_variables()* function retrieve the list of variables names for a device.
-The returned strarr must be freed by 'strarr_free'.
+* The *nutclient_get_device_variables()* function retrieves the list
+  of variables names for a device.
++
+The returned strarr must be freed by 'strarr_free'
+(see linkman:libnutclient_general[3]).
 
-The *nutclient_get_device_rw_variables* function retrieve the list of read-write variables names for a device.
-The returned strarr must be freed by 'strarr_free'.
+* The *nutclient_get_device_rw_variables* function retrieves the list
+  of read-write variables names for a device.
++
+The returned strarr must be freed by 'strarr_free'
+(see linkman:libnutclient_general[3]).
 
-The *nutclient_has_device_variable* function test if the specified variable is supported by the device.
-Return 1 is supported and 0 if not.
+* The *nutclient_has_device_variable* function tests if the specified
+  variable is supported by the device.
++
+Return '1' if supported and '0' if not.
 
-The *nutclient_get_device_variable_description* function retrieve the variable description, if any.
-The returned string must be freed.
+* The *nutclient_get_device_variable_description* function retrieves
+  the variable description, if any.
++
+The returned string must be freed by linkmanext:free[3].
 
-The *nutclient_get_device_variable_values* returns variable values (generally only one).
-The returned strarr must be freed by 'strarr_free'.
+* The *nutclient_get_device_variable_values* returns variable values
+  (generally only one).
++
+The returned strarr must be freed by 'strarr_free'
+(see linkman:libnutclient_general[3]).
 
-The *nutclient_set_device_variable_value* intend to set the value of the specified variable.
+* The *nutclient_set_device_variable_value* intends to set the value
+  of the specified variable.
 
-The *nutclient_set_device_variable_values* intend to set multiple values of the specified variable.
+* The *nutclient_set_device_variable_values* intends to set multiple
+  values of the specified variable.
 
-'dev' is the device name.
+Common arguments:
 
-'var' is the variable name.
+* 'dev' is the device name.
 
-'value' is the variable value.
+* 'var' is the variable name.
 
-'values' is the variable array of values.
+* 'value' is the variable value.
+
+* 'values' is the variable array of values.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_devices[3]
 linkman:libnutclient_general[3]

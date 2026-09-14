@@ -1,0 +1,21 @@
+VALGRIND resources
+==================
+
+Helper script and suppression file to analyze NUT binaries.
+
+Example use-case:
+----
+:; make -ks -j && LD_LIBRARY_PATH=`pwd`/clients/.libs \
+    ./scripts/valgrind/valgrind.sh ./tools/nut-scanner/nut-scanner -DDDDDD -m auto
+----
+
+Note that the script is generated under `${top_builddir}` by `configure` from
+a template file located in `${top_srcdir}/scripts/valgrind/valgrind.sh.in`.
+You might be able to run it directly, falling back to a `valgrind` program in
+your `PATH`, if any.
+
+See also:
+
+* link:https://wiki.wxwidgets.org/Valgrind_Suppression_File_Howto[Valgrind Suppression File How-to]
+  - Notably, add `--gen-suppressions=all --error-limit=no` to `valgrind`
+    program options to generate suppression snippets

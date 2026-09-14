@@ -1,0 +1,34 @@
+UPSCLI_FREE_AUTHCONF_LIST(3)
+============================
+
+NAME
+----
+
+upscli_free_authconf_list - Free the list of authentication configurations
+
+SYNOPSIS
+--------
+
+------
+	#include <authconf.h>
+
+	void upscli_free_authconf_list(void);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_free_authconf_list()* function frees the memory allocated for the
+entire list and resets the internal list pointer to NULL.
+
+RETURN VALUE
+------------
+
+The *upscli_free_authconf_list()* function returns nothing.
+
+SEE ALSO
+--------
+
+linkman:upscli_read_authconf_file[3], linkman:upscli_find_authconf_item[3],
+linkman:upscli_get_authconf_list[3], linkman:upscli_dump_authconf_list[3],
+linkman:upscli_create_authconf_item[3], linkman:upscli_free_authconf_item[3]

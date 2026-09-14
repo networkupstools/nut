@@ -11,6 +11,9 @@ export PATH
 
 UPSDPATH=/usr/local/ups/sbin
 
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
+
 # See how we are called.
 case "$1" in
   'start')
@@ -19,7 +22,7 @@ case "$1" in
        $UPSDPATH/upsmon >/dev/console 2>&1
        touch /var/lock/subsys/upsmon
     fi
-    ;;        
+    ;;
   'stop')
     echo "NUT Stopping UPS monitor "
     /usr/bin/pkill -x upsmon

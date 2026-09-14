@@ -1,0 +1,84 @@
+/* apcmicrolink.h - APC Microlink protocol driver definitions
+ *
+ * Copyright (C) 2026 Lukas Schmid <lukas.schmid@netcube.li>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ */
+
+#ifndef APCMICROLINK_H
+#define APCMICROLINK_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include <time.h>
+
+/* Named wrapper for time(NULL) - a bare time(NULL) inline in an expression
+ * reads less clearly than a named call. Safe to use anywhere a plain
+ * time(NULL) would be, including inside a short-circuited condition: it is
+ * still just a function call evaluated at that exact point, not a hoisted
+ * value, so it introduces no new call where one didn't already happen. */
+static inline time_t microlink_now(void)
+{
+	return time(NULL);
+}
+
+#define MLINK_MAX_FRAME				256
+#define MLINK_MAX_PAYLOAD			(MLINK_MAX_FRAME - 3)
+#define MLINK_RECORD_LEN			(MLINK_MAX_FRAME)
+#define MLINK_DESCRIPTOR_MAX_BLOB	(256 * MLINK_MAX_PAYLOAD)
+#define MLINK_DESCRIPTOR_MAX_USAGES	1024
+
+#define MLINK_OBJ_PROTOCOL			0x00
+
+#define MLINK_DESC_SLAVE_PASSWORD  "2:4.8.5"
+#define MLINK_DESC_MASTER_PASSWORD "2:4.8.6"
+#define MLINK_DESC_AUTH_STATUS     "2:4.8.9"
+#define MLINK_DESC_SERIALNUMBER    "2:4.9.40"
+#define MLINK_DESC_TEST_SCHEDULE   "2:4.5.18"
+
+/* Members of battery_test_interval_map that imply a recurring self test, by
+ * period. The other two ("Never", "OnStartUpOnly") imply none. */
+#define MLINK_TEST_SCHEDULE_7DAY   ((1U << 2) | (1U << 4))
+#define MLINK_TEST_SCHEDULE_14DAY  ((1U << 3) | (1U << 5))
+
+/* Bit 0 of AUTH_STATUS is the device's "the slave password you sent was
+ * accepted" flag, and it gates whether the device will serve its
+ * measurement pages at all. No device seen so far sets any other bit, so
+ * anything outside this mask is reported rather than quietly masked off -
+ * see microlink_check_auth_result(). */
+#define MLINK_AUTH_STATUS_VALID    (1U << 0)
+
+#define MLINK_PAGE0_FLAG_AUTH_REQUIRED		(1U << 0)
+#define MLINK_PAGE0_FLAG_IMPLICIT_STUFFING	(1U << 1)
+#define MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT	(1U << 3)
+#define MLINK_PAGE0_FLAG_FIRMWARE_UPDATE_NEEDED	(1U << 4)
+
+typedef struct microlink_object_s {
+	int seen;
+	size_t len;
+	unsigned char data[MLINK_MAX_PAYLOAD];
+} microlink_object_t;
+
+typedef struct microlink_descriptor_usage_s {
+	int valid;
+	int skipped;
+	char path[64];
+	size_t data_offset;
+	size_t size;
+} microlink_descriptor_usage_t;
+
+typedef struct microlink_page0_state_s {
+	size_t width;
+	unsigned int count;
+	unsigned char version;
+	unsigned char series_data_version;
+	unsigned char descriptor_version;
+	unsigned char flags;
+	uint16_t series_id;
+	uint16_t descriptor_ptr;
+} microlink_page0_state_t;
+
+#endif /* APCMICROLINK_H */

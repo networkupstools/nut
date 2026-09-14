@@ -22,20 +22,23 @@
    2005/10/26 - Version 0.40 - Operational-2 release
    2005/11/29 - Version 0.50 - rhino commands release
 
-   
+
    http://www.microsol.com.br
 
 */
 
+#include "config.h" /* must be the first header */
+
 #include <stdio.h>
-#include <math.h>
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
-#define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_NAME	"Microsol Rhino UPS driver"
+#define DRIVER_VERSION	"0.57"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -129,10 +132,10 @@ static unsigned char EventosRede, EventosSaida, EventosBateria;
 /* Methods */
 static void ScanReceivePack(void);
 static int AutonomyCalc( int );
-static void CommReceive(const unsigned char*, int );
+static void CommReceive(const unsigned char*, ssize_t);
 static void getbaseinfo(void);
 static void getupdateinfo(void);
-  
+
 static unsigned char RecPack[37];
 
 /* comment on english language */
@@ -160,327 +163,330 @@ static unsigned char RecPack[37];
 static int
 AutonomyCalc( int ia ) /* all models */
 {
+	int result = 0;
+	double auton, calc, currin;
 
-  int result = 0;
-  double  auton, calc, currin;
-
-  if( ia )
-    {
-      if( ( BattVoltage == 0 ) )
-	result = 0;
-      else
+	if( ia )
 	{
-	  calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
-	  auton = pow( calc, 1.18 );
-	  if(  ( auton == 0 ) )
-	    result = 0;
-	  else
-	    {
-	      auton = 1.0 / auton;
-	      auton = auton * 11.07;
-	      calc = ( BattVoltage * 1.0 / 10 ) - 168;
-	      result = (int) ( auton * calc * 2.5 );
-	    }
-	}
-    }
-  else
-    {
-      currin = ( UtilPowerOut + ConstInt ) *1.0 / Vin;
-      auton = ( ( ( AmpH *1.0 / currin ) * 60 * ( ( BattVoltage - VbatMin ) * 1.0 /( VbatNom - VbatMin ) ) * FM ) + FA );
-      if(  ( BattVoltage > 129 ) || ( BattVoltage < 144 ) )
-	result = 133;
-      else
-	result = (int) auton;
-    }
+		if( d_equal(BattVoltage, 0) )
+			result = 0;
+		else
+		{
+					calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
+					auton = pow( calc, 1.18 );
+					if( d_equal(auton, 0) )
+						result = 0;
+					else
+						{
+							auton = 1.0 / auton;
+							auton = auton * 11.07;
+							calc = ( BattVoltage * 1.0 / 10 ) - 168;
+							result = (int) ( auton * calc * 2.5 );
+						}
+				}
+		}
+	else
+		{
+			currin = ( UtilPowerOut + ConstInt ) *1.0 / Vin;
+			auton = ( ( ( AmpH *1.0 / currin ) * 60 * ( ( BattVoltage - VbatMin ) * 1.0 /( VbatNom - VbatMin ) ) * FM ) + FA );
+			if( ( BattVoltage > 129 ) && ( BattVoltage < 144 ) )
+				result = 133;
+			else
+				result = (int) auton;
+		}
 
-  return result;
-
+	return result;
 }
 
 /* Treat received package */
 static void
 ScanReceivePack( void )
 {
+	/* model independent data */
 
-  /* model independent data */
+	Year = RecPack[31] + ( RecPack[32] * 100 );
+	Month = RecPack[30];
+	Day = RecPack[29];
 
-  Year = RecPack[31] + ( RecPack[32] * 100 );
-  Month = RecPack[30];
-  Day = RecPack[29];
+	/* UPS internal time */
+	ihour = RecPack[26];
+	imin  = RecPack[27];
+	isec  = RecPack[28];
 
-  /* UPS internal time */
-  ihour = RecPack[26];
-  imin  = RecPack[27];
-  isec  = RecPack[28];
+	/* Flag1 */
+	/* SobreTemp        = ( ( 0x01 & RecPack[33]) = 0x01 ); */
+	/* OutputOn         = ( ( 0x02 & RecPack[33]) = 0x02 ); OutputOn */
+	/* InputOn          = ( ( 0x04 & RecPack[33]) = 0x04 ); InputOn */
+	/* ByPassOn         = ( ( 0x08 & RecPack[33]) = 0x08 ); BypassOn */
+	/* Auto_HAB         = ( ( 0x10 & RecPack[33]) = 0x10 ); */
+	/* Timer_HAB        = ( ( 0x20 & RecPack[33]) = 0x20 ); */
+	/* Boost_Ligado     = ( ( 0x40 & RecPack[33]) = 0x40 ); */
+	/* Bateria_Desc     = ( ( 0x80 & RecPack[33]) = 0x80 ); */
 
-  /* Flag1 */
-  /* SobreTemp        = ( ( 0x01 & RecPack[33]) = 0x01 ); */
-  /* OutputOn         = ( ( 0x02 & RecPack[33]) = 0x02 ); OutputOn */
-  /* InputOn          = ( ( 0x04 & RecPack[33]) = 0x04 ); InputOn */
-  /* ByPassOn         = ( ( 0x08 & RecPack[33]) = 0x08 ); BypassOn */
-  /* Auto_HAB         = ( ( 0x10 & RecPack[33]) = 0x10 ); */
-  /* Timer_HAB        = ( ( 0x20 & RecPack[33]) = 0x20 ); */
-  /* Boost_Ligado     = ( ( 0x40 & RecPack[33]) = 0x40 ); */
-  /* Bateria_Desc     = ( ( 0x80 & RecPack[33]) = 0x80 ); */
+	/* Flag2 */
+	/* Quad_Ant_Ent     = ( ( 0x01 & RecPack[34]) = 0x01 ); */
+	/* Quadratura       = ( ( 0x02 & RecPack[34]) = 0x02 ); */
+	/* Termino_XMODEM   = ( ( 0x04 & RecPack[34]) = 0x04 ); */
+	/* Em_Sincronismo   = ( ( 0x08 & RecPack[34]) = 0x08 ); */
+	/* Out110           = ( ( 0x10 & RecPack[34]) = 0x10 ); Out110 */
+	/* Exec_Beep        = ( ( 0x20 & RecPack[34]) = 0x20 ); */
+	/* LowBatt          = ( ( 0x40 & RecPack[34]) = 0x40 ); LowBatt */
+	/* Boost_Sobre      = ( ( 0x80 & RecPack[34]) = 0x80 ); */
 
-  /* Flag2 */
-  /* Quad_Ant_Ent     = ( ( 0x01 & RecPack[34]) = 0x01 ); */
-  /* Quadratura       = ( ( 0x02 & RecPack[34]) = 0x02 ); */
-  /* Termino_XMODEM   = ( ( 0x04 & RecPack[34]) = 0x04 ); */
-  /* Em_Sincronismo   = ( ( 0x08 & RecPack[34]) = 0x08 ); */
-  /* Out110           = ( ( 0x10 & RecPack[34]) = 0x10 ); Out110 */
-  /* Exec_Beep        = ( ( 0x20 & RecPack[34]) = 0x20 ); */
-  /* LowBatt          = ( ( 0x40 & RecPack[34]) = 0x40 ); LowBatt */
-  /* Boost_Sobre      = ( ( 0x80 & RecPack[34]) = 0x80 ); */
+	/* Flag3 */
+	/* OverCharge       = ( ( 0x01 & RecPack[35]) = 0x01 ); OverCharge */
+	/* SourceFail       = ( ( 0x02 & RecPack[35]) = 0x02 ); SourceFail */
+	/* RedeAnterior     = ( ( 0x04 & RecPack[35]) = 0x04 ); */
+	/* Cmd_Executado    = ( ( 0x08 & RecPack[35]) = 0x08 ); */
+	/* Exec_Autoteste   = ( ( 0x10 & RecPack[35]) = 0x10 ); */
+	/* Quad_Ant_Sai     = ( ( 0x20 & RecPack[35]) = 0x20 ); */
+	/* ComandoSerial    = ( ( 0x40 & RecPack[35]) = 0x40 ); */
+	/* SobreTensao      = ( ( 0x80 & RecPack[35]) = 0x80 ); */
 
-  /* Flag3 */
-  /* OverCharge       = ( ( 0x01 & RecPack[35]) = 0x01 ); OverCharge */
-  /* SourceFail       = ( ( 0x02 & RecPack[35]) = 0x02 ); SourceFail */
-  /* RedeAnterior     = ( ( 0x04 & RecPack[35]) = 0x04 ); */
-  /* Cmd_Executado    = ( ( 0x08 & RecPack[35]) = 0x08 ); */
-  /* Exec_Autoteste   = ( ( 0x10 & RecPack[35]) = 0x10 ); */
-  /* Quad_Ant_Sai     = ( ( 0x20 & RecPack[35]) = 0x20 ); */
-  /* ComandoSerial    = ( ( 0x40 & RecPack[35]) = 0x40 ); */
-  /* SobreTensao      = ( ( 0x80 & RecPack[35]) = 0x80 ); */
+	OutputOn = ( ( 0x02 & RecPack[33] ) == 0x02 );
+	InputOn =  ( ( 0x04 & RecPack[33] ) == 0x04 );
+	BypassOn = ( ( 0x08 & RecPack[33] ) == 0x08 );
 
-  OutputOn = ( ( 0x02  & RecPack[33] ) == 0x02 );
-  InputOn = ( ( 0x04  & RecPack[33] ) == 0x04 );
-  BypassOn = ( ( 0x08  & RecPack[33] ) == 0x08 );
+	Out110 =  ( ( 0x10 & RecPack[34] ) == 0x10 );
+	LowBatt = ( ( 0x40 & RecPack[34] ) == 0x40 );
 
-  Out110 = ( ( 0x10  & RecPack[34] ) == 0x10 );
-  LowBatt = ( ( 0x40  & RecPack[34] ) == 0x40 );
+	OverCharge = ( ( 0x01 & RecPack[35] ) == 0x01 );
+	SourceFail = ( ( 0x02 & RecPack[35] ) == 0x02 );
 
-  OverCharge = ( ( 0x01 & RecPack[35] ) == 0x01 );
-  SourceFail = ( ( 0x02  & RecPack[35] ) == 0x02 );
+	/* model dependent data read */
 
-  /* model dependent data read */
-  
-  PowerFactor = 800;
-  
-  if(  RecPack[0] ==0xC2 )
-    {
-      LimInfBattSrc = 174;
-      LimSupBattSrc = 192;/* 180????? carregador eh 180 (SCOPOS) */
-      LimInfBattInv = 174;
-      LimSupBattInv = 192;/* 170????? (SCOPOS) */
-    }
-  else
-    {
-      LimInfBattSrc = 138;
-      LimSupBattSrc = 162;/* 180????? carregador eh 180 (SCOPOS) */
-      LimInfBattInv = 126;
-      LimSupBattInv = 156;/* 170????? (SCOPOS) */
-    }
-  
-  BattNonValue = 144;
-  /*  VersaoInterna = "R10" + IntToStr( RecPack[1] ); */
-  InVoltage = RecPack[2];
-  InCurrent = RecPack[3];
-  UtilPowerIn = RecPack[4] + RecPack[5] * 256;
-  AppPowerIn = RecPack[6] + RecPack[7] * 256;
-  FatorPotEntrada = RecPack[8];
-  InFreq = ( RecPack[9] + RecPack[10] * 256 ) * 1.0 / 10;
-  OutVoltage = RecPack[11];
-  OutCurrent = RecPack[12];
-  UtilPowerOut = RecPack[13] + RecPack[14] * 256;
-  AppPowerOut = RecPack[15] + RecPack[16] * 256;
-  FatorPotSaida = RecPack[17];
-  OutFreq = ( RecPack[18] + RecPack[19] * 256 ) * 1.0 / 10;
-  BattVoltage = RecPack[20];
-  BoostVolt = RecPack[21] + RecPack[22] * 256;
-  Temperature = ( 0x7F & RecPack[23] );
-  Rendimento = RecPack[24];
+	PowerFactor = 800;
 
-  /* model independent data */
-  
-  if(  ( BattVoltage < LimInfBattInv ) )
-    CriticBatt = true;
-  
-  if(  BypassOn )
-    OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
-  
-  if(  SourceFail && RedeAnterior ) /* falha pela primeira vez */
-    OcorrenciaDeFalha = true;
-  
-  if(  !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
-    RetornoDaRede = true;
-  
-  if( !( SourceFail ) == RedeAnterior )
-    {
-      RetornoDaRede = false;
-      OcorrenciaDeFalha = false;
-    }
-  
-  RedeAnterior = !( SourceFail );
-  
-  LimInfSaida = 75;
-  LimSupSaida = 150;
-  ValorNominalSaida = 110;
-  
-  LimInfEntrada = 190;
-  LimSupEntrada = 250;
-  ValorNominalEntrada = 220;
-  
-  if(  SourceFail )
-    {
-      StatusEntrada = 2;
-      RecPack[8] = 200; /* ?????????????????????????????????? */
-    }
-  else
-    {
-      StatusEntrada = 1;
-      RecPack[8] = 99; /* ??????????????????????????????????? */
-    }
-  
-  if(  OutputOn )     /* Output Status */
-    StatusSaida = 2;
-  else
-    StatusSaida = 1;
-  
-  if(  OverCharge )
-    StatusSaida = 3;
-  
-  if(  CriticBatt ) /* Battery Status */
-    StatusBateria = 4;
-  else
-    StatusBateria = 1;
-  
-  EventosRede = 0;
-  
-  if(  OcorrenciaDeFalha )
-    EventosRede = 1;
-  
-  if(  RetornoDaRede )
-    EventosRede = 2;
-  
-  /* verify InversorOn */
-  if(  Flag_inversor )
-    {
-      oldInversorOn = InputOn;
-      Flag_inversor = false;
-    }
+	if( RecPack[0] == 0xC2 )
+	{
+		LimInfBattSrc = 174;
+		LimSupBattSrc = 192;/* 180????? carregador eh 180 (SCOPOS) */
+		LimInfBattInv = 174;
+		LimSupBattInv = 192;/* 170????? (SCOPOS) */
+	}
+	else
+	{
+		LimInfBattSrc = 138;
+		LimSupBattSrc = 162;/* 180????? carregador eh 180 (SCOPOS) */
+		LimInfBattInv = 126;
+		LimSupBattInv = 156;/* 170????? (SCOPOS) */
+	}
 
-  EventosSaida = 0;
-  if(  InputOn && !( oldInversorOn ) )
-    EventosSaida = 26;
-  if(  oldInversorOn && !( InputOn ) )
-    EventosSaida = 27;
-  oldInversorOn = InputOn;
-  if(  SuperAquecimento && !( SuperAquecimentoAnterior ) )
-    EventosSaida = 12;
-  if(  SuperAquecimentoAnterior && !( SuperAquecimento ) )
-    EventosSaida = 13;
-  SuperAquecimentoAnterior = SuperAquecimento;
-  EventosBateria = 0;
-  OldCritBatt = CriticBatt;
+	BattNonValue = 144;
+	/* VersaoInterna = "R10" + IntToStr( RecPack[1] ); */
+	InVoltage = RecPack[2];
+	InCurrent = RecPack[3];
+	UtilPowerIn = RecPack[4] + RecPack[5] * 256;
+	AppPowerIn = RecPack[6] + RecPack[7] * 256;
+	FatorPotEntrada = RecPack[8];
+	InFreq = ( RecPack[9] + RecPack[10] * 256 ) * 1.0 / 10;
+	OutVoltage = RecPack[11];
+	OutCurrent = RecPack[12];
+	UtilPowerOut = RecPack[13] + RecPack[14] * 256;
+	AppPowerOut = RecPack[15] + RecPack[16] * 256;
+	FatorPotSaida = RecPack[17];
+	OutFreq = ( RecPack[18] + RecPack[19] * 256 ) * 1.0 / 10;
+	BattVoltage = RecPack[20];
+	BoostVolt = RecPack[21] + RecPack[22] * 256;
+	Temperature = ( 0x7F & RecPack[23] );
+	Rendimento = RecPack[24];
 
-  if(  OverCharge && !( OldOverCharge ) )
-    EventosSaida = 10;
-  if(  OldOverCharge && !( OverCharge ) )
-    EventosSaida = 11;
-  OldOverCharge = OverCharge;
+	/* model independent data */
 
-  /* autonomy calc. */
-  if(  RecPack[ 0 ] ==0xC2  )
-    Autonomy = AutonomyCalc( 1 );
-  else
-    Autonomy = AutonomyCalc( 0 );
+	if( ( BattVoltage < LimInfBattInv ) )
+		CriticBatt = true;
 
+	if( BypassOn )
+		OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
+
+	if( SourceFail && RedeAnterior ) /* falha pela primeira vez */
+		OcorrenciaDeFalha = true;
+
+	if( !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
+		RetornoDaRede = true;
+
+	if( RedeAnterior == !( SourceFail ) )
+	{
+		RetornoDaRede = false;
+		OcorrenciaDeFalha = false;
+	}
+
+	RedeAnterior = !( SourceFail );
+
+	LimInfSaida = 75;
+	LimSupSaida = 150;
+	ValorNominalSaida = 110;
+
+	LimInfEntrada = 190;
+	LimSupEntrada = 250;
+	ValorNominalEntrada = 220;
+
+	if( SourceFail )
+	{
+		StatusEntrada = 2;
+		RecPack[8] = 200; /* ?????????????????????????????????? */
+	}
+	else
+	{
+		StatusEntrada = 1;
+		RecPack[8] = 99; /* ??????????????????????????????????? */
+	}
+
+	if( OutputOn )     /* Output Status */
+		StatusSaida = 2;
+	else
+		StatusSaida = 1;
+
+	if( OverCharge )
+		StatusSaida = 3;
+
+	if( CriticBatt ) /* Battery Status */
+		StatusBateria = 4;
+	else
+		StatusBateria = 1;
+
+	EventosRede = 0;
+
+	if( OcorrenciaDeFalha )
+		EventosRede = 1;
+
+	if( RetornoDaRede )
+		EventosRede = 2;
+
+	/* verify InversorOn */
+	if( Flag_inversor )
+	{
+		oldInversorOn = InputOn;
+		Flag_inversor = false;
+	}
+
+	EventosSaida = 0;
+	if( InputOn && !( oldInversorOn ) )
+		EventosSaida = 26;
+	if( oldInversorOn && !( InputOn ) )
+		EventosSaida = 27;
+	oldInversorOn = InputOn;
+	if( SuperAquecimento && !( SuperAquecimentoAnterior ) )
+		EventosSaida = 12;
+	if( SuperAquecimentoAnterior && !( SuperAquecimento ) )
+		EventosSaida = 13;
+	SuperAquecimentoAnterior = SuperAquecimento;
+	EventosBateria = 0;
+	OldCritBatt = CriticBatt;
+
+	if( OverCharge && !( OldOverCharge ) )
+		EventosSaida = 10;
+	if( OldOverCharge && !( OverCharge ) )
+		EventosSaida = 11;
+	OldOverCharge = OverCharge;
+
+	/* autonomy calc. */
+	if( RecPack[ 0 ] == 0xC2 )
+		Autonomy = AutonomyCalc( 1 );
+	else
+		Autonomy = AutonomyCalc( 0 );
 }
 
 static void
-CommReceive(const unsigned char *bufptr,  int size)
+CommReceive(const unsigned char *bufptr, ssize_t size)
 {
+	int i, i_end, CheckSum, chk;
 
-  int i, i_end, CheckSum, chk;
-  
-  if(  ( size==37 ) )
-    Waiting = 0;
-  
-  printf("CommReceive size = %d waiting = %d\n", size, Waiting );
+	if( size == 37 )
+		Waiting = 0;
 
-  switch( Waiting )
-    {
-      /* normal package */
-    case 0:
-      {
-	if(  size == 37 )
-	  {
-	    i_end = 37;
-	    for( i = 0 ; i < i_end ; ++i )
-	      {
-		RecPack[i] = *bufptr;
-		bufptr++;
-	      }
-	    
-	    /* CheckSum verify */
-	    CheckSum = 0;
-	    i_end = 36;
-	    for( i = 0 ; i < i_end ; ++i )
-	      {
-		chk =  RecPack[ i ];
-		CheckSum = CheckSum + chk;
-	      }
+	printf("CommReceive size = %" PRIiSIZE " waiting = %d\n", size, Waiting );
 
-	    CheckSum = CheckSum % 256;
+	switch( Waiting )
+	{
+		/* normal package */
+		case 0:
+		{
+			if( size == 37 )
+			{
+				i_end = 37;
+				for( i = 0 ; i < i_end ; ++i )
+				{
+					RecPack[i] = *bufptr;
+					bufptr++;
+				}
 
-	    ser_flush_in(upsfd,"",0); /* clean port */
+				/* CheckSum verify */
+				CheckSum = 0;
+				i_end = 36;
+				for( i = 0 ; i < i_end ; ++i )
+				{
+					chk = RecPack[ i ];
+					CheckSum = CheckSum + chk;
+				}
 
-	    /* correct package */
-	    if(  ( RecPack[0] == 0xC0 || RecPack[0] == 0xC1 || RecPack[0] == 0xC2 || RecPack[0] == 0xC3 )
-		  && ( RecPack[ 36 ] == CheckSum ) )
-	       {
+				CheckSum = CheckSum % 256;
 
-		 if(!(detected))
-		   {
-		     RhinoModel = RecPack[0];
-		     detected = true;
-		   }
+				ser_flush_in(upsfd,"",0); /* clean port */
 
-		 switch( RhinoModel )
-		   {
-		   case 0xC0:
-		   case 0xC1:
-		   case 0xC2:
-		   case 0xC3:
-		     {
-		       ScanReceivePack();
-		       break;
-		     }
-		   default:
-		     {
-		       printf( M_UNKN );
-		       break;
-		     }
-		   }
-	       }
+				/* correct package */
+				if( ( RecPack[0] == 0xC0 || RecPack[0] == 0xC1 || RecPack[0] == 0xC2 || RecPack[0] == 0xC3 )
+				     && ( RecPack[ 36 ] == CheckSum ) )
+				{
 
-           }
-	
-	 break;
-       }
-       
-     case 1:
-       {
-	 /* dumping package, nothing to do yet */
-	 Waiting = 0;
-	 break;
-       }
+					if(!(detected))
+					{
+						RhinoModel = RecPack[0];
+						detected = true;
+					}
 
-    }
+					switch( RhinoModel )
+					{
+						case 0xC0:
+						case 0xC1:
+						case 0xC2:
+						case 0xC3:
+						{
+							ScanReceivePack();
+							break;
+						}
+						default:
+						{
+							printf( M_UNKN );
+							break;
+						}
+					}
+				}
+			}
 
-   Waiting =0;
+			break;
+		}
 
+		case 1:
+		{
+			/* dumping package, nothing to do yet */
+			Waiting = 0;
+			break;
+		}
+
+		default:
+			break;
+
+	}
+
+	Waiting = 0;
 }
 
-static int
-send_command( int cmd )
+static ssize_t
+send_command( unsigned char cmd )
 {
+	static const size_t sizes = 19, iend = 18;
+	size_t i, kount; /*, j, uc; */
+	unsigned char chk, checksum = 0;
+	ssize_t ret = -1;
+	unsigned char ch, *psend = NULL;
 
-  int i, chk, checksum = 0, iend = 18, sizes = 19, ret, kount; /*, j, uc; */
-  unsigned char ch, psend[sizes];
-  
-  /* mounting buffer to send */
+	if ( !(psend = (unsigned char *)xmalloc(sizeof(char) * sizes)) ) {
+		upslogx(LOG_ERR, "send_command() failed to allocate buffer");
+		return -1;
+	}
+
+	/* mounting buffer to send */
 
 	for(i = 0; i < iend; i++ )
 	{
@@ -488,7 +494,7 @@ send_command( int cmd )
 			chk = 0x01;
 		else
 		{
-			if( i == 1)
+			if( i == 1 )
 				chk = cmd;
 			else
 				chk = 0x00; /* 0x20; */
@@ -496,12 +502,12 @@ send_command( int cmd )
 
 		ch = chk;
 		psend[i] = ch; /* psend[0 - 17] */
-		if( i > 0 )  /* psend[0] not computed */
+		if( i > 0 )    /* psend[0] not computed */
 			checksum = checksum + chk;
 	}
 
 	ch = checksum;
-	ch = (~( ch) ); /* not ch  */
+	ch = (~( ch) ); /* not ch */
 	psend[iend] = ch;
 
 	/* send five times the command */
@@ -518,98 +524,101 @@ send_command( int cmd )
 		usleep( UPSDELAY ); /* delay between sent command */
 		kount++;
 	}
+
+	free (psend);
 	return ret;
 }
 
 static void sendshut( void )
 {
-
 	int i;
 
 	for(i=0; i < 30000; i++)
-	  usleep( UPSDELAY ); /* 15 seconds delay */
+		usleep( UPSDELAY ); /* 15 seconds delay */
 
-	send_command( CMD_SHUT );
-	upslogx(LOG_NOTICE, "Ups shutdown command sent");
+	if ( send_command( CMD_SHUT ) < 1 )
+		upslogx(LOG_ERR, "Ups shutdown command sending failed");
+	else
+		upslogx(LOG_NOTICE, "Ups shutdown command sent");
 	printf("Ups shutdown command sent\n");
-
 }
 
 static void getbaseinfo(void)
 {
-	unsigned char  temp[256];
+	unsigned char temp[256];
 	unsigned char Pacote[37];
-	int  tam, i, j=0;
+	ssize_t tam, i, j=0;
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
 	const char *Model;
 
 	time( &tmt );
-	now = localtime( &tmt );
+	now = localtime_r( &tmt, &tmbuf );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
-        weekn = now->tm_wday;
+	weekn = now->tm_wday;
 
 	/* trying detect rhino model */
 	while ( ( !detected ) && ( j < 10 ) )
-	  {
+	{
 
-	    temp[0] = 0; /* flush temp buffer */
-	    tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
-	    if( tam == 37 )
-	      {
-		for( i = 0 ; i < tam ; i++ )
-		  {
-		    Pacote[i] = temp[i];
-		  }
-	      }
+		temp[0] = 0; /* flush temp buffer */
+		tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
+		if( tam == 37 )
+		{
+			for( i = 0 ; i < tam ; i++ )
+			{
+				Pacote[i] = temp[i];
+			}
+		}
 
-	    j++;
-	    if( tam == 37)
-	      CommReceive(Pacote, tam);
-	     else
-	      CommReceive(temp, tam);
-	  }
+		j++;
+		if( tam == 37)
+			CommReceive(Pacote, tam);
+		else
+			CommReceive(temp, tam);
+	}
 
 	if( (!detected) )
-	  {
-	    fatalx(EXIT_FAILURE,  NO_RHINO );
-	  }
+	{
+		fatalx(EXIT_FAILURE, NO_RHINO );
+	}
 
 	switch( RhinoModel )
-	  {
-	  case 0xC0:
-	    {
-	      Model =  "Rhino 20.0 kVA";
-	      PotenciaNominal = 20000;
-	      break;
-	    }
-	  case 0xC1:
-	    {
-	      Model = "Rhino 10.0 kVA";
-	      PotenciaNominal = 10000;
-	      break;
-	    }
-	  case 0xC2:
-	    {
-	      Model = "Rhino 6.0 kVA";
-	      PotenciaNominal = 6000;
-	      break;
-	    }
-	  case 0xC3:
-	    {
-	      Model = "Rhino 7.5 kVA";
-	      PotenciaNominal = 7500;
-	      break;
-	    }
-	  default:
-	    {
-	      Model = "Rhino unknown model";
-	      PotenciaNominal = 0;
-	      break;
-	    }
-	  }
+	{
+		case 0xC0:
+		{
+			Model = "Rhino 20.0 kVA";
+			PotenciaNominal = 20000;
+			break;
+		}
+		case 0xC1:
+		{
+			Model = "Rhino 10.0 kVA";
+			PotenciaNominal = 10000;
+			break;
+		}
+		case 0xC2:
+		{
+			Model = "Rhino 6.0 kVA";
+			PotenciaNominal = 6000;
+			break;
+		}
+		case 0xC3:
+		{
+			Model = "Rhino 7.5 kVA";
+			PotenciaNominal = 7500;
+			break;
+		}
+		default:
+		{
+			Model = "Rhino unknown model";
+			PotenciaNominal = 0;
+			break;
+		}
+	}
 
 	/* manufacturer and model */
 	dstate_setinfo("ups.mfr", "%s", "Microsol");
@@ -629,13 +638,12 @@ static void getbaseinfo(void)
 	dstate_addcmd("bypass.stop");	/* CMD_PASSOFF = 6 */
 
 	printf("Detected %s on %s\n", dstate_getinfo("ups.model"), device_path);
-
 }
 
 static void getupdateinfo(void)
 {
-	unsigned char  temp[256];
-	int tam;
+	unsigned char temp[256];
+	ssize_t tam;
 
 	temp[0] = 0; /* flush temp buffer */
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
@@ -646,57 +654,63 @@ static void getupdateinfo(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	ssize_t ret = 0;
 
-	int ret = 0;
-	
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
-	  {
-	    /* shutdown now (one way) */
-	    /* send_command( CMD_SHUT ); */
-	    sendshut();
-	    return STAT_INSTCMD_HANDLED;
-	  }
+	{
+		/* shutdown now (one way) */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		/* send_command( CMD_SHUT ); */
+		sendshut();
+		return STAT_INSTCMD_HANDLED;
+	}
 
 	if (!strcasecmp(cmdname, "load.on"))
-	  {
-	    /* liga Saida */
-	    ret = send_command( 3 );
-	    if ( ret < 1 )
-	      upslogx(LOG_ERR, "send_command 3 failed");
-	    return STAT_INSTCMD_HANDLED;
-	  }
+	{
+		/* liga Saida */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ret = send_command( 3 );
+		if ( ret < 1 )
+			upslogx(LOG_ERR, "send_command 3 failed");
+		return STAT_INSTCMD_HANDLED;
+	}
 
 	if (!strcasecmp(cmdname, "load.off"))
-	  {
-	    /* desliga Saida */
-	    ret = send_command( 4 );
-	    if ( ret < 1 )
-	      upslogx(LOG_ERR, "send_command 4 failed");
-	    return STAT_INSTCMD_HANDLED;
-	  }
+	{
+		/* desliga Saida */
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		ret = send_command( 4 );
+		if ( ret < 1 )
+			upslogx(LOG_ERR, "send_command 4 failed");
+		return STAT_INSTCMD_HANDLED;
+	}
 
 	if (!strcasecmp(cmdname, "bypass.start"))
-	  {
-	    /* liga Bypass */
-	    ret = send_command( 5 );
-	    if ( ret < 1 )
-	      upslogx(LOG_ERR, "send_command 5 failed");
-	    return STAT_INSTCMD_HANDLED;
-	  }
+	{
+		/* liga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ret = send_command( 5 );
+		if ( ret < 1 )
+			upslogx(LOG_ERR, "send_command 5 failed");
+		return STAT_INSTCMD_HANDLED;
+	}
 
 	if (!strcasecmp(cmdname, "bypass.stop"))
-	  {
-	    /* desliga Bypass */
-	    ret = send_command( 6 );
-	    if ( ret < 1 )
-	      upslogx(LOG_ERR, "send_command 6 failed");
-	    return STAT_INSTCMD_HANDLED;
-	  }
+	{
+		/* desliga Bypass */
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		ret = send_command( 6 );
+		if ( ret < 1 )
+			upslogx(LOG_ERR, "send_command 6 failed");
+		return STAT_INSTCMD_HANDLED;
+	}
 
-
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
-
 }
 
 void upsdrv_initinfo(void)
@@ -708,8 +722,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-
-        getupdateinfo(); /* new package for updates */
+	getupdateinfo(); /* new package for updates */
 
 	dstate_setinfo("output.voltage", "%03.1f", OutVoltage);
 	dstate_setinfo("input.voltage", "%03.1f", InVoltage);
@@ -717,62 +730,69 @@ void upsdrv_updateinfo(void)
 
 	/* output and bypass tests */
 	if( OutputOn )
-	  dstate_setinfo("outlet.switchable", "%s", "yes");
+		dstate_setinfo("outlet.switchable", "%s", "yes");
 	else
-	  dstate_setinfo("outlet.switchable", "%s", "no");
+		dstate_setinfo("outlet.switchable", "%s", "no");
 
 	if( BypassOn )
-	  dstate_setinfo("outlet.1.switchable", "%s", "yes");
+		dstate_setinfo("outlet.1.switchable", "%s", "yes");
 	else
-	  dstate_setinfo("outlet.1.switchable", "%s", "no");
+		dstate_setinfo("outlet.1.switchable", "%s", "no");
 
 	status_init();
 
 	if (!SourceFail )
-	  status_set("OL");		/* on line */
+		status_set("OL");	/* on line */
 	else
-	  status_set("OB");		/* on battery */
-	
+		status_set("OB");	/* on battery */
+
 	if (Autonomy < 5 )
-	  status_set("LB");		/* low battery */
-	
+		status_set("LB");	/* low battery */
+
 	status_commit();
 	dstate_setinfo("ups.temperature", "%2.2f", Temperature);
 	dstate_setinfo("input.frequency", "%2.1f", InFreq);
 	dstate_dataok();
-
 }
 
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
 	/* basic idea: find out line status and send appropriate command */
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
 	if (!SourceFail)     /* on line */
-	  {
-	    printf("On line, forcing shutdown command...\n");
-	    send_command( CMD_SHUT );
-	  }
+	{
+		/* FIXME: Both legs of the if-clause send CMD_SHUT,
+		 *  where is the "forcing"? */
+		printf("On line, forcing shutdown command...\n");
+		/* send_command( CMD_SHUT ); */
+		sendshut();
+	}
 	else
-	  {
-	    printf("On battery, sending normal shutdown command...\n");
-	    send_command( CMD_SHUT );
-	  }
-	
+	{
+		printf("On battery, sending normal shutdown command...\n");
+		/* send_command( CMD_SHUT ); */
+		sendshut();
+	}
 }
 
 void upsdrv_help(void)
 {
 }
 
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
+{
+}
+
 void upsdrv_makevartable(void)
 {
-	
 	addvar(VAR_VALUE, "battext", "Battery Extension (0-80)min");
-
 }
 
 void upsdrv_initups(void)
@@ -783,7 +803,6 @@ void upsdrv_initups(void)
 	/* dtr and rts setting */
 	ser_set_dtr(upsfd, 1);
 	ser_set_rts(upsfd, 0);
-	
 }
 
 void upsdrv_cleanup(void)

@@ -1,4 +1,4 @@
-/* mge-xml.h		Model specific data for MGE XML protocol UPSes 
+/* mge-xml.h		Model specific data for MGE XML protocol UPSes
 
    Copyright (C)
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>

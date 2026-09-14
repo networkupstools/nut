@@ -2,6 +2,7 @@
 
    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,6 +18,11 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#include "common.h"
+
+#include "cppunit-warnings.h"
+
 #include <cppunit/extensions/HelperMacros.h>
 
 class ExampleTest : public CppUnit::TestFixture
@@ -26,8 +32,8 @@ class ExampleTest : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE_END();
 
 public:
-  void setUp();
-  void tearDown();
+  void setUp() override;
+  void tearDown() override;
 
   void testOne();
 };
@@ -53,10 +59,10 @@ void ExampleTest::testOne()
   float f = 1.0;
 
   // Process
-  int cast = (int)f;
+  int cast = static_cast<int>(f);
 
   // Check
   CPPUNIT_ASSERT_EQUAL( i, cast );
 }
 
-
+#include "cppunit-warnings-end.h"

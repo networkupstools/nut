@@ -1,4 +1,4 @@
-Desc: SMS UPS cables, for Upsilon compatible SMS UPS 
+Desc: SMS UPS cables, for Upsilon compatible SMS UPS
 File: sms.txt
 Date: 9 October 2001
 Auth: Marcio Gomes <tecnica@microlink.com.br>

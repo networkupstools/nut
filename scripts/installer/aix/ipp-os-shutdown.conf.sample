@@ -1,0 +1,33 @@
+#
+# ipp-os-shutdown.conf
+#
+# Settings that specify typical shutdown commands for various supported OSes
+# Version for AIX
+#
+
+# The program which executes an OS shutdown, maybe including flags that
+# disable its interactive mode
+CMD_SHUTDOWN="/usr/sbin/shutdown"
+
+# Depending on OS and hardware support, "poweroff" option may tell the
+# host's power source units to cut off their power to the motherboard,
+# and "halt" may sit forever at the "OS is stopped" prompt or equivalent.
+# NOTE: Yes, according to AIX man pages, the letters are not matched
+# with the tag-words: "-p" leaves the machine halted and powered-on,
+# and "-h" tries to kill power in the end.
+SDFLAG_POWEROFF="-h"
+SDFLAG_REBOOT="-r"
+SDFLAG_HALT="-p"
+
+# The flag for quick stop (shorter service stop timeouts and fewer/no
+# logs, or outright go to kill remaining processes)
+SDFLAG_UNGRACEFUL="-F"
+
+# Trigger a shutdown without delay
+SDFLAG_INSTANT="+0"
+
+## Filename to store the PID of a pending shutdown
+## If this file is absent, the shutdown can not be canceled (killed)
+## If the "${SHUTDOWN_PIDFILE}.irreversible" exists and points to running PID
+## then the new shutdown can not be queued (caller must cancel old one first)
+SHUTDOWN_PIDFILE="/var/run/nut/shutdown.pid"

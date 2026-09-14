@@ -1,0 +1,1 @@
+description=nut is a client/server uninterruptible power supply (UPS) monitoring system${Newline}${Space}that permits the sharing of one (or more) UPS between several machines.  The${Newline}${Space}'server' monitors the UPS and notifies the 'clients' when the UPS is on${Newline}${Space}battery or has a low battery.

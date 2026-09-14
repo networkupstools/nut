@@ -1,0 +1,38 @@
+NUTSCAN_DISPLAY_UPS_CONF_WITH_SANITY_CHECK(3)
+=============================================
+
+NAME
+----
+
+nutscan_display_ups_conf_with_sanity_check - Display the specified
+`nutscan_device_t` structure and sanity-check warnings on stdout.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_display_ups_conf_with_sanity_check()* function displays
+all NUT devices in 'device' to `stdout`, and follows up with comments
+about sanity-check violations (if any). It displays them in a way that
+it can be directly copied into the `ups.conf` file.
+
+SEE ALSO
+--------
+
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
+linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
+linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf[3],
+linkman:nutscan_display_parsable[3], linkman:nutscan_new_device[3],
+linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3],
+linkman:nutscan_add_device_to_device[3], linkman:nutscan_cidr_to_ip[3]

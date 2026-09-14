@@ -1,0 +1,138 @@
+Reading APC Microlink descriptors
+---------------------------------
+
+//////////////////////////////////////////////////////////////////////////////
+// This chapter documents the on-the-wire structure the "apcmicrolink" driver
+// parses, for anyone extending its variable maps to cover more of a device.
+//////////////////////////////////////////////////////////////////////////////
+
+Overall concept
+~~~~~~~~~~~~~~~
+
+A Microlink device publishes a machine-readable *descriptor* alongside its
+data, so the driver learns where each value lives instead of hard-coding
+offsets. `drivers/apcmicrolink-maps.c` therefore maps *descriptor paths* to NUT
+variable names, and the driver resolves those paths to byte offsets at run
+time.
+
+Everything below was derived from a live APC SCL500RMI1UC. Other models share
+the structure but not necessarily the same set of usages.
+
+Frames, pages and the blob
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A record is `[page id][width data bytes][2 byte checksum]`. The `width` comes
+from page 0, along with the page count, so a device with `width = 32` and
+96 pages has 35-byte records and a 3072-byte address space.
+
+The driver assembles those pages into one flat blob by laying page N at byte
+offset `N * width`. Page 0 also carries a *descriptor table offset* (byte 12 on
+the device above) and a pointer to where the *data region* begins. Everything
+before that pointer is the descriptor program; everything after it is live
+data. Do not assume the descriptor comes second - on the SCL500RMI1UC the
+descriptor occupies pages `0x00`-`0x3F` and data starts at page `0x40`.
+
+Path syntax
+~~~~~~~~~~~
+
+Paths look like SNMP OIDs and behave like them:
+
+    <object> : <collection> . <sub-collection> . <attribute>
+
+for example `2:4.5.9.40` - object `2`, collection `4.5`, sub-collection `9`,
+attribute `40`. Components are hexadecimal without a prefix.
+
+Attribute IDs are scope-relative
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the single most useful property when identifying an unknown usage:
+*within one top-level object*, a trailing attribute ID means the same thing on
+whichever collection carries it.
+
+[options="header"]
+|===============================================================================
+| Attribute | Seen at                                              | Meaning
+| `.F.69`   | `2:4.5`, `2:4.6`, `2:4.7`, `2:4`                     | total time
+| `.40`     | `2:4.9`, `2:4.5.9`                                   | serial number
+| `.42`     | `2:4.9`, `2:4.5`                                     | part number
+| `.4A`     | `2:4.5.9`                                            | firmware revision
+| `.19`     | `2:4.9`, `2:4.5`                                     | a date
+| `.82`     | `2:4`, `2:4.3E`                                      | name
+| `.31`     | `2:4.5`, `2:4.3E`                                    | low runtime warning
+| `.25`     | `2:4.6`, `2:4.7`                                     | voltage
+| `.27`     | `2:4.6`, `2:4.7`                                     | frequency
+| `.11`     | `2`, `2:4.5`                                         | test result
+| `.13`     | `2`, `2:4.5`                                         | calibration result
+|===============================================================================
+
+Known collections under object `2` (the UPS itself):
+
+    2:4.5    battery          2:4.9    inventory
+    2:4.6    input            2:4.B    user interface
+    2:4.7    output / power   2:4.3E   outlet group
+    2:4.8    authentication   2:4.F    statistics
+
+`9` (inventory) and `F` (statistics) nest inside other collections, which is
+why `2:4.5.9.40` is the battery serial and `2:4.6.F.69` the input total time.
+
+WARNING: Top-level objects have *independent* attribute namespaces. Do not
+carry a meaning from object `2` into object `3`: on the same device `3:22` is a
+temperature threshold rather than a temperature, `3:25` is input sensitivity
+rather than a voltage, and `3:26` is accumulated energy rather than a current.
+Object `2` is the UPS device tree and `3` appears to be a system or controller
+object; `4`, `5` and `A` are not yet identified.
+
+Two scopes, one NUT name
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because the same attribute exists at several scopes, it is easy to map two
+usages onto one NUT variable by accident. When that happens the winner depends
+on the order usages appear in the descriptor, not on the order of entries in
+the map - so the result varies by device and is not reproducible.
+
+Where a device may populate either scope, map the specific one and promote the
+general one only when the specific is absent. `microlink_publish_test_result()`
+does this for `ups.test.result`: `2:4.5.11` is mapped directly, and `2:11` is
+published under an experimental name and copied over only if the battery-scope
+usage is missing entirely.
+
+Identifying an unknown usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In rough order of cost:
+
+1. *Infer from the attribute ID.* If the trailing component is already known at
+   another scope in the same object, that is very likely its meaning. Costs
+   nothing.
+
+2. *Diff a reference client's writes.* Change one setting in the vendor's own
+   software while capturing the bus, then look for host-to-device frames that
+   are not the plain control bytes. A write frame names its page and offset
+   directly, so it identifies the usage with no guesswork - and proves the
+   field is writable at the same time. This is far more reliable than matching
+   values by coincidence.
+
+3. *Cross-reference an SNMP agent.* Vendor management software often ships an
+   SNMP agent serving a documented MIB. Walking it gives named, described
+   values that can be matched against the data pages, which is useful for
+   read-only fields that step 2 cannot reach.
+
+Mapping pitfalls
+~~~~~~~~~~~~~~~~
+
+*Check the units `docs/nut-names.txt` states, not just the name.* Several
+usages are enumerations whose NUT counterpart is numeric. `ups.test.interval`
+is defined as seconds, but the device reports a schedule enum - two of whose
+members ("never", "on start-up only") have no interval at all. Publishing the
+enum string there would break any client doing arithmetic on it.
+
+*Beware percentages reported as if they were absolute.* A fixed-point field
+that reads roughly a hundred times too small is more likely a percentage of a
+nominal rating than a wrong binary point - a wrong binary point is off by a
+power of two, never by 5. Cross-multiplying independent readings catches this
+quickly: output current times output voltage should agree with apparent power.
+
+*Descriptor usages can be marked skipped.* Skipped usages are published neither
+under a name nor in the `unmapped` listing, so a value visible in a page dump
+may have no corresponding variable at all. Check the skip flag before assuming
+a mapping is missing.

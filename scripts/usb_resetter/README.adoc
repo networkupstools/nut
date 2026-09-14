@@ -1,0 +1,97 @@
+Method for resetting unreliable USB UPS interfaces (on Linux)
+=============================================================
+Orsiris de Jong <ozy@netpower.fr> - NetInvent SASU
+v1.0, 30 Mar 2023 (start date)
+
+Some cheaper USB UPS have the same kind of unreliable USB to serial interface,
+often being a "Cypress Semiconductor USB to Serial" or "INNO TECH USB to Serial"
+(often with the `0665:5161` VendorID/ProductID seen in examples below).
+Most of them use `blazer_usb` or `nutdrv_qx` NUT driver, and sometimes the
+driver can't start because it can't communicate with the UPS.
+
+NOTE: It is believed that in some cases the chip on UPS side can go into
+a sort of power-saving mode after some quiet time, so increasing the NUT
+driver polling frequency may help avoid that particular situation.
+
+Unplugging and plugging the USB port usually fixes this, but that's not
+convenient.
+
+That's where `usb_resetter` comes in handy (see the
+https://github.com/netinvent/usb_resetter project page for more info).
+You would need a Python environment to run the script, and it is limited
+to Linux platforms as of this writing.
+
+Grab a copy via `pip` with `pip install usb_resetter`, or make a plain
+install directly from GitHub with e.g.:
+----
+:; curl -o /usr/local/bin/usb_resetter -L \
+    https://raw.githubusercontent.com/netinvent/usb_resetter/main/usb_resetter/usb_resetter.py \
+   && chmod +x /usr/local/bin/usb_resetter
+----
+
+Once you have got the script, identify the USB UPS with:
+----
+:; usb_resetter --list
+----
+
+In our case, we could see something like:
+----
+Found device 0665:5161 at /dev/bus/usb/001/002 Manufacturer=INNO TECH, Product=USB to Serial
+----
+
+The `usb_resetter` can work in three different ways:
+
+- Reset device itself
+- Reset the hub the device is attached to
+- Reset all USB controllers
+
+A simple USB device reset typically isn't sufficient for those UPS devices,
+so we would need to reset the hub it's attached to.
+
+The command for doing that is:
+----
+:; usb_resetter --reset-hub --device 0665:5161
+----
+
+Bear in mind that this will reset other devices connected to the same hub.
+While this isn't a problem for a keyboard/mouse, it might be for a USB
+storage device. On some hardware, each USB plug gets its own hub.
+On others, two or more USB plugs share one hub.
+
+A good practice would be to isolate the USB UPS on a hub without any other
+device in order to not interfere with other hardware, or to associate it
+on a hub where a non-critical device is already plugged.
+
+Getting the hub your device is attached to can be done with:
+----
+:; usb_resetter --list-hubs --device 0665:5161
+----
+
+The easiest way to integrate this activity with the `nut-driver` service
+is to modify the systemd service file (or ideally use a separate "drop-in"
+snippet file) with the following line:
+----
+ExecStartPre=/usr/local/bin/usb_reset.py --reset-hub --device 0665:5161
+----
+
+An example modified `nut-driver.service` file which may be applicable to a
+NUT v2.7.4 or older release (modulo the paths and the particular VID:PID)
+is provided in this directory. Those releases packaged a single service unit
+for all the drivers you have, managed as one bundle.
+
+With current NUT releases (2.8.0+), a `nut-driver@.service` template is used
+to run each driver in a dedicated instance, declared manually or often by the
+`nut-driver-enumerator` script or service (tracking `ups.conf` sections).
+The added call to `usb_resetter` can then be a systemd drop-in file
+tailored for that particular device and named like
+`/etc/systemd/system/nut-driver@myups.service.d/usbreset.conf`,
+so it does not impact others (unless they use the same USB hub).
+
+This way, every time the nut-driver service is restarted, the USB UPS link
+is reset.
+
+NOTE: In author's testing, there were no additional delays required after
+the `usb_resetter` before starting the driver. Generally however, keep in
+mind that after a (re-)connection, the OS re-discovers the device, then it
+gets owned by kernel, then the udev/upower/... subsystem hands it off to a
+NUT run-time account, and only then can it be opened by a driver.

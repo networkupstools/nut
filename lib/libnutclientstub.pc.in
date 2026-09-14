@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+confdir=@CONFPATH@
+statepath=@STATEPATH@
+nutuser=@RUN_AS_USER@
+
+Name: libnutclientstub
+Description: Stub for UPS monitoring with Network UPS Tools (primarily for C++ tests)
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} @LDFLAGS_NUT_RPATH@ -lnutclientstub
+Cflags: -I${includedir}

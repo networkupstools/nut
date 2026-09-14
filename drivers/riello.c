@@ -4,8 +4,8 @@
  * Documents describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
- *   http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -22,17 +22,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
- * Reference of the derivative work: blazer driver  
+ *
+ * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <string.h>
-#include <stdint.h>
 
 #include "main.h"
 #include "riello.h"
 
-uint8_t foundheader=0;
+static uint8_t foundheader = 0;
 uint16_t buf_ptr_length;
 
 uint8_t wait_packet = 0;
@@ -42,11 +44,11 @@ uint8_t foundbadcrc = 0;
 uint8_t commbyte;
 uint8_t requestSENTR;
 
-unsigned char LAST_DATA[6];
+static unsigned char LAST_DATA[6];
 
 uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
-	uint8_t i;
+	uint16_t i;
 	uint16_t pom, CRC_Word;
 
 	CRC_Word = 0;
@@ -58,7 +60,7 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 					CRC_Word += buff[i];
 			}
 			else {
-				for (i=0; i<size; i++) 
+				for (i=0; i<size; i++)
 					CRC_Word += buff[i];
 			}
 			break;
@@ -68,24 +70,29 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 				size--;
 				CRC_Word = 0x554D;
 				while(size--) {
-					pom = (CRC_Word ^ *buff) & 0xff;
-					pom = (pom ^ (pom << 4)) & 0xff;
+					pom = (CRC_Word ^ *buff) & 0x00ff;
+					pom = (pom ^ (pom << 4)) & 0x00ff;
+					/* Thanks to &0x00ff above, pom is at most 255 --
+					 * so shifted by 8 bits is still uint16_t range:
+					 */
 					pom = (pom << 8) ^ (pom << 3) ^ (pom >> 4);
 					CRC_Word = (CRC_Word >> 8) ^ pom;
 					buff++;
 				}
-			} 
+			}
 			else {
 				CRC_Word = 0;
-				for (i=1; i<size; i++) 
+				for (i=1; i<size; i++)
 					CRC_Word += buff[i];
 			}
+			break;
+		default:
 			break;
 	}
 	return(CRC_Word);
 }
 
-void riello_create_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum) 
+void riello_create_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
 	uint16_t CRC_Word;
 
@@ -108,7 +115,7 @@ uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t chec
 			CRC_Word = riello_calc_CRC(type, buff, size-2, 0);
 
 			suma = buff[size-2] + buff[size-1]*256;
-			if (suma != CRC_Word) 
+			if (suma != CRC_Word)
 				return(1);
 			break;
 		case DEV_RIELLOGPSER:
@@ -118,8 +125,10 @@ uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t chec
 			suma += (buff[size-4]-0x30)*256;
 			suma += (buff[size-3]-0x30)*16;
 			suma += (buff[size-2]-0x30);
-			if (suma != CRC_Word) 
+			if (suma != CRC_Word)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);
@@ -130,15 +139,15 @@ uint8_t riello_test_bit(uint8_t *basic_address, uint8_t bit)
 	uint8_t posuv, offset;
 	uint8_t var, value;
 
-	if (basic_address == NULL) 
+	if (basic_address == NULL)
 		return(0);
 
 	posuv = bit/8;
 	offset = bit%8;
 	var = *(basic_address+posuv);
-	if (var & (1 << offset)) 
-		value = 1; 
-	else 
+	if (var & (1 << offset))
+		value = 1;
+	else
 		value = 0;
 	return(value);
 }
@@ -372,7 +381,7 @@ uint8_t riello_prepare_shutsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 6;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -394,7 +403,7 @@ uint8_t riello_prepare_setrebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 2;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -405,7 +414,7 @@ uint8_t riello_prepare_rebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 1;
-	buffer[2] = delay % 256;
+	buffer[2] = (uint8_t)(delay % 256);
 	buffer[3] = delay / 256;
 	buffer[4] = buffer[0] + buffer[1] + buffer[2] + buffer[3];
 
@@ -452,7 +461,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKVA = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKVA = (uint16_t)pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
@@ -462,7 +472,8 @@ void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 
 	if (data->Identif_bytes[0] != '1')
 		pom_long/=100;
-	data->NomPowerKW = pom_long;
+	assert (pom_long < UINT16_MAX);
+	data->NomPowerKW = (uint16_t)pom_long;
 
 	pom_word = (buffer[j++]-0x30)*256;
 	pom_word += (buffer[j++]-0x30)*16;
@@ -564,7 +575,7 @@ void riello_parse_rs(uint8_t* buffer, TRielloData* data, uint8_t numread)
 		pom_word += (buffer[j++]-0x30)*16;
 		pom_word += (buffer[j++]-0x30);
 		data->Uinp3 = pom_word;
-	} 
+	}
 	else {
 		data->Uinp2 = 0;
 		data->Uinp3 = 0;
@@ -593,7 +604,7 @@ void riello_parse_rs(uint8_t* buffer, TRielloData* data, uint8_t numread)
 		pom_word += (buffer[j++]-0x30)*16;
 		pom_word += (buffer[j++]-0x30);
 		data->Ubypass3 = pom_word;
-	} 
+	}
 	else {
 		data->Uout2 = 0;
 		data->Pout2 = 0;
@@ -638,42 +649,42 @@ void riello_parse_re(uint8_t* buffer, TRielloData* data)
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout1W = pom_word;
+	data->Pout1W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout2W = pom_word;
+	data->Pout2W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout3W = pom_word;
+	data->Pout3W = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout1VA = pom_word;
+	data->Pout1VA = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout2VA = pom_word;
+	data->Pout2VA = pom_long;
 
 	pom_long = (buffer[j++]-0x30)*65536;
 	pom_long += (buffer[j++]-0x30)*4096;
 	pom_long += (buffer[j++]-0x30)*256;
 	pom_long += (buffer[j++]-0x30)*16;
 	pom_long += (buffer[j++]-0x30);
-	data->Pout3VA = pom_word;
+	data->Pout3VA = pom_long;
 }
 
 void riello_parse_rc(uint8_t* buffer, TRielloData* data)
@@ -682,7 +693,7 @@ void riello_parse_rc(uint8_t* buffer, TRielloData* data)
 
 	j = 7;
 	for (i = 0; i < 22; i++, j+=2) {
-		data->StatusCodeT[i] = (buffer[j+1]-0x30);
+		data->StatusCodeT[i] = (char)(buffer[j+1]-0x30);
 		data->StatusCodeT[i] |= ((buffer[j]-0x30) << 4);
 	}
 	data->StatusCodeT[23] = 0;
@@ -704,7 +715,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		else
 			requestSENTR = SENTR_ONLY192;
 		data->NomPowerKVA = data->Model/10;
-	} 
+	}
 	else {
 		if (((data->Model-3000) % 10) >= 4) {
 			if (buffer[100] & 0x01)
@@ -733,11 +744,11 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 
 	data->SWversion = buffer[4]+256*buffer[5];
 
-	data->Version[0] = (uint8_t)(48 + ((data->SWversion / 1000) % 10));
-	data->Version[1] = (uint8_t)(48 + ((data->SWversion / 100) % 10));
+	data->Version[0] = (char)(uint8_t)(48 + ((data->SWversion / 1000) % 10));
+	data->Version[1] = (char)(uint8_t)(48 + ((data->SWversion / 100) % 10));
 	data->Version[2] = '.';
-	data->Version[3] = (uint8_t)(48 + ((data->SWversion / 10) % 10));
-	data->Version[4] = (uint8_t)(48 + (data->SWversion % 10));
+	data->Version[3] = (char)(uint8_t)(48 + ((data->SWversion / 10) % 10));
+	data->Version[4] = (char)(uint8_t)(48 + (data->SWversion % 10));
 
 	if (data->Model < 3000)
 		pom = data->Model*100;
@@ -756,7 +767,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uout1 = (buffer[135]+buffer[136]*256)/10;
 		data->Uout2 = (buffer[137]+buffer[138]*256)/10;
 		data->Uout3 = (buffer[139]+buffer[140]*256)/10;
-		data->Iout1 = (buffer[141]+buffer[142]*256)/10;  
+		data->Iout1 = (buffer[141]+buffer[142]*256)/10;
 		data->Iout2 = (buffer[143]+buffer[144]*256)/10;
 		data->Iout3 = (buffer[145]+buffer[146]*256)/10;
 
@@ -769,9 +780,10 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Uinp1 = buffer[35]*230/100;
 		data->Uinp2 = buffer[36]*230/100;
 		data->Uinp3 = buffer[37]*230/100;
-		data->Iinp1 = ((pom/690)*buffer[38])/100;;
-		data->Iinp2 = ((pom/690)*buffer[39])/100;;
-		data->Iinp3 = ((pom/690)*buffer[40])/100;;
+		/* TODO: Range-check the casts to uint16_t? */
+		data->Iinp1 = (uint16_t)(((pom/690)*buffer[38])/100);
+		data->Iinp2 = (uint16_t)(((pom/690)*buffer[39])/100);
+		data->Iinp3 = (uint16_t)(((pom/690)*buffer[40])/100);
 		data->Finp = buffer[41]+256*buffer[42];
 
 		if (buffer[79] & 0x80) {
@@ -786,14 +798,16 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		}
 
 		if (buffer[73]) {
+			/* FIXME: Wondering how the addition below works for uint8_t[] buffer... */
+			/* TODO: Range-check the casts to uint16_t? */
 			if (buffer[73] < 100)
 				buffer[73]+=256;
 			if (data->Model < 3000) /* singlephase */
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100);
 			else
-				data->Iout1 = ((pom/buffer[73])*buffer[62])/100/3;
-			data->Iout2 = ((pom/buffer[73])*buffer[63])/100/3;
-			data->Iout3 = ((pom/buffer[73])*buffer[64])/100/3;
+				data->Iout1 = (uint16_t)(((pom/buffer[73])*buffer[62])/100/3);
+			data->Iout2 = (uint16_t)(((pom/buffer[73])*buffer[63])/100/3);
+			data->Iout3 = (uint16_t)(((pom/buffer[73])*buffer[64])/100/3);
 		}
 		else {
 			data->Iout1 = 0;
@@ -817,7 +831,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->Ipout2 = 0;
 		data->Ipout3 = 0;
 	}
-	else { 
+	else {
 		data->Ipout2 = buffer[66]*3;
 		data->Ipout3 = buffer[67]*3;
 	}
@@ -843,7 +857,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 	data->Ubat *= 10;
 	data->Ibat = buffer[45]+256*buffer[46];
 	if (!buffer[47])
-		data->Ibat = data->Ibat*10; 
+		data->Ibat = data->Ibat*10;
 
 	data->Tsystem = buffer[48];
 	data->NomBatCap = buffer[74]+256*buffer[75];
@@ -876,36 +890,36 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 	data->StatusCode[4] = 0x00;
 
 	/* Overload 	if (riello_test_bit(&DevData.StatusCode[4], 2)) */
-	if (buffer[31] & 128)  	
+	if (buffer[31] & 128)
 		data->StatusCode[4] |= 0x04;
 
 	/* Bypass 		if (riello_test_bit(&DevData.StatusCode[1], 3)) */
-	if (((buffer[31] & 2) || (riello_test_bit(&buffer[32], 0)) || (riello_test_bit(&buffer[32], 12)) || 
+	if (((buffer[31] & 2) || (riello_test_bit(&buffer[32], 0)) || (riello_test_bit(&buffer[32], 12)) ||
 		(riello_test_bit(&buffer[32], 13)) || (riello_test_bit(&buffer[32], 14))) && (!(buffer[34] & 8)))
 		data->StatusCode[1] |= 0x08;
 
 	/* AC Fail  	if (riello_test_bit(&DevData.StatusCode[0], 1)) */
-	if (buffer[31] & 8)		
+	if (buffer[31] & 8)
 		data->StatusCode[0] |= 0x02;
 
 	/* LowBatt	  if ((riello_test_bit(&DevData.StatusCode[0], 1)) && (riello_test_bit(&DevData.StatusCode[0], 0))) */
 	if (buffer[31] & 16) {
-		if (buffer[31] & 8) {	
+		if (buffer[31] & 8) {
 			data->StatusCode[0] |= 0x02;
 			data->StatusCode[0] |= 0x01;
 		}
 	}
 
 	/* Standby 		if (!riello_test_bit(&DevData.StatusCode[0], 3)) */
-	if ((buffer[22] & 2) || (buffer[34] & 4) || (buffer[34] & 8))	  		
+	if ((buffer[22] & 2) || (buffer[34] & 4) || (buffer[34] & 8))
 		data->StatusCode[0] &= 0xF7;
 
 	/* Battery bad (Replace battery) 		if (riello_test_bit(&DevData.StatusCode[2], 0)) */
-	if (buffer[31] & 0x40)	
+	if (buffer[31] & 0x40)
 		data->StatusCode[2] |= 0x01;
 }
 
-void riello_init_serial()
+void riello_init_serial(void)
 {
 	wait_packet = 1;
 	buf_ptr_length = 0;
@@ -913,7 +927,7 @@ void riello_init_serial()
 	foundnak = 0;
 }
 
-uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length) 
+uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length)
 {
 	LAST_DATA[0] = LAST_DATA[1];
 	LAST_DATA[1] = LAST_DATA[2];
@@ -934,6 +948,8 @@ uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length)
 			if ((buf_ptr_length==0) && (LAST_DATA[5]>0x20) && (LAST_DATA[4]==0x2))
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -944,7 +960,7 @@ uint8_t riello_tail(uint8_t type, uint8_t length)
 
 	switch (type) {
 		case DEV_RIELLOSENTRY:
-			number = length; 
+			number = length;
 
 			if (buf_ptr_length >= number)
 				return(1);
@@ -952,6 +968,8 @@ uint8_t riello_tail(uint8_t type, uint8_t length)
 		case DEV_RIELLOGPSER:
 			if (LAST_DATA[5] == 0x03)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);
@@ -964,6 +982,8 @@ uint8_t riello_test_nak(uint8_t type, uint8_t* buffer)
 			if (buffer[3] == 0x15)
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -973,15 +993,15 @@ void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum)
 	static uint8_t actual_char, int_i;
 	static uint8_t length;
 
-	actual_char = commbyte; 
+	actual_char = commbyte;
 
-	if ((riello_header(typedev, actual_char, &length)) && (!foundheader)) { 
+	if ((riello_header(typedev, actual_char, &length)) && (!foundheader)) {
 		upsdebugx(5,"Header detected: LAST_DATA:%X,%X,%X,%X,%X,%X  buf_ptr:%i  \n\r",
 					LAST_DATA[0], LAST_DATA[1], LAST_DATA[2],
 					LAST_DATA[3], LAST_DATA[4], LAST_DATA[5], buf_ptr_length);
 
 		foundheader = 1;
-		buf_ptr_length = 1;  
+		buf_ptr_length = 1;
 		memset(buffer, 0, BUFFER_SIZE);
 		buffer[0] = LAST_DATA[4];
 	}
@@ -1001,13 +1021,13 @@ void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum)
 
 		if (riello_test_nak(typedev, buffer)) {
 			wait_packet = 0;
-			foundnak = 1;  
+			foundnak = 1;
 		}
 
 		if (riello_test_crc(typedev, buffer, buf_ptr_length, checksum)) {
 			wait_packet = 0;
 			foundbadcrc = 1;
-		} 
+		}
 		else {
 			wait_packet = 0;
 			foundbadcrc = 0;

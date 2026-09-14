@@ -1,0 +1,25 @@
+NUT contributed and integration scripts
+=======================================
+
+These directories hold various scripts and resources needed for systems
+integration, and other non-core functionality, which were contributed
+over time by the NUT Team, side projects and/or general community members
+(users of the software), including:
+
+- example startup and shutdown scripts for various operating systems and
+  distributions,
+- `hotplug` and `udev` integration for on the fly privileges settings
+  (Linux only),
+- `UPower` (previously `DeviceKit-power`) rules file,
+- Python Client module and application,
+- Perl client module,
+- Augeas support lenses and modules for NUT,
+- support to run NUT components as service unit instances:
+  * shared `nut-driver-enumerator` and `upsdrvsvcctl` logic,
+  * `systemd` support files,
+  * SMF (Solaris/illumos Service Management Framework) support files,
+- init-scripts and/or packaging elements for several Unix operating systems,
+- Windows build helpers and information,
+- software-driven USB reset suggestions and helpers (for stuck devices),
+- `logrotate` integration,
+- and many others.

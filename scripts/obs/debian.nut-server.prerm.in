@@ -1,0 +1,65 @@
+#!/bin/sh -e
+
+# the DEBHELPER token is purposely not used
+# because we don't want the daemon to be
+# stopped during an upgrade
+
+case "$1" in
+
+  remove)
+    # nut-usb specifics
+    [ -f /etc/hotplug/usb/libhid.usermap ] && rm -f /etc/hotplug/usb/libhid.usermap
+    [ -f /etc/hotplug/usb/libhidups ] && rm -f /etc/hotplug/usb/libhidups
+
+    [ -L /usr/doc/nut ] && rm -f /usr/doc/nut
+
+    # do stop the daemons on remove
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl stop nut-driver.target
+        /bin/systemctl disable nut-driver.target
+
+        /bin/systemctl stop nut-driver-enumerator.path
+        /bin/systemctl disable nut-driver-enumerator.path
+
+        /bin/systemctl stop nut-driver-enumerator.service
+        /bin/systemctl disable nut-driver-enumerator.service
+
+        /bin/systemctl stop nut-server.service
+        /bin/systemctl disable nut-server.service
+
+        if [ -x /lib/nut/nut-driver-enumerator.sh ] ; then
+            for DRV in `/lib/nut/nut-driver-enumerator.sh --list-services 2>/dev/null` ; do
+                /bin/systemctl stop "$DRV"
+                /bin/systemctl disable "$DRV"
+            done
+        fi
+    fi
+
+    invoke-rc.d nut stop && sleep 1
+    [ -d @runbasedir@/nut ] && rm -rf @runbasedir@/nut/
+    ;;
+
+  upgrade)
+    [ -L /usr/doc/nut ] && rm -f /usr/doc/nut
+    # do not stop the daemon on upgrade
+    ;;
+
+  failed-upgrade)
+    # do nothing
+    ;;
+
+  deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+
+exit 0

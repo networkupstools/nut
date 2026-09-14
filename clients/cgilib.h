@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_CGILIB_H_SEEN
+#define NUT_CGILIB_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -35,9 +38,16 @@ void extractpostargs(void);
 /* see if a host is allowed per the hosts.conf */
 int checkhost(const char *host, char **desc);
 
+/* print a string safely in HTML text or quoted attribute contexts */
+void html_print_esc(const char *in);
+
+/* print an RFC 3986 URI component */
+void url_print_esc(const char *in);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_CGILIB_H_SEEN */

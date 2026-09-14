@@ -22,6 +22,9 @@
  *
 */
 
+#ifndef NUT_ONEAC_H_SEEN
+#define NUT_ONEAC_H_SEEN 1
+
 /*misc stuff*/
 #define ENDCHAR '\r'
 #define IGNCHARS "\n"
@@ -167,7 +170,7 @@
 #define V120AC			'1'
 #define XFER_BLACKOUT	'B'
 #define XFER_LOW_VOLT	'L'
-#define XFER_HI_VOLT	'H' 
+#define XFER_HI_VOLT	'H'
 #define	BUZZER_ENABLED	'1'
 #define BUZZER_DISABLED	'0'
 #define	BUZZER_MUTED	'2'
@@ -181,3 +184,5 @@
 #define CODE_OVERLOAD		"c8"	/*"slight" overload*/
 #define CODE_GROSS_OVLE		"c9"	/*gross overload 1 minute to power off*/
 #define CODE_CHRGR_FUSE_OPEN "u1"	/*battery charger fuse probably open*/
+
+#endif	/* NUT_ONEAC_H_SEEN */

@@ -1,0 +1,93 @@
+#!/bin/sh -e
+
+# Note: nut-common should be installed first and it delivers
+# the user accounts and the sysconfdir (/etc/nut)
+
+case "$1" in
+
+  configure)
+
+    # make sure that nut-server conffiles are secured and have
+    # the correct ownerships on first install
+    if [ -z "$2" ] ; then
+        for file in ups.conf upsd.conf upsd.users ; do
+            if [ -f /etc/nut/$file ] ; then
+                chown root:nut /etc/nut/$file
+                chmod 640 /etc/nut/$file
+            fi
+        done
+    fi
+
+    # make sure that /var/lib/nut has the correct permissions and ownerships
+    if [ -d /var/lib/nut ] ; then
+        chown root:nut /var/lib/nut
+        chmod 770 /var/lib/nut
+    fi
+
+    # ask udev to check for new udev rules
+    [ -x /etc/init.d/udev ] && pidof udevd > /dev/null \
+      && udevadm trigger --subsystem-match=usb --action=change
+
+    # 557178  udevadm trigger --subsystem-match=usb
+
+    if dpkg --compare-versions "$2" le "2.6.4-2~" &&
+      [ -f /etc/init.d/nut ] ; then
+        if [ "`md5sum /etc/init.d/nut | cut -d ' ' -f 1`" = 72f1dbc6b92cb4407f26605d05b12681 ]; then
+            rm -f /etc/init.d/nut
+        else
+            mv /etc/init.d/nut /etc/init.d/nut.dpkg-old
+        fi
+        update-rc.d nut remove >/dev/null
+    fi
+
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        echo "Register NUT drivers (if any)..."
+        REPORT_RESTART_42=no AUTO_START=no /lib/nut/nut-driver-enumerator.sh --reconfigure
+
+        /bin/systemctl daemon-reload
+
+        # Watch *changes* to /etc/nut/ups.conf and trigger nut-driver-enumerator.service then
+        /bin/systemctl enable nut-driver-enumerator.path
+        /bin/systemctl start --no-block nut-driver-enumerator.path || true
+
+        # The nut-driver-enumerator.path reacts to changes of /etc/nut/ups.conf
+        # but does not execute the service handler (to add or remove nut-driver
+        # service instances) initially, whether the configuration exists or not.
+        # Running the script allows to handle that properly.
+        /bin/systemctl enable nut-driver-enumerator.service
+        /bin/systemctl start --no-block nut-driver-enumerator.service || true
+
+        /bin/systemctl enable nut-server.service
+        # upsd accounts must be defined (if existed before) to start the service
+        if [ -s /etc/nut/upsd.conf ] && [ -s /etc/nut/ups.conf ]; then
+            /bin/systemctl start --no-block nut-server.service || true
+        fi
+
+        /bin/systemctl enable nut-driver.target
+        /bin/systemctl start --no-block nut-driver.target || true
+    fi
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  abort-remove)
+    # do nothing
+    ;;
+
+  abort-deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+# Skip DEBHELPER because in this case we handle systemd in target OS better by ourselves #
+
+exit 0

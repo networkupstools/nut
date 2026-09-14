@@ -66,6 +66,7 @@
 
    The following parameters (ups.conf) are supported:
 	lowbatt
+	command_delay
 
    The following variables are supported (RW = read/write):
 	ambient.humidity (1)
@@ -123,9 +124,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
-#define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_NAME	"Tripp Lite SmartOnline driver"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -162,6 +164,8 @@ static struct {
 	unsigned long commands_available;
 } ups;
 
+static long command_delay = 0; /* delay in milliseconds before each command, 0 = no delay by default */
+
 /* bits in commands_available */
 #define WDG_AVAILABLE            (1UL <<  1)
 
@@ -192,9 +196,9 @@ static struct {
 #define RELAY_OFF                    "ROF" /* set */
 #define RELAY_ON                     "RON" /* set */
 #define ATX_RESUME                   "RSM" /* set */
-#define SHUTDOWN_ACTION              "SDA" /* set */
-#define SHUTDOWN_RESTART             "SDR" /* set */
-#define SHUTDOWN_TYPE                "SDT" /* poll/set */
+#define TSU_SHUTDOWN_ACTION          "SDA" /* set */
+#define TSU_SHUTDOWN_RESTART         "SDR" /* set */
+#define TSU_SHUTDOWN_TYPE            "SDT" /* poll/set */
 #define RELAY_STATUS                 "SOL" /* poll/set */
 #define SELECT_OUTPUT_VOLTAGE        "SOV" /* poll/set */
 #define STATUS_ALARM                 "STA" /* poll */
@@ -215,12 +219,18 @@ static struct {
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
-static int do_command(char type, const char *command, const char *parameters, char *response)
+static ssize_t do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count, ret;
+	size_t	count;
+	ssize_t	ret;
 
 	ser_flush_io(upsfd);
+
+	/* Apply configurable delay if enabled (> 0) to prevent communication timeouts */
+	if (command_delay > 0) {
+		usleep((useconds_t)command_delay*1000);
+	}
 
 	if (response) {
 		*response = '\0';
@@ -234,7 +244,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		return -1;
 	}
 
-	upsdebugx(3, "do_command: %d bytes sent [%s] -> OK", ret, buffer);
+	upsdebugx(3, "do_command: %" PRIiSIZE " bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
 	if (ret < 0) {
@@ -247,9 +257,10 @@ static int do_command(char type, const char *command, const char *parameters, ch
 	}
 
 	buffer[ret] = '\0';
-	upsdebugx(3, "do_command: %d byted read [%s]", ret, buffer);
+	upsdebugx(3, "do_command: %" PRIiSIZE " byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
+		int	c;
 
 		ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 3, 3, 0);
 		if (ret < 0) {
@@ -262,9 +273,15 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		buffer[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, buffer);
+		upsdebugx(3, "do_command: %" PRIiSIZE " bytes read [%s]", ret, buffer);
 
-		count = atoi(buffer);
+		c = atoi(buffer);
+		if (c < 0) {
+			upsdebugx(3, "do_command: response not expected to be a negative count!");
+			return -1;
+		}
+
+		count = (size_t)c;
 		if (count >= MAX_RESPONSE_LENGTH) {
 			upsdebugx(3, "do_command: response exceeds expected size!");
 			return -1;
@@ -290,12 +307,12 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		response[ret] = '\0';
-		upsdebugx(3, "do_command: %d bytes read [%s]", ret, response);
+		upsdebugx(3, "do_command: %" PRIiSIZE " bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
-		   I don't like that, so I remove them.  This is safe to
-		   do with all responses for this protocol, so I just
-		   do that here. */
+		 * I don't like that, so I remove them.  This is safe to
+		 * do with all responses for this protocol, so I just
+		 * do that here. */
 		str_rtrim(response, ' ');
 
 		return ret;
@@ -415,10 +432,10 @@ static int get_sensitivity(void) {
 
 	if (do_command(POLL, VOLTAGE_SENSITIVITY, "", response) <= 0)
 		return 0;
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (sensitivity[i].code == atoi(response)) {
 			dstate_setinfo("input.sensitivity", "%s",
-			               sensitivity[i].name);
+				sensitivity[i].name);
 			return 1;
 		}
 	}
@@ -430,9 +447,9 @@ static void set_sensitivity(const char *val) {
 	char parm[20];
 	unsigned int i;
 
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			snprintf(parm, sizeof(parm), "%d", i);
+			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}
@@ -463,7 +480,12 @@ static int instcmd(const char *cmdname, const char *extra)
 	int i;
 	char parm[20];
 
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_OFF, parm, NULL);
@@ -471,6 +493,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_ON, parm, NULL);
@@ -478,48 +501,57 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "60", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "60", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(1);
-		do_command(SET, SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #if 0 /* doesn't seem to work */
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		auto_reboot(0);
-		do_command(SET, SHUTDOWN_ACTION, "10", NULL);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 #endif
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
-		do_command(SET, SHUTDOWN_ACTION, "0", NULL);
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		do_command(SET, TSU_SHUTDOWN_ACTION, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "3", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 static int setvar(const char *varname, const char *val)
 {
+	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "ups.id")) {
 		set_identification(val);
@@ -542,13 +574,13 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);
+	upslog_SET_UNKNOWN(varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
 static int init_comm(void)
 {
-	int i, bit;
+	size_t i, bit;
 	char response[MAX_RESPONSE_LENGTH];
 
 	ups.commands_available = 0;
@@ -582,7 +614,7 @@ void upsdrv_initinfo(void)
 
 	if (!init_comm())
 		fatalx(EXIT_FAILURE, "Unable to detect Tripp Lite SmartOnline UPS on port %s\n",
-		        device_path);
+			device_path);
 	min_low_transfer = max_low_transfer = 0;
 	min_high_transfer = max_high_transfer = 0;
 
@@ -597,28 +629,40 @@ void upsdrv_initinfo(void)
 		ptr = field(response, 0);
 		if (ptr)
 			dstate_setinfo("input.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		ptr = field(response, 2);
 		if (ptr) {
 			dstate_setinfo("output.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		}
 		ptr = field(response, 14);
 		if (ptr)
 			dstate_setinfo("battery.voltage.nominal", "%d",
-			               atoi(ptr));
+				atoi(ptr));
 		ptr = field(response, 10);
-		if (ptr)
-			min_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 9);
-		if (ptr)
-			max_low_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_low_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 12);
-		if (ptr)
-			min_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				min_high_transfer = (unsigned int)ipv;
+		}
 		ptr = field(response, 11);
-		if (ptr)
-			max_high_transfer = atoi(ptr);
+		if (ptr) {
+			int ipv = atoi(ptr);
+			if (ipv >= 0)
+				max_high_transfer = (unsigned int)ipv;
+		}
 	}
 	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0)
 		ups.outlet_banks = atoi(response);
@@ -630,19 +674,18 @@ void upsdrv_initinfo(void)
 	if (get_transfer_voltage_low() && max_low_transfer) {
 		dstate_setflags("input.transfer.low", ST_FLAG_RW);
 		for (i = min_low_transfer; i <= max_low_transfer; i++)
-			dstate_addenum("input.transfer.low", "%d", i);
+			dstate_addenum("input.transfer.low", "%u", i);
 	}
 	if (get_transfer_voltage_high() && max_low_transfer) {
 		dstate_setflags("input.transfer.high", ST_FLAG_RW);
 		for (i = min_high_transfer; i <= max_high_transfer; i++)
-			dstate_addenum("input.transfer.high", "%d", i);
+			dstate_addenum("input.transfer.high", "%u", i);
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
-		for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]);
-		     i++)
+		for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++)
 			dstate_addenum("input.sensitivity", "%s",
-			               sensitivity[i].name);
+				sensitivity[i].name);
 	}
 	if (ups.outlet_banks) {
 		dstate_addcmd("load.off");
@@ -664,8 +707,10 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
-	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"),
-	       dstate_getinfo("ups.model"), device_path);
+	printf("Detected %s %s on %s\n",
+		dstate_getinfo("ups.mfr"),
+		dstate_getinfo("ups.model"),
+		device_path);
 }
 
 void upsdrv_updateinfo(void)
@@ -723,15 +768,15 @@ void upsdrv_updateinfo(void)
 	ptr = field(response, 3);
 	if (ptr)
 		dstate_setinfo("output.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 1);
 	if (ptr)
 		dstate_setinfo("output.frequency", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 4);
 	if (ptr)
 		dstate_setinfo("output.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 
 	low_battery = 0;
 	if (do_command(POLL, STATUS_BATTERY, "", response) <= 0) {
@@ -751,18 +796,22 @@ void upsdrv_updateinfo(void)
 	if (ptr) {
 		dstate_setinfo("battery.charge", "%d", atoi(ptr));
 		ptr2 = getval("lowbatt");
-		if (ptr2 && atoi(ptr2) > 0 && atoi(ptr2) <= 99 &&
-		    atoi(ptr) <= atoi(ptr2))
+		if (ptr2
+		 && atoi(ptr2) > 0
+		 && atoi(ptr2) <= 99
+		 && atoi(ptr) <= atoi(ptr2)
+		) {
 			low_battery = 1;
+		}
 	}
 	ptr = field(response, 6);
 	if (ptr)
 		dstate_setinfo("battery.voltage", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	ptr = field(response, 7);
 	if (ptr)
 		dstate_setinfo("battery.current", "%03.1f",
-		               (double) atoi(ptr) / 10.0);
+			(double) (atoi(ptr)) / 10.0);
 	if (low_battery)
 		status_set("LB");
 
@@ -778,11 +827,11 @@ void upsdrv_updateinfo(void)
 		ptr = field(response, 2);
 		if (ptr)
 			dstate_setinfo("input.voltage", "%03.1f",
-			               (double) atoi(ptr) / 10.0);
+				(double) (atoi(ptr)) / 10.0);
 		ptr = field(response, 1);
 		if (ptr)
-			dstate_setinfo("input.frequency",
-				       "%03.1f", (double) atoi(ptr) / 10.0);
+			dstate_setinfo("input.frequency", "%03.1f",
+				(double) (atoi(ptr)) / 10.0);
 	}
 
 	if (do_command(POLL, TEST_RESULT, "", response) > 0) {
@@ -790,8 +839,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) / 
-			sizeof(test_result_names[0]);
+		trsize = SIZEOF_ARRAY(test_result_names);
 
 		if ((r < 0) || (r >= (int) trsize))
 			r = 0;
@@ -817,7 +865,7 @@ void upsdrv_updateinfo(void)
 			}
 		}
 		if (contacts_set)
-			dstate_setinfo("ups.contacts", "%02X", flags);
+			dstate_setinfo("ups.contacts", "%02X", (unsigned int)flags);
 	}
 
 	/* if we are here, status is valid */
@@ -827,20 +875,28 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char parm[20];
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	char	parm[20];
 
 	if (!init_comm())
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
 	auto_reboot(1);
 	/* in case the power is on, tell it to automatically reboot.  if
-	   it is off, this has no effect. */
+	 * it is off, this has no effect. */
 	snprintf(parm, sizeof(parm), "%d", 1); /* delay before reboot, in minutes */
-	do_command(SET, SHUTDOWN_RESTART, parm, NULL);
+	do_command(SET, TSU_SHUTDOWN_RESTART, parm, NULL);
 	snprintf(parm, sizeof(parm), "%d", 5); /* delay before shutdown, in seconds */
-	do_command(SET, SHUTDOWN_ACTION, parm, NULL);
+	do_command(SET, TSU_SHUTDOWN_ACTION, parm, NULL);
 }
 
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 
@@ -848,12 +904,35 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "lowbatt", "Set low battery level, in percent");
+	addvar(VAR_VALUE, "command_delay", 
+		"Delay in milliseconds before each command (default: 0 = no delay; "
+		"set to 1000ms if experiencing communication timeouts)");
 }
 
 void upsdrv_initups(void)
 {
+	const char *val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	/* Initialize command_delay from configuration */
+	val = getval("command_delay");
+	if (val) {
+		long temp = atol(val);
+		/* 0 (no delay) or positive values */
+		if (temp < 0) {
+			fatalx(EXIT_FAILURE, "Invalid command_delay parameter: %s (must be >= 0)", val);
+		}
+		command_delay = temp;
+		if (command_delay == 0) {
+			upsdebugx(2, "command_delay is explicitly set to 0 (no delay)");
+		} else {
+			upsdebugx(2, "Setting command_delay to %ld milliseconds", command_delay);
+		}
+	} else {
+		upsdebugx(2, "Using default command_delay of %ld (no delay)", command_delay);
+	}
 }
 
 void upsdrv_cleanup(void)

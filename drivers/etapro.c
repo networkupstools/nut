@@ -52,9 +52,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,6 +66,14 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
+
+/* Shutdown command to off delay in seconds.  */
+#define SHUTDOWN_GRACE_TIME 10
+
+/* Shutdown to return delay in seconds.  */
+#define SHUTDOWN_TO_RETURN_TIME 15
+
 static int
 etapro_get_response(const char *resp_type)
 {
@@ -73,8 +82,8 @@ etapro_get_response(const char *resp_type)
 	unsigned int n, val;
 
 	/* Read until a newline is found or there is no room in the buffer.
-	   Unlike ser_get_line(), don't discard the following characters
-	   because we have to handle multi-line responses.  */
+	 * Unlike ser_get_line(), don't discard the following characters
+	 * because we have to handle multi-line responses.  */
 	n = 0;
 	while (ser_get_char(upsfd, (unsigned char *)&tmp[n], 1, 0) == 1) {
 		if (n >= sizeof(tmp) - 1 || tmp[n] == '\n')
@@ -105,6 +114,8 @@ etapro_get_response(const char *resp_type)
 	case 'T':
 		dstate_setinfo("ups.mfr.date", "%s", cp + 2);
 		return 0;
+	default:
+		break;
 	}
 	/* Handle all other responses as hexadecimal numbers.  */
 	val = 0;
@@ -112,11 +123,14 @@ etapro_get_response(const char *resp_type)
 		upslogx(LOG_ERR, "bad response format (%s)", tmp);
 		return -1;
 	}
-	return val;
+	if (val > INT_MAX) {
+		upslogx(LOG_WARNING, "got value too big in response");
+	}
+	return (int)val;
 }
 
 static void
-etapro_set_on_timer(int seconds)
+etapro_set_on_timer(unsigned int seconds)
 {
 	int x;
 
@@ -130,10 +144,10 @@ etapro_set_on_timer(int seconds)
 			seconds = (seconds + 59) / 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS on in %d minutes\n", seconds);
+			printf("UPS on in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS on in %d seconds\n", seconds);
+			printf("UPS on in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RN%04X\r", seconds);
@@ -141,11 +155,11 @@ etapro_set_on_timer(int seconds)
 		if (x == 0x20)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static void
-etapro_set_off_timer(int seconds)
+etapro_set_off_timer(unsigned int seconds)
 {
 	int x;
 
@@ -159,10 +173,10 @@ etapro_set_off_timer(int seconds)
 			seconds /= 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS off in %d minutes\n", seconds);
+			printf("UPS off in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS off in %d seconds\n", seconds);
+			printf("UPS off in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RO%04X\r", seconds);
@@ -170,27 +184,35 @@ etapro_set_off_timer(int seconds)
 		if (x == 0)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
 	if (!strcasecmp(cmdname, "load.off")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		etapro_set_off_timer(1);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on")) {
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		etapro_set_on_timer(1);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upsdrv_shutdown();
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
+		etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -270,7 +292,7 @@ upsdrv_updateinfo(void)
 	}
 
 	/* TODO: >= 1000VA models have a 24V battery (max 28V) - check
-	   the model string returned by the RI command.  */
+	 * the model string returned by the RI command.  */
 	battvolt = (14.0 / 255) * x;
 
 	x = etapro_get_response("SL");  /* load (on battery), 0xFF = 150% */
@@ -286,8 +308,8 @@ upsdrv_updateinfo(void)
 		return;
 	}
 	/* This is the time how long the UPS has been running on battery
-	   (in seconds, reset to zero after power returns), but there
-	   seems to be no variable defined for this yet...  */
+	 * (in seconds, reset to zero after power returns), but there
+	 * seems to be no variable defined for this yet...  */
 
 	status_init();
 
@@ -325,23 +347,25 @@ upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
-
-/* Shutdown command to off delay in seconds.  */
-#define SHUTDOWN_GRACE_TIME 10
-
-/* Shutdown to return delay in seconds.  */
-#define SHUTDOWN_TO_RETURN_TIME 15
-
 void
 upsdrv_shutdown(void)
 {
-	etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
-	etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void
 upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void
+upsdrv_tweak_prognames(void)
 {
 }
 

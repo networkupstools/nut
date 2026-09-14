@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.07"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.11"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
@@ -76,7 +76,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 	{ "output.voltage",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "output.frequency",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "ups.temperature",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Utility Fail (Immediate) */
@@ -99,6 +99,20 @@ static item_t	voltronic_qs_qx2nut[] = {
 	{ "output.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "output.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+
+	/* Query UPS for charge and runtime
+	 * > [QI\r]
+	 * < [(100 00979 50.0 000.3 177 290 0 0000010000112000\r]
+	 *    0123456789012345678901234567890123456789012345678
+	 *    0         1         2         3         4
+	 */
+
+	{ "battery.charge",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	1,	3,	"%.0f",	0,		NULL,	NULL,	NULL },
+	{ "battery.runtime",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	5,	9,	"%.0f",	0,		NULL,	NULL,	NULL },
+	{ "input.frequency",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	11,	14,	"%.1f",	0,		NULL,	NULL,	NULL },
+	{ "output.current",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	16,	20,	"%.1f",	0,		NULL,	NULL,	NULL },
+	{ "input.transfer.low",		0,	NULL,	"QI\r",	"",	49,	'(',	"",	22,	24,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	{ "input.transfer.high",	0,	NULL,	"QI\r",	"",	49,	'(',	"",	26,	28,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
@@ -123,6 +137,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 static testing_t	voltronic_qs_testing[] = {
 	{ "QS\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r",	-1 },
 	{ "F\r",	"#220.0 003 12.00 50.0\r",	-1 },
+	{ "QI\r",	"(100 00979 50.0 000.3 177 290 0 0000010000112000\r", -1}
 	{ "M\r",	"V\r",	-1 },
 	{ "Q\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
@@ -191,14 +206,23 @@ static void	voltronic_qs_initups(void)
 /* Protocol used by the UPS */
 static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen)
 {
-	if (strcasecmp(item->value, "V")) {
-		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
-		return -1;
+	int	ret = -1;
+
+	if (!strcasecmp(item->value, "V")) {
+		upsdebugx(2, "%s: detected V protocol [%s]", __func__, item->value);
+		ret = 0;
+	} else if (!strcasecmp(item->value, "H")) {
+		upsdebugx(2, "%s: detected H protocol [%s]", __func__, item->value);
+		ret = 0;
 	}
 
-	snprintf(value, valuelen, item->dfl, item->value);
+	if (ret == -1) {
+		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
+	} else {
+		snprintf_dynamic(value, valuelen, item->dfl, "%s", item->value);
+	}
 
-	return 0;
+	return ret;
 }
 
 

@@ -1,0 +1,900 @@
+Setting up the multi-arch Linux LXC container farm for NUT CI
+-------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////////////
+// You can find a rendered variant of this document on the web at
+// https://networkupstools.org/docs/qa-guide.chunked/_continuous_integration_nut_ci_farm_build_agent_preparation.html
+//////////////////////////////////////////////////////////////////////////////
+
+Due to some historical reasons including earlier personal experience,
+the Linux container setup implemented as described below was done with
+persistent LXC containers wrapped by LIBVIRT for management. There was
+no particular use-case for systems like Docker (and no firepower for a
+Kubernetes cluster) in that the build environment intended for testing
+non-regression against a certain release does not need to be regularly
+updated -- its purpose is to be stale and represent what users still
+running that system for whatever reason (e.g. embedded, IoT, corporate)
+have in their environments.
+
+Common preparations
+~~~~~~~~~~~~~~~~~~~
+
+* Example list of packages for Debian-based systems may include (not
+  necessarily is limited to):
++
+----
+:; apt install lxc lxcfs lxc-templates \
+    ipxe-qemu qemu-kvm qemu-system-common qemu-system-data \
+    qemu-system-sparc qemu-system-x86 qemu-user-static qemu-utils \
+    virt-manager virt-viewer virtinst ovmf \
+    libvirt-daemon-system-systemd libvirt-daemon-system \
+    libvirt-daemon-driver-lxc libvirt-daemon-driver-qemu \
+    libvirt-daemon-config-network libvirt-daemon-config-nwfilter \
+    libvirt-daemon libvirt-clients
+
+# TODO: Where to find virt-top - present in some but not all releases?
+# Can fetch sources from https://packages.debian.org/sid/virt-top and follow
+# https://www.linuxfordevices.com/tutorials/debian/build-packages-from-source
+# Be sure to use 1.0.x versions, since 1.1.x uses a "better-optimized API"
+# which is not implemented by libvirt/LXC backend.
+----
++
+NOTE: This claims a footprint of over a gigabyte of new packages when
+  unpacked and installed to a minimally prepared OS. Much of that would
+  be the graphical environment dependencies required by several engines
+  and tools.
+
+* Prepare LXC and LIBVIRT-LXC integration, including an "independent"
+  (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
+  and https://wiki.debian.org/LXC/SimpleBridge
+** For dnsmasq integration on the independent bridge (`lxcbr0` following
+   the documentation examples), be sure to mention:
+*** `LXC_DHCP_CONFILE="/etc/lxc/dnsmasq.conf"` in `/etc/default/lxc-net`
+*** `dhcp-hostsfile=/etc/lxc/dnsmasq-hosts.conf` in/as the content of
+    `/etc/lxc/dnsmasq.conf`
+*** `touch /etc/lxc/dnsmasq-hosts.conf` which would list simple `name,IP`
+    pairs, one per line (so one per container)
+*** `systemctl restart lxc-net` to apply config (is this needed after
+    setup of containers too, to apply new items before booting them?)
+*** For troubleshooting, see `/var/lib/misc/dnsmasq.lxcbr0.leases`
+    (in some cases you may have to rename it away and reboot host to
+    fix IP address delegation)
+
+* Install qemu with its `/usr/bin/qemu-*-static` and registration in
+  `/var/lib/binfmt`
+
+* Prepare an LVM partition (or preferably some other tech like ZFS)
+  as `/srv/libvirt` and create a `/srv/libvirt/rootfs` to hold the containers
+
+* Prepare `/home/abuild` on the host system (preferably in ZFS with
+  lightweight compression like lz4 -- and optionally, only if the amount
+  of available system RAM permits, with deduplication; otherwise avoid it);
+  account user and group ID numbers are `399` as on the rest of the CI farm
+  (historically, inherited from OBS workers)
+
+** It may help to generate an ssh key without a passphrase for `abuild`
+   that it would trust, to sub-login from CI agent sessions into the
+   container. Then again, it may be not required if CI logs into the
+   host by SSH using `authorized_keys` and an SSH Agent, and the inner
+   ssh client would forward that auth channel to the original agent.
++
+------
+abuild$ ssh-keygen
+# accept defaults
+
+abuild$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+abuild$ chmod 640 ~/.ssh/authorized_keys
+------
+
+* Edit the root (or whoever manages libvirt) `~/.profile` to default the
+  virsh provider with:
++
+------
+LIBVIRT_DEFAULT_URI=lxc:///system
+export LIBVIRT_DEFAULT_URI
+------
+
+* If host root filesystem is small, relocate the LXC download cache to the
+  (larger) `/srv/libvirt` partition:
++
+------
+:; mkdir -p /srv/libvirt/cache-lxc
+:; rm -rf /var/cache/lxc
+:; ln -sfr /srv/libvirt/cache-lxc /var/cache/lxc
+------
+** Maybe similarly relocate shared `/home/abuild` to reduce strain on rootfs?
+
+
+Setup a container
+~~~~~~~~~~~~~~~~~
+
+Note that completeness of qemu CPU emulation varies, so not all distros
+can be installed, e.g. "s390x" failed for both debian10 and debian11 to
+set up the `openssh-server` package, or once even to run `/bin/true` (seems
+to have installed an older release though, to match the outdated emulation?)
+
+While the `lxc-create` tool does not really specify the error cause and
+deletes the directories after failure, it shows the pathname where it
+writes the log (also deleted). Before re-trying the container creation, this
+file can be watched with e.g. `tail -F /var/cache/lxc/.../debootstrap.log`
+
+[NOTE]
+======
+You can find the list of LXC "template" definitions on your system
+by looking at the contents of the `/usr/share/lxc/templates/` directory,
+e.g. a script named `lxc-debian` for the "debian" template. You can see
+further options for each "template" by invoking its help action, e.g.:
+------
+:; lxc-create -t debian -h
+------
+======
+
+Initial container installation (for various guest OSes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Install containers like this:
++
+------
+:; lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-debian11-mips64el -t debian -- \
+    -r bullseye -a mips64el
+------
+** to specify a particular mirror (not everyone hosts everything --
+   so if you get something like
+   `"E: Invalid Release file, no entry for main/binary-mips/Packages"`
+   then see https://www.debian.org/mirror/list for details, and double-check
+   the chosen site to verify if the distro version of choice is hosted with
+   your arch of choice):
++
+------
+:; MIRROR="http://ftp.br.debian.org/debian/" \
+   lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-debian10-mips -t debian -- \
+    -r buster -a mips
+------
+** ...or for EOLed distros, use the Debian Archive server.
+*** Install the container with Debian Archive as the mirror like this:
++
+------
+:; MIRROR="http://archive.debian.org/debian-archive/debian/" \
+   lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-debian8-s390x -t debian -- \
+    -r jessie -a s390x
+------
+*** Note you may have to add trust to their (now expired) GPG keys for
+    packaging to verify signatures made at the time the key was valid,
+    by un-symlinking (if appropriate) the debootstrap script such as
+    `/usr/share/debootstrap/scripts/jessie`, commenting away the
+    `keyring /usr/share/keyrings/debian-archive-keyring.gpg` line and
+    setting `keyring /usr/share/keyrings/debian-archive-removed-keys.gpg`
+    instead. You may further have to edit `/usr/share/debootstrap/functions`
+    and/or `/usr/share/lxc/templates/lxc-debian` to honor that setting (the
+    `releasekeyring` was hard-coded in version I had installed), e.g. in the
+    latter file ensure such logic as below, and re-run the installation:
++
+------
+...
+    # If debian-archive-keyring isn't installed, fetch GPG keys directly
+    releasekeyring="`grep -E '^keyring ' \"/usr/share/debootstrap/scripts/$release\" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
+    if [ -z $releasekeyring ]; then
+        releasekeyring=/usr/share/keyrings/debian-archive-keyring.gpg
+    fi
+    if [ ! -f $releasekeyring ]; then
+...
+------
+** ...Alternatively, other distributions can be used (as supported by your
+   LXC scripts, typically in `/usr/share/debootstrap/scripts`), e.g. Ubuntu:
++
+------
+:; lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-ubuntu1804-s390x -t ubuntu -- \
+    -r bionic -a s390x
+------
+** For distributions with a different packaging mechanism from that on the
+   LXC host system, you may need to install corresponding tools (e.g. `yum4`,
+   `rpm` and `dnf` on Debian hosts for installing CentOS and related guests).
+   You may also need to pepper with symlinks to taste (e.g. `yum => yum4`),
+   or find a `pacman` build to install Arch Linux or derivative, etc.
+   Otherwise, you risk seeing something like this:
++
+------
+root@debian:~# lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-centos7-x86-64 -t centos -- \
+    -R 7 -a x86_64
+
+Host CPE ID from /etc/os-release:
+'yum' command is missing
+lxc-create: jenkins-centos7-x86-64: lxccontainer.c:
+  create_run_template: 1616 Failed to create container from template
+lxc-create: jenkins-centos7-x86-64: tools/lxc_create.c:
+  main: 319 Failed to create container jenkins-centos7-x86-64
+------
++
+Note also that with such "third-party" distributions you may face other
+   issues; for example, the CentOS helper did not generate some fields in
+   the `config` file that were needed for conversion into libvirt "domxml"
+   (as found by trial and error, and comparison to other `config` files):
++
+------
+lxc.uts.name = jenkins-centos7-x86-64
+lxc.arch = x86_64
+------
++
+Also note the container/system naming without underscore in "x86_64" --
+   the deployed system discards the character when assigning its hostname.
+   Using "amd64" is another reasonable choice here.
++
+** For Arch Linux you would need `pacman` tools on the host system, so see
+   https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
+   for details.
+   On a Debian/Ubuntu host, assumed ready for NUT builds per
+   linkdoc:qa-guide[Prerequisites for building NUT on different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt],
+   it would start like this:
++
+------
+:; apt-get update
+:; apt-get install meson ninja-build cmake
+
+# Some dependencies for pacman itself; note there are several libcurl builds;
+# pick another if your system constraints require you to:
+:; apt-get install libarchive-dev libcurl4-nss-dev gpg libgpgme-dev
+
+:; git clone https://gitlab.archlinux.org/pacman/pacman.git
+:; cd pacman
+
+# Iterate something like this until all needed dependencies fall
+# into line (note libdir for your host architecture):
+:; rm -rf build; mkdir build && meson build --libdir=/usr/lib/x86_64-linux-gnu
+
+:; ninja -C build
+# Depending on your asciidoc version, it may require that `--asciidoc-opts` are
+# passed as equation to a vale (not space-separated from it). Then apply this:
+#   diff --git a/doc/meson.build b/doc/meson.build
+#   -      '--asciidoc-opts', ' '.join(asciidoc_opts),
+#   +      '--asciidoc-opts='+' '.join(asciidoc_opts),
+# and re-run (meson and) ninja.
+
+# Finally when all succeeded:
+:; sudo ninja -C build install
+:; cd
+------
++
+You will also need `pacstrap` and Debian `arch-install-scripts` package
+does not deliver it. It is however simply achieved:
++
+------
+:; git clone https://github.com/archlinux/arch-install-scripts
+:; cd arch-install-scripts
+:; make && sudo make PREFIX=/usr install
+:; cd
+------
++
+It will also want an `/etc/pacman.d/mirrorlist` which you can populate for
+your geographic location from https://archlinux.org/mirrorlist/ service,
+or just fetch them all (don't forget to uncomment some `Server =` lines):
++
+------
+:; mkdir -p /etc/pacman.d/
+:; curl https://archlinux.org/mirrorlist/all/ > /etc/pacman.d/mirrorlist
+------
++
+And to reference it from your host `/etc/pacman.conf` by un-commenting the
+`[core]` section and `Include` instruction, as well as adding `[community]`
+and `[extra]` sections with same reference, e.g.:
++
+------
+[core]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+[extra]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+[community]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+------
++
+And just then you can proceed with LXC:
++
+------
+:; lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-archlinux-amd64 -t archlinux -- \
+    -a x86_64 -P openssh,sudo
+------
++
+In my case, it had problems with GPG keyring missing (using one in host
+system, as well as the package cache outside the container, it seems)
+so I had to run `pacman-key --init; pacman-key --refresh-keys` on the
+host itself. Even so, `lxc-create` complained about updating some keyring
+entries and I had to go one by one picking key servers (serving different
+metadata) like this:
++
+------
+:; pacman-key --keyserver keyserver.ubuntu.com --recv-key 6D1655C14CE1C13E
+------
++
+In the worst case, see `SigLevel = Never` for `pacman.conf` to not check
+package integrity (seems too tied into thinking that host OS is Arch)...
++
+It seems that pre-fetching the package databases with `pacman -Sy` on
+the host was also important.
+
+Initial container-related setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
+  on the host, e.g.:
++
+------
+jenkins-debian11-mips,10.0.3.245
+------
++
+NOTE: Don't forget to eventually `systemctl restart lxc-net` to apply the
+new host reservation!
+
+* Convert a pure LXC container to be managed by LIBVIRT-LXC (and edit config
+  markup on the fly -- e.g. fix the LXC `dir:/` URL schema):
++
+------
+:; virsh -c lxc:///system domxml-from-native lxc-tools \
+    /srv/libvirt/rootfs/jenkins-debian11-armhf/config \
+    | sed -e 's,dir:/srv,/srv,' \
+    > /tmp/x && virsh define /tmp/x
+------
++
+NOTE: You may want to tune the default generic 64MB RAM allocation,
+   so your launched QEMU containers are not OOM-killed as they exceeded
+   their memory `cgroup` limit. In practice they do not eat *that much*
+   resident memory, just want to have it addressable by VMM, I guess
+   (swap is not very used either), at least not until active builds
+   start (and then it depends on compiler appetite and `make` program
+   parallelism level you allow, e.g. by pre-exporting `MAXPARMAKES`
+   environment variable for `ci_build.sh`, and on the number of Jenkins
+   "executors" assigned to the build agent).
++
+** It may be needed to revert the generated "os/arch" to `x86_64` (and let
+   QEMU handle the rest) in the `/tmp/x` file, and re-try the definition:
++
+------
+:; virsh define /tmp/x
+------
+
+* Then execute `virsh edit jenkins-debian11-armhf` (and same for other
+  containers) to bind-mount the common `/home/abuild` location, adding
+  this tag to their "devices":
++
+------
+    <filesystem type='mount' accessmode='passthrough'>
+      <source dir='/home/abuild'/>
+      <target dir='/home/abuild'/>
+    </filesystem>
+------
+** Note that generated XML might not conform to current LXC schema, so it
+   fails validation during save; this can be bypassed with `i` when it asks.
+   One such case was however with indeed invalid contents, the "dir:" schema
+   removed by example above.
+
+
+Shepherd the herd
+~~~~~~~~~~~~~~~~~
+
+* Monitor deployed container rootfs'es with:
++
+------
+:; du -ks /srv/libvirt/rootfs/*
+------
++
+(should have non-trivial size for deployments without fatal infant errors)
+
+* Mass-edit/review libvirt configurations with:
++
+------
+:; virsh list --all | awk '{print $2}' \
+   | grep jenkins | while read X ; do \
+     virsh edit --skip-validate $X ; done
+------
+** ...or avoid `--skip-validate` when markup is initially good :)
+
+* Mass-define network interfaces:
++
+------
+:; virsh list --all | awk '{print $2}' \
+   | grep jenkins | while read X ; do \
+     virsh dumpxml "$X" | grep "bridge='lxcbr0'" \
+     || virsh attach-interface --domain "$X" --config \
+        --type bridge --source lxcbr0 ; \
+   done
+------
+
+* Verify that unique MAC addresses were defined (e.g. `00:16:3e:00:00:01`
+  tends to pop up often, while `52:54:00:xx:xx:xx` are assigned to other
+  containers); edit the domain definitions to randomize, if needed:
++
+------
+:; grep 'mac add' /etc/libvirt/lxc/*.xml | awk '{print $NF" "$1}' | sort
+------
+
+* Make sure at least one console device exists (end of file, under the
+  network interface definition tags), e.g.:
++
+------
+    <console type='pty'>
+      <target type='lxc' port='0'/>
+    </console>
+------
+
+* Populate with `abuild` account, as well as with the `bash` shell and
+  `sudo` ability, reporting of assigned IP addresses on the console,
+  and SSH server access complete with envvar passing from CI clients
+  by virtue of `ssh -o SendEnv='*' container-name`:
++
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    echo "=== $ALTROOT :" >&2; \
+    grep eth0 "$ALTROOT/etc/issue" || ( printf '%s %s\n' \
+        '\S{NAME} \S{VERSION_ID} \n \l@\b ;' \
+        'Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' \
+        >> "$ALTROOT/etc/issue" ) ; \
+    grep eth0 "$ALTROOT/etc/issue.net" || ( printf '%s %s\n' \
+        '\S{NAME} \S{VERSION_ID} \n \l@\b ;' \
+        'Current IP(s): \4{eth0} \4{eth1} \4{eth2} \4{eth3}' \
+        >> "$ALTROOT/etc/issue.net" ) ; \
+    groupadd -R "$ALTROOT" -g 399 abuild ; \
+    useradd -R "$ALTROOT" -u 399 -g abuild -M -N -s /bin/bash abuild \
+    || useradd -R "$ALTROOT" -u 399 -g 399 -M -N -s /bin/bash abuild \
+    || { if ! grep -w abuild "$ALTROOT/etc/passwd" ; then \
+            echo 'abuild:x:399:399::/home/abuild:/bin/bash' \
+            >> "$ALTROOT/etc/passwd" ; \
+            echo "USERADDed manually: passwd" >&2 ; \
+         fi ; \
+         if ! grep -w abuild "$ALTROOT/etc/shadow" ; then \
+            echo 'abuild:!:18889:0:99999:7:::' >> "$ALTROOT/etc/shadow" ; \
+            echo "USERADDed manually: shadow" >&2 ; \
+         fi ; \
+       } ; \
+    if [ -s "$ALTROOT/etc/ssh/sshd_config" ]; then \
+        grep 'AcceptEnv \*' "$ALTROOT/etc/ssh/sshd_config" || ( \
+            ( echo "" ; \
+              echo "# For CI: Allow passing any envvars:"; \
+              echo 'AcceptEnv *' ) \
+            >> "$ALTROOT/etc/ssh/sshd_config" \
+        ) ; \
+    fi ; \
+   done
+------
++
+Note that for some reason, in some of those other-arch distros `useradd`
+fails to find the group anyway; then we have to "manually" add them.
+
+* Let the host know and resolve the names/IPs of containers you assigned:
++
+------
+:; grep -v '#' /etc/lxc/dnsmasq-hosts.conf \
+   | while IFS=, read N I ; do \
+    getent hosts "$N" >&2 || echo "$I $N" ; \
+   done >> /etc/hosts
+------
+
+Further setup of the containers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See linkdoc:qa-guide[Prerequisites for building NUT on different
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] about dependency
+package installation for Debian-based Linux systems.
+
+It may be wise to not install e.g. documentation generation tools (or at
+least not the full set for HTML/PDF generation) in each environment, in
+order to conserve space and run-time stress.
+
+Still, if there are significant version outliers (such as using an older
+distribution due to vCPU requirements), it can be installed fully just
+to ensure non-regression -- e.g. that when adapting `Makefile` rule
+definitions or compiler arguments to modern toolkits, we do not lose
+the ability to build with older ones.
+
+For this, `chroot` from the host system can be used, e.g. to improve the
+interactive usability for a population of Debian(-compatible) containers
+(and to use its networking, while the operating environment in containers
+may be not yet configured or still struggling to access the Internet):
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    echo "=== $ALTROOT :" ; \
+    chroot "$ALTROOT" apt-get install \
+        sudo bash vim mc p7zip p7zip-full pigz pbzip2 git \
+   ; done
+------
+
+Similarly for `yum`-managed systems (CentOS and relatives), though specific
+package names can differ, and additional package repositories may need to
+be enabled first (see linkdoc:qa-guide[Prerequisites for building NUT on
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for more
+details such as recommended package names).
+
+Note that technically `(sudo) chroot ...` can also be used from the CI worker
+account on the host system to build in the prepared filesystems without the
+overhead of running containers as complete operating environments with any
+standard services and several copies of Jenkins `agent.jar` in them.
+
+Also note that externally-driven set-up of some packages, including the
+`ca-certificates` and the JDK/JRE, require that the `/proc` filesystem
+is usable in the chroot environment. This can be achieved with e.g.:
+------
+:; for ALTROOT in /srv/libvirt/rootfs/*/rootfs/ ; do \
+    for D in proc ; do \
+      echo "=== $ALTROOT/$D :" ; \
+      mkdir -p "$ALTROOT/$D" ; \
+      mount -o bind,rw "/$D" "$ALTROOT/$D" ; \
+    done ; \
+   done
+------
+
+TODO: Test and document a working NAT and firewall setup for this, to allow
+SSH access to the containers via dedicated TCP ports exposed on the host.
+
+Arch Linux containers
+^^^^^^^^^^^^^^^^^^^^^
+
+Arch Linux containers prepared by procedure above include only a minimal
+footprint, and if you missed the `-P pkg,list` argument, they can lack
+even an SSH server. Suggestions below assume this path to container:
+------
+:; ALTROOT=/srv/libvirt/rootfs/jenkins-archlinux-amd64/rootfs/
+------
+
+Let `pacman` know current package database:
+------
+:; grep 8.8.8.8 $ALTROOT/etc/resolv.conf || (echo 'nameserver 8.8.8.8' > $ALTROOT/etc/resolv.conf)
+:; chroot $ALTROOT pacman -Syu
+:; chroot $ALTROOT pacman -S openssh sudo
+:; chroot $ALTROOT systemctl enable sshd
+:; chroot $ALTROOT systemctl start sshd
+------
+
+This may require that you perform bind-mounts above, as well as "passthrough"
+the `/var/cache/pacman/pkg` from host to guest environment (in `virsh edit`,
+and bind-mount for `chroot` like for `/proc` et al above).
+
+It is possible that `virsh console` would serve you better than `chroot`.
+Note you may have to first `chroot` to set the `root` password anyhow.
+
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+* Q: Container won't start, its `virsh console` says something like:
++
+------
+Failed to create symlink /sys/fs/cgroup/net_cls: Operation not permitted
+------
++
+A: According to https://bugzilla.redhat.com/show_bug.cgi?id=1770763
+   (skip to the end for summary) this can happen when a newer Linux
+   host system with `cgroupsv2` capabilities runs an older guest distro
+   which only knows about `cgroupsv1`, such as when hosting a CentOS 7
+   container on a Debian 11 server.
++
+** One workaround is to ensure that the guest `systemd` does not try to
+   "join" host facilities, by setting an explicit empty list for that:
++
+------
+:; echo 'JoinControllers=' >> "$ALTROOT/etc/systemd/system.conf"
+------
++
+** Another approach is to upgrade `systemd` related packages in the guest
+   container. This may require additional "backport" repositories or
+   similar means, possibly maintained not by distribution itself but by
+   other community members, and arguably would logically compromise the
+   idea of non-regression builds in the old environment "as is".
+
+* Q: Server was set up with ZFS as recommended, and lots of I/O hit the
+  disk even when application writes are negligible
++
+A: This was seen on some servers and generally derives from data layout
+   and how ZFS maintains the tree structure of blocks. A small application
+   write (such as a new log line) means a new empty data block allocation,
+   an old block release, and bubble up through the whole metadata tree to
+   complete the transaction (grouped as TXG to flush to disk).
++
+** One solution is to use discardable build workspaces in RAM-backed
+   storage like `/dev/shm` (`tmpfs`) on Linux, or `/tmp` (`swap`) on
+   illumos hosting systems, and only use persistent storage for the home
+   directory with `.ccache` and `.gitcache-dynamatrix` directories.
+** Another solution is to reduce the frequency of TXG sync from modern
+   default of 5 sec to conservative 30-60 sec. Check how to set the
+   `zfs_txg_timeout` on your platform.
+
+
+Connecting Jenkins to the containers
+------------------------------------
+
+To properly cooperate with the
+https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
+project driving regular NUT CI builds, each build environment should be
+exposed as an individual agent with labels describing its capabilities.
+
+Agent Labels
+~~~~~~~~~~~~
+
+With the `jenkins-dynamatrix`, agent labels are used to calculate a large
+"slow build" matrix to cover numerous scenarios for what can be tested
+with the current population of the CI farm, across operating systems,
+`make`, shell and compiler implementations and versions, and C/C++ language
+revisions, to name a few common "axes" involved.
+
+Labels for QEMU
+^^^^^^^^^^^^^^^
+
+Emulated-CPU container builds are CPU-intensive, so for them we define as
+few capabilities as possible: here CI is more interested in checking how
+binaries behave on those CPUs, *not* in checking the quality of recipes
+(distcheck, Make implementations, etc.), shell scripts or documentation,
+which is more efficient to test on native platforms.
+
+Still, we are interested in results from different compiler suites, so
+specify at least one version of each.
+
+NOTE: Currently the NUT `Jenkinsfile-dynamatrix` only looks at various
+`COMPILER` variants for `qemu-nut-builder` use-cases, disregarding the
+versions and just using one that the environment defaults to.
+
+The reduced set of labels for QEMU workers looks like:
+
+------
+qemu-nut-builder qemu-nut-builder:alldrv
+NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit
+OS_FAMILY=linux OS_DISTRO=debian11 GCCVER=10 CLANGVER=11
+COMPILER=GCC COMPILER=CLANG
+ARCH64=ppc64le ARCH_BITS=64
+------
+
+Labels for native builds
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+For contrast, a "real" build agent's set of labels, depending on
+presence or known lack of some capabilities, looks something like this:
+------
+doc-builder nut-builder nut-builder:alldrv
+NUT_BUILD_CAPS=docs:man NUT_BUILD_CAPS=docs:all
+NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit=no
+OS_FAMILY=bsd OS_DISTRO=freebsd12 GCCVER=10 CLANGVER=10
+COMPILER=GCC COMPILER=CLANG
+ARCH64=amd64 ARCH_BITS=64
+SHELL_PROGS=sh SHELL_PROGS=dash SHELL_PROGS=zsh SHELL_PROGS=bash
+SHELL_PROGS=csh SHELL_PROGS=tcsh SHELL_PROGS=busybox
+MAKE=make MAKE=gmake
+PYTHON=python2.7 PYTHON=python3.8
+------
+
+Generic agent attributes
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Name: e.g. `ci-debian-altroot--jenkins-debian10-arm64` (note the
+  pattern for "Conflicts With" detailed below)
+
+* Remote root directory: preferably unique per agent, to avoid surprises;
+  e.g.: `/home/abuild/jenkins-nut-altroots/jenkins-debian10-armel`
+** Note it may help that the system home directory itself is shared between
+   co-located containers, so that the `.ccache` or `.gitcache-dynamatrix`
+   are available to all builders with identical contents
+** If RAM permits, the Jenkins Agent working directory may be placed in
+   a temporary filesystem not backed by disk (e.g. `/dev/shm` on modern
+   Linux distributions); roughly estimate 300Mb per executor for NUT builds.
+
+* Usage: "Only build jobs with label expressions matching this node"
+
+* Node properties / Environment variables:
+
+** `PATH+LOCAL` => `/usr/lib/ccache`
+
+Where to run agent.jar
+~~~~~~~~~~~~~~~~~~~~~~
+
+Depending on circumstances of the container, there are several options
+available to the NUT CI farm:
+
+* Java can run in the container, efficiently (native CPU, different distro)
+  => the container may be exposed as a standalone host for direct SSH access
+  (usually by NAT, exposing SSH on a dedicated port of the host; or by first
+  connecting the Jenkins controller with the host as an SSH Build Agent, and
+  then calling SSH to the container as a prefix for running the agent; or
+  by using Jenkins Swarm agents), so ultimately the build `agent.jar` JVM
+  would run in the container.
+  Filesystem for the `abuild` account may be or not be shared with the host.
+
+* Java can not run in the container (crashes on emulated CPU, or is too old
+  in the agent container's distro -- currently Jenkins requires JRE 17+, but
+  eventually will require 21+) => the agent would run on the host, and then
+  the host would `ssh` or `chroot` (networking not required, but bind-mount
+  of `/home/abuild` and maybe other paths from host would be needed) called
+  for executing `sh` steps in the container environment. Either way, home
+  directory of the `abuild` account is maintained on the host and shared with
+  the guest environment, user and group IDs should match.
+
+* Java is inefficient in the container (operations like un-stashing the source
+  succeed but take minutes instead of seconds) => either of the above
+
+NOTE: As time moves on and Jenkins core and its plugins get updated, support
+for some older run-time features of the build agents can get removed (e.g.
+older Java releases, older Git tooling). While there are projects like Temurin
+that provide Java builds for older systems, at some point a switch to "Jenkins
+agent on new host going into older build container" approach can become
+unavoidable. One clue to look at in build logs is failure messages like:
+
+----
+Caused by: java.lang.UnsupportedClassVersionError:
+  hudson/slaves/SlaveComputer$SlaveVersion has been compiled by a more
+  recent version of the Java Runtime (class file version 61.0), this version
+  of the Java Runtime only recognizes class file versions up to 55.0
+----
+
+Using Jenkins SSH Build Agents
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is a typical use-case for tightly integrated build farms under common
+management, where the Jenkins controller can log by SSH into systems which
+act as its build agents. It injects and launches the `agent.jar` to execute
+child processes for the builds, and maintains a tunnel to communicate.
+
+Methods below involving SSH assume that you have configured a password-less
+key authentication from the host machine to the `abuild` account in each
+guest build environment container.
+This can be an `ssh-keygen` result posted into `authorized_keys`, or a
+trusted key passed by a chain of ssh agents from a Jenkins Credential
+for connection to the container-hoster into the container.
+The private SSH key involved may be secured by a pass-phrase, as long as
+your Jenkins Credential storage knows it too.
+Note that for the approaches explored below, the containers are not
+directly exposed for log-in from any external network.
+
+* For passing the agent through an SSH connection from host to container,
+  so that the `agent.jar` runs inside the container environment, configure:
+
+** Launch method: "Agents via SSH"
+
+** Host, Credentials, Port: as suitable for accessing the container-hoster
++
+NOTE: The container-hoster should have accessed the guest container from
+      the account used for intermediate access, e.g. `abuild`, so that its
+      `.ssh/known_hosts` file would trust the SSH server on the container.
+
+** Prefix Start Agent Command: content depends on the container name,
+   but generally looks like the example below to report some info about
+   the final target platform (and make sure `java` is usable) in the
+   agent's log. Note that it ends with un-closed quote and a space char:
++
+------
+ssh jenkins-debian10-amd64 '( java -version & uname -a ; getconf LONG_BIT; getconf WORD_BIT; wait ) && 
+------
+
+** Suffix Start Agent Command: a single quote to close the text opened above:
+------
+'
+------
+
+
+* The other option is to run the `agent.jar` on the host, for all the
+  network and filesystem magic the agent does, and only execute shell
+  steps in the container. The solution relies on overridden `sh` step
+  implementation in the `jenkins-dynamatrix` shared library that uses a
+  magic `CI_WRAP_SH` environment variable to execute a pipe into the
+  container. Such pipes can be `ssh` or `chroot` with appropriate host
+  setup described above.
++
+NOTE: In case of ssh piping, remember that the container's
+      `/etc/ssh/sshd_config` should `AcceptEnv *` and the SSH
+      server should be restarted after such configuration change.
+
+** Launch method: "Agents via SSH"
+
+** Host, Credentials, Port: as suitable for accessing the container-hoster
+
+** Prefix Start Agent Command: content depends on the container name,
+   but generally looks like the example below to report some info about
+   the final target platform (and make sure it is accessible) in the
+   agent's log. Note that it ends with a space char, and that the command
+   here should not normally print anything into stderr/stdout (this tends
+   to confuse the Jenkins Remoting protocol):
++
+------
+echo PING > /dev/tcp/jenkins-debian11-ppc64el/22 && 
+------
+
+** Suffix Start Agent Command: empty
+
+* Node properties / Environment variables:
+
+** `CI_WRAP_SH` =>
++
+------
+ssh -o SendEnv='*' "jenkins-debian11-ppc64el" /bin/sh -xe
+------
+
+Using Jenkins Swarm Agents
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This approach allows remote systems to participate in the NUT CI farm by
+dialing in and so defining an agent. A single contributing system may be
+running a number of containers or virtual machines set up following the
+instructions above, and each of those would be a separate build agent.
+
+Such systems should be "dedicated" to contribution in the sense that
+they should be up and connected for days, and sometimes tasks would land.
+
+Configuration files maintained on the Swarm Agent system dictate which
+labels or how many executors it would expose, etc. Credentials to access
+the NUT CI farm Jenkins controller to register as an agent should be
+arranged with the farm maintainers, and currently involve a GitHub account
+with Jenkins role assignment for such access, and a token for authentication.
+
+The https://github.com/networkupstools/jenkins-swarm-nutci[jenkins-swarm-nutci]
+repository contains example code from such setup with a back-up server
+experiment for the NUT CI farm, including auto-start method scripts for
+Linux systemd and upstart, illumos SMF, and OpenBSD rcctl.
+
+Sequentializing the stress
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Running one agent at a time
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Another aspect of farm management is that emulation is a slow and intensive
+operation, so we can not run all agents and execute builds at the same time.
+
+The current solution relies on the
+https://github.com/jenkinsci/conflict-aware-ondemand-strategy-plugin[Conflict-Aware
+On Demand Retention Strategy plugin]
+to allow co-located build agents to "conflict" with each other -- when one
+picks up a job from the queue, it blocks neighbors from starting; when it
+is done, another may start.
+
+Containers can be configured with "Availability => On demand", with shorter
+cycle to switch over faster (the core code sleeps a minute between attempts):
+
+* In demand delay: `0`;
+
+* Idle delay: `0` (Jenkins may change it to `1`);
+
+* Conflicts with: `^ci-debian-altroot--.*$` assuming that is the pattern
+  for agent definitions in Jenkins -- not necessarily linked to hostnames.
+
+Also, the "executors" count should be reduced to the amount of compilers
+in that system (usually 2) and so avoid extra stress of scheduling too many
+emulated-CPU builds at once.
+
+Sequentializing the git cache access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As part of the `jenkins-dynamatrix` optional optimizations, the NUT CI
+recipe invoked via `Jenkinsfile-dynamatrix` maintains persistent git
+reference repositories that can be used to cache NUT codebase (including
+the tested commits) and so considerably speed up workspace preparation
+when running numerous build scenarios on the same agent.
+
+Such `.gitcache-dynamatrix` cache directories are located in the build
+workspace location (unique for each agent), but on a system with numerous
+containers these names can be symlinks pointing to a shared location.
+
+To avoid collisions with several executors updating the same cache with
+new commits, critical access windows are sequentialized with the use of
+https://github.com/jenkinsci/lockable-resources-plugin[Lockable Resources
+plugin]. On the `jenkins-dynamatrix` side this is facilitated by labels:
+------
+DYNAMATRIX_UNSTASH_PREFERENCE=scm-ws:nut-ci-src
+DYNAMATRIX_REFREPO_WORKSPACE_LOCKNAME=gitcache-dynamatrix:SHARED_HYPERVISOR_NAME
+------
+
+* The `DYNAMATRIX_UNSTASH_PREFERENCE` tells the `jenkins-dynamatrix` library
+  code which checkout/unstash strategy to use on a particular build agent
+  (following values defined in the library; `scm-ws` means SCM caching
+  under the agent workspace location, `nut-ci-src` names the cache for
+  this project);
+* The `DYNAMATRIX_REFREPO_WORKSPACE_LOCKNAME` specifies a semi-unique
+  string: it should be same for all co-located agents which use the same
+  shared cache location, e.g. guests on the same hypervisor; and it should
+  be different for unrelated cache locations, e.g. different hypervisors
+  and stand-alone machines.

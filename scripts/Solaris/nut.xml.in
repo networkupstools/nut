@@ -53,12 +53,14 @@
 		exec='/usr/sbin/svcadm disable -ts svc:/system/power/nut-monitor:default || /bin/true ; /usr/sbin/svcadm disable -ts svc:/system/power/nut-server:default || /bin/true ; @SBINDIR@/upsdrvsvcctl stop || /bin/true ; /bin/true'
 		timeout_seconds='120' />
 
-		<!-- When users "refresh nut" they are likely interested
-		     in a new config being applied... -->
+		<!-- When users "refresh nut" they are likely interested in a new
+		     config being applied (currently calls NDE for drivers, if they
+		     and the script/service are installed on the current system),
+		     and refreshing the other services... -->
 		<exec_method
 		type='method'
 		name='refresh'
-		exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+		exec='/usr/sbin/svcadm refresh svc:/system/power/nut-driver-enumerator:default || /usr/sbin/svcadm refresh svc:/system/power/nut-driver-enumerator:daemon || @NUT_LIBEXECDIR@/nut-driver-enumerator.sh || /bin/true; /usr/sbin/svcadm refresh svc:/system/power/nut-monitor:default || /bin/true ; /usr/sbin/svcadm refresh svc:/system/power/nut-server:default || /bin/true'
 		timeout_seconds='0'/>
 
 		<property_group name='startd' type='framework'>
@@ -85,16 +87,11 @@
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsdrvctl' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='upsd' section='8'
-				manpath='/usr/share/man' />
-				<manpage title='ups.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.conf' section='5'
-				manpath='/usr/share/man' />
-				<manpage title='upsd.users' section='5'
-				manpath='/usr/share/man' />
+				<manpage title='upsdrvctl'	section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd'		section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
+				<manpage title='ups.conf'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd.conf'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
+				<manpage title='upsd.users'	section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

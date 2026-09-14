@@ -3,19 +3,26 @@ AL175(8)
 
 NAME
 ----
+
 al175 - Driver for Eltek UPS models with AL175 alarm module
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*al175* -h
+
+*al175* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *al175* driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 The *al175* driver is known to work with the following UPSes:
 
-    Eltek MPSU4000 with AL175 alarm module
+* Eltek MPSU4000 with AL175 alarm module
 
 It may also work with other UPSes equipped with AL175 alarm module,
 but they have not been tested.
@@ -26,11 +33,13 @@ See documentation supplied with your hardware on how to do it.
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver does not support any extra settings in the
 linkman:ups.conf[5].
 
 INSTANT COMMANDS
 ----------------
+
 This driver supports some extra commands (see linkman:upscmd[8]):
 
 *test.battery.start*::
@@ -41,6 +50,7 @@ Stop a battery test.
 
 VARIABLES
 ---------
+
 Besides status, this driver reads UPS state into following variables:
 
 - *ups.test.result*
@@ -53,12 +63,14 @@ Besides status, this driver reads UPS state into following variables:
 
 KNOWN ISSUES AND BUGS
 ---------------------
+
 * Shutdown is not supported.  FIXME
 * The driver was reworked to meet the project code quality criteria, without
   testing on real hardware. Some bugs may have crept in.
 
 AUTHOR
 ------
+
 Kirill Smelkov <kirr@mns.spb.ru>
 
 SEE ALSO
@@ -66,8 +78,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

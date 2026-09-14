@@ -1,0 +1,131 @@
+NUT access via FUSE
+===================
+
+After a discussion with friends about the
+link:https://en.wikipedia.org/wiki/Filesystem_in_Userspace[FUSE] technology
+an idea resurfaced, to have NUT readings available as filesystem objects.
+
+Previously this was vaguely envisioned as a sort of `/dev/shm` on Linux or
+equivalent on other OSes (where SHM is available with a filesystem API).
+But FUSE being more portable, it is actually a better bet for this approach.
+
+* https://github.com/networkupstools/nut/issues/2591
+
+NUT access via execfuse
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For a proof-of-concept, the link:https://github.com/vi/execfuse[execfuse]
+seemed appropriate. It is a daemon which knows to call user-provided programs
+to handle certain filesystem API requests. Essentially, shell scripts exposed
+as a file system!
+
+Sure, it is not very efficient or perhaps even secure, but for quick and dirty
+experiments it proved to be great! Relatively easy to debug the new code by
+saving log files, and quick to iterate by editing the shell scripts (no need
+to rebuild and restart a daemon).
+
+Installation:
+
+* Get pre-requisites to build FUSE clients, e.g. `apt install libfuse-dev`
+  on Debian-like systems, or `brew install --cask macfuse@dev` on MacOS with
+  Homebrew community packaging.
+* Download and build the `execfuse` daemon:
++
+----
+:; git clone https://github.com/vi/execfuse
+:; cd execfuse
+:; make && ls -la execfuse
+----
+
+That's about it, an `execfuse` binary should appear.
+
+NOTE: Examples below assume a built NUT in `~/nut` location, and a temporary
+mount point in `/tmp/nut-fuse`.
+
+You can also prepare an enviroment using NUT Integration Tests (NIT) scripts:
+----
+:; ( cd ~/nut && DEBUG_SLEEP=600 make check-NIT ) &
+
+# ...wait a few seconds for it to say the sandbox is ready
+:; . "${HOME}/nut/tests/NIT/tmp/etc/NIT.env"
+----
+
+Before mounting the FUSE file system, you can also request to debug the PoC
+scripts:
+----
+:; NUT_DEBUG_FUSE=true
+:; export NUT_DEBUG_FUSE
+
+# After running some queries, so the log-files to watch appear:
+:; tail -F /tmp/nut-debug-fuse-*.log &
+----
+
+To run with the PoC scripts here:
+
+----
+:; mkdir -p /tmp/nut-fuse
+:; PATH="$HOME/nut/clients:$PATH" \
+   ./execfuse "$HOME/nut/scripts/fuse/execfuse-nut" /tmp/nut-fuse
+----
+
+Then as you walk the `/tmp/nut-fuse` location, you would see a sub-directory
+called `by-server` under which a `localhost:3493` is exposed and any token
+(even if not visible) can be accessed with the naive assumption that it is
+a hostname/IP address and an optional port.
+
+Either way, this token is also treated as a directory, assuming it is a
+device name known to the data server `upsd` on that host. In fact, this
+directory would be populated by `upsc -l` of that host(:port) automatically.
+
+Each device represented this way is also a "directory", with "files" in it
+populated by `upsc` queries to list the currently known variables, and file
+contents populated by `upsc` queries for that variable name at that device
+on that server.
+
+Example data walk:
+
+----
+:; grep -rH /tmp/nut-fuse/localhost/dummy
+/tmp/nut-fuse/localhost/dummy/battery.charge:100
+/tmp/nut-fuse/localhost/dummy/battery.charge.low:20
+/tmp/nut-fuse/localhost/dummy/battery.runtime:1456
+/tmp/nut-fuse/localhost/dummy/battery.type:PbAc
+...
+----
+
+As another experiment, a root-directory pseudo-file was added to reveal
+the `upsc` client location and version used in the queries, just for kicks:
+
+----
+:; ls -la /tmp/nut-fuse
+total 23
+drwxr-xr-x  16 root root  4096 Jan  1  1970 .
+drwxrwxrwt 154 root root 20480 Aug 13 23:55 ..
+drwxr-xr-x  16 root root  4096 Jan  1  1970 by-server
+-r--r--r--   1 root root     0 Jan  1  1970 client-location
+-r--r--r--   1 root root     0 Jan  1  1970 client-version
+
+:; cat /tmp/nut-fuse/client-location
+/home/abuild/nut/clients/upsc
+
+:; cat /tmp/nut-fuse/client-version
+Network UPS Tools upsc 2.8.2.901.2-903-g533aa7eaf (development iteration after 2.8.2)
+----
+
+Eventually, to stop this experiment:
+
+----
+:; fusermount -u /tmp/nut-fuse
+
+# Or if user-land programs are missing, like in "macfuse@dev", just `umount`:
+:; umount /tmp/nut-fuse
+----
+
+As far as a PoC goes, this is already a fun and quickly achieved result,
+although for production use something like a FUSE-capable `upsmon`-like
+client would be needed both for efficiency (to avoid dozens of process
+forks and networked queries to get each reading), and to deal with security
+somehow (for a shot at `upsrw` and `upscmd` equivalents).
+
+Hope this helps get the real development going,
+Jim Klimov

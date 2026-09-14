@@ -4,40 +4,56 @@ LIBNUTCLIENT_DEVICES(3)
 NAME
 ----
 
-libnutclient_devices, nutclient_get_devices, nutclient_has_device, nutclient_get_device_description -
-Device related functions in Network UPS Tools high-level client access library
+libnutclient_devices, nutclient_get_devices, nutclient_has_device,
+nutclient_get_device_description -
+Device related functions in Network UPS Tools high-level client access
+library
 
 SYNOPSIS
 --------
 
+------
 	#include <nutclient.h>
 
 	typedef void* NUTCLIENT_t;
 
+	typedef char** strarr;
+
 	strarr nutclient_get_devices(NUTCLIENT_t client);
+
 	int nutclient_has_device(NUTCLIENT_t client, const char* dev);
+
 	char* nutclient_get_device_description(NUTCLIENT_t client, const char* dev);
+------
 
 DESCRIPTION
 -----------
 
 These functions allow to manage devices.
 
-The *nutclient_get_devices()* function retrieve the list of devices monitored by a client.
-The returned strarr must be freed by 'strarr_free'.
+* The *nutclient_get_devices()* function retrieves the list of devices
+  monitored by a client.
++
+The returned strarr must be freed by 'strarr_free'
+(see linkman:libnutclient_general[3]).
 
-The *nutclient_has_device()* function test if a device is monitored by a client.
+* The *nutclient_has_device()* function tests if a device is monitored
+  by a client.
 
-The *nutclient_get_device_description()* function retrieve the device description.
-The returned description string must be freed.
+* The *nutclient_get_device_description()* function retrieves the device
+  description.
++
+The returned description string must be freed by linkmanext:free[3].
 
-'dev' is the device name.
+Common arguments:
+
+* 'dev' is the device name.
 
 SEE ALSO
 --------
+
 linkman:libnutclient[3]
 linkman:libnutclient_commands[3]
 linkman:libnutclient_devices[3]
 linkman:libnutclient_general[3]
 linkman:libnutclient_variables[3]
-

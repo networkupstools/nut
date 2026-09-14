@@ -1,0 +1,134 @@
+rules expecting_failure upsLinesCount upsMaxLine rulesCount stateName subCount ruleInt ^ -2 & -3 | -4 *
+rules OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 4 6 6
+OL 2 -2 0
+OB 1 0
+LB 1 1
+RB 1 2
+DISCHRG 4 0 -3 -2 3
+BYPASS 1 3
+*
+rules DISCHRG=0&^6; 1 2 6 1 DISCHRG 4 0 -3 -2 1 *
+rules DISCHRG=0&^6|^2; 1 3 6 1 DISCHRG 7 0 -3 -2 1 -4 -2 2 *
+rules ; 0 *
+rules = 0 *
+rules 0 0 *
+rules ^ 0 *
+rules OB 0 *
+rules OB= 0 *
+rules OB=; 0 *
+rules OB=a; 0 *
+rules OB=&; 0 *
+rules OB=^; 0 *
+rules OB=^a; 0 *
+rules OB=^=; 0 *
+rules OB=^&; 0 *
+rules OB=^|; 0 *
+rules OB=^2a; 0 *
+rules OB=^2^1; 0 *
+rules OB=^2&a; 0 *
+rules OB=^2&&; 0 *
+rules OB=^2&|; 0 *
+rules OB=^2|a; 0 *
+rules OB=^2|&; 0 *
+rules OB=^2||; 0 *
+rules OB=^2 0 *
+states DISCHRG=0&^6; 0 0   0 *
+states DISCHRG=0&^6; 1 0   1 *
+states DISCHRG=0&^6; 0 1   0 *
+states DISCHRG=0&^6; 1 1   0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 0 0 0  1 0 0 0 0 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 0 0 0  0 1 0 0 1 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 1 0 0  1 0 1 0 0 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 1 0 0  0 1 1 0 1 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 0 1 0  1 0 0 1 0 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 0 1 0  0 1 0 1 1 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 1 1 0  1 0 1 1 0 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 1 1 0  0 1 1 1 1 0 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 0 0 1  1 0 0 0 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 0 0 1  0 1 0 0 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 1 0 1  1 0 1 0 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 1 0 1  0 1 1 0 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 0 1 1  1 0 0 1 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 0 1 1  0 1 0 1 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 1 1 1  1 0 1 1 0 1 *
+states OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 1 1 1  0 1 1 1 0 1 *
+states OL=1; 0  0 *
+states OL=1; 1  1 *
+states OL=^1; 1  0 *
+states OL=^1; 0  1 *
+states OL=1|2; 0 0  0 *
+states OL=1|2; 1 0  1 *
+states OL=1|2; 0 1  1 *
+states OL=1|2; 1 1  1 *
+states OL=1&2; 0 0  0 *
+states OL=1&2; 1 0  0 *
+states OL=1&2; 0 1  0 *
+states OL=1&2; 1 1  1 *
+states OL=1&^2; 0 0  0 *
+states OL=1&^2; 1 0  1 *
+states OL=1&^2; 0 1  0 *
+states OL=1&^2; 1 1  0 *
+states OL=^1&2; 0 0  0 *
+states OL=^1&2; 1 0  0 *
+states OL=^1&2; 0 1  1 *
+states OL=^1&2; 1 1  0 *
+states OL=^1&^2; 0 0  1 *
+states OL=^1&^2; 1 0  0 *
+states OL=^1&^2; 0 1  0 *
+states OL=^1&^2; 1 1  0 *
+states OL=^1&^2; 1 1  0 *
+states TSTAO=1&2|3; 0 0 0  0 *
+states TSTAO=1&2|3; 1 0 0  0 *
+states TSTAO=1&2|3; 0 1 0  0 *
+states TSTAO=1&2|3; 1 1 0  1 *
+states TSTAO=1&2|3; 0 0 1  1 *
+states TSTAO=1&2|3; 1 0 1  1 *
+states TSTAO=1&2|3; 0 1 1  1 *
+states TSTAO=1&2|3; 1 1 1  1 *
+states TSTOA=1|2&3; 0 0 0  0 *
+states TSTOA=1|2&3; 1 0 0  1 *
+states TSTOA=1|2&3; 0 1 0  0 *
+states TSTOA=1|2&3; 1 1 0  1 *
+states TSTOA=1|2&3; 0 0 1  0 *
+states TSTOA=1|2&3; 1 0 1  1 *
+states TSTOA=1|2&3; 0 1 1  1 *
+states TSTOA=1|2&3; 1 1 1  1 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 0 0  OL . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 0 0  OB_DISCHRG discharging . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 0 0  OL_BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 0 0  BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 1 0  OL_LB . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 1 0  OB_LB_DISCHRG discharging . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 1 0  OL_BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 1 0  BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 0 1  OL_RB . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 0 1  OB_RB_DISCHRG discharging . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 0 1  OL_BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 0 1  BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 1 1  OL_LB_RB . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 1 1  OB_LB_RB_DISCHRG discharging . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 1 1  OL_BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 1 1  BYPASS . . . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 0 0  OL . 10 100 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 0 0  OB_DISCHRG discharging 10 100 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 0 0  OL_BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 0 0  BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 1 0  OL_LB . 10 10 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 1 0  OB_LB_DISCHRG discharging 10 10 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 1 0  OL_BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 1 0  BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 0 1  OL_RB . 10 100 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 0 1  OB_RB_DISCHRG discharging 10 100 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 0 1  OL_BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 0 1  BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 0 1 1  OL_LB_RB . 10 10 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 0 1 1  OB_LB_RB_DISCHRG discharging 10 10 *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 0 1 1 1  OL_BYPASS . 10 . *
+update OL=^0;OB=0&^6;LB=3&^6;RB=1&^6;DISCHRG=0&^6;BYPASS=6; 1 1 1 1  BYPASS . 10 . *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 gpiochip0 openclose *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 gpiochip1 openclose *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 gpiochip2 openclose *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 gpiochip0 initinfo *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 gpiochip0 initinfo *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 0 gpiochip0 updateinfo *
+library OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6; 1 gpiochip0 updateinfo *

@@ -1,8 +1,13 @@
 /*
  * blazer.h: defines/macros for Megatec/Q1 protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at "https://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -40,7 +45,7 @@
  * Returns < 0 on error, 0 on timeout and the number of bytes send/read on
  * success.
  */
-int blazer_command(const char *cmd, char *buf, size_t buflen);
+ssize_t blazer_command(const char *cmd, char *buf, size_t buflen);
 
 void blazer_makevartable(void);
 void blazer_initups(void);

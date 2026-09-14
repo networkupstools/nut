@@ -18,8 +18,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_APCSMART_OLD_H_SEEN
+#define NUT_APCSMART_OLD_H_SEEN 1
+
 #include <ctype.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif	/* !WIN32 */
 #include "serial.h"
 #include "timehead.h"
 
@@ -57,14 +62,14 @@
 
 /* status bits */
 
-#define APC_STAT_CAL	1	/* calibration */
-#define APC_STAT_TRIM	2	/* SmartTrim */
-#define APC_STAT_BOOST	4	/* SmartBoost */
-#define APC_STAT_OL	8	/* on line */
-#define APC_STAT_OB	16	/* on battery */
-#define APC_STAT_OVER	32	/* overload */
-#define APC_STAT_LB	64	/* low battery */
-#define APC_STAT_RB	128	/* replace battery */
+#define APC_STAT_CAL	1L	/* calibration */
+#define APC_STAT_TRIM	2L	/* SmartTrim */
+#define APC_STAT_BOOST	4L	/* SmartBoost */
+#define APC_STAT_OL	8L	/* on line */
+#define APC_STAT_OB	16L	/* on battery */
+#define APC_STAT_OVER	32L	/* overload */
+#define APC_STAT_LB	64L	/* low battery */
+#define APC_STAT_RB	128L	/* replace battery */
 
 /* serial protocol: special commands - initialization and such */
 #define APC_STATUS	'Q'
@@ -105,10 +110,10 @@
 typedef struct {
 	const	char	*name;		/* the variable name */
 	unsigned int	flags;	 	/* various flags		*/
-	char		cmd;		/* command character */
+	unsigned char	cmd;		/* command character */
 } apc_vartab_t;
 
-apc_vartab_t	apc_vartab[] = {
+static apc_vartab_t	apc_vartab[] = {
 
 	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
@@ -141,7 +146,7 @@ apc_vartab_t	apc_vartab[] = {
 	{ "input.transfer.low",	APC_F_VOLT,		'l' },
 	{ "input.transfer.high",
 				APC_F_VOLT,		'u' },
-	{ "input.transfer.reason", 
+	{ "input.transfer.reason",
 				APC_POLL|APC_F_REASON,	'G' },
 
 	{ "input.voltage.maximum",
@@ -151,30 +156,30 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "output.current", 	APC_POLL|APC_F_AMP,	'/' },
 	{ "output.voltage", 	APC_POLL|APC_F_VOLT,	'O' },
-	{ "output.voltage.nominal",  
+	{ "output.voltage.nominal",
 				APC_F_VOLT,		'o' },
 
 	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },
-	{ "ambient.humidity.high", 
+	{ "ambient.humidity.high",
 				APC_F_PERCENT,		'{' },
-	{ "ambient.humidity.low", 
+	{ "ambient.humidity.low",
 				APC_F_PERCENT,		'}' },
 
-	{ "ambient.temperature", 	
+	{ "ambient.temperature",
 				APC_POLL|APC_F_CELSIUS, 't' },
-	{ "ambient.temperature.high",	
+	{ "ambient.temperature.high",
 				APC_F_CELSIUS,		'[' },
-	{ "ambient.temperature.low", 	
+	{ "ambient.temperature.low",
 				APC_F_CELSIUS,		']' },
 
 	{ "battery.date",	APC_STRING,		'x' },
 
 	{ "battery.charge",  	APC_POLL|APC_F_PERCENT,	'f' },
-	{ "battery.charge.restart",  
+	{ "battery.charge.restart",
 				APC_F_PERCENT,		'e' },
 
 	{ "battery.voltage", 	APC_POLL|APC_F_VOLT,	'B' },
-	{ "battery.voltage.nominal", 
+	{ "battery.voltage.nominal",
 				0,			'g' },
 
 	{ "battery.runtime", 	APC_POLL|APC_F_MINUTES,	'j' },
@@ -183,16 +188,15 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "battery.packs", 	APC_F_DEC,		'>' },
 	{ "battery.packs.bad", 	APC_F_DEC,		'<' },
-	{ "battery.alarm.threshold", 
+	{ "battery.alarm.threshold",
 				0,			'k' },
 	/* todo:
-
-	   I = alarm enable (hex field) - split into alarm.n.enable
-	   J = alarm status (hex field) - split into alarm.n.status
-
-	0x15 = output voltage selection (APC_F_VOLT)
-	0x5C = load power (APC_POLL|APC_F_PERCENT)
-
+	 *
+	 *  I = alarm enable (hex field) - split into alarm.n.enable
+	 *  J = alarm status (hex field) - split into alarm.n.status
+	 *
+	 * 0x15 = output voltage selection (APC_F_VOLT)
+	 * 0x5C = load power (APC_POLL|APC_F_PERCENT)
 	 */
 
 	{NULL,		0,				0},
@@ -215,10 +219,10 @@ apc_vartab_t	apc_vartab[] = {
 typedef struct {
 	const	char	*name;
 	int	flags;
-	char	cmd;
+	unsigned char	cmd;
 } apc_cmdtab_t;
 
-apc_cmdtab_t	apc_cmdtab[] =
+static apc_cmdtab_t	apc_cmdtab[] =
 {
 	{ "load.off",		APC_NASTY|APC_REPEAT,	APC_CMD_OFF       },
 	{ "load.on",		APC_REPEAT,		APC_CMD_ON        },
@@ -246,7 +250,7 @@ apc_cmdtab_t	apc_cmdtab[] =
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
-struct {
+static struct {
 	const	char	*firmware;
 	const	char	*cmdchars;
 	int	flags;
@@ -289,3 +293,5 @@ struct {
 
 	{ NULL,		NULL,			0 },
 };
+
+#endif  /* NUT_APCSMART_OLD_H_SEEN */

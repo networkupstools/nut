@@ -1,6 +1,7 @@
 /* upsconf.c - code for handling ups.conf ini-style parsing
 
    Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+       2026            Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,6 +18,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -28,15 +31,27 @@
 
 	static	char	*ups_section;
 
+	void (*callback_upsconf_args)(char *upsname, char *var, char *val) = NULL;
+
 /* handle arguments separated by parseconf */
-static void conf_args(int numargs, char **arg)
+static void conf_args(size_t numargs, char **arg)
 {
 	if (numargs < 1)
 		return;
 
+	if (callback_upsconf_args == NULL) {
+#if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+		upsdebugx(1, "%s: coding error: when building NUT with ENABLE_SHARED_PRIVATE_LIBS mode, 'callback_upsconf_args' must be initialized early in ultimate program code", __func__);
+		fatalx(EXIT_FAILURE, "FATAL: Dynamic consumer of a NUT private library was not initialized correctly");
+#else
+		/* We should see the original method in the binary in statically linked scope */
+		callback_upsconf_args = do_upsconf_args;
+#endif
+	}
+
 	/* look for section headers - [upsname] */
 	if ((arg[0][0] == '[') && (arg[0][strlen(arg[0])-1] == ']')) {
-		
+
 		free(ups_section);
 
 		arg[0][strlen(arg[0])-1] = '\0';
@@ -46,7 +61,7 @@ static void conf_args(int numargs, char **arg)
 
 	/* handle 'foo' (flag) */
 	if (numargs == 1) {
-		do_upsconf_args(ups_section, arg[0], NULL);
+		callback_upsconf_args(ups_section, arg[0], NULL);
 		return;
 	}
 
@@ -55,7 +70,7 @@ static void conf_args(int numargs, char **arg)
 
 	/* handle 'foo = bar', 'foo=bar', 'foo =bar' or 'foo= bar' forms */
 	if (!strcmp(arg[1], "=")) {
-		do_upsconf_args(ups_section, arg[0], arg[2]);
+		callback_upsconf_args(ups_section, arg[0], arg[2]);
 		return;
 	}
 }
@@ -66,10 +81,14 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
 }
 
-/* open the ups.conf, parse it, and call back do_upsconf_args() */
-void read_upsconf(void)
+/* open the ups.conf, parse it, and call back callback_upsconf_args()
+ * returns -1 (or aborts the program) in case of errors;
+ * returns 1 if processing finished successfully
+ * See also reload_flag support in main.c for live-reload feature
+ */
+int read_upsconf(int fatal_errors)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 
 	ups_section = NULL;
@@ -77,8 +96,14 @@ void read_upsconf(void)
 
 	pconf_init(&ctx, upsconf_err);
 
-	if (!pconf_file_begin(&ctx, fn))
-		fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
+	if (!pconf_file_begin(&ctx, fn)) {
+		if (fatal_errors) {
+			fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
+		} else {
+			upslogx(LOG_WARNING, "Can't open %s: %s", fn, ctx.errmsg);
+			return -1;
+		}
+	}
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
@@ -93,4 +118,6 @@ void read_upsconf(void)
 	pconf_finish(&ctx);
 
 	free(ups_section);
+
+	return 1; /* Handled OK */
 }

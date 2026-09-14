@@ -1,0 +1,43 @@
+NUTSCAN_STRINGIFY_IP_RANGES(3)
+==============================
+
+NAME
+----
+
+nutscan_stringify_ip_ranges - Collect contents of a `nutscan_ip_range_list_t`
+structure into a string buffer that can be further printed into logs.
+
+SYNOPSIS
+--------
+
+------
+	#include <nut-scan.h>
+
+	const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl);
+------
+
+DESCRIPTION
+-----------
+
+The *nutscan_stringify_ip_ranges()* function can walk a `nutscan_ip_range_list_t`
+structure to report its contents: count of list items, and a comma-separated
+listing with each item as a single token (if `start_ip==end_ip` in that range)
+or a range as `start_ip .. end_ip`.
+
+Returns a pointer to internal statically allocated buffer which would be
+overwritten by subsequent calls, but does not have to be freed by caller.
+
+WARNING: Callers should use semaphores if accessing this function in multi-thread context!
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-ip.h' file.
+
+SEE ALSO
+--------
+
+linkman:nutscan_free_ip_ranges[3], linkman:nutscan_add_ip_range[3],
+linkman:nutscan_cidr_to_ip[3],
+linkman:nutscan_ip_ranges_iter_init[3],
+linkman:nutscan_ip_ranges_iter_inc[3]

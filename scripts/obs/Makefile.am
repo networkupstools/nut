@@ -1,0 +1,176 @@
+# Network UPS Tools: obs (root)
+
+EXTRA_DIST = README.adoc _service _config
+
+# Also EXTRA_DIST the recipe-related files (so OBS can use tarballs if they like)
+
+# Debian/Ubuntu recipes:
+EXTRA_DIST += \
+	debian.Makefile.am \
+	debian.NEWS \
+	debian.changelog \
+	debian.compat \
+	debian.control \
+	debian.copyright \
+	debian.description.subst \
+	debian.gbp.conf \
+	debian.hotplug \
+	debian.libnutclient-dev.install \
+	debian.libnutclient-dev.manpages \
+	debian.libnutclient1.install \
+	debian.libnutclient1.lintian-overrides \
+	debian.libnutclientstub-dev.install \
+	debian.libnutclientstub1.install \
+	debian.libnutclientstub1.lintian-overrides \
+	debian.libnutscan-dev.install \
+	debian.libnutscan1.install \
+	debian.libups-nut-perl.install \
+	debian.libupsclient-dev.install \
+	debian.libupsclient-dev.manpages \
+	debian.libupsclient4.install \
+	nut.changes \
+	debian.nut-cgi.README.Debian \
+	debian.nut-cgi.docs \
+	debian.nut-cgi.install \
+	debian.nut-cgi.manpages \
+	debian.nut-cgi.postinst \
+	debian.nut-cgi.postrm \
+	debian.nut-client.init.in \
+	debian.nut-client.install \
+	debian.nut-client.links \
+	debian.nut-client.lintian-overrides \
+	debian.nut-client.maintscript \
+	debian.nut-client.manpages \
+	debian.nut-client.postinst \
+	debian.nut-client.preinst \
+	debian.nut-client.prerm \
+	debian.nut-common.install \
+	debian.nut-common.postinst.in \
+	debian.nut-common.prerm.in \
+	debian.nut-doc.doc-base.nut-developer-guide \
+	debian.nut-doc.doc-base.nut-faq \
+	debian.nut-doc.doc-base.nut-packager-guide \
+	debian.nut-doc.doc-base.nut-user-manual \
+	debian.nut-doc.install \
+	debian.nut-gpio.install \
+	debian.nut-gpio.manpages \
+	debian.nut-ipmi.install \
+	debian.nut-ipmi.manpages \
+	debian.nut-linux-i2c.install \
+	debian.nut-linux-i2c.manpages \
+	debian.nut-modbus.install \
+	debian.nut-modbus.manpages \
+	debian.nut-monitor.install \
+	debian.nut-monitor.menu \
+	debian.nut-monitor.xpm \
+	debian.nut-powerman-pdu.install \
+	debian.nut-powerman-pdu.manpages \
+	debian.nut-server.dirs \
+	debian.nut-server.init.in \
+	debian.nut-server.install \
+	debian.nut-server.manpages \
+	debian.nut-server.postinst \
+	debian.nut-server.postrm \
+	debian.nut-server.preinst \
+	debian.nut-server.prerm.in \
+	debian.nut-snmp.docs \
+	debian.nut-snmp.install \
+	debian.nut-snmp.manpages \
+	debian.nut-upower.install \
+	debian.nut-upower.manpages \
+	debian.nut-xml.install \
+	debian.nut-xml.manpages \
+	debian.nut.README.Debian \
+	debian.nut.TODO.Debian \
+	debian.nut.docs \
+	debian.python-nut.install \
+	debian.rules \
+	debian.series \
+	debian.watch \
+	nut.dsc
+
+# RedHAT/Fedora/CentOS/... recipes:
+EXTRA_DIST += \
+	nut.spec
+
+# PKGSRC recipes:
+EXTRA_DIST += \
+	pkgsrc.obs
+
+SPELLCHECK_SRC = README.adoc
+
+# Produce an OBS preinstallimage recipe file from our SPEC and DSC resources,
+# to speed up PR and stable branch iteration builds (output of this processing
+# should be stored as a sibling OBS project "preinstallimage-nut" in the OBS
+# server). Note that syntax for "one-of-options" installation accepted by deb
+# and rpm tooling differs: for DEB we need to list them without parentheses
+# and without spaces around the pipe character. Parentheses around version
+# constraints seem to be confusing, but spaces around comparison operators
+# seem to be optional, at least for the recipe syntax parser.
+# You can debug stacks of calls here by adding `| tee -a /dev/stderr \` layers
+_preinstallimage: nut.spec nut.dsc Makefile
+	@echo "  GENERATE-RECIPE	$@" ; \
+	 (echo 'Name: preinstallimage-@PACKAGE_NAME@' ; \
+	  echo '### Start of "if RPM"'; \
+	  echo '%if 0%{?rhel_version} || 0%{?rhel} || 0%{?sle_version} || 0%{?suse_version} || 0%{?centos_version} || 0%{?centos} || 0%{?fedora_version} || 0%{?fedora} || 0%{?opensuse_version}' ; \
+		cat nut.spec \
+		| $(EGREP) '(% *(if|else|endif|define)|Requires:|Ignore:|Prefer:)' \
+		| $(EGREP) -v '(%{name} = %{version}|%{_s*bindir}/|python-base)' \
+		| $(SED) -e 's/^Requires:/BuildRequires:/' ; \
+	  echo '%endif' ; \
+	  echo '### End of "if RPM"'; \
+	  echo '# ---- blank ----'; \
+	  echo '### Start of "if DEB"'; \
+	  echo '%if 0%{?debian_version} || 0%{?debian} || 0%{?ubuntu_version} || 0%{?ubuntu}'; \
+		awk ' \
+		  /^Build-Depends(-Indep)?:/ { \
+		    inBD=1; \
+		    sub(/^Build-Depends(-Indep)?:[[:space:]]*/, ""); \
+		    buf = (buf ? buf "," : "") $$0; \
+		    next; \
+		  }; \
+		  inBD && /^[[:space:]]+/ { \
+		    buf = buf " " $$0; \
+		    next; \
+		  }; \
+		  inBD { inBD=0; next; }; \
+		  END { print buf }; \
+		' nut.dsc \
+		| $(SED) \
+		-e 's/[[:space:]]*//g' \
+		-e 's/,/\n/g' \
+		-e 's/(\([^)][^)]*\)\(>\|<\|=\|>=\|<=\|==\|!=\)\([^)][^)]*\))/\1\2\3/g' \
+		-e 's/\[[^]]*\]//g' \
+		-e 's/<[^>]*>//g' \
+		-e 's/:any\|:native//g' \
+		| $(GREP) -v '^\$$' \
+		| awk 'NF { printf "BuildRequires: %s\n", $$0 }'; \
+	  echo '%endif' ; \
+	  echo '### End of "if DEB"'; \
+	 ) > '$@'.tmp && [ -s '$@'.tmp ] && mv -f '$@'.tmp '$@'
+
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
+# We also have to export some variables that may be tainted by relative
+# paths when parsing the other makefile (e.g. MKDIR_P that may be defined
+# via expanded $(top_builddir)/install-sh):
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) @dotMAKE@
+#	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
+	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked
+CLEANFILES += _preinstallimage
+
+MAINTAINERCLEANFILES = Makefile.in .dirstamp

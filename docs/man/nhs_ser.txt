@@ -1,0 +1,111 @@
+NHS_SER(8)
+==========
+
+NAME
+----
+
+nhs_ser - Driver for NHS Nobreaks, senoidal line, with serial port
+
+SYNOPSIS
+--------
+
+*nhs_ser* -h
+
+*nhs_ser* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*nhs_ser* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+*nhs_ser* supports numerous UPS models made by NHS Sistemas Eletronicos LTDA
+and marketed in Brazil. They feature a serial port and a binary wire protocol.
+
+NOTE: Currently this driver only builds on Linux. This is expected to change
+in future revisions of the code.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver also supports the following optional settings:
+
+*baud*='num'::
+Set the serial port baud rate. The value must be one of the rates available
+in the current build (default: 2400).
+
+*serial_data_bits*='num'::
+Set the number of data bits to 5, 6, 7, or 8 (default: 8).
+
+*serial_parity*='value'::
+Set serial parity to `none`, `even`, or `odd` (default: `none`).
+
+*serial_stop_bits*='num'::
+Set the number of stop bits to 1 or 2 (default: 1).
+
+*serial_flow_control*='value'::
+Set serial flow control to `none`, `hardware`, `software`, or `both`
+(default: `hardware`).
+
+*serial_read_timeout_ms*='num'::
+Set the timeout for reading each byte, in milliseconds. Values from 0 to
+60000 are accepted; 0 requests a non-blocking read (default: 100).
+
+*serial_send_pace_us*='num'::
+Set the delay between transmitted bytes, in microseconds. Values from 0 to
+999999 are accepted; 0 disables transmission pacing (default: 0).
+
+*ah*='num'::
+Battery discharge capacity in Ampere/hour.
+
+*va*='num'::
+Nobreak NOMINAL POWER in VA.
+
+*pf*='num'::
+Power Factor to use in calculations of battery time (default: 0.90).
+
+*vin_low_warn_perc*='num'::
+Voltage In Percentage to calculate warning low level (default: 2.00).
+
+*vin_low_crit_perc*='num'::
+Voltage In Percentage to calculate critical low level (default: 2.00).
+
+*vin_high_warn_perc*='num'::
+Voltage In Percentage to calculate warning high level (default: 2.00).
+
+*vin_high_crit_perc*='num'::
+Voltage In Percentage to calculate critical high level (default: 2.00).
+
+*numbatteries*='num'::
+Num Batteries (override value from nobreak).
+
+*vbat*='num'::
+Battery Voltage (default: 12.00).
+
+*debug_pkt_raw*::
+Optional flag to enable debug logging of packet bytes.
+
+*debug_pkt_data*::
+Optional flag to enable debug logging of data packet decoding.
+
+*debug_pkt_hwinfo*::
+Optional flag to enable debug logging of hwinfo packet decoding.
+
+AUTHORS
+-------
+
+Lucas Willian Bocchi <lucas@lucas.inf.br>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

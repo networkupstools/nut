@@ -21,7 +21,11 @@ DESCRIPTION
 
 AUTHOR
 	Ben Collver <collver@softhome.net>
+	Jim Klimov <jimklimov+nut@gmail.com> - slight adjustments for NUT builds
  */
+
+#include "config.h"	/* should be first */
+#include "common.h"
 
 #include <windows.h>
 
@@ -38,6 +42,10 @@ int WINAPI WinMain(
 	TOKEN_PRIVILEGES privileges = {1, {{{0, 0}, SE_PRIVILEGE_ENABLED}}};
 	HANDLE my_token;
 	UINT my_flags;
+
+	NUT_UNUSED_VARIABLE(hInstance);
+	NUT_UNUSED_VARIABLE(hPrevInstance);
+	NUT_UNUSED_VARIABLE(nCmdShow);
 
 	my_flags = EWX_SHUTDOWN | EWX_FORCEIFHUNG;
 

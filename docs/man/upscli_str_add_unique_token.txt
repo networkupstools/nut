@@ -1,0 +1,64 @@
+UPSCLI_STR_ADD_UNIQUE_TOKEN(3)
+==============================
+
+NAME
+----
+
+upscli_str_add_unique_token - Add a unique token into a string buffer,
+    with optional callbacks as needed by implementation
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *) );
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_str_add_unique_token*() function takes the pointer 'tgt' to a
+caller-provided `char *` buffer of size 'tgtsize', and the pointer 'token'
+to a contiguous token that should be added to the end of 'tgt' buffer, if
+it is not there yet.
+
+The 'token' contents are stripped of surrounding space characters, and the
+method recurses to independently process each space-separated token inside
+(if there are any spaces left).
+
+The resulting 'tgt' buffer would eventually collect a string comprised of
+unique 'token' values in order of first mention, separated by single space
+characters (ASCII '0x20').
+
+Optionally calls 'callback_always' (if not `NULL`) after checking the input
+for spaces (and maybe recursing) and before checking if the token is already
+there, and/or 'callback_unique' (if not `NULL`) after checking for uniqueness
+and just before going to add a newly seen token.
+
+* If such callback returns '0', abort the addition of 'token' and return '-3'.
+
+It is up to the caller to dynamically or statically allocate the 'tgt' buffer
+and *free*() it if needed.  As far as this method is concerned, the buffer
+may be recycled (in data processing loops) by setting the initial character
+to `'\0'`, making it an empty string again.
+
+RETURN VALUE
+------------
+
+The *upscli_str_add_unique_token*() function returns a numeric code:
+
+* '0' if the 'token' value was already there in 'tgt' buffer;
+* '1' if 'token' was added successfully;
+* '-1' if we needed to add the 'token', but it did not fit under the 'tgtsize'
+  limit;
+* '-2' if either 'token' or 'tgt' string was `NULL`, or if 'token' was empty;
+* '-3' if the 'token' was rejected by the optional callback method returning '0'.
+
+SEE ALSO
+--------
+
+linkman:upscli_str_contains_token[3]

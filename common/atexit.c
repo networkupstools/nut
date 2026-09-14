@@ -6,6 +6,7 @@
 #ifndef HAVE_ATEXIT
 
 #include <errno.h>
+#include "common.h"
 
 int atexit(fn)
     void (*fn)();
@@ -13,6 +14,7 @@ int atexit(fn)
 #ifdef HAVE_ON_EXIT
     return on_exit(fn, 0);
 #else
+    NUT_UNUSED_VARIABLE(fn);
     /* Choose some errno thats likely to exist on lots of systems */
     errno = EPERM;
     return (-1);

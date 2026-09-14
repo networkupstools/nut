@@ -1,0 +1,113 @@
+PIJUICE(8)
+==========
+
+NAME
+----
+
+pijuice - Driver for UPS in PiJuice HAT
+
+SYNOPSIS
+--------
+
+*pijuice* -h
+
+*pijuice* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*pijuice* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+NOTE: This manual page was hastily adapted from related `asem` driver
+man page based on information from the original pull request, and so
+may not fully apply to PiJuice HAT, patches from experts are welcome.
+
+SUPPORTED HARDWARE
+------------------
+
+The *pijuice* driver supports the portable PiJuice HAT UPS for Raspberry Pi
+embedded PCs.
+
+EXTRA ARGUMENTS
+---------------
+
+The required parameter for this driver is the I2C bus name:
+
+*port*='dev-node'::
+On the PiJuice HAT, this should be `/dev/i2c-1`.
++
+NOTE: You may want to add the driver run-time unprivileged user (e.g. `nut`)
+to the `i2c` group as a secondary group -- typically in `/etc/group` (along
+with `pijuice`, if vendor CLI/GUI/automation packages are also installed), e.g.
+`sudo usermod -a -G i2c nut`. Otherwise you may have to run the driver as `root`.
+
+INSTALLATION
+------------
+
+NOTE: This section was copied from `asem` driver man page and may not fully
+apply to PiJuice HAT, patches are welcome.
+
+This driver is specific to the Linux I2C API, and requires the lm_sensors
+libi2c-dev or its equivalent to compile.
+
+Beware that the SystemIO memory used by the I2C controller is reserved by ACPI.
+If only a native I2C driver (e.g. `i2c_i801`, as of 3.5.X Linux kernels) is
+available, then you'll need to relax the ACPI resources check. For example, you
+can boot with the `acpi_enforce_resources=lax` option.
+
+//////////////////////////////////////////
+Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
+longer than what can be conveniently described in the driver error messages.
+
+DIAGNOSTICS
+-----------
+
+//////////////////////////////////////////
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+NOTE: This section was copied from `asem` driver man page and may not fully
+apply to PiJuice HAT, patches are welcome.
+
+The driver shutdown function is not implemented, so other arrangements must be
+made to turn off the UPS.
+
+The `battery.current` and `input.current` may be reported as negative, if it
+is being charged and wall power is plugged into the Pi itself (not the HAT).
+This reflects the direction of electric current over the GPIO pins; vendor
+tools like `pijuice_cli` or `pijuice_gui` also show this.  The reported
+`input.current` value was seen to fluctuate and even change the sign back
+and forth as the `battery.charge` value rose from zero into tens of percents
+with this connectivity setup.
+
+If the `ups.date` and `ups.time` look bogus, use vendor tools to set the RTC
+clock of the HAT (check in Alarms section).
+
+The `battery.temperature` report may depend on capabilities of the actual
+battery and methods used to poll it for information. Vendor tools provide
+several settings for tuning this, but they don't seem to impact what the
+driver reports (pull requests welcome); bogus negative values were seen.
+
+AUTHORS
+-------
+
+Andrew Anderson <aander07@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* Initial pull requests adding this driver:
+** https://github.com/networkupstools/nut/pull/730
+** https://github.com/PiSupply/PiJuice/issues/124
+
+* Product home page: https://uk.pi-supply.com/products/pijuice-standard
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -9,16 +9,18 @@ upscli_fd - Get file descriptor for connection
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_fd(UPSCONN_t *ups);
+	int upscli_fd(UPSCONN_t *ups);
+------
 
 DESCRIPTION
 -----------
 
-The *upscli_fd()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure and returns the value of the file descriptor
-for that connection, if any.
+The *upscli_fd()* function takes the pointer 'ups' to a `UPSCONN_t`
+state structure and returns the value of the file descriptor for
+that connection, if any.
 
 This may be useful for determining if the connection to linkman:upsd[8]
 has been lost.
@@ -27,7 +29,9 @@ RETURN VALUE
 ------------
 
 The *upscli_fd()* function returns the file descriptor, which
-may be any non-negative number.  It returns -1 if an error occurs.
+may be any non-negative number.
+
+It returns '-1' if an error occurs.
 
 SEE ALSO
 --------

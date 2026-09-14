@@ -1,38 +1,417 @@
 # Network UPS Tools: tests
 
-EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
+
+SUBDIRS = . NIT
+
+# Note: a few duplicate mentions are possible here, but a decent make should
+# handle that properly
+all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
+
+EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
+EXTRA_DIST += pynut-commands-test.py
+
+TESTS =
+noinst_LTLIBRARIES =
+CLEANFILES = *.trs *.log
+
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/drivers
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+if WITH_SSL_CXX
+  AM_CXXFLAGS += $(LIBSSL_CXXFLAGS)
+endif WITH_SSL_CXX
+
+# Compiler flags for cppunit tests
+CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
+
+check_PROGRAMS = $(TESTS)
+check_SCRIPTS =
+
+# NUT Integration Testing suite
+memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
+	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
+
+# Make sure out-of-dir dependencies exist (especially when dev-building
+# only some parts of NUT; note libnutclient* are for C++ but would not
+# be referenced unless that build ability is detected and enabled):
+$(top_builddir)/include/nut_version.h \
+$(top_builddir)/common/libcommonversion.la \
+$(top_builddir)/drivers/libdummy_mockdrv.la \
+$(top_builddir)/common/libnutconf.la \
+$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la \
+$(top_builddir)/clients/libupsclient.la \
+$(top_builddir)/clients/libnutclient.la \
+$(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/clients/upslog$(EXEEXT): dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) upslog$(EXEEXT)
+
+# Builds from root dir arrange stuff decently. Make sure parallel builds
+# started from scratch right in this dir get dependencies in proper order
+# (sub-makes are independent as far as trying to write into same files):
+$(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
+
+if ENABLE_SHARED_PRIVATE_LIBS
+
+$(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+$(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
+$(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
+
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la $(top_builddir)/include/nut_version.h
+
+NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+
+else !ENABLE_SHARED_PRIVATE_LIBS
+
+$(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
+$(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/include/nut_version.h
+
+NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
+
+endif !ENABLE_SHARED_PRIVATE_LIBS
+
+TESTS += test_cgilib
+test_cgilib_SOURCES = test_cgilib.c
+nodist_test_cgilib_SOURCES = cgilib.c
+test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+test_cgilib_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += test_upsdconf
+test_upsdconf_SOURCES = test_upsdconf.c
+test_upsdconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/server
+test_upsdconf_LDADD = $(NUT_LIBCOMMON) $(NETLIBS)
+test_upsdconf_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/server/conf.c $(top_srcdir)/server/sstate.c
+if WITH_SSL
+test_upsdconf_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
+
+nutlogtest_SOURCES = nutlogtest.c
+nutlogtest_LDADD = $(NUT_LIBCOMMON)
+
+if REQUIRE_NUT_STRARG
+check_SCRIPTS += nutlogtest-nofail.sh
+CLEANFILES += nutlogtest-nofail.sh nutlogtest$(EXEEXT) nutlogtest
+
+nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
+	@echo '#!/bin/sh' > '$@'
+	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> '$@'
+	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> '$@'
+	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> '$@'
+	@echo 'SCRIPT_DIR="`dirname \"$$0\"`"' >> '$@'
+	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> '$@'
+	@chmod +x '$@'
+
+# NOTE: Keep the line above empty!
+else !REQUIRE_NUT_STRARG
+TESTS += nutlogtest$(EXEEXT)
+endif !REQUIRE_NUT_STRARG
+
+TESTS += nuttimetest
+nuttimetest_SOURCES = nuttimetest.c
+nuttimetest_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += statetest
+statetest_SOURCES = statetest.c
+statetest_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += ecoflow_cdc_protocol_utest
+ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
+	$(top_srcdir)/drivers/ecoflow-cdc-protocol.h
+nodist_ecoflow_cdc_protocol_utest_SOURCES = ecoflow-cdc-protocol.c
+ecoflow_cdc_protocol_utest_LDADD = -lm
+
+TESTS += nutbooltest
+nutbooltest_SOURCES = nutbooltest.c
+#nutbooltest_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += test_authconf
+test_authconf_SOURCES = test_authconf.c
+test_authconf_LDADD = $(top_builddir)/clients/libupsclient.la $(NUT_LIBCOMMON)
+test_authconf_LDFLAGS = $(AM_LDFLAGS)
+test_authconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+if WITH_SSL
+# This is more for libupsclient that may be linked to NSS than for the test itself
+test_authconf_LDADD += $(LIBSSL_LIBS)
+test_authconf_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
+
+# Separate the .deps of other dirs from this one
+LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c
+
+cgilib.c: $(top_srcdir)/clients/cgilib.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/clients/cgilib.c" '$@'
+
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+hidparser.c: $(top_srcdir)/drivers/hidparser.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hidparser.c" '$@'
+
+ecoflow-cdc-protocol.c: $(top_srcdir)/drivers/ecoflow-cdc-protocol.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/ecoflow-cdc-protocol.c" '$@'
+
+if WITH_USB
+TESTS += getvaluetest getexponenttest-belkin-hid fixreportdesctest-tripplite-hid
+
+# We only need to call a few methods, not use the whole source - so
+# not linking it as a getvaluetest_SOURCE file (has too many deps):
+noinst_LTLIBRARIES += libdriverstubusb.la
+nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
+libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+#libdriverstubusb_la_LIBADD = $(NUT_LIBCOMMON)
+
+getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
+getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
+getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getexponenttest_belkin_hid_LDADD = $(NUT_LIBCOMMON) libdriverstubusb.la
+
+fixreportdesctest-tripplite-hid.c: $(top_srcdir)/drivers/tripplite-hid.c
+fixreportdesctest_tripplite_hid_SOURCES = fixreportdesctest-tripplite-hid.c
+fixreportdesctest_tripplite_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+fixreportdesctest_tripplite_hid_LDADD = $(NUT_LIBCOMMON) -lm libdriverstubusb.la
+
+getvaluetest_SOURCES = getvaluetest.c
+nodist_getvaluetest_SOURCES = hidparser.c
+# Pull the right include path for chosen libusb version:
+getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getvaluetest_LDADD = $(NUT_LIBCOMMON)
+else !WITH_USB
+EXTRA_DIST += getvaluetest.c hidparser.c
+endif !WITH_USB
+EXTRA_DIST += driver-stub-usb.c
+
+if WITH_GPIO
+TESTS += gpiotest
+
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" '$@'
+
+generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" '$@'
+
+gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
+nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
+gpiotest_LDADD = $(top_builddir)/common/libcommonversion.la $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBGPIO_LDFLAGS)
+if ENABLE_SHARED_PRIVATE_LIBS
+gpiotest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+gpiotest_CFLAGS = $(LIBGPIO_CFLAGS) $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+else !WITH_GPIO
+EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
+endif !WITH_GPIO
+
+CLEANFILES += cgilib.c generic_gpio_libgpiod.c generic_gpio_common.c
+EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
+
+TESTS += driver_methods_utest
+driver_methods_utest_SOURCES = driver_methods_utest.c
+driver_methods_utest_LDADD = $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
+driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
+if WITH_SNMP
+SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
+
+LINKED_SOURCE_FILES += $(SNMP_UPS_TEST_DRIVER_SOURCES)
+
+$(SNMP_UPS_TEST_DRIVER_SOURCES):
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/$@" '$@'
+
+TESTS += snmp-ups-setvar-test
+snmp_ups_setvar_test_SOURCES = snmp-ups-setvar-test.c
+nodist_snmp_ups_setvar_test_SOURCES = $(SNMP_UPS_TEST_DRIVER_SOURCES)
+snmp_ups_setvar_test_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS) -DSNMP_UPS_SETOID_TEST=1
+snmp_ups_setvar_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBNETSNMP_LIBS) -lm
+snmp_ups_setvar_test_LDFLAGS = $(AM_LDFLAGS)
+if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
+  snmp_ups_setvar_test_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_setvar_test_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+endif WITH_SNMP
+
+### Optional tests which can not be built everywhere
+# List of src files for CppUnit tests
+CPPUNITTESTSRC = example.cpp nutclienttest.cpp
+# These are an optional part of cppunittest, if building WITH_LIBNUTCONF
+CPPUNITTESTSRC_NUTCONF = nutconf_parser_ut.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
+# The test driver which orchestrates running those tests above
+CPPUNITTESTERSRC = cpputest.cpp
+
+CPPCLIENTTESTSRC = cpputest-client.cpp
+
+TESTS_CXX11 = cppunittest
 
 if HAVE_CXX11
 if HAVE_CPPUNIT
 # Note: per configure script this "SHOULD" also assume
 # that we HAVE_CXX11 - but better have it explicit
 
-TESTS = cppunittest
+TESTS += $(TESTS_CXX11)
 
-check_PROGRAMS = $(TESTS)
+# Note: we only build it, but do not run directly (NIT prepares the sandbox)
+check_PROGRAMS += cppnit
 
-if WITH_VALGRIND
-check-local: $(check_PROGRAMS)
-	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
-endif
+# NOTE: libnutclientstub includes libnutclient and adds nutclientmem
+cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
+###cppunittest_CXXFLAGS += -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
+cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
+cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
+cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
-cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
-cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
-cppunittest_LDADD = ../clients/libnutclient.la
+# Currently nutconf and related codebase causes woes for static analysis
+# so we do not build it unless explicitly asked to.
+if WITH_LIBNUTCONF
+cppunittest_SOURCES += $(CPPUNITTESTSRC_NUTCONF)
+cppunittest_LDADD += $(top_builddir)/common/libnutconf.la
+endif WITH_LIBNUTCONF
+if WITH_SSL_CXX
+# Not really used here, but transient dependency from libnutclient
+# At least on NetBSD consumers should know directly...
+cppunittest_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL_CXX
 
-# List of src files for CppUnit tests
-CPPUNITTESTSRC = example.cpp nutclienttest.cpp
+cppnit_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
+cppnit_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
+cppnit_LDADD   = $(top_builddir)/clients/libnutclientstub.la
+cppnit_LDADD  += $(top_builddir)/clients/libnutclient.la
+cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
+if WITH_SSL_CXX
+cppnit_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL_CXX
 
-cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
+# Just redistribute test source into tarball if not building tests
 
-EXTRA_DIST += example.cpp cpputest.cpp
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
+
+cppnit:
+	@echo "  SKIP	$@ : not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CPPUNIT
 
 else !HAVE_CXX11
+# Just redistribute test source into tarball if not building C++ at all
 
-EXTRA_DIST += example.cpp cpputest.cpp
+EXTRA_DIST += $(CPPUNITTESTSRC) $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC) $(CPPUNITTESTSRC_NUTCONF)
+
+cppnit:
+	@echo "  SKIP	$@ : not implemented without C++11 and CPPUNIT enabled" >&2 ; exit 1
 
 endif !HAVE_CXX11
+
+if HAVE_VALGRIND
+# NOTE: "cppnit", if built, requires running from NIT (with NUT_PORT, etc.)
+# Note that FAILED value begins with a space, so we do not echo another
+memcheck: $(check_PROGRAMS)
+	@RES=0; FAILED=""; \
+	 for P in $? ; do \
+		case "$$P" in \
+			cppnit|cppnit$(EXEEXT)) \
+				if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else \
+					echo "  SKIP	$@ : $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
+					continue ; \
+				fi ;; \
+		esac ; \
+		'$(top_builddir)/scripts/valgrind/valgrind.sh' "./$$P" \
+		|| { RES=$$? ; \
+			echo "FAILED: '$(top_builddir)/scripts/valgrind/valgrind.sh' './$$P'" >&2; \
+			FAILED="$$FAILED $$P" ; \
+		} ; \
+	 done; \
+	 if [ -n "$$FAILED" ] ; then echo "OVERALL FAILED:$$FAILED" >&2 ; fi ; \
+	 exit $$RES
+else !HAVE_VALGRIND
+memcheck:
+	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
+endif !HAVE_VALGRIND
+
+CHECK_LOCAL_TARGETS = become-user-root-warning-test
+CHECK_LOCAL_TARGETS_PYNUT =
+
+if HAVE_PYTHON_DEFAULT
+if WITH_PYNUT_UNITTEST_PY
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-default
+
+pynut-commands-test-default:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON_DEFAULT@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY
+endif HAVE_PYTHON_DEFAULT
+
+if HAVE_PYTHON2
+if WITH_PYNUT_UNITTEST_PY2
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-py2
+
+pynut-commands-test-py2:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON2@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY2
+endif HAVE_PYTHON2
+
+if HAVE_PYTHON3
+if WITH_PYNUT_UNITTEST_PY3
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-py3
+
+pynut-commands-test-py3:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON3@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY3
+endif HAVE_PYTHON3
+
+if WITH_VALGRIND
+CHECK_LOCAL_TARGETS += memcheck
+endif WITH_VALGRIND
+
+pynut-commands-test: $(CHECK_LOCAL_TARGETS_PYNUT)
+
+check-local: $(CHECK_LOCAL_TARGETS) $(CHECK_LOCAL_TARGETS_PYNUT)
+
+become-user-root-warning-test: $(top_builddir)/clients/upslog$(EXEEXT)
+	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/become-user-root-warning-test.sh
+
+dummy:
+
+BUILT_SOURCES = $(LINKED_SOURCE_FILES)
+CLEANFILES += $(LINKED_SOURCE_FILES)
+CLEANFILES += $(TESTS) $(TESTS_CXX11)
+MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+# NOTE: Do not clean ".deps" in SUBDIRS of the main project,
+# the root Makefile.am takes care of that!
+#clean-local:
+#	$(AM_V_at)rm -rf $(builddir)/.deps
+
+# Helper for only the enabled libs to get built:
+all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)

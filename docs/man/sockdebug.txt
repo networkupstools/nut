@@ -1,0 +1,87 @@
+SOCKDEBUG(8)
+============
+
+NAME
+----
+
+sockdebug - Simple developer/troubleshooting aid utility to communicate
+with a NUT driver using the socket protocol
+
+SYNOPSIS
+--------
+
+*sockdebug* socketname
+
+For example (WIN32 and POSIX builds):
+
+	:; sockdebug.exe dummy-ups-UPS1
+
+For example (POSIX-compliant systems using an alternate state path):
+
+	:; sockdebug /var/state/ups/dummy-ups-UPS1
+
+DESCRIPTION
+-----------
+
+*sockdebug* is a tool built when NUT `configure --with-dev` is enabled.
+It may alternatively be built by calling `make sockdebug` in the root
+of the build workspace. Actual source files used depend on the platform.
+
+It is used to connect to a NUT driver using the socket protocol on an
+Unix socket or Windows pipe, similarly to how the linkman:upsd[8] data
+server talks to the locally running drivers in order to represent them
+on the network further using the common NUT protocol of the Network UPS
+Tools project, or how driver programs can communicate to their already
+running instances to implement commands like live `reload-or-error`.
+
+This tool allows a developer or troubleshooter to watch the broadcast
+updates emitted by the driver, as well as to issue unicast commands and
+receive replies (during an interactive investigation session, you may
+want to command `NOBROADCAST` first).
+
+For more details see the `docs/sock-protocol.txt` file in NUT sources.
+
+OPTIONS
+-------
+
+*sockdebug* accepts (and requires) the following option:
+
+*socketname*::
+Either a full path (in POSIX builds) or the base name of device socket/pipe
+(on all platforms), comprised of a `drivername-devicename` tuple, e.g. some
+`dummy-ups-UPS1` for a `dummy-ups` driver instance handling an `UPS1` device
+configuration (which in turn may originate in the `ups.conf` file or be
+dynamically constructed for tests by calling the driver program with a
+`-s TMP` CLI option).
++
+On POSIX systems, if this argument only represents a base name and not a
+full path to the Unix socket file, the tool should first look for the file
+in the current directory, and then fall back to configured (built-in) state
+path or the value of `NUT_STATEPATH` environment variable, if set; e.g.:
++
+------
+:; NUT_STATEPATH=/tmp ./server/sockdebug dummy-ups-UPS1
+------
+
+AUTHORS
+-------
+
+This manual page was written by Jim Klimov <jimklimov+nut@gmail.com>.
+
+The program is currently maintained as two separate sources, with one
+of them used for a build depending on the target platform:
+
+* `server/sockdebug.c` (POSIX version) was originally written by
+  Russell Kroll <rkroll@exploits.org>, and
+* `server/pipedebug.c` (Windows version) was originally written by
+  Frederic Bohe <fredericbohe@eaton.com>.
+
+SEE ALSO
+--------
+
+linkman:upsd[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

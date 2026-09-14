@@ -28,6 +28,9 @@
  *
  */
 
+#ifndef NUT_MGE_UTALK_H_SEEN
+#define NUT_MGE_UTALK_H_SEEN 1
+
 /* --------------------------------------------------------------- */
 /*                 Default Values for UPS Variables                */
 /* --------------------------------------------------------------- */
@@ -36,7 +39,7 @@
 
 /* delay between return of utility power and powering up of load (in MINUTES) */
 #define DEFAULT_ONDELAY    1
-#define DEFAULT_OFFDELAY  20   /* delay before power off, in SECONDS */ 
+#define DEFAULT_OFFDELAY  20   /* delay before power off, in SECONDS */
 
 #define MIN_CONFIRM_TIME   3   /* shutdown must be confirmed in    */
 #define MAX_CONFIRM_TIME  15   /* this interval                    */
@@ -49,7 +52,7 @@ typedef struct {
   const char	*finalname;
 } models_name_t;
 
-models_name_t Si1_models_names [] =
+static models_name_t Si1_models_names [] =
   {
 	/* Pulsar EX */
 	{ "Pulsar EX7", "Pulsar EX 7" },
@@ -142,10 +145,10 @@ static mge_model_info_t mge_model[] = {
 /*                       Multiplier Tables                         */
 /* --------------------------------------------------------------- */
 
-/* First index : Table number, fetched with "Ai" command 
- * Second index: unit, as in enum above                               
+/* First index : Table number, fetched with "Ai" command
+ * Second index: unit, as in enum above
  * NOTE:
- *	- to make the table index the same as the MGE table number, 
+ *	- to make the table index the same as the MGE table number,
  *		dummy table row multiplier[0][] is inserted
  *	- unit MIN2SEC is used to convert values in minutes sent by
  * 	the UPS (WAKEDELAY) to seconds
@@ -153,11 +156,11 @@ static mge_model_info_t mge_model[] = {
 */
 
 /* units in multiplier table */
-typedef enum eunits 
+typedef enum eunits
 { VOLT = 0, AMPERE, HERTZ, VOLTAMP, WATT, DEGCELS, MIN2SEC, NONE } units_t;
 
 static const double multiplier[4][8] = {
-/*   V     A     Hz   VA     W   C  MIN2SEC NONE */ 
+/*   V     A     Hz   VA     W   C  MIN2SEC NONE */
   { 1  , 1  , 1  ,    1,    1, 1,    60,   1 },
   { 1  , 1  , 0.1 , 1000, 1000, 1,    60,   1 },
   { 0.01, 0.01, 1  ,    1,    1, 1,    60,   1 },
@@ -170,10 +173,10 @@ static const double multiplier[4][8] = {
 
 /* use explicit booleans */
 #ifdef FALSE
-	#undef FALSE
+#	undef FALSE
 #endif /* FALSE */
 #ifdef TRUE
-	#undef TRUE
+#	undef TRUE
 #endif /* TRUE */
 typedef enum ebool { FALSE=0, TRUE } bool_t;
 
@@ -188,7 +191,7 @@ typedef enum ebool { FALSE=0, TRUE } bool_t;
 typedef struct {
 	const char *type;          /* INFO_* element                        */
 	int   flags;               /* INFO-element flags to set in addinfo  */
-	int   length;              /* INFO-element length of strings        */  
+	int   length;              /* INFO-element length of strings        */
 	const char  *cmd;          /* UPS command string to requets element */
 	const char  *fmt;          /* printf format string for INFO entry   */
 	units_t unit;              /* unit of measurement, or NONE          */
@@ -196,7 +199,7 @@ typedef struct {
 } mge_info_item_t;
 
 /* Array containing information to translate between UTalk and NUT info
- * NOTE: 
+ * NOTE:
  *	- Array is terminated by element with type NULL.
  *	- Essential INFO items (_MFR, _MODEL, _FIRMWARE, _STATUS) are
  *		handled separately.
@@ -231,5 +234,7 @@ static mge_info_item_t mge_info[] = {
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%05.1f", VOLT, TRUE },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%05.1f", VOLT, TRUE },
 	/* terminating element */
-	{ NULL, 0, 0, "\0",	"\0", NONE, FALSE } 
+	{ NULL, 0, 0, "\0", "\0", NONE, FALSE }
 };
+
+#endif	/* NUT_MGE_UTALK_H_SEEN */

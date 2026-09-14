@@ -1,8 +1,13 @@
 /*
  * blazer.c: driver core for Megatec/Q1 protocol based UPSes
  *
+ * OBSOLETION WARNING: Please to not base new development on this
+ * codebase, instead create a new subdriver for nutdrv_qx which
+ * generally covers all Megatec/Qx protocol family and aggregates
+ * device support from such legacy drivers over time.
+ *
  * A document describing the protocol implemented by this driver can be
- * found online at http://www.networkupstools.org/ups-protocols/megatec.html
+ * found online at https://www.networkupstools.org/ups-protocols/megatec.html
  *
  * Copyright (C)
  *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -25,11 +30,10 @@
 
 #include "main.h"
 #include "blazer.h"
+#include "nut_float.h"
 
-#include <math.h>
-
-static int	ondelay = 3;	/* minutes */
-static int	offdelay = 30;	/* seconds */
+static long	ondelay = 3;	/* minutes */
+static long	offdelay = 30;	/* seconds */
 
 static int	proto;
 static int	online = 1;
@@ -78,13 +82,13 @@ static const struct {
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
 	{ "zinto", "Q1\r", "F\r", "FW?\r" },
-	{ NULL }
+	{ NULL, NULL, NULL, NULL }
 };
 
 
 /*
  * Do whatever we think is needed when we read a battery voltage from the UPS.
- * Basically all it does now, is guestimating the battery charge, but this
+ * Basically all it does now, is guesstimating the battery charge, but this
  * could be extended.
  */
 static double blazer_battery(const char *ptr, char **endptr)
@@ -128,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)
@@ -146,7 +150,7 @@ static double blazer_packs(const char *ptr, char **endptr)
 
 	for (i = 0; packs[i] > 0; i++) {
 
-		if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+		if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 			continue;
 		}
 
@@ -177,7 +181,7 @@ static int blazer_status(const char *cmd)
 		{ "input.frequency", "%.1f", strtod },
 		{ "battery.voltage", "%.2f", blazer_battery },
 		{ "ups.temperature", "%.1f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -200,7 +204,6 @@ static int blazer_status(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); status[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -211,7 +214,7 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
-		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
+		dstate_setinfo_dynamic(status[i].var, status[i].fmt, "%f", status[i].conv(val, NULL));
 	}
 
 	if (!val) {
@@ -304,7 +307,7 @@ static int blazer_rating(const char *cmd)
 		{ "input.current.nominal", "%.1f", strtod },
 		{ "battery.voltage.nominal", "%.1f", blazer_packs },
 		{ "input.frequency.nominal", "%.0f", strtod },
-		{ NULL }
+		{ NULL, NULL, NULL }
 	};
 
 	char	buf[SMALLBUF], *val, *last = NULL;
@@ -327,7 +330,6 @@ static int blazer_rating(const char *cmd)
 	}
 
 	for (i = 0, val = strtok_r(buf+1, " ", &last); rating[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
-
 		if (!val) {
 			upsdebugx(2, "%s: parsing failed", __func__);
 			return -1;
@@ -338,7 +340,7 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
-		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
+		dstate_setinfo_dynamic(rating[i].var, rating[i].fmt, "%f", rating[i].conv(val, NULL));
 	}
 
 	return 0;
@@ -354,7 +356,7 @@ static int blazer_vendor(const char *cmd)
 		{ "ups.mfr",      15 },
 		{ "ups.model",    10 },
 		{ "ups.firmware", 10 },
-		{ NULL }
+		{ NULL, 0 }
 	};
 
 	char	buf[SMALLBUF];
@@ -401,13 +403,13 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		{ "test.battery.start.deep", "TL\r" },
 		{ "test.battery.start.quick", "T\r" },
 		{ "test.battery.stop", "CT\r" },
-		{ NULL }
+		{ NULL, NULL }
 	};
 
 	char	buf[SMALLBUF] = "";
 	int	i;
 
-	upslogx(LOG_INFO, "instcmd(%s, %s)", cmdname, extra ? extra : "[NULL]");
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	for (i = 0; instcmd[i].cmd; i++) {
 
@@ -422,9 +424,10 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		 * As an exception, Best UPS units will report "ACK" in case of success!
 		 * Other UPSes will reply "(ACK" in case of success.
 		 */
+		upslog_INSTCMD_POWERSTATE_CHECKED(cmdname, extra);
 		if (blazer_command(buf, buf, sizeof(buf)) > 0) {
 			if (strncmp(buf, "ACK", 3) && strncmp(buf, "(ACK", 4)) {
-				upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+				upslogx(LOG_INSTCMD_FAILED, "instcmd: command [%s] failed", cmdname);
 				return STAT_INSTCMD_FAILED;
 			}
 		}
@@ -434,6 +437,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/*
 		 * Sn: Shutdown after n minutes and then turn on when mains is back
@@ -450,22 +454,23 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		if (ondelay == 0) {
 
 			if (offdelay < 60) {
-				snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+				snprintf(buf, sizeof(buf), "S.%ld\r", offdelay / 6);
 			} else {
-				snprintf(buf, sizeof(buf), "S%02d\r", offdelay / 60);
+				snprintf(buf, sizeof(buf), "S%02ld\r", offdelay / 60);
 			}
 
 		} else if (offdelay < 60) {
 
-			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
+			snprintf(buf, sizeof(buf), "S.%ldR%04ld\r", offdelay / 6, ondelay);
 
 		} else {
 
-			snprintf(buf, sizeof(buf), "S%02dR%04d\r", offdelay / 60, ondelay);
+			snprintf(buf, sizeof(buf), "S%02ldR%04ld\r", offdelay / 60, ondelay);
 
 		}
 
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
 		/*
 		 * SnR0000
@@ -474,22 +479,25 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		 */
 
 		if (offdelay < 60) {
-			snprintf(buf, sizeof(buf), "S.%dR0000\r", offdelay / 6);
+			snprintf(buf, sizeof(buf), "S.%ldR0000\r", offdelay / 6);
 		} else {
-			snprintf(buf, sizeof(buf), "S%02dR0000\r", offdelay / 60);
+			snprintf(buf, sizeof(buf), "S%02ldR0000\r", offdelay / 60);
 		}
 
 	} else if (!strcasecmp(cmdname, "test.battery.start")) {
-		int	delay = extra ? strtol(extra, NULL, 10) : 10;
+		long	delay = extra ? strtol(extra, NULL, 10) : 10;
 
 		if ((delay < 1) || (delay > 99)) {
-			upslogx(LOG_ERR, "instcmd: command [%s] failed, delay [%s] out of range", cmdname, extra);
+			upslogx(LOG_INSTCMD_FAILED,
+				"instcmd: command [%s] failed, delay [%s] out of range",
+				cmdname, extra);
 			return STAT_INSTCMD_FAILED;
 		}
 
-		snprintf(buf, sizeof(buf), "T%02d\r", delay);
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+		snprintf(buf, sizeof(buf), "T%02ld\r", delay);
 	} else {
-		upslogx(LOG_ERR, "instcmd: command [%s] not found", cmdname);
+		upslog_INSTCMD_UNKNOWN(cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -500,7 +508,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	 */
 	if (blazer_command(buf, buf, sizeof(buf)) > 0) {
 		if (strncmp(buf, "ACK", 3) && strncmp(buf, "(ACK", 4)) {
-			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+			upslogx(LOG_INSTCMD_FAILED, "instcmd: command [%s] failed", cmdname);
 			return STAT_INSTCMD_FAILED;
 		}
 	}
@@ -522,7 +530,7 @@ void blazer_makevartable(void)
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 
-	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -536,7 +544,7 @@ void blazer_initups(void)
 	}
 
 	if ((ondelay < 0) || (ondelay > 9999)) {
-		fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+		fatalx(EXIT_FAILURE, "Start delay '%ld' out of range [0..9999]", ondelay);
 	}
 
 	val = getval("offdelay");
@@ -545,7 +553,7 @@ void blazer_initups(void)
 	}
 
 	if ((offdelay < 12) || (offdelay > 600)) {
-		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [12..600]", offdelay);
+		fatalx(EXIT_FAILURE, "Shutdown delay '%ld' out of range [12..600]", offdelay);
 	}
 
 	/* Truncate to nearest setable value */
@@ -573,7 +581,7 @@ static void blazer_initbattery(void)
 
 	/* If no values were provided by the user in ups.conf, try to guesstimate
 	 * battery.charge, but announce it! */
-	if ((batt.volt.nom != 1) && ((batt.volt.high == -1) || (batt.volt.low == -1))) {
+	if ( (!d_equal(batt.volt.nom, 1)) && ((d_equal(batt.volt.high, -1)) || (d_equal(batt.volt.low, -1)))) {
 		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
 
 		/* Basic formula, which should cover most cases */
@@ -583,8 +591,8 @@ static void blazer_initbattery(void)
 		/* Publish these data too */
 		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
 		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
-		
-		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+
+		upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
 	}
 
 	val = getval("runtimecal");
@@ -648,7 +656,7 @@ static void blazer_initbattery(void)
 	if (val) {
 		load.low = strtod(val, NULL) / 100;
 
-		if ((load.low <= 0) || (load.low > 1)) {
+		if ((load.low < 0) || (load.low > 1)) {
 			fatalx(EXIT_FAILURE, "Idle load out of range [0..100]");
 		}
 
@@ -664,9 +672,18 @@ void blazer_initinfo(void)
 	const char	*protocol = getval("protocol");
 	int	retry;
 
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
+
 	for (proto = 0; command[proto].status; proto++) {
 
-		int	ret;
+		int	ret = -1;
 
 		if (protocol && strcasecmp(protocol, command[proto].name)) {
 			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
@@ -698,7 +715,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].rating && !testvar("norating")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -718,7 +735,7 @@ void blazer_initinfo(void)
 	}
 
 	if (command[proto].vendor && !testvar("novendor")) {
-		int	ret;
+		int	ret = -1;
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -739,8 +756,8 @@ void blazer_initinfo(void)
 
 	blazer_initbattery();
 
-	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
 
 	dstate_addcmd("beeper.toggle");
 	dstate_addcmd("load.off");
@@ -808,20 +825,20 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	retry;
 
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		break;
-
 	}
 
 	if (retry > MAXTRIES) {
@@ -830,14 +847,17 @@ void upsdrv_shutdown(void)
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %d seconds", offdelay);
-
+		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }

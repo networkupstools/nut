@@ -4,37 +4,48 @@ UPSCLI_SENDLINE(3)
 NAME
 ----
 
-upscli_sendline, upscli_sendline_timeout - send a single command to a UPS
+upscli_sendline, upscli_sendline_timeout,
+upscli_sendline_timeout_may_disconnect - Send a single command to a UPS
 
 SYNOPSIS
 --------
 
+------
+	#include <upsclient.h>
+	#include <time.h> /* or <sys/time.h> on some platforms */
 
- #include <upsclient.h>
+	int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
- int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
- int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout);
+	int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen,
+		const time_t timeout);
+
+	int upscli_sendline_timeout_may_disconnect(UPSCONN_t *ups,
+		const char *buf, size_t buflen, const time_t timeout,
+		int may_disconnect);
+------
 
 DESCRIPTION
 -----------
 
 The *upscli_sendline()* and *upscli_sendline_timeout()* functions take the
-pointer 'ups' to a `UPSCONN_t` state structure and transmit a buffer 'buf' of
-size 'buflen' to the server.
+pointer 'ups' to a `UPSCONN_t` state structure and transmit a buffer 'buf'
+of size 'buflen' to the server.
 
 The data in 'buf' must be a fully formatted protocol command as no
 parsing of the buffer occurs within this function.
 
-The difference between the two functions is that *upscli_sendline_timeout()*
+The difference between the three functions is that *upscli_sendline_timeout()*
 lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_sendline()* does not offer this
-freedom, and uses an immediate timeout (0 second).
+freedom, and uses an immediate timeout (0 second). Both of these disconnect
+upon errors. The *upscli_sendline_timeout_may_disconnect()* further allows
+to enable or disable such disconnections.
 
 RETURN VALUE
 ------------
 
-The *upscli_sendline()* and *upscli_sendline_timeout()* functions return 0 on
-success, or -1 if an error occurs.
+The *upscli_sendline()* and *upscli_sendline_timeout()* functions
+return '0' on success, or '-1' if an error occurs.
 
 SEE ALSO
 --------

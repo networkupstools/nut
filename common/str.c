@@ -20,12 +20,29 @@
  *
  */
 
+#include "config.h"	/* must be first */
+
 #include <ctype.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
-#include <string.h>
 
+#ifdef HAVE_STRING_H
+#include <string.h>	/* for strdup() and many others */
+#endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>	/* for strncasecmp() and strcasecmp() */
+#endif
+
+/* get the va_* routines */
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+#ifdef HAVE_SYS_STDARG_H
+# include <sys/stdarg.h>
+#endif
+
+#include "nut_stdint.h"
 #include "str.h"
 
 char	*str_trim(char *string, const char character)
@@ -109,7 +126,7 @@ char	*str_ltrim_space(char *string)
 
 	while (
 		*string != '\0' &&
-		isspace(*string)
+		isspace((size_t)*string)
 	)
 		memmove(string, string + 1, strlen(string));
 
@@ -130,7 +147,7 @@ char	*str_rtrim_space(char *string)
 
 	while (
 		ptr >= string &&
-		isspace(*ptr)
+		isspace((size_t)*ptr)
 	)
 		*ptr-- = '\0';
 
@@ -252,7 +269,7 @@ int	str_to_short(const char *string, short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (short)num;
 	return 1;
 }
 
@@ -273,7 +290,7 @@ int	str_to_short_strict(const char *string, short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (short)num;
 	return 1;
 }
 
@@ -291,7 +308,7 @@ int	str_to_ushort(const char *string, unsigned short *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned short)num;
 	return 1;
 }
 
@@ -309,13 +326,13 @@ int	str_to_ushort_strict(const char *string, unsigned short *number, const int b
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned short)num;
 	return 1;
 }
 
 int	str_to_int(const char *string, int *number, const int base)
 {
-	long	num;
+	long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -330,13 +347,13 @@ int	str_to_int(const char *string, int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (int)num;
 	return 1;
 }
 
 int	str_to_int_strict(const char *string, int *number, const int base)
 {
-	long	num;
+	long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -351,13 +368,13 @@ int	str_to_int_strict(const char *string, int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (int)num;
 	return 1;
 }
 
 int	str_to_uint(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num;
+	unsigned long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -369,13 +386,13 @@ int	str_to_uint(const char *string, unsigned int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned int)num;
 	return 1;
 }
 
 int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 {
-	unsigned long	num;
+	unsigned long	num; /* long >= int, make sure we fit well */
 
 	*number = 0;
 
@@ -387,7 +404,7 @@ int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 		return 0;
 	}
 
-	*number = num;
+	*number = (unsigned int)num;
 	return 1;
 }
 
@@ -429,7 +446,7 @@ int	str_to_long_strict(const char *string, long *number, const int base)
 	if (
 		string == NULL ||
 		*string == '\0' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;
@@ -495,7 +512,7 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 		*string == '\0' ||
 		*string == '+' ||
 		*string == '-' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;
@@ -559,7 +576,7 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	if (
 		string == NULL ||
 		*string == '\0' ||
-		isspace(*string)
+		isspace((size_t)*string)
 	) {
 		errno = EINVAL;
 		return 0;
@@ -605,3 +622,83 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 
 	return 1;
 }
+
+/* Probably derived from https://stackoverflow.com/a/68816055/4715872
+ * or a similar suggestion */
+int str_ends_with(const char *s, const char *suff) {
+	size_t slen;
+	size_t sufflen;
+
+	if (!s) return 0;	/* null string does not end with anything */
+	if (!suff) return 1;	/* null suffix tails anything */
+
+	slen = strlen(s);
+	sufflen = strlen(suff);
+
+	return (slen >= sufflen) && (!memcmp(s + slen - sufflen, suff, sufflen));
+}
+
+/* Based on code by "mmdemirbas" posted "Jul 9 '12 at 11:41" to forum page
+ * http://stackoverflow.com/questions/8465006/how-to-concatenate-2-strings-in-c
+ * This concatenates the given number of strings into one freshly allocated
+ * heap object; NOTE that it is up to the caller to free the object afterwards.
+ */
+char *	str_concat(size_t count, ...)
+{
+	va_list ap;
+	size_t i, len, null_pos;
+	char* merged = NULL;
+
+	/* Find required length to store merged string */
+	va_start(ap, count);
+	len = 1; /* room for '\0' in the end */
+	for(i=0 ; i<count ; i++)
+		len += strlen(va_arg(ap, char*));
+	va_end(ap);
+
+	/* Allocate memory to concat strings */
+	merged = (char*)calloc(len,sizeof(char));
+	if (merged == NULL)
+		return merged;
+
+	/* Actually concatenate strings */
+	va_start(ap, count);
+	null_pos = 0;
+	for(i=0 ; i<count ; i++)
+	{
+		char *s = va_arg(ap, char*);
+		strcpy(merged+null_pos, s);
+		null_pos += strlen(s);
+	}
+	va_end(ap);
+
+	return merged;
+}
+
+#ifndef HAVE_STRTOF
+# include <errno.h>
+# include <stdio.h>
+float strtof(const char *nptr, char **endptr)
+{
+	double d;
+	int i;
+
+	if (!nptr || !*nptr) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	/* FIXME: LC_NUMERIC=C for dot floats */
+	i = sscanf(nptr, "%f", &d);
+	if (i < 1) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	if (endptr) {
+		*endptr = (char*)nptr + i;
+	}
+
+	return (float)d;
+}
+#endif	/* HAVE_STRTOF */

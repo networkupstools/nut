@@ -1,0 +1,69 @@
+Solaris/illumos helper scripts and resources
+============================================
+
+Overview
+--------
+
+This directory contains init-scripts and SMF manifests and methods for better
+integration of NUT services with Solaris and descendant operating systems,
+covering SVR4 packaging with init scripts and/or SMF services (as called from
+`make package` in the source root).
+
+NOTE: IPS (`pkg(5)`) packaging is not currently provided here, but is a concern
+of particular distributions. See for example the OpenIndiana userland recipe at
+https://github.com/OpenIndiana/oi-userland/tree/oi/hipster/components/sysutils/nut
+
+This also includes the `nut-driver-enumerator.sh` (service and implementation
+method) and `upsdrvsvcctl` (tool) to manage NUT drivers as service instances,
+which are stored in `../upsdrvsvcctl/` subdirectory (portable codebase shared
+with Linux systemd).
+
+SMF integration
+---------------
+
+The default implementation (which runs once per invocation) can be enabled
+with:
+----
+:; svcadm enable nut-driver-enumerator:default
+----
+
+Note that at the moment there is no out-of-the-box integration for triggering
+a restart/refresh of the `nut-driver-enumerator` SMF service at the very instant
+when the `ups.conf` file is modified, like there is with systemd path unit type.
+Due to this, the systems administrator is expected to either invoke
+`svcadm refresh nut-driver-enumerator` after changing the NUT configuration,
+or wait until the daemonized mode, if enabled, picks up the change (should do
+so within a minute by default). However, a DTrace script or a tool like
+https://github.com/emcrisostomo/fswatch wrapped into a service might be used
+for equivalent effect.
+
+Alternatively, but in a potentially more computationally expensive fashion, the
+same `nut-driver-enumerator.sh` script can be executed in a loop as the payload
+of the SMF service to keep inspecting the configuration regularly and so apply
+changes to the running system. It is not a common use-case to keep changing
+device setups, so this solution is not enforced by default ;) although an SMF
+service variant for this is provided...
+
+Note that only one of these implementations can be enabled at the same time:
+----
+:; svcadm disable nut-driver-enumerator:default
+:; svcadm enable nut-driver-enumerator:daemon
+----
+
+Other
+-----
+
+For special notes about USB-connected device monitoring with NUT under Solaris
+and related operating systems, see also `docs/solaris-usb.txt`. The example
+`reset-ups-usb-solaris.sh.sample` script can be used to reset USB connections
+if a driver (or UPS controller) gets stuck -- but it needs to be adapted to
+*your* system first.
+
+Credits
+-------
+
+* Init-script solution and SVR4 packaging contributed by numerous authors
+  over the years
+
+* SMF solution and OpenIndiana packaging contributed by Jim Klimov
+  <jimklimov+nut@gmail.com>

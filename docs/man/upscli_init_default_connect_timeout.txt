@@ -1,0 +1,75 @@
+UPSCLI_INIT_DEFAULT_CONNECT_TIMEOUT(3)
+======================================
+
+NAME
+----
+
+upscli_init_default_connect_timeout - Initialize upsclient module aspect of default timeout for initial connections.
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	int upscli_init_default_connect_timeout(
+		const char *cli_secs,
+		const char *config_secs,
+		const char *default_secs);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_init_default_connect_timeout()* function initializes upsclient module
+aspect of default connection timeout for linkman:upscli_connect[3], which
+may be important when e.g. linkman:upsc[8] scripting or linkman:upsmon[8]
+configuration refers to unresponsive hosts, or when the host name resolution
+lags, etc.  By default, linkman:upscli_connect[3] blocks indefinitely in
+its attempts to connect (or until the system transport layer interrupts
+such an attempt).
+
+It populates the value from different sources, mostly C strings which represent
+a floating-point non-negative number (invalid parsing is logged and may impact
+the return value), any or all of them may be `NULL` to skip, and in specific
+order (last valid hit wins):
+
+* built-in '0' meaning indefinitely blocking (NUT default for this method over
+  at least 20 years);
+* the number from `default_secs` as a particular NUT or third-party client
+  program's built-in preferred (low-priority) default;
+* the number from `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable as a
+  site-local preference (generally pre-set in linkman:nut.conf[5]);
+* the number from `config_secs` as a particular NUT or third-party client
+  program's configuration file default;
+* the number from `cli_secs` as a particular NUT or third-party client
+  program's setting from command line (highest priority).
+
+Internally, calls linkman:upscli_set_default_connect_timeout[3] for most of
+the string related processing.
+
+The upsclient module tracks if *upscli_init_default_connect_timeout()* function
+was called and succeeded, in order to call it once (if never used) from the
+linkman:upscli_connect[3] or linkman:upscli_init[3] methods.  This allows
+unmodified (legacy) NUT clients to consistently benefit from presence of
+the `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
+
+This tracking does not preclude programs from explicitly calling the method
+any amount of times.
+
+RETURN VALUE
+------------
+
+The *upscli_init_default_connect_timeout()* function returns '0' on success (either if
+all strings were `NULL` so the built-in default is applied, or at least one of
+those strings that were set was valid and its value got applied), or '-1' if
+an error occurs (at least one string was not `NULL`, and none of the strings
+was valid).
+
+SEE ALSO
+--------
+
+linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_set_default_connect_timeout[3],
+linkman:upscli_get_default_connect_timeout[3],
+linkman:upscli_init[3]

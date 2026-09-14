@@ -3,6 +3,7 @@
    Copyright (C)
      1999  Russell Kroll <rkroll@exploits.org>
      2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+     2020-2026  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,47 +23,81 @@
 #include "common.h"
 #include "nut_platform.h"
 
-#include <pwd.h>
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else	/* WIN32 */
+#include "wincompat.h"
+#endif	/* WIN32 */
 
+#include "nut_stdint.h"
 #include "upsclient.h"
 #include "extstate.h"
+
+/* name-swap in libupsclient consumer to simplify the look of code base */
+#define builtin_setproctag(x)	setproctag(x)
+#define setproctag(x)	do { builtin_setproctag(x); upscli_upslog_setproctag(x, nut_common_cookie()); } while(0)
+
+/* network timeout for initial connection, in seconds */
+#define UPSCLI_DEFAULT_CONNECT_TIMEOUT	"10"
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			tracking_enabled = 0;
-static unsigned int		timeout = DEFAULT_TRACKING_TIMEOUT;
+static unsigned int	timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
 	struct	list_t	*next;
 };
 
-static void usage(const char *prog)
+/* For getopt loops; should match usage documented below: */
+static const char	optstring[] = "+Dhls:p:t:u:wVW:A:";
+
+static void help(const char *prog)
 {
-	printf("Network UPS Tools %s %s\n\n", prog, UPS_VERSION);
-	printf("usage: %s [-h]\n", prog);
+	print_banner_once(prog, 2);
+	printf("NUT administration client program to set variables within UPS hardware.\n");
+
+	printf("\nusage: %s [-h]\n", prog);
 	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups>\n\n", prog);
-	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
-	printf("  -h            display this help text\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
+	printf("  -l            show all possible read/write variables.\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
 	printf("                and return its actual result from the device\n");
-	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -W <secs>  - network timeout for initial connections (default: %s)\n",
+		UPSCLI_DEFAULT_CONNECT_TIMEOUT);
+	printf("  -A <name>  - require use of specified authentication configuration file\n");
+	printf("               (pass 'default' to require finding one user- or system-provided\n");
+	printf("               locations, or 'none' to not seek any such file)\n");
+	printf("  -D         - raise debugging level\n");
+	printf("  -h         - display this help text\n");
 	printf("\n");
-	printf("Call without -s to show all possible read/write variables.\n");
+	printf("Call without -s to show all possible read/write variables (same as -l).\n");
+
+	nut_report_config_flags();
+	upscli_report_build_details();
+
+	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
 
 static void clean_exit(void)
 {
+	/* Flush *our* output before possibly failing in third-party code
+	 * (e.g. SSL libs), so client consumers have a chance to see it */
+	fflush(stdout);
+	fflush(stderr);
+
 	if (ups) {
 		upscli_disconnect(ups);
 	}
@@ -70,8 +105,21 @@ static void clean_exit(void)
 	free(upsname);
 	free(hostname);
 	free(ups);
+
+	upscli_cleanup();
+
+	upsdebugx(1, "%s: finished, exiting", __func__);
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 static void do_set(const char *varname, const char *newval)
 {
 	int		cmd_complete = 0;
@@ -100,12 +148,39 @@ static void do_set(const char *varname, const char *newval)
 		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
 		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
 	) {
+		char	*e = getenv("NUT_QUIET_OK_NOTRACKING");
+		int	lvl = 0;	/* Visible by default */
+
+		if (e && !strcmp(e, "true"))
+			lvl = 1;	/* Hide into debuging if asked to */
+
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
+		upsdebugx(lvl, "%s: 'OK' only means the NUT data server accepted\n"
+			"the request as valid, but as we did not wait for result,\n"
+			"we do not know if it was handled in fact.%s",
+			lvl ? __func__ : "WARNING",
+			lvl ? "" :
+			"\nYou can export NUT_QUIET_OK_NOTRACKING=true to hide this message,\n"
+			"or use -w [-t SEC] option(s) to track the actual outcome."
+			);
 		return;
 	}
 
-	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+	/* From the check above, we know that we have exactly UUID4_LEN chars
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
+	 */
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */
@@ -121,8 +196,29 @@ static void do_set(const char *varname, const char *newval)
 		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
 			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+/* Note for gating macros above: unsuffixed HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+ * means support of contexts both inside and outside function body, so the push
+ * above and pop below (outside this finction) are not used.
+ */
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+/* Note that the individual warning pragmas for use inside function bodies
+ * are named without a _INSIDEFUNC suffix, for simplicity and legacy reasons
+ */
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 		/* and get status tracking reply */
-		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+		assert(timeout < LONG_MAX);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), (long)timeout) < 0)
 			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 
 		if (strncmp(buf, "PENDING", 7))
@@ -134,52 +230,16 @@ static void do_set(const char *varname, const char *newval)
 
 	fprintf(stderr, "%s\n", buf);
 }
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
 
-static void do_setvar(const char *varname, char *uin, const char *pass)
+static void do_setvar(const char *varname)
 {
-	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
-	struct passwd	*pw;
-
-	if (uin) {
-		snprintf(user, sizeof(user), "%s", uin);
-	} else {
-		memset(user, '\0', sizeof(user));
-
-		pw = getpwuid(getuid());
-
-		if (pw) {
-			printf("Username (%s): ", pw->pw_name);
-		} else {
-			printf("Username: ");
-		}
-
-		if (fgets(user, sizeof(user), stdin) == NULL) {
-			upsdebug_with_errno(LOG_INFO, "%s", __func__);
-		}
-
-		/* deal with that pesky newline */
-		if (strlen(user) > 1) {
-			user[strlen(user) - 1] = '\0';
-		} else {
-			if (!pw) {
-				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
-			}
-
-			snprintf(user, sizeof(user), "%s", pw->pw_name);
-		}
-	}
-
-	/* leaks - use -p when running in valgrind */
-	if (!pass) {
-		pass = GETPASS("Password: " );
-
-		if (!pass) {
-			fatal_with_errno(EXIT_FAILURE, "getpass failed");
-		}
-	}
+	char	newval[SMALLBUF], temp[SMALLBUF * 2], *ptr;
 
 	/* Check if varname is in VAR=VALUE form */
-	if ((ptr = strchr(varname, '=')) != NULL) {
+	if ((ptr = (char*)strchr(varname, '=')) != NULL) {
 		*ptr++ = 0;
 		snprintf(newval, sizeof(newval), "%s", ptr);
 	} else {
@@ -189,31 +249,6 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 			upsdebug_with_errno(LOG_INFO, "%s", __func__);
 		}
 		newval[strlen(newval) - 1] = '\0';
-	}
-
-	snprintf(temp, sizeof(temp), "USERNAME %s\n", user);
-
-	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set username: %s", upscli_strerror(ups));
-	}
-
-	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
-
-		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Set username failed due to an unknown command. You probably need to upgrade upsd.");
-		}
-
-		fatalx(EXIT_FAILURE, "Set username failed: %s", upscli_strerror(ups));
-	}
-
-	snprintf(temp, sizeof(temp), "PASSWORD %s\n", pass);
-
-	if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Can't set password: %s", upscli_strerror(ups));
-	}
-
-	if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
-		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
 
 	/* no upsname means die */
@@ -251,7 +286,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 static const char *get_data(const char *type, const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const char	*query[4];
 
@@ -271,7 +306,7 @@ static const char *get_data(const char *type, const char *varname)
 	return answer[3];
 }
 
-static void do_string(const char *varname, const int len)
+static void do_string(const char *varname, const long len)
 {
 	const char	*val;
 
@@ -282,7 +317,7 @@ static void do_string(const char *varname, const int len)
 	}
 
 	printf("Type: STRING\n");
-	printf("Maximum length: %d\n", len);
+	printf("Maximum length: %ld\n", len);
 	printf("Value: %s\n", val);
 }
 
@@ -306,10 +341,10 @@ static void do_number(const char *varname)
  * @param vartype the type of the NUT variable (ST_FLAG_STRING, ST_FLAG_NUMBER
  * @param len the length of the NUT variable, if type == ST_FLAG_STRING
  */
-static void do_enum(const char *varname, const int vartype, const int len)
+static void do_enum(const char *varname, const int vartype, const long len)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer, buf[SMALLBUF];
 	const char	*query[4], *val;
 
@@ -342,14 +377,14 @@ static void do_enum(const char *varname, const int vartype, const int len)
 		printf("Type: ENUM\n");
 
 	if (vartype == ST_FLAG_STRING)
-		printf("Maximum length: %d\n", len);
+		printf("Maximum length: %ld\n", len);
 
 	while (ret == 1) {
 
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("Option: \"%s\"", answer[3]);
@@ -367,7 +402,7 @@ static void do_enum(const char *varname, const int vartype, const int len)
 static void do_range(const char *varname)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	char	**answer;
 	const char	*query[4], *val;
 	int ival, min, max;
@@ -402,7 +437,7 @@ static void do_range(const char *varname)
 		/* RANGE <upsname> <varname> <min> <max> */
 
 		if (numa < 5) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		min = atoi(answer[3]);
@@ -424,7 +459,7 @@ static void do_type(const char *varname)
 {
 	int	ret;
 	int is_enum = 0; /* 1 if ENUM; FIXME: add a boolean type in common.h */
-	unsigned int	i, numq, numa;
+	size_t	i, numq, numa;
 	char	**answer;
 	const char	*query[4];
 
@@ -458,7 +493,7 @@ static void do_type(const char *varname)
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
 
 			char	*len = answer[i] + 7;
-			int	length = strtol(len, NULL, 10);
+			long	length = strtol(len, NULL, 10);
 
 			if (is_enum == 1)
 				do_enum(varname, ST_FLAG_STRING, length);
@@ -511,7 +546,7 @@ static void print_rw(const char *varname)
 static void print_rwlist(void)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const char	*query[2];
 	char	**answer;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
@@ -545,12 +580,12 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		/* sock this entry away for later */
 
-		ltmp = xmalloc(sizeof(struct list_t));
+		ltmp = (struct list_t *)xmalloc(sizeof(struct list_t));
 		ltmp->name = xstrdup(answer[2]);
 		ltmp->next = NULL;
 
@@ -582,44 +617,147 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
-	const char	*prog = xbasename(argv[0]);
-	char	*password = NULL, *username = NULL, *setvar = NULL;
+	/* Make sure all related logs (copies of code that may
+	 * be spread in different NUT common libs) start on the
+	 * same note; execute this call before everything else,
+	 * at the cost of a temporary otherwise useless variable. */
+	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
+	int	opt_ret = 0;
+	uint16_t	port;
+	upscli_authconf_t	*ac_conn = NULL;
+	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upsrw");
+	const char	*net_connect_timeout = NULL;
+	char	*password = NULL, *username = NULL, *setvar = NULL, *nutauth = NULL, str_port[16];
+	int	flags_ssl = UPSCLI_CONN_TRYSSL;
 
-	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
-		switch (i)
+	NUT_UNUSED_VARIABLE(upslog_start_tmp);
+	upscli_upslog_setprocname(xstrdup(getmyprocname()), nut_common_cookie());
+
+	/* NOTE: Debugging the client is primarily of use to developers, so
+	 *  it was not at all exposed via `-D[D...]` args until NUT v2.8.5.
+	 *  Since earlier 2.8.x releases, caller could `export NUT_DEBUG_LEVEL`
+	 *  to see debugs for the client and for NUT methods called from it.
+	 */
+
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+		if (opt_ret == 'D')
+			nut_debug_level++;
+	}
+
+	if (!nut_debug_level) {
+		char	*s = getenv("NUT_DEBUG_LEVEL");
+		int	l;
+		if (s && str_to_int(s, &l, 10) && l > 0) {
+			nut_debug_level = l;
+			upsdebugx(1, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+				"since none was requested by command-line options", l);
+		}	/* else follow -D settings */
+	}
+
+	/* These lines aim to just initialize the logging subsystem, and set
+	 * initial timestamp, for the eventuality that debugs would be printed:
+	 */
+	upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());
+	setproctag(prog);
+	upsdebugx(1, "Starting NUT client: %s", prog);
+
+#if (defined NUT_PLATFORM_AIX) && (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
+	callback_upsconf_args = do_upsconf_args;
+#endif
+
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
+	while ((opt_ret = getopt(argc, argv, optstring)) != -1) {
+
+		switch (opt_ret)
 		{
+		case 'D': break;	/* See nut_debug_level handled above */
+
+		case 'A':
+			nutauth = optarg;
+			break;
+
 		case 's':
 			setvar = optarg;
 			break;
+
+		case 'l':
+			if (setvar) {
+				upslogx(LOG_WARNING, "Listing mode requested, overriding setvar specified earlier!");
+				setvar = NULL;
+			}
+			break;
+
 		case 'p':
 			password = optarg;
 			break;
+
 		case 't':
 			if (!str_to_uint(optarg, &timeout, 10))
 				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
 			break;
+
 		case 'u':
 			username = optarg;
 			break;
+
 		case 'w':
 			tracking_enabled = 1;
 			break;
+
 		case 'V':
-			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
+			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
+
+		case 'W':
+			net_connect_timeout = optarg;
+			break;
+
 		case 'h':
 		default:
-			usage(prog);
+			help(prog);
 			exit(EXIT_SUCCESS);
 		}
 	}
 
+	if (nutauth) {
+		if (!strcmp(nutauth, "none")) {
+			upsdebugx(1, "Using nutauth='%s': skipping auth config", nutauth);
+		} else {
+			if (!strcmp(nutauth, "default")) {
+				upsdebugx(1, "Using nutauth='%s': require a user or system provided file", nutauth);
+				upscli_read_authconf_file(NULL, 1, -1);
+			} else {
+				upsdebugx(1, "Using nutauth='%s': require this file", nutauth);
+				upscli_read_authconf_file(nutauth, 1, -1);
+			}
+		}
+	} else {
+		upsdebugx(1, "Using best-effort auth config detection");
+		upscli_read_authconf_file(NULL, 0, 1);
+	}
+
+	if (upscli_init_default_connect_timeout(net_connect_timeout, NULL, UPSCLI_DEFAULT_CONNECT_TIMEOUT) < 0) {
+		fatalx(EXIT_FAILURE, "Error: invalid network timeout: %s",
+			net_connect_timeout);
+	}
+
+	/* Simplify offset numbering to look at command-line
+	 * arguments (if any) after the options checked above */
 	argc -= optind;
 	argv += optind;
 
 	if (argc < 1) {
-		usage(prog);
+		help(prog);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -629,21 +767,46 @@ int main(int argc, char **argv)
 	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
 		fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]");
 	}
+	setproctag(argv[0]);	/* ups[@host[:port]] */
 
-	ups = xcalloc(1, sizeof(*ups));
+	ac_conn = upscli_get_authconf_item(NULL, hostname, snprintf(str_port, sizeof(str_port), "%" PRIu16, port) > 0 ? str_port : NULL, 1);
+	if (ac_conn) {
+		if (upscli_init_authconf(ac_conn) > 0) {
+			upscli_authconf_t	*ac_default = upscli_find_authconf_item(NULL, NULL, NULL);
+			upscli_authconf_update_conn_flags(ac_default, &flags_ssl);
+		}
+		upscli_authconf_update_conn_flags(ac_conn, &flags_ssl);
+	}
 
-	if (upscli_connect(ups, hostname, port, 0) < 0) {
+	ups = (UPSCONN_t *)xcalloc(1, sizeof(*ups));
+
+	if (upscli_connect(ups, hostname, port, flags_ssl) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
 	if (setvar) {
 		/* setting a variable */
-		do_setvar(setvar, username, password);
+		if (ac_conn && ac_conn->user && !username && ac_conn->pass && !password) {
+			upsdebugx(1, "Using authentication from configuration file");
+			if (upscli_authenticate_authconf(ups, ac_conn)) {
+				fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
+			}
+		} else {
+			upsdebugx(1, "Using authentication from CLI or interactive session");
+			if (upscli_authenticate(ups, username, password, 1, 1) < 0) {
+				fatalx(EXIT_FAILURE, "Authentication failed: %s", upscli_strerror(ups));
+			}
+		}
+
+		/* VAR (interactive) or VAR=VAL */
+		do_setvar(setvar);
 	} else {
 		/* if not, get the list of supported read/write variables */
 		print_rwlist();
 	}
 
+	/* Not a sub-process (do not let common::proctag_cleanup() mis-report us as such) */
+	setproctag(prog);
 	exit(EXIT_SUCCESS);
 }
 
@@ -651,6 +814,9 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	NUT_UNUSED_VARIABLE(upsname);
+	NUT_UNUSED_VARIABLE(var);
+	NUT_UNUSED_VARIABLE(val);
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

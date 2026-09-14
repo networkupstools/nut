@@ -22,12 +22,12 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"	/* For sqrt() */
 
-#include <math.h>		/* for sqrt */
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -40,6 +40,7 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 };
 
+/* FIXME: Replace with proper upsdebugx() et al */
 #define xDEBUG
 
 #ifdef DEBUG
@@ -52,7 +53,10 @@ upsdrv_info_t	upsdrv_info = {
 #define MAXTRIES 15
 /* #define IGNCHARS	""	*/
 
-float lagrange(unsigned int vbyte)
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
+
+static float lagrange(unsigned int vbyte)
 {
 	float f0, f1, f2, f3, f4, f5, f6;
 	float a, b, c, d, e, g, h;
@@ -100,7 +104,7 @@ float lagrange(unsigned int vbyte)
 	return a + b + c + d + e + g + h;
 }
 
-float interpol(float vbytes)
+static float interpol(float vbytes)
 {
 	const int x[7]={75,83,87,98,103,118,145};
 	const float f[7]={96.0,102.0,105.0,113.0,116.0,124.0,140.0};
@@ -141,198 +145,284 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("input.transfer.high", "140.0");	/* defined */
 
 	dstate_setinfo("output.voltage", "120.0");	/* defined */
-	 
- 	 /* addinfo(INFO_, "", 0, 0); */
-	 /*printf("Using %s %s on %s\n", getdata(INFO_MFR), getdata(INFO_MODEL), device_path);*/
+
+	/* addinfo(INFO_, "", 0, 0); */
+	/*printf("Using %s %s on %s\n", getdata(INFO_MFR), getdata(INFO_MODEL), device_path);*/
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 static const char *getpacket(int *we_know){
-  fd_set readfds;
-  struct timeval tv;
-  int bytes_per_packet=0;
-  int ret;
-  static const char *packet_id=NULL;
-  static char buf[256];
-  const char *s;
-  ssize_t r;
+#ifndef WIN32
+	fd_set readfds;
+	struct timeval tv;
+	int ret;
+#endif	/* !WIN32 */
+	int bytes_per_packet=0;
+	static const char *packet_id=NULL;
+	static char buf[256];
+	const char *s;
+	ssize_t r;
 
-  
-  bytes_per_packet=*we_know;
-  D(printf("getpacket with %d\n",bytes_per_packet);)
-  
-  FD_ZERO(&readfds);
-  FD_SET(upsfd,&readfds);
+	bytes_per_packet=*we_know;
+	D(printf("getpacket with %d\n",bytes_per_packet);)
+
+#ifndef WIN32
+	FD_ZERO(&readfds);
+	FD_SET(upsfd,&readfds);
+
 	/* Wait up to 2 seconds. */
-  tv.tv_sec = 5;
-  tv.tv_usec = 0;
- 
-  ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
-  if (!ret) {
-	s="Nothing received from UPS. Check cable conexion";
-	upslogx(LOG_ERR, "%s", s);
-	D(printf("%s\n",s);)
-	return NULL;
-  }
+	tv.tv_sec = 5;
+	tv.tv_usec = 0;
 
-  r=read(upsfd,buf,255);
-  D(printf("%d bytes read: ",r);)
-  buf[r]=0;
-  if (bytes_per_packet && r < bytes_per_packet){
-	     ssize_t rr;
-	     D(printf("short read...\n");)
-	     usleep(500000);
-             tv.tv_sec = 2;
-             tv.tv_usec = 0;
-             ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
-             if (!ret) return NULL;
-	     rr=read(upsfd,buf+r,255-r);
-	     r += rr;
-	     if (r < bytes_per_packet) return NULL;
-  }
-	     
-  if (!bytes_per_packet){ /* packet size determination */ 
-       /* if (r%10 && r%9) {
-	   printf("disregarding incomplete packet\n");
-  	   return NULL;
-	}*/
-	if (r%10==0) *we_know=10;
-	else if (r%9==0)  *we_know=9;
-	return NULL;
-  }
-     
-     /* by here we have bytes_per_packet and a complete packet */
-     /* lets check if within the complete packet we have a valid packet */
- if (bytes_per_packet == 10) packet_id="&&&";  else  packet_id="***";
- s=strstr(buf,packet_id);
-     /* check validity of packet */
- if (!s) {
-	s="isbmex: no valid packet signature!";
-	upslogx(LOG_ERR, "%s", s);
-	D(printf("%s\n",s);)
-	*we_know=0;
-	return NULL;
- }
- D(if (s != buf) printf("overlapping packet received\n");)
- if ((int) strlen(s) < bytes_per_packet) {
-		    D(printf("incomplete packet information\n");)
-		    return NULL; 
- }
+	ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
+	if (!ret) {
+		s = "Nothing received from UPS. Check cable conexion";
+		upslogx(LOG_ERR, "%s", s);
+		D(printf("%s\n",s);)
+		return NULL;
+	}
+
+	r = read(upsfd,buf,255);
+#else	/* WIN32 */
+	r = select_read(upsfd,buf,255,5,0);
+	if (r <= 0) {
+		s = "Nothing received from UPS. Check cable conexion";
+		upslogx(LOG_ERR, "%s", s);
+		D(printf("%s\n",s);)
+		return NULL;
+	}
+#endif	/* WIN32 */
+	D(printf("%" PRIiSIZE " bytes read: ",r);)
+
+	buf[r]=0;
+	if (bytes_per_packet && r < bytes_per_packet){
+		ssize_t rr;
+		D(printf("short read...\n");)
+		usleep(500000);
+#ifndef WIN32
+		tv.tv_sec = 2;
+		tv.tv_usec = 0;
+		ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
+		if (!ret) return NULL;
+		/* Casting is okay since bytes_per_packet is small
+		 * and r is smaller, so 255-r is positive */
+		assert (r <= 255);
+		rr = read(upsfd, buf+r, (size_t)(255-r));
+#else	/* WIN32 */
+		rr = select_read(upsfd,buf+r,255-r,2,0);
+		if (rr <= 0) {
+			return NULL;
+		}
+#endif	/* WIN32 */
+		r += rr;
+		if (r < bytes_per_packet) return NULL;
+	}
+
+	if (!bytes_per_packet){ /* packet size determination */
+		/*
+		if (r%10 && r%9) {
+			printf("disregarding incomplete packet\n");
+			return NULL;
+		}
+		*/
+		if (r%10==0)
+			*we_know=10;
+		else if (r%9==0)
+			*we_know=9;
+		return NULL;
+	}
+
+	/* by here we have bytes_per_packet and a complete packet */
+	/* lets check if within the complete packet we have a valid packet */
+	if (bytes_per_packet == 10)
+		packet_id="&&&";
+	else
+		packet_id="***";
+	s=strstr(buf,packet_id);
+	/* check validity of packet */
+	if (!s) {
+		s="isbmex: no valid packet signature!";
+		upslogx(LOG_ERR, "%s", s);
+		D(printf("%s\n",s);)
+		*we_know=0;
+		return NULL;
+	}
+	D(if (s != buf) printf("overlapping packet received\n");)
+	if ((int) strlen(s) < bytes_per_packet) {
+		D(printf("incomplete packet information\n");)
+		return NULL;
+	}
 #ifdef DEBUG
-    printf("Got signal:");
-    {int i;for (i=0;i<strlen(s);i++) printf(" <%d>",(unsigned char)s[i]);}
-    printf("\n");
+	printf("Got signal:");
+	{int i;for (i=0;i<strlen(s);i++) printf(" <%d>",(unsigned char)s[i]);}
+	printf("\n");
 #endif
-    
- return s;
+
+	return s;
 }
 
 void upsdrv_updateinfo(void)
 {
-  static  float high_volt=-1, low_volt=999;
-  const char	*buf=NULL;
-  char buf2[17];
-  int i;
-  static int bytes_per_packet=0;
+	static  float high_volt=-1, low_volt=999;
+	const char	*buf=NULL;
+	char buf2[17];
+	int i;
+	static int bytes_per_packet=0;
 
-  for (i=0;i<5;i++) {
-	  if ((buf=getpacket(&bytes_per_packet)) != NULL) break;
-  }
-  if (!bytes_per_packet || !buf) {
-	dstate_datastale();
+	for (i=0;i<5;i++) {
+		if ((buf=getpacket(&bytes_per_packet)) != NULL) break;
+	}
+	if (!bytes_per_packet || !buf) {
+		dstate_datastale();
+		return;
+	}
+
+	/* do the parsing */
+	{
+		float in_volt,battpct,acfreq;
+		double d;
+		D(printf("parsing (%d bytes per packet)\n",bytes_per_packet);)
+		/* input voltage :*/
+		if (bytes_per_packet==9) {
+			in_volt = lagrange((unsigned char)buf[3]);
+		} else {
+			in_volt = interpol(sqrt((float)((unsigned char)buf[3]*256+(unsigned char)buf[4])));
+		}
+		snprintf(buf2,16,"%5.1f",in_volt);
+		D(printf("utility=%s\n",buf2);)
+		dstate_setinfo("input.voltage", "%s", buf2);
+
+		if (in_volt >= high_volt) high_volt=in_volt;
+		snprintf(buf2,16,"%5.1f",high_volt);
+		D(printf("highvolt=%s\n",buf2);)
+		dstate_setinfo("input.voltage.maximum", "%s", buf2);
+
+		if (in_volt <= low_volt)  low_volt=in_volt;
+		snprintf(buf2,16,"%5.1f",low_volt);
+		D(printf("lowvolt=%s\n",buf2);)
+		dstate_setinfo("input.voltage.minimum", "%s", buf2);
+
+		battpct = ((double)((unsigned char)buf[(bytes_per_packet==10)?5:4])-168.0)*(100.0/(215.0-168.0));
+		snprintf(buf2,16,"%5.1f",battpct);
+		D(printf("battpct=%s\n",buf2);)
+		dstate_setinfo("battery.charge", "%s", buf2);
+
+		d=(unsigned char)buf[(bytes_per_packet==10)?6:5]*256
+		     + (unsigned char)buf[(bytes_per_packet==10)?7:6];
+		acfreq = 1000000/d;
+		snprintf(buf2,16,"%5.2f",acfreq);
+		D(printf("acfreq=%s\n",buf2);)
+		dstate_setinfo("input.frequency", "%s", buf2);
+
+		D(printf("status: ");)
+		status_init();
+		switch (buf[(bytes_per_packet==10)?8:7]){
+			case 48: break; /* normal operation */
+			case 49: D(printf("BOOST ");)
+				status_set("BOOST");
+				break;
+			case 50: D(printf("TRIM ");)
+				status_set("TRIM");
+				break;
+			default: break;
+		}
+		switch (buf[(bytes_per_packet==10)?9:8]){
+			case 48: D(printf("OL ");)
+				status_set("OL");
+				break;
+			case 50: D(printf("LB ");)
+				status_set("LB");
+				/* break; */
+				/* FIXME? Can this device set independently LB and OB? */
+				goto fallthrough_LB_means_OB;
+				/* FALLTHRU */
+			case 49:
+			fallthrough_LB_means_OB:
+				D(printf("OB ");)
+				status_set("OB");
+				break;
+			default: break;
+		}
+		D(printf("\n");)
+		status_commit();
+	}
+	dstate_dataok();
 	return;
-  }
-	  
-  /* do the parsing */
-  {
-     float in_volt,battpct,acfreq;
-     double d;
-     D(printf("parsing (%d bytes per packet)\n",bytes_per_packet);)
-     /* input voltage :*/
-     if (bytes_per_packet==9) {
-	 in_volt = lagrange((unsigned char)buf[3]);    
-     } else {
-	 in_volt = interpol(sqrt((float)((unsigned char)buf[3]*256+(unsigned char)buf[4])));    
-     }
-     snprintf(buf2,16,"%5.1f",in_volt);
-     D(printf("utility=%s\n",buf2);)
-     dstate_setinfo("input.voltage", "%s", buf2);     
-     
-     if (in_volt >= high_volt) high_volt=in_volt;
-     snprintf(buf2,16,"%5.1f",high_volt);
-     D(printf("highvolt=%s\n",buf2);)
-     dstate_setinfo("input.voltage.maximum", "%s", buf2);       
-     
-     if (in_volt <= low_volt)  low_volt=in_volt;
-     snprintf(buf2,16,"%5.1f",low_volt);
-     D(printf("lowvolt=%s\n",buf2);)
-     dstate_setinfo("input.voltage.minimum", "%s", buf2);      
- 
-     battpct = ((double)((unsigned char)buf[(bytes_per_packet==10)?5:4])-168.0)*(100.0/(215.0-168.0));
-     snprintf(buf2,16,"%5.1f",battpct);
-     D(printf("battpct=%s\n",buf2);)
-     dstate_setinfo("battery.charge", "%s", buf2);    
- 
-     d=(unsigned char)buf[(bytes_per_packet==10)?6:5]*256
-	     + (unsigned char)buf[(bytes_per_packet==10)?7:6];    
-     acfreq = 1000000/d;
-     snprintf(buf2,16,"%5.2f",acfreq);
-     D(printf("acfreq=%s\n",buf2);)
-     dstate_setinfo("input.frequency", "%s", buf2);    
+}
 
-     D(printf("status: ");)
-     status_init();
-     switch (buf[(bytes_per_packet==10)?8:7]){
-	 case 48: break; /* normal operation */
-	 case 49: D(printf("BOOST ");)
-		  status_set("BOOST");
-		  break;
-	 case 50: D(printf("TRIM ");)
-		  status_set("TRIM");
-	 default: break;
-     }
-     switch (buf[(bytes_per_packet==10)?9:8]){
-	 case 48: D(printf("OL ");)
-		  status_set("OL");
-		  break; 
-	 case 50: D(printf("LB ");)
-		  status_set("LB");
-	 case 49: D(printf("OB ");)
-		  status_set("OB");
-		  break;
-	 default: break;
-     }
-     D(printf("\n");)
-     status_commit();	     
-				  
-	     
-   } 
-   dstate_dataok();
-   return;
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	/* May be used in logging below, but not as a command argument */
+	NUT_UNUSED_VARIABLE(extra);
+	upsdebug_INSTCMD_STARTING(cmdname, extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff"))
+	{
+		int i;
+
+		/* shutdown is supported on models with
+		 * contact closure. Some ISB models with serial
+		 * support support contact closure, some don't.
+		 * If yours does support it, then a 12V signal
+		 * on pin 9 does the trick (only when ups is
+		 * on OB condition) */
+		/*
+		 * here try to do the pin 9 trick, if it does not
+		 * work, else:*/
+/*
+		upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
+		//upslogx(LOG_ERR, "shutdown not supported");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+*/
+
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+		for (i = 0; i <= 5; i++)
+		{
+			ser_send_char(upsfd, '#');
+			usleep(50000);
+		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslog_INSTCMD_UNKNOWN(cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_shutdown(void)
 {
-	/* shutdown is supported on models with
-	 * contact closure. Some ISB models with serial
-	 * support support contact closure, some don't.
-	 * If yours does support it, then a 12V signal
-	 * on pin 9 does the trick (only when ups is 
-	 * on OB condition) */
-	/* 
-	 * here try to do the pin 9 trick, if it does not
-	 * work, else:*/
-/*	fatalx(EXIT_FAILURE, "Shutdown only supported with the Generic Driver, type 6 and special cable");  */
-	/*fatalx(EXIT_FAILURE, "shutdown not supported");*/
-	int i;
-	for(i=0;i<=5;i++)
-	{
-		ser_send_char(upsfd, '#');
-		usleep(50000);
-	}
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
-
 void upsdrv_help(void)
+{
+}
+
+/* optionally tweak prognames[] entries */
+void upsdrv_tweak_prognames(void)
 {
 }
 

@@ -29,7 +29,12 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.82"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.87"
+
+/* HID PDC unit for watts / VA, and the Unit Exponent NUT's HIDUnits table
+ * (drivers/libhid.c) expects it to be declared with. */
+#define TRIPPLITE_HID_POWER_UNIT	0x0000D121L
+#define TRIPPLITE_HID_POWER_UNIT_EXPO	7
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -47,17 +52,20 @@ static double   io_current_scale = 1.0;
 /* Specific handlers for USB device matching */
 static void *battery_scale_1dot0(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
 static void *battery_scale_0dot1(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 0.1;
 	return NULL;
 }
 static void *smart1500lcdt_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 100000.0;
 	io_voltage_scale = 100000.0;
 	io_frequency_scale = 0.01;
@@ -70,6 +78,9 @@ static void *smart1500lcdt_scale(USBDevice_t *device)
 
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
+
+/* Delta/Minuteman */
+#define DELTA_VENDORID 0x05dd
 
 /* USB IDs device table */
 static usb_device_id_t tripplite_usb_device_table[] = {
@@ -111,6 +122,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite Smart1500LCD (newer unit) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), smart1500lcdt_scale },
+	/* e.g. TrippLite AVR750U (newer unit) */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3024), smart1500lcdt_scale },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -144,8 +157,13 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 
+	/* Delta/Minuteman Enterprise Plus E1500RM2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa011), battery_scale_1dot0 },
+	/* Delta/Minuteman PRO1500RT2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa0a0), battery_scale_1dot0 },
+
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -157,21 +175,23 @@ static const char *tripplite_chemistry_fun(double value)
 
 	model = dstate_getinfo("ups.productid");
 
-	/* Workaround for AVR 550U firmware bug */
-	if (!strcmp(model, "1003")) {
-		return "unknown";
-	}
+	if (model) {
+		/* Workaround for AVR 550U firmware bug */
+		if (!strcmp(model, "1003")) {
+			return "unknown";
+		}
 
-	/* Workaround for OMNI1000LCD firmware bug */
-	if (!strcmp(model, "2005")) {
-		return "unknown";
+		/* Workaround for OMNI1000LCD firmware bug */
+		if (!strcmp(model, "2005")) {
+			return "unknown";
+		}
 	}
 
 	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
 static info_lkp_t tripplite_chemistry[] = {
-	{ 0, NULL, tripplite_chemistry_fun }
+	{ 0, NULL, tripplite_chemistry_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -186,7 +206,7 @@ static const char *tripplite_battvolt_fun(double value)
 }
 
 static info_lkp_t tripplite_battvolt[] = {
-	{ 0, NULL, tripplite_battvolt_fun }
+	{ 0, NULL, tripplite_battvolt_fun, NULL }
 };
 
 static const char *tripplite_iovolt_fun(double value)
@@ -199,7 +219,7 @@ static const char *tripplite_iovolt_fun(double value)
 }
 
 static info_lkp_t tripplite_iovolt[] = {
-	{ 0, NULL, tripplite_iovolt_fun }
+	{ 0, NULL, tripplite_iovolt_fun, NULL }
 };
 
 static const char *tripplite_iofreq_fun(double value)
@@ -212,7 +232,7 @@ static const char *tripplite_iofreq_fun(double value)
 }
 
 static info_lkp_t tripplite_iofreq[] = {
-	{ 0, NULL, tripplite_iofreq_fun }
+	{ 0, NULL, tripplite_iofreq_fun, NULL }
 };
 
 static const char *tripplite_ioamp_fun(double value)
@@ -225,7 +245,7 @@ static const char *tripplite_ioamp_fun(double value)
 }
 
 static info_lkp_t tripplite_ioamp[] = {
-	{ 0, NULL, tripplite_ioamp_fun }
+	{ 0, NULL, tripplite_ioamp_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -235,8 +255,8 @@ static info_lkp_t tripplite_ioamp[] = {
 /* TRIPPLITE usage table */
 static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown:
-	   00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
-	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
+	 * 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
+	 * ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
 	{ "TLCustom",	0xffff0010 },
 	{ "TLDelayBeforeStartup",	0xffff0056 }, /* in minutes */
@@ -265,7 +285,7 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	{ "TLOutletsStatusMask",		0xffff0096 },
 
 	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
-	   following 4 items, on some OMNI1000LCD devices. */
+	 * following 4 items, on some OMNI1000LCD devices. */
 	{ "TLCharging",			0x00840044 },  /* conflicts with HID spec! */
 	/* conflicts with HID spec (and HP implementation) for TrippLite!
 	 * Refer to tripplite_discharging_info */
@@ -288,7 +308,7 @@ static usage_tables_t tripplite_utab[] = {
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
 
-#ifdef USBHID_UPS_TRIPPLITE_DEBUG
+#if WITH_UNMAPPED_DATA_POINTS || (defined USBHID_UPS_TRIPPLITE_DEBUG)
 
 	/* unmapped variables - meaning unknown */
 	{ "UPS.Flow.0xffff0097", 0, 0, "UPS.Flow.0xffff0097", NULL, "%.0f", 0, NULL },
@@ -329,7 +349,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.OutletSystem.Outlet.0xffff00ac", 0, 0, "UPS.OutletSystem.Outlet.0xffff00ac", NULL, "%.0f", 0, NULL },
 	{ "UPS.PowerSummary.iOEMInformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
-#endif /* USBHID_UPS_TRIPPLITE_DEBUG */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS || USBHID_UPS_TRIPPLITE_DEBUG */
 
 	/* Device page */
 	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
@@ -362,8 +382,11 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Test", NULL, "%s", 0, test_read_info },
 	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
 	{ "ups.power.nominal", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "ups.power", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", 0, NULL },
-	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
+	{ "ups.power", 0, 0, "UPS.OutletSystem.Outlet.ApparentPower", NULL, "%.1f", 0, NULL },
+	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.1f", 0, NULL },
+	{ "ups.realpower.nominal", 0, 0, "UPS.Flow.ConfigActivePower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "ups.realpower", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", 0, NULL },
+	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
 	/* FIXME: what is the conversion format for this one?
 	 * Example on HP T1500 G3
@@ -516,8 +539,8 @@ static int tripplite_claim(HIDDevice_t *hd) {
 			if (hd->ProductID == 0x0001) {
 				/* e.g. SMART550USB, SMART3000RM2U */
 				upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-						 "Please use the tripplite_usb driver instead.\n",
-						 hd->VendorID, hd->ProductID);
+					"Please use the tripplite_usb driver instead.\n",
+					hd->VendorID, hd->ProductID);
 				return 0;
 			}
 
@@ -543,6 +566,74 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* The tested Tripp Lite SMART1500LCD (09ae:2012) declares its ActivePower item
+ * with the HID PDC unit for watts / VA (0x0000D121) but leaves the Unit
+ * Exponent at 0, while the report already carries a plain integer expressed in
+ * watts. NUT's HIDUnits table (see get_unit_expo() in drivers/libhid.c)
+ * normalizes that unit against an exponent of 7, so it computes 0 - 7 = -7 and
+ * scales the reading by 1e-7: a genuine 520 W reading arrives as raw 0x0208 and
+ * is published as 5.2e-05, which the "%.1f" format then renders as "0.0".
+ *
+ * Supply the exponent this firmware omits. Items that declare a different unit,
+ * or that already declare UnitExp = 7, are left alone, so this is inert on
+ * descriptors that are correct. */
+static int tripplite_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
+	size_t	i;
+	int	retval = 0;
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			(unsigned int)pDev->VendorID,
+			(unsigned int)pDev->ProductID);
+		return 0;
+	}
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t	*pData = &pDesc_arg->item[i];
+		HIDNode_t	usage;
+
+		if (pData->Path.Size == 0)
+			continue;
+
+		usage = pData->Path.Node[pData->Path.Size - 1];
+		if (usage != USAGE_POW_ACTIVE_POWER)
+			continue;
+
+		/* HID PDC 3.2.3: watts and VA use unit 0x0000D121, which NUT
+		 * normalizes against exponent 7. The tested firmware declares
+		 * that unit with UnitExp 0, which is demonstrably wrong on this
+		 * device; match only that combination. */
+		if (pData->Unit != TRIPPLITE_HID_POWER_UNIT
+		 || pData->UnitExp != 0)
+			continue;
+
+		upsdebugx(3, "Fixing Report Descriptor: ActivePower "
+			"(ReportID 0x%02x) declares the PDC power Unit 0x%08lx "
+			"with UnitExp %d, but NUT normalizes that Unit against "
+			"UnitExp %d (see HIDUnits in drivers/libhid.c), so "
+			"readings would be scaled by 1e%d. Setting UnitExp = %d.",
+			pData->ReportID,
+			(unsigned long)pData->Unit,
+			(int)pData->UnitExp,
+			TRIPPLITE_HID_POWER_UNIT_EXPO,
+			(int)pData->UnitExp - TRIPPLITE_HID_POWER_UNIT_EXPO,
+			TRIPPLITE_HID_POWER_UNIT_EXPO);
+
+		pData->UnitExp = TRIPPLITE_HID_POWER_UNIT_EXPO;
+		retval = 1;
+	}
+
+	if (!retval) {
+		upsdebugx(3, "Report Descriptor: no ActivePower item "
+			"needed a Unit Exponent fix");
+	}
+
+	return retval;
+}
+
 subdriver_t tripplite_subdriver = {
 	TRIPPLITE_HID_VERSION,
 	tripplite_claim,
@@ -551,4 +642,6 @@ subdriver_t tripplite_subdriver = {
 	tripplite_format_model,
 	tripplite_format_mfr,
 	tripplite_format_serial,
+	tripplite_fix_report_desc,
+	NULL,
 };

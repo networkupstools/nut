@@ -6,10 +6,25 @@
 #ifndef HAVE_STRERROR
 
 #include <errno.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h> /* for snprintf() */
+#else
+# include "proto.h"
+#endif
 
 char *strerror(int errnum)
 {
     static char buf[32];
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 
     switch (errnum) {
 #if defined (EPERM)
@@ -222,8 +237,10 @@ char *strerror(int errnum)
         return "Invalid slot";
 #endif
 #if defined (EDEADLOCK)
+# if (!defined(EDEADLK)) || EDEADLK != EDEADLOCK
       case EDEADLOCK:
         return "File locking deadlock error";
+# endif
 #endif
 #if defined (EBFONT)
       case EBFONT:
@@ -498,6 +515,11 @@ char *strerror(int errnum)
     /* Fallback: just print the error number */
     snprintf(buf, sizeof(buf), "Error %d", errnum);
     return buf;
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
 }
 
 #endif /* HAVE_STRERROR */

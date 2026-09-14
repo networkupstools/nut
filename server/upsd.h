@@ -1,6 +1,14 @@
 /* upsd.h - support structures and other minor details
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	1999		Russell Kroll <rkroll@exploits.org>
+	2005 - 2019	Arnaud Quette <arnaud.quette@free.fr>
+	2006 - 2007	Peter Selinger <selinger@users.sourceforge.net>
+	2006 - 2007	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2010 - 2011	Frederic Bohe <fbohe-guest@alioth.debian.org>
+	2012		Charles Lepple <clepple+nut@gmail.com>
+	2013		Emilien Kia <kiae.dev@gmail.com>
+	2020 - 2026	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,19 +33,26 @@
  */
 
 #ifndef UPSD_H_SEEN
-#define UPSD_H_SEEN
+#define UPSD_H_SEEN 1
 
 #include "attribute.h"
 
 #include "common.h"
 
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif	/* !WIN32 */
 
 #include "timehead.h"
 
 #include <sys/file.h>
+#ifdef HAVE_POLL_H
+# include <poll.h> /* nfds_t */
+#else
+typedef unsigned long int nfds_t;
+#endif
 
 #include "parseconf.h"
 #include "nut_ctype.h"
@@ -62,20 +77,37 @@ void kick_login_clients(const char *upsname);
 int sendback(nut_ctype_t *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int send_err(nut_ctype_t *client, const char *errtype);
+int send_err_extra(nut_ctype_t *client, const char *errtype, const char *extra);
 
 void server_load(void);
 void server_free(void);
 
-void check_perms(const char *fn);
+/* Can be called by configuration (re)loading logic to free up file descriptors */
+void close_oldest_client(void);
+
+/* Three usual stdin/stdout/stderr triplet FDs, new connection handler,
+ * work with config files (reload), maybe something else?..
+ * Keep about this many file descriptors off limits to the connection
+ * processing loop (comparing to `ulimit` if applicable). Note we can
+ * process existing connections in chunks (especially on Windows where
+ * a limited amount of handles may be polled in one go), but can not
+ * exceed the overall allowance (if any) on opened file descriptors.
+ *
+ * Note that the C Standard OPEN_MAX and the _POSIX_OPEN_MAX allow some
+ * 16-20 FDs that a process may always reasonably expect to be at its
+ * disposal.
+ */
+#define RESERVE_FD_COUNT_UPSD	8
 
 /* return values for instcmd / setvar status tracking,
  * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
 enum {
-   STAT_PENDING = -1,	/* not yet completed */
-   STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
-   STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
-   STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
-   STAT_FAILED		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+	STAT_PENDING = -1,	/* not yet completed */
+	STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
+	STAT_UNKNOWN,		/* unspecified error (NUT_ERR_UNKNOWN) */
+	STAT_INVALID,		/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
+	STAT_FAILED,		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+	STAT_CONVERSION_FAILED	/* STAT_INSTCMD_CONVERSION_FAILED / STAT_SET_CONVERSION_FAILED in drivers/upshandler.h => "ERR INVALID-ARGUMENT" same as STAT_INVALID */
 };
 
 /* Commands and settings status tracking functions */
@@ -90,27 +122,31 @@ int tracking_disable(void);
 int tracking_is_enabled(void);
 
 /* declarations from upsd.c */
-
-extern unsigned int	maxage, maxconn, tracking_delay;
+extern unsigned int	maxage, tracking_delay;
+extern int		allow_no_device, allow_not_all_listeners;
+extern nfds_t		maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
-
-#define SIGCMD_STOP	SIGTERM
-#define SIGCMD_RELOAD	SIGHUP
+#ifndef WIN32
+# define SIGCMD_STOP	SIGTERM
+# define SIGCMD_RELOAD	SIGHUP
+#else	/* WIN32 */
+# define SIGCMD_STOP	COMMAND_STOP
+# define SIGCMD_RELOAD	COMMAND_RELOAD
+#endif	/* WIN32 */
 
 /* awkward way to make a string out of a numeric constant */
-
 #define string_const_aux(x)	#x
 #define string_const(x)		string_const_aux(x)
 
 #ifdef SHUT_RDWR
-#define shutdown_how SHUT_RDWR
+# define shutdown_how	SHUT_RDWR
 #else
-#define shutdown_how 2
-#endif
+# define shutdown_how	2
+#endif	/* SHUT_RDWR */
 
 /* UUID v4 generation function
  * Note: 'dest' must be at least `UUID4_LEN` long */

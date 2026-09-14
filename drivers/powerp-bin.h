@@ -1,6 +1,6 @@
 /*
  * powerp-bin.h	- Model specific data/definitions for CyberPower text/binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>

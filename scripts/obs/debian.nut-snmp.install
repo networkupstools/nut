@@ -1,0 +1,5 @@
+debian/tmp/lib/nut/snmp-ups
+debian/tmp/lib/nut/snmp-ups-dmf
+debian/tmp/usr/sbin/gen-snmp-subdriver.sh
+usr/share/nut/dmfsnmp
+usr/share/nut/dmfsnmp.d

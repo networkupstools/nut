@@ -1,6 +1,8 @@
 /* upsclient.h - definitions for upsclient functions
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+        2002	Russell Kroll <rkroll@exploits.org>
+        2020 - 2026	Jim Klimov <jimklimov+nu@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,15 +20,44 @@
 */
 
 #ifndef UPSCLIENT_H_SEEN
-#define UPSCLIENT_H_SEEN
+#define UPSCLIENT_H_SEEN 1
 
 #ifdef WITH_OPENSSL
-    #include <openssl/err.h>
-    #include <openssl/ssl.h>
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	#include <nss.h>
-	#include <ssl.h>
+#	include <nss.h>
+#	include <ssl.h>
 #endif  /* WITH_OPENSSL | WITH_NSS */
+
+/* Not including nut_stdint.h because this is part of end-user API */
+#if defined HAVE_INTTYPES_H
+#	include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#	include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#	include <limits.h>
+#endif
+
+/* Not including NUT timehead.h because this is part of end-user API */
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#if defined HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -38,10 +69,33 @@ extern "C" {
 #define UPSCLI_NETBUF_LEN	512	/* network i/o buffer */
 
 #include "parseconf.h"
+#include "authconf.h"
+
+/* Forward declaration: SSL context configuration handle (opaque outside
+ * of upsclient.c; size and contents are dependent on build configuration).
+ * Obtained via upscli_get_or_create_ssl_context() method, and used with
+ * upscli_set_ssl_context(). Holds cached CA bundles, client cert identity,
+ * verify mode, and SSL backend dependent data - shared across connections.
+ */
+typedef struct upscli_ssl_context_config_s upscli_ssl_context_config_t;
+
+#ifdef WITH_OPENSSL
+/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
+typedef struct {
+	int	verbose_mode;
+	int	verify_depth;
+	int	always_continue;
+
+	/* In this context, hostname is by default a pointer to ups->host, which
+	 * should not be freed or changed (otherwise set hostname_allocated!=0) */
+	const char	*hostname;
+	int	hostname_allocated;
+} openssl_cert_verify_data_t;
+#endif
 
 typedef struct {
 	char	*host;
-	int	port;
+	uint16_t	port;
 	int	fd;
 	int	flags;
 	int	upserror;
@@ -52,50 +106,138 @@ typedef struct {
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
+	/* Per-connection SSL details: */
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	PRFileDesc *ssl;
+	PRFileDesc	*ssl;
 #else /* WITH_OPENSSL | WITH_NSS */
-	void *ssl;
+	void	*ssl;
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 	char	readbuf[64];
 	size_t	readlen;
 	size_t	readidx;
 
+	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
+	 * same for different builds, and add new data items in the end! */
+
+	/* SSL context configuration: cached CA bundle(s), client certificate
+	 * identity, and certificate verification mode. When built with SSL
+	 * support, NULL means to use the ambient default set by upscli_init*();
+	 * non-NULL is an opaque handle (from upscli_get_or_create_ssl_context())
+	 * to a shared registry entry. Per-connection (NSS, single context per
+	 * process) or per-context (OpenSSL) client certificate identity is
+	 * resolved via this registry. The connection does NOT own this entry;
+	 * it is freed only by upscli_cleanup() after all connections are
+	 * disconnected. As far as clients are concerned, this is a void-like
+	 * pointer that they get from one method and pass on to another. */
+	upscli_ssl_context_config_t	*ssl_ctx;
+#ifdef WITH_OPENSSL
+	openssl_cert_verify_data_t	*openssl_cert_verify_data;
+#else
+	void	*extra_reserved;	/* padding for struct size compatibility across build variants */
+#endif /* WITH_OPENSSL */
+
 }	UPSCONN_t;
 
 const char *upscli_strerror(UPSCONN_t *ups);
 
+/* On some platforms, libupsclient builds tend to get a built-in copy
+ * of the internal code from NUT libcommon library, so for NUT client
+ * programs using both libraries as dynamically-linked shared code,
+ * the nut_debug_level setting is backed by independent variables in
+ * active memory, and upsdebugx() calls suffer if the library's copy
+ * is never changed from zero. It can get even more confusing with
+ * libnutprivate-common being a shared dynamically loaded library
+ * instance behind both the program and libupsclient, hence the cookies:
+ * direct NUT-common consumers like NUT in-tree clients can use their
+ * nut_common_cookie() to pass into methods here.
+ */
+const void *upscli_upslog_cookie(void);
+void upscli_upslog_set_debug_level(int lvl, const void *cookie);
+int  upscli_upslog_get_debug_level(void);
+
+/* Similarly for sub-process tags that help with troubleshooting */
+void upscli_upslog_setprocname(const char *pn, const void *cookie);
+void upscli_upslog_setproctag(const char *tag, const void *cookie);
+const char *upscli_upslog_getproctag(void);
+
+/* The NUT common library code is included in several other
+ * libraries, often with their private copies of variables,
+ * so we want to synchronize them.
+ * If internal `upslog_start` value is not yet set, we set
+ * it from *tv (or current time if tv==NULL), otherwise the
+ * method is no-op (keep and report the original setting).
+ * Returns the pointer to the currently set value, so it
+ * can be propagated or used in difftime() computations.
+ * NOTE: In WIN32 builds also enforces line-buffering for
+ * stdout and stderr streams.
+ */
+struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
+
+/* NOTE: init effectively only runs once; re-runs quickly skip out */
+/* Legacy init function, prefer upscli_init2() with support for OpenSSL
+ * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
+/* Return values:
+ *   1 on success (upscli_connect and upscli_sslinit can be used),
+ *  -1 on hard error (failed to read crypto material, etc.)
+ */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
+int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
+int upscli_init_authconf(upscli_authconf_t *ac);
 int upscli_cleanup(void);
 
-int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags, struct timeval *tv);
-int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
+void *upscli_set_ssl_context(UPSCONN_t *ups, void *ssl_ctx);
+void *upscli_get_ssl_context(UPSCONN_t *ups);
 
+/* Get or create a cached SSL context configuration (CA bundle, client cert
+ * identity, verify mode) from the process-wide registry. Takes parameters
+ * identical to upscli_init2(). Returns an opaque handle for use with
+ * upscli_set_ssl_context(), or NULL on hard failure. Cheap on repeat calls
+ * with identical arguments (cached hit). See design notes in SSL_CONTEXT_ANALYSIS.* */
+void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
+	const char *certname, const char *certpasswd, const char *certfile);
+
+/* Equivalent, taking parameters from an upscli_authconf_t (also registers
+ * any CERTHOST from the authconf, like upscli_init_authconf() does). */
+void *upscli_get_or_create_ssl_context_authconf(upscli_authconf_t *ac);
+
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
+/* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */
+int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+
+void upscli_add_host_port_cert(const char* hostname, uint16_t port, const char* certname, int certverify, int forcessl);
+/* hostname may be a host:port */
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
+
+/* hostname may be a host:port; if certname is NULL, all list items are iterated */
+void upscli_free_host_cert(const char* hostname, const char* certname);
+void upscli_free_host_port_cert(const char* hostname, uint16_t port, const char* certname);
+void upscli_free_host_cert_list(void);
 
 /* --- functions that only use the new names --- */
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
-		unsigned int *numa, char ***answer);
+int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer);
 
-int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query);
+int upscli_list_start(UPSCONN_t *ups, size_t numq, const char **query);
 
-int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
-		unsigned int *numa, char ***answer);
+int upscli_list_next(UPSCONN_t *ups, size_t numq, const char **query,
+		size_t *numa, char ***answer);
 
-int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout);
-int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
+ssize_t upscli_sendline_timeout_may_disconnect(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout, int may_disconnect);
+ssize_t upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, const time_t timeout);
+ssize_t upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
-int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout);
-int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
+ssize_t upscli_readline_timeout_may_disconnect(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout, int may_disconnect);
+ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, const time_t timeout);
+ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
 int upscli_splitname(const char *buf, char **upsname, char **hostname,
-			int *port);
+			uint16_t *port);
 
-int upscli_splitaddr(const char *buf, char **hostname, int *port);
+int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port);
 
 int upscli_disconnect(UPSCONN_t *ups);
 
@@ -104,10 +246,85 @@ int upscli_disconnect(UPSCONN_t *ups);
 int upscli_fd(UPSCONN_t *ups);
 int upscli_upserror(UPSCONN_t *ups);
 
+/** Query the (already established) connection to UPSD for its version
+ *  and check it against given expectations. */
+int upscli_is_valid_protocol_version(UPSCONN_t *ups, const char *version_re);
+
+/** Common method to supply USERNAME and PASSWORD during the server dialog,
+ *  whether pre-defined (CLI, authconf) or optionally queried interactively,
+ *  for access to non-anonymous commands, variable settings, or data reads.
+ *  Note that per NUT protocol, such authentication is only expected
+ *  at most once per connection.
+ *
+ *  Note this is separate from (but a prerequisite of) the LOGIN operation
+ *  which allows a client like upsmon to gain a special role for a specific
+ *  device, and perhaps further become a PRIMARY monitoring client for it.
+ *
+ * \param ups connection state
+ * \param username if NULL, we can optionally detect the username from the OS and query/confirm interactively
+ * \param password if NULL, we can optionally query for the password interactively
+ * \param check_os_user if 1, and username is NULL, try to get OS user name
+ * \param ask_password if 1, and password is NULL, try to ask for it on stdin
+ *
+ * \return 0 on success, -1 on argument error (failed to get fallback username
+ *         and/or password), -2 on protocol error (failed when trying to use
+ *         those values); check upscli_upserror() for details
+ */
+int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
+	int check_os_user, int ask_password);
+
+/** Equivalent (wrapper) for upscli_authenticate() with upscli_authconf_t
+ *  which should convey definite "user" and "pass" field values
+ *  (no interactive fallbacks here).
+ *
+ * \param ups connection state
+ * \param ac authentication configuration (user and pass fields are used)
+ *
+ * \return 0 on success, or -1 on error
+ */
+int upscli_authenticate_authconf(UPSCONN_t *ups, upscli_authconf_t *ac);
+
 /* returns 1 if SSL mode is active for this connection */
-int upscli_ssl(UPSCONN_t *ups);	
+int upscli_ssl(UPSCONN_t *ups);
+
+#define UPSCLI_SSL_CAPS_NONE	0	/* No ability to use SSL */
+#define UPSCLI_SSL_CAPS_OPENSSL	(1 << 0)	/* Can use OpenSSL-specific setup */
+#define UPSCLI_SSL_CAPS_NSS	(1 << 1)	/* Can use Mozilla NSS-specific setup */
+#define UPSCLI_SSL_CAPS_CERTIDENT_PASS	(1 << 2)	/* Can do CERTIDENT private key password */
+#define UPSCLI_SSL_CAPS_CERTIDENT_NAME	(1 << 3)	/* Can do CERTIDENT nickname check - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTIDENT	(UPSCLI_SSL_CAPS_CERTIDENT_PASS | UPSCLI_SSL_CAPS_CERTIDENT_NAME)
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER	(1 << 4)	/* Can do CERTHOST IP address check */
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT	(1 << 5)	/* Can do CERTHOST hostname check */
+#define UPSCLI_SSL_CAPS_CERTHOST_ADDR	(UPSCLI_SSL_CAPS_CERTHOST_ADDR_NUMBER | UPSCLI_SSL_CAPS_CERTHOST_ADDR_TEXT)	/* Can do CERTHOST IP address or hostname check */
+#define UPSCLI_SSL_CAPS_CERTHOST_NAME	(1 << 6)	/* Can do CERTHOST nickname check - except antique OpenSSL APIs */
+#define UPSCLI_SSL_CAPS_CERTHOST	(UPSCLI_SSL_CAPS_CERTHOST_ADDR | UPSCLI_SSL_CAPS_CERTHOST_NAME)
+
+/* Return a bitmap of the above for the current libupsclient build */
+int upscli_ssl_caps(void);
+/* String version for program help banners etc. */
+const char *upscli_ssl_caps_descr(void);
+void upscli_report_build_details(void);
+
+/** Assign default upscli_connect() timeout from string (value
+ * in seconds, may be a fractional number); return 0 if OK, or
+ * return -1 if parsing failed and current value was kept  */
+int upscli_set_default_connect_timeout(const char *secs);
+/** If ptv!=NULL, populate it with a copy of last assigned internal timeout */
+void upscli_get_default_connect_timeout(struct timeval *ptv);
+/** Initialize default upscli_connect() timeout from a number of sources:
+ * built-in (0 = blocking), envvar NUT_DEFAULT_CONNECT_TIMEOUT,
+ * or specified strings (may be NULL) most-preferred first.
+ * Non-NULL values are in seconds, may be fractional.
+ * Returns 0 if any provided value was valid and applied,
+ * or if none were provided so the built-in default was applied;
+ * returns -1 if all provided values were not valid (so the built-in
+ * default was applied) - not necessarily fatal, rather useful to report.
+ */
+int upscli_init_default_connect_timeout(const char *cli_secs, const char *config_secs, const char *default_secs);
 
 /* upsclient error list */
+
+#define UPSCLI_ERR_NONE		-1	/* No known error (internally used in tools like upsmon, not set by upsclient.c) */
 
 #define UPSCLI_ERR_UNKNOWN	0	/* Unknown error */
 #define UPSCLI_ERR_VARNOTSUPP	1	/* Variable not supported by UPS */
@@ -168,6 +385,39 @@ int upscli_ssl(UPSCONN_t *ups);
 #define UPSCLI_CONN_INET		0x0004	/* IPv4 only */
 #define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
 #define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
+
+/** Update tryssl/reqssl/certverif bits according to authconf */
+int upscli_authconf_update_conn_flags(const upscli_authconf_t *ac, int *flags);
+
+/******************************************************************************
+ * String methods for space-separated token lists, used originally in dstate  *
+ * These methods should ease third-party NUT clients' parsing of `ups.status` *
+ ******************************************************************************/
+
+/* Return non-zero if "string" contains "token" (case-sensitive),
+ * either surrounded by space character(s) or start/end of "string",
+ * or 0 if that token is not there, or if either string is NULL or empty.
+ */
+int	upscli_str_contains_token(const char *string, const char *token);
+
+/* Add "token" to end of string "tgt", if it is not yet there
+ * (prefix it with a space character if "tgt" is not empty).
+ * Return 0 if already there, 1 if token was added successfully,
+ * -1 if we needed to add it but it did not fit under the tgtsize limit,
+ * -2 if either string was NULL or "token" was empty.
+ * NOTE: If token contains space(s) inside, recurse to treat it
+ * as several tokens to add independently.
+ * Optionally calls "callback_always" (if not NULL) after checking
+ * for spaces (and maybe recursing) and before checking if the token
+ * is already there, and/or "callback_unique" (if not NULL) after
+ * checking for uniqueness and going to add a newly seen token.
+ * If such callback returns 0, abort the addition of token and return -3.
+ */
+int	upscli_str_add_unique_token(char *tgt, size_t tgtsize, const char *token,
+				int (*callback_always)(char *, size_t, const char *),
+				int (*callback_unique)(char *, size_t, const char *)
+);
+
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

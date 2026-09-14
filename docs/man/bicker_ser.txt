@@ -1,0 +1,123 @@
+BICKER_SER(8)
+=============
+
+NAME
+----
+
+bicker_ser - Driver for Bicker DC UPS via serial port connections
+
+SYNOPSIS
+--------
+
+*bicker_ser* -h
+
+*bicker_ser* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*bicker_ser* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+*bicker_ser* supports all Bicker UPSes shipped with the PSZ-1053 extension
+module such as UPSIC-1205, UPSIC-2403, DC2412-UPS and DC2412-UPS-LD.
+
+CABLING
+-------
+
+The needed cable is a standard pin-to-pin serial cable with pins 2, 3 and 5
+(on DB9 connector) connected.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports no extra arguments from linkman:ups.conf[5].
+
+VARIABLES
+---------
+
+Depending on the type of your UPS unit, some of the following variables may
+be changed with linkman:upsrw[8]. If the driver can't read a variable from the
+UPS, it will not be made available. Whenever not explicitly stated, any variable
+can be disabled, in which case the action it performs will not be executed. To
+disable a variable, set it to an empty value.
+
+*ups.delay.shutdown* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the set time has expired, the
+output will be disabled, and the UPS and energy storage will be disconnected.
+
+*ups.delay.start* (in seconds, default disabled)::
+If activated and a restart condition switches the UPS output off and on again,
+the set time is the delay between switching on and off. The time should cause a
+defined off time so that capacities in the application can be discharged.
+
+*battery.charge.restart* (in percent, default disabled)::
+If activated and the UPS is off or restarts, the UPS output will not be released
+until the energy storage device has the set charge state. The energy storage
+device is charged in the meantime.
+
+*battery.charge.low* (in percent, default `20`)::
+If activated and the UPS is in battery mode and the battery level drops below
+the set value, a shutdown command via relay event is signaled.
+
+*experimental.output.current.low* (in mA, default `200`)::
+If activated and the UPS is in battery mode and the current drops below the set
+value, the output of the UPS will shut down and disconnect the energy storage to
+prevent self-discharge.
+
+*experimental.ups.delay.shutdown.signal* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the set time has elapsed, a
+shutdown command via relay event is signaled.
+
+*experimental.ups.delay.shutdown.signal.masked* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the signal at the IN-1 input is
+high and the set time has expired, a shutdown command via relay event is
+signaled.
+
+*experimental.battery.charge.low.empty* (in percent, default `20`)::
+This parameter stores the threshold value for the "Battery Empty" signal.
+Currently this setting is only valid for relay signaling. Cannot be disabled.
+
+*experimental.ups.relay.mode* (default `0x01`)::
+This parameter controls the behavior of the relay in case of different events.
+Cannot be disabled.
++
+Available relay modes:
+[horizontal]
+`0x01`::: On power fail (normally closed)
+`0x02`::: On power fail (normally opened)
+`0x03`::: Shutdown impulse (1 second)
+`0x04`::: Battery low signal (normally closed)
+`0x05`::: Battery defect signal (normally closed)
+
+INSTANT COMMANDS
+----------------
+
+*shutdown.return*::
+Turn off the load and return when power is back.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+*ups.delay.shutdown is not honored*::
+Although that delay is properly set when sending the shutdown command, it seems
+some UPS ignore it and use a fixed 2 seconds delay instead.
+
+AUTHOR
+------
+
+Nicola Fontana <ntd@entidi.it>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

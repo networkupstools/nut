@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=NUT Monitor
+Name[fr]=Moniteur NUT
+Comment=Network UPS Tools GUI client (Py2Gtk2)
+Comment[fr]=Client graphique pour NUT (Network UPS Tools, Py2Gtk2)
+Comment[it]=Client grafico per NUT (Network UPS Tools, Py2Gtk2)
+Categories=System;Monitor;HardwareSettings;Settings;GTK
+Exec=NUT-Monitor-py2gtk2
+Icon=nut-monitor
+Terminal=false
+Type=Application
