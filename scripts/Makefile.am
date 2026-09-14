@@ -14,6 +14,7 @@ EXTRA_DIST = \
     misc/osd-notify \
     perl/UPS/Nut.pm.in \
     perl/test_nutclient.pl \
+    perl/test_nut_parser.pl \
     RedHat/halt.patch \
     RedHat/README.adoc \
     RedHat/ups.in \
@@ -60,3 +61,8 @@ CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
 DISTCLEANFILES = misc/nut.bash_completion
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
+
+if HAVE_PERL
+check-local:
+	$(PERL) -I$(builddir)/perl $(srcdir)/perl/test_nut_parser.pl
+endif HAVE_PERL

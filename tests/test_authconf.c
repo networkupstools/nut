@@ -38,8 +38,25 @@ int main(int argc, char **argv)
 	FILE	*f;
 	upscli_authconf_t	*ac, *ac5, *ac7, *ac8, *ac9, *ac12;
 	size_t	num_sections, expected_sections = 0;
-	char	buf[512], *s;
+	char	buf[512], *s, test_conf_path[NUT_PATH_MAX],
+		cwd[NUT_PATH_MAX - 32]; /* truncate so test_conf / include_conf suffixes fit into NUT_PATH_MAX */
 	int	l, testnum = 0;
+
+	/* NOTE: AUTHCONF feature requires absolute paths for security,
+	 * and treats any others as relative to confpath()! */
+	memset(cwd, 0, sizeof(cwd));
+	if (!getcwd(cwd, sizeof(cwd) - 1) || !(*cwd))
+		snprintf(cwd, sizeof(cwd), ".");
+
+#ifdef WIN32
+	/* Assume modern enough Windows that supports both slashes in paths */
+	for (s = cwd; *s; s++) {
+		if (*s == '\\')
+			*s = '/';
+	}
+#endif
+
+	snprintf(test_conf_path, sizeof(test_conf_path), "%s/%s", cwd, test_conf);
 
 	s = getenv("NUT_DEBUG_LEVEL");
 	if (s && str_to_int(s, &l, 10) && l > 0) {
@@ -65,7 +82,7 @@ int main(int argc, char **argv)
 	fprintf(f, "USER = globaluser\n");
 	fprintf(f, "PASS = globalpass\n");
 	fprintf(f, "CERTVERIFY = 1\n");
-	fprintf(f, "INCLUDE %s\n", include_conf);
+	fprintf(f, "INCLUDE \"%s/%s\"\n", cwd, include_conf);
 
 	expected_sections++;
 	fprintf(f, "[@localhost:12345]\n");
@@ -137,8 +154,8 @@ int main(int argc, char **argv)
 	}
 
 	/* 1. Expected file read */
-	printf("=== Reading '%s' generated for this test\n", test_conf);
-	if (upscli_read_authconf_file(test_conf, 1, -1) != 1) {
+	printf("=== Reading '%s' generated for this test\n", test_conf_path);
+	if (upscli_read_authconf_file(test_conf_path, 1, -1) != 1) {
 		fprintf(stderr, "not ok %d - read_authconf failed\n", ++testnum);
 		return 1;
 	}

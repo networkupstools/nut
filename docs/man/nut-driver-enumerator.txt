@@ -108,13 +108,22 @@ NUT device names which each such unit wraps
 
 *nut-driver-enumerator.sh --show-all-configs*::
 Show the complete normalized list of device configuration blocks
-(same as used later by the parser in the script to make decisions)
+(same as used later by the parser in the script to make decisions).
+Quotes and backslashes are retained until values are queried.
+Physical lines joined by a backslash continuation or inside double
+quotes are combined. Section checksums use this normalized text,
+including a final newline.
 
 *nut-driver-enumerator.sh --show-device-config DEV*::
 Show configuration block of the specified NUT device
 
 *nut-driver-enumerator.sh --show-device-config-value DEV KEY*::
-Show single configuration key of the specified NUT device
+Show the decoded value of a configuration key of the specified NUT device.
+The first value token is used: double quotes group a token, backslash
+escapes the next character, and an unquoted hash starts a comment.
+Single quotes are literal characters. A flag without a value prints its
+name. Multiple keys may be requested; missing keys print an empty line
+and cause a nonzero exit status.
 
 ENVIRONMENT VARIABLES
 ---------------------

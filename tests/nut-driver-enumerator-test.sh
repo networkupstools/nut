@@ -145,8 +145,8 @@ run_testcase_generic() {
         printf '\t--- expected ---\n%s\n\t--- received ---\n%s\n\t--- MISMATCH ABOVE\n\n' "$EXPECT_TEXT" "$OUT" >&2
         # Give a nice output to help track the problem:
         ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
-            && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
-            && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
+            && printf '%s\n' "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
+            && printf '%s\n' "$OUT" > "/tmp/.nde.text.actual.$$" \
             && { OUTD="`diff -u \"/tmp/.nde.text.expected.$$\" \"/tmp/.nde.text.actual.$$\" 2>/dev/null`"
                 if echo "$OUTD" | head -1 | ${EGREP} '^[-+]' >/dev/null ; then
                     echo "$OUTD"
@@ -195,6 +195,7 @@ dummy-proxy-localhost
 dummy1
 epdu-2
 epdu-2-snmp
+escapedPath
 qx-serial
 qx-usb1
 qx-usb2
@@ -210,7 +211,8 @@ valueHasQuotedHashtag" \
 }
 
 testcase_show_all_configs() {
-    # We expect whitespace trimmed, comment-only lines removed
+    # Trim formatting whitespace and comments on their own lines; retain
+    # quotes, escapes and escaped trailing spaces for later value decoding.
     run_testcase "Show all configs" 0 \
 'maxstartdelay=180
 globalflag
@@ -218,17 +220,40 @@ globalflag
 driver=dummy-ups
 port=file1.dev
 desc="This is ups-1"
+empty=""
+spaces="  "
+quote="\"edge\""
+backslashes="C:\\new\\test.dev"
+adjacent="a\\\"b"
+doubleescape="\\n\\t\\r\\#"
+apostrophe="it'"'"'s literal"
+equals=one\=two=ignored
+equalfirst==ignored
+quoteinword=one"two
+closecommits="first"second
+escapedhash=file\#1.dev # ignored
+quotedhash="file#1.dev" # ignored
+quotedescapedhash="file\#1.dev"
+escapedspace=two\ words ignored
+trailing=word\'" "'
+continued="two words"
+continuedbare=twowords
+multiline="ab"
+comment=value # not a continuation \
+aftercomment=intact
+repeat=first
+repeat="second value"
 [epdu-2]
 driver=netxml-ups
-port=http://172.16.1.2
+port="http://172.16.1.2"
 synchronous=yes
 [epdu-2-snmp]
 driver=snmp-ups
 port=172.16.1.2
 synchronous=no
 [usb_3]
-driver=usbhid-ups
-port=auto
+driver="usbhid-ups"
+port="auto"
 [serial.4]
 driver=serial-ups
 driverflag
@@ -241,7 +266,7 @@ driver="dummy-ups  "
 port=remoteUPS@RemoteHost.local
 [dummy-proxy-localhost]
 driver='"'dummy-ups  '"'
-port=localUPS@127.0.0.1
+port="localUPS@127.0.0.1"
 [valueHasEquals]
 driver=dummy=ups
 port=file1.dev # key = val, right?
@@ -250,13 +275,13 @@ driver=dummy-ups
 port=file#1.dev
 [valueHasQuotedHashtag]
 driver=dummy-ups
-port=file#1.dev
+port="file#1.dev"
 [qx-serial]
 driver=nutdrv_qx
 port=/dev/ttyb
 [qx-usb1]
 driver=nutdrv_qx
-port=auto
+port="auto" # USB auto-detection
 [qx-usb2]
 driver=nutdrv_qx
 port=/dev/usb/8
@@ -268,7 +293,10 @@ desc="value with [brackets]"
 [sectionWithCommentWhitespace]
 driver=nutdrv_qx	# comment
 port=/dev/usb/8 #	comment
-commentedDriverFlag # This flag gotta mean something' \
+commentedDriverFlag # This flag gotta mean something
+[escapedPath]
+driver=dummy-ups
+port="C:\\new\\test.dev" # path' \
         --show-all-configs
 }
 
@@ -277,30 +305,25 @@ testcase_upslist_debug() {
     run_testcase "List decided MEDIA and config checksums for all devices" 0 \
 "INST: 68b329da9893e34099c7d8ad5cb9c940~[]: DRV='' PORT='' MEDIA='' SECTIONMD5='9a1f372a850f1ee3ab1fc08b185783e0'
 INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups  ' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='aff543fc07d7fbf83e81001b181c8b97'
-INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV='dummy-ups  ' PORT='localUPS@127.0.0.1' MEDIA='network-localhost,drivers=localUPS' SECTIONMD5='73e6b7e3e3b73558dc15253d8cca51b2'
-INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
-INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
+INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV=''dummy-ups' PORT='localUPS@127.0.0.1' MEDIA='network-localhost,drivers=localUPS' SECTIONMD5='ba7de199978fe89f5f2e3341ede71df4'
+INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='548240a045d5647bcf8c219e1bac66d6'
+INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='dc396adae98faff8d424f273478f49c7'
 INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
+INST: eec97fcac3f2ac0bb3db76001e000b1d~[escapedPath]: DRV='dummy-ups' PORT='C:\\new\\test.dev' MEDIA='' SECTIONMD5='f249649add564a91f9bd04c296106a57'
 INST: 16adbdafb22d9fdff1d09038520eb32e~[qx-serial]: DRV='nutdrv_qx' PORT='/dev/ttyb' MEDIA='serial' SECTIONMD5='e3e6e586fbe5b3c0a89432f4b993f4ad'
-INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='a6139c5da35bef89dc5b96e2296f5369'
+INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='59e8b68feca187fc3e2e3ffafe81009d'
 INST: 0066605e07c66043a17eccecbeea1ac5~[qx-usb2]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='5722dd9c21d07a1f5bcb516dbc458deb'
 INST: b377c8ec5f35b3c3df361686627e1625~[ragtech-serial]: DRV='ragtech' PORT='/dev/ttyACM0' MEDIA='serial' SECTIONMD5='bd2de13822ec93bde2aeeeca450fc228'
-INST: 1280a731e03116f77290e51dd2a2f37e~[sectionWithComment]: DRV='nutdrv_qx#comment' PORT='/dev/usb/8' MEDIA='' SECTIONMD5='be30e15e17d0579c85eecaf176b4a064'
-INST: 770abd5659061a29ed3ae4f7c0b00915~[sectionWithCommentWhitespace]: DRV='nutdrv_qx	# comment' PORT='/dev/usb/8 #	comment' MEDIA='' SECTIONMD5='c757822a331521cdc97310d0241eba28'
-INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
-INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
-INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
-INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
-INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='af59c3c0caaa68dcd796d7145ae403ee'" \
+INST: 1280a731e03116f77290e51dd2a2f37e~[sectionWithComment]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='be30e15e17d0579c85eecaf176b4a064'
+INST: 770abd5659061a29ed3ae4f7c0b00915~[sectionWithCommentWhitespace]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='c757822a331521cdc97310d0241eba28'
+INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
+INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='072d77825673bc1ce5d99d3e848697ed'
+INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy' PORT='file1.dev' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
+INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
+INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='4c1a0f08861adbdb62e5de5525b1618c'" \
         upslist_debug
 
-    # FIXME : in [valueHasEquals] and [serial.4] the PORT value is quite bogus
-    # with its embedded comments. Check vs. binary config parser, whether in
-    # unquoted case only first token is the valid value, and how comments are
-    # handled in general?
-    # FIXME : in [valueHasHashtag] the line after "#" should likely be dropped
-    # (check in binary config parser first) while in [valueHasQuotedHashtag]
-    # it should stay.
+
 }
 
 testcase_getValue() {
@@ -353,6 +376,92 @@ globalflag" \
     run_testcase "Query a missing configuration flag (global)" 1 \
         "" \
         --show-config-value '' nosuchflag
+}
+
+callNDE_SDP() (
+    GETSECTION=upsconf_getSection_SDP
+    export GETSECTION
+    callNDE "$@"
+)
+
+callNDE_stable() (
+    # Repeated parsing and parsing the normalized text must agree, including
+    # section hashes. Use only our test configuration, never service actions.
+    mkdir -p "$NUT_CONFPATH" || exit
+    NORMALIZED="$NUT_CONFPATH/normalized-$$.conf"
+    trap 'rm -f "$NORMALIZED"' 0
+    callNDE --show-all-configs > "$NORMALIZED" || exit
+    FIRST="`callNDE upslist_debug`" || exit
+    SECOND="`callNDE upslist_debug`" || exit
+    [ "$FIRST" = "$SECOND" ] || exit 1
+    UPSCONF="$NORMALIZED"
+    export UPSCONF
+    SECOND="`callNDE upslist_debug`" || exit
+    [ "$FIRST" = "$SECOND" ] || exit 1
+    echo stable
+)
+
+testcase_valueSyntax() {
+    run_testcase "Decode values once using NUT token syntax" 0 \
+'
+'"  "'
+"edge"
+C:\new\test.dev
+a\"b
+\n\t\r\#
+it'"'"'s literal
+one=two
+=
+one"two
+first
+file#1.dev
+file#1.dev
+file#1.dev
+two words
+word'" "'
+two words
+twowords
+ab
+value
+intact
+first
+second value' \
+        --show-device-config-value dummy1 empty spaces quote backslashes \
+        adjacent doubleescape apostrophe equals equalfirst quoteinword \
+        closecommits escapedhash quotedhash quotedescapedhash escapedspace \
+        trailing continued continuedbare multiline comment aftercomment repeat
+
+    run_testcase "Only the first unquoted value token is used" 0 'dummy' \
+        --show-device-config-value valueHasEquals driver
+    run_testcase "Single quotes are literal" 0 "'dummy-ups" \
+        --show-device-config-value dummy-proxy-localhost driver
+    run_testcase "Flags may have trailing comments" 0 'commentedDriverFlag' \
+        --show-device-config-value sectionWithCommentWhitespace commentedDriverFlag
+    run_testcase "Missing section retains failure status" 1 '' \
+        --show-device-config-value missingSection port
+    run_testcase "Key lookup is literal" 1 '' \
+        --show-device-config-value dummy1 '.*'
+    run_testcase "Missing value between present keys retains output and status" 1 \
+'C:\new\test.dev
+
+'"  "'
+intact' \
+        --show-device-config-value dummy1 backslashes missing spaces aftercomment
+
+    # Same externally visible values from the complete and smaller caches.
+    for CASE_CMD in callNDE callNDE_SDP ; do
+        run_testcase_generic "$CASE_CMD" "Quoted multiline auto with comment ($CASE_CMD)" 0 \
+'nutdrv_qx
+auto' --show-device-config-value qx-usb1 driver port
+        run_testcase_generic "$CASE_CMD" "Escaped path ($CASE_CMD)" 0 \
+            'C:\new\test.dev' --show-device-config-value escapedPath port
+        run_testcase_generic "$CASE_CMD" "Quoted hash ($CASE_CMD)" 0 \
+            'file#1.dev' --show-device-config-value valueHasQuotedHashtag port
+        run_testcase_generic "$CASE_CMD" "Unquoted hash ($CASE_CMD)" 0 \
+            'file' --show-device-config-value valueHasHashtag port
+    done
+    run_testcase_generic callNDE_stable "Repeated and normalized parsing keeps checksums stable" \
+        0 stable
 }
 
 # This one is not about NDE as such, but piggy-backs on our ability to test
@@ -651,6 +760,7 @@ testsuite() {
     testcase_show_all_configs
     testcase_getValue
     testcase_globalSection
+    testcase_valueSyntax
     # This one can take a while, put it last
     testcase_upslist_debug
     # Something very different

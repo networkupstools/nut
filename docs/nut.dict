@@ -1991,6 +1991,7 @@ cstdint
 ctime
 ctrl
 cts
+ctx
 ctypes
 cua
 cuaa
@@ -2543,6 +2544,7 @@ ld
 ldd
 ldflags
 le
+legrand
 len
 leveloffset
 lf
@@ -2688,6 +2690,7 @@ maintainership
 maj
 makefile
 makevartable
+malloc
 mandir
 manpage
 manpages

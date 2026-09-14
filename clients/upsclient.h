@@ -71,6 +71,14 @@ extern "C" {
 #include "parseconf.h"
 #include "authconf.h"
 
+/* Forward declaration: SSL context configuration handle (opaque outside
+ * of upsclient.c; size and contents are dependent on build configuration).
+ * Obtained via upscli_get_or_create_ssl_context() method, and used with
+ * upscli_set_ssl_context(). Holds cached CA bundles, client cert identity,
+ * verify mode, and SSL backend dependent data - shared across connections.
+ */
+typedef struct upscli_ssl_context_config_s upscli_ssl_context_config_t;
+
 #ifdef WITH_OPENSSL
 /* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */
 typedef struct {
@@ -98,6 +106,7 @@ typedef struct {
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
+	/* Per-connection SSL details: */
 #ifdef WITH_OPENSSL
 	SSL	*ssl;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -111,12 +120,24 @@ typedef struct {
 	size_t	readidx;
 
 	/* WARNING for maintainers/devs: keep the ifdef'ed struct sizes
-	 * same for different builds! */
+	 * same for different builds, and add new data items in the end! */
+
+	/* SSL context configuration: cached CA bundle(s), client certificate
+	 * identity, and certificate verification mode. When built with SSL
+	 * support, NULL means to use the ambient default set by upscli_init*();
+	 * non-NULL is an opaque handle (from upscli_get_or_create_ssl_context())
+	 * to a shared registry entry. Per-connection (NSS, single context per
+	 * process) or per-context (OpenSSL) client certificate identity is
+	 * resolved via this registry. The connection does NOT own this entry;
+	 * it is freed only by upscli_cleanup() after all connections are
+	 * disconnected. As far as clients are concerned, this is a void-like
+	 * pointer that they get from one method and pass on to another. */
+	upscli_ssl_context_config_t	*ssl_ctx;
 #ifdef WITH_OPENSSL
 	openssl_cert_verify_data_t	*openssl_cert_verify_data;
 #else
-	void	*extra_reserved;
-#endif /* WITH_OPENSSL | WITH_NSS */
+	void	*extra_reserved;	/* padding for struct size compatibility across build variants */
+#endif /* WITH_OPENSSL */
 
 }	UPSCONN_t;
 
@@ -158,10 +179,29 @@ struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie)
 /* NOTE: init effectively only runs once; re-runs quickly skip out */
 /* Legacy init function, prefer upscli_init2() with support for OpenSSL
  * client certificate file. Equivalent to prefer upscli_init2(..., NULL) */
+/* Return values:
+ *   1 on success (upscli_connect and upscli_sslinit can be used),
+ *  -1 on hard error (failed to read crypto material, etc.)
+ */
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_init2(int certverify, const char *certpath, const char *certname, const char *certpasswd, const char *certfile);
 int upscli_init_authconf(upscli_authconf_t *ac);
 int upscli_cleanup(void);
+
+void *upscli_set_ssl_context(UPSCONN_t *ups, void *ssl_ctx);
+void *upscli_get_ssl_context(UPSCONN_t *ups);
+
+/* Get or create a cached SSL context configuration (CA bundle, client cert
+ * identity, verify mode) from the process-wide registry. Takes parameters
+ * identical to upscli_init2(). Returns an opaque handle for use with
+ * upscli_set_ssl_context(), or NULL on hard failure. Cheap on repeat calls
+ * with identical arguments (cached hit). See design notes in SSL_CONTEXT_ANALYSIS.* */
+void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
+	const char *certname, const char *certpasswd, const char *certfile);
+
+/* Equivalent, taking parameters from an upscli_authconf_t (also registers
+ * any CERTHOST from the authconf, like upscli_init_authconf() does). */
+void *upscli_get_or_create_ssl_context_authconf(upscli_authconf_t *ac);
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags, struct timeval *tv);
 /* blocking unless default timeout is specified, see also: upscli_init_default_connect_timeout() */

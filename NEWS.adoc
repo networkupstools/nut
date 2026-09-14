@@ -416,6 +416,10 @@ https://github.com/networkupstools/nut/milestone/13
       against its 900 W rating. Note this is a behaviour change for units that
       report a non-zero `ActivePower`: the reading moves from `ups.power` to
       `ups.realpower`. [issue #3580, PR #3581]
+    * in `legrand-hid` subdriver the `beeper.disable` instant command now
+      sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
+      so the buzzer stays off across alarms; added `beeper.mute` and
+      `ups.beeper.status`. [issue #3638, PR #3639]
 
  - `snmp-ups` driver updates:
     * Fixed a NULL pointer dereference when setting exact outlet mappings
@@ -443,6 +447,10 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * The common state store now retains value changes which differ only in
+      letter case, including updates to opaque strings such as `device.contact`.
+      Variable names remain case-insensitive and immutable values remain
+      protected from changes. [issue #3622]
     * POSIX daemons now warn if their real or effective UID remains zero after
       the common credential switch. [issue #3471, PR #3609]
     * Refactored `common::background()` method used by numerous NUT daemons
@@ -504,6 +512,10 @@ https://github.com/networkupstools/nut/milestone/13
       filenames using NUT syntax. Authentication arguments are escaped
       before transmission. Existing response types are preserved; single
       quotes in configuration values are now literal. [issue #3620, PR #3629]
+    * The Perl `UPS::Nut` module now decodes quoted values and backslash
+      escapes in query/list replies and `nutauth.conf` entries, and quotes
+      authentication arguments. Single quotes in configuration are literal.
+      Command descriptions now accept the server's `CMDDESC` response. [PR #3634]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
@@ -541,6 +553,19 @@ https://github.com/networkupstools/nut/milestone/13
       report the ability to check `CERTIDENT` information. [#3331]
     * Introduced support for "authconf" files to store and convey NUT client
       authentication details. [issue #3329]
+    * Added C/C++ client support for multiple independent OpenSSL contexts
+      in the same process, or using multiple NSS client certificates with
+      its single context, for ability to connect to NUT data servers managed
+      by different entities (e.g. certificate authorities and client/server
+      realms). In-tree multiple-connection clients (`upsmon`, `upsstats.cgi`,
+      `upslog`) were updated to use this feature. [issue #3439]
+    * To support the ability of multiple SSL authentication details for
+      `upsmon` and `upsstats.cgi`, their configuration files were extended
+      with `AUTHCONF` keyword which can point to the `nutauth.conf` file
+      they should use, or pass the special values `default` (require a
+      user- or system-provided `nutauth.conf` file) or `none` (skip
+      authconf discovery entirely), matching the `-A` option semantics
+      of command-line NUT clients. [issue #3439]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
@@ -556,10 +581,10 @@ https://github.com/networkupstools/nut/milestone/13
       SSL settings in the client which previously only did best-effort attempts
       at secure communications without an individual certificate, and only
       anonymously for reading. The new `-A filename` option defaults to trying
-      to use a `nutauth.conf` file (if found in one of the default locations)
-      but not failing if one is not usable; specific values can require use of
-      such a file (`default`) or to not even try reading one (`none`).
-      [issues #3329, #3411]
+      to use a `nutauth.conf` file (if NOT specified here, but rather found in
+      one of the default locations) but not failing if one is not usable; any
+      specific values can require use of such a file (`default`) or to not even
+      try reading one (`none`). [issues #3329, #3411]
 
  - `upslog` client/tool updates:
     * Added support for best-effort use of `nutauth.conf` files from default
@@ -573,6 +598,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Added support for best-effort use of `nutauth.conf` files from default
       locations described above (no way to choose the location, other than
       by web-server environment variables for CGI calls). [#3329]
+    * `upsstats.cgi` additionally has a new `AUTHCONF` configuration option
+      that can be passed via its `hosts.conf` file, as detailed above. [#3439]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
@@ -628,6 +655,11 @@ https://github.com/networkupstools/nut/milestone/13
     * Escape variable and command descriptions from `cmdvartab` when sending
       `DESC` and `CMDDESC` responses, so embedded quotes, backslashes and
       hashes are decoded correctly by clients. [PR #3629]
+    * Validate complete numeric values and conversion ranges for `MAXAGE`,
+      `TRACKINGDELAY`, `MAXCONN` and `CERTREQUEST` in `upsd.conf`, retaining
+      the previous setting when conversion fails. Preserve public types
+      and avoid overflow in the `MAXAGE` grace-second calculation at the
+      maximum signed integer value. [issue #676]
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]
     * If the `MAXCONN` requested in the configuration file exceeds the OS
@@ -639,6 +671,14 @@ https://github.com/networkupstools/nut/milestone/13
     * If SSL configuration was provided, but the server failed to apply some
       aspect of that, it should now abort with an explanation (and not proceed
       with insecure start-up like it could do before). [issue #3331, PR #3435]
+
+ - The `nut-driver-enumerator.sh` script (NDE) updates:
+    * The shell/awk based parser now decodes `ups.conf` values using NUT token
+      syntax, preserving quoted hashes and escaped characters and ignoring
+      trailing comments. For example, `port = "auto" # comment` now properly
+      selects USB media for `nutdrv_qx`. The normalized configuration output
+      retains quotes and backslashes; changed section checksums can cause a
+      one-time reconciliation after upgrading. [PR #3635]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
