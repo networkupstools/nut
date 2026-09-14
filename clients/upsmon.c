@@ -187,6 +187,15 @@ static	sigset_t nut_upsmon_sigmask;
 static	TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
 static	int	sleep_inhibitor_status = -2;
 
+/* Track whether a wake-up was expected (announced suspend) or
+ * was inferred from an unexpected time jump. This helps avoid
+ * reporting SUSPEND_FINISHED for unannounced clock adjustments
+ * (e.g. RTC invalid at boot and NTP correction).
+ */
+static	int	wake_expected = 0;              /* set when NOTIFY_SUSPEND_STARTING was sent */
+static	int	unexpected_timejump = 0;        /* set when we infer a time jump without prior suspend */
+static	char	unexpected_timejump_msg[SMALLBUF];  /* optional detail text about time jump */
+
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
  * can define a debug_min value in the global section,
@@ -4376,6 +4385,7 @@ int main(int argc, char *argv[])
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
 			do_notify(NULL, NOTIFY_SUSPEND_STARTING, NULL);
+			wake_expected = 1;
 			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
 			Uninhibit(&sleep_inhibitor_fd);
 
@@ -4422,7 +4432,23 @@ int main(int argc, char *argv[])
 				time(&ttNow);
 				dt = difftimeval(now, prevstart);
 
-				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
+				/* If we had no prior NOTIFY_SUSPEND_STARTING and instead
+				 * inferred a wake-up due to a time jump, avoid reporting
+				 * SUSPEND_FINISHED which implies an expected sleep.
+				 */
+				if (unexpected_timejump) {
+					if (unexpected_timejump_msg[0] != '\0') {
+						/* Delay-loop detected jump (no earlier notify) */
+						do_notify(NULL, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, unexpected_timejump_msg);
+					}
+					/* Otherwise, the general-purpose handler already notified */
+				} else if (wake_expected) {
+					do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
+				}
+				/* Clear flags regardless */
+				wake_expected = 0;
+				unexpected_timejump = 0;
+				unexpected_timejump_msg[0] = '\0';
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep; %.06f seconds since previous loop cycle start", prog, dt);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
@@ -4508,11 +4534,16 @@ int main(int argc, char *argv[])
 					dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
 					upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles) by %.06f seconds", dt);
-					if (sleep_inhibitor_status < 0)
+					if (sleep_inhibitor_status < 0) {
 						sleep_inhibitor_status = 0;	/* behave as woken up */
+						unexpected_timejump = 1;
+						snprintf(unexpected_timejump_msg, sizeof(unexpected_timejump_msg), "%.06f seconds", dt);
+					}
 				} else if (dt < 0) {
 					upslogx(LOG_WARNING, "It seems the system clock was changed into the past (while in delay between main loop cycles) by %.06f seconds", dt);
 					sleep_inhibitor_status = 0;	/* behave as woken up */
+					unexpected_timejump = 1;
+					snprintf(unexpected_timejump_msg, sizeof(unexpected_timejump_msg), "%.06f seconds", dt);
 				}
 			}
 
@@ -4612,6 +4643,9 @@ int main(int argc, char *argv[])
 			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
 			upslogx(LOG_WARNING, "It seems we have slept without warning or the system clock was changed by %s", dtstr);
 			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
+			/* Mark for subsequent loop to avoid SUSPEND_FINISHED */
+			unexpected_timejump = 1;
+			unexpected_timejump_msg[0] = '\0'; /* already notified */
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		} else if (dt < 0) {
@@ -4619,6 +4653,9 @@ int main(int argc, char *argv[])
 			snprintf(dtstr, sizeof(dtstr), "%.06f seconds", dt);
 			upslogx(LOG_WARNING, "It seems the system clock was changed into the past by %s", dtstr);
 			do_notify(ups, NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED, dtstr);
+			/* Mark for subsequent loop to avoid SUSPEND_FINISHED */
+			unexpected_timejump = 1;
+			unexpected_timejump_msg[0] = '\0'; /* already notified */
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 		}
