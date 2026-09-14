@@ -33,6 +33,13 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Correct malformed numeric values in `upsd.conf` when upgrading: `MAXAGE`,
+  `TRACKINGDELAY`, `MAXCONN` and numeric `CERTREQUEST` values are now checked
+  in full and must fit their destination ranges. Values such as `15seconds`
+  were previously read as `15`; these and overflowing values are now logged
+  and ignored, retaining the previous setting. Valid decimal values,
+  leading zeroes and trailing whitespace remain accepted. [issue #676]
+
 - Potentially a breaking change for C++ clients that rushed to use the new
   SSL support options in `libnutclient`: for Mozilla NSS setup, the way to
   provide an expected `CERTHOST` address was missing.  Now the API is fixed

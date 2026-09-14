@@ -481,7 +481,7 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 	if ((elapsed > (arg_maxage / 3)) && (difftime(now, ups->last_ping) > (arg_maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > arg_maxage + 1) {
+	if (elapsed > arg_maxage + 1.0) {
 		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
 			__func__, ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */

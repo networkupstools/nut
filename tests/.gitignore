@@ -18,6 +18,9 @@
 /test_authconf
 /test_authconf.log
 /test_authconf.trs
+/test_upsdconf
+/test_upsdconf.log
+/test_upsdconf.trs
 /selftest-rw/*
 /nutlogtest-nofail.sh
 /nutlogtest
