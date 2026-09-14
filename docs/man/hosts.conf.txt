@@ -40,6 +40,23 @@ The description must be one element, so if it has spaces, then it must
 be wrapped with quotes as shown above.  The default hostname is
 "localhost".
 
+*AUTHCONF* ('filename' | `default` | `none`)::
+Optional linkman:nutauth.conf[5] file location to use for this client.
+A non-absolute path is treated as relative to NUT configuration directory.
++
+Special values:
++
+* `default`: require a default file in one of the locations listed in
+  linkman:nutauth.conf[5] (fail if none is found or accessible);
+* `none`: do not try to find or load any such file.
++
+If 'AUTHCONF' is not specified at all, best-effort (non-fatal) detection
+of a default file is attempted.
++
+Such a file allows the single linkman:upsstats.cgi[8] client process to
+assume different certificate identities per connection, and helps it trust
+(and be trusted by) NUT data servers in separate security management realms.
+
 *CUSTOM_TEMPLATE_LIST* 'filename'::
 *CUSTOM_TEMPLATE_SINGLE* 'filename'::
 
@@ -63,7 +80,8 @@ see linkman:upsstats.html[5] for more details).
 SEE ALSO
 --------
 
-linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8],
+linkman:nutauth.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

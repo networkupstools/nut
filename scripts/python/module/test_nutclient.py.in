@@ -6,7 +6,170 @@
 import PyNUT
 import sys
 import os
+import socket
 
+HAVE_UNITTEST = False
+try:
+    import unittest
+    HAVE_UNITTEST = True
+except ModuleNotFoundError as ignored:
+    pass
+
+class DisconnectSocket:
+    """ Record cleanup attempts, including operations which fail. """
+    def __init__(self, send_error=False, close_error=False):
+        self.events = []
+        self.send_error = send_error
+        self.close_error = close_error
+
+    def sendall(self, data):
+        self.events.append(data)
+        if self.send_error:
+            raise socket.error("send failed")
+
+    def close(self):
+        self.events.append("close")
+        if self.close_error:
+            raise socket.error("close failed")
+
+    def recv(self, size):
+        return b"ERR ACCESS-DENIED\n"
+
+
+if HAVE_UNITTEST:
+  class DisconnectTest(unittest.TestCase):
+    def check_cleanup(self, send_error=False, close_error=False, destructor=False):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        sock = DisconnectSocket(send_error, close_error)
+        client._PyNUTClient__srv_handler = sock
+        if destructor:
+            client.__del__()
+        else:
+            client.disconnect()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+
+    def test_retained_client(self):
+        self.check_cleanup()
+
+    def test_send_failure(self):
+        self.check_cleanup(send_error=True)
+
+    def test_close_failure(self):
+        self.check_cleanup(close_error=True)
+
+    def test_send_and_close_failure(self):
+        self.check_cleanup(send_error=True, close_error=True)
+
+    def test_destructor(self):
+        for send_error in [False, True]:
+            for close_error in [False, True]:
+                self.check_cleanup(send_error, close_error, destructor=True)
+
+    def test_deferred_client(self):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_partial_initialization(self):
+        class PartialClient(PyNUT.PyNUTClient):
+            def __init__(self):
+                pass
+        client = PartialClient()
+        # Before an instance socket is assigned, the class default is None.
+        self.assertFalse('_PyNUTClient__srv_handler' in client.__dict__)
+        client.disconnect()
+        client.__del__()
+
+    def test_socket_is_none(self):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        client._PyNUTClient__srv_handler = None
+        client.disconnect()
+        client.__del__()
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_subclass(self):
+        class Client(PyNUT.PyNUTClient):
+            __srv_handler = None
+        client = Client(connect_now=False)
+        sock = DisconnectSocket()
+        client._PyNUTClient__srv_handler = sock
+        client.disconnect()
+        self.assertEqual(sock.events, [b"LOGOUT\n", "close"])
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_connection_failure(self):
+        def fail_connect(*args):
+            raise socket.error("connection failed")
+        create_connection = socket.create_connection
+        client = PyNUT.PyNUTClient(connect_now=False)
+        try:
+            socket.create_connection = fail_connect
+            self.assertRaises(socket.error, client.__init__)
+            client.disconnect()
+            client.__del__()
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+        finally:
+            socket.create_connection = create_connection
+
+    def test_authentication_failure(self):
+        sock = DisconnectSocket()
+        create_connection = socket.create_connection
+        client = PyNUT.PyNUTClient(connect_now=False)
+        try:
+            socket.create_connection = lambda *args: sock
+            self.assertRaises(PyNUT.PyNUTError, client.__init__, login="test")
+            client.__del__()
+            self.assertEqual(sock.events, [b"USERNAME test\n", b"LOGOUT\n", "close"])
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+        finally:
+            socket.create_connection = create_connection
+
+    def test_local_socket(self):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client = None
+        peer = None
+        sock = None
+        try:
+            listener.settimeout(3)
+            listener.bind(('127.0.0.1', 0))
+            listener.listen(1)
+            client = PyNUT.PyNUTClient(host='127.0.0.1',
+                port=listener.getsockname()[1], timeout=3, tracking=None)
+            peer, addr = listener.accept()
+            peer.settimeout(3)
+            sock = client._PyNUTClient__srv_handler
+            client.disconnect()
+            self.assertRaises(socket.error, sock.getpeername)
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+            data = b''
+            while True:
+                chunk = peer.recv(32)
+                if not chunk:
+                    break
+                data += chunk
+            self.assertEqual(data, b"LOGOUT\n")
+            client.disconnect()
+            client.__del__()
+        finally:
+            if sock is not None:
+                sock.close()
+            if peer is not None:
+                peer.close()
+            listener.close()
+
+
+def testsuite_disconnect():
+    if HAVE_UNITTEST:
+        suite = unittest.TestLoader().loadTestsFromTestCase(DisconnectTest)
+        return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+    else:
+        print("SKIP: testsuite_disconnect(): module unittest is not available")
+        return 1
 
 def test_splitaddr(addr, expected_host, expected_port):
     ac = PyNUT.AuthConf(addr)
@@ -43,6 +206,12 @@ def testsuite_splitaddr():
     return True
 
 if __name__ == "__main__" :
+    if not testsuite_disconnect():
+        sys.exit(1)
+    # Run the self-contained cleanup tests without requiring a NUT server.
+    if '--disconnect' in sys.argv:
+        sys.exit(0)
+
     NUT_HOST = os.getenv('NUT_HOST', '127.0.0.1')
     NUT_PORT = int(os.getenv('NUT_PORT', '3493'))
     NUT_USER = os.getenv('NUT_USER', None)

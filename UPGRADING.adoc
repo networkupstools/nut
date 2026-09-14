@@ -31,6 +31,14 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
+  in query/list values and `nutauth.conf`, including include paths. Remove
+  manual decoding of these returned values and pass literal credentials
+  to `Authenticate()`. Single quotes in configuration are now literal, as
+  in the C parser; replace single-quoted values with double-quoted values
+  where grouping was intended. The legacy `Set()` argument contract is
+  unchanged.
+
 - PLANNED: Keep track of any further API clean-up?
 
 - The common configuration and protocol parser now accepts literal `#`
@@ -39,6 +47,13 @@ Changes from 2.8.5 to 2.8.6
   still needed when sharing configuration files with older NUT versions.
   Encoded protocol output continues to escape hashes for older peers;
   default `upsc` text output is unchanged. [issues #607, #1306, PR #3633]
+
+- Correct malformed numeric values in `upsd.conf` when upgrading: `MAXAGE`,
+  `TRACKINGDELAY`, `MAXCONN` and numeric `CERTREQUEST` values are now checked
+  in full and must fit their destination ranges. Values such as `15seconds`
+  were previously read as `15`; these and overflowing values are now logged
+  and ignored, retaining the previous setting. Valid decimal values, leading
+  zeroes and trailing whitespace remain accepted. [issue #676, PR #3631]
 
 - Potentially a breaking change for C++ clients that rushed to use the new
   SSL support options in `libnutclient`: for Mozilla NSS setup, the way to
@@ -76,10 +91,31 @@ Changes from 2.8.5 to 2.8.6
   for reading like `upsc`.
 +
 The new `-A filename` option defaults to trying to use a `nutauth.conf` file
-  (if found in one of the default locations) but not failing if one is not
-  usable; specific values can require use of such a file or to not even try
-  reading one ('none' as the legacy default). See the updated manual pages
-  for more details. [issues #3329, #3411]
+  (if NOT specified here, but rather found in one of the default locations)
+  but not failing if one is not usable; any specific values can require use
+  of such a file or to not even try reading one ('none' as the legacy default).
+  See the updated manual pages for more details. [issues #3329, #3411]
+
+- The `upsmon` and `upsstats.cgi` clients capable of connections to multiple
+  NUT data servers, potentially in separately managed security realms, now
+  support an `AUTHCONF` option in their configuration files to specify the
+  SSL details to be used with each such server. Legacy `upsmon` configuration
+  keywords like `CERTPATH`, `CERTFILE`, `CERTIDENT`, `CERTHOST`, `CERTVERIFY`
+  and `FORCESSL` act as a "global defaults" section in `nutauth.conf` terms,
+  and any actual `nutauth.conf` file entries gets loaded on top of these data.
+  The default behavior (when `AUTHCONF` remains unspecified) is a best-effort
+  attempt to load the file from one of the standard locations. If your NUT
+  deployment defines an e.g. `/etc/nut/nutauth.conf` file which would be
+  loaded automatically, but its contents conflict with what `upsmon` needs
+  to know, please specify `AUTHCONF = none` in `upsmon.conf`. [issue #3439]
+
+- `nut-driver-enumerator` now preserves quotes and backslashes in normalized
+  configuration output and decodes values once using NUT token syntax.
+  Value queries omit trailing comments, take the first value token and
+  treat single quotes literally. This corrected parsing can change media
+  dependencies. Section checksums may change on upgrade and trigger the
+  usual reconciliation, including driver restarts; subsequent checks of
+  unchanged configuration remain stable. [PR #3635]
 
 - The `powervar_cx_usb`, `tripplite_usb` drivers used a built-in limit on
   reconnection attempts after which they exited ('60' and '10' respectively).
@@ -104,6 +140,19 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   with a `reg1 is negative` error (even with a compatible UPS), including
   `bypass.start`, `shutdown.return`, `shutdown.reboot`, and
   `shutdown.reboot.graceful`. [issue #3593, #3603, PR #3604].
+
+- The NUT-Monitor GUI client application has historically branched from an
+  implementation with Python 2 syntax and GTK 2 backend for GUI, into another
+  script with Python 3 syntax and QT5 backend, and later another with QT6.
+  Those two latter scripts have now been re-merged into one with Python 3
+  syntax and support for both QT5 and QT6 backends, one selected at run-time
+  by the executable script name. Packaging-wise this should remain identical
+  to earlier releases (also for distributions which delivered more than one
+  implementation), however dependency rules can be now collapsed to requiring
+  any of the QT5/QT6 backends for essentially the same client script. Delivery
+  of the two filenames for same contents (to pick the backend at run-time) may
+  also be optimized with symbolic or hard links in packaging. [PR #3596]
+
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------

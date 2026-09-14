@@ -17,6 +17,7 @@ all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
+EXTRA_DIST += pynut-commands-test.py
 
 TESTS =
 noinst_LTLIBRARIES =
@@ -103,6 +104,15 @@ TESTS += parseconf-test
 parseconf_test_SOURCES = parseconf-test.c
 parseconf_test_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += test_upsdconf
+test_upsdconf_SOURCES = test_upsdconf.c
+test_upsdconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/server
+test_upsdconf_LDADD = $(NUT_LIBCOMMON) $(NETLIBS)
+test_upsdconf_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/server/conf.c $(top_srcdir)/server/sstate.c
+if WITH_SSL
+test_upsdconf_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
+
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(NUT_LIBCOMMON)
 
@@ -127,6 +137,10 @@ endif !REQUIRE_NUT_STRARG
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += statetest
+statetest_SOURCES = statetest.c
+statetest_LDADD = $(NUT_LIBCOMMON)
 
 TESTS += ecoflow_cdc_protocol_utest
 ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
@@ -351,11 +365,42 @@ memcheck:
 endif !HAVE_VALGRIND
 
 CHECK_LOCAL_TARGETS = become-user-root-warning-test
+CHECK_LOCAL_TARGETS_PYNUT =
+
+if HAVE_PYTHON_DEFAULT
+if WITH_PYNUT_UNITTEST_PY
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-default
+
+pynut-commands-test-default:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON_DEFAULT@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY
+endif HAVE_PYTHON_DEFAULT
+
+if HAVE_PYTHON2
+if WITH_PYNUT_UNITTEST_PY2
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-py2
+
+pynut-commands-test-py2:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON2@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY2
+endif HAVE_PYTHON2
+
+if HAVE_PYTHON3
+if WITH_PYNUT_UNITTEST_PY3
+CHECK_LOCAL_TARGETS_PYNUT += pynut-commands-test-py3
+
+pynut-commands-test-py3:
+	$(AM_V_at)PYTHONPATH='$(abs_top_builddir)/scripts/python/module' @PYTHON3@ $(srcdir)/pynut-commands-test.py
+endif WITH_PYNUT_UNITTEST_PY3
+endif HAVE_PYTHON3
+
 if WITH_VALGRIND
 CHECK_LOCAL_TARGETS += memcheck
 endif WITH_VALGRIND
 
-check-local: $(CHECK_LOCAL_TARGETS)
+pynut-commands-test: $(CHECK_LOCAL_TARGETS_PYNUT)
+
+check-local: $(CHECK_LOCAL_TARGETS) $(CHECK_LOCAL_TARGETS_PYNUT)
 
 become-user-root-warning-test: $(top_builddir)/clients/upslog$(EXEEXT)
 	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/become-user-root-warning-test.sh

@@ -162,7 +162,7 @@ SUBDIR_MAKE_VERBOSE = default
 
 # Run the standard build if going sequential (or with unknown MAKEFLAGS),
 # or fanout if parallel (presuming GNU/BSD/Sun make at least):
-CLEANFILES += .libs-dev-PATH include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
+CLEANFILES += .libs-dev-PATH NIT.env include/.all.nut_version-generated.timestamp clients/.all.libupsclient_version-generated.timestamp
 all-fanout-maybe: .libs-dev-PATH @dotMAKE@
 	@rm -f include/.all.nut_version-generated.timestamp \
 	       clients/.all.libupsclient_version-generated.timestamp
@@ -996,8 +996,28 @@ maintainer-asciidocs:
 	  fi; \
 	 )
 
+# A convenience symlink for developers to source into their shell and have
+# a reproducible environment for repetitive tests. See also .libs-dev-PATH.
+# Neither file is directly used by the `make` process nor scripts, but they
+# are often useful for interactive use of `make check-NIT*` goals or for
+# `gdb` runs and so on. Some IDEs might offer to source them, too.
+# NOTE: "test -L" confirms a symlink exists (we assume it points where it
+#  should) regardless of target existence, and "test -e" confirms a target
+#  file exists after dereference. We DO NOT (re-)create the symlink if either
+#  the target exists and contains expected contents, or the it is "dangling".
+NIT.env:
+	@if test -L $@ || test -h $@; then \
+	    if test -e $@ ; then \
+	        if $(GREP) 'NUT_PORT=' < $@ > /dev/null ; then \
+	            exit 0; \
+	        fi ; \
+	    else exit 0; fi ; \
+	 fi ; \
+	 $(RM_F) $@ ; \
+	 $(LN_S) $(builddir)/tests/NIT/tmp/etc/NIT.env $@ || true
+
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
-check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: NIT.env .libs-dev-PATH @dotMAKE@
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
 VERSION_DEFAULT: dummy-stamp

@@ -1,0 +1,178 @@
+UPSCLI_GET_OR_CREATE_SSL_CONTEXT(3)
+===================================
+
+NAME
+----
+
+upscli_get_or_create_ssl_context, upscli_get_or_create_ssl_context_authconf
+- Get or create a cached per-connection SSL context configuration
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	void *upscli_get_or_create_ssl_context(int certverify, 
+		const char *certpath, const char *certname, 
+		const char *certpasswd, const char *certfile);
+
+	void *upscli_get_or_create_ssl_context_authconf(upscli_authconf_t *ac);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_get_or_create_ssl_context*() and 
+*upscli_get_or_create_ssl_context_authconf*() functions provide per-connection
+SSL context support for client applications connecting to multiple NUT data
+servers with independent certificate authorities or client certificate identities.
+
+These functions implement a process-wide registry of SSL context configurations.
+Each configuration is cached by parameter hash and may be shared across multiple
+connections, allowing efficient reuse while supporting independent settings for
+different servers.
+
+The *upscli_get_or_create_ssl_context*() function creates or retrieves a cached
+SSL context with the specified configuration:
+
+- `certverify`: Certificate verification mode (0 or 1)
+- `certpath`: Path to CA bundle or NSS database directory
+- `certname`: Client certificate nickname/identity for NSS, or NULL
+- `certpasswd`: Password for client certificate, or NULL
+- `certfile`: OpenSSL client certificate+key PEM file, or NULL
+
+The *upscli_get_or_create_ssl_context_authconf*() function performs the same
+operation but takes parameters from an linkman:upscli_authconf_t[3] structure,
+typically obtained via linkman:upscli_get_authconf_item[3]. This variant also
+registers any CERTHOST security policies defined in the authconf, similar to
+linkman:upscli_init_authconf[3].
+
+CONFIGURATION LOOKUP
+--------------------
+
+The registry uses exact parameter matching to determine cache hits:
+
+- Identical parameters return a cached entry (efficient on repeat calls)
+- Different parameters create new registry entries (allows multi-realm connections)
+
+USAGE PATTERN
+-------------
+
+For applications connecting to multiple servers with independent SSL configurations:
+
+------
+	upscli_authconf_t *ac = upscli_get_authconf_item(
+		NULL, hostname, port_str, 1);
+	
+	void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+	
+	/* NOTE: this clause is just an example of what happens
+	 * under the hood; actually the upscli_tryconnect() method
+	 * clears "conn" and finds or creates the suitable cached
+	 * context by itself, anew every time. */
+	if (ssl_ctx) {
+		upscli_set_ssl_context(conn, ssl_ctx);
+	}
+	
+	upscli_connect(conn, hostname, port, flags);
+------
+
+This pattern ensures each connection uses its server-specific SSL configuration,
+even when multiple servers are accessed from the same process.
+
+MULTI-REALM SUPPORT
+-------------------
+
+OpenSSL builds support independent linkman:SSL_CTX[3] objects per connection,
+enabling simultaneous use of different certificate authorities and client
+certificates within a single process.
+
+NSS builds share a process-global trust database (per NSS design constraints),
+but the registry enables per-connection client certificate identity selection,
+allowing different client certificates to be presented to different servers
+from the same shared NSS database.
+
+SECURE CLEANUP
+--------------
+
+Sensitive fields (passwords, certificate names/paths) are automatically zeroed
+with linkman:memset[3] before being freed, preventing sensitive data from
+lingering in freed memory.
+
+LIFETIME AND OWNERSHIP
+----------------------
+
+SSL context configurations are owned by the registry and automatically freed by
+linkman:upscli_cleanup[3]. Individual connections do not own the context
+references and must not manually free them.
+
+RETURN VALUE
+------------
+
+The functions return an opaque handle to an SSL context configuration on
+success, or NULL on failure (memory allocation error, invalid parameters, etc.).
+
+The returned handle is suitable for use with linkman:upscli_set_ssl_context[3].
+
+ERRORS
+------
+
+Failure may occur if:
+
+- Memory allocation fails
+- The specified CA bundle or database cannot be accessed
+- The client certificate cannot be loaded or verified
+- NSS initialization fails (NSS builds only)
+
+Call linkman:upscli_strerror[3] for error details.
+
+THREAD SAFETY
+-------------
+
+The registry itself is protected by internal synchronization in threaded builds.
+However, individual connection operations are not thread-safe; each thread
+should maintain its own linkman:UPSCONN_t[3] instance.
+
+EXAMPLES
+--------
+
+Monitor multiple UPS devices with independent SSL configurations:
+
+------
+	for (each_ups_in_config) {
+		UPSCONN_t *conn = malloc(sizeof(*conn));
+		
+		// Get per-UPS authconf from config files
+		upscli_authconf_t *ac = upscli_get_authconf_item(
+			NULL, ups->hostname, ups->port_str, 1);
+		
+		// Create/fetch SSL context from registry
+		/* NOTE: this clause is just an example of what happens
+		 * under the hood; actually the upscli_tryconnect() method
+		 * clears "conn" and finds or creates the suitable cached
+		 * context by itself, anew every time. */
+		void *ctx = upscli_get_or_create_ssl_context_authconf(ac);
+		if (ctx) {
+			upscli_set_ssl_context(conn, ctx);
+		}
+		
+		// Connect with per-UPS SSL settings
+		upscli_connect(conn, ups->hostname, ups->port, flags);
+	}
+	
+	// Registry is freed when done:
+	upscli_cleanup();
+------
+
+SEE ALSO
+--------
+
+linkman:upscli_init[3], linkman:upscli_init2[3], 
+linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
+linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_disconnect[3],
+linkman:upscli_authconf_t[3], linkman:upscli_get_authconf_item[3],
+linkman:upscli_strerror[3],
+linkmanext:SSL_CTX[7]

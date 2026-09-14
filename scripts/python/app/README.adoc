@@ -30,14 +30,12 @@ For quick tests (e.g. during development), you can run the clients like this:
 or:
 
 ----
-:; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt5.in
+:; PYTHONPATH=../module/ NUT_MONITOR_QT=5 python3 ./NUT-Monitor-py3qt.in
 ----
 
-or:
-
-----
-:; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt6.in
-----
+Use `NUT_MONITOR_QT=6` to exercise the PyQt6 backend. The generated
+`NUT-Monitor-py3qt5` and `NUT-Monitor-py3qt6` commands select their named
+backend directly.
 
 Localization
 ------------
@@ -65,7 +63,9 @@ This component ships implementation-specific `nut-monitor-py2gtk2.desktop`,
 `nut-monitor-py3qt5.desktop` and `nut-monitor-py3qt6.desktop` files which allows
 a user to have icons for either variants separately, as well as the legacy-named
 `nut-monitor.desktop` for running the wrapper script `NUT-Monitor` which picks
-an implementation best suited for the current run-time circumstances.
+an implementation best suited for the current run-time circumstances. Set
+`NUT_MONITOR_QT=5` or `NUT_MONITOR_QT=6` to require a particular Python 3
+backend through the wrapper.
 
 Screenshots
 -----------
@@ -101,7 +101,7 @@ export PYTHONIOENCODING
 ----
 
 To iterate during specifically localization development, you can edit the `.in`
-template sources of the scripts and the localization files, and (from the `app`
+template sources and the localization files, and (from the `app`
 directory) run with:
 
 ----
@@ -128,7 +128,8 @@ by David Goncalves <david@lestat.st>
 
 NUT-Monitor was converted to Python 3 + Qt5 by Luke Dashjr
 
-PyNUT was extended, and two variants of NUT-Monitor converged and wrapped
+PyNUT was extended, and two generations of NUT-Monitor converged and wrapped
 for Python 2+3 dual support by Jim Klimov
 
-NUT-Monitor was ported to Python 3 + Qt6 by Sebastian Kuttnig
+NUT-Monitor was ported to Python 3 + Qt6 by Sebastian Kuttnig. The Qt5 and Qt6
+backends now share one Python 3 implementation.
