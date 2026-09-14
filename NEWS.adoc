@@ -60,6 +60,8 @@ https://github.com/networkupstools/nut/milestone/13
  - `generic_modbus` and `adelsystem_cbi` now read Modbus bit and register
    values into correctly sized buffers before converting them for driver use.
 
+ - `adelsystem_cbi` no longer reads past its onboard-temperature alarm table.
+
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
    complete descriptor available on affected River 3 Plus firmware while
