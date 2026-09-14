@@ -285,9 +285,14 @@ class AuthConfTest(unittest.TestCase):
             for login, password in [(value, 'pass'), ('user', value)]:
                 transport = RecordingSocket([b'OK\n', b'OK\n'])
                 self.assertRaises(ValueError, self.connect, login, password, transport)
-                self.assertEqual(transport.sent,
+                try:
+                    # Did we also handle socket disconnection correctly?
+                    self.assertEqual(transport.sent,
+                                 [b'LOGOUT\n'] if login == value else [b'USERNAME "user"\n', b'LOGOUT\n'])
+                except AssertionError as ignored:
+                    # If the check below fails, we get a log with the transport.sent[] list:
+                    self.assertEqual(transport.sent,
                                  [] if login == value else [b'USERNAME "user"\n'])
-
 
 if __name__ == '__main__':
     unittest.main()
