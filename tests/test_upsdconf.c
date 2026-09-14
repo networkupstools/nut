@@ -195,6 +195,9 @@ int main(void)
 			check_value(options[i], invalid[j], 0, previous);
 
 		limit = (uintmax_t)INT_MAX;
+		if (!strcmp(options[i], "MAXAGE") || !strcmp(options[i], "TRACKINGDELAY")) {
+			limit = (uintmax_t)UINT_MAX;
+		} else
 		if (!strcmp(options[i], "MAXCONN")) {
 			limit = (uintmax_t)((nfds_t)-1);
 			if (limit > (uintmax_t)LONG_MAX) limit = (uintmax_t)LONG_MAX;
