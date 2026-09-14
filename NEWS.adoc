@@ -62,11 +62,6 @@ https://github.com/networkupstools/nut/milestone/13
    complete descriptor available on affected River 3 Plus firmware while
    retaining the shorter length as a fallback.
 
- - `usbhid-ups` `legrand-hid` subdriver: `beeper.disable` now sends
-   `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"), so the
-   buzzer stays off across alarms; added `beeper.mute` and
-   `ups.beeper.status`. [issue #3638]
-
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
@@ -421,6 +416,10 @@ https://github.com/networkupstools/nut/milestone/13
       against its 900 W rating. Note this is a behaviour change for units that
       report a non-zero `ActivePower`: the reading moves from `ups.power` to
       `ups.realpower`. [issue #3580, PR #3581]
+    * in `legrand-hid` subdriver the `beeper.disable` instant command now
+      sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
+      so the buzzer stays off across alarms; added `beeper.mute` and
+      `ups.beeper.status`. [issue #3638, PR #3639]
 
  - `snmp-ups` driver updates:
     * Fixed a NULL pointer dereference when setting exact outlet mappings
