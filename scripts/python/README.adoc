@@ -35,6 +35,12 @@ and protocol support.
 
 For one practical example, you can research `tests/NIT/nit.sh` in NUT sources.
 
+There is a separate `tests/pynut-commands-test.py` whose invocation for any
+currently configured Python version(s) is managed by `tests/Makefile.am`.
+These tests require the `unittest` Python module, which is usually available
+by default (we have seen only one build agent without it, for just one of its
+many Python versions installed).
+
 app
 ~~~
 
