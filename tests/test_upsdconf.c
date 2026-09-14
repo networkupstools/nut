@@ -104,6 +104,7 @@ static void check_value(const char *option, const char *value, int accepted, uin
 	maxage = tracking_delay = 17;
 	maxconn = 17;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	/* valid assignments are 0,1,2; if invalid remain what it was */
 	certrequest = 2;
 #endif
 	args[0] = xstrdup(option);
@@ -182,13 +183,16 @@ int main(void)
 	printf("Widths: int=%" PRIuSIZE ", long=%" PRIuSIZE ", nfds_t=%" PRIuSIZE "\n",
 		sizeof(int), sizeof(long), sizeof(nfds_t));
 	for (i = 0; i < sizeof(options) / sizeof(options[0]); i++) {
+		limit = !strcmp(options[i], "CERTREQUEST") ? NETSSL_CERTREQ_MAX : 0;
 		previous = !strcmp(options[i], "CERTREQUEST") ? 2 : 17;
+#define EXPSET(x, y) (limit == 0 || limit >= x ? y : 0)
+#define EXPLIM(x) (limit == 0 || limit >= x ? x : previous)
 		check_value(options[i], "0", 1, 0);
-		check_value(options[i], "1", 1, 1);
-		check_value(options[i], "2", 1, 2);
-		check_value(options[i], "00015", 1, 15);
-		check_value(options[i], "32 \t", 1, 32);
-		check_value(options[i], "3600", 1, 3600);
+		check_value(options[i], "1", EXPSET(1, 1), EXPLIM(1));
+		check_value(options[i], "2", EXPSET(2, 1), EXPLIM(2));
+		check_value(options[i], "00015", EXPSET(15, 1), EXPLIM(15));
+		check_value(options[i], "32 \t", EXPSET(32, 1), EXPLIM(32));
+		check_value(options[i], "3600", EXPSET(3600, 1), EXPLIM(3600));
 		for (j = 0; j < sizeof(invalid) / sizeof(invalid[0]); j++)
 			check_value(options[i], invalid[j], 0, previous);
 
@@ -196,6 +200,9 @@ int main(void)
 		if (!strcmp(options[i], "MAXCONN")) {
 			limit = (uintmax_t)((nfds_t)-1);
 			if (limit > (uintmax_t)LONG_MAX) limit = (uintmax_t)LONG_MAX;
+		}
+		else if (!strcmp(options[i], "CERTREQUEST")) {
+			limit = (uintmax_t)(NETSSL_CERTREQ_MAX);
 		}
 		snprintf(number, sizeof(number), "%" PRIuMAX, limit - 1);
 		check_value(options[i], number, 1, limit - 1);
@@ -212,7 +219,8 @@ int main(void)
 	check_value("CERTREQUEST", "REQUIRE", 1, 2);
 	check_value("CERTREQUEST", "require", 0, 2);
 	/* ssl_init still owns the 0..2 domain check and its fatal error policy. */
-	check_value("CERTREQUEST", "3", 1, 3);
+	/*check_value("CERTREQUEST", "3", 1, 3);*/
+	check_value("CERTREQUEST", "3", 0, 2);
 #endif
 
 	f = fopen(config_file, "w");
