@@ -1,0 +1,149 @@
+UPSCLI_SET_SSL_CONTEXT(3)
+=========================
+
+NAME
+----
+
+upscli_set_ssl_context, upscli_get_ssl_context - Set or get per-connection
+SSL context configuration
+
+SYNOPSIS
+--------
+
+------
+	#include <upsclient.h>
+
+	void *upscli_set_ssl_context(UPSCONN_t *ups, void *ssl_ctx);
+
+	void *upscli_get_ssl_context(UPSCONN_t *ups);
+------
+
+DESCRIPTION
+-----------
+
+The *upscli_set_ssl_context*() function attaches an SSL context configuration
+to a connection, enabling per-connection SSL settings for certificate verification,
+client certificate identity, and certificate authority.
+
+The *upscli_get_ssl_context*() function retrieves the currently attached SSL
+context for a connection.
+
+CONTEXT OWNERSHIP
+-----------------
+
+SSL context configurations are obtained from the process-wide registry via
+linkman:upscli_get_or_create_ssl_context[3] or 
+linkman:upscli_get_or_create_ssl_context_authconf[3]. The connection holds
+a reference to the registry entry but does not own it; contexts are freed
+only by linkman:upscli_cleanup[3] after all connections are disconnected.
+
+USAGE
+-----
+
+These functions are typically used together with linkman:upscli_get_or_create_ssl_context_authconf[3]
+to support multiple servers with independent SSL configurations within a single
+process:
+
+------
+	// Get per-server authconf
+	upscli_authconf_t *ac = upscli_get_authconf_item(
+		NULL, hostname, port_str, 1);
+	
+	// Create/fetch SSL context from registry
+	void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
+	
+	// Attach to connection
+	if (ssl_ctx) {
+		upscli_set_ssl_context(&conn, ssl_ctx);
+	}
+	
+	// Connect (uses per-server CA, client cert, verify mode)
+	upscli_connect(&conn, hostname, port, flags);
+------
+
+MULTI-REALM CONNECTIONS
+------------------------
+
+OpenSSL builds support independent SSL_CTX objects per connection, enabling:
+- Different certificate authorities per server
+- Different client certificates per server
+- Different verification modes per server
+- All within a single process
+
+NSS builds share a process-global certificate database but support:
+- Different client certificate identities per connection
+- Different verification modes per connection
+- Per-server CERTHOST security policies
+
+RETURN VALUE
+------------
+
+The *upscli_set_ssl_context*() function returns the previous SSL context
+attached to the connection (or NULL if none was attached), allowing callers
+to track context changes if needed.
+
+The *upscli_get_ssl_context*() function returns the currently attached SSL
+context, or NULL if none is attached (connection will use registry default).
+
+PARAMETERS
+----------
+
+`ups`::
+	Pointer to a linkman:UPSCONN_t[3] structure for a connection.
+	Must be initialized by linkman:upscli_connect[3] or a
+	failed connection attempt.
+
+`ssl_ctx`::
+	An opaque SSL context handle obtained from 
+	linkman:upscli_get_or_create_ssl_context[3] or
+	linkman:upscli_get_or_create_ssl_context_authconf[3].
+	Pass NULL to clear any existing per-connection context (falls back to default).
+
+EXAMPLE
+-------
+
+Connecting to multiple NUT servers with independent SSL configurations:
+
+------
+	UPSCONN_t conn1, conn2;
+	
+	// Server 1: custom CA and verify settings
+	upscli_authconf_t *ac1 = upscli_get_authconf_item(
+		NULL, "server1.example.com", "3493", 1);
+	void *ctx1 = upscli_get_or_create_ssl_context_authconf(ac1);
+	upscli_set_ssl_context(&conn1, ctx1);
+	upscli_connect(&conn1, "server1.example.com", 3493, flags);
+	
+	// Server 2: different CA and client certificate
+	upscli_authconf_t *ac2 = upscli_get_authconf_item(
+		NULL, "server2.example.com", "3493", 1);
+	void *ctx2 = upscli_get_or_create_ssl_context_authconf(ac2);
+	upscli_set_ssl_context(&conn2, ctx2);
+	upscli_connect(&conn2, "server2.example.com", 3493, flags);
+	
+	// Both connections use independent SSL contexts
+	
+	// Cleanup
+	upscli_disconnect(&conn1);
+	upscli_disconnect(&conn2);
+	upscli_cleanup();  // Frees all registry contexts
+------
+
+LEGACY BEHAVIOR
+---------------
+
+When no per-connection SSL context is set (NULL), the connection uses the
+ambient default context created by linkman:upscli_init[3],
+linkman:upscli_init2[3], or linkman:upscli_init_authconf[3]. This provides
+backward compatibility with existing client code.
+
+SEE ALSO
+--------
+
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_connect[3], linkman:upscli_disconnect[3],
+linkman:upscli_init[3], linkman:upscli_init2[3],
+linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
+linkman:upscli_get_authconf_item[3],
+linkman:UPSCONN_t[3]
