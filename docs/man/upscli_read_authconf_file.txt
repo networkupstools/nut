@@ -23,6 +23,11 @@ The *upscli_read_authconf_file()* function reads the specified 'filename'
 (which is usually the path to *nutauth.conf*) and populates an internal
 list of authentication and SSL configurations.
 
+If the filename is NOT `NULL`, for security reasons it must be either an
+absolute path, or one resolved relatively to NUT configuration file location
+(a built-in path defined by `configure` script, or `NUT_CONFPATH` environment
+variable).
+
 If 'filename' is `NULL`, the function first tries to locate either a file
 whose path and name is fully provided in `${NUT_AUTHCONF_FILE}` environment
 variable, or a `${NUT_AUTHCONF_PATH}/nutauth.conf`, and would not try any
@@ -53,8 +58,11 @@ NESTING (INCLUDE FILES)
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Included files are supported via the `INCLUDE` directive for optionally
-present files, and `INCLUDE_REQUIRED` for files that must be there
+present files, and `INCLUDE_REQUIRED` for files which must be there
 (otherwise the program exits with a fatal error).
+
+Non-absolute paths would be resolved relatively to NUT configuration file
+location.
 
 Global-scope includes may modify global default items and define new sections.
 

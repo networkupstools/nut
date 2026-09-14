@@ -46,17 +46,14 @@ NUT_MONITOR_PY3_COMMON = \
 NUT_MONITOR_PY3QT5 = \
 	app/nut-monitor-py3qt5.desktop
 
-NUT_MONITOR_PY3QT5_TEMPLATE = \
-	app/NUT-Monitor-py3qt5.in
+NUT_MONITOR_PY3QT_TEMPLATE = \
+	app/NUT-Monitor-py3qt.in
 
 NUT_MONITOR_PY3QT5_GENERATED_SCRIPT = \
 	app/NUT-Monitor-py3qt5
 
 NUT_MONITOR_PY3QT6 = \
 	app/nut-monitor-py3qt6.desktop
-
-NUT_MONITOR_PY3QT6_TEMPLATE = \
-	app/NUT-Monitor-py3qt6.in
 
 NUT_MONITOR_PY3QT6_GENERATED_SCRIPT = \
 	app/NUT-Monitor-py3qt6
@@ -153,17 +150,18 @@ NUT_MONITOR_DISPATCHER_NOEXEC = \
 NUT_MONITOR_DISPATCHER_SCRIPT = \
 	app/NUT-Monitor
 
+TESTS = app/NUT-Monitor-test.sh
+
 #################################################################
 # `make dist` tarball contents:
 EXTRA_DIST = \
 	$(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_DISPATCHER_SCRIPT) \
 	$(NUT_MONITOR_COMMON) $(NUT_MONITOR_COMMON_TEMPLATE) \
-	$(PYNUT_COMMON) $(PYNUT_TEMPLATE)
+	$(PYNUT_COMMON) $(PYNUT_TEMPLATE) $(TESTS)
 
 EXTRA_DIST += $(NUT_MONITOR_PY2GTK2) $(NUT_MONITOR_PY2GTK2_TEMPLATE)
-EXTRA_DIST += $(NUT_MONITOR_PY3_COMMON) \
-	$(NUT_MONITOR_PY3QT5) $(NUT_MONITOR_PY3QT5_TEMPLATE) \
-	$(NUT_MONITOR_PY3QT6) $(NUT_MONITOR_PY3QT6_TEMPLATE)
+EXTRA_DIST += $(NUT_MONITOR_PY3_COMMON) $(NUT_MONITOR_PY3QT_TEMPLATE) \
+	$(NUT_MONITOR_PY3QT5) $(NUT_MONITOR_PY3QT6)
 
 #################################################################
 # `make install` handling (nobase_ to keep tree structure):

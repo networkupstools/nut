@@ -14,6 +14,11 @@
 all: PyNUTClient
 
 check-local:
+	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no; then \
+		$(PYTHON_DEFAULT) "$(builddir)/test_nutclient.py" --disconnect ; \
+	else \
+		echo "Skipping Python disconnect tests: no Python interpreter configured" ; \
+	fi
 	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
 
 # NOT tying into "make check" because a lot of stars must align for this test:

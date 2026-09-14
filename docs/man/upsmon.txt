@@ -137,6 +137,27 @@ UPS actually plugged into a serial or USB port, and a "secondary" is drawing
 power from the UPS but can't talk to it directly.
 See the section on UPS types for more.
 
+SSL/TLS CONFIGURATION
+---------------------
+
+*upsmon* can connect to linkman:upsd[8] servers using SSL/TLS with per-server
+certificate verification and client certificate authentication. SSL/TLS
+configuration is defined in linkman:upsmon.conf[5] using CERTPATH, CERTVERIFY,
+CERTNAME, and CERTHOST directives.
+
+For systems monitoring multiple UPS devices managed by different entities
+(different CAs or security realms), *upsmon* automatically uses per-connection
+SSL contexts, allowing independent certificate verification and client
+certificate identities for each monitored UPS.
+
+OpenSSL builds support independent per-connection certificate authorities,
+while NSS builds support per-connection client certificate selection from a
+shared process-global database.
+
+See linkman:upsmon.conf[5] for detailed SSL/TLS configuration options, and
+linkman:upscli_get_or_create_ssl_context[3] for information on the registry
+mechanism used to manage per-connection SSL contexts.
+
 NOTIFY EVENTS
 -------------
 
@@ -736,6 +757,14 @@ Clients:
 
 linkman:upsc[8], linkman:upscmd[8],
 linkman:upsrw[8], linkman:upsmon[8]
+
+Client libraries and utilities:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+linkman:upsclient[3], linkman:upscli_init[3], linkman:upscli_cleanup[3],
+linkman:upscli_get_or_create_ssl_context[3],
+linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3]
 
 CGI programs:
 ~~~~~~~~~~~~~
