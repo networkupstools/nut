@@ -42,6 +42,10 @@ https://github.com/networkupstools/nut/milestone/13
    to patterns defined in link:docs/nut-names.txt[]
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * PyNUT: `GetUPSCommands()` now requests command descriptions with the
+      advertised identifiers on Python 3 and uses those identifiers when
+      extracting the response. Returned keys and descriptions remain byte
+      sequences. [issue #3621]
     * `nut-scanner` tool updates:
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]
@@ -505,6 +509,10 @@ https://github.com/networkupstools/nut/milestone/13
       query (for protocol version) to verify that handshake succeeded.
       This change impacted also the classic C `libupsclient` library.
       [issue #3387, PR #3402]
+    * `PyNUTClient.disconnect()` now attempts to send `LOGOUT`, closes the
+      socket and clears its reference while the client remains alive. Such
+      cleanup remains harmless when repeated or when socket operations fail.
+      [issue #3619, PR #3627]
     * Updated OpenSSL code paths in the `libupsclient` C library to support
       features earlier only available with NSS builds, like specifying the
       client certificate+key, optionally with password, and pinning expected
@@ -605,12 +613,17 @@ https://github.com/networkupstools/nut/milestone/13
     * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
+    * The PyQt5 and PyQt6 `NUT-Monitor` commands now share one Python 3
+      implementation. The dispatcher accepts `NUT_MONITOR_QT=5` or
+      `NUT_MONITOR_QT=6` to require a particular backend. [PR #3596]
     * Fixed Qt tray tooltips to render in plain text, not rich text which
       ended up as literal HTML on KDE Plasma 6; now that rich text formatting
       is only used for main window status labels. [PR #3430]
     * Fixed both Python 2 and 3 variants to handle automatic client reconnection
       (e.g. after system suspend/resume, network interruption, or NUT server
       restart). [issue #3509, PR #3523]
+    * Fixed wrong lookup into UI widgets which broke reconnection. [PR #3616]
+    * Fixed some issues with Qt6 startup and desktop file integration. [#3624]
     * Added support for `nutauth.conf` files as source of configuration about
       default/server/user access credentials and SSL setup. [#issue #3514]
     * Fixed TAB/SHIFT-TAB focus change order through login page. [PR #3533]

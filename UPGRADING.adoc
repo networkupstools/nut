@@ -111,6 +111,19 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   `bypass.start`, `shutdown.return`, `shutdown.reboot`, and
   `shutdown.reboot.graceful`. [issue #3593, #3603, PR #3604].
 
+- The NUT-Monitor GUI client application has historically branched from an
+  implementation with Python 2 syntax and GTK 2 backend for GUI, into another
+  script with Python 3 syntax and QT5 backend, and later another with QT6.
+  Those two latter scripts have now been re-merged into one with Python 3
+  syntax and support for both QT5 and QT6 backends, one selected at run-time
+  by the executable script name. Packaging-wise this should remain identical
+  to earlier releases (also for distributions which delivered more than one
+  implementation), however dependency rules can be now collapsed to requiring
+  any of the QT5/QT6 backends for essentially the same client script. Delivery
+  of the two filenames for same contents (to pick the backend at run-time) may
+  also be optimized with symbolic or hard links in packaging. [PR #3596]
+
+
 Changes from 2.8.4 to 2.8.5
 ---------------------------
 
