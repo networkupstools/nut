@@ -41,12 +41,19 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- The common configuration and protocol parser now accepts literal `#`
+  characters inside double quotes. An unescaped `#` outside double quotes
+  still starts a comment. Existing `\#` escapes remain supported and are
+  still needed when sharing configuration files with older NUT versions.
+  Encoded protocol output continues to escape hashes for older peers;
+  default `upsc` text output is unchanged. [issues #607, #1306, PR #3633]
+
 - Correct malformed numeric values in `upsd.conf` when upgrading: `MAXAGE`,
   `TRACKINGDELAY`, `MAXCONN` and numeric `CERTREQUEST` values are now checked
   in full and must fit their destination ranges. Values such as `15seconds`
   were previously read as `15`; these and overflowing values are now logged
-  and ignored, retaining the previous setting. Valid decimal values,
-  leading zeroes and trailing whitespace remain accepted. [issue #676]
+  and ignored, retaining the previous setting. Valid decimal values, leading
+  zeroes and trailing whitespace remain accepted. [issue #676, PR #3631]
 
 - Potentially a breaking change for C++ clients that rushed to use the new
   SSL support options in `libnutclient`: for Mozilla NSS setup, the way to
