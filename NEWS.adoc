@@ -62,6 +62,11 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `adelsystem_cbi` no longer reads past its onboard-temperature alarm table.
 
+ - `generic_modbus` and `adelsystem_cbi` preserve communication errors when
+   deciding whether to reconnect. They now reuse the configured connection
+   context and keep retrying after a failed runtime reconnect, preserving
+   custom TCP ports and reporting stale data until polling recovers.
+
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
    complete descriptor available on affected River 3 Plus firmware while
