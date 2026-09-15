@@ -586,16 +586,7 @@ uint64_t	upsnotify_extend_timeout_usec_default = 600 * 1000000,
 
 pid_t get_max_pid_t(void)
 {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	if (sizeof(pid_t) == sizeof(short)) return (pid_t)SHRT_MAX;
 	if (sizeof(pid_t) == sizeof(int)) return (pid_t)INT_MAX;
 	if (sizeof(pid_t) == sizeof(long)) return (pid_t)LONG_MAX;
@@ -605,12 +596,7 @@ pid_t get_max_pid_t(void)
 # endif
 #endif
 	abort();
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 }
 
 void check_perms(const char *fn)
@@ -2881,16 +2867,7 @@ char *xbasename_no_ext(const char *file)
 #endif
 
 	/* Some compilers detect that conditions are not changing at run-time: */
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 
 	if (!exeext) {
 #ifdef EXEEXT
@@ -2927,12 +2904,7 @@ char *xbasename_no_ext(const char *file)
 	if (!bn) {
 		bn = xstrdup(cs);
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 
 	return bn;
 }
