@@ -189,6 +189,7 @@ static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 }
 
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+/* Borrowed only until the scanner destroys or closes its semaphore. */
 static sem_t *global_sem, *protocol_sem;
 static unsigned int protocol_capacity;
 static int fail_init, interrupt_wait, fail_wait, fail_try_global, fail_try_protocol;
@@ -240,21 +241,31 @@ static int test_trywait(sem_t *sem)
 #  ifdef HAVE_SEMAPHORE_UNNAMED
 static int test_init(sem_t *sem, int shared, unsigned int value)
 {
+	int ret;
+
+	assert(sem != NULL && sem != global_sem && protocol_sem == NULL);
 	if (fail_init) {
 		errno = ENOSPC;
 		return -1;
 	}
-	protocol_sem = sem;
-	protocol_capacity = value;
-	return sem_init(sem, shared, value);
+	ret = sem_init(sem, shared, value);
+	if (ret == 0) {
+		protocol_sem = sem;
+		protocol_capacity = value;
+	}
+	return ret;
 }
 
 static int test_destroy(sem_t *sem)
 {
-	assert(sem == protocol_sem);
+	int ret;
+
+	assert(protocol_sem != NULL && sem == protocol_sem);
 	check_capacity(sem, protocol_capacity);
+	ret = sem_destroy(sem);
+	assert(ret == 0);
 	protocol_sem = NULL;
-	return sem_destroy(sem);
+	return ret;
 }
 #  else
 static sem_t *test_open(const char *name, int flags, ...)
@@ -264,6 +275,7 @@ static sem_t *test_open(const char *name, int flags, ...)
 
 	NUT_UNUSED_VARIABLE(name);
 	NUT_UNUSED_VARIABLE(flags);
+	assert(protocol_sem == NULL);
 	if (fail_init) {
 		errno = ENOSPC;
 		return SEM_FAILED;
@@ -282,10 +294,14 @@ static sem_t *test_open(const char *name, int flags, ...)
 
 static int test_close(sem_t *sem)
 {
-	assert(sem == protocol_sem);
+	int ret;
+
+	assert(protocol_sem != NULL && sem == protocol_sem);
 	check_capacity(sem, protocol_capacity);
+	ret = sem_close(sem);
+	assert(ret == 0);
 	protocol_sem = NULL;
-	return sem_close(sem);
+	return ret;
 }
 
 static int test_unlink(const char *name)
@@ -444,7 +460,7 @@ static void scenario(unsigned int limit, int failure)
 	max_threads = 2;
 	curr_threads = 0;
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
-	protocol_sem = NULL;
+	assert(protocol_sem == NULL);
 	fail_init = failure == 6;
 	interrupt_wait = failure == 7 ? 1 : 0;
 	fail_wait = failure == 8 ? 1 : (failure == 9 ? 2 : 0);
@@ -476,6 +492,7 @@ static void scenario(unsigned int limit, int failure)
 	assert(sem_close(global_sem) == 0);
 	nutscan_semaphore_set(NULL);
 #  endif
+	global_sem = NULL;
 # endif
 	assert(curr_threads == 0);
 	if (failure == 1 || failure == 2 || failure == 8 || failure == 9) {
