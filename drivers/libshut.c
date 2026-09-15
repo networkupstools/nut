@@ -598,15 +598,7 @@ static int libshut_open(
 
 	rdlen = desc->wDescriptorLength;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-type-limits.h"
 /* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -617,9 +609,7 @@ static int libshut_open(
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-type-limits-end.h"
 		upsdebugx(2,
 			"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 			" (max %" PRIuSIZE ")",
@@ -632,15 +622,7 @@ static int libshut_open(
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + 0, 0, ReportDesc,
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-type-limits.h"
 /* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -651,9 +633,7 @@ static int libshut_open(
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-type-limits-end.h"
 	{
 		res = callback(*arg_upsfd, curDevice, rdbuf, rdlen);
 		if (res < 1) {

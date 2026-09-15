@@ -1083,6 +1083,12 @@ end a quiesced block of source code, e.g.:
 	}
 ----
 
+The `nut-pragmas-type-limits.h` and `nut-pragmas-type-limits-end.h` pair
+can quiesce `-Wtype-limits` and
+`-Wtautological-constant-out-of-range-compare` around type range checks.
+The headers preserve the independent warning guards and can be included
+more than once. Keep any additional local diagnostics inside the pair.
+
 
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
