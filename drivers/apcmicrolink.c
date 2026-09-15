@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -354,6 +354,7 @@ static int microlink_update_blob(void);
 static int microlink_parse_descriptor(void);
 static int microlink_send_descriptor_mask_value(const char *path, uint64_t mask);
 static int microlink_send_command_descriptor_mask_value(const char *path, uint64_t mask);
+static int microlink_get_descriptor_map_bits(const char *path, uint32_t *bits);
 static int microlink_parse_descriptor_string_value(const char *val, size_t size,
 	unsigned char *payload);
 static int microlink_parse_descriptor_fixed_point_value(const microlink_desc_value_map_t *entry,
@@ -1405,22 +1406,28 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 		value = APC_BATTERY_TEST_CMD_ABORT;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
 		value = APC_USER_IF_CMD_SHORT_TEST;
-	} else if (!strcasecmp(nut_cmdname, "beeper.enable")) {
+	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
 		/* Not a "user interface command" bit like the rest of this table -
-		 * PowerChute's own CompositeAudibleAlarm class (decompiled) writes
-		 * a plain persistent value (1=enabled, 2=disabled) straight to the
-		 * device's alarm-setting usage (2:4.B.3A, the same one
-		 * ups.beeper.status reads), not a command register. This driver
-		 * used to expose beeper.mute here instead, writing
+		 * the beeper on/off control is a persistent setting on the device's
+		 * alarm-setting usage (2:4.B.3A, the same one ups.beeper.status
+		 * reads), not a command register. This driver used to expose
+		 * beeper.mute here instead, writing
 		 * APC_USER_IF_CMD_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS to 2:4.B.3B
 		 * (ported from apc_modbus's command set by analogy) - that had no
 		 * confirmed effect on real Microlink hardware, and "mute" is
 		 * documented as a temporary silence that self-clears, which this
 		 * persistent setting never was. beeper.enable/disable name what
-		 * the device actually supports. */
-		value = 1;
-	} else if (!strcasecmp(nut_cmdname, "beeper.disable")) {
-		value = 2;
+		 * the device actually supports.
+		 *
+		 * The actual value is computed below, not here: this register packs
+		 * an alarm-delay value alongside the enable/disable flag, so the
+		 * current value is read back and only ENABLED(1)/DISABLED(2) is ORed
+		 * in, clearing the other of the pair and leaving every other bit
+		 * (the delay) untouched.
+		 * This driver used to overwrite the whole register with a bare 1 or
+		 * 2, which zeroes the delay bits; real hardware silently ignores
+		 * that as an invalid write; see nut#3587. */
+		value = 0;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start")) {
 		value = APC_RUNTIME_CAL_CMD_START;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.stop")) {
@@ -1443,8 +1450,20 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 		*result = microlink_send_command_descriptor_mask_value("2:4.B.3B", value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
-		*result = microlink_send_command_descriptor_mask_value("2:4.B.3A", value)
-			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
+		uint32_t current_alarm_setting = 0;
+
+		if (!microlink_get_descriptor_map_bits("2:4.B.3A", &current_alarm_setting)) {
+			*result = STAT_INSTCMD_FAILED;
+		} else {
+			if (!strcasecmp(nut_cmdname, "beeper.enable")) {
+				value = (current_alarm_setting | 1U) & ~(uint64_t)2U;
+			} else {
+				value = (current_alarm_setting | 2U) & ~(uint64_t)1U;
+			}
+
+			*result = microlink_send_command_descriptor_mask_value("2:4.B.3A", value)
+				? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
+		}
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start") || !strcasecmp(nut_cmdname, "calibrate.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_RUNTIME_CAL);
 		*result = microlink_send_command_descriptor_mask_value("2:12", value)
