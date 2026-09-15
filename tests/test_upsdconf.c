@@ -126,15 +126,16 @@ static void check_value(const char *option, const char *value, int accepted, uin
 
 	/* Use the real file loader and tokenizer on startup and reload. A valid
 	 * preceding directive must survive a rejected duplicate. */
-	for (reloading = 0; reloading <= 1; reloading++) {
-		f = fopen(config_file, "w");
-		if (!f) fatal_with_errno(EXIT_FAILURE, "fopen test configuration");
-		fprintf(f, "MAXAGE 17\nTRACKINGDELAY 17\nMAXCONN 17\n");
+	f = fopen(config_file, "w");
+	if (!f) fatal_with_errno(EXIT_FAILURE, "fopen test configuration");
+	fprintf(f, "MAXAGE 17\nTRACKINGDELAY 17\nMAXCONN 17\n");
 #if defined(WITH_SSL) && defined(WITH_CLIENT_CERTIFICATE_VALIDATION)
-		fprintf(f, "CERTREQUEST REQUIRE\n");
+	fprintf(f, "CERTREQUEST REQUIRE\n");
 #endif
-		fprintf(f, "%s \"%s\"\n", option, value);
-		if (fclose(f)) fatal_with_errno(EXIT_FAILURE, "fclose test configuration");
+	fprintf(f, "%s \"%s\"\n", option, value);
+	if (fclose(f)) fatal_with_errno(EXIT_FAILURE, "fclose test configuration");
+
+	for (reloading = 0; reloading <= 1; reloading++) {
 		load_upsdconf(reloading);
 		actual = stored_value(option);
 		checks++;
