@@ -30,6 +30,7 @@
 #include "upsclient.h"
 #include "nut-scan.h"
 #include "nut_stdint.h"
+#include "nutscan-thread.h"
 
 /* externally visible to nutscan-init */
 int nutscan_unload_upsclient_library(void);
@@ -393,6 +394,19 @@ err:
 /* end of dynamic link library stuff */
 
 /* FIXME: SSL support */
+static void free_nut_arg(struct scan_nut_arg *arg)
+{
+	/* Work with host_cert list is mutex'ed in the upsclient library. */
+	if (nut_upscli_free_host_cert) {
+		(*nut_upscli_free_host_cert)(arg->hostname, NULL);
+	}
+	if (arg->ac_current && nut_upscli_free_authconf_item) {
+		(*nut_upscli_free_authconf_item)(arg->ac_current);
+	}
+	free(arg->hostname);
+	free(arg);
+}
+
 /* Performs a (parallel-able) NUT protocol scan of one remote host:port.
  * Returns NULL, updates global dev_ret when a scan is successful.
  * FREES the caller's copy of "nut_arg" and "hostname" in it, if applicable.
@@ -530,12 +544,12 @@ end:
 		free(ups);
 	}
 
-	if (target_hostname)
-		free(target_hostname);
-	if (hostname)
+	if (hostname) {
 		free(hostname);
-	if (nut_arg)
-		free(nut_arg);
+	}
+	if (nut_arg) {
+		free_nut_arg(nut_arg);
+	}
 
 	return NULL;
 }
@@ -613,12 +627,12 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 	sem_t * semaphore_scantype = NULL;
 #  endif
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
-	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
+#endif /* HAVE_PTHREAD */
 
 	const char *nutauth = sec ? sec->authconf_file : NULL;
 	upscli_authconf_t	*ac_default = NULL;
@@ -637,6 +651,14 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 	 * up to 1000000, but in practice would be at least 31-bit.
 	 * If no spec from caller, apply the default we have. */
 	useconds_t usec_timeout = sec ? sec->usec_timeout : (useconds_t)UPSCLI_DEFAULT_CONNECT_TIMEOUT_SEC * (1000*1000);
+
+	if (!nutscan_avail_nut) {
+		return NULL;
+	}
+
+	if (irl == NULL || irl->ip_ranges == NULL) {
+		return NULL;
+	}
 
 	if (nut_upscli_init_default_connect_timeout
 	 && nut_upscli_get_default_connect_timeout
@@ -702,7 +724,6 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	semaphore = nutscan_semaphore();
 # endif
-#endif
 
 	pthread_mutex_init(&dev_mutex, NULL);
 
@@ -749,14 +770,6 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 
 #endif /* HAVE_PTHREAD */
-
-	if (!nutscan_avail_nut) {
-		return NULL;
-	}
-
-	if (irl == NULL || irl->ip_ranges == NULL) {
-		return NULL;
-	}
 
 	if (!irl->ip_ranges->start_ip) {
 		upsdebugx(1, "%s: no starting IP address specified", __func__);
@@ -807,33 +820,14 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 		 */
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-		/* Just wait for someone to free a semaphored slot,
-		 * if none are available, and then/otherwise grab one
-		 */
-		if (thread_array == NULL) {
-			/* Starting point, or after a wait to complete
-			 * all earlier runners */
-			if (max_threads_scantype > 0)
-				sem_wait(semaphore_scantype);
-			sem_wait(semaphore);
-			pass = TRUE;
-		} else {
-			/* If successful (the lock was acquired),
-			 * sem_wait() and sem_trywait() will return 0.
-			 * Otherwise, -1 is returned and errno is set,
-			 * and the state of the semaphore is unchanged.
-			 */
-			int	stwST = sem_trywait(semaphore_scantype);
-			int	stwS  = sem_trywait(semaphore);
-			pass = (((max_threads_scantype == 0) || (stwST == 0)) && (stwS == 0)) ? TRUE : FALSE;
-			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
-				" curr_threads=%" PRIuSIZE
-				" thread_count=%" PRIuSIZE
-				" stwST=%d stwS=%d pass=%u",
-				__func__, max_threads_scantype,
-				curr_threads, thread_count,
-				stwST, stwS, pass
-			);
+		{
+			int admitted = nutscan_semaphore_acquire(semaphore,
+				semaphore_scantype, max_threads_scantype, thread_array == NULL);
+			if (admitted < 0) {
+				upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
+				break;
+			}
+			pass = admitted > 0 ? TRUE : FALSE;
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -927,8 +921,13 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 				ip_dest = strdup(ip_str);
 			}
 
-			if ((nut_arg = (struct scan_nut_arg*)malloc(sizeof(struct scan_nut_arg))) == NULL) {
+			if (ip_dest == NULL
+			|| (nut_arg = (struct scan_nut_arg*)malloc(sizeof(struct scan_nut_arg))) == NULL
+			) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
+#if defined HAVE_PTHREAD && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+				nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+#endif
 				free(ip_dest);
 				break;
 			}
@@ -957,53 +956,24 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			}
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, list_nut_devices_thready, (void*)nut_arg) == 0) {
-				nutscan_thread_t	*new_thread_array;
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_lock(&threadcount_mutex);
-				curr_threads++;
-# endif /* HAVE_PTHREAD_TRYJOIN */
-
-				thread_count++;
-				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
-					thread_count * sizeof(nutscan_thread_t));
-				if (new_thread_array == NULL) {
-					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
-# ifdef HAVE_PTHREAD_TRYJOIN
-					pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
-					break;
+			{
+				int ret = nutscan_thread_create(&thread_array, &thread_count,
+					list_nut_devices_thready, (void *)nut_arg);
+				if (ret != 0) {
+					free_nut_arg(nut_arg);
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+					nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+# endif
+					if (ret < 0) {
+						break;
+					}
 				}
-				else {
-					thread_array = new_thread_array;
-				}
-				thread_array[thread_count - 1].thread = thread;
-				thread_array[thread_count - 1].active = TRUE;
-
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
 			}
 #else  /* if not HAVE_PTHREAD */
 			list_nut_devices_thready(nut_arg);
 #endif /* if HAVE_PTHREAD */
 
-			/* NOTE: Work with host_cert list is
-			 *  mutex'ed in the upsclient library */
-			if (nut_upscli_free_host_cert) {
-				(*nut_upscli_free_host_cert)(ip_dest, NULL);
-			}
-
-			/* Prepare the next iteration; note that
-			 * nutscan_scan_ipmi_device_thready()
-			 * takes care of freeing "tmp_sec" and its
-			 * copy (note strdup!) of "ip_str" as
-			 * hostname, possibly suffixed with a port.
-			 */
-			if (nut_arg->ac_current && have_nutauth_methods) {
-				(*nut_upscli_free_authconf_item)(nut_arg->ac_current);
-				nut_arg->ac_current = NULL;
-			}
+			/* The worker owns nut_arg and its copied hostname. */
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
@@ -1022,9 +992,6 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 						 * but handle it just in case */
 						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 							__func__, i);
-						sem_post(semaphore);
-						if (max_threads_scantype > 0)
-							sem_post(semaphore_scantype);
 						continue;
 					}
 					thread_array[i].active = FALSE;
@@ -1033,9 +1000,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 							__func__, ret);
 					}
-					sem_post(semaphore);
-					if (max_threads_scantype > 0)
-						sem_post(semaphore_scantype);
+					nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 				}
 				thread_count = 0;
 				free(thread_array);
@@ -1049,6 +1014,8 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 #endif   /* HAVE_PTHREAD */
 		} /* if: could we "pass" or not? */
 	} /* while */
+
+	free(ip_str);
 
 #ifdef HAVE_PTHREAD
 	if (thread_array != NULL) {
@@ -1065,9 +1032,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			}
 			thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-			sem_post(semaphore);
-			if (max_threads_scantype > 0)
-				sem_post(semaphore_scantype);
+			nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
