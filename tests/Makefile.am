@@ -52,7 +52,8 @@ $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la \
 $(top_builddir)/clients/libnutclient.la \
-$(top_builddir)/clients/libnutclientstub.la: dummy @dotMAKE@
+$(top_builddir)/clients/libnutclientstub.la \
+$(top_builddir)/tools/nut-scanner/libnutscan.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/clients/upslog$(EXEEXT): dummy @dotMAKE@
@@ -261,6 +262,54 @@ endif !WITH_OPENSSL
   snmp_ups_setvar_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 endif WITH_SNMP
+
+# Compile each scanner's actual admission loop with offline worker probes.
+if WITH_NUT_SCANNER
+if WITH_THREADING
+NUTSCAN_TEST_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/clients $(LIBIPMI_CFLAGS)
+NUTSCAN_TEST_LDADD = $(NUT_LIBCOMMON) $(top_builddir)/tools/nut-scanner/libnutscan.la $(LIBLTDL_LIBS) $(SEMLIBS) $(NETLIBS)
+if WITH_SSL
+NUTSCAN_TEST_CFLAGS += $(LIBSSL_CFLAGS)
+endif WITH_SSL
+
+# Finish shared dependencies before the scanner's independent sub-make.
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_builddir)/clients/libupsclient.la
+
+TESTS += nutscan-nut-test
+nutscan_nut_test_SOURCES = nutscan-thread-test.c
+nutscan_nut_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=3
+nutscan_nut_test_LDADD = $(NUTSCAN_TEST_LDADD)
+nutscan_nut_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_nut.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+
+if WITH_SNMP
+# The scanner library generates this header before the test can include it.
+$(top_builddir)/tools/nut-scanner/nutscan-snmp.h: $(top_builddir)/tools/nut-scanner/libnutscan.la
+nutscan-thread-test.c: $(top_builddir)/tools/nut-scanner/nutscan-snmp.h
+
+TESTS += nutscan-snmp-test
+nutscan_snmp_test_SOURCES = nutscan-thread-test.c
+nutscan_snmp_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) $(LIBNETSNMP_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=1
+nutscan_snmp_test_LDADD = $(NUTSCAN_TEST_LDADD)
+nutscan_snmp_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_snmp.c $(top_builddir)/tools/nut-scanner/nutscan-snmp.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+endif WITH_SNMP
+
+if WITH_IPMI
+TESTS += nutscan-ipmi-test
+nutscan_ipmi_test_SOURCES = nutscan-thread-test.c
+nutscan_ipmi_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=2
+nutscan_ipmi_test_LDADD = $(NUTSCAN_TEST_LDADD)
+nutscan_ipmi_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_ipmi.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+endif WITH_IPMI
+
+if WITH_NEON
+TESTS += nutscan-xml-test
+nutscan_xml_test_SOURCES = nutscan-thread-test.c
+nutscan_xml_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) $(LIBNEON_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=4
+nutscan_xml_test_LDADD = $(NUTSCAN_TEST_LDADD)
+nutscan_xml_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_xml_http.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+endif WITH_NEON
+endif WITH_THREADING
+endif WITH_NUT_SCANNER
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests

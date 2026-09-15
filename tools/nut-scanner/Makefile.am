@@ -92,7 +92,7 @@ endif !ENABLE_SHARED_PRIVATE_LIBS
 bin_PROGRAMS =
 lib_LTLIBRARIES =
 include_HEADERS =
-dist_noinst_HEADERS =
+dist_noinst_HEADERS = nutscan-thread.h
 
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER

@@ -34,6 +34,7 @@
 int nutscan_unload_snmp_library(void);
 
 #if (defined WITH_SNMP) && WITH_SNMP
+#include "nutscan-thread.h"
 
 #ifndef WIN32
 # include <sys/socket.h>
@@ -1141,13 +1142,23 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 	sem_t * semaphore_scantype = NULL;
 #  endif
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
-	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
 
+#endif /* HAVE_PTHREAD */
+
+	if (!nutscan_avail_snmp) {
+		return NULL;
+	}
+
+	if (irl == NULL || irl->ip_ranges == NULL) {
+		return NULL;
+	}
+
+#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
@@ -1194,14 +1205,6 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 
 #endif /* HAVE_PTHREAD */
 
-	if (!nutscan_avail_snmp) {
-		return NULL;
-	}
-
-	if (irl == NULL || irl->ip_ranges == NULL) {
-		return NULL;
-	}
-
 	if (!irl->ip_ranges->start_ip) {
 		upsdebugx(1, "%s: no starting IP address specified", __func__);
 	} else if (irl->ip_ranges_count == 1
@@ -1238,33 +1241,14 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 		 */
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-		/* Just wait for someone to free a semaphored slot,
-		 * if none are available, and then/otherwise grab one
-		 */
-		if (thread_array == NULL) {
-			/* Starting point, or after a wait to complete
-			 * all earlier runners */
-			if (max_threads_scantype > 0)
-				sem_wait(semaphore_scantype);
-			sem_wait(semaphore);
-			pass = TRUE;
-		} else {
-			/* If successful (the lock was acquired),
-			 * sem_wait() and sem_trywait() will return 0.
-			 * Otherwise, -1 is returned and errno is set,
-			 * and the state of the semaphore is unchanged.
-			 */
-			int	stwST = sem_trywait(semaphore_scantype);
-			int	stwS  = sem_trywait(semaphore);
-			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
-			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
-				" curr_threads=%" PRIuSIZE
-				" thread_count=%" PRIuSIZE
-				" stwST=%d stwS=%d pass=%d",
-				__func__, max_threads_scantype,
-				curr_threads, thread_count,
-				stwST, stwS, pass
-			);
+		{
+			int admitted = nutscan_semaphore_acquire(semaphore,
+				semaphore_scantype, max_threads_scantype, thread_array == NULL);
+			if (admitted < 0) {
+				upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
+				break;
+			}
+			pass = admitted > 0 ? TRUE : FALSE;
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -1347,6 +1331,9 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 			tmp_sec = (nutscan_snmp_t*)malloc(sizeof(nutscan_snmp_t));
 			if (tmp_sec == NULL) {
 				upsdebugx(0, "%s: Memory allocation error", __func__);
+#if defined HAVE_PTHREAD && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+				nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+#endif
 				break;
 			}
 
@@ -1354,32 +1341,20 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, try_SysOID_thready, (void*)tmp_sec) == 0) {
-				nutscan_thread_t	*new_thread_array;
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_lock(&threadcount_mutex);
-				curr_threads++;
-# endif /* HAVE_PTHREAD_TRYJOIN */
-
-				thread_count++;
-				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
-					thread_count * sizeof(nutscan_thread_t));
-				if (new_thread_array == NULL) {
-					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
-# ifdef HAVE_PTHREAD_TRYJOIN
-					pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
-					break;
+			{
+				int ret = nutscan_thread_create(&thread_array, &thread_count,
+					try_SysOID_thready, (void *)tmp_sec);
+				if (ret != 0) {
+					free(tmp_sec);
+					free(ip_str);
+					ip_str = NULL;
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+					nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+# endif
+					if (ret < 0) {
+						break;
+					}
 				}
-				else {
-					thread_array = new_thread_array;
-				}
-				thread_array[thread_count - 1].thread = thread;
-				thread_array[thread_count - 1].active = TRUE;
-
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
 			}
 #else   /* if not HAVE_PTHREAD */
 			try_SysOID_thready(tmp_sec);
@@ -1408,9 +1383,6 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 						 * but handle it just in case */
 						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 							__func__, i);
-						sem_post(semaphore);
-						if (max_threads_scantype > 0)
-							sem_post(semaphore_scantype);
 						continue;
 					}
 					thread_array[i].active = FALSE;
@@ -1419,9 +1391,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 							__func__, ret);
 					}
-					sem_post(semaphore);
-					if (max_threads_scantype > 0)
-						sem_post(semaphore_scantype);
+					nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 				}
 				thread_count = 0;
 				free(thread_array);
@@ -1435,6 +1405,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 #endif   /* HAVE_PTHREAD */
 		} /* if: could we "pass" or not? */
 	} /* while */
+
+	free(ip_str);
 
 #ifdef HAVE_PTHREAD
 	if (thread_array != NULL) {
@@ -1451,9 +1423,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 			}
 			thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-			sem_post(semaphore);
-			if (max_threads_scantype > 0)
-				sem_post(semaphore_scantype);
+			nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
