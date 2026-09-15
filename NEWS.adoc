@@ -189,6 +189,13 @@ https://github.com/networkupstools/nut/milestone/13
       alarm-delay value it also holds untouched. Writing a bare 1 or 2
       zeroed the delay, and real hardware silently ignored that write,
       so the commands had no effect.
+    * `shutdown.return`, `shutdown.stayoff` and `shutdown.reboot.graceful`
+      now ask the UPS to apply its turn-on delay as well as its turn-off
+      delay. Without it the shutdown still happened, but switched outlet
+      groups did not sequence back on when mains power returned. The
+      command is built in `apc_common.c`, which the `apc_modbus` driver
+      shares, so its `DRIVER_VERSION` is bumped too; that driver's
+      behavior on this path has not been checked on hardware.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
