@@ -43,6 +43,15 @@ to its statically allocated buffer.  Common string operations in drivers
 in this case can benefit from similar `dstate_setinfo_dynamic()` or
 `dstate_addenum_dynamic()` methods.
 
+Existing code which intentionally uses a nonliteral format string can
+bracket the call with `nut-pragmas-format-nonliteral.h` and
+`nut-pragmas-format-nonliteral-end.h` to quiesce `-Wformat-nonliteral`
+and `-Wformat-security` diagnostics. These private headers can be included
+repeatedly, preserving the existing compiler capability guards and warning
+scope. They do not validate format strings; keep the reason for using a
+nonliteral format string next to the call and prefer the hardened methods
+above when applicable.
+
 Error reporting
 ~~~~~~~~~~~~~~~
 
