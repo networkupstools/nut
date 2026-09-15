@@ -40,6 +40,18 @@ but also many more. See its sources, as well as the top-level `Makefile.am`
 recipe and the `./tests/NIT/tmp/etc/NIT.env` file generated during a test run,
 for more details and examples about the currently supported tunables.
 
+Repeater freshness
+------------------
+
+After building `dummy-ups`, `upsd` and `upsc`, run the optional repeater
+protocol-fault tests with `make -C tests/NIT check-NIT-repeater` from the
+build directory. This requires Python 3 and uses only its standard library.
+The test runs disposable loopback endpoints and checks failed refreshes,
+incomplete variable lists, repeated recovery, strict and relaxed startup,
+and unaffected dummy modes through the real driver, server and client.
+It does not use hardware or send power commands. Temporary runtime and log
+directories are printed when the test starts.
+
 Caching!
 --------
 

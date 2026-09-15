@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -338,6 +338,7 @@ void upsdrv_updateinfo(void)
 			}
 			else
 			{
+				dstate_datastale();
 				/* try to reconnect */
 				upscli_disconnect(ups);
 				if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
@@ -698,12 +699,13 @@ static int upsclient_update_vars(void)
 		return ret;
 	}
 
-	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1)
+	while ((ret = upscli_list_next(ups, numq, query, &numa, &answer)) == 1)
 	{
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4)
 		{
 			upsdebugx(1, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
+			return -1;
 		}
 
 		upsdebugx(5, "Received: %s %s %s %s",
@@ -712,6 +714,11 @@ static int upsclient_update_vars(void)
 		/* do not override the driver collection */
 		if (strncmp(answer[2], "driver.", 7))
 			setvar(answer[2], answer[3]);
+	}
+	if (ret < 0)
+	{
+		upsdebugx(1, "Error: %s (%i)", upscli_strerror(ups), upscli_upserror(ups));
+		return ret;
 	}
 	return 1;
 }
