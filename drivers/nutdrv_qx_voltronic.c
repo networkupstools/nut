@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.14"
+#define VOLTRONIC_VERSION "Voltronic 0.15"
 
 /* Support functions */
 static int	voltronic_claim(void);
