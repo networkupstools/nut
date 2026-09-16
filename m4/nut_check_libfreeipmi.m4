@@ -109,6 +109,7 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
             nut_cv_LIBIPMI_CFLAGS=""
             nut_cv_LIBIPMI_LIBS=""
             nut_cv_SOFILE_LIBFREEIPMI=""
+            nut_cv_SONAME_LIBFREEIPMI=""
             nut_cv_SOPATH_LIBFREEIPMI=""
             AS_IF([test "${nut_cv_have_freeipmi}" = "yes"], [
                 nut_cv_with_ipmi="yes"
@@ -127,6 +128,7 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBFREEIPMI], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBFREEIPMI}" && test -s "${nut_cv_SOPATH_LIBFREEIPMI}"], [
                                 nut_cv_SOFILE_LIBFREEIPMI="`basename \"${nut_cv_SOPATH_LIBFREEIPMI}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBFREEIPMI}], [nut_cv_SONAME_LIBFREEIPMI], [])
                                 break
                             ])
                         ]
@@ -216,6 +218,7 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
             dnl For nut-scanner style autoloading:
             SOPATH_LIBFREEIPMI="${nut_cv_SOPATH_LIBFREEIPMI}"
             SOFILE_LIBFREEIPMI="${nut_cv_SOFILE_LIBFREEIPMI}"
+            SONAME_LIBFREEIPMI="${nut_cv_SONAME_LIBFREEIPMI}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBIPMI_CFLAGS_SOURCE="${nut_cv_LIBIPMI_CFLAGS_SOURCE}"
@@ -227,6 +230,9 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
                 AS_IF([test -n "${SOPATH_LIBFREEIPMI}" && test -s "${SOPATH_LIBFREEIPMI}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBFREEIPMI], ["${SOPATH_LIBFREEIPMI}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBFREEIPMI], ["${SOFILE_LIBFREEIPMI}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBFREEIPMI}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBFREEIPMI], ["${SONAME_LIBFREEIPMI}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 
