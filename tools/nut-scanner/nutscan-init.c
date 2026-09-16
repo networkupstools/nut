@@ -319,6 +319,12 @@ void nutscan_init(void)
 	 * may be incompatible with OS library builds), so we use full
 	 * SOPATH_LIB<X> as the last option, but prefer a presumably
 	 * known-compatible SOFILE_LIB<X> before that.
+	 *
+	 * Worth noting that at least on macOS the base name of the
+	 * install name (SOFILE_LIB<X>) already holds the version,
+	 * e.g. `libusb-1.0.0.dylib` and would be same as SONAME_LIB<X>,
+	 * so we check for duplicates below to avoid log clutter and
+	 * time overheads to search for a failed filename again.
 	 */
 
 #if (defined WITH_USB) && WITH_USB
@@ -330,7 +336,11 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBUSB1
+	&& strcmp(SONAME_LIBUSB1, SOFILE_LIBUSB1) != 0
+#   endif	/* SONAME_LIBUSB1 */
+	) {
 		libname = get_libname(SOFILE_LIBUSB1);
 	}
 #  endif	/* SOFILE_LIBUSB1 */
@@ -351,7 +361,11 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBUSB0
+	&& strcmp(SONAME_LIBUSB0, SOFILE_LIBUSB0) != 0
+#   endif	/* SONAME_LIBUSB0 */
+	) {
 		libname = get_libname(SOFILE_LIBUSB0);
 	}
 #  endif	/* SOFILE_LIBUSB0 */
@@ -397,7 +411,11 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
-		if (!nutscan_avail_usb) {
+		if (!nutscan_avail_usb
+#   ifdef SONAME_LIBUSB1
+		&& strcmp(SONAME_LIBUSB1, SOFILE_LIBUSB1) != 0
+#   endif	/* SONAME_LIBUSB1 */
+		) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
 		}
 #  endif	/* SOFILE_LIBUSB1 */
@@ -418,7 +436,11 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
-		if (!nutscan_avail_usb) {
+		if (!nutscan_avail_usb
+#   ifdef SONAME_LIBUSB0
+		&& strcmp(SONAME_LIBUSB0, SOFILE_LIBUSB0) != 0
+#   endif	/* SONAME_LIBUSB0 */
+		) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
 		}
 #  endif	/* SOFILE_LIBUSB0 */
@@ -467,7 +489,11 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBNETSNMP
+	&& strcmp(SONAME_LIBNETSNMP, SOFILE_LIBNETSNMP) != 0
+#   endif	/* SONAME_LIBNETSNMP */
+	) {
 		libname = get_libname(SOFILE_LIBNETSNMP);
 	}
 #  endif	/* SOFILE_LIBNETSNMP */
@@ -502,7 +528,11 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
-		if (!nutscan_avail_snmp) {
+		if (!nutscan_avail_snmp
+#   ifdef SONAME_LIBNETSNMP
+		&& strcmp(SONAME_LIBNETSNMP, SOFILE_LIBNETSNMP) != 0
+#   endif	/* SONAME_LIBNETSNMP */
+		) {
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
 		}
 #  endif	/* SOFILE_LIBNETSNMP */
@@ -535,7 +565,11 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBNEON
+	&& strcmp(SONAME_LIBNEON, SOFILE_LIBNEON) != 0
+#   endif	/* SONAME_LIBNEON */
+	) {
 		libname = get_libname(SOFILE_LIBNEON);
 	}
 # endif	/* SOFILE_LIBNEON */
@@ -576,7 +610,11 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
-		if (!nutscan_avail_xml_http) {
+		if (!nutscan_avail_xml_http
+#   ifdef SONAME_LIBNEON
+		&& strcmp(SONAME_LIBNEON, SOFILE_LIBNEON) != 0
+#   endif	/* SONAME_LIBNEON */
+		) {
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
 		}
 # endif	/* SOFILE_LIBNEON */
@@ -614,7 +652,11 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBAVAHI
+	&& strcmp(SONAME_LIBAVAHI, SOFILE_LIBAVAHI) != 0
+#   endif	/* SONAME_LIBAVAHI */
+	) {
 		libname = get_libname(SOFILE_LIBAVAHI);
 	}
 # endif	/* SOFILE_LIBAVAHI */
@@ -644,7 +686,11 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
-		if (!nutscan_avail_avahi) {
+		if (!nutscan_avail_avahi
+#   ifdef SONAME_LIBAVAHI
+		&& strcmp(SONAME_LIBAVAHI, SOFILE_LIBAVAHI) != 0
+#   endif	/* SONAME_LIBAVAHI */
+		) {
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
 		}
 # endif	/* SOFILE_LIBAVAHI */
@@ -674,7 +720,11 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBGIO
+	&& strcmp(SONAME_LIBGIO, SOFILE_LIBGIO) != 0
+#   endif	/* SONAME_LIBGIO */
+	) {
 		libname = get_libname(SOFILE_LIBGIO);
 	}
 # endif	/* SOFILE_LIBGIO */
@@ -704,7 +754,11 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
-		if (!nutscan_avail_upower) {
+		if (!nutscan_avail_upower
+#   ifdef SONAME_LIBGIO
+		&& strcmp(SONAME_LIBGIO, SOFILE_LIBGIO) != 0
+#   endif	/* SONAME_LIBGIO */
+		) {
 			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
 		}
 # endif	/* SOFILE_LIBGIO */
@@ -731,7 +785,11 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
-	if (!libname) {
+	if (!libname
+#   ifdef SONAME_LIBFREEIPMI
+	&& strcmp(SONAME_LIBFREEIPMI, SOFILE_LIBFREEIPMI) != 0
+#   endif	/* SONAME_LIBFREEIPMI */
+	) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
 	}
 # endif	/* SOFILE_LIBFREEIPMI */
@@ -760,7 +818,11 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
-		if (!nutscan_avail_ipmi) {
+		if (!nutscan_avail_ipmi
+#   ifdef SONAME_LIBFREEIPMI
+		&& strcmp(SONAME_LIBFREEIPMI, SOFILE_LIBFREEIPMI) != 0
+#   endif	/* SONAME_LIBFREEIPMI */
+		) {
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
 		}
 # endif	/* SOFILE_LIBFREEIPMI */
