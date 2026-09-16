@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3831 utf-8
+personal_ws-1.1 en 3839 utf-8
 AAC
 AAS
 ABI
@@ -1254,9 +1254,12 @@ SOCKADDR
 SOCKLEN
 SOCOMECUPS
 SOFF
+SOFILE
 SOG
 SOLA
 SOMECO
+SONAME
+SOPATH
 SOURCEMODE
 SOV
 SPARC
@@ -2147,6 +2150,7 @@ egrep
 ei
 el
 elementWidth
+elfdump
 els
 emacs
 emptor
@@ -2911,6 +2915,7 @@ nutvalue
 nvi
 nvo
 nwfilter
+objdump
 odette
 offdelay
 offsite
@@ -2959,6 +2964,7 @@ osc
 ostream
 other's
 otheruser
+otool
 ouGDQn
 outliers
 overtemp
@@ -3131,6 +3137,7 @@ raritan
 rb
 rc
 rcctl
+readelf
 readline
 readonly
 realpath
@@ -3346,6 +3353,7 @@ solis
 somename
 somepass
 something's
+soname
 sortable
 sortdict
 sp

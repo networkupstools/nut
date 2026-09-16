@@ -305,18 +305,30 @@ void nutscan_init(void)
 	 * From the build time we can remember full SOPATH_LIB<X> and/or
 	 * base SOFILE_LIB<X> with specific library file names available
 	 * on the build system (with ".so.X.Y.Z" extensions or "libX-YZ.dll"
-	 * embedded version identifiers).
+	 * embedded version identifiers), as well as SONAME_LIB<X> with the
+	 * name the run-time linker itself would look for (e.g. "libX.so.N").
+	 *
+	 * The SONAME is tried first: an OS package update of the library
+	 * which keeps its ABI (so the SONAME stays the same) usually renames
+	 * the actual file (".so.N.Y.Z" -> ".so.N.Y+1.0"), and then a NUT
+	 * binary that only knew the old file name would silently lose that
+	 * scanning ability until it got rebuilt (issue #3474).
 	 *
 	 * Historically we allow run-time environments to override the
 	 * library search paths (e.g. for bundled NUT installers that
 	 * may be incompatible with OS library builds), so we use full
 	 * SOPATH_LIB<X> as the last option, but prefer a presumably
-	 * known-compatible SOFILE_LIB<X> first.
+	 * known-compatible SOFILE_LIB<X> before that.
 	 */
 
 #if (defined WITH_USB) && WITH_USB
 # if WITH_LIBUSB_1_0
 
+#  ifdef SONAME_LIBUSB1
+	if (!libname) {
+		libname = get_libname(SONAME_LIBUSB1);
+	}
+#  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBUSB1);
@@ -333,6 +345,11 @@ void nutscan_init(void)
 
 # else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
 
+#  ifdef SONAME_LIBUSB0
+	if (!libname) {
+		libname = get_libname(SONAME_LIBUSB0);
+	}
+#  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBUSB0);
@@ -374,6 +391,11 @@ void nutscan_init(void)
 
 # if WITH_LIBUSB_1_0
 
+#  ifdef SONAME_LIBUSB1
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SONAME_LIBUSB1);
+		}
+#  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
@@ -390,6 +412,11 @@ void nutscan_init(void)
 
 # else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
 
+#  ifdef SONAME_LIBUSB0
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SONAME_LIBUSB0);
+		}
+#  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
@@ -434,6 +461,11 @@ void nutscan_init(void)
 		__func__, "LibSNMP");
 	nutscan_avail_snmp = 1;
 # else	/* not WITH_SNMP_STATIC */
+#  ifdef SONAME_LIBNETSNMP
+	if (!libname) {
+		libname = get_libname(SONAME_LIBNETSNMP);
+	}
+#  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBNETSNMP);
@@ -464,6 +496,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibSNMP");
+#  ifdef SONAME_LIBNETSNMP
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library(SONAME_LIBNETSNMP);
+		}
+#  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
 		if (!nutscan_avail_snmp) {
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
@@ -492,6 +529,11 @@ void nutscan_init(void)
 #endif	/* WITH_SNMP */
 
 #if (defined WITH_NEON) && WITH_NEON
+# ifdef SONAME_LIBNEON
+	if (!libname) {
+		libname = get_libname(SONAME_LIBNEON);
+	}
+# endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBNEON);
@@ -528,6 +570,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibNeon");
+# ifdef SONAME_LIBNEON
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library(SONAME_LIBNEON);
+		}
+# endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
@@ -561,6 +608,11 @@ void nutscan_init(void)
 #endif	/* WITH_NEON */
 
 #if (defined WITH_AVAHI) && WITH_AVAHI
+# ifdef SONAME_LIBAVAHI
+	if (!libname) {
+		libname = get_libname(SONAME_LIBAVAHI);
+	}
+# endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBAVAHI);
@@ -586,6 +638,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibAvahi");
+# ifdef SONAME_LIBAVAHI
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library(SONAME_LIBAVAHI);
+		}
+# endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
 		if (!nutscan_avail_avahi) {
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
@@ -611,6 +668,11 @@ void nutscan_init(void)
 /* NOTE: There may be a stack of libraries involved (libgio, libglib2,
  *  libmount...) in driver programs, but one entry point suffices
  *  (and/or dynamically pulls in the others) for just the scan itself */
+# ifdef SONAME_LIBGIO
+	if (!libname) {
+		libname = get_libname(SONAME_LIBGIO);
+	}
+# endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBGIO);
@@ -636,6 +698,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibGIO");
+# ifdef SONAME_LIBGIO
+		if (!nutscan_avail_upower) {
+			nutscan_avail_upower = nutscan_load_upower_library(SONAME_LIBGIO);
+		}
+# endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
 		if (!nutscan_avail_upower) {
 			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
@@ -658,6 +725,11 @@ void nutscan_init(void)
 #endif	/* WITH_UPOWER */
 
 #if (defined WITH_FREEIPMI) && WITH_FREEIPMI
+# ifdef SONAME_LIBFREEIPMI
+	if (!libname) {
+		libname = get_libname(SONAME_LIBFREEIPMI);
+	}
+# endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
 	if (!libname) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
@@ -682,6 +754,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibFreeIPMI");
+# ifdef SONAME_LIBFREEIPMI
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library(SONAME_LIBFREEIPMI);
+		}
+# endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
 		if (!nutscan_avail_ipmi) {
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);

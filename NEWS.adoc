@@ -49,6 +49,14 @@ https://github.com/networkupstools/nut/milestone/13
     * `nut-scanner` tool updates:
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]
+      - Third-party libraries which `nut-scanner` loads dynamically (libusb,
+        Net-SNMP, neon, Avahi, GLib/GIO, FreeIPMI) are now looked up by the
+        `SONAME` recorded in the shared object seen at build time (such as
+        `libusb-1.0.so.0`) before the fully versioned file name seen then
+        (such as `libusb-1.0.so.0.6.0`). Previously an ABI-compatible update
+        of such a library by the OS distribution, which renamed the file but
+        kept the `SONAME`, silently disabled that scan type until the NUT
+        package was rebuilt. [issue #3474]
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]

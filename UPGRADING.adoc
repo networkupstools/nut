@@ -39,6 +39,14 @@ Changes from 2.8.5 to 2.8.6
   where grouping was intended. The legacy `Set()` argument contract is
   unchanged.
 
+- `nut-scanner` now prefers the `SONAME` of each dynamically loaded library
+  (such as `libusb-1.0.so.0`) over the fully versioned file name it saw at
+  build time (such as `libusb-1.0.so.0.6.0`). Packagers no longer need to
+  rebuild NUT after an ABI-compatible update of libusb, Net-SNMP, neon,
+  Avahi, GLib or FreeIPMI which only changed that file name. The detected
+  values are reported by `./configure` as `SONAME_LIB*` next to the
+  existing `SOPATH_LIB*` and `SOFILE_LIB*` values. [issue #3474]
+
 - PLANNED: Keep track of any further API clean-up?
 
 - Correct malformed numeric values in `upsd.conf` when upgrading: `MAXAGE`,
