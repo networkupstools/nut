@@ -22,6 +22,16 @@ PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
 
 https://github.com/networkupstools/nut/milestone/13
 
+ - `nutdrv_qx` updates:
+   * Introduced a `santak` subdriver and protocol for single-phase Santak
+     Castle C*K units, developed and tested against a Castle C1K (`C1K(G7)`)
+     over RS232. These speak the same Q6 dialect as `innovart31`, but are
+     single-phase and NAK the `F` ratings query, so `innovart31` rejects them
+     outright. Model, nominal output and the input transfer window are read
+     from the `WH` command instead; `battery.charge`, `battery.runtime` and a
+     pack-level `battery.voltage` come from `Q6`, none of which the previously
+     documented `blazer_ser` mapping could provide. [#1039]
+
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
