@@ -336,6 +336,16 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBUSB1
 	&& strcmp(SONAME_LIBUSB1, SOFILE_LIBUSB1) != 0
@@ -343,6 +353,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBUSB1);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBUSB1 */
 	if (!libname) {
 		libname = get_libname("libusb-1.0" SOEXT);
@@ -361,6 +377,16 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBUSB0
 	&& strcmp(SONAME_LIBUSB0, SOFILE_LIBUSB0) != 0
@@ -368,6 +394,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBUSB0);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBUSB0 */
 	if (!libname) {
 		libname = get_libname("libusb-0.1" SOEXT);
@@ -411,6 +443,16 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBUSB1 */
 #  ifdef SOFILE_LIBUSB1
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_usb
 #   ifdef SONAME_LIBUSB1
 		&& strcmp(SONAME_LIBUSB1, SOFILE_LIBUSB1) != 0
@@ -418,6 +460,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBUSB1 */
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
@@ -436,6 +484,16 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBUSB0 */
 #  ifdef SOFILE_LIBUSB0
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_usb
 #   ifdef SONAME_LIBUSB0
 		&& strcmp(SONAME_LIBUSB0, SOFILE_LIBUSB0) != 0
@@ -443,6 +501,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBUSB0 */
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
@@ -489,6 +553,16 @@ void nutscan_init(void)
 	}
 #  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBNETSNMP
 	&& strcmp(SONAME_LIBNETSNMP, SOFILE_LIBNETSNMP) != 0
@@ -496,6 +570,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBNETSNMP);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBNETSNMP */
 	if (!libname) {
 		libname = get_libname("libnetsnmp" SOEXT);
@@ -528,6 +608,16 @@ void nutscan_init(void)
 		}
 #  endif	/* SONAME_LIBNETSNMP */
 #  ifdef SOFILE_LIBNETSNMP
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_snmp
 #   ifdef SONAME_LIBNETSNMP
 		&& strcmp(SONAME_LIBNETSNMP, SOFILE_LIBNETSNMP) != 0
@@ -535,6 +625,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 #  endif	/* SOFILE_LIBNETSNMP */
 		if (!nutscan_avail_snmp) {
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
@@ -565,6 +661,16 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBNEON
 	&& strcmp(SONAME_LIBNEON, SOFILE_LIBNEON) != 0
@@ -572,6 +678,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBNEON);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBNEON */
 	if (!libname) {
 		libname = get_libname("libneon" SOEXT);
@@ -610,6 +722,16 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBNEON */
 # ifdef SOFILE_LIBNEON
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_xml_http
 #   ifdef SONAME_LIBNEON
 		&& strcmp(SONAME_LIBNEON, SOFILE_LIBNEON) != 0
@@ -617,6 +739,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBNEON */
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
@@ -652,6 +780,16 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBAVAHI
 	&& strcmp(SONAME_LIBAVAHI, SOFILE_LIBAVAHI) != 0
@@ -659,6 +797,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBAVAHI);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBAVAHI */
 	if (!libname) {
 		libname = get_libname("libavahi-client" SOEXT);
@@ -686,6 +830,16 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBAVAHI */
 # ifdef SOFILE_LIBAVAHI
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_avahi
 #   ifdef SONAME_LIBAVAHI
 		&& strcmp(SONAME_LIBAVAHI, SOFILE_LIBAVAHI) != 0
@@ -693,6 +847,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBAVAHI */
 		if (!nutscan_avail_avahi) {
 			nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
@@ -720,6 +880,16 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBGIO
 	&& strcmp(SONAME_LIBGIO, SOFILE_LIBGIO) != 0
@@ -727,6 +897,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBGIO);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBGIO */
 	if (!libname) {
 		libname = get_libname("libgio-2.0" SOEXT);
@@ -754,6 +930,16 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBGIO */
 # ifdef SOFILE_LIBGIO
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_upower
 #   ifdef SONAME_LIBGIO
 		&& strcmp(SONAME_LIBGIO, SOFILE_LIBGIO) != 0
@@ -761,6 +947,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBGIO */
 		if (!nutscan_avail_upower) {
 			nutscan_avail_upower = nutscan_load_upower_library("libgio-2.0" SOEXT);
@@ -785,6 +977,16 @@ void nutscan_init(void)
 	}
 # endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	if (!libname
 #   ifdef SONAME_LIBFREEIPMI
 	&& strcmp(SONAME_LIBFREEIPMI, SOFILE_LIBFREEIPMI) != 0
@@ -792,6 +994,12 @@ void nutscan_init(void)
 	) {
 		libname = get_libname(SOFILE_LIBFREEIPMI);
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBFREEIPMI */
 	if (!libname) {
 		libname = get_libname("libfreeipmi" SOEXT);
@@ -818,6 +1026,16 @@ void nutscan_init(void)
 		}
 # endif	/* SONAME_LIBFREEIPMI */
 # ifdef SOFILE_LIBFREEIPMI
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 		if (!nutscan_avail_ipmi
 #   ifdef SONAME_LIBFREEIPMI
 		&& strcmp(SONAME_LIBFREEIPMI, SOFILE_LIBFREEIPMI) != 0
@@ -825,6 +1043,12 @@ void nutscan_init(void)
 		) {
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
 		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 # endif	/* SOFILE_LIBFREEIPMI */
 		if (!nutscan_avail_ipmi) {
 			nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
