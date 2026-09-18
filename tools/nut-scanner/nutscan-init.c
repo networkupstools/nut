@@ -458,6 +458,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBUSB1, SOFILE_LIBUSB1) != 0
 #   endif	/* SONAME_LIBUSB1 */
 		) {
+#   ifdef SONAME_LIBUSB1
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_usb_library();
+#   endif	/* SONAME_LIBUSB1 */
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
 		}
 #ifdef __clang__
@@ -499,6 +504,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBUSB0, SOFILE_LIBUSB0) != 0
 #   endif	/* SONAME_LIBUSB0 */
 		) {
+#   ifdef SONAME_LIBUSB0
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_usb_library();
+#   endif	/* SONAME_LIBUSB0 */
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
 		}
 #ifdef __clang__
@@ -623,6 +633,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBNETSNMP, SOFILE_LIBNETSNMP) != 0
 #   endif	/* SONAME_LIBNETSNMP */
 		) {
+#   ifdef SONAME_LIBNETSNMP
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_snmp_library();
+#   endif	/* SONAME_LIBNETSNMP */
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
 		}
 #ifdef __clang__
@@ -737,6 +752,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBNEON, SOFILE_LIBNEON) != 0
 #   endif	/* SONAME_LIBNEON */
 		) {
+#   ifdef SONAME_LIBNEON
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_neon_library();
+#   endif	/* SONAME_LIBNEON */
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
 		}
 #ifdef __clang__
@@ -845,6 +865,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBAVAHI, SOFILE_LIBAVAHI) != 0
 #   endif	/* SONAME_LIBAVAHI */
 		) {
+#   ifdef SONAME_LIBAVAHI
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_avahi_library();
+#   endif	/* SONAME_LIBAVAHI */
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
 		}
 #ifdef __clang__
@@ -945,6 +970,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBGIO, SOFILE_LIBGIO) != 0
 #   endif	/* SONAME_LIBGIO */
 		) {
+#   ifdef SONAME_LIBGIO
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_upower_library();
+#   endif	/* SONAME_LIBGIO */
 			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
 		}
 #ifdef __clang__
@@ -1041,6 +1071,11 @@ void nutscan_init(void)
 		&& strcmp(SONAME_LIBFREEIPMI, SOFILE_LIBFREEIPMI) != 0
 #   endif	/* SONAME_LIBFREEIPMI */
 		) {
+#   ifdef SONAME_LIBFREEIPMI
+			/* Drop the cached failure of the SONAME attempt above,
+			 * so that this candidate name is really tried */
+			nutscan_unload_ipmi_library();
+#   endif	/* SONAME_LIBFREEIPMI */
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
 		}
 #ifdef __clang__
