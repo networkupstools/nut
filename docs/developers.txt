@@ -1087,6 +1087,13 @@ covered-switch pair is used as follows:
 	}
 ----
 
+The `nut-pragmas-unreachable-code.h` and
+`nut-pragmas-unreachable-code-end.h` pair suppresses `-Wunreachable-code`
+using the existing aggregate GCC capability guard and Clang pragmas.
+These private headers can be included repeatedly. Keep the pair
+at the original diagnostic boundaries; regions with different guards or
+additional warnings need their own pragmas.
+
 
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
