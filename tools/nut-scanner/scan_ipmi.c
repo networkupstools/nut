@@ -868,7 +868,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 			{
-				int admitted = nutscan_semaphore_acquire(semaphore,
+				int admitted = nut_scanner_semaphore_acquire(semaphore,
 					semaphore_scantype, max_threads_scantype, thread_array == NULL);
 				if (admitted < 0) {
 					upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
@@ -958,7 +958,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
 #if defined HAVE_PTHREAD && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
-					nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+					nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 #endif
 					break;
 				}
@@ -968,14 +968,14 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 
 #ifdef HAVE_PTHREAD
 				{
-					int ret = nutscan_thread_create(&thread_array, &thread_count,
+					int ret = nut_scanner_thread_create(&thread_array, &thread_count,
 						nutscan_scan_ipmi_device_thready, (void *)tmp_sec);
 					if (ret != 0) {
 						free(tmp_sec);
 						free(ip_str);
 						ip_str = NULL;
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
-						nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+						nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # endif
 						if (ret < 0) {
 							break;
@@ -1017,7 +1017,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 							upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 								__func__, ret);
 						}
-						nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+						nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 					}
 					thread_count = 0;
 					free(thread_array);
@@ -1049,7 +1049,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 				}
 				thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-				nutscan_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+				nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);

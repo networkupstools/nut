@@ -101,7 +101,7 @@ if WITH_NUT_SCANNER
 endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
-			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
+			nutscan-init.c nutscan-thread.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			scan_upower.c
 libnutscan_la_LIBADD = $(NETLIBS)

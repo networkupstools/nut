@@ -52,6 +52,9 @@ static int test_unlink(const char *name);
 #  endif
 # endif
 
+/* Intercept the shared helpers as well as the scanner loop. */
+# include "nutscan-thread.c"
+
 # if NUTSCAN_TEST_PROTOCOL == 1
 #  include "scan_snmp.c"
 # elif NUTSCAN_TEST_PROTOCOL == 2
