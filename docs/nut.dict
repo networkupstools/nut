@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3834 utf-8
+personal_ws-1.1 en 3840 utf-8
 AAC
 AAS
 ABI
@@ -788,6 +788,7 @@ MicroFerrups
 Microline
 Micropower
 Microsol
+Microtek
 Mikiewicz
 Milkov
 MinGW
@@ -1116,6 +1117,7 @@ QOL
 QP
 QPAR
 QPD
+QPI
 QQ
 QQQ
 QRI
@@ -1571,6 +1573,7 @@ WebFreak
 Werror
 Weverything
 Wextra
+Wformat
 WhizBang
 WiX
 Wikipedia
@@ -1582,6 +1585,8 @@ WinUSB
 Wireshark
 Wl
 Wrede
+Wtautological
+Wtype
 Wunreachable
 XAU
 XC
@@ -2863,6 +2868,7 @@ nolock
 nombattvolt
 nonascii
 noncommercially
+nonliteral
 noout
 nooutstats
 noprimarytime
