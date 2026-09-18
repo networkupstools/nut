@@ -57,6 +57,11 @@ https://github.com/networkupstools/nut/milestone/13
         of such a library by the OS distribution, which renamed the file but
         kept the `SONAME`, silently disabled that scan type until the NUT
         package was rebuilt. [issue #3474]
+      - When the NUT client library was not found under its known file names
+        and had to be loaded by the libtool default search instead, the
+        result was stored as the availability of the XML/HTTP scan. So the
+        `-M` scan could be disabled despite a working `libneon`, or offered
+        without one (impacts NUT v2.8.3 through v2.8.5). [PR #3657]
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]

@@ -624,6 +624,8 @@
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
 "Infosec"	"ups"	"1"	"(various)"	"Serial"	"nutdrv_hashx"	# https://www.infosec-ups.com/en/powermaster
 
+"ION"	"ups"	"3"	"F11"	"F11-650 (USB ID 06da:ffff)"	"usbhid-ups pollonly"	# https://ionups.com.au/products/UPS?name=F11
+
 "IPAR"	"ups"	"2"	"Mini Energy ME 800"	"USB"	"blazer_usb"
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"

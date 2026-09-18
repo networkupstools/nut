@@ -842,7 +842,7 @@ void nutscan_init(void)
 	if (!libname) {
 		libname = get_libname(SOPATH_LIBFREEIPMI);
 	}
-# endif	/* SOPATH_LIBAVAHI */
+# endif	/* SOPATH_LIBFREEIPMI */
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibFreeIPMI");
@@ -928,10 +928,12 @@ void nutscan_init(void)
 			__func__, "NUT Client library");
 #ifdef SOFILE_LIBUPSCLIENT
 		if (!nutscan_avail_nut) {
-			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
+			nutscan_avail_nut = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
 		}
 #endif	/* SOFILE_LIBUPSCLIENT */
-		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+		}
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
@@ -942,9 +944,9 @@ void nutscan_init(void)
 #endif	/* WIN32 */
 #ifdef SOPATH_LIBUPSCLIENT
 		if (!nutscan_avail_nut) {
-			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
+			nutscan_avail_nut = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
 		}
-#endif	/* SOFILE_LIBUPSCLIENT */
+#endif	/* SOPATH_LIBUPSCLIENT */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");
