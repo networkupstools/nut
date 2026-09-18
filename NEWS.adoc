@@ -309,6 +309,9 @@ https://github.com/networkupstools/nut/milestone/13
       5.2.3 GPL sources. Polling and the direct shutdown commands were verified
       on an unloaded BN150T over USB; other OMRON models and serial connections
       are untested. [issue #3112, PR #3554]
+    * Updated `voltronic` subdriver to support Microtek/Voltronic UPS devices
+      that report `QPI` as `(PI71`, such as Microtek GI3KL 3000VA Online UPS.
+      [PR #3655]
     * In `Voltronic-QS-Hex` subdriver, the format string sanity check added in
       recent NUT releases caught a mismatch in `ups.load` reading. [issue #3532]
     * Modified `voltronic-qs` subdriver to request the QI command, supplying
