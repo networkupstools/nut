@@ -1096,12 +1096,18 @@ covered-switch pair is used as follows:
 	}
 ----
 
+The `nut-pragmas-type-limits.h` and `nut-pragmas-type-limits-end.h`
+pair can quiesce `-Wtautological-constant-out-of-range-compare` and
+`-Wtype-limits` around type range checks.
+
 The `nut-pragmas-unreachable-code.h` and
 `nut-pragmas-unreachable-code-end.h` pair suppresses `-Wunreachable-code`
 using the existing aggregate GCC capability guard and Clang pragmas.
-These private headers can be included repeatedly. Keep the pair
-at the original diagnostic boundaries; regions with different guards or
-additional warnings need their own pragmas.
+
+The headers preserve the independent warning guards and can be included
+more than once. Keep the pair at the original diagnostic boundaries;
+regions with different guards or additional warnings need their own
+pragmas.
 
 
 Switch case fall-through
