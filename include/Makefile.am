@@ -18,6 +18,12 @@ dist_noinst_HEADERS = \
     nut-pragmas-covered-switch-default-end.h			\
     nut-pragmas-type-limits.h				\
     nut-pragmas-type-limits-end.h				\
+    nut-pragmas-format-nonliteral.h				\
+    nut-pragmas-format-nonliteral-end.h			\
+    nut-pragmas-range-checks.h				\
+    nut-pragmas-range-checks-end.h				\
+    nut-pragmas-unreachable-code.h				\
+    nut-pragmas-unreachable-code-end.h			\
     strcasestr-static.h wincompat.h
 
 # Optionally deliverable as part of NUT public API:

@@ -1569,6 +1569,7 @@ WebFreak
 Werror
 Weverything
 Wextra
+Wformat
 WhizBang
 WiX
 Wikipedia
@@ -2863,6 +2864,7 @@ nolock
 nombattvolt
 nonascii
 noncommercially
+nonliteral
 noout
 nooutstats
 noprimarytime
