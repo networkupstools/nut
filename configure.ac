@@ -2915,7 +2915,7 @@ nut_ssl_lib=""
 NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
-NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation ability (currently requires NSS, beware issue #3329)], [auto])
+NUT_ARG_WITH([ssl-client-validation], [enable SSL client certificate validation ability], [auto])
 
 dnl Optionally reset/initialize the cache values shared by several backends
 dnl if the check methods below never ran for all active code paths (one or more):
@@ -3001,7 +3001,8 @@ AS_CASE([${nut_with_ssl_client_validation}],
     [yes|""], [nut_with_ssl_client_validation="yes"],
         dnl TOTHINK: reject if openssl/none build?
     [auto|*], [nut_with_ssl_client_validation="no"]
-        dnl Until #3329 is solved, auto==no
+        dnl Although #3329 is solved with NUT v2.8.5, for now keep auto==no
+        dnl TODO: Flip in a later release, e.g. v2.9.0?
 )
 NUT_REPORT_FEATURE([enable SSL client certificate validation],
 	[${nut_with_ssl_client_validation}], [],
