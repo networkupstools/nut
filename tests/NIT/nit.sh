@@ -24,6 +24,7 @@
 #	NUT_DEBUG_LEVEL_UPSSCHED=3	to set debug level for particular
 #			NUT daemons or tools
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
+#	NIT_PARSECONF_TIMEOUT=60	per-query watchdog seconds for parser tests
 #	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
 #			PID files, this option tells daemons to save them
 #	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
@@ -4924,6 +4925,64 @@ EOF
     sandbox_forget_configs
 }
 
+testcase_sandbox_parseconf() {
+    if ! isTestablePython || [ -z "${PYTHON}" ] \
+    || ! $PYTHON -c 'import json' >/dev/null 2>&1 ; then
+        case "${NIT_CASE}" in
+        testcase_sandbox_parseconf|testgroup_sandbox_parseconf)
+            log_error "[testcase_sandbox_parseconf] Python with the json module is required"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_parseconf:missing-prerequisites"
+            ;;
+        *)
+            log_warn "[testcase_sandbox_parseconf] SKIPPED: Python with the json module is unavailable"
+            SKIPPED="`expr $SKIPPED + 1`"
+            SKIPPED_FUNCS="$SKIPPED_FUNCS testcase_sandbox_parseconf"
+            ;;
+        esac
+        return
+    fi
+
+    log_separator
+    log_info "[testcase_sandbox_parseconf] Check exact text and decoded JSON values with $PYTHON"
+    if (
+        # Match execcmd's per-client debug setting without changing later tests.
+        if [ -n "${NUT_DEBUG_LEVEL_UPSC-}" ]; then
+            NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_UPSC}"
+            export NUT_DEBUG_LEVEL
+        fi
+        $PYTHON "${TOP_SRCDIR}/tests/NIT/parseconf-test.py" \
+            "${TOP_BUILDDIR}/clients/upsc${EXEEXT}" "$NUT_PORT"
+    ) ; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_parseconf] PASSED: exact text and decoded JSON values"
+    else
+        log_error "[testcase_sandbox_parseconf] FAILED: parser checks complained, check above"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_parseconf"
+    fi
+}
+
+testgroup_sandbox_parseconf() {
+    # Start a fresh sandbox so these punctuation fixtures do not change
+    # the model, timer and language-binding tests' expected data.
+    if ! isTestablePython || [ -z "${PYTHON}" ] \
+    || ! $PYTHON -c 'import json' >/dev/null 2>&1 ; then
+        testcase_sandbox_parseconf
+        return
+    fi
+
+    stop_daemons
+    sandbox_forget_configs
+    sandbox_generate_configs
+    $PYTHON "${TOP_SRCDIR}/tests/NIT/parseconf-test.py" prepare "$NUT_CONFPATH" \
+        || die "[testgroup_sandbox_parseconf] Could not prepare parser fixtures"
+    testcase_sandbox_start_drivers_after_upsd
+    testcase_sandbox_parseconf
+    log_separator
+    sandbox_forget_configs
+}
+
 testgroup_sandbox_perl() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
@@ -5050,6 +5109,7 @@ case "${NIT_CASE}" in
         testgroup_upsd_invalid_configs
         testgroup_upsd_questionable_configs
         testgroup_sandbox
+        testgroup_sandbox_parseconf
         ;;
     *)  die "Unsupported NIT_CASE='$NIT_CASE' was requested" ;;
 esac

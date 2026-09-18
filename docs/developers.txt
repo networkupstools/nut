@@ -43,6 +43,15 @@ to its statically allocated buffer.  Common string operations in drivers
 in this case can benefit from similar `dstate_setinfo_dynamic()` or
 `dstate_addenum_dynamic()` methods.
 
+Existing code which intentionally uses a nonliteral format string can
+bracket the call with `nut-pragmas-format-nonliteral.h` and
+`nut-pragmas-format-nonliteral-end.h` to quiesce `-Wformat-nonliteral`
+and `-Wformat-security` diagnostics. These private headers can be included
+repeatedly, preserving the existing compiler capability guards and warning
+scope. They do not validate format strings; keep the reason for using a
+nonliteral format string next to the call and prefer the hardened methods
+above when applicable.
+
 Error reporting
 ~~~~~~~~~~~~~~~
 
@@ -1070,7 +1079,11 @@ document):
 
 Some frequently repeated pragma combinations, including the example above,
 were off-loaded into pairs of `include/nut-pragmas-*.h` files to begin and
-end a quiesced block of source code, e.g.:
+end a quiesced block of source code. The `nut-pragmas-range-checks.h` and
+`nut-pragmas-range-checks-end.h` pair covers the full combination of numeric
+range check warnings used in client and HID communication code. Use it only
+where both the warning set and its conditions match. For example, the
+covered-switch pair is used as follows:
 
 ----
 	switch(...) {
@@ -1082,6 +1095,19 @@ end a quiesced block of source code, e.g.:
 #include "nut-pragmas-covered-switch-default-end.h"
 	}
 ----
+
+The `nut-pragmas-type-limits.h` and `nut-pragmas-type-limits-end.h`
+pair can quiesce `-Wtautological-constant-out-of-range-compare` and
+`-Wtype-limits` around type range checks.
+
+The `nut-pragmas-unreachable-code.h` and
+`nut-pragmas-unreachable-code-end.h` pair suppresses `-Wunreachable-code`
+using the existing aggregate GCC capability guard and Clang pragmas.
+
+The headers preserve the independent warning guards and can be included
+more than once. Keep the pair at the original diagnostic boundaries;
+regions with different guards or additional warnings need their own
+pragmas.
 
 
 Switch case fall-through
