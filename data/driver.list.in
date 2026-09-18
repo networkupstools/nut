@@ -989,6 +989,8 @@
 "Microsol"	"ups"	"5"	"Rhino 10.0"	"10000VA"	"rhino"
 "Microsol"	"ups"	"5"	"Rhino 20.0"	"20000VA"	"rhino"
 
+"Microtek"	"ups"	"2"	"GI3KL 3000VA Online"	"USB"	"nutdrv_qx (USB ID 0665:5161)"	# PI71 dialect, https://github.com/networkupstools/nut/pull/3655
+
 "Minibox"	"ups"	"5"	"openUPS Intelligent UPS"	"USB port"	"usbhid-ups"
 
 "Must"	"ups"	"4"	"EP2000Pro"	""	"must_ep2000pro"
