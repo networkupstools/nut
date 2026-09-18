@@ -402,6 +402,14 @@ for too long; CPS devices are commonly associated with such behaviour.
 In this case, consider enabling `pollonly` flag and/or keeping `pollfreq`
 and/or `pollinterval` small.
 
+A few devices never send Interrupt In reports at all, and only answer Feature
+report requests. On these the driver matches a subdriver and enumerates the HID
+objects normally, but then logs `Got 0 HID objects` repeatedly together with
+`nut_libusb_get_interrupt: Connection timed out`, and no dynamic values are ever
+published. Setting the `pollonly` flag is required for such hardware. Phoenixtec
+based units reporting USB ID `06da:ffff`, rebranded under several brand names, are
+known to behave this way.
+
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
