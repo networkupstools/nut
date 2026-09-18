@@ -1079,7 +1079,11 @@ document):
 
 Some frequently repeated pragma combinations, including the example above,
 were off-loaded into pairs of `include/nut-pragmas-*.h` files to begin and
-end a quiesced block of source code, e.g.:
+end a quiesced block of source code. The `nut-pragmas-range-checks.h` and
+`nut-pragmas-range-checks-end.h` pair covers the full combination of numeric
+range check warnings used in client and HID communication code. Use it only
+where both the warning set and its conditions match. For example, the
+covered-switch pair is used as follows:
 
 ----
 	switch(...) {
@@ -1091,6 +1095,13 @@ end a quiesced block of source code, e.g.:
 #include "nut-pragmas-covered-switch-default-end.h"
 	}
 ----
+
+The `nut-pragmas-unreachable-code.h` and
+`nut-pragmas-unreachable-code-end.h` pair suppresses `-Wunreachable-code`
+using the existing aggregate GCC capability guard and Clang pragmas.
+These private headers can be included repeatedly. Keep the pair
+at the original diagnostic boundaries; regions with different guards or
+additional warnings need their own pragmas.
 
 
 Switch case fall-through
