@@ -88,7 +88,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'omron', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'innovart33', 'innovatae', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'omron', 'q1', 'q2', 'q6', 'santak', 'voltronic', 'voltronic-axpert', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -130,6 +130,13 @@ this fails somehow, you may want to override this value.
 Note that this is primarily useful for "guesstimation" of `battery.charge`
 and/or `battery.runtime` (with `runtimecal` setting), if those readings are
 not provided by the device directly.
+
+The *santak* protocol covers single-phase Santak Castle C*K units. They speak
+the same Q6 dialect as *innovart31* but are single-phase and NAK the `F` ratings
+query, so *innovart31* rejects them; ratings come from the `WH` command instead.
+Note that *battery.voltage* is already reported at pack level over `Q6`, so
+*battery_voltage_reports_one_pack* should NOT be set for these devices (the
+per-cell reading is a `Q1` artefact).
 
 *battery_voltage_reports_one_pack*::
 Some devices "natively" report just report a part of the total battery voltage

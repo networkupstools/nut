@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3833 utf-8
+personal_ws-1.1 en 3840 utf-8
 AAC
 AAS
 ABI
@@ -1299,6 +1299,7 @@ SYSMAXCONN
 SafeNet
 Salicru
 Salvia
+Santak
 Santinoli
 Savia
 Sawatzky
@@ -1551,6 +1552,7 @@ WARNFATAL
 WARNOPT
 WCH
 WELI
+WH
 WHAD
 WIP
 WIPO
@@ -3228,6 +3230,7 @@ rw
 réseau
 safenet
 salicru
+santak
 sbin
 sbindir
 sc

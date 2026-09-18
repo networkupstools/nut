@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -90,6 +90,7 @@
 #include "nutdrv_qx_masterguard.h"
 #include "nutdrv_qx_ablerex.h"
 #include "nutdrv_qx_gtec.h"
+#include "nutdrv_qx_santak.h"
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -108,6 +109,7 @@ static subdriver_t	*subdriver_list[] = {
 	&masterguard_subdriver,
 	&hunnox_subdriver,
 	&ablerex_subdriver,
+	&santak_subdriver,
 	&innovart31_subdriver,
 	&innovart33_subdriver,
 	&innovatae_subdriver,

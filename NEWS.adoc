@@ -270,6 +270,14 @@ https://github.com/networkupstools/nut/milestone/13
       reusing the existing Armac command framing and Megatec protocol. Polling
       and a quick battery test were verified with an SVC V-1000F
       (`0925:1234`, `UPS USB MON V1.4`). [issue #3562]
+    * Introduced a `santak` subdriver and protocol for single-phase Santak
+      Castle C*K units, developed and tested against a Castle C1K (`C1K(G7)`)
+      over RS232. These speak the same Q6 dialect as `innovart31`, but are
+      single-phase and NAK the `F` ratings query, so `innovart31` rejects them
+      outright. Model, nominal output and the input transfer window are read
+      from the `WH` command instead; `battery.charge`, `battery.runtime` and a
+      pack-level `battery.voltage` come from `Q6`, none of which the previously
+      documented `blazer_ser` mapping could provide. [issue #1039, PR #3662]
     * Bounded USB reply parsing by the number of bytes actually received, in
       the `ippon`, `cypress`, `phoenix`, `fuji` and `gtec` transports,
       preventing out-of-bounds reads when a reply fills the buffer without
