@@ -461,15 +461,7 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 				__func__, ntype,
 				notifylist[i].name);
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
+#include "nut-pragmas-format-nonliteral.h"
 			if (s) {
 				/* FIXME: Check user inputs to rule out
 				 *  any *OTHER* formatting characters.
@@ -499,9 +491,7 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 				 * SUSPEND_STARTING, SUSPEND_FINISHED ... */
 				snprintf(msg, sizeof(msg), "%s", msgfmt);
 			}
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-format-nonliteral-end.h"
 			notify(msg, notifylist[i].flags, notifylist[i].name,
 				upsname);
 

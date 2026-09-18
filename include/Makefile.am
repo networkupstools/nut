@@ -16,6 +16,8 @@ dist_noinst_HEADERS = \
     nut_bool.h nut_float.h nut_stdint.h nut_platform.h		\
     nut-pragmas-covered-switch-default.h			\
     nut-pragmas-covered-switch-default-end.h			\
+    nut-pragmas-format-nonliteral.h				\
+    nut-pragmas-format-nonliteral-end.h			\
     nut-pragmas-range-checks.h				\
     nut-pragmas-range-checks-end.h				\
     nut-pragmas-unreachable-code.h				\
