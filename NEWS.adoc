@@ -520,10 +520,16 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * `PyNUTClient`: fixed parsing of escaped descriptions and values in
+      server replies, including `GetUPSList()` and its consumers. Shared
+      parsing also handles `nutauth.conf` values, comments and included
+      filenames using NUT syntax. Authentication arguments are escaped
+      before transmission. Existing response types are preserved; single
+      quotes in configuration values are now literal. [issue #3620, PR #3629]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
-      Command descriptions now accept the server's `CMDDESC` response.
+      Command descriptions now accept the server's `CMDDESC` response. [PR #3634]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
@@ -660,6 +666,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
 
  - `upsd` data server updates:
+    * Escape variable and command descriptions from `cmdvartab` when sending
+      `DESC` and `CMDDESC` responses, so embedded quotes, backslashes and
+      hashes are decoded correctly by clients. [PR #3629]
     * Validate complete numeric values and conversion ranges for `MAXAGE`,
       `TRACKINGDELAY`, `MAXCONN` and `CERTREQUEST` in `upsd.conf`, retaining
       the previous setting when conversion fails. Preserve public types

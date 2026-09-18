@@ -31,15 +31,28 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- PLANNED: Keep track of any further API clean-up?
+
+- `PyNUTClient` now decodes NUT escape sequences in server descriptions and
+  values exactly once. Applications which worked around the old behavior by
+  removing escape characters themselves should stop doing so. The existing
+  bytes/string return types are unchanged. [PR #3629]
+
+- Python's `nutauth.conf` reader now follows NUT quoting rules: single
+  quotes are literal characters, not string delimiters. Replace single
+  quotes used for grouping with double quotes, and quote or escape spaces
+  within values. Backslashes introduce literal characters rather than
+  being retained, and unquoted hashes begin comments. Pass unescaped
+  usernames and passwords to `PyNUTClient`; the client handles their wire
+  escaping. [PR #3629]
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials
   to `Authenticate()`. Single quotes in configuration are now literal, as
   in the C parser; replace single-quoted values with double-quoted values
   where grouping was intended. The legacy `Set()` argument contract is
-  unchanged.
-
-- PLANNED: Keep track of any further API clean-up?
+  unchanged. [PR #3634]
 
 - The common configuration and protocol parser now accepts literal `#`
   characters inside double quotes. An unescaped `#` outside double quotes
