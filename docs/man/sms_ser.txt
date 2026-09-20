@@ -31,6 +31,90 @@ the `monofasico.xml` file delivered with the device.
 Other SMS protocols (for their other products) are not supported by
 this driver.
 
+Models with a USB port that were seen so far have a serial-to-USB adapter
+inside (Cypress or Prolific), so the driver talks to the serial device node
+which the operating system creates for it, e.g. `/dev/ttyUSB0`.
+
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+*offdelay*='value'::
+Time to wait before the output is cut by the `shutdown.return` command
+and when the driver is asked to power off the load at the end of a system
+shutdown (default=30). The protocol calls it seconds. Also available as
+the writable `ups.delay.shutdown` variable.
+
+*ondelay*='value'::
+Time to wait before the output returns, once mains power is back, after
+the shutdown above (default=1). The vendor software never sends 0 here.
+Also available as the writable `ups.delay.start` variable.
+
+*rebootdelay*='value'::
+Time to wait before the output is cut by the `shutdown.reboot` command
+(default=64). Also available as the writable `ups.delay.reboot` variable.
+
+All three values are limited to 65535 by the protocol.
+
+As with any driver, a `default.battery.charge.low` or
+`override.battery.charge.low` setting may be added, see NOTES below.
+
+
+INSTANT COMMANDS
+----------------
+
+*beeper.toggle*::
+Toggle the UPS beeper.
+
+*test.battery.start* ['seconds']::
+Test the battery for the given time (default=10).
+
+*test.battery.start.quick*::
+Test the battery for 10 seconds.
+
+*test.battery.start.deep*::
+Test the battery until the UPS considers it low.
+
+*test.battery.stop*::
+Stop a battery test in progress.
+
+*shutdown.return*::
+Turn off the load after `ups.delay.shutdown` and return when power is back.
+
+*shutdown.reboot* ['seconds']::
+Turn off the load after the given time (default is `ups.delay.reboot`).
+
+*shutdown.stop*::
+Stop a shutdown in progress.
+
+
+NOTES
+-----
+
+The flags of the UPS are reported as independent `ups.status` values:
+`OL` or `OB`, with `LB`, `RB` and `BOOST` added as needed. While the UPS
+runs a battery test, `CAL` is added and `ups.test.result` says so, which
+lets linkman:upsmon[8] tell a test from a power outage.
+
+The first byte of the status reply tells whether the UPS is a
+line-interactive or an on-line design; it is published as `ups.type`.
+Line-interactive models have no bypass, but at least some of them raise the
+bypass flag whenever their inverter runs. Hence `BYPASS` is only reported
+for the on-line designs, and never while on battery.
+
+The battery level the UPS reports follows the battery voltage while on
+battery. On mains power, at least some models restart it at a low value
+after any battery use (even a few seconds) and let it climb back to 100
+within minutes, so it should not be read as a state of charge then.
+If `battery.charge.low` is defined, the driver raises `LB` when the UPS is
+on battery and the level is at or below it, in addition to honoring the
+low battery flag of the UPS itself.
+
+The protocol has no battery runtime value.
+
 
 AUTHOR
 ------
