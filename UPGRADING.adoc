@@ -41,6 +41,25 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- The `sms_ser` driver changed the meaning of some commands and values
+  [issue #1987]:
+  * `test.battery.start.quick` used to start a test that runs until the
+    battery is low; it now runs a 10 second test. Use the new
+    `test.battery.start.deep` for the former behavior.
+  * `shutdown.return` (also used to power off the load at the end of a
+    system shutdown) and `shutdown.reboot` now send their delays in the
+    format used by the vendor software. Previously `shutdown.return` sent
+    no usable delays, and the `shutdown.reboot` delay was mangled (64 was
+    sent as `0x40FF`), so the timing seen with your device may change. See
+    the `offdelay`, `ondelay` and `rebootdelay` settings in
+    linkman:sms_ser[8]. A malformed `rebootdelay` in `ups.conf` is now fatal
+    instead of being silently ignored.
+  * `ups.status` may now hold several values (e.g. `OB LB`) where only one
+    was reported before, and line-interactive models no longer report
+    `BYPASS`; drop any workarounds which translated that value. With a low
+    battery properly reported, `upsmon` will now shut the system down where
+    it previously did not.
+
 - The common configuration and protocol parser now accepts literal `#`
   characters inside double quotes. An unescaped `#` outside double quotes
   still starts a comment. Existing `\#` escapes remain supported and are

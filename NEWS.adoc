@@ -360,6 +360,33 @@ https://github.com/networkupstools/nut/milestone/13
  - `riello_usb`, `riello_ser` driver updates:
     * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
 
+ - `sms_ser` driver updates [issue #1987]:
+    * The `ups.status` is now built from all flags of the UPS, as `OL` or
+      `OB` with `LB`, `RB` and `BOOST` added as needed, instead of a single
+      value picked by precedence. Newer line-interactive models (SMS Premium,
+      SMS Gamer) raise the bypass flag whenever their inverter runs, so a
+      power outage was reported as `BYPASS` and never as `OB` or `LB`. The
+      topology byte of the status reply (now published as `ups.type`) is
+      used to only report `BYPASS` for on-line models, as the vendor software
+      does.
+    * A running battery test is reported as `CAL` with `ups.test.result`;
+      `LB` is also raised while on battery if the charge is at or below
+      `battery.charge.low`, when that is defined.
+    * Shutdown and test delays are now sent as 16-bit values as the vendor
+      software does (a delay of 64 used to be sent as `0x40FF`); added the
+      `offdelay` and `ondelay` settings with `ups.delay.shutdown`,
+      `ups.delay.start` and `ups.delay.reboot` variables, and the
+      `test.battery.start.deep` command. See also `UPGRADING.adoc`.
+    * Replies are now checked for their checksum and terminator, and the
+      serial port is reopened after repeated failures (e.g. a re-plugged
+      USB adapter).
+    * Measurements keep their decimal digit; `ups.mfr`, `ups.model`,
+      `device.mfr` and `output.voltage.nominal` are published; sent and
+      received frames can be seen at debug level 4.
+    * Tested with an SMS Premium 1500 VA (a line-interactive model);
+      the new shutdown and test frames were only checked against a protocol
+      simulator so far.
+
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
       do not reset driver state to "quiet" when it will loop trying. [PR #3423]
