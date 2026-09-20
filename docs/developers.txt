@@ -1306,19 +1306,12 @@ Git access
 
 Anonymous Git checkouts are possible:
 
-	:; git clone git://github.com/networkupstools/nut.git
-
-or
-
 	:; git clone https://github.com/networkupstools/nut.git
-
-if it is necessary to get around a pesky firewall that blocks the native
-Git protocol.
 
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
-	:; git clone --depth 1 git://github.com/networkupstools/nut.git
+	:; git clone --depth 1 https://github.com/networkupstools/nut.git
 
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
@@ -1477,10 +1470,10 @@ Here is an example workflow (using a slightly older `git` command-line syntax,
 so it works verbatim on more platforms):
 
 ------------------------------------------------------------------------------
-	:; git clone -o central git://github.com/networkupstools/nut.git
+	:; git clone -o central https://github.com/networkupstools/nut.git
 
 	:; cd nut
-	:; git remote add -f USERNAME git://github.com/USERNAME/nut.git
+	:; git remote add -f USERNAME https://github.com/USERNAME/nut.git
 
 	### OPTIONALLY you can then fetch known git tags, so semantic
 	### versions look better (based off a recent release):
