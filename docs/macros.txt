@@ -31,6 +31,15 @@ The checks for each library grow organically to compensate for
 	various bugs in the libraries, pkg-config, etc. This is why we have
 	a separate macro for each library.
 
+*NUT_CHECK_SEMAPHORES*::
+
+	Check for semaphore headers, libraries, and named or unnamed
+	semaphores. Set `SEMLIBS`, the `nut_have_semaphore_*` shell
+	variables, the `HAVE_SEMAPHORE_*` preprocessor symbols and the
+	`HAVE_SEMAPHORE_LIBS` Automake conditional. Call after the
+	`fcntl.h` and `sys/stat.h` checks, before deciding whether to
+	enable threading.
+
 *NUT_CHECK_IPV6*::
 
 	Check for various features required to compile the IPv6 support.
