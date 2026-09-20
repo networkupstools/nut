@@ -42,6 +42,7 @@ static uint16_t bootdelay = DEFAULT_BOOTDELAY;
 static uint8_t bufOut[BUFFER_SIZE];
 static uint8_t bufIn[BUFFER_SIZE];
 static SmsData DeviceData;
+static int comm_failures = 0;
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -157,6 +158,62 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     results->onbattery = ((byte & (mask << 7)) != 0) ? true : false;
 }
 
+/* Sends the request prepared in bufOut and reads the reply into bufIn.
+ * Every reply is RESULT_SIZE bytes: a header byte, 15 bytes of payload, a
+ * checksum (the sum of all bytes up to and including it is 0 modulo 256)
+ * and ENDCHAR. Returns the reply length, or -1 after logging the reason. */
+static ssize_t sms_query(uint8_t length) {
+    ssize_t ret;
+    uint8_t sum = 0;
+    size_t i;
+
+    /* Drop whatever is left of an earlier, late or partial reply */
+    ser_flush_in(upsfd, "", 0);
+
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
+    if (ser_send_buf(upsfd, bufOut, length) != (ssize_t)length) {
+        upslogx(LOG_ERR, "Communication error while writing to port");
+        dstate_datastale();
+        return -1;
+    }
+    memset(bufIn, 0, sizeof(bufIn));
+    ret = ser_get_buf_len(upsfd, &bufIn[0], sizeof(bufIn), 3, 1000);
+    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
+
+    if (ret < RESULT_SIZE) {
+        upslogx(LOG_ERR, "Short read from UPS");
+        dstate_datastale();
+        return -1;
+    }
+
+    for (i = 0; i < RESULT_SIZE - 1; i++) {
+        sum += bufIn[i];
+    }
+    if (sum != 0 || bufIn[RESULT_SIZE - 1] != ENDCHAR) {
+        upslogx(LOG_ERR, "Bad checksum or terminator in reply from UPS");
+        dstate_datastale();
+        return -1;
+    }
+
+    return ret;
+}
+
+/* Closes and reopens the serial port without giving up if that fails:
+ * the next polls will try again. */
+static void sms_reconnect(void) {
+    upslogx(LOG_WARNING, "No valid reply from UPS, reopening %s", device_path);
+
+    if (VALID_FD_SER(upsfd)) {
+        ser_close(upsfd, device_path);
+    }
+    upsfd = ser_open_nf(device_path);
+    if (INVALID_FD_SER(upsfd)) {
+        upslogx(LOG_ERR, "Could not reopen %s, will retry", device_path);
+        return;
+    }
+    ser_set_speed_nf(upsfd, device_path, B2400);
+}
+
 static int get_ups_nominal(void) {
     uint8_t length;
     ssize_t ret;
@@ -165,18 +222,8 @@ static int get_ups_nominal(void) {
 
     length = sms_prepare_get_status(&bufOut[0]);
 
-    upsdebug_hex(4, "sms_ser send", bufOut, length);
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -199,18 +246,8 @@ static int get_ups_information(void) {
 
     length = sms_prepare_get_information(&bufOut[0]);
 
-    upsdebug_hex(4, "sms_ser send", bufOut, length);
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -233,18 +270,8 @@ static int get_ups_features(void) {
 
     length = sms_prepare_get_features(&bufOut[0]);
 
-    upsdebug_hex(4, "sms_ser send", bufOut, length);
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -400,6 +427,7 @@ static int sms_setvar(const char *varname, const char *val) {
 
 void upsdrv_initinfo(void) {
     char *battery_status;
+    const char *range_digits;
 
 	upsdebugx(LOG_DEBUG, "upsdrv_initinfo");
 
@@ -419,6 +447,26 @@ void upsdrv_initinfo(void) {
         dstate_setinfo("ups.firmware", "%s", DeviceData.version);
         dstate_setinfo("input.voltage.nominal", "%s", DeviceData.voltageRange);
         dstate_setinfo("input.current.nominal", "%s", DeviceData.currentRange);
+        /* The voltage range is a label like "EBiS115" or "EBiS220" whose
+         * number matches the output voltage of the units seen so far */
+        range_digits = DeviceData.voltageRange + strcspn(DeviceData.voltageRange, "0123456789");
+        if (*range_digits) {
+            dstate_setinfo("output.voltage.nominal", "%d", atoi(range_digits));
+        }
+
+        switch (DeviceData.upstype) {
+            case SMS_TYPE_LINE_INTERACTIVE:
+                dstate_setinfo("ups.type", "%s", "line-interactive");
+                break;
+            case SMS_TYPE_ONLINE_LINE_INTERACTIVE:
+                dstate_setinfo("ups.type", "%s", "online line-interactive");
+                break;
+            case SMS_TYPE_ONLINE:
+                dstate_setinfo("ups.type", "%s", "online");
+                break;
+            default:
+                break;
+        }
         dstate_setinfo("output.frequency.nominal", "%d", DeviceData.frequency);
         dstate_setinfo("ups.beeper.status", "%s", (DeviceData.beepon == 1) ? "enabled" : "disabled");
 
@@ -476,16 +524,21 @@ void upsdrv_updateinfo(void) {
 	upsdebugx(LOG_DEBUG, "upsdrv_updateinfo");
 
     if (get_ups_nominal() != 0) {
-        upslogx(LOG_ERR, "Short read from UPS");
         dstate_datastale();
+        /* A USB adapter that was unplugged leaves a dead descriptor behind,
+         * and may come back under another device node: reopen by name */
+        if (++comm_failures >= MAXTRIES) {
+            sms_reconnect();
+            comm_failures = 0;
+        }
         return;
     }
+    comm_failures = 0;
     dstate_setinfo("device.mfr", "%s", "SMS");
     dstate_setinfo("ups.mfr", "%s", "SMS");
     dstate_setinfo("ups.model", "%s", DeviceData.model);
     dstate_setinfo("device.model", "%s", DeviceData.model);
     dstate_setinfo("ups.firmware", "%s", DeviceData.version);
-    dstate_setinfo("battery.voltage.nominal", "%s", DeviceData.voltageRange);
     dstate_setinfo("output.frequency.nominal", "%d", DeviceData.frequency);
     dstate_setinfo("ups.beeper.status", "%s", (DeviceData.beepon == 1) ? "enabled" : "disabled");
 
