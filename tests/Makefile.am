@@ -138,6 +138,12 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += upssched-list-timers-test
+upssched_list_timers_test_SOURCES = upssched-list-timers-test.c
+upssched_list_timers_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+upssched_list_timers_test_LDADD = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(NETLIBS)
+upssched_list_timers_test_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_srcdir)/clients/upssched.c $(top_srcdir)/clients/upssched.h
+
 TESTS += statetest
 statetest_SOURCES = statetest.c
 statetest_LDADD = $(NUT_LIBCOMMON)
