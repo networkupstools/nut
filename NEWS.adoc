@@ -685,6 +685,9 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
+ - Corrected upsclient API declarations, logging examples and the
+   descriptions of SSL capability flags and raw line reads.
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
@@ -804,8 +807,8 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      `upscli_ssl_caps()`. Updated common NUT clients to report this info
      in their detailed help banners. Done similarly for `upsd`. The NIT
      (NUT Integration Test) suite piggy-backs on this to add run-time
-     dependent tests of SSL capability. Added `upscli_set_debug_level()`
-     and `upscli_set_debug_level()` methods to facilitate NUT debugging
+     dependent tests of SSL capability. Added `upscli_upslog_set_debug_level()`
+     and `upscli_upslog_get_debug_level()` methods to facilitate NUT debugging
      for clients built with shared NUT private libraries. [issues #3328,
      #1771, #2800, PR #3330]
    * Revised OpenSSL handshake to support retries requested by the library,
