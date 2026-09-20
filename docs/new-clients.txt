@@ -101,7 +101,7 @@ For more information, refer to the linkman:libnutclient[3] manual page.
    */
   int main(int argc, char **argv)
   {
-    Client *client;
+    Client *client = NULL;
     try
     {
       // Connection
