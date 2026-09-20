@@ -4,6 +4,8 @@
  */
 #include "common.h"
 #include "nut-scan.h"
+/* Test setup, execution and checks must run even with -DNDEBUG. */
+#undef NDEBUG
 #include <assert.h>
 
 static void *test_malloc(size_t size);

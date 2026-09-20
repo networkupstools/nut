@@ -5,6 +5,8 @@
 #include "common.h"
 #include "nut-scan.h"
 #include "upsclient.h"
+/* Test setup, execution and checks must run even with -DNDEBUG. */
+#undef NDEBUG
 #include <assert.h>
 
 #if defined WIN32 && NUTSCAN_TEST_PROTOCOL == 4
