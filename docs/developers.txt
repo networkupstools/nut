@@ -1304,9 +1304,20 @@ wiki page has some useful information for long-time users of Subversion.
 Git access
 ~~~~~~~~~~
 
-Anonymous Git checkouts are possible:
+Anonymous Git checkouts are possible over HTTPS:
 
 	:; git clone https://github.com/networkupstools/nut.git
+
+...or over SSH (if it is necessary to get around some pesky firewall,
+or to better sign your eventual contributions, but this may require
+that you have registered developer SSH keys in your GitHub account):
+
+	:; git clone git@github.com:networkupstools/nut.git
+
+NOTE: Earlier versions of this document also suggested the native
+Git protocol (e.g. `git://github.com/networkupstools/nut.git` URL)
+for anonymous access, but this is deemed insecure and no longer
+supported by GitHub since 2022.
 
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
