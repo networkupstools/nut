@@ -47,6 +47,11 @@ https://github.com/networkupstools/nut/milestone/13
       extracting the response. Returned keys and descriptions remain byte
       sequences. [issue #3621]
     * `nut-scanner` tool updates:
+      - Retry SNMP hosts whose session could not open because the process
+        ran out of file descriptors. After the original SNMP scans finish,
+        retry those hosts one at a time and report any remaining descriptor
+        exhaustion. Other scan types and their limits are unchanged.
+        [issue #2576]
       - Balance concurrency permits and worker ownership during SNMP, IPMI,
         NUT and XML/HTTP scans, including disabled protocol limits and failed
         thread creation. Keep NUT authentication data alive until the scan

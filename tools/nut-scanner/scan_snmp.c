@@ -960,8 +960,9 @@ static void * wrap_nut_snmp_sess_open(struct snmp_session *session)
 }
 
 /* Performs a (parallel-able) SNMP protocol scan of one remote host.
- * Returns NULL, updates global dev_ret when a scan is successful.
- * FREES the caller's copy of "sec" and "peername" in it, if applicable.
+ * Returns the caller-owned peername on session-open EMFILE, or NULL otherwise.
+ * Updates global dev_ret when a scan is successful. Frees sec in either case,
+ * and peername unless returned for recovery after other scans have finished.
  */
 static void * try_SysOID_thready(void * arg)
 {
@@ -988,8 +989,18 @@ static void * try_SysOID_thready(void * arg)
 	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
+	errno = 0;
 	handle = wrap_nut_snmp_sess_open(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
+		/* Prefer the session's saved system error. Use errno only when
+		 * the session did not save a system error. */
+		if (snmp_sess.s_errno == EMFILE
+		|| (snmp_sess.s_errno == 0 && errno == EMFILE)
+		) {
+			char *peername = sec->peername;
+			free(sec);
+			return peername;
+		}
 		upsdebugx(2,
 			"Failed to open SNMP session for %s",
 			sec->peername);
@@ -1093,6 +1104,15 @@ try_SysOID_free:
 	return NULL;
 }
 
+static void report_snmp_open_failure(char *peername)
+{
+	if (peername != NULL) {
+		upsdebugx(0, "WARNING: SNMP scan of %s could not open a session: "
+			"too many open files, even with one SNMP scan at a time", peername);
+		free(peername);
+	}
+}
+
 static void init_snmp_once(void)
 {
 	/* Initialize the SNMP library */
@@ -1133,6 +1153,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 	char * ip_str = NULL;
 
 #ifdef HAVE_PTHREAD
+	nutscan_ip_range_list_t retry_ranges;
+	nutscan_ip_range_t *retry;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	sem_t * semaphore = nutscan_semaphore();
 #  if (defined HAVE_SEMAPHORE_UNNAMED)
@@ -1159,6 +1181,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 	}
 
 #ifdef HAVE_PTHREAD
+	nutscan_init_ip_ranges(&retry_ranges);
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
@@ -1277,17 +1300,21 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 			) {
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
+					void *failed_peer = NULL;
 
 					if (!thread_array[i].active) continue;
 
 					pthread_mutex_lock(&threadcount_mutex);
 					upsdebugx(3, "%s: Trying to join thread #%" PRIuSIZE "...", __func__, i);
-					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
+					ret = pthread_tryjoin_np(thread_array[i].thread, &failed_peer);
 					switch (ret) {
 						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
 							upsdebugx(5, "%s: Was thread #%" PRIuSIZE " joined earlier?", __func__, i);
 							break;
 						case 0:         /* thread exited */
+							if (failed_peer != NULL) {
+								nutscan_add_ip_range(&retry_ranges, (char *)failed_peer, NULL);
+							}
 							if (curr_threads > 0) {
 								curr_threads --;
 								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE, __func__, i);
@@ -1357,14 +1384,13 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 				}
 			}
 #else   /* if not HAVE_PTHREAD */
-			try_SysOID_thready(tmp_sec);
+			/* Already serial: no other SNMP worker can release descriptors. */
+			report_snmp_open_failure((char *)try_SysOID_thready(tmp_sec));
 #endif  /* if HAVE_PTHREAD */
 
-			/* Prepare the next iteration; note that
-			 * try_SysOID_thready()
-			 * takes care of freeing "tmp_sec" and its
-			 * reference (NOT strdup!) to "ip_str" as
-			 * peername.
+			/* Prepare the next iteration. The worker owns tmp_sec and
+			 * its peername (ip_str, NOT strdup), returning the latter
+			 * only when the host needs recovery after other scans finish.
 			 */
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
@@ -1378,6 +1404,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
+					void *failed_peer = NULL;
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
@@ -1386,10 +1413,12 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 						continue;
 					}
 					thread_array[i].active = FALSE;
-					ret = pthread_join(thread_array[i].thread, NULL);
+					ret = pthread_join(thread_array[i].thread, &failed_peer);
 					if (ret != 0) {
 						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 							__func__, ret);
+					} else if (failed_peer != NULL) {
+						nutscan_add_ip_range(&retry_ranges, (char *)failed_peer, NULL);
 					}
 					nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 				}
@@ -1413,13 +1442,16 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 		upsdebugx(2, "%s: all planned scans launched, waiting for threads to complete", __func__);
 		for (i = 0; i < thread_count; i++) {
 			int ret;
+			void *failed_peer = NULL;
 
 			if (!thread_array[i].active) continue;
 
-			ret = pthread_join(thread_array[i].thread, NULL);
+			ret = pthread_join(thread_array[i].thread, &failed_peer);
 			if (ret != 0) {
 				upsdebugx(0, "WARNING: %s: Clean-up: pthread_join() returned code %i",
 					__func__, ret);
+			} else if (failed_peer != NULL) {
+				nutscan_add_ip_range(&retry_ranges, (char *)failed_peer, NULL);
 			}
 			thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
@@ -1442,6 +1474,54 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 		free(thread_array);
 		upsdebugx(2, "%s: all threads freed", __func__);
 	}
+
+	/* All original SNMP sessions have closed. Retry only session-open
+	 * EMFILE failures, serially, without changing other scanners' limits.
+	 * A second EMFILE has no further SNMP work to wait for: report it and
+	 * move on rather than sleeping or indefinitely requeueing the host.
+	 */
+	for (retry = retry_ranges.ip_ranges; retry != NULL; retry = retry->next) {
+		tmp_sec = (nutscan_snmp_t *)malloc(sizeof(*tmp_sec));
+		if (tmp_sec == NULL) {
+			upsdebugx(0, "%s: Memory allocation error during SNMP recovery", __func__);
+			break;
+		}
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+		if (nut_scanner_semaphore_acquire(semaphore, semaphore_scantype,
+			max_threads_scantype, 1) <= 0) {
+			upsdebug_with_errno(0, "%s: SNMP recovery admission failed", __func__);
+			free(tmp_sec);
+			break;
+		}
+# elif defined HAVE_PTHREAD_TRYJOIN
+		/* Other protocols still share the counter. Reserve one slot for
+		 * the synchronous probe, just as for a new worker. */
+		for (;;) {
+			pthread_mutex_lock(&threadcount_mutex);
+			if (curr_threads < max_threads) {
+				curr_threads++;
+				pthread_mutex_unlock(&threadcount_mutex);
+				break;
+			}
+			pthread_mutex_unlock(&threadcount_mutex);
+			usleep(10000);
+		}
+# endif
+		memcpy(tmp_sec, sec, sizeof(*tmp_sec));
+		tmp_sec->peername = retry->start_ip;
+		retry->start_ip = retry->end_ip = NULL;
+		upsdebugx(1, "%s: Retrying SNMP scan of %s after closing earlier sessions",
+			__func__, tmp_sec->peername);
+		report_snmp_open_failure((char *)try_SysOID_thready(tmp_sec));
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+		nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+# elif defined HAVE_PTHREAD_TRYJOIN
+		pthread_mutex_lock(&threadcount_mutex);
+		curr_threads--;
+		pthread_mutex_unlock(&threadcount_mutex);
+# endif
+	}
+	nutscan_free_ip_ranges(&retry_ranges);
 	pthread_mutex_destroy(&dev_mutex);
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)

@@ -265,7 +265,6 @@ endif WITH_SNMP
 
 # Compile each scanner's actual admission loop with offline worker probes.
 if WITH_NUT_SCANNER
-if WITH_THREADING
 NUTSCAN_TEST_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/clients $(LIBIPMI_CFLAGS)
 NUTSCAN_TEST_LDADD = $(NUT_LIBCOMMON) $(top_builddir)/tools/nut-scanner/libnutscan.la $(LIBLTDL_LIBS) $(SEMLIBS) $(NETLIBS)
 if WITH_SSL
@@ -275,6 +274,19 @@ endif WITH_SSL
 # Finish shared dependencies before the scanner's independent sub-make.
 $(top_builddir)/tools/nut-scanner/libnutscan.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_builddir)/clients/libupsclient.la
 
+if WITH_SNMP
+# The scanner library generates this header before the tests can include it.
+$(top_builddir)/tools/nut-scanner/nutscan-snmp.h: $(top_builddir)/tools/nut-scanner/libnutscan.la
+nutscan-thread-test.c nutscan-snmp-retry-test.c: $(top_builddir)/tools/nut-scanner/nutscan-snmp.h
+
+TESTS += nutscan-snmp-retry-test
+nutscan_snmp_retry_test_SOURCES = nutscan-snmp-retry-test.c
+nutscan_snmp_retry_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) $(LIBNETSNMP_CFLAGS)
+nutscan_snmp_retry_test_LDADD = $(NUTSCAN_TEST_LDADD)
+nutscan_snmp_retry_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_snmp.c $(top_builddir)/tools/nut-scanner/nutscan-snmp.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.c $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+endif WITH_SNMP
+
+if WITH_THREADING
 TESTS += nutscan-nut-test
 nutscan_nut_test_SOURCES = nutscan-thread-test.c
 nutscan_nut_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=3
@@ -282,10 +294,6 @@ nutscan_nut_test_LDADD = $(NUTSCAN_TEST_LDADD)
 nutscan_nut_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_nut.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.c $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
 
 if WITH_SNMP
-# The scanner library generates this header before the test can include it.
-$(top_builddir)/tools/nut-scanner/nutscan-snmp.h: $(top_builddir)/tools/nut-scanner/libnutscan.la
-nutscan-thread-test.c: $(top_builddir)/tools/nut-scanner/nutscan-snmp.h
-
 TESTS += nutscan-snmp-test
 nutscan_snmp_test_SOURCES = nutscan-thread-test.c
 nutscan_snmp_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) $(LIBNETSNMP_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=1
