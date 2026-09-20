@@ -27,8 +27,10 @@
 # or program file without further arguments (which may be passed in explicitly
 # quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 #
-# It is given a single last argument - the <timername> in your
-# AT ... START-TIMER defines.
+# The <timername> in your AT ... START-TIMER defines is passed as an
+# argument to this script. With no arguments configured after <scriptname>,
+# the timer name is the script's first and only argument. Any configured
+# arguments precede the timer name.
 #
 # *** This must be defined *before* the first AT line.  Otherwise the
 #     program will complain and exit without doing anything.
@@ -101,7 +103,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the last
+#   seconds, calling your CMDSCRIPT with <timername> as an
 #   argument. Each invocation starts an independent timer, even if the
 #   <timername> was already registered and started (note this can mess
 #   up subsequent CANCEL-TIMER operations).
@@ -122,7 +124,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER-SHARED <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the last
+#   seconds, calling your CMDSCRIPT with <timername> as an
 #   argument. Each invocation checks if the <timername> was already
 #   started, and if so -- appends the current event's `UPSNAME`,
 #   `NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it would
