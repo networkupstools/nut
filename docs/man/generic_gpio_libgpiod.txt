@@ -1,10 +1,10 @@
-GENERIC GPIO(8)
-===============
+GENERIC GPIO_LIBGPIOD(8)
+========================
 
 NAME
 ----
 
-generic_gpio - Driver for GPIO connected UPSes
+generic_gpio_libgpiod - Driver for GPIO connected UPSes
 
 SYNOPSIS
 --------
@@ -13,8 +13,9 @@ SYNOPSIS
 
 *generic_gpio_libgpiod* -a 'gpiochip0' ['OPTIONS']
 
-NOTE: This man page only documents the specific features of the *generic_gpio*
-driver. For information about the core driver, see linkman:nutupsdrv[8].
+NOTE: This man page only documents the specific features of
+the *generic_gpio_libgpiod* driver. For information about
+the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
