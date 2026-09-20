@@ -67,6 +67,11 @@ https://github.com/networkupstools/nut/milestone/13
    complete descriptor available on affected River 3 Plus firmware while
    retaining the shorter length as a fallback.
 
+ - `nut-scanner` now suggests a commented `allow_duplicates` flag when USB
+   discovery finds potentially ambiguous configurations for drivers which
+   implement this flag. Active settings are unchanged; device-to-name
+   association may vary if the user enables the flag. [issue #2998]
+
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.

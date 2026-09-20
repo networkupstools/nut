@@ -577,6 +577,12 @@ all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
+if WITH_NUT_SCANNER
+if HAVE_LIBREGEX
+all/tests: all-libs-local/tools/nut-scanner
+endif HAVE_LIBREGEX
+endif WITH_NUT_SCANNER
+
 all-recursive/tests: all/tests/NIT all/tests @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
