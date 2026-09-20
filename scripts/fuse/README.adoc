@@ -42,7 +42,7 @@ That's about it, an `execfuse` binary should appear.
 NOTE: Examples below assume a built NUT in `~/nut` location, and a temporary
 mount point in `/tmp/nut-fuse`.
 
-You can also prepare an enviroment using NUT Integration Tests (NIT) scripts:
+You can also prepare an environment using NUT Integration Tests (NIT) scripts:
 ----
 :; ( cd ~/nut && DEBUG_SLEEP=600 make check-NIT ) &
 
@@ -85,11 +85,11 @@ on that server.
 Example data walk:
 
 ----
-:; grep -rH /tmp/nut-fuse/localhost/dummy
-/tmp/nut-fuse/localhost/dummy/battery.charge:100
-/tmp/nut-fuse/localhost/dummy/battery.charge.low:20
-/tmp/nut-fuse/localhost/dummy/battery.runtime:1456
-/tmp/nut-fuse/localhost/dummy/battery.type:PbAc
+:; grep -rH '' /tmp/nut-fuse/by-server/localhost/dummy
+/tmp/nut-fuse/by-server/localhost/dummy/battery.charge:100
+/tmp/nut-fuse/by-server/localhost/dummy/battery.charge.low:20
+/tmp/nut-fuse/by-server/localhost/dummy/battery.runtime:1456
+/tmp/nut-fuse/by-server/localhost/dummy/battery.type:PbAc
 ...
 ----
 

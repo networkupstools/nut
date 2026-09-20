@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3833 utf-8
+personal_ws-1.1 en 3842 utf-8
 AAC
 AAS
 ABI
@@ -1037,6 +1037,7 @@ PiJuice
 PiNUT
 Plesser
 PnP
+PoC
 Poettering
 Pohle
 PointBre
@@ -2112,6 +2113,7 @@ drvctl
 drvpath
 drwxr
 drwxrwx
+drwxrwxrwt
 ds
 dsc
 dsi
@@ -2261,6 +2263,7 @@ fstab
 ftdi
 fuji
 func
+fusermount
 gamatronic
 gandi
 gc
@@ -2566,6 +2569,7 @@ libexec
 libexecdir
 libexpat
 libfreeipmi
+libfuse
 libgd
 libgio
 libglib
@@ -3132,6 +3136,7 @@ qx
 qx's
 qxflags
 rD
+rH
 ragtech
 raritan
 rb
