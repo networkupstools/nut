@@ -688,6 +688,7 @@ https://github.com/networkupstools/nut/milestone/13
  - Updated the apc_modbus manual for its implemented capabilities, timeout
    defaults and register-read attempt limit, and corrected the corresponding
    help text.
+   [PR #3690]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
