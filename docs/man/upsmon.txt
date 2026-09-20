@@ -280,24 +280,22 @@ NOTIFY COMMAND
 In linkman:upsmon.conf[5], you can configure a program called the NOTIFYCMD
 that will handle events that occur.
 
-The syntax is: +NOTIFYCMD+ "'path to program'"
+The syntax is: +NOTIFYCMD+ "'path to program'" ['arg1' 'arg2' ...]
 
 Example:
 
- - `NOTIFYCMD "/usr/local/bin/notifyme"`
+ - `NOTIFYCMD "/usr/local/bin/notifyme" "--debug"`
 
-Remember to wrap the path in "double quotes" if it contains any spaces.
-It should not rely on receiving any command-line arguments: the value of
-this directive is interpreted as a complete path to an externally stored
-executable script (e.g. not an inline scriptlet) or program file without
-further arguments (this is a change from NUT v2.8.5 and older releases).
-If you need to pass special arguments to a notification program, please
-write a small script to do so and specify its path here.
+The first token is interpreted as a complete path to an externally stored
+executable script (e.g. not an inline scriptlet) or program file.
+Pass any arguments as separate tokens. Wrap each path or argument in
+"double quotes" if it contains spaces. This is a change from NUT v2.8.5
+and older releases; see linkman:upsmon.conf[5] for details.
 
 The program you run as your NOTIFYCMD can use the environment variables
 NOTIFYTYPE and UPSNAME to know what has happened and on which UPS.  It
-also receives the notification message (see below) as the first (and
-only) argument, so you can deliver a pre-formatted message too.
+also receives the notification message (see below) as the last argument,
+so you can deliver a pre-formatted message too.
 
 Note that the NOTIFYCMD will only be called for a given event when you set
 the EXEC flag by using the notify flags, as detailed below.
@@ -463,7 +461,7 @@ from sitting there forever (which would endanger that host) if a secondary
 should break somehow.  This defaults to 15 seconds.
 
 If your primary system is shutting down too quickly, set the FINALDELAY
-interval to something greater than the default 15 seconds.  Don't set
+interval to something greater than the default 5 seconds.  Don't set
 this too high, or your UPS battery may run out of power before the
 primary upsmon process shuts down that system. If you do need more time,
 consider starting the shutdown after a short time on battery, for details

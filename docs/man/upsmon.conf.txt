@@ -233,7 +233,7 @@ more information and ideas, see docs/scheduling.txt
 The first (possibly only) token of the value is interpreted as a complete
 path to an externally stored executable script (e.g. not an inline scriptlet)
 or program file without further arguments (which may be passed in explicitly
-# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
+quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 Remember, this command also needs to be one element in the configuration
 file, so if your command path has spaces, then wrap it in quotes.
 +

@@ -124,7 +124,7 @@ Example:
 Start a timer that will execute when any UPS (+*+) has been
 gone for 10 seconds
 
-	AT COMMBAD * START-TIMER upsgone 10
+	AT COMMBAD * START-TIMER-SHARED upsgone 10
 
 *CANCEL-TIMER* 'timername' ['cmd'];;
 Cancel a running timer called 'timername', if possible.

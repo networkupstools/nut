@@ -68,24 +68,33 @@ Single quotes (apostrophes) are ordinary characters and do not group words.
 OK, so let's say you really need to embed that kind of quote within your
 configuration directive for some reason.  You can do that too.
 
-	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
+	NOTIFYCMD "/bin/notifyme" "-foo" "-bar" "\"hi there\"" "-baz"
 
-In other words, `\` can be used to escape the `"`.
+In other words, `\` can be used to escape the `"`. Here, the argument
+after `-bar` contains both the space and the literal double quotes.
+
+Unlike SHUTDOWNCMD, the first value of NOTIFYCMD is an exact executable
+path, with any arguments passed as separate tokens. This is a change from
+NUT v2.8.5 and older releases. The notification message is appended as the
+last argument. See linkman:upsmon.conf[5] for details.
 
 Finally, for the situation where you need to put the `\` character into your
 string, you just escape it.
 
-	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
+	NOTIFYCMD "/bin/notifyme" "c:\\dos\\style\\path"
 
 The `\` can actually be used to escape any permitted character, inside or
 outside double quotes. It quotes the next character once: `\n` means the
 letter `n`, not a newline. It is useful for `\`, `"`, and, outside double
 quotes, spaces, `=`, and `#`, which have special meanings to the parser.
 
-When using file names with space characters, you may end up having tricky
-things since you need to write them inside `""` which must be escaped:
+When using file names with space characters, quote each path separately:
 
-	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
+	NOTIFYCMD "c:\\path with space\\notifyme" "c:\\path with space\\name"
+
+Alternatively, escape the spaces as well as the backslashes:
+
+	NOTIFYCMD c:\\path\ with\ space\\notifyme c:\\path\ with\ space\\name
 
 Outside double quotes, `#` is the comment character. Anything after an
 unescaped `#` is ignored until the end of the physical line.

@@ -101,7 +101,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the first
+#   seconds, calling your CMDSCRIPT with <timername> as the last
 #   argument. Each invocation starts an independent timer, even if the
 #   <timername> was already registered and started (note this can mess
 #   up subsequent CANCEL-TIMER operations).
@@ -122,7 +122,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER-SHARED <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the first
+#   seconds, calling your CMDSCRIPT with <timername> as the last
 #   argument. Each invocation checks if the <timername> was already
 #   started, and if so -- appends the current event's `UPSNAME`,
 #   `NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it would
@@ -137,7 +137,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   with any UPS (*) has been gone for 10 seconds (since the first
 #   started and not yet elapsed timer named <upsgone>):
 #
-#   AT COMMBAD * START-TIMER upsgone 10
+#   AT COMMBAD * START-TIMER-SHARED upsgone 10
 
 #   -----------------------------------------------------------------------
 #
