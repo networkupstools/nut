@@ -687,6 +687,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Corrected the upsdrvsvcctl command reference and removed a stale TODO for
    its existing shutdown fallback.
+   [PR #3697]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
