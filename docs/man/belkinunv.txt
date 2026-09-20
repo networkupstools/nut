@@ -297,7 +297,7 @@ readable at that point.
  # if shutdown was caused by UPS, perform Belkin UPS workaround.
  if [ -f /etc/killpower ] || /usr/sbin/upsmon -K ; then
     echo "Waiting for AC power, or for UPS batteries to run out..."
-    /usr/bin/belkinunv -x wait /dev/ttyS1
+    /usr/bin/belkinunv -s belkinups -x wait -x port=/dev/ttyS1
 
     # we get here if the power came back on. Reboot.
     echo "Power is back. Rebooting..."
@@ -316,7 +316,7 @@ file system integrity checks are done.
  # charge to a comfortable level before writing anything to disk
  if [ -f /etc/killpower ] || /usr/sbin/upsmon -K ; then
     echo "Waiting for UPS battery charge to reach 60%..."
-    /usr/bin/belkinunv -x wait=60 -x nohang /dev/ttyS1
+    /usr/bin/belkinunv -s belkinups -x wait=60 -x nohang -x port=/dev/ttyS1
  fi
 ----
 
