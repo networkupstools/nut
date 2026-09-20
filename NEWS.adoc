@@ -687,6 +687,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Added the required USB identity fields to the Gtec configuration example,
    with explicit placeholders for the device IDs.
+   [PR #3694]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
