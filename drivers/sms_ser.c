@@ -163,12 +163,14 @@ static int get_ups_nominal(void) {
 
     length = sms_prepare_get_status(&bufOut[0]);
 
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
     if (ser_send_buf(upsfd, bufOut, length) == 0) {
         upsdebugx(LOG_ERR, "Communication error while writing to port");
         return -1;
     }
     memset(bufIn, 0, BUFFER_SIZE);
     ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
+    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
 
     if (ret < RESULT_SIZE) {
         upslogx(LOG_ERR, "Short read from UPS");
@@ -195,12 +197,14 @@ static int get_ups_information(void) {
 
     length = sms_prepare_get_information(&bufOut[0]);
 
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
     if (ser_send_buf(upsfd, bufOut, length) == 0) {
         upsdebugx(LOG_ERR, "Communication error while writing to port");
         return -1;
     }
     memset(bufIn, 0, BUFFER_SIZE);
     ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
+    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
 
     if (ret < RESULT_SIZE) {
         upslogx(LOG_ERR, "Short read from UPS");
@@ -227,12 +231,14 @@ static int get_ups_features(void) {
 
     length = sms_prepare_get_features(&bufOut[0]);
 
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
     if (ser_send_buf(upsfd, bufOut, length) == 0) {
         upsdebugx(LOG_ERR, "Communication error while writing to port");
         return -1;
     }
     memset(bufIn, 0, BUFFER_SIZE);
     ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
+    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
 
     if (ret < RESULT_SIZE) {
         upslogx(LOG_ERR, "Short read from UPS");
@@ -262,6 +268,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
         length = sms_prepare_test_battery_nsec(&bufOut[0], delay);
 
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
+
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send test.battery.start");
             return STAT_INSTCMD_FAILED;
@@ -273,6 +281,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
     if (!strcasecmp(cmdname, "test.battery.start.quick")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
         length = sms_prepare_test_battery_low(&bufOut[0]);
+
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
 
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send test.battery.start.quick");
@@ -287,6 +297,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
         length = sms_prepare_cancel_test(&bufOut[0]);
 
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
+
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send test.battery.stop");
             return STAT_INSTCMD_FAILED;
@@ -298,6 +310,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
 
     if (!strcasecmp(cmdname, "beeper.toggle")) {
         length = sms_prepare_set_beep(&bufOut[0]);
+
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
 
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send beeper.toggle");
@@ -311,6 +325,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
     if (!strcasecmp(cmdname, "shutdown.return")) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
         length = sms_prepare_shutdown_restore(&bufOut[0]);
+
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
 
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send shutdown.return");
@@ -335,6 +351,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
         length = sms_prepare_shutdown_nsec(&bufOut[0], delay);
 
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
+
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send shutdown.reboot");
             return STAT_INSTCMD_FAILED;
@@ -347,6 +365,8 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
     if (!strcasecmp(cmdname, "shutdown.stop")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
         length = sms_prepare_cancel_shutdown(&bufOut[0]);
+
+        upsdebug_hex(4, "sms_ser send", bufOut, length);
 
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
             upsdebugx(3, "failed to send shutdown.stop");
