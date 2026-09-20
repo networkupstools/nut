@@ -41,6 +41,11 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - Documented the existing `mfr` and `model` options for `liebert`, and
+   `sysfs_dir` for `hwmon_ina219`. Corrected the latter driver's hwmon path
+   and documented the integer range and default for its low battery threshold.
+   [issue #2422]
+
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
       advertised identifiers on Python 3 and uses those identifiers when
