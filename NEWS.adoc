@@ -685,6 +685,9 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
+ - Removed unsupported quick-test duration configuration guidance from the
+   Powervar serial and USB manuals.
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
