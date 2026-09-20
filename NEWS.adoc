@@ -685,6 +685,10 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
+ - Updated the apc_modbus manual for its implemented capabilities, timeout
+   defaults and register-read attempt limit, and corrected the corresponding
+   help text.
+
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
