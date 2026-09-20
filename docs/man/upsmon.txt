@@ -142,8 +142,7 @@ SSL/TLS CONFIGURATION
 
 *upsmon* can connect to linkman:upsd[8] servers using SSL/TLS with per-server
 certificate verification and client certificate authentication. SSL/TLS
-configuration is defined in linkman:upsmon.conf[5] using CERTPATH, CERTVERIFY,
-CERTNAME, and CERTHOST directives.
+configuration is described in linkman:upsmon.conf[5].
 
 For systems monitoring multiple UPS devices managed by different entities
 (different CAs or security realms), *upsmon* automatically uses per-connection
