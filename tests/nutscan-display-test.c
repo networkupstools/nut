@@ -143,6 +143,10 @@ static int check_case(const char *name, nutscan_device_t **devices, size_t count
 
 int main(void)
 {
+	/* Each cases row sets or removes one observed attribute for a device pair.
+	 * The expected bitmask selects which devices receive a suggestion:
+	 * 0 = neither, 1 = first, 2 = second, 3 = both.
+	 */
 	static const struct {
 		const char *name, *option, *first, *second;
 		int commented;
