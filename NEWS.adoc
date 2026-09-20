@@ -687,6 +687,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Corrected protocol notation and updated the architecture documentation
    for individual variable requests and command tracking.
+   [PR #3682]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
