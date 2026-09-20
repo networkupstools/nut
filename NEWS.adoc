@@ -687,6 +687,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Initialised the connection pointer in the C++ client example before
    exception handling.
+   [PR #3678]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
