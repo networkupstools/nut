@@ -100,6 +100,8 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     long v;
     double h;
 
+    results->upstype = (char)rawvalues[0];
+
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[1], (unsigned char)rawvalues[2]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
@@ -467,6 +469,9 @@ void upsdrv_initinfo(void) {
 
 void upsdrv_updateinfo(void) {
     char *battery_status;
+    const char *charge_low;
+    bool lowbattery;
+    static bool test_seen = false;
 
 	upsdebugx(LOG_DEBUG, "upsdrv_updateinfo");
 
@@ -475,6 +480,9 @@ void upsdrv_updateinfo(void) {
         dstate_datastale();
         return;
     }
+    dstate_setinfo("device.mfr", "%s", "SMS");
+    dstate_setinfo("ups.mfr", "%s", "SMS");
+    dstate_setinfo("ups.model", "%s", DeviceData.model);
     dstate_setinfo("device.model", "%s", DeviceData.model);
     dstate_setinfo("ups.firmware", "%s", DeviceData.version);
     dstate_setinfo("battery.voltage.nominal", "%s", DeviceData.voltageRange);
@@ -495,8 +503,11 @@ void upsdrv_updateinfo(void) {
     dstate_setinfo("ups.temperature", "%.2f", DeviceData.temperatureC);
 
     upsdebugx(LOG_DEBUG, "battery level: %.2f", DeviceData.batterylevel);
+    upsdebugx(LOG_DEBUG, "type: %c", DeviceData.upstype);
     upsdebugx(LOG_DEBUG, "bypass: %d", DeviceData.bypass);
     upsdebugx(LOG_DEBUG, "onBattery: %d", DeviceData.onbattery);
+    upsdebugx(LOG_DEBUG, "lowBattery: %d", DeviceData.lowbattery);
+    upsdebugx(LOG_DEBUG, "test: %d", DeviceData.test);
 
     if (DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
         upsdebugx(LOG_DEBUG, "on battery and battery < last battery");
@@ -513,35 +524,54 @@ void upsdrv_updateinfo(void) {
     }
     dstate_setinfo("battery.charger.status", "%s", battery_status);
 
+    /* The UPS has a low battery flag of its own; like SMS PowerView, also
+     * accept a charge threshold (e.g. "default.battery.charge.low" in
+     * ups.conf). The charge figure only means something while on battery:
+     * on mains it is a recharge ramp that restarts near 20% after any
+     * battery use. */
+    lowbattery = DeviceData.lowbattery;
+    charge_low = dstate_getinfo("battery.charge.low");
+    if (!lowbattery && DeviceData.onbattery && charge_low
+     && DeviceData.batterylevel <= strtod(charge_low, NULL)) {
+        upsdebugx(LOG_DEBUG, "on battery and charge <= battery.charge.low (%s)", charge_low);
+        lowbattery = true;
+    }
+
+    /* The flags are independent of each other, so are the NUT statuses */
     status_init();
 
-    if (DeviceData.bypass) {
-        upsdebugx(LOG_DEBUG, "setting status to BYPASS");
-        status_set("BYPASS");
-    } else if (DeviceData.onbattery) {
-        upsdebugx(LOG_DEBUG, "setting status to OB");
-        status_set("OB");
-    } else if (DeviceData.lowbattery) {
-        upsdebugx(LOG_DEBUG, "setting status to LB");
+    status_set(DeviceData.onbattery ? "OB" : "OL");
+
+    if (lowbattery) {
         status_set("LB");
-    } else if (!DeviceData.upsok) {
-        upsdebugx(LOG_DEBUG, "setting status to RB");
+    }
+    if (DeviceData.test) {
+        /* A battery test runs on battery with mains present; CAL lets
+         * upsmon tell it from an outage */
+        status_set("CAL");
+    }
+    if (!DeviceData.upsok) {
         status_set("RB");
-    } else if (DeviceData.boost) {
-        upsdebugx(LOG_DEBUG, "setting status to BOOST");
+    }
+    if (DeviceData.boost) {
         status_set("BOOST");
-    } else if (!DeviceData.onbattery) {
-        /* sometimes the flag "onacpower" is not set */
-        upsdebugx(LOG_DEBUG, "setting status to OL");
-        status_set("OL");
-    } else {
-        /* None of these parameters is ON, but we got some response,
-		 * so the device is (administratively) OFF ? */
-        upsdebugx(LOG_DEBUG, "setting status to OFF");
-        status_set("OFF");
+    }
+    /* Line-interactive models have no bypass and raise this flag whenever
+     * the inverter runs (on battery, battery test); SMS PowerView ignores
+     * it for them too. On battery it could never be true anyway. */
+    if (DeviceData.bypass && !DeviceData.onbattery
+     && DeviceData.upstype != SMS_TYPE_LINE_INTERACTIVE) {
+        status_set("BYPASS");
     }
 
     status_commit();
+
+    if (DeviceData.test) {
+        dstate_setinfo("ups.test.result", "%s", "In progress");
+        test_seen = true;
+    } else if (test_seen) {
+        dstate_setinfo("ups.test.result", "%s", "Done");
+    }
     dstate_dataok();
 
     poll_interval = 5;
