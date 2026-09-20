@@ -9,9 +9,9 @@ generic_gpio - Driver for GPIO connected UPSes
 SYNOPSIS
 --------
 
-*generic_gpio* -h
+*generic_gpio_libgpiod* -h
 
-*generic_gpio* -a 'gpiochip0' ['OPTIONS']
+*generic_gpio_libgpiod* -a 'gpiochip0' ['OPTIONS']
 
 NOTE: This man page only documents the specific features of the *generic_gpio*
 driver. For information about the core driver, see linkman:nutupsdrv[8].
@@ -92,7 +92,7 @@ CONFIGURATION
 Here is an example of GPIO driver configuration in *ups.conf* file:
 ----
 [CyberPower12v]
-  driver = GENERIC_GPIO
+  driver = generic_gpio_libgpiod
   port = gpiochip0
   desc = "Modem and DNS server UPS"
   mfr = CyberPower
@@ -118,7 +118,7 @@ account to access it, like by adding the following rule to Linux `rules.d`
 directory:
 
   SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
-  chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0'
+  chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0'"
 
 AUTHOR
 ------
