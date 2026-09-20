@@ -99,6 +99,9 @@ the SERVER.  The CLIENT can query this result with `GET TRACKING`; see
 the <<net-protocol,network protocol reference>>.  A reported handler
 result does not by itself confirm completion of a physical device action.
 
+Remember that `upsd` SERVER services all of its clients in a round-robin
+fashion, so individual queries must be lightweight and speedy.
+
 Setting variables
 -----------------
 
