@@ -687,6 +687,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Removed unsupported quick-test duration configuration guidance from the
    Powervar serial and USB manuals.
+   [PR #3695]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
