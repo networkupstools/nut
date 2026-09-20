@@ -388,7 +388,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibUSB");
@@ -408,8 +412,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBUSB1 */
 		) {
 #   ifdef SONAME_LIBUSB1
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_usb_library();
 #   endif	/* SONAME_LIBUSB1 */
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
@@ -417,10 +419,12 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 #  endif	/* SOFILE_LIBUSB1 */
 		if (!nutscan_avail_usb) {
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
 		}
 #  ifdef SOPATH_LIBUSB1
 		if (!nutscan_avail_usb) {
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB1);
 		}
 #  endif	/* SOPATH_LIBUSB1 */
@@ -440,8 +444,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBUSB0 */
 		) {
 #   ifdef SONAME_LIBUSB0
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_usb_library();
 #   endif	/* SONAME_LIBUSB0 */
 			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
@@ -449,15 +451,18 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 #  endif	/* SOFILE_LIBUSB0 */
 		if (!nutscan_avail_usb) {
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
 		}
 #  ifdef WIN32
 		if (!nutscan_avail_usb) {
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-0-1-4" SOEXT);
 		}
 #  endif	/* WIN32 */
 #  ifdef SOPATH_LIBUSB0
 		if (!nutscan_avail_usb) {
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB0);
 		}
 #  endif	/* SOPATH_LIBUSB0 */
@@ -465,6 +470,7 @@ void nutscan_init(void)
 
 		if (!nutscan_avail_usb) {
 			/* We can also use libusb-compat from newer libusb-1.0 releases */
+			nutscan_unload_usb_library();
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
 		}
 	}
@@ -524,7 +530,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibSNMP");
@@ -541,8 +551,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBNETSNMP */
 		) {
 #   ifdef SONAME_LIBNETSNMP
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_snmp_library();
 #   endif	/* SONAME_LIBNETSNMP */
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
@@ -550,15 +558,18 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 #  endif	/* SOFILE_LIBNETSNMP */
 		if (!nutscan_avail_snmp) {
+			nutscan_unload_snmp_library();
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
 		}
 #  ifdef WIN32
 		if (!nutscan_avail_snmp) {
+			nutscan_unload_snmp_library();
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
 		}
 #  endif	/* WIN32 */
 #  ifdef SOPATH_LIBNETSNMP
 		if (!nutscan_avail_snmp) {
+			nutscan_unload_snmp_library();
 			nutscan_avail_snmp = nutscan_load_snmp_library(SOPATH_LIBNETSNMP);
 		}
 #  endif	/* SOPATH_LIBNETSNMP */
@@ -615,7 +626,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibNeon");
@@ -632,8 +647,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBNEON */
 		) {
 #   ifdef SONAME_LIBNEON
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_neon_library();
 #   endif	/* SONAME_LIBNEON */
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
@@ -641,21 +654,26 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 # endif	/* SOFILE_LIBNEON */
 		if (!nutscan_avail_xml_http) {
+			nutscan_unload_neon_library();
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
 		}
 		if (!nutscan_avail_xml_http) {
+			nutscan_unload_neon_library();
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
 		}
 # ifdef WIN32
 		if (!nutscan_avail_xml_http) {
+			nutscan_unload_neon_library();
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-27" SOEXT);
 		}
 		if (!nutscan_avail_xml_http) {
+			nutscan_unload_neon_library();
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls-27" SOEXT);
 		}
 # endif	/* WIN32 */
 # ifdef SOPATH_LIBNEON
 		if (!nutscan_avail_xml_http) {
+			nutscan_unload_neon_library();
 			nutscan_avail_xml_http = nutscan_load_neon_library(SOPATH_LIBNEON);
 		}
 # endif	/* SOPATH_LIBNEON */
@@ -700,7 +718,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibAvahi");
@@ -717,8 +739,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBAVAHI */
 		) {
 #   ifdef SONAME_LIBAVAHI
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_avahi_library();
 #   endif	/* SONAME_LIBAVAHI */
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
@@ -726,9 +746,11 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 # endif	/* SOFILE_LIBAVAHI */
 		if (!nutscan_avail_avahi) {
+			nutscan_unload_avahi_library();
 			nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
 # ifdef SOPATH_LIBAVAHI
 		if (!nutscan_avail_avahi) {
+			nutscan_unload_avahi_library();
 			nutscan_avail_avahi = nutscan_load_avahi_library(SOPATH_LIBAVAHI);
 		}
 # endif	/* SOPATH_LIBAVAHI */
@@ -777,7 +799,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibGIO");
@@ -794,8 +820,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBGIO */
 		) {
 #   ifdef SONAME_LIBGIO
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_upower_library();
 #   endif	/* SONAME_LIBGIO */
 			nutscan_avail_upower = nutscan_load_upower_library(SOFILE_LIBGIO);
@@ -803,10 +827,12 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 # endif	/* SOFILE_LIBGIO */
 		if (!nutscan_avail_upower) {
+			nutscan_unload_upower_library();
 			nutscan_avail_upower = nutscan_load_upower_library("libgio-2.0" SOEXT);
 		}
 # ifdef SOPATH_LIBGIO
 		if (!nutscan_avail_upower) {
+			nutscan_unload_upower_library();
 			nutscan_avail_upower = nutscan_load_upower_library(SOPATH_LIBGIO);
 		}
 # endif	/* SOPATH_LIBGIO */
@@ -850,7 +876,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibFreeIPMI");
@@ -867,8 +897,6 @@ void nutscan_init(void)
 #   endif	/* SONAME_LIBFREEIPMI */
 		) {
 #   ifdef SONAME_LIBFREEIPMI
-			/* Drop the cached failure of the SONAME attempt above,
-			 * so that this candidate name is really tried */
 			nutscan_unload_ipmi_library();
 #   endif	/* SONAME_LIBFREEIPMI */
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
@@ -876,10 +904,12 @@ void nutscan_init(void)
 #include "nut-pragmas-unreachable-code-end.h"
 # endif	/* SOFILE_LIBFREEIPMI */
 		if (!nutscan_avail_ipmi) {
+			nutscan_unload_ipmi_library();
 			nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
 		}
 # ifdef SOPATH_LIBFREEIPMI
 		if (!nutscan_avail_ipmi) {
+			nutscan_unload_ipmi_library();
 			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOPATH_LIBFREEIPMI);
 		}
 # endif	/* SOPATH_LIBFREEIPMI */
@@ -922,7 +952,11 @@ void nutscan_init(void)
 		free(libname);
 		libname = NULL;
 	} else {
-		/* let libtool (lt_dlopen) do its default magic maybe better */
+		/* let libtool (lt_dlopen) do its default magic maybe better.
+		 * Note that each failed attempt is remembered in the module
+		 * handle, so we unload it before trying the next candidate
+		 * name (otherwise nutscan_load_*_library() short-circuits on
+		 * that memory and the name is never really tried). */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "NUT Client library");
@@ -932,18 +966,22 @@ void nutscan_init(void)
 		}
 #endif	/* SOFILE_LIBUPSCLIENT */
 		if (!nutscan_avail_nut) {
+			nutscan_unload_upsclient_library();
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
 		}
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
+			nutscan_unload_upsclient_library();
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
 		}
 		if (!nutscan_avail_nut) {
+			nutscan_unload_upsclient_library();
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
 		}
 #endif	/* WIN32 */
 #ifdef SOPATH_LIBUPSCLIENT
 		if (!nutscan_avail_nut) {
+			nutscan_unload_upsclient_library();
 			nutscan_avail_nut = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
 		}
 #endif	/* SOPATH_LIBUPSCLIENT */
