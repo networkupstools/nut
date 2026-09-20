@@ -280,6 +280,11 @@ int main(void)
 {
 	int error_mode;
 	unsigned int limit;
+#ifdef WIN32
+	WSADATA wsa_data;
+
+	assert(WSAStartup(MAKEWORD(2, 2), &wsa_data) == 0);
+#endif
 
 	nutscan_avail_snmp = 1;
 	nut_initialized_snmp = 1;
@@ -304,5 +309,8 @@ int main(void)
 # endif
 #endif
 	}
+#ifdef WIN32
+	assert(WSACleanup() == 0);
+#endif
 	return EXIT_SUCCESS;
 }
