@@ -85,7 +85,7 @@ on that server.
 Example data walk:
 
 ----
-:; grep -rH '' /tmp/nut-fuse/by-server/localhost/dummy
+:; grep -rH . /tmp/nut-fuse/by-server/localhost/dummy
 /tmp/nut-fuse/by-server/localhost/dummy/battery.charge:100
 /tmp/nut-fuse/by-server/localhost/dummy/battery.charge.low:20
 /tmp/nut-fuse/by-server/localhost/dummy/battery.runtime:1456
