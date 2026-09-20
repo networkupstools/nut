@@ -308,7 +308,31 @@ To scan USB devices only:
 
 ----
 :; nut-scanner -U
+Scanning USB bus.
+
+[nutdev-usb1]
+        driver = "usbhid-ups"
+        port = "auto"
+        vendorid = "0463"
+        productid = "FFFF"
+        product = "Ellipse ECO"
+        serial = "000000000"
+        vendor = "EATON"
+        # bus = "005"
+        # device = "002"
+        # busport = "001"
+
+# WARNING: all-same character "serial" with 9 copies of '0' (0x30) reported in some devices: nutdev-usb1
 ----
+
+NOTE: The `bus`, `device` and `busport` values generally depend on enumeration
+performed by the operating system, and can change from one boot or run of the
+driver to another, at least on some systems.  On some systems this may be more
+stable than on others (e.g. you do not keep re-plugging the USB cable on a
+server in the rack, or the OS numbers follow hardware entities more closely),
+and in a few cases this may be the only reasonable way to differentiate multiple
+similar devices -- in those uncommon circumstances you might want to uncomment
+and use such values.
 
 To scan SNMP v1 device with 'public' (default) community on address range
 '192.168.0.0 to 192.168.0.255':
