@@ -141,7 +141,7 @@ nuttimetest_LDADD = $(NUT_LIBCOMMON)
 TESTS += upssched-list-timers-test
 upssched_list_timers_test_SOURCES = upssched-list-timers-test.c
 upssched_list_timers_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
-upssched_list_timers_test_LDADD = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(NETLIBS)
+upssched_list_timers_test_LDADD = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(NETLIBS)
 upssched_list_timers_test_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_srcdir)/clients/upssched.c $(top_srcdir)/clients/upssched.h
 
 TESTS += statetest

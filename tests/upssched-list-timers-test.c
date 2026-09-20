@@ -10,6 +10,7 @@
 
 #include "config.h"
 
+/* Include the implementation to test its private handler and real formatter. */
 int upssched_main(int argc, char **argv);
 #define main upssched_main
 #include "upssched.c"
@@ -22,7 +23,7 @@ int upssched_main(int argc, char **argv);
 
 static int check_timestamp(uintmax_t seconds, const char *expected)
 {
-	ttype_t timer;
+	static ttype_t timer;
 	conn_t conn;
 	FILE *output;
 	char *command[] = { (char *)"LIST-TIMERS" };
