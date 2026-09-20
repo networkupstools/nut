@@ -27,7 +27,10 @@
 
 #include "nut_stdint.h"
 
-#define DEFAULT_BOOTDELAY 64 /* seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY 64 /* seconds */
+#define DEFAULT_OFFDELAY  30 /* seconds before shutdown.return cuts the output */
+#define DEFAULT_ONDELAY   1  /* delay before the output returns; SMS PowerView never sends 0 */
+#define DEFAULT_TESTDELAY 10 /* seconds, test.battery.start.quick */
 #define MAXTRIES 3
 
 /* First byte of the 'Q' reply: the UPS topology, as decoded by SMS PowerView */
@@ -75,7 +78,7 @@ uint8_t sms_prepare_set_beep(uint8_t* buffer);
 uint8_t sms_prepare_test_battery_low(uint8_t* buffer);
 uint8_t sms_prepare_test_battery_nsec(uint8_t* buffer, uint16_t delay);
 uint8_t sms_prepare_shutdown_nsec(uint8_t* buffer, uint16_t delay);
-uint8_t sms_prepare_shutdown_restore(uint8_t* buffer);
+uint8_t sms_prepare_shutdown_restore(uint8_t* buffer, uint16_t shutdown_delay, uint16_t restore_delay);
 uint8_t sms_prepare_cancel_test(uint8_t* buffer);
 uint8_t sms_prepare_cancel_shutdown(uint8_t* buffer);
 

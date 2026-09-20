@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME	"SMS Brazil UPS driver"
-#define DRIVER_VERSION	"1.05"
+#define DRIVER_VERSION	"1.06"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -39,6 +39,8 @@
 #define HUMAN_VALUES 7
 
 static uint16_t bootdelay = DEFAULT_BOOTDELAY;
+static uint16_t offdelay = DEFAULT_OFFDELAY;
+static uint16_t ondelay = DEFAULT_ONDELAY;
 static uint8_t bufOut[BUFFER_SIZE];
 static uint8_t bufIn[BUFFER_SIZE];
 static SmsData DeviceData;
@@ -286,124 +288,88 @@ static int get_ups_features(void) {
     return -1;
 }
 
+/* Parses a delay given as text; returns 0 and leaves *delay alone unless it
+ * is a number that fits the 16 bits the protocol has for it */
+static int sms_parse_delay(const char *text, uint16_t *delay) {
+    char *end = NULL;
+    long value;
+
+    if (!text || !*text) {
+        return 0;
+    }
+    value = strtol(text, &end, 10);
+    if (*end != '\0' || value < 0 || value > UINT16_MAX) {
+        return 0;
+    }
+    *delay = (uint16_t)value;
+    return 1;
+}
+
+/* Sends the command prepared in bufOut. Commands are not acknowledged. */
+static int sms_send_command(size_t length, const char *cmdname) {
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
+    if (ser_send_buf(upsfd, bufOut, length) != (ssize_t)length) {
+        upslogx(LOG_ERR, "failed to send %s", cmdname);
+        return STAT_INSTCMD_FAILED;
+    }
+    upsdebugx(3, "command %s OK!", cmdname);
+    return STAT_INSTCMD_HANDLED;
+}
+
 static int sms_instcmd(const char *cmdname, const char *extra) {
-    size_t length;
+    uint16_t delay;
 
     upsdebug_INSTCMD_STARTING(cmdname, extra);
 
     if (!strcasecmp(cmdname, "test.battery.start")) {
-        long delay = extra ? strtol(extra, NULL, 10) : 10;
-
-        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_test_battery_nsec(&bufOut[0], delay);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.start");
-            return STAT_INSTCMD_FAILED;
+        /* Test for the number of seconds given, or the quick test's */
+        delay = DEFAULT_TESTDELAY;
+        if (extra && !sms_parse_delay(extra, &delay)) {
+            upslogx(LOG_ERR, "%s: invalid duration [%s]", cmdname, extra);
+            return STAT_INSTCMD_CONVERSION_FAILED;
         }
-        upsdebugx(3, "command test.battery.start OK!");
-        return STAT_INSTCMD_HANDLED;
+        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], delay), cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.quick")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_test_battery_low(&bufOut[0]);
+        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], DEFAULT_TESTDELAY), cmdname);
+    }
 
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.start.quick");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command test.battery.start.quick OK!");
-
-        return STAT_INSTCMD_HANDLED;
+    if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+        /* Runs until the UPS reports a low battery */
+        return sms_send_command(sms_prepare_test_battery_low(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.stop")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_cancel_test(&bufOut[0]);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.stop");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command test.battery.stop OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_cancel_test(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "beeper.toggle")) {
-        length = sms_prepare_set_beep(&bufOut[0]);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send beeper.toggle");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command beeper.toggle OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_set_beep(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.return")) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        length = sms_prepare_shutdown_restore(&bufOut[0]);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.return");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command shutdown.return OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_shutdown_restore(&bufOut[0], offdelay, ondelay), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.reboot")) {
-        uint16_t delay = bootdelay;
-        if (extra) {
-            long ldelay = strtol(extra, NULL, bootdelay);
-            if (ldelay >= 0 && (intmax_t)ldelay < (intmax_t)UINT16_MAX) {
-                delay = (uint16_t)ldelay;
-            } else {
-                upsdebugx(3, "tried to set up extra shutdown.reboot delay ut it was out of range, keeping default");
-            }
+        delay = bootdelay;
+        if (extra && !sms_parse_delay(extra, &delay)) {
+            upslogx(LOG_ERR, "%s: invalid delay [%s]", cmdname, extra);
+            return STAT_INSTCMD_CONVERSION_FAILED;
         }
-
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        length = sms_prepare_shutdown_nsec(&bufOut[0], delay);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.reboot");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command shutdown.reboot OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_shutdown_nsec(&bufOut[0], delay), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.stop")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_cancel_shutdown(&bufOut[0]);
-
-        upsdebug_hex(4, "sms_ser send", bufOut, length);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.stop");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command shutdown.stop OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_cancel_shutdown(&bufOut[0]), cmdname);
     }
 
     upslog_INSTCMD_UNKNOWN(cmdname, extra);
@@ -411,18 +377,32 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
 }
 
 static int sms_setvar(const char *varname, const char *val) {
+    uint16_t *target = NULL;
+
     upsdebug_SET_STARTING(varname, val);
 
     if (!strcasecmp(varname, "ups.delay.reboot")) {
-        int ipv = atoi(val);
-        if (ipv >= 0)
-            bootdelay = (unsigned int)ipv;
-        dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
-        return STAT_SET_HANDLED;
+        target = &bootdelay;
+    } else if (!strcasecmp(varname, "ups.delay.shutdown")) {
+        target = &offdelay;
+    } else if (!strcasecmp(varname, "ups.delay.start")) {
+        target = &ondelay;
+    } else {
+        upslog_SET_UNKNOWN(varname, val);
+        return STAT_SET_UNKNOWN;
     }
 
-    upslog_SET_UNKNOWN(varname, val);
-    return STAT_SET_UNKNOWN;
+    if (!sms_parse_delay(val, target)) {
+        return STAT_SET_CONVERSION_FAILED;
+    }
+    dstate_setinfo(varname, "%u", *target);
+    return STAT_SET_HANDLED;
+}
+
+/* Publishes a delay as a writable number */
+static void sms_publish_delay(const char *varname, uint16_t value) {
+    dstate_setinfo(varname, "%u", value);
+    dstate_setflags(varname, ST_FLAG_RW | ST_FLAG_NUMBER);
 }
 
 void upsdrv_initinfo(void) {
@@ -505,11 +485,16 @@ void upsdrv_initinfo(void) {
 
     dstate_addcmd("test.battery.start");
     dstate_addcmd("test.battery.start.quick");
+    dstate_addcmd("test.battery.start.deep");
     dstate_addcmd("test.battery.stop");
     dstate_addcmd("beeper.toggle");
     dstate_addcmd("shutdown.return");
     dstate_addcmd("shutdown.stop");
     dstate_addcmd("shutdown.reboot");
+
+    sms_publish_delay("ups.delay.shutdown", offdelay);
+    sms_publish_delay("ups.delay.start", ondelay);
+    sms_publish_delay("ups.delay.reboot", bootdelay);
 
     upsh.instcmd = sms_instcmd;
     upsh.setvar = sms_setvar;
@@ -689,6 +674,14 @@ void upsdrv_makevartable(void) {
     snprintf(msg, sizeof msg, "Set reboot delay, in seconds (default=%d).",
              DEFAULT_BOOTDELAY);
     addvar(VAR_VALUE, "rebootdelay", msg);
+
+    snprintf(msg, sizeof msg, "Set shutdown delay for shutdown.return, in seconds (default=%d).",
+             DEFAULT_OFFDELAY);
+    addvar(VAR_VALUE, "offdelay", msg);
+
+    snprintf(msg, sizeof msg, "Set delay before the output returns after shutdown.return (default=%d).",
+             DEFAULT_ONDELAY);
+    addvar(VAR_VALUE, "ondelay", msg);
 }
 
 void upsdrv_initups(void) {
@@ -699,10 +692,14 @@ void upsdrv_initups(void) {
     upsfd = ser_open(device_path);
     ser_set_speed(upsfd, device_path, B2400);
 
-    if ((val = getval("rebootdelay"))) {
-        int ipv = atoi(val);
-        if (ipv >= 0)
-            bootdelay = (unsigned int)ipv;
+    if ((val = getval("rebootdelay")) && !sms_parse_delay(val, &bootdelay)) {
+        fatalx(EXIT_FAILURE, "Invalid rebootdelay [%s]", val);
+    }
+    if ((val = getval("offdelay")) && !sms_parse_delay(val, &offdelay)) {
+        fatalx(EXIT_FAILURE, "Invalid offdelay [%s]", val);
+    }
+    if ((val = getval("ondelay")) && !sms_parse_delay(val, &ondelay)) {
+        fatalx(EXIT_FAILURE, "Invalid ondelay [%s]", val);
     }
 }
 
@@ -773,11 +770,12 @@ uint8_t sms_prepare_test_battery_low(uint8_t *buffer) {
 }
 
 uint8_t sms_prepare_test_battery_nsec(uint8_t *buffer, uint16_t delay) {
+    /* The delay is a 16-bit big-endian value, the unused pair is zero */
     buffer[0] = 'T';
-    buffer[1] = (uint8_t)(delay % 256);
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(delay >> 8);
+    buffer[2] = (uint8_t)(delay & 0xFF);
+    buffer[3] = 0;
+    buffer[4] = 0;
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
@@ -785,23 +783,26 @@ uint8_t sms_prepare_test_battery_nsec(uint8_t *buffer, uint16_t delay) {
 }
 
 uint8_t sms_prepare_shutdown_nsec(uint8_t *buffer, uint16_t delay) {
+    /* The delay is a 16-bit big-endian value, the unused pair is zero */
     buffer[0] = 'S';
-    buffer[1] = (uint8_t)(delay % 256);
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(delay >> 8);
+    buffer[2] = (uint8_t)(delay & 0xFF);
+    buffer[3] = 0;
+    buffer[4] = 0;
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
     return 7;
 }
 
-uint8_t sms_prepare_shutdown_restore(uint8_t *buffer) {
+uint8_t sms_prepare_shutdown_restore(uint8_t *buffer, uint16_t shutdown_delay, uint16_t restore_delay) {
+    /* Two 16-bit big-endian values: delay before the output is cut, then
+     * delay before it returns once mains is back */
     buffer[0] = 'R';
-    buffer[1] = 255;
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(shutdown_delay >> 8);
+    buffer[2] = (uint8_t)(shutdown_delay & 0xFF);
+    buffer[3] = (uint8_t)(restore_delay >> 8);
+    buffer[4] = (uint8_t)(restore_delay & 0xFF);
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
