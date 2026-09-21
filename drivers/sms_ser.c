@@ -650,6 +650,12 @@ void upsdrv_shutdown(void) {
     /* OB: the load must remain off until the power returns */
     upsdebugx(2, "upsdrv Shutdown execute");
 
+    /* Learn the UPS type, which decides the time unit of the delays; this
+     * may be a fresh driver instance which never polled the UPS */
+    if (get_ups_nominal() != 0) {
+        upslogx(LOG_WARNING, "No status from UPS, assuming a line-interactive model for the delays");
+    }
+
     for (retry = 1; retry <= MAXTRIES; retry++) {
         /* By default, abort a previously requested shutdown
          * (if any) and schedule a new one from this moment. */
