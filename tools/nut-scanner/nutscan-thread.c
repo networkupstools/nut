@@ -15,8 +15,8 @@
 int nut_scanner_thread_create(nutscan_thread_t **array, size_t *count,
 	void *(*worker)(void *), void *arg)
 {
-	nutscan_thread_t *grown;
-	int ret;
+	nutscan_thread_t	*grown;
+	int	ret;
 
 	if (*count >= SIZE_MAX / sizeof(**array)) {
 		upsdebugx(1, "%s: Thread array is too large", __func__);
@@ -28,12 +28,15 @@ int nut_scanner_thread_create(nutscan_thread_t **array, size_t *count,
 		upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 		return -1;
 	}
+
 	*array = grown;
+
 	ret = pthread_create(&grown[*count].thread, NULL, worker, arg);
 	if (ret != 0) {
 		upsdebugx(1, "%s: pthread_create() returned code %i", __func__, ret);
 		return ret;
 	}
+
 	grown[*count].active = 1;
 	(*count)++;
 
@@ -61,7 +64,7 @@ void nut_scanner_semaphore_release(sem_t *global, sem_t *protocol, size_t limit)
 int nut_scanner_semaphore_acquire(sem_t *global, sem_t *protocol,
 	size_t limit, int wait)
 {
-	int ret, saved_errno;
+	int	ret;
 
 	if (limit > 0) {
 		do {
@@ -76,13 +79,15 @@ int nut_scanner_semaphore_acquire(sem_t *global, sem_t *protocol,
 		ret = wait ? sem_wait(global) : sem_trywait(global);
 	} while (ret != 0 && errno == EINTR);
 	if (ret != 0) {
-		saved_errno = errno;
+		int	saved_errno = errno;
 		if (limit > 0) {
 			sem_post(protocol);
 		}
 		errno = saved_errno;
 		return errno == EAGAIN ? 0 : -1;
 	}
+
+	/* Success on both fronts */
 	return 1;
 }
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
