@@ -1,5 +1,8 @@
 /* Internal ownership helpers for parallel scanner workers.
- * Copyright (C) 2026 NUT contributors
+ * Copyright (C)
+ *    2016 - 2021  EATON - Various threads-related improvements
+ *    2020 - 2026  Jim Klimov <jimklimov+nut@gmail.com>
+ *    2026         NUT contributors
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
