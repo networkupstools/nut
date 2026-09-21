@@ -53,6 +53,7 @@ $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la \
 $(top_builddir)/clients/libnutclient.la \
 $(top_builddir)/clients/libnutclientstub.la \
+$(top_builddir)/tools/nut-scanner/nutscan-snmp.h \
 $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -94,6 +95,13 @@ $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.
 NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
 
 endif !ENABLE_SHARED_PRIVATE_LIBS
+
+# Finish shared dependencies before the scanner's independent sub-make
+# (normally invoked only if building WITH_NUT_SCANNER).
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_builddir)/clients/libupsclient.la
+# The scanner library generates this header before the tests can include it
+# (if building WITH_NUT_SCANNER and WITH_SNMP).
+$(top_builddir)/tools/nut-scanner/nutscan-snmp.h: $(top_builddir)/tools/nut-scanner/libnutscan.la
 
 TESTS += test_cgilib
 test_cgilib_SOURCES = test_cgilib.c
@@ -271,12 +279,7 @@ if WITH_SSL
 NUTSCAN_TEST_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
-# Finish shared dependencies before the scanner's independent sub-make.
-$(top_builddir)/tools/nut-scanner/libnutscan.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_builddir)/clients/libupsclient.la
-
 if WITH_SNMP
-# The scanner library generates this header before the tests can include it.
-$(top_builddir)/tools/nut-scanner/nutscan-snmp.h: $(top_builddir)/tools/nut-scanner/libnutscan.la
 nutscan-thread-test.c nutscan-snmp-retry-test.c: $(top_builddir)/tools/nut-scanner/nutscan-snmp.h
 
 TESTS += nutscan-snmp-retry-test
