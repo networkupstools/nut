@@ -1280,7 +1280,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 				" pass=%u",
 				__func__, max_threads_scantype,
 				curr_threads, thread_count,
-				pass
+				(unsigned int)pass
 			);
 		}
 # else
