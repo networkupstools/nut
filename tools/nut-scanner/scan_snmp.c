@@ -1267,11 +1267,21 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 		{
 			int admitted = nut_scanner_semaphore_acquire(semaphore,
 				semaphore_scantype, max_threads_scantype, thread_array == NULL);
+
 			if (admitted < 0) {
 				upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
 				break;
 			}
 			pass = admitted > 0 ? TRUE : FALSE;
+
+			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
+				" curr_threads=%" PRIuSIZE
+				" thread_count=%" PRIuSIZE
+				" pass=%u",
+				__func__, max_threads_scantype,
+				curr_threads, thread_count,
+				pass
+			);
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
