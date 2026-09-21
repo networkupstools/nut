@@ -45,9 +45,11 @@ Example:
 *CMDSCRIPT* 'scriptname' ['arg1' 'arg2' ...]::
 Required.  This must be above any AT lines.  This script is used to
 invoke commands when your timers are triggered.  The timer name is passed
-as an argument.  With no arguments configured after 'scriptname', the
-timer name is the script's first and only argument.  Any configured
-arguments precede the timer name.
+as the first argument (after those optionally listed in your `CMDSCRIPT`
+definition, if any): with no arguments configured after 'scriptname',
+the timer name is the script's first and only argument; any optional
+arguments configured here precede the timer name, and your CMDSCRIPT
+should be coded to handle that properly.
 +
 The first (possibly only) token of the value is interpreted as a complete
 path to an externally stored executable script (e.g. not an inline scriptlet)
