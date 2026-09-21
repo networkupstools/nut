@@ -92,7 +92,9 @@ When using file names with space characters, quote each path separately:
 
 	NOTIFYCMD "c:\\path with space\\notifyme" "c:\\path with space\\name"
 
-Alternatively, escape the spaces as well as the backslashes:
+Alternatively, escape the spaces as well as the backslashes (note there
+are also two tokens in this example, making it equivalent to the one above
+for programmatic consumption -- but arguably harder to read for humans):
 
 	NOTIFYCMD c:\\path\ with\ space\\notifyme c:\\path\ with\ space\\name
 
