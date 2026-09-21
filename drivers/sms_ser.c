@@ -478,8 +478,8 @@ void upsdrv_initinfo(void) {
         dstate_setinfo("battery.voltage", "%.2f", (DeviceData.voltageBattery * DeviceData.batterylevel) / 100);
         dstate_setinfo("ups.temperature", "%.2f", DeviceData.temperatureC);
 
-        if (DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
-            upsdebugx(LOG_DEBUG, "on battery and battery < last battery");
+        if (DeviceData.onbattery) {
+            upsdebugx(LOG_DEBUG, "on battery");
             battery_status = "discharging";
         } else if (!DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
             upsdebugx(LOG_DEBUG, "on power and battery > last battery");
@@ -562,8 +562,8 @@ void upsdrv_updateinfo(void) {
     upsdebugx(LOG_DEBUG, "lowBattery: %d", DeviceData.lowbattery);
     upsdebugx(LOG_DEBUG, "test: %d", DeviceData.test);
 
-    if (DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
-        upsdebugx(LOG_DEBUG, "on battery and battery < last battery");
+    if (DeviceData.onbattery) {
+        upsdebugx(LOG_DEBUG, "on battery");
         battery_status = "discharging";
     } else if (!DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
         upsdebugx(LOG_DEBUG, "on power and battery > last battery");
