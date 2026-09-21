@@ -340,11 +340,16 @@ Defined in `m4/nut_report_feature.m4`.
 *NUT_REPORT_FEATURE(FEATURE, FLAG, VALUE, VARIABLE, DESCRIPTION)*::
 
     Report a feature decision immediately and queue it for the final
-    summary. 'FLAG' is the decision (normally `yes` or `no`); 'VALUE'
-    adds details such as the selected library. Declare the Automake
-    conditional named by 'VARIABLE', true exactly when 'FLAG' is `yes`.
-    In that case also define the C symbol 'VARIABLE' as `1`, with
-    'DESCRIPTION' as its comment.
+    summary.
++
+The 'FEATURE' is a descriptive string such that the scripted sentence
+"Checking whether to FEATURE" as well as "FEATURE" itself in the final
+list of configuration decisions both make sense (keep in mind casing,
+endings, suffixes and verb forms); 'FLAG' is the decision (normally
+`yes` or `no`); 'VALUE' adds details such as the selected library.
+This macro declares the Automake conditional named by 'VARIABLE', to be
+true exactly when 'FLAG' is `yes`. In that case also define the C symbol
+'VARIABLE' as `1`, with 'DESCRIPTION' as its comment.
 +
 Some callers pass a sixth argument to customise the check message.
 The current implementation reads the shell's sixth positional parameter
@@ -355,7 +360,7 @@ instead of that M4 argument, so callers cannot rely on this control.
 
     Apply the same conditional and C-definition handling as the feature
     reporter, using separate summary groups for drivers and programs.
-    Their check messages use `whether to FEATURE`.
+    Their configuration progress messages use `Checking whether to FEATURE`.
 
 *NUT_REPORT_SETTING(SETTING, VARIABLE, VALUE, DESCRIPTION)*::
 *NUT_REPORT_SETTING_PATH(SETTING, VARIABLE, VALUE, DESCRIPTION)*::
@@ -367,6 +372,7 @@ instead of that M4 argument, so callers cannot rely on this control.
     summary groups for NUT paths and third-party integration paths;
     `NUT_REPORT_SETTING_PATH_INTEGRATIONS` takes the same four arguments.
     Callers must supply appropriate C quoting for string values.
+    Their configuration progress messages use `Checking setting for SETTING`.
 
 *NUT_REPORT_TARGET(VARIABLE, VALUE, DESCRIPTION)*::
 *NUT_REPORT_TARGET_WITHOUT_AC_DEFINE(VARIABLE, VALUE, DESCRIPTION)*::
