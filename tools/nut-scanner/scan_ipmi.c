@@ -1043,6 +1043,7 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 		} /* while */
 
 		free(ip_str);
+		ip_str = NULL;
 
 #ifdef HAVE_PTHREAD
 		if (thread_array != NULL) {

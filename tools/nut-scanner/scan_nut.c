@@ -551,6 +551,7 @@ end:
 		free(hostname);
 	}
 	free_nut_arg(nut_arg);
+	nut_arg = NULL;
 
 	return NULL;
 }
@@ -940,6 +941,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 				nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 #endif
 				free(ip_dest);
+				ip_dest = NULL;
 				break;
 			}
 
@@ -972,6 +974,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 					list_nut_devices_thready, (void *)nut_arg);
 				if (ret != 0) {
 					free_nut_arg(nut_arg);
+					nut_arg = NULL;
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 					nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # endif

@@ -786,6 +786,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 		} /* while */
 
 		free(ip_str);
+		ip_str = NULL;
 
 #ifdef HAVE_PTHREAD
 		if (thread_array != NULL) {
