@@ -16,7 +16,17 @@
 #endif
 
 #if defined HAVE_PTHREAD && (defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+# if NUTSCAN_TEST_PROTOCOL == 5
+#  include "nutscan-serial.h"
+static char **test_serial_ports(const char *range);
+static int test_join(pthread_t thread, void **result);
+#  if defined HAVE_PTHREAD_TRYJOIN && !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
+static int test_tryjoin(pthread_t thread, void **result);
+#  endif
+# endif
+# if NUTSCAN_TEST_PROTOCOL != 5
 static void *test_malloc(size_t size);
+# endif
 static void *test_realloc(void *ptr, size_t size);
 static void test_free(void *ptr);
 static int test_create(pthread_t *thread, const pthread_attr_t *attr,
@@ -24,33 +34,46 @@ static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 static int test_wait(sem_t *sem);
 static int test_trywait(sem_t *sem);
-#  ifdef HAVE_SEMAPHORE_UNNAMED
+#  if NUTSCAN_TEST_PROTOCOL != 5
+#   ifdef HAVE_SEMAPHORE_UNNAMED
 static int test_init(sem_t *sem, int shared, unsigned int value);
 static int test_destroy(sem_t *sem);
-#  else
+#   else
 static sem_t *test_open(const char *name, int flags, ...);
 static int test_close(sem_t *sem);
 static int test_unlink(const char *name);
+#   endif
 #  endif
 # endif
 
 /* Compile the actual scanner loop. Only probes and injected resource
  * failures are replaced; threads, semaphore accounting and cleanup run.
  */
-# define malloc test_malloc
+# if NUTSCAN_TEST_PROTOCOL != 5
+#  define malloc test_malloc
+# endif
 # define realloc test_realloc
 # define free test_free
 # define pthread_create test_create
+# if NUTSCAN_TEST_PROTOCOL == 5
+#  define nutscan_get_serial_ports_list test_serial_ports
+#  define pthread_join test_join
+#  if defined HAVE_PTHREAD_TRYJOIN && !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
+#   define pthread_tryjoin_np test_tryjoin
+#  endif
+# endif
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 #  define sem_wait test_wait
 #  define sem_trywait test_trywait
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-#   define sem_init test_init
-#   define sem_destroy test_destroy
-#  else
-#   define sem_open test_open
-#   define sem_close test_close
-#   define sem_unlink test_unlink
+#  if NUTSCAN_TEST_PROTOCOL != 5
+#   ifdef HAVE_SEMAPHORE_UNNAMED
+#    define sem_init test_init
+#    define sem_destroy test_destroy
+#   else
+#    define sem_open test_open
+#    define sem_close test_close
+#    define sem_unlink test_unlink
+#   endif
 #  endif
 # endif
 
@@ -63,6 +86,8 @@ static int test_unlink(const char *name);
 #  include "scan_ipmi.c"
 # elif NUTSCAN_TEST_PROTOCOL == 3
 #  include "scan_nut.c"
+# elif NUTSCAN_TEST_PROTOCOL == 5
+#  include "scan_eaton_serial.c"
 # else
 #  include "scan_xml_http.c"
 # endif
@@ -71,6 +96,9 @@ static int test_unlink(const char *name);
 # undef realloc
 # undef free
 # undef pthread_create
+# undef nutscan_get_serial_ports_list
+# undef pthread_join
+# undef pthread_tryjoin_np
 # undef sem_wait
 # undef sem_trywait
 # undef sem_init
@@ -91,7 +119,50 @@ static void *arguments[32];
 static pthread_mutex_t test_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t test_done = PTHREAD_COND_INITIALIZER;
 static int completed_before_return;
+# if NUTSCAN_TEST_PROTOCOL == 5
+static int live_workers, release_workers;
 
+static char **test_serial_ports(const char *range)
+{
+	char **ports = (char **)calloc(6, sizeof(*ports));
+	size_t i;
+
+	NUT_UNUSED_VARIABLE(range);
+	assert(ports != NULL);
+	for (i = 0; i < 5; i++) {
+		ports[i] = strdup("test-port");
+		assert(ports[i] != NULL);
+	}
+	return ports;
+}
+
+/* Keep serial workers using borrowed port names alive until a join attempt.
+ * This exposes cleanup which frees port storage before tracking workers.
+ */
+static void release_serial_workers(void)
+{
+	pthread_mutex_lock(&test_mutex);
+	release_workers = 1;
+	pthread_cond_broadcast(&test_done);
+	pthread_mutex_unlock(&test_mutex);
+}
+
+static int test_join(pthread_t thread, void **result)
+{
+	release_serial_workers();
+	return pthread_join(thread, result);
+}
+
+#  if defined HAVE_PTHREAD_TRYJOIN && !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
+static int test_tryjoin(pthread_t thread, void **result)
+{
+	release_serial_workers();
+	return pthread_tryjoin_np(thread, result);
+}
+#  endif
+# endif
+
+# if NUTSCAN_TEST_PROTOCOL != 5
 static void *test_malloc(size_t size)
 {
 	void *ptr;
@@ -111,6 +182,7 @@ static void *test_malloc(size_t size)
 	}
 	abort();
 }
+# endif
 
 static void *test_realloc(void *ptr, size_t size)
 {
@@ -123,6 +195,12 @@ static void *test_realloc(void *ptr, size_t size)
 static void test_free(void *ptr)
 {
 	size_t i;
+
+# if NUTSCAN_TEST_PROTOCOL == 5
+	pthread_mutex_lock(&test_mutex);
+	assert(live_workers == 0);
+	pthread_mutex_unlock(&test_mutex);
+# endif
 
 	if (ptr != NULL) {
 		for (i = 0; i < sizeof(arguments) / sizeof(arguments[0]); i++) {
@@ -145,7 +223,16 @@ static void *offline_worker(void *opaque)
 {
 	struct test_worker *work = (struct test_worker *)opaque;
 
-# if NUTSCAN_TEST_PROTOCOL == 3
+# if NUTSCAN_TEST_PROTOCOL == 5
+	pthread_mutex_lock(&test_mutex);
+	while (!release_workers) {
+		pthread_cond_wait(&test_done, &test_mutex);
+	}
+	pthread_mutex_unlock(&test_mutex);
+	assert(strcmp((char *)work->arg, "test-port") == 0);
+	assert(pthread_mutex_lock(&dev_mutex) == 0);
+	assert(pthread_mutex_unlock(&dev_mutex) == 0);
+# elif NUTSCAN_TEST_PROTOCOL == 3
 	work->worker(work->arg);
 # else
 #  if NUTSCAN_TEST_PROTOCOL == 1
@@ -161,6 +248,9 @@ static void *offline_worker(void *opaque)
 	free(work);
 	pthread_mutex_lock(&test_mutex);
 	completed++;
+# if NUTSCAN_TEST_PROTOCOL == 5
+	live_workers--;
+# endif
 	pthread_cond_signal(&test_done);
 	pthread_mutex_unlock(&test_mutex);
 	return NULL;
@@ -186,6 +276,11 @@ static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 	if (ret != 0) {
 		free(work);
 	}
+# if NUTSCAN_TEST_PROTOCOL == 5
+	else {
+		live_workers++;
+	}
+# endif
 	while (ret == 0 && completed_before_return && completed == previous) {
 		pthread_cond_wait(&test_done, &test_mutex);
 	}
@@ -196,9 +291,11 @@ static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 /* Borrowed only until the scanner destroys or closes its semaphore. */
 static sem_t *global_sem, *protocol_sem;
+#  if NUTSCAN_TEST_PROTOCOL != 5
 static unsigned int protocol_capacity;
+#  endif
 static int fail_init, interrupt_wait, fail_wait, fail_try_global, fail_try_protocol;
-#  if defined HAVE_SEMAPHORE_NAMED && !defined HAVE_SEMAPHORE_UNNAMED
+#  if NUTSCAN_TEST_PROTOCOL != 5 && defined HAVE_SEMAPHORE_NAMED && !defined HAVE_SEMAPHORE_UNNAMED
 static char protocol_name[128];
 #  endif
 
@@ -243,7 +340,8 @@ static int test_trywait(sem_t *sem)
 	return sem_trywait(sem);
 }
 
-#  ifdef HAVE_SEMAPHORE_UNNAMED
+#  if NUTSCAN_TEST_PROTOCOL != 5
+#   ifdef HAVE_SEMAPHORE_UNNAMED
 static int test_init(sem_t *sem, int shared, unsigned int value)
 {
 	int ret;
@@ -272,7 +370,7 @@ static int test_destroy(sem_t *sem)
 	protocol_sem = NULL;
 	return ret;
 }
-#  else
+#   else
 static sem_t *test_open(const char *name, int flags, ...)
 {
 	va_list ap;
@@ -314,7 +412,8 @@ static int test_unlink(const char *name)
 	NUT_UNUSED_VARIABLE(name);
 	return 0;
 }
-#  endif
+#   endif
+#  endif /* NUTSCAN_TEST_PROTOCOL != 5 */
 # endif /* semaphore support */
 
 # if NUTSCAN_TEST_PROTOCOL == 1
@@ -394,31 +493,35 @@ static void offline_free_cert(const char *host, const char *cert)
 
 static void scan(unsigned int limit)
 {
-	nutscan_ip_range_list_t ranges;
-# if NUTSCAN_TEST_PROTOCOL == 1
-	nutscan_snmp_t settings;
-# elif NUTSCAN_TEST_PROTOCOL == 2
-	nutscan_ipmi_t settings;
-# elif NUTSCAN_TEST_PROTOCOL == 3
-	nutscan_nut_authconf_t settings;
+# if NUTSCAN_TEST_PROTOCOL == 5
+	NUT_UNUSED_VARIABLE(limit);
+	assert(nutscan_scan_eaton_serial("test-ports") == NULL);
 # else
+	nutscan_ip_range_list_t ranges;
+#  if NUTSCAN_TEST_PROTOCOL == 1
+	nutscan_snmp_t settings;
+#  elif NUTSCAN_TEST_PROTOCOL == 2
+	nutscan_ipmi_t settings;
+#  elif NUTSCAN_TEST_PROTOCOL == 3
+	nutscan_nut_authconf_t settings;
+#  else
 	nutscan_xml_t settings;
-# endif
+#  endif
 
 	memset(&settings, 0, sizeof(settings));
 	nutscan_init_ip_ranges(&ranges);
 	nutscan_add_ip_range(&ranges, strdup("192.0.2.1"), strdup("192.0.2.5"));
-# if NUTSCAN_TEST_PROTOCOL == 1
+#  if NUTSCAN_TEST_PROTOCOL == 1
 	max_threads_netsnmp = limit;
 	nutscan_avail_snmp = 1;
 	nut_initialized_snmp = 1;
 	nut_snmp_out_toggle_options = offline_snmp_options;
 	assert(nutscan_scan_ip_range_snmp(&ranges, 1, &settings) == NULL);
-# elif NUTSCAN_TEST_PROTOCOL == 2
+#  elif NUTSCAN_TEST_PROTOCOL == 2
 	max_threads_ipmi = limit;
 	nutscan_avail_ipmi = 1;
 	assert(nutscan_scan_ip_range_ipmi(&ranges, &settings) == NULL);
-# elif NUTSCAN_TEST_PROTOCOL == 3
+#  elif NUTSCAN_TEST_PROTOCOL == 3
 	max_threads_oldnut = limit;
 	nutscan_avail_nut = 1;
 	nut_upscli_splitaddr = offline_splitaddr;
@@ -431,12 +534,13 @@ static void scan(unsigned int limit)
 	nut_upscli_free_host_cert = offline_free_cert;
 	settings.authconf_file = "none";
 	assert(nutscan_scan_ip_range_nut_authconf(&ranges, &settings) == NULL);
-# else
+#  else
 	max_threads_netxml = limit;
 	nutscan_avail_xml_http = 1;
 	assert(nutscan_scan_ip_range_xml_http(&ranges, 1, &settings) == NULL);
-# endif
+#  endif
 	nutscan_free_ip_ranges(&ranges);
+# endif
 }
 
 static void scenario(unsigned int limit, int failure)
@@ -449,6 +553,11 @@ static void scenario(unsigned int limit, int failure)
 	fail_malloc = fail_realloc = fail_create = 0;
 	create_calls = completed = 0;
 	completed_before_return = 1;
+# if NUTSCAN_TEST_PROTOCOL == 5
+	assert(live_workers == 0);
+	completed_before_return = 0;
+	release_workers = 0;
+# endif
 	assert(allocations == 0);
 	assert(auth_allocations == 0);
 	if (failure == 1) {
@@ -539,6 +648,14 @@ int main(int argc, char **argv)
 	for (repeat = 0; repeat < 2; repeat++) {
 		for (i = 0; i < sizeof(limits) / sizeof(limits[0]); i++) {
 			for (failure = 0; failure < 12; failure++) {
+# if NUTSCAN_TEST_PROTOCOL == 5
+				/* Serial has no allocated worker argument or protocol limit. */
+				if (i > 0 || failure == 1 || failure == 6
+				|| failure == 9 || failure == 11
+				) {
+					continue;
+				}
+# endif
 # if !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
 				if (failure >= 6) {
 					continue;

@@ -290,6 +290,12 @@ nutscan_snmp_retry_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_snmp
 endif WITH_SNMP
 
 if WITH_THREADING
+TESTS += nutscan-serial-test
+nutscan_serial_test_SOURCES = nutscan-thread-test.c
+nutscan_serial_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=5
+nutscan_serial_test_LDADD = $(NUTSCAN_TEST_LDADD) $(top_builddir)/drivers/libserial-nutscan.la $(SERLIBS)
+nutscan_serial_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_eaton_serial.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.c $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+
 TESTS += nutscan-nut-test
 nutscan_nut_test_SOURCES = nutscan-thread-test.c
 nutscan_nut_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=3

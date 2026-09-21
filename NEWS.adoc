@@ -52,6 +52,9 @@ https://github.com/networkupstools/nut/milestone/13
         retry those hosts one at a time and report any remaining descriptor
         exhaustion. Other scan types and their limits are unchanged.
         [issue #2576]
+      - Keep serial scan permits balanced when admission or thread creation
+        fails, and retain port names until all started workers finish if
+        allocating thread tracking fails.
       - Balance concurrency permits and worker ownership during SNMP, IPMI,
         NUT and XML/HTTP scans, including disabled protocol limits and failed
         thread creation. Keep NUT authentication data alive until the scan
