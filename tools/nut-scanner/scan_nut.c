@@ -396,6 +396,9 @@ err:
 /* FIXME: SSL support */
 static void free_nut_arg(struct scan_nut_arg *arg)
 {
+	if (!arg)
+		return;
+
 	/* Work with host_cert list is mutex'ed in the upsclient library. */
 	if (nut_upscli_free_host_cert) {
 		(*nut_upscli_free_host_cert)(arg->hostname, NULL);
@@ -547,9 +550,7 @@ end:
 	if (hostname) {
 		free(hostname);
 	}
-	if (nut_arg) {
-		free_nut_arg(nut_arg);
-	}
+	free_nut_arg(nut_arg);
 
 	return NULL;
 }
