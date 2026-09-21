@@ -45,6 +45,8 @@ static uint8_t bufOut[BUFFER_SIZE];
 static uint8_t bufIn[BUFFER_SIZE];
 static SmsData DeviceData;
 static int comm_failures = 0;
+static int novalidate = 0;
+static int legacydelays = 0;
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -191,7 +193,7 @@ static ssize_t sms_query(uint8_t length) {
     for (i = 0; i < RESULT_SIZE - 1; i++) {
         sum += bufIn[i];
     }
-    if (sum != 0 || bufIn[RESULT_SIZE - 1] != ENDCHAR) {
+    if (!novalidate && (sum != 0 || bufIn[RESULT_SIZE - 1] != ENDCHAR)) {
         upslogx(LOG_ERR, "Bad checksum or terminator in reply from UPS");
         dstate_datastale();
         return -1;
@@ -320,6 +322,18 @@ static uint16_t sms_seconds_to_units(uint16_t seconds) {
     return (units > UINT16_MAX) ? UINT16_MAX : (uint16_t)units;
 }
 
+/* Rewrites the parameters of a prepared 'T', 'S' or 'R' command the way
+ * driver versions before 1.06 sent them, for devices that turn out to rely
+ * on it (the "legacydelays" flag): the low byte of the delay in seconds, if
+ * the command had one, and 0xFF in all other parameter bytes. */
+static void sms_apply_legacy_delays(uint8_t *buffer, int has_delay, uint16_t seconds) {
+    buffer[1] = has_delay ? (uint8_t)(seconds % 256) : 255;
+    buffer[2] = 255;
+    buffer[3] = 255;
+    buffer[4] = 255;
+    buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
+}
+
 /* Sends the command prepared in bufOut. Commands are not acknowledged. */
 static int sms_send_command(size_t length, const char *cmdname) {
     upsdebug_hex(4, "sms_ser send", bufOut, length);
@@ -333,6 +347,7 @@ static int sms_send_command(size_t length, const char *cmdname) {
 
 static int sms_instcmd(const char *cmdname, const char *extra) {
     uint16_t delay;
+    size_t length;
 
     upsdebug_INSTCMD_STARTING(cmdname, extra);
 
@@ -344,12 +359,20 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
             return STAT_INSTCMD_CONVERSION_FAILED;
         }
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(delay)), cmdname);
+        length = sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(delay));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, delay);
+        }
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.quick")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(DEFAULT_TESTDELAY)), cmdname);
+        length = sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(DEFAULT_TESTDELAY));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, DEFAULT_TESTDELAY);
+        }
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.deep")) {
@@ -369,7 +392,11 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
 
     if (!strcasecmp(cmdname, "shutdown.return")) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        return sms_send_command(sms_prepare_shutdown_restore(&bufOut[0], sms_seconds_to_units(offdelay), ondelay), cmdname);
+        length = sms_prepare_shutdown_restore(&bufOut[0], sms_seconds_to_units(offdelay), ondelay);
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 0, 0);
+        }
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.reboot")) {
@@ -379,7 +406,11 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
             return STAT_INSTCMD_CONVERSION_FAILED;
         }
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        return sms_send_command(sms_prepare_shutdown_nsec(&bufOut[0], sms_seconds_to_units(delay)), cmdname);
+        length = sms_prepare_shutdown_nsec(&bufOut[0], sms_seconds_to_units(delay));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, delay);
+        }
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.stop")) {
@@ -703,6 +734,9 @@ void upsdrv_makevartable(void) {
     snprintf(msg, sizeof msg, "Set delay before the output returns after shutdown.return (default=%d).",
              DEFAULT_ONDELAY);
     addvar(VAR_VALUE, "ondelay", msg);
+
+    addvar(VAR_FLAG, "legacydelays", "Send test and shutdown delays the way driver versions before 1.06 did");
+    addvar(VAR_FLAG, "novalidate", "Do not check the checksum and terminator of replies from the UPS");
 }
 
 void upsdrv_initups(void) {
@@ -721,6 +755,14 @@ void upsdrv_initups(void) {
     }
     if ((val = getval("ondelay")) && !sms_parse_delay(val, &ondelay)) {
         fatalx(EXIT_FAILURE, "Invalid ondelay [%s]", val);
+    }
+    if (testvar("legacydelays")) {
+        legacydelays = 1;
+        upslogx(LOG_NOTICE, "Sending delays in the legacy format; please report to the NUT project why this was needed");
+    }
+    if (testvar("novalidate")) {
+        novalidate = 1;
+        upslogx(LOG_NOTICE, "Not validating replies from the UPS; please report to the NUT project why this was needed");
     }
 }
 
