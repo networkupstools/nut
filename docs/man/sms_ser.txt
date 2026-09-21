@@ -45,19 +45,40 @@ linkman:ups.conf[5] file:
 *offdelay*='value'::
 Time to wait before the output is cut by the `shutdown.return` command
 and when the driver is asked to power off the load at the end of a system
-shutdown (default=30). The protocol calls it seconds. Also available as
-the writable `ups.delay.shutdown` variable.
+shutdown, in seconds (default=30). Also available as the writable
+`ups.delay.shutdown` variable.
 
 *ondelay*='value'::
 Time to wait before the output returns, once mains power is back, after
-the shutdown above (default=1). The vendor software never sends 0 here.
-Also available as the writable `ups.delay.start` variable.
+the shutdown above (default=1). This value is sent to the UPS as is, and
+its unit is not known (possibly minutes); the vendor software never sends
+0 here. Also available as the writable `ups.delay.start` variable.
 
 *rebootdelay*='value'::
-Time to wait before the output is cut by the `shutdown.reboot` command
-(default=64). Also available as the writable `ups.delay.reboot` variable.
+Time to wait before the output is cut by the `shutdown.reboot` command,
+in seconds (default=64). Also available as the writable `ups.delay.reboot`
+variable.
 
-All three values are limited to 65535 by the protocol.
+The protocol has 16 bits for each of these values. Line-interactive models
+count time in hundredths of a minute (0.6 seconds), so the driver converts
+seconds accordingly, which limits them to about 39000 seconds; models of
+the on-line type are sent the seconds unchanged. The unit was measured with
+battery tests on a line-interactive model and is assumed to be the same for
+the shutdown delays.
+
+*legacydelays*::
+Send the parameters of the battery test and shutdown commands the way
+driver versions before 1.06 did (the low byte of the seconds for a timed
+test or `shutdown.reboot`, and no delays at all for `shutdown.return`),
+instead of the format used by the vendor software. Only meant as a way back
+for a device whose shutdown or test worked before and does not now; please
+report such a device to the NUT project.
+
+*novalidate*::
+Do not check the checksum and the terminator of the replies from the UPS.
+Only meant as a way back for a device which worked before and whose replies
+are now rejected ("Bad checksum or terminator" in the log); please report
+such a device to the NUT project.
 
 As with any driver, a `default.battery.charge.low` or
 `override.battery.charge.low` setting may be added, see NOTES below.

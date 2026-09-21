@@ -50,10 +50,16 @@ Changes from 2.8.5 to 2.8.6
     system shutdown) and `shutdown.reboot` now send their delays in the
     format used by the vendor software. Previously `shutdown.return` sent
     no usable delays, and the `shutdown.reboot` delay was mangled (64 was
-    sent as `0x40FF`), so the timing seen with your device may change. See
+    sent as `0x40FF`), and converts seconds to the time unit of the UPS,
+    so the timing seen with your device may change. See
     the `offdelay`, `ondelay` and `rebootdelay` settings in
     linkman:sms_ser[8]. A malformed `rebootdelay` in `ups.conf` is now fatal
-    instead of being silently ignored.
+    instead of being silently ignored. If a shutdown or test which worked
+    before does not work now, the `legacydelays` flag restores the old
+    format; please report such a device.
+  * Replies from the UPS are now checked for their checksum. If a device
+    which worked before is rejected, the `novalidate` flag turns the check
+    off; please report such a device.
   * `ups.status` may now hold several values (e.g. `OB LB`) where only one
     was reported before, and line-interactive models no longer report
     `BYPASS`; drop any workarounds which translated that value. With a low

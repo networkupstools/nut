@@ -376,16 +376,23 @@ https://github.com/networkupstools/nut/milestone/13
       software does (a delay of 64 used to be sent as `0x40FF`); added the
       `offdelay` and `ondelay` settings with `ups.delay.shutdown`,
       `ups.delay.start` and `ups.delay.reboot` variables, and the
-      `test.battery.start.deep` command. See also `UPGRADING.adoc`.
+      `test.battery.start.deep` command. Times given in seconds, for battery
+      tests and shutdown delays, are converted to the time unit of the UPS,
+      which is 0.6 seconds for line-interactive models (a 10 second test
+      used to run for 6). See also `UPGRADING.adoc`.
     * Replies are now checked for their checksum and terminator, and the
       serial port is reopened after repeated failures (e.g. a re-plugged
       USB adapter).
+    * Two flags give a way back if a device which worked before does not
+      cope with these changes: `legacydelays` and `novalidate`. Reports
+      about devices which need them are welcome.
     * Measurements keep their decimal digit; `ups.mfr`, `ups.model`,
-      `device.mfr` and `output.voltage.nominal` are published; sent and
-      received frames can be seen at debug level 4.
-    * Tested with an SMS Premium 1500 VA (a line-interactive model);
-      the new shutdown and test frames were only checked against a protocol
-      simulator so far.
+      `device.mfr` and `output.voltage.nominal` are published;
+      `battery.charger.status` no longer says `floating` at the start of an
+      outage; sent and received frames can be seen at debug level 4.
+    * Tested with an SMS Premium 1500 VA (a line-interactive model),
+      including the battery test commands and their timing; the shutdown
+      commands were only checked against a protocol simulator so far.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
