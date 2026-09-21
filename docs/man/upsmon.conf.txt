@@ -242,6 +242,20 @@ NOTIFYCMD "/path to/script"
 NOTIFYCMD "/path to/script" "--debug" "-v"
 ------
 +
+On Windows, these values are joined into a command line. Grouping them
+during configuration parsing does not preserve arguments with spaces:
+the child can receive several arguments instead. This also applies
+to the executable name in the child's argument list and to the appended
+notification message.
++
+Use an executable path without spaces. The following example retains
+double quotes around the data path so a native Windows program using
+C runtime argument parsing receives that path as one argument:
++
+------
+NOTIFYCMD "c:\\nut\\notifyme.exe" "\"c:\\path with space\\name\""
+------
++
 This script is run in the background -- that is, linkman:upsmon[8] normally
 forks before it calls out to start it.  This means that your NOTIFYCMD may
 have multiple instances running simultaneously if a lot of stuff happens all

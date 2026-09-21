@@ -70,7 +70,7 @@ configuration directive for some reason.  You can do that too.
 
 	NOTIFYCMD "/bin/notifyme" "-foo" "-bar" "\"hi there\"" "-baz"
 
-In other words, `\` can be used to escape the `"`. Here, the argument
+In other words, `\` can be used to escape the `"`. Here, the parsed value
 after `-bar` contains both the space and the literal double quotes.
 
 Unlike SHUTDOWNCMD, the first value of NOTIFYCMD is an exact executable
@@ -88,7 +88,8 @@ outside double quotes. It quotes the next character once: `\n` means the
 letter `n`, not a newline. It is useful for `\`, `"`, and, outside double
 quotes, spaces, `=`, and `#`, which have special meanings to the parser.
 
-When using file names with space characters, quote each path separately:
+To keep file names with spaces together during configuration parsing,
+quote each path separately:
 
 	NOTIFYCMD "c:\\path with space\\notifyme" "c:\\path with space\\name"
 
@@ -97,6 +98,12 @@ are also two tokens in this example, making it equivalent to the one above
 for programmatic consumption -- but arguably harder to read for humans):
 
 	NOTIFYCMD c:\\path\ with\ space\\notifyme c:\\path\ with\ space\\name
+
+NOTE: On Windows, the command line used to launch NOTIFYCMD can split
+these values again, including the executable name in the child's argument
+list and the appended notification message. Configuration quoting alone
+is not sufficient. See the Windows quoting note for NOTIFYCMD in
+linkman:upsmon.conf[5].
 
 Outside double quotes, `#` is the comment character. Anything after an
 unescaped `#` is ignored until the end of the physical line.
