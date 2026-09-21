@@ -305,6 +305,21 @@ static int sms_parse_delay(const char *text, uint16_t *delay) {
     return 1;
 }
 
+/* Converts seconds into the time unit of the UPS. Line-interactive models
+ * count in hundredths of a minute (0.6 s): an SMS Premium 1500 tested for
+ * 6, 18 and 59 seconds when sent 10, 30 and 100. The vendor software scales
+ * its values by 0.6 for the on-line type, which therefore counts in seconds.
+ * Measured for the battery test only; assumed for the shutdown delays. */
+static uint16_t sms_seconds_to_units(uint16_t seconds) {
+    unsigned long units;
+
+    if (DeviceData.upstype == SMS_TYPE_ONLINE) {
+        return seconds;
+    }
+    units = ((unsigned long)seconds * 10 + 3) / 6;
+    return (units > UINT16_MAX) ? UINT16_MAX : (uint16_t)units;
+}
+
 /* Sends the command prepared in bufOut. Commands are not acknowledged. */
 static int sms_send_command(size_t length, const char *cmdname) {
     upsdebug_hex(4, "sms_ser send", bufOut, length);
@@ -329,12 +344,12 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
             return STAT_INSTCMD_CONVERSION_FAILED;
         }
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], delay), cmdname);
+        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(delay)), cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.quick")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], DEFAULT_TESTDELAY), cmdname);
+        return sms_send_command(sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(DEFAULT_TESTDELAY)), cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.deep")) {
@@ -354,7 +369,7 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
 
     if (!strcasecmp(cmdname, "shutdown.return")) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        return sms_send_command(sms_prepare_shutdown_restore(&bufOut[0], offdelay, ondelay), cmdname);
+        return sms_send_command(sms_prepare_shutdown_restore(&bufOut[0], sms_seconds_to_units(offdelay), ondelay), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.reboot")) {
@@ -364,7 +379,7 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
             return STAT_INSTCMD_CONVERSION_FAILED;
         }
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        return sms_send_command(sms_prepare_shutdown_nsec(&bufOut[0], delay), cmdname);
+        return sms_send_command(sms_prepare_shutdown_nsec(&bufOut[0], sms_seconds_to_units(delay)), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.stop")) {
