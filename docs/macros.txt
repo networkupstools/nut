@@ -101,6 +101,14 @@ Each guards against repeated checks within one `configure` run. Many
 also cache results for subsequent runs; such a cache assumes unchanged
 dependencies and configuration arguments.
 
+The checks for each library evolve organically to compensate for various
+bugs in the libraries, pkg-config, etc. or for significant changes between
+different generations of those dependencies. The need to keep such code in
+manageable sized chunks, as well as to maintain an easily comparable general
+code structure (as in `diff` of these files), and the need to match some
+capabilities for others to be based on them, is why we have a separate
+macro and source file for each library detection code.
+
 The following table lists the primary result variables and flag prefixes.
 For each prefix, the flag variables are `PREFIX_CFLAGS` and
 `PREFIX_LIBS`, except that libgd uses `LIBGD_LDFLAGS` for linking.
