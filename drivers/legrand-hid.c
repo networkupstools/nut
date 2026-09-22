@@ -28,7 +28,7 @@
 #include "main.h"
 #include "usb-common.h"
 
-#define LEGRAND_HID_VERSION	"Legrand HID 0.31"
+#define LEGRAND_HID_VERSION	"Legrand HID 0.32"
 
 /* Legrand */
 #define LEGRAND_VENDORID	0x1cb0
@@ -36,6 +36,13 @@
 /* Legrand ProductIDs */
 #define LEGRAND_PID_PDU	0x0038	/* Keor PDU model (800VA) */
 #define LEGRAND_PID_SP	0x0032	/* Keor SP model (600, 800, 1000, 1500, 2000VA version) */
+
+/* Some units of the Keor DK / Daker DK range ship a Cypress-based
+ * communication board which enumerates under the Cypress vendor ID
+ * instead of the Legrand one, while still exposing a standard HID
+ * Power Device report descriptor. */
+#define LEGRAND_CYPRESS_VENDORID	0x0665
+#define LEGRAND_PID_DK	0x5161	/* Keor DK / Daker DK (tested: Keor DK 3k) */
 
 static void *disable_interrupt_pipe(USBDevice_t *device)
 {
@@ -52,6 +59,7 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 static usb_device_id_t legrand_usb_device_table[] = {
 	{ USB_DEVICE(LEGRAND_VENDORID, LEGRAND_PID_PDU),	disable_interrupt_pipe },	/* Legrand Keor PDU */
 	{ USB_DEVICE(LEGRAND_VENDORID, LEGRAND_PID_SP) ,	disable_interrupt_pipe },	/* Legrand Keor SP */
+	{ USB_DEVICE(LEGRAND_CYPRESS_VENDORID, LEGRAND_PID_DK),	disable_interrupt_pipe },	/* Legrand Keor DK */
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -120,6 +128,19 @@ static info_lkp_t legrand_times10M_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* Only used for battery.charge, which NUT expresses as a whole percentage */
+static const char *legrand_times100M(double value)
+{
+	static char buf[20];
+	snprintf(buf, sizeof(buf), "%0.0f", value * 100000000);
+	return buf;
+}
+
+static info_lkp_t legrand_times100M_info[] = {
+	{ 0, NULL, legrand_times100M, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /* HID2NUT lookup table                                            */
 /* --------------------------------------------------------------- */
@@ -160,6 +181,25 @@ static hid_info_t legrand_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
 	{ "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, HU_FLAG_QUICK_POLL, overload_info },
+
+	/* Keor DK: the unit publishes its readings under UPS.OutletSystem.*,
+	 * UPS.Output.* and UPS.BatterySystem.*, with a uniform 1e7 scaling. */
+	{ "input.voltage", 0, 0, "UPS.OutletSystem.Voltage", NULL, "%.1f", 0, legrand_times10M_info },
+	{ "input.voltage.nominal", 0, 0, "UPS.OutletSystem.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10M_info },
+	{ "input.frequency", 0, 0, "UPS.OutletSystem.Frequency", NULL, "%.1f", 0, NULL },
+	{ "input.frequency.nominal", 0, 0, "UPS.OutletSystem.ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.transfer.high", 0, 0, "UPS.OutletSystem.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10M_info },
+	{ "input.transfer.low", 0, 0, "UPS.OutletSystem.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10M_info },
+	{ "output.voltage", 0, 0, "UPS.BatterySystem.Voltage", NULL, "%.1f", 0, legrand_times10M_info },
+	{ "output.frequency", 0, 0, "UPS.BatterySystem.Frequency", NULL, "%.1f", 0, NULL },
+	{ "output.current", 0, 0, "UPS.Output.Current", NULL, "%.1f", 0, NULL },
+	{ "output.realpower", 0, 0, "UPS.Output.ActivePower", NULL, "%.0f", 0, legrand_times10M_info },
+	{ "output.power", 0, 0, "UPS.Output.ApparentPower", NULL, "%.0f", 0, legrand_times10M_info },
+	{ "ups.power.nominal", 0, 0, "UPS.OutletSystem.ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10M_info },
+	{ "ups.realpower.nominal", 0, 0, "UPS.OutletSystem.ConfigActivePower", NULL, "%.0f", HU_FLAG_STATIC, legrand_times10M_info },
+	{ "battery.charge", 0, 0, "UPS.BatterySystem.Battery.RemainingCapacity", NULL, "%.0f", 0, legrand_times100M_info },
+	{ "battery.runtime", 0, 0, "UPS.BatterySystem.Battery.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 
 	/* Delays */
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
