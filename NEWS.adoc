@@ -428,6 +428,8 @@ https://github.com/networkupstools/nut/milestone/13
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
       `ups.beeper.status`. [issue #3638, PR #3639]
+    * added support for USB ID 0665:5161 (Cypress) in `legrand-hid` subdriver
+      for some units of the Keor DK / Daker DK range. [PR #3703]
 
  - `snmp-ups` driver updates:
     * Fixed a NULL pointer dereference when setting exact outlet mappings
