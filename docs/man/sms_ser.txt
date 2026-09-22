@@ -50,9 +50,12 @@ shutdown, in seconds (default=30). Also available as the writable
 
 *ondelay*='value'::
 Time to wait before the output returns, once mains power is back, after
-the shutdown above (default=1). This value is sent to the UPS as is, and
-its unit is not known (possibly minutes); the vendor software never sends
-0 here. Also available as the writable `ups.delay.start` variable.
+the shutdown above, in seconds (default=60). The UPS counts this delay in
+whole minutes, so the value is rounded up to the next minute, and never
+below one minute, as the vendor software never sends 0 here. When mains
+power is absent the UPS switches itself off about a minute after the output
+is cut and returns a few seconds after mains power is back, regardless of
+this setting. Also available as the writable `ups.delay.start` variable.
 
 *rebootdelay*='value'::
 Time to wait before the output is cut by the `shutdown.reboot` command,
@@ -62,9 +65,9 @@ variable.
 The protocol has 16 bits for each of these values. Line-interactive models
 count time in hundredths of a minute (0.6 seconds), so the driver converts
 seconds accordingly, which limits them to about 39000 seconds; models of
-the on-line type are sent the seconds unchanged. The unit was measured with
-battery tests on a line-interactive model and is assumed to be the same for
-the shutdown delays.
+the on-line type are sent the seconds unchanged. The unit was measured on a
+line-interactive model (SMS Premium 1500 VA) for battery tests and for both
+shutdown delays, with the restore delay in minutes as described above.
 
 *legacydelays*::
 Send the parameters of the battery test and shutdown commands the way

@@ -379,7 +379,8 @@ https://github.com/networkupstools/nut/milestone/13
       `test.battery.start.deep` command. Times given in seconds, for battery
       tests and shutdown delays, are converted to the time unit of the UPS,
       which is 0.6 seconds for line-interactive models (a 10 second test
-      used to run for 6). See also `UPGRADING.adoc`.
+      used to run for 6); the restore delay is sent in whole minutes, as the
+      UPS counts it. See also `UPGRADING.adoc`.
     * Replies are now checked for their checksum and terminator, and the
       serial port is reopened after repeated failures (e.g. a re-plugged
       USB adapter).

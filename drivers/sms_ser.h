@@ -29,7 +29,7 @@
 
 #define DEFAULT_BOOTDELAY 64 /* seconds */
 #define DEFAULT_OFFDELAY  30 /* seconds before shutdown.return cuts the output */
-#define DEFAULT_ONDELAY   1  /* delay before the output returns; SMS PowerView never sends 0 */
+#define DEFAULT_ONDELAY   60 /* seconds before the output returns; sent in whole minutes */
 #define DEFAULT_TESTDELAY 10 /* seconds, test.battery.start.quick */
 #define MAXTRIES 3
 
