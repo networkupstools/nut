@@ -1,4 +1,4 @@
-/* test_upsdconf - numeric configuration parsing and storage for upsd
+/* test_upsdconf - configuration parsing and storage for upsd
  *
  * Copyright (C) 2026 Network UPS Tools project
  *
@@ -13,6 +13,8 @@
 #include "sstate.c"
 
 static int failures = 0, checks = 0;
+static const char *listen_host = NULL, *listen_port = NULL;
+static int listen_calls = 0;
 
 /* Storage normally owned by upsd.c and netssl.c. Keep the public types. */
 int maxage = 15, tracking_delay = 3600;
@@ -43,9 +45,11 @@ upstype_t *get_ups_ptr(const char *name)
 
 void listen_add(const char *addr, const char *port)
 {
-	NUT_UNUSED_VARIABLE(addr);
-	NUT_UNUSED_VARIABLE(port);
-	unexpected_call("listen_add");
+	listen_calls++;
+	if (!listen_host || strcmp(addr, listen_host) || strcmp(port, listen_port)) {
+		upslogx(LOG_ERR, "Unexpected listener '%s' port '%s'", addr, port);
+		failures++;
+	}
 }
 
 void kick_login_clients(const char *name)
@@ -80,6 +84,49 @@ static void cleanup(void)
 {
 	unlink(config_file);
 	rmdir(config_dir);
+}
+
+/* Exercise the actual LISTEN parser and the file tokenizer, without sockets. */
+static void check_listen(const char *value, const char *separate_port,
+	const char *host, const char *port)
+{
+	char *args[3];
+	int result;
+	FILE *f;
+
+	listen_host = host;
+	listen_port = port;
+	listen_calls = 0;
+	args[0] = xstrdup("LISTEN");
+	args[1] = xstrdup(value);
+	args[2] = separate_port ? xstrdup(separate_port) : NULL;
+	result = parse_upsd_conf_args(separate_port ? 3 : 2, args);
+	checks++;
+	if (result != (host ? 1 : -1) || listen_calls != (host ? 1 : 0)) {
+		upslogx(LOG_ERR, "FAIL LISTEN '%s': result=%d, calls=%d", value, result, listen_calls);
+		failures++;
+	}
+	free(args[0]);
+	free(args[1]);
+	free(args[2]);
+
+	/* Invalid new syntax is fatal at startup; reload still ignores listeners. */
+	f = fopen(config_file, "w");
+	if (!f) {
+		fatal_with_errno(EXIT_FAILURE, "fopen LISTEN configuration");
+	}
+	fprintf(f, "LISTEN %s%s%s # listener\n", value,
+		separate_port ? " " : "", separate_port ? separate_port : "");
+	if (fclose(f)) {
+		fatal_with_errno(EXIT_FAILURE, "fclose LISTEN configuration");
+	}
+	listen_calls = 0;
+	load_upsdconf(host ? 0 : 1);
+	checks++;
+	if (listen_calls != (host ? 1 : 0)) {
+		failures++;
+	}
+	listen_host = listen_port = NULL;
 }
 
 static uintmax_t stored_value(const char *option)
@@ -178,6 +225,47 @@ int main(void)
 	atexit(cleanup);
 	if (setenv("NUT_CONFPATH", config_dir, 1))
 		fatal_with_errno(EXIT_FAILURE, "setenv NUT_CONFPATH");
+
+	check_listen("127.0.0.1:43493", NULL, "127.0.0.1", "43493");
+	check_listen("localhost:43493", NULL, "localhost", "43493");
+	check_listen("host-name.example:0043493", NULL, "host-name.example", "0043493");
+	check_listen("*:43493", NULL, "*", "43493");
+	check_listen("[::1]:43493", NULL, "::1", "43493");
+	check_listen("[::1]", NULL, "[::1]", string_const(NUT_PORT));
+	check_listen("[::1]", "43493", "[::1]", "43493");
+	check_listen("[fe80::1%lo]:43493", NULL, "fe80::1%lo", "43493");
+	check_listen("[::ffff:127.0.0.1]:43493", NULL, "::ffff:127.0.0.1", "43493");
+	check_listen(":::43493", NULL, "::", "43493");
+	check_listen("2001:db8:::43493", NULL, "2001:db8::", "43493");
+	check_listen("localhost:0", NULL, "localhost", "0");
+	check_listen("localhost:65535", NULL, "localhost", "65535");
+	check_listen("127.0.0.1", NULL, "127.0.0.1", string_const(NUT_PORT));
+	check_listen("::", NULL, "::", string_const(NUT_PORT));
+	check_listen("::1", NULL, "::1", string_const(NUT_PORT));
+	check_listen("::3493", NULL, "::3493", string_const(NUT_PORT));
+	check_listen("2001:db8::1:3493", NULL, "2001:db8::1:3493", string_const(NUT_PORT));
+	check_listen("fe80::1%lo", "43493", "fe80::1%lo", "43493");
+	check_listen("127.0.0.1", "nut", "127.0.0.1", "nut");
+	check_listen("::1", "43493", "::1", "43493");
+	check_listen("localhost:43493", "43494", NULL, NULL);
+	check_listen("[::1]:43493", "43494", NULL, NULL);
+	check_listen("localhost:", NULL, NULL, NULL);
+	check_listen(":43493", NULL, NULL, NULL);
+	check_listen("localhost:65536", NULL, NULL, NULL);
+	check_listen("localhost:+1", NULL, NULL, NULL);
+	check_listen("localhost:-1", NULL, NULL, NULL);
+	check_listen("localhost:1x", NULL, NULL, NULL);
+	check_listen("localhost:nut", NULL, NULL, NULL);
+	check_listen("localhost:9999999999999999999999", NULL, NULL, NULL);
+	check_listen("[::1]:", NULL, NULL, NULL);
+	check_listen("[::1", NULL, NULL, NULL);
+	check_listen("[::1]x:43493", NULL, NULL, NULL);
+	check_listen("[]:43493", NULL, NULL, NULL);
+	check_listen("[localhost]:43493", NULL, NULL, NULL);
+	check_listen("[::1]]:43493", NULL, NULL, NULL);
+	check_listen(":::1x", NULL, NULL, NULL);
+	check_listen("::::43493", NULL, NULL, NULL);
+	check_listen("::1:::43493", NULL, NULL, NULL);
 
 	printf("Widths: int=%" PRIuSIZE ", long=%" PRIuSIZE ", nfds_t=%" PRIuSIZE "\n",
 		sizeof(int), sizeof(long), sizeof(nfds_t));

@@ -41,6 +41,12 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - The `LISTEN` directive in `upsd.conf` now accepts `hostname:port`,
+   `IPv4:port` and `[IPv6]:port`, with matching support in `nutconf` and
+   Augeas. IPv6 addresses ending in `::` also accept an appended `:port`,
+   such as `:::3493`. Bare IPv6 addresses and the existing space-separated
+   address and port syntax retain their meaning. [issue #2424]
+
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
       advertised identifiers on Python 3 and uses those identifiers when

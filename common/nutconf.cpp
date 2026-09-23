@@ -28,6 +28,7 @@
 
 #include "nutconf.hpp"
 #include "nutwriter.hpp"
+#include "str.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -268,11 +269,11 @@ NutParser::Token NutParser::parseToken()
 			{
 				if (c == ' ' || c == '\t') {
 					/* Space : do nothing */
-				} else if (c == '[') {
+				} else if (c == '[' && !hasOptions(OPTION_IGNORE_BRACKETS)) {
 					token = Token(Token::TOKEN_BRACKET_OPEN, c);
 					popPos();
 					return Token(std::move(token));
-				} else if (c == ']') {
+				} else if (c == ']' && !hasOptions(OPTION_IGNORE_BRACKETS)) {
 					token = Token(Token::TOKEN_BRACKET_CLOSE, c);
 					popPos();
 					return Token(std::move(token));
@@ -346,7 +347,8 @@ NutParser::Token NutParser::parseToken()
 			}
 			case LEXPARSING_STATE_STRING:
 			{
-				if (c == ' ' || c == '\t' || c == '"' || c == '#' || c == '[' || c == ']'
+				if (c == ' ' || c == '\t' || c == '"' || c == '#'
+				||  ((c == '[' || c == ']') && !hasOptions(OPTION_IGNORE_BRACKETS))
 				||  (c == ':' && !hasOptions(OPTION_IGNORE_COLON))
 				||  c == '='
 				) {
@@ -1849,12 +1851,12 @@ bool UpsdConfiguration::writeTo(NutStream & ostream) const
 //
 
 UpsdConfigParser::UpsdConfigParser(const char* buffer):
-NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON | NutParser::OPTION_IGNORE_BRACKETS)
 {
 }
 
 UpsdConfigParser::UpsdConfigParser(const std::string& buffer):
-NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON | NutParser::OPTION_IGNORE_BRACKETS)
 {
 }
 
@@ -1988,10 +1990,19 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 			if(values.size()==1 || values.size()==2)
 			{
 				UpsdConfiguration::Listen listen;
-				listen.address = values.front();
+				std::string buffer(values.front());
+				char *address, *port;
+				if (!str_split_listen(&buffer[0], &address, &port) || (port && values.size() == 2)) {
+					throw std::invalid_argument("Invalid LISTEN address or duplicate port: " + values.front());
+				}
+				listen.address = address;
 				if(values.size()==2)
 				{
 					listen.port = StringToSettableNumber<uint16_t>(*(++values.begin()));
+				}
+				else if (port)
+				{
+					listen.port = StringToSettableNumber<uint16_t>(port);
 				}
 				_config->listens.push_back(listen);
 			}
