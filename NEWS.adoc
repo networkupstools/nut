@@ -33,6 +33,11 @@ https://github.com/networkupstools/nut/milestone/13
 
  - (expected) clean-up of libusb API variants support [#300 and follow-ups]
 
+ - New `tools/nut-beszel-setup.sh` helper script for Debian/Ubuntu:
+   auto-discovers UPS/PDU devices via nut-scanner, configures the NUT
+   server, and installs the Beszel monitoring agent with NUT data
+   collection enabled.
+
  - (expected) CI automation for coding style
 
  - (expected) CI automation for driver flags and variables to be certainly

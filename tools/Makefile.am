@@ -27,7 +27,7 @@ PYTHON_DEFAULT = @PYTHON_DEFAULT@
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh nut-dumpdiff.sh \
   gitlog2changelog.py.in gitlog2version.sh semver-compare.sh \
   nut-snmpinfo.py.in driver-list-format.sh check-source-nonascii.pl \
-  asciidoc-github-links.pl
+  asciidoc-github-links.pl nut-beszel-setup.sh
 
 # These files are generated for nut-scanner builds (and cleaned as any others),
 # and can change as respective SNMP/USB subdriver sources are iterated by a
