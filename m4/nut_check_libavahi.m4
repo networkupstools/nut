@@ -90,6 +90,7 @@ AC_DEFUN([NUT_CHECK_LIBAVAHI],
             nut_cv_LIBAVAHI_CFLAGS=""
             nut_cv_LIBAVAHI_LIBS=""
             nut_cv_SOFILE_LIBAVAHI=""
+            nut_cv_SONAME_LIBAVAHI=""
             nut_cv_SOPATH_LIBAVAHI=""
             AS_IF([test "${nut_cv_have_avahi}" = "yes"], [
                 dnl check if avahi-client is usable
@@ -107,6 +108,7 @@ AC_DEFUN([NUT_CHECK_LIBAVAHI],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBAVAHI], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBAVAHI}" && test -s "${nut_cv_SOPATH_LIBAVAHI}"], [
                                 nut_cv_SOFILE_LIBAVAHI="`basename \"${nut_cv_SOPATH_LIBAVAHI}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBAVAHI}], [nut_cv_SONAME_LIBAVAHI], [])
                                 break
                             ])
                         ]
@@ -177,6 +179,7 @@ AC_DEFUN([NUT_CHECK_LIBAVAHI],
             dnl For nut-scanner style autoloading:
             SOPATH_LIBAVAHI="${nut_cv_SOPATH_LIBAVAHI}"
             SOFILE_LIBAVAHI="${nut_cv_SOFILE_LIBAVAHI}"
+            SONAME_LIBAVAHI="${nut_cv_SONAME_LIBAVAHI}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBAVAHI_CFLAGS_SOURCE="${nut_cv_LIBAVAHI_CFLAGS_SOURCE}"
@@ -189,6 +192,9 @@ AC_DEFUN([NUT_CHECK_LIBAVAHI],
                 AS_IF([test -n "${SOPATH_LIBAVAHI}" && test -s "${SOPATH_LIBAVAHI}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBAVAHI], ["${SOPATH_LIBAVAHI}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBAVAHI], ["${SOFILE_LIBAVAHI}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBAVAHI}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBAVAHI], ["${SONAME_LIBAVAHI}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 

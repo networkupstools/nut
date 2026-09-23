@@ -49,6 +49,21 @@ https://github.com/networkupstools/nut/milestone/13
     * `nut-scanner` tool updates:
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]
+      - Third-party libraries which `nut-scanner` loads dynamically (libusb,
+        Net-SNMP, neon, Avahi, GLib/GIO, FreeIPMI) are now looked up by the
+        `SONAME` recorded in the shared object seen at build time (such as
+        `libusb-1.0.so.0`) before the fully versioned file name seen then
+        (such as `libusb-1.0.so.0.6.0`). Previously an ABI-compatible update
+        of such a library by the OS distribution, which renamed the file but
+        kept the `SONAME`, silently disabled that scan type until the NUT
+        package was rebuilt. [issue #3474]
+      - `nut-scanner` now really tries each name it knows for a library
+        that it loads dynamically. A failed `lt_dlopen()` attempt was
+        remembered in the module handle, so `nutscan_load_*_library()`
+        answered from that memory and every name after the first one was
+        skipped (impacts all NUT 2.8.x until now). This was only visible
+        where such a library was not found by its file name and could be
+        resolved by the run-time linker alone. [PR #3654]
       - When the NUT client library was not found under its known file names
         and had to be loaded by the libtool default search instead, the
         result was stored as the availability of the XML/HTTP scan. So the
