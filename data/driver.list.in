@@ -1416,6 +1416,7 @@
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
+"SMS (Brazil)"	"ups"	"2"	"Premium 1500 VA (PRM1500BiBiW)"	"USB (built-in Prolific PL2303 serial adapter)"	"sms_ser"	# https://github.com/networkupstools/nut/issues/1987
 
 "SNR"	"ups"	"2"	"SNR-UPS-LID-600"	""	"nutdrv_qx"
 "SNR"	"ups"	"2"	"SNR-UPS-LID-600-XPS"	""	"nutdrv_qx"

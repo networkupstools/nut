@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME	"SMS Brazil UPS driver"
-#define DRIVER_VERSION	"1.05"
+#define DRIVER_VERSION	"1.06"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18
@@ -39,9 +39,14 @@
 #define HUMAN_VALUES 7
 
 static uint16_t bootdelay = DEFAULT_BOOTDELAY;
+static uint16_t offdelay = DEFAULT_OFFDELAY;
+static uint16_t ondelay = DEFAULT_ONDELAY;
 static uint8_t bufOut[BUFFER_SIZE];
 static uint8_t bufIn[BUFFER_SIZE];
 static SmsData DeviceData;
+static int comm_failures = 0;
+static int novalidate = 0;
+static int legacydelays = 0;
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -100,46 +105,48 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     long v;
     double h;
 
+    results->upstype = (char)rawvalues[0];
+
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[1], (unsigned char)rawvalues[2]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->lastinputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[3], (unsigned char)rawvalues[4]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->inputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[5], (unsigned char)rawvalues[6]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->outputVac = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[7], (unsigned char)rawvalues[8]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->outputpower = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[9], (unsigned char)rawvalues[10]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->outputHz = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[11], (unsigned char)rawvalues[12]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->batterylevel = h;
 
     memset(buf, 0, BUFFER_SIZE);
     snprintf(buf, sizeof(buf), "0x%02x%02x", (unsigned char)rawvalues[13], (unsigned char)rawvalues[14]);
     v = strtol(buf, NULL, 16); /* 16 == hex */
-    h = v / 10;
+    h = (double)v / 10;
     results->temperatureC = h;
 
     byte = rawvalues[15];
@@ -155,6 +162,62 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     results->onbattery = ((byte & (mask << 7)) != 0) ? true : false;
 }
 
+/* Sends the request prepared in bufOut and reads the reply into bufIn.
+ * Every reply is RESULT_SIZE bytes: a header byte, 15 bytes of payload, a
+ * checksum (the sum of all bytes up to and including it is 0 modulo 256)
+ * and ENDCHAR. Returns the reply length, or -1 after logging the reason. */
+static ssize_t sms_query(uint8_t length) {
+    ssize_t ret;
+    uint8_t sum = 0;
+    size_t i;
+
+    /* Drop whatever is left of an earlier, late or partial reply */
+    ser_flush_in(upsfd, "", 0);
+
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
+    if (ser_send_buf(upsfd, bufOut, length) != (ssize_t)length) {
+        upslogx(LOG_ERR, "Communication error while writing to port");
+        dstate_datastale();
+        return -1;
+    }
+    memset(bufIn, 0, sizeof(bufIn));
+    ret = ser_get_buf_len(upsfd, &bufIn[0], sizeof(bufIn), 3, 1000);
+    upsdebug_hex(4, "sms_ser read", bufIn, ret > 0 ? (size_t)ret : 0);
+
+    if (ret < RESULT_SIZE) {
+        upslogx(LOG_ERR, "Short read from UPS");
+        dstate_datastale();
+        return -1;
+    }
+
+    for (i = 0; i < RESULT_SIZE - 1; i++) {
+        sum += bufIn[i];
+    }
+    if (!novalidate && (sum != 0 || bufIn[RESULT_SIZE - 1] != ENDCHAR)) {
+        upslogx(LOG_ERR, "Bad checksum or terminator in reply from UPS");
+        dstate_datastale();
+        return -1;
+    }
+
+    return ret;
+}
+
+/* Closes and reopens the serial port without giving up if that fails:
+ * the next polls will try again. */
+static void sms_reconnect(void) {
+    upslogx(LOG_WARNING, "No valid reply from UPS, reopening %s", device_path);
+
+    if (VALID_FD_SER(upsfd)) {
+        ser_close(upsfd, device_path);
+    }
+    upsfd = ser_open_nf(device_path);
+    if (INVALID_FD_SER(upsfd)) {
+        upslogx(LOG_ERR, "Could not reopen %s, will retry", device_path);
+        return;
+    }
+    ser_set_speed_nf(upsfd, device_path, B2400);
+}
+
 static int get_ups_nominal(void) {
     uint8_t length;
     ssize_t ret;
@@ -163,16 +226,8 @@ static int get_ups_nominal(void) {
 
     length = sms_prepare_get_status(&bufOut[0]);
 
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -195,16 +250,8 @@ static int get_ups_information(void) {
 
     length = sms_prepare_get_information(&bufOut[0]);
 
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -227,16 +274,8 @@ static int get_ups_features(void) {
 
     length = sms_prepare_get_features(&bufOut[0]);
 
-    if (ser_send_buf(upsfd, bufOut, length) == 0) {
-        upsdebugx(LOG_ERR, "Communication error while writing to port");
-        return -1;
-    }
-    memset(bufIn, 0, BUFFER_SIZE);
-    ret = ser_get_buf_len(upsfd, &bufIn[0], BUFFER_SIZE, 3, 1000);
-
-    if (ret < RESULT_SIZE) {
-        upslogx(LOG_ERR, "Short read from UPS");
-        dstate_datastale();
+    ret = sms_query(length);
+    if (ret < 0) {
         return -1;
     }
 
@@ -251,110 +290,142 @@ static int get_ups_features(void) {
     return -1;
 }
 
+/* Parses a delay given as text; returns 0 and leaves *delay alone unless it
+ * is a number that fits the 16 bits the protocol has for it */
+static int sms_parse_delay(const char *text, uint16_t *delay) {
+    char *end = NULL;
+    long value;
+
+    if (!text || !*text) {
+        return 0;
+    }
+    value = strtol(text, &end, 10);
+    if (*end != '\0' || value < 0 || value > UINT16_MAX) {
+        return 0;
+    }
+    *delay = (uint16_t)value;
+    return 1;
+}
+
+/* Converts seconds into the time unit of the UPS. Line-interactive models
+ * count in hundredths of a minute (0.6 s): an SMS Premium 1500 tested for
+ * 6, 18 and 59 seconds when sent 10, 30 and 100. The vendor software scales
+ * its values by 0.6 for the on-line type, which therefore counts in seconds.
+ * Measured on the same UPS for the battery test and the 'S' and 'R'
+ * shutdown delays. */
+static uint16_t sms_seconds_to_units(uint16_t seconds) {
+    unsigned long units;
+
+    if (DeviceData.upstype == SMS_TYPE_ONLINE) {
+        return seconds;
+    }
+    units = ((unsigned long)seconds * 10 + 3) / 6;
+    return (units > UINT16_MAX) ? UINT16_MAX : (uint16_t)units;
+}
+
+/* The restore delay of 'R' counts in minutes on the same UPS (1 gave 63 s,
+ * 3 gave 183 s), and the vendor software never sends 0 there. Rounds up,
+ * with 1 as the minimum. */
+static uint16_t sms_seconds_to_minutes(uint16_t seconds) {
+    uint16_t minutes = (uint16_t)((seconds + 59) / 60);
+
+    return minutes ? minutes : 1;
+}
+
+/* Rewrites the parameters of a prepared 'T', 'S' or 'R' command the way
+ * driver versions before 1.06 sent them, for devices that turn out to rely
+ * on it (the "legacydelays" flag): the low byte of the delay in seconds, if
+ * the command had one, and 0xFF in all other parameter bytes. */
+static void sms_apply_legacy_delays(uint8_t *buffer, int has_delay, uint16_t seconds) {
+    buffer[1] = has_delay ? (uint8_t)(seconds % 256) : 255;
+    buffer[2] = 255;
+    buffer[3] = 255;
+    buffer[4] = 255;
+    buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
+}
+
+/* Sends the command prepared in bufOut. Commands are not acknowledged. */
+static int sms_send_command(size_t length, const char *cmdname) {
+    upsdebug_hex(4, "sms_ser send", bufOut, length);
+    if (ser_send_buf(upsfd, bufOut, length) != (ssize_t)length) {
+        upslogx(LOG_ERR, "failed to send %s", cmdname);
+        return STAT_INSTCMD_FAILED;
+    }
+    upsdebugx(3, "command %s OK!", cmdname);
+    return STAT_INSTCMD_HANDLED;
+}
+
 static int sms_instcmd(const char *cmdname, const char *extra) {
+    uint16_t delay;
     size_t length;
 
     upsdebug_INSTCMD_STARTING(cmdname, extra);
 
     if (!strcasecmp(cmdname, "test.battery.start")) {
-        long delay = extra ? strtol(extra, NULL, 10) : 10;
-
-        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_test_battery_nsec(&bufOut[0], delay);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.start");
-            return STAT_INSTCMD_FAILED;
+        /* Test for the number of seconds given, or the quick test's */
+        delay = DEFAULT_TESTDELAY;
+        if (extra && !sms_parse_delay(extra, &delay)) {
+            upslogx(LOG_ERR, "%s: invalid duration [%s]", cmdname, extra);
+            return STAT_INSTCMD_CONVERSION_FAILED;
         }
-        upsdebugx(3, "command test.battery.start OK!");
-        return STAT_INSTCMD_HANDLED;
+        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+        length = sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(delay));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, delay);
+        }
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.start.quick")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_test_battery_low(&bufOut[0]);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.start.quick");
-            return STAT_INSTCMD_FAILED;
+        length = sms_prepare_test_battery_nsec(&bufOut[0], sms_seconds_to_units(DEFAULT_TESTDELAY));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, DEFAULT_TESTDELAY);
         }
-        upsdebugx(3, "command test.battery.start.quick OK!");
+        return sms_send_command(length, cmdname);
+    }
 
-        return STAT_INSTCMD_HANDLED;
+    if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+        upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+        /* Runs until the UPS reports a low battery */
+        return sms_send_command(sms_prepare_test_battery_low(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "test.battery.stop")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_cancel_test(&bufOut[0]);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send test.battery.stop");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command test.battery.stop OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_cancel_test(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "beeper.toggle")) {
-        length = sms_prepare_set_beep(&bufOut[0]);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send beeper.toggle");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command beeper.toggle OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_set_beep(&bufOut[0]), cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.return")) {
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        length = sms_prepare_shutdown_restore(&bufOut[0]);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.return");
-            return STAT_INSTCMD_FAILED;
+        length = sms_prepare_shutdown_restore(&bufOut[0], sms_seconds_to_units(offdelay), sms_seconds_to_minutes(ondelay));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 0, 0);
         }
-        upsdebugx(3, "command shutdown.return OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.reboot")) {
-        uint16_t delay = bootdelay;
-        if (extra) {
-            long ldelay = strtol(extra, NULL, bootdelay);
-            if (ldelay >= 0 && (intmax_t)ldelay < (intmax_t)UINT16_MAX) {
-                delay = (uint16_t)ldelay;
-            } else {
-                upsdebugx(3, "tried to set up extra shutdown.reboot delay ut it was out of range, keeping default");
-            }
+        delay = bootdelay;
+        if (extra && !sms_parse_delay(extra, &delay)) {
+            upslogx(LOG_ERR, "%s: invalid delay [%s]", cmdname, extra);
+            return STAT_INSTCMD_CONVERSION_FAILED;
         }
-
         upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-        length = sms_prepare_shutdown_nsec(&bufOut[0], delay);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.reboot");
-            return STAT_INSTCMD_FAILED;
+        length = sms_prepare_shutdown_nsec(&bufOut[0], sms_seconds_to_units(delay));
+        if (legacydelays) {
+            sms_apply_legacy_delays(&bufOut[0], 1, delay);
         }
-        upsdebugx(3, "command shutdown.reboot OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(length, cmdname);
     }
 
     if (!strcasecmp(cmdname, "shutdown.stop")) {
         upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-        length = sms_prepare_cancel_shutdown(&bufOut[0]);
-
-        if (ser_send_buf(upsfd, bufOut, length) == 0) {
-            upsdebugx(3, "failed to send shutdown.stop");
-            return STAT_INSTCMD_FAILED;
-        }
-        upsdebugx(3, "command shutdown.stop OK!");
-
-        return STAT_INSTCMD_HANDLED;
+        return sms_send_command(sms_prepare_cancel_shutdown(&bufOut[0]), cmdname);
     }
 
     upslog_INSTCMD_UNKNOWN(cmdname, extra);
@@ -362,22 +433,37 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
 }
 
 static int sms_setvar(const char *varname, const char *val) {
+    uint16_t *target = NULL;
+
     upsdebug_SET_STARTING(varname, val);
 
     if (!strcasecmp(varname, "ups.delay.reboot")) {
-        int ipv = atoi(val);
-        if (ipv >= 0)
-            bootdelay = (unsigned int)ipv;
-        dstate_setinfo("ups.delay.reboot", "%u", bootdelay);
-        return STAT_SET_HANDLED;
+        target = &bootdelay;
+    } else if (!strcasecmp(varname, "ups.delay.shutdown")) {
+        target = &offdelay;
+    } else if (!strcasecmp(varname, "ups.delay.start")) {
+        target = &ondelay;
+    } else {
+        upslog_SET_UNKNOWN(varname, val);
+        return STAT_SET_UNKNOWN;
     }
 
-    upslog_SET_UNKNOWN(varname, val);
-    return STAT_SET_UNKNOWN;
+    if (!sms_parse_delay(val, target)) {
+        return STAT_SET_CONVERSION_FAILED;
+    }
+    dstate_setinfo(varname, "%u", *target);
+    return STAT_SET_HANDLED;
+}
+
+/* Publishes a delay as a writable number */
+static void sms_publish_delay(const char *varname, uint16_t value) {
+    dstate_setinfo(varname, "%u", value);
+    dstate_setflags(varname, ST_FLAG_RW | ST_FLAG_NUMBER);
 }
 
 void upsdrv_initinfo(void) {
     char *battery_status;
+    const char *range_digits;
 
 	upsdebugx(LOG_DEBUG, "upsdrv_initinfo");
 
@@ -397,6 +483,26 @@ void upsdrv_initinfo(void) {
         dstate_setinfo("ups.firmware", "%s", DeviceData.version);
         dstate_setinfo("input.voltage.nominal", "%s", DeviceData.voltageRange);
         dstate_setinfo("input.current.nominal", "%s", DeviceData.currentRange);
+        /* The voltage range is a label like "EBiS115" or "EBiS220" whose
+         * number matches the output voltage of the units seen so far */
+        range_digits = DeviceData.voltageRange + strcspn(DeviceData.voltageRange, "0123456789");
+        if (*range_digits) {
+            dstate_setinfo("output.voltage.nominal", "%d", atoi(range_digits));
+        }
+
+        switch (DeviceData.upstype) {
+            case SMS_TYPE_LINE_INTERACTIVE:
+                dstate_setinfo("ups.type", "%s", "line-interactive");
+                break;
+            case SMS_TYPE_ONLINE_LINE_INTERACTIVE:
+                dstate_setinfo("ups.type", "%s", "online line-interactive");
+                break;
+            case SMS_TYPE_ONLINE:
+                dstate_setinfo("ups.type", "%s", "online");
+                break;
+            default:
+                break;
+        }
         dstate_setinfo("output.frequency.nominal", "%d", DeviceData.frequency);
         dstate_setinfo("ups.beeper.status", "%s", (DeviceData.beepon == 1) ? "enabled" : "disabled");
 
@@ -413,8 +519,8 @@ void upsdrv_initinfo(void) {
         dstate_setinfo("battery.voltage", "%.2f", (DeviceData.voltageBattery * DeviceData.batterylevel) / 100);
         dstate_setinfo("ups.temperature", "%.2f", DeviceData.temperatureC);
 
-        if (DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
-            upsdebugx(LOG_DEBUG, "on battery and battery < last battery");
+        if (DeviceData.onbattery) {
+            upsdebugx(LOG_DEBUG, "on battery");
             battery_status = "discharging";
         } else if (!DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
             upsdebugx(LOG_DEBUG, "on power and battery > last battery");
@@ -435,11 +541,16 @@ void upsdrv_initinfo(void) {
 
     dstate_addcmd("test.battery.start");
     dstate_addcmd("test.battery.start.quick");
+    dstate_addcmd("test.battery.start.deep");
     dstate_addcmd("test.battery.stop");
     dstate_addcmd("beeper.toggle");
     dstate_addcmd("shutdown.return");
     dstate_addcmd("shutdown.stop");
     dstate_addcmd("shutdown.reboot");
+
+    sms_publish_delay("ups.delay.shutdown", offdelay);
+    sms_publish_delay("ups.delay.start", ondelay);
+    sms_publish_delay("ups.delay.reboot", bootdelay);
 
     upsh.instcmd = sms_instcmd;
     upsh.setvar = sms_setvar;
@@ -447,17 +558,28 @@ void upsdrv_initinfo(void) {
 
 void upsdrv_updateinfo(void) {
     char *battery_status;
+    const char *charge_low;
+    bool lowbattery;
+    static bool test_seen = false;
 
 	upsdebugx(LOG_DEBUG, "upsdrv_updateinfo");
 
     if (get_ups_nominal() != 0) {
-        upslogx(LOG_ERR, "Short read from UPS");
         dstate_datastale();
+        /* A USB adapter that was unplugged leaves a dead descriptor behind,
+         * and may come back under another device node: reopen by name */
+        if (++comm_failures >= MAXTRIES) {
+            sms_reconnect();
+            comm_failures = 0;
+        }
         return;
     }
+    comm_failures = 0;
+    dstate_setinfo("device.mfr", "%s", "SMS");
+    dstate_setinfo("ups.mfr", "%s", "SMS");
+    dstate_setinfo("ups.model", "%s", DeviceData.model);
     dstate_setinfo("device.model", "%s", DeviceData.model);
     dstate_setinfo("ups.firmware", "%s", DeviceData.version);
-    dstate_setinfo("battery.voltage.nominal", "%s", DeviceData.voltageRange);
     dstate_setinfo("output.frequency.nominal", "%d", DeviceData.frequency);
     dstate_setinfo("ups.beeper.status", "%s", (DeviceData.beepon == 1) ? "enabled" : "disabled");
 
@@ -475,11 +597,14 @@ void upsdrv_updateinfo(void) {
     dstate_setinfo("ups.temperature", "%.2f", DeviceData.temperatureC);
 
     upsdebugx(LOG_DEBUG, "battery level: %.2f", DeviceData.batterylevel);
+    upsdebugx(LOG_DEBUG, "type: %c", DeviceData.upstype);
     upsdebugx(LOG_DEBUG, "bypass: %d", DeviceData.bypass);
     upsdebugx(LOG_DEBUG, "onBattery: %d", DeviceData.onbattery);
+    upsdebugx(LOG_DEBUG, "lowBattery: %d", DeviceData.lowbattery);
+    upsdebugx(LOG_DEBUG, "test: %d", DeviceData.test);
 
-    if (DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
-        upsdebugx(LOG_DEBUG, "on battery and battery < last battery");
+    if (DeviceData.onbattery) {
+        upsdebugx(LOG_DEBUG, "on battery");
         battery_status = "discharging";
     } else if (!DeviceData.onbattery && (uint8_t)DeviceData.batterylevel < 100) {
         upsdebugx(LOG_DEBUG, "on power and battery > last battery");
@@ -493,35 +618,54 @@ void upsdrv_updateinfo(void) {
     }
     dstate_setinfo("battery.charger.status", "%s", battery_status);
 
+    /* The UPS has a low battery flag of its own; like SMS PowerView, also
+     * accept a charge threshold (e.g. "default.battery.charge.low" in
+     * ups.conf). The charge figure only means something while on battery:
+     * on mains it is a recharge ramp that restarts near 20% after any
+     * battery use. */
+    lowbattery = DeviceData.lowbattery;
+    charge_low = dstate_getinfo("battery.charge.low");
+    if (!lowbattery && DeviceData.onbattery && charge_low
+     && DeviceData.batterylevel <= strtod(charge_low, NULL)) {
+        upsdebugx(LOG_DEBUG, "on battery and charge <= battery.charge.low (%s)", charge_low);
+        lowbattery = true;
+    }
+
+    /* The flags are independent of each other, so are the NUT statuses */
     status_init();
 
-    if (DeviceData.bypass) {
-        upsdebugx(LOG_DEBUG, "setting status to BYPASS");
-        status_set("BYPASS");
-    } else if (DeviceData.onbattery) {
-        upsdebugx(LOG_DEBUG, "setting status to OB");
-        status_set("OB");
-    } else if (DeviceData.lowbattery) {
-        upsdebugx(LOG_DEBUG, "setting status to LB");
+    status_set(DeviceData.onbattery ? "OB" : "OL");
+
+    if (lowbattery) {
         status_set("LB");
-    } else if (!DeviceData.upsok) {
-        upsdebugx(LOG_DEBUG, "setting status to RB");
+    }
+    if (DeviceData.test) {
+        /* A battery test runs on battery with mains present; CAL lets
+         * upsmon tell it from an outage */
+        status_set("CAL");
+    }
+    if (!DeviceData.upsok) {
         status_set("RB");
-    } else if (DeviceData.boost) {
-        upsdebugx(LOG_DEBUG, "setting status to BOOST");
+    }
+    if (DeviceData.boost) {
         status_set("BOOST");
-    } else if (!DeviceData.onbattery) {
-        /* sometimes the flag "onacpower" is not set */
-        upsdebugx(LOG_DEBUG, "setting status to OL");
-        status_set("OL");
-    } else {
-        /* None of these parameters is ON, but we got some response,
-		 * so the device is (administratively) OFF ? */
-        upsdebugx(LOG_DEBUG, "setting status to OFF");
-        status_set("OFF");
+    }
+    /* Line-interactive models have no bypass and raise this flag whenever
+     * the inverter runs (on battery, battery test); SMS PowerView ignores
+     * it for them too. On battery it could never be true anyway. */
+    if (DeviceData.bypass && !DeviceData.onbattery
+     && DeviceData.upstype != SMS_TYPE_LINE_INTERACTIVE) {
+        status_set("BYPASS");
     }
 
     status_commit();
+
+    if (DeviceData.test) {
+        dstate_setinfo("ups.test.result", "%s", "In progress");
+        test_seen = true;
+    } else if (test_seen) {
+        dstate_setinfo("ups.test.result", "%s", "Done");
+    }
     dstate_dataok();
 
     poll_interval = 5;
@@ -546,6 +690,12 @@ void upsdrv_shutdown(void) {
 
     /* OB: the load must remain off until the power returns */
     upsdebugx(2, "upsdrv Shutdown execute");
+
+    /* Learn the UPS type, which decides the time unit of the delays; this
+     * may be a fresh driver instance which never polled the UPS */
+    if (get_ups_nominal() != 0) {
+        upslogx(LOG_WARNING, "No status from UPS, assuming a line-interactive model for the delays");
+    }
 
     for (retry = 1; retry <= MAXTRIES; retry++) {
         /* By default, abort a previously requested shutdown
@@ -586,6 +736,17 @@ void upsdrv_makevartable(void) {
     snprintf(msg, sizeof msg, "Set reboot delay, in seconds (default=%d).",
              DEFAULT_BOOTDELAY);
     addvar(VAR_VALUE, "rebootdelay", msg);
+
+    snprintf(msg, sizeof msg, "Set shutdown delay for shutdown.return, in seconds (default=%d).",
+             DEFAULT_OFFDELAY);
+    addvar(VAR_VALUE, "offdelay", msg);
+
+    snprintf(msg, sizeof msg, "Set delay before the output returns after shutdown.return, in seconds, rounded up to whole minutes (default=%d).",
+             DEFAULT_ONDELAY);
+    addvar(VAR_VALUE, "ondelay", msg);
+
+    addvar(VAR_FLAG, "legacydelays", "Send test and shutdown delays the way driver versions before 1.06 did");
+    addvar(VAR_FLAG, "novalidate", "Do not check the checksum and terminator of replies from the UPS");
 }
 
 void upsdrv_initups(void) {
@@ -596,10 +757,22 @@ void upsdrv_initups(void) {
     upsfd = ser_open(device_path);
     ser_set_speed(upsfd, device_path, B2400);
 
-    if ((val = getval("rebootdelay"))) {
-        int ipv = atoi(val);
-        if (ipv >= 0)
-            bootdelay = (unsigned int)ipv;
+    if ((val = getval("rebootdelay")) && !sms_parse_delay(val, &bootdelay)) {
+        fatalx(EXIT_FAILURE, "Invalid rebootdelay [%s]", val);
+    }
+    if ((val = getval("offdelay")) && !sms_parse_delay(val, &offdelay)) {
+        fatalx(EXIT_FAILURE, "Invalid offdelay [%s]", val);
+    }
+    if ((val = getval("ondelay")) && !sms_parse_delay(val, &ondelay)) {
+        fatalx(EXIT_FAILURE, "Invalid ondelay [%s]", val);
+    }
+    if (testvar("legacydelays")) {
+        legacydelays = 1;
+        upslogx(LOG_NOTICE, "Sending delays in the legacy format; please report to the NUT project why this was needed");
+    }
+    if (testvar("novalidate")) {
+        novalidate = 1;
+        upslogx(LOG_NOTICE, "Not validating replies from the UPS; please report to the NUT project why this was needed");
     }
 }
 
@@ -670,11 +843,12 @@ uint8_t sms_prepare_test_battery_low(uint8_t *buffer) {
 }
 
 uint8_t sms_prepare_test_battery_nsec(uint8_t *buffer, uint16_t delay) {
+    /* The delay is a 16-bit big-endian value, the unused pair is zero */
     buffer[0] = 'T';
-    buffer[1] = (uint8_t)(delay % 256);
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(delay >> 8);
+    buffer[2] = (uint8_t)(delay & 0xFF);
+    buffer[3] = 0;
+    buffer[4] = 0;
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
@@ -682,23 +856,26 @@ uint8_t sms_prepare_test_battery_nsec(uint8_t *buffer, uint16_t delay) {
 }
 
 uint8_t sms_prepare_shutdown_nsec(uint8_t *buffer, uint16_t delay) {
+    /* The delay is a 16-bit big-endian value, the unused pair is zero */
     buffer[0] = 'S';
-    buffer[1] = (uint8_t)(delay % 256);
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(delay >> 8);
+    buffer[2] = (uint8_t)(delay & 0xFF);
+    buffer[3] = 0;
+    buffer[4] = 0;
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
     return 7;
 }
 
-uint8_t sms_prepare_shutdown_restore(uint8_t *buffer) {
+uint8_t sms_prepare_shutdown_restore(uint8_t *buffer, uint16_t shutdown_delay, uint16_t restore_delay) {
+    /* Two 16-bit big-endian values: delay before the output is cut, then
+     * delay before it returns once mains is back */
     buffer[0] = 'R';
-    buffer[1] = 255;
-    buffer[2] = 255;
-    buffer[3] = 255;
-    buffer[4] = 255;
+    buffer[1] = (uint8_t)(shutdown_delay >> 8);
+    buffer[2] = (uint8_t)(shutdown_delay & 0xFF);
+    buffer[3] = (uint8_t)(restore_delay >> 8);
+    buffer[4] = (uint8_t)(restore_delay & 0xFF);
     buffer[5] = (buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4]) * 255;
     buffer[6] = ENDCHAR;
 
