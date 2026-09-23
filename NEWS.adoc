@@ -779,6 +779,9 @@ https://github.com/networkupstools/nut/milestone/13
       documentation according to problems that were found along the way. [#3453]
     * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
       [#3489, #3495, #3498]
+    * Refactored detection of semaphore capabilities (for parallel execution)
+      into a new m4 macro `NUT_CHECK_SEMAPHORES`, added support for autoconf
+      caching of the results for repeated runs. [PR #3675]
     * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
       controllers and build agents, `docs/config-prereqs.txt` revised.
 

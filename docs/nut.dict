@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3879 utf-8
 AAC
 AAS
 ABI
@@ -1228,6 +1228,7 @@ SECCTRL
 SELFTEST
 SELFTESTS
 SELinux
+SEMLIBS
 SENTR
 SER
 SERIALNO
