@@ -688,6 +688,8 @@ https://github.com/networkupstools/nut/milestone/13
  - Revised dusty corners of NUT documentation:
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
+    * Initialised the connection pointer in the C++ client example before
+      exception handling. [PR #3678]
     * Corrected source retrieval examples, removed an unsupported `configure`
       script option and documented the `pkg-config` installation-directory
       default. [PR #3681]
