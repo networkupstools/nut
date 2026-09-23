@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "nut-scan.h"
+#include "nutscan-thread.h"
 #include "nut_platform.h"
 #include "nut_stdint.h"
 
@@ -84,24 +85,14 @@ int nutscan_unload_upower_library(void);
 const char *setproctag_lib_once(const char *val);
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE_UNNAMED
-/* Shared by library consumers, exposed by nutscan_semaphore() below */
-static sem_t semaphore;
-
-sem_t * nutscan_semaphore(void)
-{
-	return &semaphore;
-}
-
-void nutscan_semaphore_set(sem_t *s)
-{
-	NUT_UNUSED_VARIABLE(s);
-}
-# elif defined HAVE_SEMAPHORE_NAMED
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 /* Shared by library consumers, exposed by nutscan_semaphore() below.
- * Methods like sem_open() return the pointer and sem_close() frees its data.
+ * NULL selects synchronous scanning when initialisation fails.
  */
-static sem_t *semaphore = NULL;	/* TOTHINK: maybe SEM_FAILED? */
+static sem_t *semaphore = NULL;
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+static sem_t semaphore_inst;
+#  endif
 
 sem_t * nutscan_semaphore(void)
 {
@@ -112,9 +103,55 @@ void nutscan_semaphore_set(sem_t *s)
 {
 	semaphore = s;
 }
+
+void nutscan_semaphore_free(void)
+{
+	if (semaphore == NULL) {
+		return;
+	}
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+	sem_destroy(semaphore);
+#  else
+	sem_unlink(SEMNAME_TOPLEVEL);
+	sem_close(semaphore);
+#  endif
+	semaphore = NULL;
+}
+
+/* Call only before starting scans, including after CLI option parsing. */
+void nutscan_semaphore_init(void)
+{
+	nutscan_semaphore_free();
+
+#include "nut-pragmas-unreachable-code.h"
+	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
+#include "nut-pragmas-unreachable-code-end.h"
+		upsdebugx(1,
+			"WARNING: %s: Limiting max_threads to range acceptable for " REPORT_SEM_INIT_METHOD "()",
+			__func__);
+		max_threads = UINT_MAX - 1;
+	}
+
+	upsdebugx(1, "%s: Parallel scan support: max_threads=%" PRIuSIZE,
+		__func__, max_threads);
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+	if (sem_init(&semaphore_inst, 0, (unsigned int)max_threads) == 0) {
+		semaphore = &semaphore_inst;
+	}
+#  else
+	/* FIXME: Do we need O_EXCL here? */
+	semaphore = sem_open(SEMNAME_TOPLEVEL, O_CREAT, 0644, (unsigned int)max_threads);
+	if (semaphore == SEM_FAILED) {
+		semaphore = NULL;
+	}
+#  endif
+	if (semaphore == NULL) {
+		upsdebug_with_errno(0, "%s: " REPORT_SEM_INIT_METHOD "() failed; scanning one target at a time", __func__);
+	}
+}
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 pthread_mutex_t threadcount_mutex;
 # endif
 
@@ -243,41 +280,10 @@ void nutscan_init(void)
 	upsdebugx_report_search_paths(1, 1);
 
 #ifdef HAVE_PTHREAD
-/* TOTHINK: Should semaphores to limit thread count
- * and the more naive but portable methods be an
- * if-else proposition? At least when initializing?
- */
-# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-	/* NOTE: This semaphore may get re-initialized in nut-scanner program
-	 * after parsing command-line arguments. It calls nutscan_init() before
-	 * parsing CLI, to know about available libs and to set defaults below.
-	 */
-#include "nut-pragmas-unreachable-code.h"
-	/* Different platforms, different sizes, none fits all... */
-	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
-#include "nut-pragmas-unreachable-code-end.h"
-		upsdebugx(1,
-			"WARNING: %s: Limiting max_threads to range acceptable for " REPORT_SEM_INIT_METHOD "()",
-			__func__);
-		max_threads = UINT_MAX - 1;
-	}
-
-	upsdebugx(1, "%s: Parallel scan support: max_threads=%" PRIuSIZE,
-		__func__, max_threads);
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-	if (sem_init(&semaphore, 0, (unsigned int)max_threads)) {
-		upsdebug_with_errno(4, "%s: Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed", __func__);
-	}
-#  elif defined HAVE_SEMAPHORE_NAMED
-	/* FIXME: Do we need O_EXCL here? */
-	if (SEM_FAILED == (semaphore = sem_open(SEMNAME_TOPLEVEL, O_CREAT, 0644, (unsigned int)max_threads))) {
-		upsdebug_with_errno(4, "%s: Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed", __func__);
-		semaphore = NULL;
-	}
-#  endif
-# endif
-
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+	nutscan_semaphore_init();
+	nut_scanner_thread_mutex_init();
+# elif defined HAVE_PTHREAD_TRYJOIN
 	pthread_mutex_init(&threadcount_mutex, NULL);
 # endif
 #endif	/* HAVE_PTHREAD */
@@ -823,18 +829,10 @@ void nutscan_free(void)
 	nutscan_unload_upower_library();
 
 #ifdef HAVE_PTHREAD
-/* TOTHINK: See comments near mutex/semaphore init code above */
-# ifdef HAVE_SEMAPHORE_UNNAMED
-	sem_destroy(nutscan_semaphore());
-# elif defined HAVE_SEMAPHORE_NAMED
-	if (nutscan_semaphore()) {
-		sem_unlink(SEMNAME_TOPLEVEL);
-		sem_close(nutscan_semaphore());
-		nutscan_semaphore_set(NULL);
-	}
-# endif
-
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+	nutscan_semaphore_free();
+	nut_scanner_thread_mutex_free();
+# elif defined HAVE_PTHREAD_TRYJOIN
 	pthread_mutex_destroy(&threadcount_mutex);
 # endif
 #endif

@@ -92,7 +92,7 @@ endif !ENABLE_SHARED_PRIVATE_LIBS
 bin_PROGRAMS =
 lib_LTLIBRARIES =
 include_HEADERS =
-dist_noinst_HEADERS =
+dist_noinst_HEADERS = nutscan-thread.h
 
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
@@ -101,7 +101,7 @@ if WITH_NUT_SCANNER
 endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
-			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
+			nutscan-init.c nutscan-thread.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			scan_upower.c
 libnutscan_la_LIBADD = $(NETLIBS)
@@ -142,7 +142,7 @@ libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 # libnutscan version information
 ### WARNING: Do not forget to update SO_MAJOR_LIBNUTSCAN under scripts/obs,
 ### especially when bumping "age" into loss of compatibility with old releases!
-libnutscan_la_LDFLAGS += -version-info 6:0:2
+libnutscan_la_LDFLAGS += -version-info 7:0:3
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
