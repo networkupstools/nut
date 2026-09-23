@@ -686,6 +686,8 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected the installation staging example to preserve the source tree
+      (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Corrected the documented connection defaults for `upsc`, `upscmd`,
       `upsrw`, `upsmon` and `upslog` clients, and preserved the remote
       destination in the `upsc` query-loop example. [PR #3687]
