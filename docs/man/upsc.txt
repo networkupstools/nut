@@ -85,9 +85,9 @@ COMMON OPTIONS
 
 *-W* 'secs'::
 
-  Set the timeout for initial network connections (by default they are
-  indefinitely non-blocking, or until the system interrupts the attempt).
-  Overrides the optional `NUT_DEFAULT_CONNECT_TIMEOUT` environment variable.
+  Set the timeout for initial network connections. The built-in default is
+  10 seconds, which can be overridden by the `NUT_DEFAULT_CONNECT_TIMEOUT`
+  environment variable. This option overrides that environment setting.
 
 *-A* '/path/to/nutauth.conf'::
 
@@ -146,7 +146,7 @@ To retrieve the status for all UPSes connected to mybox, using Bourne-shell
 syntax:
 
     :; for UPS in `upsc -l mybox:1234`; do
-        upsc $UPS ups.status
+        upsc "$UPS@mybox:1234" ups.status
     done
 
 To list clients connected on "myups":

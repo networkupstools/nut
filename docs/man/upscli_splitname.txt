@@ -13,7 +13,7 @@ SYNOPSIS
 	#include <upsclient.h>
 
 	int upscli_splitname(const char *buf, char **upsname,
-		char **hostname, int *port)
+		char **hostname, uint16_t *port)
 ------
 
 DESCRIPTION
