@@ -79,8 +79,7 @@ Start a "deep" battery test.  This test runs the UPS until the low
 battery point and then returns to the AC line.
 
 *test.battery.start.quick*::
-Start a "quick" battery test.  The default time is 2 minutes.  This
-time can be set in the *ups.conf* file.  See *testime* above.
+Start a "quick" battery test.  The default time is 2 minutes.
 
 *test.battery.stop*::
 Stops a battery test that is in progress.
