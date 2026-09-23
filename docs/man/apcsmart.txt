@@ -58,10 +58,11 @@ those are pretty fuzzy):
 	proprietary roots, and all the new models (SMT, SMX, SURTD) use
 	completely different protocol and cables. If you purchased
 	a new APC UPS -- that uses cable with RJ45 on the one end, and DB-9
-	on the other -- then you have such model. Your only option to support
+	on the other -- then you have such model. One option to support
 	it through *NUT* is to purchase a "legacy communications card" --
-	part #AP9620 (google 'AP9620' for more details). Or if that's not
-	an option, rely on official software.
+	part #AP9620 (google 'AP9620' for more details). For experimental
+	native Microlink support, see linkman:apcmicrolink[8] and its model
+	and testing limitations.
 +
 --
 .UPDATE:
