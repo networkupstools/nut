@@ -686,6 +686,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented how to use `sdcommands` with a stopped driver daemon to
+      send a supported instant command (typically for shutdown) without
+      a locally running `upsd` data server. [issue #1677]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialised the connection pointer in the C++ client example before

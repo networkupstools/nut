@@ -158,6 +158,24 @@ attached load, if possible.
 You should use `upsdrvctl shutdown` whenever possible instead of
 calling this directly. Note that the constrained operating system
 context for shutdown typically rules out use of `upsdrvsvcctl shutdown`.
++
+With the driver daemon for this UPS stopped, `-k` can also send an instant
+command selected by `sdcommands` directly to the device, without
+linkman:upsd[8]. If the daemon is running, `-k` first requests its configured
+shutdown action; the command-line `sdcommands` override is not passed to it.
++
+For example, to cancel a pending shutdown, if supported by the driver and
+device:
++
+----
+nutdrv_qx -a myups -x sdcommands=shutdown.stop -k -F
+----
++
+The `-F` option keeps the driver in the foreground.
+Use the driver executable and UPS section name for your configuration, and
+place `-x` after `-a` to override the setting from `ups.conf`. See
+`sdcommands` in linkman:ups.conf[5] for details. A comma-separated list tries
+alternatives until one succeeds; it does not execute every command.
 
 *-r* 'directory'::
 The driver will linkmanext:chroot[2] to 'directory' during initialization.
