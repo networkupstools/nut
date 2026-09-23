@@ -685,7 +685,9 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
- - Revised dusty corners of NUT documentation:
+- Revised dusty corners of NUT documentation:
+   * Removed unsupported quick-test duration configuration guidance from the
+     Powervar serial and USB manuals. [PR #3695]
    * Removed an ineffective notification option recommendation from the
      mge-shut troubleshooting guidance. [PR #3696]
    * Corrected the `upsdrvsvcctl` command reference and removed a stale TODO
