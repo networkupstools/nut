@@ -1571,6 +1571,7 @@ static double dstate_poll_remaining(dstate_poll_t *poll)
 	elapsed = wall_elapsed;
 	if (poll->use_monotonic) {
 		st_tree_timespec_t monotonic;
+		volatile double clock_difference;
 
 		if (state_get_timestamp(&monotonic) != 0) {
 			poll_monotonic_failed = 1;
@@ -1579,7 +1580,11 @@ static double dstate_poll_remaining(dstate_poll_t *poll)
 			return 0;
 		}
 		elapsed = difftime_st_tree_timespec(monotonic, poll->monotonic);
-		if (wall_elapsed - elapsed > 5 || elapsed - wall_elapsed > 5) {
+		/* Round before comparing: x87 may otherwise retain excess precision
+		 * and treat an exact five-second difference as outside the tolerance.
+		 */
+		clock_difference = wall_elapsed - elapsed;
+		if (clock_difference > 5 || clock_difference < -5) {
 			upslogx(LOG_WARNING, "%s: suspend or wall-clock change detected (wall %.06f, monotonic %.06f seconds); refreshing data", __func__, wall_elapsed, elapsed);
 			poll->interval = 0;
 			return 0;
