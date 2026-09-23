@@ -686,6 +686,8 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+   * Updated APC Microlink support references and qualified the USB
+     kernel-driver detachment guidance. [PR #3691]
    * Corrected the GPIO driver executable name in examples and fixed a quoted
      value in its udev rule example. [PR #3693]
    * Removed unsupported quick-test duration configuration guidance from the
