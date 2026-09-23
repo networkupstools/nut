@@ -15,7 +15,7 @@
 static int failures = 0, checks = 0;
 
 /* Storage normally owned by upsd.c and netssl.c. Keep the public types. */
-int maxage = 15, tracking_delay = 3600;
+unsigned int maxage = 15, tracking_delay = 3600;
 int allow_no_device = 0, allow_not_all_listeners = 0;
 nfds_t maxconn = 0;
 char *statepath = NULL, *datapath = NULL;
@@ -30,8 +30,8 @@ int certrequest = 0;
 /* These daemon operations must not be reached by the configuration tests. */
 static void unexpected_call(const char *name)
 {
-	upslogx(LOG_ERR, "Unexpected %s", name);
 	failures++;
+	upslogx(LOG_ERR, "FAILURE [#%d]\tUnexpected %s", failures, name);
 }
 
 upstype_t *get_ups_ptr(const char *name)
@@ -112,9 +112,10 @@ static void check_value(const char *option, const char *value, int accepted, uin
 	actual = stored_value(option);
 	checks++;
 	if (result != accepted || actual != expected) {
-		upslogx(LOG_ERR, "FAIL %s '%s': accepted=%d, value=%" PRIuMAX
-			"; expected %d, %" PRIuMAX, option, value, result, actual, accepted, expected);
 		failures++;
+		upslogx(LOG_ERR, "FAILURE [#%d]\t%s '%s': accepted=%d, value=%" PRIuMAX
+			"; expected %d, %" PRIuMAX,
+			failures, option, value, result, actual, accepted, expected);
 	}
 	free(args[0]);
 	free(args[1]);
@@ -138,9 +139,10 @@ static void check_value(const char *option, const char *value, int accepted, uin
 		actual = stored_value(option);
 		checks++;
 		if (actual != expected) {
-			upslogx(LOG_ERR, "FAIL load_upsdconf(%d), %s '%s': value=%" PRIuMAX
-				"; expected %" PRIuMAX, reloading, option, value, actual, expected);
 			failures++;
+			upslogx(LOG_ERR, "FAILURE [#%d]\tload_upsdconf(%d), %s '%s': value=%" PRIuMAX
+				"; expected %" PRIuMAX,
+				failures, reloading, option, value, actual, expected);
 		}
 	}
 }
@@ -193,6 +195,9 @@ int main(void)
 			check_value(options[i], invalid[j], 0, previous);
 
 		limit = (uintmax_t)INT_MAX;
+		if (!strcmp(options[i], "MAXAGE") || !strcmp(options[i], "TRACKINGDELAY")) {
+			limit = (uintmax_t)UINT_MAX;
+		} else
 		if (!strcmp(options[i], "MAXCONN")) {
 			limit = (uintmax_t)((nfds_t)-1);
 			if (limit > (uintmax_t)LONG_MAX) limit = (uintmax_t)LONG_MAX;
@@ -232,8 +237,8 @@ int main(void)
 	ups.last_ping = ups.last_heard;
 	checks++;
 	if (sstate_dead(&ups, INT_MAX)) {
-		upslogx(LOG_ERR, "FAIL MAXAGE INT_MAX: fresh driver data is stale");
 		failures++;
+		upslogx(LOG_ERR, "FAILURE [#%d]\tMAXAGE INT_MAX: fresh driver data is stale", failures);
 	}
 	free(ups.name);
 #endif
