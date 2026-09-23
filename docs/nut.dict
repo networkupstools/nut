@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3865 utf-8
+personal_ws-1.1 en 3874 utf-8
 AAC
 AAS
 ABI
@@ -1049,6 +1049,7 @@ PiJuice
 PiNUT
 Plesser
 PnP
+PoC
 Poettering
 Pohle
 PointBre
@@ -2133,6 +2134,7 @@ drvctl
 drvpath
 drwxr
 drwxrwx
+drwxrwxrwt
 ds
 dsc
 dsi
@@ -2252,6 +2254,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmware's
 firmwares
 fixNSS
 fmt
@@ -2283,6 +2286,7 @@ fstab
 ftdi
 fuji
 func
+fusermount
 gamatronic
 gandi
 gc
@@ -2540,6 +2544,7 @@ kVA
 kadets
 kaminski
 kde
+kernel's
 kex
 kext
 keychain
@@ -2590,6 +2595,7 @@ libexec
 libexecdir
 libexpat
 libfreeipmi
+libfuse
 libgd
 libgio
 libglib
@@ -2920,6 +2926,7 @@ ntopW
 ntu
 nuf
 nuget
+nullptr
 num
 numOfBytesFromUPS
 numa
@@ -3157,6 +3164,7 @@ qx
 qx's
 qxflags
 rD
+rH
 ragtech
 raritan
 rb
@@ -3203,6 +3211,7 @@ req
 resetter
 resizing
 resolv
+restorecon
 restoreconf
 resync
 ret
