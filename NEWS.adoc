@@ -685,7 +685,7 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
-- Revised dusty corners of NUT documentation:
+ - Revised dusty corners of NUT documentation:
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
@@ -699,6 +699,8 @@ https://github.com/networkupstools/nut/milestone/13
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialised the connection pointer in the C++ client example before
       exception handling. [PR #3678]
+    * Corrected `libupsclient` API declarations, logging examples and the
+      descriptions of SSL capability flags and raw line reads. [PR #3679]
     * Corrected `nut-scanner` library (`libnutscan`) API descriptions and
       the consumer example for current function names, argument types,
       device-option pointers and initialisation. [PR #3680]
@@ -865,8 +867,8 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      `upscli_ssl_caps()`. Updated common NUT clients to report this info
      in their detailed help banners. Done similarly for `upsd`. The NIT
      (NUT Integration Test) suite piggy-backs on this to add run-time
-     dependent tests of SSL capability. Added `upscli_set_debug_level()`
-     and `upscli_set_debug_level()` methods to facilitate NUT debugging
+     dependent tests of SSL capability. Added `upscli_upslog_set_debug_level()`
+     and `upscli_upslog_get_debug_level()` methods to facilitate NUT debugging
      for clients built with shared NUT private libraries. [issues #3328,
      #1771, #2800, PR #3330]
    * Revised OpenSSL handshake to support retries requested by the library,
