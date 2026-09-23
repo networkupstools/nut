@@ -1,5 +1,5 @@
-NUTSCAN_SET_DEBUG_LEVEL(3)
-==========================
+NUTSCAN_UPSLOG_SET_DEBUG_LEVEL(3)
+=================================
 
 NAME
 ----
@@ -20,12 +20,12 @@ SYNOPSIS
 
 	const void *nutscan_upslog_cookie(void);
 
-	void nutscan_set_debug_level(int level), const void *cookie;
-	int  nutscan_get_debug_level(void);
+	void nutscan_upslog_set_debug_level(int level, const void *cookie);
+	int  nutscan_upslog_get_debug_level(void);
 
-	void nutscan_setprocname(const char *full_procname, const void *cookie);
-	void nutscan_setproctag(const char *tag, const void *cookie);
-	const char *nutscan_getproctag(void);
+	void nutscan_upslog_setprocname(const char *full_procname, const void *cookie);
+	void nutscan_upslog_setproctag(const char *tag, const void *cookie);
+	const char *nutscan_upslog_getproctag(void);
 
 	struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie);
 ------
@@ -43,7 +43,7 @@ dynamically loaded library instance behind both the program and libnutscan
 consumers like NUT in-tree clients can use their `nut_common_cookie()` value
 to pass into methods here. Third-party clients may safely pass 'NULL'.
 
-The *nutscan_set_debug_level()* function sets internal debug verbosity
+The *nutscan_upslog_set_debug_level()* function sets internal debug verbosity
 for common NUT code in the library and optionally into the loaded
 `libupsclient` (*nutscan_init()* function must be called at least once
 before this then).
@@ -72,4 +72,4 @@ releases.
 SEE ALSO
 --------
 
-linkman:nutscan_init[3], linkman:upscli_set_debug_level[3]
+linkman:nutscan_init[3], linkman:upscli_upslog_set_debug_level[3]

@@ -329,7 +329,7 @@ complete environments):
 NOTE: For Jenkins agents, also need to `apt-get install openjdk-21-jdk-headless`
 (or use alternate PPA sources or third-party builds on Debian 12 and older).
 You may have to ensure that `/proc` is mounted in the target chroot
-(or do this from the running container).
+(or do this from the running container). Also `apt-get install jq`.
 
 CentOS 6 and 7, Fedora 43
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -560,6 +560,7 @@ available for CentOS 6 nor 7 directly (in distribution packaging).
 In Fedora e.g.:
 ------
 :; yum install \
+    jq \
     java-21-openjdk-headless
 ------
 
@@ -682,6 +683,7 @@ required:
 
 # Pick one:
 :; pacman -S --needed \
+    jq \
     jre21-openjdk-headless
 
 # If needed to change default implementation, consult:
@@ -855,6 +857,9 @@ sub-directories for `15.0` and `current`:
 :; installpkg openjdk25-25.0.3_9-x86_64-1alien.txz
 ----
 
+Likewise for `jq` from http://www.slackware.com/~alien/slackbuilds/jq/pkg64/15.0/
+if using NUT CI Swarm style configuration of build agents.
+
 Upon community members' recommendations, Sotirov's SlackPack is also considered
 a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
 if not all of the dependencies required for NUT building (including PowerMan,
@@ -989,7 +994,7 @@ For compatibility with common setups on other operating systems, can symlink
 suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
 by package).
 
-NOTE: For Jenkins agents, also need to `pkg install openjdk21` (21+ required
+NOTE: For Jenkins agents, also need to `pkg install jq openjdk21` (21+ required
 since spring 2026) -- and do note its further OS configuration suggestions
 for special filesystem mounts.
 
@@ -1190,6 +1195,7 @@ but ensure that you run it with `bash` and it does `wget` the certificates
 (maybe with `--no-check-certificate` option if the OS does not trust current
 internet infrastructure either), and revise the suggested certificate files
 vs. https://letsencrypt.org/certificates/ and/or comments to that gist.
+Also `pkg_add jq`.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
 or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
@@ -1426,6 +1432,8 @@ PATH="${JAVA_HOME}/bin:${PATH}"
 export PATH
 ------
 
+Also `pkgin install jq`.
+
 OpenIndiana as of releases 2021.10 to 2024.04
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1586,7 +1594,7 @@ No pre-packaged `cppcheck` was found, either.
 
 [NOTE]
 ======
-For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
+For Jenkins agents, also need to `pkg install jq runtime/java/openjdk21`
 for JRE/JDK 21. Java 21 or 25 is required to run Jenkins agents after
 spring 2026. If updating from older releases, you may need to update
 the reference to default implementation, e.g.:
@@ -1718,7 +1726,7 @@ whatever they need to happen.
 
 [NOTE]
 ======
-For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
+For Jenkins agents, also need to `pkg install jq runtime/java/openjdk21`
 for JRE/JDK 21. Java 21 or 25 is required to run Jenkins agents after
 spring 2026. If updating from older releases, you may need to update
 the reference to default implementation, e.g.:
@@ -1885,7 +1893,7 @@ Alternatively, to prepare building sessions with `ci_build.sh` you can:
 
 NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
 for JRE/JDK 21. Java 21 or 25 (an LTS) is required to run Jenkins agents
-after spring 2026.
+after spring 2026. Also `brew install jq` for NUT CI Swarm style workers.
 
 The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
 in a GUI terminal, and a pop-up will appear offering to install it.

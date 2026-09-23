@@ -153,6 +153,10 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   of the two filenames for same contents (to pick the backend at run-time) may
   also be optimized with symbolic or hard links in packaging. [PR #3596]
 
+- Manual page name for `generic_gpio_libgpiod` driver was fixed to match its
+  name (previously the document base file name could have been `generic_gpio`).
+  This can impact packaging recipes. [PR #3693]
+
 
 Changes from 2.8.4 to 2.8.5
 ---------------------------

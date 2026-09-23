@@ -242,9 +242,11 @@ until the driver process is restarted. The driver detects this, logs a
 warning, and backs off between attempts instead of retrying at full
 speed. It cannot recover on its own.
 
-Neither this driver nor NUT's shared USB layer (`nut_libusb.c`) attempts
-to detach `usbhid` on its own. A udev rule that unbinds `usbhid` from the
-UPS's vendor/product ID avoids this. For example, for VID:PID `051d:0003`
+NUT's shared USB backends (`libusb0.c` and `libusb1.c`) attempt to detach
+a kernel driver when the relevant libusb APIs are available. This does
+not guarantee recovery if `usbhid` reclaims the interface while this
+driver is running. A udev rule that unbinds `usbhid` from the UPS's
+vendor/product ID can avoid this conflict. For example, for VID:PID `051d:0003`
 (APC Smart-UPS 500 / SCL500RMI1UC):
 
 ----
