@@ -433,8 +433,7 @@ void load_upsdconf(int reloading)
 
 retry:
 	if (!pconf_file_begin(&ctx, fn)) {
-		if (errno == EMFILE && reloading == 2) {
-			close_oldest_client();
+		if (errno == EMFILE && reloading == 2 && close_oldest_client()) {
 			goto retry;
 		}
 		pconf_finish(&ctx);
@@ -512,9 +511,8 @@ static int load_upsconf(int reloading) {
 
 	ret = read_upsconf(0);	/* 0 = do not abort fatally just yet */
 	if (ret == -1) {
-		if (errno == EMFILE && reloading == 2) {
-			upsdebugx(1, "%s: close an oldest client connection and try reading config again", __func__);
-			close_oldest_client();
+		if (errno == EMFILE && reloading == 2 && close_oldest_client()) {
+			upsdebugx(1, "%s: closed an oldest client connection, try reading config again", __func__);
 			ret = read_upsconf(1);	/* 1 = may abort upon fundamental errors */
 		} else {
 			/* Not fatalx(), the method above already reported the problem */
@@ -696,8 +694,7 @@ retry:
 	f = fopen(chkfn, "r");
 
 	if (!f) {
-		if (errno == EMFILE && retries < 10) {
-			close_oldest_client();
+		if (errno == EMFILE && retries < 10 && close_oldest_client()) {
 			retries++;
 			goto retry;
 		}

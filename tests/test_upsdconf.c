@@ -9,10 +9,41 @@
  */
 
 #include "config.h"
+#include "common.h"
+#include "parseconf.h"
+
+static FILE *test_fopen(const char *path, const char *mode);
+static int test_pconf_file_begin(PCONF_CTX_t *ctx, const char *path);
+
+#define fopen test_fopen
+#define pconf_file_begin test_pconf_file_begin
 #include "conf.c"
+#undef fopen
+#undef pconf_file_begin
 #include "sstate.c"
 
 static int failures = 0, checks = 0;
+static int open_error = 0, reclaimable_clients = 0;
+static int close_calls = 0, expected_close_calls = 0;
+
+static FILE *test_fopen(const char *path, const char *mode)
+{
+	if (open_error) {
+		errno = open_error;
+		return NULL;
+	}
+	return fopen(path, mode);
+}
+
+static int test_pconf_file_begin(PCONF_CTX_t *ctx, const char *path)
+{
+	if (open_error) {
+		snprintf(ctx->errmsg, PCONF_ERR_LEN, "Injected configuration open failure");
+		errno = open_error;
+		return 0;
+	}
+	return pconf_file_begin(ctx, path);
+}
 
 /* Storage normally owned by upsd.c and netssl.c. Keep the public types. */
 int maxage = 15, tracking_delay = 3600;
@@ -27,7 +58,7 @@ int disable_weak_ssl = 0;
 int certrequest = 0;
 #endif
 
-/* These daemon operations must not be reached by the configuration tests. */
+/* Unrelated daemon operations must not be reached by these tests. */
 static void unexpected_call(const char *name)
 {
 	upslogx(LOG_ERR, "Unexpected %s", name);
@@ -54,7 +85,20 @@ void kick_login_clients(const char *name)
 	unexpected_call("kick_login_clients");
 }
 
-void close_oldest_client(void) { unexpected_call("close_oldest_client"); }
+int close_oldest_client(void)
+{
+	close_calls++;
+	/* Bound the test even if the loader regresses to an endless retry. */
+	if (close_calls > expected_close_calls) {
+		fatalx(EXIT_FAILURE, "Unexpected configuration-open retry");
+	}
+	if (reclaimable_clients) {
+		reclaimable_clients--;
+		open_error = 0;
+		return 1;
+	}
+	return 0;
+}
 void user_flush(void) { unexpected_call("user_flush"); }
 void user_load(void) { unexpected_call("user_load"); }
 
@@ -145,6 +189,35 @@ static void check_value(const char *option, const char *value, int accepted, uin
 	}
 }
 
+static void check_open_failure(int error, int clients, int reloading, int expected)
+{
+	open_error = error;
+	reclaimable_clients = clients;
+	close_calls = 0;
+	expected_close_calls = (error == EMFILE && reloading == 2);
+	maxage = 17;
+	load_upsdconf(reloading);
+	checks++;
+	if (maxage != expected || close_calls != expected_close_calls) {
+		upslogx(LOG_ERR, "FAIL reload open error %d, clients %d, mode %d",
+			error, clients, reloading);
+		failures++;
+	}
+
+	open_error = error;
+	reclaimable_clients = clients;
+	close_calls = 0;
+	expected_close_calls = (error == EMFILE);
+	checks++;
+	if (check_file("upsd.conf") != (error == EMFILE && clients > 0)
+	||  close_calls != expected_close_calls
+	) {
+		upslogx(LOG_ERR, "FAIL precheck open error %d, clients %d", error, clients);
+		failures++;
+	}
+	open_error = 0;
+}
+
 int main(void)
 {
 	static const char *options[] = { "MAXAGE", "TRACKINGDELAY", "MAXCONN",
@@ -222,6 +295,10 @@ int main(void)
 	load_upsdconf(0);
 	checks++;
 	if (maxage != 31) failures++;
+	check_open_failure(EMFILE, 1, 2, 31);
+	check_open_failure(EMFILE, 0, 2, 17);
+	check_open_failure(EMFILE, 1, 1, 17);
+	check_open_failure(EACCES, 1, 2, 17);
 
 #ifndef WIN32
 	/* No socket I/O is needed: fresh timestamps suppress the ping path. */
