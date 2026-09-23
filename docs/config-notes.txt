@@ -35,8 +35,10 @@ Details about the configuration files
 Generalities
 ~~~~~~~~~~~~
 
-All configuration files within this package are parsed with a common
-state machine, which means they all can use a number of extras described here.
+Most configuration files within this package are parsed with a common
+state machine, which means they can use a number of extras described here.
+The service configuration file linkman:nut.conf[5] has its own syntax
+requirements, described in its manual page.
 
 First, most of the programs use an upper-case word to declare a
 configuration directive.  This may be something like MONITOR, NOTIFYCMD,
@@ -45,35 +47,66 @@ or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 Next, the parser does not care about whitespace between words.  If you
 like to indent things with tabs or spaces, feel free to do it here.
 
-If you need to set a value to something containing spaces, it has to be
-contained within "quotes" to keep the parser from splitting up the line.
+If you need to set a value to something containing spaces, put it within
+double quotes or escape each space with a backslash to keep the parser
+from splitting up the line.
 That is, you want to use something like this:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
-Without the quotes, it would only see the first word on the line.
+or, with each space escaped:
+
+	SHUTDOWNCMD /sbin/shutdown\ -h\ +0
+
+Without quoting or escaping the spaces, a directive expecting one value
+would only see the first word of that value.
+
+Double quotes must begin at the start of a token. A closing double quote
+completes the token: `"one"two` yields two tokens, `one` and `two`.
+Single quotes (apostrophes) are ordinary characters and do not group words.
 
 OK, so let's say you really need to embed that kind of quote within your
 configuration directive for some reason.  You can do that too.
 
-	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
+	NOTIFYCMD "/bin/notifyme" "-foo" "-bar" "\"hi there\"" "-baz"
 
-In other words, `\` can be used to escape the `"`.
+In other words, `\` can be used to escape the `"`. Here, the parsed value
+after `-bar` contains both the space and the literal double quotes.
+
+Unlike SHUTDOWNCMD, the first value of NOTIFYCMD is an exact executable
+path, with any arguments passed as separate tokens. This is a change from
+NUT v2.8.5 and older releases. The notification message is appended as the
+last argument. See linkman:upsmon.conf[5] for details.
 
 Finally, for the situation where you need to put the `\` character into your
 string, you just escape it.
 
-	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
+	NOTIFYCMD "/bin/notifyme" "c:\\dos\\style\\path"
 
-The `\` can actually be used to escape any character, but you only really
-need it for `\`, `"`, and `#` as they have special meanings to the parser.
+The `\` can actually be used to escape any permitted character, inside or
+outside double quotes. It quotes the next character once: `\n` means the
+letter `n`, not a newline. It is useful for `\`, `"`, and, outside double
+quotes, spaces, `=`, and `#`, which have special meanings to the parser.
 
-When using file names with space characters, you may end up having tricky
-things since you need to write them inside `""` which must be escaped:
+To keep file names with spaces together during configuration parsing,
+quote each path separately:
 
-	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
+	NOTIFYCMD "c:\\path with space\\notifyme" "c:\\path with space\\name"
 
-`#` is the comment character.  Anything after an unescaped `#` is ignored.
+Alternatively, escape the spaces as well as the backslashes (note there
+are also two tokens in this example, making it equivalent to the one above
+for programmatic consumption -- but arguably harder to read for humans):
+
+	NOTIFYCMD c:\\path\ with\ space\\notifyme c:\\path\ with\ space\\name
+
+NOTE: On Windows, the command line used to launch NOTIFYCMD can split
+these values again, including the executable name in the child's argument
+list and the appended notification message. Configuration quoting alone
+is not sufficient. See the Windows quoting note for NOTIFYCMD in
+linkman:upsmon.conf[5].
+
+Outside double quotes, `#` is the comment character. Anything after an
+unescaped `#` is ignored until the end of the physical line.
 
 Something like this...
 
@@ -81,11 +114,16 @@ Something like this...
 
 will actually turn into `identity = my`, since the `#` stops the
 parsing. If you really need to have a `#` in your configuration, then
-escape it.
+escape it or put the value inside double quotes.
 
 	identity = my\#1ups
 
-Much better.
+or:
+
+	identity = "my#1ups"
+
+Older versions of the parser required `\#` even inside double quotes.
+That spelling remains supported for compatibility with those versions.
 
 The `=` character should be used with care too. There should be only one
 "simple" `=` character in a line: between the parameter name and its value.

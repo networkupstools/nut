@@ -65,7 +65,25 @@ also escaped by representing them as `\\`.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
 
 It is an ASCII text-based line-oriented protocol, with end of each line
-signaled by a single `\n` (`0x0D`) character.
+signaled by a single `\n` (`0x0A`) character.
+
+Double quotes start a quoted element only at the beginning of an element.
+The closing quote completes that element, so `"one"two` produces two
+elements, `one` and `two`. Single quotes (apostrophes) are ordinary
+characters; they do not group words. Outside double quotes, unescaped
+whitespace separates elements, and an unescaped `=` becomes a separate
+element of its own.
+
+An unescaped `#` starts a comment only outside double quotes. Inside
+double quotes it is literal, so `"Outlet #3"` represents `Outlet #3`.
+For compatibility with older parsers which rejected an unescaped `#`
+inside quotes, `pconf_encode()` continues to send it as `\#`.
+
+A backslash quotes the next character once, inside or outside double
+quotes, subject to the character restrictions of the parser. For example,
+`one\ two` is one element, while `\n` represents the letter `n`, not a
+newline. A backslash followed by a physical newline continues the logical
+line. These rules are NUT syntax, not shell or JSON string syntax.
 
 
 Revision history
@@ -364,7 +382,7 @@ Response:
 	BEGIN LIST CMD <upsname>
 	CMD <upsname> <cmdname>
 	...
-	END LIST CMD <cmdname>
+	END LIST CMD <upsname>
 
 	BEGIN LIST CMD su700
 	CMD su700 load.on

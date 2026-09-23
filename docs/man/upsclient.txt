@@ -85,7 +85,7 @@ linkman:upscli_readline[3].  Client programs are expected to format these
 lines according to the protocol, as no checking will be performed before
 transmission.
 
-At the end of a connection, you must call linkman:upsclient_disconnect[3]
+At the end of a connection, you must call linkman:upscli_disconnect[3]
 to disconnect from *upsd* and release any dynamic memory associated
 with the `UPSCONN_t` structure.  Failure to call this function will result
 in memory and file descriptor leaks in your program.
@@ -114,7 +114,7 @@ also be used to retrieve the error number.  These numbers are defined in
 SEE ALSO
 --------
 
-linkman:nutclient[3],
+linkman:libnutclient[3],
 linkman:libupsclient-config[1],
 linkman:upscli_init[3], linkman:upscli_cleanup[3],
 linkman:upscli_add_host_cert[3],
@@ -123,7 +123,7 @@ linkman:upscli_fd[3],
 linkman:upscli_get_or_create_ssl_context[3],
 linkman:upscli_get_or_create_ssl_context_authconf[3],
 linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
-linkman:upscli_getvar[3], linkman:upscli_list_next[3],
+linkman:upscli_get[3], linkman:upscli_list_next[3],
 linkman:upscli_list_start[3], linkman:upscli_readline[3],
 linkman:upscli_sendline[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
