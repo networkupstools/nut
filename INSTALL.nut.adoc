@@ -587,9 +587,13 @@ installation, in case whole swathes of files that you expect to be present
 in the current system (libraries, drivers, docs) are not getting installed
 by the new build into same path names:
 
+Use a fresh staging directory separate from the source tree. The following
+example stops if its staging directory already exists:
+
 ----
-:; rm -rf /tmp/nut ; make DESTDIR=/tmp/nut install -j 8
-:; (cd /tmp/nut && find . | sort) | while read N ; \
+:; nut_stage=/tmp/nut-install-$$ && mkdir -m 700 "$nut_stage" && \
+   make DESTDIR="$nut_stage" install -j 8 && \
+   (cd "$nut_stage" && find . | sort) | while read N ; \
    do [ -e "/$N" ] || echo "=== MISSING: /$N" >&2 ; done
 ----
 
