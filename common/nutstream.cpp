@@ -1295,7 +1295,7 @@ NutStream::status_t NutSocket::getChar(char & ch)
 	// so unless we need greater reading efficiency, char-by-char
 	// reading should be sufficient
 
-	ssize_t read_cnt = ::read(m_impl, &ch, 1);
+	ssize_t read_cnt = sktread(m_impl, &ch, 1);
 
 	if (1 == read_cnt) {
 		m_current_ch       = ch;
