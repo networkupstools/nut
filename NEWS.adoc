@@ -695,6 +695,8 @@ https://github.com/networkupstools/nut/milestone/13
       for individual variable requests and command tracking. [PR #3682]
     * Corrected the simulation filename and recorder command in the developer
       walk-through, and fixed quoting in the recorder manual example. [PR #3683]
+    * Corrected `nut-scanner` simulation-file and configuration-directory
+      documentation and help, and repaired inconsistent scan examples. [PR #3684]
     * Corrected the documented connection defaults for `upsc`, `upscmd`,
       `upsrw`, `upsmon` and `upslog` clients, and preserved the remote
       destination in the `upsc` query-loop example. [PR #3687]

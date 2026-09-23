@@ -94,10 +94,9 @@ If IP address ranges are specified, they would be scanned instead of a broadcast
 Scan NUT devices (i.e. `upsd` daemon) on IP ranging from 'start IP' to 'end IP'.
 
 *-n* | *--nut_simulation_scan*::
-Scan NUT simulated devices (`.dev` files in the built-in "sysconfig" location).
-+
-WARNING: The `NUT_CONFPATH` environment variable override is not currently
-supported.
+Scan NUT simulated devices (`.dev` and `.seq` files in the configuration
+directory). A non-empty `NUT_CONFPATH` environment variable overrides the
+built-in "sysconfig" location.
 
 *-A* | *--avahi_scan*::
 Scan NUT servers using Avahi request on the current network interface(s).
@@ -309,11 +308,31 @@ To scan USB devices only:
 
 ----
 :; nut-scanner -U
+Scanning USB bus.
 
 [nutdev-usb1]
-        driver = "snmp-ups"
-        port = "192.168.0.42"
+        driver = "usbhid-ups"
+        port = "auto"
+        vendorid = "0463"
+        productid = "FFFF"
+        product = "Ellipse ECO"
+        serial = "000000000"
+        vendor = "EATON"
+        # bus = "005"
+        # device = "002"
+        # busport = "001"
+
+# WARNING: all-same character "serial" with 9 copies of '0' (0x30) reported in some devices: nutdev-usb1
 ----
+
+NOTE: The `bus`, `device` and `busport` values generally depend on enumeration
+performed by the operating system, and can change from one boot or run of the
+driver to another, at least on some systems.  On some systems this may be more
+stable than on others (e.g. you do not keep re-plugging the USB cable on a
+server in the rack, or the OS numbers follow hardware entities more closely),
+and in a few cases this may be the only reasonable way to differentiate multiple
+similar devices -- in those uncommon circumstances you might want to uncomment
+and use such values.
 
 To scan SNMP v1 device with 'public' (default) community on address range
 '192.168.0.0 to 192.168.0.255':
@@ -336,11 +355,11 @@ The same using CIDR notation:
         port = "192.168.0.42"
 ----
 
-To scan NUT servers with a timeout of '10' seconds on IP range '192.168.0.0
-to 192.168.0.127' using CIDR notation:
+To scan NUT servers with a timeout of '10' seconds on IP range '192.168.1.0
+to 192.168.1.127' using CIDR notation:
 
 ----
-:; nut-scanner -O -t 10 -m 192.168.0.0/25
+:; nut-scanner -O -t 10 -m 192.168.1.0/25
 
 [nutdev-nut1]
         driver = "dummy-ups"
