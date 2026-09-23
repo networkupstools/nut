@@ -252,24 +252,10 @@ void nutscan_init(void)
 	 * after parsing command-line arguments. It calls nutscan_init() before
 	 * parsing CLI, to know about available libs and to set defaults below.
 	 */
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	/* Different platforms, different sizes, none fits all... */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 		upsdebugx(1,
 			"WARNING: %s: Limiting max_threads to range acceptable for " REPORT_SEM_INIT_METHOD "()",
 			__func__);
@@ -670,7 +656,7 @@ void nutscan_init(void)
 	if (!libname) {
 		libname = get_libname(SOPATH_LIBFREEIPMI);
 	}
-# endif	/* SOPATH_LIBAVAHI */
+# endif	/* SOPATH_LIBFREEIPMI */
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibFreeIPMI");
@@ -740,10 +726,12 @@ void nutscan_init(void)
 			__func__, "NUT Client library");
 #ifdef SOFILE_LIBUPSCLIENT
 		if (!nutscan_avail_nut) {
-			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
+			nutscan_avail_nut = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
 		}
 #endif	/* SOFILE_LIBUPSCLIENT */
-		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+		if (!nutscan_avail_nut) {
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
+		}
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
@@ -754,9 +742,9 @@ void nutscan_init(void)
 #endif	/* WIN32 */
 #ifdef SOPATH_LIBUPSCLIENT
 		if (!nutscan_avail_nut) {
-			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
+			nutscan_avail_nut = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
 		}
-#endif	/* SOFILE_LIBUPSCLIENT */
+#endif	/* SOPATH_LIBUPSCLIENT */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");

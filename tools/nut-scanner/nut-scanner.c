@@ -1015,7 +1015,8 @@ static void show_usage(const char *arg_progname)
 	} else {
 		printf("* Options for NUT devices (new avahi method) scan not enabled: library not detected.\n");
 	}
-	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev files in $CONFPATH).\n");
+	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev and .seq files).\n");
+	printf("                           Uses the configuration directory, overridden by NUT_CONFPATH.\n");
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 	} else {
@@ -1683,24 +1684,10 @@ display_help:
 		sem_close(current_sem);
 	}
 #  endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	/* Different platforms, different sizes, none fits all... */
 	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 		fprintf(stderr, "\n\n"
 			"WARNING: Limiting max_threads to range acceptable for "
 			REPORT_SEM_INIT_METHOD "()\n\n");
