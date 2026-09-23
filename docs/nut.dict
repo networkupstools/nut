@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3881 utf-8
 AAC
 AAS
 ABI
@@ -483,11 +483,14 @@ Gathman
 Geerling
 Gembe
 Gert
+GetEnumList
 GetRWVars
+GetRangeList
 GetUPSCommands
 GetUPSList
 GetUPSNames
 GetUPSVars
+GetVariableDescription
 Ghali
 Giese
 Gigabit
