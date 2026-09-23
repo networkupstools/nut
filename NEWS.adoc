@@ -727,6 +727,8 @@ https://github.com/networkupstools/nut/milestone/13
       kernel-driver detachment guidance. [PR #3691]
     * Corrected the GPIO driver executable name in examples and fixed
       a quoted value in its udev rule example. [PR #3693]
+    * Added the required USB identity fields to the Gtec configuration
+      example, with explicit placeholders for the device IDs. [PR #3694]
     * Removed unsupported quick-test duration configuration guidance from
       the Powervar serial and USB manuals. [PR #3695]
     * Removed an ineffective notification option recommendation from the
