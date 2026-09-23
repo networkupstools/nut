@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3839 utf-8
+personal_ws-1.1 en 3876 utf-8
 AAC
 AAS
 ABI
@@ -32,6 +32,7 @@ APM
 AQ
 ARB
 ARG
+ARGTYPES
 ARS
 ASN
 ATEK
@@ -191,6 +192,7 @@ COMLI
 COMMBAD
 COMMFAULT
 COMMOK
+CONFIGSCRIPT
 CONFILE
 CONTEXTs
 CPAN
@@ -447,6 +449,7 @@ GCCVER
 GDBus
 GES
 GETADDRINFO
+GETNAMEINFO
 GETPID
 GHA
 GHSA
@@ -556,12 +559,14 @@ IDEN
 IDEs
 IDentifiers
 IFBETWEEN
+IFELSE
 IFEQ
 IFF
 IFSUPP
 IGN
 IIS
 IMG
+IMPLEM
 INADDR
 INFOSIZE
 INIGO
@@ -576,6 +581,7 @@ INVOLT
 IOPlatformPluginFamily
 IPAR
 IPC
+IPHLPAPI
 IPM
 IPP
 IPSS
@@ -666,9 +672,11 @@ LGTM
 LH
 LIBGD
 LIBGPIO
+LIBIPMI
 LIBNEON
 LIBNETSNMP
 LIBOPENSSL
+LIBOPTS
 LIBPOWERMAN
 LIBSSL
 LIBUPSCLI
@@ -819,6 +827,7 @@ NBF
 NConfigs
 NDE
 NEP
+NETLIBS
 NETVER
 NETVERSION
 NFS
@@ -909,6 +918,7 @@ OMNIVS
 OMNIVSINT
 OMRON
 OMRON's
+ONELEVEL
 ONF
 ONV
 OO
@@ -988,6 +998,8 @@ PPP
 PPPP
 PR
 PR'ed
+PREREQ
+PRG
 PRIuSIZE
 PROCNAME
 PROGRA
@@ -1038,6 +1050,7 @@ PiJuice
 PiNUT
 Plesser
 PnP
+PoC
 Poettering
 Pohle
 PointBre
@@ -1240,6 +1253,7 @@ SIGTERM
 SIGURG
 SIGUSR
 SIGWINCH
+SINGLEQUOTE
 SKP
 SKU
 SL
@@ -1254,6 +1268,7 @@ SNMPv
 SNR
 SOCK
 SOCKADDR
+SOCKETLIB
 SOCKLEN
 SOCOMECUPS
 SOFF
@@ -1286,6 +1301,7 @@ STO
 STP
 STRARG
 SUBDIRS
+SUBST
 SUNWlibusbugen
 SUNWugen
 SUNWusb
@@ -1388,6 +1404,7 @@ TBD
 TBR
 TCIFLUSH
 TCIOFLUSH
+TCPIP
 TCSANOW
 TEMPC
 TEMPF
@@ -1554,6 +1571,7 @@ WARNOPT
 WCH
 WELI
 WHAD
+WINSOCK
 WIP
 WIPO
 WMNut
@@ -1584,6 +1602,7 @@ WinPower
 WinUSB
 Wireshark
 Wl
+Wno
 Wrede
 Wtautological
 Wtype
@@ -1610,6 +1629,7 @@ Xlinker
 Xpert
 Xups
 YDN
+YESNO
 YQ
 YV
 YY
@@ -1681,6 +1701,7 @@ altroot
 altroots
 amd
 anded
+ansi
 antivirus
 aon
 ap
@@ -1705,6 +1726,7 @@ arg
 argc
 argp
 args
+argtypes
 argv
 armac
 armel
@@ -2114,6 +2136,7 @@ drvctl
 drvpath
 drwxr
 drwxrwx
+drwxrwxrwt
 ds
 dsc
 dsi
@@ -2158,6 +2181,7 @@ els
 emacs
 emptor
 emptyDir
+enableGiven
 endchar
 enddate
 endian
@@ -2232,6 +2256,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmware's
 firmwares
 fixNSS
 fmt
@@ -2263,6 +2288,7 @@ fstab
 ftdi
 fuji
 func
+fusermount
 gamatronic
 gandi
 gc
@@ -2293,6 +2319,7 @@ getconf
 getent
 getenv
 gethostbyname
+getnameinfo
 getopt
 getproctag
 getrlimit
@@ -2407,6 +2434,7 @@ idowell
 ie
 ietf
 ifdef
+ifelse
 ifndef
 ignoreFailures
 ignorelb
@@ -2518,6 +2546,7 @@ kVA
 kadets
 kaminski
 kde
+kernel's
 kex
 kext
 keychain
@@ -2568,6 +2597,7 @@ libexec
 libexecdir
 libexpat
 libfreeipmi
+libfuse
 libgd
 libgio
 libglib
@@ -2873,6 +2903,7 @@ noout
 nooutstats
 noprimarytime
 norating
+noreturn
 noro
 noscanlangid
 nosnap
@@ -2897,6 +2928,7 @@ ntopW
 ntu
 nuf
 nuget
+nullptr
 num
 numOfBytesFromUPS
 numa
@@ -3134,6 +3166,7 @@ qx
 qx's
 qxflags
 rD
+rH
 ragtech
 raritan
 rb
@@ -3180,6 +3213,7 @@ req
 resetter
 resizing
 resolv
+restorecon
 restoreconf
 resync
 ret
@@ -3341,8 +3375,10 @@ snprintfcat
 snr
 socat
 sockdebug
+socketlib
 socketname
 sockfn
+socklen
 socomec
 soh
 solari
@@ -3759,6 +3795,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+withGiven
 wix
 wmNUT
 wmnut

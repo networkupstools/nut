@@ -304,8 +304,6 @@ if [ -z "$SVCINST" ]; then
     SVCINST="`$ENUMERATOR --list-services`" || exit
 fi
 
-# TODO: Support shutdown of one or all UPSes by stopping its service
-# and then calling the original upsdrvctl on it?
 case "$ACTION" in
     start)
         VERB="Starting"

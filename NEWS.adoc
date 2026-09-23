@@ -678,16 +678,69 @@ https://github.com/networkupstools/nut/milestone/13
       with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - The `nut-driver-enumerator.sh` script (NDE) updates:
-    * The shell/awk based parser now decodes `ups.conf` values using NUT token
+    * The shell/`awk` based parser now decodes `ups.conf` values using NUT token
       syntax, preserving quoted hashes and escaped characters and ignoring
       trailing comments. For example, `port = "auto" # comment` now properly
       selects USB media for `nutdrv_qx`. The normalized configuration output
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
- - Added the required USB identity fields to the Gtec configuration example,
-   with explicit placeholders for the device IDs.
-   [PR #3694]
+ - Revised dusty corners of NUT documentation:
+    * Documented the existing `mfr` and `model` options for `liebert`.
+      Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
+      path in this driver and documented the integer range and default for
+      its low battery threshold. [issue #2422, PR #3671]
+    * Documented how to use `sdcommands` with a stopped driver daemon to
+      send a supported instant command (typically for shutdown) without
+      a locally running `upsd` data server. [issue #1677, PR #3672]
+    * Updated the `m4` macro reference for developers of the `configure` script
+      in `docs/macros.txt`. [PR #3674]
+    * Corrected the installation staging example to preserve the source tree
+      (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
+    * Initialised the connection pointer in the C++ client example before
+      exception handling. [PR #3678]
+    * Corrected `nut-scanner` library (`libnutscan`) API descriptions and
+      the consumer example for current function names, argument types,
+      device-option pointers and initialisation. [PR #3680]
+    * Corrected source retrieval examples, removed an unsupported `configure`
+      script option and documented the `pkg-config` installation-directory
+      default. [PR #3681]
+    * Corrected protocol notation and updated the architecture documentation
+      for individual variable requests and command tracking. [PR #3682]
+    * Corrected the simulation filename and recorder command in the developer
+      walk-through, and fixed quoting in the recorder manual example. [PR #3683]
+    * Corrected `nut-scanner` simulation-file and configuration-directory
+      documentation and help, and repaired inconsistent scan examples. [PR #3684]
+    * Corrected `upsmon` notification argument handling and escaping examples,
+      shared-timer examples and the documented `FINALDELAY` default. [PR #3685]
+    * Corrected the PyNUT `GetUPSCommands` method example and the `GetUPSNames`
+      return-type documentation. [PR #3686]
+    * Corrected the documented connection defaults for `upsc`, `upscmd`,
+      `upsrw`, `upsmon` and `upslog` clients, and preserved the remote
+      destination in the `upsc` query-loop example. [PR #3687]
+    * Corrected the `upsd` manual descriptions of state-path precedence
+      and debug-output stream. [PR #3689]
+    * Updated the `apc_modbus` manual for its implemented capabilities,
+      timeout defaults and register-read attempt limit, and corrected the
+      corresponding help text in the `apc_modbus` driver program. [PR #3690]
+    * Updated APC Microlink support references and qualified the USB
+      kernel-driver detachment guidance. [PR #3691]
+    * Corrected the GPIO driver executable name in examples and fixed
+      a quoted value in its udev rule example. [PR #3693]
+    * Added the required USB identity fields to the Gtec configuration
+      example, with explicit placeholders for the device IDs. [PR #3694]
+    * Removed unsupported quick-test duration configuration guidance from
+      the Powervar serial and USB manuals. [PR #3695]
+    * Removed an ineffective notification option recommendation from the
+      `mge-shut` driver troubleshooting guidance. [PR #3696]
+    * Corrected the `upsdrvsvcctl` command reference and removed a stale TODO
+      reminder for its existing shutdown fallback. [PR #3697]
+    * Corrected the grep pattern, directory path and displayed result prefixes
+      in the FUSE data-walk example, and fixed a spelling error in the README.
+      Added `scripts/fuse` files to `EXTRA_DIST` and `spellcheck` goals. [PR #3698]
+    * Corrected documentation cross-references and exact variable, option,
+      command and sample-file names in examples. Updated the spelling
+      dictionary for verified terms. [PR #3699]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
