@@ -685,9 +685,12 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
-- Revised dusty corners of NUT documentation:
+ - Revised dusty corners of NUT documentation:
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
+    * Corrected source retrieval examples, removed an unsupported `configure`
+      script option and documented the `pkg-config` installation-directory
+      default. [PR #3681]
     * Corrected protocol notation and updated the architecture documentation
       for individual variable requests and command tracking. [PR #3682]
     * Corrected the simulation filename and recorder command in the developer
