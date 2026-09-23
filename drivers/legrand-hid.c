@@ -308,12 +308,12 @@ static int legrand_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
 	}
 
 	if (disable_fix_report_desc) {
-		upsdebugx(3, "NOT Attempting Report Descriptor fix for Legrand Keor DK "
-			"(got disable_fix_report_desc in config)");
+		upsdebugx(3, "%s: NOT Attempting Report Descriptor fix for Legrand Keor DK "
+			"(got disable_fix_report_desc in config)", __func__);
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for Legrand Keor DK");
+	upsdebugx(3, "%s: Attempting Report Descriptor fix for Legrand Keor DK", __func__);
 
 	for (i = 0; i < pDesc_arg->nitems; i++) {
 		HIDData_t	*pData = &pDesc_arg->item[i];
@@ -335,10 +335,12 @@ static int legrand_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
 			}
 
 			if (offset) {
-				upsdebugx(3, "Fixing Report Descriptor: report 0x32 usage "
-					"0x%08x offset %u -> %u, Unit 0x%08lx -> 0, UnitExp %d -> 0",
-					(unsigned int)leaf, (unsigned int)pData->Offset,
-					(unsigned int)offset, pData->Unit, pData->UnitExp);
+				upsdebugx(3, "%s: Fixing Report Descriptor: report 0x32 "
+					"usage 0x%08" PRIxMAX " offset %" PRIu8 " -> %" PRIu8
+					", Unit 0x%08" PRIxMAX " -> 0, UnitExp %" PRIi8 " -> 0",
+					__func__,
+					(uintmax_t)leaf, pData->Offset, offset,
+					(uintmax_t)pData->Unit, pData->UnitExp);
 				pData->Offset = offset;
 				/* These are plain booleans, but they inherit the global
 				 * Unit/UnitExp (seconds, 10^-2) left over from report 0x30,
@@ -349,14 +351,16 @@ static int legrand_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
 			}
 		} else if (pData->ReportID == 0x20 && leaf == USAGE_POW_VOLTAGE) {
 			/* UPS.BatterySystem.Battery.Voltage */
-			upsdebugx(3, "Fixing Report Descriptor: battery voltage "
-				"UnitExp %d -> %d", pData->UnitExp, pData->UnitExp + 2);
+			upsdebugx(3, "%s: Fixing Report Descriptor: battery voltage "
+				"UnitExp %" PRIi8 " -> %" PRIi8,
+				__func__, pData->UnitExp, pData->UnitExp + 2);
 			pData->UnitExp += 2;
 			retval = 1;
 		} else if (pData->ReportID == 0x04 && leaf == USAGE_POW_CONFIG_VOLTAGE) {
 			/* UPS.BatterySystem.Battery.ConfigVoltage */
-			upsdebugx(3, "Fixing Report Descriptor: battery nominal voltage "
-				"UnitExp %d -> %d", pData->UnitExp, pData->UnitExp + 7);
+			upsdebugx(3, "%s: Fixing Report Descriptor: battery nominal voltage "
+				"UnitExp %" PRIi8 " -> %" PRIi8,
+				__func__, pData->UnitExp, pData->UnitExp + 7);
 			pData->UnitExp += 7;
 			retval = 1;
 		}
