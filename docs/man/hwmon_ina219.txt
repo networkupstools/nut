@@ -33,12 +33,17 @@ EXTRA ARGUMENTS
 The required parameter for this driver:
 
 *port*='hwmon-dir'::
-Path to appropriate /sys/hwmon/hwmonX or 'auto' to detect automatically.
+Path to the appropriate `/sys/class/hwmon/hwmonX` directory, or 'auto' to
+detect automatically.
 
 Optional parameters:
 
+*sysfs_dir*='directory'::
+Path to the directory to scan for INA219 devices when `port=auto`.
+Default: `/sys/class/hwmon`. Ignored when *port* specifies a device directory.
+
 *default.battery.charge.low*='low-battery-threshold'::
-Threshold for low battery state (in percent).
+Integer threshold for low battery state (1 to 100 percent). Default: 15.
 
 *default.battery.voltage.nominal*='voltage-value'::
 Nominal voltage (V) value of utilized batteries, used to derive their low

@@ -1639,8 +1639,8 @@ LINKMAN_PAGES_DRIVERS += $(SRC_LINUX_I2C_PAGES)
 endif !DOC_INSTALL_SELECTED_MANS_PROGS_BUILT
 
 # (--with-gpio)
-SRC_GPIO_PAGES = generic_gpio.txt
-INST_MAN_GPIO_PAGES = generic_gpio.$(MAN_SECTION_CMD_SYS)
+SRC_GPIO_PAGES = generic_gpio_libgpiod.txt
+INST_MAN_GPIO_PAGES = generic_gpio_libgpiod.$(MAN_SECTION_CMD_SYS)
 DIST_ALL_PAGES += $(INST_MAN_GPIO_PAGES)
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -1653,7 +1653,7 @@ endif WITH_GPIO
 endif ! SOME_DRIVERS
 
 INST_HTML_GPIO_MANS = \
-	generic_gpio.html
+	generic_gpio_libgpiod.html
 DIST_ALL_HTML_PAGES += $(INST_HTML_GPIO_MANS)
 
 if ! SOME_DRIVERS
