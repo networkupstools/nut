@@ -45,6 +45,10 @@ extern int	certrequest;
 /* Required (cnx failed if no certificate or invalid CA chain) */
 #define NETSSL_CERTREQ_REQUIRE	2
 
+/* For range-checks */
+#define NETSSL_CERTREQ_MIN	NETSSL_CERTREQ_NO
+#define NETSSL_CERTREQ_MAX	NETSSL_CERTREQ_REQUIRE
+
 /* Similar to upscli_ssl_caps_descr() for client library,
  * but with more bells and whistles */
 const char *net_ssl_caps_descr(void);

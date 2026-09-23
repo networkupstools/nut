@@ -196,11 +196,13 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 
 		if (!cert) break; /* failed */
 
+#include "nut-pragmas-unreachable-code.h"
 		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
 		if (!names) break;
 
 		count = sk_GENERAL_NAME_num(names);
 		if (!count) break; /* failed */
+#include "nut-pragmas-unreachable-code-end.h"
 
 		for (i = 0; i < count; ++i) {
 			GENERAL_NAME* entry = sk_GENERAL_NAME_value(names, i);
@@ -333,6 +335,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 		}
 	} while (0);
 
+#include "nut-pragmas-unreachable-code.h"
 	if (!ok && hostname && *hostname && (0
 # if (defined(HAVE_X509_CHECK_HOST) && HAVE_X509_CHECK_HOST)
 	 || (X509_check_host(cert, (const char *)hostname, 0, 0, NULL) == 1)
@@ -345,6 +348,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 			__func__, label, hostname);
 		ok = 1;
 	}
+#include "nut-pragmas-unreachable-code-end.h"
 
 	if (names)
 		GENERAL_NAMES_free(names);
@@ -403,7 +407,15 @@ static int openssl_cert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		/* Call this in any err case, to print debug logs about
 		 *  presence and value(s) of subjAltNames in that cert */
 		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
-		if (san_ok && err == X509_V_ERR_HOSTNAME_MISMATCH) {
+		if (san_ok
+# ifdef X509_V_ERR_HOSTNAME_MISMATCH
+		&& err == X509_V_ERR_HOSTNAME_MISMATCH
+# else
+		/* Be a bit lax on older systems that did not define
+		 * the particular error code properly used above */
+		&& err != 0
+# endif
+		) {
 			/* Caller had some problem with it, did SAN match fix it? */
 			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
 				"probably by CN, but SAN matched - reporting ok=%d and clearing error state",
