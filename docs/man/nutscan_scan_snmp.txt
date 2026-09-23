@@ -60,16 +60,20 @@ If 'community' is not NULL, SNMP v1 request are sent using this 'community'.
 If 'community' is NULL and 'secLevel' is NULL, SNMP v1 is selected
 and 'community' is set to "public".
 
-In the other cases, SNMP v3 is used. 'secLevel' may be one
-of `SNMP_SEC_LEVEL_NOAUTH`, `SNMP_SEC_LEVEL_AUTHNOPRIV`
-or `SNMP_SEC_LEVEL_AUTHPRIV`.
+In the other cases, SNMP v3 is used. The 'secLevel' corresponds to definitions
+in `net-snmp/library/snmp.h` as the currently used backend, and may be one of
+the following strings defined by 'libnutscan':
+
+* "noAuthNoPriv" for `SNMP_SEC_LEVEL_NOAUTH`,
+* "authNoPriv" for `SNMP_SEC_LEVEL_AUTHNOPRIV`, or
+* "authPriv" for `SNMP_SEC_LEVEL_AUTHPRIV`.
+
 'secName' is the security name and must be non NULL.
 
-If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHNOPRIV`, 'authPassword'
-must be non NULL.
+If 'secLevel' is set to "authNoPriv", the 'authPassword' must be non NULL.
 
-If 'secLevel' is set to `SNMP_SEC_LEVEL_AUTHPRIV`, 'authPassword'
-and 'privPassword' must be non NULL.
+If 'secLevel' is set to "authPriv", the 'authPassword' and 'privPassword'
+values must both be non NULL.
 
 If 'authProtocol' is NULL, MD5 protocol is used.
 Else you can set 'authProtocol' to either "MD5" or "SHA".

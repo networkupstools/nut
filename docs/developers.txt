@@ -43,6 +43,15 @@ to its statically allocated buffer.  Common string operations in drivers
 in this case can benefit from similar `dstate_setinfo_dynamic()` or
 `dstate_addenum_dynamic()` methods.
 
+Existing code which intentionally uses a nonliteral format string can
+bracket the call with `nut-pragmas-format-nonliteral.h` and
+`nut-pragmas-format-nonliteral-end.h` to quiesce `-Wformat-nonliteral`
+and `-Wformat-security` diagnostics. These private headers can be included
+repeatedly, preserving the existing compiler capability guards and warning
+scope. They do not validate format strings; keep the reason for using a
+nonliteral format string next to the call and prefer the hardened methods
+above when applicable.
+
 Error reporting
 ~~~~~~~~~~~~~~~
 
@@ -318,7 +327,7 @@ For more information, and perhaps inspiration for building a similar
 solution, please see the *NUT Quality Assurance and Build Automation Guide*,
 and specifically its chapters on
 linkdoc:qa-guide[Static analysis by compilers,CI_compiler_warnings],
-linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc],
+linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc,_test_automation],
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
 technologies,NUTCI_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
@@ -1070,7 +1079,11 @@ document):
 
 Some frequently repeated pragma combinations, including the example above,
 were off-loaded into pairs of `include/nut-pragmas-*.h` files to begin and
-end a quiesced block of source code, e.g.:
+end a quiesced block of source code. The `nut-pragmas-range-checks.h` and
+`nut-pragmas-range-checks-end.h` pair covers the full combination of numeric
+range check warnings used in client and HID communication code. Use it only
+where both the warning set and its conditions match. For example, the
+covered-switch pair is used as follows:
 
 ----
 	switch(...) {
@@ -1082,6 +1095,19 @@ end a quiesced block of source code, e.g.:
 #include "nut-pragmas-covered-switch-default-end.h"
 	}
 ----
+
+The `nut-pragmas-type-limits.h` and `nut-pragmas-type-limits-end.h`
+pair can quiesce `-Wtautological-constant-out-of-range-compare` and
+`-Wtype-limits` around type range checks.
+
+The `nut-pragmas-unreachable-code.h` and
+`nut-pragmas-unreachable-code-end.h` pair suppresses `-Wunreachable-code`
+using the existing aggregate GCC capability guard and Clang pragmas.
+
+The headers preserve the independent warning guards and can be included
+more than once. Keep the pair at the original diagnostic boundaries;
+regions with different guards or additional warnings need their own
+pragmas.
 
 
 Switch case fall-through
@@ -1278,21 +1304,25 @@ wiki page has some useful information for long-time users of Subversion.
 Git access
 ~~~~~~~~~~
 
-Anonymous Git checkouts are possible:
-
-	:; git clone git://github.com/networkupstools/nut.git
-
-or
+Anonymous Git checkouts are possible over HTTPS:
 
 	:; git clone https://github.com/networkupstools/nut.git
 
-if it is necessary to get around a pesky firewall that blocks the native
-Git protocol.
+...or over SSH (if it is necessary to get around some pesky firewall,
+or to better sign your eventual contributions, but this may require
+that you have registered developer SSH keys in your GitHub account):
+
+	:; git clone git@github.com:networkupstools/nut.git
+
+NOTE: Earlier versions of this document also suggested the native
+Git protocol (e.g. `git://github.com/networkupstools/nut.git` URL)
+for anonymous access, but this is deemed insecure and no longer
+supported by GitHub since 2022.
 
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
-	:; git clone --depth 1 git://github.com/networkupstools/nut.git
+	:; git clone --depth 1 https://github.com/networkupstools/nut.git
 
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
@@ -1451,10 +1481,10 @@ Here is an example workflow (using a slightly older `git` command-line syntax,
 so it works verbatim on more platforms):
 
 ------------------------------------------------------------------------------
-	:; git clone -o central git://github.com/networkupstools/nut.git
+	:; git clone -o central https://github.com/networkupstools/nut.git
 
 	:; cd nut
-	:; git remote add -f USERNAME git://github.com/USERNAME/nut.git
+	:; git remote add -f USERNAME https://github.com/USERNAME/nut.git
 
 	### OPTIONALLY you can then fetch known git tags, so semantic
 	### versions look better (based off a recent release):
