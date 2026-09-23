@@ -685,7 +685,7 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
- - Revised dusty corners of NUT documentation:
+- Revised dusty corners of NUT documentation:
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
@@ -725,10 +725,14 @@ https://github.com/networkupstools/nut/milestone/13
       corresponding help text in the `apc_modbus` driver program. [PR #3690]
     * Updated APC Microlink support references and qualified the USB
       kernel-driver detachment guidance. [PR #3691]
+    * Corrected standalone `belkinunv` and `genericups` driver examples
+      to supply a driver identifier and port option, and clarified the
+      `genericups` monitoring prerequisite. [PR #3692]
     * Corrected the GPIO driver executable name in examples and fixed
       a quoted value in its udev rule example. [PR #3693]
     * Added the required USB identity fields to the Gtec configuration
-      example, with explicit placeholders for the device IDs. [PR #3694]
+      example for `nutdrv_qx` driver, with explicit placeholders for the
+      USB device identifiers. [PR #3694]
     * Removed unsupported quick-test duration configuration guidance from
       the Powervar serial and USB manuals. [PR #3695]
     * Removed an ineffective notification option recommendation from the
