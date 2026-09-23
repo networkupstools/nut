@@ -41,11 +41,6 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - Documented the existing `mfr` and `model` options for `liebert`, and
-   `sysfs_dir` for `hwmon_ina219`. Corrected the latter driver's hwmon path
-   and documented the integer range and default for its low battery threshold.
-   [issue #2422]
-
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
       advertised identifiers on Python 3 and uses those identifiers when
@@ -691,9 +686,13 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented the existing `mfr` and `model` options for `liebert`.
+      Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
+      path in this driver and documented the integer range and default for
+      its low battery threshold. [issue #2422, PR #3671]
     * Documented how to use `sdcommands` with a stopped driver daemon to
       send a supported instant command (typically for shutdown) without
-      a locally running `upsd` data server. [issue #1677]
+      a locally running `upsd` data server. [issue #1677, PR #3672]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialised the connection pointer in the C++ client example before
@@ -730,6 +729,9 @@ https://github.com/networkupstools/nut/milestone/13
       `mge-shut` driver troubleshooting guidance. [PR #3696]
     * Corrected the `upsdrvsvcctl` command reference and removed a stale TODO
       reminder for its existing shutdown fallback. [PR #3697]
+    * Corrected the grep pattern, directory path and displayed result prefixes
+      in the FUSE data-walk example, and fixed a spelling error in the README.
+      Added `scripts/fuse` files to `EXTRA_DIST` and `spellcheck` goals. [PR #3698]
     * Corrected documentation cross-references and exact variable, option,
       command and sample-file names in examples. Updated the spelling
       dictionary for verified terms. [PR #3699]
