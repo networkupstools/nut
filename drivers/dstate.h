@@ -75,8 +75,16 @@ typedef struct conn_s {
 	extern double	previous_battery_charge_value;
 	extern st_tree_timespec_t	previous_battery_charge_timestamp;
 
+typedef struct dstate_poll_s {
+	struct timeval	wall;
+	st_tree_timespec_t	monotonic;
+	time_t	interval;
+	int	use_monotonic;
+} dstate_poll_t;
+
 char * dstate_init(const char *prog, const char *devname);
-int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
+void dstate_poll_start(dstate_poll_t *poll, time_t interval);
+int dstate_poll_fds(dstate_poll_t *poll, TYPE_FD extrafd);
 int vdstate_setinfo(const char *var, const char *fmt, va_list ap);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));

@@ -1527,13 +1527,83 @@ char * dstate_init(const char *prog, const char *devname)
 	return xstrdup(sockname);
 }
 
+/* A failed monotonic provider is not retried during this process lifetime.
+ * This affects polling only, not the timestamps in the state tree.
+ */
+static int poll_monotonic_failed = 0;
+
+void dstate_poll_start(dstate_poll_t *poll, time_t interval)
+{
+	poll->interval = interval;
+	poll->use_monotonic = 0;
+	if (gettimeofday(&poll->wall, NULL) != 0) {
+		fatal_with_errno(EXIT_FAILURE, "%s: reading wall clock", __func__);
+	}
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	if (!poll_monotonic_failed) {
+		if (state_get_timestamp(&poll->monotonic) == 0) {
+			poll->use_monotonic = 1;
+		} else {
+			poll_monotonic_failed = 1;
+			upslog_with_errno(LOG_WARNING, "%s: monotonic clock failed; using wall clock for polling", __func__);
+		}
+	}
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+}
+
+/* Return seconds left, keeping both samples in their original clock domains.
+ * Like upsmon's main loop, allow five seconds of clock sampling overhead
+ * before treating a discrepancy as a suspend or wall-clock adjustment.
+ */
+static double dstate_poll_remaining(dstate_poll_t *poll)
+{
+	struct timeval wall;
+	double elapsed, wall_elapsed;
+
+	if (poll->interval <= 0) {
+		return 0;
+	}
+	if (gettimeofday(&wall, NULL) != 0) {
+		fatal_with_errno(EXIT_FAILURE, "%s: reading wall clock", __func__);
+	}
+	wall_elapsed = difftimeval(wall, poll->wall);
+	elapsed = wall_elapsed;
+	if (poll->use_monotonic) {
+		st_tree_timespec_t monotonic;
+
+		if (state_get_timestamp(&monotonic) != 0) {
+			poll_monotonic_failed = 1;
+			poll->interval = 0;
+			upslog_with_errno(LOG_WARNING, "%s: monotonic clock failed; refreshing data before using wall clock for polling", __func__);
+			return 0;
+		}
+		elapsed = difftime_st_tree_timespec(monotonic, poll->monotonic);
+		if (wall_elapsed - elapsed > 5 || elapsed - wall_elapsed > 5) {
+			upslogx(LOG_WARNING, "%s: suspend or wall-clock change detected (wall %.06f, monotonic %.06f seconds); refreshing data", __func__, wall_elapsed, elapsed);
+			poll->interval = 0;
+			return 0;
+		}
+	}
+	if (elapsed < 0) {
+		upslogx(LOG_WARNING, "%s: polling clock moved backwards by %.06f seconds; refreshing data", __func__, -elapsed);
+		poll->interval = 0;
+		return 0;
+	}
+	if (elapsed >= poll->interval) {
+		return 0;
+	}
+	return poll->interval - elapsed;
+}
+
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
+int dstate_poll_fds(dstate_poll_t *poll, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
 	int	overrun = 0;
 	conn_t	*conn, *cnext;
-	struct timeval	now;
+	struct timeval	timeout;
+	double	remaining;
 
 #ifndef WIN32
 	int	ret;
@@ -1560,22 +1630,10 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 		}
 	}
 
-	gettimeofday(&now, NULL);
-
-	/* number of microseconds should always be positive */
-	if (timeout.tv_usec < now.tv_usec) {
-		timeout.tv_sec -= 1;
-		timeout.tv_usec += 1000000;
-	}
-
-	if (timeout.tv_sec < now.tv_sec) {
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		overrun = 1;	/* no time left */
-	} else {
-		timeout.tv_sec -= now.tv_sec;
-		timeout.tv_usec -= now.tv_usec;
-	}
+	remaining = dstate_poll_remaining(poll);
+	timeout.tv_sec = (time_t)remaining;
+	timeout.tv_usec = (suseconds_t)((remaining - timeout.tv_sec) * 1000000);
+	overrun = (remaining <= 0);
 
 	ret = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
 
@@ -1639,22 +1697,10 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	}
 */
 
-	gettimeofday(&now, NULL);
-
-	/* number of microseconds should always be positive */
-	if (timeout.tv_usec < now.tv_usec) {
-		timeout.tv_sec -= 1;
-		timeout.tv_usec += 1000000;
-	}
-
-	if (timeout.tv_sec < now.tv_sec) {
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		overrun = 1;	/* no time left */
-	} else {
-		timeout.tv_sec -= now.tv_sec;
-		timeout.tv_usec -= now.tv_usec;
-	}
+	remaining = dstate_poll_remaining(poll);
+	timeout.tv_sec = (time_t)remaining;
+	timeout.tv_usec = (suseconds_t)((remaining - timeout.tv_sec) * 1000000);
+	overrun = (remaining <= 0);
 
 	timeout_ms = (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000);
 

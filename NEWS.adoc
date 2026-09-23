@@ -455,6 +455,9 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Driver polling now measures intervals with a monotonic clock when
+      available, detects clock jumps and falls back to wall time if the
+      monotonic clock fails. [issue #10]
     * The configuration and protocol parser now accepts a literal `#`
       inside double quotes, including in UPS and `dummy-ups` outlet
       descriptions. Unquoted `#` still starts a comment, and escaped

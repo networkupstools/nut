@@ -242,6 +242,12 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+TESTS += dstate-poll-test
+dstate_poll_test_SOURCES = dstate-poll-test.c
+dstate_poll_test_LDADD = $(driver_methods_utest_LDADD)
+dstate_poll_test_CFLAGS = $(driver_methods_utest_CFLAGS)
+dstate_poll_test_DEPENDENCIES = $(driver_methods_utest_LDADD) $(top_srcdir)/drivers/dstate.c
+
 if WITH_SNMP
 SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
 
