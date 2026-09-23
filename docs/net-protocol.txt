@@ -65,7 +65,7 @@ also escaped by representing them as `\\`.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
 
 It is an ASCII text-based line-oriented protocol, with end of each line
-signaled by a single `\n` (`0x0D`) character.
+signaled by a single `\n` (`0x0A`) character.
 
 Double quotes start a quoted element only at the beginning of an element.
 The closing quote completes that element, so `"one"two` produces two
@@ -382,7 +382,7 @@ Response:
 	BEGIN LIST CMD <upsname>
 	CMD <upsname> <cmdname>
 	...
-	END LIST CMD <cmdname>
+	END LIST CMD <upsname>
 
 	BEGIN LIST CMD su700
 	CMD su700 load.on

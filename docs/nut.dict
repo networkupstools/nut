@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3842 utf-8
+personal_ws-1.1 en 3846 utf-8
 AAC
 AAS
 ABI
@@ -2232,6 +2232,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmware's
 firmwares
 fixNSS
 fmt
@@ -2519,6 +2520,7 @@ kVA
 kadets
 kaminski
 kde
+kernel's
 kex
 kext
 keychain
@@ -2899,6 +2901,7 @@ ntopW
 ntu
 nuf
 nuget
+nullptr
 num
 numOfBytesFromUPS
 numa
@@ -3183,6 +3186,7 @@ req
 resetter
 resizing
 resolv
+restorecon
 restoreconf
 resync
 ret

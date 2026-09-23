@@ -40,13 +40,11 @@ publication) as a pre-requisite to building NUT with this part of the support.
 For more details (including how to build the custom library and NUT with it)
 please see link:https://github.com/networkupstools/nut/pull/2063[NUT PR #2063]
 
-NOTE: As currently published, this driver supports reading information from
-the UPS. Implementation of support to write (set modifiable variables or send
-commands) is expected with a later release. This can impact the host shutdown
-routines in particular (no ability to actively tell the UPS to power off or
-cycle in the end). As a workaround, you can try integrating `apctest` (from
-the "apcupsd" project) with a "Test to kill power" into your late-shutdown
-procedure, if needed.
+NOTE: This driver supports reading information, setting writable variables
+and sending commands supported by the device. Load and shutdown commands
+depend on the discovery of outlet groups. For TCP connections, late-shutdown
+commands also require network access to remain available when the driver
+is called.
 
 EXTRA ARGUMENTS
 ---------------
@@ -81,13 +79,16 @@ Set the stop bits of the serial connection. The default stopbits is 1.
 Set the Modbus slave id. The default slave id is 1.
 
 *response_timeout_ms*='num'::
-Set the Modbus response timeout. The default timeout is set by libmodbus. It can
-be good to set a higher timeout on TCP connections with high latency.
+Set the Modbus response timeout in milliseconds. The default is 500 for
+serial and USB connections, or 2000 for TCP connections. It can be good to
+set a higher timeout on TCP connections with high latency.
 
 *modbus_retries*='num'::
-Set the number of retries for Modbus register reads on timeout errors.
-The default is 3 retries. After exhausting retries (or on non-timeout errors),
-the connection is closed and will be re-established on the next update cycle.
+Set the maximum number of attempts for Modbus register reads. The default
+is 3 attempts in total. Reads are retried after timeout, bad CRC, bad data
+or, where supported by libmodbus, wrong-slave errors. After exhausting
+these attempts (or on other errors), the connection is closed and will be
+re-established on the next update cycle.
 
 BUGS
 ----
