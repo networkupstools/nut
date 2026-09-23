@@ -47,6 +47,10 @@ https://github.com/networkupstools/nut/milestone/13
       extracting the response. Returned keys and descriptions remain byte
       sequences. [issue #3621]
     * `nut-scanner` tool updates:
+      - Balance concurrency permits and worker ownership during SNMP, IPMI,
+        NUT and XML/HTTP scans, including disabled protocol limits and failed
+        thread creation. Keep NUT authentication data alive until the scan
+        worker has finished. [issue #1166]
       - Mutexes used in parallelized scans were not properly released on
         failure code paths (impacts likely all 2.8.x until now). [PR #3551]
       - When the NUT client library was not found under its known file names
