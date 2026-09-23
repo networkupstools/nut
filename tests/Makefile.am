@@ -270,6 +270,7 @@ NUTSCAN_TEST_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -I$(top_bui
 NUTSCAN_TEST_LDADD = $(NUT_LIBCOMMON) $(top_builddir)/tools/nut-scanner/libnutscan.la $(LIBLTDL_LIBS) $(SEMLIBS) $(NETLIBS)
 if WITH_SSL
 NUTSCAN_TEST_CFLAGS += $(LIBSSL_CFLAGS)
+NUTSCAN_TEST_LDADD += $(LIBSSL_LIBS)
 endif WITH_SSL
 
 # Finish shared dependencies before the scanner's independent sub-make.
