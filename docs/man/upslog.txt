@@ -234,8 +234,7 @@ supports per-connection SSL contexts for independent certificate verification
 and client certificate identities. This allows *upslog* to securely log data
 from multiple UPS servers managed by different entities (different CAs or
 security realms). Configuration is specified via linkman:nutauth.conf[5]
-using CERTPATH, CERTVERIFY, CERTNAME, and CERTHOST directives, and is
-automatically applied per-connection.
+and is automatically applied per-connection.
 
 SEE ALSO
 --------

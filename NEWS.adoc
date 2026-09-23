@@ -720,6 +720,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Corrected the documented connection defaults for `upsc`, `upscmd`,
       `upsrw`, `upsmon` and `upslog` clients, and preserved the remote
       destination in the `upsc` query-loop example. [PR #3687]
+    * Clarified client authentication configuration, unattended credential
+      selection and instant-command permissions. [PR #3688]
     * Corrected the `upsd` manual descriptions of state-path precedence
       and debug-output stream. [PR #3689]
     * Updated the `apc_modbus` manual for its implemented capabilities,

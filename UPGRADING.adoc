@@ -31,15 +31,15 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- PLANNED: Keep track of any further API clean-up?
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials
   to `Authenticate()`. Single quotes in configuration are now literal, as
   in the C parser; replace single-quoted values with double-quoted values
   where grouping was intended. The legacy `Set()` argument contract is
-  unchanged.
-
-- PLANNED: Keep track of any further API clean-up?
+  unchanged. [PR #3634]
 
 - The common configuration and protocol parser now accepts literal `#`
   characters inside double quotes. An unescaped `#` outside double quotes
