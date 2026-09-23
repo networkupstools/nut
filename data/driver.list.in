@@ -1405,7 +1405,7 @@
 "Salicru"	"ups"	"3"	"SPS 3000 ADV RT2"	"usb"	"usbhid-ups (experimental)"	# https://www.salicru.com/sps-3000-adv-rt2.html
 "Salicru"	"ups"	"1"	"(various)"	"Serial"	"nutdrv_hashx"	# https://www.salicru.com/softwares-usb-rs-232.html
 
-"Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
+"Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"nutdrv_qx"	# single-phase models use protocol=santak (tested on C1K); three-phase-input variants fall through to other subdrivers; https://github.com/networkupstools/nut/issues/1039
 "Santak"	"ups"	"2"	"MT*-PRO"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
 
 "Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
