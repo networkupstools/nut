@@ -693,6 +693,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Documented how to use `sdcommands` with a stopped driver daemon to
       send a supported instant command (typically for shutdown) without
       a locally running `upsd` data server. [issue #1677, PR #3672]
+    * Updated the `m4` macro reference for developers of the `configure` script
+      in `docs/macros.txt`. [PR #3674]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialised the connection pointer in the C++ client example before
