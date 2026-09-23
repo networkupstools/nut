@@ -42,6 +42,8 @@ https://github.com/networkupstools/nut/milestone/13
    to patterns defined in link:docs/nut-names.txt[]
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * `upssched -l` preserves timer expiry timestamps beyond January 2038
+      on systems with 64-bit `time_t` and 32-bit `long`. [issue #3096]
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
       advertised identifiers on Python 3 and uses those identifiers when
       extracting the response. Returned keys and descriptions remain byte
