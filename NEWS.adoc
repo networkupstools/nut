@@ -685,9 +685,25 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
- - Corrected the upsd manual's state-path precedence and debug-output stream
-   descriptions.
-   [PR #3689]
+ - Revised dusty corners of NUT documentation:
+    * Corrected the `upsd` manual descriptions of state-path precedence and
+      debug-output stream. [PR #3689]
+    * Updated the `apc_modbus` manual for its implemented capabilities, timeout
+      defaults and register-read attempt limit, and corrected the corresponding
+      help text in the `apc_modbus` driver program. [PR #3690]
+    * Updated APC Microlink support references and qualified the USB
+      kernel-driver detachment guidance. [PR #3691]
+    * Corrected the GPIO driver executable name in examples and fixed a quoted
+      value in its udev rule example. [PR #3693]
+    * Removed unsupported quick-test duration configuration guidance from the
+      Powervar serial and USB manuals. [PR #3695]
+    * Removed an ineffective notification option recommendation from the
+      `mge-shut` driver troubleshooting guidance. [PR #3696]
+    * Corrected the `upsdrvsvcctl` command reference and removed a stale TODO
+      reminder for its existing shutdown fallback. [PR #3697]
+    * Corrected documentation cross-references and exact variable, option,
+      command and sample-file names in examples. Updated the spelling
+      dictionary for verified terms. [PR #3699]
 
  - Recipes, CI and helper script updates not classified above:
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
