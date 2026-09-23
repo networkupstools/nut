@@ -55,7 +55,10 @@ or hidden with `#if 0`.
 RETURN VALUE
 ------------
 
-The *nutscan_scan_ipmi()* function is not implemented yet.
+The *nutscan_scan_ipmi()* and *nutscan_scan_ip_range_ipmi()* functions
+return a pointer to a `nutscan_device_t` list containing the devices found,
+or NULL if no device is found, an error occurs, or IPMI scanning is
+unavailable in the current build or at run time.
 
 SEE ALSO
 --------

@@ -564,13 +564,17 @@ Currently, the Gtec specific support is only known to work with USB devices
 (tested with a Gtec ZP120N), and was not seen with Serial port.
 +
 This mode is not automatically detected, and should be enabled manually in
-your 'ups.conf', e.g.:
+your 'ups.conf'. Replace the `VVVV` and `PPPP` placeholders below with
+the four-digit hexadecimal vendor and product IDs of your USB device
+(see the *vendorid* and *productid* options above):
 +
 ----
 [gtec-ups]
     driver = "nutdrv_qx"
     port = "auto"
     subdriver = "gtec"
+    vendorid = "VVVV"
+    productid = "PPPP"
     protocol = "gtec"
 ----
 +
