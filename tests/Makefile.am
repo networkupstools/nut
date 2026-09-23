@@ -100,6 +100,10 @@ nodist_test_cgilib_SOURCES = cgilib.c
 test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 test_cgilib_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += parseconf-test
+parseconf_test_SOURCES = parseconf-test.c
+parseconf_test_LDADD = $(NUT_LIBCOMMON)
+
 TESTS += test_upsdconf
 test_upsdconf_SOURCES = test_upsdconf.c
 test_upsdconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/server
