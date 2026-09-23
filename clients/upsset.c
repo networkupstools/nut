@@ -685,7 +685,7 @@ static const char *get_data(const char *type, const char *varname)
 	return answer[3];
 }
 
-static void do_string(const char *varname, int maxlen)
+static void do_string(const char *varname, long maxlen)
 {
 	const	char	*val;
 
@@ -702,7 +702,7 @@ static void do_string(const char *varname, int maxlen)
 	html_print_esc(varname);
 	printf("\" VALUE=\"");
 	html_print_esc(val);
-	printf("\" SIZE=\"%d\">\n", maxlen);
+	printf("\" SIZE=\"%ld\">\n", maxlen);
 }
 
 static void do_enum(const char *varname)
@@ -804,15 +804,12 @@ static void do_type(const char *varname)
 		}
 
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
-			char	*ptr, len;
-			long	l;
+			long	len;
 
-			/* split out the :<len> data */
-			ptr = strchr(answer[i], ':');
-			*ptr++ = '\0';
-			l = strtol(ptr, (char **) NULL, 10);
-			assert(l <= 127);	/* FIXME: Loophole about longer numbers? Why are we limited to char at all here? */
-			len = (char)l;
+			if (!str_to_long_strict(answer[i] + 7, &len, 10) || len <= 0) {
+				printf("Unknown type\n");
+				return;
+			}
 
 			do_string(varname, len);
 			return;

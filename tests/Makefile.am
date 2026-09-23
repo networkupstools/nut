@@ -18,6 +18,7 @@ all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
+EXTRA_DIST += upsset-string-test.py
 
 TESTS =
 noinst_LTLIBRARIES =
@@ -364,8 +365,24 @@ memcheck:
 	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
-CHECK_LOCAL_TARGETS = become-user-root-warning-test
+CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test
 CHECK_LOCAL_TARGETS_PYNUT =
+
+if WITH_CGI
+if HAVE_PYTHON3
+$(top_builddir)/clients/upsset.cgi$(EXEEXT): dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+upsset-string-test: $(top_builddir)/clients/upsset.cgi$(EXEEXT)
+	$(AM_V_at)@PYTHON3@ $(srcdir)/upsset-string-test.py '$(abs_top_builddir)/clients/upsset.cgi$(EXEEXT)'
+else !HAVE_PYTHON3
+upsset-string-test:
+	@echo "  SKIP\t$@ : Python 3 was not detected"
+endif !HAVE_PYTHON3
+else !WITH_CGI
+upsset-string-test:
+	@echo "  SKIP\t$@ : CGI programs are not enabled"
+endif !WITH_CGI
 
 if HAVE_PYTHON_DEFAULT
 if WITH_PYNUT_UNITTEST_PY
