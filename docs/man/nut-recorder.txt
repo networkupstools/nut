@@ -44,7 +44,7 @@ EXAMPLES
 
 To record data from 'ups1@host1' every 10 seconds:
 
-	:; nut-recorder ups1@host1' ups1-output.seq 10
+	:; nut-recorder ups1@host1 ups1-output.seq 10
 	. . .
 	battery.charge: 100.0
 	battery.voltage: 13.9

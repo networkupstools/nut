@@ -1367,7 +1367,7 @@ AS_CASE(["${nut_with_threading}"],
     [no], [],
         [AC_MSG_ERROR([Unsupported value for --with-threading option: "${nut_with_threading}"])]
 )
-NUT_REPORT_FEATURE([Enable support for parallelization of some tools], [${nut_with_threading}], [${SEMLIBS}],
+NUT_REPORT_FEATURE([enable support for parallelization of some tools], [${nut_with_threading}], [${SEMLIBS}],
 					[WITH_THREADING], [Define to enable build with threading support])
 
 dnl ----------------------------------------------------------------------

@@ -18,14 +18,14 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_new_device()* function allocates a new `nutscan_device_type_t`
+The *nutscan_new_device()* function allocates a new `nutscan_device_t`
 structure.
 
 RETURN VALUE
 ------------
 
 The *nutscan_new_device()* function returns the newly allocated
-`nutscan_device_type_t` structure.
+`nutscan_device_t` structure.
 
 NOTES
 -----

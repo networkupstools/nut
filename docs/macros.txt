@@ -1,86 +1,485 @@
 NUT-specific autoconf macros
 ----------------------------
 
-The following NUT-specific autoconf macros are defined in the `m4/`
-directory.
+The `m4/` directory contains the following macros used by `configure.ac`
+and by other NUT macros. Related helpers are grouped below; the source
+files contain the individual probes and platform-specific details.
+
+These are build-system interfaces. For the options accepted by the
+generated `configure` script, see
+linkdoc:user-manual[Configure options,Configure_options,,Configure_options].
+The bundled `AX_*` macros are described separately below, including NUT
+adaptations of macros from the Autoconf Archive.
+
+Configuration options
+~~~~~~~~~~~~~~~~~~~~~
+
+Defined in `m4/nut_arg_with.m4`.
+
+*NUT_ARG_WITH(FEATURE, DESCRIPTION, DEFAULT)*::
+*NUT_ARG_WITH(FEATURE, VALUE_HELP, DESCRIPTION, DEFAULT)*::
+
+    Declare a `--with-FEATURE` option. The four-argument form adds
+    `=VALUE_HELP` to the help text and requires a non-empty 'DEFAULT'.
+    Both forms set `nut_with_FEATURE` and `nut_withGiven_FEATURE`;
+    the latter is `yes` if the option was supplied, including through
+    `--without-FEATURE`, and `no` otherwise. Hyphens in 'FEATURE' become
+    underscores in these shell variable names.
+
+*NUT_ARG_ENABLE(FEATURE, DESCRIPTION, DEFAULT)*::
+*NUT_ARG_ENABLE(FEATURE, VALUE_HELP, DESCRIPTION, DEFAULT)*::
+
+    The corresponding forms for `--enable-FEATURE` and
+    `--disable-FEATURE`, setting `nut_enable_FEATURE` and
+    `nut_enableGiven_FEATURE` with the same name conversion.
+
+*NUT_ARG_WITH_CUSTOM_DEFAULT_HELP*::
+*NUT_ARG_ENABLE_CUSTOM_DEFAULT_HELP*::
+
+    Take 'FEATURE', 'VALUE_HELP', 'DESCRIPTION', 'DEFAULT' and
+    'DEFAULT_HELP'. The last argument describes the default in the
+    help text independently of its shell value. An empty 'VALUE_HELP'
+    omits the value placeholder; an empty 'DEFAULT_HELP' uses 'DEFAULT'.
+
+*NUT_ARG_WITH_EXPAND_DEFAULT_HELP*::
+*NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP*::
+*NUT_ARG_WITH_EXPAND_DEFAULT_HELP_SINGLEQUOTE*::
+*NUT_ARG_ENABLE_EXPAND_DEFAULT_HELP_SINGLEQUOTE*::
+
+    Take the first four arguments of the custom-help forms and use
+    `NUT_ARG_EXPAND` to expand the default for the help text. The
+    `SINGLEQUOTE` variants are intended for paths with escaped dollar
+    signs and introduce the help value with `resolved from`.
+
+*NUT_ARG_EXPAND(NAME, VALUE)*::
+
+    Expand a value through a shell command while autoconf generates
+    `configure`. 'NAME' identifies the temporary shell variable.
+    This cannot show values which are only determined later, when the
+    generated `configure` script runs.
+
+*NUT_ARG_WITH_LIBOPTS*::
+*NUT_ARG_WITH_LIBOPTS_INVALID_YESNO*::
+
+    Take 'FEATURE', 'VALUE_HELP', 'DESCRIPTION' and 'DEFAULT', and
+    declare library options with a bracketed, optional help tag.
+    Set the same variables as `NUT_ARG_WITH`. The `INVALID_YESNO`
+    variant rejects `yes` and `no`, for options expecting flags or paths.
+
+*NUT_ARG_WITH_LIBOPTS_INCLUDES*::
+*NUT_ARG_WITH_LIBOPTS_LIBS*::
+*NUT_ARG_WITH_LIBOPTS_LIBS_AS_LDFLAGS*::
+*NUT_ARG_WITH_LIBOPTS_LDFLAGS*::
+
+    Take a project name, an optional default (otherwise `auto`), and
+    an optional display name for the help text. Declare the lower-case
+    `--with-PROJECT-includes`, `--with-PROJECT-libs` or
+    `--with-PROJECT-ldflags` option using the `INVALID_YESNO` helper.
+    `LIBS_AS_LDFLAGS` retains the `-libs` option name but describes its
+    value as `LDFLAGS` rather than `LIBS`.
+
+*NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT*::
+
+    Take a project name and optional result variable, program names,
+    default and display name. Declare `--with-PROJECT-config` and find
+    the corresponding configuration script. By default the project
+    name determines the upper-case `PROJECT_CONFIG` result variable
+    and lower-case `project-config` program name. The default is `auto`;
+    a disabled script or one that was not found is represented by `none`.
++
+`NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM`,
+`NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_2` and
+`NUT_ARG_WITH_LIBOPTS_CONFIGSCRIPT_IMPLEM_3` are internal helpers which
+apply these defaults and perform the search.
+
+Library checks
+~~~~~~~~~~~~~~
+
+The `NUT_CHECK_LIB*` macros probe headers, libraries and required APIs,
+and provide result variables and compiler/linker flags to their callers.
+Each guards against repeated checks within one `configure` run. Many
+also cache results for subsequent runs; such a cache assumes unchanged
+dependencies and configuration arguments.
+
+The checks for each library evolve organically to compensate for various
+bugs in the libraries, pkg-config, etc. or for significant changes between
+different generations of those dependencies. The need to keep such code in
+manageable sized chunks, as well as to maintain an easily comparable general
+code structure (as in `diff` of these files), and the need to match some
+capabilities for others to be based on them, is why we have a separate
+macro and source file for each library detection code.
+
+The following table lists the primary result variables and flag prefixes.
+For each prefix, the flag variables are `PREFIX_CFLAGS` and
+`PREFIX_LIBS`, except that libgd uses `LIBGD_LDFLAGS` for linking.
+Result names are not uniformly derived from library or macro names.
+
+[cols="3,3,2",options="header"]
+|=======================================================================
+|Macro |Result variable(s) |Flag prefix(es)
+
+|`NUT_CHECK_LIBAVAHI`
+|`nut_have_avahi`
+|`LIBAVAHI`
+
+|`NUT_CHECK_LIBFREEIPMI`
+|`nut_have_freeipmi`
+|`LIBIPMI`
+
+|`NUT_CHECK_LIBGD`
+|`nut_have_libgd`
+|`LIBGD`
+
+|`NUT_CHECK_LIBGLIB`
+|`nut_have_libglib`, `nut_have_libgio`
+|`LIBGLIB`, `LIBGIO`
+
+|`NUT_CHECK_LIBGPIO`
+|`nut_have_gpio`
+|`LIBGPIO`
+
+|`NUT_CHECK_LIBLTDL`
+|`nut_have_libltdl`
+|`LIBLTDL`
+
+|`NUT_CHECK_LIBMODBUS`
+|`nut_have_libmodbus`
+|`LIBMODBUS`
+
+|`NUT_CHECK_LIBNEON`
+|`nut_have_neon`
+|`LIBNEON`
+
+|`NUT_CHECK_LIBNETSNMP`
+|`nut_have_libnetsnmp`
+|`LIBNETSNMP`
+
+|`NUT_CHECK_LIBNSS`
+|`nut_have_libnss`
+|`LIBSSL`
+
+|`NUT_CHECK_LIBOPENSSL`
+|`nut_have_openssl`
+|`LIBSSL`
+
+|`NUT_CHECK_LIBPOWERMAN`
+|`nut_have_libpowerman`
+|`LIBPOWERMAN`
+
+|`NUT_CHECK_LIBREGEX`
+|`nut_have_regex`
+|`LIBREGEX`
+
+|`NUT_CHECK_LIBSYSTEMD`
+|`nut_have_libsystemd`
+|`LIBSYSTEMD`
+
+|`NUT_CHECK_LIBUSB`
+|`nut_have_libusb`
+|`LIBUSB`
+
+|`NUT_CHECK_LIBWRAP`
+|`nut_have_libwrap`
+|`LIBWRAP`
+|=======================================================================
+
+The source file names correspond to the lower-case macro names, with
+`.m4` appended, except `NUT_CHECK_LIBGPIO`, which is defined in
+`m4/nut_check_libgpiod.m4` and checks libgpiod. `NUT_CHECK_LIBGLIB`
+checks both GLib and GIO. The SSL checks share the `LIBSSL` flag variables;
+`configure.ac` selects the backend to use.
+
+Some checks also distinguish library versions or optional APIs. For
+example, `NUT_CHECK_LIBUSB` reads `nut_with_usb`, including requests
+for `libusb-1.0` or `libusb-0.1` from `--with-usb`. It reports the selected
+variant in `nut_usb_lib`. `NUT_CHECK_LIBMODBUS` checks timeout API variants
+and the optional USB backend. Consult the corresponding source before
+using additional results or changing a dependency check.
+
+Build tools and Python
+~~~~~~~~~~~~~~~~~~~~~~
+
+*NUT_CHECK_PKGCONFIG*::
+
+    Defined in `m4/nut_check_pkgconfig.m4`. Locate and validate
+    `PKG_CONFIG`, with `--with-pkg-config` as an override when a usable
+    tool has not already been detected. Set `have_PKG_CONFIG` and
+    `have_PKG_CONFIG_MACROS` to report tool and macro availability.
+    The macro also handles the pkg-config search environment when
+    cross-compiling.
+
+*NUT_CHECK_ASCIIDOC*::
+
+    Defined in `m4/nut_check_asciidoc.m4`. Find the documentation
+    tools, including `ASCIIDOC`, `A2X`, `XSLTPROC`, `XMLLINT`, `DBLATEX`
+    and `SOURCE_HIGHLIGHT`. Set `nut_have_asciidoc` and the
+    `HAVE_ASCIIDOC` Automake conditional according to the prerequisites
+    for man page generation. `configure.ac` separately tests the ability
+    to generate the requested documentation formats.
+
+*NUT_CHECK_ASPELL*::
+
+    Defined in `m4/nut_check_aspell.m4`. Find `ASPELL`, check its
+    version and filtering setup, and test spelling checks. Set
+    `nut_have_aspell`, the `HAVE_ASPELL` Automake conditional and
+    `ASPELL_FILTER_*_PATH` variables for the documentation recipes.
+
+*NUT_CHECK_CPPCHECK*::
+
+    Defined in `m4/nut_check_cppcheck.m4`. Find `CPPCHECK` and check
+    its version. Set `nut_have_cppcheck` and the `HAVE_CPPCHECK`
+    Automake conditional.
+
+*NUT_CHECK_PYTHON_DEFAULT*::
+
+    Defined with its helpers in `m4/nut_check_python.m4`. This is
+    the entry point used by `configure.ac`: detect Python interpreters,
+    reconcile requests and automatic priorities, and determine module
+    installation paths. Export `PYTHON`, `PYTHON2`, `PYTHON3` and
+    `PYTHON_DEFAULT` through `AC_SUBST`, with corresponding
+    `HAVE_PYTHON*` Automake conditionals. `PYTHON_DEFAULT` is used for
+    internal tool calls and script substitutions.
++
+`NUT_CHECK_PYTHON`, `NUT_CHECK_PYTHON2` and `NUT_CHECK_PYTHON3` process
+the corresponding `--with-python*` options and validate interpreters.
+`NUT_CHECK_PYTHON_INTERIM_RESULTS` handles missing and required
+interpreters; `NUT_CHECK_PYTHON_DEFAULT_BEST` applies the automatic
+priority policy and publishes the interpreter selections.
++
+`NUT_CHECK_PYTHON_SITE_PACKAGES`, `NUT_CHECK_PYTHON2_SITE_PACKAGES` and
+`NUT_CHECK_PYTHON3_SITE_PACKAGES` obtain module locations from the
+interpreter or the corresponding `--with-python*-modules-dir` option.
+They substitute `PYTHON_SITE_PACKAGES`, `PYTHON2_SITE_PACKAGES` and
+`PYTHON3_SITE_PACKAGES`, with matching `HAVE_*` Automake conditionals.
+
+Compiler and platform checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*NUT_COMPILER_FAMILY*::
+
+    Defined with the following flag helpers in
+    `m4/nut_compiler_family.m4`. Identify GCC and Clang compilers
+    and record version information for `CC`, `CXX` and `CPP`. These
+    results guide later flag and platform checks.
+
+*NUT_CHECK_COMPILE_FLAG(FLAG)*::
+
+    Test a flag separately for C and C++, including a link/run check
+    through `AX_RUN_OR_LINK_IFELSE`. Append the flag to `CFLAGS` or
+    `CXXFLAGS` only where the corresponding checks pass. For `-Wno-*`
+    flags, first test the positive `-W*` spelling to detect unsupported
+    warnings which a compiler might otherwise silently ignore.
+
+*NUT_COMPILER_FAMILY_FLAGS*::
+*NUT_COMPILER_FAMILY_FLAGS_DEFAULT_STANDARD*::
+
+    Apply the compiler flag policy. The first macro checks additional
+    flags and include paths, and both can select default language
+    standards when the caller has not supplied `-std=` or `-ansi`.
+    The second macro repeats that default-standard selection after
+    other configuration checks.
+
+*NUT_STASH_WARNINGS*::
+*NUT_POP_WARNINGS*::
+
+    Defined in `m4/nut_stash_warnings.m4`. Temporarily remove
+    `-W*` and `-*pedantic*` options from `CFLAGS`, `CPPFLAGS` and
+    `CXXFLAGS` so they do not interfere with configure probes, then
+    append them back afterwards. These helpers split flags on
+    whitespace; they do not support embedded spaces in flag values.
+
+*NUT_CHECK_BOOL*::
+
+    Defined in `m4/nut_check_bool.m4`. Probe Boolean types and
+    values, and define their detected spellings and implementation
+    properties for `include/nut_bool.h`.
 
 *NUT_TYPE_SOCKLEN_T*::
-*NUT_TYPE_UINT8_T*::
-*NUT_TYPE_UINT16_T*::
+*NUT_PREREQ_SYS_H_SOCKET*::
 
-	Check for the corresponding type in the system header files, and
-	`#define` a replacement if necessary.
-
-*NUT_CHECK_LIBGD*::
-*NUT_CHECK_LIBNEON*::
-*NUT_CHECK_LIBNETSNMP*::
-*NUT_CHECK_LIBPOWERMAN*::
-*NUT_CHECK_LIBOPENSSL*::
-*NUT_CHECK_LIBNSS*::
-*NUT_CHECK_LIBUSB*::
-*NUT_CHECK_LIBWRAP*::
-*et al*::
-
-	Determine the compiler flags for the corresponding library. On
-	success, set `nut_have_libxxx="yes"` and set `LIBXXX_CFLAGS` and
-	`LIBXXX_LDFLAGS`. On failure, set `nut_have_libxxx="no"`. This macro
-	can be run multiple times, but will do the checking only once.
-	Here "xxx" should of course be replaced by the respective library name.
-+
-The checks for each library grow organically to compensate for
-	various bugs in the libraries, pkg-config, etc. This is why we have
-	a separate macro for each library.
+    Defined in `m4/nut_type_socklen_t.m4`. The first checks for
+    `socklen_t`, defining a compatible replacement if it is absent or
+    failing configuration if none can be found. The prerequisite helper
+    checks socket headers and substitutes `HAVE_SYS_SOCKET_H`,
+    `HAVE_WINSOCK2_H` and `HAVE_WS2TCPIP_H` as zero-or-one shell values.
 
 *NUT_CHECK_SEMAPHORES*::
 
-	Check for semaphore headers, libraries, and named or unnamed
-	semaphores. Set `SEMLIBS`, the `nut_have_semaphore_*` shell
-	variables, the `HAVE_SEMAPHORE_*` preprocessor symbols and the
-	`HAVE_SEMAPHORE_LIBS` Automake conditional. Call after the
-	`fcntl.h` and `sys/stat.h` checks, before deciding whether to
-	enable threading.
+    Check for semaphore headers, libraries, and named or unnamed
+    semaphores. Set `SEMLIBS`, the `nut_have_semaphore_*` shell
+    variables, the `HAVE_SEMAPHORE_*` preprocessor symbols and the
+    `HAVE_SEMAPHORE_LIBS` Automake conditional. Call after the
+    `fcntl.h` and `sys/stat.h` checks, before deciding whether to
+    enable threading.
 
-*NUT_CHECK_IPV6*::
+*NUT_CHECK_SOCKETLIB*::
 
-	Check for various features required to compile the IPv6 support.
-	Define a preprocessor symbol for each individual feature
-	(`HAVE_GETADDRINFO`, `HAVE_FREEADDRINFO`, `HAVE_STRUCT_ADDRINFO`,
-	`HAVE_SOCKADDR_STORAGE`, `SOCKADDR_IN6`, `IN6_ADDR`,
-	`HAVE_IN6_IS_ADDR_V4MAPPED`, `HAVE_AI_ADDRCONFIG`).
-+
-Also set the shell variable `nut_have_ipv6=yes`	if all the required
-	features are present. Set `nut_have_ipv6=no` otherwise.
+    Defined in `m4/nut_check_socketlib.m4`. Set and substitute
+    `NETLIBS`, adding `-lws2_32` when the Windows socket startup probe
+    succeeds. Also define `WINDOWS_SOCKETS` on success and declare the
+    `HAVE_WINDOWS_SOCKETS` Automake conditional. Other socket library
+    checks are performed by `configure.ac`.
+
+*NUT_FUNC_GETNAMEINFO_ARGTYPES*::
+
+    Defined in `m4/nut_func_getnameinfo_argtypes.m4`. Determine
+    compatible argument types for `getnameinfo()` and define
+    `GETNAMEINFO_TYPE_ARG1`, `GETNAMEINFO_TYPE_ARG2`,
+    `GETNAMEINFO_TYPE_ARG46` and `GETNAMEINFO_TYPE_ARG7` when found.
+    Warn if no matching declaration is found.
+
+*NUT_CHECK_HEADER_WINDOWS*::
+*NUT_CHECK_HEADER_WINSOCK*::
+*NUT_CHECK_HEADER_WINSOCK2*::
+*NUT_CHECK_HEADER_WS2TCPIP*::
+*NUT_CHECK_HEADER_IPHLPAPI*::
+*NUT_CHECK_NATIVE_WINDOWS*::
+
+    Defined in `m4/nut_check_headers_windows.m4`. The header
+    checks test whether Windows headers can be compiled, with prerequisites
+    included in the probes. Each defines its `HAVE_*_H` C symbol on
+    success and declares the corresponding Automake conditional.
+    `NUT_CHECK_NATIVE_WINDOWS` checks for a native Windows target and
+    declares the `DOING_NATIVE_WINDOWS` Automake conditional.
 
 *NUT_CHECK_OS*::
+*NUT_OS_FUNCTIONS*::
 
-	Check for the exact system name and type.
-	This was only used in the past to determine the packaging rule to be
-	used through the `OS_NAME` variable, but may be useful for other purposes
-	in the future.
+    Defined in `m4/nut_check_os.m4`. Inspect system identification
+    files and set `OS_NAME` and `PKG_TARGET` when a flavour is found.
+    `NUT_OS_FUNCTIONS` provides the shell helpers used for this mapping.
 
-*NUT_REPORT_FEATURE(FEATURE, VALUE, VARIABLE, DESCRIPTION)*::
+Configuration reports
+~~~~~~~~~~~~~~~~~~~~
 
-	Schedule a line for the end-of-configuration feature summary.  The
-	'FEATURE' is a descriptive string such that the sentence "Checking
-	whether to FEATURE" makes sense, and 'VALUE' describes the decision
-	taken (typically 'yes' or 'no'). The feature is also reported to the
-	terminal.
+Defined in `m4/nut_report_feature.m4`.
+
+*NUT_REPORT_FEATURE(FEATURE, FLAG, VALUE, VARIABLE, DESCRIPTION)*::
+
+    Report a feature decision immediately and queue it for the final
+    summary.
 +
-Also use 'VARIABLE' and 'DESCRIPTION' for defining `AM_CONDITIONAL` and
-	`AC_DEFINE` (only if `VALUE = "yes"`).
-    The 'VARIABLE' is of the form `WITH_<NAME>`.
+The 'FEATURE' is a descriptive string such that the scripted sentence
+"Checking whether to FEATURE" as well as "FEATURE" itself in the final
+list of configuration decisions both make sense (keep in mind casing,
+endings, suffixes and verb forms); 'FLAG' is the decision (normally
+`yes` or `no`); 'VALUE' adds details such as the selected library.
+This macro declares the Automake conditional named by 'VARIABLE', to be
+true exactly when 'FLAG' is `yes`. In that case also define the C symbol
+'VARIABLE' as `1`, with 'DESCRIPTION' as its comment.
++
+Some callers pass a sixth argument to customise the check message.
+The current implementation reads the shell's sixth positional parameter
+instead of that M4 argument, so callers cannot rely on this control.
+
+*NUT_REPORT_DRIVER(FEATURE, FLAG, VALUE, VARIABLE, DESCRIPTION)*::
+*NUT_REPORT_PROGRAM(FEATURE, FLAG, VALUE, VARIABLE, DESCRIPTION)*::
+
+    Apply the same conditional and C-definition handling as the feature
+    reporter, using separate summary groups for drivers and programs.
+    Their configuration progress messages use `Checking whether to FEATURE`.
+
+*NUT_REPORT_SETTING(SETTING, VARIABLE, VALUE, DESCRIPTION)*::
+*NUT_REPORT_SETTING_PATH(SETTING, VARIABLE, VALUE, DESCRIPTION)*::
+*NUT_REPORT_SETTING_PATH_INTEGRATIONS*::
+
+    Report a setting and define 'VARIABLE' to 'VALUE' through
+    `AC_DEFINE_UNQUOTED`, using 'DESCRIPTION' as its comment. These do
+    not create Automake conditionals. The path variants use separate
+    summary groups for NUT paths and third-party integration paths;
+    `NUT_REPORT_SETTING_PATH_INTEGRATIONS` takes the same four arguments.
+    Callers must supply appropriate C quoting for string values.
+    Their configuration progress messages use `Checking setting for SETTING`.
+
+*NUT_REPORT_TARGET(VARIABLE, VALUE, DESCRIPTION)*::
+*NUT_REPORT_TARGET_WITHOUT_AC_DEFINE(VARIABLE, VALUE, DESCRIPTION)*::
+
+    Report build/target information immediately and in its summary
+    group. The first also defines 'VARIABLE' to 'VALUE' through
+    `AC_DEFINE_UNQUOTED`; the second only reports it. Neither creates
+    an Automake conditional.
 
 *NUT_REPORT(FEATURE, VALUE)*::
+*NUT_REPORT_DRV(FEATURE, VALUE)*::
+*NUT_REPORT_PRG(FEATURE, VALUE)*::
+*NUT_REPORT_PATH(FEATURE, VALUE)*::
+*NUT_REPORT_PATH_INTEGRATIONS(FEATURE, VALUE)*::
 
-	Schedule a line for the end-of-configuration feature summary, without
-	printing anything to the terminal immediately.
+    Queue a summary entry without an immediate terminal message,
+    C definition or Automake conditional. The variants select the
+    general, driver, program, NUT-path or integration-path group.
 
+*NUT_REPORT_FILE(FEATURE, VALUE, TAG, TITLE)*::
+
+    The common helper: append an entry to
+    `config.nut_report_feature.log.TAG`, adding the group's title when
+    first used, except for the driver/program continuation groups.
+
+*NUT_REPORT_COMPILERS*::
 *NUT_PRINT_FEATURE_REPORT*::
 
-	Print out a list of the features that have been reported by
-	previous `NUT_REPORT_FEATURE` macro calls.
+    The first writes the compiler and flag summary. The second prints
+    all report groups accumulated in `config.nut_report_feature.log.*`.
+    With `--enable-keep_nut_report_feature`, it also retains their
+    combined contents in `config.nut_report_feature.log`.
 
-*NUT_ARG_WITH(FEATURE, DESCRIPTION, DEFAULT)*::
+Other bundled macros
+~~~~~~~~~~~~~~~~~~~~
 
-	Declare a simple `--with-FEATURE` option with the given 'DESCRIPTION'
-	and 'DEFAULT'. Sets the variable `nut_with_FEATURE`.
+*`AX_C___ATTRIBUTE__`*::
+
+    Defined in `m4/ax_c___attribute__.m4`. Check compiler support
+    for the `unused` argument/function attributes and the `noreturn`
+    attribute. Define the corresponding `HAVE___ATTRIBUTE__*` symbols.
+
+*AX_C_PRAGMAS*::
+*AX_C_PRINTF_STRING_NULL*::
+
+    Defined in `m4/ax_c_pragmas.m4`. The first probes support for
+    the diagnostic pragmas used by NUT and defines the corresponding
+    `HAVE_PRAGMA_*` symbols. The second checks null-string formatting
+    and compiler warnings, takes `--enable-NUT_STRARG-always` into
+    account, and sets the `REQUIRE_NUT_STRARG` C definition and Automake
+    conditional. Its cross-compilation fallback only tests linking,
+    not runtime behaviour.
+
+*AX_CHECK_COMPILE_FLAG*::
+
+    Defined in `m4/ax_check_compile_flag.m4`. Take a flag, success
+    action, failure action, extra flags and optional test input. Check
+    the current language's compiler, restoring its flags afterwards.
+    The bundled implementation also recognises selected compiler
+    diagnostics about unsupported options.
+
+*AX_COMPARE_VERSION*::
+
+    Defined in `m4/ax_compare_version.m4`. Compare two versions
+    using an operator, with optional true/false actions. The argument
+    order is 'VERSION_A', 'OP', 'VERSION_B', 'ACTION_IF_TRUE',
+    'ACTION_IF_FALSE'. Set `ax_compare_version` to `true` or `false`.
+    See the file's synopsis for supported operators and precision.
+
+*AX_RUN_OR_LINK_IFELSE*::
+
+    Defined in `m4/ax_run_or_link_ifelse.m4`. Take test source,
+    success action, failure action, optional C flags and optional C++
+    flags. Run the test normally, or only link it when cross-compiling.
+    Temporarily enable fatal warnings and apply the supplied flags,
+    then restore `CFLAGS` and `CXXFLAGS`.
+
+*AX_REALPATH(PATH, VARIABLE)*::
+
+    Defined in `m4/ax_realpath.m4`. Resolve a path into 'VARIABLE',
+    trying the `REALPATH` tool if configured, then shell fallback methods.
+    `AX_REALPATH_SHELL_ONELEVEL` and `AX_REALPATH_SHELL_RECURSIVE`
+    implement those fallback methods. `UNITTEST_AX_REALPATH` and
+    `UNITTEST_AX_REALPATH_EXPECT` are development test helpers in the
+    same file, rather than normal configuration prerequisites.
+
+*AX_REALPATH_LIB(LIBRARY, VARIABLE, FALLBACK)*::
+
+    Defined in `m4/ax_realpath_lib.m4`. Try to locate a library
+    file using a GCC/Clang-compatible toolchain and resolve its path
+    into 'VARIABLE'. 'FALLBACK' is optional and defaults to an empty
+    value when resolution fails or the compiler is unsupported.
+    `AX_REALPATH_LIB_PREREQ` prepares the required platform tools.
