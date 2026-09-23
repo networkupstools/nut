@@ -1295,7 +1295,7 @@ which is of little concern for Python2 but is important in Python3
     def GetUPSNames( self ) :
         """ Returns the list of available UPS names from the NUT server as strings
 
-The result is a set of str objects (comparable with ups="somename" and
+The result is a list of str objects (comparable with ups="somename" and
 useful as arguments to other methods). Helps work around Python2/Python3
 string API changes.
         """
