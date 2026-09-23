@@ -96,7 +96,7 @@ Here is an example to setup a device simulation:
 +
 	[dummy]
 		driver = dummy-ups
-		port = evolution500.dev
+		port = evolution500.seq
 		desc = "dummy-ups in dummy mode"
 +
 - now start NUT, at least `dummy-ups` and `upsd`:
@@ -145,7 +145,7 @@ these in a differential fashion every 5 seconds (by default).
 
 Its usage is the following:
 
-	Usage: dummy-recorder.sh <device-name> [output-file] [interval]
+	Usage: nut-recorder.sh <device-name> [output-file] [interval]
 
 For example, to record information from the device 'myups' every 10 seconds:
 

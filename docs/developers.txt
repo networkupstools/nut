@@ -327,7 +327,7 @@ For more information, and perhaps inspiration for building a similar
 solution, please see the *NUT Quality Assurance and Build Automation Guide*,
 and specifically its chapters on
 linkdoc:qa-guide[Static analysis by compilers,CI_compiler_warnings],
-linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc],
+linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc,_test_automation],
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
 technologies,NUTCI_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)

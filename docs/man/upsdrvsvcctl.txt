@@ -11,7 +11,7 @@ SYNOPSIS
 
 *upsdrvsvcctl* -h
 
-*upsdrvsvcctl* ['OPTIONS'] {start | stop | status} ['ups']
+*upsdrvsvcctl* ['OPTIONS'] {start | stop | status | shutdown} ['ups']
 
 DESCRIPTION
 -----------
@@ -118,9 +118,9 @@ details.
 COMMANDS
 --------
 
-*upsdrvsvcctl* supports three of the commands processed by *upsdrvctl* --
-start, stop and shutdown. They take an optional argument which is a UPS
-name from linkman:ups.conf[5]. Without that argument, they operate on
+*upsdrvsvcctl* supports the following commands processed by *upsdrvctl* --
+start, stop, status and shutdown. They take an optional argument which is
+a UPS name from linkman:ups.conf[5]. Without that argument, they operate on
 every UPS that is currently configured.
 
 Note: shutdown is currently supported by stopping the driver service
@@ -156,8 +156,8 @@ update the mapping of service instances for NUT drivers to device section
 names used in 'ups.conf' (register new instances, tear down obsoleted ones).
 
 
-COMMANDS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
-----------------------------------------------------------------
+COMMANDS DELEGATED TO UPSDRVCTL
+-------------------------------
 
 *shutdown*::
 Command the UPS driver(s) to run their shutdown sequence.  Drivers are
