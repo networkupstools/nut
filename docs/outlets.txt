@@ -76,7 +76,7 @@ For example, on small setup, you can plug printers, USB devices, hubs, (...)
 into managed outlets. Depending on your UPS's capabilities, you will be able
 to turn off those loads:
 
-- after some minutes of back-up time using 'outlet.n.delay.start',
+- after some minutes of back-up time using 'outlet.n.delay.shutdown',
 - when reaching a percentage battery charge using
 'outlet.n.autoswitch.charge.low'.
 
