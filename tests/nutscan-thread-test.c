@@ -18,11 +18,16 @@
 #if defined HAVE_PTHREAD && (defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
 # if NUTSCAN_TEST_PROTOCOL == 5
 #  include "nutscan-serial.h"
+#  include "serial.h"
+static TYPE_FD_SER offline_serial_open(const char *port);
 static char **test_serial_ports(const char *range);
 static int test_join(pthread_t thread, void **result);
 #  if defined HAVE_PTHREAD_TRYJOIN && !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
 static int test_tryjoin(pthread_t thread, void **result);
 #  endif
+# endif
+# if NUTSCAN_TEST_PROTOCOL == 4
+static int offline_socket(void);
 # endif
 # if NUTSCAN_TEST_PROTOCOL != 5
 static void *test_malloc(size_t size);
@@ -32,17 +37,18 @@ static void test_free(void *ptr);
 static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 	void *(*worker)(void *), void *arg);
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+static int test_thread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+static int test_thread_mutex_destroy(pthread_mutex_t *mutex);
+static int test_thread_mutex_lock(pthread_mutex_t *mutex);
 static int test_wait(sem_t *sem);
 static int test_trywait(sem_t *sem);
-#  if NUTSCAN_TEST_PROTOCOL != 5
-#   ifdef HAVE_SEMAPHORE_UNNAMED
+#  ifdef HAVE_SEMAPHORE_UNNAMED
 static int test_init(sem_t *sem, int shared, unsigned int value);
 static int test_destroy(sem_t *sem);
-#   else
+#  else
 static sem_t *test_open(const char *name, int flags, ...);
 static int test_close(sem_t *sem);
 static int test_unlink(const char *name);
-#   endif
 #  endif
 # endif
 
@@ -57,27 +63,35 @@ static int test_unlink(const char *name);
 # define pthread_create test_create
 # if NUTSCAN_TEST_PROTOCOL == 5
 #  define nutscan_get_serial_ports_list test_serial_ports
+#  define ser_open_nf offline_serial_open
 #  define pthread_join test_join
 #  if defined HAVE_PTHREAD_TRYJOIN && !defined HAVE_SEMAPHORE_UNNAMED && !defined HAVE_SEMAPHORE_NAMED
 #   define pthread_tryjoin_np test_tryjoin
 #  endif
 # endif
+# if NUTSCAN_TEST_PROTOCOL == 4
+#  define socket(domain, type, protocol) offline_socket()
+# endif
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+#  define pthread_mutex_init test_thread_mutex_init
+#  define pthread_mutex_destroy test_thread_mutex_destroy
+#  define pthread_mutex_lock test_thread_mutex_lock
 #  define sem_wait test_wait
 #  define sem_trywait test_trywait
-#  if NUTSCAN_TEST_PROTOCOL != 5
-#   ifdef HAVE_SEMAPHORE_UNNAMED
-#    define sem_init test_init
-#    define sem_destroy test_destroy
-#   else
-#    define sem_open test_open
-#    define sem_close test_close
-#    define sem_unlink test_unlink
-#   endif
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+#   define sem_init test_init
+#   define sem_destroy test_destroy
+#  else
+#   define sem_open test_open
+#   define sem_close test_close
+#   define sem_unlink test_unlink
 #  endif
 # endif
 
 /* Intercept the shared helpers as well as the scanner loop. */
+# define semaphore test_global_semaphore
+# include "nutscan-init.c"
+# undef semaphore
 # include "nutscan-thread.c"
 
 # if NUTSCAN_TEST_PROTOCOL == 1
@@ -97,6 +111,8 @@ static int test_unlink(const char *name);
 # undef free
 # undef pthread_create
 # undef nutscan_get_serial_ports_list
+# undef ser_open_nf
+# undef socket
 # undef pthread_join
 # undef pthread_tryjoin_np
 # undef sem_wait
@@ -106,14 +122,12 @@ static int test_unlink(const char *name);
 # undef sem_open
 # undef sem_close
 # undef sem_unlink
-
-/* The library keeps this counter mutex private. The included scanner
- * owns the test instance and never runs a library scanner. */
-# ifdef HAVE_PTHREAD_TRYJOIN
-pthread_mutex_t threadcount_mutex;
-# endif
+# undef pthread_mutex_init
+# undef pthread_mutex_destroy
+# undef pthread_mutex_lock
 
 static int fail_malloc, fail_realloc, fail_create, create_calls, completed;
+static int synchronous;
 static int allocations, auth_allocations;
 static void *arguments[32];
 static pthread_mutex_t test_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -289,13 +303,56 @@ static int test_create(pthread_t *thread, const pthread_attr_t *attr,
 }
 
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+static int fail_mutex_init, mutex_ready, mutex_init_calls, mutex_destroy_calls;
+
+static int test_thread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
+{
+	int ret;
+
+	if (mutex != &threadcount_mutex) {
+		return pthread_mutex_init(mutex, attr);
+	}
+	assert(!mutex_ready);
+	mutex_init_calls++;
+	if (fail_mutex_init) {
+		return ENOMEM;
+	}
+	ret = pthread_mutex_init(mutex, attr);
+	if (ret == 0) {
+		mutex_ready = 1;
+	}
+	return ret;
+}
+
+static int test_thread_mutex_destroy(pthread_mutex_t *mutex)
+{
+	int ret;
+
+	if (mutex != &threadcount_mutex) {
+		return pthread_mutex_destroy(mutex);
+	}
+	assert(mutex_ready);
+	mutex_destroy_calls++;
+	ret = pthread_mutex_destroy(mutex);
+	if (ret == 0) {
+		mutex_ready = 0;
+	}
+	return ret;
+}
+
+static int test_thread_mutex_lock(pthread_mutex_t *mutex)
+{
+	if (mutex == &threadcount_mutex) {
+		assert(mutex_ready);
+	}
+	return pthread_mutex_lock(mutex);
+}
+
 /* Borrowed only until the scanner destroys or closes its semaphore. */
 static sem_t *global_sem, *protocol_sem;
-#  if NUTSCAN_TEST_PROTOCOL != 5
 static unsigned int protocol_capacity;
-#  endif
-static int fail_init, interrupt_wait, fail_wait, fail_try_global, fail_try_protocol;
-#  if NUTSCAN_TEST_PROTOCOL != 5 && defined HAVE_SEMAPHORE_NAMED && !defined HAVE_SEMAPHORE_UNNAMED
+static int fail_init, fail_global_init, interrupt_wait, fail_wait, fail_try_global, fail_try_protocol;
+#  if defined HAVE_SEMAPHORE_NAMED && !defined HAVE_SEMAPHORE_UNNAMED
 static char protocol_name[128];
 #  endif
 
@@ -340,12 +397,45 @@ static int test_trywait(sem_t *sem)
 	return sem_trywait(sem);
 }
 
-#  if NUTSCAN_TEST_PROTOCOL != 5
-#   ifdef HAVE_SEMAPHORE_UNNAMED
+#  if NUTSCAN_TEST_PROTOCOL == 3
+static int fallback_active;
+
+static void *concurrent_fallback(void *arg)
+{
+	int i;
+
+	NUT_UNUSED_VARIABLE(arg);
+	for (i = 0; i < 10; i++) {
+		assert(nut_scanner_semaphore_acquire(NULL, NULL, 0, 1) == 1);
+		pthread_mutex_lock(&test_mutex);
+		assert(fallback_active++ == 0);
+		pthread_mutex_unlock(&test_mutex);
+		usleep(1000);
+		pthread_mutex_lock(&test_mutex);
+		assert(--fallback_active == 0);
+		pthread_mutex_unlock(&test_mutex);
+		nut_scanner_semaphore_release(NULL, NULL, 0);
+	}
+	return NULL;
+}
+#  endif
+
+#  ifdef HAVE_SEMAPHORE_UNNAMED
 static int test_init(sem_t *sem, int shared, unsigned int value)
 {
 	int ret;
 
+	if (sem == &semaphore_inst) {
+		assert(global_sem == NULL);
+		if (fail_global_init) {
+			errno = ENOSPC;
+			return -1;
+		}
+		ret = sem_init(sem, shared, value);
+		assert(ret == 0);
+		global_sem = sem;
+		return ret;
+	}
 	assert(sem != NULL && sem != global_sem && protocol_sem == NULL);
 	if (fail_init) {
 		errno = ENOSPC;
@@ -363,6 +453,11 @@ static int test_destroy(sem_t *sem)
 {
 	int ret;
 
+	if (sem == global_sem) {
+		check_capacity(sem, 2);
+		global_sem = NULL;
+		return sem_destroy(sem);
+	}
 	assert(protocol_sem != NULL && sem == protocol_sem);
 	check_capacity(sem, protocol_capacity);
 	ret = sem_destroy(sem);
@@ -370,16 +465,16 @@ static int test_destroy(sem_t *sem)
 	protocol_sem = NULL;
 	return ret;
 }
-#   else
+#  else
 static sem_t *test_open(const char *name, int flags, ...)
 {
 	va_list ap;
 	unsigned int value;
+	int global = strcmp(name, SEMNAME_TOPLEVEL) == 0;
 
-	NUT_UNUSED_VARIABLE(name);
 	NUT_UNUSED_VARIABLE(flags);
-	assert(protocol_sem == NULL);
-	if (fail_init) {
+	assert(global ? global_sem == NULL : protocol_sem == NULL);
+	if (global ? fail_global_init : fail_init) {
 		errno = ENOSPC;
 		return SEM_FAILED;
 	}
@@ -387,7 +482,13 @@ static sem_t *test_open(const char *name, int flags, ...)
 	(void)va_arg(ap, int);
 	value = va_arg(ap, unsigned int);
 	va_end(ap);
-	snprintf(protocol_name, sizeof(protocol_name), "/nut-test-proto-%ld", (long)getpid());
+	snprintf(protocol_name, sizeof(protocol_name), "/nut-test-%s-%ld", global ? "global" : "proto", (long)getpid());
+	if (global) {
+		global_sem = sem_open(protocol_name, O_CREAT | O_EXCL, 0600, value);
+		assert(global_sem != SEM_FAILED);
+		assert(sem_unlink(protocol_name) == 0);
+		return global_sem;
+	}
 	protocol_sem = sem_open(protocol_name, O_CREAT | O_EXCL, 0600, value);
 	assert(protocol_sem != SEM_FAILED);
 	assert(sem_unlink(protocol_name) == 0);
@@ -399,6 +500,11 @@ static int test_close(sem_t *sem)
 {
 	int ret;
 
+	if (sem == global_sem) {
+		check_capacity(sem, 2);
+		global_sem = NULL;
+		return sem_close(sem);
+	}
 	assert(protocol_sem != NULL && sem == protocol_sem);
 	check_capacity(sem, protocol_capacity);
 	ret = sem_close(sem);
@@ -412,8 +518,7 @@ static int test_unlink(const char *name)
 	NUT_UNUSED_VARIABLE(name);
 	return 0;
 }
-#   endif
-#  endif /* NUTSCAN_TEST_PROTOCOL != 5 */
+#  endif
 # endif /* semaphore support */
 
 # if NUTSCAN_TEST_PROTOCOL == 1
@@ -421,6 +526,44 @@ static char *offline_snmp_options(char *options)
 {
 	NUT_UNUSED_VARIABLE(options);
 	return NULL;
+}
+
+static void offline_snmp_init(netsnmp_session *session)
+{
+	memset(session, 0, sizeof(*session));
+}
+
+static void *offline_snmp_open(netsnmp_session *session)
+{
+	assert(synchronous);
+	assert(session->peername != NULL);
+	completed++;
+	/* Exercise ownership of the synchronous EMFILE return value. */
+	session->s_errno = EMFILE;
+	return NULL;
+}
+# elif NUTSCAN_TEST_PROTOCOL == 2
+static ipmi_ctx_t offline_ipmi_create(void)
+{
+	assert(synchronous);
+	completed++;
+	return NULL;
+}
+# elif NUTSCAN_TEST_PROTOCOL == 4
+static int offline_socket(void)
+{
+	assert(synchronous);
+	completed++;
+	errno = EMFILE;
+	return -1;
+}
+# elif NUTSCAN_TEST_PROTOCOL == 5
+static TYPE_FD_SER offline_serial_open(const char *port)
+{
+	assert(synchronous);
+	assert(strcmp(port, "test-port") == 0);
+	completed++;
+	return ERROR_FD_SER;
 }
 # endif
 
@@ -481,6 +624,9 @@ static int offline_splitaddr(const char *target, char **host, uint16_t *port)
 	assert(auth_allocations > 0);
 	NUT_UNUSED_VARIABLE(host);
 	NUT_UNUSED_VARIABLE(port);
+	if (synchronous) {
+		completed++;
+	}
 	return -1;
 }
 
@@ -516,10 +662,14 @@ static void scan(unsigned int limit)
 	nutscan_avail_snmp = 1;
 	nut_initialized_snmp = 1;
 	nut_snmp_out_toggle_options = offline_snmp_options;
+	nut_snmp_sess_init = offline_snmp_init;
+	nut_snmp_sess_open = offline_snmp_open;
+	settings.community = "public";
 	assert(nutscan_scan_ip_range_snmp(&ranges, 1, &settings) == NULL);
 #  elif NUTSCAN_TEST_PROTOCOL == 2
 	max_threads_ipmi = limit;
 	nutscan_avail_ipmi = 1;
+	nut_ipmi_ctx_create = offline_ipmi_create;
 	assert(nutscan_scan_ip_range_ipmi(&ranges, &settings) == NULL);
 #  elif NUTSCAN_TEST_PROTOCOL == 3
 	max_threads_oldnut = limit;
@@ -545,14 +695,10 @@ static void scan(unsigned int limit)
 
 static void scenario(unsigned int limit, int failure)
 {
-# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
-#  if defined HAVE_SEMAPHORE_NAMED && !defined HAVE_SEMAPHORE_UNNAMED
-	char name[128];
-#  endif
-# endif
 	fail_malloc = fail_realloc = fail_create = 0;
 	create_calls = completed = 0;
 	completed_before_return = 1;
+	synchronous = failure >= 12;
 # if NUTSCAN_TEST_PROTOCOL == 5
 	assert(live_workers == 0);
 	completed_before_return = 0;
@@ -571,6 +717,9 @@ static void scenario(unsigned int limit, int failure)
 	} else if (failure == 5) {
 		fail_create = 2;
 	}
+	if (failure == 13) {
+		fail_malloc = 1;
+	}
 	max_threads = 2;
 	curr_threads = 0;
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
@@ -580,36 +729,43 @@ static void scenario(unsigned int limit, int failure)
 	fail_wait = failure == 8 ? 1 : (failure == 9 ? 2 : 0);
 	fail_try_global = failure == 10 ? 1 : 0;
 	fail_try_protocol = failure == 11 ? 1 : 0;
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-	global_sem = nutscan_semaphore();
-	assert(sem_init(global_sem, 0, 2) == 0);
-#  else
-	snprintf(name, sizeof(name), "/nut-test-global-%ld", (long)getpid());
-	global_sem = sem_open(name, O_CREAT | O_EXCL, 0600, 2);
-	assert(global_sem != SEM_FAILED);
-	assert(sem_unlink(name) == 0);
-	nutscan_semaphore_set(global_sem);
-#  endif
+	/* The CLI reconfigures after library initialisation; exercise both
+	 * success-to-failure and failure-to-success transitions. */
+	fail_global_init = 0;
+	nutscan_semaphore_init();
+	fail_global_init = synchronous;
+	nutscan_semaphore_init();
+	assert((nutscan_semaphore() == NULL) == synchronous);
+	nutscan_semaphore_init();
+	assert((nutscan_semaphore() == NULL) == synchronous);
 # endif
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+	nut_scanner_thread_mutex_init();
+	assert(mutex_ready);
+# elif defined HAVE_PTHREAD_TRYJOIN
 	assert(pthread_mutex_init(&threadcount_mutex, NULL) == 0);
 # endif
 	scan(limit);
 	assert(allocations == 0);
 	assert(auth_allocations == 0);
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
-	check_capacity(global_sem, 2);
+	if (global_sem != NULL) {
+		check_capacity(global_sem, 2);
+	}
 	assert(protocol_sem == NULL);
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-	assert(sem_destroy(global_sem) == 0);
-#  else
-	assert(sem_close(global_sem) == 0);
-	nutscan_semaphore_set(NULL);
-#  endif
+	nutscan_semaphore_free();
+	nutscan_semaphore_free();
+	fail_global_init = 0;
+	nutscan_semaphore_init();
+	assert(nutscan_semaphore() != NULL);
+	nutscan_semaphore_free();
 	global_sem = NULL;
 # endif
 	assert(curr_threads == 0);
-	if (failure == 1 || failure == 2 || failure == 8 || failure == 9) {
+	if (synchronous) {
+		assert(create_calls == 0);
+		assert(completed == (failure == 13 ? 0 : (NUTSCAN_TEST_PROTOCOL == 5 ? 15 : 5)));
+	} else if (failure == 1 || failure == 2 || failure == 8 || failure == 9) {
 		assert(completed == 0);
 	} else if (failure == 3) {
 		assert(completed == 1);
@@ -618,11 +774,49 @@ static void scenario(unsigned int limit, int failure)
 	} else {
 		assert(completed == 5 && create_calls == 5);
 	}
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+	nut_scanner_thread_mutex_free();
+	assert(!mutex_ready);
+# elif defined HAVE_PTHREAD_TRYJOIN
 	assert(pthread_mutex_destroy(&threadcount_mutex) == 0);
 # endif
 	printf("protocol=%d limit=%u failure=%d: PASS\n", NUTSCAN_TEST_PROTOCOL, limit, failure);
 }
+
+# if NUTSCAN_TEST_PROTOCOL == 3 && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+static void mutex_lifecycle(void)
+{
+	assert(mutex_init_calls == 0 && mutex_destroy_calls == 0);
+	fail_mutex_init = 1;
+	fail_global_init = 1;
+	nutscan_semaphore_init();
+	nut_scanner_thread_mutex_init();
+	assert(!mutex_ready && mutex_init_calls == 1);
+	/* pthread APIs return their error code without setting errno. */
+	errno = EINVAL;
+	assert(nut_scanner_semaphore_acquire(NULL, NULL, 0, 1) == -1);
+	assert(errno == ENOMEM);
+	synchronous = 1;
+	scan(0);
+	assert(create_calls == 0 && completed == 0);
+	assert(allocations == 0 && auth_allocations == 0);
+	nut_scanner_thread_mutex_free();
+	nutscan_semaphore_free();
+	assert(mutex_destroy_calls == 0);
+	fail_mutex_init = 0;
+	fail_global_init = 0;
+	nut_scanner_thread_mutex_init();
+	nut_scanner_thread_mutex_init();
+	assert(mutex_ready && mutex_init_calls == 2);
+	nut_scanner_thread_mutex_free();
+	nut_scanner_thread_mutex_free();
+	assert(!mutex_ready && mutex_destroy_calls == 1);
+	nut_scanner_thread_mutex_init();
+	nut_scanner_thread_mutex_free();
+	assert(!mutex_ready && mutex_init_calls == 3 && mutex_destroy_calls == 2);
+	puts("fallback mutex lifecycle: PASS");
+}
+# endif
 #endif /* HAVE_PTHREAD */
 
 int main(int argc, char **argv)
@@ -645,13 +839,16 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
+# if NUTSCAN_TEST_PROTOCOL == 3 && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+	mutex_lifecycle();
+# endif
 	for (repeat = 0; repeat < 2; repeat++) {
 		for (i = 0; i < sizeof(limits) / sizeof(limits[0]); i++) {
-			for (failure = 0; failure < 12; failure++) {
+			for (failure = 0; failure < 14; failure++) {
 # if NUTSCAN_TEST_PROTOCOL == 5
 				/* Serial has no allocated worker argument or protocol limit. */
 				if (i > 0 || failure == 1 || failure == 6
-				|| failure == 9 || failure == 11
+				|| failure == 9 || failure == 11 || failure == 13
 				) {
 					continue;
 				}
@@ -668,6 +865,20 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+# if NUTSCAN_TEST_PROTOCOL == 3 && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+	{
+		pthread_t first, second;
+
+		nut_scanner_thread_mutex_init();
+		assert(pthread_create(&first, NULL, concurrent_fallback, NULL) == 0);
+		assert(pthread_create(&second, NULL, concurrent_fallback, NULL) == 0);
+		assert(pthread_join(first, NULL) == 0);
+		assert(pthread_join(second, NULL) == 0);
+		nut_scanner_thread_mutex_free();
+		assert(!mutex_ready);
+		puts("shared fallback concurrency: PASS");
+	}
+# endif
 # ifdef WIN32
 	assert(WSACleanup() == 0);
 # endif

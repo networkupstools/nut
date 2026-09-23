@@ -52,8 +52,40 @@ int nut_scanner_thread_create(nutscan_thread_t **array, size_t *count,
 }
 
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+/* Reuse the counter mutex: counter admission is disabled in semaphore builds.
+ * Like semaphore setup, call these only outside active scans.
+ */
+static int thread_mutex_error = EINVAL;
+
+void nut_scanner_thread_mutex_init(void)
+{
+	if (thread_mutex_error != 0) {
+		thread_mutex_error = pthread_mutex_init(&threadcount_mutex, NULL);
+		if (thread_mutex_error != 0) {
+			upsdebugx(0, "%s: Fallback mutex initialisation failed (%i)", __func__, thread_mutex_error);
+		}
+	}
+}
+
+void nut_scanner_thread_mutex_free(void)
+{
+	if (thread_mutex_error == 0) {
+		int ret = pthread_mutex_destroy(&threadcount_mutex);
+
+		if (ret == 0) {
+			thread_mutex_error = EINVAL;
+		} else {
+			upsdebugx(0, "%s: Fallback mutex cleanup failed (%i)", __func__, ret);
+		}
+	}
+}
+
 void nut_scanner_semaphore_release(sem_t *global, sem_t *protocol, size_t limit)
 {
+	if (global == NULL) {
+		pthread_mutex_unlock(&threadcount_mutex);
+		return;
+	}
 	sem_post(global);
 	if (limit > 0) {
 		sem_post(protocol);
@@ -68,6 +100,19 @@ int nut_scanner_semaphore_acquire(sem_t *global, sem_t *protocol,
 	size_t limit, int wait)
 {
 	int	ret;
+
+	if (global == NULL) {
+		ret = thread_mutex_error;
+		if (ret == 0) {
+			ret = pthread_mutex_lock(&threadcount_mutex);
+		}
+		if (ret != 0) {
+			upsdebugx(0, "%s: Fallback admission failed (%i); scan incomplete", __func__, ret);
+			errno = ret;
+			return -1;
+		}
+		return 1;
+	}
 
 	if (limit > 0) {
 		do {

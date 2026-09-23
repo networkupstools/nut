@@ -1344,6 +1344,13 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+			if (semaphore == NULL) {
+				/* Already serial: no other SNMP worker can release descriptors. */
+				report_snmp_open_failure((char *)try_SysOID_thready(tmp_sec));
+				nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+			} else
+# endif
 			{
 				int ret = nut_scanner_thread_create(&thread_array, &thread_count,
 					try_SysOID_thready, (void *)tmp_sec);
@@ -1359,10 +1366,10 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(
 					}
 				}
 			}
-#else   /* if not HAVE_PTHREAD */
+#else /* !HAVE_PTHREAD */
 			/* Already serial: no other SNMP worker can release descriptors. */
 			report_snmp_open_failure((char *)try_SysOID_thready(tmp_sec));
-#endif  /* if HAVE_PTHREAD */
+#endif /* HAVE_PTHREAD */
 
 			/* Prepare the next iteration. The worker owns tmp_sec and
 			 * its peername (ip_str, NOT strdup), returning the latter

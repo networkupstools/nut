@@ -963,6 +963,12 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 				tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+				if (semaphore == NULL) {
+					nutscan_scan_ipmi_device_thready(tmp_sec);
+					nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+				} else
+# endif
 				{
 					int ret = nut_scanner_thread_create(&thread_array, &thread_count,
 						nutscan_scan_ipmi_device_thready, (void *)tmp_sec);
@@ -978,9 +984,9 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 						}
 					}
 				}
-#else	/* if not HAVE_PTHREAD */
+#else /* !HAVE_PTHREAD */
 				nutscan_scan_ipmi_device_thready(tmp_sec);
-#endif	/* if HAVE_PTHREAD */
+#endif /* HAVE_PTHREAD */
 
 				/* Prepare the next iteration; note that
 				 * nutscan_scan_ipmi_device_thready()
