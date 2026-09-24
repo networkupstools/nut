@@ -6,6 +6,7 @@ NAME
 
 libnutclient_misc, nutclient_authenticate, nutclient_logout,
 nutclient_device_login, nutclient_get_device_num_logins,
+nutclient_detach, nutclient_device_attach, nutclient_get_device_num_attach,
 nutclient_device_master, nutclient_device_forced_shutdown -
 Miscellaneous functions in Network UPS Tools high-level client access library
 
@@ -22,10 +23,13 @@ SYNOPSIS
 		const char* login, const char* passwd);
 
 	void nutclient_logout(NUTCLIENT_t client);
+	void nutclient_detach(NUTCLIENT_t client);
 
 	void nutclient_device_login(NUTCLIENT_t client, const char* dev);
+	void nutclient_device_attach(NUTCLIENT_t client, const char* dev);
 
 	int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
+	int nutclient_get_device_num_attach(NUTCLIENT_t client, const char* dev);
 
 	void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
 	/* OBSOLETED name: */
@@ -36,6 +40,17 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
+Since NUT 2.8.6, `nutclient_detach()`, `nutclient_device_attach()` and
+`nutclient_get_device_num_attach()` are the preferred names for the legacy
+logout, login and count functions. Both sets of names use the RFC 9271
+commands with fallback for older servers. A detach closes the connection.
+
+The C++ API provides corresponding `Client::detach()`,
+`Client::deviceAttach()`, `Client::deviceGetNumAttach()`, `Device::attach()`
+and `Device::getNumAttach()` aliases. These forward through the existing
+methods, so subclasses implementing the legacy virtual API remain supported.
+
 
 * The *nutclient_authenticate()* function authenticates the user.
 

@@ -163,9 +163,102 @@ if HAVE_UNITTEST:
             listener.close()
 
 
+
+if HAVE_UNITTEST:
+  class AttachmentTest(unittest.TestCase):
+    def client(self, replies):
+        client = PyNUT.PyNUTClient(connect_now=False)
+        client.GetUPSNames = lambda: ["dummy"]
+        sock = DisconnectSocket()
+        answers = list(replies)
+        def receive(size):
+            answer = answers.pop(0)
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+        sock.recv = receive
+        client._PyNUTClient__srv_handler = sock
+        return client, sock
+
+    def test_attach_and_legacy_api(self):
+        for method in ("DeviceAttach", "DeviceLogin"):
+            for fallback in (False, True):
+                replies = [b"OK\n", b"OK Goodbye\n"]
+                expected = [b"ATTACH dummy\n"]
+                if fallback:
+                    replies.insert(0, b"ERR UNKNOWN-COMMAND\n")
+                    expected.append(b"LOGIN dummy\n")
+                client, sock = self.client(replies)
+                self.assertEqual(getattr(client, method)("dummy"), "OK")
+                self.assertEqual(sock.events, expected)
+                client.Detach()
+                self.assertEqual(sock.events[-2:], [b"DETACH\n", "close"])
+
+    def test_attach_does_not_retry_errors_or_lost_replies(self):
+        for reply in (b"ERR ACCESS-DENIED\n", b"ERR ALREADY-ATTACHED\n",
+                      b"ERR UNKNOWN-COMMAND trailing\n", b"nonsense\n",
+                      socket.timeout("lost reply"), b""):
+            client, sock = self.client([reply])
+            self.assertRaises(Exception, client.DeviceAttach, "dummy")
+            self.assertEqual(sock.events, [b"ATTACH dummy\n"])
+            client.disconnect()
+
+    def test_detach_and_legacy_fallback(self):
+        for fallback in (False, True):
+            replies = [b"OK Goodbye\n"]
+            expected = [b"DETACH\n", "close"]
+            if fallback:
+                replies.insert(0, b"ERR UNKNOWN-COMMAND\n")
+                expected.insert(1, b"LOGOUT\n")
+            client, sock = self.client(replies)
+            client.Detach()
+            self.assertEqual(sock.events, expected)
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+            client.disconnect()
+            self.assertEqual(sock.events, expected)
+
+    def test_detach_errors_close_without_retry(self):
+        for reply in (b"ERR ACCESS-DENIED\n", b"ERR UNKNOWN-COMMAND trailing\n",
+                      b"nonsense\n", b"OKAY\n", socket.timeout("lost reply"), b""):
+            client, sock = self.client([reply])
+            self.assertRaises(Exception, client.Detach)
+            self.assertEqual(sock.events, [b"DETACH\n", "close"])
+            self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_detach_send_and_close_failure(self):
+        client, sock = self.client([])
+        sock.send_error = True
+        sock.close_error = True
+        self.assertRaises(socket.error, client.Detach)
+        self.assertEqual(sock.events, [b"DETACH\n", "close"])
+        self.assertEqual(client._PyNUTClient__srv_handler, None)
+
+    def test_count_and_legacy_api(self):
+        for method in ("GetDeviceNumAttach", "GetDeviceNumLogins"):
+            for unsupported in (None, b"ERR INVALID-ARGUMENT\n", b"ERR UNKNOWN-COMMAND\n"):
+                replies = [b"NUMATTACH dummy 2\n"]
+                expected = [b"GET NUMATTACH dummy\n"]
+                if unsupported:
+                    replies = [unsupported, b"NUMLOGINS dummy 2\n"]
+                    expected.append(b"GET NUMLOGINS dummy\n")
+                client, sock = self.client(replies)
+                self.assertEqual(getattr(client, method)("dummy"), 2)
+                self.assertEqual(sock.events, expected)
+                client.disconnect()
+
+    def test_count_errors_do_not_retry(self):
+        for reply in (b"ERR ACCESS-DENIED\n", b"ERR UNKNOWN-UPS\n", b"ERR DATA-STALE\n"):
+            client, sock = self.client([reply])
+            self.assertRaises(PyNUT.PyNUTError, client.GetDeviceNumAttach, "dummy")
+            self.assertEqual(sock.events, [b"GET NUMATTACH dummy\n"])
+            client.disconnect()
+
+
 def testsuite_disconnect():
     if HAVE_UNITTEST:
-        suite = unittest.TestLoader().loadTestsFromTestCase(DisconnectTest)
+        suite = unittest.TestSuite([
+            unittest.TestLoader().loadTestsFromTestCase(DisconnectTest),
+            unittest.TestLoader().loadTestsFromTestCase(AttachmentTest)])
         return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
     else:
         print("SKIP: testsuite_disconnect(): module unittest is not available")

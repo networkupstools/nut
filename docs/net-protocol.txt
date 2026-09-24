@@ -122,20 +122,20 @@ Retrieve a single response from the server.
 Possible sub-commands:
 
 
-NUMLOGINS
-~~~~~~~~~
+NUMATTACH (since NUT 2.8.6) or NUMLOGINS (deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Form:
 
-	GET NUMLOGINS <upsname>
-	GET NUMLOGINS su700
+	GET NUMATTACH <upsname>
+	GET NUMATTACH su700
 
 Response:
 
-	NUMLOGINS <upsname> <value>
-	NUMLOGINS su700 1
+	NUMATTACH <upsname> <value>
+	NUMATTACH su700 1
 
-'<value>' is the number of clients which have done LOGIN for this UPS.
+'<value>' is the number of clients which have done ATTACH or LOGIN for this UPS.
 This is used by the upsmon in primary mode to determine how many clients are
 still connected when starting the shutdown process.
 
@@ -143,6 +143,10 @@ This replaces the old "REQ NUMLOGINS" command.
 
 See also `LIST CLIENT <upsname>` to get the actual list of connected clients.
 
+
+The legacy `GET NUMLOGINS` request remains supported and returns a
+`NUMLOGINS` response. Clients can fall back to it if an older server rejects
+`GET NUMATTACH` with `ERR INVALID-ARGUMENT` or `ERR UNKNOWN-COMMAND`.
 
 UPSDESC
 ~~~~~~~
@@ -463,7 +467,7 @@ Response:
 	END LIST CLIENT ups1
 
 
-See also `GET NUMLOGINS <upsname>` to get just the count of connected clients.
+See also `GET NUMATTACH <upsname>` to get just the count of connected clients.
 
 SET
 ---
@@ -518,27 +522,30 @@ Response:
 	ERR <message> [<extra>...] (see Error responses)
 
 
-LOGOUT
-------
+DETACH (since NUT 2.8.6) or LOGOUT (deprecated)
+----------------------------------------------
 
 Form:
 
-	LOGOUT
+	DETACH
 
 Response:
 
 	OK Goodbye	(recent versions)
 	Goodbye...	(older versions)
 
-Used to disconnect gracefully from the server.
+Used to disconnect gracefully from the server. This closes the entire
+connection, releases its attachment and discards its credentials; it does
+not detach a device while leaving the session open. `LOGOUT` remains an
+alias with the same response. Closing the socket also releases an attachment.
 
 
-LOGIN
------
+ATTACH (since NUT 2.8.6) or LOGIN (deprecated)
+---------------------------------------------
 
 Form:
 
-	LOGIN <upsname>
+	ATTACH <upsname>
 
 Response:
 
@@ -548,7 +555,20 @@ or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon secondary" or "upsmon primary" in upsd.users
 
-Use this to log the fact that a system is drawing power from this UPS.
+Use this to record that a system is drawing power from this UPS. The legacy
+`LOGIN` spelling remains supported. There is one attachment per connection.
+A duplicate `ATTACH` returns `ERR ALREADY-ATTACHED`; a duplicate `LOGIN`
+returns `ERR ALREADY-LOGGED-IN`, regardless of the spelling used originally.
+
+Clients should prefer `ATTACH` and `DETACH`, retrying their legacy spelling
+only after `ERR UNKNOWN-COMMAND`. An authentication error or lost reply must
+not trigger an attachment retry: the first request may already have succeeded.
+`HELP` advertises the preferred spellings only.
+
+Best-effort implicit cleanup in `upscli_disconnect()` and PyNUT
+`disconnect()` retains `LOGOUT` so older servers can tear down promptly
+without the client waiting for a complete unsupported-command reply.
+
 The upsmon primary will wait until the count of attached systems reaches
 1 -- itself.  This allows the secondaries to shut down first.
 
@@ -791,10 +811,11 @@ This generally means that the driver is running, but it has lost
 communications with the hardware.  Check the physical connection
 to the equipment.
 
-- 'ALREADY-LOGGED-IN'
+- 'ALREADY-ATTACHED' (since NUT 2.8.6) or 'ALREADY-LOGGED-IN'
 +
-The client already sent LOGIN for a UPS and can't do it again.
-There is presently a limit of one LOGIN record per connection.
+The connection is already attached to a UPS. There is presently a limit
+of one attachment per connection. A repeated ATTACH returns ALREADY-ATTACHED;
+a repeated legacy LOGIN returns ALREADY-LOGGED-IN.
 
 - 'INVALID-PASSWORD'
 +

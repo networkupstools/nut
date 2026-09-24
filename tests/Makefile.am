@@ -279,6 +279,13 @@ CPPCLIENTTESTSRC = cpputest-client.cpp
 TESTS_CXX11 = cppunittest
 
 if HAVE_CXX11
+check_PROGRAMS += attachment-client
+attachment_client_SOURCES = attachment-client.cpp
+attachment_client_LDADD = $(top_builddir)/clients/libnutclient.la $(top_builddir)/clients/libupsclient.la
+if WITH_SSL_CXX
+attachment_client_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL_CXX
+
 if HAVE_CPPUNIT
 # Note: per configure script this "SHOULD" also assume
 # that we HAVE_CXX11 - but better have it explicit
