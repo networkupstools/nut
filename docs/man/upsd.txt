@@ -105,6 +105,13 @@ may also work.
 ======
 
 If you think that `upsd` can't reload, check your syslog for error messages.
+If configuration files cannot be opened because too many files are open,
+`upsd` tries closing client connections, starting with the least recently
+active client. On POSIX systems, it can then close driver connections if
+no clients remain. Driver processes keep running; `upsd` reconnects after
+the reload and requests fresh data. Data from an affected UPS is unavailable
+while disconnected, and its `ups.status` initially reports `WAIT` on reconnection.
+
 If it's complaining about not being able to read the files, then you need
 to adjust your system to make it possible.  Either change the permissions
 on the files, or run `upsd` as another user that will be able to read them,
