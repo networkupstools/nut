@@ -1,0 +1,93 @@
+NUT telemetry with Beszel
+=========================
+
+https://beszel.dev/[Beszel] is a self-hosted monitoring application. Its
+agent can collect UPS and PDU telemetry from a NUT server and send it to a
+Beszel hub. This is an optional integration: NUT does not install, configure,
+or manage Beszel.
+
+The collector uses `upsc -j`, so it requires NUT 2.8.5 or newer. It also
+requires a Beszel agent release which includes NUT monitoring support; see
+https://github.com/henrygd/beszel/pull/2404[Beszel PR #2404] for its current
+status and installation instructions.
+
+Prerequisites
+-------------
+
+Before configuring Beszel, configure and test NUT normally for the local
+platform and UPS. In particular, start the driver and `upsd`, then verify the
+data which Beszel will consume:
+
+----
+upsc -l
+upsc -j <upsname>@localhost
+----
+
+The JSON query must succeed. Beszel supports the usual local or remote NUT
+server arrangements; set `NUT_SERVER` below to the server name used with
+`upsc`.
+
+If another daemon already owns the UPS, do not attach a NUT USB driver to the
+same device. For example, an existing apcupsd deployment can be exposed to
+NUT with the read-only link:../../docs/man/apcupsd-ups.txt[apcupsd-ups] driver:
+
+----
+[apc]
+    driver = apcupsd-ups
+    port = 127.0.0.1:3551
+----
+
+Configure and verify that bridge as NUT before enabling Beszel. The
+`apcupsd-ups` driver does not provide UPS control operations.
+
+Agent configuration
+-------------------
+
+Install the compatible Beszel agent using Beszel's documented, version-pinned
+installer. Do not use an unverified downloaded binary. Create a systemd drop-in
+for the service supplied by that installer, for example
+`/etc/systemd/system/beszel-agent.service.d/nut.conf`:
+
+----
+[Unit]
+After=nut-server.service
+Wants=nut-server.service
+
+[Service]
+Environment="NUT_SERVER=localhost"
+Environment="NUT_INTERVAL=60s"
+----
+
+`NUT_INTERVAL` is a Go duration, not a plain number. `NUT_DEVICES` may be set
+to a comma-separated list of UPS names when discovery is not wanted:
+
+----
+Environment="NUT_DEVICES=apc,second-ups"
+----
+
+For an `upsd` which requires authentication for variable reads, create a
+mode-0600 NUT `nutauth.conf` file for the account which runs the Beszel agent,
+and point the agent at it:
+
+----
+Environment="NUT_AUTHCONF_FILE=/etc/nut/nutauth.conf"
+----
+
+This file is passed to `upsc -A`; it uses the `nutauth.conf` syntax, not the
+`upscmd.conf` syntax. See link:../../docs/man/nutauth.conf.txt[nutauth.conf]
+for the format and link:../../docs/man/upsd.users.txt[upsd.users] for server
+access controls.
+
+Reload the service manager and restart only the Beszel agent after testing its
+NUT query:
+
+----
+systemctl daemon-reload
+systemctl restart beszel-agent
+journalctl -u beszel-agent -e
+----
+
+The NUT services and their platform-specific package configuration remain the
+operator's responsibility. On Debian-derived systems, in particular, set an
+appropriate mode in `/etc/nut/nut.conf` and use the distribution's `nut-server`
+and `nut-monitor` services as applicable.

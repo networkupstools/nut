@@ -22,4 +22,5 @@ over time by the NUT Team, side projects and/or general community members
 - Windows build helpers and information,
 - software-driven USB reset suggestions and helpers (for stuck devices),
 - `logrotate` integration,
+- optional Beszel monitoring integration guidance,
 - and many others.

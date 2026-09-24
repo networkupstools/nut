@@ -2,6 +2,7 @@
 
 EXTRA_DIST = \
     README.adoc \
+    beszel/README.adoc \
     avahi/nut.service.in \
     HP-UX/nut-drvctl \
     HP-UX/nut-drvctl.sh \
@@ -34,7 +35,7 @@ EXTRA_DIST = \
 
 SUBDIRS = augeas devd hotplug installer obs python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
+SPELLCHECK_SRC = README.adoc beszel/README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
@@ -56,7 +57,7 @@ SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrin
 spellcheck spellcheck-interactive spellcheck-sortdict: @dotMAKE@
 	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
+CLEANFILES = *-spellchecked beszel/*-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
 
 DISTCLEANFILES = misc/nut.bash_completion
 
