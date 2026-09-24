@@ -669,7 +669,7 @@ https://github.com/networkupstools/nut/milestone/13
       the oldest client connection and retry. On POSIX systems, also try
       closing driver connections once no clients remain; the normal main
       loop reconnects them and requests fresh data after the reload. Stop
-      retrying when no connection can be reclaimed. [issue #3365]
+      retrying when no connection can be reclaimed. [issue #3365, PR #3706]
     * If the `MAXCONN` requested in the configuration file exceeds the OS
       allowance on open file descriptors, fail early since the requested
       configuration can not be guaranteed and can mis-fire unexpectedly
