@@ -4818,6 +4818,32 @@ testgroup_sandbox_parseconf() {
     sandbox_forget_configs
 }
 
+testcase_sandbox_attachment() {
+    if ! isTestablePython || [ -z "${PYTHON}" ] \
+    || ! $PYTHON -c 'import subprocess; assert hasattr(subprocess, "run")' >/dev/null 2>&1 \
+    || [ ! -x "${TOP_BUILDDIR}/tests/attachment-client${EXEEXT}" ]; then
+        log_warn "[testcase_sandbox_attachment] SKIPPED: Python 3.5+ and attachment-client are required"
+        SKIPPED="`expr $SKIPPED + 1`"
+        SKIPPED_FUNCS="$SKIPPED_FUNCS testcase_sandbox_attachment"
+        return
+    fi
+    if $PYTHON "${TOP_SRCDIR}/tests/NIT/attachment-test.py" \
+        "${TOP_BUILDDIR}/tests/attachment-client${EXEEXT}" "$NUT_PORT" \
+        dummy-admin "${TESTPASS_UPSMON_PRIMARY}"; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_attachment] PASSED"
+    else
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_attachment"
+        log_error "[testcase_sandbox_attachment] FAILED"
+    fi
+}
+
+testgroup_sandbox_attachment() {
+    testcase_sandbox_start_drivers_after_upsd
+    testcase_sandbox_attachment
+}
+
 testgroup_sandbox_perl() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
@@ -4945,6 +4971,7 @@ case "${NIT_CASE}" in
         testgroup_upsd_questionable_configs
         testgroup_sandbox
         testgroup_sandbox_parseconf
+        testgroup_sandbox_attachment
         ;;
     *)  die "Unsupported NIT_CASE='$NIT_CASE' was requested" ;;
 esac

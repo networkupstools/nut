@@ -27,8 +27,9 @@
 
 #include "netuser.h"
 
-/* LOGIN <ups> */
-void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
+/* ATTACH and its legacy LOGIN alias share the same accounting. */
+static void do_net_attach(nut_ctype_t *client, size_t numarg, const char **arg,
+	const char *already_attached)
 {
 	upstype_t	*ups;
 
@@ -39,7 +40,7 @@ void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
 
 	if (client->loginups != NULL) {
 		upslogx(LOG_INFO, "Client %s@%s tried to login twice", client->username, client->addr);
-		send_err(client, NUT_ERR_ALREADY_LOGGED_IN);
+		send_err(client, already_attached);
 		return;
 	}
 
@@ -65,6 +66,16 @@ void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
 	upslogx(LOG_INFO, "User %s@%s logged into UPS [%s]%s", client->username, client->addr,
 		client->loginups, client->ssl ? " (SSL)" : "");
 	sendback(client, "OK\n");
+}
+
+void net_attach(nut_ctype_t *client, size_t numarg, const char **arg)
+{
+	do_net_attach(client, numarg, arg, NUT_ERR_ALREADY_ATTACHED);
+}
+
+void net_login(nut_ctype_t *client, size_t numarg, const char **arg)
+{
+	do_net_attach(client, numarg, arg, NUT_ERR_ALREADY_LOGGED_IN);
 }
 
 void net_logout(nut_ctype_t *client, size_t numarg, const char **arg)

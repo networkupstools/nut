@@ -4250,7 +4250,11 @@ void TcpClient::authenticate(const AuthConf& ac)
 
 void TcpClient::logout()
 {
-	detectError(sendQuery("LOGOUT"));
+	std::string reply = sendQuery("DETACH");
+	if (reply == "ERR UNKNOWN-COMMAND") {
+		reply = sendQuery("LOGOUT");
+	}
+	detectError(reply);
 	_socket->disconnect();
 }
 
@@ -4493,7 +4497,11 @@ void TcpClient::deviceLogin(const std::string& dev)
 {
 	/* Requires that current session is already logged in with
 	 * an account which has one of "upsmon" roles in `upsd.users` */
-	detectError(sendQuery("LOGIN " + dev));
+	std::string reply = sendQuery("ATTACH " + dev);
+	if (reply == "ERR UNKNOWN-COMMAND") {
+		reply = sendQuery("LOGIN " + dev);
+	}
+	detectError(reply);
 }
 
 /* NOTE: "master" is deprecated since NUT v2.8.0 in favor of "primary".
@@ -4536,8 +4544,16 @@ void TcpClient::deviceForcedShutdown(const std::string& dev)
 
 int TcpClient::deviceGetNumLogins(const std::string& dev)
 {
-	std::string num = get("NUMLOGINS", dev)[0];
-	return atoi(num.c_str());
+	std::vector<std::string> reply;
+	try {
+		reply = get("NUMATTACH", dev);
+	} catch (NutException &ex) {
+		if (ex.str() != "INVALID-ARGUMENT" && ex.str() != "UNKNOWN-COMMAND") {
+			throw;
+		}
+		reply = get("NUMLOGINS", dev);
+	}
+	return atoi(reply[0].c_str());
 }
 
 TrackingResult TcpClient::getTrackingResult(const TrackingID& id)
@@ -5907,6 +5923,21 @@ void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* p
 			catch(...){}
 		}
 	}
+}
+
+void nutclient_detach(NUTCLIENT_t client)
+{
+	nutclient_logout(client);
+}
+
+void nutclient_device_attach(NUTCLIENT_t client, const char* dev)
+{
+	nutclient_device_login(client, dev);
+}
+
+int nutclient_get_device_num_attach(NUTCLIENT_t client, const char* dev)
+{
+	return nutclient_get_device_num_logins(client, dev);
 }
 
 void nutclient_logout(NUTCLIENT_t client)
