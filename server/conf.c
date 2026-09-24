@@ -419,6 +419,38 @@ static void upsd_conf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf (upsd.conf): %s", errmsg);
 }
 
+/* Reclaim one connection before retrying a configuration file open. */
+static int close_reload_connection(void)
+{
+#ifndef WIN32
+	upstype_t	*ups, *oldest = NULL;
+#endif
+
+	if (close_oldest_client()) {
+		return 1;
+	}
+
+#ifndef WIN32
+	/* UNIX driver sockets share the file descriptor pool with fopen().
+	 * Windows named pipes use native handles, not CRT file descriptors.
+	 */
+	for (ups = firstups; ups; ups = ups->next) {
+		if (VALID_FD(ups->sock_fd)
+		&& (!oldest || ups->last_heard < oldest->last_heard)
+		) {
+			oldest = ups;
+		}
+	}
+
+	if (oldest) {
+		upslogx(LOG_INFO, "Closing oldest driver connection for UPS [%s] to free up file descriptors", oldest->name);
+		sstate_disconnect(oldest);
+		return 1;
+	}
+#endif
+	return 0;
+}
+
 void load_upsdconf(int reloading)
 {
 	char	fn[NUT_PATH_MAX];
@@ -433,7 +465,7 @@ void load_upsdconf(int reloading)
 
 retry:
 	if (!pconf_file_begin(&ctx, fn)) {
-		if (errno == EMFILE && reloading == 2 && close_oldest_client()) {
+		if (errno == EMFILE && reloading == 2 && close_reload_connection()) {
 			goto retry;
 		}
 		pconf_finish(&ctx);
@@ -509,11 +541,18 @@ retry:
 static int load_upsconf(int reloading) {
 	int	ret;
 
+#ifndef WIN32
+retry:
+#endif
 	ret = read_upsconf(0);	/* 0 = do not abort fatally just yet */
 	if (ret == -1) {
-		if (errno == EMFILE && reloading == 2 && close_oldest_client()) {
-			upsdebugx(1, "%s: closed an oldest client connection, try reading config again", __func__);
+		if (errno == EMFILE && reloading == 2 && close_reload_connection()) {
+			upsdebugx(1, "%s: closed a connection, try reading config again", __func__);
+#ifndef WIN32
+			goto retry;
+#else
 			ret = read_upsconf(1);	/* 1 = may abort upon fundamental errors */
+#endif
 		} else {
 			/* Not fatalx(), the method above already reported the problem */
 			exit(EXIT_FAILURE);
@@ -686,7 +725,9 @@ static int check_file(const char *fn)
 {
 	char	chkfn[NUT_PATH_MAX];
 	FILE	*f;
+#ifdef WIN32
 	int	retries = 0;
+#endif
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
 
@@ -694,8 +735,15 @@ retry:
 	f = fopen(chkfn, "r");
 
 	if (!f) {
-		if (errno == EMFILE && retries < 10 && close_oldest_client()) {
+		if (errno == EMFILE
+#ifdef WIN32
+		&& retries < 10
+#endif
+		&& close_reload_connection()
+		) {
+#ifdef WIN32
 			retries++;
+#endif
 			goto retry;
 		}
 		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
@@ -725,11 +773,11 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	load_upsconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
+	load_upsconf(2);		/* 2 = reloading, and may reclaim connections if EMFILE */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */
-	load_upsdconf(2);		/* 2 = reloading, and may retry by closing clients if EMFILE */
+	load_upsdconf(2);		/* 2 = reloading, and may reclaim connections if EMFILE */
 
 	/* now delete all UPS entries that didn't get reloaded */
 

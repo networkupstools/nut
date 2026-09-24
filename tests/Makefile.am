@@ -108,7 +108,7 @@ TESTS += test_upsdconf
 test_upsdconf_SOURCES = test_upsdconf.c
 test_upsdconf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/server
 test_upsdconf_LDADD = $(NUT_LIBCOMMON) $(NETLIBS)
-test_upsdconf_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/server/conf.c $(top_srcdir)/server/sstate.c
+test_upsdconf_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/server/conf.c $(top_srcdir)/server/sstate.c $(top_srcdir)/common/upsconf.c
 if WITH_SSL
 test_upsdconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL

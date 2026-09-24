@@ -666,9 +666,10 @@ https://github.com/networkupstools/nut/milestone/13
       and avoid overflow in the `MAXAGE` grace-second calculation at the
       maximum signed integer value. [issue #676]
     * If we hit "Too many open files" during configuration reload, close
-      the oldest client connection and retry. Stop retrying when no client
-      remains, so a reload cannot loop indefinitely if driver connections
-      consume the available file descriptors. [issue #3365]
+      the oldest client connection and retry. On POSIX systems, also try
+      closing driver connections once no clients remain; the normal main
+      loop reconnects them and requests fresh data after the reload. Stop
+      retrying when no connection can be reclaimed. [issue #3365]
     * If the `MAXCONN` requested in the configuration file exceeds the OS
       allowance on open file descriptors, fail early since the requested
       configuration can not be guaranteed and can mis-fire unexpectedly
