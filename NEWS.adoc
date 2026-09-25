@@ -41,12 +41,6 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - The `LISTEN` directive in `upsd.conf` now accepts `hostname:port`,
-   `IPv4:port` and `[IPv6]:port`, with matching support in `nutconf` and
-   Augeas. IPv6 addresses ending in `::` also accept an appended `:port`,
-   such as `:::3493`. Bare IPv6 addresses and the existing space-separated
-   address and port syntax retain their meaning. [issue #2424, PR #3709]
-
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
       advertised identifiers on Python 3 and uses those identifiers when
@@ -671,6 +665,11 @@ https://github.com/networkupstools/nut/milestone/13
       the previous setting when conversion fails. Preserve public types
       and avoid overflow in the `MAXAGE` grace-second calculation at the
       maximum signed integer value. [issue #676]
+    * The `LISTEN` directive in `upsd.conf` now accepts `hostname:port`,
+      `IPv4:port` and `[IPv6]:port`, with matching support in `nutconf` and
+      Augeas. IPv6 addresses ending in `::` also accept an appended `:port`,
+      such as `:::3493`. Bare IPv6 addresses and the existing space-separated
+      address and port syntax retain their meaning. [issue #2424, PR #3709]
     * If we hit "Too many open files" during configuration reload, close
       the oldest client connection and retry. [issue #3365]
     * If the `MAXCONN` requested in the configuration file exceeds the OS
