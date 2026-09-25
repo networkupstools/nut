@@ -323,6 +323,9 @@ https://github.com/networkupstools/nut/milestone/13
       NUT with battery charge, runtime, input frequency, output current, and
       input transfer low/high values on devices which support it (`H`, `I`, `J`
       protocols, e.g. Powershield PSDR800). [#3521]
+    * Fixed incorrect claim for `innovart33` subdriver [issue #3661] - the
+      original claiming procedure was borrowed from `innovart31` without
+      thorough checking.
 
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
