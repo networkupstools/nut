@@ -93,14 +93,14 @@ command is valid for the DRIVER.  If it's supported, a message is sent
 via a socket to the DRIVER containing the command and any auxiliary
 information.
 
-At this point, there is no confirmation to the SERVER of the command's
-execution.  This is (still) planned for a future release.  This has been
-delayed since returning a response involves some potentially interesting
-timing issues.  Remember that `upsd` services clients in a round-robin
-fashion, so all queries must be lightweight and speedy.
+When supported by the CLIENT, SERVER and DRIVER, and enabled by the
+CLIENT, command tracking lets the DRIVER report its handler result to
+the SERVER.  The CLIENT can query this result with `GET TRACKING`; see
+the <<net-protocol,network protocol reference>>.  A reported handler
+result does not by itself confirm completion of a physical device action.
 
-NOTE: FIXME: Wasn't "TRACKING" mechanism for "INSTCMD/SET VAR" introduced
-to address just this? See https://github.com/networkupstools/nut/pull/659
+Remember that `upsd` SERVER services all of its clients in a round-robin
+fashion, so individual queries must be lightweight and speedy.
 
 Setting variables
 -----------------
@@ -114,12 +114,9 @@ through the socket, much like the instant command design.
 The DRIVER is expected to commit the value to the EQUIPMENT and update
 its internal representation of that variable.
 
-Like the instant commands, there is currently no acknowledgement of the
-command's completion from the DRIVER.  This, too, is planned for a future
-release.
-
-NOTE: FIXME: Wasn't "TRACKING" mechanism for "INSTCMD/SET VAR" introduced
-to address just this? See https://github.com/networkupstools/nut/pull/659
+The same optional tracking mechanism used for instant commands lets the
+DRIVER report its handler result for a `SET` request.  This does not by
+itself confirm that the EQUIPMENT has applied the requested value.
 
 Example data path
 -----------------

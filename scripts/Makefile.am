@@ -6,6 +6,11 @@ EXTRA_DIST = \
     beszel/configure-agent.sh \
     beszel/test-configure-agent.sh \
     avahi/nut.service.in \
+    fuse/README.adoc \
+    fuse/execfuse-nut/getattr \
+    fuse/execfuse-nut/read_file \
+    fuse/execfuse-nut/readdir \
+    fuse/execfuse-nut/init \
     HP-UX/nut-drvctl \
     HP-UX/nut-drvctl.sh \
     HP-UX/nut-upsd \
@@ -37,7 +42,7 @@ EXTRA_DIST = \
 
 SUBDIRS = augeas devd hotplug installer obs python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 
-SPELLCHECK_SRC = README.adoc beszel/README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
+SPELLCHECK_SRC = README.adoc beszel/README.adoc fuse/README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc obs/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

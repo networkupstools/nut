@@ -19,12 +19,12 @@ SYNOPSIS
 
 	const void *upscli_upslog_cookie(void);
 
-	void upscli_set_debug_level(int, const void *cookie);
-	int  upscli_get_debug_level(void);
+	void upscli_upslog_set_debug_level(int, const void *cookie);
+	int  upscli_upslog_get_debug_level(void);
 
-	void upscli_setprocname(const char *full_procname, const void *cookie);
-	void upscli_setproctag(const char *tag, const void *cookie);
-	const char *upscli_getproctag(void);
+	void upscli_upslog_setprocname(const char *full_procname, const void *cookie);
+	void upscli_upslog_setproctag(const char *tag, const void *cookie);
+	const char *upscli_upslog_getproctag(void);
 
 	struct timeval *upscli_upslog_start_sync(struct timeval *tv, const void *cookie);
 ------
@@ -49,9 +49,9 @@ These methods allow to set or retrieve the value of `nut_debug_level`
 setting known by the 'libupsclient' library, regardless of build mode.
 
 The most likely use (at least in NUT programs) is to call
-`upscli_set_debug_level(nut_debug_level);` after changing the
-original variable. Values of the debugging level are zero to disable
-debug, may be negative for a few special cases, and generally are
+`upscli_upslog_set_debug_level(nut_debug_level, nut_common_cookie());`
+after changing the original variable. Values of the debugging level are
+zero to disable debug, may be negative for a few special cases, and generally are
 positive numbers to cut off the more verbose logging attempts;
 otherwise it is up to the code base and NUT style guide practices
 to assign certain levels to some classes of messages.

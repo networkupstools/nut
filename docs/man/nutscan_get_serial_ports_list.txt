@@ -38,8 +38,8 @@ The 'ports_range' may be one of:
 * a list of port names separated with commas:
    `/dev/ttyS0,/dev/ttyS2,/dev/ttyS4` or `COM1,COM3`...
 
-The returned array can be used in a call to *nutscan_scan_eaton_serial*
-to get the serial-port device on a system.
+The *nutscan_scan_eaton_serial()* function accepts the original range
+string and calls this function internally to obtain the array of port names.
 
 RETURN VALUE
 ------------
