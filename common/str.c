@@ -45,6 +45,69 @@
 #include "nut_stdint.h"
 #include "str.h"
 
+/* Split a LISTEN address in place. Bare IPv6 must never lose its last group.
+ * The caller retains ownership of string; outputs point into that buffer.
+ * Only the new inline port syntax is checked here, not address resolution. */
+int str_split_listen(char *string, char **address, char **port)
+{
+	char *colon, *end = NULL, *host = string;
+	unsigned int number;
+
+	if (!string || !*string || !address || !port) {
+		return 0;
+	}
+	*address = *port = NULL;
+	colon = strchr(string, ':');
+	if (*string == '[') {
+		end = strchr(string, ']');
+		if (!end || !colon || colon > end || !strchr(colon + 1, ':')
+		|| strchr(colon + 1, ':') > end
+		|| strchr(string + 1, '[') || strchr(end + 1, ']')
+		) {
+			return 0;
+		}
+		if (!end[1]) {
+			/* Preserve bare brackets for resolvers which already accept them. */
+			*address = string;
+			return 1;
+		}
+		if (end[1] != ':') {
+			return 0;
+		}
+		host++;
+		colon = end + 1;
+	} else if (strchr(string, '[') || strchr(string, ']')) {
+		return 0;
+	} else if (colon) {
+		char *triple = strstr(string, ":::");
+		if (triple) {
+			/* Only an address ending in its sole :: can use this shortcut. */
+			if (strstr(string, "::") != triple) {
+				return 0;
+			}
+			colon = triple + 2;
+		} else if (strchr(colon + 1, ':')) {
+			colon = NULL;
+		}
+	}
+
+	if (colon) {
+		char *p = colon + 1;
+		if (colon == host || !*p || strspn(p, "0123456789") != strlen(p)
+		|| !str_to_uint_strict(p, &number, 10) || number > 65535
+		) {
+			return 0;
+		}
+		if (!end) {
+			end = colon;
+		}
+		*end = '\0';
+		*port = p;
+	}
+	*address = host;
+	return 1;
+}
+
 char	*str_trim(char *string, const char character)
 {
 	return str_rtrim(str_ltrim(string, character), character);
