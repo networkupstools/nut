@@ -3,6 +3,8 @@
 EXTRA_DIST = \
     README.adoc \
     beszel/README.adoc \
+    beszel/configure-agent.sh \
+    beszel/test-configure-agent.sh \
     avahi/nut.service.in \
     HP-UX/nut-drvctl \
     HP-UX/nut-drvctl.sh \

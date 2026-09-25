@@ -7,7 +7,7 @@ Beszel hub. This is an optional integration: NUT does not install, configure,
 or manage Beszel.
 
 The collector uses `upsc -j`, so it requires NUT 2.8.5 or newer. It also
-requires a Beszel agent release which includes NUT monitoring support; see
+requires Beszel hub and agent releases which include NUT monitoring support; see
 https://github.com/henrygd/beszel/pull/2404[Beszel PR #2404] for its current
 status and installation instructions.
 
@@ -44,19 +44,40 @@ Agent configuration
 -------------------
 
 Install the compatible Beszel agent using Beszel's documented, version-pinned
-installer. Do not use an unverified downloaded binary. Create a systemd drop-in
-for the service supplied by that installer, for example
+installer. Do not use an unverified downloaded binary. For a systemd-managed
+agent, the included `configure-agent.sh` checks that the NUT server responds
+with JSON, then prints the proposed service drop-in:
+
+----
+sh scripts/beszel/configure-agent.sh --server localhost --devices apc
+----
+
+When the output is correct, install it and restart the agent with:
+
+----
+sudo sh scripts/beszel/configure-agent.sh --server localhost --devices apc --apply
+----
+
+Omit `--devices` to let the agent discover all UPSes. Use `--interval 60s` to
+change the collection interval; the value must be a positive Go duration with
+an `ms`, `s`, `m` or `h` suffix. The helper does not install packages, configure
+NUT, download Beszel, or replace a pre-existing drop-in with different content.
+It restarts the agent only if that service is already running. Ensure the
+agent's service account can run `upsc` and read data from the NUT server.
+
+The equivalent manual setup is to create a systemd drop-in for the service
+supplied by the Beszel installer, for example
 `/etc/systemd/system/beszel-agent.service.d/nut.conf`:
 
 ----
-[Unit]
-After=nut-server.service
-Wants=nut-server.service
-
 [Service]
 Environment="NUT_SERVER=localhost"
 Environment="NUT_INTERVAL=60s"
 ----
+
+For a local NUT server, add `After=nut-server.service` under a separate
+`[Unit]` heading if startup ordering is needed. Do not add a local NUT service
+dependency when the agent reads from a remote server.
 
 `NUT_INTERVAL` is a Go duration, not a plain number. `NUT_DEVICES` may be set
 to a comma-separated list of UPS names when discovery is not wanted:
@@ -65,18 +86,19 @@ to a comma-separated list of UPS names when discovery is not wanted:
 Environment="NUT_DEVICES=apc,second-ups"
 ----
 
-For an `upsd` which requires authentication for variable reads, create a
-mode-0600 NUT `nutauth.conf` file for the account which runs the Beszel agent,
-and point the agent at it:
+Ordinary read-only NUT queries do not require credentials. If a newer `upsc`
+with `-A` support is available and connection or TLS settings are needed,
+create a mode-0600 NUT `nutauth.conf` file for the account which runs the
+Beszel agent, and point the agent at it manually:
 
 ----
 Environment="NUT_AUTHCONF_FILE=/etc/nut/nutauth.conf"
 ----
 
-This file is passed to `upsc -A`; it uses the `nutauth.conf` syntax, not the
-`upscmd.conf` syntax. See link:../../docs/man/nutauth.conf.txt[nutauth.conf]
-for the format and link:../../docs/man/upsd.users.txt[upsd.users] for server
-access controls.
+This file is passed to `upsc -A`, which is not supported by NUT 2.8.5's
+`upsc`; it uses the `nutauth.conf` syntax, not the `upscmd.conf` syntax. See
+link:../../docs/man/nutauth.conf.txt[nutauth.conf] for the format and
+link:../../docs/man/upsd.users.txt[upsd.users] for server access controls.
 
 Reload the service manager and restart only the Beszel agent after testing its
 NUT query:
