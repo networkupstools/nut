@@ -173,6 +173,21 @@ https://github.com/networkupstools/nut/milestone/13
       same usage `ups.beeper.status` reads, not a temporary mute/re-arm
       action.
 
+ - Contributed `apcmicrolink` driver fixes from a Smart-UPS X 1500
+   (SMX1500RM2UC, firmware "UPS 16.0") on the USB transport
+   [issue #3587, PR #3714]:
+    * The calibration result register (descriptor `2:13`) no longer
+      leaks its labels into `ups.status`: a unit whose last runtime
+      calibration had ended "Failed" reported `OL Failed` permanently.
+      Only a calibration in progress is published there now, as `CAL`.
+    * USB mode: the zero padding that follows each Microlink record in
+      a fixed-size HID Input report is no longer fed to the byte-stream
+      frame scanner. Leading zeros are invisible to the Microlink
+      checksum, so a record ending in `0xFF` also validated one byte
+      early, was taken for a (rejected) page 0, and was lost for that
+      poll pass; on the test unit this happened two to three times a
+      minute.
+
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
     * Decode `RunTimeCalibrationStatus_BF` into
