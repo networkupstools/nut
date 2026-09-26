@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3882 utf-8
 AAC
 AAS
 ABI
@@ -215,6 +215,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -1882,6 +1883,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -2223,6 +2225,7 @@ executeCommand
 execve
 expandsize
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2953,6 +2956,7 @@ nutvalue
 nvi
 nvo
 nwfilter
+obload
 odette
 offdelay
 offsite

@@ -37,6 +37,22 @@ the Easy Pro "GT" series) speak the same protocol but may report a model
 id that collides with a table entry, so the driver can pick the wrong VA
 rating. Use the *va* option below to set the correct rating in that case.
 
+Also validated end-to-end, including a full discharge and recharge used to
+calibrate the runtime model below, against a Ragtech New Easy Pro 3200 VA
+(part number 20NEP4061, CbU/Ti: automatic 115/127/220 V input, 115 V
+output, internal 2x 12 V 9 Ah bank, quick connector for external battery
+modules, firmware 1.0). This unit reports model id 18 and is therefore
+identified as an `Easy 2200 TI`; set `va = 3200` so that
+`ups.power.nominal` (3200), `ups.realpower.nominal` (2240) and `ups.load`
+are correct. The 2200 TI output current scaling matched both the unit's
+front-panel load display and the firmware's own load register (0x8D)
+within one percentage point, so no *iout_calib* override was needed.
+On this unit the firmware raises `LB` at about 21.7 V under load, then
+beeps, shows `A00` on the display and starts a 30 second shutdown
+countdown; the output is cut roughly 60 seconds after `LB`, whatever the
+charge byte (about 30 % at `LB`, 13 % at the countdown) says. Use
+*runtime_low* so that hosts shut down before that point.
+
 This driver is *experimental*. Polling, status decoding and the
 `shutdown.stayoff` / `shutdown.stop` instant commands have been
 verified on hardware; `shutdown.return` and `test.battery.start.deep`
@@ -64,10 +80,47 @@ rating from its model table. Setting *va* to the nameplate rating
 corrects `ups.power.nominal`, `ups.realpower.nominal` (VA times the
 0.7 power factor) and the computed `ups.load`.
 
+*runtimecal*='runtime_high,load_high,runtime_low,load_low';;
+Enable a calculated `battery.runtime` (the firmware reports none). Two
+points of full-bank runtime in seconds at a given `ups.load` in percent,
+with the same meaning as in linkman:nutdrv_qx[8]; the driver fits
+`runtime = k * load^-n` through them. With this set, `battery.charge` becomes
+the driver's own state-of-charge estimate: it integrates the energy drawn
+while on battery and recovers along *chargetime* on mains, because the
+firmware charge byte is derived from battery voltage (it reads 100 % as soon
+as the charger floats the bank, drops sharply under inverter load and was
+still around 30 % when the firmware raised low battery on the unit this was
+calibrated on). The raw firmware value is published as
+`battery.charge.approx`. See 'CALIBRATING THE RUNTIME MODEL' below.
+
+*chargetime*='seconds';;
+Time to recharge the bank from empty to 80 % (default 28800, the datasheet
+figure). The last 20 % is assumed to take half as long again, so a full
+recharge takes 1.5 times this value.
+
+*battery_ah*='number';;
+Internal bank capacity in Ah (default 9).
+
+*extbatt_ah*='number';;
+Capacity in Ah of the external battery module(s), at the bank voltage
+(default 0). Runtime scales by (battery_ah + extbatt_ah) / battery_ah.
+
+*obload_factor*='number';;
+On mains, multiply `ups.load` by this factor when computing `battery.runtime`
+(default 1.0). The inverter draws noticeably more than the mains path for the
+same equipment, so without it the estimate shown on mains is optimistic.
+Measure it as on-battery load divided by on-mains load.
+
+*runtime_low*='seconds';;
+On battery, raise `LB` once the estimated runtime drops below this value
+(default 300), so linkman:upsmon[8] can shut down before the firmware
+low-battery signal. Also published as `battery.runtime.low`.
+
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
-`test.battery.start.deep` instant commands. Disabled by default for
-safety: the Easy 2000 TI firmware does **not** auto-restart after a
+`test.battery.start.deep` and `test.battery.stop` instant commands.
+Disabled by default for safety: the Easy 2000 TI firmware does **not**
+auto-restart after a
 coordinated shutdown, so an `upsmon`-driven shutdown on low battery
 will leave the UPS (and everything plugged into it) powered off until
 someone presses the physical power button. Only set this flag if you
@@ -75,6 +128,67 @@ have an out-of-band way to power the UPS back up, or if you are
 deliberately running a UPS that should stay off after a critical-
 battery event. With this flag unset, `upsdrv_shutdown` logs the
 refusal and exits with failure instead of cutting the output.
+
+
+CALIBRATING THE RUNTIME MODEL
+-----------------------------
+
+The model needs two runtime points, the charge time and, optionally, the
+on-battery load factor. The procedure below is the one used on the Easy Pro
+3200 VA mentioned above; one discharge and one recharge are enough.
+
+*Preparation.* Keep the UPS on mains for at least 8 hours so the bank is
+full. Stop linkman:upsmon[8] (or set *runtime_low* to 0 and restart the
+driver) so the host does not shut down during the test, and keep the
+normal load connected. Log the driver variables every few seconds, for
+example:
+
+	while :; do
+	    echo "$(date +%T) $(upsc ragtech@localhost 2>/dev/null |
+	        grep -E '^(ups\.(status|load|temperature)|battery\.voltage):' |
+	        paste -sd' ' -)"
+	    sleep 5
+	done >> discharge.log
+
+*Discharge.* Disconnect the UPS from the wall and let it run until the
+firmware raises `LB`, then restore mains power immediately: the output is
+cut about one minute later. Also abort (restore mains) if the unit reports
+a fault or over-temperature, or if `battery.voltage` falls below 10.5 V
+per 12 V block (21.0 V for a 24 V bank). The inverter is audibly louder
+than on mains and the internal temperature rose from 50 to 64 C during the
+test; the fan cycles at around 63 C.
+
+*Recharge.* Keep logging `battery.voltage` (once a minute is enough) after
+mains returns. The charger holds a constant current (bulk) while the
+voltage rises, raises the bank to its absorption voltage (28.4 to 28.5 V
+here) and then drops back to float (about 26.8 V). The float transition
+marks a full bank.
+
+*Deriving the parameters.*
+
+* *runtimecal*: the time from disconnection to `LB` and the average
+  `ups.load` while on battery form one point; derive the second from the
+  datasheet autonomy table (scaled to the measured point) or from a second
+  run at a different load.
+* *obload_factor*: average `ups.load` on battery divided by the average on
+  mains before the test.
+* *chargetime*: the time from mains return to the float transition,
+  divided by 1.5.
+
+Measured on the Easy Pro 3200 VA (internal bank only): 1796 s from
+disconnection to `LB` at an average 11.4 % load on battery (9.2 % on mains
+before the test); bulk charge for 4.1 hours at about 1.5 A, float reached
+6.4 hours after mains returned. The resulting settings:
+
+	va = 3200
+	runtimecal = 1796,11.4,5592,5.0
+	chargetime = 15300
+	obload_factor = 1.24
+
+The second *runtimecal* point keeps the exponent derived from the Ragtech
+datasheet table (80 minutes at about 110 W, 20 minutes at about 300 W).
+Repeat the discharge after adding external modules (and set *extbatt_ah*),
+and about once a year as the batteries age.
 
 
 CAVEATS
