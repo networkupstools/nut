@@ -362,6 +362,8 @@ https://github.com/networkupstools/nut/milestone/13
      raises `LB` below `runtime_low`, and persists the estimate in the state
      path across driver restarts. Calibration procedure and measured values
      for an Easy Pro 3200 VA are in the man page.
+   * Added `test.battery.stop` (the OEM `cancelDischarge` action), gated by
+     `allow_shutdown` like `test.battery.start.deep`.
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed

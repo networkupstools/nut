@@ -102,8 +102,9 @@ low-battery signal. Also published as `battery.runtime.low`.
 
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
-`test.battery.start.deep` instant commands. Disabled by default for
-safety: the Easy 2000 TI firmware does **not** auto-restart after a
+`test.battery.start.deep` and `test.battery.stop` instant commands.
+Disabled by default for safety: the Easy 2000 TI firmware does **not**
+auto-restart after a
 coordinated shutdown, so an `upsmon`-driven shutdown on low battery
 will leave the UPS (and everything plugged into it) powered off until
 someone presses the physical power button. Only set this flag if you
