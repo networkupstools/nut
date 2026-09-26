@@ -3052,6 +3052,13 @@ static int microlink_receive_once(void)
 		ssize_t ret;
 
 		if (microlink_try_extract_frame(frame, &framelen)) {
+#ifdef WITH_USB
+			/* Do not let the report's zero padding reach the frame
+			 * scanner - see microlink_usb_drop_report_padding(). */
+			if (is_usb) {
+				microlink_usb_drop_report_padding();
+			}
+#endif /* WITH_USB */
 			return microlink_process_frame(frame, framelen);
 		}
 
