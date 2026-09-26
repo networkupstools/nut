@@ -64,6 +64,42 @@ rating from its model table. Setting *va* to the nameplate rating
 corrects `ups.power.nominal`, `ups.realpower.nominal` (VA times the
 0.7 power factor) and the computed `ups.load`.
 
+*runtimecal*='runtime_high,load_high,runtime_low,load_low';;
+Enable a calculated `battery.runtime` (the firmware reports none). Two
+points of full-bank runtime in seconds at a given `ups.load` in percent,
+with the same meaning as in linkman:nutdrv_qx[8]; the driver fits
+`runtime = k * load^-n` through them. With this set, `battery.charge` becomes
+the driver's own state-of-charge estimate: it integrates the energy drawn
+while on battery and recovers along *chargetime* on mains, because the
+firmware charge byte is derived from battery voltage (it reads 100 % as soon
+as the charger floats the bank, drops sharply under inverter load and was
+still around 30 % when the firmware raised low battery on the unit this was
+calibrated on). The raw firmware value is published as
+`battery.charge.approx`. See 'CALIBRATING THE RUNTIME MODEL' below.
+
+*chargetime*='seconds';;
+Time to recharge the bank from empty to 80 % (default 28800, the datasheet
+figure). The last 20 % is assumed to take half as long again, so a full
+recharge takes 1.5 times this value.
+
+*battery_ah*='number';;
+Internal bank capacity in Ah (default 9).
+
+*extbatt_ah*='number';;
+Capacity in Ah of the external battery module(s), at the bank voltage
+(default 0). Runtime scales by (battery_ah + extbatt_ah) / battery_ah.
+
+*obload_factor*='number';;
+On mains, multiply `ups.load` by this factor when computing `battery.runtime`
+(default 1.0). The inverter draws noticeably more than the mains path for the
+same equipment, so without it the estimate shown on mains is optimistic.
+Measure it as on-battery load divided by on-mains load.
+
+*runtime_low*='seconds';;
+On battery, raise `LB` once the estimated runtime drops below this value
+(default 300), so linkman:upsmon[8] can shut down before the firmware
+low-battery signal. Also published as `battery.runtime.low`.
+
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
 `test.battery.start.deep` instant commands. Disabled by default for
@@ -75,6 +111,33 @@ have an out-of-band way to power the UPS back up, or if you are
 deliberately running a UPS that should stay off after a critical-
 battery event. With this flag unset, `upsdrv_shutdown` logs the
 refusal and exits with failure instead of cutting the output.
+
+
+CALIBRATING THE RUNTIME MODEL
+-----------------------------
+
+Run the UPS from a full charge on its normal load until the firmware raises
+`LB`, logging `ups.load` and the elapsed time (stop linkman:upsmon[8] or set
+*runtime_low* to 0 for the test, so the host does not shut down early).
+The firmware cuts the output about one minute after `LB` (a 30 second
+countdown follows the alarm), so be ready to restore mains power. Use the
+elapsed time and the average `ups.load` on battery as one *runtimecal*
+point; derive the second from the datasheet autonomy table, or from a second
+run at a different load.
+
+For *chargetime*, log `battery.voltage` after mains returns: the charger
+holds a constant current (bulk), then raises the bank to its absorption
+voltage and finally drops back to float. The float transition marks a full
+bank; divide that time by 1.5.
+
+Example, Easy Pro 3200 VA with the internal 2x 12 V 9 Ah bank (reports model
+id 18, so *va* is set too): 1796 s to `LB` at an average 11.4 % load on
+battery, 9.2 % on mains, full recharge in 6.4 hours:
+
+	va = 3200
+	runtimecal = 1796,11.4,5592,5.0
+	chargetime = 15300
+	obload_factor = 1.24
 
 
 CAVEATS

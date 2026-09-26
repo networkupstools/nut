@@ -103,8 +103,11 @@
 #include "serial.h"
 #include "nut_stdint.h"
 
+#include <math.h>
+#include <time.h>
+
 #define DRIVER_NAME	"Ragtech UPS driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -223,6 +226,81 @@ static uint8_t osc53, osc57;		/* read from 0x202..0x203 at init */
 static int shutdown_enabled;		/* opt-in via ups.conf "allow_shutdown" */
 static unsigned int va_override = 0;	/* ups.conf "va" override (0 = use model table) */
 static unsigned int effective_va = 0;	/* va_override if set, else model->va */
+
+/* Battery runtime model (active only when "runtimecal" is set in ups.conf).
+ *
+ * The firmware reports no runtime, and V_CBATTERY is derived from battery
+ * voltage alone: it reads 100 % while the charger floats the bank, drops
+ * sharply as soon as the inverter loads it and recovers when load falls.
+ * So the driver keeps its own state of charge instead:
+ *
+ *   full_runtime(load) = rt_nom * load^-rt_exp * (batt_ah + extbatt_ah) / batt_ah
+ *
+ * is the runtime of a full bank at a given ups.load (Peukert-style fit
+ * through the two runtimecal points, same semantics as nutdrv_qx). On
+ * battery the state of charge drops by dt / full_runtime(load) per poll,
+ * so it integrates the energy actually drawn at the actual rate; on mains
+ * it recovers following "chargetime" (time to reach 80 %, the datasheet
+ * default; the remaining 20 % takes half as long again). The firmware's
+ * low-battery / battery-depleted flags clamp the estimate from above. */
+static int	rt_enabled;
+static double	rt_nom;			/* runtime (s) at 100 % load */
+static double	rt_exp;			/* Peukert-style exponent */
+static double	rt_load_min;		/* lowest load used by the model (%) */
+static double	batt_ah = 9.0;		/* internal bank capacity (Ah) */
+static double	extbatt_ah = 0.0;	/* external module capacity (Ah, same voltage) */
+static long	charge_time = 28800;	/* seconds to recharge 0 -> 80 % */
+static long	runtime_low = 300;	/* seconds; below this on battery -> LB */
+static double	soc = -1.0;		/* estimated state of charge, 0..1 */
+static double	load_avg = -1.0;	/* smoothed ups.load (%) for display */
+static time_t	soc_lastpoll;
+static double	obload_factor = 1.0;	/* on-battery load / on-mains load */
+static int	was_discharging = -1;
+static time_t	soc_lastsave;
+
+/* The state of charge is saved to the state path (every poll on battery,
+ * once a minute otherwise) so a driver restart (config change, USB
+ * re-enumeration) does not reset it to the firmware's voltage-based
+ * reading, which reads high while charging. */
+#define SOC_MAX_AGE	3600	/* ignore a saved value older than this (s) */
+
+static void soc_file(char *buf, size_t len)
+{
+	snprintf(buf, len, "%s/ragtech-%s.soc", dflt_statepath(), upsname);
+}
+
+static void soc_save(time_t now)
+{
+	char	fn[SMALLBUF];
+	FILE	*f;
+
+	soc_file(fn, sizeof(fn));
+	if ((f = fopen(fn, "w")) != NULL) {
+		fprintf(f, "%.6f %ld\n", soc, (long)now);
+		fclose(f);
+	}
+}
+
+/* Returns 1 and sets soc if a recent saved value exists. */
+static int soc_load(time_t now)
+{
+	char	fn[SMALLBUF];
+	FILE	*f;
+	double	v;
+	long	ts;
+	int	ok = 0;
+
+	soc_file(fn, sizeof(fn));
+	if ((f = fopen(fn, "r")) != NULL) {
+		if (fscanf(f, "%lf %ld", &v, &ts) == 2
+		 && v >= 0.0 && v <= 1.0 && now - ts >= 0 && now - ts < SOC_MAX_AGE) {
+			soc = v;
+			ok = 1;
+		}
+		fclose(f);
+	}
+	return ok;
+}
 
 static const struct ragtech_model *find_model(uint8_t id)
 {
@@ -347,6 +425,79 @@ static int ragtech_clear_bits(uint16_t addr, uint8_t bits)
 static int ragtech_set_bits(uint16_t addr, uint8_t bits)
 {
 	return ragtech_or_reg(addr, bits);
+}
+
+static double full_runtime(double load)
+{
+	double	t;
+
+	if (load < rt_load_min)
+		load = rt_load_min;
+	t = rt_nom * pow(load / 100.0, -rt_exp) * (batt_ah + extbatt_ah) / batt_ah;
+	return t > 172800.0 ? 172800.0 : t;	/* cap at 48 h */
+}
+
+/* Advance the state-of-charge estimate and publish battery.charge /
+ * battery.runtime. Returns 1 when the estimated runtime on battery has
+ * fallen below runtime_low (caller raises LB). */
+static int update_runtime(uint8_t st, uint8_t fa, double fw_charge, double load)
+{
+	time_t	now;
+	double	dt;
+	int	discharging = (st & (S_ON_BATTERY | S_SELF_TEST)) ? 1 : 0;
+	double	runtime;
+
+	time(&now);
+	dt = soc_lastpoll ? difftime(now, soc_lastpoll) : 0.0;
+	if (dt < 0.0 || dt > 60.0)	/* clock step or long stall: skip */
+		dt = 0.0;
+	soc_lastpoll = now;
+
+	/* First poll: resume a recently saved estimate, otherwise trust the
+	 * firmware only for "full" on mains. */
+	if (soc < 0.0) {
+		if (soc_load(now))
+			upsdebugx(1, "resumed saved state of charge %.3f", soc);
+		else
+			soc = (!discharging && fw_charge >= 99.0) ? 1.0 : fw_charge / 100.0;
+	}
+
+	/* Restart the average on OL <-> OB so the old state's load does not
+	 * linger in the estimate right after a transfer. */
+	if (discharging != was_discharging)
+		load_avg = -1.0;
+	was_discharging = discharging;
+	load_avg = (load_avg < 0.0) ? load : 0.7 * load_avg + 0.3 * load;
+
+	if (discharging) {
+		soc -= dt / full_runtime(load);
+	} else if (!(st & S_NO_INPUT)) {
+		soc += dt * ((soc < 0.8) ? 0.8 / charge_time : 0.2 / (charge_time / 2.0));
+	}
+
+	if (fa & F_BATTERY_DEPLETED)
+		soc = 0.0;
+	else if ((fa & F_BATTERY_LOW) && soc > 0.15)
+		soc = 0.15;
+
+	if (soc < 0.0)
+		soc = 0.0;
+	if (soc > 1.0)
+		soc = 1.0;
+
+	/* On mains, predict the runtime of an outage starting now: the inverter
+	 * draws more than the mains path does for the same equipment (measured
+	 * x1.24 on an Easy Pro 3200), so scale the mains load accordingly. */
+	runtime = soc * full_runtime(discharging ? load_avg : load_avg * obload_factor);
+	if (discharging || difftime(now, soc_lastsave) >= 60.0) {
+		soc_save(now);
+		soc_lastsave = now;
+	}
+
+	dstate_setinfo("battery.charge", "%.1f", soc * 100.0);
+	dstate_setinfo("battery.runtime", "%.0f", runtime);
+
+	return discharging && runtime < (double)runtime_low;
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -513,6 +664,16 @@ void upsdrv_initinfo(void)
 		(unsigned int)(model->bmult > 0.1 ? 24 : 12));
 	dstate_setinfo("ups.firmware", "%.1f", reply[OFF_V_VERSION - 1] * 0.1);
 
+	if (rt_enabled) {
+		dstate_setinfo("battery.capacity", "%.0f", batt_ah + extbatt_ah);
+		dstate_setinfo("battery.runtime.low", "%ld", runtime_low);
+		upslogx(LOG_INFO, "runtime model: %.0f s at 100%% load, exponent %.3f, "
+			"bank %.0f+%.0f Ah, full-bank runtime at 10%% load %.0f s",
+			rt_nom, rt_exp, batt_ah, extbatt_ah, full_runtime(10.0));
+	} else {
+		upslogx(LOG_INFO, "battery.runtime will not be calculated (runtimecal not set)");
+	}
+
 	if (ragtech_read(0x00F3, 1, &calib) == 1 && calib > 0) {
 		iout_calib = (double)calib;
 		upsdebugx(1, "iout_calib from reg 0xF3 = %u", calib);
@@ -541,8 +702,8 @@ void upsdrv_updateinfo(void)
 {
 	uint8_t r[RAGTECH_MAIN_LEN];
 	uint8_t st, fa;
-	double vout, iout, bcharge;
-	int attempt;
+	double vout, iout, bcharge, load;
+	int attempt, runtime_lb = 0;
 
 	/* CDC-ACM occasionally returns a short/corrupt reply, more often when
 	 * output current is high (bus noise). Retry the transaction a couple
@@ -564,15 +725,14 @@ void upsdrv_updateinfo(void)
 	 * yields exactly 100.0 at raw=255 (matches the OEM/Node-RED scaling). */
 	bcharge = r[OFF_V_CBATTERY - 1] / 2.55;
 
-	dstate_setinfo("battery.charge",  "%.1f", bcharge);
+	load = effective_va > 0 ? (vout * iout) / effective_va * 100.0 : 0.0;
 	dstate_setinfo("battery.voltage", "%.2f", r[OFF_V_VBATTERY - 1]  * model->bmult);
 	dstate_setinfo("input.voltage",   "%.1f", r[OFF_V_VINPUT - 1]    * 1.0600);
 	dstate_setinfo("output.voltage",  "%.1f", vout);
 	dstate_setinfo("output.current",  "%.2f", iout);
 	/* Reg 0x8D reports load as integer percent and floors to 0 at sub-1%
 	 * loads. Compute apparent-power load for accurate light-load readings. */
-	dstate_setinfo("ups.load",        "%.1f",
-		effective_va > 0 ? (vout * iout) / effective_va * 100.0 : 0.0);
+	dstate_setinfo("ups.load",        "%.1f", load);
 	dstate_setinfo("ups.temperature", "%u",   r[OFF_V_TEMPER - 1]);
 	dstate_setinfo("output.frequency", "%.2f",
 		compute_frequency(r[OFF_V_FOUTPUT - 1]));
@@ -580,12 +740,22 @@ void upsdrv_updateinfo(void)
 	st = r[OFF_F_STATUS - 1];
 	fa = r[OFF_F_FAULT - 1];
 
+	/* battery.charge is the driver's estimate when the runtime model is on
+	 * (the firmware value is voltage-based, see above); the raw firmware
+	 * reading stays available as battery.charge.approx. */
+	if (rt_enabled) {
+		dstate_setinfo("battery.charge.approx", "%.1f", bcharge);
+		runtime_lb = update_runtime(st, fa, bcharge, load);
+	} else {
+		dstate_setinfo("battery.charge", "%.1f", bcharge);
+	}
+
 	status_init();
 	if (st & S_ON_BATTERY)
 		status_set("OB");
 	else
 		status_set("OL");
-	if (fa & F_BATTERY_LOW)
+	if ((fa & F_BATTERY_LOW) || runtime_lb)
 		status_set("LB");
 	if (fa & F_OVERLOAD)
 		status_set("OVER");
@@ -645,6 +815,19 @@ void upsdrv_makevartable(void)
 	       "ups.realpower.nominal and the computed ups.load. Useful when the "
 	       "model id is shared between product lines (e.g. a GT unit reporting "
 	       "the same id as an Easy 2200 TI).");
+	addvar(VAR_VALUE, "runtimecal",
+	       "Enable battery.runtime: runtime_high,load_high,runtime_low,load_low "
+	       "(seconds at ups.load %, full internal bank; same as nutdrv_qx)");
+	addvar(VAR_VALUE, "chargetime",
+	       "Seconds to recharge the bank from empty to 80% (default 28800)");
+	addvar(VAR_VALUE, "battery_ah",
+	       "Internal battery bank capacity in Ah (default 9)");
+	addvar(VAR_VALUE, "extbatt_ah",
+	       "Capacity in Ah of external battery modules at the bank voltage (default 0)");
+	addvar(VAR_VALUE, "obload_factor",
+	       "On mains, multiply ups.load by this when predicting runtime, since load rises on battery (default 1.0)");
+	addvar(VAR_VALUE, "runtime_low",
+	       "Raise LB on battery when estimated runtime drops below this many seconds (default 300)");
 	addvar(VAR_FLAG, "allow_shutdown",
 	       "Enable the shutdown.* and test.battery.start.deep instcmds. "
 	       "WARNING: this UPS firmware does not auto-restart after a "
@@ -704,6 +887,38 @@ void upsdrv_initups(void)
 	}
 
 	shutdown_enabled = testvar("allow_shutdown") ? 1 : 0;
+
+	v = getval("runtimecal");
+	if (v) {
+		double rh, lh, rl, ll;
+
+		if (sscanf(v, "%lf,%lf,%lf,%lf", &rh, &lh, &rl, &ll) != 4)
+			fatalx(EXIT_FAILURE, "runtimecal: expected runtime_high,load_high,runtime_low,load_low");
+		if (rh <= 0 || rl <= rh)
+			fatalx(EXIT_FAILURE, "runtimecal: runtimes out of range (need 0 < runtime_high < runtime_low)");
+		if (ll <= 0 || lh <= ll || lh > 100)
+			fatalx(EXIT_FAILURE, "runtimecal: loads out of range (need 0 < load_low < load_high <= 100)");
+		rt_exp = log(rl / rh) / log(lh / ll);
+		rt_nom = rh * pow(lh / 100.0, rt_exp);
+		rt_load_min = ll / 4.0;	/* don't extrapolate to infinity at ~0 load */
+		rt_enabled = 1;
+	}
+
+	v = getval("chargetime");
+	if (v && (charge_time = atol(v)) <= 0)
+		fatalx(EXIT_FAILURE, "chargetime must be > 0");
+	v = getval("battery_ah");
+	if (v && (batt_ah = atof(v)) <= 0.0)
+		fatalx(EXIT_FAILURE, "battery_ah must be > 0");
+	v = getval("extbatt_ah");
+	if (v && (extbatt_ah = atof(v)) < 0.0)
+		fatalx(EXIT_FAILURE, "extbatt_ah must be >= 0");
+	v = getval("obload_factor");
+	if (v && (obload_factor = atof(v)) < 1.0)
+		fatalx(EXIT_FAILURE, "obload_factor must be >= 1.0");
+	v = getval("runtime_low");
+	if (v && (runtime_low = atol(v)) < 0)
+		fatalx(EXIT_FAILURE, "runtime_low must be >= 0");
 }
 
 void upsdrv_cleanup(void)
