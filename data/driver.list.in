@@ -1320,6 +1320,7 @@
 "Ragtech"	"ups"	"1"	"Easy 2000 M2"	""	"ragtech (experimental)"
 "Ragtech"	"ups"	"1"	"Easy 2200 TI"	""	"ragtech (experimental)"
 "Ragtech"	"ups"	"1"	"Easy 2200 M2"	""	"ragtech (experimental)"
+"Ragtech"	"ups"	"1"	"New Easy Pro 3200VA (20NEP4061, CbU/Ti)"	"USB, reports as Easy 2200 TI: set va=3200"	"ragtech (experimental)"	# https://github.com/networkupstools/nut/pull/3716
 
 "Raritan"	"pdu"	"3"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
