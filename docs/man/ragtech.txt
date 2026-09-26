@@ -91,7 +91,10 @@ firmware charge byte is derived from battery voltage (it reads 100 % as soon
 as the charger floats the bank, drops sharply under inverter load and was
 still around 30 % when the firmware raised low battery on the unit this was
 calibrated on). The raw firmware value is published as
-`battery.charge.approx`. See 'CALIBRATING THE RUNTIME MODEL' below.
+`battery.charge.approx`. The load behind `battery.runtime` is averaged
+over about 5 minutes on mains, so that short spikes do not swing the
+forecast, and over about 15 seconds on battery. See 'CALIBRATING THE
+RUNTIME MODEL' below.
 
 *chargetime*='seconds';;
 Time to recharge the bank from empty to 80 % (default 28800, the datasheet

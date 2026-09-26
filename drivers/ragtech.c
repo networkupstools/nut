@@ -252,11 +252,18 @@ static double	extbatt_ah = 0.0;	/* external module capacity (Ah, same voltage) *
 static long	charge_time = 28800;	/* seconds to recharge 0 -> 80 % */
 static long	runtime_low = 300;	/* seconds; below this on battery -> LB */
 static double	soc = -1.0;		/* estimated state of charge, 0..1 */
-static double	load_avg = -1.0;	/* smoothed ups.load (%) for display */
+static double	load_avg = -1.0;	/* smoothed ups.load (%) for the estimate */
 static time_t	soc_lastpoll;
 static double	obload_factor = 1.0;	/* on-battery load / on-mains load */
 static int	was_discharging = -1;
 static time_t	soc_lastsave;
+
+/* Time constants (s) of the ups.load average behind battery.runtime: long on
+ * mains, where the figure is a forecast and short spikes (a phone charger, a
+ * fan) would otherwise swing it by minutes; short on battery, where it has to
+ * follow the real discharge. */
+#define LOAD_TAU_MAINS		300.0
+#define LOAD_TAU_BATTERY	15.0
 
 /* The state of charge is saved to the state path (every poll on battery,
  * once a minute otherwise) so a driver restart (config change, USB
@@ -467,7 +474,12 @@ static int update_runtime(uint8_t st, uint8_t fa, double fw_charge, double load)
 	if (discharging != was_discharging)
 		load_avg = -1.0;
 	was_discharging = discharging;
-	load_avg = (load_avg < 0.0) ? load : 0.7 * load_avg + 0.3 * load;
+	if (load_avg < 0.0) {
+		load_avg = load;
+	} else {
+		double tau = discharging ? LOAD_TAU_BATTERY : LOAD_TAU_MAINS;
+		load_avg += (load - load_avg) * (1.0 - exp(-dt / tau));
+	}
 
 	if (discharging) {
 		soc -= dt / full_runtime(load);
