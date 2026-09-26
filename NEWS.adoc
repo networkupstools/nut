@@ -352,6 +352,16 @@ https://github.com/networkupstools/nut/milestone/13
      firmware model id is shared between product lines, correcting
      `ups.power.nominal`, `ups.realpower.nominal` and the computed
      `ups.load`. [issue #3500]
+   * Added an optional battery runtime model, enabled by `runtimecal`
+     (same semantics as in `nutdrv_qx`), with `chargetime`, `battery_ah`,
+     `extbatt_ah`, `obload_factor` and `runtime_low` options. The firmware
+     reports no runtime and its charge byte is voltage-based, so the driver
+     now publishes its own `battery.charge` estimate (energy-integrated on
+     battery, recovering along the charge time on mains) and
+     `battery.runtime`, keeps the firmware value in `battery.charge.approx`,
+     raises `LB` below `runtime_low`, and persists the estimate in the state
+     path across driver restarts. Calibration procedure and measured values
+     for an Easy Pro 3200 VA are in the man page.
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
