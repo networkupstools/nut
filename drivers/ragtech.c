@@ -511,7 +511,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	 && (!strcasecmp(cmdname, "shutdown.return")
 	  || !strcasecmp(cmdname, "shutdown.stayoff")
 	  || !strcasecmp(cmdname, "shutdown.stop")
-	  || !strcasecmp(cmdname, "test.battery.start.deep"))) {
+	  || !strcasecmp(cmdname, "test.battery.start.deep")
+	  || !strcasecmp(cmdname, "test.battery.stop"))) {
 		upslogx(LOG_WARNING,
 			"%s refused: set 'allow_shutdown' in ups.conf to enable. "
 			"WARNING: this UPS firmware does NOT auto-restart after a "
@@ -570,6 +571,14 @@ static int instcmd(const char *cmdname, const char *extra)
 		 || ragtech_set_bits(0x0095, 0x80) < 0)
 			return STAT_INSTCMD_FAILED;
 		upslogx(LOG_NOTICE, "test.battery.start.deep: full discharge cycle initiated");
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		/* devices.xml: cancelDischarge = F_OPCHECKUP=0 */
+		if (ragtech_clear_bits(0x0090, S_SELF_TEST) < 0)
+			return STAT_INSTCMD_FAILED;
+		upslogx(LOG_NOTICE, "test.battery.stop: discharge cycle cancelled");
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -689,6 +698,7 @@ void upsdrv_initinfo(void)
 		dstate_addcmd("shutdown.stayoff");
 		dstate_addcmd("shutdown.stop");
 		dstate_addcmd("test.battery.start.deep");
+		dstate_addcmd("test.battery.stop");
 	} else {
 		upslogx(LOG_INFO,
 			"shutdown / test.battery.start.deep instcmds are disabled "
