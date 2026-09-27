@@ -80,7 +80,9 @@ carry a meaning from object `2` into object `3`: on the same device `3:22` is a
 temperature threshold rather than a temperature, `3:25` is input sensitivity
 rather than a voltage, and `3:26` is accumulated energy rather than a current.
 Object `2` is the UPS device tree and `3` appears to be a system or controller
-object; `4`, `5` and `A` are not yet identified.
+object. `A` carries at least the runtime calibration status (`A:6.13`, the only
+calibration status usage on the tested Smart-UPS 500, which has neither `2:13`
+nor `2:4.5.13`); `4` and `5` are not yet identified.
 
 Two scopes, one NUT name
 ~~~~~~~~~~~~~~~~~~~~~~~~

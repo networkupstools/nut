@@ -206,6 +206,14 @@ https://github.com/networkupstools/nut/milestone/13
       runtime calibration command register) they could only ever fail.
       With debug enabled, the driver logs which commands it left out and
       why.
+    * The runtime calibration status register in object `A` (`A:6.13`) is
+      now read, as `experimental.microlink.ups.calibration.status`, and a
+      running calibration there raises `CAL` in `ups.status`. It is the
+      only calibration status the tested Smart-UPS 500 has, so that model
+      previously reported no calibration state at all. It is kept apart
+      from the existing `*.calibration.result` variables because it is
+      not yet known whether it carries the same value on devices that
+      have both.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
