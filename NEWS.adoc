@@ -196,6 +196,9 @@ https://github.com/networkupstools/nut/milestone/13
       command is built in `apc_common.c`, which the `apc_modbus` driver
       shares, so its `DRIVER_VERSION` is bumped too; that driver's
       behavior on this path has not been checked on hardware.
+    * The calibration status in `ups.status` (see above) also follows the
+      UPS-scope register `2:4.5.13`, for devices that populate that one
+      instead of `2:13`.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

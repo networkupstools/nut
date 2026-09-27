@@ -42,13 +42,16 @@ static const microlink_value_map_t microlink_outlet_status_map[] = {
  * ended "Failed" reported "OL Failed" forever (seen on an SMX1500, FW UPS 16.0).
  */
 static const microlink_value_map_t microlink_calibration_ups_status_map[] = {
-	{ (1ULL << 1), "CAL" },	/* InProgress */
+	{ APC_CAL_STATUS_IN_PROGRESS, "CAL" },
 	{ 0, NULL }
 };
 
 const microlink_desc_publish_map_t microlink_desc_publish_map[] = {
 	{ "2:4.A", apc_status_map, apc_alarm_map },
 	{ "2:13", microlink_calibration_ups_status_map, NULL },
+	/* Same register in the UPS-scope namespace: devices that populate this
+	 * one instead must reach ups.status too, as with the test-result pair. */
+	{ "2:4.5.13", microlink_calibration_ups_status_map, NULL },
 	{ NULL, NULL, NULL }
 };
 
