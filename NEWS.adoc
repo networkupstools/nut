@@ -199,6 +199,13 @@ https://github.com/networkupstools/nut/milestone/13
     * The calibration status in `ups.status` (see above) also follows the
       UPS-scope register `2:4.5.13`, for devices that populate that one
       instead of `2:13`.
+    * Instant commands such as `calibrate.start` and `bypass.start` are
+      only advertised when the device's Microlink descriptor contains the
+      register they write to. They used to be listed on every device, so
+      on a model without that register (the tested Smart-UPS 500 has no
+      runtime calibration command register) they could only ever fail.
+      With debug enabled, the driver logs which commands it left out and
+      why.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

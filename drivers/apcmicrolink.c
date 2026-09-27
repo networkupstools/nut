@@ -291,6 +291,7 @@ static microlink_page0_state_t page0;
 static int warned_implicit_stuffing = 0;
 static int descriptor_ready = 0;
 static int outlet_commands_registered = 0;
+static int simple_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
 static time_t microlink_fallback_since = 0;
 static unsigned int microlink_fallback_retries = 0;
@@ -1392,9 +1393,44 @@ static int microlink_handle_outlet_cmd(const char *nut_cmdname, const char *extr
 	return 1;
 }
 
+/* The descriptor usage each simple (non-outlet) instant command writes to.
+ * Not every model has every command register - the SCL500RM1UC, for one,
+ * has no 2:12 - so microlink_register_simple_commands() only advertises a
+ * command once the device's descriptor turns out to contain its usage,
+ * instead of listing commands that can only ever fail. */
+static const struct {
+	const char *cmdname;
+	const char *path;
+} microlink_simple_cmd_paths[] = {
+	{ "test.battery.start",	"2:10" },
+	{ "test.battery.stop",	"2:10" },
+	{ "test.panel.start",	"2:4.B.3B" },
+	{ "beeper.enable",	"2:4.B.3A" },
+	{ "beeper.disable",	"2:4.B.3A" },
+	{ "calibrate.start",	"2:12" },
+	{ "calibrate.stop",	"2:12" },
+	{ "bypass.start",	"2:14" },
+	{ "bypass.stop",	"2:14" },
+	{ NULL, NULL }
+};
+
+static const char *microlink_simple_cmd_path(const char *nut_cmdname)
+{
+	size_t i;
+
+	for (i = 0; microlink_simple_cmd_paths[i].cmdname != NULL; i++) {
+		if (!strcasecmp(microlink_simple_cmd_paths[i].cmdname, nut_cmdname)) {
+			return microlink_simple_cmd_paths[i].path;
+		}
+	}
+
+	return NULL;
+}
+
 static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *extra, int *result)
 {
 	uint64_t value;
+	const char *path;
 
 	if (nut_cmdname == NULL || result == NULL) {
 		return 0;
@@ -1442,17 +1478,23 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 
+	path = microlink_simple_cmd_path(nut_cmdname);
+	if (path == NULL) {
+		*result = STAT_INSTCMD_FAILED;
+		return 1;
+	}
+
 	if (!strcasecmp(nut_cmdname, "test.battery.start") || !strcasecmp(nut_cmdname, "test.battery.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_BATTERY_TEST);
-		*result = microlink_send_command_descriptor_mask_value("2:10", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
-		*result = microlink_send_command_descriptor_mask_value("2:4.B.3B", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
 		uint32_t current_alarm_setting = 0;
 
-		if (!microlink_get_descriptor_map_bits("2:4.B.3A", &current_alarm_setting)) {
+		if (!microlink_get_descriptor_map_bits(path, &current_alarm_setting)) {
 			*result = STAT_INSTCMD_FAILED;
 		} else {
 			if (!strcasecmp(nut_cmdname, "beeper.enable")) {
@@ -1461,16 +1503,16 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 				value = (current_alarm_setting | 2U) & ~(uint64_t)1U;
 			}
 
-			*result = microlink_send_command_descriptor_mask_value("2:4.B.3A", value)
+			*result = microlink_send_command_descriptor_mask_value(path, value)
 				? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 		}
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start") || !strcasecmp(nut_cmdname, "calibrate.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_RUNTIME_CAL);
-		*result = microlink_send_command_descriptor_mask_value("2:12", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_UPS);
-		*result = microlink_send_command_descriptor_mask_value("2:14", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	}
 
@@ -3788,6 +3830,40 @@ void upsdrv_initups(void)
 	}
 }
 
+/* Same conditions microlink_send_descriptor_mask_value() needs before it
+ * can write a usage at all. */
+static int microlink_command_usage_present(const char *path)
+{
+	const microlink_descriptor_usage_t *usage = microlink_find_descriptor_usage(path);
+
+	return (usage != NULL && !usage->skipped && usage->size > 0
+		&& usage->size <= sizeof(uint64_t)
+		&& usage->data_offset + usage->size <= descriptor_blob_len);
+}
+
+/* Called at init and on every poll, like microlink_register_outlet_commands():
+ * a USB start can run on the HID fallback before the descriptor is known. */
+static void microlink_register_simple_commands(void)
+{
+	size_t i;
+
+	if (simple_commands_registered || !descriptor_ready) {
+		return;
+	}
+
+	for (i = 0; microlink_simple_cmd_paths[i].cmdname != NULL; i++) {
+		if (microlink_command_usage_present(microlink_simple_cmd_paths[i].path)) {
+			dstate_addcmd(microlink_simple_cmd_paths[i].cmdname);
+		} else {
+			upsdebugx(1, "apcmicrolink: not offering %s: the device has no %s usage to write",
+				microlink_simple_cmd_paths[i].cmdname,
+				microlink_simple_cmd_paths[i].path);
+		}
+	}
+
+	simple_commands_registered = 1;
+}
+
 static void microlink_register_outlet_commands(void)
 {
 	size_t outlet_group_count, switched_group_count = 0, g;
@@ -3860,6 +3936,7 @@ void upsdrv_initinfo(void)
 	memset(&page0, 0, sizeof(page0));
 	descriptor_ready = 0;
 	outlet_commands_registered = 0;
+	simple_commands_registered = 0;
 	microlink_session_next_retry = 0;
 	microlink_fallback_since = 0;
 	/* Capture the user's configured pollinterval (or main.c's own default)
@@ -3931,16 +4008,7 @@ void upsdrv_initinfo(void)
 			"back on", device_path);
 	}
 
-	dstate_addcmd("test.battery.start");
-	dstate_addcmd("test.battery.stop");
-	dstate_addcmd("test.panel.start");
-	dstate_addcmd("beeper.enable");
-	dstate_addcmd("beeper.disable");
-	dstate_addcmd("calibrate.start");
-	dstate_addcmd("calibrate.stop");
-	dstate_addcmd("bypass.start");
-	dstate_addcmd("bypass.stop");
-
+	microlink_register_simple_commands();
 	microlink_register_outlet_commands();
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -4031,6 +4099,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
+		microlink_register_simple_commands();
 		microlink_register_outlet_commands();
 		microlink_publish_identity();
 		microlink_publish_status();
@@ -4045,6 +4114,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	ser_comm_good();
+	microlink_register_simple_commands();
 	microlink_register_outlet_commands();
 	microlink_publish_identity();
 	microlink_publish_status();

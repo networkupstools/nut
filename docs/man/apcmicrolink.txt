@@ -161,14 +161,21 @@ switchable groups, and the unswitched group has no on/off/cycle/shutdown
 commands to offer. Other models have no unswitched group at all: their
 outlet groups start numbering at 1, and `outlet.group.0` is not published.
 
-Supported instant commands currently include:
+Supported instant commands currently include the following. Each one is
+only offered once the Microlink descriptor turns out to contain the register
+it writes to, since not every model has all of them -- the tested Smart-UPS
+500, for example, has no runtime calibration command register, so it offers
+no `calibrate.*` commands:
 
 * `test.battery.start`
 * `test.battery.stop`
 * `test.panel.start`
-* `test.panel.stop`
 * `beeper.enable`
 * `beeper.disable`
+* `calibrate.start`
+* `calibrate.stop`
+* `bypass.start`
+* `bypass.stop`
 
 Driver-assisted shutdown is not yet implemented.
 
