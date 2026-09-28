@@ -136,7 +136,7 @@ If using SELinux, ensure NUT's dummy-ups has access to the <portfile>
 (even in /var/lib/ups!) by adding a label, e.g.
 
   $ semanage fcontext -a -t nut_conf_t <STATE_DIR>/<portfile>
-  $ restoreconf -F <STATE_DIR>/<portfile>
+  $ restorecon -F <STATE_DIR>/<portfile>
 
 Create a systemd template file (replace <XXX> items)
 

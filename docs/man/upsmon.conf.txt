@@ -233,13 +233,27 @@ more information and ideas, see docs/scheduling.txt
 The first (possibly only) token of the value is interpreted as a complete
 path to an externally stored executable script (e.g. not an inline scriptlet)
 or program file without further arguments (which may be passed in explicitly
-# quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
+quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 Remember, this command also needs to be one element in the configuration
 file, so if your command path has spaces, then wrap it in quotes.
 +
 ------
 NOTIFYCMD "/path to/script"
 NOTIFYCMD "/path to/script" "--debug" "-v"
+------
++
+On Windows, these values are joined into a command line. Grouping them
+during configuration parsing does not preserve arguments with spaces:
+the child can receive several arguments instead. This also applies
+to the executable name in the child's argument list and to the appended
+notification message.
++
+Use an executable path without spaces. The following example retains
+double quotes around the data path so a native Windows program using
+C runtime argument parsing receives that path as one argument:
++
+------
+NOTIFYCMD "c:\\nut\\notifyme.exe" "\"c:\\path with space\\name\""
 ------
 +
 This script is run in the background -- that is, linkman:upsmon[8] normally

@@ -48,9 +48,9 @@ SSL/TLS CONFIGURATION
 
 *upsstats.cgi* supports per-server SSL/TLS certificate verification and
 client certificate authentication when monitoring multiple UPS devices.
-SSL/TLS configuration is defined via linkman:hosts.conf[5] and
-linkman:nutauth.conf[5] using CERTPATH, CERTVERIFY, CERTNAME, and CERTHOST
-directives.
+SSL/TLS configuration is described in linkman:nutauth.conf[5]. The
+AUTHCONF directive in linkman:hosts.conf[5] can select that configuration
+file.
 
 When monitoring multiple UPS servers managed by different entities
 (different CAs or security realms), *upsstats.cgi* automatically uses

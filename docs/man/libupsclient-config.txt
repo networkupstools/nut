@@ -56,7 +56,7 @@ SEE ALSO
 --------
 
 linkman:upsclient[3],
-linkman:nutclient[3]
+linkman:libnutclient[3]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
