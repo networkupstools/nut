@@ -40,7 +40,7 @@ AC_DEFUN([NUT_CHECK_SEMAPHORES],
 
                 AS_CASE([${ac_cv_search_sem_init}], [no*], [], [nut_cv_SEMLIBS="${ac_cv_search_sem_init}"])
                 AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${nut_cv_SEMLIBS}"], [], [nut_cv_SEMLIBS="${ac_cv_search_sem_open}"])
-                nut_cv_SEMLIBS="${SEMLIBS}${SEMLIBS_LRT}"
+                nut_cv_SEMLIBS="${nut_cv_SEMLIBS}${SEMLIBS_LRT}"
                 unset SEMLIBS_LRT
 
                 LIBS="${nut_cv_SEMLIBS}"
