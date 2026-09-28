@@ -49,7 +49,7 @@ commands with fallback for older servers. A detach closes the connection.
 The C++ API provides corresponding `Client::detach()`,
 `Client::deviceAttach()`, `Client::deviceGetNumAttach()`, `Device::attach()`
 and `Device::getNumAttach()` aliases. These forward through the existing
-methods, so subclasses implementing the legacy virtual API remain supported.
+methods, so derived classes implementing the legacy virtual API remain supported.
 
 
 * The *nutclient_authenticate()* function authenticates the user.
