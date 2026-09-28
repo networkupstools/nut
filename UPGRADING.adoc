@@ -123,12 +123,17 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   which defaults to trying indefinitely now. [#3541]
 
 - Deployments using `nutdrv_qx` driver with `cypress` subdriver may be impacted
-  by a fix which added a `cypress_0665_5161_subdriver` initialization method for
-  devices with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
-  a special quirk to drain stale bytes from USB buffers of the device before our
-  driver sends queries, and use a longer timeout. If this change breaks your
-  device, please add `cypress_drain_quirk = 0` in your `ups.conf` and let us
-  know. [issue #2534, PR #3563]
+  by a fix which added a special quirk, enabled by default for devices with
+  USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska), to drain stale bytes
+  from USB buffers of the device before our driver sends queries, and use
+  a longer timeout. If this change breaks your device, please add
+  `cypress_drain_quirk = 0` in your `ups.conf` and let us know.
+  [issue #2534, PR #3563]
+  With this quirk, a device which keeps sending data for longer than a reply
+  takes is now reset over USB and reconnected; after 3 such resets in a row
+  the driver exits ("Replies from the UPS stayed out of step with commands").
+  The quirk (and its default by USB ID) now also applies with an explicit
+  `subdriver = cypress` setting, which used to turn it off.
 
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended
