@@ -47,63 +47,88 @@
    company (if either) originated the protocol.  Picking one of the
    companies arbitrarily to name it after just seems wrong.
 
-   There are a few things still to add.  Primarily there's control of
-   individual outlet banks, using (I presume) outlet.n.x variables.
-   I'll probably wait for an example of that to show up in some other
-   driver before adding that, to try to make sure I do it in the way
-   that Russell Kroll envisioned.  It also might be nice to give the
-   user control over the delays before shutdown and restart, probably
-   with additional driver parameters.  Letting the user turn the buzzer
-   off might be nice too; for that I'd have to investigate whether the
-   command to do that disables it entirely, or just turns it off during
-   the existing alarm condition, to determine whether it would be better
-   implemented through variables or instant commands, and then of course
-   request that those get added to the list of known names.  Finally,
-   there are a number of other alarm conditions that can be reported
-   that would be nice to pass on to the user; these would require new
-   variables or new status values.
+   There are a few things still to add.  There are a number of other alarm
+   conditions that can be reported that would be nice to pass on to the
+   user; these would require new variables or new status values.
 
 
    The following parameters (ups.conf) are supported:
 	lowbatt
 	command_delay
+	offdelay
+	startdelay
 
    The following variables are supported (RW = read/write):
 	ambient.humidity (1)
 	ambient.temperature (1)
 	battery.charge
 	battery.current (1)
+	battery.date
 	battery.temperature
 	battery.voltage
 	battery.voltage.nominal
 	input.frequency
+	input.eco.switchable (RW)
 	input.sensitivity (RW) (1)
 	input.transfer.high (RW)
 	input.transfer.low (RW)
 	input.voltage
 	input.voltage.nominal
+	outlet.count
+	outlet.delay.start (RW)
+	outlet.n.status
+	outlet.n.switchable
 	output.current (1)
 	output.frequency
 	output.voltage
 	output.voltage.nominal
+	ups.beeper.status (RW)
+	ups.delay.start (RW)
 	ups.firmware
 	ups.id (RW) (1)
 	ups.load
 	ups.mfr
 	ups.model
 	ups.status
+	ups.start.auto (RW)
 	ups.test.result
+	ups.watchdog.status (RW)
 	ups.contacts (1)
 
     The following instant commands are supported:
 	load.off
 	load.on
+	outlet.n.load.off (one per outlet bank)
+	outlet.n.load.on (one per outlet bank)
+	beeper.mute
+	clear.fault.record
 	shutdown.reboot
 	shutdown.reboot.graceful
 	shutdown.return
+	shutdown.stayoff
 	shutdown.stop
 	test.battery.start
 	test.battery.stop
+
+    The shutdown-related commands above accept an optional delay, in seconds,
+    passed as the "value" argument of upscmd; it takes precedence over the
+    "offdelay" setting from ups.conf, which in turn takes precedence over
+    the built-in default.  The "load.off", "load.on" and "outlet.n.load.*"
+    commands do not take a value: they only switch the outlet banks.
+
+    "shutdown.return" and "shutdown.stayoff" clear the device return delay
+    (SDR), so the load comes back only when mains is (re)applied or not at
+    all, while the two reboot commands ask for the load to come back right
+    behind the shutdown (just behind it, see reboot_start_delay()).  The
+    "startdelay" setting is used by the driver shutdown handler only.
+
+    Because that is what the commands mean on this hardware, the shutdown
+    commands change the device auto-reboot setting ("ups.start.auto", ARB);
+    the device stores it, so the change outlives the shutdown that needs it,
+    and the driver logs it (restore it with upsrw if needed).  The buzzer is
+    a device setting as well: enabling/disabling it is done through the
+    read/write "ups.beeper.status" variable, while the "beeper.mute" command
+    only silences the alarm that is currently sounding.
 
     The following ups.status values are supported:
 	BOOST (1)
@@ -127,7 +152,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -139,6 +164,64 @@ upsdrv_info_t upsdrv_info = {
 };
 
 #define MAX_RESPONSE_LENGTH 256
+
+/* Delay, in seconds, used by shutdown-related instant commands when the
+ * caller does not pass a value and 'offdelay' is not set in ups.conf.
+ * Note: a shutdown action value of 0 is used to cancel a scheduled
+ * shutdown (see "shutdown.stop"), so it is not accepted as a delay. */
+#define DEFAULT_OFFDELAY 10U
+#define MIN_OFFDELAY 1U
+#define MAX_OFFDELAY 3600U
+
+/* Default delay, in seconds, of the graceful reboot command; unlike the
+ * other shutdown commands it is not affected by the 'offdelay' setting. */
+#define DEFAULT_GRACEFUL_DELAY 60U
+
+/* Delay, in seconds, before the load is returned (restarted) after a
+ * shutdown.  The device command (SDR) takes minutes, so values are rounded
+ * up when sent; the default of one minute matches the value this driver
+ * used before it became configurable.  Unlike the shutdown action (SDA),
+ * a value of 0 is meaningful here and means "return without delay", so it
+ * is accepted.  The ups.conf parameter 'startdelay' is expressed in
+ * minutes (the device unit), while the ups.delay.start variable uses
+ * seconds, as usual for delays in NUT. */
+#define DEFAULT_STARTDELAY 60U
+#define MIN_STARTDELAY 0U
+#define MAX_STARTDELAY 3600U
+#define MAX_STARTDELAY_MINUTES (MAX_STARTDELAY / 60U)
+
+/* Power-on (boot) delay: how many seconds the device waits before it starts
+ * delivering voltage to its outputs (inverter on, load relays closed) when
+ * it is powered up or asked to switch them on.  This is a device setting,
+ * not an action, so it is only exposed as a read/write variable (no instant
+ * command); 0 means "no delay" and the device field is three digits wide. */
+#define DEFAULT_BOOTDELAY 0U
+#define MAX_BOOTDELAY 999U
+
+/* Watchdog setting (WDG): the device stores a timeout in seconds (up to
+ * three digits, 0 disables it) plus a flag selecting whether the restart
+ * alarm is enabled (1) or disabled (2).  The timeout and the flag are
+ * preserved when the watchdog is (dis)armed from NUT. */
+#define DEFAULT_WATCHDOG 255U
+#define MAX_WATCHDOG 255U
+
+/* Sanity limit on the outlet bank count reported by the device (LET), so
+ * that a garbled answer cannot make the driver publish, register and poll
+ * an unbounded number of banks. */
+#define MAX_OUTLET_BANKS 16U
+
+/* Command pacing: the device needs time to digest a command before it can
+ * accept the next one, so a burst of commands sent back to back (as the
+ * driver does while initializing and polling) can make it miss answers.
+ * The ups.conf parameter 'command_delay' is the minimum interval to keep
+ * between two commands, in milliseconds: 0 disables the pacing (the
+ * historical behaviour), a positive value is the interval itself, and -1
+ * asks the driver to work it out by itself (see note_command_timeout()).
+ * The vendor software paces its own commands by 1.5 to 3 seconds. */
+#define COMMAND_DELAY_AUTO (-1)
+#define DEFAULT_COMMAND_DELAY 0
+#define DEFAULT_AUTO_COMMAND_DELAY 1000U
+#define MAX_COMMAND_DELAY 60000U
 
 static const char *test_result_names[] = {
 	"No test performed",
@@ -164,10 +247,19 @@ static struct {
 	unsigned long commands_available;
 } ups;
 
-static long command_delay = 0; /* delay in milliseconds before each command, 0 = no delay by default */
-
-/* bits in commands_available */
-#define WDG_AVAILABLE            (1UL <<  1)
+static long command_delay_conf = DEFAULT_COMMAND_DELAY; /* 'command_delay' as set in ups.conf */
+static unsigned int command_delay = 0; /* minimum interval kept between commands, in milliseconds (0 = no waiting) */
+static int command_delay_auto = 0; /* 1 when 'command_delay' asked for automatic pacing (-1) */
+static int command_sent = 0; /* 1 once a command has been sent (see pace_before_command()) */
+static struct timeval command_sent_at; /* when the last command was sent */
+static unsigned int offdelay = DEFAULT_OFFDELAY; /* delay in seconds before shutdown */
+static int offdelay_from_conf = 0; /* set if 'offdelay' was provided in ups.conf */
+static unsigned int startdelay = DEFAULT_STARTDELAY; /* delay in seconds before return */
+static unsigned int bootdelay = DEFAULT_BOOTDELAY; /* power-on delay in seconds */
+static unsigned int watchdog_seconds = 0; /* watchdog timeout last reported by the device */
+static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag last reported */
+static unsigned int min_low_transfer, max_low_transfer; /* reported transfer voltage ranges */
+static unsigned int min_high_transfer, max_high_transfer;
 
 /* message types */
 #define POLL             'P'
@@ -185,7 +277,8 @@ static long command_delay = 0; /* delay in milliseconds before each command, 0 =
 #define BUZZER_TEST                  "BTT" /* set */
 #define BATTERY_TEST                 "BTV" /* poll/set */
 #define BUZZER                       "BUZ" /* set */
-#define ECONOMIC_MODE                "ECO" /* set */
+#define BYPASS_REASON                "BPA" /* poll/set */
+#define ECONOMIC_MODE                "ECO" /* set; poll is unproven */
 #define ENABLE_BUZZER                "EDB" /* set */
 #define ENVIRONMENT_INFORMATION      "ENV" /* poll */
 #define OUTLET_RELAYS                "LET" /* poll */
@@ -219,18 +312,75 @@ static long command_delay = 0; /* delay in milliseconds before each command, 0 =
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
+/* Milliseconds elapsed since '*start', as a signed value ("now" is expected
+ * to be later than the reference time). */
+static long elapsed_milliseconds(const struct timeval *start)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	return (long)(now.tv_sec - start->tv_sec) * 1000L
+		+ (long)(now.tv_usec - start->tv_usec) / 1000L;
+}
+
+/* Wait until at least 'command_delay' milliseconds have passed since the
+ * previous command was sent, so that the device has time to get ready.
+ * Nothing is waited for on an idle link, nor when the driver work between
+ * two commands (a slow answer, for instance) already took that long: what
+ * the device needs is a minimum spacing between commands, not a pause
+ * before every single one of them. */
+static void pace_before_command(void)
+{
+	long remaining;
+
+	if (!command_delay || !command_sent)
+		return;
+
+	remaining = (long)command_delay - elapsed_milliseconds(&command_sent_at);
+	if (remaining <= 0)
+		return;
+
+	upsdebugx(3, "%s: waiting %ld ms for the device to digest the "
+		"previous command", __func__, remaining);
+	usleep((useconds_t)(remaining * 1000L));
+}
+
+/* Remember when a command was sent, for pace_before_command(). */
+static void note_command_sent(void)
+{
+	gettimeofday(&command_sent_at, NULL);
+	command_sent = 1;
+}
+
+/* The device did not answer a command in time.  In automatic mode the
+ * interval is raised, once: a device that is slow to digest a command does
+ * not get faster again for the rest of the run (command_delay is 0 until
+ * this function raises it, so this happens only once).  An explicitly
+ * configured value - including 0 - is never touched.  Only POLL commands
+ * count: a SET command that goes unanswered may have been carried out all
+ * the same, so it says nothing about how fast the device can be driven. */
+static void note_command_timeout(char type)
+{
+	if (type != POLL || !command_delay_auto || command_delay)
+		return;
+
+	command_delay = DEFAULT_AUTO_COMMAND_DELAY;
+	upslogx(LOG_WARNING, "Read timeout: waiting %u ms between commands "
+		"from now on (command_delay=auto); adjust 'command_delay' in "
+		"ups.conf to change this", command_delay);
+}
+
+
 static ssize_t do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
 	size_t	count;
 	ssize_t	ret;
 
+	/* let the device get ready for the next command, then drop whatever
+	 * it may have sent in the meantime */
+	pace_before_command();
 	ser_flush_io(upsfd);
-
-	/* Apply configurable delay if enabled (> 0) to prevent communication timeouts */
-	if (command_delay > 0) {
-		usleep((useconds_t)command_delay*1000);
-	}
 
 	if (response) {
 		*response = '\0';
@@ -244,6 +394,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		return -1;
 	}
 
+	note_command_sent();
 	upsdebugx(3, "do_command: %" PRIiSIZE " bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
@@ -253,6 +404,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	}
 	if (ret == 0) {
 		upsdebugx(3, "do_command: read -> TIMEOUT");
+		note_command_timeout(type);
 		return -1;
 	}
 
@@ -269,6 +421,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		}
 		if (ret == 0) {
 			upsdebugx(3, "do_command: read -> TIMEOUT");
+			note_command_timeout(type);
 			return -1;
 		}
 
@@ -303,6 +456,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		}
 		if (ret == 0) {
 			upsdebugx(3, "do_command: read -> TIMEOUT");
+			note_command_timeout(type);
 			return -1;
 		}
 
@@ -323,6 +477,24 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	}
 
 	return -1;
+}
+
+/* Send a SET command and tell whether the device accepted it: it answers
+ * with a plain ACK (~00A) for accepted operations and with a rejection
+ * (~00R) for ones it does not support, while a timeout or a bad answer
+ * makes do_command() return a negative value in all those cases. */
+static int send_set_command(const char *command, const char *parameters) {
+	return do_command(SET, command, parameters, NULL) >= 0;
+}
+
+/* Same, but log the failure and return the matching instant command status. */
+static int send_set_or_fail(const char *command, const char *parameters) {
+	if (send_set_command(command, parameters))
+		return STAT_INSTCMD_HANDLED;
+
+	upslogx(LOG_ERR, "device rejected or did not answer [%s%s]",
+		command, NUT_STRARG(parameters));
+	return STAT_INSTCMD_FAILED;
 }
 
 static char *field(char *str, int fieldnum)
@@ -358,7 +530,10 @@ static void set_identification(const char *val) {
 	if (strcmp(val, response)) {
 		strncpy(response, val, MAX_RESPONSE_LENGTH);
 		response[MAX_RESPONSE_LENGTH - 1] = '\0';
-		do_command(SET, IDENTIFICATION, response, NULL);
+		if (!send_set_command(IDENTIFICATION, response))
+			upslogx(LOG_ERR, "%s: device rejected or did not "
+				"answer [%s%s]", __func__, IDENTIFICATION,
+				response);
 	}
 }
 
@@ -391,7 +566,9 @@ static void set_transfer_voltage_low(int val) {
 		return;
 	high = atoi(ptr);
 	snprintf(response, sizeof(response), "%d;%d", val, high);
-	do_command(SET, TRANSFER_VOLTAGE, response, NULL);
+	if (!send_set_command(TRANSFER_VOLTAGE, response))
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, TRANSFER_VOLTAGE, response);
 }
 
 static int get_transfer_voltage_high(void) {
@@ -423,7 +600,9 @@ static void set_transfer_voltage_high(int val) {
 	if (!ptr || val == atoi(ptr))
 		return;
 	snprintf(response, sizeof(response), "%d;%d", low, val);
-	do_command(SET, TRANSFER_VOLTAGE, response, NULL);
+	if (!send_set_command(TRANSFER_VOLTAGE, response))
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, TRANSFER_VOLTAGE, response);
 }
 
 static int get_sensitivity(void) {
@@ -450,99 +629,515 @@ static void set_sensitivity(const char *val) {
 	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
 			snprintf(parm, sizeof(parm), "%u", i);
-			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
+			if (!send_set_command(VOLTAGE_SENSITIVITY, parm))
+				upslogx(LOG_ERR, "%s: device rejected or did "
+					"not answer [%s%s]", __func__,
+					VOLTAGE_SENSITIVITY, parm);
 			break;
 		}
 	}
 }
 
-static void auto_reboot(int enable) {
+/* Name the device auto-reboot mode for logging and variable values. */
+static const char *auto_reboot_name(int mode) {
+	switch (mode) {
+	case 1:
+		return "yes";
+	case 2:
+		return "no";
+	default:
+		return "unknown";
+	}
+}
+
+static int auto_reboot(int enable) {
 	char parm[20];
 	char response[MAX_RESPONSE_LENGTH];
 	char *ptr;
-	int mode;
+	int mode, oldmode;
 
 	if (enable)
 		mode = 1;
 	else
 		mode = 2;
-	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0)
-		return;
-	ptr = field(response, 0);
-	if (!ptr || atoi(ptr) != mode) {
-		snprintf(parm, sizeof(parm), "%d", mode);
-		do_command(SET, AUTO_REBOOT, parm, NULL);
+	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0) {
+		/* the current setting is unknown (some devices do not report
+		 * it), so leave it alone and let the caller decide based on
+		 * its own commands */
+		upsdebugx(2, "%s: no answer for [%s], leaving it unchanged",
+			__func__, AUTO_REBOOT);
+		return 1;
 	}
+	ptr = field(response, 0);
+	oldmode = ptr ? atoi(ptr) : 0;
+	if (oldmode != mode) {
+		snprintf(parm, sizeof(parm), "%d", mode);
+		if (!send_set_command(AUTO_REBOOT, parm)) {
+			upslogx(LOG_ERR, "%s: device rejected or did not answer "
+				"[%s%s]", __func__, AUTO_REBOOT, parm);
+			return 0;
+		}
+		/* the device stores this setting, so the change outlives the
+		 * shutdown that needs it: make it (and how to undo it) visible */
+		upslogx(LOG_INFO, "%s: ups.start.auto changed from '%s' to "
+			"'%s' (device setting; restore with "
+			"\"upsrw -s ups.start.auto=yes|no\" if needed)",
+			__func__, auto_reboot_name(oldmode),
+			auto_reboot_name(mode));
+	}
+	/* keep the published setting in sync with the device */
+	dstate_setinfo("ups.start.auto", "%s", auto_reboot_name(mode));
+	return 1;
+}
+
+/* Read the auto-reboot setting (whether the device starts again when mains
+ * is (re)applied) and publish it as ups.start.auto; 1 = yes, 2 = no.
+ * This is auxiliary information, so a missing or unexpected answer must not
+ * mark the whole UPS as stale. */
+static int get_auto_reboot(void) {
+	char response[MAX_RESPONSE_LENGTH];
+
+	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0)
+		return 0;
+
+	switch (atoi(response)) {
+	case 1:
+		dstate_setinfo("ups.start.auto", "%s", "yes");
+		return 1;
+	case 2:
+		dstate_setinfo("ups.start.auto", "%s", "no");
+		return 1;
+	default:
+		upsdebugx(2, "%s: unexpected [%s] response [%s]",
+			__func__, AUTO_REBOOT, response);
+		return 0;
+	}
+}
+
+/* Read the battery installation date (BRD field 0, formatted as YYYYMMDD).
+ * The second field looks like a scheduled replacement date, but its meaning
+ * has not been confirmed for this protocol, so it is only reported in debug
+ * output instead of being published as a standard variable. */
+static void get_battery_date(void) {
+	char response[MAX_RESPONSE_LENGTH];
+	char *ptr, *sep;
+
+	if (do_command(POLL, BATTERY_REPLACEMENT_DATE, "", response) <= 0)
+		return;
+
+	ptr = field(response, 0);
+	if (ptr) {
+		sep = strchr(ptr, ';');
+		if (sep)
+			*sep = '\0';
+		if (*ptr)
+			dstate_setinfo("battery.date", "%s", ptr);
+	}
+
+	ptr = field(response, 1);
+	if (ptr)
+		upsdebugx(2, "%s: unmapped second field [%s]",
+			__func__, ptr);
+}
+
+/* Read the power-on (boot) delay from the device.  This is auxiliary
+ * information: a missing or unexpected answer must not mark the whole UPS
+ * as stale, it only leaves the previously known value in place. */
+static int get_boot_delay(void) {
+	char response[MAX_RESPONSE_LENGTH];
+	unsigned int delay;
+
+	if (do_command(POLL, BOOT_DELAY, "", response) <= 0)
+		return 0;
+
+	if (!str_to_uint_strict(response, &delay, 10) || delay > MAX_BOOTDELAY) {
+		upsdebugx(2, "%s: unexpected [%s] response [%s]",
+			__func__, BOOT_DELAY, response);
+		return 0;
+	}
+
+	bootdelay = delay;
+	dstate_setinfo("outlet.delay.start", "%u", bootdelay);
+	return 1;
+}
+
+/* Write the power-on (boot) delay to the device; the field is three
+ * digits wide, so it is zero padded like the vendor software does. */
+static void set_boot_delay(unsigned int delay) {
+	char parm[20];
+
+	snprintf(parm, sizeof(parm), "%03u", delay);
+	if (!send_set_command(BOOT_DELAY, parm))
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, BOOT_DELAY, parm);
+}
+
+/* Read the watchdog setting and publish ups.watchdog.status.  The device
+ * reports "<timeout in seconds>;<restart alarm flag>", where a timeout of 0
+ * means that the watchdog is disabled.  This is auxiliary information, so a
+ * missing or unexpected answer must not mark the whole UPS as stale. */
+static int get_watchdog(void) {
+	char response[MAX_RESPONSE_LENGTH];
+	char *ptr;
+	int timeout, alarm;
+
+	if (do_command(POLL, WATCHDOG, "", response) <= 0)
+		return 0;
+
+	ptr = field(response, 0);
+	if (!ptr)
+		return 0;
+	timeout = atoi(ptr);
+	if (timeout < 0 || timeout > (int)MAX_WATCHDOG) {
+		upsdebugx(2, "%s: unexpected [%s] response [%s]",
+			__func__, WATCHDOG, response);
+		return 0;
+	}
+	watchdog_seconds = (unsigned int)timeout;
+
+	ptr = field(response, 1);
+	if (ptr) {
+		alarm = atoi(ptr);
+		if (alarm == 1 || alarm == 2)
+			watchdog_alarm = (unsigned int)alarm;
+	}
+
+	dstate_setinfo("ups.watchdog.status", "%s",
+		watchdog_seconds ? "enabled" : "disabled");
+	return 1;
+}
+
+/* Arm or disarm the watchdog, keeping the timeout (255 seconds when none
+ * was ever reported) and the restart-alarm flag that the device uses. */
+static void set_watchdog(int enable) {
+	char parm[20];
+	unsigned int timeout = 0;
+
+	if (enable)
+		timeout = watchdog_seconds ? watchdog_seconds : DEFAULT_WATCHDOG;
+
+	snprintf(parm, sizeof(parm), "%u;%u", timeout, watchdog_alarm);
+	if (!send_set_command(WATCHDOG, parm))
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, WATCHDOG, parm);
+}
+
+/* Read the ECO (high efficiency) setting and publish it as
+ * input.eco.switchable; 1 = high efficiency, 2 = high quality.
+ * The vendor software only ever writes this setting, so a device may not
+ * answer the poll: in that case the published value is left alone. */
+static int get_eco_mode(void) {
+	char response[MAX_RESPONSE_LENGTH];
+
+	if (do_command(POLL, ECONOMIC_MODE, "", response) <= 0)
+		return 0;
+
+	switch (atoi(response)) {
+	case 1:
+		dstate_setinfo("input.eco.switchable", "%s", "ECO");
+		return 1;
+	case 2:
+		dstate_setinfo("input.eco.switchable", "%s", "normal");
+		return 1;
+	default:
+		upsdebugx(2, "%s: unexpected [%s] response [%s]",
+			__func__, ECONOMIC_MODE, response);
+		return 0;
+	}
+}
+
+/* Switch between high efficiency (1) and high quality (2) operation.  The
+ * published value is only updated when the device accepted the setting. */
+static void set_eco_mode(int mode) {
+	char parm[20];
+
+	snprintf(parm, sizeof(parm), "%d", mode);
+	if (!send_set_command(ECONOMIC_MODE, parm)) {
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, ECONOMIC_MODE, parm);
+		return;
+	}
+	dstate_setinfo("input.eco.switchable", "%s", mode == 1 ? "ECO" : "normal");
+}
+
+/* Read the buzzer status (EDB: 1 = enabled, 2 = disabled) and publish it as
+ * ups.beeper.status.  The vendor software only ever writes this setting, so
+ * a device may not answer the poll: in that case the published value is left
+ * alone.  Note that "muted" (the one-shot action performed by the
+ * beeper.mute command) is a transient state that the device does not
+ * report. */
+static int get_beeper_status(void) {
+	char response[MAX_RESPONSE_LENGTH];
+
+	if (do_command(POLL, ENABLE_BUZZER, "", response) <= 0)
+		return 0;
+
+	switch (atoi(response)) {
+	case 1:
+		dstate_setinfo("ups.beeper.status", "%s", "enabled");
+		return 1;
+	case 2:
+		dstate_setinfo("ups.beeper.status", "%s", "disabled");
+		return 1;
+	default:
+		upsdebugx(2, "%s: unexpected [%s] response [%s]",
+			__func__, ENABLE_BUZZER, response);
+		return 0;
+	}
+}
+
+/* Enable (1) or disable (2) the buzzer; this is a device setting, unlike
+ * the beeper.mute command, which only silences the current alarm. */
+static void set_beeper_status(int enable) {
+	char parm[20];
+
+	snprintf(parm, sizeof(parm), "%d", enable ? 1 : 2);
+	if (!send_set_command(ENABLE_BUZZER, parm)) {
+		upslogx(LOG_ERR, "%s: device rejected or did not answer "
+			"[%s%s]", __func__, ENABLE_BUZZER, parm);
+		return;
+	}
+	dstate_setinfo("ups.beeper.status", "%s", enable ? "enabled" : "disabled");
+}
+
+/* Read the relay status of each outlet bank (SOL<n>: 0 = powered, 1 = off)
+ * and publish it as outlet.n.status.  Errors are not fatal: this is
+ * auxiliary information, so a missing answer must not mark the whole UPS
+ * as stale. */
+static void get_outlet_status(void) {
+	char command[8];
+	char response[MAX_RESPONSE_LENGTH];
+	char varname[32];
+	unsigned int i;
+
+	for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+		snprintf(command, sizeof(command), "%s%u", RELAY_STATUS, i);
+		if (do_command(POLL, command, "", response) <= 0) {
+			upsdebugx(2, "%s: no response for [%s]",
+				__func__, command);
+			continue;
+		}
+		snprintf(varname, sizeof(varname), "outlet.%u.status", i);
+		if (!strcmp(response, "0"))
+			dstate_setinfo(varname, "%s", "on");
+		else if (!strcmp(response, "1"))
+			dstate_setinfo(varname, "%s", "off");
+		else
+			upsdebugx(2, "%s: unexpected [%s] response [%s]",
+				__func__, command, response);
+	}
+}
+
+/* Send the restart (return) delay to the UPS.  The SDR value is expressed
+ * in minutes, so it is rounded up to never return the load earlier than
+ * requested.  Returns 1 when the device accepted the setting. */
+static int set_start_delay(unsigned int delay) {
+	char parm[20];
+
+	snprintf(parm, sizeof(parm), "%u", (delay + 59U) / 60U);
+	return send_set_command(TSU_SHUTDOWN_RESTART, parm);
+}
+
+/* Restart delay (in seconds) to ask for when the load has to come back
+ * after a shutdown: one second more than the shutdown delay, so that
+ * rounding up to whole minutes (set_start_delay(): the device counts its
+ * restart delay in minutes) always lands behind the off.  The device does
+ * not restart the load when the restart delay is 0 - an online device
+ * switches its outputs off and leaves them off, an offline one is only
+ * started up (tested on an SUINT1500RTXL2Ua) - hence it stays 0 then. */
+static unsigned int reboot_start_delay(unsigned int delay)
+{
+	return delay ? delay + 1U : 0U;
+}
+
+/* Parse an unsigned integer bounded to the given inclusive range.  Returns
+ * 1 on success and stores the result in *result, 0 otherwise. */
+static int parse_uint_range(const char *val, unsigned int minval,
+	unsigned int maxval, unsigned int *result)
+{
+	unsigned int tmp;
+
+	if (!val || !*val)
+		return 0;
+
+	if (!str_to_uint_strict(val, &tmp, 10))
+		return 0;
+
+	if (tmp < minval || tmp > maxval)
+		return 0;
+
+	*result = tmp;
+	return 1;
+}
+
+/* Parse a transfer voltage setting: it must be numeric and, when the device
+ * reported a settable range, fall inside it. */
+static int parse_transfer_voltage(const char *val, unsigned int minval,
+	unsigned int maxval, unsigned int *voltage)
+{
+	unsigned int tmp;
+
+	/* sanity bounds, also used when the device reported no range */
+	if (!parse_uint_range(val, 1U, 999U, &tmp))
+		return 0;
+
+	if (maxval && (tmp < minval || tmp > maxval))
+		return 0;
+
+	*voltage = tmp;
+	return 1;
+}
+
+/* Parse the delay (in seconds) before the load is returned.  A value of 0
+ * is meaningful here and means "return without delay", so it is accepted,
+ * unlike the shutdown delay. */
+static int parse_return_delay(const char *val, unsigned int *delay)
+{
+	return parse_uint_range(val, MIN_STARTDELAY, MAX_STARTDELAY, delay);
+}
+
+/* Resolve the delay (in seconds) to use for a shutdown-related command:
+ * the value passed by the caller takes precedence over the given fallback
+ * (the 'offdelay' setting from ups.conf, or the command's own default).
+ * Returns 1 on success and stores the result in *delay, 0 otherwise. */
+static int get_shutdown_delay(const char *cmdname, const char *extra,
+	unsigned int fallback, unsigned int *delay)
+{
+	*delay = fallback;
+
+	if (extra && *extra) {
+		if (!parse_uint_range(extra, MIN_OFFDELAY, MAX_OFFDELAY,
+			delay)) {
+			upslogx(LOG_ERR, "instcmd(%s): invalid delay value '%s' "
+				"(expected %u..%u seconds)",
+				cmdname, extra, MIN_OFFDELAY, MAX_OFFDELAY);
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	static const struct {
+		const char *suffix;	/* command suffix */
+		const char *relay;	/* protocol RELAY_* command */
+		int maybepower;		/* 1: only possibly affects power state */
+	} outlet_commands[] = {
+		{ "load.off", RELAY_OFF, 0 },
+		{ "load.on", RELAY_ON, 1 }
+	};
+	/* the shutdown commands share the same skeleton: set the auto-reboot
+	 * setting ("ups.start.auto") to what the shutdown needs, set the
+	 * restart (SDR) delay and schedule the shutdown action (SDA) */
+	static const struct {
+		const char *name;	/* instant command name */
+		int autoreboot;		/* ARB value to set: 1 = yes, 0 = no */
+		int use_offdelay;	/* 1: default value is the offdelay setting */
+		int timed_return;	/* 1: the load restarts right behind the off */
+	} shutdown_commands[] = {
+		{ "shutdown.reboot",          1, 1, 1 },
+		{ "shutdown.reboot.graceful", 1, 0, 1 },
+		{ "shutdown.return",          1, 1, 0 },
+		{ "shutdown.stayoff",         0, 1, 0 }
+	};
 	int i;
 	char parm[20];
+	char command[32];	/* "outlet.<n>.load.on" and friends */
+	unsigned int bank, cmd_index;
+	unsigned int delay;
+	unsigned int fallback;
+	int result = STAT_INSTCMD_HANDLED;
 
-	/* May be used in logging below, but not as a command argument */
-	NUT_UNUSED_VARIABLE(extra);
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
 	if (!strcasecmp(cmdname, "load.off")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
-			do_command(SET, RELAY_OFF, parm, NULL);
+			if (send_set_or_fail(RELAY_OFF, parm) != STAT_INSTCMD_HANDLED)
+				result = STAT_INSTCMD_FAILED;
 		}
-		return STAT_INSTCMD_HANDLED;
+		return result;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
 		for (i = 0; i < ups.outlet_banks; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
-			do_command(SET, RELAY_ON, parm, NULL);
+			if (send_set_or_fail(RELAY_ON, parm) != STAT_INSTCMD_HANDLED)
+				result = STAT_INSTCMD_FAILED;
 		}
-		return STAT_INSTCMD_HANDLED;
+		return result;
 	}
-	if (!strcasecmp(cmdname, "shutdown.reboot")) {
+	/* one set of commands per outlet bank; these take no value */
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(outlet_commands); cmd_index++) {
+		for (bank = 1; bank <= (unsigned int)ups.outlet_banks; bank++) {
+			snprintf(command, sizeof(command), "outlet.%u.%s",
+				bank, outlet_commands[cmd_index].suffix);
+			if (strcasecmp(cmdname, command))
+				continue;
+
+			if (outlet_commands[cmd_index].maybepower)
+				upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
+			else
+				upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+
+			snprintf(parm, sizeof(parm), "%u;1", bank);
+			return send_set_or_fail(outlet_commands[cmd_index].relay,
+				parm);
+		}
+	}
+	/* buzzer: BUZ 2 silences the alarm that is currently sounding.
+	 * Enabling/disabling the buzzer is a device setting (it survives
+	 * restarts), so it is exposed as the read/write ups.beeper.status
+	 * variable instead of a pair of instant commands. */
+	if (!strcasecmp(cmdname, "beeper.mute")) {
+		return send_set_or_fail(BUZZER, "2");
+	}
+	if (!strcasecmp(cmdname, "clear.fault.record")) {
+		/* reset the bypass reason recorded by the device */
+		return send_set_or_fail(BYPASS_REASON, "0");
+	}
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
+		cmd_index++) {
+		if (strcasecmp(cmdname, shutdown_commands[cmd_index].name))
+			continue;
+
+		fallback = shutdown_commands[cmd_index].use_offdelay
+			? offdelay : DEFAULT_GRACEFUL_DELAY;
+		if (!get_shutdown_delay(cmdname, extra, fallback, &delay))
+			return STAT_INSTCMD_FAILED;
+
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		auto_reboot(1);
-		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
-		return STAT_INSTCMD_HANDLED;
+		if (!auto_reboot(shutdown_commands[cmd_index].autoreboot))
+			result = STAT_INSTCMD_FAILED;
+		/* the reboot commands ask the load to come back right behind
+		 * the shutdown; the others clear any return delay left over
+		 * from an earlier command, so that the load comes back only
+		 * when mains is (re)applied, or not at all */
+		if (!set_start_delay(shutdown_commands[cmd_index].timed_return
+			? reboot_start_delay(delay) : 0U))
+			result = STAT_INSTCMD_FAILED;
+		snprintf(parm, sizeof(parm), "%u", delay);
+		if (send_set_or_fail(TSU_SHUTDOWN_ACTION, parm)
+		    != STAT_INSTCMD_HANDLED)
+			result = STAT_INSTCMD_FAILED;
+		return result;
 	}
-	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
-		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		auto_reboot(1);
-		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, TSU_SHUTDOWN_ACTION, "60", NULL);
-		return STAT_INSTCMD_HANDLED;
-	}
-	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		auto_reboot(1);
-		do_command(SET, TSU_SHUTDOWN_RESTART, "1", NULL);
-		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
-		return STAT_INSTCMD_HANDLED;
-	}
-#if 0 /* doesn't seem to work */
-	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		auto_reboot(0);
-		do_command(SET, TSU_SHUTDOWN_ACTION, "10", NULL);
-		return STAT_INSTCMD_HANDLED;
-	}
-#endif
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		do_command(SET, TSU_SHUTDOWN_ACTION, "0", NULL);
-		return STAT_INSTCMD_HANDLED;
+		/* SDA 0 cancels a scheduled shutdown; the auto-reboot
+		 * setting is left as it is */
+		return send_set_or_fail(TSU_SHUTDOWN_ACTION, "0");
 	}
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		do_command(SET, TEST, "3", NULL);
-		return STAT_INSTCMD_HANDLED;
+		return send_set_or_fail(TEST, "3");
 	}
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		do_command(SET, TEST, "0", NULL);
-		return STAT_INSTCMD_HANDLED;
+		return send_set_or_fail(TEST, "0");
 	}
 
 	upslog_INSTCMD_UNKNOWN(cmdname, extra);
@@ -558,13 +1153,119 @@ static int setvar(const char *varname, const char *val)
 		get_identification();
 		return STAT_SET_HANDLED;
 	}
+	if (!strcasecmp(varname, "ups.delay.start")) {
+		unsigned int delay;
+
+		if (!parse_return_delay(val, &delay)) {
+			upslogx(LOG_ERR, "setvar(%s): invalid return delay "
+				"value '%s' (expected %u..%u seconds)",
+				varname, val, MIN_STARTDELAY, MAX_STARTDELAY);
+			return STAT_SET_FAILED;
+		}
+		if (!set_start_delay(delay)) {
+			upslogx(LOG_ERR, "setvar(%s): device rejected or did "
+				"not answer the return delay", varname);
+			return STAT_SET_FAILED;
+		}
+		startdelay = delay;
+		dstate_setinfo("ups.delay.start", "%u", startdelay);
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "outlet.delay.start")) {
+		unsigned int delay;
+
+		if (!parse_uint_range(val, 0U, MAX_BOOTDELAY, &delay)) {
+			upslogx(LOG_ERR, "setvar(%s): invalid power-on delay "
+				"value '%s' (expected 0..%u seconds)",
+				varname, val, MAX_BOOTDELAY);
+			return STAT_SET_FAILED;
+		}
+		set_boot_delay(delay);
+		/* read the value back, so that the published variable
+		 * reflects what the device actually accepted */
+		get_boot_delay();
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "ups.start.auto")) {
+		if (!strcasecmp(val, "yes"))
+			auto_reboot(1);
+		else if (!strcasecmp(val, "no"))
+			auto_reboot(0);
+		else {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected yes or no)", varname, val);
+			return STAT_SET_FAILED;
+		}
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "ups.beeper.status")) {
+		if (!strcasecmp(val, "enabled"))
+			set_beeper_status(1);
+		else if (!strcasecmp(val, "disabled"))
+			set_beeper_status(0);
+		else {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected enabled or disabled)", varname, val);
+			return STAT_SET_FAILED;
+		}
+		/* read the value back, so that the published variable
+		 * reflects what the device actually accepted */
+		get_beeper_status();
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "ups.watchdog.status")) {
+		if (!strcasecmp(val, "enabled"))
+			set_watchdog(1);
+		else if (!strcasecmp(val, "disabled"))
+			set_watchdog(0);
+		else {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected enabled or disabled)", varname, val);
+			return STAT_SET_FAILED;
+		}
+		/* read the value back, so that the published variable
+		 * reflects what the device actually accepted */
+		get_watchdog();
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "input.eco.switchable")) {
+		if (!strcasecmp(val, "ECO"))
+			set_eco_mode(1);
+		else if (!strcasecmp(val, "normal"))
+			set_eco_mode(2);
+		else {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected ECO or normal)", varname, val);
+			return STAT_SET_FAILED;
+		}
+		get_eco_mode();
+		return STAT_SET_HANDLED;
+	}
 	if (!strcasecmp(varname, "input.transfer.low")) {
-		set_transfer_voltage_low(atoi(val));
+		unsigned int voltage;
+
+		if (!parse_transfer_voltage(val, min_low_transfer,
+			max_low_transfer, &voltage)) {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected %u..%u)", varname, val,
+				min_low_transfer, max_low_transfer);
+			return STAT_SET_FAILED;
+		}
+		set_transfer_voltage_low((int)voltage);
 		get_transfer_voltage_low();
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "input.transfer.high")) {
-		set_transfer_voltage_high(atoi(val));
+		unsigned int voltage;
+
+		if (!parse_transfer_voltage(val, min_high_transfer,
+			max_high_transfer, &voltage)) {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected %u..%u)", varname, val,
+				min_high_transfer, max_high_transfer);
+			return STAT_SET_FAILED;
+		}
+		set_transfer_voltage_high((int)voltage);
 		get_transfer_voltage_high();
 		return STAT_SET_HANDLED;
 	}
@@ -607,8 +1308,7 @@ static int init_comm(void)
 void upsdrv_initinfo(void)
 {
 	char response[MAX_RESPONSE_LENGTH];
-	unsigned int min_low_transfer, max_low_transfer;
-	unsigned int min_high_transfer, max_high_transfer;
+	char buf[32];	/* "outlet.<n>.load.on" and friends */
 	unsigned int i;
 	char *ptr;
 
@@ -664,9 +1364,55 @@ void upsdrv_initinfo(void)
 				max_high_transfer = (unsigned int)ipv;
 		}
 	}
-	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0)
-		ups.outlet_banks = atoi(response);
+	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0) {
+		int banks = atoi(response);
+
+		if (banks > 0 && banks <= (int)MAX_OUTLET_BANKS)
+			ups.outlet_banks = banks;
+		else if (banks != 0)
+			upslogx(LOG_WARNING, "%s: ignoring implausible "
+				"outlet bank count [%s]", __func__, response);
+	}
+	if (ups.outlet_banks > 0) {
+		dstate_setinfo("outlet.count", "%d", ups.outlet_banks);
+		for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+			snprintf(buf, sizeof(buf), "outlet.%u.switchable", i);
+			dstate_setinfo(buf, "%s", "yes");
+		}
+	}
+	get_battery_date();
 	/* define things that are settable */
+	dstate_setinfo("ups.delay.start", "%u", startdelay);
+	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.start", 4);
+	/* the power-on delay is a device setting (get/set), so it is published
+	 * with a default and refreshed from the device right away */
+	dstate_setinfo("outlet.delay.start", "%u", bootdelay);
+	dstate_setflags("outlet.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("outlet.delay.start", 3);
+	get_boot_delay();
+	/* the auto-reboot setting is a device setting (get/set) as well */
+	dstate_setinfo("ups.start.auto", "%s", "yes");
+	dstate_setflags("ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.start.auto", 3);
+	get_auto_reboot();
+	/* the watchdog is a device setting too: 0 seconds means disabled */
+	dstate_setinfo("ups.watchdog.status", "%s", "disabled");
+	dstate_setflags("ups.watchdog.status", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.watchdog.status", 8);
+	get_watchdog();
+	/* the ECO (high efficiency) mode selection is a device setting too */
+	dstate_setinfo("input.eco.switchable", "%s", "normal");
+	dstate_setflags("input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("input.eco.switchable", 6);
+	get_eco_mode();
+	/* the buzzer is a device setting: enabling/disabling it is done with
+	 * upsrw, while the beeper.mute command only silences the current
+	 * alarm */
+	dstate_setinfo("ups.beeper.status", "%s", "enabled");
+	dstate_setflags("ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.beeper.status", 8);
+	get_beeper_status();
 	if (get_identification()) {
 		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.id", 100);
@@ -676,10 +1422,20 @@ void upsdrv_initinfo(void)
 		for (i = min_low_transfer; i <= max_low_transfer; i++)
 			dstate_addenum("input.transfer.low", "%u", i);
 	}
-	if (get_transfer_voltage_high() && max_low_transfer) {
+	if (get_transfer_voltage_high() && max_high_transfer) {
 		dstate_setflags("input.transfer.high", ST_FLAG_RW);
 		for (i = min_high_transfer; i <= max_high_transfer; i++)
 			dstate_addenum("input.transfer.high", "%u", i);
+	}
+	/* report the settable ranges, so that the values accepted by setvar()
+	 * are visible to clients */
+	if (max_low_transfer) {
+		dstate_setinfo("input.transfer.low.min", "%u", min_low_transfer);
+		dstate_setinfo("input.transfer.low.max", "%u", max_low_transfer);
+	}
+	if (max_high_transfer) {
+		dstate_setinfo("input.transfer.high.min", "%u", min_high_transfer);
+		dstate_setinfo("input.transfer.high.max", "%u", max_high_transfer);
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
@@ -687,16 +1443,24 @@ void upsdrv_initinfo(void)
 			dstate_addenum("input.sensitivity", "%s",
 				sensitivity[i].name);
 	}
+	/* load.off, load.on and the commands below switch individual outlet
+	 * banks, so they are only registered when the device reports any */
 	if (ups.outlet_banks) {
 		dstate_addcmd("load.off");
 		dstate_addcmd("load.on");
+		for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+			snprintf(buf, sizeof(buf), "outlet.%u.load.off", i);
+			dstate_addcmd(buf);
+			snprintf(buf, sizeof(buf), "outlet.%u.load.on", i);
+			dstate_addcmd(buf);
+		}
 	}
+	dstate_addcmd("beeper.mute");
+	dstate_addcmd("clear.fault.record");
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
 	dstate_addcmd("shutdown.return");
-#if 0 /* doesn't work */
 	dstate_addcmd("shutdown.stayoff");
-#endif
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
@@ -868,6 +1632,8 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.contacts", "%02X", (unsigned int)flags);
 	}
 
+	get_outlet_status();
+
 	/* if we are here, status is valid */
 	status_commit();
 	dstate_dataok();
@@ -882,13 +1648,18 @@ void upsdrv_shutdown(void)
 
 	if (!init_comm())
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
-	auto_reboot(1);
 	/* in case the power is on, tell it to automatically reboot.  if
 	 * it is off, this has no effect. */
-	snprintf(parm, sizeof(parm), "%d", 1); /* delay before reboot, in minutes */
-	do_command(SET, TSU_SHUTDOWN_RESTART, parm, NULL);
-	snprintf(parm, sizeof(parm), "%d", 5); /* delay before shutdown, in seconds */
-	do_command(SET, TSU_SHUTDOWN_ACTION, parm, NULL);
+	if (!auto_reboot(1))
+		upslogx(LOG_ERR, "%s: could not set ups.start.auto", __func__);
+	if (!set_start_delay(startdelay))
+		upslogx(LOG_ERR, "%s: could not set the return delay", __func__);
+	/* delay before shutdown, in seconds: honor 'offdelay' if the user set
+	 * it in ups.conf, otherwise keep the historical default */
+	snprintf(parm, sizeof(parm), "%u",
+		offdelay_from_conf ? offdelay : 5U);
+	if (!send_set_command(TSU_SHUTDOWN_ACTION, parm))
+		upslogx(LOG_ERR, "%s: could not schedule the shutdown", __func__);
 }
 
 void upsdrv_help(void)
@@ -903,10 +1674,26 @@ void upsdrv_tweak_prognames(void)
 /* list flags and values that you want to receive via -x or ups.conf */
 void upsdrv_makevartable(void)
 {
+	char msg[256];
+
 	addvar(VAR_VALUE, "lowbatt", "Set low battery level, in percent");
-	addvar(VAR_VALUE, "command_delay", 
-		"Delay in milliseconds before each command (default: 0 = no delay; "
-		"set to 1000ms if experiencing communication timeouts)");
+	addvar(VAR_VALUE, "command_delay",
+		"Minimum interval between commands, in milliseconds "
+		"(default: 0 = no wait; -1 = automatic)");
+
+	snprintf(msg, sizeof msg, "Set shutdown delay, in seconds (default=%u, range %u..%u).",
+		DEFAULT_OFFDELAY, MIN_OFFDELAY, MAX_OFFDELAY);
+	addvar(VAR_VALUE, "offdelay", msg);
+
+	/* The return delay is configured in minutes because that is the unit
+	 * used by the device (SDR), while it is exposed in seconds through
+	 * the ups.delay.start variable, as usual for delays in NUT. */
+	snprintf(msg, sizeof msg, "Set return (restart) delay, in minutes "
+		"(default=%u, range %u..%u).",
+		DEFAULT_STARTDELAY / 60U,
+		MIN_STARTDELAY / 60U,
+		MAX_STARTDELAY_MINUTES);
+	addvar(VAR_VALUE, "startdelay", msg);
 }
 
 void upsdrv_initups(void)
@@ -916,22 +1703,82 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
-	/* Initialize command_delay from configuration */
+	/* Initialize command_delay from configuration.  The value is in
+	 * milliseconds: 0 disables the pacing (commands follow each other as
+	 * soon as the previous answer is read), -1 asks the driver to pace
+	 * them by itself (start without waiting, raise the interval once if a
+	 * command times out) and a positive value is the minimum interval to
+	 * keep between two commands. */
+	command_delay_conf = DEFAULT_COMMAND_DELAY;
 	val = getval("command_delay");
-	if (val) {
-		long temp = atol(val);
-		/* 0 (no delay) or positive values */
-		if (temp < 0) {
-			fatalx(EXIT_FAILURE, "Invalid command_delay parameter: %s (must be >= 0)", val);
+	if (val && *val) {
+		long temp;
+
+		if (!str_to_long_strict(val, &temp, 10) ||
+		    temp < (long)COMMAND_DELAY_AUTO ||
+		    temp > (long)MAX_COMMAND_DELAY) {
+			fatalx(EXIT_FAILURE, "Invalid command_delay parameter: %s "
+				"(expected -1 (auto), 0 (no wait) or 1..%u "
+				"milliseconds)", val, MAX_COMMAND_DELAY);
 		}
-		command_delay = temp;
-		if (command_delay == 0) {
-			upsdebugx(2, "command_delay is explicitly set to 0 (no delay)");
-		} else {
-			upsdebugx(2, "Setting command_delay to %ld milliseconds", command_delay);
-		}
+		command_delay_conf = temp;
 	} else {
-		upsdebugx(2, "Using default command_delay of %ld (no delay)", command_delay);
+		upsdebugx(2, "Using default command_delay of %ld milliseconds",
+			command_delay_conf);
+	}
+
+	if (command_delay_conf == (long)COMMAND_DELAY_AUTO) {
+		command_delay_auto = 1;
+		command_delay = 0;
+		upsdebugx(2, "command_delay is automatic: commands are paced by "
+			"%u milliseconds once one of them times out",
+			DEFAULT_AUTO_COMMAND_DELAY);
+	} else {
+		command_delay_auto = 0;
+		command_delay = (unsigned int)command_delay_conf;
+		if (command_delay)
+			upsdebugx(2, "Setting command_delay to %u milliseconds",
+				command_delay);
+		else
+			upsdebugx(2, "command_delay is 0: no wait between commands");
+	}
+
+	/* Initialize offdelay from configuration */
+	val = getval("offdelay");
+	if (val && *val) {
+		unsigned int temp;
+		if (!str_to_uint_strict(val, &temp, 10) ||
+		    temp < MIN_OFFDELAY || temp > MAX_OFFDELAY) {
+			fatalx(EXIT_FAILURE, "Invalid offdelay parameter: %s "
+				"(expected %u..%u seconds)",
+				val, MIN_OFFDELAY, MAX_OFFDELAY);
+		}
+		offdelay = temp;
+		offdelay_from_conf = 1;
+		upsdebugx(2, "Setting offdelay to %u seconds", offdelay);
+	} else {
+		upsdebugx(2, "Using default offdelay of %u seconds", offdelay);
+	}
+
+	/* Initialize startdelay from configuration.  The parameter is in
+	 * minutes (the unit used by the device), the internal value is in
+	 * seconds (as used by ups.delay.start). */
+	val = getval("startdelay");
+	if (val && *val) {
+		unsigned int temp;
+		if (!str_to_uint_strict(val, &temp, 10) ||
+		    temp > MAX_STARTDELAY_MINUTES) {
+			fatalx(EXIT_FAILURE, "Invalid startdelay parameter: %s "
+				"(expected %u..%u minutes)",
+				val, MIN_STARTDELAY / 60U,
+				MAX_STARTDELAY_MINUTES);
+		}
+		startdelay = temp * 60U;
+		upsdebugx(2, "Setting startdelay to %u seconds (%u minutes)",
+			startdelay, temp);
+	} else {
+		upsdebugx(2, "Using default startdelay of %u seconds",
+			startdelay);
 	}
 }
 

@@ -43,6 +43,7 @@ VARDESC ups.start.auto "UPS starts when mains is (re)applied"
 VARDESC ups.start.battery "Allow to start UPS from battery"
 VARDESC ups.start.reboot "UPS reboots when power returns during shutdown delay"
 VARDESC ups.shutdown "Enable or disable UPS shutdown ability (poweroff)"
+VARDESC ups.watchdog.status "UPS watchdog status (enabled or disabled)"
 
 VARDESC input.voltage "Input voltage (V)"
 VARDESC input.voltage.extended "Extended input voltage range"
@@ -168,6 +169,7 @@ VARDESC ambient.contacts.2.status "State of the dry contact sensor 2"
 #
 # VARDESC outlet.[[:digit:]]+.id "Outlet system identifier (<index>)"
 
+VARDESC outlet.count "Total number of outlets"
 VARDESC outlet.id "Outlet system identifier"
 VARDESC outlet.desc "Outlet description"
 VARDESC outlet.switch "Outlet switch control"
