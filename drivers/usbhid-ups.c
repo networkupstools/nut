@@ -1354,6 +1354,8 @@ void upsdrv_makevartable(void)
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
 	addvar(VAR_FLAG, "winhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
+	addvar(VAR_VALUE, "winhid_layout",
+		"Windows HID capability ordering: auto, legacy or native (default=auto)");
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1743,6 +1745,16 @@ void upsdrv_initups(void)
 			comm_driver->name, comm_driver->version);
 	} else {
 		comm_driver = &usb_subdriver;
+	}
+	if (comm_driver == &winhid_subdriver) {
+		val = getval("winhid_layout");
+		if (!winhid_set_layout(val ? val : "auto")) {
+			fatalx(EXIT_FAILURE,
+				"invalid winhid_layout '%s' (expected auto, legacy or native)",
+				val ? val : "(null)");
+		}
+		dstate_setinfo("driver.parameter.winhid_layout", "%s", winhid_get_layout());
+		upslogx(LOG_INFO, "winhid capability ordering policy: %s", winhid_get_layout());
 	}
 # else	/* !WIN32 */
 	if (testvar("winhid")) {

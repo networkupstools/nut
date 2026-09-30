@@ -218,6 +218,20 @@ typedef struct win_hidp_link_collection_node_s {
 /*! @brief The winhid communication subdriver instance (registered at build time) */
 extern usb_communication_subdriver_t winhid_subdriver;
 
+/**
+ * @brief Select the ordering compatibility policy for synthesized HID reports.
+ *
+ * The value is case-insensitive and accepts "auto", "legacy" or "native".
+ * Auto preserves the legacy ordering unless the native HIDP layout is the
+ * only one whose report lengths agree with the device capabilities.
+ *
+ * @return 1 if the value was accepted, 0 otherwise.
+ */
+int winhid_set_layout(const char *value);
+
+/** @brief Return the configured ordering policy name. */
+const char *winhid_get_layout(void);
+
 /*!
  * @brief Canonicalize a parsed HID report descriptor for winhid compatibility.
  *
