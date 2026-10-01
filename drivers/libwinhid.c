@@ -2129,9 +2129,15 @@ static winhid_layout_mode_t winhid_select_layout(
 		out_vals, out_vals_n, out_btns, out_btns_n,
 		feat_vals, feat_vals_n, feat_btns, feat_btns_n, 0);
 
-	/* Legacy wins ties so existing devices keep their historical layout. */
-	if (native_match && !legacy_match) {
-		upsdebugx(2, "%s: auto selected native HIDP capability order", __func__);
+	/* Prefer the native capability order when it is length-compatible.  The
+	 * legacy reversal is a heuristic and is available as an explicit override
+	 * for devices that depend on it. */
+	if (native_match) {
+		if (legacy_match) {
+			upsdebugx(2, "%s: auto selected native HIDP capability order (length tie)", __func__);
+		} else {
+			upsdebugx(2, "%s: auto selected native HIDP capability order", __func__);
+		}
 		return WINHID_LAYOUT_NATIVE;
 	}
 	if (!legacy_match && !native_match) {

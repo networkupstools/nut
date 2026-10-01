@@ -222,8 +222,9 @@ extern usb_communication_subdriver_t winhid_subdriver;
  * @brief Select the ordering compatibility policy for synthesized HID reports.
  *
  * The value is case-insensitive and accepts "auto", "legacy" or "native".
- * Auto preserves the legacy ordering unless the native HIDP layout is the
- * only one whose report lengths agree with the device capabilities.
+ * Auto prefers the native HIDP capability order when its report lengths agree
+ * with the device capabilities.  The legacy reversal remains available as an
+ * explicit compatibility override.
  *
  * @return 1 if the value was accepted, 0 otherwise.
  */
