@@ -56,7 +56,7 @@ typedef enum winhid_layout_mode_e {
 	WINHID_LAYOUT_NATIVE
 } winhid_layout_mode_t;
 
-/* Keep the long-standing ordering as the safe fallback for unknown devices. */
+/* Keep the legacy reversal as the fallback when auto validation is inconclusive. */
 static winhid_layout_mode_t g_winhid_layout = WINHID_LAYOUT_AUTO;
 
 static int winhid_case_equal(const char *a, const char *b)
@@ -1954,9 +1954,9 @@ static int winhid_emit_ordered_caps(
  * Estimate the byte length represented by one synthetic report type.  The
  * native HID parser exposes report lengths through HIDP_CAPS, while the
  * synthetic descriptor is assembled from value/button caps.  Comparing the
- * two lets auto mode detect the unusual devices for which the native cap
- * order must be kept, without changing the established default for devices
- * where both layouts are plausible.
+ * two lets auto mode detect devices for which the native cap order must be
+ * kept, while retaining the legacy fallback when neither layout matches the
+ * native lengths.
  */
 static size_t winhid_estimate_report_length(
 	const win_hidp_value_caps_t *vals, size_t vals_n,
