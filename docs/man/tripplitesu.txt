@@ -169,14 +169,23 @@ value; enabling/disabling the buzzer for good is done through the
 	quiet device it has no audible effect.
 
 'clear.fault.record'::
-	Clear the bypass reason recorded by the device.  This is a one-shot
-	action, so the recorded reason is not published as a variable.
+	Clear the bypass reason recorded by the device.  The recorded reason
+	itself is published, read-only, as *input.transfer.reason*, which is
+	refreshed on every poll cycle.
 
 VARIABLES
 ---------
 
 The driver publishes the usual battery, input and output variables, plus
 the following ones:
++
+Read/write variables that describe a device setting (*outlet.delay.start*,
+*ups.start.auto*, *ups.watchdog.status*, *input.eco.switchable* and
+*ups.beeper.status*) are published, and made settable, only once the device
+has reported the setting: when it does not answer, the variable is absent
+(no value is assumed) and a warning is logged.  A setting that was read
+before keeps its last known value when the device stops answering, again
+with a warning for every failed read.
 
 *outlet.count*::
 	Total number of controllable outlet banks.
@@ -213,9 +222,8 @@ the following ones:
 	'beeper.mute' command instead silences the alarm that is currently
 	sounding (a transient state the device does not report, which is why
 	it never appears here).  The vendor software only ever writes this
-	setting, so the device may not report it back: when it does not, the
-	published value is the last one written by the driver, starting from
-	the 'enabled' assumption.
+	setting, so some devices may not report it back; see the note on device
+	settings above.
 
 *ups.delay.start*::
 	Read/write return delay, in seconds, used by the driver shutdown
@@ -245,11 +253,11 @@ linkman:upsrw[8] to restore your preferred value, for example:
 	Read/write watchdog setting, either 'enabled' or 'disabled': the
 	device reboots the load when it does not hear from the driver for the
 	watchdog timeout.  A timeout of 0 seconds means 'disabled', and
-	setting the variable to 'enabled' arms the watchdog with the last
-	timeout reported by the device (255 seconds when none was ever
-	reported), keeping the restart-alarm behaviour the device uses.  Note
-	that the timeout itself is not exposed as a separate variable,
-	because there is no name for it in the NUT naming scheme.
+	setting the variable to 'enabled' arms the watchdog with the timeout
+	last reported by the device, keeping the restart-alarm behaviour the
+	device uses.  Note that the timeout itself is not exposed as a
+	separate variable, because there is no name for it in the NUT naming
+	scheme.
 +
 WARNING: Enabling this setting arms a timer the device uses to power cycle
 the load when the driver stops talking to it, so a driver that hangs (or a
@@ -260,12 +268,17 @@ The device reports the timeout and the restart-alarm flag, not a watchdog
 status: 'enabled' and 'disabled' are inferred from a non-zero timeout, which
 has not been verified on hardware.
 
+*input.transfer.reason*::
+	Read-only reason for the last transfer recorded by the device,
+	published as the raw two-digit code it reports: the meaning of the
+	codes is not documented, so they are not translated.  The value is
+	refreshed on every poll cycle, and cleared on the device by the
+	'clear.fault.record' instant command.
+
 *input.eco.switchable*::
 	Read/write high efficiency (ECO) mode selection, either 'ECO' or
 	'normal'.  The vendor software only ever writes this setting, so the
-	device may not report it back: when it does not, the published value
-	is the last one written by the driver, starting from the 'normal'
-	assumption.
+	device may not report it back; see the note on device settings above.
 
 *input.transfer.low*, *input.transfer.high*::
 	Read/write low and high voltage transfer points, in V.  Values are

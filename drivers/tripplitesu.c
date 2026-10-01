@@ -72,6 +72,7 @@
 	input.sensitivity (RW) (1)
 	input.transfer.high (RW)
 	input.transfer.low (RW)
+	input.transfer.reason
 	input.voltage
 	input.voltage.nominal
 	outlet.count
@@ -195,7 +196,6 @@ upsdrv_info_t upsdrv_info = {
  * it is powered up or asked to switch them on.  This is a device setting,
  * not an action, so it is only exposed as a read/write variable (no instant
  * command); 0 means "no delay" and the device field is three digits wide. */
-#define DEFAULT_BOOTDELAY 0U
 #define MAX_BOOTDELAY 999U
 
 /* Watchdog setting (WDG): the device stores a timeout in seconds (up to
@@ -255,9 +255,9 @@ static struct timeval command_sent_at; /* when the last command was sent */
 static unsigned int offdelay = DEFAULT_OFFDELAY; /* delay in seconds before shutdown */
 static int offdelay_from_conf = 0; /* set if 'offdelay' was provided in ups.conf */
 static unsigned int startdelay = DEFAULT_STARTDELAY; /* delay in seconds before return */
-static unsigned int bootdelay = DEFAULT_BOOTDELAY; /* power-on delay in seconds */
 static unsigned int watchdog_seconds = 0; /* watchdog timeout last reported by the device */
 static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag last reported */
+static int watchdog_known = 0; /* set once the device reported its watchdog setting */
 static unsigned int min_low_transfer, max_low_transfer; /* reported transfer voltage ranges */
 static unsigned int min_high_transfer, max_high_transfer;
 
@@ -685,20 +685,28 @@ static int auto_reboot(int enable) {
 			__func__, auto_reboot_name(oldmode),
 			auto_reboot_name(mode));
 	}
-	/* keep the published setting in sync with the device */
+	/* keep the published setting in sync with the device, and make it
+	 * settable again in case it was not read at startup */
 	dstate_setinfo("ups.start.auto", "%s", auto_reboot_name(mode));
+	dstate_setflags("ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.start.auto", 3);
 	return 1;
 }
 
 /* Read the auto-reboot setting (whether the device starts again when mains
  * is (re)applied) and publish it as ups.start.auto; 1 = yes, 2 = no.
  * This is auxiliary information, so a missing or unexpected answer must not
- * mark the whole UPS as stale. */
+ * mark the whole UPS as stale: a warning is logged and the previously
+ * published value is left in place. */
 static int get_auto_reboot(void) {
 	char response[MAX_RESPONSE_LENGTH];
 
-	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0)
+	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the auto-reboot "
+			"setting [%s]; keeping the last known value", __func__,
+			AUTO_REBOOT);
 		return 0;
+	}
 
 	switch (atoi(response)) {
 	case 1:
@@ -708,8 +716,9 @@ static int get_auto_reboot(void) {
 		dstate_setinfo("ups.start.auto", "%s", "no");
 		return 1;
 	default:
-		upsdebugx(2, "%s: unexpected [%s] response [%s]",
-			__func__, AUTO_REBOOT, response);
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, AUTO_REBOOT,
+			response);
 		return 0;
 	}
 }
@@ -742,22 +751,27 @@ static void get_battery_date(void) {
 
 /* Read the power-on (boot) delay from the device.  This is auxiliary
  * information: a missing or unexpected answer must not mark the whole UPS
- * as stale, it only leaves the previously known value in place. */
+ * as stale, it logs a warning and only leaves the previously known value in
+ * place. */
 static int get_boot_delay(void) {
 	char response[MAX_RESPONSE_LENGTH];
 	unsigned int delay;
 
-	if (do_command(POLL, BOOT_DELAY, "", response) <= 0)
-		return 0;
-
-	if (!str_to_uint_strict(response, &delay, 10) || delay > MAX_BOOTDELAY) {
-		upsdebugx(2, "%s: unexpected [%s] response [%s]",
-			__func__, BOOT_DELAY, response);
+	if (do_command(POLL, BOOT_DELAY, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the power-on delay "
+			"[%s]; keeping the last known value", __func__,
+			BOOT_DELAY);
 		return 0;
 	}
 
-	bootdelay = delay;
-	dstate_setinfo("outlet.delay.start", "%u", bootdelay);
+	if (!str_to_uint_strict(response, &delay, 10) || delay > MAX_BOOTDELAY) {
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, BOOT_DELAY,
+			response);
+		return 0;
+	}
+
+	dstate_setinfo("outlet.delay.start", "%u", delay);
 	return 1;
 }
 
@@ -775,25 +789,36 @@ static void set_boot_delay(unsigned int delay) {
 /* Read the watchdog setting and publish ups.watchdog.status.  The device
  * reports "<timeout in seconds>;<restart alarm flag>", where a timeout of 0
  * means that the watchdog is disabled.  This is auxiliary information, so a
- * missing or unexpected answer must not mark the whole UPS as stale. */
+ * missing or unexpected answer must not mark the whole UPS as stale: a
+ * warning is logged and the previously published value is left in place. */
 static int get_watchdog(void) {
 	char response[MAX_RESPONSE_LENGTH];
 	char *ptr;
 	int timeout, alarm;
 
-	if (do_command(POLL, WATCHDOG, "", response) <= 0)
+	if (do_command(POLL, WATCHDOG, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the watchdog "
+			"setting [%s]; keeping the last known value",
+			__func__, WATCHDOG);
 		return 0;
+	}
 
 	ptr = field(response, 0);
-	if (!ptr)
+	if (!ptr) {
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, WATCHDOG,
+			response);
 		return 0;
+	}
 	timeout = atoi(ptr);
 	if (timeout < 0 || timeout > (int)MAX_WATCHDOG) {
-		upsdebugx(2, "%s: unexpected [%s] response [%s]",
-			__func__, WATCHDOG, response);
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, WATCHDOG,
+			response);
 		return 0;
 	}
 	watchdog_seconds = (unsigned int)timeout;
+	watchdog_known = 1;
 
 	ptr = field(response, 1);
 	if (ptr) {
@@ -813,8 +838,16 @@ static void set_watchdog(int enable) {
 	char parm[20];
 	unsigned int timeout = 0;
 
-	if (enable)
+	if (enable) {
+		/* arming without a reading uses assumed values, which is
+		 * worth telling about: the timeout is not the one the device
+		 * would have reported */
+		if (!watchdog_known)
+			upslogx(LOG_WARNING, "%s: arming the watchdog with an "
+				"assumed timeout, the device never reported "
+				"its [%s] setting", __func__, WATCHDOG);
 		timeout = watchdog_seconds ? watchdog_seconds : DEFAULT_WATCHDOG;
+	}
 
 	snprintf(parm, sizeof(parm), "%u;%u", timeout, watchdog_alarm);
 	if (!send_set_command(WATCHDOG, parm))
@@ -822,15 +855,49 @@ static void set_watchdog(int enable) {
 			"[%s%s]", __func__, WATCHDOG, parm);
 }
 
+/* Read the bypass reason recorded by the device (BPA) and publish it as
+ * input.transfer.reason.  This is a live value, so it is refreshed on every
+ * update cycle; a missing or unexpected answer must not mark the whole UPS
+ * as stale: a warning is logged and the previously published reason is left
+ * in place.  The device value is a two-digit code whose meaning is not
+ * documented, so it is published as it comes. */
+static int get_bypass_reason(void) {
+	char response[MAX_RESPONSE_LENGTH];
+	char *ptr;
+
+	if (do_command(POLL, BYPASS_REASON, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the bypass reason "
+			"[%s]; keeping the last known value", __func__,
+			BYPASS_REASON);
+		return 0;
+	}
+
+	ptr = field(response, 0);
+	if (!ptr || !*ptr) {
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, BYPASS_REASON,
+			response);
+		return 0;
+	}
+
+	dstate_setinfo("input.transfer.reason", "%s", ptr);
+	return 1;
+}
+
 /* Read the ECO (high efficiency) setting and publish it as
  * input.eco.switchable; 1 = high efficiency, 2 = high quality.
  * The vendor software only ever writes this setting, so a device may not
- * answer the poll: in that case the published value is left alone. */
+ * answer the poll: in that case a warning is logged and the published value
+ * is left alone. */
 static int get_eco_mode(void) {
 	char response[MAX_RESPONSE_LENGTH];
 
-	if (do_command(POLL, ECONOMIC_MODE, "", response) <= 0)
+	if (do_command(POLL, ECONOMIC_MODE, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the ECO setting "
+			"[%s]; keeping the last known value", __func__,
+			ECONOMIC_MODE);
 		return 0;
+	}
 
 	switch (atoi(response)) {
 	case 1:
@@ -840,8 +907,9 @@ static int get_eco_mode(void) {
 		dstate_setinfo("input.eco.switchable", "%s", "normal");
 		return 1;
 	default:
-		upsdebugx(2, "%s: unexpected [%s] response [%s]",
-			__func__, ECONOMIC_MODE, response);
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__,
+			ECONOMIC_MODE, response);
 		return 0;
 	}
 }
@@ -862,15 +930,19 @@ static void set_eco_mode(int mode) {
 
 /* Read the buzzer status (EDB: 1 = enabled, 2 = disabled) and publish it as
  * ups.beeper.status.  The vendor software only ever writes this setting, so
- * a device may not answer the poll: in that case the published value is left
- * alone.  Note that "muted" (the one-shot action performed by the
- * beeper.mute command) is a transient state that the device does not
- * report. */
+ * a device may not answer the poll: in that case a warning is logged and the
+ * published value is left alone.  Note that "muted" (the one-shot action
+ * performed by the beeper.mute command) is a transient state that the device
+ * does not report. */
 static int get_beeper_status(void) {
 	char response[MAX_RESPONSE_LENGTH];
 
-	if (do_command(POLL, ENABLE_BUZZER, "", response) <= 0)
+	if (do_command(POLL, ENABLE_BUZZER, "", response) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the buzzer setting "
+			"[%s]; keeping the last known value", __func__,
+			ENABLE_BUZZER);
 		return 0;
+	}
 
 	switch (atoi(response)) {
 	case 1:
@@ -880,8 +952,9 @@ static int get_beeper_status(void) {
 		dstate_setinfo("ups.beeper.status", "%s", "disabled");
 		return 1;
 	default:
-		upsdebugx(2, "%s: unexpected [%s] response [%s]",
-			__func__, ENABLE_BUZZER, response);
+		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
+			"keeping the last known value", __func__, ENABLE_BUZZER,
+			response);
 		return 0;
 	}
 }
@@ -1385,34 +1458,34 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.delay.start", "%u", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 4);
-	/* the power-on delay is a device setting (get/set), so it is published
-	 * with a default and refreshed from the device right away */
-	dstate_setinfo("outlet.delay.start", "%u", bootdelay);
-	dstate_setflags("outlet.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("outlet.delay.start", 3);
-	get_boot_delay();
-	/* the auto-reboot setting is a device setting (get/set) as well */
-	dstate_setinfo("ups.start.auto", "%s", "yes");
-	dstate_setflags("ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.start.auto", 3);
-	get_auto_reboot();
-	/* the watchdog is a device setting too: 0 seconds means disabled */
-	dstate_setinfo("ups.watchdog.status", "%s", "disabled");
-	dstate_setflags("ups.watchdog.status", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.watchdog.status", 8);
-	get_watchdog();
-	/* the ECO (high efficiency) mode selection is a device setting too */
-	dstate_setinfo("input.eco.switchable", "%s", "normal");
-	dstate_setflags("input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("input.eco.switchable", 6);
-	get_eco_mode();
-	/* the buzzer is a device setting: enabling/disabling it is done with
-	 * upsrw, while the beeper.mute command only silences the current
-	 * alarm */
-	dstate_setinfo("ups.beeper.status", "%s", "enabled");
-	dstate_setflags("ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.beeper.status", 8);
-	get_beeper_status();
+	/* the device settings below (get/set) are published, and made
+	 * settable, only when the device actually reports them: an unreadable
+	 * setting must not appear with an assumed value, and each get_*()
+	 * already warns when it cannot read one */
+	if (get_boot_delay()) {
+		dstate_setflags("outlet.delay.start",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("outlet.delay.start", 3);
+	}
+	if (get_auto_reboot()) {
+		dstate_setflags("ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.start.auto", 3);
+	}
+	if (get_watchdog()) {
+		dstate_setflags("ups.watchdog.status",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.watchdog.status", 8);
+	}
+	if (get_eco_mode()) {
+		dstate_setflags("input.eco.switchable",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("input.eco.switchable", 6);
+	}
+	if (get_beeper_status()) {
+		dstate_setflags("ups.beeper.status",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.beeper.status", 8);
+	}
 	if (get_identification()) {
 		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.id", 100);
@@ -1631,6 +1704,11 @@ void upsdrv_updateinfo(void)
 		if (contacts_set)
 			dstate_setinfo("ups.contacts", "%02X", (unsigned int)flags);
 	}
+
+	/* the bypass (transfer) reason is a live value: refresh it on every
+	 * pass, without marking the whole UPS stale when the device does not
+	 * report it */
+	get_bypass_reason();
 
 	get_outlet_status();
 
