@@ -173,20 +173,6 @@ https://github.com/networkupstools/nut/milestone/13
       same usage `ups.beeper.status` reads, not a temporary mute/re-arm
       action.
 
- - `tripplitesu` driver updates:
-    * The bypass (transfer) reason recorded by the device is now published
-      as the read-only `input.transfer.reason` variable, refreshed on every
-      poll, and the existing `clear.fault.record` instant command clears
-      the recorded reason on the device.
-    * Device settings (`outlet.delay.start`, `ups.start.auto`,
-      `ups.watchdog.status`, `input.eco.switchable` and
-      `ups.beeper.status`) are no longer published with assumed values when
-      the device does not report them: they appear, and become settable,
-      only once the device has reported them.  A setting that was read
-      before keeps its last known value when the device stops answering,
-      and a warning is logged instead of silently falling back to a
-      default.
-
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
     * Decode `RunTimeCalibrationStatus_BF` into
@@ -372,9 +358,21 @@ https://github.com/networkupstools/nut/milestone/13
       some problems possible when iterating devices. [issue #1768, PR #3477]
 
  - `riello_usb`, `riello_ser` driver updates:
-    * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+    * riello_usb, riello_ser: report NAK on RE as failure. [issue #3546]
 
- - `tripplitesu` driver updates:
+ - `tripplitesu` driver updates [PR #3273]:
+    * The bypass (transfer) reason recorded by the device is now published
+      as the read-only `input.transfer.reason` variable, refreshed on every
+      poll, and the existing `clear.fault.record` instant command clears
+      the recorded reason on the device.
+    * Device settings (`outlet.delay.start`, `ups.start.auto`,
+      `ups.watchdog.status`, `input.eco.switchable` and
+      `ups.beeper.status`) are no longer published with assumed values when
+      the device does not report them: they appear, and become settable,
+      only once the device has reported them.  A setting that was read
+      before keeps its last known value when the device stops answering,
+      and a warning is logged instead of silently falling back to a
+      default.
     * Added the `offdelay` and `startdelay` settings in `ups.conf` (in
       seconds and minutes respectively, the units of the two device
       commands) and support for an optional delay (in seconds), passed as
@@ -409,7 +407,7 @@ https://github.com/networkupstools/nut/milestone/13
       one.  The interval is measured from the previous command, so an idle
       link is not penalized, and the special value `-1` makes the driver
       start without waiting and pace commands by one second only if one of
-      them times out.  [PR #3273]
+      them times out.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
