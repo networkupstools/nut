@@ -133,7 +133,7 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   takes is now reset over USB and reconnected; after 3 such resets in a row
   the driver exits ("Replies from the UPS stayed out of step with commands").
   The quirk (and its default by USB ID) now also applies with an explicit
-  `subdriver = cypress` setting, which used to turn it off.
+  `subdriver = cypress` setting, which used to turn it off. [PR #3720]
 
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended

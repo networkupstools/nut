@@ -298,15 +298,16 @@ https://github.com/networkupstools/nut/milestone/13
       sending for longer than a reply takes (3 seconds), it resets the USB
       device and reconnects, up to 3 times in a row, before giving up and
       exiting, instead of exiting right away with a misleading "Got
-      disconnected by another driver" message.
+      disconnected by another driver" message. [PR #3720]
     * A USB reconnection attempt which failed again (the device was closed
       for another reconnection) is no longer reported as "re-established",
       for all USB subdrivers. So with a positive `reconnect_max_tries`, such
       attempts now count towards that limit instead of resetting the count.
+      [PR #3720]
     * The `cypress_drain_quirk` setting (and its default for USB ID
       `0665:5161`) now also applies when `subdriver = cypress` is set
       explicitly in `ups.conf`; previously that silently turned the quirk
-      off.
+      off. [PR #3720]
     * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
       (when a device returns all-spaces in that part of the `I` query response)
       out of the box and not ignore the device as unsupported, by adding the
