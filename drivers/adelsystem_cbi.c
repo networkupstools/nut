@@ -34,9 +34,10 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.12"
 
 /* variables */
+static int is_open = 0;
 static modbus_t *mbctx = NULL;							/* modbus memory context */
 static devstate_t *dstate = NULL;						/* device state context */
 static int errcnt = 0;									/* modbus access error counter */
@@ -72,10 +73,10 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat);
 modbus_t *modbus_new(const char *port);
 
 /* reconnect upon communication error */
-void modbus_reconnect(void);
+int modbus_reconnect(void);
 
 /* modbus register read function */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
+int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data);
 
 /* modbus register write function */
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -125,6 +126,8 @@ void upsdrv_initups(void)
 		modbus_free(mbctx);
 		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: error(%s)", modbus_strerror(errno));
 	}
+
+	is_open = 1;
 
 	/* set modbus response timeout */
 #if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
@@ -208,6 +211,11 @@ void upsdrv_updateinfo(void)
 	int rval;					/* return value */
 	int i;						/* local index */
 	devstate_t *ds = dstate;	/* device state */
+
+	if (!is_open && modbus_reconnect() < 0) {
+		dstate_datastale();
+		return;
+	}
 
 	upsdebugx(2, "upsdrv_updateinfo");
 
@@ -612,17 +620,19 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 	/* read all HOLDING registers */
 	rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, data);
 	if (rval == -1) {
+		int saved_errno = errno;
+
 		upslogx(LOG_ERR,
 			"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s",
-			modbus_strerror(errno),
+			modbus_strerror(saved_errno),
 			(unsigned int)(regs[H_REG_STARTIDX].xaddr),
 			MAX_H_REGS,
 			device_path
 		);
 
 		/* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
-		if (errno == EPIPE || errno == EMBBADDATA || errno == EMBBADCRC) {
-			upsdebugx(1, "register_read: error(%s)", modbus_strerror(errno));
+		if (saved_errno == EPIPE || saved_errno == EMBBADDATA || saved_errno == EMBBADCRC) {
+			upsdebugx(1, "register_read: error(%s)", modbus_strerror(saved_errno));
 			modbus_reconnect();
 		}
 	}
@@ -633,30 +643,34 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 }
 
 /* Read a modbus register */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
+int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data)
 {
 	int rval = -1;
+	uint8_t bit_value = 0;
+	uint16_t register_value = 0;
 
 	/* register bit masks */
 	uint16_t mask8 = 0x00FF;
 	uint16_t mask16 = 0xFFFF;
 
+	*data = 0;
+
 	switch (type) {
 		case COIL:
-			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_bits(mb, addr, 1, &bit_value);
+			*data = (unsigned int)(bit_value & mask8);
 			break;
 		case INPUT_B:
-			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_input_bits(mb, addr, 1, &bit_value);
+			*data = (unsigned int)(bit_value & mask8);
 			break;
 		case INPUT_R:
-			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_input_registers(mb, addr, 1, &register_value);
+			*data = (unsigned int)(register_value & mask16);
 			break;
 		case HOLDING:
-			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_registers(mb, addr, 1, &register_value);
+			*data = (unsigned int)(register_value & mask16);
 			break;
 #include "nut-pragmas-covered-switch-default.h"
 		/* All enum cases defined as of the time of coding
@@ -669,9 +683,11 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 #include "nut-pragmas-covered-switch-default-end.h"
 	}
 	if (rval == -1) {
+		int saved_errno = errno;
+
 		upslogx(LOG_ERR,
 			"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s",
-			modbus_strerror(errno),
+			modbus_strerror(saved_errno),
 			(unsigned int)addr,
 			(type == COIL) ? "COIL" :
 			(type == INPUT_B) ? "INPUT_B" :
@@ -680,13 +696,13 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 		);
 
 		/* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
-		if (errno == EPIPE || errno == EMBBADDATA || errno == EMBBADCRC) {
-			upsdebugx(1, "register_read: error(%s)", modbus_strerror(errno));
+		if (saved_errno == EPIPE || saved_errno == EMBBADDATA || saved_errno == EMBBADCRC) {
+			upsdebugx(1, "register_read: error(%s)", modbus_strerror(saved_errno));
 			modbus_reconnect();
 		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
-		(unsigned int)addr, type, *(unsigned int *)data);
+		(unsigned int)addr, type, *data);
 	return rval;
 }
 
@@ -727,9 +743,11 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			break;
 	}
 	if (rval == -1) {
+		int saved_errno = errno;
+
 		upslogx(LOG_ERR,
 			"ERROR:(%s) modbus_write: addr:0x%x, type:%8s, path:%s",
-			modbus_strerror(errno),
+			modbus_strerror(saved_errno),
 			(unsigned int)addr,
 			(type == COIL) ? "COIL" :
 			(type == INPUT_B) ? "INPUT_B" :
@@ -738,8 +756,8 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 		);
 
 		/* on BROKEN PIPE error try to reconnect */
-		if (errno == EPIPE) {
-			upsdebugx(1, "register_write: error(%s)", modbus_strerror(errno));
+		if (saved_errno == EPIPE) {
+			upsdebugx(1, "register_write: error(%s)", modbus_strerror(saved_errno));
 			modbus_reconnect();
 		}
 	}
@@ -1268,71 +1286,23 @@ modbus_t *modbus_new(const char *port)
 }
 
 /* reconnect to modbus server upon connection error */
-void modbus_reconnect(void)
+int modbus_reconnect(void)
 {
-	int rval;
-
 	upsdebugx(1, "modbus_reconnect, trying to reconnect to modbus server");
 	reconnect_trying(RECONNECT_TRYING);
 
-	/* clear current modbus context */
-	modbus_close(mbctx);
-	modbus_free(mbctx);
-
-	/* open communication port */
-	mbctx = modbus_new(device_path);
-	if (mbctx == NULL) {
-		fatalx(EXIT_FAILURE, "modbus_new_rtu: Unable to open communication port context");
+	/* Keep the configured endpoint, slave ID and timeouts in the context. */
+	if (is_open) {
+		modbus_close(mbctx);
+		is_open = 0;
 	}
 
-	/* set slave ID */
-	rval = modbus_set_slave(mbctx, dev_slave_id);
-	if (rval < 0) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_slave: Invalid modbus slave ID %d", dev_slave_id);
-	}
-
-	/* connect to modbus device  */
 	if (modbus_connect(mbctx) == -1) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+		upslogx(LOG_ERR, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+		return -1;
 	}
 
-	/* set modbus response timeout */
-#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
-	rval = modbus_set_response_timeout(mbctx, mod_resp_to_s, mod_resp_to_us);
-	if (rval < 0) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_response_timeout: error(%s)", modbus_strerror(errno));
-	}
-#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
-	{	/* see comments above */
-		struct timeval to;
-		memset(&to, 0, sizeof(struct timeval));
-		to.tv_sec = mod_resp_to_s;
-		to.tv_usec = mod_resp_to_us;
-		/* void */ modbus_set_response_timeout(mbctx, &to);
-	}
-/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
-#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
-
-	/* set modbus byte timeout */
-#if (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32) || (defined NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields)
-	rval = modbus_set_byte_timeout(mbctx, mod_byte_to_s, mod_byte_to_us);
-	if (rval < 0) {
-		modbus_free(mbctx);
-		fatalx(EXIT_FAILURE, "modbus_set_byte_timeout: error(%s)", modbus_strerror(errno));
-	}
-#elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields)
-	{	/* see comments above */
-		struct timeval to;
-		memset(&to, 0, sizeof(struct timeval));
-		to.tv_sec = mod_byte_to_s;
-		to.tv_usec = mod_byte_to_us;
-		/* void */ modbus_set_byte_timeout(mbctx, &to);
-	}
-/* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
-#endif /* NUT_MODBUS_TIMEOUT_ARG_* */
-
+	is_open = 1;
 	reconnect_trying(RECONNECT_SUCCESS);
+	return 0;
 }
