@@ -390,6 +390,12 @@ https://github.com/networkupstools/nut/milestone/13
       broken maximum from HID global state. Both `battery.runtime` and
       `battery.voltage` then read as nonsense; platforms with a 64-bit `long`
       were unaffected. [PR #3555]
+    * `idowell-hid` subdriver now also repairs the Usage Page of two
+      `PresentStatus` flags in those GoldenMate packs: the firmware leaves the
+      Battery System page selected, so the intended `Good` and
+      `ShutdownImminent` bits were decoded as `AtRateTimeToEmpty` and
+      `AverageTimeToEmpty` and ignored. They now feed the `OFF` and `LB`
+      status flags via the existing mappings. [issue #3015]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
     * `mge-hid` subdriver: extended the `mge_model_names[]` list for the
