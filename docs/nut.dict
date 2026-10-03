@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3887 utf-8
 AAC
 AAS
 ABI
@@ -565,6 +565,7 @@ IFF
 IFSUPP
 IGN
 IIS
+ILP
 IMG
 IMPLEM
 INADDR
@@ -722,6 +723,7 @@ Lite's
 LocalIP
 LogMax
 LogMin
+LogicalMaximum
 LowBatt
 Loyer
 Luca
@@ -1036,6 +1038,7 @@ Patrik
 Pavel
 Pawe
 PbAc
+PercentLoad
 Perriault
 Petr
 Petri
@@ -1045,6 +1048,8 @@ Phasak
 PhoenixContact
 PhoenixTec
 Phoenixtec
+PhysicalMaximum
+PhysicalMinimum
 Pi
 PiJuice
 PiNUT
@@ -1209,6 +1214,7 @@ Rozman
 Rucelf
 RunAs
 RunTimeCalibrationStatus
+RunTimeToEmpty
 RunUPSCommand
 RxD
 Ryabov
@@ -3172,6 +3178,7 @@ rH
 ragtech
 raritan
 rb
+rbuf
 rc
 rcctl
 readline
@@ -3212,6 +3219,7 @@ reportId
 reposurgeon
 repotec
 req
+rescales
 resetter
 resizing
 resolv
@@ -3819,6 +3827,7 @@ xD
 xF
 xFE
 xFF
+xFFFF
 xXXXX
 xYYYY
 xZZZZ

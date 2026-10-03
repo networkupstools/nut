@@ -67,6 +67,11 @@ static double exponent(double a, int8_t b);
 /* Tweak flag for APC Back-UPS */
 size_t max_report_size = 0;
 
+/* Buffer size used for reports when max_report_size is active. A HID report
+ * carries at most 255 bytes of payload plus the report ID, and some firmwares
+ * only answer a GET_REPORT at all when asked for more than they declared. */
+#define MAX_REPORT_ALLOC	256
+
 /* Tweaks for Powercom, at least */
 int interrupt_only = 0;
 size_t interrupt_size = 0;
@@ -135,7 +140,13 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 			continue;
 		}
 
-		rbuf->data[id] = (unsigned char *)calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
+		/* When the max_report_size tweak is active we deliberately ask the
+		 * device for more than it declared, so the buffer has to be able to
+		 * hold that much. Otherwise a device answering with more bytes than
+		 * its descriptor promised writes past the allocation. */
+		rbuf->cap[id] = max_report_size
+			? (size_t)MAX_REPORT_ALLOC : rbuf->len[id];
+		rbuf->data[id] = (unsigned char *)calloc(rbuf->cap[id], sizeof(*(rbuf->data[id])));
 		if (rbuf->data[id])
 			continue;
 
@@ -171,7 +182,14 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id];
+	/* Ask for exactly as much as was allocated: cap[] equals len[] unless the
+	 * max_report_size tweak asked new_report_buffer() for a larger buffer.
+	 * NOTE: this used to say sizeof(rbuf->data[id]), but data[] is an array
+	 * of pointers, so that yielded the size of a pointer (8 bytes on LP64,
+	 * 4 on ILP32) rather than the size of the buffer. The tweak therefore
+	 * never asked for the full buffer, and on reports shorter than a pointer
+	 * it invited the device to write past the allocation. */
+	r = rbuf->cap[id];
 #include "nut-pragmas-range-checks.h"
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
@@ -192,10 +210,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		}
 
 		/* Avoid overflowing known buffer size, to be sure: */
-		r = UMIN(r, sizeof(rbuf->data[id]));
-		if (!max_report_size) {
-			r = UMIN(r, rbuf->len[id]);
-		}
+		r = UMIN(r, rbuf->cap[id]);
 	}
 #include "nut-pragmas-range-checks-end.h"
 
