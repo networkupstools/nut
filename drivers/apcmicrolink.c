@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
