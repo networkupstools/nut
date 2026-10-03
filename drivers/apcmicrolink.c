@@ -3906,6 +3906,10 @@ void upsdrv_initinfo(void)
 			"ups.status/battery.charge/battery.runtime from them as soon as they "
 			"arrive. Outlet-group data and commands will become available "
 			"automatically once the Microlink session connects", device_path);
+	} else if (is_usb && !hid_fallback_enabled) {
+		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
+			"and the standard HID Power Device fallback is disabled "
+			"(hid_fallback=no)", device_path);
 	} else {
 		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
 			"and this device exposes no standard HID Power Device usages to fall "
