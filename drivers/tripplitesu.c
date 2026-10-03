@@ -99,8 +99,8 @@
     The following instant commands are supported:
 	load.off
 	load.on
-	outlet.n.load.off (one per outlet bank)
-	outlet.n.load.on (one per outlet bank)
+	outlet.n.load.off (one per outlet)
+	outlet.n.load.on (one per outlet)
 	beeper.mute
 	clear.fault.record
 	shutdown.reboot
@@ -115,7 +115,7 @@
     passed as the "value" argument of upscmd; it takes precedence over the
     "offdelay" setting from ups.conf, which in turn takes precedence over
     the built-in default.  The "load.off", "load.on" and "outlet.n.load.*"
-    commands do not take a value: they only switch the outlet banks.
+    commands do not take a value: they only switch the outlets.
 
     "shutdown.return" and "shutdown.stayoff" clear the device return delay
     (SDR), so the load comes back only when mains is (re)applied or not at
@@ -205,10 +205,10 @@ upsdrv_info_t upsdrv_info = {
 #define DEFAULT_WATCHDOG 255U
 #define MAX_WATCHDOG 255U
 
-/* Sanity limit on the outlet bank count reported by the device (LET), so
+/* Sanity limit on the outlet count reported by the device (LET), so
  * that a garbled answer cannot make the driver publish, register and poll
- * an unbounded number of banks. */
-#define MAX_OUTLET_BANKS 16U
+ * an unbounded number of outlets. */
+#define MAX_OUTLETS 16U
 
 /* Command pacing: the device needs time to digest a command before it can
  * accept the next one, so a burst of commands sent back to back (as the
@@ -243,7 +243,7 @@ static struct {
 };
 
 static struct {
-	int outlet_banks;
+	int outlets;
 	unsigned long commands_available;
 } ups;
 
@@ -312,17 +312,6 @@ static unsigned int min_high_transfer, max_high_transfer;
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
-/* Milliseconds elapsed since '*start', as a signed value ("now" is expected
- * to be later than the reference time). */
-static long elapsed_milliseconds(const struct timeval *start)
-{
-	struct timeval now;
-
-	gettimeofday(&now, NULL);
-	return (long)(now.tv_sec - start->tv_sec) * 1000L
-		+ (long)(now.tv_usec - start->tv_usec) / 1000L;
-}
-
 /* Wait until at least 'command_delay' milliseconds have passed since the
  * previous command was sent, so that the device has time to get ready.
  * Nothing is waited for on an idle link, nor when the driver work between
@@ -336,7 +325,7 @@ static void pace_before_command(void)
 	if (!command_delay || !command_sent)
 		return;
 
-	remaining = (long)command_delay - elapsed_milliseconds(&command_sent_at);
+	remaining = (long)command_delay - elapsed_since_timeval(&command_sent_at);
 	if (remaining <= 0)
 		return;
 
@@ -492,7 +481,7 @@ static int send_set_or_fail(const char *command, const char *parameters) {
 	if (send_set_command(command, parameters))
 		return STAT_INSTCMD_HANDLED;
 
-	upslogx(LOG_ERR, "device rejected or did not answer [%s%s]",
+	upslogx(LOG_ERR, "device rejected or did not answer [%s %s]",
 		command, NUT_STRARG(parameters));
 	return STAT_INSTCMD_FAILED;
 }
@@ -532,7 +521,7 @@ static void set_identification(const char *val) {
 		response[MAX_RESPONSE_LENGTH - 1] = '\0';
 		if (!send_set_command(IDENTIFICATION, response))
 			upslogx(LOG_ERR, "%s: device rejected or did not "
-				"answer [%s%s]", __func__, IDENTIFICATION,
+				"answer [%s %s]", __func__, IDENTIFICATION,
 				response);
 	}
 }
@@ -568,7 +557,7 @@ static void set_transfer_voltage_low(int val) {
 	snprintf(response, sizeof(response), "%d;%d", val, high);
 	if (!send_set_command(TRANSFER_VOLTAGE, response))
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, TRANSFER_VOLTAGE, response);
+			"[%s %s]", __func__, TRANSFER_VOLTAGE, response);
 }
 
 static int get_transfer_voltage_high(void) {
@@ -602,7 +591,7 @@ static void set_transfer_voltage_high(int val) {
 	snprintf(response, sizeof(response), "%d;%d", low, val);
 	if (!send_set_command(TRANSFER_VOLTAGE, response))
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, TRANSFER_VOLTAGE, response);
+			"[%s %s]", __func__, TRANSFER_VOLTAGE, response);
 }
 
 static int get_sensitivity(void) {
@@ -631,7 +620,7 @@ static void set_sensitivity(const char *val) {
 			snprintf(parm, sizeof(parm), "%u", i);
 			if (!send_set_command(VOLTAGE_SENSITIVITY, parm))
 				upslogx(LOG_ERR, "%s: device rejected or did "
-					"not answer [%s%s]", __func__,
+					"not answer [%s %s]", __func__,
 					VOLTAGE_SENSITIVITY, parm);
 			break;
 		}
@@ -662,11 +651,11 @@ static int auto_reboot(int enable) {
 		mode = 2;
 	if (do_command(POLL, AUTO_REBOOT, "", response) <= 0) {
 		/* the current setting is unknown (some devices do not report
-		 * it), so leave it alone and let the caller decide based on
-		 * its own commands */
-		upsdebugx(2, "%s: no answer for [%s], leaving it unchanged",
-			__func__, AUTO_REBOOT);
-		return 1;
+		 * it), so it cannot be confirmed: report a failure so the
+		 * caller aborts instead of powering the load off on a guess */
+		upslogx(LOG_ERR, "%s: no answer for [%s], cannot set or "
+			"confirm ups.start.auto", __func__, AUTO_REBOOT);
+		return 0;
 	}
 	ptr = field(response, 0);
 	oldmode = ptr ? atoi(ptr) : 0;
@@ -674,7 +663,7 @@ static int auto_reboot(int enable) {
 		snprintf(parm, sizeof(parm), "%d", mode);
 		if (!send_set_command(AUTO_REBOOT, parm)) {
 			upslogx(LOG_ERR, "%s: device rejected or did not answer "
-				"[%s%s]", __func__, AUTO_REBOOT, parm);
+				"[%s %s]", __func__, AUTO_REBOOT, parm);
 			return 0;
 		}
 		/* the device stores this setting, so the change outlives the
@@ -783,7 +772,7 @@ static void set_boot_delay(unsigned int delay) {
 	snprintf(parm, sizeof(parm), "%03u", delay);
 	if (!send_set_command(BOOT_DELAY, parm))
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, BOOT_DELAY, parm);
+			"[%s %s]", __func__, BOOT_DELAY, parm);
 }
 
 /* Read the watchdog setting and publish ups.watchdog.status.  The device
@@ -852,7 +841,7 @@ static void set_watchdog(int enable) {
 	snprintf(parm, sizeof(parm), "%u;%u", timeout, watchdog_alarm);
 	if (!send_set_command(WATCHDOG, parm))
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, WATCHDOG, parm);
+			"[%s %s]", __func__, WATCHDOG, parm);
 }
 
 /* Read the bypass reason recorded by the device (BPA) and publish it as
@@ -922,7 +911,7 @@ static void set_eco_mode(int mode) {
 	snprintf(parm, sizeof(parm), "%d", mode);
 	if (!send_set_command(ECONOMIC_MODE, parm)) {
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, ECONOMIC_MODE, parm);
+			"[%s %s]", __func__, ECONOMIC_MODE, parm);
 		return;
 	}
 	dstate_setinfo("input.eco.switchable", "%s", mode == 1 ? "ECO" : "normal");
@@ -967,13 +956,13 @@ static void set_beeper_status(int enable) {
 	snprintf(parm, sizeof(parm), "%d", enable ? 1 : 2);
 	if (!send_set_command(ENABLE_BUZZER, parm)) {
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s%s]", __func__, ENABLE_BUZZER, parm);
+			"[%s %s]", __func__, ENABLE_BUZZER, parm);
 		return;
 	}
 	dstate_setinfo("ups.beeper.status", "%s", enable ? "enabled" : "disabled");
 }
 
-/* Read the relay status of each outlet bank (SOL<n>: 0 = powered, 1 = off)
+/* Read the relay status of each outlet (SOL<n>: 0 = powered, 1 = off)
  * and publish it as outlet.n.status.  Errors are not fatal: this is
  * auxiliary information, so a missing answer must not mark the whole UPS
  * as stale. */
@@ -983,7 +972,7 @@ static void get_outlet_status(void) {
 	char varname[32];
 	unsigned int i;
 
-	for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+	for (i = 1; i <= (unsigned int)ups.outlets; i++) {
 		snprintf(command, sizeof(command), "%s%u", RELAY_STATUS, i);
 		if (do_command(POLL, command, "", response) <= 0) {
 			upsdebugx(2, "%s: no response for [%s]",
@@ -1118,7 +1107,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	int i;
 	char parm[20];
 	char command[32];	/* "outlet.<n>.load.on" and friends */
-	unsigned int bank, cmd_index;
+	unsigned int outlet, cmd_index;
 	unsigned int delay;
 	unsigned int fallback;
 	int result = STAT_INSTCMD_HANDLED;
@@ -1127,7 +1116,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		for (i = 0; i < ups.outlet_banks; i++) {
+		for (i = 0; i < ups.outlets; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			if (send_set_or_fail(RELAY_OFF, parm) != STAT_INSTCMD_HANDLED)
 				result = STAT_INSTCMD_FAILED;
@@ -1136,18 +1125,18 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		for (i = 0; i < ups.outlet_banks; i++) {
+		for (i = 0; i < ups.outlets; i++) {
 			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			if (send_set_or_fail(RELAY_ON, parm) != STAT_INSTCMD_HANDLED)
 				result = STAT_INSTCMD_FAILED;
 		}
 		return result;
 	}
-	/* one set of commands per outlet bank; these take no value */
+	/* one set of commands per outlet; these take no value */
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(outlet_commands); cmd_index++) {
-		for (bank = 1; bank <= (unsigned int)ups.outlet_banks; bank++) {
+		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
 			snprintf(command, sizeof(command), "outlet.%u.%s",
-				bank, outlet_commands[cmd_index].suffix);
+				outlet, outlet_commands[cmd_index].suffix);
 			if (strcasecmp(cmdname, command))
 				continue;
 
@@ -1156,7 +1145,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			else
 				upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
-			snprintf(parm, sizeof(parm), "%u;1", bank);
+			snprintf(parm, sizeof(parm), "%u;1", outlet);
 			return send_set_or_fail(outlet_commands[cmd_index].relay,
 				parm);
 		}
@@ -1183,20 +1172,30 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		if (!auto_reboot(shutdown_commands[cmd_index].autoreboot))
-			result = STAT_INSTCMD_FAILED;
+		/* set the auto-reboot and return-delay prerequisites before
+		 * scheduling the shutdown: if either cannot be confirmed,
+		 * stop here and leave the load powered rather than power it
+		 * off with no guaranteed way to come back on */
+		if (!auto_reboot(shutdown_commands[cmd_index].autoreboot)) {
+			upslogx(LOG_ERR, "%s: could not set or confirm "
+				"ups.start.auto, not powering the load off", cmdname);
+			return STAT_INSTCMD_FAILED;
+		}
 		/* the reboot commands ask the load to come back right behind
 		 * the shutdown; the others clear any return delay left over
 		 * from an earlier command, so that the load comes back only
 		 * when mains is (re)applied, or not at all */
 		if (!set_start_delay(shutdown_commands[cmd_index].timed_return
-			? reboot_start_delay(delay) : 0U))
-			result = STAT_INSTCMD_FAILED;
+			? reboot_start_delay(delay) : 0U)) {
+			upslogx(LOG_ERR, "%s: could not set the return "
+				"delay, not powering the load off", cmdname);
+			return STAT_INSTCMD_FAILED;
+		}
 		snprintf(parm, sizeof(parm), "%u", delay);
 		if (send_set_or_fail(TSU_SHUTDOWN_ACTION, parm)
 		    != STAT_INSTCMD_HANDLED)
-			result = STAT_INSTCMD_FAILED;
-		return result;
+			return STAT_INSTCMD_FAILED;
+		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
@@ -1260,15 +1259,21 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.start.auto")) {
+		int enable;
+
 		if (!strcasecmp(val, "yes"))
-			auto_reboot(1);
+			enable = 1;
 		else if (!strcasecmp(val, "no"))
-			auto_reboot(0);
+			enable = 0;
 		else {
 			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
 				"(expected yes or no)", varname, val);
 			return STAT_SET_FAILED;
 		}
+		/* auto_reboot() logs the reason on failure: a device that
+		 * does not report the setting cannot confirm it */
+		if (!auto_reboot(enable))
+			return STAT_SET_FAILED;
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.beeper.status")) {
@@ -1438,17 +1443,17 @@ void upsdrv_initinfo(void)
 		}
 	}
 	if (do_command(POLL, OUTLET_RELAYS, "", response) > 0) {
-		int banks = atoi(response);
+		int outlet_count = atoi(response);
 
-		if (banks > 0 && banks <= (int)MAX_OUTLET_BANKS)
-			ups.outlet_banks = banks;
-		else if (banks != 0)
+		if (outlet_count > 0 && outlet_count <= (int)MAX_OUTLETS)
+			ups.outlets = outlet_count;
+		else if (outlet_count != 0)
 			upslogx(LOG_WARNING, "%s: ignoring implausible "
-				"outlet bank count [%s]", __func__, response);
+				"outlet count [%s]", __func__, response);
 	}
-	if (ups.outlet_banks > 0) {
-		dstate_setinfo("outlet.count", "%d", ups.outlet_banks);
-		for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+	if (ups.outlets > 0) {
+		dstate_setinfo("outlet.count", "%d", ups.outlets);
+		for (i = 1; i <= (unsigned int)ups.outlets; i++) {
 			snprintf(buf, sizeof(buf), "outlet.%u.switchable", i);
 			dstate_setinfo(buf, "%s", "yes");
 		}
@@ -1517,11 +1522,11 @@ void upsdrv_initinfo(void)
 				sensitivity[i].name);
 	}
 	/* load.off, load.on and the commands below switch individual outlet
-	 * banks, so they are only registered when the device reports any */
-	if (ups.outlet_banks) {
+	 * outlets, so they are only registered when the device reports any */
+	if (ups.outlets) {
 		dstate_addcmd("load.off");
 		dstate_addcmd("load.on");
-		for (i = 1; i <= (unsigned int)ups.outlet_banks; i++) {
+		for (i = 1; i <= (unsigned int)ups.outlets; i++) {
 			snprintf(buf, sizeof(buf), "outlet.%u.load.off", i);
 			dstate_addcmd(buf);
 			snprintf(buf, sizeof(buf), "outlet.%u.load.on", i);
@@ -1728,10 +1733,16 @@ void upsdrv_shutdown(void)
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
 	/* in case the power is on, tell it to automatically reboot.  if
 	 * it is off, this has no effect. */
-	if (!auto_reboot(1))
-		upslogx(LOG_ERR, "%s: could not set ups.start.auto", __func__);
-	if (!set_start_delay(startdelay))
-		upslogx(LOG_ERR, "%s: could not set the return delay", __func__);
+	if (!auto_reboot(1)) {
+		upslogx(LOG_ERR, "%s: could not set or confirm ups.start.auto, "
+			"not powering the load off", __func__);
+		return;
+	}
+	if (!set_start_delay(startdelay)) {
+		upslogx(LOG_ERR, "%s: could not set the return delay, "
+			"not powering the load off", __func__);
+		return;
+	}
 	/* delay before shutdown, in seconds: honor 'offdelay' if the user set
 	 * it in ups.conf, otherwise keep the historical default */
 	snprintf(parm, sizeof(parm), "%u",

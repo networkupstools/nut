@@ -93,15 +93,15 @@ at all.
 INSTANT COMMANDS
 ----------------
 
-The following instant commands switch the outlet banks.  They take no value:
+The following instant commands switch the outlets.  They take no value:
 a delayed shutdown of the whole UPS is what the 'shutdown.*' commands below
 are for.
 
 'load.off'::
-	Switch off every controllable outlet bank immediately.
+	Switch off every controllable outlet immediately.
 
 'load.on'::
-	Switch on every controllable outlet bank immediately.
+	Switch on every controllable outlet immediately.
 
 The following instant commands accept an optional delay, in seconds, passed
 as the 'value' argument of linkman:upscmd[8]:
@@ -146,18 +146,20 @@ delay, choose a 'startdelay' longer than the 'offdelay' used there (or than
 the historical 5 seconds, when 'offdelay' is not set).
 
 A command that is reported as failed had at least one of the operations it
-performs rejected by the device (or unanswered), so a partially applied
-command is possible and worth re-checking with linkman:upsc[8].
+performs rejected by the device (or left unanswered), so it may have been
+applied only partially.  The driver logs which operation was rejected; the
+published state (for example *outlet.n.status*) reflects what the device
+actually did, as reported on the next poll.
 
-The following instant commands control a single outlet bank, where 'n'
-ranges from 1 to the number of banks reported by the device (see
+The following instant commands control a single outlet, where 'n'
+ranges from 1 to the number of outlets reported by the device (see
 *outlet.count* below).  They take no value:
 
 'outlet.n.load.off'::
-	Switch off outlet bank n immediately.
+	Switch off outlet n immediately.
 
 'outlet.n.load.on'::
-	Switch on outlet bank n immediately.
+	Switch on outlet n immediately.
 
 The following instant commands control the device buzzer.  They take no
 value; enabling/disabling the buzzer for good is done through the
@@ -188,16 +190,16 @@ before keeps its last known value when the device stops answering, again
 with a warning for every failed read.
 
 *outlet.count*::
-	Total number of controllable outlet banks.
+	Total number of controllable outlets.
 
 *outlet.n.status*::
-	Status of outlet bank n, either 'on' or 'off', as reported by the
-	device relay status.  This is the state of the bank relay, not a
+	Status of outlet n, either 'on' or 'off', as reported by the
+	device relay status.  This is the state of the outlet relay, not a
 	measure of the voltage present on the outlet: with the whole UPS
 	output off, the reported value can still be 'on'.
 
 *outlet.n.switchable*::
-	Set to 'yes' for every controllable outlet bank.
+	Set to 'yes' for every controllable outlet.
 
 *outlet.delay.start*::
 	Read/write power-on (boot) delay, in seconds: how long the device waits
@@ -250,19 +252,22 @@ linkman:upsrw[8] to restore your preferred value, for example:
 	upsrw -s ups.start.auto=no myups
 
 *ups.watchdog.status*::
-	Read/write watchdog setting, either 'enabled' or 'disabled': the
-	device reboots the load when it does not hear from the driver for the
-	watchdog timeout.  A timeout of 0 seconds means 'disabled', and
-	setting the variable to 'enabled' arms the watchdog with the timeout
-	last reported by the device, keeping the restart-alarm behaviour the
-	device uses.  Note that the timeout itself is not exposed as a
-	separate variable, because there is no name for it in the NUT naming
-	scheme.
+	Read/write watchdog setting, either 'enabled' or 'disabled'.  This is
+	an external (hardware) watchdog: the device expects the driver to keep
+	talking to it and, when contact is lost for longer than the watchdog
+	timeout, it power cycles the load, switching the outputs off and back
+	on.  A timeout of 0 seconds means 'disabled', and setting the variable
+	to 'enabled' arms the watchdog with the timeout last reported by the
+	device, keeping the restart-alarm behaviour the device uses.  Note that
+	the timeout itself is not exposed as a separate variable, because there
+	is no name for it in the NUT naming scheme.
 +
-WARNING: Enabling this setting arms a timer the device uses to power cycle
-the load when the driver stops talking to it, so a driver that hangs (or a
-serial link that breaks) while the watchdog is armed can switch the load off
-and on again.
+WARNING: While the watchdog is armed, a driver that hangs or a serial link
+that breaks is enough to switch the load off and on again, and the load is
+powered only as long as the driver keeps polling the device.  If you do not
+need this protection, disable it with:
++
+	upsrw -s ups.watchdog.status=disabled myups
 +
 The device reports the timeout and the restart-alarm flag, not a watchdog
 status: 'enabled' and 'disabled' are inferred from a non-zero timeout, which
