@@ -53,10 +53,12 @@ size_t microlink_usb_drop_report_padding(void);
  * microlink_usb_get_char() opportunistically decodes and stashes these
  * whenever they arrive. This accessor returns 1 and fills the out-params
  * if this device was found (at open time) to expose all the usages
- * needed, and the last decoded snapshot is no older than max_age_sec;
- * returns 0 otherwise (unsupported device, or no fresh-enough snapshot
- * yet). battery_charge/battery_runtime are set to -1 if that particular
- * field wasn't found on this device, even when the call otherwise
+ * needed, and both status booleans (ACPresent, Discharging) were decoded
+ * from a report no older than max_age_sec; returns 0 otherwise (unsupported
+ * device, or status not seen recently enough - a RemainingCapacity or
+ * RunTimeToEmpty report alone does not count). battery_charge/
+ * battery_runtime are set to -1 if that particular field wasn't found on
+ * this device or has not been decoded yet, even when the call otherwise
  * succeeds for the status booleans. */
 int microlink_usb_get_hid_fallback(int max_age_sec,
 	int *ac_present, int *discharging, int *below_rcl,
