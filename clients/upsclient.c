@@ -34,6 +34,7 @@
 # endif
 #endif	/* !WIN32 */
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -3772,6 +3773,47 @@ int upscli_upserror(UPSCONN_t *ups)
 	return ups->upserror;
 }
 
+/* Format a "USERNAME" or "PASSWORD" line for upsd, so that the value arrives
+ * intact: upsd splits its input into words with the same parser as for config
+ * files, where a "#" starts a comment, white space separates words, and
+ * backslash or double quote are special. Like build_cmd() does for command
+ * arguments, escape the value with pconf_encode() and wrap it into quotes if
+ * it has white space (or is empty, which would be no argument at all without
+ * them); ordinary values are sent exactly as before.
+ * pconf_encode() silently truncates when its buffer is too small, and a
+ * truncated credential must not be sent, so check the room needed first.
+ * Returns 0 on success or -1 if the line would not fit into buf.
+ */
+static int format_auth_line(char *buf, size_t bufsize, const char *keyword, const char *value)
+{
+	char	enc[UPSCLI_NETBUF_LEN];
+	const char	*p, *quote = (*value == '\0') ? "\"" : "";
+	size_t	enclen = 0;
+	int	len;
+
+	for (p = value; *p != '\0'; p++) {
+		/* pconf_encode() adds a backslash before each of these */
+		enclen += (*p == '#' || *p == '\\' || *p == '"') ? 2 : 1;
+
+		if (isspace((unsigned char)*p)) {
+			quote = "\"";
+		}
+	}
+
+	if (enclen >= sizeof(enc)) {
+		return -1;
+	}
+
+	len = snprintf(buf, bufsize, "%s %s%s%s\n",
+		keyword, quote, pconf_encode(value, enc, sizeof(enc)), quote);
+
+	if (len < 0 || (size_t)len >= bufsize) {
+		return -1;
+	}
+
+	return 0;
+}
+
 int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *password,
 	int check_os_user, int ask_password)
 {
@@ -3846,7 +3888,11 @@ int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *passwo
 	}
 
 	/* We have enough strings to try and log in */
-	snprintf(buf, sizeof(buf), "USERNAME %s\n", user_ptr);
+	if (format_auth_line(buf, sizeof(buf), "USERNAME", user_ptr) < 0) {
+		upslogx(LOG_ERR, "Can't set username: too long to be encoded for the network protocol");
+		ups->upserror = UPSCLI_ERR_INVUSERNAME;
+		return -1;
+	}
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
 		upslogx(LOG_ERR, "Can't set username: %s", upscli_strerror(ups));
 		return -2;
@@ -3870,7 +3916,11 @@ int upscli_authenticate(UPSCONN_t *ups, const char *username, const char *passwo
 		return -2;
 	}
 
-	snprintf(buf, sizeof(buf), "PASSWORD %s\n", pass_ptr);
+	if (format_auth_line(buf, sizeof(buf), "PASSWORD", pass_ptr) < 0) {
+		upslogx(LOG_ERR, "Can't set password: too long to be encoded for the network protocol");
+		ups->upserror = UPSCLI_ERR_INVPASSWORD;
+		return -1;
+	}
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
 		upslogx(LOG_ERR, "Can't set password: %s", upscli_strerror(ups));
 		return -2;
