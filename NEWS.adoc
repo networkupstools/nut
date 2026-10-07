@@ -224,6 +224,13 @@ https://github.com/networkupstools/nut/milestone/13
     * Serial mode: the driver polls continuously again, as the original
       serial driver did, instead of pausing for `pollinterval` between
       passes since USB support was added. USB mode is unchanged.
+    * Serial mode: startup is complete once the authentication response
+      has been sent, as with the original serial driver, rather than
+      waiting up to 15 seconds for the device to acknowledge it, during
+      which a few missed replies aborted startup. The acknowledgement is
+      still collected by the regular polling. USB mode is unchanged.
+      If startup does fail after the handshake, the message now names
+      the step that was missing.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

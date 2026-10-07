@@ -2105,12 +2105,45 @@ static int microlink_startup_ready(void)
 	 * 0 for days. Keep the startup loop polling across that window - but
 	 * only until the grace expires, because a device that never sets the
 	 * bit still has usable identity data and a standard-HID fallback worth
-	 * starting up on. */
-	if (microlink_auth_pending(microlink_now())) {
+	 * starting up on.
+	 *
+	 * USB only: serial polls continuously (see
+	 * microlink_connected_poll_interval()), so the acknowledgement is
+	 * collected by the regular polling after startup, as the original serial
+	 * implementation always did. Waiting here only widened the window in
+	 * which a few consecutive read timeouts abort startup altogether
+	 * (issue #3587). */
+#ifdef WITH_USB
+	if (is_usb && microlink_auth_pending(microlink_now())) {
 		return 0;
 	}
+#endif /* WITH_USB */
 
 	return authentication_sent;
+}
+
+/* Which microlink_startup_ready() condition is still unmet, for the startup
+ * failure message. Checked in the same order. */
+static const char *microlink_startup_missing(void)
+{
+	if (!session_ready) {
+		return "session lost";
+	}
+
+	if (!microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
+		return "no protocol header (page 0) received";
+	}
+
+	if ((page0.flags & (MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT | MLINK_PAGE0_FLAG_AUTH_REQUIRED)) != 0U
+	 && !descriptor_ready) {
+		return "descriptor read incomplete";
+	}
+
+	if (!authentication_sent) {
+		return "authentication response not sent";
+	}
+
+	return "authentication not acknowledged";
 }
 
 static void microlink_set_alarms_from_descriptor_map(const char *path,
@@ -4033,10 +4066,16 @@ void upsdrv_initinfo(void)
 		/* Say which stage failed - a dead link and a session that answered
 		 * but never finished its startup exchange need different debugging -
 		 * and only mention the HID fallback where it could ever apply. */
-		const char	*stage = handshake_ok
-			? "Microlink session started but did not reach startup readiness"
-			: "Microlink session handshake failed";
+		char	stage[128];
 		const char	*fallback = "";
+
+		if (handshake_ok) {
+			snprintf(stage, sizeof(stage), "Microlink session started but "
+				"did not reach startup readiness (%s)",
+				microlink_startup_missing());
+		} else {
+			snprintf(stage, sizeof(stage), "Microlink session handshake failed");
+		}
 
 #ifdef WITH_USB
 		if (is_usb) {
