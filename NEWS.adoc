@@ -69,8 +69,8 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `nut-scanner` now suggests a commented `allow_duplicates` flag when USB
    discovery finds potentially ambiguous configurations for drivers which
-   implement this flag. Active settings are unchanged; device-to-name
-   association may vary if the user enables the flag. [issue #2998]
+   implement this flag. Active settings are unchanged; but the device-to-name
+   association may vary if the user enables the flag. [issue #2998, PR #3670]
 
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
