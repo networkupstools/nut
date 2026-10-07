@@ -59,8 +59,20 @@ typedef enum winhid_layout_mode_e {
 /* Keep the legacy reversal as the fallback when auto validation is inconclusive. */
 static winhid_layout_mode_t g_winhid_layout = WINHID_LAYOUT_AUTO;
 
+/** Case-insensitive comparison (according to tolower per-char). Returns:
+ * 0 for non-equal strings (also if either or both are NULL),
+ * 1 for equal strings
+ */
 static int winhid_case_equal(const char *a, const char *b)
 {
+#if 0
+	/* TOTHINK: Which is better (performance etc.)? */
+	if (!a || !b) {
+		return 0;
+	}
+
+	return (strcasecmp(a, b) == 0);
+#else
 	unsigned char ca;
 	unsigned char cb;
 
@@ -75,6 +87,7 @@ static int winhid_case_equal(const char *a, const char *b)
 		}
 	}
 	return *a == '\0' && *b == '\0';
+#endif
 }
 
 static const char *winhid_layout_name(const winhid_layout_mode_t mode)
