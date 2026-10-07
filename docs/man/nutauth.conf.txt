@@ -9,7 +9,7 @@ nutauth.conf - Authentication and SSL configuration for NUT clients
 DESCRIPTION
 -----------
 
-This file is read by the NUT client library linkman:libupsclient[3] via
+This file is read by the NUT client library linkman:upsclient[3] via
 linkman:upscli_read_authconf_file[3]. It allows users to define default and
 per-server authentication credentials (username and password) and SSL/TLS
 settings (certificates, verification, etc.) for use by NUT clients like
