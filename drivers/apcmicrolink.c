@@ -3291,10 +3291,18 @@ static int microlink_start_session_impl(unsigned int max_attempts)
 		 * never NAK alone - see MLINK_STOP_BYTE's comment. A STOP write
 		 * failure is treated the same as an INIT_BYTE write failure
 		 * (hard I/O error, not just "no reply yet"), matching how
-		 * MLINK_INIT_BYTE's own failure is handled just below. */
-		if (!microlink_send_simple(MLINK_STOP_BYTE)) {
+		 * MLINK_INIT_BYTE's own failure is handled just below.
+		 *
+		 * USB only: the problem this works around was seen on the USB HID
+		 * tunnel, and the original serial implementation only ever sent
+		 * INIT. Serial session startup began failing on a unit that had
+		 * worked with INIT alone once STOP was added here (issue #3587),
+		 * so serial keeps its long-proven INIT-only handshake. */
+#ifdef WITH_USB
+		if (is_usb && !microlink_send_simple(MLINK_STOP_BYTE)) {
 			return 0;
 		}
+#endif /* WITH_USB */
 
 		if (!microlink_send_simple(MLINK_INIT_BYTE)) {
 			return 0;
@@ -3923,6 +3931,7 @@ static void microlink_register_outlet_commands(void)
 void upsdrv_initinfo(void)
 {
 	int microlink_ready = 0;
+	int handshake_ok = 0;
 
 	memset(objects, 0, sizeof(objects));
 	session_ready = 0;
@@ -3948,6 +3957,7 @@ void upsdrv_initinfo(void)
 	microlink_configured_poll_interval = poll_interval;
 
 	if (microlink_start_session()) {
+		handshake_ok = 1;
 		microlink_ready = 1;
 		while (microlink_ready && !microlink_startup_ready()) {
 			time_t now = microlink_now();
@@ -4003,9 +4013,23 @@ void upsdrv_initinfo(void)
 			"arrive. Outlet-group data and commands will become available "
 			"automatically once the Microlink session connects", device_path);
 	} else {
-		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
-			"and this device exposes no standard HID Power Device usages to fall "
-			"back on", device_path);
+		/* Say which stage failed - a dead link and a session that answered
+		 * but never finished its startup exchange need different debugging -
+		 * and only mention the HID fallback where it could ever apply. */
+		const char	*stage = handshake_ok
+			? "Microlink session started but did not reach startup readiness"
+			: "Microlink session handshake failed";
+		const char	*fallback = "";
+
+#ifdef WITH_USB
+		if (is_usb) {
+			fallback = ", and this device exposes no standard HID Power Device "
+				"usages to fall back on";
+		}
+#endif /* WITH_USB */
+
+		fatalx(EXIT_FAILURE, "apcmicrolink: %s on %s%s",
+			stage, device_path, fallback);
 	}
 
 	microlink_register_simple_commands();

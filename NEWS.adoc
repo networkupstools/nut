@@ -214,6 +214,13 @@ https://github.com/networkupstools/nut/milestone/13
       from the existing `*.calibration.result` variables because it is
       not yet known whether it carries the same value on devices that
       have both.
+    * Serial mode: session start sends only the INIT byte again, as the
+      original serial implementation did. The STOP byte that the USB
+      transport needs before INIT had also been sent on serial, where a
+      previously working setup then failed to start.
+    * When the driver gives up at startup, the message now says whether
+      the session handshake failed or the session started but never
+      became ready, and only mentions the standard HID fallback on USB.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
