@@ -22,10 +22,6 @@ PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
 
 https://github.com/networkupstools/nut/milestone/13
 
- - `upsset.cgi` now displays writable strings with maximum lengths above
-   127 characters without aborting or truncating the length. Invalid string
-   lengths are reported as an unknown type. [issue #3545]
-
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
@@ -612,6 +608,9 @@ https://github.com/networkupstools/nut/milestone/13
       by web-server environment variables for CGI calls). [#3329]
     * `upsstats.cgi` additionally has a new `AUTHCONF` configuration option
       that can be passed via its `hosts.conf` file, as detailed above. [#3439]
+    * `upsset.cgi` now displays writable strings with maximum lengths above
+      127 characters without aborting or truncating the length; invalid string
+      lengths are reported as an unknown type. [issue #3545, PR #3668]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
