@@ -428,7 +428,6 @@ https://github.com/networkupstools/nut/milestone/13
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
       `ups.beeper.status`. [issue #3638, PR #3639]
-
     * Added a new `vertiv-hid` subdriver for the Vertiv Liebert GXT5 (USB ID
       `10af:1000`). This device shares the Liebert vendor ID handled by
       `belkin-hid`, but exposes everything under `UPS.PowerSummary` only (no
@@ -442,7 +441,7 @@ https://github.com/networkupstools/nut/milestone/13
       reverts it). `belkin-hid` now explicitly declines `10af:1000` so the
       new subdriver is used even when `productid` is set in `ups.conf`.
       Tested against a GXT5 on mains only; on-battery status transitions
-      are not yet confirmed. [issue #3613]
+      are not yet confirmed. [issue #3613, PR #3730]
 
  - `snmp-ups` driver updates:
     * Fixed a NULL pointer dereference when setting exact outlet mappings
