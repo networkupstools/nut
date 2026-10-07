@@ -88,6 +88,10 @@ mode.
 
 *baudrate*='num'::
 Set the serial line speed. The default is `9600`. Serial mode only.
++
+In serial mode the driver polls the device continuously, as it always has,
+and the `pollinterval` setting from linkman:ups.conf[5] does not apply.
+USB mode honors `pollinterval`.
 
 *showinternals*='yes|no'::
 Publish additional internal Microlink runtime values. By default this follows
