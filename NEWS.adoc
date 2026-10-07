@@ -231,6 +231,9 @@ https://github.com/networkupstools/nut/milestone/13
       still collected by the regular polling. USB mode is unchanged.
       If startup does fail after the handshake, the message now names
       the step that was missing.
+    * Serial mode: the driver no longer sends a STOP byte when it exits.
+      The original serial driver never did; only the USB transport needs
+      it. USB mode is unchanged.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

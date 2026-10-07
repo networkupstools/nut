@@ -4261,17 +4261,22 @@ void upsdrv_cleanup(void)
 	 * would have skipped the STOP under the narrower test.
 	 *
 	 * Best-effort: this runs on the way out, so a failed write is worth a
-	 * debug line and nothing more. */
-	if (microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
-		session_ready = 0;
-		if (!microlink_send_simple(MLINK_STOP_BYTE)) {
-			upsdebugx(1, "microlink: could not send STOP while closing "
-				"the session");
-		}
-	}
-
+	 * debug line and nothing more.
+	 *
+	 * USB only: the problem was seen on the USB HID tunnel, and the original
+	 * serial implementation never sent STOP on the way out. Keep the serial
+	 * line exactly as that implementation left it, as with the STOP before
+	 * INIT in microlink_start_session_impl() (issue #3587). */
 #ifdef WITH_USB
 	if (is_usb) {
+		if (microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
+			session_ready = 0;
+			if (!microlink_send_simple(MLINK_STOP_BYTE)) {
+				upsdebugx(1, "microlink: could not send STOP while closing "
+					"the session");
+			}
+		}
+
 		microlink_usb_close();
 		return;
 	}
