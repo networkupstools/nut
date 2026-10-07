@@ -2836,7 +2836,7 @@ static int microlink_send_write(unsigned char id, unsigned char offset,
 
 static int microlink_send_simple(unsigned char byte)
 {
-	microlink_trace_frame(2, "TX ctrl", &byte, 1);
+	microlink_trace_frame(4, "TX ctrl", &byte, 1);
 
 #ifdef WITH_USB
 	if (is_usb) {
@@ -2913,7 +2913,7 @@ static int microlink_try_extract_frame(unsigned char *frame, size_t *framelen)
 
 			memmove(rxbuf, rxbuf + *framelen, rxbuf_len - *framelen);
 			rxbuf_len -= *framelen;
-			microlink_trace_frame(2, "RX record", frame, *framelen);
+			microlink_trace_frame(4, "RX record", frame, *framelen);
 			return 1;
 		}
 	}
