@@ -148,6 +148,12 @@ ecoflow_cdc_protocol_utest_SOURCES = ecoflow_cdc_protocol_utest.c \
 nodist_ecoflow_cdc_protocol_utest_SOURCES = ecoflow-cdc-protocol.c
 ecoflow_cdc_protocol_utest_LDADD = -lm
 
+TESTS += hashx-usb-protocol-test
+hashx_usb_protocol_test_SOURCES = hashx-usb-protocol-test.c \
+	$(top_srcdir)/drivers/hashx-usb-protocol.h
+nodist_hashx_usb_protocol_test_SOURCES = hashx-usb-protocol.c
+hashx_usb_protocol_test_LDADD =
+
 TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
 #nutbooltest_LDADD = $(NUT_LIBCOMMON)
@@ -165,7 +171,7 @@ test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c
+LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c hashx-usb-protocol.c
 
 cgilib.c: $(top_srcdir)/clients/cgilib.c
 	test -s '$@' || ln -s -f "$(top_srcdir)/clients/cgilib.c" '$@'
@@ -177,6 +183,9 @@ hidparser.c: $(top_srcdir)/drivers/hidparser.c
 
 ecoflow-cdc-protocol.c: $(top_srcdir)/drivers/ecoflow-cdc-protocol.c
 	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/ecoflow-cdc-protocol.c" '$@'
+
+hashx-usb-protocol.c: $(top_srcdir)/drivers/hashx-usb-protocol.c
+	test -s '$@' || ln -s -f "$(top_srcdir)/drivers/hashx-usb-protocol.c" '$@'
 
 if WITH_USB
 TESTS += getvaluetest getexponenttest-belkin-hid fixreportdesctest-tripplite-hid

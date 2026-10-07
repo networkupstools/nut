@@ -4,7 +4,7 @@ NUTDRV_HASHX(8)
 NAME
 ----
 
-nutdrv_hashx - Driver for #* protocol serial based UPS equipment
+nutdrv_hashx - Driver for #* protocol serial and USB UPS equipment
 
 SYNOPSIS
 --------
@@ -32,14 +32,80 @@ Long story short: if your UPS came with a software called 'PowerMaster+'
 (or the older 'PowerMaster' and 'PowerGuide'), chances are high that it
 works with this driver.
 
-Only devices with a serial interface are supported.
+Serial devices are supported. An experimental, explicitly enabled USB
+monitoring path is available for devices using USB ID `0764:0601` and the
+observed HashX status transport, such as an nJoy Keen 2000. USB support has
+been developed against passive PowerMaster+ traffic captures and tested
+once on one nJoy Keen 2000 in AC mode. That controlled USB handoff followed
+an existing PowerMaster+ session; it does not establish cold-start support.
+
+The USB ID is also used by other CyberPower-compatible devices. The ID
+alone does not establish protocol compatibility. The USB path requires
+both `port = auto` and the `usb_monitor` flag, and a complete valid HashX
+status response before publishing telemetry. USB matching options such as
+`vendorid`, `productid`, `serial`, `bus`, `device` and `busport` can further
+restrict selection. Interface and endpoint overrides are not supported by
+this experimental path.
+
+USB MONITORING
+--------------
+
+Example configuration:
+
+----
+[hashx_usb]
+    driver = nutdrv_hashx
+    port = auto
+    usb_monitor
+    vendorid = 0764
+    productid = 0601
+----
+
+The USB path issues only the `B` status query through interrupt output
+endpoint 2 and assembles replies from interrupt input endpoint 1. It
+publishes input/output voltage and frequency, load, battery charge and
+voltage, estimated runtime, and the existing HashX status mapping.
+Incomplete or malformed replies mark data stale instead of inventing zero
+values. A genuine complete zero-load reply is preserved.
+
+In the single controlled AC-mode test, input/output voltage, load, battery
+charge and voltage, and estimated runtime agreed with nearby passive
+PowerMaster+ telemetry within the comparison tolerances. PowerMaster+
+polling was verified again after the bounded test; the experimental driver
+was not left deployed. Historical intermittent zero-load readings with
+`usbhid-ups` were not reproduced. The USB tunnel provides an alternative
+monitoring path; this test does not establish a correction to the HID decoder.
+
+Before each status query, the USB path makes a bounded attempt to drain
+queued input packets. If the queue cannot be drained, it does not send a
+new query and marks data stale. The observed protocol has no transaction
+identifier: a reply delayed until after that drain cannot be conclusively
+associated with the new query. Freshness across timeouts and reconnects
+remains a hardware-test requirement.
+
+USB monitoring does not send session initialization, settings, battery-test,
+beeper or shutdown commands, and does not infer the UPS type, nominal
+ratings, model or firmware. Instant commands are not registered in USB
+mode. Cold-start/session requirements remain unverified: a successful
+status query against an already initialized device does not establish
+startup support. The status-bit mapping comes from the serial driver and
+has not been verified on this USB device during battery operation.
+
+The driver claims the USB interface and must have exclusive access.
+Arrange a controlled handoff from PowerMaster+ or another driver before a
+hardware test, preserving the existing shutdown protection. Passive
+capture tests validate framing and parsing; they do not validate USB
+ownership. The single controlled handoff tested ownership and AC-mode
+telemetry on an already initialized device; reconnection, battery operation
+and shutdown behaviour remain unvalidated.
 
 KNOWN ISSUES AND BUGS
 ---------------------
 
-The driver has only been tested with a single line-interactive device
-(Atlantis Land A03-S1200) so far, thus the protocol reverse engineering
-has been currently limited to what such device supports.
+The serial protocol reverse engineering was originally limited to a single
+line-interactive device (Atlantis Land A03-S1200). The experimental USB path
+has separate, limited test coverage on one nJoy Keen 2000 as described
+above. Neither establishes support for all features on other devices.
 
 Thus the lack of these features:
 
@@ -55,10 +121,10 @@ Thus the lack of these features:
 * Detection of lack of Neutral line connection.
 * Detection of UPS generators.
 * Detection of other Battery / UPS error states.
-* Reading of actual Voltage, Frequency, Current, Power factor, Temperature values.
+* Reading of actual Current, Power factor, Temperature values.
 * Reading the status of the battery packs.
 * Bypass modes usage and detection.
-* USB Support (PM+ mentions being it supported, unsure if with the same protocol).
+* Full USB support, including startup/session handling and power control.
 
 The driver shutdown function is not implemented (while it's supported), so other
 arrangements must be made to turn off the UPS.

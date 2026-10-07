@@ -324,6 +324,16 @@ https://github.com/networkupstools/nut/milestone/13
       input transfer low/high values on devices which support it (`H`, `I`, `J`
       protocols, e.g. Powershield PSDR800). [#3521]
 
+ - `nutdrv_hashx` gained an explicitly enabled, experimental USB monitoring
+   path for the HashX status tunnel observed on an nJoy Keen 2000 with USB
+   ID `0764:0601`. It issues only status queries, validates and reassembles
+   length-prefixed replies before publishing telemetry, and preserves genuine
+   zero-load readings. Developed against passive vendor-software captures,
+   it was tested once in a controlled AC-mode USB handoff after an existing
+   PowerMaster+ session. Cold-start/session requirements, reconnect recovery
+   and battery/power-event behaviour remain unverified. USB instant commands
+   and shutdown are unavailable.
+
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
    the NEP, TORO, INNERGIE and OneUP brands in Brazil). Devices present a USB

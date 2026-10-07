@@ -1,4 +1,4 @@
-/* nutdrv_hashx.c - Driver for serial UPS units with #* protocols
+/* nutdrv_hashx.c - Driver for serial and USB UPS units with #* protocols
  *
  * Copyright (C)
  *   2025 Marco Trevisan (Treviño) <mail@3v1n0.net>
@@ -25,7 +25,13 @@
 #include "main.h"
 #include "nut_stdint.h"
 #include "powerpanel.h"
+#ifdef HASHX_SERIAL
 #include "serial.h"
+#endif
+#ifdef HASHX_USB
+#include "nut_libusb.h"
+#include "hashx-usb-protocol.h"
+#endif
 #include "str.h"
 #include "upshandler.h"
 #include <stdio.h>
@@ -34,8 +40,14 @@
 #define ENDCHAR		'\r'
 #define IGNCHARS	""
 
+#if defined(HASHX_USB) && defined(HASHX_SERIAL)
+#define DRIVER_NAME	"Generic #* USB/Serial driver"
+#elif defined(HASHX_USB)
+#define DRIVER_NAME	"Generic #* USB driver"
+#else
 #define DRIVER_NAME	"Generic #* Serial driver"
-#define DRIVER_VERSION	"0.03"
+#endif
+#define DRIVER_VERSION	"0.04"
 
 #define SESSION_ID	"OoNUTisAMAZINGoO"
 #define SESSION_HASH	"74279F35A48F5F13"
@@ -117,6 +129,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+#ifdef HASHX_SERIAL
 static struct hashx_cmd_t {
 	const char *cmd_name;
 	const char *ups_cmd;
@@ -134,6 +147,185 @@ static struct hashx_cmd_t {
 };
 
 static int hashx_instcmd(const char *cmd_name, const char *extra);
+#endif
+
+static void hashx_apply_status(char *buf, ssize_t transferred);
+
+#ifdef HASHX_USB
+#define HASHX_USB_EP_IN		0x81
+#define HASHX_USB_EP_OUT		0x02
+
+static int hashx_is_usb = 0;
+static usb_dev_handle *hashx_udev = NULL;
+static USBDevice_t hashx_usbdevice;
+static USBDeviceMatcher_t *hashx_regex_matcher = NULL;
+static USBDeviceMatcher_t *hashx_reopen_matcher = NULL;
+
+/* The ID is also used by unrelated CyberPower HID devices. USB support
+ * requires an explicit opt-in and a valid HashX status response.
+ */
+static usb_device_id_t hashx_usb_ids[] = {
+	{ USB_DEVICE(0x0764, 0x0601), NULL },
+	{ 0, 0, NULL }
+};
+
+static int hashx_usb_match(USBDevice_t *device, void *privdata)
+{
+	NUT_UNUSED_VARIABLE(privdata);
+	return is_usb_device_supported(hashx_usb_ids, device) == SUPPORTED;
+}
+
+static USBDeviceMatcher_t hashx_device_matcher = {
+	&hashx_usb_match,
+	NULL,
+	NULL
+};
+
+static void hashx_usb_free_device(void)
+{
+	free(hashx_usbdevice.Vendor);
+	free(hashx_usbdevice.Product);
+	free(hashx_usbdevice.Serial);
+	free(hashx_usbdevice.Bus);
+	free(hashx_usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(hashx_usbdevice.BusPort);
+#endif
+	memset(&hashx_usbdevice, 0, sizeof(hashx_usbdevice));
+}
+
+static int hashx_usb_open(void)
+{
+	int ret;
+	USBDeviceMatcher_t *matcher;
+
+	matcher = hashx_reopen_matcher ? hashx_reopen_matcher : hashx_regex_matcher;
+	hashx_usb_free_device();
+	ret = usb_subdriver.open_dev(&hashx_udev, &hashx_usbdevice, matcher, NULL);
+	if (ret < 1) {
+		return -1;
+	}
+	if (!hashx_reopen_matcher) {
+		ret = USBNewExactMatcher(&hashx_reopen_matcher, &hashx_usbdevice);
+		if (ret != 0) {
+			fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
+		}
+		hashx_reopen_matcher->next = hashx_regex_matcher;
+	}
+	return 0;
+}
+
+static void hashx_usb_check_disconnect(int ret)
+{
+#if WITH_LIBUSB_1_0
+	if (ret != LIBUSB_ERROR_NO_DEVICE) {
+#else
+	if (ret != -ENODEV) {
+#endif
+		return;
+	}
+	usb_subdriver.close_dev(hashx_udev);
+	hashx_udev = NULL;
+}
+
+static int hashx_usb_read_packet(void *context, unsigned char *packet,
+	size_t length, unsigned int timeout)
+{
+	int ret;
+
+	if (length > INT_MAX || timeout > INT_MAX) {
+		return -1;
+	}
+	ret = usb_interrupt_read((usb_dev_handle *)context, HASHX_USB_EP_IN,
+		(usb_ctrl_charbuf)packet, (int)length, (int)timeout);
+#if WITH_LIBUSB_1_0
+	if (ret == LIBUSB_ERROR_TIMEOUT) {
+#else
+	if (ret == -ETIMEDOUT) {
+#endif
+		return 0;
+	}
+	if (ret < 0) {
+		hashx_usb_check_disconnect(ret);
+		return -1;
+	}
+	return ret;
+}
+
+static int hashx_usb_write_packet(void *context, const unsigned char *packet,
+	size_t length, unsigned int timeout)
+{
+	int ret;
+
+	if (length > INT_MAX || timeout > INT_MAX) {
+		return -1;
+	}
+	ret = usb_interrupt_write((usb_dev_handle *)context, HASHX_USB_EP_OUT,
+		(usb_ctrl_charbuf)packet, (int)length, (int)timeout);
+	if (ret < 0) {
+		hashx_usb_check_disconnect(ret);
+		return -1;
+	}
+	return ret;
+}
+
+static ssize_t hashx_usb_status(char *buf, size_t bufsize)
+{
+	struct hashx_usb_reply reply;
+
+	if (bufsize < HASHX_USB_FRAME_SIZE || (!hashx_udev && hashx_usb_open() < 0)) {
+		return -1;
+	}
+	if (hashx_usb_status_query(hashx_udev, hashx_usb_read_packet,
+		hashx_usb_write_packet, &reply) != 1
+	 || !hashx_usb_status_valid(reply.data, reply.length)) {
+		return -1;
+	}
+
+	/* The serial receiver excludes CR. Preserve that convention for the
+	 * existing status mapping, including its binary status-byte tail.
+	 */
+	memcpy(buf, reply.data, reply.length - 1);
+	buf[reply.length - 1] = '\0';
+	return (ssize_t)(reply.length - 1);
+}
+
+static void hashx_usb_init(void)
+{
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
+	int ret;
+
+	regex_array[0] = getval("vendorid");
+	regex_array[1] = getval("productid");
+	regex_array[2] = getval("vendor");
+	regex_array[3] = getval("product");
+	regex_array[4] = getval("serial");
+	regex_array[5] = getval("bus");
+	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		fatalx(EXIT_FAILURE, "busport matching is unavailable in this build");
+	}
+#endif
+	ret = USBNewRegexMatcher(&hashx_regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (ret < 0) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
+	}
+	if (ret > 0) {
+		fatalx(EXIT_FAILURE, "invalid USB matching expression: %s", regex_array[ret - 1]);
+	}
+	hashx_regex_matcher->next = &hashx_device_matcher;
+	if (hashx_usb_open() < 0) {
+		fatalx(EXIT_FAILURE, "No matching USB 0764:0601 device available for HashX monitoring");
+	}
+	dstate_setinfo("ups.vendorid", "%04x", hashx_usbdevice.VendorID);
+	dstate_setinfo("ups.productid", "%04x", hashx_usbdevice.ProductID);
+}
+#endif /* HASHX_USB */
+
+#ifdef HASHX_SERIAL
 
 static ssize_t hashx_recv(char *buf, size_t bufsize)
 {
@@ -205,6 +397,7 @@ static int hashx_send_command(const char *command)
 
 	return status;
 }
+#endif /* HASHX_SERIAL */
 
 /*
  * This is how PowerMaster+ 1.2.3 does when connecting to the UPS:
@@ -250,6 +443,7 @@ static int hashx_send_command(const char *command)
 
 void upsdrv_initinfo(void)
 {
+#ifdef HASHX_SERIAL
 	ssize_t transferred;
 	char buf[256];
 	char *reply;
@@ -257,6 +451,25 @@ void upsdrv_initinfo(void)
 	int ival;
 	double dval;
 	size_t i;
+#endif
+
+#ifdef HASHX_USB
+	if (hashx_is_usb) {
+		char status_buf[256];
+		ssize_t status_length;
+
+		status_length = hashx_usb_status(status_buf, sizeof(status_buf));
+		if (status_length < 0) {
+			fatalx(EXIT_FAILURE, "USB monitoring probe did not return a complete valid HashX status frame");
+		}
+		dstate_setinfo("device.type", "ups");
+		dstate_setinfo("driver.parameter.usb_monitor", "enabled");
+		hashx_apply_status(status_buf, status_length);
+		return;
+	}
+#endif
+
+#ifdef HASHX_SERIAL
 
 	for (i = 0; ; ++i) {
 		upsdebugx(4, "Checking if device supports the #-protocol... [%" PRIuSIZE "]", i+1);
@@ -418,12 +631,44 @@ void upsdrv_initinfo(void)
 	for (i = 0; i < sizeof (hashx_cmd) / sizeof (*hashx_cmd); ++i) {
 		dstate_addcmd(hashx_cmd[i].cmd_name);
 	}
+#endif /* HASHX_SERIAL */
 }
 
 void upsdrv_updateinfo(void)
 {
 	char buf[256];
 	ssize_t transferred;
+
+#ifdef HASHX_USB
+	if (hashx_is_usb) {
+		transferred = hashx_usb_status(buf, sizeof(buf));
+		if (transferred < 0) {
+			upslogx(LOG_ERR, "USB HashX status query failed or returned an incomplete/malformed frame");
+			dstate_datastale();
+			return;
+		}
+		hashx_apply_status(buf, transferred);
+		return;
+	}
+#endif
+
+#ifdef HASHX_SERIAL
+	if ((transferred = ser_send(upsfd, COMMAND_GET_STATUS"%c", ENDCHAR)) != 2) {
+		upslogx(LOG_ERR, "%s: Failed to get status", __func__);
+		dstate_datastale();
+		return;
+	}
+	if ((transferred = hashx_recv(buf, sizeof(buf))) <= 0) {
+		upslogx(LOG_ERR, "%s: unexpected status response: %s", __func__, buf);
+		dstate_datastale();
+		return;
+	}
+	hashx_apply_status(buf, transferred);
+#endif
+}
+
+static void hashx_apply_status(char *buf, ssize_t transferred)
+{
 	size_t i;
 	char *status;
 	int ret;
@@ -437,17 +682,6 @@ void upsdrv_updateinfo(void)
 	int remaining_runtime = -1;
 	char *status_bytes = NULL;
 	size_t status_bytes_size = 0;
-
-	if ((transferred = ser_send(upsfd, COMMAND_GET_STATUS"%c", ENDCHAR)) != 2) {
-		upslogx(LOG_ERR, "%s: Failed to get status", __func__);
-		dstate_datastale();
-		return;
-	}
-	if ((transferred = hashx_recv(buf, sizeof(buf))) <= 0) {
-		upslogx(LOG_ERR, "%s: unexpected status response: %s", __func__, buf);
-		dstate_datastale();
-		return;
-	}
 
 	/* This is in the format:
 	 * #I239.0O237.0L007B100V27.0F50.1H50.1R040S\x80\0x84\0xd0\x80\x80\0xc0
@@ -616,6 +850,7 @@ void upsdrv_updateinfo(void)
 	alarm_commit();
 }
 
+#ifdef HASHX_SERIAL
 static int hashx_instcmd(const char *cmd_name, const char *extra)
 {
 	size_t i;
@@ -643,6 +878,7 @@ static int hashx_instcmd(const char *cmd_name, const char *extra)
 	upslog_INSTCMD_UNKNOWN(cmd_name, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
+#endif
 
 void upsdrv_shutdown(void)
 {
@@ -665,10 +901,35 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_makevartable(void)
 {
+#ifdef HASHX_USB
+	addvar(VAR_FLAG, "usb_monitor", "Explicitly enable experimental USB monitoring with port=auto; no power-control commands");
+	nut_usb_addvars();
+#endif
 }
 
 void upsdrv_initups(void)
 {
+#ifdef HASHX_USB
+	if (testvar("usb_monitor")) {
+		if (strcmp(device_path, "auto") != 0) {
+			fatalx(EXIT_FAILURE, "USB monitoring requires both port=auto and usb_monitor");
+		}
+		if (getval("usb_config_index") || getval("usb_hid_rep_index")
+		 || getval("usb_hid_desc_index") || getval("usb_hid_ep_in")
+		 || getval("usb_hid_ep_out") || testvar("usb_set_altinterface")) {
+			fatalx(EXIT_FAILURE, "USB HashX monitoring supports only the observed default interface and endpoints");
+		}
+		hashx_is_usb = 1;
+		upslogx(LOG_WARNING, "Experimental USB monitoring only: startup sessions and power controls are unverified and unavailable");
+		hashx_usb_init();
+		return;
+	}
+	if (strcmp(device_path, "auto") == 0) {
+		fatalx(EXIT_FAILURE, "USB monitoring requires explicit usb_monitor opt-in");
+	}
+#endif
+
+#ifdef HASHX_SERIAL
 	upsdebugx(3, "Opening device %s", device_path);
 
 	upsfd = ser_open(device_path);
@@ -678,9 +939,26 @@ void upsdrv_initups(void)
 	}
 
 	ser_set_speed(upsfd, device_path, B2400);
+#else
+	fatalx(EXIT_FAILURE, "Serial support is unavailable; USB requires port=auto and usb_monitor");
+#endif
 }
 
 void upsdrv_cleanup(void)
 {
+#ifdef HASHX_USB
+	if (hashx_is_usb) {
+		if (hashx_udev) {
+			usb_subdriver.close_dev(hashx_udev);
+			hashx_udev = NULL;
+		}
+		USBFreeExactMatcher(hashx_reopen_matcher);
+		USBFreeRegexMatcher(hashx_regex_matcher);
+		hashx_usb_free_device();
+		return;
+	}
+#endif
+#ifdef HASHX_SERIAL
 	ser_close(upsfd, device_path);
+#endif
 }
