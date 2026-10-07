@@ -806,6 +806,7 @@ static void do_type(const char *varname)
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
 			long	len;
 
+			/* split out the :<len> data */
 			if (!str_to_long_strict(answer[i] + 7, &len, 10) || len <= 0) {
 				printf("Unknown type\n");
 				return;
