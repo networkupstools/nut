@@ -883,6 +883,7 @@ spellcheck spellcheck-interactive: @dotMAKE@
 		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
 		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
 	  fi
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 # Auto-parallel recipe (if current 'make' implementation supports the "-j N"
 # syntax; the optional MAXPARMAKES may be set in NUT CI farm style builds):
@@ -902,22 +903,27 @@ SET_PARMAKES_OPT = \
 all-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} all
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 install-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} install
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 check-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} check
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 memcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} memcheck
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 spellcheck-quick: @dotMAKE@
 	+@$(SET_PARMAKES_OPT); \
 	  $(MAKE) $(AM_MAKEFLAGS) -k -s $${PARMAKES_OPT} spellcheck
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 # Run auto-parallel recipe, and if something fails - re-run interactively:
 spellcheck-interactive-quick: @dotMAKE@
@@ -927,6 +933,7 @@ spellcheck-interactive-quick: @dotMAKE@
 		SUBDIR_MAKE_VERBOSE=1 ; export SUBDIR_MAKE_VERBOSE ; \
 	  fi ; \
 	  $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_QUICK=true -k -s spellcheck-interactive
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
 # found by `configure` script (and so avoided by conventional recipes)
@@ -939,6 +946,7 @@ man all-man man-man check-man check-man-man html-man all-html: @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
 	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 INSTALL.nut UPGRADING NEWS README: @dotMAKE@
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
@@ -1026,6 +1034,7 @@ NIT.env:
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
 check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: NIT.env .libs-dev-PATH @dotMAKE@
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
+	@echo "SUCCESS: Completed top-level goal: $@" >&2
 
 VERSION_DEFAULT: dummy-stamp
 	@abs_top_srcdir='$(abs_top_srcdir)' ; \

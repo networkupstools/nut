@@ -13,7 +13,7 @@ SYNOPSIS
 	#include <upsclient.h>
 
 	int upscli_splitaddr(const char *buf, char **hostname,
-		int *port)
+		uint16_t *port)
 ------
 
 DESCRIPTION

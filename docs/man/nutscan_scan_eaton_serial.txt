@@ -23,8 +23,10 @@ The *nutscan_scan_eaton_serial()* function tries to detect NUT devices
 which are compatible with Eaton's serial device protocols (SHUT, XCP
 and Q1 (aka blazer or megatec)).
 
-'ports_list' is a NULL-terminated array of pointers to strings containing
-serial device name (`/dev/ttyS0`, `COM1`, `/dev/ttya`...)
+'ports_list' is a string specifying a serial port, a range such as `0-1`,
+or a comma-separated list such as `/dev/ttyS0,/dev/ttyS1`. The function
+expands this string internally using linkman:nutscan_get_serial_ports_list[3],
+which describes the supported syntax and platform-specific port names.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 

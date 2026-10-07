@@ -282,7 +282,11 @@ Step 2
 
 Start the driver with the type you want to try, e.g.:
 
-        genericups -x upstype=n /dev/port
+        genericups -s test-ups -x upstype=n -x port=/dev/port
+
+To monitor this test through linkman:upsd[8], first configure a matching
+`[test-ups]` section in linkman:ups.conf[5] with `driver = genericups` and
+the same port. Alternatively, use the debug mode below.
 
 Let linkman:upsd[8] sync up (watch the syslog), and then run linkman:upsc[8]
 to see what it found.  If the `STATUS` is correct (should be "OL" for online),
@@ -290,7 +294,7 @@ continue to <<_step_3,Step 3>>, otherwise go back to step 1.
 
 Alternatively, you can run `genericups` in debug mode, e.g.:
 
-        genericups -DDDDD -x upstype=n /dev/port
+        genericups -s test-ups -DDDDD -x upstype=n -x port=/dev/port
 
 In this mode it will be running in the foreground and continuously
 display the line and battery status of the UPS.
@@ -325,7 +329,7 @@ So far: OL works, OB works, and LB works.
 With the UPS running on battery, run the genericups driver with the -k
 switch to shut it down.
 
-        genericups -x upstype=n -k /dev/port
+        genericups -s test-ups -x upstype=n -k -x port=/dev/port
 
 If the UPS turns off the lamp, you're done.  At this point, you have
 verified that the shutdown sequence actually does what you want.  You

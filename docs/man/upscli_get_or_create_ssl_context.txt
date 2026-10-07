@@ -97,7 +97,7 @@ SECURE CLEANUP
 --------------
 
 Sensitive fields (passwords, certificate names/paths) are automatically zeroed
-with linkman:memset[3] before being freed, preventing sensitive data from
+with linkmanext:memset[3] before being freed, preventing sensitive data from
 lingering in freed memory.
 
 LIFETIME AND OWNERSHIP
