@@ -221,6 +221,9 @@ https://github.com/networkupstools/nut/milestone/13
     * When the driver gives up at startup, the message now says whether
       the session handshake failed or the session started but never
       became ready, and only mentions the standard HID fallback on USB.
+    * Serial mode: the driver polls continuously again, as the original
+      serial driver did, instead of pausing for `pollinterval` between
+      passes since USB support was added. USB mode is unchanged.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]

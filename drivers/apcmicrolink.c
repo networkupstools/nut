@@ -646,6 +646,21 @@ static unsigned int microlink_handshake_retries(void)
 	return MLINK_HANDSHAKE_RETRIES;
 }
 
+/* poll_interval to run at once a session is up. USB honors the configured
+ * pollinterval (see microlink_configured_poll_interval). Serial polls
+ * continuously, as the original serial implementation always did: it forced
+ * poll_interval to 0, and the device was only ever proven against that
+ * cadence, never against the pauses of a pollinterval (issue #3587). */
+static time_t microlink_connected_poll_interval(void)
+{
+#ifdef WITH_USB
+	if (is_usb) {
+		return microlink_configured_poll_interval;
+	}
+#endif /* WITH_USB */
+	return 0;
+}
+
 /* Whether an already-established session has gone quiet long enough to be
  * torn down and restarted. USB uses a much more patient, wall-clock-based
  * budget than the initial handshake (see MLINK_USB_MIDSESSION_IDLE_SEC);
@@ -3950,11 +3965,13 @@ void upsdrv_initinfo(void)
 	microlink_fallback_since = 0;
 	/* Capture the user's configured pollinterval (or main.c's own default)
 	 * before anything below has a chance to lower poll_interval to pace
-	 * connection retries - a successfully connected session restores this
-	 * value rather than busy-polling at 0s once the tunnel is up, since
+	 * connection retries - a successfully connected USB session restores
+	 * this value rather than busy-polling at 0s once the tunnel is up, since
 	 * ups.status/battery.charge/outlet state don't change fast enough to
-	 * need that. */
+	 * need that. Serial keeps polling continuously, see
+	 * microlink_connected_poll_interval(). */
 	microlink_configured_poll_interval = poll_interval;
+	poll_interval = microlink_connected_poll_interval();
 
 	if (microlink_start_session()) {
 		handshake_ok = 1;
@@ -4086,7 +4103,7 @@ void upsdrv_updateinfo(void)
 		}
 		microlink_fallback_since = 0;
 		microlink_fallback_retries = 0;
-		poll_interval = microlink_configured_poll_interval;
+		poll_interval = microlink_connected_poll_interval();
 	}
 
 	if (microlink_poll_burst()) {
