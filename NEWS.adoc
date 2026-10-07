@@ -231,6 +231,11 @@ https://github.com/networkupstools/nut/milestone/13
       still collected by the regular polling. USB mode is unchanged.
       If startup does fail after the handshake, the message now names
       the step that was missing.
+    * Serial mode: one record is read per poll again, and data is
+      published after each one, as with the original serial driver.
+      Reading a full pass (about 6 seconds on a tested unit) before
+      publishing delayed status changes such as going on battery by
+      that much. USB mode is unchanged.
     * Serial mode: the driver no longer sends a STOP byte when it exits.
       The original serial driver never did; only the USB transport needs
       it. USB mode is unchanged.

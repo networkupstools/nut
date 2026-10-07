@@ -2065,7 +2065,11 @@ static int microlink_auth_data_valid(void)
  * finished at the moment of the write: this device takes roughly 20 further
  * exchanges to set the AUTH_STATUS valid bit, and serves no measurement page
  * until it does. Anything that decides whether to keep polling has to know
- * that, or it stops mid-handshake and the tunnel never yields a reading. */
+ * that, or it stops mid-handshake and the tunnel never yields a reading.
+ *
+ * USB only: serial polls continuously, one record at a time, so it never
+ * stops asking in the first place (see microlink_connected_poll_interval()). */
+#ifdef WITH_USB
 static int microlink_auth_pending(time_t now)
 {
 	if (!authentication_sent || authentication_sent_at == 0) {
@@ -2078,6 +2082,7 @@ static int microlink_auth_pending(time_t now)
 
 	return (difftime(now, authentication_sent_at) < MLINK_AUTH_GRACE_SEC);
 }
+#endif /* WITH_USB */
 
 static int microlink_startup_ready(void)
 {
@@ -3229,13 +3234,24 @@ static int microlink_poll_once(time_t now)
  * blocking loop. */
 static unsigned int microlink_poll_burst_budget(void)
 {
-	if (page0.count >= MLINK_POLL_BURST_MIN
-	 && page0.count <= MLINK_POLL_BURST_MAX
-	) {
-		return page0.count;
-	}
+	/* Serial: one record per call, as the original serial implementation
+	 * did. It polls continuously anyway (see
+	 * microlink_connected_poll_interval()), so a bigger pass gains nothing
+	 * and only delays publishing - a full pass takes ~6 s on a 105-page
+	 * device, so an OL->OB change could show up that late (issue #3587). */
+#ifdef WITH_USB
+	if (is_usb) {
+		if (page0.count >= MLINK_POLL_BURST_MIN
+		 && page0.count <= MLINK_POLL_BURST_MAX
+		) {
+			return page0.count;
+		}
 
-	return MLINK_POLL_BURST_MIN;
+		return MLINK_POLL_BURST_MIN;
+	}
+#endif /* WITH_USB */
+
+	return 1;
 }
 
 /* Drive the tunnel the way APC's own client does: keep asking for the next
@@ -3266,7 +3282,17 @@ static int microlink_poll_burst(void)
 	time_t started = microlink_now();
 	time_t now = started;
 
-	while (fetched < budget || microlink_auth_pending(now)) {
+	for (;;) {
+		/* USB also overruns the budget while auth is pending, see above;
+		 * serial takes exactly its one record per call. */
+		if (fetched >= budget
+#ifdef WITH_USB
+		 && !(is_usb && microlink_auth_pending(now))
+#endif /* WITH_USB */
+		) {
+			break;
+		}
+
 		/* A pending shutdown outranks finishing the pass. The main loop
 		 * cannot begin tearing down until upsdrv_updateinfo() returns, so
 		 * every further exchange here delays the STOP that
@@ -3293,7 +3319,9 @@ static int microlink_poll_burst(void)
 		}
 	}
 
-	upsdebugx(3, "microlink: poll burst fetched %u of %u records in %.0f s",
+	/* A one-record serial "burst" runs every ~50 ms; keep it out of D3. */
+	upsdebugx(budget > 1 ? 3 : 4,
+		"microlink: poll burst fetched %u of %u records in %.0f s",
 		fetched, budget, difftime(now, started));
 
 	return (fetched > 0);
