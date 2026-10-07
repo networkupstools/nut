@@ -347,7 +347,7 @@ https://github.com/networkupstools/nut/milestone/13
      the read command that was sent while the handshake reply was still in
      flight. [issue #3500]
    * Compute `battery.charge` as `raw / 2.55` so a fully charged battery
-     reports exactly 100 % instead of 100.2 %.
+     reports exactly 100 % instead of 100.2 %. [issue #3500, PR #3504]
    * Added a `va` option to override the apparent-power rating when the
      firmware model id is shared between product lines, correcting
      `ups.power.nominal`, `ups.realpower.nominal` and the computed
@@ -363,9 +363,9 @@ https://github.com/networkupstools/nut/milestone/13
      path across driver restarts. The load behind the runtime figure is
      averaged over about 5 minutes on mains and 15 seconds on battery.
      Calibration procedure and measured values for an Easy Pro 3200 VA are
-     in the man page.
+     in the man page. [PR #3716]
    * Added `test.battery.stop` (the OEM `cancelDischarge` action), gated by
-     `allow_shutdown` like `test.battery.start.deep`.
+     `allow_shutdown` like `test.battery.start.deep`. [PR #3716]
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
