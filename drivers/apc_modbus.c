@@ -43,7 +43,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT APC Modbus driver " DRIVER_NAME_NUT_MODBUS_HAS_USB_WITH_STR " USB support (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1803,7 +1803,7 @@ void upsdrv_makevartable(void)
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");
 	addvar(VAR_VALUE, "response_timeout_ms", "Modbus response timeout in milliseconds (default=500, 2000 for TCP)");
-	addvar(VAR_VALUE, "modbus_retries", "Number of retries for Modbus register reads on timeout errors (default=3)");
+	addvar(VAR_VALUE, "modbus_retries", "Maximum attempts for Modbus register reads on retryable errors (default=3)");
 
 	/* Serial RTU parameters */
 	addvar(VAR_VALUE, "baudrate", "Modbus serial RTU communication speed in baud (default=9600)");

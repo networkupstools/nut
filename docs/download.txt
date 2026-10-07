@@ -100,7 +100,7 @@ link:https://github.com/[GitHub].
 
 To retrieve the current development tree, use the following command:
 
-	:; git clone git://github.com/networkupstools/nut.git
+	:; git clone https://github.com/networkupstools/nut.git
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
 better (based off a recent release):

@@ -1015,7 +1015,8 @@ static void show_usage(const char *arg_progname)
 	} else {
 		printf("* Options for NUT devices (new avahi method) scan not enabled: library not detected.\n");
 	}
-	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev files in $CONFPATH).\n");
+	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev and .seq files).\n");
+	printf("                           Uses the configuration directory, overridden by NUT_CONFPATH.\n");
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 	} else {

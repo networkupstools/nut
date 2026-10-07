@@ -71,7 +71,7 @@ The easiest way to integrate this activity with the `nut-driver` service
 is to modify the systemd service file (or ideally use a separate "drop-in"
 snippet file) with the following line:
 ----
-ExecStartPre=/usr/local/bin/usb_reset.py --reset-hub --device 0665:5161
+ExecStartPre=/usr/local/bin/usb_resetter --reset-hub --device 0665:5161
 ----
 
 An example modified `nut-driver.service` file which may be applicable to a
