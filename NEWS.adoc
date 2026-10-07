@@ -697,13 +697,13 @@ https://github.com/networkupstools/nut/milestone/13
       in `docs/macros.txt`. [PR #3674]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
-    * Initialised the connection pointer in the C++ client example before
+    * Initialized the connection pointer in the C++ client example before
       exception handling. [PR #3678]
     * Corrected `libupsclient` API declarations, logging examples and the
       descriptions of SSL capability flags and raw line reads. [PR #3679]
     * Corrected `nut-scanner` library (`libnutscan`) API descriptions and
       the consumer example for current function names, argument types,
-      device-option pointers and initialisation. [PR #3680]
+      device-option pointers and initialization. [PR #3680]
     * Corrected source retrieval examples, removed an unsupported `configure`
       script option and documented the `pkg-config` installation-directory
       default. [PR #3681]
