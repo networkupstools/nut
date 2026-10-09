@@ -119,6 +119,12 @@ On battery, raise `LB` once the estimated runtime drops below this value
 (default 300), so linkman:upsmon[8] can shut down before the firmware
 low-battery signal. Also published as `battery.runtime.low`.
 
+*soc_save_interval*='seconds';;
+How often the driver's state-of-charge estimate is saved to the state path
+(default 60); it is also saved on every mains/battery transition and when
+the driver exits. Set to 0 to neither save nor resume it. See 'STATE OF
+CHARGE FILE' below.
+
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
 `test.battery.start.deep` and `test.battery.stop` instant commands.
@@ -190,8 +196,39 @@ before the test); bulk charge for 4.1 hours at about 1.5 A, float reached
 
 The second *runtimecal* point keeps the exponent derived from the Ragtech
 datasheet table (80 minutes at about 110 W, 20 minutes at about 300 W).
+These values come from a brand new unit with its factory batteries,
+calibrated within days of purchase; older batteries deliver noticeably less.
 Repeat the discharge after adding external modules (and set *extbatt_ah*),
 and about once a year as the batteries age.
+
+
+STATE OF CHARGE FILE
+--------------------
+
+With *runtimecal* set, the driver keeps its state-of-charge estimate in
+`ragtech-<upsname>.soc` under the NUT state path (`NUT_STATEPATH`, often
+`/run/nut` or `/var/state/ups`), as one line with the estimate and a
+timestamp. It is rewritten every *soc_save_interval* seconds (1440 small
+writes a day at the default 60 s), on each mains/battery transition and on
+driver exit, and read back when the driver starts. A saved value older than
+one hour is ignored, and so is a missing file: the driver then starts from
+the firmware charge reading, which is only trustworthy as "full" while on
+mains.
+
+Things to consider for the location of the state path:
+
+* On a `tmpfs` (the default on many systems) the writes cost no storage
+  wear, but the estimate is lost on reboot; after a reboot during or soon
+  after an outage the driver starts from the inflated firmware reading and
+  re-converges as it recharges.
+* On persistent storage the estimate also survives a quick reboot, but
+  every save is a write to the medium. On systems with soldered-on flash
+  or other wear-sensitive storage, consider a longer *soc_save_interval*
+  or a `tmpfs` state path. Should the file system be slow or unavailable,
+  the write may also delay a driver poll; a failing save is logged once.
+* With *soc_save_interval* set to 0 nothing is written; the estimate then
+  restarts from the firmware reading whenever the driver restarts (for
+  example after a configuration change or a USB re-enumeration).
 
 
 CAVEATS

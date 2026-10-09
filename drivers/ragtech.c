@@ -257,6 +257,8 @@ static time_t	soc_lastpoll;
 static double	obload_factor = 1.0;	/* on-battery load / on-mains load */
 static int	was_discharging = -1;
 static time_t	soc_lastsave;
+static long	soc_save_interval = 60;	/* s between saves of the estimate; 0 = off */
+static int	soc_save_failed;	/* log a failing save only once */
 
 /* Time constants (s) of the ups.load average behind battery.runtime: long on
  * mains, where the figure is a forecast and short spikes (a phone charger, a
@@ -265,10 +267,12 @@ static time_t	soc_lastsave;
 #define LOAD_TAU_MAINS		300.0
 #define LOAD_TAU_BATTERY	15.0
 
-/* The state of charge is saved to the state path (every poll on battery,
- * once a minute otherwise) so a driver restart (config change, USB
- * re-enumeration) does not reset it to the firmware's voltage-based
- * reading, which reads high while charging. */
+/* The state of charge is saved to the state path every soc_save_interval
+ * seconds, on each mains <-> battery transition and when the driver exits,
+ * so a driver restart (config change, USB re-enumeration) does not reset it
+ * to the firmware's voltage-based reading, which reads high while charging.
+ * Whether the file survives a reboot depends on where the state path lives
+ * (often a tmpfs); see the man page. */
 #define SOC_MAX_AGE	3600	/* ignore a saved value older than this (s) */
 
 static void soc_file(char *buf, size_t len)
@@ -280,12 +284,31 @@ static void soc_save(time_t now)
 {
 	char	fn[SMALLBUF];
 	FILE	*f;
+#ifndef WIN32
+	mode_t	mask;
+#endif
+
+	if (soc_save_interval <= 0 || soc < 0.0)
+		return;
 
 	soc_file(fn, sizeof(fn));
-	if ((f = fopen(fn, "w")) != NULL) {
+#ifndef WIN32
+	/* Same as writepid(): never leave the file group/world-writable */
+	mask = umask(022);
+#endif
+	f = fopen(fn, "w");
+#ifndef WIN32
+	umask(mask);
+#endif
+	if (f != NULL) {
 		fprintf(f, "%.6f %ld\n", soc, (long)now);
 		fclose(f);
+		soc_save_failed = 0;
+	} else if (!soc_save_failed) {
+		upslog_with_errno(LOG_NOTICE, "could not save the state of charge to %s", fn);
+		soc_save_failed = 1;
 	}
+	soc_lastsave = now;
 }
 
 /* Returns 1 and sets soc if a recent saved value exists. */
@@ -296,6 +319,9 @@ static int soc_load(time_t now)
 	double	v;
 	long	ts;
 	int	ok = 0;
+
+	if (soc_save_interval <= 0)
+		return 0;
 
 	soc_file(fn, sizeof(fn));
 	if ((f = fopen(fn, "r")) != NULL) {
@@ -471,8 +497,11 @@ static int update_runtime(uint8_t st, uint8_t fa, double fw_charge, double load)
 
 	/* Restart the average on OL <-> OB so the old state's load does not
 	 * linger in the estimate right after a transfer. */
-	if (discharging != was_discharging)
+	if (discharging != was_discharging) {
 		load_avg = -1.0;
+		if (was_discharging >= 0)
+			soc_save(now);	/* keep the estimate at each transfer */
+	}
 	was_discharging = discharging;
 	if (load_avg < 0.0) {
 		load_avg = load;
@@ -484,7 +513,8 @@ static int update_runtime(uint8_t st, uint8_t fa, double fw_charge, double load)
 	if (discharging) {
 		soc -= dt / full_runtime(load);
 	} else if (!(st & S_NO_INPUT)) {
-		soc += dt * ((soc < 0.8) ? 0.8 / charge_time : 0.2 / (charge_time / 2.0));
+		soc += dt * ((soc < 0.8) ? 0.8 / (double)charge_time
+		                        : 0.2 / ((double)charge_time / 2.0));
 	}
 
 	if (fa & F_BATTERY_DEPLETED)
@@ -501,10 +531,8 @@ static int update_runtime(uint8_t st, uint8_t fa, double fw_charge, double load)
 	 * draws more than the mains path does for the same equipment (measured
 	 * x1.24 on an Easy Pro 3200), so scale the mains load accordingly. */
 	runtime = soc * full_runtime(discharging ? load_avg : load_avg * obload_factor);
-	if (discharging || difftime(now, soc_lastsave) >= 60.0) {
+	if (soc_save_interval > 0 && difftime(now, soc_lastsave) >= (double)soc_save_interval)
 		soc_save(now);
-		soc_lastsave = now;
-	}
 
 	dstate_setinfo("battery.charge", "%.1f", soc * 100.0);
 	dstate_setinfo("battery.runtime", "%.0f", runtime);
@@ -850,6 +878,10 @@ void upsdrv_makevartable(void)
 	       "On mains, multiply ups.load by this when predicting runtime, since load rises on battery (default 1.0)");
 	addvar(VAR_VALUE, "runtime_low",
 	       "Raise LB on battery when estimated runtime drops below this many seconds (default 300)");
+	addvar(VAR_VALUE, "soc_save_interval",
+	       "Seconds between saves of the battery.charge estimate to the state path, "
+	       "also saved on mains/battery transitions and at exit; 0 disables saving "
+	       "and resuming (default 60)");
 	addvar(VAR_FLAG, "allow_shutdown",
 	       "Enable the shutdown.* and test.battery.start.deep instcmds. "
 	       "WARNING: this UPS firmware does not auto-restart after a "
@@ -941,9 +973,14 @@ void upsdrv_initups(void)
 	v = getval("runtime_low");
 	if (v && (runtime_low = atol(v)) < 0)
 		fatalx(EXIT_FAILURE, "runtime_low must be >= 0");
+	v = getval("soc_save_interval");
+	if (v && (soc_save_interval = atol(v)) < 0)
+		fatalx(EXIT_FAILURE, "soc_save_interval must be >= 0");
 }
 
 void upsdrv_cleanup(void)
 {
+	if (rt_enabled)
+		soc_save(time(NULL));
 	ser_close(upsfd, device_path);
 }

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3882 utf-8
+personal_ws-1.1 en 3883 utf-8
 AAC
 AAS
 ABI
@@ -3625,6 +3625,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
