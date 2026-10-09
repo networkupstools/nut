@@ -2347,7 +2347,8 @@ TESTPASS_UPSMON_SECONDARY='P@ssW0rd'
 
 # Passwords with characters that the parser of upsd (used for both config files
 # and client requests) treats specially: hash (starts a comment), white space
-# (separates words), backslash and double quote (escaping and quoting),
+# and an unquoted equals sign (separate words), backslash and double quote
+# (escaping and quoting),
 # alone and combined. They are stored as plain text here, the way a client
 # is given them, and escaped as needed for upsd.users below.
 TESTPASS_SPECIAL_HASH='ab#cd'
@@ -2355,6 +2356,7 @@ TESTPASS_SPECIAL_SPACE='some pass  words'
 TESTPASS_SPECIAL_BACKSLASH='back\slash'
 TESTPASS_SPECIAL_QUOTES='"quoted"'
 TESTPASS_SPECIAL_COMBINED='a#b c"d\e'
+TESTPASS_SPECIAL_EQUALS='abc=def'
 TESTPASS_SPECIAL_EMPTY=''
 
 nit_conf_escape() {
@@ -2412,6 +2414,10 @@ generatecfg_upsdusers_trivial() {
 
 [special-combined]
     password = "`nit_conf_escape "$TESTPASS_SPECIAL_COMBINED"`"
+    instcmds = load.off
+
+[special-equals]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_EQUALS"`"
     instcmds = load.off
 
 [special-empty]
@@ -4832,6 +4838,8 @@ testcase_sandbox_upscmd_credentials() {
     check_upscmd_credential special-backslash "$TESTPASS_SPECIAL_BACKSLASH" accepted "password with a backslash"
     check_upscmd_credential special-quotes "$TESTPASS_SPECIAL_QUOTES" accepted "password with double quotes"
     check_upscmd_credential special-combined "$TESTPASS_SPECIAL_COMBINED" accepted "password with a combination of special characters"
+    check_upscmd_credential special-equals "$TESTPASS_SPECIAL_EQUALS" accepted "password with an equals sign"
+    check_upscmd_credential special-equals "${TESTPASS_SPECIAL_EQUALS}x" denied "wrong password with an equals sign is still refused by upsd"
     check_upscmd_credential special-empty "$TESTPASS_SPECIAL_EMPTY" accepted "empty password"
     check_upscmd_credential admin "$TESTPASS_SPECIAL_EMPTY" denied "empty password is refused by upsd for a user who has a password"
     check_upscmd_credential special-hash "${TESTPASS_SPECIAL_HASH}x" denied "wrong password is still refused by upsd"

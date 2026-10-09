@@ -3775,11 +3775,12 @@ int upscli_upserror(UPSCONN_t *ups)
 
 /* Format a "USERNAME" or "PASSWORD" line for upsd, so that the value arrives
  * intact: upsd splits its input into words with the same parser as for config
- * files, where a "#" starts a comment, white space separates words, and
- * backslash or double quote are special. Like build_cmd() does for command
- * arguments, escape the value with pconf_encode() and wrap it into quotes if
- * it has white space (or is empty, which would be no argument at all without
- * them); ordinary values are sent exactly as before.
+ * files, where a "#" starts a comment, white space separates words, an
+ * unquoted "=" is a word of its own, and backslash or double quote are
+ * special. Like build_cmd() does for command arguments, escape the value with
+ * pconf_encode() and wrap it into quotes if it has white space or an "="
+ * (or is empty, which would be no argument at all without them); ordinary
+ * values are sent exactly as before.
  * pconf_encode() silently truncates when its buffer is too small, and a
  * truncated credential must not be sent, so check the room needed first.
  * Returns 0 on success or -1 if the line would not fit into buf.
@@ -3795,7 +3796,7 @@ static int format_auth_line(char *buf, size_t bufsize, const char *keyword, cons
 		/* pconf_encode() adds a backslash before each of these */
 		enclen += (*p == '#' || *p == '\\' || *p == '"') ? 2 : 1;
 
-		if (isspace((unsigned char)*p)) {
+		if (isspace((unsigned char)*p) || *p == '=') {
 			quote = "\"";
 		}
 	}
