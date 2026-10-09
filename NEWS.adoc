@@ -428,6 +428,13 @@ https://github.com/networkupstools/nut/milestone/13
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
       `ups.beeper.status`. [issue #3638, PR #3639]
+    * `legrand-hid` subdriver: added a `fix_report_desc()` hook which clears
+      the Unit and Unit Exponent on 1-bit items of Legrand devices. Some
+      firmware (seen on USB ID `1cb0:0035`, which names itself "Reserve")
+      leaves a Unit Exponent of -2 in effect for the `PresentStatus` flags,
+      so `libhid` scaled a set bit to `0.01`: `ACPresent` never read as true
+      and the UPS was reported `OB` while on mains, and `LB` could never be
+      raised. It can be turned off with `disable_fix_report_desc`.
 
  - `snmp-ups` driver updates:
     * Fixed a NULL pointer dereference when setting exact outlet mappings
