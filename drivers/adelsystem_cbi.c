@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT ADELSYSTEM DC-UPS CB/CBI driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.11"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -75,7 +75,7 @@ modbus_t *modbus_new(const char *port);
 void modbus_reconnect(void);
 
 /* modbus register read function */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
+int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data);
 
 /* modbus register write function */
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -633,30 +633,34 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 }
 
 /* Read a modbus register */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
+int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data)
 {
 	int rval = -1;
+	uint8_t bit_value = 0;
+	uint16_t register_value = 0;
 
 	/* register bit masks */
 	uint16_t mask8 = 0x00FF;
 	uint16_t mask16 = 0xFFFF;
 
+	*data = 0;
+
 	switch (type) {
 		case COIL:
-			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_bits(mb, addr, 1, &bit_value);
+			*data = (unsigned int)(bit_value & mask8);
 			break;
 		case INPUT_B:
-			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_input_bits(mb, addr, 1, &bit_value);
+			*data = (unsigned int)(bit_value & mask8);
 			break;
 		case INPUT_R:
-			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_input_registers(mb, addr, 1, &register_value);
+			*data = (unsigned int)(register_value & mask16);
 			break;
 		case HOLDING:
-			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_registers(mb, addr, 1, &register_value);
+			*data = (unsigned int)(register_value & mask16);
 			break;
 #include "nut-pragmas-covered-switch-default.h"
 		/* All enum cases defined as of the time of coding
@@ -686,7 +690,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
-		(unsigned int)addr, type, *(unsigned int *)data);
+		(unsigned int)addr, type, *data);
 	return rval;
 }
 
