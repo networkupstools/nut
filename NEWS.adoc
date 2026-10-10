@@ -184,6 +184,15 @@ https://github.com/networkupstools/nut/milestone/13
         early, was taken for a (rejected) page 0, and was lost for that
         poll pass; on the test unit this happened two to three times a
         minute.
+    * USB mode: the standard-HID fallback no longer publishes a status it
+      never read. Its snapshot counted as fresh as soon as any fallback
+      report arrived (battery charge or runtime alone), while the "AC
+      present" flag still held its initial zero, so a driver starting on
+      fallback data could publish `OB` for a UPS on line power; when that
+      data then went stale, `upsmon` forced a shutdown. A status is now
+      published only after both status flags were decoded from a recent
+      report. Also corrected the startup failure message shown when
+      `hid_fallback = no`. [issue #3587, PR #3728]
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
