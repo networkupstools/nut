@@ -820,7 +820,9 @@ static int cypress_get_input_report(
 	usb_ctrl_charbufsize bufsize,
 	usb_ctrl_timeout_msec timeout)
 {
+#ifdef WIN32
 	int ret;
+#endif	/* WIN32 */
 
 	if (!buf || bufsize < 1) {
 		return LIBUSB_ERROR_INVALID_PARAM;
