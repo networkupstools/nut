@@ -686,6 +686,58 @@ void NutConfTest::testUpsdConfigParser()
 		CPPUNIT_ASSERT_MESSAGE("LISTEN ::1 3493", it != conf.listens.end());
 	}
 
+	/* Both spellings must survive a read/write/read cycle as the same listener. */
+	static const struct {
+		const char *input;
+		const char *host;
+		uint16_t port;
+	} listens[] = {
+		{"127.0.0.1:43493", "127.0.0.1", 43493},
+		{"host-name.example:0043493", "host-name.example", 43493},
+		{"*:43493", "*", 43493},
+		{"[::1]:43493", "::1", 43493},
+		{"[::1] 43493", "[::1]", 43493},
+		{"[fe80::1%lo]:43493", "fe80::1%lo", 43493},
+		{"[::ffff:127.0.0.1]:43493", "::ffff:127.0.0.1", 43493},
+		{":::43493", "::", 43493},
+		{"2001:db8:::43493", "2001:db8::", 43493},
+		{"localhost:0", "localhost", 0},
+		{"localhost:65535", "localhost", 65535},
+		{"::1 43493", "::1", 43493},
+		{"127.0.0.1 43493", "127.0.0.1", 43493}
+	};
+	for (size_t i = 0; i < sizeof(listens) / sizeof(listens[0]); i++) {
+		UpsdConfiguration parsed, reparsed;
+		NutMemory stream;
+		parsed.parseFromString(std::string("LISTEN ") + listens[i].input + " # listener\n");
+		CPPUNIT_ASSERT_EQUAL_MESSAGE(listens[i].input, size_t(1), parsed.listens.size());
+		CPPUNIT_ASSERT_EQUAL(std::string(listens[i].host), parsed.listens.front().address);
+		CPPUNIT_ASSERT(parsed.listens.front().port.set());
+		CPPUNIT_ASSERT_EQUAL(listens[i].port, *parsed.listens.front().port);
+		CPPUNIT_ASSERT(parsed.writeTo(stream));
+		CPPUNIT_ASSERT(reparsed.parseFrom(stream));
+		CPPUNIT_ASSERT(parsed.listens == reparsed.listens);
+	}
+	static const char *bare[] = {"localhost", "::", "::1", "[::1]", "::3493", "2001:db8::1:3493", "fe80::1%lo"};
+	for (size_t i = 0; i < sizeof(bare) / sizeof(bare[0]); i++) {
+		UpsdConfiguration parsed;
+		parsed.parseFromString(std::string("LISTEN ") + bare[i] + "\n");
+		CPPUNIT_ASSERT_EQUAL(size_t(1), parsed.listens.size());
+		CPPUNIT_ASSERT_EQUAL(std::string(bare[i]), parsed.listens.front().address);
+		CPPUNIT_ASSERT(!parsed.listens.front().port.set());
+	}
+	static const char *invalid[] = {
+		"localhost:", ":43493", "localhost:65536", "localhost:+1", "localhost:-1",
+		"localhost:1x", "localhost:nut", "localhost:9999999999999999999999",
+		"[::1]:", "[::1", "[::1]x:43493", "[]:43493", "[localhost]:43493",
+		"[::1]]:43493", ":::1x", "::::43493", "::1:::43493",
+		"localhost:43493 43494", "[::1]:43493 43494"
+	};
+	for (size_t i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
+		UpsdConfiguration parsed;
+		CPPUNIT_ASSERT_THROW(parsed.parseFromString(std::string("LISTEN ") + invalid[i] + "\n"), std::invalid_argument);
+	}
+
 }
 
 #include "cppunit-warnings-end.h"

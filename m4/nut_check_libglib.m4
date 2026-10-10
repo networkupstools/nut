@@ -90,6 +90,7 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
             nut_cv_LIBGLIB_CFLAGS=""
             nut_cv_LIBGLIB_LIBS=""
             nut_cv_SOFILE_LIBGLIB=""
+            nut_cv_SONAME_LIBGLIB=""
             nut_cv_SOPATH_LIBGLIB=""
             AS_IF([test "${nut_cv_have_libglib}" = "yes"], [
                 dnl GLib headers seem incorrect and offensive to many compilers
@@ -139,6 +140,7 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBGLIB], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBGLIB}" && test -s "${nut_cv_SOPATH_LIBGLIB}"], [
                                 nut_cv_SOFILE_LIBGLIB="`basename \"${nut_cv_SOPATH_LIBGLIB}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBGLIB}], [nut_cv_SONAME_LIBGLIB], [])
                                 break
                             ])
                         ]
@@ -209,6 +211,7 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
             nut_cv_LIBGIO_CFLAGS=""
             nut_cv_LIBGIO_LIBS=""
             nut_cv_SOFILE_LIBGIO=""
+            nut_cv_SONAME_LIBGIO=""
             nut_cv_SOPATH_LIBGIO=""
             AS_IF([test "${nut_cv_have_libgio}" = "yes"], [
                 dnl GLib headers seem incorrect and offensive to many compilers
@@ -251,6 +254,7 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBGIO], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBGIO}" && test -s "${nut_cv_SOPATH_LIBGIO}"], [
                                 nut_cv_SOFILE_LIBGIO="`basename \"${nut_cv_SOPATH_LIBGIO}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBGIO}], [nut_cv_SONAME_LIBGIO], [])
                                 break
                             ])
                         ]
@@ -328,8 +332,10 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
             dnl For nut-scanner style autoloading:
             SOPATH_LIBGLIB="${nut_cv_SOPATH_LIBGLIB}"
             SOFILE_LIBGLIB="${nut_cv_SOFILE_LIBGLIB}"
+            SONAME_LIBGLIB="${nut_cv_SONAME_LIBGLIB}"
             SOPATH_LIBGIO="${nut_cv_SOPATH_LIBGIO}"
             SOFILE_LIBGIO="${nut_cv_SOFILE_LIBGIO}"
+            SONAME_LIBGIO="${nut_cv_SONAME_LIBGIO}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBGLIB_CFLAGS_SOURCE="${nut_cv_LIBGLIB_CFLAGS_SOURCE}"
@@ -344,6 +350,9 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
                 AS_IF([test -n "${SOPATH_LIBGLIB}" && test -s "${SOPATH_LIBGLIB}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBGLIB], ["${SOPATH_LIBGLIB}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBGLIB], ["${SOFILE_LIBGLIB}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBGLIB}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBGLIB], ["${SONAME_LIBGLIB}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 
@@ -352,6 +361,9 @@ AC_DEFUN([NUT_CHECK_LIBGLIB],
                 AS_IF([test -n "${SOPATH_LIBGIO}" && test -s "${SOPATH_LIBGIO}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBGIO], ["${SOPATH_LIBGIO}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBGIO], ["${SOFILE_LIBGIO}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBGIO}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBGIO], ["${SONAME_LIBGIO}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 

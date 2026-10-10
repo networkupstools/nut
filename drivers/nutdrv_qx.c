@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -90,6 +90,7 @@
 #include "nutdrv_qx_masterguard.h"
 #include "nutdrv_qx_ablerex.h"
 #include "nutdrv_qx_gtec.h"
+#include "nutdrv_qx_santak.h"
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -108,6 +109,7 @@ static subdriver_t	*subdriver_list[] = {
 	&masterguard_subdriver,
 	&hunnox_subdriver,
 	&ablerex_subdriver,
+	&santak_subdriver,
 	&innovart31_subdriver,
 	&innovart33_subdriver,
 	&innovatae_subdriver,
@@ -734,8 +736,28 @@ static int	(*subdriver_command)(const char *cmd, size_t cmdlen, char *buf, size_
 static int	cypress_drain_quirk_setting = -1;
 static bool_t	cypress_0665_5161_quirk = FALSE;
 
-#define CYPRESS_0665_5161_FLUSH_REPORTS	10
+/* A command was sent but its reply was not read completely (consulted by
+ * the 0665:5161 quirk): the rest of that reply may still be on its way. */
+static bool_t	cypress_reply_outstanding = FALSE;
+
+/* Stale data before a command was logged; not again until the input
+ * endpoint was found idle before a command */
+static bool_t	cypress_stale_reported = FALSE;
+
+/* Not a libusb code: returned by a USB transport when the device's replies
+ * stay out of step with the commands and draining could not fix that */
+#define QX_USB_ERROR_DESYNC	-1000
+
+/* Most input reports discarded before a command: the ones queued in the
+ * bridge (it keeps up to 8) plus the rest of a late reply fit within this */
+#define CYPRESS_0665_5161_FLUSH_REPORTS	32
+/* Longer than all reports of a long reply take to arrive: an endpoint which
+ * stays busy for longer is not delivering a reply (ms) */
+#define CYPRESS_0665_5161_FLUSH_BUDGET	3000
 #define CYPRESS_0665_5161_FLUSH_TIMEOUT	25
+/* Longer than the pauses a UPS makes between reports within one reply
+ * (up to 160 ms were seen with a Voltronic unit) */
+#define CYPRESS_0665_5161_RESYNC_QUIET	500
 #define CYPRESS_REPLY_TIMEOUT			1000
 #define CYPRESS_0665_5161_REPLY_TIMEOUT	3000
 
@@ -747,6 +769,8 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	int	ret = 0;
 	int	reply_timeout = CYPRESS_REPLY_TIMEOUT;
 	size_t	i;
+	const char	*cr;
+	struct timeval	flush_start, flush_now;
 
 	if (buflen > INT_MAX) {
 		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
@@ -762,28 +786,77 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	if (cypress_0665_5161_quirk) {
 		reply_timeout = CYPRESS_0665_5161_REPLY_TIMEOUT;
 
-		/* Read once more than the number of reports we accept, so a timeout
+		/* An idle endpoint is confirmed by a short read. But once a reply
+		 * was left unread, or stale data turns up, more of it may still be
+		 * on its way: wait until the UPS stays quiet for longer than it
+		 * pauses within a reply. Taking the rest of a late reply for the
+		 * reply to this command would put every later reply one command
+		 * behind, and while nobody reads, the bridge keeps only the newest
+		 * reports of a long reply (so its start gets lost).
+		 *
+		 * Read once more than the number of reports we accept, so a timeout
 		 * confirms that the endpoint is empty. Do not send a command if it
-		 * remains busy: its reply could not be associated reliably.
+		 * remains busy (for too many reports or for too long, as either
+		 * would stall the driver): its reply could not be associated
+		 * reliably.
 		 */
+		gettimeofday(&flush_start, NULL);
 		for (i = 0; i <= CYPRESS_0665_5161_FLUSH_REPORTS; i++) {
 			ret = usb_interrupt_read(udev, 0x81,
-				(usb_ctrl_charbuf)tmp, 8, CYPRESS_0665_5161_FLUSH_TIMEOUT);
+				(usb_ctrl_charbuf)tmp, 8,
+				(cypress_reply_outstanding || i > 0)
+					? CYPRESS_0665_5161_RESYNC_QUIET
+					: CYPRESS_0665_5161_FLUSH_TIMEOUT);
 
 			if (ret == LIBUSB_ERROR_TIMEOUT)
 				break;
 
-			if (ret <= 0)
+			/* An empty report is no reply to this command either:
+			 * discard it like any other */
+			if (ret < 0)
 				return ret;
 
-			if (i == CYPRESS_0665_5161_FLUSH_REPORTS) {
+			/* Not elapsed_since_timeval(): the clock is read here,
+			 * where the unit test can substitute it */
+			gettimeofday(&flush_now, NULL);
+			if (i == CYPRESS_0665_5161_FLUSH_REPORTS
+			 || difftimeval(flush_now, flush_start) * 1000 > CYPRESS_0665_5161_FLUSH_BUDGET
+			) {
 				upsdebugx(1, "cypress: input endpoint stayed busy before %s", cmd);
-				return LIBUSB_ERROR_BUSY;
+				return QX_USB_ERROR_DESYNC;
 			}
 
 			upsdebugx(3, "cypress: discarded stale input report before %s", cmd);
 		}
+
+		if (i == 0) {
+			cypress_stale_reported = FALSE;
+		} else {
+			/* Name the command by its readable start: commands of
+			 * some protocols end with binary CRC bytes */
+			size_t	cmdshown = 0;
+
+			while (cmd[cmdshown] && isprint((unsigned char)cmd[cmdshown]))
+				cmdshown++;
+
+			if (!cypress_reply_outstanding && !cypress_stale_reported) {
+				/* The device sent data unasked: log that once, not
+				 * on every poll of a device which keeps doing it */
+				upslogx(LOG_NOTICE, "cypress: discarded %" PRIuSIZE " stale input report(s) before %.*s: replies were out of step with commands",
+					i, (int)cmdshown, cmd);
+				cypress_stale_reported = TRUE;
+			} else {
+				/* The rest of an unread reply is expected (e.g. during
+				 * protocol autodetection); stale data was logged already */
+				upsdebugx(2, "cypress: discarded %" PRIuSIZE " input report(s) of %s before %.*s",
+					i, cypress_reply_outstanding ? "an unread reply" : "stale data again",
+					(int)cmdshown, cmd);
+			}
+		}
 	}
+
+	/* Until its reply was read completely */
+	cypress_reply_outstanding = TRUE;
 
 	/* Send command */
 	memset(tmp, 0, sizeof(tmp));
@@ -836,16 +909,14 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 
 	}
 
-	if (nut_debug_level >= 3) {
-		/* Bound the display by the bytes actually received: the reply
-		 * need not contain a CR. An embedded NUL still stops "%.*s".
-		 * The guard mirrors the upsdebugx() macro, so the scan stays
-		 * off the normal, non-debugging path. */
-		const char	*cr = (const char *)memchr(buf, '\r', i);
+	cr = (const char *)memchr(buf, '\r', i);
+	if (cr)
+		cypress_reply_outstanding = FALSE;	/* the reply was read completely */
 
-		upsdebugx(3, "read: %.*s",
-			(int)(cr ? (size_t)(cr - buf) : i), buf);
-	}
+	/* Bound the display by the bytes actually received: the reply
+	 * need not contain a CR. An embedded NUL still stops "%.*s". */
+	upsdebugx(3, "read: %.*s",
+		(int)(cr ? (size_t)(cr - buf) : i), buf);
 
 	if (i > INT_MAX) {
 		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
@@ -2733,24 +2804,6 @@ static void	*cypress_subdriver(USBDevice_t *device)
 {
 	NUT_UNUSED_VARIABLE(device);
 
-	switch (cypress_drain_quirk_setting) {
-		case 0: cypress_0665_5161_quirk = FALSE; break;
-		case 1: cypress_0665_5161_quirk = TRUE; break;
-		default: cypress_0665_5161_quirk = FALSE;
-	}
-	subdriver_command = &cypress_command;
-	return NULL;
-}
-
-static void	*cypress_0665_5161_subdriver(USBDevice_t *device)
-{
-	NUT_UNUSED_VARIABLE(device);
-
-	switch (cypress_drain_quirk_setting) {
-		case 0: cypress_0665_5161_quirk = FALSE; break;
-		case 1: cypress_0665_5161_quirk = TRUE; break;
-		default: cypress_0665_5161_quirk = TRUE;
-	}
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -2895,7 +2948,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(SYSGRATION_VENDORID,	0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(NONAMEFFFF_VENDORID,	0x0000),	NULL,		NULL,			&ablerex_subdriver_fun },	/* Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135) */
 	{ USB_DEVICE(LEGRAND_VENDORID,	0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
-	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_0665_5161_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(CYPRESS_VENDORID,	0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	"Phoenixtec Power","USB Cable (V2.00)",	&phoenixtec_subdriver },/* Masterguard A Series */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(PHOENIXTEC_VENDORID,	0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
@@ -4119,6 +4172,20 @@ void	upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "No subdriver selected");
 		}
 
+		/* The cypress_drain_quirk setting, or else the default for the
+		 * device's USB ID (whether the subdriver was chosen explicitly
+		 * or by the USB ID) */
+		if (subdriver_command == &cypress_command) {
+			switch (cypress_drain_quirk_setting) {
+				case 0: cypress_0665_5161_quirk = FALSE; break;
+				case 1: cypress_0665_5161_quirk = TRUE; break;
+				default:
+					cypress_0665_5161_quirk =
+						(usbdevice.VendorID == CYPRESS_VENDORID
+						 && usbdevice.ProductID == 0x5161) ? TRUE : FALSE;
+			}
+		}
+
 		/* Create a new matcher for later reopening */
 		ret = USBNewExactMatcher(&reopen_matcher, &usbdevice);
 		if (ret) {
@@ -4250,6 +4317,11 @@ void	upsdrv_cleanup(void)
  * ViewPower, various Voltronic Power). See NUT issue #598. */
 #define QX_USB_OVERFLOW_RESET_TRIES	3
 
+/* USB device resets tried in a row when a transport reports that the device's
+ * replies stay out of step with the commands (QX_USB_ERROR_DESYNC), before
+ * giving up on the device. */
+#define QX_USB_DESYNC_RESET_TRIES	3
+
 static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
 #ifndef TESTING
@@ -4258,6 +4330,8 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 	/* Persists across calls; only consecutive overflows accumulate (any clean
 	 * read zeroes it, see the switch on `ret` below). */
 	static int	overflow_tries = 0;
+	/* Likewise for resets after QX_USB_ERROR_DESYNC */
+	static int	desync_resets = 0;
 	int	reconnecting = (udev == NULL);
 # endif
 #endif
@@ -4299,6 +4373,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 
 		if (ret >= 0) {
 			overflow_tries = 0;	/* clean read: forget any overflow streak */
+			desync_resets = 0;
 			if (reconnecting) {
 				reconnect_trying(RECONNECT_SUCCESS);
 			}
@@ -4345,6 +4420,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		case -ETIME:		/* Timer expired */
 		fallthrough_case_ETIME:
 #endif	/* ETIME && WITH_LIBUSB_0_1 */
+		fallthrough_case_reset:
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
@@ -4384,6 +4460,17 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			}
 			goto fallthrough_case_reconnect;
 
+		case QX_USB_ERROR_DESYNC:	/* Replies stay out of step with commands */
+			if (++desync_resets > QX_USB_DESYNC_RESET_TRIES) {
+				fatalx(EXIT_FAILURE,
+					"Replies from the UPS stayed out of step with commands after %d USB device resets in a row",
+					QX_USB_DESYNC_RESET_TRIES);
+			}
+			upslogx(LOG_WARNING,
+				"Replies from the UPS are out of step with commands, resetting the USB device (%d/%d)",
+				desync_resets, QX_USB_DESYNC_RESET_TRIES);
+			goto fallthrough_case_reset;
+
 		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
 #if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
@@ -4392,7 +4479,8 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			break;
 		}
 
-		if (reconnecting) {
+		/* Unless the device was just closed for another reconnection */
+		if (reconnecting && udev != NULL) {
 			/* Success after updateinfo in the bulk of this method body */
 			upsdebugx(1, "%s: libusb returned %" PRIiSIZE
 				" which was not classified as a known error, assuming reconnection succeeded",
