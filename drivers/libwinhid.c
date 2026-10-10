@@ -59,35 +59,16 @@ typedef enum winhid_layout_mode_e {
 /* Keep the legacy reversal as the fallback when auto validation is inconclusive. */
 static winhid_layout_mode_t g_winhid_layout = WINHID_LAYOUT_AUTO;
 
-/** Case-insensitive comparison (according to tolower per-char). Returns:
+/** Case-insensitive comparison with a defined NULL result. Returns:
  * 0 for non-equal strings (also if either or both are NULL),
  * 1 for equal strings
  */
 static int winhid_case_equal(const char *a, const char *b)
 {
-#if 0
-	/* TOTHINK: Which is better (performance etc.)? */
 	if (!a || !b) {
 		return 0;
 	}
-
-	return (strcasecmp(a, b) == 0);
-#else
-	unsigned char ca;
-	unsigned char cb;
-
-	if (!a || !b) {
-		return 0;
-	}
-	while (*a && *b) {
-		ca = (unsigned char)*a++;
-		cb = (unsigned char)*b++;
-		if (tolower(ca) != tolower(cb)) {
-			return 0;
-		}
-	}
-	return *a == '\0' && *b == '\0';
-#endif
+	return strcasecmp(a, b) == 0;
 }
 
 static const char *winhid_layout_name(const winhid_layout_mode_t mode)
@@ -166,6 +147,16 @@ typedef BOOLEAN (WINAPI *pHidD_GetFeature)(
 	PVOID ReportBuffer,
 	ULONG ReportBufferLength);
 
+typedef BOOLEAN (WINAPI *pHidD_SetFeature)(
+	HANDLE HidDeviceObject,
+	PVOID ReportBuffer,
+	ULONG ReportBufferLength);
+
+typedef BOOLEAN (WINAPI *pHidD_SetOutputReport)(
+	HANDLE HidDeviceObject,
+	PVOID ReportBuffer,
+	ULONG ReportBufferLength);
+
 typedef BOOLEAN (WINAPI *pHidD_GetIndexedString)(
 	HANDLE HidDeviceObject,
 	ULONG StringIndex,
@@ -229,6 +220,13 @@ typedef BOOL (WINAPI *pReadFile_t)(
 	LPDWORD lpNumberOfBytesRead,
 	LPOVERLAPPED lpOverlapped);
 
+typedef BOOL (WINAPI *pWriteFile_t)(
+	HANDLE hFile,
+	LPCVOID lpBuffer,
+	DWORD nNumberOfBytesToWrite,
+	LPDWORD lpNumberOfBytesWritten,
+	LPOVERLAPPED lpOverlapped);
+
 typedef BOOL (WINAPI *pCloseHandle_t)(HANDLE hObject);
 
 typedef HANDLE (WINAPI *pCreateEventW_t)(
@@ -261,6 +259,8 @@ typedef struct winhid_api_s {
 	pHidD_FreePreparsedData HidD_FreePreparsedData;
 	pHidD_GetInputReport HidD_GetInputReport;
 	pHidD_GetFeature HidD_GetFeature;
+	pHidD_SetFeature HidD_SetFeature;
+	pHidD_SetOutputReport HidD_SetOutputReport;
 	pHidD_GetIndexedString HidD_GetIndexedString;
 	pHidD_GetManufacturerString HidD_GetManufacturerString;
 	pHidD_GetProductString HidD_GetProductString;
@@ -272,6 +272,7 @@ typedef struct winhid_api_s {
 
 	pCreateFileW_t CreateFileW;
 	pReadFile_t ReadFile;
+	pWriteFile_t WriteFile;
 	pCloseHandle_t CloseHandle;
 	pCreateEventW_t CreateEventW;
 	pResetEvent_t ResetEvent;
@@ -299,6 +300,7 @@ typedef struct winhid_dev_ctx_s {
 	size_t read_buf_size;
 	int read_pending;
 	size_t input_report_len;
+	size_t output_report_len;
 	size_t feature_report_len;
 	unsigned char input_report_ids[256];
 	unsigned char has_input_report_id[256];
@@ -383,6 +385,8 @@ static int winhid_load_apis(void)
 	WINHID_RESOLVE(g_winhid_api.HidD_FreePreparsedData, g_winhid_api.hid_mod, "HidD_FreePreparsedData");
 	WINHID_RESOLVE(g_winhid_api.HidD_GetInputReport, g_winhid_api.hid_mod, "HidD_GetInputReport");
 	WINHID_RESOLVE(g_winhid_api.HidD_GetFeature, g_winhid_api.hid_mod, "HidD_GetFeature");
+	WINHID_RESOLVE(g_winhid_api.HidD_SetFeature, g_winhid_api.hid_mod, "HidD_SetFeature");
+	WINHID_RESOLVE(g_winhid_api.HidD_SetOutputReport, g_winhid_api.hid_mod, "HidD_SetOutputReport");
 	{
 		FARPROC fp = GetProcAddress(g_winhid_api.hid_mod, "HidD_GetIndexedString");
 		if (!fp) {
@@ -429,6 +433,7 @@ static int winhid_load_apis(void)
 
 	WINHID_RESOLVE(g_winhid_api.CreateFileW, g_winhid_api.kernel32_mod, "CreateFileW");
 	WINHID_RESOLVE(g_winhid_api.ReadFile, g_winhid_api.kernel32_mod, "ReadFile");
+	WINHID_RESOLVE(g_winhid_api.WriteFile, g_winhid_api.kernel32_mod, "WriteFile");
 	WINHID_RESOLVE(g_winhid_api.CloseHandle, g_winhid_api.kernel32_mod, "CloseHandle");
 	WINHID_RESOLVE(g_winhid_api.CreateEventW, g_winhid_api.kernel32_mod, "CreateEventW");
 	WINHID_RESOLVE(g_winhid_api.ResetEvent, g_winhid_api.kernel32_mod, "ResetEvent");
@@ -2267,6 +2272,7 @@ static int winhid_collect_caps_and_optional_descriptor(
 	}
 
 	ctx->input_report_len = (size_t)caps.InputReportByteLength;
+	ctx->output_report_len = (size_t)caps.OutputReportByteLength;
 	ctx->feature_report_len = (size_t)caps.FeatureReportByteLength;
 	upsdebugx(3, "%s: HidP report lengths Input=%u Output=%u Feature=%u",
 		__func__,
@@ -2617,20 +2623,133 @@ static int nut_winhid_get_report(
 	return (int)copy_len;
 }
 
+static int winhid_prepare_write_buffer(
+	const unsigned char *raw_buf,
+	size_t report_size,
+	size_t native_report_len,
+	usb_ctrl_repindex ReportId,
+	unsigned char **tmp_out,
+	size_t *tmp_len_out)
+{
+	size_t write_size;
+	size_t copy_len;
+	unsigned char *tmp;
+
+	if (!raw_buf || report_size < 1 || ReportId > 0xFFU
+	|| !tmp_out || !tmp_len_out) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+	write_size = native_report_len;
+	if (write_size < report_size) {
+		write_size = report_size;
+	}
+	if (write_size < 1 || write_size > (size_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+	tmp = (unsigned char *)calloc(write_size, 1);
+	if (!tmp) {
+		return LIBUSB_ERROR_NO_MEM;
+	}
+
+	copy_len = report_size < write_size ? report_size : write_size;
+	memcpy(tmp, raw_buf, copy_len);
+	tmp[0] = (unsigned char)ReportId;
+	*tmp_out = tmp;
+	*tmp_len_out = write_size;
+	return 1;
+}
+
 static int nut_winhid_set_report(
 	usb_dev_handle *sdev,
 	usb_ctrl_repindex ReportId,
 	usb_ctrl_charbuf raw_buf,
 	usb_ctrl_charbufsize ReportSize)
 {
-	NUT_UNUSED_VARIABLE(sdev);
-	NUT_UNUSED_VARIABLE(ReportId);
-	NUT_UNUSED_VARIABLE(raw_buf);
-	NUT_UNUSED_VARIABLE(ReportSize);
+	winhid_dev_ctx_t *ctx;
+	unsigned char *tmp;
+	size_t write_size;
+	DWORD err;
+	int ret;
 
-	/* Phase-1 limitation: HidD_SetFeature was intentionally not used yet. */
-	upsdebugx(2, "%s: not implemented in phase-1 backend", __func__);
-	return LIBUSB_ERROR_NOT_SUPPORTED;
+	if (!sdev || !raw_buf || ReportSize < 1) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+	ctx = (winhid_dev_ctx_t *)sdev;
+	if (!ctx->handle || ctx->handle == INVALID_HANDLE_VALUE) {
+		return LIBUSB_ERROR_NO_DEVICE;
+	}
+
+	ret = winhid_prepare_write_buffer(
+		raw_buf, (size_t)ReportSize, ctx->feature_report_len,
+		ReportId, &tmp, &write_size);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!g_winhid_api.HidD_SetFeature(ctx->handle, tmp, (ULONG)write_size)) {
+		err = GetLastError();
+		free(tmp);
+		return winhid_map_winerr_to_libusb(err);
+	}
+
+	free(tmp);
+	return (int)write_size;
+}
+
+static int nut_winhid_set_output_report(
+	usb_dev_handle *sdev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
+{
+	winhid_dev_ctx_t *ctx;
+	unsigned char *tmp;
+	size_t write_size;
+	DWORD err;
+	DWORD written = 0;
+	int ret;
+
+	if (!sdev || !raw_buf || ReportSize < 1) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+	ctx = (winhid_dev_ctx_t *)sdev;
+	if (!ctx->handle || ctx->handle == INVALID_HANDLE_VALUE) {
+		return LIBUSB_ERROR_NO_DEVICE;
+	}
+
+	ret = winhid_prepare_write_buffer(
+		raw_buf, (size_t)ReportSize, ctx->output_report_len,
+		ReportId, &tmp, &write_size);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (g_winhid_api.HidD_SetOutputReport(
+		ctx->handle, tmp, (ULONG)write_size)) {
+		free(tmp);
+		return (int)write_size;
+	}
+
+	err = GetLastError();
+	if (!ctx->use_overlapped_io
+	&& g_winhid_api.WriteFile(ctx->handle, tmp, (DWORD)write_size,
+		&written, NULL)
+	&& written == (DWORD)write_size) {
+		free(tmp);
+		return (int)write_size;
+	}
+
+	if (!ctx->use_overlapped_io && written != 0U) {
+		err = ERROR_WRITE_FAULT;
+	} else if (!ctx->use_overlapped_io) {
+		err = GetLastError();
+	}
+	free(tmp);
+	return winhid_map_winerr_to_libusb(err);
 }
 
 static int nut_winhid_get_string(
@@ -3203,6 +3322,7 @@ usb_communication_subdriver_t winhid_subdriver = {
 	nut_winhid_close,
 	nut_winhid_get_report,
 	nut_winhid_set_report,
+	nut_winhid_set_output_report,
 	nut_winhid_get_string,
 	nut_winhid_get_interrupt,
 	LIBUSB_DEFAULT_CONF_INDEX,

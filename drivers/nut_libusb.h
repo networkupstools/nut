@@ -67,6 +67,11 @@ typedef struct usb_communication_subdriver_s {
 	int (*set_report)(usb_dev_handle *sdev, usb_ctrl_repindex ReportId,
 		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);
 
+	/* Send a HID Output report.  raw_buf contains the complete report,
+	 * including its leading report ID byte when the device uses one. */
+	int (*set_output_report)(usb_dev_handle *sdev, usb_ctrl_repindex ReportId,
+		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);
+
 	int (*get_string)(usb_dev_handle *sdev,
 		usb_ctrl_strindex StringIdx, char *buf, usb_ctrl_charbufsize buflen);
 

@@ -495,6 +495,16 @@ Run the driver program with the `--help` option to see the exact list of
 NOTE: When using this option, it is mandatory to also specify the *vendorid*
 and *productid* matching parameters.
 
+*winhid*::
+On Windows builds, use the native Windows HID backend instead of libusb for
+USB device discovery and communication. The `cypress` command transport uses
+the backend's Output Report method and adapts the native report-ID byte to the
+legacy eight-byte Qx payload. Other Qx USB transports still contain their own
+libusb control or interrupt-transfer details and are not converted by this
+option yet.
++
+This option is ignored on non-WIN32 builds.
+
 *langid_fix =* 'value'::
 Apply the language ID workaround to the *krauler* subdriver.
 This is mandatory for some devices to work (LDLC, Dynamix and others).

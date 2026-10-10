@@ -1751,7 +1751,7 @@ void upsdrv_initups(void)
 		if (!winhid_set_layout(val ? val : "auto")) {
 			fatalx(EXIT_FAILURE,
 				"invalid winhid_layout '%s' (expected auto, legacy or native)",
-				val ? val : "(null)");
+				NUT_STRARG(val));
 		}
 		dstate_setinfo("driver.parameter.winhid_layout", "%s", winhid_get_layout());
 		upslogx(LOG_INFO, "winhid capability ordering policy: %s", winhid_get_layout());
