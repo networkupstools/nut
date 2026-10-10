@@ -88,6 +88,10 @@ mode.
 
 *baudrate*='num'::
 Set the serial line speed. The default is `9600`. Serial mode only.
++
+In serial mode the driver polls the device continuously, as it always has,
+and the `pollinterval` setting from linkman:ups.conf[5] does not apply.
+USB mode honors `pollinterval`.
 
 *showinternals*='yes|no'::
 Publish additional internal Microlink runtime values. By default this follows
@@ -161,14 +165,21 @@ switchable groups, and the unswitched group has no on/off/cycle/shutdown
 commands to offer. Other models have no unswitched group at all: their
 outlet groups start numbering at 1, and `outlet.group.0` is not published.
 
-Supported instant commands currently include:
+Supported instant commands currently include the following. Each one is
+only offered once the Microlink descriptor turns out to contain the register
+it writes to, since not every model has all of them -- the tested Smart-UPS
+500, for example, has no runtime calibration command register, so it offers
+no `calibrate.*` commands:
 
 * `test.battery.start`
 * `test.battery.stop`
 * `test.panel.start`
-* `test.panel.stop`
 * `beeper.enable`
 * `beeper.disable`
+* `calibrate.start`
+* `calibrate.stop`
+* `bypass.start`
+* `bypass.stop`
 
 Driver-assisted shutdown is not yet implemented.
 

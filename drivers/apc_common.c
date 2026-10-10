@@ -275,16 +275,28 @@ uint64_t apc_build_outlet_command(apc_outlet_command_type_t type, uint64_t targe
 		cmd |= APC_OUTLET_CMD_OUTPUT_ON | APC_OUTLET_CMD_USE_ON_DELAY;
 		break;
 	case APC_OUTLET_OP_SHUTDOWN_RETURN:
-		cmd |= APC_OUTLET_CMD_OUTPUT_SHUTDOWN | APC_OUTLET_CMD_USE_OFF_DELAY;
+		/* Both delay bits, not just OFF: confirmed against a real PCSS ->
+		 * MicroLink USB capture (OutletCommand_BF = 0x1EC8) on a Smart-UPS
+		 * X 1500 - omitting USE_ON_DELAY reproduces the shutdown but the
+		 * switched outlet groups do not sequence back on at AC restore.
+		 * See nut#3587. */
+		cmd |= APC_OUTLET_CMD_OUTPUT_SHUTDOWN | APC_OUTLET_CMD_USE_ON_DELAY
+			| APC_OUTLET_CMD_USE_OFF_DELAY;
 		break;
 	case APC_OUTLET_OP_SHUTDOWN_STAYOFF:
-		cmd |= APC_OUTLET_CMD_OUTPUT_OFF | APC_OUTLET_CMD_USE_OFF_DELAY;
+		/* Same reasoning as APC_OUTLET_OP_SHUTDOWN_RETURN above (confirmed
+		 * variant OutletCommand_BF = 0x1EC4); see nut#3587. */
+		cmd |= APC_OUTLET_CMD_OUTPUT_OFF | APC_OUTLET_CMD_USE_ON_DELAY
+			| APC_OUTLET_CMD_USE_OFF_DELAY;
 		break;
 	case APC_OUTLET_OP_SHUTDOWN_REBOOT:
 		cmd |= APC_OUTLET_CMD_OUTPUT_REBOOT;
 		break;
 	case APC_OUTLET_OP_SHUTDOWN_REBOOT_GRACEFUL:
-		cmd |= APC_OUTLET_CMD_OUTPUT_REBOOT | APC_OUTLET_CMD_USE_OFF_DELAY;
+		/* Same reasoning as APC_OUTLET_OP_SHUTDOWN_RETURN above (confirmed
+		 * variant OutletCommand_BF = 0x1ED0); see nut#3587. */
+		cmd |= APC_OUTLET_CMD_OUTPUT_REBOOT | APC_OUTLET_CMD_USE_ON_DELAY
+			| APC_OUTLET_CMD_USE_OFF_DELAY;
 		break;
 #include "nut-pragmas-covered-switch-default.h"
 	case APC_OUTLET_OP_NULL:

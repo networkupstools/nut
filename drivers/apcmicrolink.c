@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -291,6 +291,7 @@ static microlink_page0_state_t page0;
 static int warned_implicit_stuffing = 0;
 static int descriptor_ready = 0;
 static int outlet_commands_registered = 0;
+static int simple_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
 static time_t microlink_fallback_since = 0;
 static unsigned int microlink_fallback_retries = 0;
@@ -354,6 +355,7 @@ static int microlink_update_blob(void);
 static int microlink_parse_descriptor(void);
 static int microlink_send_descriptor_mask_value(const char *path, uint64_t mask);
 static int microlink_send_command_descriptor_mask_value(const char *path, uint64_t mask);
+static int microlink_get_descriptor_map_bits(const char *path, uint32_t *bits);
 static int microlink_parse_descriptor_string_value(const char *val, size_t size,
 	unsigned char *payload);
 static int microlink_parse_descriptor_fixed_point_value(const microlink_desc_value_map_t *entry,
@@ -642,6 +644,21 @@ static unsigned int microlink_handshake_retries(void)
 	}
 #endif /* WITH_USB */
 	return MLINK_HANDSHAKE_RETRIES;
+}
+
+/* poll_interval to run at once a session is up. USB honors the configured
+ * pollinterval (see microlink_configured_poll_interval). Serial polls
+ * continuously, as the original serial implementation always did: it forced
+ * poll_interval to 0, and the device was only ever proven against that
+ * cadence, never against the pauses of a pollinterval (issue #3587). */
+static time_t microlink_connected_poll_interval(void)
+{
+#ifdef WITH_USB
+	if (is_usb) {
+		return microlink_configured_poll_interval;
+	}
+#endif /* WITH_USB */
+	return 0;
 }
 
 /* Whether an already-established session has gone quiet long enough to be
@@ -1391,9 +1408,44 @@ static int microlink_handle_outlet_cmd(const char *nut_cmdname, const char *extr
 	return 1;
 }
 
+/* The descriptor usage each simple (non-outlet) instant command writes to.
+ * Not every model has every command register - the SCL500RM1UC, for one,
+ * has no 2:12 - so microlink_register_simple_commands() only advertises a
+ * command once the device's descriptor turns out to contain its usage,
+ * instead of listing commands that can only ever fail. */
+static const struct {
+	const char *cmdname;
+	const char *path;
+} microlink_simple_cmd_paths[] = {
+	{ "test.battery.start",	"2:10" },
+	{ "test.battery.stop",	"2:10" },
+	{ "test.panel.start",	"2:4.B.3B" },
+	{ "beeper.enable",	"2:4.B.3A" },
+	{ "beeper.disable",	"2:4.B.3A" },
+	{ "calibrate.start",	"2:12" },
+	{ "calibrate.stop",	"2:12" },
+	{ "bypass.start",	"2:14" },
+	{ "bypass.stop",	"2:14" },
+	{ NULL, NULL }
+};
+
+static const char *microlink_simple_cmd_path(const char *nut_cmdname)
+{
+	size_t i;
+
+	for (i = 0; microlink_simple_cmd_paths[i].cmdname != NULL; i++) {
+		if (!strcasecmp(microlink_simple_cmd_paths[i].cmdname, nut_cmdname)) {
+			return microlink_simple_cmd_paths[i].path;
+		}
+	}
+
+	return NULL;
+}
+
 static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *extra, int *result)
 {
 	uint64_t value;
+	const char *path;
 
 	if (nut_cmdname == NULL || result == NULL) {
 		return 0;
@@ -1405,22 +1457,28 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 		value = APC_BATTERY_TEST_CMD_ABORT;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
 		value = APC_USER_IF_CMD_SHORT_TEST;
-	} else if (!strcasecmp(nut_cmdname, "beeper.enable")) {
+	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
 		/* Not a "user interface command" bit like the rest of this table -
-		 * PowerChute's own CompositeAudibleAlarm class (decompiled) writes
-		 * a plain persistent value (1=enabled, 2=disabled) straight to the
-		 * device's alarm-setting usage (2:4.B.3A, the same one
-		 * ups.beeper.status reads), not a command register. This driver
-		 * used to expose beeper.mute here instead, writing
+		 * the beeper on/off control is a persistent setting on the device's
+		 * alarm-setting usage (2:4.B.3A, the same one ups.beeper.status
+		 * reads), not a command register. This driver used to expose
+		 * beeper.mute here instead, writing
 		 * APC_USER_IF_CMD_MUTE_ALL_ACTIVE_AUDIBLE_ALARMS to 2:4.B.3B
 		 * (ported from apc_modbus's command set by analogy) - that had no
 		 * confirmed effect on real Microlink hardware, and "mute" is
 		 * documented as a temporary silence that self-clears, which this
 		 * persistent setting never was. beeper.enable/disable name what
-		 * the device actually supports. */
-		value = 1;
-	} else if (!strcasecmp(nut_cmdname, "beeper.disable")) {
-		value = 2;
+		 * the device actually supports.
+		 *
+		 * The actual value is computed below, not here: this register packs
+		 * an alarm-delay value alongside the enable/disable flag, so the
+		 * current value is read back and only ENABLED(1)/DISABLED(2) is ORed
+		 * in, clearing the other of the pair and leaving every other bit
+		 * (the delay) untouched.
+		 * This driver used to overwrite the whole register with a bare 1 or
+		 * 2, which zeroes the delay bits; real hardware silently ignores
+		 * that as an invalid write; see nut#3587. */
+		value = 0;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start")) {
 		value = APC_RUNTIME_CAL_CMD_START;
 	} else if (!strcasecmp(nut_cmdname, "calibrate.stop")) {
@@ -1435,23 +1493,41 @@ static int microlink_handle_simple_instcmd(const char *nut_cmdname, const char *
 
 	upslog_INSTCMD_POWERSTATE_CHECKED(nut_cmdname, extra);
 
+	path = microlink_simple_cmd_path(nut_cmdname);
+	if (path == NULL) {
+		*result = STAT_INSTCMD_FAILED;
+		return 1;
+	}
+
 	if (!strcasecmp(nut_cmdname, "test.battery.start") || !strcasecmp(nut_cmdname, "test.battery.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_BATTERY_TEST);
-		*result = microlink_send_command_descriptor_mask_value("2:10", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "test.panel.start")) {
-		*result = microlink_send_command_descriptor_mask_value("2:4.B.3B", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else if (!strcasecmp(nut_cmdname, "beeper.enable") || !strcasecmp(nut_cmdname, "beeper.disable")) {
-		*result = microlink_send_command_descriptor_mask_value("2:4.B.3A", value)
-			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
+		uint32_t current_alarm_setting = 0;
+
+		if (!microlink_get_descriptor_map_bits(path, &current_alarm_setting)) {
+			*result = STAT_INSTCMD_FAILED;
+		} else {
+			if (!strcasecmp(nut_cmdname, "beeper.enable")) {
+				value = (current_alarm_setting | 1U) & ~(uint64_t)2U;
+			} else {
+				value = (current_alarm_setting | 2U) & ~(uint64_t)1U;
+			}
+
+			*result = microlink_send_command_descriptor_mask_value(path, value)
+				? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
+		}
 	} else if (!strcasecmp(nut_cmdname, "calibrate.start") || !strcasecmp(nut_cmdname, "calibrate.stop")) {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_RUNTIME_CAL);
-		*result = microlink_send_command_descriptor_mask_value("2:12", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	} else {
 		value |= microlink_command_source_bit(MLINK_CMD_DOMAIN_UPS);
-		*result = microlink_send_command_descriptor_mask_value("2:14", value)
+		*result = microlink_send_command_descriptor_mask_value(path, value)
 			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED;
 	}
 
@@ -1989,7 +2065,11 @@ static int microlink_auth_data_valid(void)
  * finished at the moment of the write: this device takes roughly 20 further
  * exchanges to set the AUTH_STATUS valid bit, and serves no measurement page
  * until it does. Anything that decides whether to keep polling has to know
- * that, or it stops mid-handshake and the tunnel never yields a reading. */
+ * that, or it stops mid-handshake and the tunnel never yields a reading.
+ *
+ * USB only: serial polls continuously, one record at a time, so it never
+ * stops asking in the first place (see microlink_connected_poll_interval()). */
+#ifdef WITH_USB
 static int microlink_auth_pending(time_t now)
 {
 	if (!authentication_sent || authentication_sent_at == 0) {
@@ -2002,6 +2082,7 @@ static int microlink_auth_pending(time_t now)
 
 	return (difftime(now, authentication_sent_at) < MLINK_AUTH_GRACE_SEC);
 }
+#endif /* WITH_USB */
 
 static int microlink_startup_ready(void)
 {
@@ -2029,12 +2110,45 @@ static int microlink_startup_ready(void)
 	 * 0 for days. Keep the startup loop polling across that window - but
 	 * only until the grace expires, because a device that never sets the
 	 * bit still has usable identity data and a standard-HID fallback worth
-	 * starting up on. */
-	if (microlink_auth_pending(microlink_now())) {
+	 * starting up on.
+	 *
+	 * USB only: serial polls continuously (see
+	 * microlink_connected_poll_interval()), so the acknowledgement is
+	 * collected by the regular polling after startup, as the original serial
+	 * implementation always did. Waiting here only widened the window in
+	 * which a few consecutive read timeouts abort startup altogether
+	 * (issue #3587). */
+#ifdef WITH_USB
+	if (is_usb && microlink_auth_pending(microlink_now())) {
 		return 0;
 	}
+#endif /* WITH_USB */
 
 	return authentication_sent;
+}
+
+/* Which microlink_startup_ready() condition is still unmet, for the startup
+ * failure message. Checked in the same order. */
+static const char *microlink_startup_missing(void)
+{
+	if (!session_ready) {
+		return "session lost";
+	}
+
+	if (!microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
+		return "no protocol header (page 0) received";
+	}
+
+	if ((page0.flags & (MLINK_PAGE0_FLAG_DESCRIPTOR_PRESENT | MLINK_PAGE0_FLAG_AUTH_REQUIRED)) != 0U
+	 && !descriptor_ready) {
+		return "descriptor read incomplete";
+	}
+
+	if (!authentication_sent) {
+		return "authentication response not sent";
+	}
+
+	return "authentication not acknowledged";
 }
 
 static void microlink_set_alarms_from_descriptor_map(const char *path,
@@ -2727,7 +2841,7 @@ static int microlink_send_write(unsigned char id, unsigned char offset,
 
 static int microlink_send_simple(unsigned char byte)
 {
-	microlink_trace_frame(2, "TX ctrl", &byte, 1);
+	microlink_trace_frame(4, "TX ctrl", &byte, 1);
 
 #ifdef WITH_USB
 	if (is_usb) {
@@ -2804,7 +2918,7 @@ static int microlink_try_extract_frame(unsigned char *frame, size_t *framelen)
 
 			memmove(rxbuf, rxbuf + *framelen, rxbuf_len - *framelen);
 			rxbuf_len -= *framelen;
-			microlink_trace_frame(2, "RX record", frame, *framelen);
+			microlink_trace_frame(4, "RX record", frame, *framelen);
 			return 1;
 		}
 	}
@@ -3120,13 +3234,24 @@ static int microlink_poll_once(time_t now)
  * blocking loop. */
 static unsigned int microlink_poll_burst_budget(void)
 {
-	if (page0.count >= MLINK_POLL_BURST_MIN
-	 && page0.count <= MLINK_POLL_BURST_MAX
-	) {
-		return page0.count;
-	}
+	/* Serial: one record per call, as the original serial implementation
+	 * did. It polls continuously anyway (see
+	 * microlink_connected_poll_interval()), so a bigger pass gains nothing
+	 * and only delays publishing - a full pass takes ~6 s on a 105-page
+	 * device, so an OL->OB change could show up that late (issue #3587). */
+#ifdef WITH_USB
+	if (is_usb) {
+		if (page0.count >= MLINK_POLL_BURST_MIN
+		 && page0.count <= MLINK_POLL_BURST_MAX
+		) {
+			return page0.count;
+		}
 
-	return MLINK_POLL_BURST_MIN;
+		return MLINK_POLL_BURST_MIN;
+	}
+#endif /* WITH_USB */
+
+	return 1;
 }
 
 /* Drive the tunnel the way APC's own client does: keep asking for the next
@@ -3157,7 +3282,17 @@ static int microlink_poll_burst(void)
 	time_t started = microlink_now();
 	time_t now = started;
 
-	while (fetched < budget || microlink_auth_pending(now)) {
+	for (;;) {
+		/* USB also overruns the budget while auth is pending, see above;
+		 * serial takes exactly its one record per call. */
+		if (fetched >= budget
+#ifdef WITH_USB
+		 && !(is_usb && microlink_auth_pending(now))
+#endif /* WITH_USB */
+		) {
+			break;
+		}
+
 		/* A pending shutdown outranks finishing the pass. The main loop
 		 * cannot begin tearing down until upsdrv_updateinfo() returns, so
 		 * every further exchange here delays the STOP that
@@ -3184,7 +3319,9 @@ static int microlink_poll_burst(void)
 		}
 	}
 
-	upsdebugx(3, "microlink: poll burst fetched %u of %u records in %.0f s",
+	/* A one-record serial "burst" runs every ~50 ms; keep it out of D3. */
+	upsdebugx(budget > 1 ? 3 : 4,
+		"microlink: poll burst fetched %u of %u records in %.0f s",
 		fetched, budget, difftime(now, started));
 
 	return (fetched > 0);
@@ -3230,10 +3367,18 @@ static int microlink_start_session_impl(unsigned int max_attempts)
 		 * never NAK alone - see MLINK_STOP_BYTE's comment. A STOP write
 		 * failure is treated the same as an INIT_BYTE write failure
 		 * (hard I/O error, not just "no reply yet"), matching how
-		 * MLINK_INIT_BYTE's own failure is handled just below. */
-		if (!microlink_send_simple(MLINK_STOP_BYTE)) {
+		 * MLINK_INIT_BYTE's own failure is handled just below.
+		 *
+		 * USB only: the problem this works around was seen on the USB HID
+		 * tunnel, and the original serial implementation only ever sent
+		 * INIT. Serial session startup began failing on a unit that had
+		 * worked with INIT alone once STOP was added here (issue #3587),
+		 * so serial keeps its long-proven INIT-only handshake. */
+#ifdef WITH_USB
+		if (is_usb && !microlink_send_simple(MLINK_STOP_BYTE)) {
 			return 0;
 		}
+#endif /* WITH_USB */
 
 		if (!microlink_send_simple(MLINK_INIT_BYTE)) {
 			return 0;
@@ -3769,6 +3914,40 @@ void upsdrv_initups(void)
 	}
 }
 
+/* Same conditions microlink_send_descriptor_mask_value() needs before it
+ * can write a usage at all. */
+static int microlink_command_usage_present(const char *path)
+{
+	const microlink_descriptor_usage_t *usage = microlink_find_descriptor_usage(path);
+
+	return (usage != NULL && !usage->skipped && usage->size > 0
+		&& usage->size <= sizeof(uint64_t)
+		&& usage->data_offset + usage->size <= descriptor_blob_len);
+}
+
+/* Called at init and on every poll, like microlink_register_outlet_commands():
+ * a USB start can run on the HID fallback before the descriptor is known. */
+static void microlink_register_simple_commands(void)
+{
+	size_t i;
+
+	if (simple_commands_registered || !descriptor_ready) {
+		return;
+	}
+
+	for (i = 0; microlink_simple_cmd_paths[i].cmdname != NULL; i++) {
+		if (microlink_command_usage_present(microlink_simple_cmd_paths[i].path)) {
+			dstate_addcmd(microlink_simple_cmd_paths[i].cmdname);
+		} else {
+			upsdebugx(1, "apcmicrolink: not offering %s: the device has no %s usage to write",
+				microlink_simple_cmd_paths[i].cmdname,
+				microlink_simple_cmd_paths[i].path);
+		}
+	}
+
+	simple_commands_registered = 1;
+}
+
 static void microlink_register_outlet_commands(void)
 {
 	size_t outlet_group_count, switched_group_count = 0, g;
@@ -3828,6 +4007,7 @@ static void microlink_register_outlet_commands(void)
 void upsdrv_initinfo(void)
 {
 	int microlink_ready = 0;
+	int handshake_ok = 0;
 
 	memset(objects, 0, sizeof(objects));
 	session_ready = 0;
@@ -3841,17 +4021,21 @@ void upsdrv_initinfo(void)
 	memset(&page0, 0, sizeof(page0));
 	descriptor_ready = 0;
 	outlet_commands_registered = 0;
+	simple_commands_registered = 0;
 	microlink_session_next_retry = 0;
 	microlink_fallback_since = 0;
 	/* Capture the user's configured pollinterval (or main.c's own default)
 	 * before anything below has a chance to lower poll_interval to pace
-	 * connection retries - a successfully connected session restores this
-	 * value rather than busy-polling at 0s once the tunnel is up, since
+	 * connection retries - a successfully connected USB session restores
+	 * this value rather than busy-polling at 0s once the tunnel is up, since
 	 * ups.status/battery.charge/outlet state don't change fast enough to
-	 * need that. */
+	 * need that. Serial keeps polling continuously, see
+	 * microlink_connected_poll_interval(). */
 	microlink_configured_poll_interval = poll_interval;
+	poll_interval = microlink_connected_poll_interval();
 
 	if (microlink_start_session()) {
+		handshake_ok = 1;
 		microlink_ready = 1;
 		while (microlink_ready && !microlink_startup_ready()) {
 			time_t now = microlink_now();
@@ -3907,21 +4091,32 @@ void upsdrv_initinfo(void)
 			"arrive. Outlet-group data and commands will become available "
 			"automatically once the Microlink session connects", device_path);
 	} else {
-		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
-			"and this device exposes no standard HID Power Device usages to fall "
-			"back on", device_path);
+		/* Say which stage failed - a dead link and a session that answered
+		 * but never finished its startup exchange need different debugging -
+		 * and only mention the HID fallback where it could ever apply. */
+		char	stage[128];
+		const char	*fallback = "";
+
+		if (handshake_ok) {
+			snprintf(stage, sizeof(stage), "Microlink session started but "
+				"did not reach startup readiness (%s)",
+				microlink_startup_missing());
+		} else {
+			snprintf(stage, sizeof(stage), "Microlink session handshake failed");
+		}
+
+#ifdef WITH_USB
+		if (is_usb) {
+			fallback = ", and this device exposes no standard HID Power Device "
+				"usages to fall back on";
+		}
+#endif /* WITH_USB */
+
+		fatalx(EXIT_FAILURE, "apcmicrolink: %s on %s%s",
+			stage, device_path, fallback);
 	}
 
-	dstate_addcmd("test.battery.start");
-	dstate_addcmd("test.battery.stop");
-	dstate_addcmd("test.panel.start");
-	dstate_addcmd("beeper.enable");
-	dstate_addcmd("beeper.disable");
-	dstate_addcmd("calibrate.start");
-	dstate_addcmd("calibrate.stop");
-	dstate_addcmd("bypass.start");
-	dstate_addcmd("bypass.stop");
-
+	microlink_register_simple_commands();
 	microlink_register_outlet_commands();
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -3975,7 +4170,7 @@ void upsdrv_updateinfo(void)
 		}
 		microlink_fallback_since = 0;
 		microlink_fallback_retries = 0;
-		poll_interval = microlink_configured_poll_interval;
+		poll_interval = microlink_connected_poll_interval();
 	}
 
 	if (microlink_poll_burst()) {
@@ -4012,6 +4207,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
+		microlink_register_simple_commands();
 		microlink_register_outlet_commands();
 		microlink_publish_identity();
 		microlink_publish_status();
@@ -4026,6 +4222,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	ser_comm_good();
+	microlink_register_simple_commands();
 	microlink_register_outlet_commands();
 	microlink_publish_identity();
 	microlink_publish_status();
@@ -4092,17 +4289,22 @@ void upsdrv_cleanup(void)
 	 * would have skipped the STOP under the narrower test.
 	 *
 	 * Best-effort: this runs on the way out, so a failed write is worth a
-	 * debug line and nothing more. */
-	if (microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
-		session_ready = 0;
-		if (!microlink_send_simple(MLINK_STOP_BYTE)) {
-			upsdebugx(1, "microlink: could not send STOP while closing "
-				"the session");
-		}
-	}
-
+	 * debug line and nothing more.
+	 *
+	 * USB only: the problem was seen on the USB HID tunnel, and the original
+	 * serial implementation never sent STOP on the way out. Keep the serial
+	 * line exactly as that implementation left it, as with the STOP before
+	 * INIT in microlink_start_session_impl() (issue #3587). */
 #ifdef WITH_USB
 	if (is_usb) {
+		if (microlink_get_object(MLINK_OBJ_PROTOCOL)->seen) {
+			session_ready = 0;
+			if (!microlink_send_simple(MLINK_STOP_BYTE)) {
+				upsdebugx(1, "microlink: could not send STOP while closing "
+					"the session");
+			}
+		}
+
 		microlink_usb_close();
 		return;
 	}

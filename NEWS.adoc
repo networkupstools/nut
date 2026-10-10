@@ -185,6 +185,63 @@ https://github.com/networkupstools/nut/milestone/13
         poll pass; on the test unit this happened two to three times a
         minute.
 
+ - Contributed `apcmicrolink` driver follow-ups [issue #3587]:
+    * `beeper.enable` and `beeper.disable` now change only the
+      enabled/disabled flag of the alarm-setting register, leaving the
+      alarm-delay value it also holds untouched. Writing a bare 1 or 2
+      zeroed the delay, and real hardware silently ignored that write,
+      so the commands had no effect.
+    * `shutdown.return`, `shutdown.stayoff` and `shutdown.reboot.graceful`
+      now ask the UPS to apply its turn-on delay as well as its turn-off
+      delay. Without it the shutdown still happened, but switched outlet
+      groups did not sequence back on when mains power returned. The
+      command is built in `apc_common.c`, which the `apc_modbus` driver
+      shares, so its `DRIVER_VERSION` is bumped too; that driver's
+      behavior on this path has not been checked on hardware.
+    * The calibration status in `ups.status` (see above) also follows the
+      UPS-scope register `2:4.5.13`, for devices that populate that one
+      instead of `2:13`.
+    * Instant commands such as `calibrate.start` and `bypass.start` are
+      only advertised when the device's Microlink descriptor contains the
+      register they write to. They used to be listed on every device, so
+      on a model without that register (the tested Smart-UPS 500 has no
+      runtime calibration command register) they could only ever fail.
+      With debug enabled, the driver logs which commands it left out and
+      why.
+    * The runtime calibration status register in object `A` (`A:6.13`) is
+      now read, as `experimental.microlink.ups.calibration.status`, and a
+      running calibration there raises `CAL` in `ups.status`. It is the
+      only calibration status the tested Smart-UPS 500 has, so that model
+      previously reported no calibration state at all. It is kept apart
+      from the existing `*.calibration.result` variables because it is
+      not yet known whether it carries the same value on devices that
+      have both.
+    * Serial mode: session start sends only the INIT byte again, as the
+      original serial implementation did. The STOP byte that the USB
+      transport needs before INIT had also been sent on serial, where a
+      previously working setup then failed to start.
+    * When the driver gives up at startup, the message now says whether
+      the session handshake failed or the session started but never
+      became ready, and only mentions the standard HID fallback on USB.
+    * Serial mode: the driver polls continuously again, as the original
+      serial driver did, instead of pausing for `pollinterval` between
+      passes since USB support was added. USB mode is unchanged.
+    * Serial mode: startup is complete once the authentication response
+      has been sent, as with the original serial driver, rather than
+      waiting up to 15 seconds for the device to acknowledge it, during
+      which a few missed replies aborted startup. The acknowledgement is
+      still collected by the regular polling. USB mode is unchanged.
+      If startup does fail after the handshake, the message now names
+      the step that was missing.
+    * Serial mode: one record is read per poll again, and data is
+      published after each one, as with the original serial driver.
+      Reading a full pass (about 6 seconds on a tested unit) before
+      publishing delayed status changes such as going on battery by
+      that much. USB mode is unchanged.
+    * Serial mode: the driver no longer sends a STOP byte when it exits.
+      The original serial driver never did; only the USB transport needs
+      it. USB mode is unchanged.
+
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
     * Decode `RunTimeCalibrationStatus_BF` into
