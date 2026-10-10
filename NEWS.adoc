@@ -281,12 +281,35 @@ https://github.com/networkupstools/nut/milestone/13
     * Only claim a USB device as "supported" during discovery out of the box
       if `subdriver_command` was assigned (`1A86:7523` is used by CH340/341
       USB chips not only in UPSes). [issue #3410]
-    * Added a `cypress_0665_5161_subdriver` initialization method for devices
-      with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
-      a quirk to drain stale bytes from USB buffers of the device before our
+    * Added a quirk for the `cypress` subdriver, enabled by default for
+      devices with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska),
+      to drain stale bytes from USB buffers of the device before our
       driver sends queries, and use a longer timeout. If this change breaks
       your device, please add `cypress_drain_quirk = 0` in your `ups.conf`
       and let us know. [issue #2534, PR #3563]
+    * With the `cypress_drain_quirk` enabled, keep replies in step with
+      commands after the UPS answered too late or sent data unasked. Such
+      a `0665:5161` bridge holds only the newest 8 reports (64 bytes) of UPS
+      output while the driver does not read, so the rest of a late reply was
+      taken for the reply to the next command, and a longer reply (e.g. the
+      76-byte Voltronic `QGS`) lost its start. Without the quirk (as in NUT
+      2.8.5) this kept the driver one reply behind, reporting "data stale"
+      until it was restarted. The driver now drains until the UPS stays quiet
+      for longer than it pauses within a reply (up to 160 ms were seen), and
+      logs unasked data (once, while it keeps recurring). If the device keeps
+      sending for longer than a reply takes (3 seconds), it resets the USB
+      device and reconnects, up to 3 times in a row, before giving up and
+      exiting, instead of exiting right away with a misleading "Got
+      disconnected by another driver" message. [PR #3720]
+    * A USB reconnection attempt which failed again (the device was closed
+      for another reconnection) is no longer reported as "re-established",
+      for all USB subdrivers. So with a positive `reconnect_max_tries`, such
+      attempts now count towards that limit instead of resetting the count.
+      [PR #3720]
+    * The `cypress_drain_quirk` setting (and its default for USB ID
+      `0665:5161`) now also applies when `subdriver = cypress` is set
+      explicitly in `ups.conf`; previously that silently turned the quirk
+      off. [PR #3720]
     * Modified `megatec` subdriver to allow `ups.firmware` with empty contents
       (when a device returns all-spaces in that part of the `I` query response)
       out of the box and not ignore the device as unsupported, by adding the
