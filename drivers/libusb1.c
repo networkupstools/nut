@@ -1152,9 +1152,6 @@ static int nut_libusb_set_output_report(
 	|| ReportId < 0 || (uintmax_t)ReportId > UINT16_MAX
 	|| ReportSize < 0 || (uintmax_t)ReportSize > UINT16_MAX
 	) {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
 		return 0;
 	}
 
