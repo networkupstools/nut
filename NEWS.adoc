@@ -363,7 +363,56 @@ https://github.com/networkupstools/nut/milestone/13
       some problems possible when iterating devices. [issue #1768, PR #3477]
 
  - `riello_usb`, `riello_ser` driver updates:
-    * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+    * riello_usb, riello_ser: report NAK on RE as failure. [issue #3546]
+
+ - `tripplitesu` driver updates [PR #3273]:
+    * The bypass (transfer) reason recorded by the device is now published
+      as the read-only `input.transfer.reason` variable, refreshed on every
+      poll, and the existing `clear.fault.record` instant command clears
+      the recorded reason on the device.
+    * Device settings (`outlet.delay.start`, `ups.start.auto`,
+      `ups.watchdog.status`, `input.eco.switchable` and
+      `ups.beeper.status`) are no longer published with assumed values when
+      the device does not report them: they appear, and become settable,
+      only once the device has reported them.  A setting that was read
+      before keeps its last known value when the device stops answering,
+      and a warning is logged instead of silently falling back to a
+      default.
+    * Added the `offdelay` and `startdelay` settings in `ups.conf` (in
+      seconds and minutes respectively, the units of the two device
+      commands) and support for an optional delay (in seconds), passed as
+      the `value` argument of the `shutdown.return`, `shutdown.reboot` and
+      `shutdown.reboot.graceful` instant commands, so that the timer can be
+      chosen per invocation without restarting the driver or changing its
+      configuration.
+    * Added control of the individual outlet banks through the
+      `outlet.n.load.off` and `outlet.n.load.on` instant commands, and the
+      matching `outlet.count`, `outlet.n.status` and `outlet.n.switchable`
+      variables.
+    * Added the `shutdown.stayoff` instant command, and made the
+      shutdown-related commands keep the device return delay consistent with
+      what they mean: the two reboot commands ask for the load to come back
+      right behind the shutdown (the device only restarts the load when the
+      restart delay is longer than the shutdown delay), while
+      `shutdown.return` and `shutdown.stayoff` clear it, so that the load
+      comes back only when mains is (re)applied, or not at all.
+    * Added the read/write variables `ups.beeper.status`, `ups.delay.start`,
+      `ups.start.auto`, `ups.watchdog.status`, `outlet.delay.start` and
+      `input.eco.switchable`, the `battery.date` variable, the `beeper.mute`
+      and `clear.fault.record` instant commands, and validation of
+      `input.transfer.low`/`.high` against the ranges reported by the device
+      (published as `input.transfer.low.min`/`.max` and
+      `input.transfer.high.min`/`.max`).
+    * Instant commands and variable writes now report a failure when the
+      device rejects or does not answer one of the operations they perform,
+      instead of always reporting success.
+    * Added the `command_delay` setting in `ups.conf` as a minimum interval
+      between two commands sent to the UPS, in milliseconds, to work around
+      units that do not answer a command sent too soon after the previous
+      one.  The interval is measured from the previous command, so an idle
+      link is not penalized, and the special value `-1` makes the driver
+      start without waiting and pace commands by one second only if one of
+      them times out.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
