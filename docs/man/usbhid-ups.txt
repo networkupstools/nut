@@ -37,7 +37,8 @@ At the present time, usbhid-ups supports:
  - some EcoFlow models,
  - some Powercom models,
  - some PowerWalker models,
- - some TrippLite models.
+ - some TrippLite models,
+ - some Vertiv models (Liebert GXT5).
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the NUT source distribution as `data/driver.list`, or on the

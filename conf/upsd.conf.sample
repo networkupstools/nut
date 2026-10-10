@@ -80,8 +80,16 @@
 # LISTEN <IP address or name> [<port>]
 # LISTEN 127.0.0.1 3493
 # LISTEN ::1 3493
-# LISTEN myhostname 83493
+# LISTEN myhostname 43493
 # LISTEN myhostname.mydomain
+# LISTEN 127.0.0.1:3493
+# LISTEN [::1]:3493
+#
+# An address and decimal port (0 to 65535) may be combined as hostname:port,
+# IPv4:port or [IPv6]:port, without a second port argument. Bare IPv6
+# addresses keep their meaning: ::3493 is an address, not an inline port.
+# Addresses ending in :: also accept the shortcut :::3493 for [::]:3493,
+# or 2001:db8:::3493 for [2001:db8::]:3493.
 #
 # With no LISTEN statement, the default is localhost and port 3493.
 # In case of IP v4 or v6 disabled kernel, only the available one will

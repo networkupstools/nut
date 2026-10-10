@@ -127,6 +127,15 @@ compiled into the code.  This overrides any value you may have set with
 `configure --with-port`.  If you don't change it with configure or this value,
 `upsd` will listen on port '3493' for this interface.
 +
+The address and port may also be combined as `hostname:port`, `IPv4:port`
+or `[IPv6]:port`. The inline port must be a decimal number from 0 to 65535,
+and must not be followed by a separate port argument. Bare IPv6 addresses
+remain complete addresses: `::3493` does not specify port 3493.
++
+For an IPv6 address ending in `::`, appending `:port` is also accepted:
+`:::3493` means `[::]:3493`, and `2001:db8:::3493` means
+`[2001:db8::]:3493`. Use brackets for other IPv6 addresses with inline ports.
++
 Multiple `LISTEN` addresses may be specified.  The default is to bind to
 `127.0.0.1` if no `LISTEN` addresses are specified (and also `::1` if IPv6
 support is compiled in).
@@ -145,6 +154,8 @@ socket to handle both address families.
 	LISTEN myhostname.mydomain
 	LISTEN ::1
 	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+	LISTEN 127.0.0.1:3493
+	LISTEN [::1]:3493
 +
 This parameter will only be read at startup.  You'll need to restart
 (rather than merely reload) `upsd` to apply any changes made here.

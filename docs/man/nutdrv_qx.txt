@@ -518,6 +518,14 @@ The `nutdrv_qx` driver can drain the USB buffer and use longer timeouts to commu
 with such devices, but such a change may potentially misfire on other devices with
 same USB ID (Belkin, Voltronic).  This option allows to explicitly enable or disable
 this behavior; by default it is chosen according to device self-identification.
+This also applies when the `cypress` subdriver is selected explicitly.
++
+With this behavior enabled, the driver also keeps replies in step with commands
+when the UPS answers only after the driver stopped waiting, or sends data unasked:
+it then drains until the UPS stays quiet for longer than it pauses within a reply,
+and logs such out-of-step data (once, while it keeps recurring).  If the device
+keeps sending data for longer than a reply takes, the driver resets the USB device
+and reconnects, and gives up (exits) after several resets in a row.
 
 
 IMPLEMENTATION NOTES
