@@ -48,7 +48,7 @@
 /* ---------------------------------------------------------------------- */
 
 #define WINHID_DRIVER_NAME         "USB communication driver (Windows HID API)"
-#define WINHID_DRIVER_VERSION      "0.11"
+#define WINHID_DRIVER_VERSION      "0.12"
 #define WINHID_MAX_REPORT_SIZE     0x1800
 #define WINHID_HIDP_STATUS_SUCCESS 0x00110000UL
 

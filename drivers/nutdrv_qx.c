@@ -61,7 +61,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
