@@ -719,6 +719,7 @@
 "Legrand"	"ups"	"2"	"Daker DK"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Daker DK Plus"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Daker DK Plus"	"USB"	"nutdrv_qx"
+"Legrand"	"ups"	"3"	"Keor DK"	"USB"	"usbhid-ups"	# NOTE: units with the Cypress-based comm board (0665:5161); set "ignorelb" (no low-battery flag observed)
 "Legrand"	"ups"	"2"	"Keor Line RT"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Line RT"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor LP"	"Serial"	"nutdrv_qx"

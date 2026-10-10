@@ -475,6 +475,8 @@ https://github.com/networkupstools/nut/milestone/13
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
       `ups.beeper.status`. [issue #3638, PR #3639]
+    * Added support for USB ID 0665:5161 (Cypress) in `legrand-hid` subdriver
+      for some units of the Keor DK / Daker DK range. [PR #3703]
     * Added a new `vertiv-hid` subdriver for the Vertiv Liebert GXT5 (USB ID
       `10af:1000`). This device shares the Liebert vendor ID handled by
       `belkin-hid`, but exposes everything under `UPS.PowerSummary` only (no
