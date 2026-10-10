@@ -32,6 +32,28 @@ if test -z "${nut_ax_realpath_lib_prereq_seen}"; then
                 [AC_CHECK_TOOLS([LD], [ld], [false])])
         ]
     )
+
+    dnl # Tools which can report the SONAME recorded inside a shared
+    dnl # object (see AX_SONAME_LIB below). Any of them may be absent,
+    dnl # in which case only the SOPATH/SOFILE names are used.
+    AS_CASE(["${target_os}"],
+        [*mingw*], [],
+        [*darwin*], [
+            AS_IF([test x"${OTOOL-}" = x],
+                [AC_CHECK_TOOLS([OTOOL], [otool], [false])])
+        ],
+        [
+            AS_IF([test x"${READELF-}" = x],
+                [AC_CHECK_TOOLS([READELF], [readelf eu-readelf], [false])])
+            AS_IF([test x"${OBJDUMP-}" = x],
+                [AC_CHECK_TOOLS([OBJDUMP], [objdump], [false])])
+            AS_CASE(["${target_os}"],
+                [*solaris*|*illumos*|*sunos*], [
+                    AS_IF([test x"${ELFDUMP-}" = x],
+                        [AC_CHECK_TOOLS([ELFDUMP], [elfdump], [false])])
+                ])
+        ]
+    )
 fi
 ])
 
@@ -286,4 +308,69 @@ AC_DEFUN([AX_REALPATH_LIB],
     [AC_MSG_WARN([Compiler not detected as GCC/CLANG-compatible, skipping REALPATH_LIB($1)])
      $2="$3"
     ])
+])
+
+dnl Determine the SONAME recorded inside a shared object file (#1, an
+dnl existing path such as one resolved by AX_REALPATH_LIB above) and save
+dnl it into varname #2. In case of problems return #3 (optional, defaults
+dnl to empty). The SONAME is the name the run-time linker actually looks
+dnl for (e.g. "libusb-1.0.so.0"), which packaged libraries keep stable
+dnl across ABI-compatible updates, while the fully versioned file name
+dnl (e.g. "libusb-1.0.so.0.6.0") changes with every upstream release.
+dnl Programs like nut-scanner which dlopen() such libraries by name should
+dnl try the SONAME first, so that a library update does not require the
+dnl NUT binaries to be rebuilt just to learn the new file name.
+AC_DEFUN([AX_SONAME_LIB],
+[
+    AC_REQUIRE([AX_REALPATH_LIB_PREREQ])dnl
+
+    AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to SONAME_LIB macro (arg1)])])
+    AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to SONAME_LIB macro (arg2)])])
+
+    mySONAME=""
+    AS_IF([test -n "$1" && test -s "$1"], [
+        AC_MSG_CHECKING([for SONAME recorded in $1])
+        AS_CASE(["${target_os}"],
+            [*mingw*], [
+                dnl # A DLL is loaded by its own file name, nothing to add
+            ],
+            [*darwin*], [
+                AS_IF([test x"${OTOOL-}" != x && test x"${OTOOL-}" != xfalse], [
+                    dnl # First line repeats the queried file name (with a
+                    dnl # trailing colon), second line is the install name,
+                    dnl # usually a full or @rpath path; we want its base name
+                    mySONAME="`${OTOOL} -D \"$1\" 2>/dev/null | sed -e 1d | head -1 | sed -e 's,^.*/,,'`"
+                ])
+            ],
+            [
+                AS_IF([test -z "${mySONAME}" && test x"${READELF-}" != x && test x"${READELF-}" != xfalse], [
+                    dnl # Expected line (GNU or elfutils readelf), e.g.:
+                    dnl #   0x000000000000000e (SONAME)  Library soname: [libusb-1.0.so.0]
+                    mySONAME="`${READELF} -d \"$1\" 2>/dev/null | ${GREP} -w SONAME | sed -n -e 's,^.*\@<:@\(@<:@^@:>@@:>@*\)\@:>@.*$,\1,p' | head -1`"
+                ])
+                AS_IF([test -z "${mySONAME}" && test x"${OBJDUMP-}" != x && test x"${OBJDUMP-}" != xfalse], [
+                    dnl # Expected line, e.g.:
+                    dnl #   SONAME               libusb-1.0.so.0
+                    mySONAME="`${OBJDUMP} -p \"$1\" 2>/dev/null | ${GREP} -w SONAME | head -1 | tr '\t' ' ' | sed -e 's,^.* ,,'`"
+                ])
+                AS_IF([test -z "${mySONAME}" && test x"${ELFDUMP-}" != x && test x"${ELFDUMP-}" != xfalse], [
+                    dnl # Expected line (Solaris/illumos), e.g.:
+                    dnl #   [4]  SONAME   0x1   libusb-1.0.so.0
+                    mySONAME="`${ELFDUMP} -d \"$1\" 2>/dev/null | ${GREP} -w SONAME | head -1 | tr '\t' ' ' | sed -e 's,^.* ,,'`"
+                ])
+            ]
+        )
+
+        dnl # Only a plain base file name is useful to a by-name loader
+        AS_CASE(["${mySONAME}"],
+            [*/*|*" "*], [mySONAME=""]
+        )
+
+        AS_IF([test -n "${mySONAME}"],
+            [AC_MSG_RESULT([${mySONAME}])],
+            [AC_MSG_RESULT([not found])])
+    ])
+
+    AS_IF([test -n "${mySONAME}"], [$2="${mySONAME}"], [$2="$3"])
+    unset mySONAME
 ])

@@ -48,6 +48,10 @@ Repeater Mode
 
 In this mode, *dummy-ups* acts as a NUT client, simply forwarding data.
 
+During operation, if an upstream refresh fails, the repeated data is marked
+stale until a complete variable list is received. The driver keeps trying to
+reconnect.
+
 This can be useful for supervision purposes. This mode can also allow some
 load sharing between several `upsd` instances communicating with ultimate
 NUT clients, with a "central" one using a point-to-point communication with
