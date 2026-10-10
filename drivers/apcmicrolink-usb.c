@@ -86,14 +86,18 @@ static hid_fallback_field_t ff_below_rcl;
 static hid_fallback_field_t ff_remaining_capacity;
 static hid_fallback_field_t ff_runtime_to_empty;
 
-/* Latest opportunistically decoded fallback snapshot; fb_last_update == 0
- * means nothing decoded yet this session. */
+/* Latest opportunistically decoded fallback snapshot. The two status flags
+ * carry their own decode times (0 = not decoded yet this session): a zero
+ * that was never read from the device must not pass for "AC not present",
+ * and a RemainingCapacity/RunTimeToEmpty report says nothing about how fresh
+ * the status is. */
 static int fb_ac_present = 0;
 static int fb_discharging = 0;
 static int fb_below_rcl = 0;
 static long fb_battery_charge = -1;
 static long fb_battery_runtime = -1;
-static time_t fb_last_update = 0;
+static time_t fb_ac_present_update = 0;
+static time_t fb_discharging_update = 0;
 
 /* Output/Input reports are 64 bytes: 1 Report ID byte + 63 data bytes. */
 #define MLINK_USB_REPORT_PAYLOAD_LEN	63U
@@ -322,7 +326,11 @@ static int microlink_usb_report_callback(usb_dev_handle *arg_udev, USBDevice_t *
 	memset(&ff_below_rcl, 0, sizeof(ff_below_rcl));
 	memset(&ff_remaining_capacity, 0, sizeof(ff_remaining_capacity));
 	memset(&ff_runtime_to_empty, 0, sizeof(ff_runtime_to_empty));
-	fb_last_update = 0;
+	fb_ac_present_update = 0;
+	fb_discharging_update = 0;
+	fb_below_rcl = 0;
+	fb_battery_charge = -1;
+	fb_battery_runtime = -1;
 
 	if (rdbuf == NULL || rdlen <= 0) {
 		upsdebugx(1, "microlink_usb: no HID report descriptor available");
@@ -818,9 +826,11 @@ static void microlink_usb_try_decode_fallback(const unsigned char *report, size_
 
 	if (ff_ac_present.report_id == report_id) {
 		fb_ac_present = (int)hid_extract_bits(data, data_len, ff_ac_present.offset, ff_ac_present.size);
+		fb_ac_present_update = microlink_now();
 	}
 	if (ff_discharging.report_id == report_id) {
 		fb_discharging = (int)hid_extract_bits(data, data_len, ff_discharging.offset, ff_discharging.size);
+		fb_discharging_update = microlink_now();
 	}
 	if (ff_below_rcl.report_id == report_id) {
 		fb_below_rcl = (int)hid_extract_bits(data, data_len, ff_below_rcl.offset, ff_below_rcl.size);
@@ -832,12 +842,6 @@ static void microlink_usb_try_decode_fallback(const unsigned char *report, size_
 	if (ff_runtime_to_empty.report_id == report_id) {
 		fb_battery_runtime = (long)hid_extract_bits(data, data_len,
 			ff_runtime_to_empty.offset, ff_runtime_to_empty.size);
-	}
-
-	if (report_id == ff_ac_present.report_id || report_id == ff_discharging.report_id
-	 || report_id == ff_below_rcl.report_id || report_id == ff_remaining_capacity.report_id
-	 || report_id == ff_runtime_to_empty.report_id) {
-		fb_last_update = microlink_now();
 	}
 }
 
@@ -1095,8 +1099,12 @@ int microlink_usb_get_hid_fallback(int max_age_sec,
 	pthread_mutex_lock(&async_lock);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
-	if (fb_last_update == 0 || max_age_sec < 0
-	 || difftime(microlink_now(), fb_last_update) > (double)max_age_sec) {
+	/* Both status flags must have been decoded from a real report, and
+	 * recently: the caller turns them into OL/OB, which upsmon acts upon. */
+	if (fb_ac_present_update == 0 || fb_discharging_update == 0
+	 || max_age_sec < 0
+	 || difftime(microlink_now(), fb_ac_present_update) > (double)max_age_sec
+	 || difftime(microlink_now(), fb_discharging_update) > (double)max_age_sec) {
 #if WITH_LIBUSB_1_0 && defined(HAVE_PTHREAD)
 		pthread_mutex_unlock(&async_lock);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
@@ -1129,6 +1137,36 @@ int microlink_usb_get_hid_fallback(int max_age_sec,
 int microlink_usb_hid_fallback_supported(void)
 {
 	return (ff_ac_present.report_id != 0 && ff_discharging.report_id != 0);
+}
+
+/* The tunnel's Input reports are fixed-size (63 data bytes) while a Microlink
+ * record is page0.width + 3 bytes, so the device zero-pads each report after
+ * the record it carries (observed: one 35-byte record at offset 0 plus 28
+ * bytes of 0x00, 13040 reports out of 13040, SMX1500 FW UPS 16.0). Fed to the
+ * byte-stream frame scanner, that padding is worse than noise: leading 0x00
+ * bytes are invisible to the Microlink checksum (Fletcher, mod 255), so a
+ * record whose last check byte is 0xFF also validates one byte early, gets
+ * taken for a (bogus) page 0, and the real record is lost for that pass.
+ *
+ * Called by the parser right after it has extracted a frame: if everything
+ * left unread in the current report is 0x00, drop it, so the next record is
+ * parsed from the start of its own report. A non-zero remainder is left alone
+ * (returns 0) - it cannot be padding, and a complete record can never hide in
+ * all-zero bytes because a computed check byte is never 0x00. Returns the
+ * number of padding bytes dropped. */
+size_t microlink_usb_drop_report_padding(void)
+{
+	size_t i, dropped;
+
+	for (i = in_report_pos; i < in_report_len; i++) {
+		if (in_report[i] != 0x00) {
+			return 0;
+		}
+	}
+
+	dropped = in_report_len - in_report_pos;
+	in_report_pos = in_report_len;
+	return dropped;
 }
 
 /* Per-call synchronous read: issue one interrupt-IN transfer and wait up to
