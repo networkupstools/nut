@@ -32,7 +32,7 @@
 #include "usb-common.h"
 #include "nut_float.h"	/* For fabs() */
 
-#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.24"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.25"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -661,6 +661,15 @@ static int belkin_claim(HIDDevice_t *hd)
 			return 0;
 
 		case LIEBERT_VENDORID:
+			/* Vertiv Liebert GXT5 (10af:1000) exposes only a
+			 * UPS.PowerSummary collection and none of the usages
+			 * this subdriver maps; See GitHub issue #3613. */
+			if (hd->ProductID == 0x1000) {
+				upsdebugx(1, "%s: 10af:1000 is a Vertiv GXT5, "
+					"deferring to the vertiv subdriver", __func__);
+				return 0;
+			}
+
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
 				/* Liebert PSI5 / PowerSure PST (10af:0002): the HID Power Device

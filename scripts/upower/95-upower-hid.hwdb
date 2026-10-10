@@ -165,6 +165,7 @@ usb:v10AFp0001*
 usb:v10AFp0002*
 usb:v10AFp0004*
 usb:v10AFp0008*
+usb:v10AFp1000*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Liebert
 

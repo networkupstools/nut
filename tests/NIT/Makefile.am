@@ -10,6 +10,7 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 EXTRA_DIST = nit.sh README.adoc
+EXTRA_DIST += repeater.py
 EXTRA_DIST += parseconf-test.py
 
 if WITH_CHECK_NIT
@@ -24,6 +25,11 @@ endif !WITH_CHECK_NIT
 # such as NIT suite using/testing upsdrvctl:
 ABS_TOP_SRCDIR = @ABS_TOP_SRCDIR@
 ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
+
+# Optional protocol-fault tests using the configured Python 3 interpreter.
+check-NIT-repeater:
+	@test -n "$(PYTHON3)" || { echo "Python 3 is required for $@" >&2; exit 1; }
+	$(PYTHON3) "$(abs_srcdir)/repeater.py" "$(ABS_TOP_BUILDDIR)" --exeext="$(EXEEXT)"
 
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.

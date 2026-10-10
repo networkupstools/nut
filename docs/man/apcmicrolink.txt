@@ -110,6 +110,9 @@ from the standard HID Power Device usages this device also exposes on the
 same interrupt pipe, instead of letting that data go stale. The default is
 `yes`. Set to `no` to get an honest data gap instead of a value sourced
 from a different (less precise) channel than the rest of the Microlink data.
+A status is only published from this source once the device has actually
+sent its status report; until then (and whenever that report is older than
+30 seconds) the data is reported as stale.
 
 include::nut_usb_addvars.txt[]
 

@@ -32,7 +32,14 @@ module NutUpsdConf =
 let sep_spc  = Util.del_ws_spc
 let opt_spc  = Util.del_opt_ws ""
 let eol      = Util.eol
-let ip       = /[0-9A-Za-z\.:]+/
+let host     = /[0-9A-Za-z_.%*-]+/
+(* Keep the trailing-:: form separate: it also accepts an inline port. *)
+let ipv6_end = /([0-9A-Fa-f]+(:[0-9A-Fa-f]+)*)?::/
+let zone     = /%[0-9A-Za-z_.-]+/
+let ipv6_rest = (/([0-9A-Fa-f]+:){2,}[0-9A-Fa-f.]+/
+               | /([0-9A-Fa-f]+(:[0-9A-Fa-f]+)*)?::([0-9A-Fa-f]+:)*[0-9A-Fa-f.]+/) . zone?
+               | ipv6_end . zone
+let ipv6     = ipv6_end | ipv6_rest
 let num      = /[0-9]+/
 let word     = /[^"#; \t\n]+/
 let empty    = Util.empty
@@ -49,9 +56,16 @@ let upsd_allow_no_device = [ opt_spc . key "ALLOW_NO_DEVICE"    . sep_spc . stor
 let upsd_allow_not_all_listeners = [ opt_spc . key "ALLOW_NOT_ALL_LISTENERS"    . sep_spc . store num  . eol ]
 let upsd_disable_weak_ssl = [ opt_spc . key "DISABLE_WEAK_SSL"    . sep_spc . store num  . eol ]
 let upsd_statepath = [ opt_spc . key "STATEPATH" . sep_spc . store path . eol ]
-let upsd_listen    = [ opt_spc . key "LISTEN"    . sep_spc 
-                          . [ label "interface" . store ip ]
-                          . [ sep_spc . label "port" . store num]? ]
+(* Preserve the established interface/port tree. Bracketed addresses retain
+ * their brackets so newly written inline entries also use brackets. *)
+let listen_plain = [ label "interface" . store (host | ipv6_end) ]
+                 . [ del /[ \t]+|:/ " " . label "port" . store num ]?
+let listen_ipv6 = [ label "interface" . store ipv6_rest ]
+                . [ sep_spc . label "port" . store num ]?
+let listen_bracket = [ label "interface" . store (/\[/ . ipv6 . /\]/) ]
+                   . [ del /[ \t]+|:/ ":" . label "port" . store num ]?
+let upsd_listen = [ opt_spc . key "LISTEN" . sep_spc
+                  . (listen_plain | listen_ipv6 | listen_bracket) ]
 let upsd_listen_list = upsd_listen . eol 
 let upsd_maxconn  = [ opt_spc . key "MAXCONN"  . sep_spc . store num  . eol ]
 let upsd_certfile = [ opt_spc . key "CERTFILE" . sep_spc . store path . eol ]
@@ -78,6 +92,9 @@ let upsd_certrequest = [ opt_spc . key "CERTREQUEST"    . sep_spc . store num  .
  *    LISTEN 192.168.50.1
  *    LISTEN ::1
  *    LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+ *    LISTEN 127.0.0.1:3493
+ *    LISTEN [::1]:3493
+ *    LISTEN :::3493
  * MAXCONN count
  * CERTFILE path
  *    Single certificate file (SSL with OpenSSL)
