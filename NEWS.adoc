@@ -585,6 +585,16 @@ https://github.com/networkupstools/nut/milestone/13
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
       Command descriptions now accept the server's `CMDDESC` response.
+    * The `upscli_authenticate()` method of the classic C `libupsclient`
+      library (used by `upsmon`, `upscmd`, `upsrw` and other C clients) now
+      escapes the username and password it sends to `upsd`, and quotes them
+      if they contain white space or an equals sign, so that credentials with
+      a hash, white space, an equals sign, a backslash or double quotes can
+      log in (they were truncated or altered on the way before). Ordinary
+      credentials are sent as before.
+      Credentials which would not fit the network buffer once encoded are
+      now refused by the client, instead of being silently truncated.
+      [issue #3721]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among

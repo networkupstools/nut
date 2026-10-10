@@ -478,7 +478,7 @@ else
 fi
 
 log_info "Locating NUT programs to test:"
-for PROG in upsd upsc dummy-ups upsdrvctl upsmon upslog upssched ; do
+for PROG in upsd upsc upscmd dummy-ups upsdrvctl upsmon upslog upssched ; do
     (command -v ${PROG}) || (command -v ${PROG}${EXEEXT-}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
 
@@ -2345,6 +2345,25 @@ TESTPASS_TESTER='pass words'
 TESTPASS_UPSMON_PRIMARY='P@ssW0rdAdm'
 TESTPASS_UPSMON_SECONDARY='P@ssW0rd'
 
+# Passwords with characters that the parser of upsd (used for both config files
+# and client requests) treats specially: hash (starts a comment), white space
+# and an unquoted equals sign (separate words), backslash and double quote
+# (escaping and quoting),
+# alone and combined. They are stored as plain text here, the way a client
+# is given them, and escaped as needed for upsd.users below.
+TESTPASS_SPECIAL_HASH='ab#cd'
+TESTPASS_SPECIAL_SPACE='some pass  words'
+TESTPASS_SPECIAL_BACKSLASH='back\slash'
+TESTPASS_SPECIAL_QUOTES='"quoted"'
+TESTPASS_SPECIAL_COMBINED='a#b c"d\e'
+TESTPASS_SPECIAL_EQUALS='abc=def'
+TESTPASS_SPECIAL_EMPTY=''
+
+nit_conf_escape() {
+    # Escape a plain text value to place it in double quotes in a config file
+    printf '%s' "$1" | sed 's/[#"\\]/\\&/g'
+}
+
 generatecfg_upsdusers_trivial() {
     cat > "$NUT_CONFPATH/upsd.users" << EOF
 [admin]
@@ -2376,6 +2395,34 @@ generatecfg_upsdusers_trivial() {
 [dummy-user]
     password = "${TESTPASS_UPSMON_SECONDARY}"
     upsmon secondary
+
+[special-hash]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_HASH"`"
+    instcmds = load.off
+
+[special-space]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_SPACE"`"
+    instcmds = load.off
+
+[special-backslash]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_BACKSLASH"`"
+    instcmds = load.off
+
+[special-quotes]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_QUOTES"`"
+    instcmds = load.off
+
+[special-combined]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_COMBINED"`"
+    instcmds = load.off
+
+[special-equals]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_EQUALS"`"
+    instcmds = load.off
+
+[special-empty]
+    password = "`nit_conf_escape "$TESTPASS_SPECIAL_EMPTY"`"
+    instcmds = load.off
 EOF
     [ $? = 0 ] || die "Failed to populate temporary FS structure for the NIT: upsd.users"
 
@@ -4736,12 +4783,83 @@ sandbox_start_upsmon_master() {
 
 ####################################
 
+check_upscmd_credential() {
+    # Usage: check_upscmd_credential USER PASSWORD EXPECTED DESCRIPTION
+    # Runs the "load.off" instant command, which dummy-ups supports: upsd
+    # checks the login only after it knows the command, so the request
+    # succeeds only if upsd received exactly the credentials we passed.
+    # EXPECTED is one of:
+    #   accepted - upsd accepted the request
+    #   denied   - upsd refused the login (wrong credentials)
+    #   refused  - the client refused to send credentials it can not encode
+    runcmd upscmd -u "$1" -p "$2" dummy@localhost:$NUT_PORT load.off
+    TCC_RES=$?
+
+    # Note: upscmd reports the "OK" reply on stderr (which may also have
+    # other messages, e.g. about SSL), so look for it as a line of its own
+    case "$3" in
+        accepted)
+            [ "$TCC_RES" = 0 ] && echo "$CMDERR" | tr -d '\r' | ${GREP} -x 'OK' >/dev/null
+            ;;
+        denied)
+            [ "$TCC_RES" != 0 ] && echo "$CMDERR" | ${GREP} 'ACCESS-DENIED' >/dev/null
+            ;;
+        refused)
+            [ "$TCC_RES" != 0 ] \
+            && echo "$CMDERR" | ${GREP} 'too long to be encoded' >/dev/null \
+            && echo "$CMDERR" | ${GREP} 'Authentication failed' >/dev/null
+            ;;
+        *)  false ;;
+    esac
+    TCC_GOOD=$?
+
+    if [ "$TCC_GOOD" = 0 ] ; then
+        PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upscmd_credentials] PASSED: $4"
+    else
+        log_error "[testcase_sandbox_upscmd_credentials] FAILED: $4 (expected: $3, exit code: $TCC_RES, stdout: '$CMDOUT', stderr: '$CMDERR')"
+        FAILED="`expr $FAILED + 1`"
+        FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upscmd_credentials"
+    fi
+}
+
+testcase_sandbox_upscmd_credentials() {
+    # The client library must encode the username and password it sends
+    # to upsd, so that characters special for its parser arrive intact
+    log_separator
+    log_info "[testcase_sandbox_upscmd_credentials] Authenticate with special characters in passwords"
+
+    NUT_QUIET_OK_NOTRACKING=true
+    export NUT_QUIET_OK_NOTRACKING
+
+    check_upscmd_credential admin "$TESTPASS_ADMIN" accepted "ordinary password"
+    check_upscmd_credential special-hash "$TESTPASS_SPECIAL_HASH" accepted "password with a hash"
+    check_upscmd_credential special-space "$TESTPASS_SPECIAL_SPACE" accepted "password with white space"
+    check_upscmd_credential special-backslash "$TESTPASS_SPECIAL_BACKSLASH" accepted "password with a backslash"
+    check_upscmd_credential special-quotes "$TESTPASS_SPECIAL_QUOTES" accepted "password with double quotes"
+    check_upscmd_credential special-combined "$TESTPASS_SPECIAL_COMBINED" accepted "password with a combination of special characters"
+    check_upscmd_credential special-equals "$TESTPASS_SPECIAL_EQUALS" accepted "password with an equals sign"
+    check_upscmd_credential special-equals "${TESTPASS_SPECIAL_EQUALS}x" denied "wrong password with an equals sign is still refused by upsd"
+    check_upscmd_credential special-empty "$TESTPASS_SPECIAL_EMPTY" accepted "empty password"
+    check_upscmd_credential admin "$TESTPASS_SPECIAL_EMPTY" denied "empty password is refused by upsd for a user who has a password"
+    check_upscmd_credential special-hash "${TESTPASS_SPECIAL_HASH}x" denied "wrong password is still refused by upsd"
+    check_upscmd_credential special-combined "$TESTPASS_SPECIAL_HASH" denied "password of another user is still refused by upsd"
+
+    # Each hash is escaped by two characters, so this does not fit the
+    # client's buffer after encoding and must not be sent truncated
+    TESTPASS_TOOLONG="`printf '%300s' '' | tr ' ' '#'`"
+    check_upscmd_credential special-hash "$TESTPASS_TOOLONG" refused "password too long once encoded is refused by the client"
+
+    unset NUT_QUIET_OK_NOTRACKING
+}
+
 testgroup_sandbox() {
     testcase_sandbox_start_drivers_after_upsd
     testcase_sandbox_upsc_query_model
     testcase_sandbox_upsc_query_bogus
     testcase_sandbox_upsc_query_timer
     testcase_sandbox_upsc_query_case
+    testcase_sandbox_upscmd_credentials
     testcases_sandbox_python
     testcases_sandbox_cppnit
     testcases_sandbox_perl
