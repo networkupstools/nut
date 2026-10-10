@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3886 utf-8
+personal_ws-1.1 en 3892 utf-8
 AAC
 AAS
 ABI
@@ -1079,6 +1079,7 @@ PowerPanel
 PowerShare
 PowerShell
 PowerShield
+PowerSummary
 PowerSure
 PowerSystemError
 PowerTech
@@ -1319,6 +1320,7 @@ SYSMAXCONN
 SafeNet
 Salicru
 Salvia
+Santak
 Santinoli
 Savia
 Sawatzky
@@ -1573,6 +1575,7 @@ WARNFATAL
 WARNOPT
 WCH
 WELI
+WH
 WHAD
 WINSOCK
 WIP
@@ -3273,6 +3276,7 @@ rw
 réseau
 safenet
 salicru
+santak
 sbin
 sbindir
 sc
@@ -3558,6 +3562,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
@@ -3766,6 +3771,7 @@ verifySourceSig
 versa
 versioned
 versioning
+vertiv
 vh
 victron
 victronups

@@ -46,6 +46,9 @@ check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 $(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/drivers/libdummy_mockdrv.la \
+$(top_builddir)/drivers/libdummy_libusb.la \
+$(top_builddir)/drivers/libdummy_serial.la \
+$(top_builddir)/drivers/libdummy_nutdrv_qx_subdrivers.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la \
@@ -77,6 +80,9 @@ $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-comm
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
 
 $(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+$(top_builddir)/drivers/libdummy_libusb.la \
+$(top_builddir)/drivers/libdummy_serial.la \
+$(top_builddir)/drivers/libdummy_nutdrv_qx_subdrivers.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
 $(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la $(top_builddir)/include/nut_version.h
@@ -86,6 +92,9 @@ NUT_LIBCOMMON = $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_U
 else !ENABLE_SHARED_PRIVATE_LIBS
 
 $(top_builddir)/drivers/libdummy_mockdrv.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion.la $(top_builddir)/common/libparseconf.la
+$(top_builddir)/drivers/libdummy_libusb.la \
+$(top_builddir)/drivers/libdummy_serial.la \
+$(top_builddir)/drivers/libdummy_nutdrv_qx_subdrivers.la: $(top_builddir)/common/libcommon.la
 $(top_builddir)/common/libnutconf.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/clients/libnutclient.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/clients/libupsclient.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/include/nut_version.h
@@ -137,6 +146,12 @@ endif !REQUIRE_NUT_STRARG
 TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += upssched-list-timers-test
+upssched_list_timers_test_SOURCES = upssched-list-timers-test.c
+upssched_list_timers_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+upssched_list_timers_test_LDADD = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(NETLIBS)
+upssched_list_timers_test_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_srcdir)/clients/upssched.c $(top_srcdir)/clients/upssched.h
 
 TESTS += statetest
 statetest_SOURCES = statetest.c
@@ -203,8 +218,34 @@ nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(NUT_LIBCOMMON)
+
+# The nutdrv_qx USB transport against a simulated USB bridge; the test source
+# includes nutdrv_qx.c itself (to reach its static methods), so only the
+# subdrivers are linked from a library here. The simulation replaces calls
+# of the libusb-1.0 API.
+if WITH_LIBUSB_1_0
+TESTS += nutdrv_qx_cypress_utest
+nutdrv_qx_cypress_utest.c: $(top_srcdir)/drivers/nutdrv_qx.c
+nutdrv_qx_cypress_utest_SOURCES = nutdrv_qx_cypress_utest.c
+nutdrv_qx_cypress_utest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DQX_USB -DDRIVERS_MAIN_WITHOUT_MAIN=1
+nutdrv_qx_cypress_utest_LDADD = $(top_builddir)/drivers/libdummy_nutdrv_qx_subdrivers.la
+if WITH_SERIAL
+# Like the driver itself, which then chooses between serial and USB at run time.
+# Not the libnutprivate-*-drivers-serial library even when we build those: it
+# brings the driver core (main.c, dstate.c) which libdummy_mockdrv.la has too.
+nutdrv_qx_cypress_utest_CFLAGS += -DQX_SERIAL
+nutdrv_qx_cypress_utest_LDADD += $(top_builddir)/drivers/libdummy_serial.la $(SERLIBS)
+endif WITH_SERIAL
+nutdrv_qx_cypress_utest_LDADD += $(top_builddir)/drivers/libdummy_libusb.la $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_qx_cypress_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_qx_cypress_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la $(LIBUSB_LIBS) -lm
+else !WITH_LIBUSB_1_0
+EXTRA_DIST += nutdrv_qx_cypress_utest.c
+endif !WITH_LIBUSB_1_0
 else !WITH_USB
-EXTRA_DIST += getvaluetest.c hidparser.c
+EXTRA_DIST += getvaluetest.c hidparser.c nutdrv_qx_cypress_utest.c
 endif !WITH_USB
 EXTRA_DIST += driver-stub-usb.c
 
