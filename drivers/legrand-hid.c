@@ -352,17 +352,29 @@ static int legrand_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
 		} else if (pData->ReportID == 0x20 && leaf == USAGE_POW_VOLTAGE) {
 			/* UPS.BatterySystem.Battery.Voltage */
 			upsdebugx(3, "%s: Fixing Report Descriptor: battery voltage "
-				"UnitExp %" PRIi8 " -> %" PRIi8,
-				__func__, pData->UnitExp, pData->UnitExp + 2);
-			pData->UnitExp += 2;
-			retval = 1;
+				"UnitExp %" PRIi8 " -> %d",
+				__func__, pData->UnitExp, (int)(pData->UnitExp + 2));
+			if (pData->UnitExp >= 0 && pData->UnitExp < INT8_MAX - 2) {
+				pData->UnitExp += 2;
+				retval = 1;
+			} else {
+				upslogx(LOG_WARNING, "%s: could not fix Report Descriptor "
+					"(battery nominal voltage): out of range", __func__);
+				errno = ERANGE;
+			}
 		} else if (pData->ReportID == 0x04 && leaf == USAGE_POW_CONFIG_VOLTAGE) {
 			/* UPS.BatterySystem.Battery.ConfigVoltage */
 			upsdebugx(3, "%s: Fixing Report Descriptor: battery nominal voltage "
-				"UnitExp %" PRIi8 " -> %" PRIi8,
-				__func__, pData->UnitExp, pData->UnitExp + 7);
-			pData->UnitExp += 7;
-			retval = 1;
+				"UnitExp %" PRIi8 " -> %d",
+				__func__, pData->UnitExp, (int)(pData->UnitExp + 7));
+			if (pData->UnitExp >= 0 && pData->UnitExp < INT8_MAX - 7) {
+				pData->UnitExp += 7;
+				retval = 1;
+			} else {
+				upslogx(LOG_WARNING, "%s: could not fix Report Descriptor "
+					"(battery nominal voltage): out of range", __func__);
+				errno = ERANGE;
+			}
 		}
 	}
 
