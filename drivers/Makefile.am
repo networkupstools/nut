@@ -641,6 +641,12 @@ libdummy_mockdrv_la_LIBADD = \
 libdummy_mockdrv_la_LDFLAGS = -static
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
+# The nutdrv_qx protocol subdrivers, for unit-tests which include nutdrv_qx.c
+# itself (to reach its static methods). Not meant to be installed.
+EXTRA_LTLIBRARIES += libdummy_nutdrv_qx_subdrivers.la
+libdummy_nutdrv_qx_subdrivers_la_SOURCES = $(NUTDRV_QX_SUBDRIVERS)
+libdummy_nutdrv_qx_subdrivers_la_LDFLAGS = -static
+
 # Also define a library with serial-port UPS routines needed for nut-scanner
 # Note: not covering in WITH_SERIAL because that toggle is about building
 # drivers, not an (in-)ability to use serial comms - so far all platforms can.
