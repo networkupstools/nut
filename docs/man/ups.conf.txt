@@ -157,6 +157,14 @@ delay which is controlled by this setting.  This is normally 2 seconds.
 This setting may be useful if the driver is creating too much of a load
 on your monitoring system or network.
 +
+The shared driver polling loop uses a monotonic clock when available.
+A difference of more than five seconds between wall and monotonic elapsed
+time indicates a suspend or wall-clock adjustment. When the driver next
+checks its polling deadline, it ends the wait and queries the device again.
+If the monotonic clock fails, the current wait ends and later polling cycles
+use wall time. Builds without a monotonic clock also use wall time; moving the
+wall clock before the start of the polling interval ends the current wait.
++
 Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8]
 and linkman:nutdrv_qx[8]) also have an option called *pollfreq* which
 controls how frequently some of the less critical parameters are polled.
