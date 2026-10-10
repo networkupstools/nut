@@ -300,7 +300,7 @@ static int sms_parse_delay(const char *text, uint16_t *delay) {
         return 0;
     }
     value = strtol(text, &end, 10);
-    if (*end != '\0' || value < 0 || value > UINT16_MAX) {
+    if (*end != '\0' || value < 0 || (uintmax_t)value > (uintmax_t)UINT16_MAX) {
         return 0;
     }
     *delay = (uint16_t)value;
