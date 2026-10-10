@@ -269,7 +269,7 @@ https://github.com/networkupstools/nut/milestone/13
       protocol. It wraps the existing eight-byte Qx command payload as a HID
       Output Report while preserving the report-ID byte returned by the native
       Windows HID API. Other Qx USB transports retain their existing transfer
-      paths for now. [issue #3723]
+      paths for now. [issue #3717, PR #3723]
     * Added the `richcomm-svc` USB communication subdriver for older
       session-initialized Richcomm bridges. It configures the bridge before
       reusing the existing Armac command framing and Megatec protocol. Polling
@@ -1087,7 +1087,7 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
    * Extended the `winhid` extension in NUT for Windows builds with selectable
      HID capability ordering (`winhid_layout`) and Feature Report writes, so
      writable `setvar`/`instcmd` operations can use the native Windows HID API
-     when supported by the UPS. [PR #3335, issue #3723]
+     when supported by the UPS. [PRs #3335, #3723, issue #3717]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
