@@ -48,7 +48,7 @@
 /* ---------------------------------------------------------------------- */
 
 #define WINHID_DRIVER_NAME         "USB communication driver (Windows HID API)"
-#define WINHID_DRIVER_VERSION      "0.11"
+#define WINHID_DRIVER_VERSION      "0.12"
 #define WINHID_MAX_REPORT_SIZE     0x1800
 #define WINHID_HIDP_STATUS_SUCCESS 0x00110000UL
 
@@ -217,6 +217,21 @@ typedef struct win_hidp_link_collection_node_s {
 
 /*! @brief The winhid communication subdriver instance (registered at build time) */
 extern usb_communication_subdriver_t winhid_subdriver;
+
+/**
+ * @brief Select the ordering compatibility policy for synthesized HID reports.
+ *
+ * The value is case-insensitive and accepts "auto", "legacy" or "native".
+ * Auto prefers the native HIDP capability order when its report lengths agree
+ * with the device capabilities.  The legacy reversal remains available as an
+ * explicit compatibility override.
+ *
+ * @return 1 if the value was accepted, 0 otherwise.
+ */
+int winhid_set_layout(const char *value);
+
+/** @brief Return the configured ordering policy name. */
+const char *winhid_get_layout(void);
 
 /*!
  * @brief Canonicalize a parsed HID report descriptor for winhid compatibility.

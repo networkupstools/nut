@@ -48,6 +48,9 @@
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
 #	include "nut_libusb.h" /* also includes "usb-common.h" */
+#	ifdef WIN32
+#		include "libwinhid.h"
+#	endif	/* WIN32 */
 
 #	ifdef QX_SERIAL
 #		define DRIVER_NAME	"Generic Q* USB/Serial driver"
@@ -761,6 +764,119 @@ static bool_t	cypress_stale_reported = FALSE;
 #define CYPRESS_REPLY_TIMEOUT			1000
 #define CYPRESS_0665_5161_REPLY_TIMEOUT	3000
 
+/* The Qx Cypress protocol exposes eight payload bytes per HID report.  The
+ * native Windows HID API also returns the report ID byte, so keep that detail
+ * in this transport adapter instead of changing the generic HID contract. */
+static int cypress_set_output_report(
+	const unsigned char *payload,
+	size_t payload_len)
+{
+	int ret;
+
+	if (!payload || payload_len < 1
+	|| payload_len > (size_t)USB_CTRL_CHARBUFSIZE_MAX) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+#ifdef WIN32
+	if (usb == &winhid_subdriver) {
+		unsigned char report[SMALLBUF];
+		size_t report_len;
+
+		if (payload_len >= sizeof(report)) {
+			return LIBUSB_ERROR_INVALID_PARAM;
+		}
+		report_len = payload_len + 1U;
+		memset(report, 0, report_len);
+		memcpy(report + 1, payload, payload_len);
+		ret = usb->set_output_report(
+			udev, 0, (usb_ctrl_charbuf)report,
+			(usb_ctrl_charbufsize)report_len);
+		if (ret <= 0) {
+			return ret;
+		}
+		if ((size_t)ret != report_len) {
+			upsdebugx(2,
+				"cypress: short output report transfer (%d of %" PRIuSIZE " bytes)",
+				ret, report_len);
+			return LIBUSB_ERROR_IO;
+		}
+		return (int)payload_len;
+	}
+#endif	/* WIN32 */
+
+	/* Keep the original libusb control transfer on native USB backends.  The
+	 * Cypress resynchronization logic relies on its exact return semantics;
+	 * the WinHid adapter above is the only path which needs report-ID framing. */
+	ret = usb_control_msg(udev,
+		USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+		0x09, 0x200, 0,
+		(usb_ctrl_charbuf)payload, (int)payload_len, 5000);
+	return ret;
+}
+
+static int cypress_get_input_report(
+	usb_ctrl_charbuf buf,
+	usb_ctrl_charbufsize bufsize,
+	usb_ctrl_timeout_msec timeout)
+{
+#ifdef WIN32
+	int ret;
+#endif	/* WIN32 */
+
+	if (!buf || bufsize < 1) {
+		return LIBUSB_ERROR_INVALID_PARAM;
+	}
+
+#ifdef WIN32
+	if (usb == &winhid_subdriver) {
+		unsigned char report[SMALLBUF];
+		size_t payload_len;
+
+		ret = usb->get_interrupt(
+			udev, (usb_ctrl_charbuf)report,
+			(usb_ctrl_charbufsize)sizeof(report), timeout);
+		if (ret == 0) {
+			/* The generic callback uses zero for a timeout.  Qx's Cypress
+			 * drain needs the libusb timeout code to distinguish an idle
+			 * endpoint from a successfully read empty report. */
+			return LIBUSB_ERROR_TIMEOUT;
+		}
+		if (ret < 0) {
+			return ret;
+		}
+		if (ret < 2) {
+			return LIBUSB_ERROR_IO;
+		}
+
+		payload_len = (size_t)ret - 1U;
+		if (payload_len > (size_t)bufsize) {
+			return LIBUSB_ERROR_OVERFLOW;
+		}
+		memcpy(buf, report + 1, payload_len);
+		return (int)payload_len;
+	}
+#endif	/* WIN32 */
+
+	/* Preserve raw libusb timeout/zero-length results for the Cypress drain. */
+	return usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
+}
+
+/* WinHid has no libusb reset or endpoint-halt operation.  Returning a
+ * supported libusb-style error lets the caller proceed with its reconnect
+ * path without passing a WinHid handle to a libusb function. */
+static int qx_usb_reset_device(void)
+{
+#ifdef WIN32
+	if (usb == &winhid_subdriver) {
+		upsdebugx(1, "WinHid backend has no USB reset; reconnecting");
+		return LIBUSB_ERROR_NOT_SUPPORTED;
+	}
+#endif	/* WIN32 */
+
+	return usb_reset(udev);
+}
+
 /* Cypress communication subdriver */
 static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buflen)
 {
@@ -802,7 +918,7 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 		 */
 		gettimeofday(&flush_start, NULL);
 		for (i = 0; i <= CYPRESS_0665_5161_FLUSH_REPORTS; i++) {
-			ret = usb_interrupt_read(udev, 0x81,
+			ret = cypress_get_input_report(
 				(usb_ctrl_charbuf)tmp, 8,
 				(cypress_reply_outstanding || i > 0)
 					? CYPRESS_0665_5161_RESYNC_QUIET
@@ -866,11 +982,8 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	for (i = 0; i < tmplen; i += (size_t)ret) {
 
 		/* Write data in 8-byte chunks */
-		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev,
-			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x200, 0,
-			(usb_ctrl_charbuf)&tmp[i], 8, 5000);
+		ret = cypress_set_output_report(
+			(const unsigned char *)&tmp[i], 8);
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%d)",
@@ -889,9 +1002,7 @@ static int	cypress_command(const char *cmd, size_t cmdlen, char *buf, size_t buf
 	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
 
 		/* Read data in 8-byte chunks */
-		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev,
-			0x81,
+		ret = cypress_get_input_report(
 			(usb_ctrl_charbuf)&buf[i], 8, reply_timeout);
 
 		/* Any errors here mean that we are unable to read a reply
@@ -3742,6 +3853,9 @@ void	upsdrv_makevartable(void)
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
+#ifdef WIN32
+	addvar(VAR_FLAG, "winhid", "Use the native Windows HID backend instead of libusb (WIN32 only)");
+#endif	/* WIN32 */
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -3956,6 +4070,9 @@ void	upsdrv_initups(void)
 		getval("bus") ||
 		getval("langid_fix") ||
 		getval("cypress_drain_quirk")
+# ifdef WIN32
+		|| getval("winhid")
+# endif	/* WIN32 */
 # if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		|| getval("busport")
 # endif
@@ -4153,6 +4270,16 @@ void	upsdrv_initups(void)
 
 		/* Link the matchers */
 		regex_matcher->next = &device_matcher;
+
+# ifdef WIN32
+		if (testvar("winhid")) {
+			usb = &winhid_subdriver;
+			dstate_setinfo("driver.version.usb", "winhid-%s (Windows HID API)",
+				usb->version);
+			upslogx(LOG_INFO, "Using experimental winhid backend: %s %s",
+				usb->name, usb->version);
+		}
+# endif	/* WIN32 */
 
 		ret = usb->open_dev(&udev, &usbdevice, regex_matcher, NULL);
 		if (ret < 0) {
@@ -4411,6 +4538,11 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 #	endif	/* WITH_LIBUSB_0_1 */
 
 		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
+#ifdef WIN32
+			if (usb == &winhid_subdriver) {
+				goto fallthrough_case_reset;
+			}
+#endif	/* WIN32 */
 			if (usb_clear_halt(udev, 0x81) == 0) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
@@ -4421,7 +4553,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 		fallthrough_case_ETIME:
 #endif	/* ETIME && WITH_LIBUSB_0_1 */
 		fallthrough_case_reset:
-			if (usb_reset(udev) == 0) {
+			if (qx_usb_reset_device() == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
 			goto fallthrough_case_reconnect;
@@ -4455,7 +4587,7 @@ static ssize_t	qx_command(const char *cmd, size_t cmdlen, char *buf, size_t bufl
 			upsdebugx(1, "OVERFLOW on EP 0x81 persisted for %d polls; resetting device",
 				overflow_tries);
 			overflow_tries = 0;
-			if (usb_reset(udev) == 0) {
+			if (qx_usb_reset_device() == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
 			goto fallthrough_case_reconnect;
