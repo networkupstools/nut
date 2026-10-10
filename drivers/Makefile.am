@@ -150,7 +150,7 @@ NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) \
 SERIAL_DRIVERLIST = al175 apcmicrolink bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut nutdrv_hashx oneac optiups powercom powervar_cx_ser rhino	\
+ mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom powervar_cx_ser rhino	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser ve-direct meanwell_ntu \
  ragtech
@@ -164,7 +164,7 @@ USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 SERIAL_USB_DRIVERLIST = \
-	nutdrv_qx
+	nutdrv_qx nutdrv_hashx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus must_ep2000pro
@@ -276,7 +276,21 @@ microsol_apc_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 nhs_ser_SOURCES = nhs_ser.c
 nhs_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
 nutdrv_hashx_SOURCES = nutdrv_hashx.c
-nutdrv_hashx_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
+nutdrv_hashx_LDADD = $(LDADD_DRIVERS) -lm
+nutdrv_hashx_CFLAGS = $(AM_CFLAGS)
+if WITH_SERIAL
+nutdrv_hashx_CFLAGS += -DHASHX_SERIAL
+if ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_hashx_LDADD += libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-serial.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+nutdrv_hashx_LDADD += libdummy_serial.la $(SERLIBS)
+endif !ENABLE_SHARED_PRIVATE_LIBS
+endif WITH_SERIAL
+if WITH_USB
+nutdrv_hashx_CFLAGS += -DHASHX_USB
+nutdrv_hashx_SOURCES += hashx-usb-protocol.c
+nutdrv_hashx_LDADD += $(LDADD_DRIVERS_LIBUSB)
+endif WITH_USB
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -549,6 +563,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # distributed by "make dist".
 
 dist_noinst_HEADERS = \
+ hashx-usb-protocol.h \
  apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h baytech-rpc3nc-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h failover.h gamatronic.h genericups.h	\
