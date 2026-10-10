@@ -64,6 +64,7 @@
 #	include "idowell-hid.h"
 #	include "legrand-hid.h"
 #	include "liebert-hid.h"
+#	include "microdowell-hid.h"
 #	include "openups-hid.h"
 #	include "powercom-hid.h"
 #	include "powervar-hid.h"
@@ -90,6 +91,7 @@ static subdriver_t *subdriver_list[] = {
 	&idowell_subdriver,
 	&legrand_subdriver,
 	&liebert_subdriver,
+	&microdowell_subdriver,
 	&openups_subdriver,
 	&powercom_subdriver,
 	&powervar_subdriver,

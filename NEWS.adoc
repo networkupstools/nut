@@ -463,6 +463,36 @@ https://github.com/networkupstools/nut/milestone/13
       broken maximum from HID global state. Both `battery.runtime` and
       `battery.voltage` then read as nonsense; platforms with a 64-bit `long`
       were unaffected. [PR #3555]
+    * Added the `microdowell-hid` subdriver for the MicroDowell `Enterprise USB`
+      interface (USB ID `075d:0201`), as fitted to the B.8 (800 VA). The device
+      was previously unsupported, and its report descriptor is broken in three
+      independent ways, all repaired by the subdriver's `fix_report_desc()`
+      under predicates that only match the faulty encoding:
+      `PhysicalMinimum 0` / `PhysicalMaximum 300` is emitted once and never
+      reset, so every later item inherits it and `logical_to_physical()`
+      rescales the single-bit `PresentStatus` flags from 1 to 300 - the
+      `info_lkp_t` tables match on the exact value 1, so no status flag was
+      ever recognised and an online, charging UPS reported `OB OFF`; the nine
+      `PresentStatus` usages are declared as one 9-bit Input item carrying the
+      `ACPresent` usage, so that flag read true whenever any of the nine was
+      set; and `UPS.PowerSummary.Voltage` is 16 bits wide but declares
+      `LogicalMaximum 255`, so `GetValue()` masked away everything above bit 7
+      and 27.0 V came out as 1.4 V (the same class of firmware fault as the
+      `cps-hid` entry below). `ups.load` and `battery.runtime` are deliberately
+      left unmapped: this firmware declares `PercentLoad` but never populates
+      it, and always reports `RunTimeToEmpty` as `0xFFFF`. [issue #3712]
+    * `usbhid-ups` asked for the wrong buffer size when the `maxreport` tweak
+      was enabled: `refresh_report_buffer()` used `sizeof(rbuf->data[id])`,
+      but `data[]` is an array of pointers, so this yielded a pointer's width
+      (8 bytes on LP64, 4 on ILP32) rather than the size of the buffer behind
+      it. The tweak therefore never requested the full buffer, and because the
+      buffer is allocated with exactly the declared report length, any report
+      shorter than a pointer handed the USB layer a length larger than the
+      allocation - inviting the device to write past it on every poll. The
+      report buffer now tracks its allocated capacity explicitly alongside the
+      declared length, and that capacity is what gets requested and clamped
+      against. Devices already using the tweak (some APC Back-UPS models) now
+      receive the intended full-buffer request. [issue #3712]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
     * `mge-hid` subdriver: extended the `mge_model_names[]` list for the
