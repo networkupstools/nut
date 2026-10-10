@@ -162,7 +162,7 @@ static int parse_boolean(char *arg, int *result)
 	return 0;
 }
 
-/* return 1 if usable, 0 if not */
+/* Return 1 if usable, 0 if not, -1 for an invalid LISTEN address. */
 static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
 	int n, starts_with_digit;
@@ -380,10 +380,13 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* LISTEN <address> [<port>] */
 	if (!strcmp(arg[0], "LISTEN")) {
-		if (numargs < 3)
-			listen_add(arg[1], string_const(NUT_PORT));
-		else
-			listen_add(arg[1], arg[2]);
+		char *address, *port;
+		if (!str_split_listen(arg[1], &address, &port) || (port && numargs >= 3)) {
+			upslogx(LOG_ERR, "Invalid LISTEN address or duplicate port: %s", arg[1]);
+			return -1;
+		}
+		/* Preserve the existing separate port syntax and its validation. */
+		listen_add(address, numargs >= 3 ? arg[2] : (port ? port : string_const(NUT_PORT)));
 		return 1;
 	}
 
@@ -423,7 +426,7 @@ void load_upsdconf(int reloading)
 {
 	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
-	int	numerrors = 0;
+	int	numerrors = 0, listen_errors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -454,6 +457,7 @@ retry:
 	}
 
 	while (pconf_file_next(&ctx)) {
+		int parsed;
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
@@ -464,7 +468,11 @@ retry:
 		if (ctx.numargs < 1)
 			continue;
 
-		if (!parse_upsd_conf_args(ctx.numargs, ctx.arglist)) {
+		parsed = parse_upsd_conf_args(ctx.numargs, ctx.arglist);
+		if (parsed < 0) {
+			listen_errors++;
+		}
+		if (parsed <= 0) {
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
@@ -505,6 +513,12 @@ retry:
 	}
 
 	pconf_finish(&ctx);
+	if (listen_errors && !reloading) {
+		/* Do not fall back to defaults or rely on getaddrinfo() rejecting
+		 * malformed input: Windows may accept it and use the default port.
+		 * Reload never changes listeners, including malformed new entries. */
+		fatalx(EXIT_FAILURE, "Invalid LISTEN configuration");
+	}
 }
 
 static int load_upsconf(int reloading) {

@@ -393,8 +393,10 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             dnl with some value.
             nut_cv_SOPATH_LIBUSB0=""
             nut_cv_SOFILE_LIBUSB0=""
+            nut_cv_SONAME_LIBUSB0=""
             nut_cv_SOPATH_LIBUSB1=""
             nut_cv_SOFILE_LIBUSB1=""
+            nut_cv_SONAME_LIBUSB1=""
             AS_IF([test "${nut_cv_with_usb}" = "yes" && test "${nut_cv_usb_lib}" = "(libusb-1.0)"], [
                 dnl Help usb if we can (nut-scanner etc.)
                 for TOKEN in $depLIBS ; do
@@ -403,6 +405,7 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBUSB1], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBUSB1}" && test -s "${nut_cv_SOPATH_LIBUSB1}"], [
                                 nut_cv_SOFILE_LIBUSB1="`basename \"${nut_cv_SOPATH_LIBUSB1}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBUSB1}], [nut_cv_SONAME_LIBUSB1], [])
                                 break
                             ])
                         ]
@@ -419,6 +422,7 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBUSB0], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBUSB0}" && test -s "${nut_cv_SOPATH_LIBUSB0}"], [
                                 nut_cv_SOFILE_LIBUSB0="`basename \"${nut_cv_SOPATH_LIBUSB0}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBUSB0}], [nut_cv_SONAME_LIBUSB0], [])
                                 break
                             ])
                         ]
@@ -488,8 +492,10 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             dnl For nut-scanner style autoloading:
             SOPATH_LIBUSB0="${nut_cv_SOPATH_LIBUSB0}"
             SOFILE_LIBUSB0="${nut_cv_SOFILE_LIBUSB0}"
+            SONAME_LIBUSB0="${nut_cv_SONAME_LIBUSB0}"
             SOPATH_LIBUSB1="${nut_cv_SOPATH_LIBUSB1}"
             SOFILE_LIBUSB1="${nut_cv_SOFILE_LIBUSB1}"
+            SONAME_LIBUSB1="${nut_cv_SONAME_LIBUSB1}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBUSB_CFLAGS_SOURCE="${nut_cv_LIBUSB_CFLAGS_SOURCE}"
@@ -577,6 +583,9 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                 AS_IF([test -n "${SOPATH_LIBUSB1}" && test -s "${SOPATH_LIBUSB1}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBUSB1], ["${SOPATH_LIBUSB1}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBUSB1], ["${SOFILE_LIBUSB1}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBUSB1}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBUSB1], ["${SONAME_LIBUSB1}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ], [
                 AC_DEFINE([WITH_LIBUSB_1_0], [0],
@@ -589,6 +598,9 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                 AS_IF([test -n "${SOPATH_LIBUSB0}" && test -s "${SOPATH_LIBUSB0}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBUSB0], ["${SOPATH_LIBUSB0}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBUSB0], ["${SOFILE_LIBUSB0}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBUSB0}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBUSB0], ["${SONAME_LIBUSB0}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ], [
                 AC_DEFINE([WITH_LIBUSB_0_1], [0],

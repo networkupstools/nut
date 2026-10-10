@@ -41,30 +41,13 @@ Changes from 2.8.5 to 2.8.6
   where grouping was intended. The legacy `Set()` argument contract is
   unchanged. [PR #3634]
 
-- The `sms_ser` driver changed the meaning of some commands and values
-  [issue #1987]:
-  * `test.battery.start.quick` used to start a test that runs until the
-    battery is low; it now runs a 10 second test. Use the new
-    `test.battery.start.deep` for the former behavior.
-  * `shutdown.return` (also used to power off the load at the end of a
-    system shutdown) and `shutdown.reboot` now send their delays in the
-    format used by the vendor software. Previously `shutdown.return` sent
-    no usable delays, and the `shutdown.reboot` delay was mangled (64 was
-    sent as `0x40FF`), and converts seconds to the time unit of the UPS,
-    so the timing seen with your device may change. See
-    the `offdelay`, `ondelay` and `rebootdelay` settings in
-    linkman:sms_ser[8]. A malformed `rebootdelay` in `ups.conf` is now fatal
-    instead of being silently ignored. If a shutdown or test which worked
-    before does not work now, the `legacydelays` flag restores the old
-    format; please report such a device.
-  * Replies from the UPS are now checked for their checksum. If a device
-    which worked before is rejected, the `novalidate` flag turns the check
-    off; please report such a device.
-  * `ups.status` may now hold several values (e.g. `OB LB`) where only one
-    was reported before, and line-interactive models no longer report
-    `BYPASS`; drop any workarounds which translated that value. With a low
-    battery properly reported, `upsmon` will now shut the system down where
-    it previously did not.
+- `nut-scanner` now prefers the `SONAME` of each dynamically loaded library
+  (such as `libusb-1.0.so.0`) over the fully versioned file name it saw at
+  build time (such as `libusb-1.0.so.0.6.0`). Packagers no longer need to
+  rebuild NUT after an ABI-compatible update of libusb, Net-SNMP, neon,
+  Avahi, GLib or FreeIPMI which only changed that file name. The detected
+  values are reported by `./configure` as `SONAME_LIB*` next to the
+  existing `SOPATH_LIB*` and `SOFILE_LIB*` values. [issue #3474]
 
 - The common configuration and protocol parser now accepts literal `#`
   characters inside double quotes. An unescaped `#` outside double quotes
@@ -142,18 +125,48 @@ The new `-A filename` option defaults to trying to use a `nutauth.conf` file
   usual reconciliation, including driver restarts; subsequent checks of
   unchanged configuration remain stable. [PR #3635]
 
+- The `sms_ser` driver changed the meaning of some commands and values
+  [issue #1987]:
+  * `test.battery.start.quick` used to start a test that runs until the
+    battery is low; it now runs a 10 second test. Use the new
+    `test.battery.start.deep` for the former behavior.
+  * `shutdown.return` (also used to power off the load at the end of a
+    system shutdown) and `shutdown.reboot` now send their delays in the
+    format used by the vendor software. Previously `shutdown.return` sent
+    no usable delays, and the `shutdown.reboot` delay was mangled (64 was
+    sent as `0x40FF`), and converts seconds to the time unit of the UPS,
+    so the timing seen with your device may change. See
+    the `offdelay`, `ondelay` and `rebootdelay` settings in
+    linkman:sms_ser[8]. A malformed `rebootdelay` in `ups.conf` is now fatal
+    instead of being silently ignored. If a shutdown or test which worked
+    before does not work now, the `legacydelays` flag restores the old
+    format; please report such a device.
+  * Replies from the UPS are now checked for their checksum. If a device
+    which worked before is rejected, the `novalidate` flag turns the check
+    off; please report such a device.
+  * `ups.status` may now hold several values (e.g. `OB LB`) where only one
+    was reported before, and line-interactive models no longer report
+    `BYPASS`; drop any workarounds which translated that value. With a low
+    battery properly reported, `upsmon` will now shut the system down where
+    it previously did not.
+
 - The `powervar_cx_usb`, `tripplite_usb` drivers used a built-in limit on
   reconnection attempts after which they exited ('60' and '10' respectively).
   This was revised to follow the new common setting `reconnect_max_tries`,
   which defaults to trying indefinitely now. [#3541]
 
 - Deployments using `nutdrv_qx` driver with `cypress` subdriver may be impacted
-  by a fix which added a `cypress_0665_5161_subdriver` initialization method for
-  devices with USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska) which enables
-  a special quirk to drain stale bytes from USB buffers of the device before our
-  driver sends queries, and use a longer timeout. If this change breaks your
-  device, please add `cypress_drain_quirk = 0` in your `ups.conf` and let us
-  know. [issue #2534, PR #3563]
+  by a fix which added a special quirk, enabled by default for devices with
+  USB ID `0665:5161` (Belkin, Voltronic, VOLT Polska), to drain stale bytes
+  from USB buffers of the device before our driver sends queries, and use
+  a longer timeout. If this change breaks your device, please add
+  `cypress_drain_quirk = 0` in your `ups.conf` and let us know.
+  [issue #2534, PR #3563]
+  With this quirk, a device which keeps sending data for longer than a reply
+  takes is now reset over USB and reconnected; after 3 such resets in a row
+  the driver exits ("Replies from the UPS stayed out of step with commands").
+  The quirk (and its default by USB ID) now also applies with an explicit
+  `subdriver = cypress` setting, which used to turn it off. [PR #3720]
 
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended
