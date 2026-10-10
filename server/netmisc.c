@@ -79,7 +79,7 @@ void net_help(nut_ctype_t *client, size_t numarg, const char **arg)
 	}
 
 	sendback(client, "Commands: HELP VER PROTVER GET LIST SET INSTCMD"
-		" LOGIN LOGOUT USERNAME PASSWORD STARTTLS\n");
+		" ATTACH DETACH USERNAME PASSWORD STARTTLS\n");
 	/* Not exposed: PRIMARY/MASTER FSD */
 }
 

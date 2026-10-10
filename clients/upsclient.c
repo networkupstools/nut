@@ -3090,6 +3090,7 @@ static struct {
 	{ UPSCLI_ERR_DATASTALE,		"DATA-STALE"		},
 	{ UPSCLI_ERR_VARUNKNOWN,	"VAR-UNKNOWN"		},
 	{ UPSCLI_ERR_LOGINTWICE,	"ALREADY-LOGGED-IN"	},
+	{ UPSCLI_ERR_LOGINTWICE,	"ALREADY-ATTACHED"	},
 	{ UPSCLI_ERR_PWDSETTWICE,	"ALREADY-SET-PASSWORD"	},
 	{ UPSCLI_ERR_UNKNOWNTYPE,	"UNKNOWN-TYPE"		},
 	{ UPSCLI_ERR_UNKNOWNVAR,	"UNKNOWN-VAR"		},
@@ -3103,6 +3104,7 @@ static struct {
 	{ UPSCLI_ERR_INVUSERNAME,	"INVALID-USERNAME"	},
 	{ UPSCLI_ERR_USERSETTWICE,	"ALREADY-SET-USERNAME"	},
 	{ UPSCLI_ERR_UNKCOMMAND,	"UNKNOWN-COMMAND"	},
+	{ UPSCLI_ERR_INVALIDARG,	"INVALID-ARGUMENT"	},
 	{ UPSCLI_ERR_INVPASSWORD,	"INVALID-PASSWORD"	},
 	{ UPSCLI_ERR_USERREQUIRED,	"USERNAME-REQUIRED"	},
 	{ UPSCLI_ERR_DRVNOTCONN,	"DRIVER-NOT-CONNECTED"	},
@@ -3214,6 +3216,16 @@ int upscli_get(UPSCONN_t *ups, size_t numq, const char **query,
 	}
 
 	if (upscli_errcheck(ups, tmp) != 0) {
+		/* NUMATTACH callers may retry the legacy query. Do not turn a
+		 * malformed reply into evidence that the new query is unsupported. */
+		if (!strcasecmp(query[0], "NUMATTACH")
+		&&  (ups->upserror == UPSCLI_ERR_INVALIDARG
+		 ||  ups->upserror == UPSCLI_ERR_UNKCOMMAND)
+		&&  strcmp(tmp, "ERR INVALID-ARGUMENT")
+		&&  strcmp(tmp, "ERR UNKNOWN-COMMAND")
+		) {
+			ups->upserror = UPSCLI_ERR_PROTOCOL;
+		}
 		return -1;
 	}
 

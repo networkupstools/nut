@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3885 utf-8
 AAC
 AAS
 ABI
@@ -308,6 +308,7 @@ Ddtrace
 Defensor
 DeltaUPSv
 DesktopFileName
+DeviceAttach
 DeviceID
 DeviceKit
 DeviceLogin
@@ -483,6 +484,8 @@ Gathman
 Geerling
 Gembe
 Gert
+GetDeviceNumAttach
+GetDeviceNumLogins
 GetRWVars
 GetUPSCommands
 GetUPSList
@@ -868,6 +871,7 @@ NTFS
 NTP
 NTU
 NTU's
+NUMATTACH
 NUT's
 NUTCI
 NUTCONF
@@ -2090,7 +2094,9 @@ devctl
 devd
 devel
 devfs
+deviceAttach
 deviceGetClients
+deviceGetNumAttach
 devicename
 devscan
 dfl
@@ -2313,6 +2319,7 @@ getClients
 getDescription
 getDevice
 getDevicesVariableValues
+getNumAttach
 getTrackingResult
 getValue
 getVariable

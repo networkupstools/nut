@@ -31,6 +31,40 @@ sub fixture {
     return bless {name => 'test', answer => $answer, lines => \@lines}, 'ParserFixture';
 }
 
+# Attachment aliases retry only a definite unsupported command.
+package AttachmentFixture;
+use vars qw(@ISA);
+@ISA = qw(UPS::Nut);
+sub Authenticate { return 1; }
+sub _send {
+    my ($self, $command) = @_;
+    push @{$self->{commands}}, $command;
+    return shift @{$self->{answers}};
+}
+package main;
+sub attachment_fixture {
+    return bless {name => 'test', answers => [@_], commands => []}, 'AttachmentFixture';
+}
+foreach my $method ('Attach', 'Login') {
+    foreach my $legacy (0, 1) {
+        my $f = attachment_fixture($legacy ? ('ERR UNKNOWN-COMMAND', 'OK') : ('OK'));
+        check($f->$method('user', 'pass'), "$method successful");
+        equal(join('|', @{$f->{commands}}), $legacy ? 'ATTACH test|LOGIN test' : 'ATTACH test', "$method exact fallback");
+    }
+    foreach my $error ('ERR ACCESS-DENIED', 'ERR ALREADY-ATTACHED', 'ERR UNKNOWN-COMMAND trailing', undef) {
+        my $f = attachment_fixture($error, 'OK');
+        check(!defined $f->$method('user', 'pass'), "$method error returned");
+        equal(join('|', @{$f->{commands}}), 'ATTACH test', "$method does not retry failure");
+    }
+}
+foreach my $method ('GetNumAttach', 'GetNumLogins') {
+    foreach my $legacy (0, 1) {
+        my $f = attachment_fixture($legacy ? ('ERR INVALID-ARGUMENT', 'NUMLOGINS test 2') : ('NUMATTACH test 2'));
+        equal($f->$method(), 2, "$method count");
+        equal(join('|', @{$f->{commands}}), $legacy ? 'GET NUMATTACH "test"|GET NUMLOGINS "test"' : 'GET NUMATTACH "test"', "$method exact fallback");
+    }
+}
+
 # Wire strings are explicit, not produced by the encoder being tested.
 my @values = (
     ['"ordinary"', 'ordinary'], ['""', ''], ['"two words"', 'two words'],
@@ -214,7 +248,7 @@ my @dialog = (
     ['LIST VAR test', ["BEGIN LIST VAR test\nVAR test v \"a\\", "\"b\\", "\\c\"\nEND LIST VAR test\n"]],
     ['GET VAR test v', ["VAR test v \"a\\", "\"b\\\\c\"\n"]],
     ['LIST UPS', ["BE", "GIN LIST UPS\nUPS test \"a\\", "\"b\\\\c\"\nUPS second \"two words\"\nEND LIST U", "PS\n"]],
-    ['LOGOUT', ["OK Goodbye\n"]],
+    ['DETACH', ["OK Goodbye\n"]],
 );
 # Flush TAP before fork; normal child exit also works with Windows pseudofork.
 $| = 1;

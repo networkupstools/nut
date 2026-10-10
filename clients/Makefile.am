@@ -222,7 +222,7 @@ endif WITH_SSL
 # future release.
 ### WARNING: Do not forget to update SO_MAJOR_LIBUPSCLIENT under scripts/obs,
 ### especially when bumping "age" into loss of compatibility with old releases!
-libupsclient_la_LDFLAGS = -version-info 9:0:2
+libupsclient_la_LDFLAGS = -version-info 9:1:2
 libupsclient_la_LDFLAGS += -export-symbols-regex '^(upscli_|nut_debug_level)'
 #|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|print_banner_once)'
 if HAVE_WINDOWS
@@ -297,7 +297,7 @@ if HAVE_CXX11
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 ### WARNING: Do not forget to update SO_MAJOR_LIBNUTCLIENT under scripts/obs,
 ### especially when bumping "age" into loss of compatibility with old releases!
-libnutclient_la_LDFLAGS = -version-info 4:0:0
+libnutclient_la_LDFLAGS = -version-info 5:0:1
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 if ENABLE_SHARED_PRIVATE_LIBS

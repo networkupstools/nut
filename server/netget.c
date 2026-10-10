@@ -27,7 +27,7 @@
 
 #include "netget.h"
 
-static void get_numlogins(nut_ctype_t *client, const char *upsname)
+static void get_numlogins(nut_ctype_t *client, const char *upsname, const char *command)
 {
 	const	upstype_t	*ups;
 
@@ -41,7 +41,7 @@ static void get_numlogins(nut_ctype_t *client, const char *upsname)
 	if (!ups_available(ups, client))
 		return;
 
-	sendback(client, "NUMLOGINS %s %d\n", upsname, ups->numlogins);
+	sendback(client, "%s %s %d\n", command, upsname, ups->numlogins);
 }
 
 static void get_upsdesc(nut_ctype_t *client, const char *upsname)
@@ -275,9 +275,14 @@ void net_get(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
-	/* GET NUMLOGINS UPS */
+	/* GET NUMATTACH UPS (NUMLOGINS is the legacy spelling). */
+	if (!strcasecmp(arg[0], "NUMATTACH")) {
+		get_numlogins(client, arg[1], "NUMATTACH");
+		return;
+	}
+
 	if (!strcasecmp(arg[0], "NUMLOGINS")) {
-		get_numlogins(client, arg[1]);
+		get_numlogins(client, arg[1], "NUMLOGINS");
 		return;
 	}
 
