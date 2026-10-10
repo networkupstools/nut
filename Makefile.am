@@ -568,12 +568,19 @@ all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recurs
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
+TESTS_REQUIRE_LIBNUTSCAN =
+if WITH_NUT_SCANNER
+if HAVE_LIBREGEX
+TESTS_REQUIRE_LIBNUTSCAN += all-libs-local/tools/nut-scanner
+endif HAVE_LIBREGEX
+endif WITH_NUT_SCANNER
+
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
 ### Requires-ext: common/libcommon.la common/libnutconf.la
 ### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
 ### Requires-ext: drivers/libdummy_mockdrv.la
 ### Requires-int: libdriverstubusb.la
-all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients @dotMAKE@
+all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients $(TESTS_REQUIRE_LIBNUTSCAN) @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
