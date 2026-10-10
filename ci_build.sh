@@ -107,6 +107,7 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     # emit varied warnings. But so far would be nice to get the majority
     # of shared codebase clean first:
     #[ -n "$NUT_SSL_VARIANTS" ] || NUT_SSL_VARIANTS=auto
+    #[ -n "$NUT_SSL_CLIENT_VALIDATION_VARIANTS" ] || NUT_SSL_CLIENT_VALIDATION_VARIANTS=auto
 
     # Similarly for libusb implementations with varying support
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
@@ -2247,6 +2248,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 "") ;;
                 *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
             esac
+            case "${NUT_SSL_CLIENT_VALIDATION_VARIANTS}" in
+                yes) CONFIG_OPTS+=("--with-ssl-client-validation") ;;
+                no)  CONFIG_OPTS+=("--without-ssl-client-validation") ;;
+                auto) CONFIG_OPTS+=("--with-ssl-client-validation=auto") ;;
+                "") ;;
+                *)   echo "WARNING: Unrecognized NUT_SSL_CLIENT_VALIDATION_VARIANTS='${NUT_SSL_CLIENT_VALIDATION_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+            esac
             configure_nut
             ;;
     esac
@@ -2398,6 +2406,20 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 fi
             fi
 
+            if [ -n "$NUT_SSL_CLIENT_VALIDATION_VARIANTS" ] \
+            && [ x"$NUT_SSL_CLIENT_VALIDATION_VARIANTS" != xauto ] \
+            && [ x"$NUT_SSL_CLIENT_VALIDATION_VARIANTS" != xdefault ] \
+            ; then
+                TMP="$NUT_SSL_CLIENT_VALIDATION_VARIANTS"
+                NUT_SSL_CLIENT_VALIDATION_VARIANTS=()
+                for VAL in $TMP ; do
+                    if [ x"${VAL}" = x -o x"${VAL}" = xdefault ] ; then VAL=auto; fi
+                    NUT_SSL_CLIENT_VALIDATION_VARIANTS+=("$VAL")
+                done
+            else
+                NUT_SSL_CLIENT_VALIDATION_VARIANTS=("no" "yes")
+            fi
+
             if [ -n "$NUT_USB_VARIANTS" ] ; then
                 TMP="$NUT_USB_VARIANTS"
                 NUT_USB_VARIANTS=()
@@ -2474,12 +2496,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # MGE SHUT vs. other serial protocols...
 
             BUILDSTODO_SSL="${#NUT_SSL_VARIANTS[@]}"
+            BUILDSTODO_SSL_CLIENT_VALIDATION="${#NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}"
             BUILDSTODO_USB="${#NUT_USB_VARIANTS[@]}"
             BUILDSTODO_UNMAPPED="${#NUT_UNMAPPED_VARIANTS[@]}"
             BUILDSTODO_LIBNUTPRIVATE="${#NUT_LIBNUTPRIVATE_VARIANTS[@]}"
 
-            echo "=== Found ${BUILDSTODO_SSL} SSL (${NUT_SSL_VARIANTS[*]}) and ${BUILDSTODO_USB} USB (${NUT_USB_VARIANTS[*]}) and ${BUILDSTODO_UNMAPPED} UNMAPPED (${NUT_UNMAPPED_VARIANTS[*]}) and ${BUILDSTODO_LIBNUTPRIVATE} LIBNUTPRIVATE (${NUT_LIBNUTPRIVATE_VARIANTS[*]}) variations..."
-            if [ x"${BUILDSTODO_SSL}${BUILDSTODO_USB}${BUILDSTODO_UNMAPPED}${BUILDSTODO_LIBNUTPRIVATE}" = x"0000" ] ; then
+            echo "=== Found ${BUILDSTODO_SSL} SSL (${NUT_SSL_VARIANTS[*]}) and ${BUILDSTODO_SSL_CLIENT_VALIDATION} SSL client validation (${NUT_SSL_CLIENT_VALIDATION_VARIANTS[*]}), and ${BUILDSTODO_USB} USB (${NUT_USB_VARIANTS[*]}), and ${BUILDSTODO_UNMAPPED} UNMAPPED (${NUT_UNMAPPED_VARIANTS[*]}), and ${BUILDSTODO_LIBNUTPRIVATE} LIBNUTPRIVATE (${NUT_LIBNUTPRIVATE_VARIANTS[*]}) variations..."
+            if [ x"${BUILDSTODO_SSL}${BUILDSTODO_SSL_CLIENT_VALIDATION}${BUILDSTODO_USB}${BUILDSTODO_UNMAPPED}${BUILDSTODO_LIBNUTPRIVATE}" = x"00000" ] ; then
                 echo "=== ERROR: BUILD_TYPE='${BUILD_TYPE}' got no builds to run!" >&2
                 exit 1
             fi
@@ -2495,6 +2518,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             BUILDSTODO_ALWAYS=""
             if [ "$BUILDSTODO_SSL" = 1 ]; then
                 BUILDSTODO_ALWAYS="NUT_SSL_VARIANT=${NUT_SSL_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
+            fi
+            if [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" = 1 ]; then
+                BUILDSTODO_ALWAYS="NUT_SSL_CLIENT_VALIDATION_VARIANT=${NUT_SSL_CLIENT_VALIDATION_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
             fi
             if [ "$BUILDSTODO_USB" = 1 ]; then
                 BUILDSTODO_ALWAYS="NUT_USB_VARIANT=${NUT_USB_VARIANTS[*]};${BUILDSTODO_ALWAYS}"
@@ -2525,6 +2551,33 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
                             BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
                         done
+                    fi
+                    # If more than one SSL client validation value is requested,
+                    # ensure we try both values for each enabled SSL backend
+                    # (values other than 'no'). For SSL=no, validation is irrelevant.
+                    if [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -gt 1 ]; then
+                        TMP_COMBO_LIST=()
+                        HAVE_ENABLED_SSL=false
+                        for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                            if [ "${SSLVAL}" = no ] ; then
+                                # Preserve the SSL=no case once
+                                TMP_COMBO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                continue
+                            fi
+                            HAVE_ENABLED_SSL=true
+                            for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                TMP_COMBO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                            done
+                        done
+                        if [ "${HAVE_ENABLED_SSL}" = true ] ; then
+                            # Replace the list so far to enforce SSL×Validation coverage
+                            BUILDSTODO_LIST=("${TMP_COMBO_LIST[@]}")
+                        else
+                            # No enabled SSL backends requested, just iterate validation values
+                            for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                            done
+                        fi
                     fi
                     if [ "$BUILDSTODO_USB" -gt 1 ]; then
                         # Effectively, whatever up to one version of LibUSB support
@@ -2559,6 +2612,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     BUILDSTODO_MAX="$BUILDSTODO_SSL"
                     BUILDSTODO_MAX_TYPE="BUILDSTODO_SSL"
 
+                    [ "$BUILDSTODO_MAX" -ge "$BUILDSTODO_SSL_CLIENT_VALIDATION" ] || {
+                        BUILDSTODO_MAX="$BUILDSTODO_SSL_CLIENT_VALIDATION"
+                        BUILDSTODO_MAX_TYPE="BUILDSTODO_SSL_CLIENT_VALIDATION"
+                    }
+
                     [ "$BUILDSTODO_MAX" -ge "$BUILDSTODO_USB" ] \
                     || { BUILDSTODO_MAX="$BUILDSTODO_USB"; BUILDSTODO_MAX_TYPE="BUILDSTODO_USB" ; }
 
@@ -2570,11 +2628,48 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
 
                     # FIXME: Can this be eval'ed?
                     # First populate the longer set of variants:
+                    DID_COMBINE_SSL_AND_VALIDATION=false
                     case "${BUILDSTODO_MAX_TYPE}" in
                         BUILDSTODO_SSL)
-                            for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
-                                BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
-                            done
+                            if [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -gt 1 ] ; then
+                                # Build SSL×Validation pairs per enabled SSL backend
+                                for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    if [ "$SSLVAL" = no ] ; then
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                        continue
+                                    fi
+                                    for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                                    done
+                                done
+                                DID_COMBINE_SSL_AND_VALIDATION=true
+                                BUILDSTODO_MAX="${#BUILDSTODO_LIST[@]}"
+                            else
+                                for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                                done
+                            fi
+                            ;;
+                        BUILDSTODO_SSL_CLIENT_VALIDATION)
+                            if [ "$BUILDSTODO_SSL" -ge 1 ] ; then
+                                # Build SSL×Validation pairs per enabled SSL backend
+                                for SSLVAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    if [ "$SSLVAL" = no ] ; then
+                                        # Keep a single SSL=no entry without validation
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};${BUILDSTODO_ALWAYS}")
+                                        continue
+                                    fi
+                                    for VVAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                        BUILDSTODO_LIST+=("NUT_SSL_VARIANT=${SSLVAL};NUT_SSL_CLIENT_VALIDATION_VARIANT=${VVAL};${BUILDSTODO_ALWAYS}")
+                                    done
+                                done
+                                DID_COMBINE_SSL_AND_VALIDATION=true
+                                BUILDSTODO_MAX="${#BUILDSTODO_LIST[@]}"
+                            else
+                                for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST+=("NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_ALWAYS}")
+                                done
+                            fi
                             ;;
                         BUILDSTODO_USB)
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
@@ -2596,6 +2691,44 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     case "${BUILDSTODO_MAX_TYPE}" in
                         BUILDSTODO_SSL)
                             i=$(($RANDOM % $BUILDSTODO_MAX))
+                            if ! $DID_COMBINE_SSL_AND_VALIDATION ; then
+                                [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
+                                for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                    i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                                done
+                            fi
+
+                            [ "$BUILDSTODO_USB" -le 1 ] || \
+                            for VAL in "${NUT_USB_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_USB_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_UNMAPPED" -le 1 ] || \
+                            for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_UNMAPPED_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            [ "$BUILDSTODO_LIBNUTPRIVATE" -le 1 ] || \
+                            for VAL in "${NUT_LIBNUTPRIVATE_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_LIBNUTPRIVATE_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+                            ;;
+                        BUILDSTODO_SSL_CLIENT_VALIDATION)
+                            i=$(($RANDOM % $BUILDSTODO_MAX))
+                            if ! $DID_COMBINE_SSL_AND_VALIDATION ; then
+                                [ "$BUILDSTODO_SSL" -le 1 ] || \
+                                for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
+                                    BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                    i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                                done
+                            fi
+
                             [ "$BUILDSTODO_USB" -le 1 ] || \
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
                                 BUILDSTODO_LIST[$i]="NUT_USB_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
@@ -2624,6 +2757,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                                 i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
                             done
 
+                            [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
+                            for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
                             i=$(($RANDOM % $BUILDSTODO_MAX))
                             [ "$BUILDSTODO_UNMAPPED" -le 1 ] || \
                             for VAL in "${NUT_UNMAPPED_VARIANTS[@]}" ; do
@@ -2646,6 +2785,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                                 i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
                             done
 
+                            [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
+                            for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
                             i=$(($RANDOM % $BUILDSTODO_MAX))
                             [ "$BUILDSTODO_USB" -le 1 ] || \
                             for VAL in "${NUT_USB_VARIANTS[@]}" ; do
@@ -2665,6 +2810,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                             [ "$BUILDSTODO_SSL" -le 1 ] || \
                             for VAL in "${NUT_SSL_VARIANTS[@]}" ; do
                                 BUILDSTODO_LIST[$i]="NUT_SSL_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
+                                i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
+                            done
+
+                            [ "$BUILDSTODO_SSL_CLIENT_VALIDATION" -le 1 ] || \
+                            for VAL in "${NUT_SSL_CLIENT_VALIDATION_VARIANTS[@]}" ; do
+                                BUILDSTODO_LIST[$i]="NUT_SSL_CLIENT_VALIDATION_VARIANT=${VAL};${BUILDSTODO_LIST[$i]}"
                                 i=$(( $(($i + 1)) % $BUILDSTODO_MAX))
                             done
 
@@ -2699,6 +2850,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                 # Assign new variations; empty means either "configure" script
                 # default, or opinionated choice of this script as seen below
                 NUT_SSL_VARIANT=""
+                NUT_SSL_CLIENT_VALIDATION_VARIANT=""
                 NUT_USB_VARIANT=""
                 NUT_UNMAPPED_VARIANT=""
                 NUT_LIBNUTPRIVATE_VARIANT=""
@@ -2728,6 +2880,25 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         ;;
                 esac
 
+                case "${NUT_SSL_CLIENT_VALIDATION_VARIANT}" in
+                    "") ;;
+                    auto)
+                        CONFIG_OPTS+=("--with-ssl-client-validation=auto")
+                        ;;
+                    yes)
+                        echo "=== Building with SSL client validation support..."
+                        CONFIG_OPTS+=("--with-ssl-client-validation")
+                        ;;
+                    no)
+                        echo "=== Building without SSL client validation support..."
+                        CONFIG_OPTS+=("--without-ssl-client-validation")
+                        ;;
+                    *)  # Potentially something new? Unknown values can fail in the configure script.
+                        echo "=== Building with 'NUT_SSL_CLIENT_VALIDATION_VARIANT=${NUT_SSL_CLIENT_VALIDATION_VARIANT}' (WARNING: may be not supported)..."
+                        CONFIG_OPTS+=("--with-ssl-client-validation=${NUT_SSL_CLIENT_VALIDATION_VARIANT}")
+                        ;;
+                esac
+
                 # FIXME: Move checks of SSL/USB presence and their impact up
                 #  to (exhaustive) BUILDSTODO_LIST preparation?
                 case "$NUT_USB_VARIANT" in
@@ -2738,6 +2909,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         CONFIG_OPTS+=("--with-usb=auto")
@@ -2747,6 +2919,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         CONFIG_OPTS+=("--without-usb")
@@ -2756,6 +2929,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         CONFIG_OPTS+=("--with-usb=${NUT_USB_VARIANT}")
@@ -2765,6 +2939,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         CONFIG_OPTS+=("--with-usb=libusb-${NUT_USB_VARIANT}")
@@ -2778,6 +2953,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         if [ "${NUT_USB_VARIANTS[*]}" != "no" ] && [ x"${NUT_USB_VARIANT}" = x ] ; then
@@ -2798,6 +2974,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                         if [ "${NUT_SSL_VARIANTS[*]}" != "auto" ] && [ x"${NUT_SSL_VARIANT}" = x ] ; then
                             CONFIG_OPTS+=("--without-all")
                             CONFIG_OPTS+=("--without-ssl")
+                            # FIXME: else consider NUT_SSL_CLIENT_VALIDATION_VARIANTS
                         fi
                         CONFIG_OPTS+=("--with-serial=auto")
                         if [ "${NUT_USB_VARIANTS[*]}" != "no" ] && [ x"${NUT_USB_VARIANT}" = x ] ; then
@@ -3175,6 +3352,14 @@ bindings)
         *)   echo "WARNING: Unrecognized NUT_SSL_VARIANTS='${NUT_SSL_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
     esac
 
+	case "${NUT_SSL_CLIENT_VALIDATION_VARIANTS}" in
+		yes) CONFIG_OPTS+=("--with-ssl-client-validation") ;;
+		no)  CONFIG_OPTS+=("--without-ssl-client-validation") ;;
+		auto) CONFIG_OPTS+=("--with-ssl-client-validation=auto") ;;
+		"") ;;
+		*)   echo "WARNING: Unrecognized NUT_SSL_CLIENT_VALIDATION_VARIANTS='${NUT_SSL_CLIENT_VALIDATION_VARIANTS}' for a general deterministic build, ignored" >&2 ;;
+	esac
+
     if [ -n "${BUILD_DEBUGINFO-}" ]; then
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
     else
@@ -3336,6 +3521,7 @@ cross-windows-mingw*)
     export WITH_LIBNUTPRIVATE
 
     export NUT_SSL_VARIANTS
+    export NUT_SSL_CLIENT_VALIDATION_VARIANTS
 
     if [ -n "${CI_CACHE_NUT_HASHDIR}" ] && [ -d "${CI_CACHE_NUT_HASHDIR}" ] ; then
         export CI_CACHE_NUT_HASHDIR
