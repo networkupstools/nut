@@ -571,9 +571,9 @@ all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recurs
 ### LIB-Requires-ext: #COMMENTED-AWAY# common/libcommon.la
 ### Requires-ext: common/libcommon.la common/libnutconf.la
 ### Requires-ext: clients/libnutclient.la clients/libnutclientstub.la
-### Requires-ext: drivers/libdummy_mockdrv.la
+### Requires-ext: drivers/libdummy_mockdrv.la tools/nut-scanner/libnutscan.la
 ### Requires-int: libdriverstubusb.la
-all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients @dotMAKE@
+all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients all-libs-local/tools/nut-scanner @dotMAKE@
 	+@NUT_VERSION_H_GENERATED=true; export NUT_VERSION_H_GENERATED; \
 	  $(SUBDIR_TGT_RULE)
 
