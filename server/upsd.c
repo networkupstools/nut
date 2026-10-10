@@ -80,10 +80,10 @@ int	deny_severity = LOG_WARNING;
 upstype_t	*firstups = NULL;
 
 /* default 15 seconds before data is marked stale */
-int	maxage = 15;
+unsigned int	maxage = 15;
 
 /* default to 1h before cleaning up status tracking entries */
-int	tracking_delay = 3600;
+unsigned int	tracking_delay = 3600;
 
 /*
  * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
