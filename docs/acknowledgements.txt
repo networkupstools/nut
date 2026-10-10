@@ -162,6 +162,8 @@ document
 - Potrans provided a Fenton PowerPal 600 (P series) for development of the
 safenet driver.
 - Tim Niemueller wrote nut-upower driver for UPower devices and scanner support.
+- Array Health Solutions, through Warren Strong, provided a Vertiv Liebert
+GXT5 for development and testing of the vertiv-hid subdriver of usbhid-ups.
 
 Older entries (before 2005)
 ---------------------------

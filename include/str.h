@@ -39,6 +39,11 @@ extern "C" {
 # endif
 #endif
 
+/* Split LISTEN address[:port] syntax in place, preserving bare IPv6.
+ * Returns 1 on success with pointers into string (port is NULL if absent),
+ * or 0 for invalid combined syntax. Numeric ports range from 0 to 65535. */
+int str_split_listen(char *string, char **address, char **port);
+
 /* Remove all
  * - leading and trailing (str_trim[_m]())
  * - leading (str_ltrim[_m]())

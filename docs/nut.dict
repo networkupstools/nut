@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3883 utf-8
+personal_ws-1.1 en 3886 utf-8
 AAC
 AAS
 ABI
@@ -1080,6 +1080,7 @@ PowerPanel
 PowerShare
 PowerShell
 PowerShield
+PowerSummary
 PowerSure
 PowerSystemError
 PowerTech
@@ -3554,6 +3555,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
@@ -3763,6 +3765,7 @@ verifySourceSig
 versa
 versioned
 versioning
+vertiv
 vh
 victron
 victronups
