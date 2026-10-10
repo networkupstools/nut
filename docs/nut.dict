@@ -3550,6 +3550,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
