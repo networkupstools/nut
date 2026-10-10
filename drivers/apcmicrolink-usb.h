@@ -44,6 +44,7 @@ int microlink_usb_send_bytes(const unsigned char *buf, size_t len);
  * Mirrors ser_get_char()'s contract: 1 with *ch filled on success,
  * 0 on timeout/no data yet, negative on hard error. */
 int microlink_usb_get_char(unsigned char *ch, long d_usec);
+size_t microlink_usb_drop_report_padding(void);
 
 /* Standard-HID-Power-Device-usage fallback: this device also
  * pushes autonomous Input reports for PresentStatus/RemainingCapacity/

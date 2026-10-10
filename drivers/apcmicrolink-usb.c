@@ -1131,6 +1131,36 @@ int microlink_usb_hid_fallback_supported(void)
 	return (ff_ac_present.report_id != 0 && ff_discharging.report_id != 0);
 }
 
+/* The tunnel's Input reports are fixed-size (63 data bytes) while a Microlink
+ * record is page0.width + 3 bytes, so the device zero-pads each report after
+ * the record it carries (observed: one 35-byte record at offset 0 plus 28
+ * bytes of 0x00, 13040 reports out of 13040, SMX1500 FW UPS 16.0). Fed to the
+ * byte-stream frame scanner, that padding is worse than noise: leading 0x00
+ * bytes are invisible to the Microlink checksum (Fletcher, mod 255), so a
+ * record whose last check byte is 0xFF also validates one byte early, gets
+ * taken for a (bogus) page 0, and the real record is lost for that pass.
+ *
+ * Called by the parser right after it has extracted a frame: if everything
+ * left unread in the current report is 0x00, drop it, so the next record is
+ * parsed from the start of its own report. A non-zero remainder is left alone
+ * (returns 0) - it cannot be padding, and a complete record can never hide in
+ * all-zero bytes because a computed check byte is never 0x00. Returns the
+ * number of padding bytes dropped. */
+size_t microlink_usb_drop_report_padding(void)
+{
+	size_t i, dropped;
+
+	for (i = in_report_pos; i < in_report_len; i++) {
+		if (in_report[i] != 0x00) {
+			return 0;
+		}
+	}
+
+	dropped = in_report_len - in_report_pos;
+	in_report_pos = in_report_len;
+	return dropped;
+}
+
 /* Per-call synchronous read: issue one interrupt-IN transfer and wait up to
  * d_usec for it. Used as-is on non-libusb-1.0 builds, and as the fallback when
  * the async listener could not be started. */
