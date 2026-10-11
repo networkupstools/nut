@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3892 utf-8
+personal_ws-1.1 en 3894 utf-8
 AAC
 AAS
 ABI
@@ -1881,6 +1881,7 @@ bv
 byobu
 bypassOff
 bypassOn
+bypassasalarm
 cStandard
 cablepower
 cachefile
@@ -3012,6 +3013,7 @@ otheruser
 otool
 ouGDQn
 outliers
+overridemodel
 overtemp
 ovmf
 pF
