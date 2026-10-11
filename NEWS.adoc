@@ -781,7 +781,7 @@ https://github.com/networkupstools/nut/milestone/13
     * Corrected operator guidance for communication loss, certificate expiry
       and device-list reloads, debug output and polling intervals. Documented
       the scanning thread limit, completed notification lists and linked
-      the SSL configuration directives.
+      the SSL configuration directives. [PR #3743]
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
