@@ -778,6 +778,11 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Reworked the packaging proposal around deployment roles and build
+      contents, clarified service-managed startup and multi-token UPS status,
+      and added support-data redaction guidance. Improved Windows archive
+      navigation, completed self-test and Jenkins introductions, and indexed
+      authentication, SSL and library logging manuals.
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
