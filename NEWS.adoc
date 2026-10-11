@@ -781,7 +781,7 @@ https://github.com/networkupstools/nut/milestone/13
     * Corrected the `usbhid-ups` on-battery discharge option name and the
       `belkinunv` configuration guidance. Documented the existing
       `microdowell` delay settings and the `nhs_ser` model override and
-      bypass-alarm settings.
+      bypass-alarm settings. [PR #3744]
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
