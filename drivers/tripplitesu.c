@@ -57,6 +57,7 @@
 	command_delay
 	offdelay
 	startdelay
+	shutdown_mode
 
    The following variables are supported (RW = read/write):
 	ambient.humidity (1)
@@ -93,7 +94,9 @@
 	ups.status
 	ups.start.auto (RW)
 	ups.test.result
+	ups.watchdog.alarm (RW)
 	ups.watchdog.status (RW)
+	ups.watchdog.timeout (RW)
 	ups.contacts (1)
 
     The following instant commands are supported:
@@ -103,6 +106,7 @@
 	outlet.n.load.on (one per outlet)
 	beeper.mute
 	clear.fault.record
+	reset.watchdog
 	shutdown.reboot
 	shutdown.reboot.graceful
 	shutdown.return
@@ -114,14 +118,19 @@
     The shutdown-related commands above accept an optional delay, in seconds,
     passed as the "value" argument of upscmd; it takes precedence over the
     "offdelay" setting from ups.conf, which in turn takes precedence over
-    the built-in default.  The "load.off", "load.on" and "outlet.n.load.*"
-    commands do not take a value: they only switch the outlets.
+    the built-in default.  The "load.off", "load.on", "outlet.n.load.*" and
+    "reset.watchdog" commands do not take a value.
+
+    Commands that send more than one frame stop at the first operation the
+    device rejects or does not answer, so a failed command is never applied
+    partially: the driver logs the operation that failed and sends nothing
+    more.  "load.off" and "load.on", for instance, leave the outlets they did
+    not reach untouched.
 
     "shutdown.return" and "shutdown.stayoff" clear the device return delay
     (SDR), so the load comes back only when mains is (re)applied or not at
     all, while the two reboot commands ask for the load to come back right
-    behind the shutdown (just behind it, see reboot_start_delay()).  The
-    "startdelay" setting is used by the driver shutdown handler only.
+    behind the shutdown (just behind it, see reboot_start_delay()).
 
     Because that is what the commands mean on this hardware, the shutdown
     commands change the device auto-reboot setting ("ups.start.auto", ARB);
@@ -129,7 +138,20 @@
     and the driver logs it (restore it with upsrw if needed).  The buzzer is
     a device setting as well: enabling/disabling it is done through the
     read/write "ups.beeper.status" variable, while the "beeper.mute" command
-    only silences the alarm that is currently sounding.
+    only silences the alarm that is currently sounding.  The watchdog is the
+    third device setting of that kind: its timeout and restart-alarm flag are
+    the read/write "ups.watchdog.timeout" and "ups.watchdog.alarm"
+    variables, "ups.watchdog.status" is their enabled/disabled view, and the
+    "reset.watchdog" command sends the stored setting again.
+
+    The driver shutdown handler (the "shutdown.default" instant command, run
+    by "upsdrvctl shutdown" and by the "driver.killpower" request) always
+    turns the auto-reboot setting on (ARB) and then schedules the shutdown
+    (SDA), so that the load is powered again when mains is (re)applied;
+    unlike the commands above it does not touch the return delay (SDR).  The
+    "shutdown_mode" setting chooses whether a failure of one of those two
+    operations stops the handler there ("abort", fail safe) or not
+    ("continue", best effort, the default).
 
     The following ups.status values are supported:
 	BOOST (1)
@@ -200,8 +222,10 @@ upsdrv_info_t upsdrv_info = {
 
 /* Watchdog setting (WDG): the device stores a timeout in seconds (up to
  * three digits, 0 disables it) plus a flag selecting whether the restart
- * alarm is enabled (1) or disabled (2).  The timeout and the flag are
- * preserved when the watchdog is (dis)armed from NUT. */
+ * alarm is enabled (1) or disabled (2).  Both fields are written together,
+ * so the driver keeps them apart in the read/write variables
+ * ups.watchdog.timeout and ups.watchdog.alarm, and reloads the pair it has
+ * when the watchdog is (dis)armed or kicked from NUT. */
 #define DEFAULT_WATCHDOG 255U
 #define MAX_WATCHDOG 255U
 
@@ -255,9 +279,10 @@ static struct timeval command_sent_at; /* when the last command was sent */
 static unsigned int offdelay = DEFAULT_OFFDELAY; /* delay in seconds before shutdown */
 static int offdelay_from_conf = 0; /* set if 'offdelay' was provided in ups.conf */
 static unsigned int startdelay = DEFAULT_STARTDELAY; /* delay in seconds before return */
-static unsigned int watchdog_seconds = 0; /* watchdog timeout last reported by the device */
-static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag last reported */
-static int watchdog_known = 0; /* set once the device reported its watchdog setting */
+static unsigned int watchdog_seconds = 0; /* watchdog timeout currently set on the device */
+static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag currently set on the device */
+static int watchdog_known = 0; /* set once the device reported or accepted its watchdog setting */
+static int shutdown_abort_on_error = 0; /* 1 when 'shutdown_mode' asks the driver shutdown handler to stop at the first failure */
 static unsigned int min_low_transfer, max_low_transfer; /* reported transfer voltage ranges */
 static unsigned int min_high_transfer, max_high_transfer;
 
@@ -775,11 +800,28 @@ static void set_boot_delay(unsigned int delay) {
 			"[%s %s]", __func__, BOOT_DELAY, parm);
 }
 
-/* Read the watchdog setting and publish ups.watchdog.status.  The device
- * reports "<timeout in seconds>;<restart alarm flag>", where a timeout of 0
- * means that the watchdog is disabled.  This is auxiliary information, so a
- * missing or unexpected answer must not mark the whole UPS as stale: a
- * warning is logged and the previously published value is left in place. */
+/* Publish the watchdog variables from the setting the driver has: the one
+ * the device reported, or the one it accepted.  The device stores a timeout
+ * and a restart-alarm flag, not a status, so 'enabled' and 'disabled' are
+ * derived from a non-zero timeout. */
+static void publish_watchdog(void) {
+	dstate_setinfo("ups.watchdog.status", "%s",
+		watchdog_seconds ? "enabled" : "disabled");
+	dstate_setinfo("ups.watchdog.timeout", "%u", watchdog_seconds);
+	dstate_setinfo("ups.watchdog.alarm", "%s",
+		watchdog_alarm == 1 ? "enabled" : "disabled");
+}
+
+/* Read the watchdog setting (WDG) and publish it as ups.watchdog.status
+ * (enabled/disabled), ups.watchdog.timeout (seconds, 0 = disabled) and
+ * ups.watchdog.alarm (enabled/disabled; the device stores 1 = enabled and
+ * 2 = disabled).  The device reports "<timeout in seconds>;<restart alarm
+ * flag>", where a timeout of 0 means that the watchdog is disabled.  This is
+ * auxiliary information, so a missing or unexpected answer must not mark the
+ * whole UPS as stale: a warning is logged and the setting the driver has is
+ * left in place.  Both fields are kept because the device stores them
+ * together: whenever one of them changes, the driver has to send the other
+ * one along. */
 static int get_watchdog(void) {
 	char response[MAX_RESPONSE_LENGTH];
 	char *ptr;
@@ -816,32 +858,101 @@ static int get_watchdog(void) {
 			watchdog_alarm = (unsigned int)alarm;
 	}
 
-	dstate_setinfo("ups.watchdog.status", "%s",
-		watchdog_seconds ? "enabled" : "disabled");
+	publish_watchdog();
 	return 1;
 }
 
-/* Arm or disarm the watchdog, keeping the timeout (255 seconds when none
- * was ever reported) and the restart-alarm flag that the device uses. */
-static void set_watchdog(int enable) {
+/* Send the watchdog setting (WDG "<timeout>;<restart alarm flag>"): the
+ * device stores the two fields together, so both are always written.  The
+ * values it accepts are remembered as the setting the driver has, so that
+ * the watchdog variables can be published from them without another round
+ * trip and disable_watchdog_on_exit() knows whether it has to act even when
+ * reading the value back fails.  Returns 1 when the device accepted the
+ * setting. */
+static int send_watchdog_setting(unsigned int timeout, unsigned int alarm)
+{
 	char parm[20];
-	unsigned int timeout = 0;
 
-	if (enable) {
-		/* arming without a reading uses assumed values, which is
-		 * worth telling about: the timeout is not the one the device
-		 * would have reported */
-		if (!watchdog_known)
-			upslogx(LOG_WARNING, "%s: arming the watchdog with an "
-				"assumed timeout, the device never reported "
-				"its [%s] setting", __func__, WATCHDOG);
-		timeout = watchdog_seconds ? watchdog_seconds : DEFAULT_WATCHDOG;
+	if (timeout > MAX_WATCHDOG || (alarm != 1 && alarm != 2)) {
+		upslogx(LOG_ERR, "%s: refusing to write the watchdog setting "
+			"[%u;%u]", __func__, timeout, alarm);
+		return 0;
 	}
 
-	snprintf(parm, sizeof(parm), "%u;%u", timeout, watchdog_alarm);
-	if (!send_set_command(WATCHDOG, parm))
+	snprintf(parm, sizeof(parm), "%u;%u", timeout, alarm);
+	if (!send_set_command(WATCHDOG, parm)) {
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
 			"[%s %s]", __func__, WATCHDOG, parm);
+		return 0;
+	}
+
+	watchdog_seconds = timeout;
+	watchdog_alarm = alarm;
+	watchdog_known = 1;
+	publish_watchdog();
+	return 1;
+}
+
+/* Arm or disarm the watchdog, keeping the timeout (255 seconds when the
+ * device never reported one) and the restart-alarm flag that the device
+ * uses: arming a watchdog whose restart alarm is disabled must not enable
+ * that alarm, and the other way round.  Arming a watchdog that was never
+ * read uses a timeout that is assumed, which is worth telling about. */
+static int set_watchdog(int enable) {
+	if (enable && !watchdog_known)
+		upslogx(LOG_WARNING, "%s: arming the watchdog with an "
+			"assumed timeout, the device never reported "
+			"its [%s] setting", __func__, WATCHDOG);
+
+	return send_watchdog_setting(enable
+		? (watchdog_seconds ? watchdog_seconds : DEFAULT_WATCHDOG)
+		: 0U, watchdog_alarm);
+}
+
+/* The "reset.watchdog" instant command: send the setting the device last
+ * reported (or accepted) again, which restarts its timer.  The command
+ * takes no value, so the watchdog it kicks is the one the driver is
+ * configured with.  A watchdog that was never read is left alone, so that a
+ * kick cannot arm it with assumed values; a watchdog that is disabled is
+ * simply refreshed (0 is sent again) so that its stored timeout is left as
+ * the device reported it. */
+static int reset_watchdog(void) {
+	if (!watchdog_known) {
+		upslogx(LOG_ERR, "%s: the device never reported its [%s] "
+			"setting, not resetting the watchdog",
+			__func__, WATCHDOG);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	if (!watchdog_seconds)
+		upslogx(LOG_INFO, "%s: the watchdog is disabled (timeout "
+			"0), the kick only refreshes that", __func__);
+
+	if (!send_watchdog_setting(watchdog_seconds, watchdog_alarm))
+		return STAT_INSTCMD_FAILED;
+
+	return STAT_INSTCMD_HANDLED;
+}
+
+/* A watchdog left armed power cycles the load as soon as the device stops
+ * hearing from the driver, so disarm it when the driver goes away on
+ * purpose: a signal handled in main.c (SIGTERM, SIGINT, SIGQUIT), the
+ * 'driver.exit' instant command and the end of a data dump all run
+ * upsdrv_cleanup(), which calls this function before closing the port.  A
+ * driver restart (for example during a package upgrade) then does not turn
+ * into an unexpected outage.  Only a watchdog the driver believes to be
+ * armed is touched, so a device whose watchdog is already disabled is left
+ * alone and nothing is sent at all.  A driver that crashes or is killed
+ * without unwinding never gets here, so the watchdog keeps covering that
+ * case. */
+static void disable_watchdog_on_exit(void)
+{
+	if (!watchdog_seconds)
+		return;
+
+	upslogx(LOG_INFO, "%s: disabling the watchdog before exiting",
+		__func__);
+	set_watchdog(0);
 }
 
 /* Read the bypass reason recorded by the device (BPA) and publish it as
@@ -1104,33 +1215,37 @@ static int instcmd(const char *cmdname, const char *extra)
 		{ "shutdown.return",          1, 1, 0 },
 		{ "shutdown.stayoff",         0, 1, 0 }
 	};
-	int i;
 	char parm[20];
 	char command[32];	/* "outlet.<n>.load.on" and friends */
 	unsigned int outlet, cmd_index;
 	unsigned int delay;
 	unsigned int fallback;
-	int result = STAT_INSTCMD_HANDLED;
 
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
+	/* Switching the outlets is a multi-frame command: stop at the first
+	 * frame the device rejects or does not answer, so that a failure is
+	 * not reported as a success (the outlets that were not reached are
+	 * left as they were). */
 	if (!strcasecmp(cmdname, "load.off")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		for (i = 0; i < ups.outlets; i++) {
-			snprintf(parm, sizeof(parm), "%d;1", i + 1);
-			if (send_set_or_fail(RELAY_OFF, parm) != STAT_INSTCMD_HANDLED)
-				result = STAT_INSTCMD_FAILED;
+		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+			snprintf(parm, sizeof(parm), "%u;1", outlet);
+			if (send_set_or_fail(RELAY_OFF, parm)
+			    != STAT_INSTCMD_HANDLED)
+				return STAT_INSTCMD_FAILED;
 		}
-		return result;
+		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		for (i = 0; i < ups.outlets; i++) {
-			snprintf(parm, sizeof(parm), "%d;1", i + 1);
-			if (send_set_or_fail(RELAY_ON, parm) != STAT_INSTCMD_HANDLED)
-				result = STAT_INSTCMD_FAILED;
+		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+			snprintf(parm, sizeof(parm), "%u;1", outlet);
+			if (send_set_or_fail(RELAY_ON, parm)
+			    != STAT_INSTCMD_HANDLED)
+				return STAT_INSTCMD_FAILED;
 		}
-		return result;
+		return STAT_INSTCMD_HANDLED;
 	}
 	/* one set of commands per outlet; these take no value */
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(outlet_commands); cmd_index++) {
@@ -1160,6 +1275,11 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "clear.fault.record")) {
 		/* reset the bypass reason recorded by the device */
 		return send_set_or_fail(BYPASS_REASON, "0");
+	}
+	if (!strcasecmp(cmdname, "reset.watchdog")) {
+		/* kick the watchdog: this takes no value, it sends the
+		 * setting the driver has, which restarts the device timer */
+		return reset_watchdog();
 	}
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
 		cmd_index++) {
@@ -1292,17 +1412,53 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.watchdog.status")) {
+		if (!strcasecmp(val, "enabled")) {
+			if (!set_watchdog(1))
+				return STAT_SET_FAILED;
+		} else if (!strcasecmp(val, "disabled")) {
+			if (!set_watchdog(0))
+				return STAT_SET_FAILED;
+		} else {
+			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
+				"(expected enabled or disabled)", varname, val);
+			return STAT_SET_FAILED;
+		}
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "ups.watchdog.timeout")) {
+		unsigned int timeout;
+
+		/* 0 disables the watchdog; the restart-alarm flag the
+		 * device stores with it is kept as it is */
+		if (!parse_uint_range(val, 0U, MAX_WATCHDOG, &timeout)) {
+			upslogx(LOG_ERR, "setvar(%s): invalid timeout value "
+				"'%s' (expected 0..%u seconds, 0 disables)",
+				varname, val, MAX_WATCHDOG);
+			return STAT_SET_FAILED;
+		}
+		if (!send_watchdog_setting(timeout, watchdog_alarm))
+			return STAT_SET_FAILED;
+		/* read the value back, so that the published variables
+		 * reflect what the device actually accepted */
+		get_watchdog();
+		return STAT_SET_HANDLED;
+	}
+	if (!strcasecmp(varname, "ups.watchdog.alarm")) {
+		unsigned int alarm;
+
 		if (!strcasecmp(val, "enabled"))
-			set_watchdog(1);
+			alarm = 1;
 		else if (!strcasecmp(val, "disabled"))
-			set_watchdog(0);
+			alarm = 2;
 		else {
 			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
 				"(expected enabled or disabled)", varname, val);
 			return STAT_SET_FAILED;
 		}
-		/* read the value back, so that the published variable
-		 * reflects what the device actually accepted */
+		if (!send_watchdog_setting(watchdog_seconds, alarm))
+			return STAT_SET_FAILED;
+		/* read the value back, so that the published variables
+		 * reflect what the device actually accepted */
 		get_watchdog();
 		return STAT_SET_HANDLED;
 	}
@@ -1480,6 +1636,12 @@ void upsdrv_initinfo(void)
 		dstate_setflags("ups.watchdog.status",
 			ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.watchdog.status", 8);
+		dstate_setflags("ups.watchdog.timeout",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.watchdog.timeout", 3);
+		dstate_setflags("ups.watchdog.alarm",
+			ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.watchdog.alarm", 8);
 	}
 	if (get_eco_mode()) {
 		dstate_setflags("input.eco.switchable",
@@ -1535,6 +1697,7 @@ void upsdrv_initinfo(void)
 	}
 	dstate_addcmd("beeper.mute");
 	dstate_addcmd("clear.fault.record");
+	dstate_addcmd("reset.watchdog");
 	dstate_addcmd("shutdown.reboot");
 	dstate_addcmd("shutdown.reboot.graceful");
 	dstate_addcmd("shutdown.return");
@@ -1731,20 +1894,28 @@ void upsdrv_shutdown(void)
 
 	if (!init_comm())
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
-	/* in case the power is on, tell it to automatically reboot.  if
-	 * it is off, this has no effect. */
+	/* Turn the device auto-reboot setting (ARB) on, unconditionally:
+	 * it asks the device to start the load again once mains is
+	 * (re)applied, so that every outlet is powered again after the
+	 * outage that caused the shutdown.  In case the power is on, this
+	 * also tells the device to start again; if it is off, it has no
+	 * effect.  A device that does not confirm the setting is a device
+	 * the driver cannot tell anything about, so 'shutdown_mode' decides
+	 * whether the shutdown is scheduled anyway (best effort) or not
+	 * (fail safe). */
 	if (!auto_reboot(1)) {
-		upslogx(LOG_ERR, "%s: could not set or confirm ups.start.auto, "
-			"not powering the load off", __func__);
-		return;
-	}
-	if (!set_start_delay(startdelay)) {
-		upslogx(LOG_ERR, "%s: could not set the return delay, "
-			"not powering the load off", __func__);
-		return;
+		upslogx(LOG_ERR, "%s: could not set or confirm "
+			"ups.start.auto", __func__);
+		if (shutdown_abort_on_error) {
+			upslogx(LOG_ERR, "%s: shutdown_mode=abort, not "
+				"powering the load off", __func__);
+			return;
+		}
 	}
 	/* delay before shutdown, in seconds: honor 'offdelay' if the user set
-	 * it in ups.conf, otherwise keep the historical default */
+	 * it in ups.conf, otherwise keep the historical default.  No return
+	 * delay (SDR) is sent: whether the load comes back is decided by the
+	 * auto-reboot setting above, not by a delay of its own. */
 	snprintf(parm, sizeof(parm), "%u",
 		offdelay_from_conf ? offdelay : 5U);
 	if (!send_set_command(TSU_SHUTDOWN_ACTION, parm))
@@ -1783,6 +1954,23 @@ void upsdrv_makevartable(void)
 		MIN_STARTDELAY / 60U,
 		MAX_STARTDELAY_MINUTES);
 	addvar(VAR_VALUE, "startdelay", msg);
+
+	/* The driver shutdown handler ("shutdown.default", run by
+	 * upsdrvctl shutdown) always turns the device auto-reboot setting
+	 * (ARB) on before it schedules the shutdown, so that the load is
+	 * powered again when mains is (re)applied.  The device stores the
+	 * setting, so it also affects "ups.start.auto"; the shutdown
+	 * commands (shutdown.return and friends) set it for their own
+	 * needs.  The 'shutdown_mode' setting decides how the handler
+	 * reacts to a failed operation: keep sending the remaining ones
+	 * (best effort) or stop at the first failure (fail safe).  The
+	 * operations are the auto-reboot setting (ARB) and the shutdown
+	 * action (SDA). */
+	snprintf(msg, sizeof msg, "How the shutdown handler reacts to a "
+		"failed operation: continue = keep sending the remaining "
+		"ones (best effort), abort = stop at the first failure "
+		"(fail safe, default=continue).");
+	addvar(VAR_VALUE, "shutdown_mode", msg);
 }
 
 void upsdrv_initups(void)
@@ -1869,9 +2057,31 @@ void upsdrv_initups(void)
 		upsdebugx(2, "Using default startdelay of %u seconds",
 			startdelay);
 	}
+
+	/* Initialize shutdown_mode from configuration: whether a failure of
+	 * an operation stops the shutdown handler there (fail safe) or not
+	 * (best effort, the default). */
+	shutdown_abort_on_error = 0;
+	val = getval("shutdown_mode");
+	if (val && *val) {
+		if (!strcasecmp(val, "continue")) {
+			shutdown_abort_on_error = 0;
+		} else if (!strcasecmp(val, "abort")) {
+			shutdown_abort_on_error = 1;
+		} else {
+			fatalx(EXIT_FAILURE, "Invalid shutdown_mode "
+				"parameter: %s (expected continue or abort)",
+				val);
+		}
+		upsdebugx(2, "Setting shutdown_mode to %s",
+			shutdown_abort_on_error ? "abort" : "continue");
+	} else {
+		upsdebugx(2, "Using default shutdown_mode of continue");
+	}
 }
 
 void upsdrv_cleanup(void)
 {
+	disable_watchdog_on_exit();
 	ser_close(upsfd, device_path);
 }

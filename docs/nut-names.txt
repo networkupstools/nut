@@ -280,6 +280,10 @@ ups: General unit information
                           see the note below)          | vendor:eaton:ECO
 | ups.watchdog.status   | UPS watchdog status
                           (enabled or disabled)        | disabled
+| ups.watchdog.timeout  | UPS watchdog timeout
+                          (seconds, 0 disables)        | 255
+| ups.watchdog.alarm    | UPS watchdog restart alarm
+                          (enabled or disabled)        | disabled
 | ups.start.auto        | UPS starts when mains is
                           (re)applied                  | yes
 | ups.start.battery     | Allow to start UPS from

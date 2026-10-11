@@ -75,20 +75,39 @@ linkman:upsdrvctl[8] 'shutdown') uses this setting as well, but keeps the
 historical default of 5 seconds when it is not set in linkman:ups.conf[5].
 
 *startdelay*='minutes'::
-Set the return (restart) delay, in minutes, used by the driver shutdown
-handling as the delay before the load is started again.  The default value
-is 1.
+Set the return (restart) delay, in minutes, that the driver publishes as the
+read/write variable *ups.delay.start* (see VARIABLES below).  The default
+value is 1.
 +
 The parameter uses the unit of the device command ('SDR', whole minutes);
-values outside the range are rejected.  The same delay is also exposed, in
-seconds, as the read/write variable *ups.delay.start* (see VARIABLES below),
-where a value that is not a whole number of minutes is rounded up when it is
-sent to the device.
+values outside the range are rejected.  The device command is write-only, so
+the value is not read back from the UPS: after a driver restart the variable
+reflects this setting, and a value written with linkman:upsrw[8] is published
+as it was sent (a value that is not a whole number of minutes is rounded up
+when it is sent to the device).
 +
-The 'shutdown.return' and 'shutdown.stayoff' commands do not use this
-setting: they clear the return delay instead (see the INSTANT COMMANDS
-section), so that the load comes back only when mains is (re)applied, or not
-at all.
+The driver shutdown handling does not use this setting: it turns the
+auto-reboot setting on and sets the shutdown delay, and leaves the return delay
+stored on the device as it is (see the note in the INSTANT COMMANDS section).
+
+*shutdown_mode*='continue'|'abort'::
+Set how the driver shutdown handling reacts when the device rejects, or does
+not answer, one of the operations that make up a shutdown, that is switching
+the auto-reboot setting on and scheduling the shutdown itself.  The default
+value is 'continue'.
++
+'continue' (best effort) keeps going, so a device that does not confirm the
+auto-reboot setting is still asked to switch the load off: the shutdown
+happens even when part of it could not be confirmed.  'abort' (fail safe)
+stops at the first failure and leaves the load powered instead, because a
+shutdown that is not known to be able to bring the load back is worse than no
+shutdown.
+
+WARNING: With 'abort', a shutdown the device does not confirm leaves the load
+powered: the computer may already be going down at that point, so an outage
+then ends in a hard power loss rather than in an orderly shutdown.  Use
+'abort' only with a device that answers reliably and a load that must not be
+switched off without a confirmed way back.
 
 INSTANT COMMANDS
 ----------------
@@ -131,6 +150,12 @@ as the 'value' argument of linkman:upscmd[8]:
 The accepted range is 1 through 3600 seconds.  An invalid value makes the
 command fail without sending anything to the UPS.
 
+The driver shutdown handling is available as the 'shutdown.default' instant
+command, which is what linkman:upsdrvctl[8] 'shutdown' runs.  It takes no
+value: before it switches the load off, after the 'offdelay' setting (5
+seconds when it is not set in linkman:ups.conf[5]), it asks the device to
+start the load again once mains is (re)applied - see the note below.
+
 All other instant commands ignore any value passed to them.
 
 NOTE: The device takes the shutdown delay in seconds (its 'SDA' command) and
@@ -139,17 +164,22 @@ again when the restart delay is longer than the shutdown delay.  The two
 reboot commands therefore add one second to the shutdown delay before
 rounding it up to whole minutes, so that the restart always falls behind
 the off, while 'shutdown.return' and 'shutdown.stayoff' clear the restart
-delay, so that the load does not come back on a timer of its own.  The
-driver shutdown handling sends the configured 'startdelay' instead: as the
-device only restarts the load when that delay is longer than the shutdown
-delay, choose a 'startdelay' longer than the 'offdelay' used there (or than
-the historical 5 seconds, when 'offdelay' is not set).
+delay, so that the load does not come back on a timer of its own.
++
+The driver shutdown handling (the 'shutdown.default' instant command, which
+is what linkman:upsdrvctl[8] 'shutdown' runs) turns the auto-reboot setting
+on and sets the shutdown delay, and sends no return delay at all: it does not
+clear a return delay stored on the device either, so a value left behind by an
+earlier command (or written to *ups.delay.start* with linkman:upsrw[8]) still
+applies and the device starts the load again on that timer when it is longer
+than the shutdown delay.  Write 0 to *ups.delay.start* if the load has to
+stay off until mains is (re)applied.
 
-A command that is reported as failed had at least one of the operations it
-performs rejected by the device (or left unanswered), so it may have been
-applied only partially.  The driver logs which operation was rejected; the
-published state (for example *outlet.n.status*) reflects what the device
-actually did, as reported on the next poll.
+A command that is reported as failed met an operation the device rejected (or
+left unanswered).  The driver logs which operation failed and stops there, so
+the rest of the command is not attempted and it may have been applied only
+partially.  The published state (for example *outlet.n.status*) reflects what
+the device actually did, as reported on the next poll.
 
 The following instant commands control a single outlet, where 'n'
 ranges from 1 to the number of outlets reported by the device (see
@@ -175,6 +205,18 @@ value; enabling/disabling the buzzer for good is done through the
 	itself is published, read-only, as *input.transfer.reason*, which is
 	refreshed on every poll cycle.
 
+'reset.watchdog'::
+	Restart the watchdog timer of the device, which is the "kick" a
+	hardware watchdog needs to stay quiet.  The command takes no value: it
+	sends the watchdog setting the driver has, so the timeout and the
+	restart-alarm behaviour are the ones the device last reported or
+	accepted (use *ups.watchdog.timeout* and *ups.watchdog.alarm* to change
+	them, and *ups.watchdog.status* to arm or disarm the watchdog).  It
+	fails when the device never reported its watchdog setting, so that a
+	kick cannot arm a watchdog with assumed values; a watchdog that is
+	disabled is written again with a timeout of 0, which leaves it as it
+	is.
+
 VARIABLES
 ---------
 
@@ -182,12 +224,12 @@ The driver publishes the usual battery, input and output variables, plus
 the following ones:
 +
 Read/write variables that describe a device setting (*outlet.delay.start*,
-*ups.start.auto*, *ups.watchdog.status*, *input.eco.switchable* and
-*ups.beeper.status*) are published, and made settable, only once the device
-has reported the setting: when it does not answer, the variable is absent
-(no value is assumed) and a warning is logged.  A setting that was read
-before keeps its last known value when the device stops answering, again
-with a warning for every failed read.
+*ups.start.auto*, *ups.watchdog.status*, *ups.watchdog.timeout*,
+*ups.watchdog.alarm*, *input.eco.switchable* and *ups.beeper.status*) are
+published, and made settable, only once the device has reported the setting:
+when it does not answer, the variable is absent (no value is assumed) and a
+warning is logged.  A setting that was read before keeps its last known value
+when the device stops answering, again with a warning for every failed read.
 
 *outlet.count*::
 	Total number of controllable outlets.
@@ -228,12 +270,18 @@ with a warning for every failed read.
 	settings above.
 
 *ups.delay.start*::
-	Read/write return delay, in seconds, used by the driver shutdown
-	handling (the 'shutdown.default' instant command and
-	linkman:upsdrvctl[8] 'shutdown').  Values are rounded up to whole
-	minutes when they are sent to the device and, since the corresponding
-	device command is write-only, the variable is not read back from the
-	UPS: after a driver restart it reflects the 'startdelay' setting.
+	Read/write return (restart) delay of the device, in seconds: how long
+	the device leaves the load switched off before it starts it again by
+	itself.  Values are rounded up to whole minutes when they are sent to
+	the device ('SDR') and, since that command is write-only, the variable
+	is not read back from the UPS: after a driver restart it reflects the
+	'startdelay' setting.
++
+The device only starts the load again when this delay is longer than the
+shutdown delay of the command that switched it off, so it has to be chosen
+together with the delay passed to the shutdown command (see the note in the
+INSTANT COMMANDS section).  The driver shutdown handling does not change it,
+while 'shutdown.return' and 'shutdown.stayoff' clear it.
 
 *ups.start.auto*::
 	Read/write auto-reboot setting, either 'yes' or 'no': when it is 'yes'
@@ -257,10 +305,16 @@ linkman:upsrw[8] to restore your preferred value, for example:
 	talking to it and, when contact is lost for longer than the watchdog
 	timeout, it power cycles the load, switching the outputs off and back
 	on.  A timeout of 0 seconds means 'disabled', and setting the variable
-	to 'enabled' arms the watchdog with the timeout last reported by the
-	device, keeping the restart-alarm behaviour the device uses.  Note that
-	the timeout itself is not exposed as a separate variable, because there
-	is no name for it in the NUT naming scheme.
+	to 'enabled' arms the watchdog with the timeout reported by the device
+	(255 seconds, the value the vendor software used, when the device
+	reports no timeout), keeping the restart-alarm behaviour the device
+	uses.  Use *ups.watchdog.timeout* and *ups.watchdog.alarm* to choose
+	those two fields, and the 'reset.watchdog' instant command to only
+	restart the timer.
++
+The device stores the timeout and the restart-alarm flag together rather than
+a status, so the three variables are published from the same setting and a
+change to one of them writes the whole pair to the device.
 +
 WARNING: While the watchdog is armed, a driver that hangs or a serial link
 that breaks is enough to switch the load off and on again, and the load is
@@ -272,6 +326,31 @@ need this protection, disable it with:
 The device reports the timeout and the restart-alarm flag, not a watchdog
 status: 'enabled' and 'disabled' are inferred from a non-zero timeout, which
 has not been verified on hardware.
++
+When the driver exits on purpose, it disarms the watchdog before closing the
+port: a watchdog left armed would power cycle the load as soon as the device
+stops hearing from the driver, turning a driver restart (for example during a
+package upgrade) into an unexpected outage.  This covers the exits the driver
+can handle, that is the signals used to stop it, the 'driver.exit' instant
+command and the end of a data dump.  A watchdog that is already disabled, or
+that the device never reported, is left alone, and a driver that crashes or is
+killed without unwinding does not get there, so the watchdog keeps covering
+that case.
+
+*ups.watchdog.timeout*::
+	Read/write watchdog timeout, in seconds: the time the device waits
+	without hearing from the driver before it power cycles the load (see
+	*ups.watchdog.status* above).  The accepted range is 0 through 255: 0
+	disables the watchdog and a non-zero value enables it, which is the
+	value the 'enabled'/'disabled' status is derived from.
+
+*ups.watchdog.alarm*::
+	Read/write restart-alarm flag, either 'enabled' or 'disabled': it tells
+	the device whether to sound its alarm when the watchdog restarts the
+	load.  The device stores the flag as a number, 1 for 'enabled' and 2
+	for 'disabled', next to the timeout; changing it leaves the timeout
+	alone, so it can be set while the watchdog is disabled.  What exactly
+	triggers that alarm has not been verified on hardware.
 
 *input.transfer.reason*::
 	Read-only reason for the last transfer recorded by the device,

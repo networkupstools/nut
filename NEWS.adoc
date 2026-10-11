@@ -408,6 +408,32 @@ https://github.com/networkupstools/nut/milestone/13
       link is not penalized, and the special value `-1` makes the driver
       start without waiting and pace commands by one second only if one of
       them times out.
+    * The watchdog is disarmed when the driver exits on purpose (a handled
+      signal, the `driver.exit` instant command or the end of a data dump),
+      so that a driver restart - for example during a package upgrade - does
+      not leave an armed watchdog that would power cycle the load.  A
+      watchdog the driver never saw enabled, or one already disabled, is left
+      untouched, and a crash or a SIGKILL does not disarm it.
+    * Added the read/write `ups.watchdog.timeout` and `ups.watchdog.alarm`
+      variables, which expose the two fields the device stores for its
+      watchdog - the timeout in seconds, 0 disabling the watchdog, and the
+      restart-alarm flag - instead of only the derived
+      `ups.watchdog.status`, and the `reset.watchdog` instant command, which
+      sends the watchdog setting the driver has again to restart its timer.
+    * The driver shutdown handling (`shutdown.default`, which
+      `upsdrvctl shutdown` runs) always asks the device to start the load
+      again when mains is (re)applied (the auto-reboot setting is turned on),
+      so that every outlet is powered again after the outage, and the new
+      `shutdown_mode` setting decides whether it stops at the first operation
+      the device rejects or does not answer (`abort`, fail safe) or keeps
+      sending the rest (`continue`, best effort, the default).
+      It also sets no return delay of its own any more, so that it does not
+      schedule a restart on a timer, and the `startdelay` setting now only
+      seeds the `ups.delay.start` variable.
+    * The multi-frame commands (`load.off` and `load.on`, which walk the
+      outlet banks) stop at the first frame the device rejects or does not
+      answer, as the shutdown commands already did, instead of sending the
+      remaining frames.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
