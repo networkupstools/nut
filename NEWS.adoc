@@ -778,6 +778,10 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected operator guidance for communication loss, certificate expiry
+      and device-list reloads, debug output and polling intervals. Documented
+      the scanning thread limit, completed notification lists and linked
+      the SSL configuration directives.
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for

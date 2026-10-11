@@ -301,8 +301,8 @@ when it is (re-)started it scans the currently defined device sections in
 'ups.conf' and the currently defined instances of `nut-driver` service,
 and brings them in sync (adding or removing service instances), and if
 there were changes -- it restarts the corresponding drivers (via service
-instances) as well as the data server which only reads the list of sections
-at its startup. This helper service should be triggered whenever your system
+instances) as well as the data server.
+This helper service should be triggered whenever your system
 (re-)starts the `nut-server` service, so that it runs against an up-to-date
 list of NUT driver processes.
 
