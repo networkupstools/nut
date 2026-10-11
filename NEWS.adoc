@@ -778,6 +778,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented the existing Modbus timeout components and defaults for
+      `generic_modbus` and `adelsystem_cbi`, and corrected the `genericups`
+      driver name in the GE/IMV/Victron cable reference.
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
