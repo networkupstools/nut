@@ -295,6 +295,9 @@ TESTS += nutscan-snmp-test
 nutscan_snmp_test_SOURCES = nutscan-thread-test.c
 nutscan_snmp_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) $(LIBNETSNMP_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=1
 nutscan_snmp_test_LDADD = $(NUTSCAN_TEST_LDADD)
+if WITH_SNMP_STATIC
+nutscan_snmp_test_LDADD += $(LIBNETSNMP_LIBS)
+endif WITH_SNMP_STATIC
 nutscan_snmp_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/scan_snmp.c $(top_builddir)/tools/nut-scanner/nutscan-snmp.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.c $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
 endif WITH_SNMP
 
