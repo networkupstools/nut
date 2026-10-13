@@ -40,7 +40,9 @@ jobs:
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
      #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
      #  => https://github.com/addnab/docker-run-action can help
-    runs-on: ubuntu-latest
+    # Pinned (not ubuntu-latest) so the toolchain and the "current"
+    # aspell-en only change when we bump this deliberately
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout repository
@@ -88,12 +90,16 @@ jobs:
     # and our own docs/config-prereqs.txt
     # NOTE: Currently installing the MAX prerequisite footprint,
     # which for building just the docs may be a bit of an overkill.
+    # The eatmydata wrapper skips fsync() calls of dpkg (unneeded on a
+    # throw-away runner), and recommended packages are not installed
+    # (we list what we need), to speed up this step.
     - name: NUT CI Prerequisite packages (Ubuntu, GCC)
       run: |
         echo "set man-db/auto-update false" | sudo debconf-communicate
         sudo dpkg-reconfigure man-db
         sudo apt update
-        sudo apt install \
+        sudo apt install --no-install-recommends eatmydata
+        sudo eatmydata apt install --no-install-recommends \
             gcc g++ clang \
             ccache time \
             git perl curl \
@@ -104,7 +110,7 @@ jobs:
             libtool-bin \
             python3 gettext python3-pyqt6 pyqt6-dev-tools \
             aspell aspell-en \
-            asciidoc source-highlight python3-pygments dblatex \
+            asciidoc asciidoc-dblatex source-highlight python3-pygments dblatex \
             libgd-dev \
             systemd-dev \
             libsystemd-dev \
@@ -276,9 +282,13 @@ jobs:
   # which rejects some spellings (e.g. British ones) that newer dictionaries
   # accept. Runs in parallel to the tarball build (not delaying it), via
   # "docker run" since GitHub's own actions can not run in such old distros.
+  # The image is pinned by digest (the Trusty archive is frozen, so this
+  # also makes the apt-get step deterministic).
   spellcheck-old-aspell-en:
     name: "Spellcheck with old aspell-en 7.1 (Ubuntu 14.04)"
-    runs-on: ubuntu-latest
+    # Pinned (not ubuntu-latest) so the toolchain and the "current"
+    # aspell-en only change when we bump this deliberately
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout repository
@@ -294,10 +304,11 @@ jobs:
       run: |
         docker run --rm -v "$PWD:/src:ro" \
             -e DEBIAN_FRONTEND=noninteractive \
-            ubuntu:14.04 sh -c '
+            ubuntu:14.04@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30 \
+            sh -c '
                 set -e
                 apt-get update -qq
-                apt-get install -y -qq \
+                apt-get install -y -qq --no-install-recommends \
                     aspell aspell-en \
                     autoconf automake libtool make gcc g++ pkg-config \
                     perl python3 git file >/dev/null
