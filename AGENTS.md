@@ -12,6 +12,8 @@ Before proposing a change, read the parts relevant to it:
 - `docs/developer-guide.txt` for NUT architecture, design and data flow.
 - `.github/pull_request_template.md` for the current contribution checklist.
 - `SECURITY.md` before investigating or reporting a possible vulnerability.
+- `.github/CI.md` before changing GitHub Actions workflows or scripts under
+  `.github/`.
 
 Follow more specific guidance in those files if this summary differs from it.
 
