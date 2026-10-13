@@ -1138,9 +1138,9 @@ do_autogen_get_CONFIGURE_SCRIPT() {
         (
             # Optionally drop the PR-specific last component of the version
             # (e.g. 2.8.5.1466.13 => 2.8.5.1466) which AC_INIT puts into
-            # config.h as PACKAGE_VERSION. With -g3 every object file embeds
-            # all macros it saw, so a version change means a full rebuild
-            # and defeats ccache across pull requests. Only autogen.sh gets
+            # config.h as PACKAGE_VERSION. The ccache direct mode hashes all
+            # included headers, so a version change misses for nearly every
+            # file and defeats ccache across pull requests. Only autogen.sh gets
             # this setting, so `make` still generates nut_version.h (and the
             # UPS_VERSION reported by programs) from actual Git metadata.
             if [ x"${CI_AUTOGEN_STABLE_VERSION-}" = xtrue ] && [ -z "${NUT_VERSION_FORCED-}" ] ; then
