@@ -46,21 +46,25 @@ jobs:
 
     steps:
 
-    # https://github.com/marketplace/actions/substitute-string
+    # Name the artifact by PR number, or by branch/tag name (with characters
+    # that are not valid in artifact names, like "/", replaced by "_").
     # See also examples in https://github.com/dhimmel/dump-actions-context/
-    # Note it warns about "unexpected input(s)" with replacement tokens below,
-    # as they are by design not predefined, as far as actions API is concerned.
-    # They still work for substitutions though.
-    - uses: bluwy/substitute-string-action@v4
-      id: subst-github-ref-name
-      with:
-        _input-text: "${{ github.event.pull_request.number > 0 && format('PR-{0}', github.event.pull_request.number) || github.head_ref || github.ref_name }}"
-        " ": _
-        "/": _
-
+    # Values are passed via env, since a PR branch name is author-controlled.
     - name: Define Artifact Name
       id: set-artifact-name
-      run: echo "artifact_name=NUT-tarballs-${{ steps.subst-github-ref-name.outputs.result }}" >> "$GITHUB_OUTPUT"
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_REF: ${{ github.head_ref }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        if [ -n "${PR_NUMBER}" ] ; then
+            NAME="PR-${PR_NUMBER}"
+        else
+            NAME="${HEAD_REF:-${REF_NAME}}"
+        fi
+        NAME="`printf '%s' "${NAME}" | tr -c 'A-Za-z0-9._+-' '_'`"
+        echo "ref_name=${NAME}" >> "$GITHUB_OUTPUT"
+        echo "artifact_name=NUT-tarballs-${NAME}" >> "$GITHUB_OUTPUT"
 
     - name: Debug PR/branch identification
       env:
@@ -70,7 +74,7 @@ jobs:
         github_ref: ${{ github.ref }}
         github_ref_name: ${{ github.ref_name }}
       run: |
-        echo "steps.subst-github-ref-name.outputs.result='${{ steps.subst-github-ref-name.outputs.result }}'" || true
+        echo "steps.set-artifact-name.outputs.ref_name='${{ steps.set-artifact-name.outputs.ref_name }}'" || true
         echo "github.event.pull_request.number='${github_event_pull_request_number}'" || true
         echo "format('PR-{0}', github.event.pull_request.number)='${PR_ref_short}'" || true
         echo "github.head_ref='${github_head_ref}'" || true
@@ -157,7 +161,7 @@ jobs:
     # We may want another script block (after this cleanup of obsolete data)
     # to iterate clearing the way build by build until there's X MB available
     # (at least 12MB as of Nov 2025).
-    - if: env.GITHUB_REF_TYPE != 'tag' && steps.subst-github-ref-name.outputs.result != 'master'
+    - if: env.GITHUB_REF_TYPE != 'tag' && steps.set-artifact-name.outputs.ref_name != 'master'
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v9
       id: delete_old_artifact_for_pr
