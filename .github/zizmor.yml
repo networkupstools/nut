@@ -22,7 +22,7 @@ rules:
 
   dangerous-triggers:
     ignore:
-      # Uses pull_request_target to comment on PRs and set statuses with
-      # write permissions; the untrusted PR code only runs in its "Worker"
-      # job, with read-only permissions (see comments there).
-      - 01-make-dist.yml
+      # Uses workflow_run to comment on PRs and set statuses with write
+      # permissions for GHA-01 builds of (possibly fork) PRs; it never runs
+      # PR code, and uses details of the build run only as data.
+      - 01-make-dist-report.yml

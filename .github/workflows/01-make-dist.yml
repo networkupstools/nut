@@ -1,14 +1,10 @@
-# Adapted from NUT codeql.yml with inspiration taken from
-# https://javahelps.com/manage-github-artifact-storage-quota
-# regarding uploads of artifacts and clearing the way for them.
+# Build NUT dist and docs tarballs, and upload them as an artifact.
 #
-# This workflow is triggered on pushes to a repository (PRs,
-# branch increments, or tags), weekly, or manually. Its jobs have
-# higher permissions to manage comments, artifacts and statuses
-# (with helper scripts from .github/scripts/), and it calls the
-# separate "Worker" workflow (as a reusable workflow with read-only
-# permissions) for tarball generation touching possibly untrusted
-# code base.
+# This workflow has no write permissions: for PRs it runs on pull_request
+# (not pull_request_target), so PR code (from forks too) builds with a
+# read-only token and in the PR's own cache scope. The PR comment, commit
+# status and artifact clean-up are done by the "GHA-01: Tarballs Report"
+# workflow (01-make-dist-report.yml), triggered by runs of this one.
 #
 # See also:
 #   https://github.com/actions/upload-artifact
@@ -22,204 +18,50 @@ on:
     branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
     tags:
       - v*
-  pull_request_target:
+  pull_request:
     # The branches below must be a subset of the branches above
-    # Note that for PRs this runs the copy of workflow (and of the
-    # .github/scripts/) in the default branch, not from the PR (and
-    # only then gets the write permissions of the jobs below), and
-    # identification/naming of PR source vs. a pushed branch (e.g.
-    # master updated by a PR merge) is tricky.
     branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
   schedule:
     - cron: '15 12 * * 0'
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
-# Each job gets only the permissions it needs (see below)
 permissions: {}
 
 jobs:
-  prepare-dist-tarballs:
-    name: "Prepare making Dist and Docs Tarballs"
+  name-dist-tarballs:
+    name: "Name Dist and Docs Tarballs"
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+    permissions: {}
     outputs:
-      ref_name: ${{ steps.set-artifact-name.outputs.ref_name }}
       artifact_name: ${{ steps.set-artifact-name.outputs.artifact_name }}
 
     steps:
 
     # Name the artifact by PR number, or by branch/tag name (with characters
     # that are not valid in artifact names, like "/", replaced by "_").
-    # See also examples in https://github.com/dhimmel/dump-actions-context/
+    # The report workflow computes the same name to find the artifact.
     # Values are passed via env, since a PR branch name is author-controlled.
     - name: Define Artifact Name
       id: set-artifact-name
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}
-        HEAD_REF: ${{ github.head_ref }}
         REF_NAME: ${{ github.ref_name }}
       run: |
         if [ -n "${PR_NUMBER}" ] ; then
             NAME="PR-${PR_NUMBER}"
         else
-            NAME="${HEAD_REF:-${REF_NAME}}"
+            NAME="${REF_NAME}"
         fi
         NAME="`printf '%s' "${NAME}" | tr -c 'A-Za-z0-9._+-' '_'`"
-        echo "ref_name=${NAME}" >> "$GITHUB_OUTPUT"
         echo "artifact_name=NUT-tarballs-${NAME}" >> "$GITHUB_OUTPUT"
 
-    - name: Debug PR/branch identification
-      env:
-        github_event_pull_request_number: ${{ github.event.pull_request.number }}
-        PR_ref_short: ${{ format('PR-{0}', github.event.pull_request.number) }}
-        github_head_ref: ${{ github.head_ref }}
-        github_ref: ${{ github.ref }}
-        github_ref_name: ${{ github.ref_name }}
-      run: |
-        echo "steps.set-artifact-name.outputs.ref_name='${{ steps.set-artifact-name.outputs.ref_name }}'" || true
-        echo "github.event.pull_request.number='${github_event_pull_request_number}'" || true
-        echo "format('PR-{0}', github.event.pull_request.number)='${PR_ref_short}'" || true
-        echo "github.head_ref='${github_head_ref}'" || true
-        echo "github.ref='${github_ref}'" || true
-        echo "github.ref_name='${github_ref_name}'" || true
-
-    # Get the helper scripts for the steps below. NOTE: This job has write
-    # permissions (also for pull_request_target events), so this MUST keep
-    # checking out the default ref (the trusted workflow's own commit, not
-    # the PR source): do not add a "ref:" here.
-    - name: Checkout GHA-01 helper scripts
-      if: github.event.pull_request.number > 0
-      uses: actions/checkout@v7
-      with:
-        sparse-checkout: .github/scripts
-        persist-credentials: false
-
-    # Remove outdated build comments of AppVeyor CI from the PR (it posts
-    # new ones for the new commits).
-    - name: "GHA-01: Delete old AppVeyor PR comments"
-      if: github.event.pull_request.number > 0
-      continue-on-error: true
-      uses: actions/github-script@v9
-      with:
-        script: |
-          const prComments = require('./.github/scripts/pr-comments.js');
-          await prComments.deletePrCommentsBy({ github, context }, 'AppVeyorBot');
-
-    # One PR comment (found by a hidden marker) is posted here, and
-    # updated with the tarball link or failure details at the end.
-    - name: "GHA-01: Create/Update new GH PR comment for future link"
-      if: github.event.pull_request.number > 0
-      continue-on-error: true
-      uses: actions/github-script@v9
-      env:
-        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-      with:
-        script: |
-          const report = require('./.github/scripts/dist-tarballs-report.js');
-          await report.commentPreparing({ github, context });
-
-  # We do not necessarily trust any code that comes from the PR branch
-  # (nor whatever is produced by scripts and tools running there),
-  # so we run that in the "Worker" workflow with read-only permissions,
-  # called here as a reusable workflow (so as part of this run, without
-  # a job waiting for a separately dispatched run), and only publish a
-  # link to its results in the job below.
   build-dist-tarballs:
     name: "Build"
-    needs: prepare-dist-tarballs
+    needs: name-dist-tarballs
     permissions:
       contents: read
     uses: ./.github/workflows/01-make-dist-worker.yml
     with:
       ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      artifact_name: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
-
-  report-dist-tarballs:
-    name: "Report Dist and Docs Tarballs, see workflow page for links"
-    needs: [ prepare-dist-tarballs, build-dist-tarballs ]
-    # Also report when the worker failed (e.g. only some checks failed,
-    # and tarballs were still built; or with details of the failure)
-    if: ${{ !cancelled() && needs.prepare-dist-tarballs.result == 'success' }}
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
-      pull-requests: write
-      statuses: write
-
-    steps:
-
-    # Get the helper scripts for the steps below. NOTE: This job has write
-    # permissions (also for pull_request_target events), so this MUST keep
-    # checking out the default ref (the trusted workflow's own commit, not
-    # the PR source): do not add a "ref:" here.
-    - name: Checkout GHA-01 helper scripts
-      uses: actions/checkout@v7
-      with:
-        sparse-checkout: .github/scripts
-        persist-credentials: false
-
-    # The artifact was already uploaded by the "Worker" job of this run.
-    # We need to find the artifact URL and report it below.
-    - name: Get Artifact URL
-      id: get_artifact_url
-      uses: actions/github-script@v9
-      env:
-        ARTIFACT_NAME: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
-      with:
-        script: |
-          const report = require('./.github/scripts/dist-tarballs-report.js');
-          await report.findArtifact({ github, context, core });
-
-    # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
-    # This is the part which needs "actions: write" permission.
-    # Note that deleteOldArtifacts() wipes all artifacts with this name,
-    # except the one from this run!
-    # We may want another script block (after this cleanup of obsolete data)
-    # to iterate clearing the way build by build until there's X MB available
-    # (at least 12MB as of Nov 2025).
-    - if: ${{ steps.get_artifact_url.outcome == 'success' && env.GITHUB_REF_TYPE != 'tag' && needs.prepare-dist-tarballs.outputs.ref_name != 'master' }}
-      name: Delete Old Artifacts for this feature branch/PR
-      id: delete_old_artifact_for_pr
-      continue-on-error: true
-      uses: actions/github-script@v9
-      env:
-        ARTIFACT_NAME: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
-        ARTIFACT_ID: ${{ steps.get_artifact_url.outputs.artifact_id }}
-      with:
-        script: |
-          const report = require('./.github/scripts/dist-tarballs-report.js');
-          await report.deleteOldArtifacts({ github, context });
-
-    - name: "GHA-01: Create/update new GH PR comment with link"
-      if: ${{ !cancelled() && github.event.pull_request.number > 0 }}
-      continue-on-error: true
-      uses: actions/github-script@v9
-      env:
-        ARTIFACT_NAME: "${{ needs.prepare-dist-tarballs.outputs.artifact_name }}.zip"
-        ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
-        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        WORKER_RESULT: ${{ needs.build-dist-tarballs.result }}
-      with:
-        script: |
-          const report = require('./.github/scripts/dist-tarballs-report.js');
-          await report.commentResult({ github, context });
-
-    # Report the link in this run's job summary, and as a commit status
-    # (its "Details" link in the PR checks list opens the artifact).
-    - name: "GHA-01: Report tarball link in summary and commit status"
-      if: always()
-      continue-on-error: true
-      uses: actions/github-script@v9
-      env:
-        ARTIFACT_NAME: "${{ needs.prepare-dist-tarballs.outputs.artifact_name }}.zip"
-        ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
-        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        WORKER_RESULT: ${{ needs.build-dist-tarballs.result }}
-      with:
-        script: |
-          const report = require('./.github/scripts/dist-tarballs-report.js');
-          await report.reportSummaryAndStatus({ github, context, core });
+      artifact_name: ${{ needs.name-dist-tarballs.outputs.artifact_name }}
