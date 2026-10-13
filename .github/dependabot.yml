@@ -10,3 +10,8 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    # Only propose action versions published at least a week ago, so that a
+    # compromised release is more likely to be found and pulled before we
+    # pick it up (actions are referenced by tags, see .github/zizmor.yml)
+    cooldown:
+      default-days: 7
