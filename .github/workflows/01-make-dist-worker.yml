@@ -126,10 +126,14 @@ jobs:
         || exit
         date > .timestamp-init
 
+    # The ccache is only restored here, and saved (see below) only by
+    # trusted runs for the master branch: builds of PR code (which run in
+    # the master branch cache scope under pull_request_target) must not
+    # be able to plant a poisoned cache for later master branch builds.
     - name: Prepare ccache
       # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
       id: cache-ccache
-      uses: actions/cache@v6
+      uses: actions/cache/restore@v6
       env:
         compiler: 'CC=gcc CXX=g++'
         cache-name: cache-ccache-${{ env.compiler }}
@@ -203,6 +207,17 @@ jobs:
 
     - name: CCache stats after distcheck
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: Save ccache (master branch pushes and scheduled runs only)
+      if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@v6
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        # Same key as computed when restoring (its .timestamp-init is gone)
+        key: ${{ steps.cache-ccache.outputs.cache-primary-key }}
 
     - name: NUT CI Build to package complex docs (not part of dist tarball)
       run: |
