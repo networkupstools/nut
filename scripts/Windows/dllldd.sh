@@ -81,6 +81,16 @@ discover_COMPILER_PATHS() {
 }
 discover_COMPILER_PATHS
 
+# Only scan initialized data sections for DLL names (as older binutils did
+# by default), not the whole file: with debug info (-g3) most of our binary
+# size is debug sections, so a full scan produced ~200 times more text (all
+# piped through filters below), with the same DLL names found.
+# Fall back to a whole-file scan if this `strings` lacks the option.
+STRINGS_DATA_ONLY=""
+if (strings --help 2>&1 | ${GREP} -- '--data' >/dev/null) ; then
+	STRINGS_DATA_ONLY="-d"
+fi
+
 filter_away_system_DLLs() {
 	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|dnsapi|dwrite|iphlpapi|kernelbase|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
 }
@@ -154,7 +164,10 @@ dllldd_with_tools() (
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
+			# Private headers (-p) hold the PE import table ("DLL Name:")
+			# and ELF dynamic section ("NEEDED"); -x would also dump the
+			# (large, for debug builds) symbol tables and relocations.
+			ODOUT="`$OD -p \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
@@ -216,7 +229,7 @@ dllldd_with_tools() (
 )
 
 dllldd_with_strings() (
-	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
+	strings ${STRINGS_DATA_ONLY} "$@" | tr ' ' '\n' | tr '&' '\n' \
 	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
 	| filter_away_system_DLLs \
 	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
