@@ -8,10 +8,17 @@ rules:
   unpinned-uses:
     config:
       policies:
-        # Actions are referenced by tags (e.g. "@v7") in this repository,
-        # and updated by Dependabot. Pinning them to commit SHAs would be
-        # a separate decision for all workflows.
-        "*": ref-pin
+        # GitHub's own actions (actions/checkout, github/codeql-action etc.)
+        # may be referenced by tags (e.g. "@v7"). Note that such major
+        # version tags are moved to new releases by design, so this means
+        # we trust GitHub's own organizations (which run the workflows
+        # anyway), rather than that these refs can never change.
+        "actions/*": ref-pin
+        "github/*": ref-pin
+        # All other actions must be pinned to a full commit SHA, with the
+        # version in a comment (e.g. "@<sha> # v1.2.3"), as their tags (or
+        # branches) can be moved to other code. Dependabot updates both.
+        "*": hash-pin
 
   dangerous-triggers:
     ignore:
