@@ -129,7 +129,9 @@ jobs:
     # The ccache is restored here, and saved (see below) only by master
     # branch pushes and scheduled runs. PR builds run on pull_request, in
     # their own cache scope, so they can not plant a poisoned cache for
-    # later master branch builds.
+    # later master branch builds. Note that a manual (workflow_dispatch)
+    # run uses the cache scope of the branch it is started on: do not
+    # start it on master with an untrusted "ref" input.
     - name: Prepare ccache
       # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
       id: cache-ccache

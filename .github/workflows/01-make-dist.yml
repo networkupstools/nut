@@ -41,7 +41,7 @@ jobs:
     # Name the artifact by PR number, or by branch/tag name (with characters
     # that are not valid in artifact names, like "/", replaced by "_").
     # The report workflow computes the same name to find the artifact.
-    # Values are passed via env, since a PR branch name is author-controlled.
+    # Values are passed via env, not expanded into the script.
     - name: Define Artifact Name
       id: set-artifact-name
       env:

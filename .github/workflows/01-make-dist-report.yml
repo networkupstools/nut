@@ -1,7 +1,8 @@
 # Report results of "GHA-01: Tarballs" (01-make-dist.yml) runs: delete old
 # AppVeyor comments and post a "Preparing" PR comment when a run starts,
 # and when it completes, update that comment with the tarballs link, set
-# a commit status, and delete older artifacts of the same PR or branch.
+# a commit status, and delete older artifacts of the same PR or feature
+# branch (not of master or tags).
 #
 # Triggered by workflow_run, so it always runs this workflow (and the
 # .github/scripts/) from the default branch, with the write permissions
