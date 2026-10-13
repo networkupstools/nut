@@ -92,7 +92,7 @@ if (strings --help 2>&1 | ${GREP} -- '--data' >/dev/null) ; then
 fi
 
 filter_away_system_DLLs() {
-	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|dnsapi|dwrite|iphlpapi|kernelbase|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
+	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|combase|dnsapi|dwrite|hid|iphlpapi|kernelbase|mswsock|setupapi|shfolder|shlwapi|winmm|wship6|xmllite|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
 }
 
 first_file_named() {
@@ -232,7 +232,7 @@ dllldd_with_strings() (
 	strings ${STRINGS_DATA_ONLY} "$@" | tr ' ' '\n' | tr '&' '\n' \
 	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
 	| filter_away_system_DLLs \
-	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
+	| ${EGREP} -vi '^(.*[/\\])?(lib)*%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
 		# Skip out if we already reported this file
 		# (The for/case loop below is surprisingly expensive on MSYS2)
