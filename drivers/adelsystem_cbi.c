@@ -76,7 +76,7 @@ modbus_t *modbus_new(const char *port);
 int modbus_reconnect(void);
 
 /* modbus register read function */
-int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data);
+int register_read(modbus_t *mb, int addr, regtype_t type, uint16_t *data);
 
 /* modbus register write function */
 int register_write(modbus_t *mb, int addr, regtype_t type, void *data);
@@ -643,7 +643,7 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 }
 
 /* Read a modbus register */
-int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data)
+int register_read(modbus_t *mb, int addr, regtype_t type, uint16_t *data)
 {
 	int rval = -1;
 	uint8_t bit_value = 0;
@@ -658,19 +658,19 @@ int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data)
 	switch (type) {
 		case COIL:
 			rval = modbus_read_bits(mb, addr, 1, &bit_value);
-			*data = (unsigned int)(bit_value & mask8);
+			*data = (uint16_t)(bit_value & mask8);
 			break;
 		case INPUT_B:
 			rval = modbus_read_input_bits(mb, addr, 1, &bit_value);
-			*data = (unsigned int)(bit_value & mask8);
+			*data = (uint16_t)(bit_value & mask8);
 			break;
 		case INPUT_R:
 			rval = modbus_read_input_registers(mb, addr, 1, &register_value);
-			*data = (unsigned int)(register_value & mask16);
+			*data = (uint16_t)(register_value & mask16);
 			break;
 		case HOLDING:
 			rval = modbus_read_registers(mb, addr, 1, &register_value);
-			*data = (unsigned int)(register_value & mask16);
+			*data = (uint16_t)(register_value & mask16);
 			break;
 #include "nut-pragmas-covered-switch-default.h"
 		/* All enum cases defined as of the time of coding
@@ -702,7 +702,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, unsigned int *data)
 		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
-		(unsigned int)addr, type, *data);
+		(unsigned int)addr, type, (unsigned int)*data);
 	return rval;
 }
 
@@ -849,7 +849,7 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 	int n;
 	int rval;						/* return value */
 	static char *ptr = NULL;		/* temporary pointer */
-	unsigned int reg_val;					/* register value */
+	uint16_t reg_val;					/* register value */
 #if READALL_REGS == 0
 	unsigned int num;						/* register number */
 	regtype_t rtype;				/* register type */
@@ -870,11 +870,11 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		return rval;
 	}
 	upsdebugx(3,
-		"get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %d",
+		"get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %u",
 		num,
 		addr,
 		rtype,
-		reg_val
+		(unsigned int)reg_val
 	);
 #endif
 	/* process register data */
@@ -932,14 +932,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				size_t	reg_val_sz;
 
 				state->reg.val.ui16 = reg_val;
-				n = snprintf(NULL, 0, "%u", reg_val);
+				n = snprintf(NULL, 0, "%u", (unsigned int)reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
 				reg_val_sz = sizeof(char) * (n + 1);
 				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", (unsigned int)reg_val);
 				state->reg.strval = reg_val_s;
 			} else {
 				state->reg.val.ui16 = 0;
@@ -1169,14 +1169,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 				size_t	reg_val_sz;
 
 				state->reg.val.ui16 = reg_val;
-				n = snprintf(NULL, 0, "%u", reg_val);
+				n = snprintf(NULL, 0, "%u", (unsigned int)reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
 				reg_val_sz = sizeof(char) * (n + 1);
 				reg_val_s = (char *)xmalloc(reg_val_sz);
 				ptr = reg_val_s;
-				snprintf(reg_val_s, reg_val_sz, "%u", reg_val);
+				snprintf(reg_val_s, reg_val_sz, "%u", (unsigned int)reg_val);
 				state->reg.strval = reg_val_s;
 			}
 			break;
