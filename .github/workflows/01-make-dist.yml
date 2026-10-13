@@ -84,6 +84,24 @@ jobs:
         echo "github.ref='${github_ref}'" || true
         echo "github.ref_name='${github_ref_name}'" || true
 
+    # Remove outdated build comments of AppVeyor CI from the PR (it posts
+    # new ones for the new commits). Formerly done by the "GHA-00: Pre-clean"
+    # workflow with maheshrayas/action-pr-comment-delete.
+    - name: "GHA-01: Delete old AppVeyor PR comments"
+      if: github.event.pull_request.number > 0
+      continue-on-error: true
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const comments = await github.paginate(github.rest.issues.listComments,
+            { owner, repo, issue_number, per_page: 100 });
+          for (const c of comments.filter(c => c.user && c.user.login === 'AppVeyorBot')) {
+            await github.rest.issues.deleteComment({ owner, repo, comment_id: c.id });
+            console.log(`Deleted comment ${c.id}`);
+          }
+
     # One PR comment (found by a hidden marker) is posted here, and updated
     # with the tarball link or failure details at the end. Comments posted
     # earlier by thollander/actions-comment-pull-request are taken over.
