@@ -1,6 +1,7 @@
 # Separated from 01-make-dist.yml to touch untrusted sources
 # in a separate job without particular permissions to anything.
-# Triggered by a step in that job.
+# Called from that workflow as a reusable workflow (workflow_call),
+# or can be started manually (workflow_dispatch) for any ref.
 #
 # See also:
 #   https://github.com/actions/upload-artifact

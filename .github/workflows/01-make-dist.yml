@@ -4,9 +4,10 @@
 #
 # This workflow is triggered on pushes to a repository (PRs,
 # branch increments, or tags). It has higher permissions to
-# perform management of comments and checks, and launches a
-# separate "Worker" workflow for tarball generation touching
-# possibly untrusted code base.
+# perform management of comments and statuses, and calls the
+# separate "Worker" workflow (as a reusable workflow with read-only
+# permissions) for tarball generation touching possibly untrusted
+# code base.
 #
 # See also:
 #   https://github.com/actions/upload-artifact
@@ -33,16 +34,18 @@ on:
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
-permissions:
-  statuses: write
-  actions: write
-  issues: write
-  pull-requests: write
+# Each job gets only the permissions it needs (see below)
+permissions: {}
 
 jobs:
-  arrange-dist-tarballs:
-    name: "Arrange making Dist and Docs Tarballs, see workflow page for links"
+  prepare-dist-tarballs:
+    name: "Prepare making Dist and Docs Tarballs"
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    outputs:
+      ref_name: ${{ steps.set-artifact-name.outputs.ref_name }}
+      artifact_name: ${{ steps.set-artifact-name.outputs.artifact_name }}
 
     steps:
 
@@ -111,48 +114,58 @@ jobs:
             console.log(`Created comment ${res.data.id}`);
           }
 
-    # We do not necessarily trust any code that comes from the PR branch
-    # (nor whatever is produced by scripts and tools running there),
-    # so we run that in a separate sandbox and just publish a link to
-    # the results later.
-    - name: Launch Build Worker
-      id: launch_worker
-      uses: benc-uk/workflow-dispatch@v1
-      with:
-        workflow: "GHA-01: Tarballs Build Worker"
-        token: ${{ secrets.GITHUB_TOKEN }}
-        ref: ${{ github.event.pull_request.number > 0 && github.event.pull_request.base.ref || github.base_ref || github.head_ref || github.ref_name }}
-        inputs: '{ "ref": "${{ github.event.pull_request.number > 0 && github.event.pull_request.head.sha || github.sha }}", "artifact_name": "${{ steps.set-artifact-name.outputs.artifact_name }}" }'
-        wait-timeout-seconds: 3600
-        wait-for-completion: true
-        sync-status: true
+  # We do not necessarily trust any code that comes from the PR branch
+  # (nor whatever is produced by scripts and tools running there),
+  # so we run that in the "Worker" workflow with read-only permissions,
+  # called here as a reusable workflow (so as part of this run, without
+  # a job waiting for a separately dispatched run), and only publish a
+  # link to its results in the job below.
+  build-dist-tarballs:
+    name: "Build"
+    needs: prepare-dist-tarballs
+    permissions:
+      contents: read
+    uses: ./.github/workflows/01-make-dist-worker.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      artifact_name: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
 
-    # The artifact was already uploaded by the "Worker" job.
+  report-dist-tarballs:
+    name: "Report Dist and Docs Tarballs, see workflow page for links"
+    needs: [ prepare-dist-tarballs, build-dist-tarballs ]
+    # Also report when the worker failed (e.g. only some checks failed,
+    # and tarballs were still built; or with details of the failure)
+    if: ${{ !cancelled() && needs.prepare-dist-tarballs.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: write
+      statuses: write
+
+    steps:
+
+    # The artifact was already uploaded by the "Worker" job of this run.
     # We need to find the artifact URL and report it below.
     - name: Get Artifact URL
       id: get_artifact_url
       uses: actions/github-script@v9
+      env:
+        ARTIFACT_NAME: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
       with:
           script: |
-              const res = await github.rest.actions.listArtifactsForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-              })
-              const artifactName = '${{ steps.set-artifact-name.outputs.artifact_name }}';
-              // Find the most recent artifact with this name
-              const artifacts = res.data.artifacts
-                .filter(a => a.name === artifactName)
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-              if (artifacts.length > 0) {
-                const artifact = artifacts[0];
-                var workflowRunId = artifact.workflow_run_id || ${{ steps.launch_worker.outputs.runId }};
-                core.setOutput('artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
-                core.setOutput('real_artifact_url', `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${workflowRunId}/artifacts/${artifact.id}`);
+              const { owner, repo } = context.repo;
+              const res = await github.rest.actions.listWorkflowRunArtifacts({
+                owner, repo, run_id: context.runId, name: process.env.ARTIFACT_NAME,
+              });
+              if (res.data.artifacts.length > 0) {
+                const artifact = res.data.artifacts[0];
+                const url = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}/artifacts/${artifact.id}`;
+                core.setOutput('artifact_url', url);
+                core.setOutput('real_artifact_url', url);
                 core.setOutput('artifact_id', `${artifact.id}`);
-                console.log(`Detected newest artifact ${artifact.id} from workflow run ${workflowRunId}`);
+                console.log(`Detected artifact ${artifact.id} from this workflow run ${context.runId}`);
               } else {
-                core.setFailed(`Artifact ${artifactName} not found`);
+                core.setFailed(`Artifact ${process.env.ARTIFACT_NAME} not found in this workflow run`);
               }
 
     # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
@@ -161,11 +174,14 @@ jobs:
     # We may want another script block (after this cleanup of obsolete data)
     # to iterate clearing the way build by build until there's X MB available
     # (at least 12MB as of Nov 2025).
-    - if: env.GITHUB_REF_TYPE != 'tag' && steps.set-artifact-name.outputs.ref_name != 'master'
+    - if: ${{ steps.get_artifact_url.outcome == 'success' && env.GITHUB_REF_TYPE != 'tag' && needs.prepare-dist-tarballs.outputs.ref_name != 'master' }}
       name: Delete Old Artifacts for this feature branch/PR
       uses: actions/github-script@v9
       id: delete_old_artifact_for_pr
       continue-on-error: true
+      env:
+        ARTIFACT_NAME: ${{ needs.prepare-dist-tarballs.outputs.artifact_name }}
+        ARTIFACT_ID: ${{ steps.get_artifact_url.outputs.artifact_id }}
       with:
         script: |
           const res = await github.rest.actions.listArtifactsForRepo({
@@ -173,12 +189,10 @@ jobs:
             repo: context.repo.repo,
           })
 
-          const artifact_id = '${{ steps.get_artifact_url.outputs.artifact_id }}';
-
           res.data.artifacts
-            .filter(({ name }) => name === '${{ steps.set-artifact-name.outputs.artifact_name }}')
+            .filter(({ name }) => name === process.env.ARTIFACT_NAME)
             .forEach(({ id }) => {
-              if (id == artifact_id) return;
+              if (`${id}` === process.env.ARTIFACT_ID) return;
               console.log(`Deleting artifact ${id}`);
               github.rest.actions.deleteArtifact({
                 owner: context.repo.owner,
@@ -192,26 +206,22 @@ jobs:
       continue-on-error: true
       uses: actions/github-script@v9
       env:
-        ARTIFACT_NAME: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        ARTIFACT_NAME: "${{ needs.prepare-dist-tarballs.outputs.artifact_name }}.zip"
         ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
         COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        WORKER_OUTCOME: ${{ steps.launch_worker.outcome }}
-        WORKER_RUN_ID: ${{ steps.launch_worker.outputs.runId }}
+        WORKER_RESULT: ${{ needs.build-dist-tarballs.result }}
       with:
         script: |
           const e = process.env;
-          const server = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
-          const runUrl = e.WORKER_RUN_ID
-            ? `${server}/actions/runs/${e.WORKER_RUN_ID}`
-            : `${server}/actions/runs/${context.runId}`;
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
           let body;
           if (e.ARTIFACT_URL) {
             body = `A ZIP file with standard source tarball and another tarball with pre-built docs for commit ${e.COMMIT_REF} is temporarily available: [${e.ARTIFACT_NAME}](${e.ARTIFACT_URL}).`;
-            if (e.WORKER_OUTCOME !== 'success') {
-              body += `\n\n:warning: Some checks in the [tarball build worker run](${runUrl}) failed.`;
+            if (e.WORKER_RESULT !== 'success') {
+              body += `\n\n:warning: Some checks in the [tarball build workflow run](${runUrl}) failed.`;
             }
           } else {
-            body = `:x: Could not prepare the tarballs for commit ${e.COMMIT_REF}, see the [tarball build worker run](${runUrl}).`;
+            body = `:x: Could not prepare the tarballs for commit ${e.COMMIT_REF}, see the [tarball build workflow run](${runUrl}).`;
           }
           const marker = '<!-- GHA-01:tarball-url -->';
           const legacyMarker = '<!-- thollander/actions-comment-pull-request "tarball-url" -->';
@@ -239,25 +249,21 @@ jobs:
       continue-on-error: true
       uses: actions/github-script@v9
       env:
-        ARTIFACT_NAME: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        ARTIFACT_NAME: "${{ needs.prepare-dist-tarballs.outputs.artifact_name }}.zip"
         ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
         COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        WORKER_OUTCOME: ${{ steps.launch_worker.outcome }}
-        WORKER_RUN_ID: ${{ steps.launch_worker.outputs.runId }}
+        WORKER_RESULT: ${{ needs.build-dist-tarballs.result }}
       with:
         script: |
           const e = process.env;
-          const server = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
-          const runUrl = e.WORKER_RUN_ID
-            ? `${server}/actions/runs/${e.WORKER_RUN_ID}`
-            : `${server}/actions/runs/${context.runId}`;
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
           await core.summary
             .addHeading('Dist and Docs tarballs', 3)
             .addTable([
               [{ data: 'Item', header: true }, { data: 'Value', header: true }],
               ['Commit', e.COMMIT_REF],
               ['Tarballs', e.ARTIFACT_URL ? `<a href="${e.ARTIFACT_URL}">${e.ARTIFACT_NAME}</a>` : 'not available'],
-              ['Worker run', `<a href="${runUrl}">${e.WORKER_OUTCOME || 'not started'}</a>`],
+              ['Build worker', e.WORKER_RESULT || 'not started'],
             ])
             .write();
           await github.rest.repos.createCommitStatus({
@@ -269,5 +275,5 @@ jobs:
             target_url: e.ARTIFACT_URL || runUrl,
             description: e.ARTIFACT_URL
               ? `Dist and Docs tarballs for ${e.COMMIT_REF.substring(0, 9)}`
-              : `No tarballs for ${e.COMMIT_REF.substring(0, 9)}, see the worker run`,
+              : `No tarballs for ${e.COMMIT_REF.substring(0, 9)}, see the workflow run`,
           });
