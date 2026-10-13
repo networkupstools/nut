@@ -29,6 +29,8 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
+        # Later steps do not use git credentials, so do not keep them
+        persist-credentials: false
     - name: Set up Python 3.13
       uses: actions/setup-python@v7
       with:
