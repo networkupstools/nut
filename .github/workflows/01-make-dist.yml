@@ -3,8 +3,9 @@
 # regarding uploads of artifacts and clearing the way for them.
 #
 # This workflow is triggered on pushes to a repository (PRs,
-# branch increments, or tags). It has higher permissions to
-# perform management of comments and statuses, and calls the
+# branch increments, or tags), weekly, or manually. Its jobs have
+# higher permissions to manage comments, artifacts and statuses
+# (with helper scripts from .github/scripts/), and it calls the
 # separate "Worker" workflow (as a reusable workflow with read-only
 # permissions) for tarball generation touching possibly untrusted
 # code base.
@@ -23,11 +24,11 @@ on:
       - v*
   pull_request_target:
     # The branches below must be a subset of the branches above
-    # Note that for PRs this runs the copy of workflow in the
-    # target branch (and only then gets some of the permissions
-    # listed below), and identification/naming of PR source vs.
-    # a pushed branch (e.g. master updated by a PR merge) is
-    # tricky.
+    # Note that for PRs this runs the copy of workflow (and of the
+    # .github/scripts/) in the default branch, not from the PR (and
+    # only then gets the write permissions of the jobs below), and
+    # identification/naming of PR source vs. a pushed branch (e.g.
+    # master updated by a PR merge) is tricky.
     branches: [ "master", "FTY", "fightwarn", "FTY-obs" ]
   schedule:
     - cron: '15 12 * * 0'
@@ -107,6 +108,8 @@ jobs:
           const prComments = require('./.github/scripts/pr-comments.js');
           await prComments.deletePrCommentsBy({ github, context }, 'AppVeyorBot');
 
+    # One PR comment (found by a hidden marker) is posted here, and
+    # updated with the tarball link or failure details at the end.
     - name: "GHA-01: Create/Update new GH PR comment for future link"
       if: github.event.pull_request.number > 0
       continue-on-error: true
@@ -173,7 +176,8 @@ jobs:
 
     # Inspired by https://javahelps.com/manage-github-artifact-storage-quota
     # This is the part which needs "actions: write" permission.
-    # Note that the code below wipes everything matched by the filter!
+    # Note that deleteOldArtifacts() wipes all artifacts with this name,
+    # except the one from this run!
     # We may want another script block (after this cleanup of obsolete data)
     # to iterate clearing the way build by build until there's X MB available
     # (at least 12MB as of Nov 2025).
