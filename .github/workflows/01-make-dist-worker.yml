@@ -97,9 +97,9 @@ jobs:
       run: |
         echo "set man-db/auto-update false" | sudo debconf-communicate
         sudo dpkg-reconfigure man-db
-        sudo apt update
-        sudo apt install --no-install-recommends eatmydata
-        sudo eatmydata apt install --no-install-recommends \
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends eatmydata
+        sudo eatmydata apt-get install -y --no-install-recommends \
             gcc g++ clang \
             ccache time \
             git perl curl \
