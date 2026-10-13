@@ -28,7 +28,13 @@ platform: x64
 # https://www.appveyor.com/docs/build-cache/
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
-  APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
+  # Store cache entries without (re-)compression: the data is mostly already
+  # compressed (ccache objects, pacman *.zst packages), and single-threaded
+  # LZMA at -mx=6 took 1-2 minutes per run for the ccache entry alone.
+  # The cache limit for PR builds is 1GB total across all entries, so
+  # ccache max_size is capped below (see install steps) to leave a margin
+  # for the other entries (pacman packages ~100MB, nut-win-deps, nut-ci):
+  APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -mx=0
   CCACHE_DIR: /home/appveyor/.ccache
   DO_CLEAN_NUTCI_CACHE: no
   DO_USE_NUTCI_CACHE: yes
@@ -103,7 +109,7 @@ install:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true ; ccache -o max_size=750M || true '
 
 
 # NOTE: The script aims to configure for minimal build results, e.g.
