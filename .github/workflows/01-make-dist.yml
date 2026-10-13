@@ -34,7 +34,7 @@ on:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
 permissions:
-  checks: write
+  statuses: write
   actions: write
   issues: write
   pull-requests: write
@@ -77,18 +77,35 @@ jobs:
         echo "github.ref='${github_ref}'" || true
         echo "github.ref_name='${github_ref_name}'" || true
 
+    # One PR comment (found by a hidden marker) is posted here, and updated
+    # with the tarball link or failure details at the end. Comments posted
+    # earlier by thollander/actions-comment-pull-request are taken over.
+    # Values are passed via env, not expanded into the script code.
     - name: "GHA-01: Create/Update new GH PR comment for future link"
       if: github.event.pull_request.number > 0
       continue-on-error: true
+      uses: actions/github-script@v9
       env:
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: thollander/actions-comment-pull-request@v3
+        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
       with:
-        message: |
-            Preparing a ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} ...
-        comment-tag: tarball-url
-        github-token: ${{ env.GITHUB_TOKEN }}
+        script: |
+          const body = `Preparing a ZIP file with standard source tarball and another tarball with pre-built docs for commit ${process.env.COMMIT_REF} ...`;
+          const marker = '<!-- GHA-01:tarball-url -->';
+          const legacyMarker = '<!-- thollander/actions-comment-pull-request "tarball-url" -->';
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const fullBody = `${body}\n\n${marker}`;
+          const comments = await github.paginate(github.rest.issues.listComments,
+            { owner, repo, issue_number, per_page: 100 });
+          const old = comments.find(c => c.user && c.user.login === 'github-actions[bot]'
+            && (c.body.includes(marker) || c.body.includes(legacyMarker)));
+          if (old) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: old.id, body: fullBody });
+            console.log(`Updated comment ${old.id}`);
+          } else {
+            const res = await github.rest.issues.createComment({ owner, repo, issue_number, body: fullBody });
+            console.log(`Created comment ${res.data.id}`);
+          }
 
     # We do not necessarily trust any code that comes from the PR branch
     # (nor whatever is produced by scripts and tools running there),
@@ -167,64 +184,86 @@ jobs:
             })
 
     - name: "GHA-01: Create/update new GH PR comment with link"
-      if: github.event.pull_request.number > 0
+      if: ${{ !cancelled() && github.event.pull_request.number > 0 }}
       continue-on-error: true
+      uses: actions/github-script@v9
       env:
-        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
-        artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: thollander/actions-comment-pull-request@v3
+        ARTIFACT_NAME: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
+        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        WORKER_OUTCOME: ${{ steps.launch_worker.outcome }}
+        WORKER_RUN_ID: ${{ steps.launch_worker.outputs.runId }}
       with:
-        message: |
-            A ZIP file with standard source tarball and another tarball with pre-built docs for commit ${{ env.ref }} is temporarily available: [${{ env.artifact_name }}](${{ env.artifact_url }}).
-        comment-tag: tarball-url
-        github-token: ${{ env.GITHUB_TOKEN }}
+        script: |
+          const e = process.env;
+          const server = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+          const runUrl = e.WORKER_RUN_ID
+            ? `${server}/actions/runs/${e.WORKER_RUN_ID}`
+            : `${server}/actions/runs/${context.runId}`;
+          let body;
+          if (e.ARTIFACT_URL) {
+            body = `A ZIP file with standard source tarball and another tarball with pre-built docs for commit ${e.COMMIT_REF} is temporarily available: [${e.ARTIFACT_NAME}](${e.ARTIFACT_URL}).`;
+            if (e.WORKER_OUTCOME !== 'success') {
+              body += `\n\n:warning: Some checks in the [tarball build worker run](${runUrl}) failed.`;
+            }
+          } else {
+            body = `:x: Could not prepare the tarballs for commit ${e.COMMIT_REF}, see the [tarball build worker run](${runUrl}).`;
+          }
+          const marker = '<!-- GHA-01:tarball-url -->';
+          const legacyMarker = '<!-- thollander/actions-comment-pull-request "tarball-url" -->';
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const fullBody = `${body}\n\n${marker}`;
+          const comments = await github.paginate(github.rest.issues.listComments,
+            { owner, repo, issue_number, per_page: 100 });
+          const old = comments.find(c => c.user && c.user.login === 'github-actions[bot]'
+            && (c.body.includes(marker) || c.body.includes(legacyMarker)));
+          if (old) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: old.id, body: fullBody });
+            console.log(`Updated comment ${old.id}`);
+          } else {
+            const res = await github.rest.issues.createComment({ owner, repo, issue_number, body: fullBody });
+            console.log(`Created comment ${res.data.id}`);
+          }
 
-    # NOTE: Despite the docs examples, due to GH API changes in Mar 2025
-    # this action can no longer update an existing check, only create a
-    # new one. Also calls authenticated with "github-actions" GH App may
-    # not set "details_url" freely...
-    # https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28
-    # FIXME: Construct the URL to commit ID (may be on PR source repo?)
-    # FIXME: The details_url seems to be ignored, and a click leads not to
-    #  the artifact download right away, but rather to the build page of
-    #  the workflow (which then has a message and link to the ZIP file).
-    # FIXME: The resulting Checks entry tends to use a random prefix
-    #  (e.g. "GHA-05: CodeQL / URL for ...") and not necessarily the
-    #  same as this workflow name ("GHA-01: Tarballs / URL for ...")
-    #  There gotta be a parameter to set it in the JSON below, right?
-    #  Maybe a pointer to the workflow/run ID?..
-    - name: "GHA-01: Create new GH Check report - shell/cURL"
+    # Report the link in this run's job summary, and as a commit status:
+    # unlike check runs created with GITHUB_TOKEN (whose "details_url" is
+    # ignored), a status "target_url" is honored, so "Details" in the PR
+    # checks list leads to the artifact download right away.
+    - name: "GHA-01: Report tarball link in summary and commit status"
       if: always()
       continue-on-error: true
+      uses: actions/github-script@v9
       env:
-        artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
-        artifact_url: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -L \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/${{ github.repository }}/check-runs \
-          -d '{"head_sha": "${{ env.ref }}", "name": "URL for ${{ env.artifact_name }}", "details_url": "${{ env.artifact_url }}", "status": "completed", "conclusion": "${{ job.status }}", "output": {"title": "${{ env.artifact_url }}", "summary": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}"} }'
-
-    ### This tends to use same "name" text on both sides of Checks list entry:
-    #- name: "GHA-01: Add link as GH Check report"
-    #  uses: LouisBrunner/checks-action@v2.0.0
-    #  if: always()
-    #  continue-on-error: true
-    #  env:
-    #    artifact_name: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
-    #    artifact_url: ${{ steps.upload_artifact.outputs.artifact-url }}
-    #    ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    #  with:
-    #    token: ${{ secrets.GITHUB_TOKEN }}
-    #    name: "[${{ env.artifact_name }}](${{ env.artifact_url }})"
-    #    status: "completed"
-    #    conclusion: ${{ job.status }}
-    #    details_url: ${{ env.artifact_url }}
-    #    output: '{ "text_description": "Dist and Docs [${{ env.artifact_name }}](${{ env.artifact_url }}) are available for commit ${{ env.ref }}", "summary": "${{ job.status }}" }'
+        ARTIFACT_NAME: "${{ steps.set-artifact-name.outputs.artifact_name }}.zip"
+        ARTIFACT_URL: ${{ steps.get_artifact_url.outputs.real_artifact_url }}
+        COMMIT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        WORKER_OUTCOME: ${{ steps.launch_worker.outcome }}
+        WORKER_RUN_ID: ${{ steps.launch_worker.outputs.runId }}
+      with:
+        script: |
+          const e = process.env;
+          const server = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+          const runUrl = e.WORKER_RUN_ID
+            ? `${server}/actions/runs/${e.WORKER_RUN_ID}`
+            : `${server}/actions/runs/${context.runId}`;
+          await core.summary
+            .addHeading('Dist and Docs tarballs', 3)
+            .addTable([
+              [{ data: 'Item', header: true }, { data: 'Value', header: true }],
+              ['Commit', e.COMMIT_REF],
+              ['Tarballs', e.ARTIFACT_URL ? `<a href="${e.ARTIFACT_URL}">${e.ARTIFACT_NAME}</a>` : 'not available'],
+              ['Worker run', `<a href="${runUrl}">${e.WORKER_OUTCOME || 'not started'}</a>`],
+            ])
+            .write();
+          await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: e.COMMIT_REF,
+            context: 'GHA-01: Tarballs / download link',
+            state: e.ARTIFACT_URL ? 'success' : 'failure',
+            target_url: e.ARTIFACT_URL || runUrl,
+            description: e.ARTIFACT_URL
+              ? `Dist and Docs tarballs for ${e.COMMIT_REF.substring(0, 9)}`
+              : `No tarballs for ${e.COMMIT_REF.substring(0, 9)}, see the worker run`,
+          });
