@@ -169,6 +169,22 @@ jobs:
         ./autogen.sh && \
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all --with-dev --with-docs --enable-docs-changelog ${{env.compiler}}
 
+    # Documentation spellcheck is run explicitly here (other CI build
+    # scenarios pass --disable-spellcheck so it is not part of every
+    # "make check" in the build matrices). The old aspell-en dictionary
+    # is checked by the parallel "spellcheck-old-aspell-en" job below.
+    # Failures are reported, but do not stop the tarball build; the job
+    # is failed at the end (see "Report spellcheck failures").
+    - name: NUT CI Spellcheck (aspell-en current)
+      id: spellcheck-current
+      continue-on-error: true
+      run: |
+        dpkg -l aspell aspell-en | grep "^ii"
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=yes spellcheck || {
+            echo "::error title=Spellcheck (aspell-en current)::Documentation spellcheck failed with the current aspell-en dictionary, see this step log; update the text or docs/nut.dict"
+            exit 1
+        }
+
     # NOTE: In this scenario we do not build actually NUT in the main
     # checkout directory, at least not explicitly (recipe may generate
     # some files like man pages to fulfill the "dist" requirements;
@@ -195,7 +211,8 @@ jobs:
         CCACHE_COMPRESS=true; export CCACHE_COMPRESS
         ccache --version || true
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        make -s -j 8 distcheck
+        # Spelling is gated by the explicit steps above, not here
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=no distcheck
 
     - name: NUT CI Build to verify "dist" tarball build self-reproducibility
       env:
@@ -205,7 +222,8 @@ jobs:
         CCACHE_COMPRESS=true; export CCACHE_COMPRESS
         ccache --version || true
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        make -s -j 8 distcheck-completeness
+        # Spelling is gated by the explicit steps above, not here
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=no distcheck-completeness
 
     - name: CCache stats after distcheck
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
@@ -245,3 +263,48 @@ jobs:
       run: |
         echo "### Dist and Docs tarballs" >> "$GITHUB_STEP_SUMMARY"
         echo "[${ARTIFACT_NAME}.zip](${ARTIFACT_URL})" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Report spellcheck failures
+      if: ${{ !cancelled() && steps.spellcheck-current.outcome == 'failure' }}
+      run: |
+        echo "### Documentation spellcheck failed (aspell-en current)" >> "$GITHUB_STEP_SUMMARY"
+        echo "The tarballs were still built; see the spellcheck step log." >> "$GITHUB_STEP_SUMMARY"
+        exit 1
+
+  # Dictionaries differ from decade to decade, so also check with an old
+  # aspell-en: Ubuntu Trusty ships aspell-en 7.1, same as CentOS 7 (EPEL),
+  # which rejects some spellings (e.g. British ones) that newer dictionaries
+  # accept. Runs in parallel to the tarball build (not delaying it), via
+  # "docker run" since GitHub's own actions can not run in such old distros.
+  spellcheck-old-aspell-en:
+    name: "Spellcheck with old aspell-en 7.1 (Ubuntu 14.04)"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        # See notes in the make-dist-tarballs job above
+        fetch-depth: 0
+        fetch-tags: true
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+
+    - name: NUT CI Spellcheck (aspell-en 7.1, Ubuntu 14.04)
+      run: |
+        docker run --rm -v "$PWD:/src:ro" \
+            -e DEBIAN_FRONTEND=noninteractive \
+            ubuntu:14.04 sh -c '
+                set -e
+                apt-get update -qq
+                apt-get install -y -qq \
+                    aspell aspell-en \
+                    autoconf automake libtool make gcc g++ pkg-config \
+                    perl python3 git file >/dev/null
+                dpkg -l aspell aspell-en | grep "^ii"
+                cp -a /src /build && cd /build
+                BUILD_TYPE=default-spellcheck ./ci_build.sh
+            ' || {
+            echo "::error title=Spellcheck (aspell-en 7.1)::Documentation spellcheck failed with the old aspell-en 7.1 dictionary (as on CentOS 7), see this job log; update the text or docs/nut.dict"
+            exit 1
+        }

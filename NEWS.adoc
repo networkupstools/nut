@@ -887,6 +887,13 @@ https://github.com/networkupstools/nut/milestone/13
     * Further rearrangement of AppVeyor CI builds and security hardening of
       GitHub Actions used to prepare the dist tarballs and report on progress
       there. [PRs #3753, #3754, #3756]
+    * CI build matrix scenarios (Jenkins autotools builds, `ci_build.sh` with
+      `BUILD_TYPE=default-withdoc*`) now pass `--disable-spellcheck`, so their
+      `make check` no longer runs (and fails on) the documentation spellcheck.
+      The GitHub Actions dist tarball worker checks the spelling explicitly,
+      with both a current and an old (7.1, as on CentOS 7) version of the
+      `aspell-en` dictionary. Local builds keep the default of
+      `configure --enable-spellcheck=auto`. [PR #3752]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
