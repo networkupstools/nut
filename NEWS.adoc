@@ -964,11 +964,13 @@ https://github.com/networkupstools/nut/milestone/13
       `configure --enable-spellcheck=auto`. [PR #3752]
     * The `include/config.h` file no longer carries the full Git-derived NUT
       version (which changes with every commit), only the base semantic
-      version, so `ccache` and similar build caches can re-use compiled
-      objects across commits and fresh CI checkouts. The full version is
-      still provided by `include/nut_version.h` and in the substituted
-      `@PACKAGE_VERSION@` values. This makes the `CI_AUTOGEN_STABLE_VERSION`
-      setting of `ci_build.sh` redundant, so it was removed.
+      version (e.g. `2.8.5` for a release, or `2.8.5.1` for any development
+      iteration after it), so `ccache` and similar build caches can re-use
+      compiled objects across commits and fresh CI checkouts. The full
+      version is still provided by `include/nut_version.h` and in the
+      substituted `@PACKAGE_VERSION@` values. This makes the
+      `CI_AUTOGEN_STABLE_VERSION` setting of `ci_build.sh` redundant,
+      so it was removed.
       [PR #3754 follow-up]
 
 

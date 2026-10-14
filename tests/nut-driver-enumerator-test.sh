@@ -528,7 +528,7 @@ testcase_gitlog2version() {
     TRUNK='origin/master' BASE='adfdbe3aba19e157010075c42fba7c3174e9baa7' \
     run_testcase_generic callG2V \
         "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release candidate" 0 \
-"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.3-786+gadfdbe3ab' => TAG='v2.8.3' + SUFFIX='-786+gadfdbe3ab+v2.8.4+rc3' => VER5='2.8.3.786.0' => DESC5='2.8.3.786.0-786+gadfdbe3ab+v2.8.4+rc3' => VER50='2.8.3.786' => DESC50='2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3'
+"SEMVER=2.8.4; SEMVER_ACINIT=2.8.3.1; TRUNK=''; BASE=''; DESC='v2.8.3-786+gadfdbe3ab' => TAG='v2.8.3' + SUFFIX='-786+gadfdbe3ab+v2.8.4+rc3' => VER5='2.8.3.786.0' => DESC5='2.8.3.786.0-786+gadfdbe3ab+v2.8.4+rc3' => VER50='2.8.3.786' => DESC50='2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3'
 2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3"
 
     # Taken from `git checkout v2.8.4` (emptied TRUNK and BASE):
@@ -536,14 +536,14 @@ testcase_gitlog2version() {
     TRUNK='origin/master' BASE='541c2ecf0b2ec33dadb9f40b16acbe39042bd103' \
     run_testcase_generic callG2V \
         "Testing that parsing from a NUT_VERSION_FORCED string for a known git checkout returns same results, for a release (tag)" 0 \
-"SEMVER=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
+"SEMVER=2.8.4; SEMVER_ACINIT=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
 2.8.4"
 
     NUT_VERSION_QUERY=DESC5X \
     NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1 \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, with extra fields" 0 \
-"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+"SEMVER=3.14.160; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
 000003.000014.000159.002653.000059-2712+gdeadbeef+v3.14.160+rc1"
 
     NUT_VERSION_QUERY=VER5X \
@@ -551,7 +551,7 @@ testcase_gitlog2version() {
     NUT_VERSION_EXTRA_WIDTH=9 \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a release candidate, just the numeric part" 0 \
-"SEMVER=3.14.160; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
+"SEMVER=3.14.160; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef+v3.14.160+rc1' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef+v3.14.160+rc1'
 000000003.000000014.000000159.000002653.000000059"
 
     # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
@@ -560,7 +560,7 @@ testcase_gitlog2version() {
     NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, with extra fields" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
 000003.000014.000159.002653.000059-2712+gdeadbeef"
 
     NUT_VERSION_QUERY=VER5X \
@@ -568,7 +568,7 @@ testcase_gitlog2version() {
     NUT_VERSION_EXTRA_WIDTH=8 \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a dev iteration, just the numeric part, wider numbers" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
 00000003.00000014.00000159.00002653.00000059"
 
     # Reset NUT_VERSION_EXTRA_WIDTH for ksh out there
@@ -577,14 +577,14 @@ testcase_gitlog2version() {
     NUT_VERSION_FORCED=3.14.159.2653 \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (requiring at least 5 numeric components)" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
 000003.000014.000159.002653.000000"
 
     NUT_VERSION_QUERY=VER50X \
     NUT_VERSION_FORCED=3.14.159.2653 \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, for a master merge increment, just the numeric part (dropping trailing zero numeric components)" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159' => TAG='v3.14.159' + SUFFIX='' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0' => VER50='3.14.159.2653' => DESC50='3.14.159.2653'
 000003.000014.000159.002653"
 
     # Note that DESC must be either a tag as is,
@@ -594,14 +594,14 @@ testcase_gitlog2version() {
     NUT_VERSION_FORCED=3.14.159+gdeadbeef \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-0+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-0+gdeadbeef' => VER5='3.14.159.0.0' => DESC5='3.14.159.0.0-0+gdeadbeef' => VER50='3.14.159' => DESC50='3.14.159-0+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-0+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-0+gdeadbeef' => VER5='3.14.159.0.0' => DESC5='3.14.159.0.0-0+gdeadbeef' => VER50='3.14.159' => DESC50='3.14.159-0+gdeadbeef'
 3.14.159-0+gdeadbeef"
 
     # ...auto-account the offset since tag correctly:
     NUT_VERSION_FORCED=3.14.159.2653+gdeadbeef \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2653+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2653+gdeadbeef' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0-2653+gdeadbeef' => VER50='3.14.159.2653' => DESC50='3.14.159.2653-2653+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2653+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2653+gdeadbeef' => VER5='3.14.159.2653.0' => DESC5='3.14.159.2653.0-2653+gdeadbeef' => VER50='3.14.159.2653' => DESC50='3.14.159.2653-2653+gdeadbeef'
 3.14.159.2653-2653+gdeadbeef"
 
     # ...auto-account the offset since tag correctly
@@ -609,7 +609,7 @@ testcase_gitlog2version() {
     NUT_VERSION_FORCED=3.14.159.2653.5+gdeadbeef \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with a trailing gHASH but no commit count" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
 3.14.159.2653.5-2658+gdeadbeef"
 
     NUT_VERSION_QUERY=DESC5X \
@@ -617,7 +617,7 @@ testcase_gitlog2version() {
     NUT_VERSION_STRIP_LEADING_ZEROES=true \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also a trailing gHASH but no commit count" 0 \
-"SEMVER=3.14.159; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2658+gdeadbeef' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-2658+gdeadbeef' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-2658+gdeadbeef'
 000003.000014.000159.002653.000005-2658+gdeadbeef"
 
     # Note here SEMVER is taken from the future version that the RC is for
@@ -626,8 +626,43 @@ testcase_gitlog2version() {
     NUT_VERSION_STRIP_LEADING_ZEROES=true \
     run_testcase_generic callG2V \
         "Complex (forced) NUT version expanded for alphanumeric comparisons, with leading zeroes, also in the commit count and RC suffix" 0 \
-"SEMVER=4.5.6; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
+"SEMVER=4.5.6; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-002658+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-002658+gdeadbeef+v04.005.0006+rc001' => VER5='3.14.159.2653.5' => DESC5='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001' => VER50='3.14.159.2653.5' => DESC50='3.14.159.2653.5-002658+gdeadbeef+v04.005.0006+rc001'
 000003.000014.000159.002653.000005-002658+gdeadbeef+v04.005.0006+rc001"
+
+    # SEMVER_ACINIT (for AC_INIT and so config.h) is the SEMVER for
+    # releases, and a nominal "triplet.1" for development iterations
+    # Reset NUT_VERSION_STRIP_LEADING_ZEROES for ksh out there
+    NUT_VERSION_STRIP_LEADING_ZEROES='' \
+    NUT_VERSION_QUERY=SEMVER_ACINIT \
+    NUT_VERSION_FORCED=2.8.4 \
+    run_testcase_generic callG2V \
+        "Stable NUT version for AC_INIT, for a release (tag)" 0 \
+"SEMVER=2.8.4; SEMVER_ACINIT=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
+2.8.4"
+
+    NUT_VERSION_QUERY=SEMVER_ACINIT \
+    NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
+    run_testcase_generic callG2V \
+        "Stable NUT version for AC_INIT, for a dev iteration" 0 \
+"SEMVER=3.14.159; SEMVER_ACINIT=3.14.159.1; TRUNK=''; BASE=''; DESC='v3.14.159-2712+gdeadbeef' => TAG='v3.14.159' + SUFFIX='-2712+gdeadbeef' => VER5='3.14.159.2653.59' => DESC5='3.14.159.2653.59-2712+gdeadbeef' => VER50='3.14.159.2653.59' => DESC50='3.14.159.2653.59-2712+gdeadbeef'
+3.14.159.1"
+
+    # Like NUT_VERSION_DEFAULT between releases: no second ".1" suffix
+    NUT_VERSION_QUERY=SEMVER_ACINIT \
+    NUT_VERSION_FORCED=2.8.5.1 \
+    run_testcase_generic callG2V \
+        "Stable NUT version for AC_INIT, for a 4-component default version" 0 \
+"SEMVER=2.8.5; SEMVER_ACINIT=2.8.5.1; TRUNK=''; BASE=''; DESC='v2.8.5' => TAG='v2.8.5' + SUFFIX='' => VER5='2.8.5.1.0' => DESC5='2.8.5.1.0' => VER50='2.8.5.1' => DESC50='2.8.5.1'
+2.8.5.1"
+
+    # For a release candidate, SEMVER is the upcoming release, but
+    # SEMVER_ACINIT is a dev iteration after the preceding release
+    NUT_VERSION_QUERY=SEMVER_ACINIT \
+    NUT_VERSION_FORCED=2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3 \
+    run_testcase_generic callG2V \
+        "Stable NUT version for AC_INIT, for a release candidate" 0 \
+"SEMVER=2.8.4; SEMVER_ACINIT=2.8.3.1; TRUNK=''; BASE=''; DESC='v2.8.3-786+gadfdbe3ab' => TAG='v2.8.3' + SUFFIX='-786+gadfdbe3ab+v2.8.4+rc3' => VER5='2.8.3.786.0' => DESC5='2.8.3.786.0-786+gadfdbe3ab+v2.8.4+rc3' => VER50='2.8.3.786' => DESC50='2.8.3.786-786+gadfdbe3ab+v2.8.4+rc3'
+2.8.3.1"
 }
 
 testcase_semver_compare() {

@@ -499,9 +499,27 @@ getver_default() {
     fi
 }
 
+getver_acinit() {
+    # Temporally stable version for AC_INIT (ends up in config.h macros):
+    # exactly SEMVER for releases, and by legacy convention a nominal
+    # "triplet.1" for any development iteration after that release.
+    # Note that for pre-release tagged commits SEMVER is the upcoming
+    # release, while the code is still a development iteration after the
+    # previous one (unless the caller forced a SEMVER), so take the
+    # triplet from VER50 in that case. Starting from a triplet ensures
+    # we do not add a second ".1" to 4-component NUT_VERSION_DEFAULT.
+    if [ x"${SEMVER}" = x"${VER50}" ] ; then
+        SEMVER_ACINIT="${SEMVER}"
+    elif [ -n "${SUFFIX_PRERELEASE}" ] && [ -z "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
+        SEMVER_ACINIT="`echo \"${VER50}\" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*$/\1/'`.1"
+    else
+        SEMVER_ACINIT="${SEMVER}.1"
+    fi
+}
+
 report_debug() {
     # Debug
-    echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => DESC5='${DESC5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+    echo "SEMVER=${SEMVER}; SEMVER_ACINIT=${SEMVER_ACINIT}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => DESC5='${DESC5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 }
 
 report_output() {
@@ -515,6 +533,7 @@ report_output() {
         "VER50")	echo "${VER50}" ;;
         "VER50x"|"VER50X")	"${SEMVER_COMPARE}" --expand "${VER50}" ;;
         "SEMVER")	echo "${SEMVER}" ;;
+        "SEMVER_ACINIT")	echo "${SEMVER_ACINIT}" ;;
         "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
         "IS_PRERELEASE")	[ x"${SUFFIX_PRERELEASE}" != x ] && echo true || echo false ;;
         "TAG")  	echo "${TAG}" ;;
@@ -639,6 +658,7 @@ if [ x"$DESC" = x ]; then
     fi
 fi
 
+getver_acinit
 report_debug
 report_output
 

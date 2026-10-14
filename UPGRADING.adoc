@@ -34,11 +34,12 @@ Changes from 2.8.5 to 2.8.6
 - PLANNED: Keep track of any further API clean-up?
 
 - The `PACKAGE_VERSION` and `PACKAGE_STRING` macros in the generated
-  `include/config.h` now only carry the base semantic version (e.g. `2.8.5`)
-  rather than the full Git-derived version (e.g. `2.8.5.1466.13`), and the
+  `include/config.h` now only carry the base semantic version (e.g. `2.8.5`
+  for a release, or `2.8.5.1` for any development iteration after it) rather
+  than the full Git-derived version (e.g. `2.8.5.1466.13`), and the
   `PACKAGE` and `VERSION` macros are no longer defined there, so that build
   caches remain valid across commits. The `./configure --version` output
-  also reports the base semantic version. Code which needs the full version
+  also reports this shortened version. Code which needs the full version
   should use `NUT_VERSION_MACRO` from the generated `include/nut_version.h`.
   The `@PACKAGE_VERSION@` and `@VERSION@` values substituted into Makefiles,
   `*.pc` files, packaging recipes and tarball names are not changed.
