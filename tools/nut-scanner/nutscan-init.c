@@ -219,6 +219,24 @@ struct timeval *nutscan_upslog_start_sync(struct timeval *tv, const void *cookie
 	return nstv;
 }
 
+/* One verdict per library at the default debug level. The individual
+ * nutscan_load_*_library() calls report each candidate name they try,
+ * and why it failed, only at debug level 1: nutscan_init() may try
+ * several names before one works, so a per-attempt message at level 0
+ * would claim the search was disabled while the next name still loads.
+ */
+static void nutscan_report_load(const char *func, int avail,
+	const char *libdesc, const char *scantype)
+{
+	if (avail) {
+		upsdebugx(1, "%s: succeeded to load the library for %s",
+			func, libdesc);
+	} else {
+		upsdebugx(0, "Cannot load %s, %s search disabled.",
+			libdesc, scantype);
+	}
+}
+
 void nutscan_init(void)
 {
 	char *libname = NULL;
@@ -474,8 +492,7 @@ void nutscan_init(void)
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
 		}
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_usb ? "succeeded" : "failed", "LibUSB");
+	nutscan_report_load(__func__, nutscan_avail_usb, "LibUSB", "USB");
 #else	/* not WITH_USB */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibUSB");
@@ -574,8 +591,7 @@ void nutscan_init(void)
 		}
 #  endif	/* SOPATH_LIBNETSNMP */
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_snmp ? "succeeded" : "failed", "LibSNMP");
+	nutscan_report_load(__func__, nutscan_avail_snmp, "LibSNMP", "SNMP");
 # endif	/* WITH_SNMP_STATIC */
 #else	/* not WITH_SNMP */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
@@ -678,8 +694,7 @@ void nutscan_init(void)
 		}
 # endif	/* SOPATH_LIBNEON */
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_xml_http ? "succeeded" : "failed", "LibNeon");
+	nutscan_report_load(__func__, nutscan_avail_xml_http, "LibNeon", "XML");
 #else	/* not WITH_NEON */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibNeon");
@@ -756,8 +771,7 @@ void nutscan_init(void)
 # endif	/* SOPATH_LIBAVAHI */
 		}
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_avahi ? "succeeded" : "failed", "LibAvahi");
+	nutscan_report_load(__func__, nutscan_avail_avahi, "LibAvahi", "AVAHI");
 #else	/* not WITH_AVAHI */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibAvahi");
@@ -837,8 +851,7 @@ void nutscan_init(void)
 		}
 # endif	/* SOPATH_LIBGIO */
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_upower ? "succeeded" : "failed", "LibGIO");
+	nutscan_report_load(__func__, nutscan_avail_upower, "LibGIO", "UPower");
 #else	/* not WITH_UPOWER */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibGIO");
@@ -914,8 +927,7 @@ void nutscan_init(void)
 		}
 # endif	/* SOPATH_LIBFREEIPMI */
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_ipmi ? "succeeded" : "failed", "LibFreeIPMI");
+	nutscan_report_load(__func__, nutscan_avail_ipmi, "LibFreeIPMI", "IPMI");
 #else	/* not WITH_FREEIPMI */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibFreeIPMI");
@@ -986,8 +998,7 @@ void nutscan_init(void)
 		}
 #endif	/* SOPATH_LIBUPSCLIENT */
 	}
-	upsdebugx(1, "%s: %s to load the library for %s",
-		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");
+	nutscan_report_load(__func__, nutscan_avail_nut, "NUT Client library", "NUT");
 /* end of libupsclient for "old NUT" (vs. Avahi) protocol */
 
 

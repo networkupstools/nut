@@ -620,9 +620,8 @@ NOTE: If the client does not send *any* certificate, the connection is closed.
 Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
-WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
-#3329] is solved, not all stock NUT clients may even have a way to present
-some certain certificate.
+NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
+third-party NUT clients to even have a way to present some certain certificate.
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
