@@ -1142,8 +1142,8 @@ static int sock_arg(conn_t *conn)
 
 		while (item) {
 			if (item->name) {
-				send_to_one(conn, "%s\t%ld\t%g\t",
-					item->name, (long)item->etime, difftime(item->etime, now));
+				send_to_one(conn, "%s\t%" PRIiMAX "\t%g\t",
+					item->name, (intmax_t)item->etime, difftime(item->etime, now));
 
 				s = NULL;
 				if (item->notifytypes && *(item->notifytypes) && **(item->notifytypes)) {

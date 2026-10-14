@@ -12,6 +12,8 @@ Before proposing a change, read the parts relevant to it:
 - `docs/developer-guide.txt` for NUT architecture, design and data flow.
 - `.github/pull_request_template.md` for the current contribution checklist.
 - `SECURITY.md` before investigating or reporting a possible vulnerability.
+- `.github/CI.md` before changing GitHub Actions workflows or scripts under
+  `.github/`.
 
 Follow more specific guidance in those files if this summary differs from it.
 
@@ -33,7 +35,7 @@ Follow more specific guidance in those files if this summary differs from it.
 - When adding, removing or renaming files, or changing templates, update the
   applicable `Makefile.am`, `configure.ac`, distribution lists and generation
   rules. Update source templates rather than generated files unless project
-  practice requires a generated artefact to be tracked.
+  practice requires a generated artifact to be tracked.
 - Update manuals, compatibility data, version markers, `NEWS.adoc`,
   `UPGRADING.adoc` and acknowledgements only where required by the affected
   change. With `NEWS.adoc` note that many changes are grouped by subject,

@@ -69,6 +69,7 @@
 #	include "powervar-hid.h"
 #	include "salicru-hid.h"
 #	include "tripplite-hid.h"
+#	include "vertiv-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
@@ -94,6 +95,7 @@ static subdriver_t *subdriver_list[] = {
 	&powervar_subdriver,
 	&salicru_subdriver,
 	&tripplite_subdriver,
+	&vertiv_subdriver,
 #endif	/* !SHUT_MODE => USB */
 	NULL
 };
