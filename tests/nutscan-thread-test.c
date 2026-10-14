@@ -783,6 +783,34 @@ static void scenario(unsigned int limit, int failure)
 	printf("protocol=%d limit=%u failure=%d: PASS\n", NUTSCAN_TEST_PROTOCOL, limit, failure);
 }
 
+# if NUTSCAN_TEST_PROTOCOL == 3 && defined HAVE_SEMAPHORE_UNNAMED
+static void semaphore_setter(void)
+{
+	sem_t caller_sem;
+	sem_t *owned;
+
+	assert(sem_init(&caller_sem, 0, 1) == 0);
+	assert(nutscan_semaphore() == NULL);
+	nutscan_semaphore_set(&caller_sem);
+	assert(nutscan_semaphore() == NULL);
+	nutscan_semaphore_free();
+	check_capacity(&caller_sem, 1);
+
+	max_threads = 2;
+	nutscan_semaphore_init();
+	owned = nutscan_semaphore();
+	assert(owned != NULL);
+	nutscan_semaphore_set(NULL);
+	assert(nutscan_semaphore() == owned);
+	nutscan_semaphore_set(&caller_sem);
+	assert(nutscan_semaphore() == owned);
+	nutscan_semaphore_free();
+	check_capacity(&caller_sem, 1);
+	assert(sem_destroy(&caller_sem) == 0);
+	puts("unnamed semaphore setter compatibility: PASS");
+}
+# endif
+
 # if NUTSCAN_TEST_PROTOCOL == 3 && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
 static void mutex_lifecycle(void)
 {
@@ -839,6 +867,9 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
+# if NUTSCAN_TEST_PROTOCOL == 3 && defined HAVE_SEMAPHORE_UNNAMED
+	semaphore_setter();
+# endif
 # if NUTSCAN_TEST_PROTOCOL == 3 && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
 	mutex_lifecycle();
 # endif

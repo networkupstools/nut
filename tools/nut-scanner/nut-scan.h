@@ -245,6 +245,7 @@ nutscan_device_t * nutscan_scan_upower(void);
 /* Expose shared libnutscan semaphore for overall thread count
  * limited across different scanning methods (protocols/media): */
 sem_t * nutscan_semaphore(void);
+/* Select a named semaphore; a no-op for library-owned unnamed semaphores. */
 void nutscan_semaphore_set(sem_t *s);
 /* Initialise/reconfigure before scans, release after all scans finish.
  * nutscan_semaphore() returns NULL if initialisation failed. */

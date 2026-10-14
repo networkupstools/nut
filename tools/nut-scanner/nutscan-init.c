@@ -101,7 +101,11 @@ sem_t * nutscan_semaphore(void)
 
 void nutscan_semaphore_set(sem_t *s)
 {
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+	NUT_UNUSED_VARIABLE(s);
+#  else
 	semaphore = s;
+#  endif
 }
 
 void nutscan_semaphore_free(void)
