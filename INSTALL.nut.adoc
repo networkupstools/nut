@@ -283,19 +283,15 @@ for developers iterating on some features.
   stored in the `include/config.h` file (included by all sources) but only
   in `include/nut_version.h` (included by a couple of source files), so after
   a new commit or in a fresh checkout, only those few objects get recompiled.
+  This matters especially for debug builds with options like `-g3` which
+  embed all macro definitions into compiled objects, so `ccache` can not
+  fall back to its preprocessor mode to find a match for a changed macro.
   If several Git work trees or checkout directories share one cache, set
   `CCACHE_BASEDIR` to a common parent directory so that absolute paths in
   compiler command lines do not prevent cache hits.
 * When you iterate code development, `make NUT_VERSION_H_GENERATED=true`
   can skip regeneration of `include/nut_version.h` (at a cost of a less
   precise version reported by the built programs).
-* If you are a developer iterating with debug builds on different branches,
-  `export CI_AUTOGEN_STABLE_VERSION=true` can additionally ensure that the
-  `AC_INIT` in the generated `configure` script would not follow NUT SEMVER
-  but use a shorter and temporally stable version string. This helps on some
-  systems where enabling debug options embeds all macros into compiled objects,
-  so an ever-changing `PACKAGE_VERSION` in `config.h` which does follow NUT
-  SEMVER prevents `ccache` direct mode (because each build is deemed unique).
 * Using `export DO_USE_NUTCI_CACHE=yes` (and derived environment variables
   like `DO_USE_AUTOCONF_CACHE` or `DO_USE_NIT_TESTCERT_CACHE`) can be used
   to speed up re-builds with `ci_build.sh` and re-runs of NUT Integration
