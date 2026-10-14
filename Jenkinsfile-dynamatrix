@@ -98,9 +98,13 @@ import org.nut.dynamatrix.*;
 
     // In modern builds, use the ci_build.sh recipe which first checks
     // quietly for things that succeed, and summarizes errors in the end
-    dynacfgPipeline['spellcheck_prepconf'] = false
-    dynacfgPipeline['spellcheck_configure'] = false
-    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
+    dynacfgPipeline['spellcheck'] = [
+        prepconf: false,
+        configure: false,
+        tryAllNodes: false,
+        tryAllDistros: true,
+        spellcheck: '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
+    ]
 
 /*
     // For older builds, with only autotools in the tree:
