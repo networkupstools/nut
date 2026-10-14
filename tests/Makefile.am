@@ -65,6 +65,9 @@ $(top_builddir)/clients/upslog$(EXEEXT): dummy @dotMAKE@
 # started from scratch right in this dir get dependencies in proper order
 # (sub-makes are independent as far as trying to write into same files):
 $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonclient.la: $(top_builddir)/common/libparseconf.la
+# These independent sub-makes share the replacement-function objects.
+# Finish one library before the other can rebuild those objects.
+$(top_builddir)/common/libcommon.la: $(top_builddir)/common/libcommonclient.la
 $(top_builddir)/common/libcommonversion.la: $(top_builddir)/include/nut_version.h
 $(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclient.la
 
@@ -284,7 +287,12 @@ nutscan-thread-test.c: $(top_builddir)/clients/libupsclient-version.h
 $(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/clients/libupsclient.la
 if WITH_SSL
 NUTSCAN_TEST_CFLAGS += $(LIBSSL_CFLAGS)
+NUTSCAN_TEST_LDADD += $(LIBSSL_LIBS)
 endif WITH_SSL
+# Any fixture may pull the SNMP scanner from static libnutscan.
+if WITH_SNMP_STATIC
+NUTSCAN_TEST_LDADD += $(LIBNETSNMP_LIBS_EXEC)
+endif WITH_SNMP_STATIC
 
 if WITH_SNMP
 nutscan-thread-test.c nutscan-snmp-retry-test.c: $(top_builddir)/tools/nut-scanner/nutscan-snmp.h
@@ -300,7 +308,7 @@ if WITH_THREADING
 TESTS += nutscan-serial-test
 nutscan_serial_test_SOURCES = nutscan-thread-test.c
 nutscan_serial_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_TEST_PROTOCOL=5
-nutscan_serial_test_LDADD = $(NUTSCAN_TEST_LDADD) $(top_builddir)/drivers/libserial-nutscan.la $(SERLIBS)
+nutscan_serial_test_LDADD = $(top_builddir)/drivers/libserial-nutscan.la $(NUTSCAN_TEST_LDADD) $(SERLIBS)
 nutscan_serial_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_srcdir)/tools/nut-scanner/scan_eaton_serial.c $(top_srcdir)/tools/nut-scanner/nutscan-thread.h $(top_srcdir)/tools/nut-scanner/nutscan-thread.c $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
 
 TESTS += nutscan-nut-test
