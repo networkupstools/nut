@@ -1075,6 +1075,27 @@ static upscli_ssl_context_config_t *upscli_ssl_context_config_find(
 void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	const char *certname, const char *certpasswd, const char *certfile)
 {
+	static const char	*quiet_init_ssl = NULL;
+	static int	quiet_init_ssl_parsed = 0;
+
+	if (!quiet_init_ssl_parsed) {
+		quiet_init_ssl_parsed = 1;
+		quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+		if (quiet_init_ssl != NULL) {
+			if (*quiet_init_ssl == '\0'
+				|| (strncmp(quiet_init_ssl, "true", 4)
+				&&  strncmp(quiet_init_ssl, "TRUE", 4)
+				&&  strncmp(quiet_init_ssl, "1", 1) )
+			) {
+				if (strncmp(quiet_init_ssl, "false", 5)
+				&&  strncmp(quiet_init_ssl, "FALSE", 5)
+				&&  strncmp(quiet_init_ssl, "0", 1) )
+					upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+				quiet_init_ssl = NULL;
+			}
+		}
+	}
+
 #if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
 	if (certverify || certpath || certname || certpasswd || certfile) {
 		if (quiet_init_ssl != NULL) {
@@ -1087,7 +1108,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	return NULL;
 #else
 	upscli_ssl_context_config_t	*cfg;
-	const char	*quiet_init_ssl;
 # ifdef WITH_OPENSSL
 	long	ret;
 	int	ssl_mode = SSL_VERIFY_NONE;
@@ -1109,21 +1129,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	cfg->certpasswd = certpasswd ? xstrdup(certpasswd) : NULL;
 	cfg->certfile = certfile ? xstrdup(certfile) : NULL;
 	cfg->refcount = 1;
-
-	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
-	if (quiet_init_ssl != NULL) {
-		if (*quiet_init_ssl == '\0'
-			|| (strncmp(quiet_init_ssl, "true", 4)
-			&&  strncmp(quiet_init_ssl, "TRUE", 4)
-			&&  strncmp(quiet_init_ssl, "1", 1) )
-		) {
-			if (strncmp(quiet_init_ssl, "false", 5)
-			&&  strncmp(quiet_init_ssl, "FALSE", 5)
-			&&  strncmp(quiet_init_ssl, "0", 1) )
-				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
-			quiet_init_ssl = NULL;
-		}
-	}
 
 # ifdef WITH_OPENSSL
 
