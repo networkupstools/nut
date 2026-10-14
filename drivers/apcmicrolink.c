@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.05"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -3052,6 +3052,13 @@ static int microlink_receive_once(void)
 		ssize_t ret;
 
 		if (microlink_try_extract_frame(frame, &framelen)) {
+#ifdef WITH_USB
+			/* Do not let the report's zero padding reach the frame
+			 * scanner - see microlink_usb_drop_report_padding(). */
+			if (is_usb) {
+				microlink_usb_drop_report_padding();
+			}
+#endif /* WITH_USB */
 			return microlink_process_frame(frame, framelen);
 		}
 
@@ -3899,6 +3906,12 @@ void upsdrv_initinfo(void)
 			"ups.status/battery.charge/battery.runtime from them as soon as they "
 			"arrive. Outlet-group data and commands will become available "
 			"automatically once the Microlink session connects", device_path);
+#ifdef WITH_USB
+	} else if (is_usb && !hid_fallback_enabled) {
+		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
+			"and the standard HID Power Device fallback is disabled "
+			"(hid_fallback=no)", device_path);
+#endif	/* WITH_USB */
 	} else {
 		fatalx(EXIT_FAILURE, "apcmicrolink: failed to start Microlink session on %s "
 			"and this device exposes no standard HID Power Device usages to fall "

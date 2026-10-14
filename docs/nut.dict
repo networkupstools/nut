@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3878 utf-8
+personal_ws-1.1 en 3893 utf-8
 AAC
 AAS
 ABI
@@ -1081,6 +1081,7 @@ PowerPanel
 PowerShare
 PowerShell
 PowerShield
+PowerSummary
 PowerSure
 PowerSystemError
 PowerTech
@@ -1230,6 +1231,7 @@ SECCTRL
 SELFTEST
 SELFTESTS
 SELinux
+SEMLIBS
 SENTR
 SER
 SERIALNO
@@ -1274,9 +1276,12 @@ SOCKETLIB
 SOCKLEN
 SOCOMECUPS
 SOFF
+SOFILE
 SOG
 SOLA
 SOMECO
+SONAME
+SOPATH
 SOURCEMODE
 SOV
 SPARC
@@ -1318,6 +1323,7 @@ SYSMAXCONN
 SafeNet
 Salicru
 Salvia
+Santak
 Santinoli
 Savia
 Sawatzky
@@ -1573,6 +1579,7 @@ WARNFATAL
 WARNOPT
 WCH
 WELI
+WH
 WHAD
 WINSOCK
 WIP
@@ -2182,6 +2189,7 @@ egrep
 ei
 el
 elementWidth
+elfdump
 els
 emacs
 emptor
@@ -2956,6 +2964,7 @@ nutvalue
 nvi
 nvo
 nwfilter
+objdump
 odette
 offdelay
 offsite
@@ -3004,6 +3013,7 @@ osc
 ostream
 other's
 otheruser
+otool
 ouGDQn
 outliers
 overtemp
@@ -3177,6 +3187,7 @@ raritan
 rb
 rc
 rcctl
+readelf
 readline
 readonly
 realpath
@@ -3269,6 +3280,7 @@ rw
 réseau
 safenet
 salicru
+santak
 sbin
 sbindir
 sc
@@ -3395,6 +3407,7 @@ solis
 somename
 somepass
 something's
+soname
 sortable
 sortdict
 sp
@@ -3553,6 +3566,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
@@ -3761,6 +3775,7 @@ verifySourceSig
 versa
 versioned
 versioning
+vertiv
 vh
 victron
 victronups
@@ -3801,6 +3816,7 @@ winnutclient
 winpthreads
 winsymlinks
 withGiven
+withdoc
 wix
 wmNUT
 wmnut
