@@ -42,5 +42,8 @@
 /getvaluetest.log
 /getvaluetest.trs
 /hidparser.c
+/nutdrv_qx_cypress_utest
+/nutdrv_qx_cypress_utest.log
+/nutdrv_qx_cypress_utest.trs
 /generic_gpio_libgpiod.c
 /generic_gpio_common.c

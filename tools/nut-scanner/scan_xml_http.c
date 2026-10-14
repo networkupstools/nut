@@ -114,7 +114,7 @@ int nutscan_load_neon_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		upsdebugx(0, "Neon library not found. XML search disabled.");
+		upsdebugx(1, "Neon library not found.");
 		return 0;
 	}
 
@@ -174,8 +174,8 @@ int nutscan_load_neon_library(const char *libname_path)
 	return 1;
 
 err:
-	upsdebugx(0,
-		"Cannot load XML library (%s) : %s%s%s%s. XML search disabled.",
+	upsdebugx(1,
+		"Cannot load XML library (%s) : %s%s%s%s",
 		libname_path, dl_error,
 		symbol ? " Error happened during search for symbol '" : "",
 		symbol ? symbol : "",
