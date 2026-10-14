@@ -183,6 +183,7 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
             nut_cv_LIBNETSNMP_LIBS=""
             nut_cv_LIBNETSNMP_LIBS_EXEC=""
             nut_cv_SOFILE_LIBNETSNMP=""
+            nut_cv_SONAME_LIBNETSNMP=""
             nut_cv_SOPATH_LIBNETSNMP=""
             AS_IF([test "${nut_cv_have_libnetsnmp}" = "yes"], [
                 nut_cv_LIBNETSNMP_CFLAGS="${depCFLAGS}"
@@ -360,6 +361,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBNETSNMP], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBNETSNMP}" && test -s "${nut_cv_SOPATH_LIBNETSNMP}"], [
                                 nut_cv_SOFILE_LIBNETSNMP="`basename \"${nut_cv_SOPATH_LIBNETSNMP}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBNETSNMP}], [nut_cv_SONAME_LIBNETSNMP], [])
                                 break
                             ])
                         ]
@@ -445,6 +447,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
             dnl For nut-scanner style autoloading:
             SOPATH_LIBNETSNMP="${nut_cv_SOPATH_LIBNETSNMP}"
             SOFILE_LIBNETSNMP="${nut_cv_SOFILE_LIBNETSNMP}"
+            SONAME_LIBNETSNMP="${nut_cv_SONAME_LIBNETSNMP}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBNETSNMP_CFLAGS_SOURCE="${nut_cv_LIBNETSNMP_CFLAGS_SOURCE}"
@@ -458,6 +461,9 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
                 AS_IF([test -n "${SOPATH_LIBNETSNMP}" && test -s "${SOPATH_LIBNETSNMP}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBNETSNMP], ["${SOPATH_LIBNETSNMP}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBNETSNMP], ["${SOFILE_LIBNETSNMP}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBNETSNMP}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBNETSNMP], ["${SONAME_LIBNETSNMP}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 

@@ -163,7 +163,7 @@ int nutscan_load_ipmi_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		upsdebugx(0, "IPMI library not found. IPMI search disabled.");
+		upsdebugx(1, "IPMI library not found.");
 		return 0;
 	}
 
@@ -306,8 +306,8 @@ int nutscan_load_ipmi_library(const char *libname_path)
 	return 1;
 
 err:
-	upsdebugx(0,
-		"Cannot load IPMI library (%s) : %s%s%s%s. IPMI search disabled.",
+	upsdebugx(1,
+		"Cannot load IPMI library (%s) : %s%s%s%s",
 		libname_path, dl_error,
 		symbol ? " Error happened during search for symbol '" : "",
 		symbol ? symbol : "",

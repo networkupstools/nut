@@ -13,7 +13,7 @@ SYNOPSIS
 
 *upscmd* -l 'ups'
 
-*upscmd* [-A 'authconf'] [-u 'username'] [-p 'password'] [-w] [-t <timeout>] 'ups' 'command'
+*upscmd* [-A 'authconf'] [-u 'username'] [-p 'password'] [-w] [-t <timeout>] 'ups' 'command' ['value']
 
 DESCRIPTION
 -----------
@@ -67,6 +67,14 @@ Set a timeout when using *-w*. Defaults to 10 seconds.
 'ups'::
 Connect to this UPS.  The format is `upsname[@hostname[:port]]`.  The default
 hostname is "localhost".
+
+'command'::
+Valid instant command, for example 'test.panel.start'.
+
+'value'::
+Optional additional data for the command, such as a number of seconds taken
+by commands like 'shutdown.return' or 'load.off.delay'.  Not all drivers and
+commands support a value; those which do not would ignore it.
 
 COMMON OPTIONS
 --------------
