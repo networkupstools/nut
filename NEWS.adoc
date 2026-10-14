@@ -909,6 +909,16 @@ https://github.com/networkupstools/nut/milestone/13
       retains quotes and backslashes; changed section checksums can cause a
       one-time reconciliation after upgrading. [PR #3635]
 
+ - Configuration management:
+    * Implemented support for additional configuration file discovery as
+      `<confpath>/<conffile>.d/*.conf` (also `.../*.users` for `upsd.users.d`)
+      processed in alphanumeric order for NUT configuration files (`ups.conf`,
+      `upsd.conf`, `upsd.users`, `hosts.conf`, `upsmon.conf`, `upssched.conf`,
+      `upsset.conf`, etc., except `nutauth.conf` which has direct `INCLUDE` and
+      `INCLUDE_REQUIRES` keywords already). Any additional file restarts
+      population of the root context, adding or replacing configuration
+      remembered there from earlier parsing.
+
  - Revised dusty corners of NUT documentation:
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and

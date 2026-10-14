@@ -281,6 +281,120 @@ static void check_attached_hash_warning(void)
 	check_result(msg[0] == '\0', 1, "no warning for line input");
 }
 
+static void write_test_file(const char *path, const char *content)
+{
+	FILE *f = fopen(path, "w");
+	if (!f)
+		fatal_with_errno(EXIT_FAILURE, "fopen");
+	if (fputs(content, f) == EOF || fclose(f))
+		fatal_with_errno(EXIT_FAILURE, "fclose");
+}
+
+static void check_get_files(void)
+{
+	char tmptpl[] = "/tmp/nut_pconf_test_XXXXXX";
+	char *tmpdir = mkdtemp(tmptpl);
+	char main_conf[1024], d_dir[1024], file1[1024], file2[1024], file_ignored[1024];
+	char users_main[1024], users_d[1024], ufile1[1024], ufile2[1024];
+	char nutauth_main[1024], nutauth_d[1024], na_file[1024];
+	char **files;
+	size_t count = 0;
+
+	if (!tmpdir)
+		fatal_with_errno(EXIT_FAILURE, "mkdtemp");
+
+	/* Test 1: neither main file nor .d dir exists */
+	snprintf(main_conf, sizeof(main_conf), "%s/ups.conf", tmpdir);
+	files = pconf_get_files(main_conf, &count);
+	check_result(files == NULL, 1, "pconf_get_files non-existent");
+	check_result((int)count, 0, "pconf_get_files non-existent count");
+
+	/* Test 2: main file exists, no .d dir */
+	write_test_file(main_conf, "maxretry = 3\n");
+	files = pconf_get_files(main_conf, &count);
+	check_result(files != NULL, 1, "pconf_get_files main only");
+	check_result((int)count, 1, "pconf_get_files main only count");
+	if (files && count >= 1) {
+		check_result(strcmp(files[0], main_conf), 0, "pconf_get_files main only path");
+	}
+	pconf_free_files(files);
+
+	/* Test 3: main file exists + .d dir with files in alphanumeric order */
+	snprintf(d_dir, sizeof(d_dir), "%s/ups.conf.d", tmpdir);
+	if (mkdir(d_dir, 0700) != 0)
+		fatal_with_errno(EXIT_FAILURE, "mkdir");
+
+	snprintf(file2, sizeof(file2), "%s/20-second.conf", d_dir);
+	write_test_file(file2, "[ups2]\ndriver=dummy-ups\n");
+	snprintf(file1, sizeof(file1), "%s/10-first.conf", d_dir);
+	write_test_file(file1, "[ups1]\ndriver=dummy-ups\n");
+	snprintf(file_ignored, sizeof(file_ignored), "%s/ignored.txt", d_dir);
+	write_test_file(file_ignored, "ignored\n");
+
+	files = pconf_get_files(main_conf, &count);
+	check_result(files != NULL, 1, "pconf_get_files main + .d");
+	check_result((int)count, 3, "pconf_get_files main + .d count");
+	if (files && count >= 3) {
+		check_result(strcmp(files[0], main_conf), 0, "pconf_get_files order 0");
+		check_result(strcmp(files[1], file1), 0, "pconf_get_files order 1");
+		check_result(strcmp(files[2], file2), 0, "pconf_get_files order 2");
+	}
+	pconf_free_files(files);
+
+	/* Test 4: upsd.users supports both .conf and .users snippets */
+	snprintf(users_main, sizeof(users_main), "%s/upsd.users", tmpdir);
+	write_test_file(users_main, "[admin]\npassword=pass\n");
+	snprintf(users_d, sizeof(users_d), "%s/upsd.users.d", tmpdir);
+	if (mkdir(users_d, 0700) != 0)
+		fatal_with_errno(EXIT_FAILURE, "mkdir users.d");
+	snprintf(ufile1, sizeof(ufile1), "%s/01-mon.users", users_d);
+	write_test_file(ufile1, "[monuser]\npassword=secret\n");
+	snprintf(ufile2, sizeof(ufile2), "%s/02-admin.conf", users_d);
+	write_test_file(ufile2, "[admin]\nactions=SET\n");
+
+	files = pconf_get_files(users_main, &count);
+	check_result(files != NULL, 1, "pconf_get_files upsd.users + .d");
+	check_result((int)count, 3, "pconf_get_files upsd.users + .d count");
+	if (files && count >= 3) {
+		check_result(strcmp(files[0], users_main), 0, "pconf_get_files users order 0");
+		check_result(strcmp(files[1], ufile1), 0, "pconf_get_files users order 1");
+		check_result(strcmp(files[2], ufile2), 0, "pconf_get_files users order 2");
+	}
+	pconf_free_files(files);
+
+	/* Test 5: nutauth.conf must NOT discover nutauth.conf.d */
+	snprintf(nutauth_main, sizeof(nutauth_main), "%s/nutauth.conf", tmpdir);
+	write_test_file(nutauth_main, "dummy\n");
+	snprintf(nutauth_d, sizeof(nutauth_d), "%s/nutauth.conf.d", tmpdir);
+	if (mkdir(nutauth_d, 0700) != 0)
+		fatal_with_errno(EXIT_FAILURE, "mkdir nutauth.conf.d");
+	snprintf(na_file, sizeof(na_file), "%s/01-extra.conf", nutauth_d);
+	write_test_file(na_file, "extra\n");
+
+	files = pconf_get_files(nutauth_main, &count);
+	check_result(files != NULL, 1, "pconf_get_files nutauth.conf");
+	check_result((int)count, 1, "pconf_get_files nutauth.conf count");
+	if (files && count >= 1) {
+		check_result(strcmp(files[0], nutauth_main), 0, "pconf_get_files nutauth path");
+	}
+	pconf_free_files(files);
+
+	/* Cleanup */
+	unlink(na_file);
+	rmdir(nutauth_d);
+	unlink(nutauth_main);
+	unlink(ufile1);
+	unlink(ufile2);
+	rmdir(users_d);
+	unlink(users_main);
+	unlink(file_ignored);
+	unlink(file1);
+	unlink(file2);
+	rmdir(d_dir);
+	unlink(main_conf);
+	rmdir(tmpdir);
+}
+
 int main(void)
 {
 	size_t i;
@@ -289,6 +403,7 @@ int main(void)
 		check_case(&cases[i]);
 	check_boundaries();
 	check_encoder();
+	check_get_files();
 	check_attached_hash_warning();
 	printf("parseconf: %" PRIuSIZE " cases through line/file/char, boundary and encoder checks: %d failures\n",
 		sizeof(cases) / sizeof(cases[0]), failures);

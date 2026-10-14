@@ -429,67 +429,85 @@ void load_upsdconf(int reloading)
 	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0, listen_errors = 0;
+	char	**files;
+	size_t	file_idx, count = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
-	check_perms(fn);
-
-	pconf_init(&ctx, upsd_conf_err);
-
-retry:
-	if (!pconf_file_begin(&ctx, fn)) {
-		if (errno == EMFILE && reloading == 2) {
-			close_oldest_client();
-			goto retry;
-		}
-		pconf_finish(&ctx);
-
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
 		if (!reloading)
-			fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
+			fatalx(EXIT_FAILURE, "Can't open %s (and %s.d/*.conf)", fn, fn);
 
-		upslogx(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+		upslogx(LOG_ERR, "Reload failed: can't open %s (and %s.d/*.conf)", fn, fn);
 		return;
 	}
 
-	if (reloading) {
-		/* if upsd.conf added or changed
-		 * (or commented away) the debug_min
-		 * setting, detect that */
-		nut_debug_level_global = -1;
-	}
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		check_perms(files[file_idx]);
+		pconf_init(&ctx, upsd_conf_err);
 
-	while (pconf_file_next(&ctx)) {
-		int parsed;
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-			numerrors++;
+retry:
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
+			if (errno == EMFILE && reloading == 2) {
+				close_oldest_client();
+				goto retry;
+			}
+			pconf_finish(&ctx);
+
+			if (!reloading) {
+				pconf_free_files(files);
+				fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
+			}
+
+			upslogx(LOG_ERR, "Reload failed: %s", ctx.errmsg);
 			continue;
 		}
 
-		if (ctx.numargs < 1)
-			continue;
-
-		parsed = parse_upsd_conf_args(ctx.numargs, ctx.arglist);
-		if (parsed < 0) {
-			listen_errors++;
-		}
-		if (parsed <= 0) {
-			unsigned int	i;
-			char	errmsg[SMALLBUF];
-
-			snprintf(errmsg, sizeof(errmsg),
-				"upsd.conf: invalid directive");
-
-			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s",
-					ctx.arglist[i]);
-
-			numerrors++;
-			upslogx(LOG_WARNING, "%s", errmsg);
+		if (reloading && file_idx == 0) {
+			/* if upsd.conf added or changed
+			 * (or commented away) the debug_min
+			 * setting, detect that */
+			nut_debug_level_global = -1;
 		}
 
+		while (pconf_file_next(&ctx)) {
+			int parsed;
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				numerrors++;
+				continue;
+			}
+
+			if (ctx.numargs < 1)
+				continue;
+
+			parsed = parse_upsd_conf_args(ctx.numargs, ctx.arglist);
+			if (parsed < 0) {
+				listen_errors++;
+			}
+			if (parsed <= 0) {
+				unsigned int	i;
+				char	errmsg[SMALLBUF];
+
+				snprintf(errmsg, sizeof(errmsg),
+					"upsd.conf: invalid directive");
+
+				for (i = 0; i < ctx.numargs; i++)
+					snprintfcat(errmsg, sizeof(errmsg), " %s",
+						ctx.arglist[i]);
+
+				numerrors++;
+				upslogx(LOG_WARNING, "%s", errmsg);
+			}
+
+		}
+
+		pconf_finish(&ctx);
 	}
+
+	pconf_free_files(files);
 
 	if (reloading) {
 		if (nut_debug_level_global > -1) {
@@ -703,25 +721,17 @@ static void delete_ups(upstype_t *target)
 static int check_file(const char *fn)
 {
 	char	chkfn[NUT_PATH_MAX];
-	FILE	*f;
-	int	retries = 0;
+	char	**files;
+	size_t	count = 0;
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
-
-retry:
-	f = fopen(chkfn, "r");
-
-	if (!f) {
-		if (errno == EMFILE && retries < 10) {
-			close_oldest_client();
-			retries++;
-			goto retry;
-		}
-		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
+	files = pconf_get_files(chkfn, &count);
+	if (!files || count == 0) {
+		upslogx(LOG_ERR, "Reload failed: can't open %s (and %s.d/*.conf)", chkfn, chkfn);
 		return 0;	/* failed */
 	}
 
-	fclose(f);
+	pconf_free_files(files);
 	return 1;	/* OK */
 }
 

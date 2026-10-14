@@ -1532,11 +1532,19 @@ static void display_tree(int verbose)
 
 static void add_ups(char *sys, char *desc)
 {
-	ulist_t	*tmp, *last;
+	ulist_t	*tmp, *last = NULL;
+
+	if (!sys || !desc)
+		return;
 
 	tmp = last = ulhead;
 
 	while (tmp) {
+		if (!strcmp(tmp->sys, sys)) {
+			free(tmp->desc);
+			tmp->desc = xstrdup(desc);
+			return;
+		}
 		last = tmp;
 		tmp = (ulist_t *)tmp->next;
 	}
@@ -1619,15 +1627,14 @@ static void load_hosts_conf(int handle_MONITOR)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	char	**files;
+	size_t	file_idx, count = 0;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", confpath());
 	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
-	pconf_init(&ctx, upsstats_hosts_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
 		/* Don't print HTML here if we are in JSON mode.
 		 * The JSON function will handle the error.
 		 */
@@ -1642,43 +1649,55 @@ static void load_hosts_conf(int handle_MONITOR)
 		}
 
 		/* leave something for the admin */
-		fprintf(stderr, "upsstats: %s\n", ctx.errmsg);
+		fprintf(stderr, "upsstats: can't open %s (and %s.d/*.conf)\n", fn, fn);
 		exit(EXIT_FAILURE);
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		pconf_init(&ctx, upsstats_hosts_err);
+
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
+			pconf_finish(&ctx);
+			fprintf(stderr, "upsstats: %s\n", ctx.errmsg);
 			continue;
 		}
 
-		if (ctx.numargs < 2)
-			continue;
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				continue;
+			}
 
-		/* AUTHCONF (<filename> | "default" | "none") */
-		if (!strcmp(ctx.arglist[0], "AUTHCONF")) {
-			free(authconf_configured);
-			authconf_configured = xstrdup(ctx.arglist[1]);
+			if (ctx.numargs < 2)
+				continue;
+
+			/* AUTHCONF (<filename> | "default" | "none") */
+			if (!strcmp(ctx.arglist[0], "AUTHCONF")) {
+				free(authconf_configured);
+				authconf_configured = xstrdup(ctx.arglist[1]);
+			}
+
+			/* CUSTOM_TEMPLATE_LIST <filename> */
+			if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_LIST"))
+				add_allowed_template_list(ctx.arglist[1]);
+
+			/* CUSTOM_TEMPLATE_SINGLE <filename> */
+			if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_SINGLE"))
+				add_allowed_template_single(ctx.arglist[1]);
+
+			if (ctx.numargs < 3)
+				continue;
+
+			/* MONITOR <host> <desc> */
+			if (handle_MONITOR && !strcmp(ctx.arglist[0], "MONITOR"))
+				add_ups(ctx.arglist[1], ctx.arglist[2]);
 		}
 
-		/* CUSTOM_TEMPLATE_LIST <filename> */
-		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_LIST"))
-			add_allowed_template_list(ctx.arglist[1]);
-
-		/* CUSTOM_TEMPLATE_SINGLE <filename> */
-		if (!strcmp(ctx.arglist[0], "CUSTOM_TEMPLATE_SINGLE"))
-			add_allowed_template_single(ctx.arglist[1]);
-
-		if (ctx.numargs < 3)
-			continue;
-
-		/* MONITOR <host> <desc> */
-		if (handle_MONITOR && !strcmp(ctx.arglist[0], "MONITOR"))
-			add_ups(ctx.arglist[1], ctx.arglist[2]);
+		pconf_finish(&ctx);
 	}
 
-	pconf_finish(&ctx);
+	pconf_free_files(files);
 
 	if (!ulhead && handle_MONITOR) {
 		/* Don't print HTML here if we are in JSON mode.

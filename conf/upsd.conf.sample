@@ -10,6 +10,11 @@
 #
 # NOTE: Contents of this file should be pure ASCII (character codes
 # not in range would be ignored with a warning message).
+#
+# Additional configuration snippets can be placed in `upsd.conf.d/*.conf`
+# files, processed in alphanumeric order. Each additional file restarts
+# population of the root context, adding or replacing configuration
+# remembered there from earlier parsing.
 
 # =======================================================================
 # MAXAGE <seconds>

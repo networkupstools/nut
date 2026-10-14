@@ -2081,6 +2081,8 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	utype_t	*tmp, *last;
 	long	lpv;
 
+	NUT_UNUSED_VARIABLE(reloading);
+
 	/* the username is now required - no more host-based auth */
 
 	if ((!sys) || (!pvs) || (!pw) || (!managerialOption) || (!un)) {
@@ -2130,11 +2132,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 		/* check for duplicates */
 		if (!strcmp(tmp->sys, sys)) {
-			if (reloading)
-				redefine_ups(tmp, pv, un, pw, managerialOption);
-			else
-				upslogx(LOG_WARNING, "Warning: ignoring duplicate"
-					" UPS [%s]", sys);
+			redefine_ups(tmp, pv, un, pw, managerialOption);
 			return;
 		}
 
@@ -2694,28 +2692,27 @@ static void loadconfig(void)
 {
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
+	char	**files;
+	size_t	file_idx, count = 0;
 
 	upsdebugx(1, "%s: %s %s", __func__,
 		(reload_flag == 1) ? "Reloading" : "Loading",
 		configfile);
 
-	pconf_init(&ctx, upsmon_err);
-
-	if (!pconf_file_begin(&ctx, configfile)) {
-		pconf_finish(&ctx);
-
+	files = pconf_get_files(configfile, &count);
+	if (!files || count == 0) {
 		if (reload_flag == 1) {
-			upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+			upslog_with_errno(LOG_ERR, "Reload failed: can't open %s (and %s.d/*.conf)", configfile, configfile);
 			return;
 		}
 
 		if (reload_flag == -1) {
 			/* For help() */
-			upsdebugx(1, "Load failed: %s", ctx.errmsg);
+			upsdebugx(1, "Load failed: can't open %s (and %s.d/*.conf)", configfile, configfile);
 			return;
 		}
 
-		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "Can't open %s (and %s.d/*.conf)", configfile, configfile);
 	}
 
 	if (reload_flag == 1) {
@@ -2754,33 +2751,59 @@ static void loadconfig(void)
 		/*upscli_cleanup();*/
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				configfile, ctx.linenum, ctx.errmsg);
-			numerrors++;
-			continue;
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		pconf_init(&ctx, upsmon_err);
+
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
+			pconf_finish(&ctx);
+
+			if (reload_flag == 1) {
+				upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+				continue;
+			}
+
+			if (reload_flag == -1) {
+				/* For help() */
+				upsdebugx(1, "Load failed: %s", ctx.errmsg);
+				continue;
+			}
+
+			pconf_free_files(files);
+			fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 		}
 
-		if (ctx.numargs < 1)
-			continue;
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				numerrors++;
+				continue;
+			}
 
-		if (!parse_conf_arg(ctx.numargs, ctx.arglist)) {
-			unsigned int	i;
-			char	errmsg[SMALLBUF];
+			if (ctx.numargs < 1)
+				continue;
 
-			snprintf(errmsg, sizeof(errmsg),
-				"%s line %d: invalid directive",
-				configfile, ctx.linenum);
+			if (!parse_conf_arg(ctx.numargs, ctx.arglist)) {
+				unsigned int	i;
+				char	errmsg[SMALLBUF];
 
-			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s",
-					ctx.arglist[i]);
+				snprintf(errmsg, sizeof(errmsg),
+					"%s line %d: invalid directive",
+					files[file_idx], ctx.linenum);
 
-			numerrors++;
-			upslogx(LOG_WARNING, "%s", errmsg);
+				for (i = 0; i < ctx.numargs; i++)
+					snprintfcat(errmsg, sizeof(errmsg), " %s",
+						ctx.arglist[i]);
+
+				numerrors++;
+				upslogx(LOG_WARNING, "%s", errmsg);
+			}
 		}
+
+		pconf_finish(&ctx);
 	}
+
+	pconf_free_files(files);
 
 	if (reload_flag == 1) {
 		if (nut_debug_level_global > -1) {

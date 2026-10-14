@@ -489,14 +489,6 @@ upsconf_getSection_content() {
     # "$1" = name of ups.conf section to display in whole, from whatever
     # comes on stdin (file or a pre-made normalized variable)
     # empty "$1" means the global config (before any sections)
-    #
-    # NOTE (TODO?): This routine finds the one NUT device section, prints it
-    # and returns when the section is over. It currently does not cover (in
-    # a way allowing to do it efficiently) selection of several sections,
-    # or storing each section content in some array or dynamic variables
-    # (as would be better fit for portable shells) to later address them
-    # quickly without re-parsing the file or big envvar many times.
-    #
 
     CURR_SECTION=""
     SECTION_CONTENT=""
@@ -504,13 +496,20 @@ upsconf_getSection_content() {
     [ -n "$1" ] || RES=0
     while IFS= read -r LINE ; do
         case "$LINE" in
-            \["$1"\])
-                if [ "$RES" = 0 ]; then
-                    # We have already displayed a section, here is a new one,
-                    # and this routine only displays one (TODO: toggle?)
-                    break
+            \[\])
+                # Reset to root/global context
+                if [ -z "$1" ]; then
+                    CURR_SECTION=""
+                    RES=0
+                else
+                    CURR_SECTION="[]"
                 fi
-                SECTION_CONTENT="$LINE"
+                continue
+                ;;
+            \["$1"\])
+                if [ "$RES" != 0 ]; then
+                    SECTION_CONTENT="$LINE"
+                fi
                 CURR_SECTION="$1"
                 RES=0
                 continue
@@ -520,8 +519,7 @@ upsconf_getSection_content() {
                 # Fall through to add the line to contents of existing section
                 ;;
             \[*\])
-                [ "$CURR_SECTION" = "$1" ] && break
-                # Use a value that can not be a section name here:
+                # Other section
                 CURR_SECTION="[]"
                 continue
                 ;;
@@ -786,6 +784,39 @@ upsconf_debug() {
     # Not public, not in usage()
     # Used by tests, echo as formatted here to stdout
     printf '%s\n' "INST: ${NAME_MD5}~[$1]: DRV='${_DRV}' PORT='${_PRT}' MEDIA='${_MED}' SECTIONMD5='${_MD5}'"
+}
+
+upsconf_get_files() {
+    # Returns the list of ups.conf and ups.conf.d/*.conf files in processing order
+    _FOUND=""
+    if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
+        _FOUND="$UPSCONF"
+    fi
+    if [ -d "${UPSCONF}.d" ] && [ -r "${UPSCONF}.d" ]; then
+        for _F in "${UPSCONF}.d"/*.conf ; do
+            if [ -f "$_F" ] && [ -r "$_F" ]; then
+                if [ -z "$_FOUND" ]; then
+                    _FOUND="$_F"
+                else
+                    _FOUND="$_FOUND
+$_F"
+                fi
+            fi
+        done
+    fi
+    [ -n "$_FOUND" ] || return 2
+    printf '%s\n' "$_FOUND"
+}
+
+calc_md5_upsconf() {
+    # Calculates checksum across $UPSCONF and ${UPSCONF}.d/*.conf files
+    _FILES="`upsconf_get_files 2>/dev/null`" || return 2
+    _CONCAT=""
+    for _F in $_FILES ; do
+        _FMD5="`calc_md5_file \"$_F\"`" || return 1
+        _CONCAT="${_CONCAT}${_FMD5}"
+    done
+    calc_md5 "$_CONCAT"
 }
 
 calc_md5() {
@@ -1400,37 +1431,46 @@ upslist_normalizeFile_filter() {
 }
 
 upslist_normalizeFile() {
-    # Read the ups.conf file and find all defined sections (names of
-    # configuration blocks for drivers that connect to a certain device
+    # Read the ups.conf (and ups.conf.d/*.conf) file(s) and find all defined sections
+    # (names of configuration blocks for drivers that connect to a certain device
     # using specified protocol and media); normalize section contents
     # as detailed below, to simplify subsequent parsing and comparison.
 
     # File contents
     UPSCONF_DATA=""
     UPSCONF_DATA_SDP=""
-    if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
-        [ ! -s "$UPSCONF" ] \
-        && log_warn "The '$UPSCONF' file exists but is empty" \
-        && return 0
-        # Ok to continue - we may end up removing all instances
-    else
-        # TOTHINK: log_fatal() right away?
-        log_error "The '$UPSCONF' file does not exist or is not readable"
+
+    UPSCONF_FILES="`upsconf_get_files 2>/dev/null`" || UPSCONF_FILES=""
+    if [ -z "$UPSCONF_FILES" ]; then
+        log_error "The '$UPSCONF' file (and '${UPSCONF}.d/*.conf') does not exist or is not readable"
         return 2
     fi
 
-    # Store a normalized version of NUT configuration file contents.
-    # Also use a SDP subset with just section, driver and port info
-    # for faster parsing when determining driver-required media etc.
-    UPSCONF_DATA="`upslist_normalizeFile_filter < \"${UPSCONF}\"`" \
-        && [ "${#UPSCONF_DATA}" != 0 ] \
-        && UPSCONF_DATA_SDP="`$EGREP '^(\[.*\]|driver=|port=)' << EOF
+    # Read and normalize each file, concatenating them.
+    # Note: Any additional file restarts population of the root context,
+    # adding/replacing configuration remembered there from earlier parsing.
+    for _F in $UPSCONF_FILES ; do
+        _DATA="`upslist_normalizeFile_filter < \"${_F}\"`"
+        if [ -n "$_DATA" ]; then
+            if [ -z "$UPSCONF_DATA" ]; then
+                UPSCONF_DATA="$_DATA"
+            else
+                UPSCONF_DATA="${UPSCONF_DATA}
+[]
+${_DATA}"
+            fi
+        fi
+    done
+
+    if [ "${#UPSCONF_DATA}" != 0 ] ; then
+        UPSCONF_DATA_SDP="`$EGREP '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
-EOF`" \
-        ||  { log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization"
-              UPSCONF_DATA=""
-              UPSCONF_DATA_SDP=""
-            }
+EOF`"
+    else
+        log_error "Could not read the '$UPSCONF' (and '${UPSCONF}.d/*.conf') file(s) or they do not declare any device configurations: nothing left after normalization"
+        UPSCONF_DATA=""
+        UPSCONF_DATA_SDP=""
+    fi
 }
 
 upslist_normalizeFile_once() {
@@ -1455,7 +1495,7 @@ upslist_readFile() {
 
     if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
-        UPSLIST_FILE="`printf '%s\n' \"$UPSCONF_DATA_SDP\" | $EGREP '^\[[^'\"$TABCHAR\"'\ ]*\]$' | $SED 's,^\[\(.*\)\]$,\1,' | sort -k1n -k1`" \
+        UPSLIST_FILE="`printf '%s\n' \"$UPSCONF_DATA_SDP\" | $EGREP '^\[[^'\"$TABCHAR\"'\ ]+\]$' | $SED 's,^\[\(.*\)\]$,\1,' | $EGREP -v '^$' | sort -k1n -k1 | uniq`" \
             || UPSLIST_FILE=""
         if [ "${#UPSLIST_FILE}" = 0 ] ; then
             log_error "Could not read the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents"
@@ -1674,7 +1714,7 @@ nut_driver_enumerator_main() {
     # NOTE: Check this at the last moment to minimize
     # the chance of still not noticing the change made
     # at just the wrong moment.
-    UPSCONF_CHECKSUM_END="`calc_md5_file \"$UPSCONF\"`" || true
+    UPSCONF_CHECKSUM_END="`calc_md5_upsconf`" || true
     if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
         # NOTE: even if daemonized, the sleep between iterations
         # can be configured into an uncomfortably long lag, so
@@ -1746,7 +1786,7 @@ nut_driver_enumerator_full_reconfigure() {
     # NOTE: Check this at the last moment to minimize
     # the chance of still not noticing the change made
     # at just the wrong moment.
-    UPSCONF_CHECKSUM_END="`calc_md5_file \"$UPSCONF\"`" || true
+    UPSCONF_CHECKSUM_END="`calc_md5_upsconf`" || true
     if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
         log_info "'$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up and reconcile the late-coming changes"
         nut_driver_enumerator_main ; return $?
@@ -1943,7 +1983,7 @@ trap_handle_hup_sleep() {
     log_info "Received a HUP in my sleep, reprocessing configs right now!"
     # Avoid re-parsing main twice, though don't recalculate
     # checksums needlessly on every loop cycle, either...
-    UPSCONF_CHECKSUM_START="`calc_md5_file \"$UPSCONF\"`" || true
+    UPSCONF_CHECKSUM_START="`calc_md5_upsconf`" || true
     RECONFIGURE_ASAP=true
     if [ -n "$1" ] ; then
         # Kill the sleeper PID
@@ -1996,7 +2036,7 @@ daemonize() {
 
 # Save the checksum of ups.conf as early as possible,
 # to test in the end that it is still the same file.
-UPSCONF_CHECKSUM_START="`calc_md5_file \"$UPSCONF\"`" || true
+UPSCONF_CHECKSUM_START="`calc_md5_upsconf`" || true
 
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then

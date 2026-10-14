@@ -753,6 +753,60 @@ testcase_semver_compare() {
         --with-foo bar --expand 01.02.03
 }
 
+testcase_dropins_cmd() (
+    DROPIN_DIR="${NUT_CONFPATH}/test-dropins-$$"
+    mkdir -p "${DROPIN_DIR}/ups.conf.d" || exit 1
+    trap 'rm -rf "${DROPIN_DIR}"' 0
+
+    cat > "${DROPIN_DIR}/ups.conf" << 'EOF'
+maxstartdelay = 180
+[ups_main]
+driver = dummy-ups
+port = file1.dev
+desc = "Main file UPS"
+EOF
+
+    cat > "${DROPIN_DIR}/ups.conf.d/10-extra.conf" << 'EOF'
+[ups_extra]
+driver = usbhid-ups
+port = auto
+desc = "Extra UPS from snippet"
+EOF
+
+    cat > "${DROPIN_DIR}/ups.conf.d/20-override.conf" << 'EOF'
+maxstartdelay = 240
+[ups_main]
+desc = "Main file UPS overridden by snippet"
+EOF
+
+    UPSCONF="${DROPIN_DIR}/ups.conf"
+    export UPSCONF
+
+    DEVS="`callNDE --list-devices`" || exit 1
+    echo "DEVICES: $DEVS"
+
+    DELAY="`callNDE --show-device-config-value '' maxstartdelay`" || exit 1
+    echo "MAXSTARTDELAY: $DELAY"
+
+    MAIN_DESC="`callNDE --show-device-config-value ups_main desc`" || exit 1
+    echo "MAIN_DESC: $MAIN_DESC"
+
+    EXTRA_DRV="`callNDE --show-device-config-value ups_extra driver`" || exit 1
+    echo "EXTRA_DRV: $EXTRA_DRV"
+)
+
+testcase_dropins() {
+    run_testcase_generic testcase_dropins_cmd \
+        "Drop-in discovery and section merging in nut-driver-enumerator" 0 \
+"DEVICES: ups_extra
+ups_main
+MAXSTARTDELAY: 180
+240
+MAIN_DESC: Main file UPS
+Main file UPS overridden by snippet
+EXTRA_DRV: usbhid-ups"
+}
+
 # Combine the cases above into a stack
 testsuite() {
     testcase_bogus_args
@@ -761,6 +815,7 @@ testsuite() {
     testcase_getValue
     testcase_globalSection
     testcase_valueSyntax
+    testcase_dropins
     # This one can take a while, put it last
     testcase_upslist_debug
     # Something very different

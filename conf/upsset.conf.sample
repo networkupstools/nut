@@ -8,6 +8,11 @@
 # NOTE: Contents of this file should be pure ASCII (character codes
 # not in range would be ignored with a warning message).
 #
+# Additional configuration snippets can be placed in `upsset.conf.d/*.conf`
+# files, processed in alphanumeric order. Each additional file restarts
+# population of the root context, adding or replacing configuration
+# remembered there from earlier parsing.
+#
 # By default, your web server will probably let anyone access upsset.cgi
 # once it is installed.  This means that anyone could attempt to crack
 # upsd logins since they would appear to be coming from your web server,

@@ -90,34 +90,51 @@ int read_upsconf(int fatal_errors)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	char	**files;
+	size_t	i, count = 0;
 
-	ups_section = NULL;
 	snprintf(fn, sizeof(fn), "%s/ups.conf", confpath());
 
-	pconf_init(&ctx, upsconf_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
 		if (fatal_errors) {
-			fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
+			fatalx(EXIT_FAILURE, "Can't open %s (and %s.d/*.conf)", fn, fn);
 		} else {
-			upslogx(LOG_WARNING, "Can't open %s: %s", fn, ctx.errmsg);
+			upslogx(LOG_WARNING, "Can't open %s (and %s.d/*.conf)", fn, fn);
 			return -1;
 		}
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-			continue;
+	for (i = 0; i < count; i++) {
+		ups_section = NULL;
+		pconf_init(&ctx, upsconf_err);
+
+		if (!pconf_file_begin(&ctx, files[i])) {
+			if (fatal_errors) {
+				fatalx(EXIT_FAILURE, "Can't open %s: %s", files[i], ctx.errmsg);
+			} else {
+				upslogx(LOG_WARNING, "Can't open %s: %s", files[i], ctx.errmsg);
+				pconf_finish(&ctx);
+				pconf_free_files(files);
+				return -1;
+			}
 		}
 
-		conf_args(ctx.numargs, ctx.arglist);
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[i], ctx.linenum, ctx.errmsg);
+				continue;
+			}
+
+			conf_args(ctx.numargs, ctx.arglist);
+		}
+
+		pconf_finish(&ctx);
+		free(ups_section);
+		ups_section = NULL;
 	}
 
-	pconf_finish(&ctx);
-
-	free(ups_section);
-
+	pconf_free_files(files);
 	return 1; /* Handled OK */
 }
