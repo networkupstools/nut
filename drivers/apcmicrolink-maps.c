@@ -36,9 +36,19 @@ static const microlink_value_map_t microlink_outlet_status_map[] = {
 	{ 0, NULL }
 };
 
+/* Only a running calibration belongs in ups.status. apc_calibration_status_map
+ * holds the labels of the calibration RESULT register, and feeding it to
+ * status_set() leaks them as status tokens: a unit whose last calibration
+ * ended "Failed" reported "OL Failed" forever (seen on an SMX1500, FW UPS 16.0).
+ */
+static const microlink_value_map_t microlink_calibration_ups_status_map[] = {
+	{ (1ULL << 1), "CAL" },	/* InProgress */
+	{ 0, NULL }
+};
+
 const microlink_desc_publish_map_t microlink_desc_publish_map[] = {
 	{ "2:4.A", apc_status_map, apc_alarm_map },
-	{ "2:13", apc_calibration_status_map, NULL },
+	{ "2:13", microlink_calibration_ups_status_map, NULL },
 	{ NULL, NULL, NULL }
 };
 

@@ -120,7 +120,7 @@ int nutscan_load_avahi_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		upsdebugx(0, "AVAHI client library not found. AVAHI search disabled.");
+		upsdebugx(1, "AVAHI client library not found.");
 		return 0;
 	}
 
@@ -258,8 +258,8 @@ int nutscan_load_avahi_library(const char *libname_path)
 	return 1;
 
 err:
-	upsdebugx(0,
-		"Cannot load AVAHI library (%s) : %s%s%s%s. AVAHI search disabled.",
+	upsdebugx(1,
+		"Cannot load AVAHI library (%s) : %s%s%s%s",
 		libname_path, dl_error,
 		symbol ? " Error happened during search for symbol '" : "",
 		symbol ? symbol : "",
