@@ -13,7 +13,19 @@
 # (having only shell scripting as a prerequisite suffices for that)
 all: PyNUTClient
 
-check-local:
+check-local: check-pynut-parser check-pynut-disconnect
+
+check-pynut-parser:
+	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no ; then \
+		for TEST in test_upslist.py test_protocol.py ; do \
+			PYTHONPATH="$(builddir)" $(PYTHON_DEFAULT) "$(srcdir)/$$TEST" || exit $$? ; \
+		done ; \
+	else \
+		echo "SKIP: PyNUT parser tests require a configured Python interpreter"; \
+	fi
+	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
+
+check-pynut-disconnect:
 	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no; then \
 		$(PYTHON_DEFAULT) "$(builddir)/test_nutclient.py" --disconnect ; \
 	else \
@@ -25,7 +37,7 @@ check-local:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini MANIFEST.in
+EXTRA_DIST = tox.ini MANIFEST.in test_upslist.py test_protocol.py
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON_DEFAULT = @PYTHON_DEFAULT@

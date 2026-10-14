@@ -33,9 +33,10 @@ versions 2.7, 3.4, 3.5, 3.7, 3.11 and 3.13.
 
 [NOTE]
 ======
-Text fields returned by methods are byte sequences (not locale-aware
-strings), except NUT protocol error codes quoted into `PyNUTError`
-exceptions which are decoded into strings as originally `ascii` text.
+The dictionaries returned by `GetUPSList()`, `GetUPSVars()`, `GetRWVars()`
+and `GetUPSCommands()` contain byte keys and values (not locale-aware
+strings). NUT protocol error codes in `PyNUTError` exceptions are decoded
+into strings as originally `ascii` text.
 This is of little concern for Python 2, but is important in Python 3.
 
 The `ups` argument to methods is handled as a string, so conversion may
@@ -46,8 +47,8 @@ strUps = bUps.decode('ascii')
 bUps = strUps.encode('ascii')
 ----
 
-Only the names returned by `GetUPSNames()` method specifically are
-converted into string type.
+`GetUPSNames()`, `GetVariableDescription()`, `GetEnumList()` and the bounds
+returned by `GetRangeList()` use ASCII-decoded strings.
 
 Since Python 3 support was added just recently, module code may later be
 converted to use string types like `str` or `unicode` in the returned
@@ -57,6 +58,18 @@ idiomatic.
 Examples below *do not* specify the `b'some text'` markup that would be
 pedantically correct (for Python 3 at least).
 ======
+
+Description and value readers decode NUT escaping exactly once. Callers
+should not remove backslashes from the returned data themselves: a literal
+backslash in a value remains a backslash, and is not a Python escape.
+Pass ordinary ASCII strings for the constructor's `login` and `password`
+arguments, without adding NUT quotes or escapes. The client encodes these
+arguments for transmission; control characters are rejected.
+
+The `nutauth.conf` reader uses NUT syntax for values and `INCLUDE` filenames:
+double quotes group tokens, single quotes are literal, unquoted hashes
+begin comments, and backslashes escape the next character. See
+linkman:nutauth.conf[5] for configuration examples.
 
 .List of methods in the class
 ------
