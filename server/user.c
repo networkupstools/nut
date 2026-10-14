@@ -45,12 +45,14 @@ static void user_add(const char *un)
 		return;
 	}
 
+	curr_user = NULL;
+
 	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		last = tmp;
 
 		if (!strcmp(tmp->username, un)) {
-			curr_user = tmp;
+			upslogx(LOG_WARNING, "Warning: ignoring duplicate user [%s]", un);
 			return;
 		}
 	}
@@ -81,7 +83,12 @@ static void user_password(const char *pw)
 		return;
 	}
 
-	free(curr_user->password);
+	if (curr_user->password) {
+		upslogx(LOG_WARNING, "Warning: ignoring duplicate password for [%s]",
+			curr_user->username);
+		return;
+	}
+
 	curr_user->password = xstrdup(pw);
 }
 

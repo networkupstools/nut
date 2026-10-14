@@ -797,13 +797,12 @@ EOF
 
 testcase_dropins() {
     run_testcase_generic testcase_dropins_cmd \
-        "Drop-in discovery and section merging in nut-driver-enumerator" 0 \
+        "Drop-in discovery and duplicate section rejection in nut-driver-enumerator" 0 \
 "DEVICES: ups_extra
 ups_main
 MAXSTARTDELAY: 180
 240
 MAIN_DESC: Main file UPS
-Main file UPS overridden by snippet
 EXTRA_DRV: usbhid-ups"
 }
 

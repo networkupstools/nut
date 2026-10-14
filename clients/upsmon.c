@@ -2081,8 +2081,6 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	utype_t	*tmp, *last;
 	long	lpv;
 
-	NUT_UNUSED_VARIABLE(reloading);
-
 	/* the username is now required - no more host-based auth */
 
 	if ((!sys) || (!pvs) || (!pw) || (!managerialOption) || (!un)) {
@@ -2132,7 +2130,11 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 		/* check for duplicates */
 		if (!strcmp(tmp->sys, sys)) {
-			redefine_ups(tmp, pv, un, pw, managerialOption);
+			if (reloading)
+				redefine_ups(tmp, pv, un, pw, managerialOption);
+			else
+				upslogx(LOG_WARNING, "Warning: ignoring duplicate"
+					" UPS [%s]", sys);
 			return;
 		}
 

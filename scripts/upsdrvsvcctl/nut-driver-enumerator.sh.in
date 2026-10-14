@@ -492,6 +492,7 @@ upsconf_getSection_content() {
 
     CURR_SECTION=""
     SECTION_CONTENT=""
+    SEEN_SECTION=0
     RES=1
     [ -n "$1" ] || RES=0
     while IFS= read -r LINE ; do
@@ -507,6 +508,12 @@ upsconf_getSection_content() {
                 continue
                 ;;
             \["$1"\])
+                if [ -n "$1" ] && [ "$SEEN_SECTION" = 1 ]; then
+                    log_warn "Warning: ignoring duplicate UPS [$1]"
+                    CURR_SECTION="[]"
+                    continue
+                fi
+                SEEN_SECTION=1
                 if [ "$RES" != 0 ]; then
                     SECTION_CONTENT="$LINE"
                 fi

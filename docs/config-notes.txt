@@ -183,64 +183,57 @@ of its business in detection of overall configuration changes is to
 compute combined checksums and extract configuration across drop-ins
 as if they were a single file.
 
-Configuration Section Merging Behavior::
-In the implemented configuration drop-in architecture, defining an
-already-known section (such as `[upsname]` in `ups.conf` / `ups.conf.d/*.conf`,
-or `[username]` in `upsd.users` / `upsd.users.d/*`) in a subsequent
-configuration file merges the newly added data into what has already been
-learned and remembered from previous files, rather than replacing the section
-as a whole. Flat file formats without any subsections behave essentially the
-same way, acting like one global configuration section.
+Configuration Section Uniqueness and Stacking Behavior::
+In the configuration drop-in architecture, named sub-sections (such as
+`[upsname]` in `ups.conf` / `ups.conf.d/*.conf`, `[username]` in `upsd.users`
+/ `upsd.users.d/*`, or `MONITOR` entries in `upsmon.conf` / `upsmon.conf.d/*.conf`)
+must be defined once. If a section or device/user definition is encountered
+again in a subsequent file or snippet, the parser retains the first seen
+definition, ignores the duplicate section, and logs a warning about it.
 +
-This design maximizes practical utility and efficiency for administrators:
-modular drop-ins can override or add specific parameters without duplicating
-entire configuration blocks.
+Flat file directives outside sections (or files without subsections, acting
+like one global configuration section) continue to add or replace configuration
+remembered from earlier parsing in root context.
 
-How Merging Operates Across Components::
+How Uniqueness Operates Across Components::
 1. UPS Definitions (`ups.conf` and `ups.conf.d/*.conf`):
-   * Drivers: When a driver parses its section across `ups.conf` and later
-     `ups.conf.d/*.conf` files, parameters already loaded into the driver
-     state tree (`dstate`) are preserved. Subsequent definitions in drop-in
-     files for the same section name update existing keys with new values
-     or append new keys or flags, retaining previously configured options
-     (e.g., `port`, `desc`, vendor-specific flags).
-   * Driver Controller (`upsdrvctl`): When encountering repeated `[upsname]`
-     sections across files, `upsdrvctl` resolves the existing record in its
-     internal table and updates or populates specific fields of interest (such
-     as `driver`, `port`, `sdorder`, `maxstartdelay`, `maxretry`, `retrydelay`)
-     instead of discarding earlier attributes or creating duplicate records.
-   * Data Server (`upsd`) locates the existing `ups_t` definition for an
-     `upsname` in its `upstable`, and updates individual fields (`driver`,
-     `port`, `desc`), retaining other previously associated attributes.
+   * Drivers: When a driver parses `ups.conf` and later `ups.conf.d/*.conf`
+     files, the first seen definition of a `[upsname]` section is parsed into
+     the driver state tree (`dstate`). Duplicate occurrences of the section
+     are ignored with a warning log.
+   * Driver Controller (`upsdrvctl`): The first definition of each `[upsname]`
+     populates the driver records in its internal table. Duplicate section
+     headers are ignored with a warning.
+   * Data Server (`upsd`): The first definition of each `[upsname]` in
+     `upstable` is retained; duplicates are ignored with a warning.
    * Driver Service Enumerator (`nut-driver-enumerator`) script: its
-     `upsconf_getSection_content()` method collects all lines associated
-     with an `[upsname]` section across the main configuration and all
-     `ups.conf.d/*.conf` drop-in files into a unified section body.
-     Parameter resolution processes these definitions sequentially so
-     that later assignments override earlier ones while non-conflicting
-     assignments are preserved.
+     `upsconf_getSection_content()` method collects lines from the first
+     seen `[upsname]` section across the configuration and drop-ins, ignoring
+     duplicate section blocks with a warning.
 2. User & Access Control Definitions (`upsd.users` and `upsd.users.d/*`):
-   * User Accounts: When a `[username]` section is encountered across files,
-     the `upsd` `add_user()` method attaches to the existing user record
-     in `usertable` rather than ignoring it or discarding prior settings.
-   * Passwords & Role Settings: Setting `password` value in a drop-in file
-     updates the existing password for that user. Setting `upsmon` updates
-     the client role flags (`master`/`primary`, `slave`/`secondary`).
-   * Command & Action Lists: Directives such as `actions` and `instcmds`
-     append authorized items to that user's action and instant command
-     lists (if not already present there), effectively merging
-     permissions from drop-in snippets into the existing account.
+   * User Accounts: When a `[username]` section is encountered, `upsd` creates
+     the user record in `usertable`. Subsequent occurrences of the same username
+     are ignored with a warning log.
+   * Passwords & Role Settings: Defined under the initial user section; duplicate
+     password definitions are ignored.
+3. Client Monitoring Definitions (`upsmon.conf` and `upsmon.conf.d/*.conf`):
+   * Monitored Systems: Each `MONITOR <system> ...` definition creates a
+     monitored UPS entry. Duplicate `MONITOR` definitions for the same system
+     are ignored with a warning log.
+4. CGI Host Definitions (`hosts.conf` and `hosts.conf.d/*.conf`):
+   * Monitored Hosts: Each `MONITOR <system> ...` definition creates a host
+     entry. Duplicate `MONITOR` lines for the same system are ignored with a
+     warning log.
 
 Root Context Reset Between Files::
-While repeated named sections merge their key-value pairs into the existing
-section definitions, the parser always resets its current section context
-to the root/global level at the start of each new file:
+Any additional drop-in file always restarts population of its configuration
+at the root/global context:
 * Directives placed outside of any `[...]` section header in a drop-in file
   apply to global settings (e.g., `maxstartdelay`, `STATEPATH`, `LISTEN`,
-  `MAXAGE`).
-* Directives inside a `[section]` header in a drop-in file apply directly to
-  that named section, augmenting what was defined in the base configuration
-  or earlier drop-ins.
+  `MAXAGE`), adding or replacing settings remembered from earlier parsing.
+* Directives inside a newly seen `[section]` header in a drop-in file apply
+  to that named section; duplicate sections defined earlier are ignored
+  with a warning log.
 
 
 Basic configuration

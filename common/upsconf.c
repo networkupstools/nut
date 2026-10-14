@@ -30,8 +30,48 @@
 #include "parseconf.h"
 
 	static	char	*ups_section;
+	static	int	ups_section_ignored = 0;
+
+	struct section_node {
+		char	*name;
+		struct section_node	*next;
+	};
+
+	static	struct section_node	*seen_sections = NULL;
 
 	void (*callback_upsconf_args)(char *upsname, char *var, char *val) = NULL;
+
+static void free_seen_sections(void)
+{
+	struct section_node	*curr = seen_sections;
+
+	while (curr) {
+		struct section_node	*next = curr->next;
+		free(curr->name);
+		free(curr);
+		curr = next;
+	}
+	seen_sections = NULL;
+}
+
+static int is_seen_section(const char *name)
+{
+	struct section_node	*curr;
+
+	for (curr = seen_sections; curr != NULL; curr = curr->next) {
+		if (!strcmp(curr->name, name))
+			return 1;
+	}
+	return 0;
+}
+
+static void add_seen_section(const char *name)
+{
+	struct section_node	*node = (struct section_node *)xmalloc(sizeof(*node));
+	node->name = xstrdup(name);
+	node->next = seen_sections;
+	seen_sections = node;
+}
 
 /* handle arguments separated by parseconf */
 static void conf_args(size_t numargs, char **arg)
@@ -53,11 +93,24 @@ static void conf_args(size_t numargs, char **arg)
 	if ((arg[0][0] == '[') && (arg[0][strlen(arg[0])-1] == ']')) {
 
 		free(ups_section);
+		ups_section = NULL;
 
 		arg[0][strlen(arg[0])-1] = '\0';
+
+		if (is_seen_section(&arg[0][1])) {
+			upslogx(LOG_WARNING, "Warning: ignoring duplicate UPS [%s]", &arg[0][1]);
+			ups_section_ignored = 1;
+			return;
+		}
+
+		add_seen_section(&arg[0][1]);
+		ups_section_ignored = 0;
 		ups_section = xstrdup(&arg[0][1]);
 		return;
 	}
+
+	if (ups_section_ignored)
+		return;
 
 	/* handle 'foo' (flag) */
 	if (numargs == 1) {
@@ -105,8 +158,13 @@ int read_upsconf(int fatal_errors)
 		}
 	}
 
+	free_seen_sections();
+	ups_section = NULL;
+	ups_section_ignored = 0;
+
 	for (i = 0; i < count; i++) {
 		ups_section = NULL;
+		ups_section_ignored = 0;
 		pconf_init(&ctx, upsconf_err);
 
 		if (!pconf_file_begin(&ctx, files[i])) {
@@ -116,6 +174,7 @@ int read_upsconf(int fatal_errors)
 				upslogx(LOG_WARNING, "Can't open %s: %s", files[i], ctx.errmsg);
 				pconf_finish(&ctx);
 				pconf_free_files(files);
+				free_seen_sections();
 				return -1;
 			}
 		}
@@ -133,8 +192,10 @@ int read_upsconf(int fatal_errors)
 		pconf_finish(&ctx);
 		free(ups_section);
 		ups_section = NULL;
+		ups_section_ignored = 0;
 	}
 
 	pconf_free_files(files);
+	free_seen_sections();
 	return 1; /* Handled OK */
 }

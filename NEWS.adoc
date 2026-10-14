@@ -916,8 +916,10 @@ https://github.com/networkupstools/nut/milestone/13
       `upsd.conf`, `upsd.users`, `hosts.conf`, `upsmon.conf`, `upssched.conf`,
       `upsset.conf`, etc., except `nutauth.conf` which has direct `INCLUDE` and
       `INCLUDE_REQUIRES` keywords already). Any additional file restarts
-      population of the root context, adding or replacing configuration
-      remembered there from earlier parsing.
+      population of the root context, adding or replacing global configuration
+      remembered there from earlier parsing, while sub-sections must be defined
+      once (subsequent duplicate sections are ignored with a warning log).
+      [issue #2230, PR #3784]
 
  - Revised dusty corners of NUT documentation:
     * Corrected client API signatures and array initialization descriptions,

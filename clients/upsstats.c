@@ -1541,8 +1541,7 @@ static void add_ups(char *sys, char *desc)
 
 	while (tmp) {
 		if (!strcmp(tmp->sys, sys)) {
-			free(tmp->desc);
-			tmp->desc = xstrdup(desc);
+			upslogx(LOG_WARNING, "Warning: ignoring duplicate host [%s]", sys);
 			return;
 		}
 		last = tmp;
