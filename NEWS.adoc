@@ -41,6 +41,9 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - Second-level bullet points listed in this file will now use 4 spaces
+   (not 3 like before) for easier initial indentation of new entries.
+
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * Now `upssched -l` preserves timer expiry timestamps beyond January 2038
       on systems with 64-bit `time_t` and 32-bit `long`. [issue #3096, PR #3669]
@@ -88,9 +91,6 @@ https://github.com/networkupstools/nut/milestone/13
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
    [issue #3452, PR #3560]
-
- - Second-level bullet points listed in this file will now use 4 spaces
-   (not 3 like before) for easier initial indentation of new entries.
 
  - Introduced and intensively evolved an experimental `apcmicrolink` driver
    for devices with the APC Microlink protocol on serial port connections.
