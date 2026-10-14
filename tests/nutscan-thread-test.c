@@ -3,8 +3,12 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "common.h"
+/* Keep the included scanner's mutex separate from libnutscan. */
+#define threadcount_mutex test_threadcount_mutex
 #include "nut-scan.h"
 #include "upsclient.h"
+/* Test setup, execution and checks must run even with -DNDEBUG. */
+#undef NDEBUG
 #include <assert.h>
 
 #if defined WIN32 && NUTSCAN_TEST_PROTOCOL == 4
