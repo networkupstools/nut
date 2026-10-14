@@ -333,6 +333,9 @@ technologies,NUTCI_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
 build agent preparation,NUTCI_farm_agents].
 
+See also "Repetitive build/test optimizations" in `INSTALL.nut.adoc` file
+for suggestions specific to this area.
+
 Integrated Development Environments (IDEs) and debugging NUT
 ------------------------------------------------------------
 

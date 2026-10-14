@@ -1076,12 +1076,14 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	const char *certname, const char *certpasswd, const char *certfile)
 {
 #if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
-	NUT_UNUSED_VARIABLE(certverify);
-	NUT_UNUSED_VARIABLE(certpath);
-	NUT_UNUSED_VARIABLE(certname);
-	NUT_UNUSED_VARIABLE(certpasswd);
-	NUT_UNUSED_VARIABLE(certfile);
-	upslogx(LOG_ERR, "%s called but SSL wasn't compiled in", __func__);
+	if (certverify || certpath || certname || certpasswd || certfile) {
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "%s called with non-trivial arguments, but SSL wasn't compiled in", __func__);
+		} else {
+			upslogx(LOG_ERR, "%s called with non-trivial arguments, but SSL wasn't compiled in", __func__);
+		}
+	}
+
 	return NULL;
 #else
 	upscli_ssl_context_config_t	*cfg;
@@ -1410,7 +1412,11 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	 * There's nothing to retry to change that state anyway.
 	 */
 	if (certverify || certpath || certname || certpasswd || certfile) {
-		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "%s called with non-trivial arguments, but unexpected SSL backend was compiled in", __func__);
+		} else {
+			upslogx(LOG_ERR, "%s called with non-trivial arguments, but unexpected SSL backend was compiled in", __func__);
+		}
 	}
 # endif /* WITH_OPENSSL | WITH_NSS */
 
