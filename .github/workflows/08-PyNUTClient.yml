@@ -25,10 +25,12 @@ jobs:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
         fetch-tags: true
+        # Later steps do not use git credentials, so do not keep them
+        persist-credentials: false
     - name: Set up Python 3.13
       uses: actions/setup-python@v7
       with:
@@ -67,14 +69,14 @@ jobs:
     - name: Publish master distribution 📦 to Test PyPI
       # https://github.com/pypa/gh-action-pypi-publish
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
       with:
         packages-dir: scripts/python/module/dist
         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
         repository-url: https://test.pypi.org/legacy/
     - name: Publish tagged release distribution 📦 to PyPI
       if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
       with:
         packages-dir: scripts/python/module/dist
         password: ${{ secrets.PYPI_API_TOKEN }}

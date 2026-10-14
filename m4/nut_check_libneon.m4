@@ -88,6 +88,7 @@ AC_DEFUN([NUT_CHECK_LIBNEON],
             nut_cv_LIBNEON_CFLAGS=""
             nut_cv_LIBNEON_LIBS=""
             nut_cv_SOFILE_LIBNEON=""
+            nut_cv_SONAME_LIBNEON=""
             nut_cv_SOPATH_LIBNEON=""
             AS_IF([test "${nut_cv_have_neon}" = "yes"], [
                 dnl Check for connect timeout support in library (optional)
@@ -102,6 +103,7 @@ AC_DEFUN([NUT_CHECK_LIBNEON],
                             AX_REALPATH_LIB([${TOKEN}], [nut_cv_SOPATH_LIBNEON], [])
                             AS_IF([test -n "${nut_cv_SOPATH_LIBNEON}" && test -s "${nut_cv_SOPATH_LIBNEON}"], [
                                 nut_cv_SOFILE_LIBNEON="`basename \"${nut_cv_SOPATH_LIBNEON}\"`"
+                                AX_SONAME_LIB([${nut_cv_SOPATH_LIBNEON}], [nut_cv_SONAME_LIBNEON], [])
                                 break
                             ])
                         ]
@@ -166,6 +168,7 @@ AC_DEFUN([NUT_CHECK_LIBNEON],
             dnl For nut-scanner style autoloading:
             SOPATH_LIBNEON="${nut_cv_SOPATH_LIBNEON}"
             SOFILE_LIBNEON="${nut_cv_SOFILE_LIBNEON}"
+            SONAME_LIBNEON="${nut_cv_SONAME_LIBNEON}"
 
             dnl For troubleshooting of re-runs, mostly:
             LIBNEON_CFLAGS_SOURCE="${nut_cv_LIBNEON_CFLAGS_SOURCE}"
@@ -177,6 +180,9 @@ AC_DEFUN([NUT_CHECK_LIBNEON],
                 AS_IF([test -n "${SOPATH_LIBNEON}" && test -s "${SOPATH_LIBNEON}"], [
                     AC_DEFINE_UNQUOTED([SOPATH_LIBNEON], ["${SOPATH_LIBNEON}"], [Path to dynamic library on build system])
                     AC_DEFINE_UNQUOTED([SOFILE_LIBNEON], ["${SOFILE_LIBNEON}"], [Base file name of dynamic library on build system])
+                    AS_IF([test -n "${SONAME_LIBNEON}"], [
+                        AC_DEFINE_UNQUOTED([SONAME_LIBNEON], ["${SONAME_LIBNEON}"], [SONAME (run-time linker name) of dynamic library on build system])
+                    ])
                 ])
             ])
 
