@@ -36,7 +36,11 @@ Follow more specific guidance in those files if this summary differs from it.
   practice requires a generated artefact to be tracked.
 - Update manuals, compatibility data, version markers, `NEWS.adoc`,
   `UPGRADING.adoc` and acknowledgements only where required by the affected
-  change.
+  change. With `NEWS.adoc` note that many changes are grouped by subject,
+  such as improvements for a specific driver or tool program, library or
+  common ecosystem -- do not introduce dangling paragraphs where they can
+  rather be bullet points in an existing list. Be sure to only add entries to
+  the upcoming release (topmost chapter in `NEWS.adoc` and `UPGRADING.adoc`).
 
 ## Validate the affected behaviour
 
