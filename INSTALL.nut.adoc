@@ -279,6 +279,16 @@ for developers iterating on some features.
   changed. On many systems it suffices to add e.g. `/usr/lib/ccache` early
   in `PATH` and populate it with symlinks to e.g. `/usr/bin/ccache` using
   various compiler program names.
+  The full Git-derived NUT version, which changes with every commit, is not
+  stored in the `include/config.h` file (included by all sources) but only
+  in `include/nut_version.h` (included by a couple of source files), so after
+  a new commit or in a fresh checkout, only those few objects get recompiled.
+  If several Git work trees or checkout directories share one cache, set
+  `CCACHE_BASEDIR` to a common parent directory so that absolute paths in
+  compiler command lines do not prevent cache hits.
+* When you iterate code development, `make NUT_VERSION_H_GENERATED=true`
+  can skip regeneration of `include/nut_version.h` (at a cost of a less
+  precise version reported by the built programs).
 * If you are a developer iterating with debug builds on different branches,
   `export CI_AUTOGEN_STABLE_VERSION=true` can additionally ensure that the
   `AC_INIT` in the generated `configure` script would not follow NUT SEMVER

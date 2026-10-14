@@ -336,6 +336,15 @@ build agent preparation,NUTCI_farm_agents].
 See also "Repetitive build/test optimizations" in `INSTALL.nut.adoc` file
 for suggestions specific to this area.
 
+The full Git-derived NUT version (e.g. `2.8.5.1466.13`) changes with every
+commit, so it is kept out of `include/config.h` (included by all sources)
+to let `ccache` re-use objects: the `PACKAGE_VERSION` and `PACKAGE_STRING`
+macros there only carry the base semantic version (e.g. `2.8.5`). Please
+do not use these macros in new C code; the full version is provided by
+`NUT_VERSION_MACRO` in the generated `include/nut_version.h` file (exposed
+to programs by the `UPS_VERSION` string in common code), and that header
+should not be included by more source files than necessary.
+
 Integrated Development Environments (IDEs) and debugging NUT
 ------------------------------------------------------------
 
