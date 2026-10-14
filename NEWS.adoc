@@ -878,6 +878,9 @@ https://github.com/networkupstools/nut/milestone/13
       revisions available on the worker. On the other side, this CI recipe was
       extended to require more "quick phase" builds to cover spellcheck on many
       distributions, as their base dictionaries like different things. [PR #3757]
+    * Further rearrangement of AppVeyor CI builds and security hardening of
+      GitHub Actions used to prepare the dist tarballs and report on progress
+      there. [PRs #3753, #3754, #3756]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
