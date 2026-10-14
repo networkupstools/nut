@@ -1,0 +1,55 @@
+# Report results of "GHA-01: Tarballs" (01-make-dist.yml) runs: delete old
+# AppVeyor comments and post a "Preparing" PR comment when a run starts,
+# and when it completes, update that comment with the tarballs link, set
+# a commit status, and delete older artifacts of the same PR or feature
+# branch (not of master or tags).
+#
+# Triggered by workflow_run, so it always runs this workflow (and the
+# .github/scripts/) from the default branch, with the write permissions
+# below, also for PRs from forks. It never checks out or runs PR code:
+# details of the GHA-01 run are only used as data, via env (see
+# .github/scripts/dist-tarballs-report.js).
+
+name: "GHA-01: Tarballs Report"
+
+on:
+  workflow_run:
+    workflows: [ "GHA-01: Tarballs" ]
+    types: [ requested, completed ]
+
+permissions: {}
+
+jobs:
+  report-dist-tarballs:
+    name: "Report Dist and Docs Tarballs"
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: write
+      statuses: write
+
+    steps:
+
+    # Default ref: the trusted default branch. Do not add a "ref:" here.
+    - name: Checkout GHA-01 helper scripts
+      uses: actions/checkout@v7
+      with:
+        sparse-checkout: .github/scripts
+        persist-credentials: false
+
+    - name: "GHA-01: Report to PR comment and commit status"
+      uses: actions/github-script@v9
+      env:
+        RUN_ACTION: ${{ github.event.action }}
+        RUN_ID: ${{ github.event.workflow_run.id }}
+        RUN_URL: ${{ github.event.workflow_run.html_url }}
+        RUN_EVENT: ${{ github.event.workflow_run.event }}
+        RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+      with:
+        script: |
+          const report = require('./.github/scripts/dist-tarballs-report.js');
+          await report.run({ github, context, core });
