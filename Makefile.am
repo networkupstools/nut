@@ -1063,15 +1063,27 @@ dist-hook:
 ### Still, there remains value in also checking the script syntax
 ### by the very version of the shell interpreter that would run
 ### these scripts in production usage of the resulting packages.
+### POSIX shell scripts are checked with each interpreter listed in the
+### SHELL_PROGS envvar (system /bin/sh by default), like the NDE self-test
+### below does; Bourne-Again shell scripts are always checked with bash.
 ###
 check-scripts-syntax:
-	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
+	@echo 'NOTE: some shells (e.g. ksh93) complain about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons, so such messages are hidden: `...` obsolete, use $$(...)'
 	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	 [ -n "$${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh" ; \
+	 echo "Checking POSIX shell scripts with SHELL_PROGS='$$SHELL_PROGS', and Bourne-Again shell scripts with '$$RUNBASH'" ; \
+	 check_syntax() { \
+	    echo "+ $$1 -n $$F" ; \
+	    OUT="`$$1 -n \"$$F\" 2>&1`" ; RES=$$? ; \
+	    if [ -n "$$OUT" ] ; then printf '%s\n' "$$OUT" | $(EGREP) -v '`[.][.][.]` obsolete, use [$$][(][.][.][.][)]' >&2 ; fi ; \
+	    if [ "$$RES" != 0 ] ; then echo "ERROR: Syntax check failed for script file: $$F (with $$1)" >&2 ; return $$RES ; fi ; \
+	 } ; \
 	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file \"$$F\"`" in \
-	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
-	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
-	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
+	        *"Bourne-Again shell script"*) check_syntax "$$RUNBASH" || exit ;; \
+	        *"POSIX shell script"*|*"shell script"*) \
+	            for SH in $$SHELL_PROGS ; do check_syntax "$$SH" || exit ; done ;; \
+	    esac ; \
 	done
 	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
 

@@ -199,7 +199,11 @@ Shell script checks
 The `make shellcheck` recipe finds files which the `file` tool determines
 to be POSIX or Bourne-Again shell scripts, and runs them through respective
 interpreter's (`bash` or system `/bin/sh`) test mode to validate the syntax
-works.
+works. POSIX shell scripts can be checked with other interpreters instead
+of `/bin/sh` by listing them in the `SHELL_PROGS` environment variable,
+e.g. `make shellcheck SHELL_PROGS="dash ksh bash"`. Warnings that some
+shells (e.g. `ksh93`) emit about the legacy command substitution syntax
+(which NUT scripts use deliberately for portability) are hidden.
 
 Given that the `/bin/sh` implementation varies wildly on different systems
 (e.g. Korn shell, BASH, DASH and many others), this goal performed by CI on
