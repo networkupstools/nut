@@ -721,11 +721,11 @@ Options for developers
 Request debug-friendly compiler options for NUT binaries. With `yes`, GCC
 and CLANG builds add `-g3 -gdwarf-2` and reduce optimization with `-O0`.
 For C builds, `-O0` is added to `CPPFLAGS`, so later optimization options
-in `CFLAGS` can still override it. For `C++` builds, these options are appended
+in `CFLAGS` can still override it. For C++ builds, these options are appended
 to `CXXFLAGS` and replace the separate debug options for CppUnit tests.
 Unknown compiler families do not receive these options.
 
-With `auto`, C and `C++` are considered separately: add the debug options only
+With `auto`, C and C++ are considered separately: add the debug options only
 if the caller's `CFLAGS` or `CXXFLAGS`, respectively, contain neither `-O`
 nor `-g` options. With `no`, NUT adds no debug options through this setting;
 compiler defaults and caller-supplied flags still apply. The `legacy` value
@@ -734,9 +734,9 @@ compiler checks.
 
 	--enable-cppunit (yes/no/force/auto, default: auto)
 
-Control whether to build CppUnit tests for the `C++` bindings. Detection
+Control whether to build CppUnit tests for the C\++ bindings. Detection
 requires `pkg-config`, the CppUnit development files and a compiler with
-`C++11` support. The `configure` script also checks whether a small CppUnit
+C++11 support. The `configure` script also checks whether a small CppUnit
 program can build and, when execution is possible, run with the current
 toolkit.
 
