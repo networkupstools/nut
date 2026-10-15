@@ -539,6 +539,59 @@ static void cleanup_flist(void)
 	}
 }
 
+/* Systems own their strings and connection, but borrow the shared log target. */
+static struct monhost_ups_t *new_monhost(const char *system, struct logtarget_t *target)
+{
+	struct monhost_ups_t	*p = (struct monhost_ups_t *)xcalloc(1, sizeof(*p));
+
+	p->monhost = xstrdup(system);
+	p->logtarget = target;
+	return p;
+}
+
+static struct monhost_ups_t *new_discovered_monhost(const struct monhost_ups_t *parent, const char *upsname)
+{
+	struct monhost_ups_t	*p;
+	char	buf[LARGEBUF];
+
+	snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
+		upsname, parent->hostname, parent->port);
+	p = new_monhost(buf, parent->logtarget);
+	p->upsname = xstrdup(upsname);
+	p->hostname = xstrdup(parent->hostname);
+	p->port = parent->port;
+	return p;
+}
+
+static void insert_monhost(struct monhost_ups_t **link, struct monhost_ups_t *p, size_t *count)
+{
+	p->next = *link;
+	*link = p;
+	(*count)++;
+}
+
+static void destroy_monhost(struct monhost_ups_t *p, int report_freeing)
+{
+	/* Wildcard placeholders may have no connection; normal nodes may own one. */
+	if (p->ups) {
+		upscli_disconnect(p->ups);
+		free(p->ups);
+	}
+
+	/* Keep disconnect diagnostics before FREEING, while the strings are alive. */
+	if (report_freeing) {
+		upsdebugx(1, "FREEING: [%s] => [%s] @ [%s]",
+			NUT_STRARG(p->monhost),
+			NUT_STRARG(p->upsname),
+			NUT_STRARG(p->hostname)
+		);
+	}
+	free(p->monhost);
+	free(p->upsname);
+	free(p->hostname);
+	free(p);
+}
+
 	/* -s <monhost>
 	 * -l <log file>
 	 * -m <monhost,logfile>
@@ -631,35 +684,27 @@ int main(int argc, char **argv)
 #endif
 
 			case 'm': { /* var scope */
-					char *m_arg, *s;
-
-					monhost_ups_prev = monhost_ups_current;
-					monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
-					if (monhost_ups_anchor == NULL)
-						monhost_ups_anchor = monhost_ups_current;
-					else
-						monhost_ups_prev->next = monhost_ups_current;
-					monhost_ups_current->next = NULL;
-					monhost_len++;
+					char *m_arg, *s, *system;
+					struct logtarget_t	*target;
 
 					/* Be sure to not mangle original optarg, nor rely on its longevity */
 					s = xstrdup(optarg);
 					m_arg = s;
 					/* splitting done in common loop below */
-					monhost_ups_current->upsname = NULL;
-					monhost_ups_current->hostname = NULL;
-					monhost_ups_current->port = 0;
-					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
+					system = strsep(&m_arg, ",");
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 #ifndef WIN32
-					monhost_ups_current->logtarget = add_logfile(strsep(&m_arg, ","));
+					target = add_logfile(strsep(&m_arg, ","));
 #else	/* WIN32 */
-					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
+					target = add_logfile(filter_path(strsep(&m_arg, ",")));
 #endif	/* WIN32 */
-					monhost_ups_current->ups = NULL;
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
+					monhost_ups_prev = monhost_ups_current;
+					monhost_ups_current = new_monhost(system, target);
+					insert_monhost(monhost_ups_prev ? &monhost_ups_prev->next : &monhost_ups_anchor,
+						monhost_ups_current, &monhost_len);
 					free(s);
 				} /* var scope */
 				break;
@@ -802,24 +847,10 @@ int main(int argc, char **argv)
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
-		monhost_ups_current = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
-		if (monhost_ups_anchor == NULL) {
-			/* Become the single-entry list */
-			monhost_ups_anchor = monhost_ups_current;
-		} else {
-			/* Attach to existing list */
-			monhost_ups_prev->next = monhost_ups_current;
-		}
-		monhost_ups_current->next = NULL;
-		monhost_len++;
-
 		/* splitting done in common loop below */
-		monhost_ups_current->upsname = NULL;
-		monhost_ups_current->hostname = NULL;
-		monhost_ups_current->port = 0;
-		monhost_ups_current->monhost = xstrdup(monhost);
-		monhost_ups_current->logtarget = add_logfile(logfn);
-		monhost_ups_current->ups = NULL;
+		monhost_ups_current = new_monhost(monhost, add_logfile(logfn));
+		insert_monhost(monhost_ups_prev ? &monhost_ups_prev->next : &monhost_ups_anchor,
+			monhost_ups_current, &monhost_len);
 	}
 
 	/* shouldn't happen */
@@ -899,6 +930,7 @@ int main(int argc, char **argv)
 			const char	*query[4];
 			char		**answer;
 			UPSCONN_t	*conn = NULL;
+			struct monhost_ups_t	*removed;
 
 			query[0] = "UPS";
 			numq = 1;
@@ -926,7 +958,6 @@ int main(int argc, char **argv)
 
 			while (upscli_list_next(conn, numq, query, &numa, &answer) == 1) {
 				struct	monhost_ups_t *mu = NULL;
-				char	buf[LARGEBUF];
 
 				/* UPS <upsname> <description> */
 				if (numa < 3) {
@@ -936,26 +967,14 @@ int main(int argc, char **argv)
 				found++;
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
-				mu = (struct monhost_ups_t *)xmalloc(sizeof(struct monhost_ups_t));
+				mu = new_discovered_monhost(monhost_ups_current, answer[1]);
 				if (mu == NULL) {
 					upslogx(LOG_ERR, "Failed to get memory for monitoring host structure. Not adding %s@%s:%" PRIu16,
 						answer[1], monhost_ups_current->hostname, monhost_ups_current->port);
 					continue;
 				}
 
-				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
-					answer[1],
-					monhost_ups_current->hostname,
-					monhost_ups_current->port);
-				mu->monhost = xstrdup(buf);
-				mu->upsname = xstrdup(answer[1]);
-				mu->hostname = xstrdup(monhost_ups_current->hostname);
-				mu->port = monhost_ups_current->port;
-				mu->ups = NULL;
-				mu->logtarget = monhost_ups_current->logtarget;
-				mu->next = monhost_ups_current->next;
-				monhost_ups_current->next = mu;
-				monhost_len++;
+				insert_monhost(&monhost_ups_current->next, mu, &monhost_len);
 			}
 
 			upscli_disconnect(conn);
@@ -972,18 +991,7 @@ int main(int argc, char **argv)
 
 			/* Remove the entry with asterisk */
 			upsdebugx(2, "%s: free strings of asterisky monhost_ups_current", __func__);
-			if (monhost_ups_current->monhost)
-				free(monhost_ups_current->monhost);
-			if (monhost_ups_current->upsname)
-				free(monhost_ups_current->upsname);
-			if (monhost_ups_current->hostname)
-				free(monhost_ups_current->hostname);
-
-			/* Should be NULL, but just in case... */
-			if (monhost_ups_current->ups) {
-				upscli_disconnect(monhost_ups_current->ups);
-				free(monhost_ups_current->ups);
-			}
+			removed = monhost_ups_current;
 
 			/* After detachment, rewind monhost_ups_current to the
 			 * first entry we have resolved in this loop, to gather
@@ -992,15 +1000,14 @@ int main(int argc, char **argv)
 			if (monhost_ups_prev) {
 				monhost_ups_prev->next = monhost_ups_current->next;
 				/* monhost_ups_prev remains as it was */
-				free(monhost_ups_current);
 				monhost_ups_current = monhost_ups_prev;
 			} else {
 				/* This is the first entry, anchor */
 				monhost_ups_anchor = monhost_ups_current->next;
 				monhost_ups_prev = NULL;
-				free(monhost_ups_current);
 				monhost_ups_current = monhost_ups_anchor;
 			}
+			destroy_monhost(removed, 0);
 			monhost_len--;
 
 			if (!monhost_ups_current || !monhost_len) {
@@ -1160,20 +1167,8 @@ int main(int argc, char **argv)
 	) {
 		struct monhost_ups_t	*mu = monhost_ups_current;
 
-		upscli_disconnect(monhost_ups_current->ups);
-		free(monhost_ups_current->ups);
-
-		upsdebugx(1, "FREEING: [%s] => [%s] @ [%s]",
-			NUT_STRARG(monhost_ups_current->monhost),
-			NUT_STRARG(monhost_ups_current->upsname),
-			NUT_STRARG(monhost_ups_current->hostname)
-			);
-		free(monhost_ups_current->monhost);
-		free(monhost_ups_current->upsname);
-		free(monhost_ups_current->hostname);
-
 		monhost_ups_current = mu->next;
-		free(mu);
+		destroy_monhost(mu, 1);
 	}
 
 	if (logformat_allocated) {
