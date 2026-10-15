@@ -66,7 +66,7 @@ The SERVER will connect to the socket of each DRIVER and will request a
 dump at that time.  It retains this data in local storage for later use.
 It continues to listen on the socket for additional updates.
 
-This protocol is documented in link:sock-protocol.txt[].
+This protocol is documented in <<sock-protocol,NUT socket protocol reference>>.
 
 From the server
 ~~~~~~~~~~~~~~~
@@ -77,7 +77,8 @@ immediately.  When a request for data arrives from a CLIENT, the SERVER
 looks through the internal storage for that UPS and returns the
 requested data if it is available.
 
-The format for requests from the CLIENT is documented in link:protocol.txt[].
+The format for requests from the CLIENT is documented in
+<<net-protocol,NUT network protocol reference>>.
 
 Instant commands
 ----------------

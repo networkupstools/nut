@@ -854,6 +854,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected client API signatures and array initialization descriptions,
+      SNMP daisychain alarm handling and subdriver mapping references, and
+      developer-guide protocol links and source access instructions. [PR #3745]
     * Reworked the packaging proposal around deployment roles and build
       contents, clarified service-managed startup and multi-token UPS status,
       and added support-data redaction guidance. Improved Windows archive
