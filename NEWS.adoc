@@ -607,6 +607,10 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Driver help now prints identical option names, types and descriptions
+      only once, reducing repeated entries from protocol subdrivers.
+      Configuration handling and the parsable `-L` list are unchanged.
+      [issue #2064, PR #3741]
     * The configuration and protocol parser now accepts a literal `#`
       inside double quotes, including in UPS and `dummy-ups` outlet
       descriptions. Unquoted `#` still starts a comment, and escaped
