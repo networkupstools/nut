@@ -291,11 +291,12 @@ This might also happen on certain virtualization platforms. If you cannot
 reproduce the problem on a physical machine, please report the bug to the
 virtualization software vendor.
 
-If this happens a lot, you might consider cranking up DEADTIME
-in the upsmon.conf to suppress some of the warnings for shorter
-intervals.  Use caution when adjusting this number, since it
-directly affects how long you run on battery without knowing
-what's going on with the UPS.
+To reduce repeated polling-failure log messages, see
+`POLLFAIL_LOG_THROTTLE_MAX` in linkman:upsmon.conf[5].
+`NOCOMMWARNTIME` controls recurring `NOCOMM` notifications.
+`DEADTIME` instead controls how long a UPS last known to be on battery
+can remain unreachable before it is assumed critical; increasing it
+delays this protection.
 
 Note: some drivers occasionally need more time to update than the
 default value of MAXAGE (in `upsd.conf`) allows.  As a result, they
