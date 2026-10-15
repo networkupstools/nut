@@ -1011,6 +1011,11 @@ https://github.com/networkupstools/nut/milestone/13
       locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
       disables the checks for deliberate portability idioms of NUT scripts
       (backticks, `x"$var"` comparisons, `expr`).
+    * The `make spellcheck` recipes now report unknown words with the file
+      name, line and column where they were found (rather than byte offsets
+      in the `aspell` output), and in GitHub Actions also as annotations on
+      the source lines (once per unknown word, despite the retries) and in
+      the job summary.
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

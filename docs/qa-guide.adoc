@@ -262,6 +262,13 @@ For each checked file, a `*-spellchecked` touch-file is created in respective
 `${builddir}`, so it is not re-checked until the source document, the custom
 dictionary, or the `Makefile` recipe is updated.
 
+Unknown words are reported with the file name, line and column where they
+were found (relative to the root of NUT sources), followed by the `aspell`
+report line with suggestions. When running in GitHub Actions (with the
+`GITHUB_ACTIONS=true` environment variable), they are also reported as
+annotations for the source lines, and listed in the job summary (unless
+`SPELLCHECK_ERROR_FATAL=no` is set).
+
 The ecosystem of `Makefile.am` files includes the following useful recipes:
 
 * `spellcheck`: passively check that all used words are in some dictionary

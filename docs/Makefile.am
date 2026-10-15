@@ -885,6 +885,39 @@ ASPELL_ENV_LC_ALL = C
 ### ASPELL_ENV_LC_ALL = en_US.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 
+# Locate the errors in "aspell -a" output: it prints a banner line, and then
+# for each input line its result lines (with a column offset for unknown
+# words, which matches the original line since we prefix each line with a
+# space), followed by an empty line. Reports the errors as "file:line:col:"
+# prefixed aspell result lines, or as GitHub Actions workflow commands (for
+# annotations on the changed lines) with `-v mode=gha`; the top-level
+# spellcheck recipe collects these into SPELLCHECK_GHA_LOG, if set.
+# No annotations are made with SPELLCHECK_ERROR_FATAL=no (e.g. in distcheck
+# when the spelling is checked by another CI step). Note: no ternary
+# operators nor hash characters here, for older awk and make implementations.
+ASPELL_OUT_LOCATE_AWK = BEGIN { line = 1 } \
+	/^@/ { next } \
+	/^$$/ { line++ ; next } \
+	/^[*+-]/ { next } \
+	{ \
+		word = $$2 ; col = $$3 ; sugg = "" ; \
+		if ($$1 == "&" || $$1 == "?") { \
+			col = $$4 ; sub(/:$$/, "", col) ; \
+			sugg = $$0 ; sub(/^[^:]*: /, "", sugg) ; \
+		} \
+		if (mode == "gha") { \
+			n = split(sugg, s, ", ") ; hint = "" ; \
+			for (i = 1; i <= n && i <= 5; i++) { \
+				if (i > 1) { hint = hint ", " } \
+				hint = hint s[i] ; \
+			} \
+			if (hint != "") { hint = " (suggestions: " hint ")" } \
+			printf "::error file=%s,line=%d,col=%d,title=Spellcheck::Unknown word \"%s\"%s; fix it, or add it to docs/nut.dict if valid\n", src, line, col, word, hint ; \
+		} else { \
+			print src ":" line ":" col ": " $$0 ; \
+		} \
+	}
+
 # WARNING: The percent wildcard is a GNU extension; otherwise we need
 # a ".txt.txt-spellchecked" type of rule and files like "README" all
 # renamed to *.txt, or lots of rules for files without the extensions.
@@ -962,13 +995,20 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		echo "  ASPELL	Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
 	 fi ; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)'`" \
-		&& { if test -n "$$OUT" ; then OUT="`echo \"$$OUT\" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
-		     test -z "$$OUT" ; } \
+		&& { ERRS="" ; if test -n "$$OUT" ; then ERRS="`printf '%s\n' \"$$OUT\" | $(AWK) -v src=\"$${REPORT_SRCDIR}$${REPORT_SRC_ONE}\" '$(ASPELL_OUT_LOCATE_AWK)'`" ; fi; \
+		     test -z "$$ERRS" ; } \
 		|| { RES=$$? ; \
-		     echo "FAILED : Aspell reported errors here:" >&2 \
-		     && echo "----- vvv" >&2 \
-		     && echo "$$OUT" >&2 \
-		     && echo "----- ^^^" >&2 ; \
+		     echo "FAILED : Aspell reported errors here:" >&2 ; \
+		     echo "----- vvv" >&2 ; \
+		     if test -n "$$ERRS" ; then echo "$$ERRS" >&2 ; else echo "$$OUT" >&2 ; fi ; \
+		     echo "----- ^^^" >&2 ; \
+		     if test x"$${GITHUB_ACTIONS-}" = xtrue && test x"$(SPELLCHECK_ERROR_FATAL)" != xno && test -n "$$ERRS" ; then \
+		        if test -n "$${SPELLCHECK_GHA_LOG-}" ; then \
+		           printf '%s\n' "$$OUT" | $(AWK) -v src="$${REPORT_SRCDIR}$${REPORT_SRC_ONE}" -v mode=gha '$(ASPELL_OUT_LOCATE_AWK)' >> "$${SPELLCHECK_GHA_LOG}" ; \
+		        else \
+		           printf '%s\n' "$$OUT" | $(AWK) -v src="$${REPORT_SRCDIR}$${REPORT_SRC_ONE}" -v mode=gha '$(ASPELL_OUT_LOCATE_AWK)' ; \
+		        fi ; \
+		     fi ; \
 		     exit $$RES; } ; \
 	 if $(EGREP) '^[ *.-]*(NOTE|TIP|IMPORTANT|CAUTION|WARNING):[ \t]*[a-z]' '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' ; then \
 		echo "FAILED: ASCIIDOC nuance: Admonition block should contain a sentence, not starting with a lower-case letter: '$${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}'" >&2 ; \
