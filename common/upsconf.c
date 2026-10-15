@@ -100,7 +100,11 @@ int read_upsconf(int fatal_errors)
 		if (fatal_errors) {
 			fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
 		} else {
+			int	err = errno;
+
 			upslogx(LOG_WARNING, "Can't open %s: %s", fn, ctx.errmsg);
+			pconf_finish(&ctx);
+			errno = err;
 			return -1;
 		}
 	}

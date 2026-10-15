@@ -2452,7 +2452,8 @@ static void setup_signals(void)
 #endif	/* WIN32 */
 }
 
-void close_oldest_client(void)
+/* Return 1 if a client was disconnected, 0 if there was none. */
+int close_oldest_client(void)
 {
 	nut_ctype_t	*client, *oldest = NULL;
 
@@ -2465,7 +2466,9 @@ void close_oldest_client(void)
 	if (oldest) {
 		upslogx(LOG_INFO, "Closing oldest client connection from %s to free up file descriptors", oldest->addr);
 		client_disconnect(oldest);
+		return 1;
 	}
+	return 0;
 }
 
 int main(int argc, char **argv)
