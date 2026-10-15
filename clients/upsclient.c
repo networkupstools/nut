@@ -2454,7 +2454,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (!(ups->ssl_ctx) && !upscli_initialized) {
 		upsdebugx(3, "%s: upscli not initialized, "
-			"force initialisation without SSL configuration", __func__);
+			"force initialization without SSL configuration", __func__);
 		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
 			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);

@@ -84,7 +84,8 @@ even when multiple servers are accessed from the same process.
 MULTI-REALM SUPPORT
 -------------------
 
-OpenSSL builds support independent linkman:SSL_CTX[3] objects per connection,
+OpenSSL builds support independent
+`SSL_CTX` objects per connection (see linkmanext:SSL_CTX_new[3]),
 enabling simultaneous use of different certificate authorities and client
 certificates within a single process.
 
@@ -132,7 +133,7 @@ THREAD SAFETY
 
 The registry itself is protected by internal synchronization in threaded builds.
 However, individual connection operations are not thread-safe; each thread
-should maintain its own linkman:UPSCONN_t[3] instance.
+should maintain its own `UPSCONN_t` (see linkman:upsclient[3]) instance.
 
 EXAMPLES
 --------
@@ -175,4 +176,5 @@ linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
 linkman:upscli_disconnect[3],
 linkman:upscli_authconf_t[3], linkman:upscli_get_authconf_item[3],
 linkman:upscli_strerror[3],
-linkmanext:SSL_CTX[7]
+linkmanext:SSL_CTX_new[3],
+link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[OpenSSL 3.5 web reference]

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3896 utf-8
+personal_ws-1.1 en 3899 utf-8
 AAC
 AAS
 ABI
@@ -2172,7 +2172,10 @@ dummypass
 dummyups
 dumpxml
 dv
+dynacfgBase
+dynacfgPipeline
 dynamatrix
+dynamatrixPipeline
 ePDU
 ePDUs
 eaton

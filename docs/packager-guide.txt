@@ -32,7 +32,7 @@ software installation and support out of the box.
 NOTE: Making NUT packaging more uniform should help its documentation,
 support and maintenance across the supported OSes.
 
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 *sandbox*
 This document assumes that you have read the other NUT documents such
 as INSTALL.nut, FAQ, config-notes.txt, config-prereqs.txt ...
@@ -97,7 +97,7 @@ redundancy in Mandriva)
 case / feedback could be shared
 ...
 
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 
 
 Packagers involved
@@ -132,12 +132,24 @@ The following packagers should be interested in working on this subject:
 Possible use cases
 ------------------
 
-- standalone (1 system + 1-n UPS)
-- network server (same as standalone, but serving data to network clients)
-- network monitoring client
-- network supervision client
+A package selection should support the following deployments:
 
-TO BE COMPLETED...
+* "Standalone" for Local monitoring and shutdown: one host runs the driver(s),
+  `upsd` and `upsmon` client for its own shutdown.
+* Network data server: a host runs drivers and `upsd`, serving local and remote
+  clients; `upsmon` is also needed if that host requires automatic shutdown.
+* Network monitoring client: a host runs `upsmon` against a remote `upsd` and
+  does not need local drivers or a local data server.
+* Query and administration client: a host uses tools such as `upsc`, `upscmd`
+  and `upsrw` to access a remote server without configuring automatic shutdown.
+* Application integration: another program uses NUT client libraries or
+  language bindings to communicate with an existing server.
+
+///////////////////////////////////////////////////////////////////////
+*sandbox*
+
+These are historic notes, hidden by default from rendered documentation.
+They are slowly converted into the table in the next section.
 
 Optimized packaging proposal
 ----------------------------
@@ -421,35 +433,244 @@ Note: "nut" can be a meta package
 
 This kind of tree obviously needs modification on the conf/make
 files of NUT to allow build/install in a separate way.
+///////////////////////////////////////////////////////////////////////
 
+Package boundaries
+------------------
 
-...
-TO BE CONTINUED
-...
+It is recommended to avoid creating a single package for all NUT features,
+installation of which may cause a huge footprint by both NUT programs and
+their third-party dependencies. Each end-user system has a different set
+of needs based on the devices they need to talk to and the user interface
+they prefer.
+
+The aim of the package split suggested below is to:
+
+* rationalize the split according to the above use cases;
+* share resources used by many packages (descriptions, i18n, ...);
+* find the best compromise between available features and dependencies:
+  many features and drivers may involve significant dependency tree
+  footprints, but are not of interest to each and every NUT user;
+* standardize NUT package names across different operating systems;
+* create the foundation for the upcoming and underway improvements;
+* improve NUT integration;
+* ease and improve user experience.
+
+This standard was created by:
+
+* capitalizing on the experience of existing packages;
+* using and improving the use of all NUT features;
+* considering upcoming NUT changes and improvements;
+* working closely with packagers.
+
+Package names, library ABI suffixes and dependency names vary by operating
+system. The following groups describe useful boundaries rather than a
+mandatory set of package names. A distribution may combine groups where
+that matches its packaging policy.
+
+Many packaging ecosystems support short and long descriptions of each package.
+* The short description is used in the package manager's list of installed
+  packages, and should be concise and informative. It is recommended to use
+  a common format like `Network UPS Tools (NUT) - Group Name` (with the
+  "Group Name" suffix taken from the table below) for this.
+* The long description is used in the package manager's detailed view of the
+  package, and should be more verbose and descriptive. The initial paragraph
+  common to all NUT packages should be:
+________________________________________________________________________
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status changes.
+________________________________________________________________________
+
+[options="header"]
+|=======================================================================
+| Group and suggested package name | Purpose and contents | Dependency considerations
+
+| *Umbrella package* +
+  `nut`
+| Provide what the end-users commonly require to get started and can
+  further append specific packages to.
+| At least `nut-common`, `nut-server`, `nut-clients`, `nut-scanner`;
+  maybe `nut-drivers-usb` as this is a common use case nowadays. +
+  If the packaging platform supports recommended dependencies based on what
+  else is installed, the presence of X11 or similar environment is a good
+  reason to include the `NUT-Monitor` and/or sibling WMNut GUI packages.
+  Likewise, the presence of Augeas Tools package is a good reason to include
+  `nut-augeas`.
+
+| *Common integration* +
+  `nut-common`
+| Shared configuration examples, account setup and service integration
+  used by the selected NUT components. Contents are platform-dependent,
+  e.g. `systemd-tmpfiles`, maybe `systemd-presets`, in case of modern
+  Linux packaging. +
+  If you build NUT with separated private libraries which other binaries
+  depend on for shared code, this is a good place to provide them, although
+  you may want to split the `nut-common` package into `nut-common-config`
+  (to keep it tiny) and `nut-common-lib`.
+| Keep ownership, permissions and runtime-directory creation consistent
+  across packages; avoid installing the same shared file in multiple packages. +
+  Depended-on by most other NUT packages.
+
+| *Data server and basic drivers* +
+  `nut-server`
+| `upsd` and selected local drivers (software-only `dummy-ups` and `clone*`),
+  with their configuration examples and manual pages. The majority of drivers
+  may be split into further packages.
+| Include or depend on the libraries required by the drivers actually shipped.
+  On MacOS, the `macosx-ups` driver may be part of this package.
+
+| *Monitoring and command-line clients* +
+  `nut-client-tools`
+| `upsmon`, `upssched`, `upsc`, `upscmd`, `upsrw` and `upslog`, with their
+  configuration examples and manual pages.
+| A remote monitoring client should not require local hardware drivers.
+  Include (depend on) the NUT client runtime library and selected SSL
+  backend as applicable. On space-constrained systems, consider providing
+  the `upsmon` and `upssched` programs as a separate package for just
+  the graceful shutdown support.
+
+| *Client libraries* +
+  `nut-client-lib` or OS-dictated, e.g. +
+  for C: `libupsclient1` +
+  for C++: `libnutclient1`
+| Runtime C and, when built, C++ client libraries.
+| Follow the platform's shared-library ABI naming and dependency policy;
+  derive the package name from the library built for this release.
+  The number in the package name, where required, is the latest compatible
+  ABI version ("major" minus "age").
+
+| *Development files* +
+  `nut-client-lib-dev` or OS-dictated, e.g. +
+  for C: `libupsclient1-dev` +
+  for C++: `libnutclient1-dev`
+| Installed headers, linker metadata and `pkg-config` files for the
+  libraries included in the build.
+| Depend on the corresponding runtime libraries and follow platform policy
+  for development-package naming. Package name suffixes like `-dev` or
+  `-devel` may be dictated by the OS.
+
+| *CGI interface* +
+  `nut-cgi` or `nut-client-cgi`
+| The built CGI programs, templates, configuration examples and manuals.
+| Include their linked libraries; web-server configuration remains a
+  separate integration task and depends on the web-server of choice.
+
+| *Device discovery* +
+  `nut-scanner`
+| `nut-scanner`, `libnutscan`, and the installed development files and
+  manuals selected for this build.
+| When dynamic library loading is enabled, distinguish direct linked
+  dependencies from optional libraries needed for individual scan types. +
+  May be further separated into `nut-scanner-tools` and `nut-scanner-lib`
+  (or `libnutscan1`) and corresponding development package. +
+  Note that the `nut-scanner` program and `libnutscan` are designed to
+  avoid persistent linking to any external libraries that they may use
+  to discover devices, so dependencies on e.g. `libsnmp`, `libneon` and
+  `libusb` (0.1 or 1.0 depending on build-time choices and used by drivers)
+  may be softly recommended but not required. If end-users are not
+  interested in particular media/protocol as not used by their devices,
+  they are not required to waste space on corresponding libraries.
+
+| *Optional driver families* +
+  `nut-drivers-usb` `nut-drivers-snmp` `nut-drivers-xml` `nut-drivers-ipmi`
+  `nut-drivers-gpio` `nut-drivers-i2c` `nut-drivers-upower`
+  `nut-drivers-powerman` `nut-drivers-modbus` etc.
+| Drivers using SNMP, NetXML, IPMI, Modbus, PowerMan, GPIO, I2C, UPower or
+  platform-specific interfaces, as supported by the selected build.
+  See the `configure` documentation or run-time help for details relevant
+  to the NUT version you are packaging, and keep track of `UPGRADING.adoc`
+  for changes in the driver population between releases.
+| Split by the dependencies or platform requirements of the actual driver
+  binaries rather than assuming every host needs every family. +
+  Note that while serial port support is commonly available on all known
+  platforms (does not require extra libraries on the target system), it
+  may be still prudent to split the serial-only drivers into a separate
+  `nut-serial` package rather than include them in the default footprint. +
+  Also note that some drivers support mixed dependencies, e.g. common
+  `libmodbus` may use TCP and Serial, but a fork maintained by NUT
+  (upstream pending) can also use USB. Some other drivers may be
+  built to support both USB and Serial connections.
+
+| *Python interface and client* +
+  `nut-pynut` and `nut-monitor` or
+  OS-dictated e.g. `python-pynut` and `python-nut-client`
+| `PyNUTClient` module and, when selected, the Python GUI `NUT-Monitor`.
+| Keep the module available independently of the graphical application,
+  as it may have third-party consumers. Some packagers prefer to rely
+  on the PyPI published package rather than building the module from NUT
+  sources. The client module should be compatible with Python 2.7 and 3.x,
+  so you may package it for each interpreter version. There are separate
+  implementations of `NUT-Monitor` for Python 2.7 and 3.x however, with
+  the former further supporting Gtk2, and the latter Qt5 or Qt6, as the
+  GUI toolkit. A wrapper script takes care of launching the correct
+  implementation, based on detected run-time support.
+
+| *Documentation* +
+  `nut-doc`
+| Generated user, developer, packaging and QA guides, and manual pages as
+  appropriate for the documentation policy of the target distribution.
+| Decide whether individual manuals travel with their programs or with a
+  documentation package, and avoid duplicate file ownership. This depends
+  on the documentation policy of the target distribution, and technologies
+  in their packaging systems (e.g. "facets" to optionally install some files).
+|=======================================================================
+
+When documenting package sizes, measure installed and archive sizes for
+the release, architecture and build configuration concerned. State that
+context alongside the measurements, since sizes vary between builds.
+
+Build and installation policy
+------------------------------
+
+Select build options explicitly and record the resulting configuration
+summary. For packaging, `./configure --with-all` can help expose missing
+prerequisites and newly available features; disable unsupported features
+explicitly. `--with-all=auto` instead selects features whose prerequisites
+are detected in the build environment, so the resulting package contents
+can change when that environment changes.
+
+Use the options documented in `docs/configure.txt` to set installation
+paths. In particular, `--with-confdir` controls NUT's configuration
+location; options for driver, state, PID, CGI and HTML paths serve different
+purposes and should match the integration policy for the target distribution. Do not
+copy a path layout from another platform without checking its conventions.
+
+Stage installation into a packaging directory with `DESTDIR`, as described
+in `INSTALL.nut.adoc`. Keep the configured final paths distinct from this
+staging prefix. Inspect the staged file inventory and derive package
+contents and dependencies from the actual build, including shared-library
+metadata and optional scanner libraries. Do not replace administrator
+configuration with example files during an upgrade.
+
+///////////////////////////////////////////////////////////////////////
+*sandbox*
 
 Configuration option
 ^^^^^^^^^^^^^^^^^^^^
 
 Example:
 
-name= "ups" or "nut"
-./configure \
-            --prefix=/ \
-            --with-confdir=/etc/$name \
-            --mandir=/usr/share/man \
-            --libdir=/usr/lib \
-            --includedir=/usr/include \
-            --datadir=/usr/share/$name \
-            --with-statepath=/var/run/nut \
-            --with-altpidpath=/var/run/nut \
-            --with-drvpath=/lib/nut \
-            --with-cgipath=/usr/lib/cgi-bin/$name \
-html-path
-            --with-pidpath=/var/run/$name \
-            --with-user=$name \
-            --with-cgi \
-            --without-ssl
-...
+	name= "ups" or "nut"
+
+	./configure \
+		--prefix=/ \
+		--with-confdir=/etc/$name \
+		--mandir=/usr/share/man \
+		--libdir=/usr/lib \
+		--includedir=/usr/include \
+		--datadir=/usr/share/$name \
+		--with-statepath=/var/run/nut \
+		--with-altpidpath=/var/run/nut \
+		--with-drvpath=/lib/nut \
+		--with-cgipath=/usr/lib/cgi-bin/$name \
+		--with-htmlpath=/var/www/$name \
+		--with-pidpath=/var/run/$name \
+		--with-user=$name \
+		--with-cgi \
+		--without-ssl
+		...
 
 NOTE: For packaging (OS distribution or in-house) it is recommended to
 primarily `./configure --with-all` and then excise `--without-something`
@@ -462,5 +683,29 @@ NOTE: For eons, the way to specify the directory for NUT configuration
 files was to use `--sysconfdir=/etc/$name`. Since NUT v2.8.5 new options
 are available to customize this location and keep the default `sysconfdir`
 value intact (maybe unused).
+///////////////////////////////////////////////////////////////////////
 
-------------------------------------------------------------------------
+Service and shutdown integration
+--------------------------------
+
+Include the service definitions and shutdown hooks appropriate for the
+platform. Ensure that the selected driver, server and monitoring services
+use the same configuration and runtime paths as the built programs.
+`nut.conf` describes common deployment modes, but support for its settings
+varies between platform packages and service scripts; see linkman:nut.conf[5].
+
+Keep normal service stop and machine shutdown handling distinct. Review
+how the installed shutdown hook uses the power-down flag and invokes the
+local driver shutdown sequence. This integration needs validation on the
+target platform; a successful build alone does not validate UPS power-off
+and restart behaviour.
+
+Packaging validation
+--------------------
+
+Validate the release archive with the appropriate `distcheck` target,
+then check the resulting package's staged contents, ownership, dependency
+metadata and upgrade handling. Verify service startup and shutdown
+integration in a suitable test deployment for the target platform.
+Document which optional features were included and where their
+configuration and manual pages are installed.
