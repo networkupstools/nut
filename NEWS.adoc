@@ -583,7 +583,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `snmp-ups` driver updates:
     * Corrected the IETF fallback warning so it is emitted for automatic
-      IETF selection rather than vendor-specific mappings. [issue #3585]
+      IETF selection rather than vendor-specific mappings. [issue #3585, PR #3767]
     * Fixed a NULL pointer dereference when setting exact outlet mappings
       without a corresponding numbered outlet template, and restored handling
       of exact server-side outlet variables and commands. [issue #3360,
