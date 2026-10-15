@@ -607,6 +607,9 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Driver polling now measures intervals with a monotonic clock when
+      available, detects clock jumps and falls back to wall time if the
+      monotonic clock fails. [issue #10, PR #3708]
     * Driver help now prints identical option names, types and descriptions
       only once, reducing repeated entries from protocol subdrivers.
       Configuration handling and the parsable `-L` list are unchanged.
