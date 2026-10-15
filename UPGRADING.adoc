@@ -36,7 +36,7 @@ Changes from 2.8.5 to 2.8.6
   Scripts which relied on serial execution must arrange their own locking.
   On idle exit, the timer daemon waits for its directly launched commands.
   Immediate `EXECUTE` and unmatched `CANCEL-TIMER` command handling retain
-  their synchronous behaviour. [issue #3115]
+  their synchronous behaviour. [issue #3115, PR #3769]
 
 - PLANNED: Keep track of any further API clean-up?
 
