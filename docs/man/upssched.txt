@@ -81,13 +81,15 @@ If you also want to continue writing to the syslog, just add it in:
 
 For a full list of notify flags, see the linkman:upsmon[8] documentation.
 
-Please note that command execution is synchronous (with the called `upssched`
-tool process in case of `EXECUTE` directive, or with the timer process).
-Consider using your system shell abilities like `&` to send long-duration
-handling to the background and let `upssched` timer daemon continue.
-This should not impact `upsmon` daemon, which handles each notification
-in a separate sub-process (and so not a problem for immediate `EXECUTE`
-events).
+Commands launched by expired timers run asynchronously. A long-running command
+therefore does not delay other timers or requests to list, start or cancel
+pending timers. Commands may overlap, including successive invocations of the
+same timer name. Scripts which require serial execution must arrange their
+own locking.
+
+Immediate `EXECUTE` commands wait in the calling tool process. The optional
+command for a `CANCEL-TIMER` with no matching timer still waits in the timer
+daemon. `upsmon` handles each notification in a separate sub-process.
 
 CONFIGURATION
 -------------
@@ -157,12 +159,13 @@ It will come and go from the process list as necessary.  When a new timer
 is started, a process will be forked to actually watch the clock and
 eventually start the CMDSCRIPT.  When a timer triggers, it is removed from
 the queue.  Cancelling a timer will also remove it from the queue.  When
-no timers are present in the queue, the background process exits.
+no timers are present in the queue and all commands launched by timers have
+finished, the background process exits after its idle grace period.
 
 This means that you will only see upssched running when one of two things
 is happening:
 
- - There's a timer of some sort currently running
+ - There's a pending timer or a command launched by a timer still running
  - upsmon just called it, and you managed to catch the brief instance
 
 The final optimization handles the possibility of trying to cancel a timer
@@ -180,7 +183,7 @@ runs in foreground mode.
 NOTE: Unlike some other NUT daemons, `upssched` with enabled debug
 does not stop reporting on `stderr`! It forks a background process
 with the first call as an event handler, which exits soon after all
-tracked timers have elapsed and were handled (if needed).
+tracked timers have elapsed and their directly launched commands have finished.
 
 *UPSNAME* and *NOTIFYTYPE* are required, as detailed above. They are
 set by `upsmon` when it calls `upssched` as its choice of `NOTIFYCMD`.

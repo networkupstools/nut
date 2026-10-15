@@ -31,6 +31,13 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.5 to 2.8.6
 ---------------------------
 
+- `upssched` timer commands now run asynchronously. Commands from different
+  timers, or successive invocations of the same timer name, may overlap.
+  Scripts which relied on serial execution must arrange their own locking.
+  On idle exit, the timer daemon waits for its directly launched commands.
+  Immediate `EXECUTE` and unmatched `CANCEL-TIMER` command handling retain
+  their synchronous behaviour. [issue #3115]
+
 - PLANNED: Keep track of any further API clean-up?
 
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
