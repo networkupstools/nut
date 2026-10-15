@@ -45,7 +45,7 @@
  *
  * timers can be cancelled at any time before they trigger
  *
- * the daemon will shut down automatically when no more timers are active
+ * the daemon shuts down after all timers and their direct commands finish
  *
  */
 
@@ -149,17 +149,30 @@ static OVERLAPPED connect_overlapped;
 #define US_SOCK_BUF_LEN		256
 #define US_MAX_READ		128
 
+typedef struct command_s {
+#ifndef WIN32
+	pid_t	pid;
+#else
+	intptr_t	pid;
+#endif
+	char	*name;
+	struct command_s	*next;
+} command_t;
+
+static command_t	*commands = NULL;
+
 /* --- server functions --- */
 
-static void exec_cmd(const char *cmd)
+static void exec_cmd(const char *cmd, int asynchronous)
 {
 #ifndef WIN32
 	int	waitstatus = 0;
 	pid_t	pid, waitret;
 #else
-	int	err = 0;
+	intptr_t	err = 0;
 #endif
 	char	**argv = NULL;
+	command_t	*child;
 
 	if (cmdscript_argc == 0) {
 		upslogx(LOG_ERR, "No CMDSCRIPT defined, cannot execute command: %s", NUT_STRARG(cmd));
@@ -177,6 +190,15 @@ static void exec_cmd(const char *cmd)
 	}
 
 	if (pid > 0) {
+		if (asynchronous) {
+			child = xcalloc(1, sizeof(*child));
+			child->pid = pid;
+			child->name = xstrdup(cmd);
+			child->next = commands;
+			commands = child;
+			return;
+		}
+
 		/* parent process - wait for child */
 		waitret = waitpid(pid, &waitstatus, 0);
 		if (waitret < 0) {
@@ -221,10 +243,20 @@ static void exec_cmd(const char *cmd)
 	exit(EXIT_FAILURE);
 #else	/* WIN32 */
 	/* Use _spawnvp for Windows */
-	err = _spawnvp(_P_WAIT, cmdscript_argv[0], (const char * const *)argv);
+	err = _spawnvp(asynchronous ? _P_NOWAIT : _P_WAIT,
+		cmdscript_argv[0], (const char * const *)argv);
+	if (asynchronous && err != -1) {
+		child = xcalloc(1, sizeof(*child));
+		child->pid = err;
+		child->name = xstrdup(cmd);
+		child->next = commands;
+		commands = child;
+		free(argv);
+		return;
+	}
 	if (err != -1) {
 		upslogx(LOG_INFO, "Execute command %s \"%s\" OK", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
-		upsdebugx(3, "%s: returned status %d", __func__, err);
+		upsdebugx(3, "%s: returned status %d", __func__, (int)err);
 	} else {
 		upslog_with_errno(LOG_ERR, "Execute command %s \"%s\" failure", NUT_STRARG(cmdscript_concat), NUT_STRARG(cmd));
 	}
@@ -317,6 +349,57 @@ static char* collect_string(char **string_arr, char *logtag, char *sep, size_t *
 	return buf;
 }
 
+/* Poll only commands owned by timer dispatch; do not collect other children. */
+static void reap_commands(void)
+{
+	command_t **link = &commands, *child;
+
+	while ((child = *link) != NULL) {
+#ifndef WIN32
+		int status = 0;
+		pid_t ret = waitpid(child->pid, &status, WNOHANG);
+
+		if (ret == 0 || (ret < 0 && errno == EINTR)) {
+			link = &child->next;
+			continue;
+		}
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "waitpid(%d) failed", (int)child->pid);
+		} else if (WIFEXITED(status)) {
+			if (WEXITSTATUS(status)) {
+				upslogx(LOG_INFO, "exec_cmd(%s '%s') returned %d",
+					NUT_STRARG(cmdscript_concat), child->name, WEXITSTATUS(status));
+			}
+		} else if (WIFSIGNALED(status)) {
+			upslogx(LOG_WARNING, "exec_cmd(%s '%s') terminated with signal %d",
+				NUT_STRARG(cmdscript_concat), child->name, WTERMSIG(status));
+		} else {
+			upslogx(LOG_ERR, "Execute command failure: %s '%s'",
+				NUT_STRARG(cmdscript_concat), child->name);
+		}
+#else
+		DWORD status = 0;
+		DWORD ret = WaitForSingleObject((HANDLE)child->pid, 0);
+
+		if (ret == WAIT_TIMEOUT) {
+			link = &child->next;
+			continue;
+		}
+		if (ret != WAIT_OBJECT_0 || !GetExitCodeProcess((HANDLE)child->pid, &status)) {
+			upslogx(LOG_ERR, "Cannot collect command '%s': Windows error %lu",
+				child->name, (unsigned long)GetLastError());
+		} else if (status) {
+			upslogx(LOG_INFO, "exec_cmd(%s '%s') returned %lu",
+				NUT_STRARG(cmdscript_concat), child->name, (unsigned long)status);
+		}
+		CloseHandle((HANDLE)child->pid);
+#endif
+		*link = child->next;
+		free(child->name);
+		free(child);
+	}
+}
+
 static void exec_cmd_timer(ttype_t *item)
 {
 	char	*upsnames = NULL, *notifytypes = NULL, *notifymsgs = NULL;
@@ -352,7 +435,7 @@ static void exec_cmd_timer(ttype_t *item)
 	if (nut_debug_level)
 		upslogx(LOG_INFO, "Executing command by timer: %s\t[%s]\t[%s]\t[%s]",
 			item->name, NUT_STRARG(notifytypes), NUT_STRARG(upsnames), NUT_STRARG(notifymsgs));
-	exec_cmd(item->name);
+	exec_cmd(item->name, 1);
 	upsdebugx(3, "%s: returned from exec_cmd()", __func__);
 
 	/* Timer process should not retain random envvars */
@@ -436,8 +519,13 @@ static void checktimers(void)
 
 	upsdebugx(3, "%s: starting", __func__);
 
-	/* if the queue is empty we might be ready to exit */
-	if (!thead) {
+	reap_commands();
+	if (commands) {
+		emptyctr = 0;
+	}
+
+	/* Running commands keep the daemon alive, even with no queued timers. */
+	if (!thead && !commands) {
 
 		emptyctr++;
 
@@ -726,7 +814,7 @@ static void cancel_timer(const char *name, const char *cname, const char *notify
 		if (nut_debug_level)
 			upslogx(LOG_INFO, "Cancel %s, event: %s", name, cname);
 
-		exec_cmd(cname);
+		exec_cmd(cname, 0);
 	}
 }
 
@@ -2419,7 +2507,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 		if (nut_debug_level)
 			upslogx(LOG_INFO, "Executing command: %s", ca1);
 
-		exec_cmd(ca1);
+		exec_cmd(ca1, 0);
 		return;
 	}
 
@@ -2649,6 +2737,16 @@ static void clean_exit(void)
 	ttype_t	*tcurr, *tnext;
 	conn_t	*ccurr, *cnext;
 	size_t	i;
+	command_t	*child;
+
+	while ((child = commands) != NULL) {
+		commands = child->next;
+#ifdef WIN32
+		CloseHandle((HANDLE)child->pid);
+#endif
+		free(child->name);
+		free(child);
+	}
 
 	/* Flush *our* output before possibly failing in third-party code
 	 * (e.g. SSL libs), so client consumers have a chance to see it */
