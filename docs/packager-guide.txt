@@ -134,7 +134,8 @@ Possible use cases
 
 A package selection should support the following deployments:
 
-* Local monitoring and shutdown: one host runs the driver, `upsd` and `upsmon`.
+* "Standalone" for Local monitoring and shutdown: one host runs the driver(s),
+  `upsd` and `upsmon` client for its own shutdown.
 * Network data server: a host runs drivers and `upsd`, serving local and remote
   clients; `upsmon` is also needed if that host requires automatic shutdown.
 * Network monitoring client: a host runs `upsmon` against a remote `upsd` and
@@ -145,7 +146,7 @@ A package selection should support the following deployments:
   language bindings to communicate with an existing server.
 
 Package boundaries
--------------------
+------------------
 
 Package names, library ABI suffixes and dependency names vary by operating
 system. The following groups describe useful boundaries rather than a
