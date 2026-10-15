@@ -854,6 +854,8 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented the existing `--with-debuginfo` and `--enable-cppunit`
+      developer options, including their defaults and dependencies. [issue #2311, PR #3740]
     * Included the eight existing text cable references in the generated
       cable guide and user manual, preserving their diagrams and attribution.
       [issue #1367, PR #3742]
