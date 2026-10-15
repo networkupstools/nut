@@ -329,6 +329,18 @@ static int collect(PCONF_CTX_t *ctx)
 {
 	/* comment means the word is done, and skip to the end of the line */
 	if (ctx->ch == '#') {
+		/* A hash glued to a word in a config file is often part of a
+		 * value such as a password, and the error a consumer reports
+		 * later about missing tokens does not point at it. Say where
+		 * the line was cut, by position only, so no part of a secret
+		 * reaches the logs. Protocol input stays quiet. */
+		if (ctx->f) {
+			fprintf(stderr, "parseconf: line %d, word %" PRIuSIZE ": '#' "
+				"right after a word starts a comment, the rest of the "
+				"line is ignored; write \\# or quote the value if the "
+				"hash belongs to it\n",
+				ctx->linenum, ctx->numargs + 1);
+		}
 		endofword(ctx);
 
 		return STATE_FINDEOL;

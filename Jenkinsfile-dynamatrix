@@ -441,7 +441,7 @@ set | sort -n """
 
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
-                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules']
+                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck']
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
@@ -486,7 +486,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
                     ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall',
-                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck'
                     ]
                     ],
                 allowedFailure: [
@@ -534,7 +534,7 @@ set | sort -n """
                     // (so splitting into many tokens), or quoted as a single
                     // token DISTCHECK_FLAGS in its stage (split by make later).
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck'
                     ]
                     ],
 
