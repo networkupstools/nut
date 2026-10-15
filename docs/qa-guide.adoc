@@ -210,8 +210,23 @@ Given that the `/bin/sh` implementation varies wildly on different systems
 a large number of available platforms makes sure that the lowest-denominator
 syntax we use is actually understood everywhere.
 
-NOTE: At a later time additional tests, perhaps using the `shellcheck` tool,
-can be introduced into the stack.
+For pull requests, the "GHA-07: ShellCheck" GitHub Actions workflow also
+runs the link:https://www.shellcheck.net/[ShellCheck] tool on the shell
+scripts that they change. Many existing scripts have known findings, so it
+fails only for findings of "warning" or "error" level that are new compared
+to the base branch. The new findings are shown as annotations on the
+changed lines, and listed in the job summary. You can run the same check
+locally (with `perl` and `shellcheck` installed) before posting the
+changes, e.g.:
+
+----
+:; perl tools/shellcheck-ci.pl origin/master
+----
+
+The `.shellcheckrc` file in the root of NUT sources disables the checks for
+deliberate portability idioms of NUT scripts (e.g. the legacy command
+substitution syntax), and is also used by `shellcheck` runs in your editor
+or IDE.
 
 The `make shellcheck-nde` recipe calls `tests/nut-driver-enumerator-test.sh`
 to self-test the `scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in` against

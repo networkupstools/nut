@@ -1003,6 +1003,14 @@ https://github.com/networkupstools/nut/milestone/13
       `/bin/sh`), and hides warnings about the legacy command substitution
       syntax (e.g. from `ksh93`) to avoid noise that obscured other problems.
       [issues #1058, #1059]
+    * Added a "GHA-07: ShellCheck" GitHub Actions workflow which checks the
+      shell scripts changed by a pull request, and fails only for findings
+      of "warning" or "error" level that are new compared to the base branch
+      (many existing scripts have known findings), with annotations on the
+      changed lines and a list in the job summary. The same check can be run
+      locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
+      disables the checks for deliberate portability idioms of NUT scripts
+      (backticks, `x"$var"` comparisons, `expr`).
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

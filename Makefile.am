@@ -282,7 +282,7 @@ EXTRA_DIST += ci_build.sh ci_build.adoc \
 EXTRA_DIST += autogen.sh
 
 # Help also the tarball users contribute properly:
-EXTRA_DIST += .editorconfig
+EXTRA_DIST += .editorconfig .shellcheckrc
 
 # automake xompilation wrapper
 EXTRA_DIST += compile
