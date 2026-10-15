@@ -180,6 +180,19 @@ test_authconf_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 test_authconf_CFLAGS += $(LIBSSL_CFLAGS)
 endif WITH_SSL
 
+# Include production lifecycle helpers, using the normal client dependencies.
+TESTS += upslog-lifetime-test
+upslog_lifetime_test_SOURCES = upslog-lifetime-test.c
+upslog_lifetime_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+upslog_lifetime_test_LDADD = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(top_builddir)/clients/libupsclient.la $(NETLIBS)
+upslog_lifetime_test_LDFLAGS = $(AM_LDFLAGS)
+upslog_lifetime_test_DEPENDENCIES = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(top_builddir)/clients/libupsclient.la $(top_srcdir)/clients/upslog.c $(top_srcdir)/clients/upslog.h
+if WITH_SSL
+upslog_lifetime_test_CFLAGS += $(LIBSSL_CFLAGS)
+upslog_lifetime_test_LDADD += $(LIBSSL_LIBS)
+upslog_lifetime_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = cgilib.c hidparser.c ecoflow-cdc-protocol.c
 
@@ -406,8 +419,16 @@ memcheck:
 	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
-CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test
+CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test upslog-lifetime-cli-test
 CHECK_LOCAL_TARGETS_PYNUT =
+
+if HAVE_PYTHON3
+upslog-lifetime-cli-test: $(top_builddir)/clients/upslog$(EXEEXT)
+	$(AM_V_at)@PYTHON3@ $(srcdir)/NIT/upslog-lifetime.py '$(abs_top_builddir)' --exeext='$(EXEEXT)' --serverless --output='$(abs_builddir)/upslog-lifetime-results'
+else !HAVE_PYTHON3
+upslog-lifetime-cli-test:
+	@echo "  SKIP\t$@ : Python 3 was not detected"
+endif !HAVE_PYTHON3
 
 if WITH_CGI
 if HAVE_PYTHON3
@@ -472,8 +493,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
-#	$(AM_V_at)rm -rf $(builddir)/.deps
+clean-local:
+	$(AM_V_at)rm -rf upslog-lifetime-results
 
 # Helper for only the enabled libs to get built:
 all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)
