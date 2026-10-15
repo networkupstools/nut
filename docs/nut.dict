@@ -2588,6 +2588,7 @@ ld
 ldd
 ldflags
 le
+legacydelays
 legrand
 len
 leveloffset
@@ -2926,6 +2927,7 @@ notifyme
 notifymsg
 notifytype
 notransferoids
+novalidate
 novendor
 nowait
 nowarn

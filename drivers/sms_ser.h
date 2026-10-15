@@ -27,10 +27,19 @@
 
 #include "nut_stdint.h"
 
-#define DEFAULT_BOOTDELAY 64 /* seconds (max 0xFF) */
+#define DEFAULT_BOOTDELAY 64 /* seconds */
+#define DEFAULT_OFFDELAY  30 /* seconds before shutdown.return cuts the output */
+#define DEFAULT_ONDELAY   60 /* seconds before the output returns; sent in whole minutes */
+#define DEFAULT_TESTDELAY 10 /* seconds, test.battery.start.quick */
 #define MAXTRIES 3
 
+/* First byte of the 'Q' reply: the UPS topology, as decoded by SMS PowerView */
+#define SMS_TYPE_LINE_INTERACTIVE        '=' /* "UPS Line Interative" */
+#define SMS_TYPE_ONLINE_LINE_INTERACTIVE '>' /* "On Line Interative" */
+#define SMS_TYPE_ONLINE                  '<' /* "UPS On Line" */
+
 typedef struct {
+    char upstype;            /* one of SMS_TYPE_*, only the on-line types have a real bypass */
     char model[25];          /* device.model */
     char version[7];         /* ups.firmware */
     char voltageRange[15];   /* garbage from sms (it's a string with some strange items) */
@@ -40,11 +49,11 @@ typedef struct {
 
     bool beepon;      /* ups.beeper.status */
     bool shutdown;    /* ups.status = FSD (the shutdown has started by another via) */
-    bool test;        /* the UPS is testing the battery, need a status ? */
+    bool test;        /* the UPS is testing the battery: ups.status = CAL + ups.test.result */
     bool upsok;       /* ups.status or battery.status ? (Maybe RB if is False ?) */
     bool boost;       /* ups.status = BOOST */
-    bool bypass;      /* ups.status = BYPASS */
-    bool lowbattery;  /* ups.status = LB (OL + LB or OB + LB ?) */
+    bool bypass;      /* ups.status = BYPASS, but line-interactive models set it whenever the inverter runs */
+    bool lowbattery;  /* ups.status = LB */
     bool onbattery;   /* ups.status = OB + battery.charger.status = discharging */
 
     float lastinputVac;      /* garbage ? always 000 */
@@ -69,7 +78,7 @@ uint8_t sms_prepare_set_beep(uint8_t* buffer);
 uint8_t sms_prepare_test_battery_low(uint8_t* buffer);
 uint8_t sms_prepare_test_battery_nsec(uint8_t* buffer, uint16_t delay);
 uint8_t sms_prepare_shutdown_nsec(uint8_t* buffer, uint16_t delay);
-uint8_t sms_prepare_shutdown_restore(uint8_t* buffer);
+uint8_t sms_prepare_shutdown_restore(uint8_t* buffer, uint16_t shutdown_delay, uint16_t restore_delay);
 uint8_t sms_prepare_cancel_test(uint8_t* buffer);
 uint8_t sms_prepare_cancel_shutdown(uint8_t* buffer);
 
