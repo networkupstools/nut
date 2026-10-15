@@ -461,6 +461,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed incorrect claim for `innovart33` subdriver -- the original device
       claiming procedure was borrowed from `innovart31` without thoroughly
       checking the code. [issue #3661, PR #3713]
+    * `nutdrv_qx`: failed SANTAK, INNOVART31 and INNOVART33 claims no longer
+      leave their probed measurements in the selected subdriver's state.
+      Configured defaults and overrides are preserved. [issue #3659, PR #3766]
 
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
