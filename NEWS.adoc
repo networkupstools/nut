@@ -858,7 +858,7 @@ https://github.com/networkupstools/nut/milestone/13
       including explicitly selected drivers. All-program manual selection
       now includes disabled driver and program pages while API manuals
       continue to follow `--with-dev`. Distribution archives retain the
-      complete manual-page set. [issue #2979]
+      complete manual-page set. [issue #2979, PR #3765]
     * Corrected operator guidance for communication loss, certificate expiry
       and device-list reloads, debug output and polling intervals. Documented
       the scanning thread limit, completed notification lists and linked
