@@ -317,7 +317,9 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (starts_with_digit && str_to_int(arg[1], &n, 10)) {
+		if (starts_with_digit && str_to_int(arg[1], &n, 10)
+		&&  n >= NETSSL_CERTREQ_MIN && n <= NETSSL_CERTREQ_MAX
+		) {
 			certrequest = n;
 			return 1;
 		}

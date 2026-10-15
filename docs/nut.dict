@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3894 utf-8
+personal_ws-1.1 en 3895 utf-8
 AAC
 AAS
 ABI
@@ -1229,6 +1229,7 @@ SECCTRL
 SELFTEST
 SELFTESTS
 SELinux
+SEMLIBS
 SENTR
 SER
 SERIALNO
@@ -2312,7 +2313,6 @@ gdlib
 gdwarf
 ge
 gedit
-genericsups
 genericups
 genesisII
 gentoo
@@ -3814,6 +3814,7 @@ winnutclient
 winpthreads
 winsymlinks
 withGiven
+withdoc
 wix
 wmNUT
 wmnut
