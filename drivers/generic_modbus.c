@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"NUT Generic Modbus driver (libmodbus link type: " NUT_MODBUS_LINKTYPE_STR ")"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -61,7 +61,7 @@ modbus_t *modbus_new(const char *port);
 void modbus_reconnect(void);
 
 /* modbus register read function */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data);
+int register_read(modbus_t *mb, int addr, regtype_t type, int *data);
 
 /* instant command triggered by upsd */
 int upscmd(const char *cmd, const char *arg);
@@ -407,30 +407,34 @@ void upsdrv_cleanup(void)
  */
 
 /* Read a modbus register */
-int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
+int register_read(modbus_t *mb, int addr, regtype_t type, int *data)
 {
 	int rval = -1;
+	uint8_t bit_value = 0;
+	uint16_t register_value = 0;
 
 	/* register bit masks */
 	uint16_t mask8 = 0x000F;
 	uint16_t mask16 = 0x00FF;
 
+	*data = 0;
+
 	switch (type) {
 		case COIL:
-			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_bits(mb, addr, 1, &bit_value);
+			*data = (int)(bit_value & mask8);
 			break;
 		case INPUT_B:
-			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask8;
+			rval = modbus_read_input_bits(mb, addr, 1, &bit_value);
+			*data = (int)(bit_value & mask8);
 			break;
 		case INPUT_R:
-			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_input_registers(mb, addr, 1, &register_value);
+			*data = (int)(register_value & mask16);
 			break;
 		case HOLDING:
-			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint16_t *)data = *(uint16_t *)data & mask16;
+			rval = modbus_read_registers(mb, addr, 1, &register_value);
+			*data = (int)(register_value & mask16);
 			break;
 
 #include "nut-pragmas-covered-switch-default.h"
@@ -460,7 +464,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 		}
 	}
 	upsdebugx(3, "register addr: 0x%x, register type: %u read: %u",
-		(unsigned int)addr, type, *(unsigned int *)data);
+		(unsigned int)addr, type, (unsigned int)*data);
 	return rval;
 }
 
