@@ -282,6 +282,13 @@ The following cipher suite ids are currently supported
 MISCELLANEOUS OPTIONS
 ---------------------
 
+*-T* | *--thread* 'max threads'::
+Limit the number of scanning threads running simultaneously.
+The value must be a positive integer and may be constrained by the
+system's file descriptor limit. The default depends on the build and
+system limits; see the command's help output. This option is ignored
+in builds without support for limiting scanning threads.
+
 *-V* | *--version*::
 Display NUT version.
 

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3898 utf-8
+personal_ws-1.1 en 3903 utf-8
 AAC
 AAS
 ABI
@@ -240,6 +240,7 @@ ConnectUPS
 Corbelli
 Corbolante
 Coutadeur
+CppUnit
 Ctrl
 Cuvellard
 Cyber
@@ -1883,6 +1884,7 @@ bv
 byobu
 bypassOff
 bypassOn
+bypassasalarm
 cStandard
 cablepower
 cachefile
@@ -2172,7 +2174,10 @@ dummypass
 dummyups
 dumpxml
 dv
+dynacfgBase
+dynacfgPipeline
 dynamatrix
+dynamatrixPipeline
 ePDU
 ePDUs
 eaton
@@ -2315,7 +2320,6 @@ gdlib
 gdwarf
 ge
 gedit
-genericsups
 genericups
 genesisII
 gentoo
@@ -3016,6 +3020,7 @@ otheruser
 otool
 ouGDQn
 outliers
+overridemodel
 overtemp
 ovmf
 pF
