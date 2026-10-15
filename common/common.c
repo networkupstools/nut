@@ -92,8 +92,7 @@ static struct {
 
 static void nut_common_atexit_cleanup(void)
 {
-	size_t	i;
-	int	iPN = -1, iPT = -1;
+	size_t	i, iPN = SIZE_MAX, iPT = SIZE_MAX;
 
 	/* Monkey-patch */
 	for (i = 0; nut_common_atexit_handlers[i].func; i++) {
@@ -105,7 +104,7 @@ static void nut_common_atexit_cleanup(void)
 		}
 	}
 
-	if (iPN >= 0 && iPT >= 0) {
+	if (iPN != SIZE_MAX && iPT != SIZE_MAX) {
 		if (nut_common_atexit_handlers[iPN].registered
 		 && nut_common_atexit_handlers[iPT].registered
 		) {
@@ -1273,9 +1272,9 @@ process_stat_symlink:
 		/* Some magic symlinks under (for example) /proc and /sys
 		 * report 'st_size' as zero. In that case, take PATH_MAX
 		 * or equivalent as a "good enough" estimate. */
-		if (st.st_size) {
-			/* Add one for ending '\0' */
-			procnamelen = st.st_size + 1;
+		if (st.st_size > 0 && (uintmax_t)st.st_size < (uintmax_t)SIZE_MAX) {
+			/* Add one for ending '\0' only when the size fits. */
+			procnamelen = (size_t)st.st_size + 1;
 		} else {
 			procnamelen = sizeof(pathname);
 		}
@@ -1283,7 +1282,7 @@ process_stat_symlink:
 		/* Not xcalloc() here, not too fatal if we fail */
 		procname = (char*)calloc(procnamelen, sizeof(char));
 		if (procname) {
-			int nbytes = readlink(pathname, procname, procnamelen);
+			ssize_t nbytes = readlink(pathname, procname, procnamelen);
 			if (nbytes < 0) {
 				upsdebug_with_errno(1, "%s: failed to readlink() from %s",
 					__func__, pathname);
@@ -1292,7 +1291,7 @@ process_stat_symlink:
 				goto process_parse_file;
 			}
 #include "nut-pragmas-type-limits.h"
-			if ((unsigned int)nbytes > SIZE_MAX || procnamelen <= (size_t)nbytes) {
+			if ((uintmax_t)nbytes > (uintmax_t)SIZE_MAX || procnamelen <= (size_t)nbytes) {
 #include "nut-pragmas-type-limits-end.h"
 				upsdebugx(1, "%s: failed to readlink() from %s: may have been truncated",
 					__func__, pathname);
@@ -2636,7 +2635,7 @@ repeat:
 	if (!s || !*s)
 		return 0;
 
-	offset = s - string;
+	offset = (size_t)(s - string);
 #ifdef DEBUG
 	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" toklen=%" PRIuSIZE" s[toklen]='0x%2X'\n",
 		__func__, token, string, offset, toklen, s[toklen]);
@@ -3499,7 +3498,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 						if (s && *s) {
 							long l = strtol(s, (char **)NULL, 10);
 							if (l > 0) {
-								to_usec = l;
+								to_usec = (uint64_t)l;
 							}
 						}
 					}
@@ -5032,7 +5031,7 @@ char *xstrdup(const char *string)
 
 /* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
 #ifndef WIN32
-int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+int select_connect(int fd, const struct sockaddr_un *addr, socklen_t addrlen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int rc;
 	int err = 0;
@@ -5909,6 +5908,8 @@ int match_regex_hex(const regex_t *preg, const int n)
  */
 #define INETADDRBUF_SIZE	(MAX(40, MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN) + 1))
 
+/* POSIX inet_ntop() takes socklen_t; Windows uses a different length type.
+ * Convert only after capping the buffer length to the address text size. */
 const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrstrsz)
 {
 	if (!s) {
@@ -5929,9 +5930,17 @@ const char *inet_ntopSS(struct sockaddr_storage *s, char *addrstr, size_t addrst
 	switch (s->ss_family)
 	{
 	case AF_INET:
-		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), addrstr, MIN(16, addrstrsz));
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), addrstr,
+#ifndef WIN32
+			(socklen_t)
+#endif
+			MIN(16, addrstrsz));
 	case AF_INET6:
-		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), addrstr, MIN(40, addrstrsz));
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), addrstr,
+#ifndef WIN32
+			(socklen_t)
+#endif
+			MIN(40, addrstrsz));
 	default:
 		errno = EAFNOSUPPORT;
 		return NULL;
@@ -6025,12 +6034,20 @@ const char *inet_ntopAI(struct addrinfo *ai, char *addrstr, size_t addrstrsz)
 		case AF_INET: {
 			struct sockaddr_in	addr_in;
 			memcpy(&addr_in, ai->ai_addr, sizeof(addr_in));
-			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr, MIN(INET_ADDRSTRLEN, addrstrsz));
+			return inet_ntop(AF_INET, &(addr_in.sin_addr), addrstr,
+#ifndef WIN32
+				(socklen_t)
+#endif
+				MIN(INET_ADDRSTRLEN, addrstrsz));
 		}
 		case AF_INET6: {
 			struct sockaddr_in6	addr_in6;
 			memcpy(&addr_in6, ai->ai_addr, sizeof(addr_in6));
-			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr, MIN(INET6_ADDRSTRLEN, addrstrsz));
+			return inet_ntop(AF_INET6, &(addr_in6.sin6_addr), addrstr,
+#ifndef WIN32
+				(socklen_t)
+#endif
+				MIN(INET6_ADDRSTRLEN, addrstrsz));
 		}
 		default:
 			errno = EAFNOSUPPORT;
