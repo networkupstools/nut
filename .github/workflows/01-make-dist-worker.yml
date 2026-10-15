@@ -1,6 +1,7 @@
-# Separated from 01-make-dist.yml to touch untrusted sources
-# in a separate job without particular permissions to anything.
-# Triggered by a step in that job.
+# Builds the tarballs of possibly untrusted sources (PR code), with
+# read-only permissions. Called from 01-make-dist.yml as a reusable
+# workflow (workflow_call), or can be started manually
+# (workflow_dispatch) for any ref.
 #
 # See also:
 #   https://github.com/actions/upload-artifact
@@ -39,7 +40,9 @@ jobs:
      #  NUT build/tooling prereqs (save about 3 minutes per run!)
      #  Maybe https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
      #  => https://github.com/addnab/docker-run-action can help
-    runs-on: ubuntu-latest
+    # Pinned (not ubuntu-latest) so the toolchain and the "current"
+    # aspell-en only change when we bump this deliberately
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout repository
@@ -87,12 +90,16 @@ jobs:
     # and our own docs/config-prereqs.txt
     # NOTE: Currently installing the MAX prerequisite footprint,
     # which for building just the docs may be a bit of an overkill.
+    # The eatmydata wrapper skips fsync() calls of dpkg (unneeded on a
+    # throw-away runner), and recommended packages are not installed
+    # (we list what we need), to speed up this step.
     - name: NUT CI Prerequisite packages (Ubuntu, GCC)
       run: |
         echo "set man-db/auto-update false" | sudo debconf-communicate
         sudo dpkg-reconfigure man-db
-        sudo apt update
-        sudo apt install \
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends eatmydata
+        sudo eatmydata apt-get install -y --no-install-recommends \
             gcc g++ clang \
             ccache time \
             git perl curl \
@@ -103,7 +110,7 @@ jobs:
             libtool-bin \
             python3 gettext python3-pyqt6 pyqt6-dev-tools \
             aspell aspell-en \
-            asciidoc source-highlight python3-pygments dblatex \
+            asciidoc asciidoc-dblatex source-highlight python3-pygments dblatex \
             libgd-dev \
             systemd-dev \
             libsystemd-dev \
@@ -125,10 +132,16 @@ jobs:
         || exit
         date > .timestamp-init
 
+    # The ccache is restored here, and saved (see below) only by master
+    # branch pushes and scheduled runs. PR builds run on pull_request, in
+    # their own cache scope, so they can not plant a poisoned cache for
+    # later master branch builds. Note that a manual (workflow_dispatch)
+    # run uses the cache scope of the branch it is started on: do not
+    # start it on master with an untrusted "ref" input.
     - name: Prepare ccache
       # Based on https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#example-using-the-cache-action example
       id: cache-ccache
-      uses: actions/cache@v6
+      uses: actions/cache/restore@v6
       env:
         compiler: 'CC=gcc CXX=g++'
         cache-name: cache-ccache-${{ env.compiler }}
@@ -162,6 +175,22 @@ jobs:
         ./autogen.sh && \
         ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all --with-dev --with-docs --enable-docs-changelog ${{env.compiler}}
 
+    # Documentation spellcheck is run explicitly here (other CI build
+    # scenarios pass --disable-spellcheck so it is not part of every
+    # "make check" in the build matrices). The old aspell-en dictionary
+    # is checked by the parallel "spellcheck-old-aspell-en" job below.
+    # Failures are reported, but do not stop the tarball build; the job
+    # is failed at the end (see "Report spellcheck failures").
+    - name: NUT CI Spellcheck (aspell-en current)
+      id: spellcheck-current
+      continue-on-error: true
+      run: |
+        dpkg -l aspell aspell-en | grep "^ii"
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=yes spellcheck || {
+            echo "::error title=Spellcheck (aspell-en current)::Documentation spellcheck failed with the current aspell-en dictionary, see this step log; update the text or docs/nut.dict"
+            exit 1
+        }
+
     # NOTE: In this scenario we do not build actually NUT in the main
     # checkout directory, at least not explicitly (recipe may generate
     # some files like man pages to fulfill the "dist" requirements;
@@ -188,7 +217,8 @@ jobs:
         CCACHE_COMPRESS=true; export CCACHE_COMPRESS
         ccache --version || true
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        make -s -j 8 distcheck
+        # Spelling is gated by the explicit steps above, not here
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=no distcheck
 
     - name: NUT CI Build to verify "dist" tarball build self-reproducibility
       env:
@@ -198,10 +228,22 @@ jobs:
         CCACHE_COMPRESS=true; export CCACHE_COMPRESS
         ccache --version || true
         ( ${{env.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
-        make -s -j 8 distcheck-completeness
+        # Spelling is gated by the explicit steps above, not here
+        make -s -j 8 SPELLCHECK_ERROR_FATAL=no distcheck-completeness
 
     - name: CCache stats after distcheck
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
+
+    - name: Save ccache (master branch pushes and scheduled runs only)
+      if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@v6
+      with:
+        path: |
+            ~/.ccache
+            ~/.cache/ccache
+            ~/.config/ccache/ccache.conf
+        # Same key as computed when restoring (its .timestamp-init is gone)
+        key: ${{ steps.cache-ccache.outputs.cache-primary-key }}
 
     - name: NUT CI Build to package complex docs (not part of dist tarball)
       run: |
@@ -218,4 +260,77 @@ jobs:
         compression-level: 0
         overwrite: true
 
-    # FINISH: Pass control back to the main pipeline
+    # The PR comment and commit status with this link are set by the
+    # "GHA-01: Tarballs Report" workflow (01-make-dist-report.yml)
+    - name: Report tarball link in job summary
+      env:
+        ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        ARTIFACT_URL: ${{ steps.upload_artifact.outputs.artifact-url }}
+      run: |
+        echo "### Dist and Docs tarballs" >> "$GITHUB_STEP_SUMMARY"
+        echo "[${ARTIFACT_NAME}.zip](${ARTIFACT_URL})" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Report spellcheck failures
+      if: ${{ !cancelled() && steps.spellcheck-current.outcome == 'failure' }}
+      run: |
+        echo "### Documentation spellcheck failed (aspell-en current)" >> "$GITHUB_STEP_SUMMARY"
+        echo "The tarballs were still built; see the spellcheck step log." >> "$GITHUB_STEP_SUMMARY"
+        exit 1
+
+  # Dictionaries differ from decade to decade, so also check with an old
+  # aspell-en: 7.1, as on CentOS 7 (EPEL), which rejects some spellings
+  # (e.g. British ones) that newer dictionaries accept.
+  # Runs in parallel to the tarball build (not delaying it).
+  # Only the dictionary matters, so the runner's own aspell is pointed at
+  # the aspell-en 7.1 word lists (via ASPELL_CONF), no old distro needed.
+  spellcheck-old-aspell-en:
+    name: "Spellcheck with old aspell-en 7.1 (as on CentOS 7)"
+    # Pinned (not ubuntu-latest) so the toolchain and the "current"
+    # aspell-en only change when we bump this deliberately
+    runs-on: ubuntu-24.04
+
+    # The old dictionary: upstream aspell6-en-7.1-0 word lists (repacked
+    # under another top directory name, same content), fetched from the
+    # Ubuntu archive mirror next to the runners. That is plain HTTP, so
+    # the download is verified against its SHA-256 checksum.
+    env:
+      ASPELL_EN_OLD_URL: http://azure.archive.ubuntu.com/ubuntu/pool/main/a/aspell-en/aspell-en_7.1-0.orig.tar.bz2
+      ASPELL_EN_OLD_SHA256: 03b06fa1d72016bd5d22d36cac427ba8bc0dbf6a5996d16760f023287070f0ee
+      # Top directory in that tarball
+      ASPELL_EN_OLD_DIR: aspell-en-7.1-0
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        # See notes in the make-dist-tarballs job above
+        fetch-depth: 0
+        fetch-tags: true
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+
+    - name: NUT CI Prerequisite packages (Ubuntu, aspell)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends eatmydata
+        sudo eatmydata apt-get install -y --no-install-recommends \
+            aspell autoconf automake libtool make gcc g++ pkg-config
+
+    # Its "make" only compiles the word lists with the installed aspell
+    - name: Prepare old aspell-en 7.1 dictionary
+      working-directory: ${{ runner.temp }}
+      run: |
+        curl -fsSL -o aspell-en-old.tar.bz2 "$ASPELL_EN_OLD_URL"
+        echo "$ASPELL_EN_OLD_SHA256  aspell-en-old.tar.bz2" | sha256sum -c
+        tar xjf aspell-en-old.tar.bz2
+        cd "$ASPELL_EN_OLD_DIR" && ./configure && make
+
+    - name: NUT CI Spellcheck (aspell-en 7.1)
+      env:
+        ASPELL_CONF: dict-dir ${{ runner.temp }}/${{ env.ASPELL_EN_OLD_DIR }}
+      run: |
+        aspell --version
+        BUILD_TYPE=default-spellcheck ./ci_build.sh || {
+            echo "::error title=Spellcheck (aspell-en 7.1)::Documentation spellcheck failed with the old aspell-en 7.1 dictionary (as on CentOS 7), see this job log; update the text or docs/nut.dict"
+            exit 1
+        }

@@ -1,0 +1,28 @@
+# Configuration of zizmor, the GitHub Actions static analysis tool used by
+# the "GHA-06: zizmor" workflow (.github/workflows/06-zizmor.yml), see
+# https://docs.zizmor.sh/configuration/
+# This records deliberate choices of this repository, so that the check
+# only fails for new problems. Please explain the reason for each entry.
+
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # GitHub's own actions (actions/checkout, github/codeql-action etc.)
+        # may be referenced by tags (e.g. "@v7"). Note that such major
+        # version tags are moved to new releases by design, so this means
+        # we trust GitHub's own organizations (which run the workflows
+        # anyway), rather than that these refs can never change.
+        "actions/*": ref-pin
+        "github/*": ref-pin
+        # All other actions must be pinned to a full commit SHA, with the
+        # version in a comment (e.g. "@<sha> # v1.2.3"), as their tags (or
+        # branches) can be moved to other code. Dependabot updates both.
+        "*": hash-pin
+
+  dangerous-triggers:
+    ignore:
+      # Uses workflow_run to comment on PRs and set statuses with write
+      # permissions for GHA-01 builds of (possibly fork) PRs; it never runs
+      # PR code, and uses details of the build run only as data.
+      - 01-make-dist-report.yml
