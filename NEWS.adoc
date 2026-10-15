@@ -1016,6 +1016,10 @@ https://github.com/networkupstools/nut/milestone/13
       in the `aspell` output), and in GitHub Actions also as annotations on
       the source lines (once per unknown word, despite the retries) and in
       the job summary.
+    * The `configure` script now also looks for `aspell` filter resources
+      under `lib64` (e.g. on CentOS 7) and in directories named by just the
+      major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
+      [issue #2068]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
