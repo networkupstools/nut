@@ -850,6 +850,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Included the eight existing text cable references in the generated
+      cable guide and user manual, preserving their diagrams and attribution.
+      [issue #1367, PR #3742]
     * Corrected the `usbhid-ups` on-battery discharge option name and the
       `belkinunv` configuration guidance. Documented the existing
       `microdowell` delay settings and the `nhs_ser` model override and
