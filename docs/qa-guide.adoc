@@ -504,7 +504,8 @@ with binary installation prototype area, intended for enthusiastic testing
 soon after NUT 2.8.0 release.
 
 This relies on a few prerequisite packages and a common NUT configuration,
-as coded in the `appveyor.yml` file in the NUT codebase.
+as coded in the `appveyor.yml` file in the NUT codebase, and the step
+scripts it calls from the `.github/scripts/appveyor/` directory.
 
 CircleCI
 ~~~~~~~~

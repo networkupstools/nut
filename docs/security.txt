@@ -620,9 +620,8 @@ NOTE: If the client does not send *any* certificate, the connection is closed.
 Like CA certificates, you can add many "trusted" client and CA certificates
 in server's certificate databases.
 
-WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
-#3329] is solved, not all stock NUT clients may even have a way to present
-some certain certificate.
+NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
+third-party NUT clients to even have a way to present some certain certificate.
 
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -727,8 +726,8 @@ It'll display a date like this:
 
 	notAfter=Oct 28 20:05:32 2002 GMT
 
-If that's after the current date, you need to generate another cert/key
-pair using the procedure above.
+If that date is before the current date, you need to generate another
+cert/key pair using the procedure above.
 
 Conclusion
 ~~~~~~~~~~
@@ -738,8 +737,8 @@ since various bits of the implementation or configuration may change in
 the future. In other words, if you use this and it stops working after
 an upgrade, come back to this file to find out what changed.
 
-This is why the other documentation doesn't mention any of these
-directives yet.  SSL support is a treat for those of you that RTFM.
+See linkman:upsd.conf[5], linkman:upsmon.conf[5] and linkman:nutauth.conf[5]
+for the SSL configuration directives.
 
 There are also potential licensing issues for people who ship binary
 packages since NUT is GPL and OpenSSL is not compatible with it.  You

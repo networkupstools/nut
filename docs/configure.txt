@@ -716,6 +716,36 @@ flags or provide the desired string explicitly.
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
 
+	--with-debuginfo (yes/no/auto/legacy, default: no)
+
+Request debug-friendly compiler options for NUT binaries. With `yes`, GCC
+and CLANG builds add `-g3 -gdwarf-2` and reduce optimization with `-O0`.
+For C builds, `-O0` is added to `CPPFLAGS`, so later optimization options
+in `CFLAGS` can still override it. For C++ builds, these options are appended
+to `CXXFLAGS` and replace the separate debug options for CppUnit tests.
+Unknown compiler families do not receive these options.
+
+With `auto`, C and C++ are considered separately: add the debug options only
+if the caller's `CFLAGS` or `CXXFLAGS`, respectively, contain neither `-O`
+nor `-g` options. With `no`, NUT adds no debug options through this setting;
+compiler defaults and caller-supplied flags still apply. The `legacy` value
+adds `-O` only if the corresponding flags are empty after the initial
+compiler checks.
+
+	--enable-cppunit (yes/no/force/auto, default: auto)
+
+Control whether to build CppUnit tests for the C\++ bindings. Detection
+requires `pkg-config`, the CppUnit development files and a compiler with
+C++11 support. The `configure` script also checks whether a small CppUnit
+program can build and, when execution is possible, run with the current
+toolkit.
+
+With `auto`, build the tests if these checks succeed; otherwise skip them.
+With `yes`, fail configuration if the tests cannot be enabled. With `no`,
+disable the tests. With `force`, enable the tests even if detection fails,
+with a warning; this does not supply missing dependencies or guarantee that
+the tests will build or run. Enabled tests are run by `make check`.
+
 	--enable-spellcheck (default: auto)
 
 Activate recipes for documentation source file spelling checks with `aspell`
@@ -803,9 +833,8 @@ Enable the `upsd` server-side ability to set up `CERTREQUEST` directive in
 `upsd.conf`, which lets the server reject clients which do not present a
 certificate.
 
-WARNING: Until link:https://github.com/networkupstools/nut/issues/3329[issue
-#3329] is solved, not all stock NUT clients may even have a way to present
-some certain certificate.
+NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
+third-party NUT clients to even have a way to present some certain certificate.
 
 Read link:docs/security.txt[] for instructions on practical setup of SSL
 support.
