@@ -281,9 +281,20 @@ Test programs in NUT codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [[CI_NUT_SELFTESTS]]
 
-FIXME: Write the chapter text.
+After configuring and building NUT, run `make check` from the build root
+to execute the tests enabled for that configuration. The `tests/Makefile.am`
+file lists the test programs and the conditions under which they are built;
+optional dependencies and build features affect the selected set.
 
-For now, investigate files in the `tests/` directory contents in NUT sources.
+The tests cover areas such as configuration parsing, authentication
+configuration, logging and selected driver helpers. Read the test output
+to distinguish passes, failures and skipped tests. A successful run covers
+the tests selected by that build; it does not establish acceptance on other
+platforms or with real UPS hardware.
+
+For the separate NUT Integration Testing suite and its setup, see the
+following <<NIT,NUT Integration Testing>> section. For memory checking of
+the built self-tests, see <<CI_VALGRIND,Valgrind checks>>.
 
 /////////////////////////////
 // end of CI_NUT_SELFTESTS //
@@ -351,22 +362,40 @@ The jenkins-dynamatrix library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [[Jenkins_Dynamatrix_Library]]
 
-FIXME: Write the chapter text.
+NUT's Jenkins pipeline loads the
+link:https://github.com/networkupstools/jenkins-dynamatrix[jenkins-dynamatrix]
+Shared Library. The library supplies the matrix-building and pipeline
+functions invoked by `Jenkinsfile-dynamatrix`; the NUT file supplies the
+project-specific configuration and build recipes.
 
-For now, see https://github.com/networkupstools/jenkins-dynamatrix sources
-(note the README and large comments at start of files may be obsolete, as
-of this writing -- documenting the initial ideas, but the implementation
-might differ from that over time).
+When investigating a matrix result, read the NUT pipeline configuration
+for the revision being built and the library revision loaded by that job.
+These are separate sources of behaviour. The library's README and source
+comments provide background; compare them with the implementation when
+details have changed.
 
 Jenkinsfile-dynamatrix cases in NUT sources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [[Jenkins_Dynamatrix_Pipeline]]
 
-FIXME: Write the chapter text.
+The link:https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix[Jenkinsfile-dynamatrix]
+file defines NUT-specific inputs to the Shared Library. It builds the
+`dynacfgBase` and `dynacfgPipeline` maps and passes them to
+`dynamatrixPipeline()`.
 
-For now, see the `Jenkinsfile-dynamatrix` in the NUT sources (maybe only git),
-e.g. https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix
-for the practical pipeline preparation and hand-off to library implementation.
+The base configuration selects agent labels, matrix axes and common
+environment settings. The pipeline configuration defines stages, commands,
+filters and allowed-failure cases. Some choices depend on the branch name
+and the files changed by a pull request, so two runs can legitimately
+select different scenarios.
+
+To reproduce a failed scenario, use the revision, configuration command,
+build command and environment recorded for that scenario. Check its agent
+labels and tool versions before choosing a local environment. A passing
+local build applies to the scenario exercised; inspect the individual
+matrix results to identify which other scenarios passed, failed or were
+not selected. See the following section for examples of commands recorded
+in NUT CI logs.
 
 Jenkins CI
 ^^^^^^^^^^
@@ -475,7 +504,8 @@ with binary installation prototype area, intended for enthusiastic testing
 soon after NUT 2.8.0 release.
 
 This relies on a few prerequisite packages and a common NUT configuration,
-as coded in the `appveyor.yml` file in the NUT codebase.
+as coded in the `appveyor.yml` file in the NUT codebase, and the step
+scripts it calls from the `.github/scripts/appveyor/` directory.
 
 CircleCI
 ~~~~~~~~
