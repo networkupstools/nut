@@ -850,6 +850,10 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected the `usbhid-ups` on-battery discharge option name and the
+      `belkinunv` configuration guidance. Documented the existing
+      `microdowell` delay settings and the `nhs_ser` model override and
+      bypass-alarm settings. [PR #3744]
     * Documented the existing Modbus timeout components and defaults for
       `generic_modbus` and `adelsystem_cbi`, and corrected the `genericups`
       driver name in the GE/IMV/Victron cable reference. [PR #3749]
