@@ -513,7 +513,16 @@ getver_acinit() {
     elif [ -n "${SUFFIX_PRERELEASE}" ] && [ -z "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
         SEMVER_ACINIT="`echo \"${VER50}\" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*$/\1/'`.1"
     else
-        SEMVER_ACINIT="${SEMVER}.1"
+        # Check if the version forced from input is like `X.Y.Z.0(.0...)`
+        # (still a release, zero commits after tag), and do not turn it
+        # into `X.Y.Z.1` needlessly.
+        _VER50="`echo \"${VER50}\" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\(\.00*\)*$/\1/'`"
+        if [ x"${SEMVER}" = x"${_VER50}" ] ; then
+            SEMVER_ACINIT="${SEMVER}"
+        else
+            SEMVER_ACINIT="${SEMVER}.1"
+        fi
+        unset _VER50
     fi
 }
 

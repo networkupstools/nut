@@ -640,6 +640,17 @@ testcase_gitlog2version() {
 "SEMVER=2.8.4; SEMVER_ACINIT=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4' => DESC50='2.8.4'
 2.8.4"
 
+    # NOTE: VER50 retains trailing .0 from the input, but SEMVER_ACINIT
+    # should not become 2.8.4.1 for what is still a release (zero commits
+    # after tag)
+    NUT_VERSION_STRIP_LEADING_ZEROES='' \
+    NUT_VERSION_QUERY=SEMVER_ACINIT \
+    NUT_VERSION_FORCED=2.8.4.0 \
+    run_testcase_generic callG2V \
+        "Stable NUT version for AC_INIT, for a release (tag)" 0 \
+"SEMVER=2.8.4; SEMVER_ACINIT=2.8.4; TRUNK=''; BASE=''; DESC='v2.8.4' => TAG='v2.8.4' + SUFFIX='' => VER5='2.8.4.0.0' => DESC5='2.8.4.0.0' => VER50='2.8.4.0' => DESC50='2.8.4.0'
+2.8.4"
+
     NUT_VERSION_QUERY=SEMVER_ACINIT \
     NUT_VERSION_FORCED=3.14.159.2653.59-2712+gdeadbeef \
     run_testcase_generic callG2V \
