@@ -1078,6 +1078,16 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	static const char	*quiet_init_ssl = NULL;
 	static int	quiet_init_ssl_parsed = 0;
 
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	upscli_ssl_context_config_t	*cfg;
+# ifdef WITH_OPENSSL
+	long	ret;
+	int	ssl_mode = SSL_VERIFY_NONE;
+# elif defined(WITH_NSS)	/* WITH_OPENSSL */
+	SECStatus	status;
+# endif	/* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
 	if (!quiet_init_ssl_parsed) {
 		quiet_init_ssl_parsed = 1;
 		quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
@@ -1107,13 +1117,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 
 	return NULL;
 #else
-	upscli_ssl_context_config_t	*cfg;
-# ifdef WITH_OPENSSL
-	long	ret;
-	int	ssl_mode = SSL_VERIFY_NONE;
-# elif defined(WITH_NSS)	/* WITH_OPENSSL */
-	SECStatus	status;
-# endif	/* WITH_OPENSSL | WITH_NSS */
 
 	cfg = upscli_ssl_context_config_find(certverify, certpath, certname, certpasswd, certfile);
 	if (cfg) {

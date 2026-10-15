@@ -672,6 +672,8 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
+      declarations after executable statements as errors. [issue #3761, PR #3762]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
