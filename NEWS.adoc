@@ -854,6 +854,11 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Aligned ordinary manual-page builds with installation selection,
+      including explicitly selected drivers. All-program manual selection
+      now includes disabled driver and program pages while API manuals
+      continue to follow `--with-dev`. Distribution archives retain the
+      complete manual-page set. [issue #2979]
     * Corrected operator guidance for communication loss, certificate expiry
       and device-list reloads, debug output and polling intervals. Documented
       the scanning thread limit, completed notification lists and linked
