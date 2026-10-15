@@ -146,6 +146,13 @@ NOTE: In a future NUT release, the default `configure` script handling for the
   The quirk (and its default by USB ID) now also applies with an explicit
   `subdriver = cypress` setting, which used to turn it off. [PR #3720]
 
+- Deployments using `usbhid-ups` with a Minuteman UPS which reports USB ID
+  `05dd:a0a0` and has `productid` set in `ups.conf` used to get the
+  `delta_ups-hid` subdriver. The `tripplite-hid` subdriver, which corrects
+  this device's voltage and frequency readings, now handles it in all
+  cases, so the set of published variables changes somewhat (for example
+  `input.source` is no longer reported). [issue #1852]
+
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended
   to upgrade to NUT 2.8.6, all previous versions are considered too unreliable

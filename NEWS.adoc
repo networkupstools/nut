@@ -562,6 +562,19 @@ https://github.com/networkupstools/nut/milestone/13
       against its 900 W rating. Note this is a behaviour change for units that
       report a non-zero `ActivePower`: the reading moves from `ups.power` to
       `ups.realpower`. [issue #3580, PR #3581]
+    * `tripplite-hid` subdriver: on Minuteman UPSes with USB ID `05dd:a0a0`
+      (Delta's vendor ID), `tripplite_fix_report_desc()` now also repairs two
+      Report Descriptor defects which left `input.voltage`, `output.voltage`
+      and `battery.voltage` at `0.0` and both frequencies at `870.0`: the
+      16-bit measurement fields declare a Logical Maximum of 255, so their
+      reports were masked to 8 bits, and the values are sent as tenths but
+      declare a Unit Exponent of 1. The fix widens those Logical Maximums to
+      the field size and sets the Unit Exponents which mean tenths (6 for
+      volts, -1 for hertz and amperes). The `delta_ups-hid` subdriver now
+      leaves `05dd:a0a0` to `tripplite-hid` even when the `productid` option
+      is set; it used to claim the device then, without these fixes.
+      Verified on a Minuteman Entrust ETR1500LCD, which now reports 122.3 V
+      input, 123.6 V output, 59.9 Hz and 28.1 V battery. [issue #1852]
     * in `legrand-hid` subdriver the `beeper.disable` instant command now
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
