@@ -38,6 +38,10 @@ This depends on further libraries installed on the system:
 Note that if a method is reported as unavailable by those variables, the
 call to the corresponding `nutscan_scan_*` function will always return NULL.
 
+If the semaphore used to limit scan threads cannot be initialised, the library
+reports this and scans SNMP, IPMI, NUT, XML/HTTP and serial targets one at a time.
+Scanning can take longer in this fallback mode.
+
 NOTES
 -----
 

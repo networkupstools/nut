@@ -1201,11 +1201,6 @@ int main(int argc, char *argv[])
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
 	int _nut_debug_level = 0;
-#ifdef HAVE_PTHREAD
-# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-	sem_t	*current_sem;
-# endif
-#endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 #endif
@@ -1672,43 +1667,8 @@ display_help:
 	}
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
-	 * We need to destroy it before re-init. We currently can't change "sem value"
-	 * on lib (need to be thread safe). */
-	current_sem = nutscan_semaphore();
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-	sem_destroy(current_sem);
-#  elif defined HAVE_SEMAPHORE_NAMED
-	if (current_sem) {
-		sem_unlink(SEMNAME_TOPLEVEL);
-		sem_close(current_sem);
-	}
-#  endif
-#include "nut-pragmas-unreachable-code.h"
-	/* Different platforms, different sizes, none fits all... */
-	if (SIZE_MAX > UINT_MAX && max_threads > UINT_MAX) {
-#include "nut-pragmas-unreachable-code-end.h"
-		fprintf(stderr, "\n\n"
-			"WARNING: Limiting max_threads to range acceptable for "
-			REPORT_SEM_INIT_METHOD "()\n\n");
-		max_threads = UINT_MAX - 1;
-	}
-
-	upsdebugx(1, "Parallel scan support: max_threads=%" PRIuSIZE, max_threads);
-#  ifdef HAVE_SEMAPHORE_UNNAMED
-	if (sem_init(current_sem, 0, (unsigned int)max_threads)) {
-		/* Show this one to end-users so they know */
-		upsdebug_with_errno(0, "Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed");
-	}
-#  elif defined HAVE_SEMAPHORE_NAMED
-	/* FIXME: Do we need O_EXCL here? */
-	if (SEM_FAILED == (current_sem = sem_open(SEMNAME_TOPLEVEL, O_CREAT, 0644, (unsigned int)max_threads))) {
-		/* Show this one to end-users so they know */
-		upsdebug_with_errno(0, "Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed");
-		current_sem = NULL;
-	}
-	nutscan_semaphore_set(current_sem);
-#  endif
+	/* Apply the limit parsed from the command line before starting scans. */
+	nutscan_semaphore_init();
 
 # endif
 #else
@@ -2025,17 +1985,6 @@ display_help:
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
 	nutscan_upslog_setproctag("cleanup", NULL);
-#ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE_UNNAMED
-	sem_destroy(nutscan_semaphore());
-# elif defined HAVE_SEMAPHORE_NAMED
-	if (nutscan_semaphore()) {
-		sem_unlink(SEMNAME_TOPLEVEL);
-		sem_close(nutscan_semaphore());
-		nutscan_semaphore_set(NULL);
-	}
-# endif
-#endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free_ip_ranges(&ip_ranges_list);

@@ -127,7 +127,7 @@ extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut,
 #  define SEMNAME_IPMI		"/libnutscan-ipmi"
 # endif
 
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 extern pthread_mutex_t threadcount_mutex;
 # endif
 
@@ -245,7 +245,12 @@ nutscan_device_t * nutscan_scan_upower(void);
 /* Expose shared libnutscan semaphore for overall thread count
  * limited across different scanning methods (protocols/media): */
 sem_t * nutscan_semaphore(void);
+/* Select a named semaphore; a no-op for library-owned unnamed semaphores. */
 void nutscan_semaphore_set(sem_t *s);
+/* Initialise/reconfigure before scans, release after all scans finish.
+ * nutscan_semaphore() returns NULL if initialisation failed. */
+void nutscan_semaphore_init(void);
+void nutscan_semaphore_free(void);
 # endif
 #endif
 
