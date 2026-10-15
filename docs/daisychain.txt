@@ -199,9 +199,11 @@ driver:
 
 * `device_alarm_init()`: clear the current alarm buffer
 * `device_alarm_commit(const int device_number)`: commit the current alarm
-  buffer to `device.<device_number>.ups.alarm`, and increase the count of
-  alarms when the buffer is non-empty. If the buffer is empty, the variable
-  `device.<device_number>.ups.alarm` is removed from publication without
+  buffer to `device.<device_number>.ups.alarm` for a non-zero device number,
+  or to the root `ups.alarm` for device number 0 (the composite daisychain,
+  not a published `device.0.ups.alarm` variable). Increase the count of
+  alarms when the buffer is non-empty. If the buffer is empty, the
+  corresponding alarm variable is removed from publication without
   decreasing the alarm count. The count is reset at the beginning of each
   main update loop, so an alarm-free device does not cancel another device's
   alarm.
@@ -225,6 +227,7 @@ This will clear the current alarms, and ensure that this buffer will not
 be considered by other subsequent devices,
 * `status_commit()` followed by `alarm_commit()` at the end of the main
 update loop, for the whole daisychain. This order preserves the alarm count
-while committing the main status (`device.0`, root collection), so the
-"ALARM" flag reflects alarms from all devices.
+while committing the root `ups.status` for the composite daisychain
+(internal device number 0), so the "ALARM" flag reflects alarms from all
+devices.
 ======

@@ -85,7 +85,7 @@ MULTI-REALM SUPPORT
 -------------------
 
 OpenSSL builds support independent
-link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[SSL_CTX] objects per connection,
+`SSL_CTX` objects per connection (see linkmanext:SSL_CTX_new[3]),
 enabling simultaneous use of different certificate authorities and client
 certificates within a single process.
 
@@ -176,4 +176,5 @@ linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
 linkman:upscli_disconnect[3],
 linkman:upscli_authconf_t[3], linkman:upscli_get_authconf_item[3],
 linkman:upscli_strerror[3],
-link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[SSL_CTX_new(3)]
+linkmanext:SSL_CTX_new[3],
+link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[OpenSSL 3.5 web reference]
