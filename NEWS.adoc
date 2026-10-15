@@ -949,6 +949,9 @@ https://github.com/networkupstools/nut/milestone/13
       Directory names are based on hashes of strings that identify the content,
       which are size-limited to some 8 characters.
       [issues #3108, #3390, #1711, #3526, PR #3109]
+    * NIT now checks rejection of expired and not-yet-valid certificates with
+      verified TLS, including client certificates when required by the server,
+      without changing the system clock. [issue #3427, PR #3768]
     * Introduced `tools/asciidoc-github-links.pl` to simplify `docs/Makefile.am`
       generation of `*.adoc-parsed` files with substituted GitHub links, and to
       allow that logic to be executed separately from `make` and potentially be
