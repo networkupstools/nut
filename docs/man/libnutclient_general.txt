@@ -20,7 +20,7 @@ SYNOPSIS
 
 	typedef char** strarr;
 
-	strarr strarr_alloc(unsigned short count);
+	strarr strarr_alloc(size_t count);
 
 	void strarr_free(strarr arr);
 ------
@@ -37,7 +37,7 @@ The *nutclient_destroy()* function destroys a 'NUTCLIENT_t' or derived
 Pointed strings must be allocated by `(x)calloc` or `(x)strdup`.
 
 * The *strarr_alloc()* function allocates a 'strarr' array with the specified
-  number of (non-initialized) string pointers.
+  number of string pointers, initialized to NULL.
 +
 Another additional pointer set to NULL is added at the end of the array.
 
