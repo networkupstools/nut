@@ -172,7 +172,7 @@ NUT provides helper scripts to ease the configuration step of your program, by
 detecting the right compilation and link flags.
 
 For more information, refer to a
-<<lib-info,Appendix B: NUT libraries complementary information>>.
+<<lib-info,Appendix C: NUT libraries complementary information>>.
 
 Python
 ------

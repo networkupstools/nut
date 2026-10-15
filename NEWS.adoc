@@ -611,12 +611,21 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Driver help now prints identical option names, types and descriptions
+      only once, reducing repeated entries from protocol subdrivers.
+      Configuration handling and the parsable `-L` list are unchanged.
+      [issue #2064, PR #3741]
     * The configuration and protocol parser now accepts a literal `#`
       inside double quotes, including in UPS and `dummy-ups` outlet
       descriptions. Unquoted `#` still starts a comment, and escaped
       hashes remain supported. Encoded output continues to escape hashes
       for older peers; default `upsc` text output is unchanged.
       [issues #607, #1306, PR #3633]
+    * The configuration file parser now warns on `stderr` when an unquoted
+      `#` glued to a word starts a comment. A password with a hash in
+      `upsmon.conf` is a common case. The warning gives the line and word
+      number and leaves out the word itself. Parsing does not change, and
+      protocol input does not warn. [issue #3711]
     * The common state store now retains value changes which differ only in
       letter case, including updates to opaque strings such as `device.contact`.
       Variable names remain case-insensitive and immutable values remain
@@ -676,6 +685,10 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * Introduction of `nutauth.conf` support caused some rearrangement of
+      codebase layout in the library, and this in turn caused some fallout.
+      Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
+      declarations after executable statements as errors. [issue #3761, PR #3762]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
@@ -850,6 +863,28 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected client API signatures and array initialization descriptions,
+      SNMP daisychain alarm handling and subdriver mapping references, and
+      developer-guide protocol links and source access instructions. [PR #3745]
+    * Reworked the packaging proposal around deployment roles and build
+      contents, clarified service-managed startup and multi-token UPS status,
+      and added support-data redaction guidance. Improved Windows archive
+      navigation, completed self-test and Jenkins introductions, and indexed
+      authentication, SSL and library logging manuals. [PR #3748]
+    * Corrected operator guidance for communication loss, certificate expiry
+      and device-list reloads, debug output and polling intervals. Documented
+      the scanning thread limit, completed notification lists and linked
+      the SSL configuration directives. [PR #3743]
+    * Documented the existing `--with-debuginfo` and `--enable-cppunit`
+      developer options, including their defaults and dependencies.
+      [issue #2311, PR #3740]
+    * Included the eight existing text cable references in the generated
+      cable guide and user manual, preserving their diagrams and attribution.
+      [issue #1367, PR #3742]
+    * Corrected the `usbhid-ups` on-battery discharge option name and the
+      `belkinunv` configuration guidance. Documented the existing
+      `microdowell` delay settings and the `nhs_ser` model override and
+      bypass-alarm settings. [PR #3744]
     * Documented the existing Modbus timeout components and defaults for
       `generic_modbus` and `adelsystem_cbi`, and corrected the `genericups`
       driver name in the GE/IMV/Victron cable reference. [PR #3749]
@@ -860,8 +895,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Documented how to use `sdcommands` with a stopped driver daemon to
       send a supported instant command (typically for shutdown) without
       a locally running `upsd` data server. [issue #1677, PR #3672]
-    * Updated the `m4` macro reference for developers of the `configure` script
-      in `docs/macros.txt`. [PR #3674]
+    * Updated the `m4` macro reference for developers of the `configure`
+      script in `docs/macros.txt`. [PR #3674]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialized the connection pointer in the C++ client example before
