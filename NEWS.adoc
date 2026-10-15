@@ -617,6 +617,11 @@ https://github.com/networkupstools/nut/milestone/13
       hashes remain supported. Encoded output continues to escape hashes
       for older peers; default `upsc` text output is unchanged.
       [issues #607, #1306, PR #3633]
+    * The configuration file parser now warns on `stderr` when an unquoted
+      `#` glued to a word starts a comment. A password with a hash in
+      `upsmon.conf` is a common case. The warning gives the line and word
+      number and leaves out the word itself. Parsing does not change, and
+      protocol input does not warn. [issue #3711]
     * The common state store now retains value changes which differ only in
       letter case, including updates to opaque strings such as `device.contact`.
       Variable names remain case-insensitive and immutable values remain
