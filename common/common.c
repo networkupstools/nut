@@ -5031,14 +5031,14 @@ char *xstrdup(const char *string)
 
 /* Try to connect to addr, using select() for timeout since AF_UNIX won't timeout normally */
 #ifndef WIN32
-int select_connect(int fd, const struct sockaddr_un *addr, socklen_t addrlen, const time_t d_sec, const suseconds_t d_usec)
+int select_connect(int fd, const struct sockaddr_un *addr, size_t addrlen, const time_t d_sec, const suseconds_t d_usec)
 {
 	int rc;
 	int err = 0;
 	int flags = fcntl(fd, F_GETFL, 0);
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-	rc = connect(fd, (const struct sockaddr *)addr, addrlen);
+	rc = connect(fd, (const struct sockaddr *)addr, (socklen_t)addrlen);
 	if (rc == -1 && errno != EINPROGRESS) {
 		err = errno;
 	} else if (rc == -1) {

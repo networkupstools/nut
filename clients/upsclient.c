@@ -643,8 +643,10 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
-# if __has_warning("-Wused-but-marked-unused")
-#  pragma clang diagnostic ignored "-Wused-but-marked-unused"
+# ifdef __has_warning
+#  if __has_warning("-Wused-but-marked-unused")
+#   pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#  endif
 # endif
 #endif
 		count = sk_GENERAL_NAME_num(names);
