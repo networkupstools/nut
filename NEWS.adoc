@@ -756,7 +756,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - `upslog` client/tool updates:
     * Fixed a startup memory leak when replacing UPS name and hostname strings
-      allocated during initial parsing or wildcard discovery.
+      allocated during initial parsing or wildcard discovery. [#3771]
     * Added support for best-effort use of `nutauth.conf` files from default
       locations or via `-A` option, as described above. Since this client
       can establish multiple connections, keep in mind that currently it
