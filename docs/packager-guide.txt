@@ -32,7 +32,7 @@ software installation and support out of the box.
 NOTE: Making NUT packaging more uniform should help its documentation,
 support and maintenance across the supported OSes.
 
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 *sandbox*
 This document assumes that you have read the other NUT documents such
 as INSTALL.nut, FAQ, config-notes.txt, config-prereqs.txt ...
@@ -97,7 +97,7 @@ redundancy in Mandriva)
 case / feedback could be shared
 ...
 
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 
 
 Packagers involved
