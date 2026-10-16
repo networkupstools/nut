@@ -1252,8 +1252,9 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                 log_warn "FAILED check_NIT_certs with cached data, will generate anew. Removing:"
                 find "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" -ls || true
                 rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
-                # Do not re-create the (now empty) cache dir: it is populated
-                # below only if absent, after we generate the certificates
+                # Do not re-create the (now empty) cache dir: it is created and
+                # populated below only if absent at that time, after we generate
+                # the certificates
                 mkdir -p "${TESTCERT_PATH_BASE}"
             fi
         else
@@ -1341,7 +1342,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     fi
                 done
 
-                # Create lock
+                # Create lock (in parent dir that collects all cached hashdirs,
+                # probably CI_CACHE_NUT_BASEDIR)
+                mkdir -p "`dirname \"${CI_CACHE_NIT_HASHDIR}\"`"
                 touch "${LOCKFILE}"
 
                 if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
