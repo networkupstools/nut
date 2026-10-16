@@ -1972,7 +1972,7 @@ EOF
                                     keytool -importkeystore \
                                         -deststorepass "${TESTCERT_CLIENT_PASS}" \
                                         -destkeypass "${TESTCERT_CLIENT_PASS}" \
-                                        -destkeystore upsd.jks \
+                                        -destkeystore upsmon.jks \
                                         -srckeystore client.p12 \
                                         -srcstoretype PKCS12 \
                                         -srcstorepass "${TESTCERT_CLIENT_PASS}" \
