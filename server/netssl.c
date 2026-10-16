@@ -570,14 +570,15 @@ static SECKEYPrivateKey	*privKey;
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	nut_ctype_t *client = (nut_ctype_t *)arg;	/* Populated by SSL_SetPKCS11PinArg() */
 
 	if (retry) {
 		/* Force not inted to retrieve password many times. */
 		return NULL;
 	}
-	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s (%s): password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		(client && client->addr && *(client->addr)) ? client->addr : "hostname not specified",
 		certpasswd ? "" : "not ");
 	return certpasswd ? PL_strdup(certpasswd) : NULL;
 }
