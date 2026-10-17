@@ -41,7 +41,13 @@ https://github.com/networkupstools/nut/milestone/13
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
+ - Second-level bullet points listed in this file will now use 4 spaces
+   (not 3 like before) for easier initial indentation of new entries.
+
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * `libnutconf`: character reads from a TCP socket now use the Windows
+      socket API, matching string reads. Previously they failed with a bad
+      file descriptor error on Windows. [issue #2293]
     * Now `upssched -l` preserves timer expiry timestamps beyond January 2038
       on systems with 64-bit `time_t` and 32-bit `long`. [issue #3096, PR #3669]
     * PyNUT: `GetUPSCommands()` now requests command descriptions with the
@@ -66,6 +72,11 @@ https://github.com/networkupstools/nut/milestone/13
         skipped (impacts all NUT 2.8.x until now). This was only visible
         where such a library was not found by its file name and could be
         resolved by the run-time linker alone. [PR #3654]
+      - `nut-scanner` now reports a library it could not load with a single
+        line at the default debug level, naming the scan type that is
+        disabled as a result. The names it tried, and why each one failed,
+        are logged at debug level 1 instead, since a failed name followed by
+        a working one is not a failure. [PR #3739]
       - When the NUT client library was not found under its known file names
         and had to be loaded by the libtool default search instead, the
         result was stored as the availability of the XML/HTTP scan. So the
@@ -88,9 +99,6 @@ https://github.com/networkupstools/nut/milestone/13
    already received as a successful short read, while safely canceling
    and completing pending overlapped I/O before reusing its state.
    [issue #3452, PR #3560]
-
- - Second-level bullet points listed in this file will now use 4 spaces
-   (not 3 like before) for easier initial indentation of new entries.
 
  - Introduced and intensively evolved an experimental `apcmicrolink` driver
    for devices with the APC Microlink protocol on serial port connections.
@@ -208,6 +216,63 @@ https://github.com/networkupstools/nut/milestone/13
       published only after both status flags were decoded from a recent
       report. Also corrected the startup failure message shown when
       `hid_fallback = no`. [issue #3587, PR #3728]
+
+ - Contributed `apcmicrolink` driver follow-ups [issue #3587]:
+    * `beeper.enable` and `beeper.disable` now change only the
+      enabled/disabled flag of the alarm-setting register, leaving the
+      alarm-delay value it also holds untouched. Writing a bare 1 or 2
+      zeroed the delay, and real hardware silently ignored that write,
+      so the commands had no effect.
+    * `shutdown.return`, `shutdown.stayoff` and `shutdown.reboot.graceful`
+      now ask the UPS to apply its turn-on delay as well as its turn-off
+      delay. Without it the shutdown still happened, but switched outlet
+      groups did not sequence back on when mains power returned. The
+      command is built in `apc_common.c`, which the `apc_modbus` driver
+      shares, so its `DRIVER_VERSION` is bumped too; that driver's
+      behavior on this path has not been checked on hardware.
+    * The calibration status in `ups.status` (see above) also follows the
+      UPS-scope register `2:4.5.13`, for devices that populate that one
+      instead of `2:13`.
+    * Instant commands such as `calibrate.start` and `bypass.start` are
+      only advertised when the device's Microlink descriptor contains the
+      register they write to. They used to be listed on every device, so
+      on a model without that register (the tested Smart-UPS 500 has no
+      runtime calibration command register) they could only ever fail.
+      With debug enabled, the driver logs which commands it left out and
+      why.
+    * The runtime calibration status register in object `A` (`A:6.13`) is
+      now read, as `experimental.microlink.ups.calibration.status`, and a
+      running calibration there raises `CAL` in `ups.status`. It is the
+      only calibration status the tested Smart-UPS 500 has, so that model
+      previously reported no calibration state at all. It is kept apart
+      from the existing `*.calibration.result` variables because it is
+      not yet known whether it carries the same value on devices that
+      have both.
+    * Serial mode: session start sends only the INIT byte again, as the
+      original serial implementation did. The STOP byte that the USB
+      transport needs before INIT had also been sent on serial, where a
+      previously working setup then failed to start.
+    * When the driver gives up at startup, the message now says whether
+      the session handshake failed or the session started but never
+      became ready, and only mentions the standard HID fallback on USB.
+    * Serial mode: the driver polls continuously again, as the original
+      serial driver did, instead of pausing for `pollinterval` between
+      passes since USB support was added. USB mode is unchanged.
+    * Serial mode: startup is complete once the authentication response
+      has been sent, as with the original serial driver, rather than
+      waiting up to 15 seconds for the device to acknowledge it, during
+      which a few missed replies aborted startup. The acknowledgement is
+      still collected by the regular polling. USB mode is unchanged.
+      If startup does fail after the handshake, the message now names
+      the step that was missing.
+    * Serial mode: one record is read per poll again, and data is
+      published after each one, as with the original serial driver.
+      Reading a full pass (about 6 seconds on a tested unit) before
+      publishing delayed status changes such as going on battery by
+      that much. USB mode is unchanged.
+    * Serial mode: the driver no longer sends a STOP byte when it exits.
+      The original serial driver never did; only the USB transport needs
+      it. USB mode is unchanged.
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
@@ -542,12 +607,21 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Driver help now prints identical option names, types and descriptions
+      only once, reducing repeated entries from protocol subdrivers.
+      Configuration handling and the parsable `-L` list are unchanged.
+      [issue #2064, PR #3741]
     * The configuration and protocol parser now accepts a literal `#`
       inside double quotes, including in UPS and `dummy-ups` outlet
       descriptions. Unquoted `#` still starts a comment, and escaped
       hashes remain supported. Encoded output continues to escape hashes
       for older peers; default `upsc` text output is unchanged.
       [issues #607, #1306, PR #3633]
+    * The configuration file parser now warns on `stderr` when an unquoted
+      `#` glued to a word starts a comment. A password with a hash in
+      `upsmon.conf` is a common case. The warning gives the line and word
+      number and leaves out the word itself. Parsing does not change, and
+      protocol input does not warn. [issue #3711]
     * The common state store now retains value changes which differ only in
       letter case, including updates to opaque strings such as `device.contact`.
       Variable names remain case-insensitive and immutable values remain
@@ -607,6 +681,10 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * Introduction of `nutauth.conf` support caused some rearrangement of
+      codebase layout in the library, and this in turn caused some fallout.
+      Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
+      declarations after executable statements as errors. [issue #3761, PR #3762]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
@@ -695,6 +773,9 @@ https://github.com/networkupstools/nut/milestone/13
       by web-server environment variables for CGI calls). [#3329]
     * `upsstats.cgi` additionally has a new `AUTHCONF` configuration option
       that can be passed via its `hosts.conf` file, as detailed above. [#3439]
+    * `upsset.cgi` now displays writable strings with maximum lengths above
+      127 characters without aborting or truncating the length; invalid string
+      lengths are reported as an unknown type. [issue #3545, PR #3668]
 
  - `upsmon` client updates:
     * Introduced support for `CERTFILE` option, so the client can identify
@@ -778,6 +859,31 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected client API signatures and array initialization descriptions,
+      SNMP daisychain alarm handling and subdriver mapping references, and
+      developer-guide protocol links and source access instructions. [PR #3745]
+    * Reworked the packaging proposal around deployment roles and build
+      contents, clarified service-managed startup and multi-token UPS status,
+      and added support-data redaction guidance. Improved Windows archive
+      navigation, completed self-test and Jenkins introductions, and indexed
+      authentication, SSL and library logging manuals. [PR #3748]
+    * Corrected operator guidance for communication loss, certificate expiry
+      and device-list reloads, debug output and polling intervals. Documented
+      the scanning thread limit, completed notification lists and linked
+      the SSL configuration directives. [PR #3743]
+    * Documented the existing `--with-debuginfo` and `--enable-cppunit`
+      developer options, including their defaults and dependencies.
+      [issue #2311, PR #3740]
+    * Included the eight existing text cable references in the generated
+      cable guide and user manual, preserving their diagrams and attribution.
+      [issue #1367, PR #3742]
+    * Corrected the `usbhid-ups` on-battery discharge option name and the
+      `belkinunv` configuration guidance. Documented the existing
+      `microdowell` delay settings and the `nhs_ser` model override and
+      bypass-alarm settings. [PR #3744]
+    * Documented the existing Modbus timeout components and defaults for
+      `generic_modbus` and `adelsystem_cbi`, and corrected the `genericups`
+      driver name in the GE/IMV/Victron cable reference. [PR #3749]
     * Documented the existing `mfr` and `model` options for `liebert`.
       Documented `sysfs_dir` for `hwmon_ina219`, and corrected the `hwmon`
       path in this driver and documented the integer range and default for
@@ -785,8 +891,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Documented how to use `sdcommands` with a stopped driver daemon to
       send a supported instant command (typically for shutdown) without
       a locally running `upsd` data server. [issue #1677, PR #3672]
-    * Updated the `m4` macro reference for developers of the `configure` script
-      in `docs/macros.txt`. [PR #3674]
+    * Updated the `m4` macro reference for developers of the `configure`
+      script in `docs/macros.txt`. [PR #3674]
     * Corrected the installation staging example to preserve the source tree
       (temporary workspace) and stop when staging prerequisites fail. [PR #3677]
     * Initialized the connection pointer in the C++ client example before
@@ -871,8 +977,26 @@ https://github.com/networkupstools/nut/milestone/13
       documentation according to problems that were found along the way. [#3453]
     * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
       [#3489, #3495, #3498]
+    * Refactored detection of semaphore capabilities (for parallel execution)
+      into a new m4 macro `NUT_CHECK_SEMAPHORES`, added support for autoconf
+      caching of the results for repeated runs. [PR #3675]
     * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
       controllers and build agents, `docs/config-prereqs.txt` revised.
+    * `Jenkinsfile-dynamatrix` recipe revised to generate fewer RISC-V recipes
+      specifically (very slow worker), focusing on the newest compiler and C/C++
+      revisions available on the worker. On the other side, this CI recipe was
+      extended to require more "quick phase" builds to cover spellcheck on many
+      distributions, as their base dictionaries like different things. [PR #3757]
+    * Further rearrangement of AppVeyor CI builds and security hardening of
+      GitHub Actions used to prepare the dist tarballs and report on progress
+      there. [PRs #3753, #3754, #3756]
+    * CI build matrix scenarios (Jenkins autotools builds, `ci_build.sh` with
+      `BUILD_TYPE=default-withdoc*`) now pass `--disable-spellcheck`, so their
+      `make check` no longer runs (and fails on) the documentation spellcheck.
+      The GitHub Actions dist tarball worker checks the spelling explicitly,
+      with both a current and an old (7.1, as on CentOS 7) version of the
+      `aspell-en` dictionary. Local builds keep the default of
+      `configure --enable-spellcheck=auto`. [PR #3752]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

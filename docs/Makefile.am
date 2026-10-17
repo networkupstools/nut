@@ -553,7 +553,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	    fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) $(CABLES_DEPS) \
 	$(top_builddir)/README.adoc-parsed \
 	$(top_builddir)/INSTALL.nut.adoc-parsed \
 	$(top_builddir)/UPGRADING.adoc-parsed \
@@ -564,6 +564,8 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../tools/nut-scanner/README.adoc
 FULL_QA_GUIDE_DEPS = $(QA_GUIDE_DEPS) $(SHARED_DEPS) \
 	$(top_builddir)/ci_build.adoc-parsed
+
+cables.html cables.chunked cables.pdf: cables.txt $(CABLES_DEPS) $(CABLES_IMAGES) asciidoc.conf
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)

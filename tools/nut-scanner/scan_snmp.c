@@ -307,7 +307,7 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		upsdebugx(0, "SNMP library not found. SNMP search disabled.");
+		upsdebugx(1, "SNMP library not found.");
 		return 0;
 	}
 
@@ -504,8 +504,8 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #ifndef WITH_SNMP_STATIC
 err:
-	upsdebugx(0,
-		"Cannot load SNMP library (%s) : %s%s%s%s. SNMP search disabled.",
+	upsdebugx(1,
+		"Cannot load SNMP library (%s) : %s%s%s%s",
 		libname_path, dl_error,
 		symbol ? " Error happened during search for symbol '" : "",
 		symbol ? symbol : "",
