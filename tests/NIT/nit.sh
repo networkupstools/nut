@@ -1390,7 +1390,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
             mkdir -p "${TESTCERT_PATH_ROOTCA}" || die_or_croak "Could not mkdir TESTCERT_PATH_ROOTCA"
             (   cd "${TESTCERT_PATH_ROOTCA}" || exit
                 log_info "SSL: Preparing test Root CA..."
-                echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
+                # Ensure the .pwfile does not contain a trailing
+                # CRLF/newline that Fedora parses differently than Debian
+                printf "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *NSS*)
                         { [ -e /dev/urandom ] && \
@@ -1615,7 +1617,7 @@ EOF
             mkdir -p "${TESTCERT_PATH_SERVER}"
             (   cd "${TESTCERT_PATH_SERVER}" || exit
                 log_info "SSL: Preparing test server certificate..."
-                echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
+                printf "${TESTCERT_SERVER_PASS}" > ".pwfile"
                 case "${WITH_SSL_SERVER}" in
                     NSS)
                         # Create the certificate database:
@@ -1858,7 +1860,7 @@ EOF
             mkdir -p "${TESTCERT_PATH_CLIENT}"
             (   cd "${TESTCERT_PATH_CLIENT}" || exit
                 log_info "SSL: Preparing test client certificate..."
-                echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+                printf "${TESTCERT_CLIENT_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}" in
                     NSS)
                         # Create the certificate database of client key+cert store:
