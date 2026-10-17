@@ -304,11 +304,6 @@ https://github.com/networkupstools/nut/milestone/13
       making unknown-code handling explicit.
 
  - `nutdrv_qx` driver updates:
-    * Added a Windows `winhid` transport path for the Cypress command
-      protocol. It wraps the existing eight-byte Qx command payload as a HID
-      Output Report while preserving the report-ID byte returned by the native
-      Windows HID API. Other Qx USB transports retain their existing transfer
-      paths for now. [issue #3717, PR #3723]
     * Added the `richcomm-svc` USB communication subdriver for older
       session-initialized Richcomm bridges. It configures the bridge before
       reusing the existing Armac command framing and Megatec protocol. Polling
