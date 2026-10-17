@@ -1868,6 +1868,7 @@ EOF
                             fi
                         fi
                         ;;
+                    *) die_or_croak "Unexpected WITH_SSL_SERVER='${WITH_SSL_SERVER}'" ;;
                 esac
             ) || die_or_croak "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
 
@@ -2179,6 +2180,7 @@ EOF
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
                         fi
                         ;;
+                    *) die_or_croak "Unexpected WITH_SSL_CLIENT='${WITH_SSL_CLIENT}'" ;;
                 esac
             ) || die_or_croak "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
         ) && {
