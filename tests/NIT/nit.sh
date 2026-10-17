@@ -1893,14 +1893,14 @@ EOF
 
                             if command -v keytool >/dev/null 2>&1 ; then
                                 # Bonus program: Java JKS (if caching)
-                                # TODO: dedup with above
-                                openssl pkcs12 -export -out server.p12 \
-                                    -inkey server.key -in server.crt \
-                                    -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
-                                    -name "${TESTCERT_SERVER_NAME}" \
-                                    -passout file:.pwfile \
-                                && { echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator" ; } \
-                                && keytool -importkeystore \
+                                { [ -s server.p12 ] || {
+                                    openssl pkcs12 -export -out server.p12 \
+                                        -inkey server.key -in server.crt \
+                                        -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                        -name "${TESTCERT_SERVER_NAME}" \
+                                        -passout file:.pwfile \
+                                    && { echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator" ; }
+                                } ; } && keytool -importkeystore \
                                     -deststorepass "${TESTCERT_SERVER_PASS}" \
                                     -destkeypass "${TESTCERT_SERVER_PASS}" \
                                     -destkeystore upsd.jks \
