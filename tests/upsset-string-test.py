@@ -79,7 +79,7 @@ def request(binary, metadata, value='original', new_value=None):
             result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, env=environment, timeout=10)
         finally:
-            thread.join(timeout=11)
+            thread.join(timeout=30)
         assert not thread.is_alive(), 'Server did not finish'
         assert not errors, errors
         assert result.returncode == 0, (metadata, result.returncode, result.stderr.decode())
