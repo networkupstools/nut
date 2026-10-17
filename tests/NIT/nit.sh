@@ -1027,15 +1027,60 @@ check_NIT_certs_NSS() {
     #   SEC_ERROR_LEGACY_DATABASE: The certificate/key database is in an old, unsupported format
 
     # TBD: Consider `-P "$3"` prefix eventually
-    OUT="`certutil -d \"$2\" -L 2>&1`"
+    OUT="`certutil -d \"$2\" -L 2>&1 && certutil -d \"$2\" -f \"${2}${TESTCERT_PATH_SEP}.pwfile\" -K 2>&1`"
     if [ "$?" != 0 ] ; then
-        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' \
-        && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
-        && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
+        RECREATE_NSSDB=false
+        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' >/dev/null \
+            && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+            && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
         ; then
+            # Technically, can `export NSS_DEFAULT_DB_TYPE=sql` and retry
+            # (at least CentOS 7 certutil is okay with this) but this use
+            # of non-default database type would be cumbersome for e.g.
+            # manual re-runs and maybe use via library from NUT binaries.
             log_info "$OUT"
             log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
+            RECREATE_NSSDB=true
+        else
+            if echo "$OUT" | ${EGREP} 'SEC_ERROR_BAD_DATABASE' >/dev/null \
+                && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
+                && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+            ; then
+                # Fedora (as of 43) deprecated DBM format support
+                # completely; what's worse, it generates database
+                # files with a password hashing algorithm that older
+                # libnss in Debian (as of 11-13) can not read, and
+                # this is not configurable, it seems. So we have
+                # the case below, for those systems to again generate
+                # the (SQL) database files with such password hashes
+                # which both can use.
+                log_info "$OUT"
+                log_warn "NSS tools on this worker need new DB format files, but we only have old ones"
+                RECREATE_NSSDB=true
+            else
+                if echo "$OUT" | ${EGREP} 'SEC_ERROR_BAD_PASSWORD' >/dev/null \
+                    && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+                    && [ -e "${2}${TESTCERT_PATH_SEP}".pwfile ] \
+                    && (command -v pk12util) \
+                ; then
+                    log_info "$OUT"
+                    log_warn "NSS tools on this worker need older password algorithm in DB format files, but we only have very new ones"
+                    RECREATE_NSSDB=true
 
+                    # Move away old files (TBD: remove?) so they
+                    # do not confuse "certutil -N" below
+                    for F in \
+                        "${2}${TESTCERT_PATH_SEP}${3}cert9.db" \
+                        "${2}${TESTCERT_PATH_SEP}${3}key4.db" \
+                        "${2}${TESTCERT_PATH_SEP}${3}pkcs11.txt" \
+                    ; do
+                        mv -f "$F" "$F.bak" || true
+                    done
+                fi
+            fi
+        fi
+
+        if $RECREATE_NSSDB ; then
             # See comments above about no TESTCERT_PATH_SEP for shell globs.
             if ls -l "${2}"/*.p12 "${2}${TESTCERT_PATH_SEP}".pwfile && (command -v pk12util) ; then
                 log_info "Will try to create older-format DB from P12 files"
@@ -1096,7 +1141,7 @@ check_NIT_certs_NSS() {
         fi
     fi
 
-    # List private keys (make sure passphrases are usable vs. DB format):
+    # List private keys (make sure passphrases are usable vs. DB format after all the hassle above):
     OUT="`certutil -d \"$2\" -f \"${2}${TESTCERT_PATH_SEP}.pwfile\" -K 2>&1`"
     if [ "$?" = 0 ] ; then
         log_info "Known passphrase is usable for NSS ${1} DB files in $2"
