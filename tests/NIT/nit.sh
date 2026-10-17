@@ -1033,6 +1033,7 @@ check_NIT_certs_NSS() {
         && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
         && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
         ; then
+            log_info "$OUT"
             log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
 
             # See comments above about no TESTCERT_PATH_SEP for shell globs.
@@ -1090,6 +1091,7 @@ check_NIT_certs_NSS() {
             certutil -d "$2" -L || \
             die_or_croak "Could not parse NSS ${1} DB files in $2 after attempted re-import"
         else
+            log_info "$OUT"
             die_or_croak "Could not parse NSS ${1} DB files in $2"
         fi
     fi
@@ -1099,6 +1101,7 @@ check_NIT_certs_NSS() {
     if [ "$?" = 0 ] ; then
         log_info "Known passphrase is usable for NSS ${1} DB files in $2"
     else
+        log_info "$OUT"
         die_or_croak "Could not parse NSS ${1} DB files with a password in $2"
     fi
 }
