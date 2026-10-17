@@ -995,7 +995,11 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		echo "  ASPELL	Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
 	 fi ; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)'`" \
-		&& { ERRS="" ; if test -n "$$OUT" ; then ERRS="`printf '%s\n' \"$$OUT\" | $(AWK) -v src=\"$${REPORT_SRCDIR}$${REPORT_SRC_ONE}\" '$(ASPELL_OUT_LOCATE_AWK)'`" ; fi; \
+		&& { ERRS="" ; if test -n "$$OUT" ; then \
+		        printf '%s\n' "$$OUT" | $(AWK) -v src="$${REPORT_SRCDIR}$${REPORT_SRC_ONE}" '$(ASPELL_OUT_LOCATE_AWK)' > '$@.errs' ; \
+		        ERRS="`cat '$@.errs'`" ; \
+		        rm -f '$@.errs' ; \
+		     fi; \
 		     test -z "$$ERRS" ; } \
 		|| { RES=$$? ; \
 		     echo "FAILED : Aspell reported errors here:" >&2 ; \
