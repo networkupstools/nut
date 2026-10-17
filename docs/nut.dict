@@ -1793,6 +1793,7 @@ b'string
 bAlternateSetting
 bUps
 backend
+backend's
 backends
 backgrounding
 backport
@@ -3314,6 +3315,7 @@ secretpass
 securityLevel
 securityName
 sed
+selectable
 selftest
 semanage
 semver
@@ -3813,6 +3815,7 @@ wiki
 wildcard
 wildcards
 winhid
+winhid_layout
 wininit
 winnutclient
 winpthreads
