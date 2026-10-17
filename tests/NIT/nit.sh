@@ -1104,6 +1104,14 @@ check_NIT_certs_NSS() {
             die_or_croak "Could not parse NSS ${1} DB files in $2"
         fi
     fi
+
+    # List private keys (make sure passphrases are usable vs. DB format):
+    OUT="`certutil -d \"$2\" -f \"${2}${TESTCERT_PATH_SEP}.pwfile\" -K 2>&1`"
+    if [ "$?" = 0 ] ; then
+        log_info "Known passphrase is usable for NSS ${1} DB files in $2"
+    else
+        die_or_croak "Could not parse NSS ${1} DB files with a password in $2"
+    fi
 }
 
 check_NIT_certs() {
