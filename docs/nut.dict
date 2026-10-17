@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3900 utf-8
+personal_ws-1.1 en 3904 utf-8
 AAC
 AAS
 ABI
@@ -1346,6 +1346,7 @@ Shambarger
 Shara
 ShareAlike
 Shaul
+ShellCheck
 ShutDown
 Sibbald
 Sicon
@@ -1798,6 +1799,7 @@ backgrounding
 backport
 backported
 backports
+backticks
 backupspro
 bart
 baseurl
@@ -2235,6 +2237,7 @@ executables
 executeCommand
 execve
 expandsize
+expr
 extapi
 extern
 externalConsole
@@ -3352,6 +3355,7 @@ sgml
 sgs
 sha
 shellcheck
+shellcheckrc
 shellenv
 shm
 showinternals
