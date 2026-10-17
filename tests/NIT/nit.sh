@@ -907,6 +907,16 @@ export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
+# Ensure lowest common denominator that all libnss implementations should
+# support in the same manner. Newer "sql" based databases differ in choice
+# of default password hashing algorithm (PBKDF2) between NSS versions, e.g.
+# Fedora 43 ships a much newer libnss than Debian 13, so SQL crypto storage
+# generated there can not be read by any other container in the NUT CI farm.
+if [ x"${NSS_DEFAULT_DB_TYPE-}" = x ] ; then
+    NSS_DEFAULT_DB_TYPE="dbm"
+    export NSS_DEFAULT_DB_TYPE
+fi
+
 # Adjust path spelling to run-time platform, libraries seem to want that on WIN32
 # NOTE: Windows backslashes are pre-escaped in the configure-generated value
 # NOTE: For mingw bash at least, shell globs (wildcards, not exact file names)
@@ -1027,6 +1037,7 @@ check_NIT_certs_NSS() {
     #   SEC_ERROR_LEGACY_DATABASE: The certificate/key database is in an old, unsupported format
 
     # TBD: Consider `-P "$3"` prefix eventually
+    # This block point might be a bit moot now that we force dbm by default...
     OUT="`certutil -d \"$2\" -L 2>&1`"
     if [ "$?" != 0 ] ; then
         if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' \
