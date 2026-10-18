@@ -540,7 +540,7 @@ https://github.com/networkupstools/nut/milestone/13
       reset, so every later item inherits it and `logical_to_physical()`
       rescales the single-bit `PresentStatus` flags from 1 to 300 - the
       `info_lkp_t` tables match on the exact value 1, so no status flag was
-      ever recognised and an online, charging UPS reported `OB OFF`; the nine
+      ever recognized and an online, charging UPS reported `OB OFF`; the nine
       `PresentStatus` usages are declared as one 9-bit Input item carrying the
       `ACPresent` usage, so that flag read true whenever any of the nine was
       set; and `UPS.PowerSummary.Voltage` is 16 bits wide but declares
