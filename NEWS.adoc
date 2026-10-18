@@ -601,6 +601,10 @@ https://github.com/networkupstools/nut/milestone/13
       developed and tested against a PowerShield Centurion RT 1000VA
       (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
       PR #3570]
+    * `apc-ats` subdriver: added `output.current`, `ups.power` and `ups.load`
+      from the APC ATS output phase table, which also provides
+      `output.voltage` on models without the output bank table, such as
+      the AP4452A.
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we
