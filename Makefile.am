@@ -282,7 +282,7 @@ EXTRA_DIST += ci_build.sh ci_build.adoc \
 EXTRA_DIST += autogen.sh
 
 # Help also the tarball users contribute properly:
-EXTRA_DIST += .editorconfig
+EXTRA_DIST += .editorconfig .shellcheckrc
 
 # automake xompilation wrapper
 EXTRA_DIST += compile
@@ -844,8 +844,48 @@ $(SPELLCHECK_DIRS_LAST): prep-src-docs/docs/man prep-src-docs/docs $(SPELLCHECK_
 # but using the correct make target for this goal:
 # FIXME: fanned-out recipes tend to fail early despite "make -ks", so for
 #  now we retry with a not-fanned-out attempt to cover most touch-files
+# In GitHub Actions, the docs recipes collect workflow commands (for error
+# annotations) into SPELLCHECK_GHA_LOG, reported once at the end, because
+# the same errors may be reported again by the retry and there is a limit
+# on the count of annotations per step. They are also listed in the job
+# summary (GITHUB_STEP_SUMMARY), if available, with links to the lines.
+# Note: no hash characters in the awk program (octal escape is used).
+SPELLCHECK_GHA_SUMMARY_AWK = { \
+		s = $$0 ; sub(/^::error file=/, "", s) ; \
+		f = s ; sub(/,line=.*$$/, "", f) ; \
+		l = s ; sub(/^.*,line=/, "", l) ; sub(/,.*$$/, "", l) ; \
+		c = s ; sub(/^.*,col=/, "", c) ; sub(/,.*$$/, "", c) ; \
+		m = s ; sub(/^[^:]*::/, "", m) ; sub(/; fix it.*$$/, "", m) ; \
+		gsub(/[|]/, "\\|", m) ; \
+		loc = f ":" l ":" c ; \
+		if (ENVIRON["GITHUB_SERVER_URL"] != "" && ENVIRON["GITHUB_REPOSITORY"] != "" && ENVIRON["GITHUB_SHA"] != "") { \
+			loc = "[" loc "](" ENVIRON["GITHUB_SERVER_URL"] "/" ENVIRON["GITHUB_REPOSITORY"] "/blob/" ENVIRON["GITHUB_SHA"] "/" f "\043L" l ")" ; \
+		} \
+		print "| " loc " | " m " |" ; \
+	}
+
 spellcheck spellcheck-interactive: @dotMAKE@
 	+@SUBDIR_TGT_MAKEFLAGS="$${SUBDIR_TGT_MAKEFLAGS-} -k -s " ; export SUBDIR_TGT_MAKEFLAGS ; \
+	  if [ x"$${GITHUB_ACTIONS-}" = xtrue ] ; then \
+		SPELLCHECK_GHA_LOG="$(abs_top_builddir)/gha-annotations-spellchecked" ; \
+		rm -f "$${SPELLCHECK_GHA_LOG}" ; \
+		export SPELLCHECK_GHA_LOG ; \
+	  fi ; \
+	  report_gha() { \
+		if [ -n "$${SPELLCHECK_GHA_LOG-}" ] && [ -s "$${SPELLCHECK_GHA_LOG}" ] ; then \
+			sort -u "$${SPELLCHECK_GHA_LOG}" ; \
+			if [ -n "$${GITHUB_STEP_SUMMARY-}" ] ; then \
+				{ echo '### Spellcheck: unknown words' ; echo '' ; \
+				  echo '| Location | Problem |' ; echo '|---|---|' ; \
+				  sort -u "$${SPELLCHECK_GHA_LOG}" | $(AWK) '$(SPELLCHECK_GHA_SUMMARY_AWK)' ; \
+				  echo '' ; \
+				  echo 'Fix the spelling, or add valid words to `docs/nut.dict` (e.g. with `make spellcheck-interactive`, or edit it and run `make spellcheck-sortdict`).' ; \
+				  echo '' ; \
+				} >> "$${GITHUB_STEP_SUMMARY}" ; \
+			fi ; \
+		fi ; \
+		if [ -n "$${SPELLCHECK_GHA_LOG-}" ] ; then rm -f "$${SPELLCHECK_GHA_LOG}" ; fi ; \
+	  } ; \
 	  if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
 		RES=0 ; \
 		if [ x"$(SUBDIR_MAKE_VERBOSE)" != x0 ] ; then \
@@ -861,6 +901,7 @@ spellcheck spellcheck-interactive: @dotMAKE@
 			D="`echo \"$$D\" | sed 's,^spellcheck/,,'`" ; \
 			(cd "$(builddir)/$$D" && $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_REPORT_MAYBE_UPDATED_DICT=yes -k -s $@) || RES=$$? ; \
 		done ; \
+		report_gha ; \
 		exit $$RES ; \
 	  fi ; \
 	  SUBDIR_MAKE_VERBOSE="$(SUBDIR_MAKE_VERBOSE)" ; \
@@ -871,7 +912,8 @@ spellcheck spellcheck-interactive: @dotMAKE@
 	  ( $(MAKE) $(AM_MAKEFLAGS) SPELLCHECK_TGT='$@' SUBDIR_MAKE_VERBOSE="$${SUBDIR_MAKE_VERBOSE}" -k -s $(SPELLCHECK_DIRS) && exit ; \
 	    echo "WARNING: FAILED fanned-out attempt in $@, retrying with NUT_MAKE_SKIP_FANOUT" >&2 ; \
 	    $(MAKE) $(AM_MAKEFLAGS) NUT_MAKE_SKIP_FANOUT=true SPELLCHECK_TGT='$@' -k -s $(SPELLCHECK_DIRS) \
-	  ) || exit ; \
+	  ) || { RES=$$? ; report_gha ; exit $$RES ; } ; \
+	  report_gha ; \
 	  if [ x'$@' = xspellcheck-interactive ] ; then \
 		echo "SUCCESS: $@: follow up with spellcheck-quick to revise and update timestamps"; \
 		$(MAKE) $(AM_MAKEFLAGS) spellcheck-quick ; \
@@ -1063,15 +1105,27 @@ dist-hook:
 ### Still, there remains value in also checking the script syntax
 ### by the very version of the shell interpreter that would run
 ### these scripts in production usage of the resulting packages.
+### POSIX shell scripts are checked with each interpreter listed in the
+### SHELL_PROGS envvar (system /bin/sh by default), like the NDE self-test
+### below does; Bourne-Again shell scripts are always checked with bash.
 ###
 check-scripts-syntax:
-	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
+	@echo 'NOTE: some shells (e.g. ksh93) complain about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons, so such messages are hidden: `...` obsolete, use $$(...)'
 	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | $(EGREP) '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	 [ -n "$${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh" ; \
+	 echo "Checking POSIX shell scripts with SHELL_PROGS='$$SHELL_PROGS', and Bourne-Again shell scripts with '$$RUNBASH'" ; \
+	 check_syntax() { \
+	    echo "+ $$1 -n $$F" ; \
+	    OUT="`$$1 -n \"$$F\" 2>&1`" ; RES=$$? ; \
+	    if [ -n "$$OUT" ] ; then printf '%s\n' "$$OUT" | $(EGREP) -v '`[.][.][.]` obsolete, use [$$][(][.][.][.][)]' >&2 ; fi ; \
+	    if [ "$$RES" != 0 ] ; then echo "ERROR: Syntax check failed for script file: $$F (with $$1)" >&2 ; return $$RES ; fi ; \
+	 } ; \
 	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file \"$$F\"`" in \
-	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
-	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
-	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
+	        *"Bourne-Again shell script"*) check_syntax "$$RUNBASH" || exit ;; \
+	        *"POSIX shell script"*|*"shell script"*) \
+	            for SH in $$SHELL_PROGS ; do check_syntax "$$SH" || exit ; done ;; \
+	    esac ; \
 	done
 	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
 
