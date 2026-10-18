@@ -110,7 +110,7 @@ about security or other matters.
   release), e.g.:
 ** DO NOT yet remove "PLANNED:" from the new release section title
 ** revise (remove if not implemented) the TODO etc. entries referring to
-   planned future in the `NEWS.adoc` and `UPDATING.adoc` files -- except
+   planned future in the `NEWS.adoc` and `UPGRADING.adoc` files -- except
    for what was actually completed the upcoming release
 ** comment away the top-most (auto-resolved, templated like `@PACKAGE_VERSION@`)
    NUT version and build date in `docs/docinfo.xml.in` -- DO NOT add (or at
@@ -138,7 +138,7 @@ about security or other matters.
 TODO: Maintain proper library scripts (maybe in Git) with exact lists of
 symbol names and API versions, similar to what `GNUC` or `SUNW` libraries do.
 
-* revise the contents of `NEWS.adoc` and `UPDATING.adoc` files; verify that
+* revise the contents of `NEWS.adoc` and `UPGRADING.adoc` files; verify that
   any recent changes to drivers (including `main.c` and other major impact
   from common code) and sub-drivers (`*-hid.c` for `usbhid-ups`, `*-mib.c`
   for `snmp-ups`, `nutdrv_qx_*` etc.) have been reflected in bumps to their
@@ -312,7 +312,7 @@ VERSION_FORCED_SEMVER:NUT_VERSION_FORCED_SEMVER='2.8.3'
 ** Ensure that `NEWS.adoc` has a `PLANNED: Release notes for...` section
    with a new URL to GitHub "milestone" for the next release, and unfinished
    "expected" points pushed back from the previous release (if any)
-** Ensure that `UPDATING.adoc` has a `Changes from ... to ...` section for
+** Ensure that `UPGRADING.adoc` has a `Changes from ... to ...` section for
    the new couple of release numbers
 ** `git commit` if there were any changes after that `git revert`
 ** Initiate a PR to `Post-release 2.8.0 rituals: begin next cycle` with this

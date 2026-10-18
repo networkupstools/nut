@@ -232,6 +232,13 @@ linkman:tripplite_usb[8],
 linkman:usbhid-ups[8]
 
 
+Choose how NUT processes are managed before starting them. For an installed
+package with service integration, use its service manager and configuration
+instructions. See <<Starting_drivers_NDE,Driver(s) as a service>> for the
+independent driver services supplied for systemd and SMF. The direct commands
+in the following sections describe manual startup and troubleshooting when
+the corresponding processes are not already managed by services.
+
 [[Starting_drivers]]
 Starting the driver(s) in legacy operating systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -301,8 +308,8 @@ when it is (re-)started it scans the currently defined device sections in
 'ups.conf' and the currently defined instances of `nut-driver` service,
 and brings them in sync (adding or removing service instances), and if
 there were changes -- it restarts the corresponding drivers (via service
-instances) as well as the data server which only reads the list of sections
-at its startup. This helper service should be triggered whenever your system
+instances) as well as the data server.
+This helper service should be triggered whenever your system
 (re-)starts the `nut-server` service, so that it runs against an up-to-date
 list of NUT driver processes.
 
@@ -399,7 +406,9 @@ linkman:upsd[8]
 Starting the data server
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Start the network data server:
+If your installation provides a `nut-server` service, start the data server
+through that service using the platform's service manager. For manual
+startup when no service-managed data server is running, use:
 
 	:; upsd
 
@@ -458,11 +467,20 @@ You should see just one line in response:
 
 	OL
 
-`OL` means your system is running on line power.  If it says something
-else (like `OB` -- on battery, or `LB` -- low battery), your driver was
-probably misconfigured during the <<Driver_configuration, Driver configuration>>
-step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
-start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
+`ups.status` contains space-separated status tokens. `OL` means that the
+UPS reports line power; it can appear with additional tokens, such as
+`OL CHRG` for line power while charging. See
+<<nut-names,NUT command and variable naming scheme>> for the format of
+`ups.status`.
+
+Check that the reported state agrees with the UPS's actual condition.
+`OB` means on battery and `LB` means low battery; either may be valid for
+the current power and battery conditions. If the data is unexpected,
+check the hardware, the driver's manual and the configuration from the
+<<Driver_configuration,Driver configuration>> step. After correcting the
+configuration, restart the driver using the
+<<Starting_drivers_NDE,service manager>> or
+<<Starting_drivers,manual startup method>> appropriate for your installation.
 
 Reference: man page: linkman:upsc[8]
 
@@ -527,19 +545,26 @@ above.  A sample run on an UPS (Eaton Ellipse MAX 1100) looks like this:
 Reference: man page: linkman:upsc[8],
 <<nut-names,NUT command and variable naming scheme>>
 
-Startup scripts
-~~~~~~~~~~~~~~~
+Startup integration
+~~~~~~~~~~~~~~~~~~~~
 
-NOTE: This step is not necessary if you installed from packages.
+Ensure that the required NUT components start automatically for your
+deployment. Local monitoring with automatic shutdown needs drivers,
+`upsd` and `upsmon`, while a host monitoring a remote server may only
+need `upsmon` and its client-side configuration.
 
-Edit your startup scripts, and make sure `upsdrvctl` and `upsd` are run
-every time your system starts. In newer versions of NUT, you may have a
-'nut.conf' file which sets the `MODE` variable for bundled init-scripts,
-to facilitate enabling of certain features in the specific end-user
-deployments.
+If you installed a package, follow its instructions for enabling the
+services and selecting the deployment mode. Installing a package does not
+by itself describe which components your deployment needs. The `MODE`
+setting in 'nut.conf' is used by some bundled init scripts and service
+methods; support varies between platforms and packages. See
+linkman:nut.conf[5].
 
-If you installed from source, check the `scripts` directory for reference
-init-scripts, as well as systemd or SMF service methods and manifests.
+If you installed from source, the `scripts` directory contains reference
+init scripts, systemd units, and SMF methods and manifests. Select and
+configure the integration appropriate to your platform. Use its service
+manager for processes that it owns; reserve direct `upsdrvctl`, `upsd` and
+`upsmon` commands for a manual setup or controlled troubleshooting.
 
 
 [[UPS_shutdown]]

@@ -83,6 +83,18 @@ Num Batteries (override value from nobreak).
 *vbat*='num'::
 Battery Voltage (default: 12.00).
 
+*overridemodel*='string'::
+Replace the model name published as `device.model` and `ups.model`.
+A non-empty string overrides the detected model name; the driver stores
+at most 99 bytes of the supplied name. An empty value leaves the model
+name unchanged.
+
+*bypassasalarm*='0|1'::
+Control whether the decoded bypass bit produces an `[ON BYPASS]` alarm.
+The default value is 1, which publishes this alarm when the bit is set.
+Set to 0 to suppress this alarm while retaining the decoded bit in
+packet diagnostics.
+
 *debug_pkt_raw*::
 Optional flag to enable debug logging of packet bytes.
 

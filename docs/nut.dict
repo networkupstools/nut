@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3885 utf-8
+personal_ws-1.1 en 3923 utf-8
 AAC
 AAS
 ABI
@@ -77,11 +77,13 @@ Arnaud's
 Aros
 AsciiDoc
 Asium
+AtRateTimeToEmpty
 Ates
 AudibleAlarmControl
 AuthConfig
 Autobook
 Autoconfigure
+AverageTimeToEmpty
 Avocent
 Axel
 Axpert
@@ -239,6 +241,7 @@ ConnectUPS
 Corbelli
 Corbolante
 Coutadeur
+CppUnit
 Ctrl
 Cuvellard
 Cyber
@@ -568,6 +571,7 @@ IFF
 IFSUPP
 IGN
 IIS
+ILP
 IMG
 IMPLEM
 INADDR
@@ -725,6 +729,7 @@ Lite's
 LocalIP
 LogMax
 LogMin
+LogicalMaximum
 LowBatt
 Loyer
 Luca
@@ -1040,6 +1045,7 @@ Patrik
 Pavel
 Pawe
 PbAc
+PercentLoad
 Perriault
 Petr
 Petri
@@ -1049,6 +1055,8 @@ Phasak
 PhoenixContact
 PhoenixTec
 Phoenixtec
+PhysicalMaximum
+PhysicalMinimum
 Pi
 PiJuice
 PiNUT
@@ -1083,6 +1091,7 @@ PowerPanel
 PowerShare
 PowerShell
 PowerShield
+PowerSummary
 PowerSure
 PowerSystemError
 PowerTech
@@ -1213,6 +1222,7 @@ Rozman
 Rucelf
 RunAs
 RunTimeCalibrationStatus
+RunTimeToEmpty
 RunUPSCommand
 RxD
 Ryabov
@@ -1232,6 +1242,7 @@ SECCTRL
 SELFTEST
 SELFTESTS
 SELinux
+SEMLIBS
 SENTR
 SER
 SERIALNO
@@ -1276,9 +1287,12 @@ SOCKETLIB
 SOCKLEN
 SOCOMECUPS
 SOFF
+SOFILE
 SOG
 SOLA
 SOMECO
+SONAME
+SOPATH
 SOURCEMODE
 SOV
 SPARC
@@ -1320,6 +1334,7 @@ SYSMAXCONN
 SafeNet
 Salicru
 Salvia
+Santak
 Santinoli
 Savia
 Sawatzky
@@ -1343,7 +1358,9 @@ Shambarger
 Shara
 ShareAlike
 Shaul
+ShellCheck
 ShutDown
+ShutdownImminent
 Sibbald
 Sicon
 Sidorov
@@ -1574,6 +1591,7 @@ WARNFATAL
 WARNOPT
 WCH
 WELI
+WH
 WHAD
 WINSOCK
 WIP
@@ -1794,6 +1812,7 @@ backgrounding
 backport
 backported
 backports
+backticks
 backupspro
 bart
 baseurl
@@ -1879,6 +1898,7 @@ bv
 byobu
 bypassOff
 bypassOn
+bypassasalarm
 cStandard
 cablepower
 cachefile
@@ -2169,7 +2189,10 @@ dummypass
 dummyups
 dumpxml
 dv
+dynacfgBase
+dynacfgPipeline
 dynamatrix
+dynamatrixPipeline
 ePDU
 ePDUs
 eaton
@@ -2185,6 +2208,7 @@ egrep
 ei
 el
 elementWidth
+elfdump
 els
 emacs
 emptor
@@ -2228,6 +2252,7 @@ executables
 executeCommand
 execve
 expandsize
+expr
 extapi
 extern
 externalConsole
@@ -2310,7 +2335,6 @@ gdlib
 gdwarf
 ge
 gedit
-genericsups
 genericups
 genesisII
 gentoo
@@ -2960,6 +2984,7 @@ nutvalue
 nvi
 nvo
 nwfilter
+objdump
 odette
 offdelay
 offsite
@@ -3008,8 +3033,10 @@ osc
 ostream
 other's
 otheruser
+otool
 ouGDQn
 outliers
+overridemodel
 overtemp
 ovmf
 pF
@@ -3179,8 +3206,10 @@ rH
 ragtech
 raritan
 rb
+rbuf
 rc
 rcctl
+readelf
 readline
 readonly
 realpath
@@ -3219,6 +3248,7 @@ reportId
 reposurgeon
 repotec
 req
+rescales
 resetter
 resizing
 resolv
@@ -3273,6 +3303,7 @@ rw
 réseau
 safenet
 salicru
+santak
 sbin
 sbindir
 sc
@@ -3342,6 +3373,7 @@ sgml
 sgs
 sha
 shellcheck
+shellcheckrc
 shellenv
 shm
 showinternals
@@ -3399,6 +3431,7 @@ solis
 somename
 somepass
 something's
+soname
 sortable
 sortdict
 sp
@@ -3557,6 +3590,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
@@ -3765,6 +3799,7 @@ verifySourceSig
 versa
 versioned
 versioning
+vertiv
 vh
 victron
 victronups
@@ -3805,6 +3840,7 @@ winnutclient
 winpthreads
 winsymlinks
 withGiven
+withdoc
 wix
 wmNUT
 wmnut
@@ -3818,6 +3854,7 @@ writeinfo
 writepid
 writeups
 ws
+www
 wwwroot
 xAA
 xAAAA
@@ -3826,6 +3863,7 @@ xD
 xF
 xFE
 xFF
+xFFFF
 xXXXX
 xYYYY
 xZZZZ

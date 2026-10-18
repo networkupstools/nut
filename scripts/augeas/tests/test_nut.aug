@@ -99,6 +99,79 @@ test NutUpsdConf.upsd_lns get upsd_conf =
 		{ "port"     = "3493"     } }
 	{ "MAXCONN"      = "1024" }
 
+(* Inline ports keep the same port node; bare IPv6 is never split. *)
+let upsd_listeners = "LISTEN 127.0.0.1:43493
+LISTEN host-name.example:0043493
+LISTEN *:43493
+LISTEN [::1]:43493
+LISTEN [fe80::1%lo]:43493
+LISTEN [::ffff:127.0.0.1]:43493
+LISTEN :::43493
+LISTEN 2001:db8:::43493
+LISTEN ::3493
+LISTEN 2001:db8::1:3493
+LISTEN fe80::1%lo 43493
+LISTEN localhost:0
+LISTEN localhost:65535
+"
+
+test NutUpsdConf.upsd_lns get upsd_listeners =
+  { "LISTEN" { "interface" = "127.0.0.1" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "host-name.example" } { "port" = "0043493" } }
+  { "LISTEN" { "interface" = "*" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "[::1]" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "[fe80::1%lo]" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "[::ffff:127.0.0.1]" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "::" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "2001:db8::" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "::3493" } }
+  { "LISTEN" { "interface" = "2001:db8::1:3493" } }
+  { "LISTEN" { "interface" = "fe80::1%lo" } { "port" = "43493" } }
+  { "LISTEN" { "interface" = "localhost" } { "port" = "0" } }
+  { "LISTEN" { "interface" = "localhost" } { "port" = "65535" } }
+
+test NutUpsdConf.upsd_lns put "LISTEN [::1]:43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN [::1]:43494\n"
+test NutUpsdConf.upsd_lns get "LISTEN [::1]\n" =
+  { "LISTEN" { "interface" = "[::1]" } }
+test NutUpsdConf.upsd_lns put "LISTEN [::1] 43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN [::1] 43494\n"
+test NutUpsdConf.upsd_lns put "LISTEN :::43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN :::43494\n"
+test NutUpsdConf.upsd_lns put "LISTEN 127.0.0.1:43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN 127.0.0.1:43494\n"
+test NutUpsdConf.upsd_lns put "LISTEN ::1 43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN ::1 43494\n"
+test NutUpsdConf.upsd_lns put "LISTEN 2001:db8:::43493\n" after
+  set "LISTEN/port" "43494" = "LISTEN 2001:db8:::43494\n"
+test NutUpsdConf.upsd_lns put "LISTEN ::\n" after
+  set "LISTEN/port" "43493" = "LISTEN :: 43493\n"
+test NutUpsdConf.upsd_lns put "LISTEN 2001:db8::\n" after
+  set "LISTEN/port" "43493" = "LISTEN 2001:db8:: 43493\n"
+test NutUpsdConf.upsd_lns put "LISTEN ::3493\n" after
+  set "LISTEN/port" "43493" = "LISTEN ::3493 43493\n"
+(* As with separate ports, range validation belongs to the daemon. Editing
+ * a numeric value must preserve the original inline separator. *)
+test NutUpsdConf.upsd_lns put "LISTEN localhost:65536\n" after
+  set "LISTEN/port" "65536" = "LISTEN localhost:65536\n"
+test NutUpsdConf.upsd_lns put "LISTEN localhost:00065536\n" after
+  set "LISTEN/port" "00065535" = "LISTEN localhost:00065535\n"
+test NutUpsdConf.upsd_lns put "LISTEN [::1]:65536\n" after
+  set "LISTEN/port" "65536" = "LISTEN [::1]:65536\n"
+test NutUpsdConf.upsd_lns put "LISTEN :::65536\n" after
+  set "LISTEN/port" "65535" = "LISTEN :::65535\n"
+test NutUpsdConf.upsd_lns put "" after
+  set "LISTEN/interface" "[::1]"; set "LISTEN/port" "43493"
+  = "LISTEN [::1]:43493\n"
+test NutUpsdConf.upsd_lns get "LISTEN [::1]:\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN localhost:1x\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN :::1x\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN [::1]:43493 43494\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN localhost:43493 43494\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN :::43493 43494\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN ::::43493\n" = *
+test NutUpsdConf.upsd_lns get "LISTEN ::1:::43493\n" = *
+
 let upsd_users = "
 	[admin]
 		password = upsman
