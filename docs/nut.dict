@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3894 utf-8
+personal_ws-1.1 en 3917 utf-8
 AAC
 AAS
 ABI
@@ -77,11 +77,13 @@ Arnaud's
 Aros
 AsciiDoc
 Asium
+AtRateTimeToEmpty
 Ates
 AudibleAlarmControl
 AuthConfig
 Autobook
 Autoconfigure
+AverageTimeToEmpty
 Avocent
 Axel
 Axpert
@@ -239,6 +241,7 @@ ConnectUPS
 Corbelli
 Corbolante
 Coutadeur
+CppUnit
 Ctrl
 Cuvellard
 Cyber
@@ -566,6 +569,7 @@ IFF
 IFSUPP
 IGN
 IIS
+ILP
 IMG
 IMPLEM
 INADDR
@@ -723,6 +727,7 @@ Lite's
 LocalIP
 LogMax
 LogMin
+LogicalMaximum
 LowBatt
 Loyer
 Luca
@@ -1037,6 +1042,7 @@ Patrik
 Pavel
 Pawe
 PbAc
+PercentLoad
 Perriault
 Petr
 Petri
@@ -1046,6 +1052,8 @@ Phasak
 PhoenixContact
 PhoenixTec
 Phoenixtec
+PhysicalMaximum
+PhysicalMinimum
 Pi
 PiJuice
 PiNUT
@@ -1211,6 +1219,7 @@ Rozman
 Rucelf
 RunAs
 RunTimeCalibrationStatus
+RunTimeToEmpty
 RunUPSCommand
 RxD
 Ryabov
@@ -1346,7 +1355,9 @@ Shambarger
 Shara
 ShareAlike
 Shaul
+ShellCheck
 ShutDown
+ShutdownImminent
 Sibbald
 Sicon
 Sidorov
@@ -1798,6 +1809,7 @@ backgrounding
 backport
 backported
 backports
+backticks
 backupspro
 bart
 baseurl
@@ -1883,6 +1895,7 @@ bv
 byobu
 bypassOff
 bypassOn
+bypassasalarm
 cStandard
 cablepower
 cachefile
@@ -2171,7 +2184,10 @@ dummypass
 dummyups
 dumpxml
 dv
+dynacfgBase
+dynacfgPipeline
 dynamatrix
+dynamatrixPipeline
 ePDU
 ePDUs
 eaton
@@ -2231,6 +2247,7 @@ executables
 executeCommand
 execve
 expandsize
+expr
 extapi
 extern
 externalConsole
@@ -3013,6 +3030,7 @@ otheruser
 otool
 ouGDQn
 outliers
+overridemodel
 overtemp
 ovmf
 pF
@@ -3182,6 +3200,7 @@ rH
 ragtech
 raritan
 rb
+rbuf
 rc
 rcctl
 readelf
@@ -3223,6 +3242,7 @@ reportId
 reposurgeon
 repotec
 req
+rescales
 resetter
 resizing
 resolv
@@ -3347,6 +3367,7 @@ sgml
 sgs
 sha
 shellcheck
+shellcheckrc
 shellenv
 shm
 showinternals
@@ -3827,6 +3848,7 @@ writeinfo
 writepid
 writeups
 ws
+www
 wwwroot
 xAA
 xAAAA
@@ -3835,6 +3857,7 @@ xD
 xF
 xFE
 xFF
+xFFFF
 xXXXX
 xYYYY
 xZZZZ
