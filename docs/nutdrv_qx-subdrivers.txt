@@ -168,7 +168,7 @@ typedef struct item_t {
 	info_rw_t	*info_rw;
 	const char	*command;
 	char		answer[SMALLBUF];
-	const int	answer_len;
+	const size_t	answer_len;
 	const char	leading;
 	char		value[SMALLBUF];
 	const int	from;

@@ -31,6 +31,10 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
 
+    // On NUT CI farm we do have build agents that have asciidoc/a2x but not
+    // aspell, so default pattern (including doc-builder) does not fit well:
+    dynamatrixGlobalState.labelDocumentationSpellchecker = 'doc-spellchecker'
+
     // NOTE: Disabled by default because with -std=c* the compiler and linker
     // (at least on environments NUT CI farm has) do not "see" many things,
     // and do not even define WIN32, and this is unrelated to NUT codebase.
