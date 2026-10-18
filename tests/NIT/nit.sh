@@ -4752,11 +4752,11 @@ prepare_NIT_cert_validity() (
     CERT_DEST="${CERT_SOURCE}-${CERT_VARIANT}"
     CERT_YEAR="`date -u +%Y`" || exit
     case "$CERT_VARIANT" in
-        valid) CERT_START="`expr "$CERT_YEAR" - 1`0101000000Z"
-            CERT_END="`expr "$CERT_YEAR" + 2`0101000000Z" ;;
+        valid) CERT_START="`expr \"$CERT_YEAR\" - 1`0101000000Z"
+            CERT_END="`expr \"$CERT_YEAR\" + 2`0101000000Z" ;;
         expired) CERT_START=20000101000000Z; CERT_END=20010101000000Z ;;
-        future) CERT_START="`expr "$CERT_YEAR" + 2`0101000000Z"
-            CERT_END="`expr "$CERT_YEAR" + 3`0101000000Z" ;;
+        future) CERT_START="`expr \"$CERT_YEAR\" + 2`0101000000Z"
+            CERT_END="`expr \"$CERT_YEAR\" + 3`0101000000Z" ;;
         *) exit 1 ;;
     esac
     mkdir -p "$CERT_DEST" || exit
@@ -4766,7 +4766,7 @@ prepare_NIT_cert_validity() (
         server) echo 10 > "$CERT_DEST/serial" ;;
         client) echo 20 > "$CERT_DEST/serial" ;;
     esac
-    cat > "$CERT_DEST/ca.conf" << EOC
+    cat > "$CERT_DEST/ca.conf" << EOF
 [ ca ]
 default_ca = nit
 [ nit ]
@@ -4784,7 +4784,7 @@ countryName = optional
 stateOrProvinceName = optional
 organizationName = optional
 organizationalUnitName = optional
-EOC
+EOF
     set --
     # Cached requests may have been made by the other TLS backend.
     # Use the extension file when present; otherwise copy request extensions.
@@ -4825,7 +4825,7 @@ testgroup_sandbox_certificate_validity() {
     if ! command -v openssl >/dev/null 2>&1 \
     || [ ! -s "$TESTCERT_PATH_ROOTCA/rootca.key" ] \
     || [ ! -s "$TESTCERT_PATH_SERVER/server.req" ] \
-    || { [ "$WITH_SSL_SERVER_CLIVAL" = true ] && [ ! -s "$TESTCERT_PATH_CLIENT/client.req" ]; } ; then
+    || { [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] && [ ! -s "$TESTCERT_PATH_CLIENT/client.req" ]; } ; then
         case "$WITH_SSL_TESTS" in
             required|require|required-conditional|require-conditional)
                 die "Certificate validity tests require TLS, openssl and the NIT CA private key" ;;
@@ -4844,7 +4844,7 @@ testgroup_sandbox_certificate_validity() {
     for VALIDITY_VARIANT in valid expired future ; do
         prepare_NIT_cert_validity server "$VALIDITY_SERVER" "$WITH_SSL_SERVER" \
             "$TESTCERT_SERVER_NAME" "$VALIDITY_VARIANT" || die "Could not prepare server validity fixture"
-        if [ "$WITH_SSL_SERVER_CLIVAL" = true ] ; then
+        if [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] ; then
             prepare_NIT_cert_validity client "$VALIDITY_CLIENT" "$WITH_SSL_CLIENT" \
                 "$TESTCERT_CLIENT_NAME" "$VALIDITY_VARIANT" || die "Could not prepare client validity fixture"
         fi
@@ -4867,9 +4867,9 @@ testgroup_sandbox_certificate_validity() {
     log_info "PASSED certificate-validity server valid"
     PASSED="`expr $PASSED + 1`"
 
-    if [ "$WITH_SSL_SERVER_CLIVAL" = true ] ; then
+    if [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] ; then
         # A trust-only NSS database prevents automatic client-cert selection.
-        if [ "$WITH_SSL_CLIENT" = NSS ] ; then
+        if [ x"$WITH_SSL_CLIENT" = xNSS ] ; then
             mkdir -p "${VALIDITY_CLIENT}-no-cert" || die "Could not prepare trust-only database"
             certutil -N -d "${VALIDITY_CLIENT}-no-cert" -f "$VALIDITY_CLIENT/.pwfile" \
                 && certutil -A -d "${VALIDITY_CLIENT}-no-cert" -f "$VALIDITY_CLIENT/.pwfile" \
@@ -4882,7 +4882,7 @@ testgroup_sandbox_certificate_validity() {
             "$NUT_AUTHCONF_FILE" > "$NUT_CONFPATH/no-client-cert.conf" \
             || die "Could not prepare missing-client-certificate control"
         # OpenSSL still needs its CA directory, rather than the NSS-only DB.
-        if [ "$WITH_SSL_CLIENT" = OpenSSL ] ; then
+        if [ x"$WITH_SSL_CLIENT" = xOpenSSL ] ; then
             sed "s|^CERTPATH = .*|CERTPATH = \"$TESTCERT_PATH_ROOTCA\"|" \
                 "$NUT_CONFPATH/no-client-cert.conf" > "$NUT_CONFPATH/no-client-cert.conf.tmp" \
                 && mv "$NUT_CONFPATH/no-client-cert.conf.tmp" "$NUT_CONFPATH/no-client-cert.conf" \
@@ -4890,7 +4890,7 @@ testgroup_sandbox_certificate_validity() {
         fi
         runcmd upsc -DDDDD -A "$NUT_CONFPATH/no-client-cert.conf" -l "localhost:$NUT_PORT"
         if [ "$CMDRES" != 0 ] && ${EGREP} \
-            "peer did not return a certificate|SSL_ERROR_NO_CERTIFICATE" \
+            "(peer did not return a certificate|SSL_ERROR_NO_CERTIFICATE)" \
             "$NUT_STATEPATH/validity-server.log" >/dev/null ; then
             log_info "PASSED certificate-validity missing-client-certificate"
             PASSED="`expr $PASSED + 1`"
@@ -4903,7 +4903,7 @@ testgroup_sandbox_certificate_validity() {
     fi
 
     for VALIDITY_ROLE in server client ; do
-        if [ "$VALIDITY_ROLE" = client ] && [ "$WITH_SSL_SERVER_CLIVAL" != true ] ; then
+        if [ "$VALIDITY_ROLE" = client ] && [ x"$WITH_SSL_SERVER_CLIVAL" != xtrue ] ; then
             log_info "SKIPPING client certificate validity: server does not enforce client verification"
             SKIPPED="`expr $SKIPPED + 1`"
             SKIPPED_FUNCS="$SKIPPED_FUNCS certificate-validity-client"
@@ -4911,7 +4911,7 @@ testgroup_sandbox_certificate_validity() {
         fi
         for VALIDITY_VARIANT in valid expired future ; do
             # The initial control already checked the valid server variant.
-            [ "$VALIDITY_ROLE:$VALIDITY_VARIANT" != server:valid ] || continue
+            [ x"$VALIDITY_ROLE:$VALIDITY_VARIANT" != x'server:valid' ] || continue
             stop_daemons
             TESTCERT_PATH_SERVER="${VALIDITY_SERVER}-valid"
             TESTCERT_PATH_CLIENT="$VALIDITY_CLIENT"
@@ -4929,7 +4929,7 @@ testgroup_sandbox_certificate_validity() {
             cat "$NUT_STATEPATH/validity-server.log"
             case "$VALIDITY_ROLE" in
                 server) VALIDITY_DIAGNOSTIC="$CMDERR" ;;
-                client) VALIDITY_DIAGNOSTIC="`cat "$NUT_STATEPATH/validity-server.log"`" ;;
+                client) VALIDITY_DIAGNOSTIC="`cat \"$NUT_STATEPATH/validity-server.log\"`" ;;
             esac
             case "$VALIDITY_VARIANT" in
                 valid) VALIDITY_OK=false
@@ -4940,12 +4940,12 @@ testgroup_sandbox_certificate_validity() {
                 expired) VALIDITY_OK=false
                     [ "$VALIDITY_RESULT" != 0 ] \
                     && echo "$VALIDITY_DIAGNOSTIC" | ${EGREP} -i \
-                        'certificate has expired|SEC_ERROR_EXPIRED_CERTIFICATE' >/dev/null \
+                        '(certificate has expired|SEC_ERROR_EXPIRED_CERTIFICATE)' >/dev/null \
                     && VALIDITY_OK=true ;;
                 future) VALIDITY_OK=false
                     [ "$VALIDITY_RESULT" != 0 ] \
                     && echo "$VALIDITY_DIAGNOSTIC" | ${EGREP} -i \
-                        'certificate is not yet valid|SEC_ERROR_EXPIRED_CERTIFICATE' >/dev/null \
+                        '(certificate is not yet valid|SEC_ERROR_EXPIRED_CERTIFICATE)' >/dev/null \
                     && VALIDITY_OK=true ;;
             esac
             if "$VALIDITY_OK" ; then
