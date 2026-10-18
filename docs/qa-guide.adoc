@@ -199,15 +199,34 @@ Shell script checks
 The `make shellcheck` recipe finds files which the `file` tool determines
 to be POSIX or Bourne-Again shell scripts, and runs them through respective
 interpreter's (`bash` or system `/bin/sh`) test mode to validate the syntax
-works.
+works. POSIX shell scripts can be checked with other interpreters instead
+of `/bin/sh` by listing them in the `SHELL_PROGS` environment variable,
+e.g. `make shellcheck SHELL_PROGS="dash ksh bash"`. Warnings that some
+shells (e.g. `ksh93`) emit about the legacy command substitution syntax
+(which NUT scripts use deliberately for portability) are hidden.
 
 Given that the `/bin/sh` implementation varies wildly on different systems
 (e.g. Korn shell, BASH, DASH and many others), this goal performed by CI on
 a large number of available platforms makes sure that the lowest-denominator
 syntax we use is actually understood everywhere.
 
-NOTE: At a later time additional tests, perhaps using the `shellcheck` tool,
-can be introduced into the stack.
+For pull requests, the "GHA-07: ShellCheck" GitHub Actions workflow also
+runs the link:https://www.shellcheck.net/[ShellCheck] tool on the shell
+scripts that they change. Many existing scripts have known findings, so it
+fails only for findings of "warning" or "error" level that are new compared
+to the base branch. The new findings are shown as annotations on the
+changed lines, and listed in the job summary. You can run the same check
+locally (with `perl` and `shellcheck` installed) before posting the
+changes, e.g.:
+
+----
+:; perl tools/shellcheck-ci.pl origin/master
+----
+
+The `.shellcheckrc` file in the root of NUT sources disables the checks for
+deliberate portability idioms of NUT scripts (e.g. the legacy command
+substitution syntax), and is also used by `shellcheck` runs in your editor
+or IDE.
 
 The `make shellcheck-nde` recipe calls `tests/nut-driver-enumerator-test.sh`
 to self-test the `scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in` against
@@ -242,6 +261,13 @@ calls the tool if it was detected by the `configure` script, or skips work.
 For each checked file, a `*-spellchecked` touch-file is created in respective
 `${builddir}`, so it is not re-checked until the source document, the custom
 dictionary, or the `Makefile` recipe is updated.
+
+Unknown words are reported with the file name, line and column where they
+were found (relative to the root of NUT sources), followed by the `aspell`
+report line with suggestions. When running in GitHub Actions (with the
+`GITHUB_ACTIONS=true` environment variable), they are also reported as
+annotations for the source lines, and listed in the job summary (unless
+`SPELLCHECK_ERROR_FATAL=no` is set).
 
 The ecosystem of `Makefile.am` files includes the following useful recipes:
 

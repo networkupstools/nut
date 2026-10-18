@@ -24,7 +24,7 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.60"
+#define APC_ATS_MIB_VERSION  "0.61"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
@@ -112,8 +112,20 @@ static snmp_info_t apc_ats_mib[] = {
 	/* Output collection */
 	/* atsOutputFrequency.1 = INTEGER: 50 */
 	snmp_info_default("output.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.2.1.4.1", NULL, SU_FLAG_OK, NULL),
+	/* Models without the OutputBank table (e.g. AP4452A) only report the
+	 * output phase table; unsupported columns read -1. Keep this entry
+	 * before atsOutputBankOutputVoltage so that the latter, when present,
+	 * is still the published value. */
+	/* atsOutputVoltage.1.1.1 = INTEGER: 118 */
+	snmp_info_default("output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.3.1.3.1.1.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
 	/* atsOutputBankOutputVoltage.1 = INTEGER: 215 */
 	snmp_info_default("output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.6.1", NULL, SU_FLAG_OK, NULL),
+	/* atsOutputCurrent.1.1.1 = INTEGER: 115 (0.1 A) */
+	snmp_info_default("output.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.8.5.4.3.1.4.1.1.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
+	/* atsOutputPower.1.1.1 = INTEGER: 1357 (VA) */
+	snmp_info_default("ups.power", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.3.1.13.1.1.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
+	/* atsOutputPercentPower.1.1.1 = INTEGER: 70 */
+	snmp_info_default("ups.load", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.3.1.16.1.1.1", NULL, SU_FLAG_OK | SU_FLAG_NEGINVALID, NULL),
 
 	/* UPS collection */
 	/* FIXME: RFC for device.status! */
