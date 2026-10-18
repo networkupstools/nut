@@ -574,7 +574,7 @@ https://github.com/networkupstools/nut/milestone/13
       leaves `05dd:a0a0` to `tripplite-hid` even when the `productid` option
       is set; it used to claim the device then, without these fixes.
       Verified on a Minuteman Entrust ETR1500LCD, which now reports 122.3 V
-      input, 123.6 V output, 59.9 Hz and 28.1 V battery. [issue #1852]
+      input, 123.6 V output, 59.9 Hz and 28.1 V battery. [issue #1852, PR #3764]
     * in `legrand-hid` subdriver the `beeper.disable` instant command now
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and

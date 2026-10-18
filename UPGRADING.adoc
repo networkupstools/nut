@@ -151,7 +151,7 @@ NOTE: In a future NUT release, the default `configure` script handling for the
   `delta_ups-hid` subdriver. The `tripplite-hid` subdriver, which corrects
   this device's voltage and frequency readings, now handles it in all
   cases, so the set of published variables changes somewhat (for example
-  `input.source` is no longer reported). [issue #1852]
+  `input.source` is no longer reported). [issue #1852, PR #3764]
 
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended
