@@ -537,7 +537,7 @@ https://github.com/networkupstools/nut/milestone/13
       reset, so every later item inherits it and `logical_to_physical()`
       rescales the single-bit `PresentStatus` flags from 1 to 300 - the
       `info_lkp_t` tables match on the exact value 1, so no status flag was
-      ever recognised and an online, charging UPS reported `OB OFF`; the nine
+      ever recognized and an online, charging UPS reported `OB OFF`; the nine
       `PresentStatus` usages are declared as one 9-bit Input item carrying the
       `ACPresent` usage, so that flag read true whenever any of the nine was
       set; and `UPS.PowerSummary.Voltage` is 16 bits wide but declares
@@ -545,7 +545,7 @@ https://github.com/networkupstools/nut/milestone/13
       and 27.0 V came out as 1.4 V (the same class of firmware fault as the
       `cps-hid` entry below). `ups.load` and `battery.runtime` are deliberately
       left unmapped: this firmware declares `PercentLoad` but never populates
-      it, and always reports `RunTimeToEmpty` as `0xFFFF`. [issue #3712]
+      it, and always reports `RunTimeToEmpty` as `0xFFFF`. [issue #3712, PR #3729]
     * `usbhid-ups` asked for the wrong buffer size when the `maxreport` tweak
       was enabled: `refresh_report_buffer()` used `sizeof(rbuf->data[id])`,
       but `data[]` is an array of pointers, so this yielded a pointer's width
