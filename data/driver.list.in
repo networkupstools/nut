@@ -1638,6 +1638,8 @@
 
 "TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
 
+"UGREEN"	"ups"	"1"	"US2000"	"(USB ID 2b89:ffff)"	"usbhid-ups"
+
 "UltraMax"	"ups"	"2"	"1000SC"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1634
 
 "UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"blazer_ser"
