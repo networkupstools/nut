@@ -339,6 +339,7 @@ int upscli_init_default_connect_timeout(const char *cli_secs, const char *config
 #define UPSCLI_ERR_DATASTALE	10	/* Data stale */
 #define UPSCLI_ERR_VARUNKNOWN	11	/* Variable unknown */
 #define UPSCLI_ERR_LOGINTWICE	12	/* Already logged in */
+#define UPSCLI_ERR_ATTACHTWICE	UPSCLI_ERR_LOGINTWICE
 #define UPSCLI_ERR_PWDSETTWICE	13	/* Already set password */
 #define UPSCLI_ERR_UNKNOWNTYPE	14	/* Unknown variable type */
 #define UPSCLI_ERR_UNKNOWNVAR	15	/* Unknown variable */

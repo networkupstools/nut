@@ -912,6 +912,8 @@ public:
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
 	virtual void logout() = 0;
+	/** Preferred alias; non-virtual to preserve existing subclass ABI. */
+	void detach() { logout(); }
 
 	/** Query the (already established) connection to UPSD for its version
 	 *  and check it against given expectations.
@@ -1066,12 +1068,15 @@ public:
 	 * \param dev Device name.
 	 */
 	virtual void deviceLogin(const std::string& dev) = 0;
+	/** Preferred alias; dispatches through the existing virtual method. */
+	void deviceAttach(const std::string& dev) { deviceLogin(dev); }
 	/**
 	 * Retrieve the number of user logged-in for the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
 	virtual int deviceGetNumLogins(const std::string& dev) = 0;
+	int deviceGetNumAttach(const std::string& dev) { return deviceGetNumLogins(dev); }
 	/**
 	 * Who did a deviceLogin() to this dev?
 	 * \param dev Device name.
@@ -1629,6 +1634,7 @@ public:
 	 * Login current client's user for the device.
 	 */
 	void login();
+	void attach() { login(); }
 	/**
 	 * Who did a login() to this dev?
 	 */
@@ -1645,6 +1651,7 @@ public:
 	 * \return Number of users.
 	 */
 	int getNumLogins();
+	int getNumAttach() { return getNumLogins(); }
 
 protected:
 	Device(Client* client, const std::string& name);
@@ -1885,6 +1892,7 @@ void nutclient_authenticate(NUTCLIENT_t client, const char* login, const char* p
  * \param client Nut client handle.
  */
 void nutclient_logout(NUTCLIENT_t client);
+void nutclient_detach(NUTCLIENT_t client);
 
 /**
  * Register current user on the device.
@@ -1892,6 +1900,7 @@ void nutclient_logout(NUTCLIENT_t client);
  * \param dev Device name to test.
  */
 void nutclient_device_login(NUTCLIENT_t client, const char* dev);
+void nutclient_device_attach(NUTCLIENT_t client, const char* dev);
 
 /**
  * Retrieve the number of users registered on a device.
@@ -1899,6 +1908,7 @@ void nutclient_device_login(NUTCLIENT_t client, const char* dev);
  * \param dev Device name to test.
  */
 int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
+int nutclient_get_device_num_attach(NUTCLIENT_t client, const char* dev);
 
 /**
  * Set current user as master user of the device.
