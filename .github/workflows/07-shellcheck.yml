@@ -1,0 +1,49 @@
+# Static analysis of the shell scripts changed by a pull request with
+# ShellCheck (https://www.shellcheck.net/). Many existing scripts have
+# known findings, so this fails only for new problems of "warning" or
+# "error" level (new "info" and "style" ones are shown as notices); the
+# findings are shown as annotations on the changed lines, and listed in
+# the job summary. Deliberate portability idioms of NUT scripts are
+# disabled in .shellcheckrc file.
+# Run tools/shellcheck-ci.pl locally for the same check.
+#
+# Runs on pull_request (not pull_request_target), so for PRs from forks
+# it has a read-only token and runs the copy of this workflow in the PR,
+# which is fine as it needs no write permissions.
+
+name: "GHA-07: ShellCheck"
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  shellcheck:
+    name: "ShellCheck new findings in changed scripts"
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+    # The pull_request checkout is a merge commit of the PR into its
+    # base branch, so its first parent is the base to compare with
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 2
+        persist-credentials: false
+
+    # ShellCheck is usually pre-installed in GitHub-hosted Ubuntu runners;
+    # both base and PR versions are checked with the same one, so its
+    # exact version does not matter much
+    - name: Install ShellCheck
+      run: |
+        command -v shellcheck >/dev/null || {
+          sudo apt-get update && sudo apt-get install -y shellcheck
+        }
+        shellcheck --version
+
+    - name: Run ShellCheck for changed scripts
+      run: |
+        perl tools/shellcheck-ci.pl HEAD^1

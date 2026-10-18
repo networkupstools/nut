@@ -2332,6 +2332,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
+              # Its output is discarded, so let the verbose attempt below
+              # make the GitHub Actions annotations and job summary
+              GITHUB_ACTIONS="" ; export GITHUB_ACTIONS
               $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo \"$BUILD_TYPE\" | sed 's,^default-,,'`" >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
@@ -2339,6 +2342,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
               $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE SPELLCHECK_ERROR_FATAL=yes spellcheck
               # Make end of log useful:
               echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              # The verbose attempt above already made the GitHub Actions
+              # annotations and job summary for the errors, do not repeat
+              GITHUB_ACTIONS="" ; export GITHUB_ACTIONS
               $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes spellcheck
             )
             exit $?
