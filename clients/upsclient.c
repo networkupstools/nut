@@ -324,7 +324,7 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	/* Prefer the per-connection context (if any) over the ambient default,
 	 * so different connections in one process can use different client certs
 	 * from the same shared NSS certificate/key database. */
-	UPSCONN_t	*ups = (UPSCONN_t *)arg;
+	UPSCONN_t	*ups = (UPSCONN_t *)arg;	/* Populated by SSL_SetPKCS11PinArg() */
 	upscli_ssl_context_config_t	*cfg = ups ? (upscli_ssl_context_config_t *)ups->ssl_ctx : NULL;
 	const char	*passwd;
 
@@ -335,8 +335,9 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	}
 	passwd = cfg ? cfg->certpasswd : NULL;
 
-	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s (%s): password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		(ups && ups->host && *(ups->host)) ? ups->host : "hostname not specified",
 		passwd ? "" : "not ");
 	return passwd ? PL_strdup(passwd) : NULL;
 }
@@ -2451,7 +2452,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (!(ups->ssl_ctx) && !upscli_initialized) {
 		upsdebugx(3, "%s: upscli not initialized, "
-			"force initialisation without SSL configuration", __func__);
+			"force initialization without SSL configuration", __func__);
 		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
 			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);

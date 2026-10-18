@@ -617,6 +617,11 @@ https://github.com/networkupstools/nut/milestone/13
       hashes remain supported. Encoded output continues to escape hashes
       for older peers; default `upsc` text output is unchanged.
       [issues #607, #1306, PR #3633]
+    * The configuration file parser now warns on `stderr` when an unquoted
+      `#` glued to a word starts a comment. A password with a hash in
+      `upsmon.conf` is a common case. The warning gives the line and word
+      number and leaves out the word itself. Parsing does not change, and
+      protocol input does not warn. [issue #3711]
     * The common state store now retains value changes which differ only in
       letter case, including updates to opaque strings such as `device.contact`.
       Variable names remain case-insensitive and immutable values remain
@@ -755,6 +760,8 @@ https://github.com/networkupstools/nut/milestone/13
       try reading one (`none`). [issues #3329, #3411]
 
  - `upslog` client/tool updates:
+    * Fixed a startup memory leak when replacing UPS name and hostname strings
+      allocated during initial parsing or wildcard discovery. [#3771]
     * Added support for best-effort use of `nutauth.conf` files from default
       locations or via `-A` option, as described above. Since this client
       can establish multiple connections, keep in mind that currently it
@@ -854,6 +861,14 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected client API signatures and array initialization descriptions,
+      SNMP daisychain alarm handling and subdriver mapping references, and
+      developer-guide protocol links and source access instructions. [PR #3745]
+    * Reworked the packaging proposal around deployment roles and build
+      contents, clarified service-managed startup and multi-token UPS status,
+      and added support-data redaction guidance. Improved Windows archive
+      navigation, completed self-test and Jenkins introductions, and indexed
+      authentication, SSL and library logging manuals. [PR #3748]
     * Corrected operator guidance for communication loss, certificate expiry
       and device-list reloads, debug output and polling intervals. Documented
       the scanning thread limit, completed notification lists and linked
@@ -987,6 +1002,29 @@ https://github.com/networkupstools/nut/milestone/13
       with both a current and an old (7.1, as on CentOS 7) version of the
       `aspell-en` dictionary. Local builds keep the default of
       `configure --enable-spellcheck=auto`. [PR #3752]
+    * The `make shellcheck` (and `make check-scripts-syntax`) recipe can now
+      check the POSIX shell scripts with each interpreter listed in the
+      `SHELL_PROGS` environment variable (default is still the system
+      `/bin/sh`), and hides warnings about the legacy command substitution
+      syntax (e.g. from `ksh93`) to avoid noise that obscured other problems.
+      [issues #1058, #1059]
+    * Added a "GHA-07: ShellCheck" GitHub Actions workflow which checks the
+      shell scripts changed by a pull request, and fails only for findings
+      of "warning" or "error" level that are new compared to the base branch
+      (many existing scripts have known findings), with annotations on the
+      changed lines and a list in the job summary. The same check can be run
+      locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
+      disables the checks for deliberate portability idioms of NUT scripts
+      (backticks, `x"$var"` comparisons, `expr`).
+    * The `make spellcheck` recipes now report unknown words with the file
+      name, line and column where they were found (rather than byte offsets
+      in the `aspell` output), and in GitHub Actions also as annotations on
+      the source lines (once per unknown word, despite the retries) and in
+      the job summary.
+    * The `configure` script now also looks for `aspell` filter resources
+      under `lib64` (e.g. on CentOS 7) and in directories named by just the
+      major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
+      [issue #2068]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

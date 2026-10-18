@@ -79,6 +79,13 @@ In this case, be sure to include the following information:
 
 	/path/to/driver -DD -a <upsname>
 
+Before posting configuration or logs to a public mailing list or issue,
+review them for passwords, SNMP community strings, authentication tokens,
+private keys and other sensitive information. Replace sensitive values
+with consistent placeholders while preserving the configuration structure
+and the diagnostic messages needed to understand the problem. Include the
+relevant excerpts rather than complete credential files.
+
 If you don't include the above information in your help request, we will
 not be able to help you!
 
