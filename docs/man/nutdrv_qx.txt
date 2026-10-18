@@ -136,7 +136,7 @@ the same Q6 dialect as *innovart31* but are single-phase and NAK the `F` ratings
 query, so *innovart31* rejects them; ratings come from the `WH` command instead.
 Note that *battery.voltage* is already reported at pack level over `Q6`, so
 *battery_voltage_reports_one_pack* should NOT be set for these devices (the
-per-cell reading is a `Q1` artefact).
+per-cell reading is a `Q1` artifact).
 
 *battery_voltage_reports_one_pack*::
 Some devices "natively" report just report a part of the total battery voltage

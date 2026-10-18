@@ -267,6 +267,32 @@ will be 'ups' and 'nut' respectively.
 Be sure the new user is a member of the new group!  If you forget to
 do this, you will have problems later on when you try to start upsd.
 
+Repetitive build/test optimizations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are several optimizations in NUT recipes and scripts aimed at speeding
+up repetitive builds and tests, which are not too useful for one-off end-user
+builds, but can bring significant benefits on CI and packaging systems and
+for developers iterating on some features.
+
+* `ccache` can be used to NOT recompile objects for which no sources have
+  changed. On many systems it suffices to add e.g. `/usr/lib/ccache` early
+  in `PATH` and populate it with symlinks to e.g. `/usr/bin/ccache` using
+  various compiler program names.
+* If you are a developer iterating with debug builds on different branches,
+  `export CI_AUTOGEN_STABLE_VERSION=true` can additionally ensure that the
+  `AC_INIT` in the generated `configure` script would not follow NUT SEMVER
+  but use a shorter and temporally stable version string. This helps on some
+  systems where enabling debug options embeds all macros into compiled objects,
+  so an ever-changing `PACKAGE_VERSION` in `config.h` which does follow NUT
+  SEMVER prevents `ccache` direct mode (because each build is deemed unique).
+* Using `export DO_USE_NUTCI_CACHE=yes` (and derived environment variables
+  like `DO_USE_AUTOCONF_CACHE` or `DO_USE_NIT_TESTCERT_CACHE`) can be used
+  to speed up re-builds with `ci_build.sh` and re-runs of NUT Integration
+  Test suite. Exports like this can be placed into your `~/.profile` or
+  exported from CI system recipes.
+* When you iterate code development, `./configure --with-doc=skip ...` can
+  avoid time loss from parsing documentation files you never even edited.
 
 Build and install
 ~~~~~~~~~~~~~~~~~
@@ -899,15 +925,12 @@ Windows binary package
 
 [NOTE]
 ======
-NUT binary package built for Windows platform was last issued for
-a much older codebase (using NUT v2.6.5 as a baseline). While the current
-state of the codebase you are looking at aims to refresh the effort of
-delivering NUT on Windows, the aim at the moment is to help developers
-build and modernize it after a decade of blissful slumber, and packages
-are not being regularly produced yet. Functionality of such builds varies
-a lot depending on build environment used. This effort is generally
-tracked at https://github.com/orgs/networkupstools/projects/2/views/1
-and help would be welcome!
+For Windows binary archives, start with the Windows section of
+link:https://networkupstools.org/download.html[Download instructions] and the
+link:https://github.com/networkupstools/nut/wiki/NUT-for-Windows[NUT for Windows wiki article].
+These describe the available release and CI archives and provide information
+relevant to those builds. Use the documentation for the archive or package
+you selected when setting up a current build.
 
 It should currently be possible to build the codebase in native Windows
 with MSYS2/MinGW and cross-building from Linux with mingw (preferably
@@ -925,8 +948,11 @@ Archives with binaries built by recent iterations of continuous integration
 jobs should be available for exploration on the respective CI platforms.
 ======
 
-*Information below may be currently obsolete, but the NUT project wishes
-it to become actual and factual again :)*
+Historical MSI installer
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following instructions are retained for the obsolete NUT 2.6.5-based
+MSI package; they describe that installer and its configuration layout.
 
 NUT binary package built for Windows platform comes in a `.msi` file.
 
