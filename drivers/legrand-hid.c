@@ -28,7 +28,7 @@
 #include "main.h"
 #include "usb-common.h"
 
-#define LEGRAND_HID_VERSION	"Legrand HID 0.31"
+#define LEGRAND_HID_VERSION	"Legrand HID 0.32"
 
 /* Legrand */
 #define LEGRAND_VENDORID	0x1cb0
@@ -228,6 +228,51 @@ static int legrand_claim(HIDDevice_t *hd)
 	}
 }
 
+/* Some Legrand firmware (seen on 1cb0:0035, which names itself "Reserve")
+ * leaves a Unit and Unit Exponent in effect for the 1-bit PresentStatus
+ * flags, so libhid scales a set bit to 0.01: ACPresent never reads as true
+ * (OB while on mains) and BelowRemainingCapacityLimit can never raise LB.
+ * A 1-bit item is a flag, not a scaled quantity, so drop its unit/exponent.
+ */
+static int legrand_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
+{
+	size_t	i;
+	int	fixed = 0;
+
+	if (pDev->VendorID != LEGRAND_VENDORID)
+		return 0;
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(got disable_fix_report_desc in config)",
+			pDev->VendorID, pDev->ProductID);
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x",
+		pDev->VendorID, pDev->ProductID);
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t	*pData = &pDesc_arg->item[i];
+
+		if (pData->Size != 1 || (pData->Unit == 0 && pData->UnitExp == 0))
+			continue;
+
+		upsdebugx(4, "Report Descriptor: ReportID 0x%02x Offset %d: 1-bit item had Unit %08lx UnitExp %d, cleared",
+			pData->ReportID, pData->Offset, (unsigned long)pData->Unit, pData->UnitExp);
+		pData->Unit = 0;
+		pData->UnitExp = 0;
+		fixed++;
+	}
+
+	if (fixed)
+		upsdebugx(3, "Fixing Report Descriptor: cleared Unit/UnitExp on %d 1-bit items", fixed);
+
+	return fixed ? 1 : 0;
+}
+
 subdriver_t legrand_subdriver = {
 	LEGRAND_HID_VERSION,
 	legrand_claim,
@@ -236,6 +281,6 @@ subdriver_t legrand_subdriver = {
 	legrand_format_model,
 	legrand_format_mfr,
 	legrand_format_serial,
-	fix_report_desc,
+	legrand_fix_report_desc,
 	NULL,
 };
