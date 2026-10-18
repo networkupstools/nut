@@ -31,8 +31,10 @@
 #include "usb-common.h"
 #include "hidparser.h" /* for FindObject_with_ID_Node() */
 
-#define IDOWELL_HID_VERSION	"iDowell HID 0.23"
+#define IDOWELL_HID_VERSION	"iDowell HID 0.24"
 /* FIXME: experimental flag to be put in upsdrv_info */
+/* v0.24 GoldenMate: restore the Power Device page on the Good and
+ *       ShutdownImminent PresentStatus bits, see idowell_fix_status_usage() */
 /* v0.21 GoldenMate LiFePO4 packs reuse the shared Phoenixtec VID (0x06da):
  *       claim only those (by -BMS-/Smart-Battery firmware strings) and defer
  *       everything else on that VID to liebert-hid / mge-hid */
@@ -230,6 +232,56 @@ static int idowell_claim(HIDDevice_t *hd)
 #define IDOWELL_RUNTIME_LOGMAX	0x75FFFFFFL
 #define IDOWELL_VOLTAGE_LOGMAX	65535L
 
+/* idowell_fix_status_usage: correct a second firmware bug in the same packs.
+ *
+ * Feature report 0x01 declares seven 1-bit PresentStatus flags, but the
+ * firmware sets Usage Page 0x85 (Battery System) for ACPresent and never
+ * switches back to 0x84 (Power Device) for two of the flags:
+ *
+ *   05 85  09 d0 09 44 09 45 09 42  09 61  09 d1  09 69
+ *          ACPresent Charging       ^^^^^  Battery ^^^^^
+ *          Discharging BelowRCL     0x61   Present 0x69
+ *
+ * On the Battery System page 0x61 and 0x69 are AtRateTimeToEmpty and
+ * AverageTimeToEmpty, which are run-time counters and make no sense as
+ * single-bit status flags. On the Power Device page the same usages are
+ * Good and ShutdownImminent, which is clearly what was intended: on a
+ * healthy 06da:ffff unit they read 1 and 0 respectively both on mains
+ * and on battery, while ACPresent/Discharging flip as expected.
+ *
+ * Move just those two usages back to the Power Device page so the existing
+ * PresentStatus.Good and PresentStatus.ShutdownImminent mappings apply.
+ * The fix is narrowly scoped: report 0x01, Feature, 1-bit, directly under
+ * PresentStatus; anything else is left alone.
+ */
+static int idowell_fix_status_usage(HIDDesc_t *pDesc_arg,
+	HIDNode_t wrong_usage, HIDNode_t right_usage)
+{
+	HIDData_t	*pData;
+	HIDPath_t	*pPath;
+
+	if (!(pData = FindObject_with_ID_Node(pDesc_arg, 0x01, wrong_usage))) {
+		return 0;
+	}
+
+	pPath = &pData->Path;
+	if (pData->Type != ITEM_FEATURE || pData->Size != 1 || pPath->Size < 2
+	 || pPath->Node[pPath->Size - 2] != USAGE_POW_PRESENT_STATUS
+	) {
+		upsdebugx(4, "NOT fixing Report Descriptor: ReportID 0x01 "
+			"usage 0x%08x is not a 1-bit PresentStatus Feature flag",
+			(unsigned int)wrong_usage);
+		return 0;
+	}
+
+	pPath->Node[pPath->Size - 1] = right_usage;
+	upsdebugx(3, "Fixing Report Descriptor: set ReportID 0x01 "
+		"PresentStatus usage 0x%08x => 0x%08x",
+		(unsigned int)wrong_usage, (unsigned int)right_usage);
+
+	return 1;
+}
+
 static int idowell_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t	*pData;
 	int	retval = 0;
@@ -291,6 +343,11 @@ static int idowell_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			retval++;
 		}
 	}
+
+	retval += idowell_fix_status_usage(pDesc_arg,
+		USAGE_BAT_AT_RATE_TIME_TO_EMPTY, USAGE_POW_GOOD);
+	retval += idowell_fix_status_usage(pDesc_arg,
+		USAGE_BAT_AVERAGE_TIME_TO_EMPTY, USAGE_POW_SHUTDOWN_IMMINENT);
 
 	return retval;
 }

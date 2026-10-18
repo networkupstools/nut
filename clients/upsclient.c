@@ -324,7 +324,7 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	/* Prefer the per-connection context (if any) over the ambient default,
 	 * so different connections in one process can use different client certs
 	 * from the same shared NSS certificate/key database. */
-	UPSCONN_t	*ups = (UPSCONN_t *)arg;
+	UPSCONN_t	*ups = (UPSCONN_t *)arg;	/* Populated by SSL_SetPKCS11PinArg() */
 	upscli_ssl_context_config_t	*cfg = ups ? (upscli_ssl_context_config_t *)ups->ssl_ctx : NULL;
 	const char	*passwd;
 
@@ -335,8 +335,9 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	}
 	passwd = cfg ? cfg->certpasswd : NULL;
 
-	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s (%s): password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		(ups && ups->host && *(ups->host)) ? ups->host : "hostname not specified",
 		passwd ? "" : "not ");
 	return passwd ? PL_strdup(passwd) : NULL;
 }
@@ -1075,6 +1076,37 @@ static upscli_ssl_context_config_t *upscli_ssl_context_config_find(
 void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	const char *certname, const char *certpasswd, const char *certfile)
 {
+	static const char	*quiet_init_ssl = NULL;
+	static int	quiet_init_ssl_parsed = 0;
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
+	upscli_ssl_context_config_t	*cfg;
+# ifdef WITH_OPENSSL
+	long	ret;
+	int	ssl_mode = SSL_VERIFY_NONE;
+# elif defined(WITH_NSS)	/* WITH_OPENSSL */
+	SECStatus	status;
+# endif	/* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
+	if (!quiet_init_ssl_parsed) {
+		quiet_init_ssl_parsed = 1;
+		quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+		if (quiet_init_ssl != NULL) {
+			if (*quiet_init_ssl == '\0'
+				|| (strncmp(quiet_init_ssl, "true", 4)
+				&&  strncmp(quiet_init_ssl, "TRUE", 4)
+				&&  strncmp(quiet_init_ssl, "1", 1) )
+			) {
+				if (strncmp(quiet_init_ssl, "false", 5)
+				&&  strncmp(quiet_init_ssl, "FALSE", 5)
+				&&  strncmp(quiet_init_ssl, "0", 1) )
+					upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+				quiet_init_ssl = NULL;
+			}
+		}
+	}
+
 #if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
 	if (certverify || certpath || certname || certpasswd || certfile) {
 		if (quiet_init_ssl != NULL) {
@@ -1086,14 +1118,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 
 	return NULL;
 #else
-	upscli_ssl_context_config_t	*cfg;
-	const char	*quiet_init_ssl;
-# ifdef WITH_OPENSSL
-	long	ret;
-	int	ssl_mode = SSL_VERIFY_NONE;
-# elif defined(WITH_NSS)	/* WITH_OPENSSL */
-	SECStatus	status;
-# endif	/* WITH_OPENSSL | WITH_NSS */
 
 	cfg = upscli_ssl_context_config_find(certverify, certpath, certname, certpasswd, certfile);
 	if (cfg) {
@@ -1109,21 +1133,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	cfg->certpasswd = certpasswd ? xstrdup(certpasswd) : NULL;
 	cfg->certfile = certfile ? xstrdup(certfile) : NULL;
 	cfg->refcount = 1;
-
-	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
-	if (quiet_init_ssl != NULL) {
-		if (*quiet_init_ssl == '\0'
-			|| (strncmp(quiet_init_ssl, "true", 4)
-			&&  strncmp(quiet_init_ssl, "TRUE", 4)
-			&&  strncmp(quiet_init_ssl, "1", 1) )
-		) {
-			if (strncmp(quiet_init_ssl, "false", 5)
-			&&  strncmp(quiet_init_ssl, "FALSE", 5)
-			&&  strncmp(quiet_init_ssl, "0", 1) )
-				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
-			quiet_init_ssl = NULL;
-		}
-	}
 
 # ifdef WITH_OPENSSL
 
@@ -2443,7 +2452,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (!(ups->ssl_ctx) && !upscli_initialized) {
 		upsdebugx(3, "%s: upscli not initialized, "
-			"force initialisation without SSL configuration", __func__);
+			"force initialization without SSL configuration", __func__);
 		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
 			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);

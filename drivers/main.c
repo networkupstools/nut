@@ -366,6 +366,22 @@ static void help_msg(void)
 		printf("Acceptable values for -x or ups.conf in this driver:\n\n");
 
 		while (tmp) {
+			vartab_t *seen;
+
+			/* Subdrivers may register identical options: show each only once. */
+			for (seen = vartab_h; seen != tmp; seen = seen->next) {
+				if (seen->vartype == tmp->vartype
+				&&  !strcmp(seen->var, tmp->var)
+				&&  !strcmp(seen->desc, tmp->desc)
+				) {
+					break;
+				}
+			}
+			if (seen != tmp) {
+				tmp = tmp->next;
+				continue;
+			}
+
 			if (tmp->vartype == VAR_VALUE)
 				printf("  %*s=<value>\t%s\n",
 					(int)(maxlen), tmp->var, tmp->desc);

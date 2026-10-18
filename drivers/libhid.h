@@ -93,7 +93,9 @@ extern HIDDesc_t	*pDesc;	/* parsed Report Descriptor */
    each given report id */
 typedef struct reportbuf_s {
 	time_t	ts[256];			/* timestamp when report was retrieved */
-	size_t	len[256];			/* size of report data */
+	size_t	len[256];			/* size of report data, as declared by the descriptor */
+	size_t	cap[256];			/* allocated size of data[id] (may exceed len[] when
+						   the max_report_size tweak is active) */
 	unsigned char	*data[256];		/* report data (allocated) */
 } reportbuf_t;
 
