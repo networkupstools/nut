@@ -12,6 +12,16 @@
 #include "common.h"
 #include "parseconf.h"
 
+#ifdef WIN32
+# include <io.h>
+# define dup _dup
+# define dup2 _dup2
+# define fileno _fileno
+# define close _close
+#else
+# include <unistd.h>
+#endif
+
 typedef struct {
 	const char *name;
 	const char *input;
@@ -215,6 +225,62 @@ static void check_encoder(void)
 	pconf_finish(&ctx);
 }
 
+/* Parse input with stderr sent to a temporary file, return what was written */
+static void capture_stderr(const char *input, int from_file, char *out, size_t outlen)
+{
+	PCONF_CTX_t ctx;
+	FILE *cap = tmpfile();
+	int saved;
+	size_t n;
+
+	out[0] = '\0';
+	if (!cap)
+		fatal_with_errno(EXIT_FAILURE, "tmpfile");
+	fflush(stderr);
+	saved = dup(fileno(stderr));
+	if (saved < 0 || dup2(fileno(cap), fileno(stderr)) < 0)
+		fatal_with_errno(EXIT_FAILURE, "redirect stderr");
+
+	pconf_init(&ctx, NULL);
+	if (from_file) {
+		file_input(&ctx, input);
+		pconf_file_next(&ctx);
+	} else {
+		pconf_line(&ctx, input);
+	}
+	pconf_finish(&ctx);
+
+	fflush(stderr);
+	dup2(saved, fileno(stderr));
+	close(saved);
+	rewind(cap);
+	n = fread(out, 1, outlen - 1, cap);
+	out[n] = '\0';
+	fclose(cap);
+}
+
+static void check_attached_hash_warning(void)
+{
+	static const char line[] = "MONITOR ups@localhost 1 upsmon Example#123 primary\n";
+	char msg[512];
+
+	/* A config file line cut by a glued hash names its position, and
+	 * none of the text before the hash */
+	capture_stderr(line, 1, msg, sizeof(msg));
+	check_result(strstr(msg, "line 1, word 5: '#'") != NULL, 1,
+		"attached hash warning in a file");
+	check_result(strstr(msg, "Example") == NULL, 1,
+		"attached hash warning leaves out the word");
+
+	/* A comment after a space is ordinary and stays quiet */
+	capture_stderr("MONITOR ups@localhost 1 upsmon pass # note\n", 1, msg, sizeof(msg));
+	check_result(msg[0] == '\0', 1, "no warning for a spaced comment");
+
+	/* Protocol and single line input stays quiet */
+	capture_stderr(line, 0, msg, sizeof(msg));
+	check_result(msg[0] == '\0', 1, "no warning for line input");
+}
+
 int main(void)
 {
 	size_t i;
@@ -223,6 +289,7 @@ int main(void)
 		check_case(&cases[i]);
 	check_boundaries();
 	check_encoder();
+	check_attached_hash_warning();
 	printf("parseconf: %" PRIuSIZE " cases through line/file/char, boundary and encoder checks: %d failures\n",
 		sizeof(cases) / sizeof(cases[0]), failures);
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;

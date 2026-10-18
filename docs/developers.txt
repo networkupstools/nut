@@ -333,6 +333,9 @@ technologies,NUTCI_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
 build agent preparation,NUTCI_farm_agents].
 
+See also "Repetitive build/test optimizations" in `INSTALL.nut.adoc` file
+for suggestions specific to this area.
+
 Integrated Development Environments (IDEs) and debugging NUT
 ------------------------------------------------------------
 
@@ -1345,20 +1348,6 @@ Git repository, and your local Mercurial working copy.
 
 Other tools for hg/git interoperability are sure to exist. We would
 welcome any feedback about this process on the nut-upsdev mailing list.
-
-Subversion (SVN) access
-~~~~~~~~~~~~~~~~~~~~~~~
-
-If you prefer to check out the NUT source code using an SVN client, GitHub
-has a link:https://github.com/blog/966-improved-subversion-client-support[SVN
-interface to Git repositories] hosted on their servers. You can fork a copy
-of the NUT repository and commit to your fork with SVN.
-
-Be aware that the examples in the GitHub blog post might result in a
-checkout that includes all of the current branches, as well as the trunk.
-You are most likely interested in a command line similar to the following:
-
-	:; svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
 Ignoring generated files
 ------------------------

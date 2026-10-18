@@ -38,11 +38,13 @@ man page (man 8 snmp-ups).
 
 	* Extending existing mib2nut information
 
-	To be written...
+	See the "CUSTOMIZATION" section in docs/snmp-subdrivers.txt.
+	It describes how to map SNMP data to NUT variables and commands.
 
 	* Adding new mib2nut information
 
-	To be written...
+	See the "Creating a subdriver" and "Integrating the subdriver with
+	snmp-ups" sections in docs/snmp-subdrivers.txt.
 
 
 References:
