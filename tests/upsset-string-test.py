@@ -26,7 +26,9 @@ def request(binary, metadata, value='original', new_value=None):
         server.bind(('127.0.0.1', 0))
         server.listen(1)
         server.settimeout(default_timeout)
-        target = 'dummy@127.0.0.1:' + str(server.getsockname()[1])
+        server_port_str = str(server.getsockname()[1])
+        assert server_port_str is not None and server_port_str != "" and server_port_str != "None", "Server port is None or empty"
+        target = 'dummy@127.0.0.1:' + server_port_str
         config = Path(directory)
         (config / 'upsset.conf').write_text('I_HAVE_SECURED_MY_CGI_DIRECTORY\n')
         (config / 'hosts.conf').write_text('MONITOR ' + target + ' "Test UPS"\n')
@@ -82,11 +84,30 @@ def request(binary, metadata, value='original', new_value=None):
             NUT_CONFPATH=directory,
             CONTENT_LENGTH=str(len(body)),
             REQUEST_METHOD='POST',
-            CONTENT_TYPE='application/x-www-form-urlencoded'
+            CONTENT_TYPE='application/x-www-form-urlencoded',
+            # Provide a minimal but complete CGI context; some servers/frameworks
+            # always set these, and upsset.cgi/cgilib can rely on them in places.
+            GATEWAY_INTERFACE='CGI/1.1',
+            SERVER_PROTOCOL='HTTP/1.1',
+            SERVER_SOFTWARE='nut-test',
+            SERVER_NAME='localhost',
+            SERVER_PORT=server_port_str,
+            SCRIPT_NAME='/upsset.cgi',
+            REQUEST_URI='/upsset.cgi',
+            QUERY_STRING='',
+            REMOTE_ADDR='127.0.0.1',
+            HTTP_HOST='localhost'
         )
         try:
-            result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
+            try:
+                result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                # Some build trees provide a libtool wrapper script (shell script)
+                # which may not be directly executable in certain environments.
+                # Retry explicitly via /bin/bash to ensure it launches.
+                result = subprocess.run(['/usr/bin/env', 'bash', binary], input=body, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
         finally:
             thread.join(timeout=default_timeout + 5)
         assert not thread.is_alive(), 'Server did not finish'
