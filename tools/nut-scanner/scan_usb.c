@@ -57,6 +57,18 @@ static int nut_usb_get_string_with_langid_control_transfer(
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
+# if !(defined HAVE_LIBUSB_GET_VERSION) || !HAVE_LIBUSB_GET_VERSION
+ /* libusb.h of 1.0.9 and older lacks this; mirror its (stable ABI)
+  * layout so that a newer libusb found at run time can still be asked */
+ struct libusb_version {
+	const uint16_t major;
+	const uint16_t minor;
+	const uint16_t micro;
+	const uint16_t nano;
+	const char *rc;
+	const char *describe;
+ };
+# endif	/* !HAVE_LIBUSB_GET_VERSION */
 # define USB_INIT_SYMBOL "libusb_init"
 # define USB_OPEN_SYMBOL "libusb_open"
 # define USB_CLOSE_SYMBOL "libusb_close"
@@ -160,7 +172,21 @@ int nutscan_load_usb_library(const char *libname_path)
 	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle,
 		symbol = USB_STRERROR_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
+#if WITH_LIBUSB_1_0
+		/* libusb_strerror() appeared in libusb 1.0.16; releases from
+		 * 1.0.9 on have libusb_error_name() with a compatible signature,
+		 * which names the error code instead of describing it. */
+		upsdebugx(1, "%s: While loading USB library (%s), "
+			"failed to find %s() : %s. Trying libusb_error_name() instead.",
+			__func__, libname_path, USB_STRERROR_SYMBOL, dl_error);
+		*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle,
+			symbol = "libusb_error_name");
+		if ((dl_error = lt_dlerror()) != NULL) {
+			goto err;
+		}
+#else
 		goto err;
+#endif	/* WITH_LIBUSB_1_0 */
 	}
 
 #if WITH_LIBUSB_1_0
@@ -170,10 +196,15 @@ int nutscan_load_usb_library(const char *libname_path)
 		goto err;
 	}
 
+	/* Absent in libusb 1.0.9 and older, tolerate that */
 	*(void **) (&nut_usb_get_version) = lt_dlsym(dl_handle,
 		symbol = "libusb_get_version");
 	if ((dl_error = lt_dlerror()) != NULL) {
-		goto err;
+		upsdebugx(1, "%s: While loading USB library (%s), "
+			"failed to find libusb_get_version() : %s. "
+			"The libusb version is unknown, probably 1.0.9 or older.",
+			__func__, libname_path, dl_error);
+		nut_usb_get_version = NULL;
 	}
 
 	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle,
@@ -516,7 +547,8 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		 * libusb_exit() should not be called unless libusb_init()
 		 * succeeded for same context.
 		 */
-		const struct libusb_version	*ver = (*nut_usb_get_version)();
+		/* No libusb_get_version() means a libusb older than 1.0.24 */
+		const struct libusb_version	*ver = nut_usb_get_version ? (*nut_usb_get_version)() : NULL;
 
 		if (ver && (ver->major > 1 || (ver->major == 1 && ver->minor >= 24)))
 			(*nut_usb_exit)(NULL);

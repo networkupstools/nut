@@ -226,11 +226,22 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
                     AC_CHECK_HEADERS(libusb.h, [nut_cv_have_libusb=yes], [nut_cv_have_libusb=no], [AC_INCLUDES_DEFAULT])
                     AC_CHECK_FUNCS(libusb_init, [], [nut_cv_have_libusb=no])
-                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_cv_have_libusb=no; nut_cv_have_libusb_strerror=no])
+                    dnl libusb_strerror() appeared in 1.0.16; older releases
+                    dnl from 1.0.9 on have libusb_error_name() which we can
+                    dnl use instead (see usb-common.h):
+                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_cv_have_libusb_strerror=no])
                     AS_IF([test "${nut_cv_have_libusb_strerror}" = "no"], [
-                        AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        AC_CHECK_FUNCS(libusb_error_name, [
+                            AC_MSG_NOTICE([libusb_strerror() not found (libusb older than 1.0.16), error messages will show libusb_error_name() codes instead])
+                        ], [
+                            nut_cv_have_libusb=no
+                            AC_MSG_WARN([neither libusb_strerror() nor libusb_error_name() found; libusb 1.0.9 or newer is needed to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        ])
                     ])
                     AS_IF([test "${nut_cv_have_libusb}" = "yes"], [
+                        dnl Absent before libusb 1.0.10 or so, not fatal:
+                        AC_CHECK_FUNCS(libusb_get_version)
+
                         dnl This function is fairly old, but check for it anyway:
                         AC_CHECK_FUNCS(libusb_kernel_driver_active)
                         dnl Check for libusb "force driver unbind" availability
@@ -533,10 +544,14 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     dnl libusb 1.0 detected via pkg-config:
                     AC_CHECK_HEADERS(libusb.h, [], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
                     AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
-                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb=no; nut_have_libusb_strerror=no])
+                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb_strerror=no])
                     AS_IF([test "${nut_have_libusb_strerror}" = "no"], [
-                        AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        AC_CHECK_FUNCS(libusb_error_name, [], [
+                            nut_have_libusb=no
+                            AC_MSG_WARN([neither libusb_strerror() nor libusb_error_name() found; libusb 1.0.9 or newer is needed to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        ])
                     ])
+                    AC_CHECK_FUNCS(libusb_get_version)
                 ], [
                     dnl libusb 0.1, or missing pkg-config:
                     AC_CHECK_HEADERS(usb.h, [], [
