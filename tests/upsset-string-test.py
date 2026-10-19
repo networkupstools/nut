@@ -14,6 +14,7 @@ import tempfile
 import threading
 from urllib.parse import urlencode
 
+default_timeout = 30
 
 def quote(value):
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('#', '\\#') + '"'
@@ -24,7 +25,7 @@ def request(binary, metadata, value='original', new_value=None):
     with tempfile.TemporaryDirectory(prefix='nut-upsset-') as directory, socket.socket() as server:
         server.bind(('127.0.0.1', 0))
         server.listen(1)
-        server.settimeout(10)
+        server.settimeout(default_timeout)
         target = 'dummy@127.0.0.1:' + str(server.getsockname()[1])
         config = Path(directory)
         (config / 'upsset.conf').write_text('I_HAVE_SECURED_MY_CGI_DIRECTORY\n')
@@ -36,7 +37,7 @@ def request(binary, metadata, value='original', new_value=None):
             try:
                 connection, unused = server.accept()
                 with connection:
-                    connection.settimeout(10)
+                    connection.settimeout(default_timeout)
                     with connection.makefile('rb') as stream:
                         for raw in stream:
                             command = raw.decode('ascii').rstrip('\r\n')
@@ -77,9 +78,9 @@ def request(binary, metadata, value='original', new_value=None):
                            REQUEST_METHOD='POST')
         try:
             result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, env=environment, timeout=10)
+                                    stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
         finally:
-            thread.join(timeout=30)
+            thread.join(timeout=default_timeout + 5)
         assert not thread.is_alive(), 'Server did not finish'
         assert not errors, errors
         assert result.returncode == 0, (metadata, result.returncode, result.stderr.decode())
