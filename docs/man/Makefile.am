@@ -2119,6 +2119,13 @@ DOCBUILD_END = { \
     fi ; \
 }
 
+DOCBUILD_MAN = { \
+    echo "  DOC-MAN	Generating $@"; \
+    $(DOCBUILD_BEGIN) ; RES=0; \
+    $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
+    $(DOCBUILD_END) ; exit $$RES ; \
+}
+
 ### Call the prep step consistently to create symlinks (out-of-tree)
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
@@ -2188,38 +2195,23 @@ else !KNOWN_UNABLE_MANS
 
 .txt-prepped.$(MAN_SECTION_CMD_USR):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_USR).$(@F).$$$$" ; \
-	 echo "  DOC-MAN	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(DOCBUILD_MAN)
 
 .txt-prepped.$(MAN_SECTION_API):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_API).$(@F).$$$$" ; \
-	 echo "  DOC-MAN	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(DOCBUILD_MAN)
 
 .txt-prepped.$(MAN_SECTION_CFG):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CFG).$(@F).$$$$" ; \
-	 echo "  DOC-MAN	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(DOCBUILD_MAN)
 
 .txt-prepped.$(MAN_SECTION_CMD_SYS):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_SYS).$(@F).$$$$" ; \
-	 echo "  DOC-MAN	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(DOCBUILD_MAN)
 
 .txt-prepped.$(MAN_SECTION_MISC):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_MISC).$(@F).$$$$" ; \
-	 echo "  DOC-MAN	Generating $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(DOCBUILD_MAN)
 
 endif !KNOWN_UNABLE_MANS
 
