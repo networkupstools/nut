@@ -101,6 +101,7 @@ def request(binary, metadata, value='original', new_value=None):
         # request body and skip any network activity, leading to a timeout here.
         environment.update(
             NUT_CONFPATH=directory,
+            NUT_AUTHCONF_PATH=directory,
             CONTENT_LENGTH=str(len(body)),
             REQUEST_METHOD='POST',
             CONTENT_TYPE='application/x-www-form-urlencoded',
