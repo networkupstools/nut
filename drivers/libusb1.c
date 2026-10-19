@@ -47,7 +47,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.55"
+#define USB_DRIVER_VERSION	"0.56"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -866,7 +866,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 					"hidusb.sys or similar). It could have been\n"
 					"\"restored\" by Windows Update. You can try "
 					"https://zadig.akeo.ie/ to handle it with\n"
-					"either WinUSB, libusb0.sys or libusbK.sys.");
+					"WinUSB (preferred) or libusbK.sys.");
 #endif	/* WIN32 */
 				rdlen = res; /* correct rdlen if necessary */
 			}
@@ -967,7 +967,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		"hidusb.sys or similar). It could have been\n"
 		"\"restored\" by Windows Update. You can try "
 		"https://zadig.akeo.ie/ to handle it with\n"
-		"either WinUSB, libusb0.sys or libusbK.sys.");
+		"WinUSB (preferred) or libusbK.sys.");
 #endif	/* WIN32 */
 
 	return -1;
