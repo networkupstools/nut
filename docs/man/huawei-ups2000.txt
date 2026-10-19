@@ -83,8 +83,8 @@ USB-to-serial chip. On Linux, it's only usable on Linux 5.12 and later, via
 the *xr_serial* kernel module. On Windows, it's also suggested to install
 an additional device driver. On some newer UPS hardware variants, a WCH
 CH341 chip is used instead, these should have better compatibility (via the
-*ch341* Linux kernel module, or Windows Update). See subsection *Linux USB*
-and *Windows USB* for details.
+*ch341* Linux kernel module, or Windows Update). See <<_linux_usb>>
+and <<_windows_usb>> for details.
 
 Only one port can be used at a time. When USB is used, RS-232 should be
 unplugged from the UPS, and vice versa. Further, optional adapter cards,
@@ -385,7 +385,7 @@ problem, the negative impact is worse on some UPS models: it was not possible
 to *write to any registers at all*, meaning that changing any *variable* or
 sending any *instant command* is impossible.
 
-See *Historical bugs* at the bottom of this manual for links.
+See <<_historical_bugs>> at the bottom of this manual for links.
 
 Battery status has a non-fatal read failure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -479,7 +479,7 @@ be done within NUT. Please use the RS-232 port instead.
 Alternatively, if your unit has a WCH CH341 chip (likely only found in
 units made after 2022), it should have better compatibility.
 
-See the previous section *Cabling* for more information.
+See <<_cabling>> for more information.
 
 AUTHOR
 ------
