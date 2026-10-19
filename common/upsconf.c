@@ -68,6 +68,10 @@ static int is_seen_section(const char *name)
 static void add_seen_section(const char *name)
 {
 	struct section_node	*node = (struct section_node *)xmalloc(sizeof(*node));
+
+	if (!node)
+		fatalx(EXIT_FAILURE, "Could not allocate node for seen section");
+
 	node->name = xstrdup(name);
 	node->next = seen_sections;
 	seen_sections = node;
