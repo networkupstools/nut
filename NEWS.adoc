@@ -1079,6 +1079,10 @@ https://github.com/networkupstools/nut/milestone/13
       so `driver.version.usb` says the version is unknown. `nut-scanner`
       falls back the same way when the libusb it loads at run time lacks
       these methods. [issue #509, issue #3781]
+    * With `--with-usb=auto` (or `yes`), the `configure` script now falls
+      back to an also available libusb-0.1 when the preferred libusb-1.0 is
+      too old for NUT, instead of building without USB drivers. An explicit
+      `--with-usb=libusb-1.0` still fails in that case. [issue #3781]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

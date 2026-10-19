@@ -156,6 +156,45 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             )
             AC_MSG_RESULT([${nut_cv_LIBUSB_VERSION} ${nut_cv_usb_lib}])
 
+            dnl A libusb-1.0 picked by preference (not explicitly requested)
+            dnl may be too old for NUT: libusb_error_name() (1.0.9+) is the
+            dnl minimum, standing in for libusb_strerror() (1.0.16+, see
+            dnl https://github.com/networkupstools/nut/issues/509) e.g. with
+            dnl the libusb1-1.0.9 of CentOS 6. If a libusb-0.1 is also available,
+            dnl fall back to it rather than end up with no USB drivers, see
+            dnl https://github.com/networkupstools/nut/issues/3781
+            dnl Custom cflags/ldflags are taken as an explicit choice too.
+            AS_IF([test x"${nut_cv_usb_lib}" = x"(libusb-1.0)" \
+                && test x"${nut_with_usb_includes}" = xauto \
+                && test x"${nut_with_usb_libs}" = xauto \
+                && test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone -o x"${nut_cv_LIBUSB_CONFIG_VERSION}" != xnone
+            ], [
+                AS_CASE(["${nut_cv_with_usb}"],
+                    [auto|yes], [
+                        AC_MSG_CHECKING([whether libusb-1.0 ${nut_cv_LIBUSB_1_0_VERSION} provides libusb_init() and libusb_error_name()])
+                        CFLAGS="${CFLAGS_ORIG} `$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
+                        LIBS="${LIBS_ORIG} `$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
+                        AC_LANG_PUSH([C])
+                        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libusb.h>]],
+                            [[libusb_init(NULL); (void)libusb_error_name(LIBUSB_SUCCESS);]])],
+                            [AC_MSG_RESULT([yes])],
+                            [AC_MSG_RESULT([no])
+                             AS_IF([test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone],
+                                [nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_0_1_VERSION}"
+                                 nut_cv_usb_lib="(libusb-0.1)"
+                                ],
+                                [nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_CONFIG_VERSION}"
+                                 nut_cv_usb_lib="(libusb-0.1-config)"
+                                ])
+                             AC_MSG_NOTICE([libusb-1.0 ${nut_cv_LIBUSB_1_0_VERSION} is not usable by NUT (libusb 1.0.9+ needed), falling back to ${nut_cv_LIBUSB_VERSION} ${nut_cv_usb_lib}])
+                            ])
+                        AC_LANG_POP([C])
+                        CFLAGS=""
+                        LIBS=""
+                    ]
+                )
+            ])
+
             AS_IF([test x"${nut_cv_LIBUSB_1_0_VERSION}" != xnone && test x"${nut_cv_usb_lib}" != x"(libusb-1.0)" ],
                 [AC_MSG_NOTICE([libusb-1.0 support was detected, but another was chosen ${nut_cv_usb_lib}])]
             )
@@ -209,10 +248,8 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             )
             AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
-            dnl TODO: Consult chosen nut_cv_usb_lib value and/or nut_cv_with_usb argument
-            dnl (with "auto" we may use a 0.1 if present and working while a 1.0 is
-            dnl present but useless)
-            dnl Check if libusb is usable
+            dnl Check if libusb is usable (a 1.0 too old for NUT was already
+            dnl swapped for an available 0.1 above, when not chosen explicitly)
             CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
             LIBS="${LIBS_ORIG} ${depLIBS}"
             nut_cv_have_libusb_strerror=""
