@@ -120,20 +120,44 @@ def request(binary, metadata, value='original', new_value=None):
         )
         try:
             try:
-                result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
+                p = subprocess.Popen([binary],
+                                     stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     env=environment)
             except (FileNotFoundError, PermissionError, OSError) as e:
                 # Some build trees provide a libtool wrapper script (shell script)
                 # which may not be directly executable in certain environments.
                 # Retry explicitly via /bin/bash to ensure it launches.
-                result = subprocess.run(['/usr/bin/env', 'bash', binary], input=body, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
+                p = subprocess.Popen(['/usr/bin/env', 'bash', binary],
+                                     stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     env=environment)
+
+            if nut_debug_level > 0:
+                print('Client PID', p.pid)
+            try:
+                if nut_debug_level > 1:
+                    print("Client INPUT:")
+                    print(str(body))
+                out, err = p.communicate(input=body, timeout=default_timeout)
+                # err = p.stderr.decode()
+                if nut_debug_level > 1:
+                    print("Client OUT:")
+                    print(out.decode())
+                    print("ERR:")
+                    print(err.decode())
+            finally:
+                rc = p.returncode
+                if nut_debug_level > 0:
+                    print('Client finished', rc)
         finally:
             thread.join(timeout=default_timeout + 5)
         assert not thread.is_alive(), 'Server did not finish'
         assert not errors, errors
-        assert result.returncode == 0, (metadata, result.returncode, result.stderr.decode())
-        output = result.stdout.decode('ascii')
+        assert p.returncode == 0, (metadata, p.returncode, err.decode())
+        output = out.decode('ascii')
         if nut_debug_level_env > 0:
             assert '</BODY></HTML>' in output
             assert output.rstrip().endswith('</pre>'), output
