@@ -283,7 +283,18 @@ static void check_attached_hash_warning(void)
 
 static void write_test_file(const char *path, const char *content)
 {
-	FILE *f = fopen(path, "w");
+	FILE *f = NULL;
+
+#ifndef WIN32
+	mode_t m = umask(077);
+#endif
+
+	f = fopen(path, "w");
+
+#ifndef WIN32
+	umask(m);
+#endif
+
 	if (!f)
 		fatal_with_errno(EXIT_FAILURE, "fopen");
 	if (fputs(content, f) == EOF || fclose(f))
