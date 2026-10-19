@@ -474,7 +474,7 @@ static void upsd_user_err(const char *errmsg)
 
 void user_load(void)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	char	**files;
 	size_t	i, count = 0;
