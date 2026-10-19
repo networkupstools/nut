@@ -23,9 +23,9 @@
                 <Control Id="Description2" Type="Text" X="26" Y="116" Width="328" Height="74" Transparent="yes" NoPrefix="yes">
                     <Text>If the automatic USB driver installation fails, you can try to install a driver manually. For this go to :
 
-https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/
+https://zadig.akeo.ie/
 
-After installling libusb-win32, run libUSB's Inf Wizard and choose your device.</Text>
+Run Zadig, select your UPS, choose WinUSB and click "Replace Driver".</Text>
                 </Control>
                 <Control Id="Description3" Type="Text" X="26" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
                     <Text>Click Next to continue [Wizard].</Text>

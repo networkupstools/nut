@@ -1083,6 +1083,11 @@ https://github.com/networkupstools/nut/milestone/13
       back to an also available libusb-0.1 when the preferred libusb-1.0 is
       too old for NUT, instead of building without USB drivers. An explicit
       `--with-usb=libusb-1.0` still fails in that case. [issue #3781]
+    * The `wdi-simple` USB driver installer for Windows now installs the
+      WinUSB driver (or libusbK, if chosen) instead of `libusb0.sys`,
+      accepts command-line options, and no longer reads past the end of
+      the generated NUT USB device table. Its build instructions were
+      updated for current libwdi. [issue #1507]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
