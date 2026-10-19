@@ -74,8 +74,16 @@ def request(binary, metadata, value='original', new_value=None):
             fields['UPSVAR_test.string'] = new_value
         body = urlencode(fields).encode('ascii') + b'\n'
         environment = {key: val for key, val in os.environ.items() if not key.startswith('NUT_')}
-        environment.update(NUT_CONFPATH=directory, CONTENT_LENGTH=str(len(body)),
-                           REQUEST_METHOD='POST')
+        # Ensure CGI environment is sufficiently defined for predictable behavior
+        # so upsset.cgi reliably parses POSTed form data and proceeds to contact
+        # the mocked NUT server. Missing CONTENT_TYPE may cause it to ignore the
+        # request body and skip any network activity, leading to a timeout here.
+        environment.update(
+            NUT_CONFPATH=directory,
+            CONTENT_LENGTH=str(len(body)),
+            REQUEST_METHOD='POST',
+            CONTENT_TYPE='application/x-www-form-urlencoded'
+        )
         try:
             result = subprocess.run([binary], input=body, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, env=environment, timeout=default_timeout)
