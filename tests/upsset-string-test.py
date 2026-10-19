@@ -15,6 +15,9 @@ import threading
 from urllib.parse import urlencode
 
 default_timeout = 30
+nut_debug_level_env = int(os.getenv('NUT_DEBUG_LEVEL', 0))
+# Might hack here to debug PY script independently of upsset.cgi binary
+nut_debug_level = nut_debug_level_env
 
 def quote(value):
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('#', '\\#') + '"'
@@ -36,13 +39,22 @@ def request(binary, metadata, value='original', new_value=None):
         (config / 'nutauth.conf').chmod(0o600)
 
         def serve():
+            """ Mock upsd """
             try:
+                if nut_debug_level > 0:
+                    print("Server awaiting connection on port", server_port_str)
                 connection, unused = server.accept()
+                if nut_debug_level > 0:
+                    print("Server accepted connection")
                 with connection:
+                    if nut_debug_level > 0:
+                        print("Server using connection")
                     connection.settimeout(default_timeout)
                     with connection.makefile('rb') as stream:
                         for raw in stream:
                             command = raw.decode('ascii').rstrip('\r\n')
+                            if nut_debug_level > 0:
+                                print("Server got command:", command)
                             commands.append(command)
                             if command == 'STARTTLS':
                                 reply = 'ERR FEATURE-NOT-SUPPORTED'
@@ -61,13 +73,20 @@ def request(binary, metadata, value='original', new_value=None):
                                 reply = 'OK'
                             elif command == 'LOGOUT':
                                 connection.sendall(b'OK Goodbye\n')
+                                if nut_debug_level > 0:
+                                    print("Server ended connection")
                                 break
                             else:
                                 raise AssertionError('Unexpected request: ' + command)
                             connection.sendall((reply + '\n').encode('ascii'))
+                if nut_debug_level > 0:
+                    print("Server thread ended without errors")
             except Exception as error:
                 errors.append(error)
+                if nut_debug_level > 0:
+                    print("Server thread ended with errors")
 
+        # Start mock upsd as a thread, get upsset.cgi to talk to it
         thread = threading.Thread(target=serve, daemon=True)
         thread.start()
         fields = {'username': 'test', 'password': 'test', 'monups': target,
@@ -75,7 +94,7 @@ def request(binary, metadata, value='original', new_value=None):
         if new_value is not None:
             fields['UPSVAR_test.string'] = new_value
         body = urlencode(fields).encode('ascii') + b'\n'
-        environment = {key: val for key, val in os.environ.items() if not key.startswith('NUT_')}
+        environment = {key: val for key, val in os.environ.items() if (key == 'NUT_DEBUG_LEVEL' or not key.startswith('NUT_'))}
         # Ensure CGI environment is sufficiently defined for predictable behavior
         # so upsset.cgi reliably parses POSTed form data and proceeds to contact
         # the mocked NUT server. Missing CONTENT_TYPE may cause it to ignore the
@@ -114,7 +133,11 @@ def request(binary, metadata, value='original', new_value=None):
         assert not errors, errors
         assert result.returncode == 0, (metadata, result.returncode, result.stderr.decode())
         output = result.stdout.decode('ascii')
-        assert output.rstrip().endswith('</BODY></HTML>'), output
+        if nut_debug_level_env > 0:
+            assert '</BODY></HTML>' in output
+            assert output.rstrip().endswith('</pre>'), output
+        else:
+            assert output.rstrip().endswith('</BODY></HTML>'), output
         assert 'Error:' not in output, output
         if new_value is None:
             assert 'GET TYPE dummy test.string' in commands, commands
