@@ -2085,6 +2085,11 @@ CLEANFILES += *.xml *.html *.pdf
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+# For some reason, parallel builds of man pages on FreeBSD 15 with tmpfs
+# (to create a tarball during `make dist`, or inside `make distcheck`
+# context) fail sufficiently often to be noticeable. May be a system
+# problem with some files not becoming visible in time (some other
+# tests had failed suspiciously similarly). Sleep just in case...
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
@@ -2101,6 +2106,12 @@ DOCBUILD_BEGIN = { \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
     A2X_VERBOSE="$(ASCIIDOC_VERBOSE)"; if [ "$(V)" = 1 ]; then A2X_VERBOSE="--verbose"; fi; \
+    case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+        *-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+            case "`uname -s | tr 'A-Z' 'a-z'`" in \
+                *freebsd*) sleep 1 ;; \
+            esac ;; \
+    esac ; \
 }
 
 # Note that documents with sub-pages (see LIBNUTCLIENT_*_DEPS above)
