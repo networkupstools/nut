@@ -303,13 +303,14 @@ static void write_test_file(const char *path, const char *content)
 
 static void check_get_files(void)
 {
-	char tmptpl[] = "/tmp/nut_pconf_test_XXXXXX";
-	char *tmpdir = mkdtemp(tmptpl);
-	char main_conf[1024], d_dir[1024], file1[1024], file2[1024], file_ignored[1024];
-	char users_main[1024], users_d[1024], ufile1[1024], ufile2[1024];
-	char nutauth_main[1024], nutauth_d[1024], na_file[1024];
-	char **files;
-	size_t count = 0;
+	char	tmptpl[] = "/tmp/nut_pconf_test_XXXXXX";
+	char	*tmpdir = mkdtemp(tmptpl);
+	char	main_conf[NUT_PATH_MAX + 1], d_dir[NUT_PATH_MAX - 32];
+	char	file1[NUT_PATH_MAX + 1], file2[NUT_PATH_MAX + 1], file_ignored[NUT_PATH_MAX + 1];
+	char	users_main[NUT_PATH_MAX + 1], users_d[NUT_PATH_MAX - 32], ufile1[NUT_PATH_MAX + 1], ufile2[NUT_PATH_MAX + 1];
+	char	nutauth_main[NUT_PATH_MAX + 1], nutauth_d[NUT_PATH_MAX - 32], na_file[NUT_PATH_MAX + 1];
+	char	**files;
+	size_t	count = 0;
 
 	if (!tmpdir)
 		fatal_with_errno(EXIT_FAILURE, "mkdtemp");
