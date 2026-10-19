@@ -76,7 +76,8 @@ let nut_word_all          = [ sep_spc . key nut_word_all_re . def_sep . sep_spc 
 
 let nut_lns  = (nut_mode|nut_bool|nut_num|nut_num_signed|nut_word_all|comment|empty)*
 
-let nut_filter = ( incl "@CONFPATH@/nut.conf" )
+let nut_filter = ( incl "@CONFPATH@/nut.conf" |
+		    incl "@CONFPATH@/nut.conf.d/*.conf" )
 			. Util.stdexcl
 
 let nut_xfm    = transform nut_lns nut_filter
