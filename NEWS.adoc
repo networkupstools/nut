@@ -623,6 +623,11 @@ https://github.com/networkupstools/nut/milestone/13
       new subdriver is used even when `productid` is set in `ups.conf`.
       Tested against a GXT5 on mains only; on-battery status transitions
       are not yet confirmed. [issue #3613, PR #3730]
+    * `ecoflow-hid` subdriver: the `battery.runtime` minutes-to-seconds
+      conversion returned a newly allocated string on every call, which the
+      driver never freed; with this quick-polled value the driver leaked
+      128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
+      uses a static buffer like the other conversion functions. [issue #3787]
 
  - `snmp-ups` driver updates:
     * Corrected the IETF fallback warning so it is emitted for automatic
