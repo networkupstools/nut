@@ -948,6 +948,18 @@ Archives with binaries built by recent iterations of continuous integration
 jobs should be available for exploration on the respective CI platforms.
 ======
 
+[[Windows_USB]]
+USB-connected devices
+^^^^^^^^^^^^^^^^^^^^^
+
+If you plan to use an UPS which is locally connected to an USB port,
+you have to bind it to the WinUSB driver, so that NUT (built with
+libusb-1.0) can open it. Most UPS devices are bound to the Windows HID
+driver by default. You can use the `wdi-simple` program shipped with NUT
+(see `scripts/Windows/DriverInstaller` in the sources), or
+link:https://zadig.akeo.ie/[Zadig]: select the UPS, choose `WinUSB` and
+click "Replace Driver". Both currently support Windows 7 and newer.
+
 Historical MSI installer
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -967,18 +979,16 @@ Newer Windows releases should include the Windows Installer natively.
 
 Run `NUT-Installer.msi` and follow the wizard indications.
 
-If you plan to use an UPS which is locally connected to an USB port,
-you have to bind it to the WinUSB driver, so that NUT (built with
-libusb-1.0) can open it. Most UPS devices are bound to the Windows HID
-driver by default. You can use the `wdi-simple` program shipped with NUT
-(see `scripts/Windows/DriverInstaller` in the sources), or
-link:https://zadig.akeo.ie/[Zadig]: select the UPS, choose `WinUSB` and
-click "Replace Driver". Both currently support Windows 7 and newer.
+That historical package was built with libusb-0.1: to use a locally
+connected USB UPS with it, you would install
+https://github.com/mcuee/libusb-win32[libusb-win32] and bind the device
+to its `libusb0.sys` driver with libusb's "Inf Wizard". Current NUT for
+Windows is built with libusb-1.0 only, and does not support that driver
+(see <<Windows_USB,USB-connected devices>> above instead).
 
-NOTE: Older NUT for Windows builds used libusb-0.1 via
-https://github.com/mcuee/libusb-win32[libusb-win32] and its `libusb0.sys`
-driver, installed with libusb's "Inf Wizard". Current NUT for Windows is
-built with libusb-1.0 only, and does not support that driver.
+NOTE: A new installer based on the WiX Toolset is being worked on, see
+link:scripts/Windows/Installer/README.adoc[scripts/Windows/Installer/README.adoc]
+and https://github.com/networkupstools/nut/issues/1485 for details.
 
 If you have selected default directory, all configuration files are located in
 `C:\Program Files\NUT\ups\etc`
