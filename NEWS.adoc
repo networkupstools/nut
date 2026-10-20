@@ -82,6 +82,11 @@ https://github.com/networkupstools/nut/milestone/13
         result was stored as the availability of the XML/HTTP scan. So the
         `-M` scan could be disabled despite a working `libneon`, or offered
         without one (impacts NUT v2.8.3 through v2.8.5). [PR #3657]
+      - `nut-scanner` crashed in USB scans in 32-bit Windows builds: it
+        called the dynamically loaded libusb-1.0 methods as default C
+        functions, but there they use the calling convention of Windows
+        API methods (`LIBUSB_CALL`), so the stack got misaligned (impacts
+        all NUT 2.8.x until now).
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
