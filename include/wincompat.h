@@ -83,11 +83,21 @@ char * filter_path(const char * source);
 #ifndef strcasecmp
 #define strcasecmp(a,b) _stricmp(a,b)
 #endif
-#ifndef snprintf
-#define snprintf _snprintf
-#endif
-#ifndef vsnprintf
-#define vsnprintf _vsnprintf
+/* NOTE: Microsoft _snprintf() and _vsnprintf() are NOT the C99 functions:
+ * when the output is truncated, they return -1 and do NOT terminate the
+ * buffer with a NUL character, so code relying on C99 semantics (that is,
+ * all of NUT) may then read or write past the end of the buffer.
+ * Only map to them for old MSVC (before Visual Studio 2015, _MSC_VER 1900)
+ * which lacked C99 snprintf(); MinGW-w64 always provides the C99 ones,
+ * and these macros used to override them (as they are not macros there).
+ */
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
+# ifndef snprintf
+#  define snprintf _snprintf
+# endif
+# ifndef vsnprintf
+#  define vsnprintf _vsnprintf
+# endif
 #endif
 
 int sktconnect(int fh, struct sockaddr * name, int len);

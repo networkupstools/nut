@@ -85,6 +85,14 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * NUT for Windows: `snprintf()` and `vsnprintf()` were mapped to the
+      Microsoft `_snprintf()` and `_vsnprintf()` methods, which do not
+      terminate the buffer and return -1 when the output does not fit, so
+      NUT code relying on C99 behavior could read past the end of the buffer
+      (impacts the NUT for Windows builds since v2.8.1). The mapping is now
+      only used for Visual Studio versions before 2015, which lacked C99
+      `snprintf()`, and a new test checks the C99 behavior. See
+      link:https://github.com/networkupstools/nut/security/advisories/GHSA-ghqr-q65h-w9wg[security advisory].
     * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
       when explicitly specifying same `--with-user` *OR* `--with-group` name
       as would be default for current platform (so one was treated as not-set
