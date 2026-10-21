@@ -1129,12 +1129,12 @@ https://github.com/networkupstools/nut/milestone/13
       description; before 1.0.10 or so there is no `libusb_get_version()`,
       so `driver.version.usb` says the version is unknown. `nut-scanner`
       falls back the same way when the libusb it loads at run time lacks
-      these methods. [issues #509, #3781, PR #3791]
+      these methods. [issues #509, #3781, PR #3782]
     * With `--with-usb=auto` (or `yes`), the `configure` script now falls
       back to an also available libusb-0.1 when the preferred libusb-1.0 is
       too old for NUT, instead of building without USB drivers. An explicit
       `--with-usb=libusb-1.0` still fails in that case.
-      [issue #3781, PR #3791]
+      [issue #3781, PR #3782]
     * Windows (MinGW/MSYS2) builds of NUT now support only libusb-1.0 for
       USB drivers, used with the WinUSB driver. Support for libusb-0.1
       (libusb-win32 with its `libusb0.sys` driver, or libusb-compat) was
