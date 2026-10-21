@@ -33,6 +33,13 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- OpenSSL builds without `X509_V_ERR_HOSTNAME_MISMATCH` now retain
+  certificate verification errors even when a subject alternative name
+  matches. Connections using expired or not-yet-valid certificates can
+  therefore fail where they previously succeeded with verification enabled.
+  Renew expired certificates or correct certificate validity dates before
+  upgrading. [PR #3768]
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials

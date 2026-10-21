@@ -45,6 +45,10 @@ https://github.com/networkupstools/nut/milestone/13
    (not 3 like before) for easier initial indentation of new entries.
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * OpenSSL certificate verification no longer clears unrelated errors
+      when a subject alternative name matches on builds without
+      `X509_V_ERR_HOSTNAME_MISMATCH`. Expired and not-yet-valid certificates
+      are now rejected when verification is enabled. [PR #3768]
     * `libnutconf`: character reads from a TCP socket now use the Windows
       socket API, matching string reads. Previously they failed with a bad
       file descriptor error on Windows. [issue #2293]

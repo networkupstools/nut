@@ -595,12 +595,10 @@ int Socket::_openssl_cert_verify_data_index = 0;
 		/* Call this in any err case, to print debug logs about
 		 *  presence and value(s) of subjAltNames in that cert */
 		int	san_ok = openssl_cert_verify_san_name(buf, err_cert, openssl_cert_verify_data->hostname);
-		if (san_ok
+		/* A matching SAN can only repair a hostname mismatch. */
 # ifdef X509_V_ERR_HOSTNAME_MISMATCH
+		if (san_ok
 			&& err == X509_V_ERR_HOSTNAME_MISMATCH
-# else
-			&& err != 0
-# endif
 		) {
 			/* Caller had some problem with it, did SAN match fix it? */
 			upsdebugx(5, "%s: originally called with verify error:num=%d:%s:depth=%d:%s "
@@ -612,6 +610,10 @@ int Socket::_openssl_cert_verify_data_index = 0;
 			X509_STORE_CTX_set_error(ctx, err);
 			return san_ok;
 		}
+# else
+		/* Without a hostname-mismatch code, retain the backend error. */
+		NUT_UNUSED_VARIABLE(san_ok);
+# endif
 	}
 
 	/* Catch a too long certificate chain. The depth limit set using
