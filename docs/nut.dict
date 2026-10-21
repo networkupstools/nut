@@ -4,6 +4,7 @@ AAS
 ABI
 ACFAIL
 ACFREQ
+ACINIT
 ACK
 ACM
 ACPI
@@ -2357,6 +2358,7 @@ gettextize
 getval
 getvar
 gh
+ghqr
 gif
 gio
 gitcache
@@ -3823,6 +3825,7 @@ wc
 wdi
 webserver
 wf
+wg
 wget
 whitespace
 wiki
