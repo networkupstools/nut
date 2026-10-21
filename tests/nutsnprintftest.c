@@ -76,7 +76,10 @@ static int call_vsnprintf(char *buf, size_t size, const char *fmt, ...)
 	int	ret;
 
 	va_start(ap, fmt);
+#include "nut-pragmas-format-nonliteral.h"
+	/* Note: this code intentionally uses a caller-provided format string */
 	ret = vsnprintf(buf, size, fmt, ap);
+#include "nut-pragmas-format-nonliteral-end.h"
 	va_end(ap);
 
 	return ret;
