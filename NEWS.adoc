@@ -1073,6 +1073,13 @@ https://github.com/networkupstools/nut/milestone/13
       with both a current and an old (7.1, as on CentOS 7) version of the
       `aspell-en` dictionary. Local builds keep the default of
       `configure --enable-spellcheck=auto`. [PR #3752]
+    * The `include/config.h` file no longer carries the full Git-derived NUT
+      version (which changes with every commit), only the base semantic
+      version (e.g. `2.8.5` for a release, or `2.8.5.1` for any development
+      iteration after it), so `ccache` and similar build caches can re-use
+      compiled objects across commits and fresh CI checkouts. The full
+      version is still provided by `include/nut_version.h` and in the
+      substituted `@PACKAGE_VERSION@` values. [PR #3759, follow-up to PR #3754]
     * The `make shellcheck` (and `make check-scripts-syntax`) recipe can now
       check the POSIX shell scripts with each interpreter listed in the
       `SHELL_PROGS` environment variable (default is still the system

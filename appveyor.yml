@@ -36,9 +36,6 @@ environment:
   # ccache max_size is capped below (see install steps) to leave a margin
   # for the other entries (pacman packages ~100MB, nut-win-deps, nut-ci):
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -mx=0
-  # Keep config.h stable across PRs, so ccache can reuse -g3 objects
-  # (see ci_build.sh for details):
-  CI_AUTOGEN_STABLE_VERSION: true
   CCACHE_DIR: /home/appveyor/.ccache
   CCACHE_MAXSIZE: 750MiB
   DO_CLEAN_NUTCI_CACHE: no
