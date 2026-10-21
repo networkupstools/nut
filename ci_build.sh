@@ -1136,32 +1136,11 @@ do_autogen_get_CONFIGURE_SCRIPT() {
         # older system) we have to remove it when we already have the script.
         # This matches the use-case of distro-building from release tarballs that
         # include all needed pre-generated files to rely less on OS facilities.
-        (
-            # Optionally drop the PR-specific last component of the version
-            # (e.g. 2.8.5.1466.13 => 2.8.5.1466) which AC_INIT puts into
-            # config.h as PACKAGE_VERSION. The ccache direct mode hashes all
-            # included headers, so a version change misses for nearly every
-            # file and defeats ccache across pull requests. Only autogen.sh gets
-            # this setting, so `make` still generates nut_version.h (and the
-            # UPS_VERSION reported by programs) from actual Git metadata.
-            if [ x"${CI_AUTOGEN_STABLE_VERSION-}" = xtrue ] && [ -z "${NUT_VERSION_FORCED-}" ] ; then
-                _NUT_VERSION_STABLE="`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh 2>/dev/null`" || _NUT_VERSION_STABLE=""
-                case "${_NUT_VERSION_STABLE}" in
-                    *.*.*.*.*) _NUT_VERSION_STABLE="${_NUT_VERSION_STABLE%.*}" ;;
-                esac
-                if [ -n "${_NUT_VERSION_STABLE}" ] ; then
-                    echo "INFO: CI_AUTOGEN_STABLE_VERSION: using NUT_VERSION_FORCED='${_NUT_VERSION_STABLE}' for autogen.sh" >&2
-                    NUT_VERSION_FORCED="${_NUT_VERSION_STABLE}"
-                    export NUT_VERSION_FORCED
-                fi
-            fi
-
-            if [ "$CI_OS_NAME" = "windows" ] ; then
-                $CI_TIME ./autogen.sh || true
-            else
-                $CI_TIME ./autogen.sh ### 2>/dev/null
-            fi
-        ) || exit
+        if [ "$CI_OS_NAME" = "windows" ] ; then
+            $CI_TIME ./autogen.sh || true
+        else
+            $CI_TIME ./autogen.sh ### 2>/dev/null
+        fi || exit
     fi
 
     # Retain the full path to configure script file
