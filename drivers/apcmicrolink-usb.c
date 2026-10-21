@@ -134,6 +134,12 @@ typedef struct {
 static struct libusb_transfer *async_xfer = NULL;
 static int async_xfer_active = 0;	/* 1 while a transfer is submitted/outstanding */
 
+/* Abandoned transfers whose callback has not fired yet. libusb_close() drops
+ * in-flight transfers from libusb's list without ever calling their callback,
+ * so microlink_usb_reset_and_reopen() reaps them before closing the handle;
+ * otherwise each one would leak. Guarded by async_lock. */
+static unsigned int async_abandoned_count = 0;
+
 /* The queue, async_xfer_active and the fb_* globals are touched by both the
  * pump thread and the main thread, so all go through async_lock. async_cond is
  * signalled whenever the callback queues a report, so get_char() can block on
@@ -154,6 +160,7 @@ static volatile int async_pump_stop = 0;
  * callback calls. */
 static int microlink_usb_async_start(void);
 static void microlink_usb_async_stop(void);
+static void microlink_usb_async_reap_abandoned(void);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
 static unsigned char in_report[MLINK_USB_REPORT_TOTAL_LEN];
@@ -562,6 +569,9 @@ int microlink_usb_reset_and_reopen(void)
 		 * usb-common.h abstraction; calling libusb_reset_device() directly
 		 * breaks NUT_USB_VARIANT=0.1 builds. */
 		usb_reset(udev);
+#if WITH_LIBUSB_1_0 && defined(HAVE_PTHREAD)
+		microlink_usb_async_reap_abandoned();
+#endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 		comm_driver->close_dev(udev);
 		udev = NULL;
 	}
@@ -913,6 +923,11 @@ static void LIBUSB_CALL microlink_usb_async_cb(struct libusb_transfer *transfer)
 	if (abandoned) {
 		free(transfer->buffer);
 		libusb_free_transfer(transfer);
+		pthread_mutex_lock(&async_lock);
+		if (async_abandoned_count > 0) {
+			async_abandoned_count--;
+		}
+		pthread_mutex_unlock(&async_lock);
 		return;
 	}
 
@@ -999,34 +1014,38 @@ static int microlink_usb_async_start(void)
 		buf, (int)MLINK_USB_REPORT_TOTAL_LEN,
 		microlink_usb_async_cb, NULL, 0);
 
-	if (libusb_submit_transfer(async_xfer) != 0) {
-		upsdebugx(1, "microlink_usb: failed to submit the initial async "
-			"interrupt-IN transfer");
+	async_queue_head = 0;
+	async_queue_count = 0;
+
+	/* Start the pump before submitting, so a thread-creation failure leaves
+	 * nothing outstanding. With nothing submitted yet the pump just times out
+	 * every 50ms. */
+	async_pump_stop = 0;
+	if (pthread_create(&async_pump_tid, NULL, microlink_usb_async_pump, NULL) != 0) {
+		upsdebugx(1, "microlink_usb: failed to start the async pump thread");
 		libusb_free_transfer(async_xfer);
 		free(buf);
 		async_xfer = NULL;
 		return 0;
 	}
 
-	async_queue_head = 0;
-	async_queue_count = 0;
+	/* Set before submitting: once submitted, the callback may run on the
+	 * pump thread at any time and clear it. */
+	pthread_mutex_lock(&async_lock);
 	async_xfer_active = 1;
+	pthread_mutex_unlock(&async_lock);
 
-	async_pump_stop = 0;
-	if (pthread_create(&async_pump_tid, NULL, microlink_usb_async_pump, NULL) != 0) {
-		upsdebugx(1, "microlink_usb: failed to start the async pump thread, "
-			"abandoning the just-submitted transfer and falling back to "
-			"synchronous reads");
-		/* Nothing will service the event loop until some later synchronous
-		 * call incidentally does, so request cancellation now and then walk
-		 * away exactly like the timeout path in microlink_usb_async_stop()
-		 * below. */
-		libusb_cancel_transfer(async_xfer);
-		async_xfer->user_data = (void *)1;
-		async_xfer = NULL;
+	if (libusb_submit_transfer(async_xfer) != 0) {
+		upsdebugx(1, "microlink_usb: failed to submit the initial async "
+			"interrupt-IN transfer");
+		async_pump_stop = 1;
+		pthread_join(async_pump_tid, NULL);
+		pthread_mutex_lock(&async_lock);
 		async_xfer_active = 0;
-		async_queue_head = 0;
-		async_queue_count = 0;
+		pthread_mutex_unlock(&async_lock);
+		libusb_free_transfer(async_xfer);
+		free(buf);
+		async_xfer = NULL;
 		return 0;
 	}
 
@@ -1042,8 +1061,9 @@ static int microlink_usb_async_start(void)
  * during a USB reset), so cancel it and wait, bounded, for confirmation. If
  * the bound is hit - realistically only when the device is already too wedged
  * to answer a cancel, i.e. exactly what leads here - mark the transfer
- * abandoned via user_data and let its callback free it whenever libusb
- * eventually completes it. Never touch it again after that. */
+ * abandoned via user_data and let its callback free it if libusb completes it
+ * before the handle is closed (see microlink_usb_async_reap_abandoned()).
+ * Never touch it again after that. */
 static void microlink_usb_async_stop(void)
 {
 	int i;
@@ -1068,9 +1088,11 @@ static void microlink_usb_async_stop(void)
 
 		if (async_xfer_active) {
 			upsdebugx(1, "microlink_usb: async transfer did not confirm "
-				"cancellation in time, abandoning it (it will free itself "
-				"once libusb eventually completes it)");
+				"cancellation in time, abandoning it");
 			async_xfer->user_data = (void *)1;
+			pthread_mutex_lock(&async_lock);
+			async_abandoned_count++;
+			pthread_mutex_unlock(&async_lock);
 			async_xfer = NULL;
 			async_xfer_active = 0;
 			async_queue_head = 0;
@@ -1084,6 +1106,41 @@ static void microlink_usb_async_stop(void)
 	async_xfer = NULL;
 	async_queue_head = 0;
 	async_queue_count = 0;
+}
+
+/* Give abandoned transfers a bounded chance to complete before the handle is
+ * closed: after a bus reset the kernel discards their URBs, and reaping them
+ * here runs the callback that frees them. Only call with the pump stopped, so
+ * this is the sole caller of libusb_handle_events*(). */
+static void microlink_usb_async_reap_abandoned(void)
+{
+	int i;
+	unsigned int pending = 0;
+
+	for (i = 0; i < 50; i++) {
+		struct timeval tv;
+
+		pthread_mutex_lock(&async_lock);
+		pending = async_abandoned_count;
+		pthread_mutex_unlock(&async_lock);
+		if (pending == 0) {
+			return;
+		}
+
+		tv.tv_sec = 0;
+		tv.tv_usec = 20000;
+		libusb_handle_events_timeout_completed(nut_libusb_get_context(), &tv, NULL);
+	}
+
+	upsdebugx(1, "microlink_usb: %u abandoned async transfer(s) still "
+		"pending at close, leaking them", pending);
+
+	/* The caller closes the handle next, after which libusb never calls
+	 * these callbacks, so stop counting them. No thread handles events
+	 * until then. */
+	pthread_mutex_lock(&async_lock);
+	async_abandoned_count = 0;
+	pthread_mutex_unlock(&async_lock);
 }
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
