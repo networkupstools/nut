@@ -90,6 +90,7 @@ char * filter_path(const char * source);
  * Only map to them for old MSVC (before Visual Studio 2015, _MSC_VER 1900)
  * which lacked C99 snprintf(); MinGW-w64 always provides the C99 ones,
  * and these macros used to override them (as they are not macros there).
+ * TOTHINK: Consider wrapper methods that would ensure C99 semantics?
  */
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 # ifndef snprintf
