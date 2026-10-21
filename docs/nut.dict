@@ -2357,6 +2357,7 @@ gettextize
 getval
 getvar
 gh
+ghqr
 gif
 gio
 gitcache
@@ -3823,6 +3824,7 @@ wc
 wdi
 webserver
 wf
+wg
 wget
 whitespace
 wiki
