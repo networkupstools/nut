@@ -667,6 +667,9 @@ https://github.com/networkupstools/nut/milestone/13
       not do so for single-driver runs -- addressed with this release. [#3302]
 
  - common code:
+    * Fixed strict Clang conversion warnings. Process-name lookup now checks
+      the symlink size before allocation and retains the full signed byte
+      count returned when reading the link. [PR #3770]
     * Driver help now prints identical option names, types and descriptions
       only once, reducing repeated entries from protocol subdrivers.
       Configuration handling and the parsable `-L` list are unchanged.
@@ -741,6 +744,8 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
+      annotation warning in the C client library. [PR #3770]
     * Introduction of `nutauth.conf` support caused some rearrangement of
       codebase layout in the library, and this in turn caused some fallout.
       Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
