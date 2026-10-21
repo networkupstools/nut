@@ -12,7 +12,8 @@ set MSYSTEM=MINGW64
 REM Oh the joys of shell scripting with strings passed through CMD:
 REM Note: currently Python installation path with MSYS is buggy [#1584]
 REM Time limit: see CI_DEADLINE_EPOCH in appveyor.yml
-C:\msys64\usr\bin\bash -lc 'date -u; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if [ "$R" -le 0 ] ; then exit 124 ; fi ; set -e ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" timeout -k 30 "$R" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%"'
+REM The "ccache -c" after the bundle build: see 04-build_script.bat
+C:\msys64\usr\bin\bash -lc 'date -u; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if [ "$R" -le 0 ] ; then exit 124 ; fi ; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" timeout -k 30 "$R" make -s -j 8 install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; RES=$? ; if ! PATH="/mingw64/bin:$PATH" ccache -c ; then echo "SKIP: Could not clean up ccache" ; fi ; exit "$RES" '
 if errorlevel 1 exit /b %ERRORLEVEL%
 C:\msys64\usr\bin\bash -lc 'date -u'
 pushd .inst
