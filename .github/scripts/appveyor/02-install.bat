@@ -45,5 +45,5 @@ REM Preserve the current working directory:
 set CHERE_INVOKING=yes
 REM Start a 64 bit Mingw environment:
 set MSYSTEM=MINGW64
-C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true ; if [ x"${CCACHE_MAXSIZE}" = x ] ; then ccache -o max_size=750M ; fi || true '
+C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; if ! ccache -sv ; then echo "SKIP: Could not query ccache stats" ; fi ; ccache -o compression=true ; echo "ccache settings: max_size=`ccache -k max_size` compression=`ccache -k compression`" ; true '
 if errorlevel 1 exit /b %ERRORLEVEL%
