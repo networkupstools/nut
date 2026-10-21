@@ -286,8 +286,25 @@ static unsigned int watchdog_seconds = 0; /* watchdog timeout currently set on t
 static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag currently set on the device */
 static int watchdog_known = 0; /* set once the device reported or accepted its watchdog setting */
 static int shutdown_abort_on_error = 0; /* 1 when 'shutdown_mode' asks the driver shutdown handler to stop at the first failure */
-static unsigned int min_low_transfer, max_low_transfer; /* reported transfer voltage ranges */
-static unsigned int min_high_transfer, max_high_transfer;
+/* The two settable transfer voltages: the variable each one is published as
+ * and the field it occupies in the TXV reply.  The table order must match the
+ * transfer_voltage_id values, which are used as its indexes. */
+enum transfer_voltage_id {
+	TRANSFER_VOLTAGE_LOW,
+	TRANSFER_VOLTAGE_HIGH,
+	TRANSFER_VOLTAGE_COUNT
+};
+
+static const struct transfer_voltage_setting {
+	const char *varname;
+	unsigned int field;
+} transfer_voltage_settings[TRANSFER_VOLTAGE_COUNT] = {
+	{ "input.transfer.low", 0 },
+	{ "input.transfer.high", 1 }
+};
+
+static unsigned int min_transfer[TRANSFER_VOLTAGE_COUNT]; /* reported minimum */
+static unsigned int max_transfer[TRANSFER_VOLTAGE_COUNT]; /* reported maximum */
 
 /* message types */
 #define POLL             'P'
@@ -589,64 +606,65 @@ static void set_identification(const char *val) {
 	}
 }
 
-static int get_transfer_voltage_low(void) {
+static int get_transfer_voltage(enum transfer_voltage_id id) {
+	const struct transfer_voltage_setting *setting =
+		&transfer_voltage_settings[id];
 	char response[MAX_RESPONSE_LENGTH];
-	char low[32];
+	char value[32];
 
 	if (do_command(POLL, TRANSFER_VOLTAGE, "", response, sizeof(response)) > 0
-	    && get_field(response, 0, low, sizeof(low))) {
-		dstate_setinfo("input.transfer.low", "%d", atoi(low));
+	    && get_field(response, setting->field, value, sizeof(value))) {
+		dstate_setinfo(setting->varname, "%d", atoi(value));
 		return 1;
 	}
 
 	return 0;
 }
 
-static void set_transfer_voltage_low(int val) {
+static void set_transfer_voltage(enum transfer_voltage_id id, int val) {
+	const struct transfer_voltage_setting *setting =
+		&transfer_voltage_settings[id];
 	char response[MAX_RESPONSE_LENGTH];
-	char low[32], high[32];
+	int voltages[TRANSFER_VOLTAGE_COUNT];
+	unsigned int i;
 
 	if (do_command(POLL, TRANSFER_VOLTAGE, "", response, sizeof(response)) <= 0)
 		return;
-	if (!get_field(response, 0, low, sizeof(low))
-	    || !get_field(response, 1, high, sizeof(high)))
-		return;
-	if (val == atoi(low))
-		return;
-	snprintf(response, sizeof(response), "%d;%d", val, atoi(high));
-	if (!send_set_command(TRANSFER_VOLTAGE, response))
-		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s %s]", __func__, TRANSFER_VOLTAGE, response);
-}
+	/* the device takes both voltages at once, and this driver must not
+	 * change the other one: leave the setting alone unless both are
+	 * readable */
+	for (i = 0; i < TRANSFER_VOLTAGE_COUNT; i++) {
+		char value[32];
 
-static int get_transfer_voltage_high(void) {
-	char response[MAX_RESPONSE_LENGTH];
-	char high[32];
-
-	if (do_command(POLL, TRANSFER_VOLTAGE, "", response, sizeof(response)) > 0
-	    && get_field(response, 1, high, sizeof(high))) {
-		dstate_setinfo("input.transfer.high", "%d", atoi(high));
-		return 1;
+		if (!get_field(response, transfer_voltage_settings[i].field,
+			value, sizeof(value)))
+			return;
+		voltages[i] = atoi(value);
 	}
-
-	return 0;
-}
-
-static void set_transfer_voltage_high(int val) {
-	char response[MAX_RESPONSE_LENGTH];
-	char low[32], high[32];
-
-	if (do_command(POLL, TRANSFER_VOLTAGE, "", response, sizeof(response)) <= 0)
+	if (val == voltages[id])
 		return;
-	if (!get_field(response, 0, low, sizeof(low))
-	    || !get_field(response, 1, high, sizeof(high)))
-		return;
-	if (val == atoi(high))
-		return;
-	snprintf(response, sizeof(response), "%d;%d", atoi(low), val);
+	voltages[id] = val;
+	snprintf(response, sizeof(response), "%d;%d",
+		voltages[TRANSFER_VOLTAGE_LOW],
+		voltages[TRANSFER_VOLTAGE_HIGH]);
 	if (!send_set_command(TRANSFER_VOLTAGE, response))
 		upslogx(LOG_ERR, "%s: device rejected or did not answer "
-			"[%s %s]", __func__, TRANSFER_VOLTAGE, response);
+			"[%s %s] for %s", __func__, TRANSFER_VOLTAGE, response,
+			setting->varname);
+}
+
+/* Store one of the transfer voltage range fields of a RAT reply, leaving the
+ * current value alone when the device does not report a usable one. */
+static void set_transfer_range(const char *response, unsigned int field,
+	unsigned int *target) {
+	char value[32];
+	int parsed;
+
+	if (!get_field(response, field, value, sizeof(value)))
+		return;
+	parsed = atoi(value);
+	if (parsed >= 0)
+		*target = (unsigned int)parsed;
 }
 
 static int get_sensitivity(void) {
@@ -1257,6 +1275,51 @@ static const struct shutdown_command shutdown_commands[] = {
 	{ "shutdown.stayoff",         0, 1, 0 }
 };
 
+/* How an instant command affects the power state, for the upshandler.h
+ * logging macros: some change it, some may, and many do not touch it. */
+#define INSTCMD_POWERSTATE_NONE   0
+#define INSTCMD_POWERSTATE_MAYBE  1
+#define INSTCMD_POWERSTATE_CHANGE 2
+
+/* Log an instant command before it is sent, using the classification kept in
+ * the command tables below.  This is a macro so that the logging macros still
+ * report instcmd() as the function that sent the command. */
+#define log_instcmd_powerstate(powerstate, cmdname, extra)	do {	\
+	if ((powerstate) == INSTCMD_POWERSTATE_CHANGE)			\
+		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);	\
+	else if ((powerstate) == INSTCMD_POWERSTATE_MAYBE)		\
+		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);	\
+	} while (0)
+
+/* Commands that switch every outlet bank ("load.off", "load.on") and, with
+ * the same name after "outlet.<n>.", a single bank. */
+static const struct relay_command {
+	const char *name;	/* instant command name */
+	const char *relay;	/* protocol RELAY_* command */
+	int powerstate;		/* INSTCMD_POWERSTATE_* value */
+} relay_commands[] = {
+	{ "load.off", RELAY_OFF, INSTCMD_POWERSTATE_CHANGE },
+	{ "load.on",  RELAY_ON,  INSTCMD_POWERSTATE_MAYBE }
+};
+
+/* Commands that are a single SET frame with a fixed parameter.  The buzzer
+ * entry only silences the alarm that is currently sounding: enabling and
+ * disabling the buzzer is a device setting (it survives restarts), so it is
+ * exposed as the read/write ups.beeper.status variable instead of a pair of
+ * instant commands. */
+static const struct simple_command {
+	const char *name;	/* instant command name */
+	const char *command;	/* protocol SET command */
+	const char *parameters;	/* parameter sent with it */
+	int powerstate;		/* INSTCMD_POWERSTATE_* value */
+} simple_commands[] = {
+	{ "beeper.mute",        BUZZER,              "2", INSTCMD_POWERSTATE_NONE },
+	{ "clear.fault.record", BYPASS_REASON,       "0", INSTCMD_POWERSTATE_NONE },
+	{ "shutdown.stop",      TSU_SHUTDOWN_ACTION, "0", INSTCMD_POWERSTATE_MAYBE },
+	{ "test.battery.start", TEST,                "3", INSTCMD_POWERSTATE_MAYBE },
+	{ "test.battery.stop",  TEST,                "0", INSTCMD_POWERSTATE_MAYBE }
+};
+
 /* Switch one outlet bank: the device addresses the banks with "<n>;1",
  * starting at 1, and the RELAY_* command says what to do with it. */
 static int switch_outlet(unsigned int outlet, const char *relay) {
@@ -1333,16 +1396,12 @@ static int shutdown_command(const char *cmdname, const char *extra,
 	return STAT_INSTCMD_HANDLED;
 }
 
+/* Dispatch an instant command.  The command names, their frames and how they
+ * affect the power state all come from the tables above, which are also used
+ * to register the commands (see add_instant_commands()), so a command cannot
+ * be advertised without being handled or handled without being advertised. */
 static int instcmd(const char *cmdname, const char *extra)
 {
-	static const struct {
-		const char *suffix;	/* command suffix */
-		const char *relay;	/* protocol RELAY_* command */
-		int maybepower;		/* 1: only possibly affects power state */
-	} outlet_commands[] = {
-		{ "load.off", RELAY_OFF, 0 },
-		{ "load.on", RELAY_ON, 1 }
-	};
 	char command[32];	/* "outlet.<n>.load.on" and friends */
 	unsigned int outlet, cmd_index;
 
@@ -1351,47 +1410,46 @@ static int instcmd(const char *cmdname, const char *extra)
 	/* Switching the outlets is a multi-frame command: switch_outlets()
 	 * stops at the first frame the device rejects or does not answer, so
 	 * that a failure is not reported as a success. */
-	if (!strcasecmp(cmdname, "load.off")) {
-		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		return switch_outlets(RELAY_OFF);
-	}
-	if (!strcasecmp(cmdname, "load.on")) {
-		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		return switch_outlets(RELAY_ON);
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
+		cmd_index++) {
+		if (strcasecmp(cmdname, relay_commands[cmd_index].name))
+			continue;
+
+		log_instcmd_powerstate(relay_commands[cmd_index].powerstate,
+			cmdname, extra);
+		return switch_outlets(relay_commands[cmd_index].relay);
 	}
 	/* one set of commands per outlet; these take no value */
-	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(outlet_commands); cmd_index++) {
-		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+	for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+		for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
+			cmd_index++) {
 			snprintf(command, sizeof(command), "outlet.%u.%s",
-				outlet, outlet_commands[cmd_index].suffix);
+				outlet, relay_commands[cmd_index].name);
 			if (strcasecmp(cmdname, command))
 				continue;
 
-			if (outlet_commands[cmd_index].maybepower)
-				upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-			else
-				upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-
+			log_instcmd_powerstate(
+				relay_commands[cmd_index].powerstate,
+				cmdname, extra);
 			return switch_outlet(outlet,
-				outlet_commands[cmd_index].relay);
+				relay_commands[cmd_index].relay);
 		}
 	}
-	/* buzzer: BUZ 2 silences the alarm that is currently sounding.
-	 * Enabling/disabling the buzzer is a device setting (it survives
-	 * restarts), so it is exposed as the read/write ups.beeper.status
-	 * variable instead of a pair of instant commands. */
-	if (!strcasecmp(cmdname, "beeper.mute")) {
-		return send_set_or_fail(BUZZER, "2");
+	/* commands that are a single SET frame */
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(simple_commands);
+		cmd_index++) {
+		if (strcasecmp(cmdname, simple_commands[cmd_index].name))
+			continue;
+
+		log_instcmd_powerstate(
+			simple_commands[cmd_index].powerstate, cmdname, extra);
+		return send_set_or_fail(simple_commands[cmd_index].command,
+			simple_commands[cmd_index].parameters);
 	}
-	if (!strcasecmp(cmdname, "clear.fault.record")) {
-		/* reset the bypass reason recorded by the device */
-		return send_set_or_fail(BYPASS_REASON, "0");
-	}
-	if (!strcasecmp(cmdname, "reset.watchdog")) {
-		/* kick the watchdog: this takes no value, it sends the
-		 * setting the driver has, which restarts the device timer */
+	/* kick the watchdog: this takes no value, it sends the setting the
+	 * driver has, which restarts the device timer */
+	if (!strcasecmp(cmdname, "reset.watchdog"))
 		return reset_watchdog();
-	}
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
 		cmd_index++) {
 		if (!strcasecmp(cmdname, shutdown_commands[cmd_index].name)) {
@@ -1399,27 +1457,52 @@ static int instcmd(const char *cmdname, const char *extra)
 				&shutdown_commands[cmd_index]);
 		}
 	}
-	if (!strcasecmp(cmdname, "shutdown.stop")) {
-		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		/* SDA 0 cancels a scheduled shutdown; the auto-reboot
-		 * setting is left as it is */
-		return send_set_or_fail(TSU_SHUTDOWN_ACTION, "0");
-	}
-	if (!strcasecmp(cmdname, "test.battery.start")) {
-		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		return send_set_or_fail(TEST, "3");
-	}
-	if (!strcasecmp(cmdname, "test.battery.stop")) {
-		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		return send_set_or_fail(TEST, "0");
-	}
 
 	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
+/* Register every instant command the driver supports.  The names come from
+ * the same tables instcmd() dispatches on, so the two cannot drift apart. */
+static void add_instant_commands(void)
+{
+	char command[32];	/* "outlet.<n>.load.on" and friends */
+	unsigned int outlet, cmd_index;
+
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(simple_commands);
+		cmd_index++) {
+		dstate_addcmd(simple_commands[cmd_index].name);
+	}
+	dstate_addcmd("reset.watchdog");
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
+		cmd_index++) {
+		dstate_addcmd(shutdown_commands[cmd_index].name);
+	}
+
+	/* the relay commands switch outlets (load.off and load.on all of
+	 * them, outlet.n.load.* a single bank), so they are only registered
+	 * when the device reports any */
+	if (!ups.outlets)
+		return;
+
+	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
+		cmd_index++) {
+		dstate_addcmd(relay_commands[cmd_index].name);
+	}
+	for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+		for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
+			cmd_index++) {
+			snprintf(command, sizeof(command), "outlet.%u.%s",
+				outlet, relay_commands[cmd_index].name);
+			dstate_addcmd(command);
+		}
+	}
+}
+
 static int setvar(const char *varname, const char *val)
 {
+	unsigned int i, voltage;
+
 	upsdebug_SET_STARTING(varname, val);
 
 	if (!strcasecmp(varname, "ups.id")) {
@@ -1539,32 +1622,21 @@ static int setvar(const char *varname, const char *val)
 		get_eco_mode();
 		return STAT_SET_HANDLED;
 	}
-	if (!strcasecmp(varname, "input.transfer.low")) {
-		unsigned int voltage;
+	for (i = 0; i < TRANSFER_VOLTAGE_COUNT; i++) {
+		const struct transfer_voltage_setting *setting =
+			&transfer_voltage_settings[i];
 
-		if (!parse_transfer_voltage(val, min_low_transfer,
-			max_low_transfer, &voltage)) {
+		if (strcasecmp(varname, setting->varname))
+			continue;
+		if (!parse_transfer_voltage(val, min_transfer[i],
+			max_transfer[i], &voltage)) {
 			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
 				"(expected %u..%u)", varname, val,
-				min_low_transfer, max_low_transfer);
+				min_transfer[i], max_transfer[i]);
 			return STAT_SET_FAILED;
 		}
-		set_transfer_voltage_low((int)voltage);
-		get_transfer_voltage_low();
-		return STAT_SET_HANDLED;
-	}
-	if (!strcasecmp(varname, "input.transfer.high")) {
-		unsigned int voltage;
-
-		if (!parse_transfer_voltage(val, min_high_transfer,
-			max_high_transfer, &voltage)) {
-			upslogx(LOG_ERR, "setvar(%s): invalid value '%s' "
-				"(expected %u..%u)", varname, val,
-				min_high_transfer, max_high_transfer);
-			return STAT_SET_FAILED;
-		}
-		set_transfer_voltage_high((int)voltage);
-		get_transfer_voltage_high();
+		set_transfer_voltage((enum transfer_voltage_id)i, (int)voltage);
+		get_transfer_voltage((enum transfer_voltage_id)i);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "input.sensitivity")) {
@@ -1614,14 +1686,15 @@ void upsdrv_initinfo(void)
 {
 	char response[MAX_RESPONSE_LENGTH];
 	char buf[32];	/* "outlet.<n>.load.on" and friends */
+	char rangevar[48];	/* "<varname>.min" and "<varname>.max" */
 	char value[32];
 	unsigned int i;
 
 	if (!init_comm())
 		fatalx(EXIT_FAILURE, "Unable to detect Tripp Lite SmartOnline UPS on port %s\n",
 			device_path);
-	min_low_transfer = max_low_transfer = 0;
-	min_high_transfer = max_high_transfer = 0;
+	for (i = 0; i < TRANSFER_VOLTAGE_COUNT; i++)
+		min_transfer[i] = max_transfer[i] = 0;
 
 	/* get all the read-only fields here */
 	if (do_command(POLL, MANUFACTURER, "", response, sizeof(response)) > 0)
@@ -1640,26 +1713,18 @@ void upsdrv_initinfo(void)
 		if (get_field(response, 14, value, sizeof(value)))
 			dstate_setinfo("battery.voltage.nominal", "%d",
 				atoi(value));
-		if (get_field(response, 10, value, sizeof(value))) {
-			int ipv = atoi(value);
-			if (ipv >= 0)
-				min_low_transfer = (unsigned int)ipv;
-		}
-		if (get_field(response, 9, value, sizeof(value))) {
-			int ipv = atoi(value);
-			if (ipv >= 0)
-				max_low_transfer = (unsigned int)ipv;
-		}
-		if (get_field(response, 12, value, sizeof(value))) {
-			int ipv = atoi(value);
-			if (ipv >= 0)
-				min_high_transfer = (unsigned int)ipv;
-		}
-		if (get_field(response, 11, value, sizeof(value))) {
-			int ipv = atoi(value);
-			if (ipv >= 0)
-				max_high_transfer = (unsigned int)ipv;
-		}
+		/* the transfer voltage ranges: field 10 is the lowest settable
+		 * low transfer, 9 the highest settable low transfer, 12 the
+		 * lowest settable high transfer and 11 the highest settable
+		 * high transfer */
+		set_transfer_range(response, 10,
+			&min_transfer[TRANSFER_VOLTAGE_LOW]);
+		set_transfer_range(response, 9,
+			&max_transfer[TRANSFER_VOLTAGE_LOW]);
+		set_transfer_range(response, 12,
+			&min_transfer[TRANSFER_VOLTAGE_HIGH]);
+		set_transfer_range(response, 11,
+			&max_transfer[TRANSFER_VOLTAGE_HIGH]);
 	}
 	if (do_command(POLL, OUTLET_RELAYS, "", response, sizeof(response)) > 0) {
 		int outlet_count = atoi(response);
@@ -1716,25 +1781,33 @@ void upsdrv_initinfo(void)
 		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.id", 100);
 	}
-	if (get_transfer_voltage_low() && max_low_transfer) {
-		dstate_setflags("input.transfer.low", ST_FLAG_RW);
-		for (i = min_low_transfer; i <= max_low_transfer; i++)
-			dstate_addenum("input.transfer.low", "%u", i);
-	}
-	if (get_transfer_voltage_high() && max_high_transfer) {
-		dstate_setflags("input.transfer.high", ST_FLAG_RW);
-		for (i = min_high_transfer; i <= max_high_transfer; i++)
-			dstate_addenum("input.transfer.high", "%u", i);
+	for (i = 0; i < TRANSFER_VOLTAGE_COUNT; i++) {
+		const struct transfer_voltage_setting *setting =
+			&transfer_voltage_settings[i];
+		unsigned int voltage;
+
+		if (!get_transfer_voltage((enum transfer_voltage_id)i))
+			continue;
+		if (!max_transfer[i])
+			continue;
+		dstate_setflags(setting->varname, ST_FLAG_RW);
+		for (voltage = min_transfer[i];
+			voltage <= max_transfer[i]; voltage++) {
+			dstate_addenum(setting->varname, "%u", voltage);
+		}
 	}
 	/* report the settable ranges, so that the values accepted by setvar()
 	 * are visible to clients */
-	if (max_low_transfer) {
-		dstate_setinfo("input.transfer.low.min", "%u", min_low_transfer);
-		dstate_setinfo("input.transfer.low.max", "%u", max_low_transfer);
-	}
-	if (max_high_transfer) {
-		dstate_setinfo("input.transfer.high.min", "%u", min_high_transfer);
-		dstate_setinfo("input.transfer.high.max", "%u", max_high_transfer);
+	for (i = 0; i < TRANSFER_VOLTAGE_COUNT; i++) {
+		const struct transfer_voltage_setting *setting =
+			&transfer_voltage_settings[i];
+
+		if (!max_transfer[i])
+			continue;
+		snprintf(rangevar, sizeof(rangevar), "%s.min", setting->varname);
+		dstate_setinfo(rangevar, "%u", min_transfer[i]);
+		snprintf(rangevar, sizeof(rangevar), "%s.max", setting->varname);
+		dstate_setinfo(rangevar, "%u", max_transfer[i]);
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
@@ -1742,28 +1815,10 @@ void upsdrv_initinfo(void)
 			dstate_addenum("input.sensitivity", "%s",
 				sensitivity[i].name);
 	}
-	/* load.off, load.on and the commands below switch individual outlet
-	 * outlets, so they are only registered when the device reports any */
-	if (ups.outlets) {
-		dstate_addcmd("load.off");
-		dstate_addcmd("load.on");
-		for (i = 1; i <= (unsigned int)ups.outlets; i++) {
-			snprintf(buf, sizeof(buf), "outlet.%u.load.off", i);
-			dstate_addcmd(buf);
-			snprintf(buf, sizeof(buf), "outlet.%u.load.on", i);
-			dstate_addcmd(buf);
-		}
-	}
-	dstate_addcmd("beeper.mute");
-	dstate_addcmd("clear.fault.record");
-	dstate_addcmd("reset.watchdog");
-	dstate_addcmd("shutdown.reboot");
-	dstate_addcmd("shutdown.reboot.graceful");
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.stayoff");
-	dstate_addcmd("shutdown.stop");
-	dstate_addcmd("test.battery.start");
-	dstate_addcmd("test.battery.stop");
+	/* register every command, taking the names from the same tables that
+	 * instcmd() dispatches on (load.off, load.on and the outlet commands
+	 * are only added when the device reports outlet banks) */
+	add_instant_commands();
 
 	/* add all the variables that change regularly */
 	upsdrv_updateinfo();
