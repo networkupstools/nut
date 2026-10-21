@@ -738,41 +738,75 @@ static int auto_reboot(int enable) {
 	return 1;
 }
 
-/* Read the auto-reboot setting (whether the device starts again when mains
- * is (re)applied) and publish it as ups.start.auto; 1 = yes, 2 = no.
- * This is auxiliary information, so a missing or unexpected answer must not
- * mark the whole UPS as stale: a warning is logged and the previously
- * published value is left in place. */
-static int get_auto_reboot(void) {
+/* A device setting that the protocol reports as a single number: 1 selects
+ * the first name published in the variable, 2 the second one.  The variable
+ * name and both names live in the table, so that reading any of these
+ * settings is the same code.  The table order must match the identifiers
+ * below, which are used as its indexes. */
+enum two_state_setting_id {
+	TWO_STATE_AUTO_REBOOT,
+	TWO_STATE_ECO_MODE,
+	TWO_STATE_BEEPER
+};
+
+struct two_state_setting {
+	const char *command;	/* protocol POLL command */
+	const char *varname;	/* variable the setting is published as */
+	const char *what;	/* description used in the log messages */
+	const char *on_name;	/* name published for value 1 */
+	const char *off_name;	/* name published for value 2 */
+};
+
+static const struct two_state_setting two_state_settings[] = {
+	{ AUTO_REBOOT, "ups.start.auto", "auto-reboot setting",
+		"yes", "no" },
+	{ ECONOMIC_MODE, "input.eco.switchable", "ECO setting",
+		"ECO", "normal" },
+	{ ENABLE_BUZZER, "ups.beeper.status", "buzzer setting",
+		"enabled", "disabled" }
+};
+
+/* Read a two-state setting (see above) and publish it.  This is auxiliary
+ * information, so a missing or unexpected answer must not mark the whole
+ * UPS as stale: a warning is logged and the previously published value is
+ * left in place.  Returns 1 when the setting was published. */
+static int get_two_state_setting(enum two_state_setting_id id) {
+	const struct two_state_setting *setting = &two_state_settings[id];
 	char response[MAX_RESPONSE_LENGTH];
-	unsigned int mode;
+	unsigned int value;
 
-	if (do_command(POLL, AUTO_REBOOT, "", response, sizeof(response)) <= 0) {
-		upslogx(LOG_WARNING, "%s: could not read the auto-reboot "
-			"setting [%s]; keeping the last known value", __func__,
-			AUTO_REBOOT);
+	if (do_command(POLL, setting->command, "", response, sizeof(response)) <= 0) {
+		upslogx(LOG_WARNING, "%s: could not read the %s [%s]; "
+			"keeping the last known value", __func__, setting->what,
+			setting->command);
 		return 0;
 	}
-	if (!str_to_uint_strict(response, &mode, 10)) {
+	if (!str_to_uint_strict(response, &value, 10)) {
 		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, AUTO_REBOOT,
-			response);
+			"keeping the last known value", __func__,
+			setting->command, response);
 		return 0;
 	}
 
-	switch (mode) {
+	switch (value) {
 	case 1:
-		dstate_setinfo("ups.start.auto", "%s", "yes");
+		dstate_setinfo(setting->varname, "%s", setting->on_name);
 		return 1;
 	case 2:
-		dstate_setinfo("ups.start.auto", "%s", "no");
+		dstate_setinfo(setting->varname, "%s", setting->off_name);
 		return 1;
 	default:
 		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, AUTO_REBOOT,
-			response);
+			"keeping the last known value", __func__,
+			setting->command, response);
 		return 0;
 	}
+}
+
+/* Read the auto-reboot setting (whether the device starts again when mains
+ * is (re)applied) and publish it as ups.start.auto; 1 = yes, 2 = no. */
+static int get_auto_reboot(void) {
+	return get_two_state_setting(TWO_STATE_AUTO_REBOOT);
 }
 
 /* Read the battery installation date (BRD field 0, formatted as YYYYMMDD).
@@ -1014,35 +1048,7 @@ static int get_bypass_reason(void) {
  * answer the poll: in that case a warning is logged and the published value
  * is left alone. */
 static int get_eco_mode(void) {
-	char response[MAX_RESPONSE_LENGTH];
-	unsigned int mode;
-
-	if (do_command(POLL, ECONOMIC_MODE, "", response, sizeof(response)) <= 0) {
-		upslogx(LOG_WARNING, "%s: could not read the ECO setting "
-			"[%s]; keeping the last known value", __func__,
-			ECONOMIC_MODE);
-		return 0;
-	}
-	if (!str_to_uint_strict(response, &mode, 10)) {
-		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, ECONOMIC_MODE,
-			response);
-		return 0;
-	}
-
-	switch (mode) {
-	case 1:
-		dstate_setinfo("input.eco.switchable", "%s", "ECO");
-		return 1;
-	case 2:
-		dstate_setinfo("input.eco.switchable", "%s", "normal");
-		return 1;
-	default:
-		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__,
-			ECONOMIC_MODE, response);
-		return 0;
-	}
+	return get_two_state_setting(TWO_STATE_ECO_MODE);
 }
 
 /* Switch between high efficiency (1) and high quality (2) operation.  The
@@ -1066,35 +1072,7 @@ static void set_eco_mode(int mode) {
  * performed by the beeper.mute command) is a transient state that the device
  * does not report. */
 static int get_beeper_status(void) {
-	char response[MAX_RESPONSE_LENGTH];
-	unsigned int status;
-
-	if (do_command(POLL, ENABLE_BUZZER, "", response, sizeof(response)) <= 0) {
-		upslogx(LOG_WARNING, "%s: could not read the buzzer setting "
-			"[%s]; keeping the last known value", __func__,
-			ENABLE_BUZZER);
-		return 0;
-	}
-	if (!str_to_uint_strict(response, &status, 10)) {
-		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, ENABLE_BUZZER,
-			response);
-		return 0;
-	}
-
-	switch (status) {
-	case 1:
-		dstate_setinfo("ups.beeper.status", "%s", "enabled");
-		return 1;
-	case 2:
-		dstate_setinfo("ups.beeper.status", "%s", "disabled");
-		return 1;
-	default:
-		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, ENABLE_BUZZER,
-			response);
-		return 0;
-	}
+	return get_two_state_setting(TWO_STATE_BEEPER);
 }
 
 /* Enable (1) or disable (2) the buzzer; this is a device setting, unlike
@@ -1261,6 +1239,100 @@ invalid:
 	return 0;
 }
 
+/* One shutdown-related instant command: the auto-reboot setting (ARB) it
+ * needs, where its default shutdown delay comes from and whether the load is
+ * expected to restart right behind the off (timed return) or only when mains
+ * is (re)applied. */
+struct shutdown_command {
+	const char *name;	/* instant command name */
+	int autoreboot;		/* ARB value to set: 1 = yes, 0 = no */
+	int use_offdelay;	/* 1: default value is the offdelay setting */
+	int timed_return;	/* 1: the load restarts right behind the off */
+};
+
+static const struct shutdown_command shutdown_commands[] = {
+	{ "shutdown.reboot",          1, 1, 1 },
+	{ "shutdown.reboot.graceful", 1, 0, 1 },
+	{ "shutdown.return",          1, 1, 0 },
+	{ "shutdown.stayoff",         0, 1, 0 }
+};
+
+/* Switch one outlet bank: the device addresses the banks with "<n>;1",
+ * starting at 1, and the RELAY_* command says what to do with it. */
+static int switch_outlet(unsigned int outlet, const char *relay) {
+	char parm[20];
+
+	snprintf(parm, sizeof(parm), "%u;1", outlet);
+	return send_set_or_fail(relay, parm);
+}
+
+/* Send 'relay' to every outlet bank.  This is a multi-frame command: stop
+ * at the first frame the device rejects or does not answer, so that a
+ * failure is not reported as a success (the banks that were not reached are
+ * left as they were). */
+static int switch_outlets(const char *relay) {
+	unsigned int outlet;
+
+	for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+		if (switch_outlet(outlet, relay) != STAT_INSTCMD_HANDLED) {
+			return STAT_INSTCMD_FAILED;
+		}
+	}
+
+	return STAT_INSTCMD_HANDLED;
+}
+
+/* The shutdown commands share the same skeleton: set the auto-reboot
+ * setting ("ups.start.auto") to what the shutdown needs, set the restart
+ * (SDR) delay and schedule the shutdown action (SDA). */
+static int shutdown_command(const char *cmdname, const char *extra,
+	const struct shutdown_command *spec)
+{
+	char parm[20];
+	unsigned int delay, return_delay;
+	unsigned int fallback = spec->use_offdelay
+		? offdelay : DEFAULT_GRACEFUL_DELAY;
+
+	if (spec->timed_return) {
+		/* "off[:on]", both in the units the device uses */
+		if (!parse_reboot_delay(cmdname, extra, fallback,
+			&delay, &return_delay)) {
+			return STAT_INSTCMD_FAILED;
+		}
+	} else {
+		if (!get_shutdown_delay(cmdname, extra, fallback, &delay)) {
+			return STAT_INSTCMD_FAILED;
+		}
+		/* no timed return: only mains coming back may start the
+		 * load again */
+		return_delay = 0;
+	}
+
+	upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
+	/* set the auto-reboot and return-delay prerequisites before
+	 * scheduling the shutdown: if either cannot be confirmed, stop here
+	 * and leave the load powered rather than power it off with no
+	 * guaranteed way to come back on */
+	if (!auto_reboot(spec->autoreboot)) {
+		upslogx(LOG_ERR, "%s: could not set or confirm "
+			"ups.start.auto, not powering the load off", cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+	if (!set_start_delay(return_delay)) {
+		upslogx(LOG_ERR, "%s: could not set the return delay, "
+			"not powering the load off", cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	snprintf(parm, sizeof(parm), "%u", delay);
+	if (send_set_or_fail(TSU_SHUTDOWN_ACTION, parm)
+	    != STAT_INSTCMD_HANDLED) {
+		return STAT_INSTCMD_FAILED;
+	}
+
+	return STAT_INSTCMD_HANDLED;
+}
+
 static int instcmd(const char *cmdname, const char *extra)
 {
 	static const struct {
@@ -1271,51 +1343,21 @@ static int instcmd(const char *cmdname, const char *extra)
 		{ "load.off", RELAY_OFF, 0 },
 		{ "load.on", RELAY_ON, 1 }
 	};
-	/* the shutdown commands share the same skeleton: set the auto-reboot
-	 * setting ("ups.start.auto") to what the shutdown needs, set the
-	 * restart (SDR) delay and schedule the shutdown action (SDA) */
-	static const struct {
-		const char *name;	/* instant command name */
-		int autoreboot;		/* ARB value to set: 1 = yes, 0 = no */
-		int use_offdelay;	/* 1: default value is the offdelay setting */
-		int timed_return;	/* 1: the load restarts right behind the off */
-	} shutdown_commands[] = {
-		{ "shutdown.reboot",          1, 1, 1 },
-		{ "shutdown.reboot.graceful", 1, 0, 1 },
-		{ "shutdown.return",          1, 1, 0 },
-		{ "shutdown.stayoff",         0, 1, 0 }
-	};
-	char parm[20];
 	char command[32];	/* "outlet.<n>.load.on" and friends */
 	unsigned int outlet, cmd_index;
-	unsigned int delay, return_delay;
-	unsigned int fallback;
 
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
-	/* Switching the outlets is a multi-frame command: stop at the first
-	 * frame the device rejects or does not answer, so that a failure is
-	 * not reported as a success (the outlets that were not reached are
-	 * left as they were). */
+	/* Switching the outlets is a multi-frame command: switch_outlets()
+	 * stops at the first frame the device rejects or does not answer, so
+	 * that a failure is not reported as a success. */
 	if (!strcasecmp(cmdname, "load.off")) {
 		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
-			snprintf(parm, sizeof(parm), "%u;1", outlet);
-			if (send_set_or_fail(RELAY_OFF, parm)
-			    != STAT_INSTCMD_HANDLED)
-				return STAT_INSTCMD_FAILED;
-		}
-		return STAT_INSTCMD_HANDLED;
+		return switch_outlets(RELAY_OFF);
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
-		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
-			snprintf(parm, sizeof(parm), "%u;1", outlet);
-			if (send_set_or_fail(RELAY_ON, parm)
-			    != STAT_INSTCMD_HANDLED)
-				return STAT_INSTCMD_FAILED;
-		}
-		return STAT_INSTCMD_HANDLED;
+		return switch_outlets(RELAY_ON);
 	}
 	/* one set of commands per outlet; these take no value */
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(outlet_commands); cmd_index++) {
@@ -1330,9 +1372,8 @@ static int instcmd(const char *cmdname, const char *extra)
 			else
 				upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
 
-			snprintf(parm, sizeof(parm), "%u;1", outlet);
-			return send_set_or_fail(outlet_commands[cmd_index].relay,
-				parm);
+			return switch_outlet(outlet,
+				outlet_commands[cmd_index].relay);
 		}
 	}
 	/* buzzer: BUZ 2 silences the alarm that is currently sounding.
@@ -1353,44 +1394,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
 		cmd_index++) {
-		if (strcasecmp(cmdname, shutdown_commands[cmd_index].name))
-			continue;
-
-		fallback = shutdown_commands[cmd_index].use_offdelay
-			? offdelay : DEFAULT_GRACEFUL_DELAY;
-		if (shutdown_commands[cmd_index].timed_return) {
-			/* "off[:on]", both in the units the device uses */
-			if (!parse_reboot_delay(cmdname, extra, fallback,
-				&delay, &return_delay))
-				return STAT_INSTCMD_FAILED;
-		} else {
-			if (!get_shutdown_delay(cmdname, extra, fallback, &delay))
-				return STAT_INSTCMD_FAILED;
-			/* no timed return: only mains coming back may start
-			 * the load again */
-			return_delay = 0;
+		if (!strcasecmp(cmdname, shutdown_commands[cmd_index].name)) {
+			return shutdown_command(cmdname, extra,
+				&shutdown_commands[cmd_index]);
 		}
-
-		upslog_INSTCMD_POWERSTATE_CHANGE(cmdname, extra);
-		/* set the auto-reboot and return-delay prerequisites before
-		 * scheduling the shutdown: if either cannot be confirmed,
-		 * stop here and leave the load powered rather than power it
-		 * off with no guaranteed way to come back on */
-		if (!auto_reboot(shutdown_commands[cmd_index].autoreboot)) {
-			upslogx(LOG_ERR, "%s: could not set or confirm "
-				"ups.start.auto, not powering the load off", cmdname);
-			return STAT_INSTCMD_FAILED;
-		}
-		if (!set_start_delay(return_delay)) {
-			upslogx(LOG_ERR, "%s: could not set the return "
-				"delay, not powering the load off", cmdname);
-			return STAT_INSTCMD_FAILED;
-		}
-		snprintf(parm, sizeof(parm), "%u", delay);
-		if (send_set_or_fail(TSU_SHUTDOWN_ACTION, parm)
-		    != STAT_INSTCMD_HANDLED)
-			return STAT_INSTCMD_FAILED;
-		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		upslog_INSTCMD_POWERSTATE_MAYBE(cmdname, extra);
