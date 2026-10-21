@@ -103,6 +103,12 @@ int main(void)
 	char	buf[BUFFER_SIZE + 8];
 	int	ret, failed = 0;
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 	/* The C library functions, as mapped (or not) by NUT headers */
 	prepare(buf, sizeof(buf));
 	ret = snprintf(buf, BUFFER_SIZE, "%s", SOURCE_STRING);
@@ -151,6 +157,9 @@ int main(void)
 	} else {
 		printf("PASS: snprintf() of fitting output\n");
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 
 	return (failed ? 1 : 0);
 }
