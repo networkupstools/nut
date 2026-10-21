@@ -627,7 +627,8 @@ https://github.com/networkupstools/nut/milestone/13
       conversion returned a newly allocated string on every call, which the
       driver never freed; with this quick-polled value the driver leaked
       128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
-      uses a static buffer like the other conversion functions. [issue #3787]
+      uses a static buffer like the other conversion functions. [issue #3787,
+      PR #3788]
 
  - `snmp-ups` driver updates:
     * Corrected the IETF fallback warning so it is emitted for automatic
