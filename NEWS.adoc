@@ -1041,6 +1041,15 @@ https://github.com/networkupstools/nut/milestone/13
     * Further rearrangement of AppVeyor CI builds and security hardening of
       GitHub Actions used to prepare the dist tarballs and report on progress
       there. [PRs #3753, #3754, #3756]
+    * Fixed more AppVeyor CI step scripts where `cmd.exe` interpreted `||`
+      inside the single-quoted `bash` command lines itself (it does not
+      honour such quotes). Also enforce the `ccache` size limit before the
+      build cache is saved (it could outgrow the limit for a saved cache
+      item, and get lost), do not save the build cache from pull request
+      builds (they still restore it) nor from failed builds other than of
+      `master`, run the tests in parallel, sped up compression of the
+      artifact archive, and report per-build `ccache` statistics in the
+      GitHub notification of passed builds.
     * CI build matrix scenarios (Jenkins autotools builds, `ci_build.sh` with
       `BUILD_TYPE=default-withdoc*`) now pass `--disable-spellcheck`, so their
       `make check` no longer runs (and fails on) the documentation spellcheck.
