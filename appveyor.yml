@@ -39,6 +39,7 @@ environment:
   # (see ci_build.sh for details):
   CI_AUTOGEN_STABLE_VERSION: true
   CCACHE_DIR: /home/appveyor/.ccache
+  CCACHE_MAXSIZE: 750MiB
   DO_CLEAN_NUTCI_CACHE: no
   DO_USE_NUTCI_CACHE: yes
   MSYS: "winsymlinks:nativestrict"
