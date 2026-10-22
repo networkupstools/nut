@@ -123,10 +123,8 @@
     Without a colon, only the shutdown delay is changed and the restart delay
     defaults to "startdelay"; with no value at all, the shutdown delay
     defaults to "offdelay" (60 seconds for the graceful variant) as well.
-    Fields that are empty, non-numeric, use ';', '.' or ',', or are out of
-    range make the command fail before anything is sent.  The "load.off",
-    "load.on", "outlet.n.load.*" and "reset.watchdog" commands do not take a
-    value.
+    The "load.off", "load.on", "outlet.n.load.*" and "reset.watchdog" commands
+	do not take a value.
 
     Commands that send more than one frame stop at the first operation the
     device rejects or does not answer, so a failed command is never applied
@@ -137,8 +135,7 @@
     "shutdown.return" and "shutdown.stayoff" clear the device return delay
     (SDR 0), so the load comes back only when mains is (re)applied or not at
     all, while the two reboot commands ask for the load to come back after
-    the restart delay.  The firmware decides how the shutdown and restart
-    delays relate; the driver sends both as requested.
+    the restart delay.
 
     Because that is what the commands mean on this hardware, the shutdown
     commands change the device auto-reboot setting ("ups.start.auto", ARB);
@@ -740,11 +737,8 @@ static int auto_reboot(int enable) {
 				"[%s %s]", __func__, AUTO_REBOOT, parm);
 			return 0;
 		}
-		/* the device stores this setting, so the change outlives the
-		 * shutdown that needs it: make it (and how to undo it) visible */
-		upslogx(LOG_INFO, "%s: ups.start.auto changed from '%s' to "
-			"'%s' (device setting; restore with "
-			"\"upsrw -s ups.start.auto=yes|no\" if needed)",
+
+		upslogx(LOG_INFO, "%s: ups.start.auto changed from '%s' to '%s'",
 			__func__, auto_reboot_name(oldmode),
 			auto_reboot_name(mode));
 	}
@@ -1407,6 +1401,15 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	upsdebug_INSTCMD_STARTING(cmdname, extra);
 
+	if (!strncasecmp(cmdname, "shutdown.", 9)) {
+		for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
+			cmd_index++) {
+			if (!strcasecmp(cmdname, shutdown_commands[cmd_index].name)) {
+				return shutdown_command(cmdname, extra,
+					&shutdown_commands[cmd_index]);
+			}
+		}
+	}
 	/* Switching the outlets is a multi-frame command: switch_outlets()
 	 * stops at the first frame the device rejects or does not answer, so
 	 * that a failure is not reported as a success. */
@@ -1419,20 +1422,24 @@ static int instcmd(const char *cmdname, const char *extra)
 			cmdname, extra);
 		return switch_outlets(relay_commands[cmd_index].relay);
 	}
-	/* one set of commands per outlet; these take no value */
-	for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
-		for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
-			cmd_index++) {
-			snprintf(command, sizeof(command), "outlet.%u.%s",
-				outlet, relay_commands[cmd_index].name);
-			if (strcasecmp(cmdname, command))
-				continue;
+	/* one set of commands per outlet; these take no value.  Only the
+	 * names that start with "outlet." can match one, so every other
+	 * command skips the walk over the outlet list. */
+	if (!strncasecmp(cmdname, "outlet.", 7)) {
+		for (outlet = 1; outlet <= (unsigned int)ups.outlets; outlet++) {
+			for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(relay_commands);
+				cmd_index++) {
+				snprintf(command, sizeof(command), "outlet.%u.%s",
+					outlet, relay_commands[cmd_index].name);
+				if (strcasecmp(cmdname, command))
+					continue;
 
-			log_instcmd_powerstate(
-				relay_commands[cmd_index].powerstate,
-				cmdname, extra);
-			return switch_outlet(outlet,
-				relay_commands[cmd_index].relay);
+				log_instcmd_powerstate(
+					relay_commands[cmd_index].powerstate,
+					cmdname, extra);
+				return switch_outlet(outlet,
+					relay_commands[cmd_index].relay);
+			}
 		}
 	}
 	/* commands that are a single SET frame */
@@ -1450,13 +1457,6 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * driver has, which restarts the device timer */
 	if (!strcasecmp(cmdname, "reset.watchdog"))
 		return reset_watchdog();
-	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
-		cmd_index++) {
-		if (!strcasecmp(cmdname, shutdown_commands[cmd_index].name)) {
-			return shutdown_command(cmdname, extra,
-				&shutdown_commands[cmd_index]);
-		}
-	}
 
 	upslog_INSTCMD_UNKNOWN(cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
