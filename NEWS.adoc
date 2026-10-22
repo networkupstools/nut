@@ -580,6 +580,18 @@ https://github.com/networkupstools/nut/milestone/13
       returns to disabled after it trips; `reset.watchdog` now fails when the
       timeout is 0 instead of reporting a successful kick of a watchdog that
       is not running.
+    * The device restarts its watchdog timer on any command it receives, not
+      only on a kick, so the driver's own polls usually keep an armed watchdog
+      quiet as well.  The documentation still tells the user to kick it
+      explicitly with `reset.watchdog`, because the polling cadence is an
+      implementation detail (`pollinterval` can be longer than the watchdog
+      timeout) and not a guarantee.
+    * The watchdog setting is re-read on every update cycle while the watchdog
+      is armed, so a watchdog that trips, power cycles the load and comes back
+      disabled shows up as `ups.watchdog.status` = `disabled`, with the
+      timeout and restart-alarm flag that come with it, even when the driver
+      keeps running across the restart, for example on a machine that is not
+      powered by the UPS.
     * The driver shutdown handling (`shutdown.default`, which
       `upsdrvctl shutdown` runs) always asks the device to start the load
       again when mains is (re)applied (the auto-reboot setting is turned on),

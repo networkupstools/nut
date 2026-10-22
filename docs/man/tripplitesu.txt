@@ -203,6 +203,16 @@ value; enabling/disabling the buzzer for good is done through the
 	the timeout is 0: a disabled watchdog has no timer to restart, and
 	reporting a successful kick would hide a monitoring or configuration
 	error.
++
+The device restarts its watchdog timer whenever it receives a command, not
+only on a kick, so the periodic polls the driver sends already keep an armed
+watchdog quiet as long as they follow each other within the timeout.  Do not
+rely on that: kick the watchdog explicitly, for example from a monitoring
+script, for as long as it is meant to protect the load.  How often the driver
+polls is an implementation detail that can change, the common 'pollinterval'
+setting could be raised above the watchdog timeout, and a device that answers
+slowly or drops commands may not get every poll.  A kick every few seconds
+costs nothing; an unexpected power cycle of the load does not.
 
 VARIABLES
 ---------
@@ -216,7 +226,10 @@ Read/write variables that describe a device setting (*outlet.delay.start*,
 published, and made settable, only once the device has reported the setting:
 when it does not answer, the variable is absent (no value is assumed) and a
 warning is logged.  A setting that was read before keeps its last known value
-when the device stops answering, again with a warning for every failed read.
+when the device stops answering, and the failure is logged instead of falling
+back to a default.  The watchdog setting is also re-read on every update cycle
+while the watchdog is armed, and those repeated failures are logged at debug
+level (see *ups.watchdog.status* below).
 
 *outlet.count*::
 	Total number of controllable outlets.
@@ -291,16 +304,27 @@ The device stores the timeout and the restart-alarm flag together rather than
 a status, so the three variables are published from the same setting and a
 change to one of them writes the whole pair to the device.
 +
-Once armed, the watchdog must be kicked continuously with the
-'reset.watchdog' instant command for as long as it is meant to protect the
-load, or explicitly disabled with *ups.watchdog.status*.  When it trips, the
-device power cycles the load and the watchdog returns to 'disabled' until it
-is armed again; it does not stay armed by itself.
+Once armed, the watchdog has to be kicked for as long as it is meant to
+protect the load, or explicitly disabled with *ups.watchdog.status*.  The
+device restarts its timer on every command it receives, so the polls of a
+driver that keeps talking usually keep it quiet, but an explicit kick with the
+'reset.watchdog' instant command is strongly recommended: see that command
+above, and keep the timeout well above 'pollinterval'.
++
+When the watchdog trips, the device power cycles the load and returns to
+'disabled' until it is armed again: it does not stay armed by itself.  The
+driver re-reads the setting on every update cycle while it believes the
+watchdog is armed, so such a change is published in *ups.watchdog.status*,
+*ups.watchdog.timeout* and *ups.watchdog.alarm* even when the driver keeps
+running across the restart, for example when the computer driving it is not
+powered by the UPS.  A 'reset.watchdog' issued after the trip fails, because
+the watchdog is reported as disabled until it is armed again.
 +
 WARNING: While the watchdog is armed, a driver that hangs or a serial link
-that breaks is enough to switch the load off and on again, and the load is
-powered only as long as the driver keeps polling the device.  If you do not
-need this protection, disable it with:
+that breaks for longer than the watchdog timeout is enough to switch the load
+off and on again: the load is protected only as long as the device keeps
+hearing from the driver.  If you do not need this protection, disable it
+with:
 +
 	upsrw -s ups.watchdog.status=disabled myups
 +

@@ -147,8 +147,13 @@
     third device setting of that kind: its timeout and restart-alarm flag are
     the read/write "ups.watchdog.timeout" and "ups.watchdog.alarm"
     variables, "ups.watchdog.status" is their enabled/disabled view, and the
-    "reset.watchdog" command sends the stored setting again.  A disabled
-    watchdog has no timer to kick, so "reset.watchdog" fails then.
+    "reset.watchdog" command sends the stored setting again.  The device
+    restarts its watchdog timer on any command it receives, so the driver's
+    own polls already do it; the command is still the explicit kick to rely
+    on, because the polling cadence is not a guarantee.  A disabled watchdog
+    has no timer to kick, so "reset.watchdog" fails then, and the driver
+    re-reads the setting on every poll while it is armed, so a watchdog that
+    tripped (and came back disabled) is published as such.
 
     The driver shutdown handler (the "shutdown.default" instant command, run
     by "upsdrvctl shutdown" and by the "driver.killpower" request) turns the
@@ -282,6 +287,7 @@ static unsigned int startdelay = DEFAULT_STARTDELAY_MINUTES; /* delay in minutes
 static unsigned int watchdog_seconds = 0; /* watchdog timeout currently set on the device */
 static unsigned int watchdog_alarm = 2; /* watchdog restart-alarm flag currently set on the device */
 static int watchdog_known = 0; /* set once the device reported or accepted its watchdog setting */
+static int watchdog_cycle_ok = 1; /* 1 while the watchdog reads succeed */
 static int shutdown_abort_on_error = 0; /* 1 when 'shutdown_mode' asks the driver shutdown handler to stop at the first failure */
 /* The two settable transfer voltages: the variable each one is published as
  * and the field it occupies in the TXV reply.  The table order must match the
@@ -895,33 +901,58 @@ static void publish_watchdog(void) {
  * 2 = disabled).  The device reports "<timeout in seconds>;<restart alarm
  * flag>", where a timeout of 0 means that the watchdog is disabled.  This is
  * auxiliary information, so a missing or unexpected answer must not mark the
- * whole UPS as stale: a warning is logged and the setting the driver has is
+ * whole UPS as stale: the failure is logged and the setting the driver has is
  * left in place.  Both fields are kept because the device stores them
  * together: whenever one of them changes, the driver has to send the other
- * one along. */
-static int get_watchdog(void) {
+ * one along.
+ * 'from_cycle' is set by the caller in upsdrv_updateinfo(), which re-reads
+ * the setting while the driver believes the watchdog is armed: the device
+ * disables its watchdog when it trips, and the driver may well keep running
+ * across the restart of the load (it is often not powered by the UPS).  A
+ * caller that reads the setting once (the startup and the reads that follow
+ * a variable write) gets a warning for every failure.  The update cycle gets
+ * a warning for the first failure of a series and debug messages for the
+ * following ones, so that a device that stops answering does not fill the log
+ * at every poll interval; the first failure of a series is the one after a
+ * read that worked, which also covers the first cycle after the startup. */
+static int get_watchdog(int from_cycle) {
 	char response[MAX_RESPONSE_LENGTH];
 	char timeout_value[32], alarm_value[32];
+	char msg[MAX_RESPONSE_LENGTH + 96];
+	const char *failure = NULL;
 	unsigned int timeout, alarm;
 
 	if (do_command(POLL, WATCHDOG, "", response, sizeof(response)) <= 0) {
-		upslogx(LOG_WARNING, "%s: could not read the watchdog "
+		snprintf(msg, sizeof(msg), "could not read the watchdog "
 			"setting [%s]; keeping the last known value",
-			__func__, WATCHDOG);
-		return 0;
-	}
-
-	if (!get_field(response, 0, timeout_value, sizeof(timeout_value))
+			WATCHDOG);
+		failure = msg;
+	} else if (!get_field(response, 0, timeout_value, sizeof(timeout_value))
 	    || !str_to_uint_strict(timeout_value, &timeout, 10)
 	    || timeout > MAX_WATCHDOG
 	    || !get_field(response, 1, alarm_value, sizeof(alarm_value))
 	    || !str_to_uint_strict(alarm_value, &alarm, 10)
 	    || (alarm != 1 && alarm != 2)) {
-		upslogx(LOG_WARNING, "%s: unexpected [%s] response [%s]; "
-			"keeping the last known value", __func__, WATCHDOG,
+		snprintf(msg, sizeof(msg), "unexpected [%s] response "
+			"[%s]; keeping the last known value", WATCHDOG,
 			response);
+		failure = msg;
+	}
+
+	if (failure) {
+		if (!from_cycle || watchdog_cycle_ok)
+			upslogx(LOG_WARNING, "%s: %s", __func__, failure);
+		else
+			upsdebugx(2, "%s: %s", __func__, failure);
+
+		if (from_cycle)
+			watchdog_cycle_ok = 0;
 		return 0;
 	}
+
+	/* a read that worked starts a new series of failures, so the next
+	 * failure is warned about again */
+	watchdog_cycle_ok = 1;
 
 	watchdog_seconds = timeout;
 	watchdog_alarm = alarm;
@@ -979,10 +1010,13 @@ static int set_watchdog(int enable) {
 }
 
 /* The "reset.watchdog" instant command: send the setting the device last
- * reported (or accepted) again, which restarts its timer.  The command
- * takes no value, so the watchdog it kicks is the one the driver is
- * configured with.  A watchdog that was never read is left alone, so that a
- * kick cannot arm it with assumed values, and a disabled watchdog is not
+ * reported (or accepted) again, which restarts its timer.  The device
+ * restarts that timer on any command it receives, so the driver's own polls
+ * already do it in practice; this is the explicit kick the documentation
+ * tells the user to rely on, because the polling cadence is not a guarantee.
+ * The command takes no value, so the watchdog it kicks is the one the driver
+ * is configured with.  A watchdog that was never read is left alone, so that
+ * a kick cannot arm it with assumed values, and a disabled watchdog is not
  * kicked either: there is no timer to reset, and pretending otherwise would
  * report a watchdog that does not protect the load. */
 static int reset_watchdog(void) {
@@ -1587,7 +1621,7 @@ static int setvar(const char *varname, const char *val)
 			return STAT_SET_FAILED;
 		/* read the value back, so that the published variables
 		 * reflect what the device actually accepted */
-		get_watchdog();
+		get_watchdog(0);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.watchdog.alarm")) {
@@ -1606,7 +1640,7 @@ static int setvar(const char *varname, const char *val)
 			return STAT_SET_FAILED;
 		/* read the value back, so that the published variables
 		 * reflect what the device actually accepted */
-		get_watchdog();
+		get_watchdog(0);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "input.eco.switchable")) {
@@ -1756,7 +1790,7 @@ void upsdrv_initinfo(void)
 		dstate_setflags("ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.start.auto", 3);
 	}
-	if (get_watchdog()) {
+	if (get_watchdog(0)) {
 		dstate_setflags("ups.watchdog.status",
 			ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux("ups.watchdog.status", 8);
@@ -1980,6 +2014,18 @@ void upsdrv_updateinfo(void)
 	get_bypass_reason();
 
 	get_outlet_status();
+
+	/* A watchdog that trips power cycles the load and comes back
+	 * disabled.  The driver often runs on a machine that is not powered
+	 * by the UPS and survives that restart, so re-read the setting while
+	 * the driver believes the watchdog is armed: the first read after the
+	 * trip publishes 'disabled' (and the timeout and restart-alarm flag
+	 * that came with it), which also stops these reads.  Reading the
+	 * setting is a command like any other and therefore restarts the
+	 * device timer as well, but the documentation still tells the user to
+	 * kick the watchdog explicitly instead of relying on the polls. */
+	if (watchdog_seconds)
+		get_watchdog(1);
 
 	/* if we are here, status is valid */
 	status_commit();
