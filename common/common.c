@@ -2863,9 +2863,15 @@ char *xbasename_no_ext(const char *file)
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
 				 * this character is what we already do not want */
-				bn = (char*)xmalloc(bn_len + 1);
+				bn = (char*)xmalloc(bn_len + 2);
+				memset(bn, 0, bn_len + 2);
 				/* Extract first bn_len characters, add '\0' in the end */
-				snprintf(bn, bn_len, "%s", cs);
+				snprintf(bn, bn_len + 1, "%s", cs);
+				/* Just to be sure, hopefully we simply get two '\0' chars in the end.
+				 * NOTE: Older platform builds with `_snprintf` macro via wincompat.h
+				 *  (now e.g. MSVC 2015 in 32-bit builds) would not add the trailing NUL!
+				 */
+				bn[bn_len + 1] = '\0';
 			}
 		}
 	}
