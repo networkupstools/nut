@@ -1027,14 +1027,60 @@ check_NIT_certs_NSS() {
     #   SEC_ERROR_LEGACY_DATABASE: The certificate/key database is in an old, unsupported format
 
     # TBD: Consider `-P "$3"` prefix eventually
-    OUT="`certutil -d \"$2\" -L 2>&1`"
+    OUT="`certutil -d \"$2\" -L 2>&1 && certutil -d \"$2\" -f \"${2}${TESTCERT_PATH_SEP}.pwfile\" -K 2>&1`"
     if [ "$?" != 0 ] ; then
-        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' \
-        && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
-        && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
+        RECREATE_NSSDB=false
+        if echo "$OUT" | ${EGREP} 'SEC_ERROR_LEGACY_DATABASE' >/dev/null \
+            && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+            && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
         ; then
+            # Technically, can `export NSS_DEFAULT_DB_TYPE=sql` and retry
+            # (at least CentOS 7 certutil is okay with this) but this use
+            # of non-default database type would be cumbersome for e.g.
+            # manual re-runs and maybe use via library from NUT binaries.
+            log_info "$OUT"
             log_warn "NSS tools on this worker need old DB format files, but we only have new ones"
+            RECREATE_NSSDB=true
+        else
+            if echo "$OUT" | ${EGREP} 'SEC_ERROR_BAD_DATABASE' >/dev/null \
+                && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert8.db" ] \
+                && [ ! -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+            ; then
+                # Fedora (as of 43) deprecated DBM format support
+                # completely; what's worse, it generates database
+                # files with a password hashing algorithm that older
+                # libnss in Debian (as of 11-13) can not read, and
+                # this is not configurable, it seems. So we have
+                # the case below, for those systems to again generate
+                # the (SQL) database files with such password hashes
+                # which both can use.
+                log_info "$OUT"
+                log_warn "NSS tools on this worker need new DB format files, but we only have old ones"
+                RECREATE_NSSDB=true
+            else
+                if echo "$OUT" | ${EGREP} 'SEC_ERROR_BAD_PASSWORD' >/dev/null \
+                    && [ -e "${2}${TESTCERT_PATH_SEP}${3}cert9.db" ] \
+                    && [ -e "${2}${TESTCERT_PATH_SEP}".pwfile ] \
+                    && (command -v pk12util) \
+                ; then
+                    log_info "$OUT"
+                    log_warn "NSS tools on this worker need older password algorithm in DB format files, but we only have very new ones"
+                    RECREATE_NSSDB=true
 
+                    # Move away old files (TBD: remove?) so they
+                    # do not confuse "certutil -N" below
+                    for F in \
+                        "${2}${TESTCERT_PATH_SEP}${3}cert9.db" \
+                        "${2}${TESTCERT_PATH_SEP}${3}key4.db" \
+                        "${2}${TESTCERT_PATH_SEP}${3}pkcs11.txt" \
+                    ; do
+                        mv -f "$F" "$F.bak" || true
+                    done
+                fi
+            fi
+        fi
+
+        if $RECREATE_NSSDB ; then
             # See comments above about no TESTCERT_PATH_SEP for shell globs.
             if ls -l "${2}"/*.p12 "${2}${TESTCERT_PATH_SEP}".pwfile && (command -v pk12util) ; then
                 log_info "Will try to create older-format DB from P12 files"
@@ -1057,6 +1103,7 @@ check_NIT_certs_NSS() {
 
             certutil -N -d "${2}" -f "${2}${TESTCERT_PATH_SEP}.pwfile" \
             || die_or_croak "Could not init NSS $1 database in $2"
+            echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> "${2}${TESTCERT_PATH_SEP}.creator"
 
             case "$1" in
                 Server|Client)
@@ -1089,8 +1136,18 @@ check_NIT_certs_NSS() {
             certutil -d "$2" -L || \
             die_or_croak "Could not parse NSS ${1} DB files in $2 after attempted re-import"
         else
+            log_info "$OUT"
             die_or_croak "Could not parse NSS ${1} DB files in $2"
         fi
+    fi
+
+    # List private keys (make sure passphrases are usable vs. DB format after all the hassle above):
+    OUT="`certutil -d \"$2\" -f \"${2}${TESTCERT_PATH_SEP}.pwfile\" -K 2>&1`"
+    if [ "$?" = 0 ] ; then
+        log_info "Known passphrase is usable for NSS ${1} DB files in $2"
+    else
+        log_info "$OUT"
+        die_or_croak "Could not parse NSS ${1} DB files with a password in $2"
     fi
 }
 
@@ -1235,7 +1292,7 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                 log_info "Found cached NIT certificates in ${CI_CACHE_NIT_HASHDIR}"
                 mkdir -p "${TESTCERT_PATH_BASE}"
                 # See comments above about no TESTCERT_PATH_SEP for shell globs.
-                cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \\
+                cp -prf "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}" || \
                 cp -prfL "${CI_CACHE_NIT_HASHDIR}"/* "${TESTCERT_PATH_BASE}${TESTCERT_PATH_SEP}"
 
                 # If there is a setup script there, source it to get variables
@@ -1252,7 +1309,10 @@ if [ x"${DO_USE_NIT_TESTCERT_CACHE-}" = xyes ] ; then
                 log_warn "FAILED check_NIT_certs with cached data, will generate anew. Removing:"
                 find "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" -ls || true
                 rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
-                mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+                # Do not re-create the (now empty) cache dir: it is created and
+                # populated below only if absent at that time, after we generate
+                # the certificates
+                mkdir -p "${TESTCERT_PATH_BASE}"
             fi
         else
             log_info "Did not find a CI_CACHE_NIT_HASHDIR, will populate a new one after generating certificates as '${CI_CACHE_NIT_HASHDIR}'"
@@ -1339,7 +1399,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     fi
                 done
 
-                # Create lock
+                # Create lock (in parent dir that collects all cached hashdirs,
+                # probably CI_CACHE_NUT_BASEDIR)
+                mkdir -p "`dirname \"${CI_CACHE_NIT_HASHDIR}\"`"
                 touch "${LOCKFILE}"
 
                 if [ x"${DO_CLEAN_NIT_TESTCERT_CACHE_BEFORE}" = xyes ] ; then
@@ -1362,7 +1424,8 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
 
                     log_warn "FAILED check_NIT_certs with cached data, will generate anew"
                     rm -rf "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}" || true
-                    mkdir -p "${TESTCERT_PATH_BASE}" "${CI_CACHE_NIT_HASHDIR}"
+                    # Do not re-create the cache dir, see above
+                    mkdir -p "${TESTCERT_PATH_BASE}"
                 fi
 
                 # if [ -n "${BASH_VERSION-}" ]; then
@@ -1373,7 +1436,9 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
             mkdir -p "${TESTCERT_PATH_ROOTCA}" || die_or_croak "Could not mkdir TESTCERT_PATH_ROOTCA"
             (   cd "${TESTCERT_PATH_ROOTCA}" || exit
                 log_info "SSL: Preparing test Root CA..."
-                echo "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
+                # Ensure the .pwfile does not contain a trailing
+                # CRLF/newline that Fedora parses differently than Debian
+                printf "${TESTCERT_ROOTCA_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                     *NSS*)
                         { [ -e /dev/urandom ] && \
@@ -1386,6 +1451,7 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                         # Create the certificate database:
                         certutil -N -d . -f .pwfile \
                         || die_or_croak "Could not init NSS CA database in `pwd`"
+                        echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                         # Generate a certificate for CA
                         cscmd() {
@@ -1446,13 +1512,15 @@ case "${WITH_SSL_CLIENT}${WITH_SSL_SERVER}" in
                             # to PEM for use by OpenSSL-based builds
                             # e.g. for PERL and Python test suites:
                             pk12cmd() {
-                                pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile
+                                pk12util -o rootca.p12 -n "${TESTCERT_ROOTCA_NAME}" -d . -k .pwfile -w .pwfile \
+                                && echo "`LANG=C TZ=UTC date -u`: p12: pk12util from nssdb: `hostname`" >> ".creator"
                             }
                             if pk12cmd >/dev/null 2>&1 ; then
                                 openssl pkcs12 -in rootca.p12 \
                                     -out rootca.key -nodes -nocerts \
                                     -passin file:.pwfile \
-                                && log_info "Exported NSS CA key to OpenSSL PEM"
+                                && log_info "Exported NSS CA key to OpenSSL PEM" \
+                                && echo "`LANG=C TZ=UTC date -u`: pem: openssl pkcs12 from p12: `hostname`" >> ".creator"
                             fi
                         fi
 
@@ -1504,6 +1572,7 @@ EOF
                                 -out rootca.pem \
                                 -config rootca.req.conf
                         } || die_or_croak "Could not self-sign OpenSSL CA req"
+                        echo "`LANG=C TZ=UTC date -u`: pem: openssl self-sign: `hostname`" >> ".creator"
 
                         # NOTE: We limit this to cache population as we do
                         # not have non-compiled NSS backended clients so far:
@@ -1518,6 +1587,7 @@ EOF
                             # Create the certificate database:
                             certutil -N -d . -f .pwfile \
                             || die_or_croak "Could not init NSS CA database from PEM in `pwd`"
+                            echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                             # Import the CA certificate and key:
                             # First package to PKCS#12
@@ -1536,6 +1606,7 @@ EOF
                                     -passout file:.pwfile \
                                 || die_or_croak "Could not package CA to PKCS#12 for NSS import"
                             }
+                            echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator"
 
                             # Then import to NSS
                             pk12util -i rootca.p12 -d . -k .pwfile -w .pwfile \
@@ -1598,12 +1669,13 @@ EOF
             mkdir -p "${TESTCERT_PATH_SERVER}"
             (   cd "${TESTCERT_PATH_SERVER}" || exit
                 log_info "SSL: Preparing test server certificate..."
-                echo "${TESTCERT_SERVER_PASS}" > ".pwfile"
+                printf "${TESTCERT_SERVER_PASS}" > ".pwfile"
                 case "${WITH_SSL_SERVER}" in
                     NSS)
                         # Create the certificate database:
                         certutil -N -d . -f .pwfile \
                         || die_or_croak "Could not init NSS Server database in `pwd`"
+                        echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                         # Import the CA certificate, so users of this DB trust it:
                         certutil -A -d . -f .pwfile \
@@ -1690,7 +1762,8 @@ EOF
                             # of build, as well as PERL and Python tests.
 
                             pk12cmd() {
-                                pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile
+                                pk12util -o server.p12 -n "${TESTCERT_SERVER_NAME}" -d . -k .pwfile -w .pwfile \
+                                && echo "`LANG=C TZ=UTC date -u`: p12: pk12util from nssdb: `hostname`" >> ".creator"
                             }
                             # Export private key to PEM for OpenSSL builds;
                             # server.crt is already PEM (from signing step)
@@ -1700,7 +1773,8 @@ EOF
                                         -out server.key \
                                         -nodes -nocerts \
                                         -passin file:.pwfile "$@" \
-                                    && log_info "Exported NSS Server key to OpenSSL PEM"
+                                    && log_info "Exported NSS Server key to OpenSSL PEM" \
+                                    && echo "`LANG=C TZ=UTC date -u`: pem: openssl pkcs12 from p12: `hostname`" >> ".creator"
                                 fi
                             }
                             mkpk12key
@@ -1721,7 +1795,8 @@ EOF
                                         -srcstorepass "${TESTCERT_SERVER_PASS}" \
                                         -alias "${TESTCERT_SERVER_NAME}" \
                                         -noprompt \
-                                    && log_info "Generated Java JKS for Server"
+                                    && log_info "Generated Java JKS for Server" \
+                                    && echo "`LANG=C TZ=UTC date -u`: jks: keytool import from p12: `hostname`" >> ".creator"
                                     # else openssl -legacy
                                     # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
                                 }
@@ -1773,6 +1848,7 @@ EOF
                                 -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
                                 -extfile "${TESTCERT_PATH_SERVER}${TESTCERT_PATH_SEP}server.v3.ext"
                         ) || die_or_croak "Could not sign a OpenSSL Server certificate request with the OpenSSL CA certificate"
+                        echo "`LANG=C TZ=UTC date -u`: pem: openssl sign: `hostname`" >> ".creator"
 
                         cat server.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem server.key > upsd.pem \
                         || die_or_croak "Could not combine an upsd.pem"
@@ -1791,6 +1867,7 @@ EOF
                                 # Create the certificate database:
                                 certutil -N -d . -f .pwfile \
                                 || die_or_croak "Could not init NSS Server database from PEM in `pwd`"
+                                echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                                 # Import the CA certificate, so users of this DB trust it:
                                 certutil -A -d . -f .pwfile \
@@ -1806,6 +1883,7 @@ EOF
                                     -name "${TESTCERT_SERVER_NAME}" \
                                     -passout file:.pwfile \
                                 || die_or_croak "Could not package Server cert to PKCS#12 for NSS import"
+                                echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator"
 
                                 pk12util -i server.p12 -d . -k .pwfile -w .pwfile \
                                 || die_or_croak "Could not import Server PKCS#12 to NSS"
@@ -1815,12 +1893,14 @@ EOF
 
                             if command -v keytool >/dev/null 2>&1 ; then
                                 # Bonus program: Java JKS (if caching)
-                                openssl pkcs12 -export -out server.p12 \
-                                    -inkey server.key -in server.crt \
-                                    -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
-                                    -name "${TESTCERT_SERVER_NAME}" \
-                                    -passout file:.pwfile \
-                                && keytool -importkeystore \
+                                { [ -s server.p12 ] || {
+                                    openssl pkcs12 -export -out server.p12 \
+                                        -inkey server.key -in server.crt \
+                                        -certfile "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem \
+                                        -name "${TESTCERT_SERVER_NAME}" \
+                                        -passout file:.pwfile \
+                                    && { echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator" ; }
+                                } ; } && keytool -importkeystore \
                                     -deststorepass "${TESTCERT_SERVER_PASS}" \
                                     -destkeypass "${TESTCERT_SERVER_PASS}" \
                                     -destkeystore upsd.jks \
@@ -1829,24 +1909,27 @@ EOF
                                     -srcstorepass "${TESTCERT_SERVER_PASS}" \
                                     -alias "${TESTCERT_SERVER_NAME}" \
                                     -noprompt \
-                                && log_info "Generated Java JKS for Server (from OpenSSL)"
+                                && log_info "Generated Java JKS for Server (from OpenSSL)" \
+                                && echo "`LANG=C TZ=UTC date -u`: jks: keytool import from p12: `hostname`" >> ".creator"
                                 # See comments above about no TESTCERT_PATH_SEP for shell globs.
                                 ls -l "${TESTCERT_PATH_SERVER}"/*.jks "${TESTCERT_PATH_SERVER}"/*.p12 || true
                             fi
                         fi
                         ;;
+                    *) die_or_croak "Unexpected WITH_SSL_SERVER='${WITH_SSL_SERVER}'" ;;
                 esac
             ) || die_or_croak "Could not prepare Server certs in '${TESTCERT_PATH_SERVER}'"
 
             mkdir -p "${TESTCERT_PATH_CLIENT}"
             (   cd "${TESTCERT_PATH_CLIENT}" || exit
                 log_info "SSL: Preparing test client certificate..."
-                echo "${TESTCERT_CLIENT_PASS}" > ".pwfile"
+                printf "${TESTCERT_CLIENT_PASS}" > ".pwfile"
                 case "${WITH_SSL_CLIENT}" in
                     NSS)
                         # Create the certificate database of client key+cert store:
                         certutil -N -d . -f .pwfile \
                         || die_or_croak "Could not init NSS Client database in `pwd`"
+                        echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                         # Import the CA certificate, so users of this DB trust it:
                         certutil -A -d . -f .pwfile \
@@ -1941,7 +2024,8 @@ EOF
                             # of build, as well as PERL and Python tests.
 
                             pk12cmd() {
-                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                                pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile \
+                                && echo "`LANG=C TZ=UTC date -u`: p12: pk12util from nssdb: `hostname`" >> ".creator"
                             }
                             # Export private key to PEM for OpenSSL builds;
                             # client.crt is already PEM (from signing step)
@@ -1951,7 +2035,8 @@ EOF
                                         -out client.key \
                                         -nodes -nocerts \
                                         -passin file:.pwfile "$@" \
-                                    && log_info "Exported NSS Client key to OpenSSL PEM"
+                                    && log_info "Exported NSS Client key to OpenSSL PEM" \
+                                    && echo "`LANG=C TZ=UTC date -u`: pem: openssl pkcs12 from p12: `hostname`" >> ".creator"
                                 fi
                             }
                             mkpk12key
@@ -1966,13 +2051,14 @@ EOF
                                     keytool -importkeystore \
                                         -deststorepass "${TESTCERT_CLIENT_PASS}" \
                                         -destkeypass "${TESTCERT_CLIENT_PASS}" \
-                                        -destkeystore upsd.jks \
+                                        -destkeystore upsmon.jks \
                                         -srckeystore client.p12 \
                                         -srcstoretype PKCS12 \
                                         -srcstorepass "${TESTCERT_CLIENT_PASS}" \
                                         -alias "${TESTCERT_CLIENT_NAME}" \
                                         -noprompt \
-                                    && log_info "Generated Java JKS for Client"
+                                    && log_info "Generated Java JKS for Client" \
+                                    && echo "`LANG=C TZ=UTC date -u`: jks: keytool import from p12: `hostname`" >> ".creator"
                                     # else openssl -legacy
                                     # https://stackoverflow.com/questions/70244066/keytool-error-java-io-ioexception-parsealgparameters-failed-objectidentifier
                                 }
@@ -2036,6 +2122,7 @@ EOF
                                 -days "${TESTCERT_VALIDITY_DAYS}" -sha256 \
                                 -extfile "${TESTCERT_PATH_CLIENT}${TESTCERT_PATH_SEP}client.v3.ext"
                         ) || die_or_croak "Could not sign a OpenSSL Client certificate request with the OpenSSL CA certificate"
+                        echo "`LANG=C TZ=UTC date -u`: pem: openssl sign: `hostname`" >> ".creator"
 
                         cat client.crt "${TESTCERT_PATH_ROOTCA}${TESTCERT_PATH_SEP}"rootca.pem client.key > upsmon.pem \
                         || die_or_croak "Could not combine an upsmon.pem"
@@ -2067,7 +2154,8 @@ EOF
                                 -keystore rootca.jks \
                                 -storepass "${TESTCERT_ROOTCA_PASS}" \
                                 -noprompt \
-                            && log_info "Generated Java JKS truststore for Client (OpenSSL)"
+                            && log_info "Generated Java JKS truststore for Client (OpenSSL)" \
+                            && echo "`LANG=C TZ=UTC date -u`: jks: keytool import: `hostname`" >> ".creator"
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks || true
                         fi
 
@@ -2082,6 +2170,7 @@ EOF
                                 # Create the certificate database:
                                 certutil -N -d . -f .pwfile \
                                 || die_or_croak "Could not init NSS Client database from PEM in `pwd`"
+                                echo "`LANG=C TZ=UTC date -u`: nss: certutil -N: `hostname`" >> ".creator"
 
                                 # Import the CA certificate, so users of this DB trust it:
                                 certutil -A -d . -f .pwfile \
@@ -2105,6 +2194,7 @@ EOF
                                         -name "${TESTCERT_CLIENT_NAME}" \
                                         -passout file:.pwfile \
                                     || die_or_croak "Could not package Client cert to PKCS#12 for NSS import"
+                                    echo "`LANG=C TZ=UTC date -u`: p12: openssl pkcs12 from pem: `hostname`" >> ".creator"
 
                                     pk12util -i client.p12 -d . -k .pwfile -w .pwfile \
                                     || die_or_croak "Could not import Client PKCS#12 to NSS"
@@ -2116,7 +2206,8 @@ EOF
                             if command -v keytool >/dev/null 2>&1 ; then
                                 # Bonus program: Java JKS (if caching)
                                 pk12cmd() {
-                                    pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile
+                                    pk12util -o client.p12 -n "${TESTCERT_CLIENT_NAME}" -d . -k .pwfile -w .pwfile \
+                                    && echo "`LANG=C TZ=UTC date -u`: p12: pk12util from nssdb: `hostname`" >> ".creator"
                                 }
                                 if command -v keytool >/dev/null 2>&1 ; then
                                     if pk12cmd >/dev/null 2>&1 ; then
@@ -2129,13 +2220,15 @@ EOF
                                             -srcstorepass "${TESTCERT_CLIENT_PASS}" \
                                             -alias "${TESTCERT_CLIENT_NAME}" \
                                             -noprompt \
-                                        && log_info "Generated Java JKS for Client"
+                                        && log_info "Generated Java JKS for Client" \
+                                        && echo "`LANG=C TZ=UTC date -u`: jks: keytool import from p12: `hostname`" >> ".creator"
                                     fi
                                 fi
                             fi
                             ls -l "${TESTCERT_PATH_CLIENT}"/*.jks "${TESTCERT_PATH_CLIENT}"/*.p12 || true
                         fi
                         ;;
+                    *) die_or_croak "Unexpected WITH_SSL_CLIENT='${WITH_SSL_CLIENT}'" ;;
                 esac
             ) || die_or_croak "Could not prepare Client certs in '${TESTCERT_PATH_CLIENT}'"
         ) && {
@@ -4709,7 +4802,7 @@ testcase_sandbox_nutscanner_list() {
         log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
-        if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
+        if ( echo "$CMDERR" | ${EGREP} "Cannot load NUT.*library.*NUT search disabled" ) ; then
             log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
             log_error "[testcase_sandbox_nutscanner_list] Error: nut-scanner complained or did not return all expected data, check above"

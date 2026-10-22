@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_innovart33.h"
 
-#define INNOVART33_VERSION "INNOVART33 0.01"
+#define INNOVART33_VERSION "INNOVART33 0.03"
 
 /* Support functions */
 static int	innovart33_claim(void);
@@ -197,8 +197,8 @@ static int	innovart33_claim(void)
 	} mandatory[] = {
 		{ "input.L1-N.voltage", "Q6" },
 		{ "ups.type", "Q1" },
-		{ "output.current", "WA" },
-		{ "input.bypass.voltage", "BPS" },
+		{ "output.L1.current", "WA" },
+		{ "input.bypass.L1-N.voltage", "BPS" },
 		{ "input.voltage.nominal", "F" },
 		{ "ups.firmware", "FW?" },
 		{ "ups.serial", "SASV07?" },
@@ -221,8 +221,14 @@ static int	innovart33_claim(void)
 			return 0;
 
 		/* Unable to process value */
-		if (ups_infoval_set(item) != 1)
+		if (ups_infoval_check(item) != 1)
 			return 0;
+	}
+
+	/* All values passed validation, including any device-specific checks. */
+	for (vari = 0; mandatory[vari].var; vari++) {
+		item = find_nut_info(mandatory[vari].var, 0, 0);
+		ups_infoval_set(item);
 	}
 
 	return 1;

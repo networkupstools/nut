@@ -103,6 +103,24 @@ Modbus:
 *rio_slave_id*='value'::
 An integer specifying the RIO modbus slave ID (default 1).
 
+*mod_resp_to_s*='num'::
+Seconds component of the Modbus response timeout (default: 0).
+
+*mod_resp_to_us*='num'::
+Microseconds component of the Modbus response timeout (default: 200000).
+The driver rejects values greater than 999999.
+
+*mod_byte_to_s*='num'::
+Seconds component of the Modbus byte timeout (default: 0).
+
+*mod_byte_to_us*='num'::
+Microseconds component of the Modbus byte timeout (default: 50000).
+The driver rejects values greater than 999999.
+
+Each timeout is the sum of its seconds and microseconds components. The
+default response timeout is 0.2 seconds; the default byte timeout is
+0.05 seconds.
+
 States (X = OL, OB, LB, HB, RB, CHRG, DISCHRG, FSD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

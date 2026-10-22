@@ -303,6 +303,15 @@ Compiler and platform checks
     checks socket headers and substitutes `HAVE_SYS_SOCKET_H`,
     `HAVE_WINSOCK2_H` and `HAVE_WS2TCPIP_H` as zero-or-one shell values.
 
+*NUT_CHECK_SEMAPHORES*::
+
+    Check for semaphore headers, libraries, and named or unnamed
+    semaphores. Set `SEMLIBS`, the `nut_have_semaphore_*` shell
+    variables, the `HAVE_SEMAPHORE_*` preprocessor symbols and the
+    `HAVE_SEMAPHORE_LIBS` Automake conditional. Call after the
+    `fcntl.h` and `sys/stat.h` checks, before deciding whether to
+    enable threading.
+
 *NUT_CHECK_SOCKETLIB*::
 
     Defined in `m4/nut_check_socketlib.m4`. Set and substitute
