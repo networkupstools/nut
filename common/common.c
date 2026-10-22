@@ -1290,9 +1290,7 @@ process_stat_symlink:
 				procname = NULL;
 				goto process_parse_file;
 			}
-#include "nut-pragmas-range-checks.h"
-			if ((uintmax_t)nbytes > (uintmax_t)SIZE_MAX || procnamelen <= (size_t)nbytes) {
-#include "nut-pragmas-range-checks-end.h"
+			if (procnamelen <= (size_t)nbytes) {
 				upsdebugx(1, "%s: failed to readlink() from %s: may have been truncated",
 					__func__, pathname);
 				free(procname);
