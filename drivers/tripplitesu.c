@@ -920,7 +920,7 @@ static int get_watchdog(int from_cycle) {
 	char timeout_value[32], alarm_value[32];
 	char msg[MAX_RESPONSE_LENGTH + 96];
 	const char *failure = NULL;
-	unsigned int timeout, alarm;
+	unsigned int timeout = 0, alarm = 1;
 
 	if (do_command(POLL, WATCHDOG, "", response, sizeof(response)) <= 0) {
 		snprintf(msg, sizeof(msg), "could not read the watchdog "
