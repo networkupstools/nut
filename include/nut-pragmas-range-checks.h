@@ -43,5 +43,6 @@
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 # pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
