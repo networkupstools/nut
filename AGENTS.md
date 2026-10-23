@@ -5,13 +5,16 @@ They supplement, but do not replace, the project's authoritative guidance.
 
 ## Read the project guidance
 
-Before proposing a change, read the parts relevant to it:
+Before editing, read and apply the relevant guidance below. Check the final
+diff against those requirements before submission:
 
 - `docs/developers.txt` for coding style, portability, build and contribution
   requirements.
 - `docs/developer-guide.txt` for NUT architecture, design and data flow.
 - `.github/pull_request_template.md` for the current contribution checklist.
 - `SECURITY.md` before investigating or reporting a possible vulnerability.
+- `.github/CI.md` before changing GitHub Actions workflows or scripts under
+  `.github/`.
 
 Follow more specific guidance in those files if this summary differs from it.
 
@@ -21,7 +24,8 @@ Follow more specific guidance in those files if this summary differs from it.
   consulting relevant history where needed. Trace affected callers, consumers
   and data flow, then change the layer which owns the behaviour.
 - Reuse established NUT helpers, types, probes and patterns before adding new
-  code. Check nearby code for applicable precedent.
+  code. Check nearby code for applicable precedent. Check that optional
+  features and their detection mechanisms are available before use.
 
 ## Keep changes focused and portable
 
@@ -30,10 +34,13 @@ Follow more specific guidance in those files if this summary differs from it.
 - Follow affected-file style and the portability requirements in
   `docs/developers.txt`, including plain ASCII in source comments and AsciiDoc
   where ASCII suffices.
+- Preserve still-valid behavioral qualifications and rationale when
+  restructuring code or documentation. Relocate useful comments with the code
+  they explain, and review removed text for lost information.
 - When adding, removing or renaming files, or changing templates, update the
   applicable `Makefile.am`, `configure.ac`, distribution lists and generation
   rules. Update source templates rather than generated files unless project
-  practice requires a generated artefact to be tracked.
+  practice requires a generated artifact to be tracked.
 - Update manuals, compatibility data, version markers, `NEWS.adoc`,
   `UPGRADING.adoc` and acknowledgements only where required by the affected
   change. With `NEWS.adoc` note that many changes are grouped by subject,
@@ -44,9 +51,13 @@ Follow more specific guidance in those files if this summary differs from it.
 
 ## Validate the affected behaviour
 
+- Select checks from the affected compatibility requirements, including older
+  supported tools and feature-disabled paths. Apply these requirements to tests
+  and build scripts too.
 - Run affected tests and builds, and run `make distcheck-light` before
   upstreaming. Include relevant documentation and distribution checks when
-  their inputs or metadata change.
+  their inputs or metadata change. For documentation changes, run the project
+  spellcheck and account for the dictionary versions exercised by CI.
 - Report expected compatibility, what was actually tested, material failures
   and untested limitations. Do not claim hardware, platform or runtime
   acceptance from CI jobs which did not exercise it.

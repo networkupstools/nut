@@ -12,14 +12,24 @@
 #include "common.h"
 #include "parseconf.h"
 
+#ifdef WIN32
+# include <io.h>
+# define dup _dup
+# define dup2 _dup2
+# define fileno _fileno
+# define close _close
+#else
+# include <unistd.h>
+#endif
+
 typedef struct {
-	const char *name;
-	const char *input;
-	size_t numargs;
-	const char *args[8];
+	const char	*name;
+	const char	*input;
+	size_t		numargs;
+	const char	*args[8];
 } testcase_t;
 
-static const testcase_t cases[] = {
+static const testcase_t	cases[] = {
 	{ "ordinary", "one two\n", 2, { "one", "two" } },
 	{ "empty", " \t\n", 0, { NULL } },
 	{ "comment", "# ignored\n", 0, { NULL } },
@@ -55,11 +65,11 @@ static const testcase_t cases[] = {
 	{ "character filter", "\"a\001\t\r\200\377b\177\"\n", 1, { "ab\177" } }
 };
 
-static int failures = 0;
+static int	failures = 0;
 
 static void check_args(PCONF_CTX_t *ctx, const testcase_t *test, const char *mode)
 {
-	size_t i;
+	size_t	i;
 
 	if (pconf_parse_error(ctx)) {
 		fprintf(stderr, "%s/%s: unexpected parse error: %s\n",
@@ -102,9 +112,9 @@ static void file_input(PCONF_CTX_t *ctx, const char *input)
 
 static void check_case(const testcase_t *test)
 {
-	PCONF_CTX_t ctx;
-	size_t i, len = strlen(test->input);
-	int ret;
+	PCONF_CTX_t	ctx;
+	size_t	i, len = strlen(test->input);
+	int	ret;
 
 	pconf_init(&ctx, NULL);
 	check_result(pconf_line(&ctx, test->input), 1, test->name);
@@ -131,20 +141,20 @@ static void check_case(const testcase_t *test)
 
 static void check_boundaries(void)
 {
-	PCONF_CTX_t ctx;
-	static const testcase_t incomplete = {
+	PCONF_CTX_t	ctx;
+	static const testcase_t	incomplete = {
 		"incomplete quote", "key \"unfinished", 2, { "key", "unfinished" }
 	};
-	static const testcase_t limited = {
+	static const testcase_t	limited = {
 		"limits", "abcde fghij discarded\n", 2, { "abcd", "fghi" }
 	};
-	static const testcase_t trailing = {
+	static const testcase_t	trailing = {
 		"trailing backslash", "key value\\", 2, { "key", "value" }
 	};
-	static const testcase_t next = {
+	static const testcase_t	next = {
 		"next line", "next\n", 1, { "next" }
 	};
-	size_t i;
+	size_t	i;
 
 	/* These incomplete inputs historically return their collected words. */
 	pconf_init(&ctx, NULL);
@@ -187,12 +197,12 @@ static void check_boundaries(void)
 
 static void check_encoder(void)
 {
-	static const char raw[] = "# \\\"' = end#";
-	static const char encoded[] = "\\# \\\\\\\"' = end\\#";
-	PCONF_CTX_t ctx;
-	char output[128], input[132];
-	const testcase_t roundtrip = { "encoder roundtrip", NULL, 1, { raw } };
-	const testcase_t short_result = { "short encoder roundtrip", NULL, 1, { "#" } };
+	static const char	raw[] = "# \\\"' = end#";
+	static const char	encoded[] = "\\# \\\\\\\"' = end\\#";
+	PCONF_CTX_t	ctx;
+	char	output[128], input[132];
+	const testcase_t	roundtrip = { "encoder roundtrip", NULL, 1, { raw } };
+	const testcase_t	short_result = { "short encoder roundtrip", NULL, 1, { "#" } };
 
 	check_result(pconf_encode(raw, output, sizeof(output)) == output, 1, "encoder return");
 	check_result(strcmp(output, encoded), 0, "encoder bytes (including escaped hash)");
@@ -215,14 +225,71 @@ static void check_encoder(void)
 	pconf_finish(&ctx);
 }
 
+/* Parse input with stderr sent to a temporary file, return what was written */
+static void capture_stderr(const char *input, int from_file, char *out, size_t outlen)
+{
+	PCONF_CTX_t	ctx;
+	FILE	*cap = tmpfile();
+	int	saved;
+	size_t	n;
+
+	out[0] = '\0';
+	if (!cap)
+		fatal_with_errno(EXIT_FAILURE, "tmpfile");
+	fflush(stderr);
+	saved = dup(fileno(stderr));
+	if (saved < 0 || dup2(fileno(cap), fileno(stderr)) < 0)
+		fatal_with_errno(EXIT_FAILURE, "redirect stderr");
+
+	pconf_init(&ctx, NULL);
+	if (from_file) {
+		file_input(&ctx, input);
+		pconf_file_next(&ctx);
+	} else {
+		pconf_line(&ctx, input);
+	}
+	pconf_finish(&ctx);
+
+	fflush(stderr);
+	dup2(saved, fileno(stderr));
+	close(saved);
+	rewind(cap);
+	n = fread(out, 1, outlen - 1, cap);
+	out[n] = '\0';
+	fclose(cap);
+}
+
+static void check_attached_hash_warning(void)
+{
+	static const char	line[] = "MONITOR ups@localhost 1 upsmon Example#123 primary\n";
+	char	msg[512];
+
+	/* A config file line cut by a glued hash names its position, and
+	 * none of the text before the hash */
+	capture_stderr(line, 1, msg, sizeof(msg));
+	check_result(strstr(msg, "line 1, word 5: '#'") != NULL, 1,
+		"attached hash warning in a file");
+	check_result(strstr(msg, "Example") == NULL, 1,
+		"attached hash warning leaves out the word");
+
+	/* A comment after a space is ordinary and stays quiet */
+	capture_stderr("MONITOR ups@localhost 1 upsmon pass # note\n", 1, msg, sizeof(msg));
+	check_result(msg[0] == '\0', 1, "no warning for a spaced comment");
+
+	/* Protocol and single line input stays quiet */
+	capture_stderr(line, 0, msg, sizeof(msg));
+	check_result(msg[0] == '\0', 1, "no warning for line input");
+}
+
 int main(void)
 {
-	size_t i;
+	size_t	i;
 
 	for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
 		check_case(&cases[i]);
 	check_boundaries();
 	check_encoder();
+	check_attached_hash_warning();
 	printf("parseconf: %" PRIuSIZE " cases through line/file/char, boundary and encoder checks: %d failures\n",
 		sizeof(cases) / sizeof(cases[0]), failures);
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;

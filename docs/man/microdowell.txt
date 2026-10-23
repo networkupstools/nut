@@ -26,8 +26,22 @@ Other Microdowell models may work, too.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the
-linkman:ups.conf[5].
+This driver supports the following settings in linkman:ups.conf[5]:
+
+*ups.delay.shutdown*='num'::
+Set the shutdown delay in seconds (default: 120). The stored value is
+limited to the range 0 to 32767. When sending a shutdown command, the
+driver uses a minimum delay of 6 seconds.
+
+*ups.delay.start*='num'::
+Set the restart delay in seconds (default: 10). The stored value is
+limited to the range 0 to 999999.
+
+Both values are also available as writable runtime variables through
+linkman:upsrw[8]. Runtime changes apply to the running driver instance.
+Fresh driver initialization loads the configured values. If a running
+driver instance accepts a *-k* request, its runtime values remain in
+effect; otherwise the new *-k* process loads the configured values.
 
 AUTHOR
 ------

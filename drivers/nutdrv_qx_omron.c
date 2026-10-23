@@ -587,7 +587,7 @@ static item_t	omron_qx2nut[] = {
 	 *
 	 * None carries QX_FLAG_QUICK_POLL: a QUICK_POLL item that fails aborts
 	 * qx_ups_walk() before QX_FLAG_SKIP can be set, which during
-	 * initialisation stops the driver from starting at all. */
+	 * initialization stops the driver from starting at all. */
 	{ "battery.charge",		0,	NULL,	"Bl ?\r",	"",	4,	0,	"",	0,	0,	"%.1f",	0,			NULL,	NULL,	omron_process_charge },
 	{ "battery.runtime",		0,	NULL,	"RTS\r",	"",	4,	0,	"",	0,	0,	"%.0f",	0,			NULL,	NULL,	omron_process_runtime },
 	{ "battery.temperature",	0,	NULL,	"TPb\r",	"",	5,	0,	"",	0,	0,	"%s",	0,			NULL,	NULL,	omron_process_signed },
