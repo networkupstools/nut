@@ -1123,6 +1123,19 @@ https://github.com/networkupstools/nut/milestone/13
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
+    * USB support can now be built against libusb-1.0 releases from 1.0.9
+      on, such as the `libusb1` 1.0.9 package of CentOS 6. Before 1.0.16
+      there is no `libusb_strerror()`, so error messages show the name of
+      the libusb error code (from `libusb_error_name()`) instead of its
+      description; before 1.0.10 or so there is no `libusb_get_version()`,
+      so `driver.version.usb` says the version is unknown. `nut-scanner`
+      falls back the same way when the libusb it loads at run time lacks
+      these methods. [issues #509, #3781, PR #3782]
+    * With `--with-usb=auto` (or `yes`), the `configure` script now falls
+      back to an also available libusb-0.1 when the preferred libusb-1.0 is
+      too old for NUT, instead of building without USB drivers. An explicit
+      `--with-usb=libusb-1.0` still fails in that case.
+      [issue #3781, PR #3782]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
