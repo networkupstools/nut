@@ -324,7 +324,7 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	/* Prefer the per-connection context (if any) over the ambient default,
 	 * so different connections in one process can use different client certs
 	 * from the same shared NSS certificate/key database. */
-	UPSCONN_t	*ups = (UPSCONN_t *)arg;
+	UPSCONN_t	*ups = (UPSCONN_t *)arg;	/* Populated by SSL_SetPKCS11PinArg() */
 	upscli_ssl_context_config_t	*cfg = ups ? (upscli_ssl_context_config_t *)ups->ssl_ctx : NULL;
 	const char	*passwd;
 
@@ -335,8 +335,9 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	}
 	passwd = cfg ? cfg->certpasswd : NULL;
 
-	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s (%s): password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		(ups && ups->host && *(ups->host)) ? ups->host : "hostname not specified",
 		passwd ? "" : "not ");
 	return passwd ? PL_strdup(passwd) : NULL;
 }
@@ -635,7 +636,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
 		if (!names) break;
 
-		/* OpenSSL macros may have an unreachable effect like this */
+		/* OpenSSL macros can look unreachable and call helpers marked unused. */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wunreachable-code"
@@ -643,6 +644,11 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
+# ifdef __has_warning
+#  if __has_warning("-Wused-but-marked-unused")
+#   pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#  endif
+# endif
 #endif
 		count = sk_GENERAL_NAME_num(names);
 		if (!count) break; /* failed */
@@ -733,7 +739,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 					case 4:
 						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - (size_t)(p - ip_addr_buf) - 1,
 								"%u%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ".");
@@ -748,7 +754,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 						 *  a bit wasteful. */
 						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - (size_t)(p - ip_addr_buf) - 1,
 								"%02x%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ":");
@@ -1599,7 +1605,7 @@ static uint16_t get_port_from_string(const char *str_port)
 		} else {
 			struct servent	*se = getservbyname(str_port, "tcp");
 			if (se && se->s_port > 0 && (uintmax_t)(se->s_port) <= (uintmax_t)UINT16_MAX) {
-				retval = se->s_port;
+				retval = (uint16_t)se->s_port;
 			}
 		}
 #include "nut-pragmas-range-checks-end.h"
@@ -2451,7 +2457,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (!(ups->ssl_ctx) && !upscli_initialized) {
 		upsdebugx(3, "%s: upscli not initialized, "
-			"force initialisation without SSL configuration", __func__);
+			"force initialization without SSL configuration", __func__);
 		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
 			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);

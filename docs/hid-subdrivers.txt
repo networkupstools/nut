@@ -9,7 +9,7 @@ How to make a new subdriver to support another USB/HID UPS
 Overall concept
 ~~~~~~~~~~~~~~~
 
-USB (Universal Serial Port) devices can be divided into several
+USB (Universal Serial Bus) devices can be divided into several
 different classes (audio, imaging, mass storage etc). Almost all UPS
 devices belong to the "HID" class, which means "Human Interface
 Device", and also includes things like keyboards and mice. What HID
@@ -21,9 +21,9 @@ in the case of a UPS).
 The NUT "usbhid-ups" driver is a meta-driver that handles all HID UPS
 devices. It consists of a core driver that handles most of the work of
 talking to the USB hardware, and several sub-drivers to handle
-specific UPS manufacturers (MGE, APC, and Belkin are currently
-supported).  Adding support for a new HID UPS device is easy, because
-it requires only the creation of a new sub-driver.
+specific UPS manufacturers (including MGE, APC, and Belkin).  Adding support
+for a new HID UPS device is easy, because it requires only the creation of a
+new sub-driver.
 
 There are a few USB UPS devices that are not true HID devices. These
 devices typically implement some version of the manufacturer's serial
