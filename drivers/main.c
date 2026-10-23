@@ -3485,15 +3485,14 @@ sockname_ownership_finished:
 
 	memset(&previous_battery_charge_timestamp, 0, sizeof(previous_battery_charge_timestamp));
 	while (!exit_flag) {
-		struct timeval	timeout;
+		dstate_poll_t	timeout;
 		const st_tree_t	*dstate_entry = NULL;
 
 		if (!dump_data) {
 			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 		}
 
-		gettimeofday(&timeout, NULL);
-		timeout.tv_sec += poll_interval;
+		dstate_poll_start(&timeout, poll_interval);
 
 		if (reconnect_count > 0) {
 			dstate_setinfo("driver.reconnect_count", "%d", reconnect_count);
@@ -3533,7 +3532,7 @@ sockname_ownership_finished:
 		else {
 			/* NOTE: this doubles as (up to) poll_interval sleep
 			 * between update loop cycles */
-			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
+			while (!dstate_poll_fds(&timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
 				handle_reload_flag();
 			}
