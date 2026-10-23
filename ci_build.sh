@@ -1136,32 +1136,11 @@ do_autogen_get_CONFIGURE_SCRIPT() {
         # older system) we have to remove it when we already have the script.
         # This matches the use-case of distro-building from release tarballs that
         # include all needed pre-generated files to rely less on OS facilities.
-        (
-            # Optionally drop the PR-specific last component of the version
-            # (e.g. 2.8.5.1466.13 => 2.8.5.1466) which AC_INIT puts into
-            # config.h as PACKAGE_VERSION. The ccache direct mode hashes all
-            # included headers, so a version change misses for nearly every
-            # file and defeats ccache across pull requests. Only autogen.sh gets
-            # this setting, so `make` still generates nut_version.h (and the
-            # UPS_VERSION reported by programs) from actual Git metadata.
-            if [ x"${CI_AUTOGEN_STABLE_VERSION-}" = xtrue ] && [ -z "${NUT_VERSION_FORCED-}" ] ; then
-                _NUT_VERSION_STABLE="`NUT_VERSION_QUERY=VER50 ./tools/gitlog2version.sh 2>/dev/null`" || _NUT_VERSION_STABLE=""
-                case "${_NUT_VERSION_STABLE}" in
-                    *.*.*.*.*) _NUT_VERSION_STABLE="${_NUT_VERSION_STABLE%.*}" ;;
-                esac
-                if [ -n "${_NUT_VERSION_STABLE}" ] ; then
-                    echo "INFO: CI_AUTOGEN_STABLE_VERSION: using NUT_VERSION_FORCED='${_NUT_VERSION_STABLE}' for autogen.sh" >&2
-                    NUT_VERSION_FORCED="${_NUT_VERSION_STABLE}"
-                    export NUT_VERSION_FORCED
-                fi
-            fi
-
-            if [ "$CI_OS_NAME" = "windows" ] ; then
-                $CI_TIME ./autogen.sh || true
-            else
-                $CI_TIME ./autogen.sh ### 2>/dev/null
-            fi
-        ) || exit
+        if [ "$CI_OS_NAME" = "windows" ] ; then
+            $CI_TIME ./autogen.sh || true
+        else
+            $CI_TIME ./autogen.sh ### 2>/dev/null
+        fi || exit
     fi
 
     # Retain the full path to configure script file
@@ -2050,6 +2029,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
                     CONFIG_OPTS+=("--with-doc=yes")
                 fi
             fi
+            # Spelling is checked by dedicated BUILD_TYPE=default-spellcheck jobs
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ -z "${DO_CLEAN_CHECK-}" ]; then
                 # This is one of recipes where we want to
                 # keep the build products by default ;)
@@ -2065,6 +2046,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             else
                 CONFIG_OPTS+=("--with-doc=man")
             fi
+            # Spelling is checked by dedicated BUILD_TYPE=default-spellcheck jobs
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ -z "${DO_CLEAN_CHECK-}" ]; then
                 # This is one of recipes where we want to
                 # keep the build products by default ;)
@@ -2328,6 +2311,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
             # Note: no PARMAKE_FLAGS here - better have this output readably
             # ordered in case of issues (in sequential replay below).
             ( echo "`date`: Starting the quiet build attempt for target $BUILD_TYPE..." >&2
+              # Its output is discarded, so let the verbose attempt below
+              # make the GitHub Actions annotations and job summary
+              GITHUB_ACTIONS="" ; export GITHUB_ACTIONS
               $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes -k $PARMAKE_FLAGS "`echo \"$BUILD_TYPE\" | sed 's,^default-,,'`" >/dev/null 2>&1 \
               && echo "`date`: SUCCEEDED the spellcheck" >&2
             ) || \
@@ -2335,6 +2321,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-al
               $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE SPELLCHECK_ERROR_FATAL=yes spellcheck
               # Make end of log useful:
               echo "`date`: FAILED something in spellcheck above; re-starting a non-verbose build attempt to just summarize now:" >&2
+              # The verbose attempt above already made the GitHub Actions
+              # annotations and job summary for the errors, do not repeat
+              GITHUB_ACTIONS="" ; export GITHUB_ACTIONS
               $CI_TIME $MAKE $MAKE_FLAGS_QUIET SPELLCHECK_ERROR_FATAL=yes spellcheck
             )
             exit $?

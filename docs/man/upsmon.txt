@@ -49,7 +49,7 @@ rely on a PID file.
 
 *-D*::
 Raise the debugging level.  upsmon will run in the foreground by default,
-and will print information on stdout about the monitoring process.
+and will print information on stderr about the monitoring process.
 Use this option multiple times for more details.
 
 *-F*::
@@ -187,6 +187,9 @@ Communication with the UPS was just lost.
 
 *SHUTDOWN*::
 The local system is being shut down.
+
+*SHUTDOWN_HOSTSYNC*::
+This primary system began the shutdown, and is waiting for secondaries.
 
 *REPLBATT*::
 The UPS needs to have its battery replaced.

@@ -1032,7 +1032,7 @@ static void savesettings(void)
 static void savesettings(void)
 {
 	int	changed = 0;
-	char	*desc;
+	char	*desc = NULL;
 	uvtype_t	*upsvar;
 
 	if (!checkhost(monups, &desc))

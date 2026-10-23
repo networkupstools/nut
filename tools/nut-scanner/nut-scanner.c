@@ -644,6 +644,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 				pCurrAddresses->Description,
 				sizeof(ifname) - ifnamelen);
 
+			upsdebugx(5, "%s: collected ifnamelen=%" PRIuSIZE, __func__, ifnamelen);
+
 			if ( (ifflags & IP_ADAPTER_IPV6_ENABLED)
 			||   (ifflags & IP_ADAPTER_IPV4_ENABLED)
 			) for (pUnicast = pCurrAddresses->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next)
@@ -666,6 +668,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 				"%s: %s",
 				pAdapter->AdapterName,
 				pAdapter->Description);
+
+			upsdebugx(5, "%s: collected ifnamelen=%" PRIuSIZE, __func__, ifnamelen);
 
 			for (pUnicast = &(pAdapter->IpAddressList); pUnicast; pUnicast = pUnicast->Next)
 #endif
