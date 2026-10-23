@@ -1,6 +1,6 @@
 dnl Check for LIBNETSNMP compiler flags. On success, set
 dnl nut_have_libnetsnmp="yes" and set LIBNETSNMP_CFLAGS and
-dnl LIBNETSNMP_LIBS. On failure, set nut_have_libnetsnmp="no".
+dnl LIBNETSNMP_LIBS and LIBNETSNMP_LIBS_EXEC. On failure, set nut_have_libnetsnmp="no".
 dnl This macro can be run multiple times, but will do the
 dnl checking only once.
 
@@ -18,6 +18,9 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
         NUT_ARG_WITH_LIBOPTS_LIBS([snmp], [auto], [Net-SNMP])
 
         nut_noncv_checked_libnetsnmp_now=no
+        dnl Refresh older caches which did not retain executable linker flags.
+        AS_IF([test "${nut_cv_LIBNETSNMP_LIBS_EXEC+set}" != set],
+            [AS_UNSET([nut_cv_checked_libnetsnmp])])
         AC_CACHE_VAL([nut_cv_checked_libnetsnmp], [
             nut_noncv_checked_libnetsnmp_now=yes
 
@@ -129,6 +132,8 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
             )
             AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
+            depLIBS_EXEC="${depLIBS}"
+
             dnl Check if the Net-SNMP library is usable
             CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
             LIBS="${LIBS_ORIG} ${depLIBS}"
@@ -150,6 +155,8 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
                         [*mingw*], [
                             AC_MSG_NOTICE([mingw builds of net-snmp might provide only a static library - retrying for that])
                             depLIBS="`$PKG_CONFIG --silence-errors --libs --static netsnmp 2>/dev/null`"
+                            dnl Executables need ordinary flags after their static libraries.
+                            depLIBS_EXEC="${depLIBS}"
                             dnl # Some workarouds here, to avoid libtool bailing out like this:
                             dnl # *** Warning: This system cannot link to static lib archive /usr/x86_64-w64-mingw32/lib//libnetsnmp.la.
                             dnl # *** I have the capability to make that library automatically link in when
@@ -174,12 +181,14 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 
             nut_cv_LIBNETSNMP_CFLAGS=""
             nut_cv_LIBNETSNMP_LIBS=""
+            nut_cv_LIBNETSNMP_LIBS_EXEC=""
             nut_cv_SOFILE_LIBNETSNMP=""
             nut_cv_SONAME_LIBNETSNMP=""
             nut_cv_SOPATH_LIBNETSNMP=""
             AS_IF([test "${nut_cv_have_libnetsnmp}" = "yes"], [
                 nut_cv_LIBNETSNMP_CFLAGS="${depCFLAGS}"
                 nut_cv_LIBNETSNMP_LIBS="${depLIBS}"
+                nut_cv_LIBNETSNMP_LIBS_EXEC="${depLIBS_EXEC}"
 
                 AC_CACHE_CHECK([for defined usmAESPrivProtocol],
                     [nut_cv_NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol],
@@ -378,6 +387,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
             AC_CACHE_VAL([nut_cv_prefer_NET_SNMP_CONFIG], [])
             AC_CACHE_VAL([nut_cv_LIBNETSNMP_CFLAGS], [])
             AC_CACHE_VAL([nut_cv_LIBNETSNMP_LIBS], [])
+            AC_CACHE_VAL([nut_cv_LIBNETSNMP_LIBS_EXEC], [])
             AC_CACHE_VAL([nut_cv_LIBNETSNMP_CFLAGS_SOURCE], [])
             AC_CACHE_VAL([nut_cv_LIBNETSNMP_LIBS_SOURCE], [])
             AC_CACHE_VAL([nut_cv_SOFILE_LIBNETSNMP], [])
@@ -385,6 +395,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 
             unset depCFLAGS
             unset depLIBS
+            unset depLIBS_EXEC
             unset depCFLAGS_SOURCE
             unset depLIBS_SOURCE
 
@@ -431,6 +442,7 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 
             LIBNETSNMP_CFLAGS="${nut_cv_LIBNETSNMP_CFLAGS}"
             LIBNETSNMP_LIBS="${nut_cv_LIBNETSNMP_LIBS}"
+            LIBNETSNMP_LIBS_EXEC="${nut_cv_LIBNETSNMP_LIBS_EXEC}"
 
             dnl For nut-scanner style autoloading:
             SOPATH_LIBNETSNMP="${nut_cv_SOPATH_LIBNETSNMP}"
