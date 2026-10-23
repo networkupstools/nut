@@ -2562,47 +2562,62 @@ static void checkconf(void)
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
+	char	**files;
+	size_t	file_idx, count = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upssched.conf", confpath());
 
-	pconf_init(&ctx, upssched_err);
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
+		fatalx(EXIT_FAILURE, "Can't open %s (and %s.d/*.conf)", fn, fn);
+	}
 
-	if (!pconf_file_begin(&ctx, fn)) {
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		pconf_init(&ctx, upssched_err);
+
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
+			pconf_finish(&ctx);
+			pconf_free_files(files);
+			fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
+		}
+
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				numerrors++;
+				continue;
+			}
+
+			if (ctx.numargs < 1)
+				continue;
+
+			/* Note: for list_timers mode this only parses some config values
+			 * that are of interest for communications with the timer daemon
+			 * (e.g. PIPEFN), but for normal mode this also calls parse_at()
+			 * and does the actual work, as/when relevant, line by line.
+			 */
+			if (!conf_arg(ctx.numargs, ctx.arglist)) {
+				unsigned int	i;
+				char	errmsg[SMALLBUF];
+
+				snprintf(errmsg, sizeof(errmsg),
+					"%s line %d: invalid directive",
+					files[file_idx], ctx.linenum);
+
+				for (i = 0; i < ctx.numargs; i++)
+					snprintfcat(errmsg, sizeof(errmsg), " %s",
+						ctx.arglist[i]);
+
+				numerrors++;
+				upslogx(LOG_WARNING, "%s", errmsg);
+			}
+		}
+
 		pconf_finish(&ctx);
-		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-			numerrors++;
-			continue;
-		}
-
-		if (ctx.numargs < 1)
-			continue;
-
-		/* Note: for list_timers mode this only parses some config values
-		 * that are of interest for communications with the timer daemon
-		 * (e.g. PIPEFN), but for normal mode this also calls parse_at()
-		 * and does the actual work, as/when relevant, line by line.
-		 */
-		if (!conf_arg(ctx.numargs, ctx.arglist)) {
-			unsigned int	i;
-			char	errmsg[SMALLBUF];
-
-			snprintf(errmsg, sizeof(errmsg),
-				"upssched.conf: invalid directive");
-
-			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s",
-					ctx.arglist[i]);
-
-			numerrors++;
-			upslogx(LOG_WARNING, "%s", errmsg);
-		}
-	}
+	pconf_free_files(files);
 
 	if (list_timers) {
 		if (!pipefn || !(*pipefn)) {

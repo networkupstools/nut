@@ -78,7 +78,9 @@ let upsd_users_record   = IniFile.record upsd_users_title (upsd_users_entry|upsd
 
 let upsd_users_lns      = IniFile.lns upsd_users_record upsd_users_comment
 
-let upsd_users_filter = ( incl "@CONFPATH@/upsd.users" )
+let upsd_users_filter = ( incl "@CONFPATH@/upsd.users" |
+			   incl "@CONFPATH@/upsd.users.d/*.users" |
+			   incl "@CONFPATH@/upsd.users.d/*.conf" )
 			. Util.stdexcl
 
 let upsd_users_xfm = transform upsd_users_lns upsd_users_filter

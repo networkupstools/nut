@@ -278,7 +278,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	}
 
 #else	/* WIN32 */
-	char pipename[NUT_PATH_MAX];
+	char pipename[NUT_PATH_MAX + 1];
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL  result = FALSE;
 	DWORD bytesWritten;

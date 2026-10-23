@@ -5,6 +5,11 @@
 # NOTE: Contents of this file should be pure ASCII (character codes
 # not in range would be ignored with a warning message).
 #
+# Additional configuration snippets can be placed in `upsmon.conf.d/*.conf`
+# files, processed in alphanumeric order. Each additional file restarts
+# population of the root context, adding or replacing configuration
+# remembered there from earlier parsing.
+#
 # A minimal configuration should include at least one MONITOR instruction,
 # MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
 # and a POWERDOWNFLAG if this machine is a "primary" system connected to

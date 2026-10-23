@@ -45,12 +45,14 @@ static void user_add(const char *un)
 		return;
 	}
 
+	curr_user = NULL;
+
 	for (tmp = users; tmp != NULL; tmp = (ulist_t*)tmp->next) {
 
 		last = tmp;
 
 		if (!strcmp(tmp->username, un)) {
-			fprintf(stderr, "Ignoring duplicate user %s\n", un);
+			upslogx(LOG_WARNING, "Warning: ignoring duplicate user [%s]", un);
 			return;
 		}
 	}
@@ -82,7 +84,7 @@ static void user_password(const char *pw)
 	}
 
 	if (curr_user->password) {
-		fprintf(stderr, "Ignoring duplicate password for %s\n",
+		upslogx(LOG_WARNING, "Warning: ignoring duplicate password for [%s]",
 			curr_user->username);
 		return;
 	}
@@ -140,6 +142,10 @@ static actionlist_t *addaction(actionlist_t *base, const char *action)
 	for (tmp = base; tmp != NULL; tmp = (actionlist_t*)tmp->next) {
 
 		last = tmp;
+
+		if (!strcasecmp(tmp->action, action)) {
+			return base;
+		}
 	}
 
 	tmp = (actionlist_t*)xcalloc(1, sizeof(*tmp));
@@ -468,35 +474,43 @@ static void upsd_user_err(const char *errmsg)
 
 void user_load(void)
 {
-	char	fn[NUT_PATH_MAX];
+	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
-
-	curr_user = NULL;
+	char	**files;
+	size_t	i, count = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.users", confpath());
 
-	check_perms(fn);
-
-	pconf_init(&ctx, upsd_user_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-
-		pconf_finish(&ctx);
-
-		upslogx(LOG_WARNING, "%s", ctx.errmsg);
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
+		upslogx(LOG_WARNING, "Can't open %s (and %s.d/*.users, *.conf)", fn, fn);
 		return;
 	}
 
-	while (pconf_file_next(&ctx)) {
+	for (i = 0; i < count; i++) {
+		curr_user = NULL;
+		check_perms(files[i]);
+		pconf_init(&ctx, upsd_user_err);
 
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+		if (!pconf_file_begin(&ctx, files[i])) {
+			upslogx(LOG_WARNING, "%s", ctx.errmsg);
+			pconf_finish(&ctx);
 			continue;
 		}
 
-		user_parse_arg(ctx.numargs, ctx.arglist);
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[i], ctx.linenum, ctx.errmsg);
+				continue;
+			}
+
+			user_parse_arg(ctx.numargs, ctx.arglist);
+		}
+
+		pconf_finish(&ctx);
 	}
 
-	pconf_finish(&ctx);
+	curr_user = NULL;
+	pconf_free_files(files);
 }

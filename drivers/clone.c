@@ -284,7 +284,7 @@ static TYPE_FD sstate_connect(void)
 
 	/* continued below... */
 #else /* WIN32 */
-	char		pipename[NUT_PATH_MAX];
+	char		pipename[NUT_PATH_MAX + 1];
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
