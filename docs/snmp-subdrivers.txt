@@ -207,7 +207,7 @@ structure to be precise), and will not implement any useful functionality
 (in particular, it will be unable to shut down the UPS). In the beginning,
 it simply attempts to monitor some UPS variables. To make this driver useful,
 you must examine the NUT variables of the form "unmapped.*" in the
-hid_info_t data structure (commonly wrapped into `snmp_info_default()`
+`snmp_info_t` data structure (commonly wrapped into `snmp_info_default()`
 macros for portability), and map them to actual NUT variables and
 instant commands. There are currently no step-by-step instructions for
 how to do this. Please look at the source files to see how the currently

@@ -336,7 +336,11 @@ indicates that the timed shutdown has failed.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in linkman:ups.conf[5].
+The *wait*, *nohang*, *flash*, *silent* and *dumbterm* settings described
+under <<_options,OPTIONS>> can also be specified in linkman:ups.conf[5].
+
+Do not set *wait* in a section used for normal UPS monitoring: it makes
+the driver run in standalone wait mode instead of monitoring the UPS.
 
 AUTHOR
 ------
