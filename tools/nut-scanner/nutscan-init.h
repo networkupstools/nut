@@ -18,7 +18,7 @@
  */
 
 /*! \file nutscan-init.h
-    \brief initialisation data
+    \brief initialization data
     \author Frederic Bohe <fredericbohe@eaton.com>
 	\author Arnaud Quette <arnaudquette@free.fr>
 */

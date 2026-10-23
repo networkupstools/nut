@@ -9,5 +9,5 @@ REM Preserve the current working directory:
 set CHERE_INVOKING=yes
 REM Start a 64 bit Mingw environment:
 set MSYSTEM=MINGW64
-C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; if ! ccache -sv ; then if ! ccache -s ; then echo "SKIP: Could not query ccache stats" ; fi ; fi'
 if errorlevel 1 exit /b %ERRORLEVEL%

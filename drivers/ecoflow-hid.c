@@ -29,7 +29,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.02"
+#define ECOFLOW_HID_VERSION	"EcoFlow HID 0.03"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* EcoFlow */
@@ -63,9 +63,12 @@ static usage_tables_t ecoflow_utab[] = {
 /* ----------------------------------------------------------------------------- */
 /* Runtime conversion function to match NUT HID driver's conversion signature    */
 /* minutes -> seconds                                                            */
+/* Returns a statically allocated string: callers (hu_find_infoval() in          */
+/* usbhid-ups.c) never free it. The old xmalloc() leaked HU_INFOSIZE bytes on    */
+/* every poll. Must not be called again before the caller is done with result.  */
 /* ----------------------------------------------------------------------------- */
 static const char *ecoflow_battery_runtime_conversion(double hid_value) {
-	char *converted_value;
+	static char converted_value[HU_INFOSIZE];
 	double converted_runtime;
 
 	/* Handle runtime values, including those over 24 hours */
@@ -73,9 +76,8 @@ static const char *ecoflow_battery_runtime_conversion(double hid_value) {
 		/* Convert minutes to seconds */
 		converted_runtime = hid_value * 60.0;
 
-		/* Allocate memory for string representation */
-		converted_value = (char*)xmalloc(HU_INFOSIZE);
-		snprintf(converted_value, HU_INFOSIZE, "%.0f", converted_runtime);
+		/* Format into the static buffer (no per-poll allocation) */
+		snprintf(converted_value, sizeof(converted_value), "%.0f", converted_runtime);
 		return converted_value;
 	}
 	return NULL;
