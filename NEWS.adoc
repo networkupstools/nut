@@ -1090,6 +1090,12 @@ https://github.com/networkupstools/nut/milestone/13
       `master`, run the tests in parallel, sped up compression of the
       artifact archive, and report per-build `ccache` statistics in the
       GitHub notification of passed builds. [PR #3790]
+    * AppVeyor CI: pull request builds (which do not save the build cache)
+      no longer stop early to leave time for saving it, and can use the
+      whole hour; for other builds that deadline moved from 51 to 57 minutes.
+      The `ccache` size limit is now also enforced right after the test and
+      bundle build steps, so a `master` build which fails there (e.g. by that
+      deadline) does not save an oversized build cache. [PR #3794]
     * CI build matrix scenarios (Jenkins autotools builds, `ci_build.sh` with
       `BUILD_TYPE=default-withdoc*`) now pass `--disable-spellcheck`, so their
       `make check` no longer runs (and fails on) the documentation spellcheck.
