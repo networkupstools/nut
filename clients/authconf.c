@@ -100,9 +100,11 @@ upscli_authconf_t *upscli_clone_authconf_item(upscli_authconf_t *source, const c
 		if ( ((at = strchr(node->section, '@')) != NULL)
 		 &&   at != node->section
 		) {
+			size_t	userlen = (size_t)(at - node->section);
+
 			/* New section title strictly defines a user name */
-			node->user = (char*)xcalloc(at - node->section + 1, sizeof(char));
-			memcpy(node->user, node->section, at - node->section);
+			node->user = (char*)xcalloc(userlen + 1, sizeof(char));
+			memcpy(node->user, node->section, userlen);
 		} else {
 			/* No '@' or no username chars before it */
 			node->user = source->user ? xstrdup(source->user) : NULL;
@@ -142,10 +144,12 @@ upscli_authconf_t *upscli_merge_authconf_item(upscli_authconf_t *source, upscli_
 	if ( ((at = strchr(target->section, '@')) != NULL)
 	 &&    at != target->section
 	) {
+		size_t	userlen = (size_t)(at - target->section);
+
 		/* Target section title strictly defines a user name */
 		free(target->user);
-		target->user = (char*)xcalloc(at - target->section + 1, sizeof(char));
-		memcpy(target->user, target->section, at - target->section);
+		target->user = (char*)xcalloc(userlen + 1, sizeof(char));
+		memcpy(target->user, target->section, userlen);
 	} else {
 		/* No '@' or no username chars before it in target section title */
 		if (!(target->user) && source->user) {
@@ -516,7 +520,7 @@ int upscli_normalize_authconf_section_parts(
 
 			if (se) {
 				char	portbuf[16];
-				if (snprintf(portbuf, sizeof(portbuf), "%u", (unsigned int)ntohs(se->s_port)) < 1) {
+				if (snprintf(portbuf, sizeof(portbuf), "%u", (unsigned int)ntohs((uint16_t)se->s_port)) < 1) {
 					upsdebugx(1, "%s: Failed to construct port number from service name", __func__);
 					goto failed;
 				}
