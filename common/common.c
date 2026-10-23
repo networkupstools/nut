@@ -1290,9 +1290,7 @@ process_stat_symlink:
 				procname = NULL;
 				goto process_parse_file;
 			}
-#include "nut-pragmas-type-limits.h"
-			if ((uintmax_t)nbytes > (uintmax_t)SIZE_MAX || procnamelen <= (size_t)nbytes) {
-#include "nut-pragmas-type-limits-end.h"
+			if (procnamelen <= (size_t)nbytes) {
 				upsdebugx(1, "%s: failed to readlink() from %s: may have been truncated",
 					__func__, pathname);
 				free(procname);
@@ -2863,9 +2861,15 @@ char *xbasename_no_ext(const char *file)
 			if (s && (bn_len == (size_t)(s - cs))) {
 				/* s points to first character that matches exeext,
 				 * this character is what we already do not want */
-				bn = (char*)xmalloc(bn_len + 1);
+				bn = (char*)xmalloc(bn_len + 2);
+				memset(bn, 0, bn_len + 2);
 				/* Extract first bn_len characters, add '\0' in the end */
-				snprintf(bn, bn_len, "%s", cs);
+				snprintf(bn, bn_len + 1, "%s", cs);
+				/* Just to be sure, hopefully we simply get two '\0' chars in the end.
+				 * NOTE: Older platform builds with `_snprintf` macro via wincompat.h
+				 *  (now e.g. MSVC 2015 in 32-bit builds) would not add the trailing NUL!
+				 */
+				bn[bn_len + 1] = '\0';
 			}
 		}
 	}
