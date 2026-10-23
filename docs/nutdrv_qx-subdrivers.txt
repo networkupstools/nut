@@ -168,7 +168,7 @@ typedef struct item_t {
 	info_rw_t	*info_rw;
 	const char	*command;
 	char		answer[SMALLBUF];
-	const int	answer_len;
+	const size_t	answer_len;
 	const char	leading;
 	char		value[SMALLBUF];
 	const int	from;
@@ -986,6 +986,13 @@ Find an item of +item_t+ type in +qx2nut+ data structure by its +info_type+, opt
 *+int	qx_process(item_t *item, const char *command)+*::
 Send +command+ (a null-terminated byte string) or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply, saving it in +item+'s +answer+.
 Return +-1+ on errors, +0+ on success.
+
+*+int	ups_infoval_check(item_t *item)+*::
+Validate a cached value with the same return codes as +ups_infoval_set()+,
+without publishing it or changing mapping and battery bookkeeping.
+Use only with a value preprocessor that has no side effects and does not depend
+on values published by the claim. Once all mandatory values and device-specific
+checks pass, publish the cached values with +ups_infoval_set()+.
 
 *+int	ups_infoval_set(item_t *item)+*::
 Process the value we got back from the UPS (set status bits and set the value of other parameters), calling the +item+-specific +preprocess+ function, if any, otherwise executing the standard preprocessing (including trimming if +QX_FLAG_TRIM+ is set).

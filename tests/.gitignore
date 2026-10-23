@@ -32,6 +32,9 @@
 /nutbooltest
 /nutbooltest.log
 /nutbooltest.trs
+/nutsnprintftest
+/nutsnprintftest.log
+/nutsnprintftest.trs
 /getexponenttest-belkin-hid
 /getexponenttest-belkin-hid.log
 /getexponenttest-belkin-hid.trs

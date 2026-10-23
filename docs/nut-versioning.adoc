@@ -322,6 +322,13 @@ DESC='v2.8.2-2381+g1faa9945d'
 			  * DESC5X with default width (6):
 			    `000002.000008.000004.000910.000002-912+g081755da0`
 |`SEMVER`	| Exactly three leading numeric components	| * `2.8.2`
+|`SEMVER_ACINIT`	| `SEMVER` for releases, or a nominal `SEMVER.1` for any
+			  development iteration after that release (for pre-releases,
+			  the triplet of `VER50` is used, unless forced otherwise).
+			  Used for `AC_INIT` (so ends up in `config.h` macros), and
+			  does not change between releases, to benefit build caches.
+			| * dev: `2.8.2.1`
+			  * rel: `2.8.2`
 |`IS_RELEASE`	| `true` if `SEMVER`==`VER50`, `false` otherwise
 			| * dev: `false`
 			  * rel: `true`

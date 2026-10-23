@@ -1038,6 +1038,9 @@ int main(int argc, char **argv)
 			? "stdout"
 			: monhost_ups_current->logtarget->logfn,
 			interval);
+		/* Release the earlier parse or discovery results before replacing them. */
+		free(monhost_ups_current->upsname);
+		free(monhost_ups_current->hostname);
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
