@@ -110,6 +110,23 @@ nodist_test_cgilib_SOURCES = cgilib.c
 test_cgilib_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 test_cgilib_LDADD = $(NUT_LIBCOMMON)
 
+if WITH_NUT_SCANNER
+if HAVE_LIBREGEX
+TESTS += nutscan-display-test
+nutscan_display_test_SOURCES = nutscan-display-test.c
+nutscan_display_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner $(LIBIPMI_CFLAGS)
+nutscan_display_test_LDADD = $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+nutscan_display_test_LDFLAGS = $(AM_LDFLAGS)
+if WITH_SSL
+nutscan_display_test_LDADD += $(LIBSSL_LIBS)
+nutscan_display_test_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
+endif WITH_SSL
+
+$(top_builddir)/tools/nut-scanner/libnutscan.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_builddir)/clients/libupsclient.la dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+endif HAVE_LIBREGEX
+endif WITH_NUT_SCANNER
+
 TESTS += parseconf-test
 parseconf_test_SOURCES = parseconf-test.c
 parseconf_test_LDADD = $(NUT_LIBCOMMON)

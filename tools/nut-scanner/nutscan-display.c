@@ -47,6 +47,108 @@ static char * nutscan_device_type_string[TYPE_END] = {
  */
 static size_t last_nutdev_num = 0;
 
+#if (defined HAVE_LIBREGEX) && HAVE_LIBREGEX
+static nutscan_options_t * nutscan_find_option(nutscan_device_t *device, const char *name)
+{
+	nutscan_options_t *opt;
+
+	for (opt = device->opt; opt; opt = opt->next) {
+		if (opt->option && !strcmp(opt->option, name)) {
+			return opt;
+		}
+	}
+	return NULL;
+}
+
+static int nutscan_usb_selectors_overlap(nutscan_device_t *device, nutscan_device_t *other)
+{
+	/* Only active selectors constrain this configuration. The other entry's
+	 * commented options still describe its observed USB attributes.
+	 */
+	static const char *selectors[] = {
+		"vendorid", "productid", "vendor", "product", "serial", "bus", "device",
+# if (defined WITH_USB_BUSPORT) && WITH_USB_BUSPORT
+		"busport",
+# endif
+		NULL
+	};
+	size_t i;
+
+	for (i = 0; selectors[i]; i++) {
+		nutscan_options_t *opt = nutscan_find_option(device, selectors[i]);
+		nutscan_options_t *observed;
+		regex_t *regex = NULL;
+		int matches;
+
+		if (!opt || opt->comment_tag || !opt->value) {
+			continue;
+		}
+		if (compile_regex(&regex, opt->value, REG_ICASE | REG_EXTENDED)) {
+			/* A duplicate-device suggestion cannot repair an invalid regex. */
+			return 0;
+		}
+		observed = nutscan_find_option(other, selectors[i]);
+		/* Identical discovered text cannot distinguish the devices, even
+		 * when it needs separate regex escaping or whitespace corrections.
+		 * Otherwise use the same full-string matching as the USB drivers.
+		 */
+		matches = (observed && observed->value && !strcasecmp(opt->value, observed->value))
+			|| match_regex(regex, observed ? observed->value : NULL) == 1;
+		regfree(regex);
+		free(regex);
+		if (!matches) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static void nutscan_suggest_usb_duplicates(nutscan_device_t *device, nutscan_device_t *first)
+{
+	/* These drivers both register allow_duplicates and claim devices through
+	 * the common libusb backend. In particular, richcomm_usb and apc_modbus
+	 * register the flag but use other claim paths; bcmxcp_usb, nutdrv_atcl_usb and
+	 * powervar_cx_usb do not register it. Do not suggest an ineffective flag.
+	 */
+	static const char *drivers[] = {
+		"usbhid-ups", "nutdrv_qx", "blazer_usb", "riello_usb",
+		"tripplite_usb", "apcmicrolink", NULL
+	};
+	nutscan_device_t *other;
+	size_t i;
+
+	if (device->type != TYPE_USB || !device->driver
+	||  nutscan_find_option(device, "allow_duplicates")
+	) {
+		return;
+	}
+	for (i = 0; drivers[i]; i++) {
+		if (!strcmp(device->driver, drivers[i])) {
+			break;
+		}
+	}
+	if (!drivers[i]) {
+		return;
+	}
+
+	/* ponytail: pairwise comparisons suit small USB discovery lists; index
+	 * the discovered selectors if large lists make this a measured problem.
+	 */
+	for (other = first; other; other = other->next) {
+		if (other == device || other->type != TYPE_USB || !other->driver
+		||  strcmp(device->driver, other->driver)
+		) {
+			continue;
+		}
+		if (nutscan_usb_selectors_overlap(device, other)) {
+			nutscan_add_commented_option_to_device(device, "allow_duplicates", NULL,
+				"OPTIONAL: device-to-name association may vary between runs");
+			return;
+		}
+	}
+}
+#endif /* HAVE_LIBREGEX */
+
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 {
 	/* Note: while a single device is passed to the method, it is actually
@@ -65,6 +167,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	 * used to locate the list of related device types and iterate it all.
 	 */
 	nutscan_device_t * current_dev = device;
+	nutscan_device_t * first;
 	nutscan_options_t * opt;
 	static size_t nutdev_num = 1;
 
@@ -80,9 +183,16 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	while (current_dev->prev != NULL) {
 		current_dev = current_dev->prev;
 	}
+	first = current_dev;
+#if (!defined HAVE_LIBREGEX) || (!HAVE_LIBREGEX)
+	NUT_UNUSED_VARIABLE(first);
+#endif
 
 	/* Display each device */
 	do {
+#if (defined HAVE_LIBREGEX) && HAVE_LIBREGEX
+		nutscan_suggest_usb_duplicates(current_dev, first);
+#endif
 		printf("[nutdev-%s%" PRIuSIZE "]\n\tdriver = \"%s\"",
 			nutscan_device_type_lstrings[current_dev->type],
 			nutdev_num, current_dev->driver);

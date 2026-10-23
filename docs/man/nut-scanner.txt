@@ -80,6 +80,26 @@ over time:
 +
 NOTE: For reliability, it is preferable to match just by vendor and product
 identification, and a serial number if available and unique.
++
+When generating `ups.conf` sections, the scanner may suggest a commented
+`allow_duplicates` flag for USB configurations whose active selectors do not
+distinguish another discovered device using the same driver. Missing selectors
+do not restrict matching; commented link details do not distinguish devices.
+For example, if only one of two otherwise similar devices reports a vendor
+string, the configuration without a vendor selector may receive the suggestion.
++
+This advisory currently covers `usbhid-ups`, `nutdrv_qx`, `blazer_usb`,
+`riello_usb`, `tripplite_usb` and `apcmicrolink`, which use the common USB
+handling of this flag. It compares identical observed selector text
+or regular-expression matches against the other devices' observed attributes.
+It does not correct whitespace or regular-expression escaping in the generated
+configuration, and an invalid regular expression suppresses the suggestion.
++
+The flag remains disabled. Review the configuration before enabling it:
+the association between a device name and a physical UPS may change between
+runs, and the flag does not guarantee that every driver instance will connect.
+Prefer unique selectors when available. See the USB options in the applicable
+driver manual for details. Parsable output does not include this advisory.
 
 *-S* | *--snmp_scan*::
 Scan SNMP devices. Requires at least a 'start IP', and optionally,
