@@ -75,7 +75,7 @@
 
 #include "nutdrv_qx_santak.h"
 
-#define SANTAK_VERSION "SANTAK 0.01"
+#define SANTAK_VERSION "SANTAK 0.02"
 
 /* Offsets of the input L2/L3 voltage fields inside the Q6 reply, used by
  * claim() to tell a single-phase device from a three-phase one. */
@@ -296,7 +296,7 @@ static int	santak_claim(void)
 			return 0;
 
 		/* Unable to process value */
-		if (ups_infoval_set(item) != 1)
+		if (ups_infoval_check(item) != 1)
 			return 0;
 
 		/* Keep the Q6-sourced item: its answer buffer holds the whole
@@ -323,6 +323,12 @@ static int	santak_claim(void)
 			"so it is not single-phase; leaving it to another subdriver",
 			__func__);
 		return 0;
+	}
+
+	/* Publish the cached values only after the complete claim succeeds. */
+	for (vari = 0; mandatory[vari].var; vari++) {
+		item = find_nut_info(mandatory[vari].var, 0, 0);
+		ups_infoval_set(item);
 	}
 
 	return 1;
