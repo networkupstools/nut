@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.56"
+#define DRIVER_VERSION	"0.57"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -5281,7 +5281,7 @@ int	qx_process(item_t *item, const char *command)
 }
 
 /* See header file for details. */
-int	ups_infoval_set(item_t *item)
+static int	ups_infoval_process(item_t *item, bool_t publish)
 {
 	char	value[SMALLBUF] = "";
 
@@ -5297,14 +5297,14 @@ int	ups_infoval_set(item_t *item)
 
 		/* Deal with status items */
 		if (!strncmp(item->info_type, "ups.status", 10)) {
-			if (strlen(value) > 0)
+			if (publish && strlen(value) > 0)
 				update_status(value);
 			return 0;
 		}
 
 		/* Deal with alarm items */
 		if (!strncmp(item->info_type, "ups.alarm", 9)) {
-			if (strlen(value) > 0)
+			if (publish && strlen(value) > 0)
 				alarm_set(value);
 			return 0;
 		}
@@ -5343,6 +5343,9 @@ int	ups_infoval_set(item_t *item)
 		return -1;
 	}
 
+	if (!publish)
+		return 1;
+
 	item->qxflags |= QX_FLAG_MAPPING_HANDLED;
 	dstate_setinfo(item->info_type, "%s", value);
 
@@ -5353,6 +5356,18 @@ int	ups_infoval_set(item_t *item)
 		batt.runt.act = strtol(value, NULL, 10);
 
 	return 1;
+}
+
+/* Validate claim-time values before publishing a complete mandatory set. */
+int	ups_infoval_check(item_t *item)
+{
+	return ups_infoval_process(item, FALSE);
+}
+
+/* See header file for details. */
+int	ups_infoval_set(item_t *item)
+{
+	return ups_infoval_process(item, TRUE);
 }
 
 /* See header file for details. */
