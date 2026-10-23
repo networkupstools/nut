@@ -206,7 +206,8 @@ driver:
   corresponding alarm variable is removed from publication without
   decreasing the alarm count. The count is reset at the beginning of each
   main update loop, so an alarm-free device does not cancel another device's
-  alarm.
+  alarm. Once the alarm count reaches "0", the main (`device.0`) `ups.status`
+  will also remove the "ALARM" flag.
 
 [NOTE]
 ======

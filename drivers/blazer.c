@@ -582,7 +582,10 @@ static void blazer_initbattery(void)
 	/* If no values were provided by the user in ups.conf, try to guesstimate
 	 * battery.charge, but announce it! */
 	if ( (!d_equal(batt.volt.nom, 1)) && ((d_equal(batt.volt.high, -1)) || (d_equal(batt.volt.low, -1)))) {
-		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
+		upslogx(LOG_INFO, "No values provided for battery high/low voltages"
+			" in ups.conf: set default.battery.voltage.high and"
+			" default.battery.voltage.low to compute battery.charge"
+			" from the actual pack, see man blazer(" MAN_SECTION_CMD_SYS ")\n");
 
 		/* Basic formula, which should cover most cases */
 		batt.volt.low = 104 * batt.volt.nom / 120;
