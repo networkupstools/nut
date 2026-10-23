@@ -4829,6 +4829,231 @@ sandbox_start_upsmon_master() {
 
 ####################################
 
+# Re-sign an existing NIT request: share its key, name, CA and request
+# extensions across all date variants,
+# and vary only the validity interval. Do not put these short-lived variants
+# into the persistent certificate cache.
+prepare_NIT_cert_validity() (
+    CERT_ROLE="$1"
+    CERT_SOURCE="$2"
+    CERT_BACKEND="$3"
+    CERT_NAME="$4"
+    CERT_VARIANT="$5"
+    CERT_DEST="${CERT_SOURCE}-${CERT_VARIANT}"
+    CERT_YEAR="`date -u +%Y`" || exit
+    case "$CERT_VARIANT" in
+        valid) CERT_START="`expr \"$CERT_YEAR\" - 1`0101000000Z"
+            CERT_END="`expr \"$CERT_YEAR\" + 2`0101000000Z" ;;
+        expired) CERT_START=20000101000000Z; CERT_END=20010101000000Z ;;
+        future) CERT_START="`expr \"$CERT_YEAR\" + 2`0101000000Z"
+            CERT_END="`expr \"$CERT_YEAR\" + 3`0101000000Z" ;;
+        *) exit 1 ;;
+    esac
+    mkdir -p "$CERT_DEST" || exit
+    cp -pr "$CERT_SOURCE"/. "$CERT_DEST"/ || exit
+    : > "$CERT_DEST/index"
+    case "$CERT_ROLE" in
+        server) echo 10 > "$CERT_DEST/serial" ;;
+        client) echo 20 > "$CERT_DEST/serial" ;;
+    esac
+    cat > "$CERT_DEST/ca.conf" << EOF
+[ ca ]
+default_ca = nit
+[ nit ]
+database = $CERT_DEST/index
+serial = $CERT_DEST/serial
+new_certs_dir = $CERT_DEST
+certificate = $TESTCERT_PATH_ROOTCA/rootca.pem
+private_key = $TESTCERT_PATH_ROOTCA/rootca.key
+default_md = sha256
+policy = nit_policy
+copy_extensions = copy
+[ nit_policy ]
+commonName = supplied
+countryName = optional
+stateOrProvinceName = optional
+organizationName = optional
+organizationalUnitName = optional
+EOF
+    set --
+    # Cached requests may have been made by the other TLS backend.
+    # Use the extension file when present; otherwise copy request extensions.
+    if [ -s "$CERT_SOURCE/$CERT_ROLE.v3.ext" ] ; then
+        set -- -extfile "$CERT_SOURCE/$CERT_ROLE.v3.ext"
+    fi
+    openssl ca -batch -notext -preserveDN -config "$CERT_DEST/ca.conf" \
+        -passin "file:$TESTCERT_PATH_ROOTCA/.pwfile" \
+        -in "$CERT_SOURCE/$CERT_ROLE.req" -out "$CERT_DEST/$CERT_ROLE.crt" \
+        -startdate "$CERT_START" -enddate "$CERT_END" "$@" || exit
+    openssl x509 -in "$CERT_DEST/$CERT_ROLE.crt" -noout -dates -subject || exit
+    case "$CERT_BACKEND" in
+        OpenSSL)
+            case "$CERT_ROLE" in
+                server) CERT_PEM=upsd.pem ;;
+                client) CERT_PEM=upsmon.pem ;;
+            esac
+            cat "$CERT_DEST/$CERT_ROLE.crt" "$TESTCERT_PATH_ROOTCA/rootca.pem" \
+                "$CERT_SOURCE/$CERT_ROLE.key" > "$CERT_DEST/$CERT_PEM" || exit
+            ;;
+        NSS)
+            certutil -D -d "$CERT_DEST" -f "$CERT_DEST/.pwfile" -n "$CERT_NAME" || exit
+            certutil -A -d "$CERT_DEST" -f "$CERT_DEST/.pwfile" \
+                -n "$CERT_NAME" -t ',,' -a -i "$CERT_DEST/$CERT_ROLE.crt" || exit
+            certutil -L -d "$CERT_DEST" -n "$CERT_NAME" -a \
+                | openssl x509 -noout -dates -serial -subject || exit
+            ;;
+    esac
+)
+
+testgroup_sandbox_certificate_validity() {
+    if [ "$WITH_SSL_CLIENT" = none ] || [ "$WITH_SSL_SERVER" = none ] ; then
+        log_info "SKIPPING certificate validity tests: need TLS on both endpoints"
+        SKIPPED="`expr $SKIPPED + 1`"
+        SKIPPED_FUNCS="$SKIPPED_FUNCS testgroup_sandbox_certificate_validity"
+        return
+    fi
+    if ! command -v openssl >/dev/null 2>&1 \
+    || [ ! -s "$TESTCERT_PATH_ROOTCA/rootca.key" ] \
+    || [ ! -s "$TESTCERT_PATH_SERVER/server.req" ] \
+    || { [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] && [ ! -s "$TESTCERT_PATH_CLIENT/client.req" ]; } ; then
+        case "$WITH_SSL_TESTS" in
+            required|require|required-conditional|require-conditional)
+                die "Certificate validity tests require TLS, openssl and the NIT CA private key" ;;
+        esac
+        log_info "SKIPPING certificate validity tests: need TLS and OpenSSL signing material"
+        SKIPPED="`expr $SKIPPED + 1`"
+        SKIPPED_FUNCS="$SKIPPED_FUNCS testgroup_sandbox_certificate_validity"
+        return
+    fi
+
+    stop_daemons
+    generatecfg_ups_trivial
+    generatecfg_upsdusers_trivial
+    VALIDITY_SERVER="$TESTCERT_PATH_SERVER"
+    VALIDITY_CLIENT="$TESTCERT_PATH_CLIENT"
+    for VALIDITY_VARIANT in valid expired future ; do
+        prepare_NIT_cert_validity server "$VALIDITY_SERVER" "$WITH_SSL_SERVER" \
+            "$TESTCERT_SERVER_NAME" "$VALIDITY_VARIANT" || die "Could not prepare server validity fixture"
+        if [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] ; then
+            prepare_NIT_cert_validity client "$VALIDITY_CLIENT" "$WITH_SSL_CLIENT" \
+                "$TESTCERT_CLIENT_NAME" "$VALIDITY_VARIANT" || die "Could not prepare client validity fixture"
+        fi
+    done
+
+    # No driver is needed to list the configured UPSes.
+    # Each invocation is a new process and cannot reuse a TLS session.
+    generatecfg_upsd_nodev
+    TESTCERT_PATH_SERVER="${VALIDITY_SERVER}-valid"
+    TESTCERT_PATH_CLIENT="$VALIDITY_CLIENT"
+    generatecfg_upsd_add_SSL
+    generatecfg_nutauth
+    NUT_DEBUG_LEVEL_UPSD=5 upsd_start_loop certificate-validity > "$NUT_STATEPATH/validity-server.log" 2>&1 \
+        || die "Could not start validity test server"
+    runcmd upsc -DDDDD -A "$NUT_AUTHCONF_FILE" -l "localhost:$NUT_PORT" \
+        || die "Valid certificate control failed"
+    [ -z "$CMDOUT" ] && echo "$CMDERR" | ${GREP} \
+        "Certificate verification (by client) is enabled, and apparently succeeded" >/dev/null \
+        || die "Valid certificate control did not verify the server"
+    log_info "PASSED certificate-validity server valid"
+    PASSED="`expr $PASSED + 1`"
+
+    if [ x"$WITH_SSL_SERVER_CLIVAL" = xtrue ] ; then
+        # A trust-only NSS database prevents automatic client-cert selection.
+        if [ x"$WITH_SSL_CLIENT" = xNSS ] ; then
+            mkdir -p "${VALIDITY_CLIENT}-no-cert" || die "Could not prepare trust-only database"
+            certutil -N -d "${VALIDITY_CLIENT}-no-cert" -f "$VALIDITY_CLIENT/.pwfile" \
+                && certutil -A -d "${VALIDITY_CLIENT}-no-cert" -f "$VALIDITY_CLIENT/.pwfile" \
+                    -n "$TESTCERT_ROOTCA_NAME" -t 'CT,C,C' -a \
+                    -i "$TESTCERT_PATH_ROOTCA/rootca.pem" \
+                || die "Could not initialise trust-only database"
+        fi
+        sed -e '/^CERTFILE =/d' -e '/^CERTIDENT_/d' \
+            -e "s|^CERTPATH = .*|CERTPATH = \"${VALIDITY_CLIENT}-no-cert\"|" \
+            "$NUT_AUTHCONF_FILE" > "$NUT_CONFPATH/no-client-cert.conf" \
+            || die "Could not prepare missing-client-certificate control"
+        # OpenSSL still needs its CA directory, rather than the NSS-only DB.
+        if [ x"$WITH_SSL_CLIENT" = xOpenSSL ] ; then
+            sed "s|^CERTPATH = .*|CERTPATH = \"$TESTCERT_PATH_ROOTCA\"|" \
+                "$NUT_CONFPATH/no-client-cert.conf" > "$NUT_CONFPATH/no-client-cert.conf.tmp" \
+                && mv "$NUT_CONFPATH/no-client-cert.conf.tmp" "$NUT_CONFPATH/no-client-cert.conf" \
+                || die "Could not set missing-client-certificate trust path"
+        fi
+        runcmd upsc -DDDDD -A "$NUT_CONFPATH/no-client-cert.conf" -l "localhost:$NUT_PORT"
+        if [ "$CMDRES" != 0 ] && ${EGREP} \
+            "(peer did not return a certificate|SSL_ERROR_NO_CERTIFICATE)" \
+            "$NUT_STATEPATH/validity-server.log" >/dev/null ; then
+            log_info "PASSED certificate-validity missing-client-certificate"
+            PASSED="`expr $PASSED + 1`"
+        else
+            log_error "FAILED certificate-validity missing-client-certificate"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS certificate-validity-missing-client-certificate"
+        fi
+        cat "$NUT_STATEPATH/validity-server.log"
+    fi
+
+    for VALIDITY_ROLE in server client ; do
+        if [ "$VALIDITY_ROLE" = client ] && [ x"$WITH_SSL_SERVER_CLIVAL" != xtrue ] ; then
+            log_info "SKIPPING client certificate validity: server does not enforce client verification"
+            SKIPPED="`expr $SKIPPED + 1`"
+            SKIPPED_FUNCS="$SKIPPED_FUNCS certificate-validity-client"
+            continue
+        fi
+        for VALIDITY_VARIANT in valid expired future ; do
+            # The initial control already checked the valid server variant.
+            [ x"$VALIDITY_ROLE:$VALIDITY_VARIANT" != x'server:valid' ] || continue
+            stop_daemons
+            TESTCERT_PATH_SERVER="${VALIDITY_SERVER}-valid"
+            TESTCERT_PATH_CLIENT="$VALIDITY_CLIENT"
+            case "$VALIDITY_ROLE" in
+                server) TESTCERT_PATH_SERVER="${VALIDITY_SERVER}-${VALIDITY_VARIANT}" ;;
+                client) TESTCERT_PATH_CLIENT="${VALIDITY_CLIENT}-${VALIDITY_VARIANT}" ;;
+            esac
+            generatecfg_upsd_nodev
+            generatecfg_upsd_add_SSL
+            generatecfg_nutauth
+            NUT_DEBUG_LEVEL_UPSD=5 upsd_start_loop certificate-validity > "$NUT_STATEPATH/validity-server.log" 2>&1 \
+                || die "Could not start validity test server"
+            runcmd upsc -DDDDD -A "$NUT_AUTHCONF_FILE" -l "localhost:$NUT_PORT"
+            VALIDITY_RESULT="$CMDRES"
+            cat "$NUT_STATEPATH/validity-server.log"
+            case "$VALIDITY_ROLE" in
+                server) VALIDITY_DIAGNOSTIC="$CMDERR" ;;
+                client) VALIDITY_DIAGNOSTIC="`cat \"$NUT_STATEPATH/validity-server.log\"`" ;;
+            esac
+            case "$VALIDITY_VARIANT" in
+                valid) VALIDITY_OK=false
+                    [ "$VALIDITY_RESULT" = 0 ] && [ -z "$CMDOUT" ] \
+                    && echo "$CMDERR" | ${GREP} \
+                        "Certificate verification (by client) is enabled, and apparently succeeded" >/dev/null \
+                    && VALIDITY_OK=true ;;
+                expired) VALIDITY_OK=false
+                    [ "$VALIDITY_RESULT" != 0 ] \
+                    && echo "$VALIDITY_DIAGNOSTIC" | ${EGREP} -i \
+                        '(certificate has expired|SEC_ERROR_EXPIRED_CERTIFICATE)' >/dev/null \
+                    && VALIDITY_OK=true ;;
+                future) VALIDITY_OK=false
+                    [ "$VALIDITY_RESULT" != 0 ] \
+                    && echo "$VALIDITY_DIAGNOSTIC" | ${EGREP} -i \
+                        '(certificate is not yet valid|SEC_ERROR_EXPIRED_CERTIFICATE)' >/dev/null \
+                    && VALIDITY_OK=true ;;
+            esac
+            if "$VALIDITY_OK" ; then
+                log_info "PASSED certificate-validity $VALIDITY_ROLE $VALIDITY_VARIANT"
+                PASSED="`expr $PASSED + 1`"
+            else
+                log_error "FAILED certificate-validity $VALIDITY_ROLE $VALIDITY_VARIANT"
+                FAILED="`expr $FAILED + 1`"
+                FAILED_FUNCS="$FAILED_FUNCS certificate-validity-$VALIDITY_ROLE-$VALIDITY_VARIANT"
+            fi
+        done
+    done
+    stop_daemons
+    TESTCERT_PATH_SERVER="$VALIDITY_SERVER"
+    TESTCERT_PATH_CLIENT="$VALIDITY_CLIENT"
+    sandbox_forget_configs
+}
+
 testgroup_sandbox() {
     testcase_sandbox_start_drivers_after_upsd
     testcase_sandbox_upsc_query_model
@@ -5037,6 +5262,7 @@ case "${NIT_CASE}" in
         testgroup_upsd_invalid_configs
         testgroup_upsd_questionable_configs
         testgroup_sandbox
+        testgroup_sandbox_certificate_validity
         testgroup_sandbox_parseconf
         ;;
     *)  die "Unsupported NIT_CASE='$NIT_CASE' was requested" ;;

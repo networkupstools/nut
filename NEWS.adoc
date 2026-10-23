@@ -45,6 +45,10 @@ https://github.com/networkupstools/nut/milestone/13
    (not 3 like before) for easier initial indentation of new entries.
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * OpenSSL certificate verification no longer clears unrelated errors
+      when a subject alternative name matches on builds without
+      `X509_V_ERR_HOSTNAME_MISMATCH`. Expired and not-yet-valid certificates
+      are now rejected when verification is enabled. [PR #3768]
     * `libnutconf`: character reads from a TCP socket now use the Windows
       socket API, matching string reads. Previously they failed with a bad
       file descriptor error on Windows. [issue #2293]
@@ -1043,6 +1047,9 @@ https://github.com/networkupstools/nut/milestone/13
       Directory names are based on hashes of strings that identify the content,
       which are size-limited to some 8 characters.
       [issues #3108, #3390, #1711, #3526, PR #3109]
+    * NIT now checks rejection of expired and not-yet-valid certificates with
+      verified TLS, including client certificates when required by the server,
+      without changing the system clock. [issue #3427, PR #3768]
     * Introduced `tools/asciidoc-github-links.pl` to simplify `docs/Makefile.am`
       generation of `*.adoc-parsed` files with substituted GitHub links, and to
       allow that logic to be executed separately from `make` and potentially be
