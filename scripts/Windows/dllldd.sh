@@ -81,8 +81,23 @@ discover_COMPILER_PATHS() {
 }
 discover_COMPILER_PATHS
 
+# Only scan initialized data sections for DLL names (as older binutils did
+# by default), not the whole file: with debug info (-g3) most of our binary
+# size is debug sections, so a full scan produced ~200 times more text (all
+# piped through filters below), with the same DLL names found.
+# Fall back to a whole-file scan if this `strings` lacks the option.
+STRINGS_DATA_ONLY=""
+if (strings --help 2>&1 | ${GREP} -- '--data' >/dev/null) ; then
+	STRINGS_DATA_ONLY="-d"
+fi
+
 filter_away_system_DLLs() {
-	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|dnsapi|dwrite|iphlpapi|kernelbase|mswsock|shlwapi|winmm|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
+	${EGREP} -v -i '^(/.*/)?(msvcrt|userenv|bcrypt|bcryptprimitives|combase|dnsapi|dwrite|hid|iphlpapi|kernelbase|mswsock|setupapi|shfolder|shlwapi|winmm|wship6|xmllite|rpcrt4|usp10|ntdll|api-ms-win-[^ ]*|(advapi|crypt|kernel|user|wsock|ws2_|gdi|ole|shell)(32|64))'"${DLLEXT_REGEX_EOL}"
+}
+
+first_file_named() {
+	# Print the first line of stdin (a file path) whose base name is "$1"
+	awk -v f="$1" '{ n = $0; sub(/^.*\//, "", n); if (n == f) { print; exit } }'
 }
 
 filter_away_NUT_DLLs() {
@@ -132,24 +147,37 @@ dllldd_with_tools() (
 	SEEN=0
 	NOTSEEN_OD=""
 	if [ -n "${ARCH-}${MINGW_PREFIX-}${MSYSTEM_PREFIX-}" ] ; then
+		# List candidate locations once, rather than calling `find` for
+		# each DLL name: spawning processes and walking big directories
+		# (e.g. /mingw64/bin) is slow on MSYS2, and this adds up quickly
+		# in recursive searches. Listing order is kept as it was in the
+		# per-name searches, so the first hit is the same file as before.
+		DESTDIR_FILES=""
+		if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
+			DESTDIR_FILES="`find \"$DESTDIR\" -type f \! -size 0 2>/dev/null`"
+		fi
+		SEARCH_INPUT_FILES=""
+		if [ -n "$SEARCH_INPUT_PATH" ] ; then
+			SEARCH_INPUT_FILES="`for D in ${SEARCH_INPUT_PATH_MULTILINE} ; do find \"$D\" -type f \! -size 0 2>/dev/null ; done`"
+		fi
+
 		for OD in objdump "$ARCH-objdump" ; do
 			(command -v "$OD" >/dev/null 2>/dev/null) || continue
 
-			ODOUT="`$OD -x \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
+			# Private headers (-p) hold the PE import table ("DLL Name:")
+			# and ELF dynamic section ("NEEDED"); -x would also dump the
+			# (large, for debug builds) symbol tables and relocations.
+			ODOUT="`$OD -p \"$@\" 2>/dev/null | ${EGREP} -i '(DLL Name:|^'"${REGEX_WS}"'*NEEDED)' | awk '{print $NF}' | sort | uniq | filter_away_system_DLLs`" \
 			&& [ -n "$ODOUT" ] || continue
 
 			for F in $ODOUT ; do
-				if [ -n "$DESTDIR" -a -d "${DESTDIR}" ] ; then
-					OUT="`find \"$DESTDIR\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
+				if [ -n "$DESTDIR_FILES" ] ; then
+					OUT="`echo \"$DESTDIR_FILES\" | first_file_named \"$F\"`" \
 					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
-				if [ -n "$SEARCH_INPUT_PATH" ] ; then
-					SEEN_INPUT=false
-					for D in ${SEARCH_INPUT_PATH_MULTILINE} ; do
-						OUT="`find \"$D\" -type f -name \"$F\" \! -size 0 2>/dev/null | head -1`" \
-						&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN_INPUT=true ; break ; }
-					done
-					$SEEN_INPUT && { SEEN="`expr $SEEN + 1`" ; continue ; }
+				if [ -n "$SEARCH_INPUT_FILES" ] ; then
+					OUT="`echo \"$SEARCH_INPUT_FILES\" | first_file_named \"$F\"`" \
+					&& [ -n "$OUT" ] && { echo "$OUT" ; SEEN="`expr $SEEN + 1`" ; continue ; }
 				fi
 				if [ -n "$ARCH" -a -d "/usr/${ARCH}" ] ; then
 					OUT="`ls -1 \"/usr/${ARCH}/bin/$F\" \"/usr/${ARCH}/lib/$F\" 2>/dev/null || true`" \
@@ -201,10 +229,10 @@ dllldd_with_tools() (
 )
 
 dllldd_with_strings() (
-	strings "$@" | tr ' ' '\n' | tr '&' '\n' \
+	strings ${STRINGS_DATA_ONLY} "$@" | tr ' ' '\n' | tr '&' '\n' \
 	| ${EGREP} -i '..*'"${DLLEXT_REGEX_EOL}" | sort | uniq \
 	| filter_away_system_DLLs \
-	| ${EGREP} -vi '^(lib)*%s'"${DLLEXT_REGEX_EOL}" \
+	| ${EGREP} -vi '^(.*[/\\])?(lib)*%s'"${DLLEXT_REGEX_EOL}" \
 	| while read DLL ; do (
 		# Skip out if we already reported this file
 		# (The for/case loop below is surprisingly expensive on MSYS2)

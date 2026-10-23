@@ -41,7 +41,7 @@ Crack cable: for UPS
   Victron Lite (no IMV Victron Match Lite)
 
 
-Driver: genericsups
+Driver: genericups
 
 UPS          PC 9 pin connector
 1 ---------- 4 DTR
