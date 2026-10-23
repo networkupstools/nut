@@ -20,6 +20,9 @@
 /* This file is intentionally repeat-includable so one translation unit can
  * bracket several type range checks. */
 
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif

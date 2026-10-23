@@ -40,6 +40,18 @@ Changes from 2.8.5 to 2.8.6
   Renew expired certificates or correct certificate validity dates before
   upgrading. [PR #3768]
 
+- The `PACKAGE_VERSION` and `PACKAGE_STRING` macros in the generated
+  `include/config.h` now only carry the base semantic version (e.g. `2.8.5`
+  for a release, or `2.8.5.1` for any development iteration after it) rather
+  than the full Git-derived version (e.g. `2.8.5.1466.13`), and the
+  `PACKAGE` and `VERSION` macros are no longer defined there, so that build
+  caches remain valid across commits. The `./configure --version` output
+  also reports this shortened version. Code which needs the full version
+  should use `NUT_VERSION_MACRO` from the generated `include/nut_version.h`.
+  The `@PACKAGE_VERSION@` and `@VERSION@` values substituted into Makefiles,
+  `*.pc` files, packaging recipes and tarball names are not changed.
+  [PR #3754 follow-up]
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials
