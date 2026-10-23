@@ -32,3 +32,9 @@
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
 # pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wtype-limits"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif

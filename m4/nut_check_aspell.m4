@@ -35,6 +35,8 @@ AC_DEFUN([NUT_CHECK_ASPELL],
             AC_MSG_RESULT([${ASPELL_VERSION}])
 
             ASPELL_VERSION_MINMAJ="`echo \"${ASPELL_VERSION}\" | sed 's,\.@<:@0-9@:>@@<:@0-9@:>@*$,,'`"
+            dnl # Resources are often in e.g. "aspell-0.60" even for a 0.60.6.1
+            ASPELL_VERSION_MAJMIN="`echo \"${ASPELL_VERSION}\" | sed 's,^\(@<:@0-9@:>@*\.@<:@0-9@:>@*\).*$,\1,'`"
 
             dnl FIXME: Some systems have more complicated layouts, e.g.
             dnl   /usr/lib/amd64/aspell-0.60/tex-filter.so
@@ -45,42 +47,27 @@ AC_DEFUN([NUT_CHECK_ASPELL],
             dnl failed. This may need some more-direct addressing later.
             AC_MSG_CHECKING([for aspell "lib" filtering resources directory])
             ASPELL_BINDIR="`dirname \"$ASPELL\"`"
-            AS_IF([test -d "${ASPELL_BINDIR}/../lib"], [
-                AS_IF([test x"${ASPELL_VERSION}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}"], [
-                    ASPELL_FILTER_LIB_PATH="`cd \"${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}\" && pwd`" \
-                    || ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}"
-                ], [
-                    AS_IF([test x"${ASPELL_VERSION_MINMAJ}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}"], [
-                        ASPELL_FILTER_LIB_PATH="`cd \"${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}\" && pwd`" \
-                        || ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}"
-                    ], [
-                        AS_IF([test -d "${ASPELL_BINDIR}/../lib/aspell"], [
-                            ASPELL_FILTER_LIB_PATH="`cd \"${ASPELL_BINDIR}/../lib/aspell\" && pwd`" \
-                            || ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell"
-                        ])
+            dnl # Some platforms (e.g. CentOS 7) keep the resources in "lib64"
+            for ASPELL_RESDIR in lib lib64 ; do
+                for ASPELL_RESSUBDIR in "aspell-${ASPELL_VERSION}" "aspell-${ASPELL_VERSION_MINMAJ}" "aspell-${ASPELL_VERSION_MAJMIN}" "aspell" ; do
+                    AS_IF([test x"${ASPELL_FILTER_LIB_PATH}" = x"none" && test -d "${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}"], [
+                        ASPELL_FILTER_LIB_PATH="`cd \"${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}\" && pwd`" \
+                        || ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}"
                     ])
-                ])
-            ])
+                done
+            done
             AC_MSG_RESULT([${ASPELL_FILTER_LIB_PATH}])
 
             AC_MSG_CHECKING([for aspell "share" filtering resources directory])
             ASPELL_BINDIR="`dirname \"$ASPELL\"`"
-            AS_IF([test -d "${ASPELL_BINDIR}/../share"], [
-                AS_IF([test x"${ASPELL_VERSION}" != x"none" && test -d "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}"], [
-                    ASPELL_FILTER_SHARE_PATH="`cd \"${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}\" && pwd`" \
-                    || ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}"
-                ], [
-                    AS_IF([test x"${ASPELL_VERSION_MINMAJ}" != x"none" && test -d "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}"], [
-                        ASPELL_FILTER_SHARE_PATH="`cd \"${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}\" && pwd`" \
-                        || ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}"
-                    ], [
-                        AS_IF([test -d "${ASPELL_BINDIR}/../share/aspell"], [
-                            ASPELL_FILTER_SHARE_PATH="`cd \"${ASPELL_BINDIR}/../share/aspell\" && pwd`" \
-                            || ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell"
-                        ])
+            for ASPELL_RESDIR in share ; do
+                for ASPELL_RESSUBDIR in "aspell-${ASPELL_VERSION}" "aspell-${ASPELL_VERSION_MINMAJ}" "aspell-${ASPELL_VERSION_MAJMIN}" "aspell" ; do
+                    AS_IF([test x"${ASPELL_FILTER_SHARE_PATH}" = x"none" && test -d "${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}"], [
+                        ASPELL_FILTER_SHARE_PATH="`cd \"${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}\" && pwd`" \
+                        || ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../${ASPELL_RESDIR}/${ASPELL_RESSUBDIR}"
                     ])
-                ])
-            ])
+                done
+            done
             AC_MSG_RESULT([${ASPELL_FILTER_SHARE_PATH}])
 
             AC_MSG_CHECKING([for aspell "tex" filtering resources directory])

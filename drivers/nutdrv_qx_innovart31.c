@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_innovart31.h"
 
-#define INNOVART31_VERSION "INNOVART31 0.02"
+#define INNOVART31_VERSION "INNOVART31 0.03"
 
 /* Support functions */
 static int	innovart31_claim(void);
@@ -206,8 +206,14 @@ static int	innovart31_claim(void)
 			return 0;
 
 		/* Unable to process value */
-		if (ups_infoval_set(item) != 1)
+		if (ups_infoval_check(item) != 1)
 			return 0;
+	}
+
+	/* All values passed validation, including any device-specific checks. */
+	for (vari = 0; mandatory[vari].var; vari++) {
+		item = find_nut_info(mandatory[vari].var, 0, 0);
+		ups_infoval_set(item);
 	}
 
 	return 1;
