@@ -168,6 +168,10 @@ TESTS += nutbooltest
 nutbooltest_SOURCES = nutbooltest.c
 #nutbooltest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += nutsnprintftest
+nutsnprintftest_SOURCES = nutsnprintftest.c
+nutsnprintftest_LDADD = $(NUT_LIBCOMMON)
+
 TESTS += test_authconf
 test_authconf_SOURCES = test_authconf.c
 test_authconf_LDADD = $(top_builddir)/clients/libupsclient.la $(NUT_LIBCOMMON)
