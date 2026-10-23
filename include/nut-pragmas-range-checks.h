@@ -43,6 +43,8 @@
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wtautological-compare"
-# pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
 # pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+/* clang-3.4 does not directly know this warning type either,
+ * while clang-7 seems to complain despite its presence: */
+/*# pragma clang diagnostic ignored "-Wtautological-type-limit-compare"*/
 #endif
