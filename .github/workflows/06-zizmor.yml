@@ -1,0 +1,46 @@
+# Static analysis of the GitHub Actions workflows (and other .github/
+# files) with zizmor (https://docs.zizmor.sh/), for changes to them.
+# Deliberate choices of this repository are recorded in .github/zizmor.yml,
+# so this fails only for new problems of at least "medium" severity; the
+# findings are shown as annotations on the changed lines.
+#
+# Runs on pull_request (not pull_request_target), so for PRs from forks
+# it has a read-only token and runs the copy of this workflow in the PR,
+# which is fine as it needs no write permissions.
+
+name: "GHA-06: zizmor"
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - '.github/**'
+  pull_request:
+    paths:
+      - '.github/**'
+  workflow_dispatch:
+    # Allow manually running the action, e.g. to check with a new zizmor version
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: "zizmor GitHub Actions analysis"
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+
+    # zizmor is installed from PyPI in a pinned version (bump it here
+    # deliberately), and given the token for its online audits (e.g.
+    # known vulnerable action versions, ambiguous tag/branch refs).
+    - name: Run zizmor
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        pipx run zizmor==1.25.2 --format github --min-severity medium .github/

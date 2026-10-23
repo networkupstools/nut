@@ -324,7 +324,7 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	/* Prefer the per-connection context (if any) over the ambient default,
 	 * so different connections in one process can use different client certs
 	 * from the same shared NSS certificate/key database. */
-	UPSCONN_t	*ups = (UPSCONN_t *)arg;
+	UPSCONN_t	*ups = (UPSCONN_t *)arg;	/* Populated by SSL_SetPKCS11PinArg() */
 	upscli_ssl_context_config_t	*cfg = ups ? (upscli_ssl_context_config_t *)ups->ssl_ctx : NULL;
 	const char	*passwd;
 
@@ -335,8 +335,9 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 	}
 	passwd = cfg ? cfg->certpasswd : NULL;
 
-	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s (%s): password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot),
+		(ups && ups->host && *(ups->host)) ? ups->host : "hostname not specified",
 		passwd ? "" : "not ");
 	return passwd ? PL_strdup(passwd) : NULL;
 }
@@ -635,7 +636,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 		names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
 		if (!names) break;
 
-		/* OpenSSL macros may have an unreachable effect like this */
+		/* OpenSSL macros can look unreachable and call helpers marked unused. */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wunreachable-code"
@@ -643,6 +644,11 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
+# ifdef __has_warning
+#  if __has_warning("-Wused-but-marked-unused")
+#   pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#  endif
+# endif
 #endif
 		count = sk_GENERAL_NAME_num(names);
 		if (!count) break; /* failed */
@@ -733,7 +739,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 					case 4:
 						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - (size_t)(p - ip_addr_buf) - 1,
 								"%u%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ".");
@@ -748,7 +754,7 @@ static int openssl_cert_verify_san_name(const char* label, X509* const cert, con
 						 *  a bit wasteful. */
 						for (j = 0; j < ip_addr_raw_len && p < pMax; j++) {
 							p += snprintf(p,
-								sizeof(ip_addr_buf) - (p - ip_addr_buf) - 1,
+								sizeof(ip_addr_buf) - (size_t)(p - ip_addr_buf) - 1,
 								"%02x%s",
 								ip_addr_raw[j],
 								(j == ip_addr_raw_len - 1) ? "" : ":");
@@ -1075,23 +1081,48 @@ static upscli_ssl_context_config_t *upscli_ssl_context_config_find(
 void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	const char *certname, const char *certpasswd, const char *certfile)
 {
-#if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
-	NUT_UNUSED_VARIABLE(certverify);
-	NUT_UNUSED_VARIABLE(certpath);
-	NUT_UNUSED_VARIABLE(certname);
-	NUT_UNUSED_VARIABLE(certpasswd);
-	NUT_UNUSED_VARIABLE(certfile);
-	upslogx(LOG_ERR, "%s called but SSL wasn't compiled in", __func__);
-	return NULL;
-#else
+	static const char	*quiet_init_ssl = NULL;
+	static int	quiet_init_ssl_parsed = 0;
+
+#if defined(WITH_OPENSSL) || defined(WITH_NSS)
 	upscli_ssl_context_config_t	*cfg;
-	const char	*quiet_init_ssl;
 # ifdef WITH_OPENSSL
 	long	ret;
 	int	ssl_mode = SSL_VERIFY_NONE;
 # elif defined(WITH_NSS)	/* WITH_OPENSSL */
 	SECStatus	status;
 # endif	/* WITH_OPENSSL | WITH_NSS */
+#endif	/* WITH_OPENSSL | WITH_NSS */
+
+	if (!quiet_init_ssl_parsed) {
+		quiet_init_ssl_parsed = 1;
+		quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+		if (quiet_init_ssl != NULL) {
+			if (*quiet_init_ssl == '\0'
+				|| (strncmp(quiet_init_ssl, "true", 4)
+				&&  strncmp(quiet_init_ssl, "TRUE", 4)
+				&&  strncmp(quiet_init_ssl, "1", 1) )
+			) {
+				if (strncmp(quiet_init_ssl, "false", 5)
+				&&  strncmp(quiet_init_ssl, "FALSE", 5)
+				&&  strncmp(quiet_init_ssl, "0", 1) )
+					upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
+				quiet_init_ssl = NULL;
+			}
+		}
+	}
+
+#if !(defined(WITH_OPENSSL) || defined(WITH_NSS))
+	if (certverify || certpath || certname || certpasswd || certfile) {
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "%s called with non-trivial arguments, but SSL wasn't compiled in", __func__);
+		} else {
+			upslogx(LOG_ERR, "%s called with non-trivial arguments, but SSL wasn't compiled in", __func__);
+		}
+	}
+
+	return NULL;
+#else
 
 	cfg = upscli_ssl_context_config_find(certverify, certpath, certname, certpasswd, certfile);
 	if (cfg) {
@@ -1107,21 +1138,6 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	cfg->certpasswd = certpasswd ? xstrdup(certpasswd) : NULL;
 	cfg->certfile = certfile ? xstrdup(certfile) : NULL;
 	cfg->refcount = 1;
-
-	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
-	if (quiet_init_ssl != NULL) {
-		if (*quiet_init_ssl == '\0'
-			|| (strncmp(quiet_init_ssl, "true", 4)
-			&&  strncmp(quiet_init_ssl, "TRUE", 4)
-			&&  strncmp(quiet_init_ssl, "1", 1) )
-		) {
-			if (strncmp(quiet_init_ssl, "false", 5)
-			&&  strncmp(quiet_init_ssl, "FALSE", 5)
-			&&  strncmp(quiet_init_ssl, "0", 1) )
-				upsdebugx(1, "NUT_QUIET_INIT_SSL='%s' value was not recognized, ignored", quiet_init_ssl);
-			quiet_init_ssl = NULL;
-		}
-	}
 
 # ifdef WITH_OPENSSL
 
@@ -1410,7 +1426,11 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	 * There's nothing to retry to change that state anyway.
 	 */
 	if (certverify || certpath || certname || certpasswd || certfile) {
-		upslogx(LOG_ERR, "upscli_init called but SSL wasn't compiled in");
+		if (quiet_init_ssl != NULL) {
+			upsdebugx(1, "%s called with non-trivial arguments, but unexpected SSL backend was compiled in", __func__);
+		} else {
+			upslogx(LOG_ERR, "%s called with non-trivial arguments, but unexpected SSL backend was compiled in", __func__);
+		}
 	}
 # endif /* WITH_OPENSSL | WITH_NSS */
 
@@ -1585,7 +1605,7 @@ static uint16_t get_port_from_string(const char *str_port)
 		} else {
 			struct servent	*se = getservbyname(str_port, "tcp");
 			if (se && se->s_port > 0 && (uintmax_t)(se->s_port) <= (uintmax_t)UINT16_MAX) {
-				retval = se->s_port;
+				retval = (uint16_t)se->s_port;
 			}
 		}
 #include "nut-pragmas-range-checks-end.h"
@@ -2437,7 +2457,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (!(ups->ssl_ctx) && !upscli_initialized) {
 		upsdebugx(3, "%s: upscli not initialized, "
-			"force initialisation without SSL configuration", __func__);
+			"force initialization without SSL configuration", __func__);
 		upsdebugx(5, "%s: ssl_ctx=%p upscli_initialized=%d",
 			__func__, ups ? (void*)ups->ssl_ctx : NULL, upscli_initialized);
 		upscli_init(0, NULL, NULL, NULL);

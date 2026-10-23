@@ -23,25 +23,14 @@
 #include "config.h"
 
 #include "nutstream.hpp"
-#include "nutipc.hpp"	/* Used in a test to "freeze" a writer child process */
 
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
+#include <exception>
 
 extern "C" {
-#ifndef WIN32
-# include <sys/select.h>
-# include <sys/wait.h>
-#else	/* WIN32 */
-# if !(defined random) && !(defined HAVE_RANDOM)
-   /* WIN32 names it differently: */
-#  define random() rand()
-# endif
-#endif	/* WIN32 */
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <pthread.h>
 
 extern bool verbose;
 }
@@ -74,7 +63,7 @@ static const std::string test_data(
  *  \retval true  in case of success
  *  \retval false in case of failure
  */
-static bool readTestData(nut::NutStream * stream) {
+static bool readTestData(nut::NutStream * stream, size_t * read_count = nullptr) {
 	assert(nullptr != stream);
 
 	// Read characters from the stream
@@ -89,8 +78,11 @@ static bool readTestData(nut::NutStream * stream) {
 			return false;
 		}
 
-		if (nut::NutStream::NUTS_EOF == status)
+		if (nut::NutStream::NUTS_EOF == status) {
+			if (read_count != nullptr)
+				*read_count = pos;
 			break;
+		}
 
 		if (nut::NutStream::NUTS_OK != status) {
 			if (verbose)
@@ -254,189 +246,111 @@ void NutFileUnitTest::test() {
 class NutSocketUnitTest: public NutStreamUnitTest {
 	private:
 
-	/** NUT socket stream unit test: writer */
-	class Writer {
-		private:
-
-		/** Remote listen address */
-		nut::NutSocket::Address m_remote_address;
-
-		public:
-
-		/**
-		 *  \brief  Constructor
-		 *
-		 *  \param  addr  Remote address
-		 */
-		Writer(const nut::NutSocket::Address & addr):
-			m_remote_address(addr)
-		{}
-
-		/**
-		 *  \brief  Writer routine
-		 *
-		 *  Writer shall write contents of the test data
-		 *  to its connection socket.
-		 *
-		 *  \retval true  in case of success
-		 *  \retval false otherwise
-		 */
-		bool run();
-
-	};  // end of class Writer
-
-	/** TCP listen address IPv4 */
-	static const nut::NutSocket::Address m_listen_address;
-
 	CPPUNIT_TEST_SUITE(NutSocketUnitTest);
 		CPPUNIT_TEST(test);
+		CPPUNIT_TEST(testString);
 	CPPUNIT_TEST_SUITE_END();
+
+	void checkSocket(bool characters);
 
 	public:
 
-	inline void setUp() override {}
-	inline void tearDown() override {}
+	inline void setUp() override {
+#ifdef WIN32
+		WSADATA wsaData;
+		CPPUNIT_ASSERT(0 == WSAStartup(MAKEWORD(2, 2), &wsaData));
+#endif
+	}
+
+	inline void tearDown() override {
+#ifdef WIN32
+		CPPUNIT_ASSERT(0 == WSACleanup());
+#endif
+	}
 
 	virtual void test();
+	void testString();
 
 };  // end of class NutSocketUnitTest
 
 
-/* Static initializer below may run before methods of the test,
- * so it tends to repeat the same port for parallel CI runs */
-static long reallyRandom() {
-	::srand(static_cast<unsigned int>(::time(nullptr)));
-	return ::random();
-}
-
-/* Randomize to try avoiding collisions in parallel testing */
-static uint16_t getFreePort() {
-	int tries = 100;
-#ifdef WIN32
-	WSADATA wsaData;
-	static int wsaStarted = 0;
-	if (!wsaStarted) {
-		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-			std::cerr << "WIN32: Failed to WSAStartup() the socket layer" << std::endl << std::flush;
-		}
-		// well, at least attempted
-		wsaStarted = 1;
-	}
-#endif	/* WIN32 */
-	while (tries > 0) {
-		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
-		nut::NutSocket::Address addr(127, 0, 0, 1, port);
-		nut::NutSocket sock;
-		int ec;
-		std::string em;
-
-		if (sock.bind(addr, ec, em)) {
-			/* FWIW, "verbose" is only set in main() and this method currently
-			 * is part of static initialization before that. So no trace.
-			 */
-			if (verbose)
-				std::cerr << "getFreePort() could bind() port " << port
-						<< "; is FD valid?=" << sock.valid() << std::endl;
-			/* Let the destructor close it */
-			sock.closex();
-			return port;
-		}
-
-		if (verbose)
-			std::cerr << "getFreePort() failed to bind() port " << port
-					<< ": code " << ec << " aka " << em << ": will try another"
-					<< std::endl;
-		sock.closex();
-		tries--;
-	}
-
-	// Well, gotta try something...
-	if (verbose)
-		std::cerr << "getFreePort() failed to bind(), falling back to 10000" << std::endl;
-	return 10000;
-}
-
-const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(
-		127, 0, 0, 1,
-		getFreePort());
-
-bool NutSocketUnitTest::Writer::run() {
-	nut::NutSocket conn_sock;
-
-	if (!conn_sock.connect(m_remote_address))
-		return false;
-
-	if (!writeTestData(&conn_sock))
-		return false;
-
-	if (!conn_sock.close())
-		return false;
-
-	return true;
-}
-
-
 void NutSocketUnitTest::test() {
-#ifdef WIN32
-	/* FIXME NUT_WIN32_INCOMPLETE:
-	 *  get Process working in the first place */
-	std::cout << "NutSocketUnitTest::test(): skipped on this platform" << std::endl;
-#else	/* !WIN32 */
-	// Fork writer
-	pid_t writer_pid = ::fork();
+	checkSocket(true);
+}
 
-	if (!writer_pid) {
-		// Wait for listen socket
-		::sleep(1);
 
-		// Run writer
-		CPPUNIT_ASSERT(Writer(m_listen_address).run());
+void NutSocketUnitTest::testString() {
+	checkSocket(false);
+}
 
-		exit(0);
-	}
 
-	// Freeze the writer until we bind the port
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::STOP, writer_pid));
-
-	// Listen
+void NutSocketUnitTest::checkSocket(bool characters) {
 	nut::NutSocket listen_sock;
+	uint16_t port = 0;
+	bool bound = false;
 
-	std::stringstream msg_bind;
-	msg_bind << "Expected to listen on " << m_listen_address.str();
-	bool bound = listen_sock.bind(m_listen_address);
-	int retries = 5;
-
-	while (!bound && retries > 0) {
-		retries--;
-		if (verbose)
-			std::cerr << msg_bind.str() << ": will retry test in 15 sec ("
-					<< retries << " retries remaining)" << std::endl;
-		sleep(15);
-		bound = listen_sock.bind(m_listen_address);
+	/* Keep the socket bound so parallel tests cannot take its port. */
+	for (int tries = 0; tries < 100 && !bound; ++tries) {
+		port = static_cast<uint16_t>(10000 + std::rand() % 40000);
+		bound = listen_sock.bind(nut::NutSocket::Address(127, 0, 0, 1, port));
 	}
 
-	// Un-freeze the writer as we have bound the port (or will fail next line)
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::CONT, writer_pid));
+	CPPUNIT_ASSERT(bound);
+	listen_sock.listenx(1);
 
-	CPPUNIT_ASSERT_MESSAGE(msg_bind.str(), bound);
-	CPPUNIT_ASSERT(listen_sock.listen(10));
+	/* Establish both ends before starting the reader. */
+	nut::NutSocket writer;
+	writer.connectx(nut::NutSocket::Address(127, 0, 0, 1, port));
+	nut::NutSocket reader(nut::NutSocket::ACCEPT, listen_sock);
+	struct ReadData {
+		nut::NutSocket * stream;
+		bool characters;
+		bool ok;
+		std::exception_ptr error;
+	} read_data = { &reader, characters, false, std::exception_ptr() };
+	bool write_ok = false;
+	std::exception_ptr write_error;
+	pthread_t read_thread;
 
-	// Accept connection
-	nut::NutSocket conn_sock(nut::NutSocket::ACCEPT, listen_sock);
+	int status = pthread_create(&read_thread, nullptr, [](void * arg) -> void * {
+		ReadData & data = *static_cast<ReadData *>(arg);
+		try {
+			if (data.characters) {
+				size_t read_count = 0;
+				data.ok = readTestData(data.stream, &read_count)
+					&& read_count == test_data.size();
+			} else {
+				std::string text;
+				data.ok = data.stream->getString(text) == nut::NutStream::NUTS_OK
+					&& text == test_data;
+			}
+		} catch (...) {
+			data.error = std::current_exception();
+		}
+		return nullptr;
+	}, &read_data);
+	CPPUNIT_ASSERT(0 == status);
 
-	// Read the test data
-	readx(&conn_sock);
+	try {
+		write_ok = writeTestData(&writer);
+	} catch (...) {
+		write_error = std::current_exception();
+	}
 
-	// Wait for writer
-	int   writer_exit;
-	pid_t wpid = ::waitpid(writer_pid, &writer_exit, 0);
+	/* Closing the writer delivers EOF, including after a failed write.
+	 * Join before asserting or propagating either thread's exception. */
+	bool closed = writer.close();
+	status = pthread_join(read_thread, nullptr);
 
-	CPPUNIT_ASSERT(wpid == writer_pid);
+	CPPUNIT_ASSERT(0 == status);
+	if (write_error)
+		std::rethrow_exception(write_error);
+	if (read_data.error)
+		std::rethrow_exception(read_data.error);
 
-	std::stringstream msg_writer_exit;
-	msg_writer_exit << "Got writer_exit=" << writer_exit << ", expected 0";
-	CPPUNIT_ASSERT_MESSAGE(msg_writer_exit.str(), 0    == writer_exit);
-#endif	/* !WIN32 */
+	CPPUNIT_ASSERT(closed);
+	CPPUNIT_ASSERT(write_ok);
+	CPPUNIT_ASSERT(read_data.ok);
 }
 
 

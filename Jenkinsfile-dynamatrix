@@ -31,6 +31,10 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
 
+    // On NUT CI farm we do have build agents that have asciidoc/a2x but not
+    // aspell, so default pattern (including doc-builder) does not fit well:
+    dynamatrixGlobalState.labelDocumentationSpellchecker = 'doc-spellchecker'
+
     // NOTE: Disabled by default because with -std=c* the compiler and linker
     // (at least on environments NUT CI farm has) do not "see" many things,
     // and do not even define WIN32, and this is unrelated to NUT codebase.
@@ -98,9 +102,13 @@ import org.nut.dynamatrix.*;
 
     // In modern builds, use the ci_build.sh recipe which first checks
     // quietly for things that succeed, and summarizes errors in the end
-    dynacfgPipeline['spellcheck_prepconf'] = false
-    dynacfgPipeline['spellcheck_configure'] = false
-    dynacfgPipeline['spellcheck'] = '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
+    dynacfgPipeline['spellcheck'] = [
+        prepconf: false,
+        configure: false,
+        tryAllNodes: false,
+        tryAllDistros: true,
+        spellcheck: '(BUILD_TYPE=default-spellcheck-quick ./ci_build.sh)'
+    ]
 
 /*
     // For older builds, with only autotools in the tree:
@@ -232,6 +240,41 @@ import org.nut.dynamatrix.*;
     // Might not be exact, but reduces workload still.
     dynacfgPipeline.excludeCombos_AUTOTOOLS_NOT_REQUIRE_TWEAK =
         [[~/OS_DISTRO=(?!(openbsd-6\.|macos|netbsd))/]]
+
+    // Prepare to exclude not-newest features in most-popular (master-branch)
+    // builds for RISC-V platforms (which realistically only need modern C/C++
+    // coverage as they were first introduced in 2020's)
+
+    /** Exclude older language standards on RISC-V platforms */
+    dynacfgPipeline.axisCombos_RISCV_LEGACY_CSTD = [
+        ~/ARCH64=riscv64/,
+        ~/CSTDVERSION_c=(89|99|11)\b/
+    ]
+
+    /** Exclude older language standards on RISC-V platforms */
+    dynacfgPipeline.axisCombos_RISCV_LEGACY_CXXSTD = [
+        ~/ARCH64=riscv64/,
+        ~/CSTDVERSION_cxx=(98|11)\b/
+    ]
+
+    /** Exclude strict ANSI/C modes on RISC-V if GNU variants are sufficient */
+    dynacfgPipeline.axisCombos_RISCV_STRICT_C = [
+        ~/ARCH64=riscv64/,
+        ~/CSTDVARIANT=c/
+    ]
+
+    /** Exclude any older compiler revisions that may remain installed on RISC-V
+     * builders in the future (in addition to newer installed versions) */
+    dynacfgPipeline.axisCombos_RISCV_NOT_MAX_COMPILER = [
+        ~/ARCH64=riscv64/,
+        ~/COMPILERVER=(NOT_MAX|!MAX)/
+    ]
+
+    dynacfgPipeline.excludeCombos_RISCV_DEFAULT = [
+        dynacfgPipeline.axisCombos_RISCV_LEGACY_CSTD,
+        dynacfgPipeline.axisCombos_RISCV_LEGACY_CXXSTD,
+        dynacfgPipeline.axisCombos_RISCV_NOT_MAX_COMPILER
+    ]
 
     dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
@@ -402,7 +445,7 @@ set | sort -n """
 
                 mergeMode: [ 'dynamatrixAxesVirtualLabelsMap': 'replace', 'dynamatrixAxesCommonEnv': 'replace', 'excludeCombos': 'merge' ],
                 dynamatrixAxesCommonEnv: [
-                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules']
+                    ['CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck']
                     ],
                 allowedFailure: [
                     dynacfgPipeline.axisCombos_WINDOWS,
@@ -447,7 +490,7 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     //['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall\\ -Wextra\\ -Werror', 'CXXFLAGS=-Wall\\ -Wextra\\ -Werror']
                     ['LANG=C','LC_ALL=C','TZ=UTC', 'CFLAGS=-Wall', 'CXXFLAGS=-Wall',
-                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck'
                     ]
                     ],
                 allowedFailure: [
@@ -495,7 +538,7 @@ set | sort -n """
                     // (so splitting into many tokens), or quoted as a single
                     // token DISTCHECK_FLAGS in its stage (split by make later).
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules --disable-spellcheck'
                     ]
                     ],
 
@@ -509,6 +552,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 dynamatrixAxesLabels: [~/^OS_DISTRO/, 'COMPILER'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + dynacfgPipeline.excludeCombos_AUTOTOOLS_REQUIRE_TWEAK
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -552,6 +596,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -705,6 +750,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    // + dynacfgPipeline.excludeCombos_RISCV_DEFAULT	// Commented-away: do give a shot to base language revision and distcheck on RISC-V too after all
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -744,6 +790,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
@@ -826,6 +873,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -879,6 +927,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -922,6 +971,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                     + dynacfgPipeline.excludeCombos_AUTOTOOLS_NOT_REQUIRE_TWEAK // skip systems covered with "autotools-driven builds" (MASTER-0)
@@ -964,6 +1014,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC]	// checking non-GCC builds; GCC is covered in more detail below
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -1004,7 +1055,8 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT
-                    //+ [dynacfgPipeline.axisCombos_STRICT_C] // TODO: revise to match the purpose of this filter
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT	// Because axisCombos_RISCV_LEGACY_CSTD excludes CSTDVERSION_c=89 on ARCH64=riscv64, RISC-V builds are skipped entirely in this phase
+                    //+ [dynacfgPipeline.axisCombos_STRICT_C]	// TODO: revise to match the purpose of this filter
                     + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/, ~/GCCVER=[01234].+/]]	// Does not trust pragmas to quiesce known "infractions" which are not problems
                     + [[~/OS_DISTRO=freebsd-15(\.\d+|)$/, ~/CSTDVARIANT=c/]]	// Disabled `long long` pre-C99 precludes use of `strto{,u}ll()` [#3583]
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
@@ -1211,6 +1263,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + dynacfgPipeline.excludeCombos_RISCV_DEFAULT	// Skips C89/C99/C11 standards on RISC-V, executing solely the gnu17/gnu++17 hard-warning check against the newest GCC (GCCVER: 'MAX')
                     + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -1250,7 +1303,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
                     dynacfgPipeline.axisCombos_WINDOWS
-                    ]
+                    ] + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -1413,7 +1466,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
                     dynacfgPipeline.axisCombos_WINDOWS,
                     dynacfgPipeline.axisCombos_NOT_WINDOWS_CROSS
-                    ]
+                    ] + dynacfgPipeline.excludeCombos_RISCV_DEFAULT
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build

@@ -333,6 +333,19 @@ technologies,NUTCI_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
 build agent preparation,NUTCI_farm_agents].
 
+See also "Repetitive build/test optimizations" in `INSTALL.nut.adoc` file
+for suggestions specific to this area.
+
+The full Git-derived NUT version (e.g. `2.8.5.1466.13`) changes with every
+commit, so it is kept out of `include/config.h` (included by all sources)
+to let `ccache` re-use objects: the `PACKAGE_VERSION` and `PACKAGE_STRING`
+macros there only carry the base semantic version (e.g. `2.8.5`, or
+`2.8.5.1` for any development iteration after that release). Please
+do not use these macros in new C code; the full version is provided by
+`NUT_VERSION_MACRO` in the generated `include/nut_version.h` file (exposed
+to programs by the `UPS_VERSION` string in common code), and that header
+should not be included by more source files than necessary.
+
 Integrated Development Environments (IDEs) and debugging NUT
 ------------------------------------------------------------
 
@@ -1345,20 +1358,6 @@ Git repository, and your local Mercurial working copy.
 
 Other tools for hg/git interoperability are sure to exist. We would
 welcome any feedback about this process on the nut-upsdev mailing list.
-
-Subversion (SVN) access
-~~~~~~~~~~~~~~~~~~~~~~~
-
-If you prefer to check out the NUT source code using an SVN client, GitHub
-has a link:https://github.com/blog/966-improved-subversion-client-support[SVN
-interface to Git repositories] hosted on their servers. You can fork a copy
-of the NUT repository and commit to your fork with SVN.
-
-Be aware that the examples in the GitHub blog post might result in a
-checkout that includes all of the current branches, as well as the trunk.
-You are most likely interested in a command line similar to the following:
-
-	:; svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
 Ignoring generated files
 ------------------------

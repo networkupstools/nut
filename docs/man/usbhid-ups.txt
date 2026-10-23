@@ -37,7 +37,8 @@ At the present time, usbhid-ups supports:
  - some EcoFlow models,
  - some Powercom models,
  - some PowerWalker models,
- - some TrippLite models.
+ - some TrippLite models,
+ - some Vertiv models (Liebert GXT5).
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the NUT source distribution as `data/driver.list`, or on the
@@ -163,7 +164,7 @@ in conjunction with a frozen controller, where only a driver reconnection
 restored the data exchange (e.g. APC BXnnnnMI) -- in such cases you may want
 to use a reasonable non-negative value here.
 
-*onlinedischarge_battery*::
+*onlinedischarge_onbattery*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as
 offline/on-battery.
 +
@@ -172,7 +173,7 @@ however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
 
 *onlinedischarge*::
-DEPRECATED, old name for `onlinedischarge_battery` described above.
+DEPRECATED, old name for `onlinedischarge_onbattery` described above.
 
 *onlinedischarge_calibration*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as calibration.
