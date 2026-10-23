@@ -183,9 +183,10 @@ Special values:
 SERVICE DELAYS
 --------------
 
-The interval value is merely the number given to linkmanext:sleep[3] after running
-through the format string.  Therefore, a query will actually take slightly
-longer than the interval, depending on the speed of your system.
+The interval is used to schedule polling cycles. `upslog` sleeps for the
+remaining time before the next scheduled poll, rather than adding the full
+interval after each poll. Slow queries or interruptions can affect the
+actual timing.
 
 ON-DEMAND LOGGING
 -----------------

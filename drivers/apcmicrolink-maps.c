@@ -36,9 +36,25 @@ static const microlink_value_map_t microlink_outlet_status_map[] = {
 	{ 0, NULL }
 };
 
+/* Only a running calibration belongs in ups.status. apc_calibration_status_map
+ * holds the labels of the calibration RESULT register, and feeding it to
+ * status_set() leaks them as status tokens: a unit whose last calibration
+ * ended "Failed" reported "OL Failed" forever (seen on an SMX1500, FW UPS 16.0).
+ */
+static const microlink_value_map_t microlink_calibration_ups_status_map[] = {
+	{ APC_CAL_STATUS_IN_PROGRESS, "CAL" },
+	{ 0, NULL }
+};
+
 const microlink_desc_publish_map_t microlink_desc_publish_map[] = {
 	{ "2:4.A", apc_status_map, apc_alarm_map },
-	{ "2:13", apc_calibration_status_map, NULL },
+	{ "2:13", microlink_calibration_ups_status_map, NULL },
+	/* Same register in the UPS-scope namespace: devices that populate this
+	 * one instead must reach ups.status too, as with the test-result pair. */
+	{ "2:4.5.13", microlink_calibration_ups_status_map, NULL },
+	/* And in object A, where the tested SCL500RM1UC keeps its only
+	 * calibration status usage (it has neither of the two above). */
+	{ "A:6.13", microlink_calibration_ups_status_map, NULL },
 	{ NULL, NULL, NULL }
 };
 
@@ -262,6 +278,14 @@ const microlink_desc_value_map_t microlink_desc_value_map[] = {
 	{ "2:13",     "experimental.microlink.ups.calibration.result",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
 	{ "2:4.5.13", "experimental.ups.calibration.result",
+	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
+	/* RunTimeCalibrationStatus_BF in object A - the only calibration status
+	 * usage the tested SCL500RM1UC has. Deliberately not mapped onto either
+	 * name above: object A has its own attribute namespace, and nothing yet
+	 * shows it carries the same value as 2:13 / 2:4.5.13 on a device that
+	 * has those too (see docs/apcmicrolink-descriptors.txt, "Two scopes,
+	 * one NUT name"). */
+	{ "A:6.13",   "experimental.microlink.ups.calibration.status",
 	                                      MLINK_DESC_BITFIELD_MAP,  MLINK_DESC_UNSIGNED, 0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, apc_calibration_status_map },
 	{ "2:B",      "input.transfer.reason",
 	                                      MLINK_DESC_ENUM_MAP,      MLINK_DESC_SIGNED,   0, MLINK_DESC_RO, MLINK_NAME_INDEX_NONE, ups_status_change_cause_map },

@@ -86,14 +86,18 @@ static hid_fallback_field_t ff_below_rcl;
 static hid_fallback_field_t ff_remaining_capacity;
 static hid_fallback_field_t ff_runtime_to_empty;
 
-/* Latest opportunistically decoded fallback snapshot; fb_last_update == 0
- * means nothing decoded yet this session. */
+/* Latest opportunistically decoded fallback snapshot. The two status flags
+ * carry their own decode times (0 = not decoded yet this session): a zero
+ * that was never read from the device must not pass for "AC not present",
+ * and a RemainingCapacity/RunTimeToEmpty report says nothing about how fresh
+ * the status is. */
 static int fb_ac_present = 0;
 static int fb_discharging = 0;
 static int fb_below_rcl = 0;
 static long fb_battery_charge = -1;
 static long fb_battery_runtime = -1;
-static time_t fb_last_update = 0;
+static time_t fb_ac_present_update = 0;
+static time_t fb_discharging_update = 0;
 
 /* Output/Input reports are 64 bytes: 1 Report ID byte + 63 data bytes. */
 #define MLINK_USB_REPORT_PAYLOAD_LEN	63U
@@ -130,6 +134,12 @@ typedef struct {
 static struct libusb_transfer *async_xfer = NULL;
 static int async_xfer_active = 0;	/* 1 while a transfer is submitted/outstanding */
 
+/* Abandoned transfers whose callback has not fired yet. libusb_close() drops
+ * in-flight transfers from libusb's list without ever calling their callback,
+ * so microlink_usb_reset_and_reopen() reaps them before closing the handle;
+ * otherwise each one would leak. Guarded by async_lock. */
+static unsigned int async_abandoned_count = 0;
+
 /* The queue, async_xfer_active and the fb_* globals are touched by both the
  * pump thread and the main thread, so all go through async_lock. async_cond is
  * signalled whenever the callback queues a report, so get_char() can block on
@@ -150,6 +160,7 @@ static volatile int async_pump_stop = 0;
  * callback calls. */
 static int microlink_usb_async_start(void);
 static void microlink_usb_async_stop(void);
+static void microlink_usb_async_reap_abandoned(void);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
 static unsigned char in_report[MLINK_USB_REPORT_TOTAL_LEN];
@@ -322,7 +333,11 @@ static int microlink_usb_report_callback(usb_dev_handle *arg_udev, USBDevice_t *
 	memset(&ff_below_rcl, 0, sizeof(ff_below_rcl));
 	memset(&ff_remaining_capacity, 0, sizeof(ff_remaining_capacity));
 	memset(&ff_runtime_to_empty, 0, sizeof(ff_runtime_to_empty));
-	fb_last_update = 0;
+	fb_ac_present_update = 0;
+	fb_discharging_update = 0;
+	fb_below_rcl = 0;
+	fb_battery_charge = -1;
+	fb_battery_runtime = -1;
 
 	if (rdbuf == NULL || rdlen <= 0) {
 		upsdebugx(1, "microlink_usb: no HID report descriptor available");
@@ -554,6 +569,9 @@ int microlink_usb_reset_and_reopen(void)
 		 * usb-common.h abstraction; calling libusb_reset_device() directly
 		 * breaks NUT_USB_VARIANT=0.1 builds. */
 		usb_reset(udev);
+#if WITH_LIBUSB_1_0 && defined(HAVE_PTHREAD)
+		microlink_usb_async_reap_abandoned();
+#endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 		comm_driver->close_dev(udev);
 		udev = NULL;
 	}
@@ -818,9 +836,11 @@ static void microlink_usb_try_decode_fallback(const unsigned char *report, size_
 
 	if (ff_ac_present.report_id == report_id) {
 		fb_ac_present = (int)hid_extract_bits(data, data_len, ff_ac_present.offset, ff_ac_present.size);
+		fb_ac_present_update = microlink_now();
 	}
 	if (ff_discharging.report_id == report_id) {
 		fb_discharging = (int)hid_extract_bits(data, data_len, ff_discharging.offset, ff_discharging.size);
+		fb_discharging_update = microlink_now();
 	}
 	if (ff_below_rcl.report_id == report_id) {
 		fb_below_rcl = (int)hid_extract_bits(data, data_len, ff_below_rcl.offset, ff_below_rcl.size);
@@ -832,12 +852,6 @@ static void microlink_usb_try_decode_fallback(const unsigned char *report, size_
 	if (ff_runtime_to_empty.report_id == report_id) {
 		fb_battery_runtime = (long)hid_extract_bits(data, data_len,
 			ff_runtime_to_empty.offset, ff_runtime_to_empty.size);
-	}
-
-	if (report_id == ff_ac_present.report_id || report_id == ff_discharging.report_id
-	 || report_id == ff_below_rcl.report_id || report_id == ff_remaining_capacity.report_id
-	 || report_id == ff_runtime_to_empty.report_id) {
-		fb_last_update = microlink_now();
 	}
 }
 
@@ -909,6 +923,11 @@ static void LIBUSB_CALL microlink_usb_async_cb(struct libusb_transfer *transfer)
 	if (abandoned) {
 		free(transfer->buffer);
 		libusb_free_transfer(transfer);
+		pthread_mutex_lock(&async_lock);
+		if (async_abandoned_count > 0) {
+			async_abandoned_count--;
+		}
+		pthread_mutex_unlock(&async_lock);
 		return;
 	}
 
@@ -995,34 +1014,38 @@ static int microlink_usb_async_start(void)
 		buf, (int)MLINK_USB_REPORT_TOTAL_LEN,
 		microlink_usb_async_cb, NULL, 0);
 
-	if (libusb_submit_transfer(async_xfer) != 0) {
-		upsdebugx(1, "microlink_usb: failed to submit the initial async "
-			"interrupt-IN transfer");
+	async_queue_head = 0;
+	async_queue_count = 0;
+
+	/* Start the pump before submitting, so a thread-creation failure leaves
+	 * nothing outstanding. With nothing submitted yet the pump just times out
+	 * every 50ms. */
+	async_pump_stop = 0;
+	if (pthread_create(&async_pump_tid, NULL, microlink_usb_async_pump, NULL) != 0) {
+		upsdebugx(1, "microlink_usb: failed to start the async pump thread");
 		libusb_free_transfer(async_xfer);
 		free(buf);
 		async_xfer = NULL;
 		return 0;
 	}
 
-	async_queue_head = 0;
-	async_queue_count = 0;
+	/* Set before submitting: once submitted, the callback may run on the
+	 * pump thread at any time and clear it. */
+	pthread_mutex_lock(&async_lock);
 	async_xfer_active = 1;
+	pthread_mutex_unlock(&async_lock);
 
-	async_pump_stop = 0;
-	if (pthread_create(&async_pump_tid, NULL, microlink_usb_async_pump, NULL) != 0) {
-		upsdebugx(1, "microlink_usb: failed to start the async pump thread, "
-			"abandoning the just-submitted transfer and falling back to "
-			"synchronous reads");
-		/* Nothing will service the event loop until some later synchronous
-		 * call incidentally does, so request cancellation now and then walk
-		 * away exactly like the timeout path in microlink_usb_async_stop()
-		 * below. */
-		libusb_cancel_transfer(async_xfer);
-		async_xfer->user_data = (void *)1;
-		async_xfer = NULL;
+	if (libusb_submit_transfer(async_xfer) != 0) {
+		upsdebugx(1, "microlink_usb: failed to submit the initial async "
+			"interrupt-IN transfer");
+		async_pump_stop = 1;
+		pthread_join(async_pump_tid, NULL);
+		pthread_mutex_lock(&async_lock);
 		async_xfer_active = 0;
-		async_queue_head = 0;
-		async_queue_count = 0;
+		pthread_mutex_unlock(&async_lock);
+		libusb_free_transfer(async_xfer);
+		free(buf);
+		async_xfer = NULL;
 		return 0;
 	}
 
@@ -1038,8 +1061,9 @@ static int microlink_usb_async_start(void)
  * during a USB reset), so cancel it and wait, bounded, for confirmation. If
  * the bound is hit - realistically only when the device is already too wedged
  * to answer a cancel, i.e. exactly what leads here - mark the transfer
- * abandoned via user_data and let its callback free it whenever libusb
- * eventually completes it. Never touch it again after that. */
+ * abandoned via user_data and let its callback free it if libusb completes it
+ * before the handle is closed (see microlink_usb_async_reap_abandoned()).
+ * Never touch it again after that. */
 static void microlink_usb_async_stop(void)
 {
 	int i;
@@ -1064,9 +1088,11 @@ static void microlink_usb_async_stop(void)
 
 		if (async_xfer_active) {
 			upsdebugx(1, "microlink_usb: async transfer did not confirm "
-				"cancellation in time, abandoning it (it will free itself "
-				"once libusb eventually completes it)");
+				"cancellation in time, abandoning it");
 			async_xfer->user_data = (void *)1;
+			pthread_mutex_lock(&async_lock);
+			async_abandoned_count++;
+			pthread_mutex_unlock(&async_lock);
 			async_xfer = NULL;
 			async_xfer_active = 0;
 			async_queue_head = 0;
@@ -1080,6 +1106,41 @@ static void microlink_usb_async_stop(void)
 	async_xfer = NULL;
 	async_queue_head = 0;
 	async_queue_count = 0;
+}
+
+/* Give abandoned transfers a bounded chance to complete before the handle is
+ * closed: after a bus reset the kernel discards their URBs, and reaping them
+ * here runs the callback that frees them. Only call with the pump stopped, so
+ * this is the sole caller of libusb_handle_events*(). */
+static void microlink_usb_async_reap_abandoned(void)
+{
+	int i;
+	unsigned int pending = 0;
+
+	for (i = 0; i < 50; i++) {
+		struct timeval tv;
+
+		pthread_mutex_lock(&async_lock);
+		pending = async_abandoned_count;
+		pthread_mutex_unlock(&async_lock);
+		if (pending == 0) {
+			return;
+		}
+
+		tv.tv_sec = 0;
+		tv.tv_usec = 20000;
+		libusb_handle_events_timeout_completed(nut_libusb_get_context(), &tv, NULL);
+	}
+
+	upsdebugx(1, "microlink_usb: %u abandoned async transfer(s) still "
+		"pending at close, leaking them", pending);
+
+	/* The caller closes the handle next, after which libusb never calls
+	 * these callbacks, so stop counting them. No thread handles events
+	 * until then. */
+	pthread_mutex_lock(&async_lock);
+	async_abandoned_count = 0;
+	pthread_mutex_unlock(&async_lock);
 }
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
@@ -1095,8 +1156,12 @@ int microlink_usb_get_hid_fallback(int max_age_sec,
 	pthread_mutex_lock(&async_lock);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
 
-	if (fb_last_update == 0 || max_age_sec < 0
-	 || difftime(microlink_now(), fb_last_update) > (double)max_age_sec) {
+	/* Both status flags must have been decoded from a real report, and
+	 * recently: the caller turns them into OL/OB, which upsmon acts upon. */
+	if (fb_ac_present_update == 0 || fb_discharging_update == 0
+	 || max_age_sec < 0
+	 || difftime(microlink_now(), fb_ac_present_update) > (double)max_age_sec
+	 || difftime(microlink_now(), fb_discharging_update) > (double)max_age_sec) {
 #if WITH_LIBUSB_1_0 && defined(HAVE_PTHREAD)
 		pthread_mutex_unlock(&async_lock);
 #endif /* WITH_LIBUSB_1_0 && HAVE_PTHREAD */
@@ -1129,6 +1194,36 @@ int microlink_usb_get_hid_fallback(int max_age_sec,
 int microlink_usb_hid_fallback_supported(void)
 {
 	return (ff_ac_present.report_id != 0 && ff_discharging.report_id != 0);
+}
+
+/* The tunnel's Input reports are fixed-size (63 data bytes) while a Microlink
+ * record is page0.width + 3 bytes, so the device zero-pads each report after
+ * the record it carries (observed: one 35-byte record at offset 0 plus 28
+ * bytes of 0x00, 13040 reports out of 13040, SMX1500 FW UPS 16.0). Fed to the
+ * byte-stream frame scanner, that padding is worse than noise: leading 0x00
+ * bytes are invisible to the Microlink checksum (Fletcher, mod 255), so a
+ * record whose last check byte is 0xFF also validates one byte early, gets
+ * taken for a (bogus) page 0, and the real record is lost for that pass.
+ *
+ * Called by the parser right after it has extracted a frame: if everything
+ * left unread in the current report is 0x00, drop it, so the next record is
+ * parsed from the start of its own report. A non-zero remainder is left alone
+ * (returns 0) - it cannot be padding, and a complete record can never hide in
+ * all-zero bytes because a computed check byte is never 0x00. Returns the
+ * number of padding bytes dropped. */
+size_t microlink_usb_drop_report_padding(void)
+{
+	size_t i, dropped;
+
+	for (i = in_report_pos; i < in_report_len; i++) {
+		if (in_report[i] != 0x00) {
+			return 0;
+		}
+	}
+
+	dropped = in_report_len - in_report_pos;
+	in_report_pos = in_report_len;
+	return dropped;
 }
 
 /* Per-call synchronous read: issue one interrupt-IN transfer and wait up to

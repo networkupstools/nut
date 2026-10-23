@@ -64,11 +64,13 @@
 #	include "idowell-hid.h"
 #	include "legrand-hid.h"
 #	include "liebert-hid.h"
+#	include "microdowell-hid.h"
 #	include "openups-hid.h"
 #	include "powercom-hid.h"
 #	include "powervar-hid.h"
 #	include "salicru-hid.h"
 #	include "tripplite-hid.h"
+#	include "vertiv-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
@@ -89,11 +91,13 @@ static subdriver_t *subdriver_list[] = {
 	&idowell_subdriver,
 	&legrand_subdriver,
 	&liebert_subdriver,
+	&microdowell_subdriver,
 	&openups_subdriver,
 	&powercom_subdriver,
 	&powervar_subdriver,
 	&salicru_subdriver,
 	&tripplite_subdriver,
+	&vertiv_subdriver,
 #endif	/* !SHUT_MODE => USB */
 	NULL
 };
