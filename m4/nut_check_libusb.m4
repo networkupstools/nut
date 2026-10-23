@@ -85,28 +85,9 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             AS_IF([test x"${nut_cv_LIBUSB_1_0_VERSION}" != xnone], [
                 nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_1_0_VERSION}"
                 nut_cv_usb_lib="(libusb-1.0)"
-                dnl ...except on Windows, where we support libusb-0.1(-compat)
-                dnl better so far (allow manual specification though, to let
-                dnl someone finally develop the on-par support), see also
+                dnl On Windows (mingw/MSYS2 native and cross builds) only
+                dnl libusb-1.0 is supported (with the WinUSB driver), see
                 dnl https://github.com/networkupstools/nut/issues/1507
-                dnl Note this may upset detection of libmodbus RTU USB support.
-                AS_IF([test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone], [
-                    AS_CASE(["${target_os}"],
-                        [*mingw*], [
-                                AS_IF([test x"$build" = x"$host"], [
-                                    AS_IF([test "${nut_with_modbus_and_usb}" = "yes"], [
-                                        AC_MSG_NOTICE(["Normally" mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available, but you requested --with-modbus+usb so preferring libusb-1.0 in this build])
-                                    ], [
-                                        AC_MSG_NOTICE([mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available until https://github.com/networkupstools/nut/issues/1507 is solved])
-                                        nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_0_1_VERSION}"
-                                        nut_cv_usb_lib="(libusb-0.1)"
-                                    ])
-                                ],[
-                                    AC_MSG_NOTICE([mingw cross-builds prefer libusb-1.0 over libusb-0.1(-compat) if both are available])
-                                ])
-                            ]
-                    )
-                ])
             ], [
                 AS_IF([test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone], [
                     nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_0_1_VERSION}"
@@ -138,6 +119,9 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     nut_cv_usb_lib="(libusb-1.0)"
                     ],
                 [libusb-0.1|0.1], [
+                    AS_CASE(["${target_os}"],
+                        [*mingw*], [AC_MSG_ERROR([option --with-usb=${nut_cv_with_usb} is not supported for Windows builds, please use libusb-1.0 (with the WinUSB driver), see https://github.com/networkupstools/nut/issues/1507])]
+                    )
                     AS_IF([test x"${nut_cv_LIBUSB_0_1_VERSION}" = xnone \
                         && test x"${nut_cv_LIBUSB_CONFIG_VERSION}" = xnone],
                         [AC_MSG_ERROR([option --with-usb=${nut_cv_with_usb} was required, but this library version was not detected])
@@ -155,6 +139,45 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     ]
             )
             AC_MSG_RESULT([${nut_cv_LIBUSB_VERSION} ${nut_cv_usb_lib}])
+
+            dnl A libusb-1.0 picked by preference (not explicitly requested)
+            dnl may be too old for NUT: libusb_error_name() (1.0.9+) is the
+            dnl minimum, standing in for libusb_strerror() (1.0.16+, see
+            dnl https://github.com/networkupstools/nut/issues/509) e.g. with
+            dnl the libusb1-1.0.9 of CentOS 6. If a libusb-0.1 is also available,
+            dnl fall back to it rather than end up with no USB drivers, see
+            dnl https://github.com/networkupstools/nut/issues/3781
+            dnl Custom cflags/ldflags are taken as an explicit choice too.
+            AS_IF([test x"${nut_cv_usb_lib}" = x"(libusb-1.0)" \
+                && test x"${nut_with_usb_includes}" = xauto \
+                && test x"${nut_with_usb_libs}" = xauto \
+                && test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone -o x"${nut_cv_LIBUSB_CONFIG_VERSION}" != xnone
+            ], [
+                AS_CASE(["${nut_cv_with_usb}"],
+                    [auto|yes], [
+                        AC_MSG_CHECKING([whether libusb-1.0 ${nut_cv_LIBUSB_1_0_VERSION} provides libusb_init() and libusb_error_name()])
+                        CFLAGS="${CFLAGS_ORIG} `$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
+                        LIBS="${LIBS_ORIG} `$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
+                        AC_LANG_PUSH([C])
+                        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libusb.h>]],
+                            [[libusb_init(NULL); (void)libusb_error_name(LIBUSB_SUCCESS);]])],
+                            [AC_MSG_RESULT([yes])],
+                            [AC_MSG_RESULT([no])
+                             AS_IF([test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone],
+                                [nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_0_1_VERSION}"
+                                 nut_cv_usb_lib="(libusb-0.1)"
+                                ],
+                                [nut_cv_LIBUSB_VERSION="${nut_cv_LIBUSB_CONFIG_VERSION}"
+                                 nut_cv_usb_lib="(libusb-0.1-config)"
+                                ])
+                             AC_MSG_NOTICE([libusb-1.0 ${nut_cv_LIBUSB_1_0_VERSION} is not usable by NUT (libusb 1.0.9+ needed), falling back to ${nut_cv_LIBUSB_VERSION} ${nut_cv_usb_lib}])
+                            ])
+                        AC_LANG_POP([C])
+                        CFLAGS=""
+                        LIBS=""
+                    ]
+                )
+            ])
 
             AS_IF([test x"${nut_cv_LIBUSB_1_0_VERSION}" != xnone && test x"${nut_cv_usb_lib}" != x"(libusb-1.0)" ],
                 [AC_MSG_NOTICE([libusb-1.0 support was detected, but another was chosen ${nut_cv_usb_lib}])]
@@ -209,10 +232,8 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             )
             AC_MSG_RESULT([${depLIBS} (source: ${depLIBS_SOURCE})])
 
-            dnl TODO: Consult chosen nut_cv_usb_lib value and/or nut_cv_with_usb argument
-            dnl (with "auto" we may use a 0.1 if present and working while a 1.0 is
-            dnl present but useless)
-            dnl Check if libusb is usable
+            dnl Check if libusb is usable (a 1.0 too old for NUT was already
+            dnl swapped for an available 0.1 above, when not chosen explicitly)
             CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
             LIBS="${LIBS_ORIG} ${depLIBS}"
             nut_cv_have_libusb_strerror=""
@@ -226,11 +247,22 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
                     AC_CHECK_HEADERS(libusb.h, [nut_cv_have_libusb=yes], [nut_cv_have_libusb=no], [AC_INCLUDES_DEFAULT])
                     AC_CHECK_FUNCS(libusb_init, [], [nut_cv_have_libusb=no])
-                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_cv_have_libusb=no; nut_cv_have_libusb_strerror=no])
+                    dnl libusb_strerror() appeared in 1.0.16; older releases
+                    dnl from 1.0.9 on have libusb_error_name() which we can
+                    dnl use instead (see usb-common.h):
+                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_cv_have_libusb_strerror=no])
                     AS_IF([test "${nut_cv_have_libusb_strerror}" = "no"], [
-                        AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        AC_CHECK_FUNCS(libusb_error_name, [
+                            AC_MSG_NOTICE([libusb_strerror() not found (libusb older than 1.0.16), error messages will show libusb_error_name() codes instead])
+                        ], [
+                            nut_cv_have_libusb=no
+                            AC_MSG_WARN([neither libusb_strerror() nor libusb_error_name() found; libusb 1.0.9 or newer is needed to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        ])
                     ])
                     AS_IF([test "${nut_cv_have_libusb}" = "yes"], [
+                        dnl Absent before libusb 1.0.10 or so, not fatal:
+                        AC_CHECK_FUNCS(libusb_get_version)
+
                         dnl This function is fairly old, but check for it anyway:
                         AC_CHECK_FUNCS(libusb_kernel_driver_active)
                         dnl Check for libusb "force driver unbind" availability
@@ -248,33 +280,13 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     ])
                 ], [
                     dnl libusb 0.1, or missing pkg-config :
-                    AC_CHECK_HEADERS(usb.h, [nut_cv_have_libusb=yes], [
-                        nut_cv_have_libusb=no
-                        dnl Per https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/1.2.6.0/
-                        dnl this project (used among alternatives in MSYS2/MinGW builds)
-                        dnl uses a different include filename to avoid conflict with
-                        dnl a WDK header:
-                        AS_CASE(["${target_os}"],
-                            [*mingw*], [
-                                AC_MSG_NOTICE([try alternate header name for mingw builds with libusb-win32])
-                                AC_CHECK_HEADERS(lusb0_usb.h, [
-                                    nut_cv_usb_lib="(libusb-0.1)"
-                                    nut_cv_have_libusb=yes
-                                ], [], [AC_INCLUDES_DEFAULT])
-                            ])
-                        ],
-                        [AC_INCLUDES_DEFAULT])
+                    AC_CHECK_HEADERS(usb.h, [nut_cv_have_libusb=yes], [nut_cv_have_libusb=no], [AC_INCLUDES_DEFAULT])
                     AC_CHECK_FUNCS(usb_init, [], [
                         dnl Some systems may just have libusb in their standard
                         dnl paths, but not the pkg-config or libusb-config data
                         AS_IF([test "${nut_cv_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS" -o x"$LIBS" = x"-lusb" ], [
                             AC_MSG_CHECKING([if libusb is just present in path])
                             depLIBS="-L/usr/lib -L/usr/local/lib -lusb"
-                            dnl TODO: Detect bitness for trying /mingw32 or /usr/$ARCH as well?
-                            dnl This currently caters to mingw-w64-x86_64-libusb-win32 of MSYS2:
-                            AS_CASE(["${target_os}"],
-                                [*mingw*], [depLIBS="-L/mingw64/lib $depLIBS"]
-                            )
                             unset ac_cv_func_usb_init || true
                             LIBS="${LIBS_ORIG} ${depLIBS}"
                             AC_CHECK_FUNCS(usb_init, [], [
@@ -356,6 +368,22 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                 AC_CHECK_FUNCS(libusb_get_port_number, [nut_cv_with_usb_busport=yes])
             ])
             AC_LANG_POP([C])
+
+            dnl libusb-0.1 (libusb-win32 or libusb-compat) is not supported
+            dnl for Windows builds, see https://github.com/networkupstools/nut/issues/1507
+            AS_IF([test "${nut_cv_have_libusb}" = "yes"], [
+                AS_CASE(["${target_os}"],
+                    [*mingw*], [
+                        AS_CASE(["${nut_cv_usb_lib}"],
+                            ["(libusb-0.1)"|"(libusb-0.1-config)"], [
+                                AC_MSG_WARN([libusb-0.1 ${nut_cv_usb_lib} is not supported for Windows builds, please use libusb-1.0 (with the WinUSB driver), see https://github.com/networkupstools/nut/issues/1507])
+                                nut_cv_have_libusb=no
+                                nut_cv_usb_lib=""
+                            ]
+                        )
+                    ]
+                )
+            ])
 
             nut_cv_LIBUSB_CFLAGS=""
             nut_cv_LIBUSB_LIBS=""
@@ -533,22 +561,17 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
                     dnl libusb 1.0 detected via pkg-config:
                     AC_CHECK_HEADERS(libusb.h, [], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
                     AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
-                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb=no; nut_have_libusb_strerror=no])
+                    AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb_strerror=no])
                     AS_IF([test "${nut_have_libusb_strerror}" = "no"], [
-                        AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        AC_CHECK_FUNCS(libusb_error_name, [], [
+                            nut_have_libusb=no
+                            AC_MSG_WARN([neither libusb_strerror() nor libusb_error_name() found; libusb 1.0.9 or newer is needed to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+                        ])
                     ])
+                    AC_CHECK_FUNCS(libusb_get_version)
                 ], [
                     dnl libusb 0.1, or missing pkg-config:
-                    AC_CHECK_HEADERS(usb.h, [], [
-                        nut_cv_have_libusb=no
-                        AS_CASE(["${target_os}"],
-                            [*mingw*], [
-                                AC_MSG_NOTICE([try alternate header name for mingw builds with libusb-win32])
-                                AC_CHECK_HEADERS(lusb0_usb.h, [], [], [AC_INCLUDES_DEFAULT])
-                            ])
-                        ],
-                        [AC_INCLUDES_DEFAULT]
-                    )
+                    AC_CHECK_HEADERS(usb.h, [], [nut_cv_have_libusb=no], [AC_INCLUDES_DEFAULT])
 
                     dnl No elaborate re-detection like that done above.
                     dnl Just set the vars about the method with LIBS already chosen.

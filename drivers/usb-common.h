@@ -20,15 +20,20 @@
  *   Original SGML for that seems to be in source tarball such as
  *   http://deb.debian.org/debian/pool/main/libu/libusb/libusb_0.1.12.orig.tar.gz
  *
- * Related (but currently not directly used) projects include:
- * - libusb-win32 port based on libusb-0.1 API (bug-fix-only mode,
- *   new projects should use libusb Windows backend):
- *   https://sourceforge.net/p/libusb-win32/wiki/Documentation/
- * - (Currently not in NUT codebase scope, but might help...)
- *   > A compatibility layer allowing applications written for
- *   > libusb-0.1 to work with libusb-1.0. libusb-compat-0.1
- *   > attempts to look, feel, smell and walk like libusb-0.1.
- *   Mostly. Details (and known differences) documented at:
+ * Related projects:
+ * - On Windows, NUT uses libusb-1.0 only, whose Windows backend needs
+ *   the device to be bound to a supported kernel driver:
+ *   https://github.com/libusb/libusb/wiki/Windows
+ *   - WinUSB (preferred, part of Windows):
+ *     https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation
+ *   - libusbK (needs libusbK.dll):
+ *     https://github.com/mcuee/libusbk
+ *   Such a driver can be installed with libwdi (as NUT's wdi-simple
+ *   does) or Zadig:
+ *   https://github.com/pbatard/libwdi
+ * - libusb-compat-0.1 provides the libusb-0.1 API on top of libusb-1.0,
+ *   and can stand in for libusb-0.1 on non-Windows platforms. Details
+ *   (and known differences) are documented at:
  *   https://github.com/libusb/libusb-compat-0.1
  *
  * Also note that at least currently this does not deal with non-libusb
@@ -94,6 +99,14 @@
  */
 #if WITH_LIBUSB_1_0
 # include <libusb.h>
+
+ /* libusb_strerror() appeared in libusb 1.0.16; configure accepts older
+  * releases from 1.0.9 on, which only have libusb_error_name(): it names
+  * the error code (e.g. "LIBUSB_ERROR_TIMEOUT") instead of describing it.
+  * See https://github.com/networkupstools/nut/issues/509 */
+# if !(defined HAVE_LIBUSB_STRERROR) || !HAVE_LIBUSB_STRERROR
+#  define libusb_strerror(e)	libusb_error_name((int)(e))
+# endif
 
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
 
@@ -394,11 +407,7 @@
 # ifdef HAVE_USB_H
 #  include <usb.h>
 # else
-#  ifdef HAVE_LUSB0_USB_H
-#   include <lusb0_usb.h>
-#  else
-#   error "configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build"
-#  endif
+#  error "configure script error: HAVE_USB_H is not set for the WITH_LIBUSB_0_1 build"
 # endif
  /* Structures */
  /* See detailed comments above, in libusb-1.0 definitions

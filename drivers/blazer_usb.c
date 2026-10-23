@@ -37,7 +37,7 @@
 #endif	/* WIN32 */
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -595,14 +595,10 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 		break;
 
 	case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
-/* libusb-win32 does not know EPROTO and EOVERFLOW,
- * it only returns EIO for any IO errors */
-#ifndef WIN32
 	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
-# if EPROTO && WITH_LIBUSB_0_1
+#if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
-# endif
-#endif	/* !WIN32 */
+#endif
 	default:
 		break;
 	}

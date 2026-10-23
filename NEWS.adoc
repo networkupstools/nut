@@ -82,6 +82,11 @@ https://github.com/networkupstools/nut/milestone/13
         result was stored as the availability of the XML/HTTP scan. So the
         `-M` scan could be disabled despite a working `libneon`, or offered
         without one (impacts NUT v2.8.3 through v2.8.5). [PR #3657]
+      - `nut-scanner` crashed in USB scans in 32-bit Windows builds: it
+        called the dynamically loaded libusb-1.0 methods as default C
+        functions, but there they use the calling convention of Windows
+        API methods (`LIBUSB_CALL`), so the stack got misaligned (impacts
+        all NUT 2.8.x until now). [PR #3791]
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
@@ -1123,6 +1128,32 @@ https://github.com/networkupstools/nut/milestone/13
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
+    * USB support can now be built against libusb-1.0 releases from 1.0.9
+      on, such as the `libusb1` 1.0.9 package of CentOS 6. Before 1.0.16
+      there is no `libusb_strerror()`, so error messages show the name of
+      the libusb error code (from `libusb_error_name()`) instead of its
+      description; before 1.0.10 or so there is no `libusb_get_version()`,
+      so `driver.version.usb` says the version is unknown. `nut-scanner`
+      falls back the same way when the libusb it loads at run time lacks
+      these methods. [issues #509, #3781, PR #3782]
+    * With `--with-usb=auto` (or `yes`), the `configure` script now falls
+      back to an also available libusb-0.1 when the preferred libusb-1.0 is
+      too old for NUT, instead of building without USB drivers. An explicit
+      `--with-usb=libusb-1.0` still fails in that case.
+      [issue #3781, PR #3782]
+    * Windows (MinGW/MSYS2) builds of NUT now support only libusb-1.0 for
+      USB drivers, used with the WinUSB driver. Support for libusb-0.1
+      (libusb-win32 with its `libusb0.sys` driver, or libusb-compat) was
+      removed from Windows builds: `configure --with-usb=libusb-0.1` now
+      fails there, and an auto-detected libusb-0.1 is not used. Tested
+      with `apcmicrolink` and `nut-scanner` on Windows 10.
+      [issue #1507, PR #3791]
+    * The `wdi-simple` USB driver installer for Windows now installs the
+      WinUSB driver (or libusbK, if chosen) instead of `libusb0.sys`,
+      accepts command-line options, and no longer reads past the end of
+      the generated NUT USB device table. Its build instructions were
+      updated for current libwdi.
+      [issue #1507, PR #3791]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

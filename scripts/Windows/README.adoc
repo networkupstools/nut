@@ -305,16 +305,8 @@ libusb
 	:; make
 	:; sudo make install
 
-* libusb-compat-0.1 (API translation layer for older codebase, uses libusb-1.0)
-
-	:; ( cd "$DLDIR" && wget -c https://github.com/libusb/libusb-compat-0.1/archive/refs/heads/master.zip -O libusb-compat-0.1-master.zip )
-	:; cd "$WSDIR"
-	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
-	:; cd libusb-compat-0.1-master
-	:; ./bootstrap.sh
-	:; ./configure --prefix="$PREFIX" $HOST_FLAG
-	:; make
-	:; sudo make install
+NOTE: Only libusb-1.0 is supported for Windows builds of NUT;
+libusb-0.1 (libusb-win32 or libusb-compat-0.1) is not.
 
 
 zlib

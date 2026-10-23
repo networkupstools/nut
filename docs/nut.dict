@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3917 utf-8
+personal_ws-1.1 en 3930 utf-8
 AAC
 AAS
 ABI
@@ -1587,6 +1587,7 @@ WALKMODE
 WARNFATAL
 WARNOPT
 WCH
+WDK
 WELI
 WH
 WHAD
@@ -2667,6 +2668,8 @@ libtool
 libupsclient
 libusb
 libusb's
+libusbK
+libusbk
 libusbugen
 libusbx
 libvirt
@@ -2701,6 +2704,7 @@ lm
 lmodbus
 ln
 lnetsnmp
+lntdll
 loadPercentage
 localcalculation
 localhost
@@ -2715,6 +2719,7 @@ login
 logins
 logout
 logrotate
+lole
 lookup
 loopback
 lowbatt
@@ -2723,6 +2728,7 @@ lr
 lregex
 ls
 lsd
+lsetupapi
 lst
 lsusb
 lt
@@ -2731,6 +2737,7 @@ lu
 lua
 lv
 lvo
+lwdi
 lws
 lxc
 lxcbr
@@ -3219,6 +3226,7 @@ reconnection
 recurses
 recursing
 recv
+redistributable
 redistributors
 reentrancy
 refactored
@@ -3396,6 +3404,7 @@ slaveaddr
 slaveid
 slavesync
 slibtool
+sln
 sm
 smartslot
 smartups
@@ -3822,6 +3831,7 @@ waitbeforereconnect
 wakeup
 wc
 wdi
+wdkdir
 webserver
 wf
 wg
@@ -3835,6 +3845,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+winusb
 withGiven
 withdoc
 wix
