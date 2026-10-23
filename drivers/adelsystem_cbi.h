@@ -345,7 +345,7 @@ static alrm_ar_t *bsta;
 static alrm_t obta_ar[] = {
 	{0, "onboard temperature high"}
 };
-static int obta_c = 4;
+static int obta_c = SIZEOF_ARRAY(obta_ar);
 static alrm_ar_t *obta;
 
 /* UPS device reg enum */
