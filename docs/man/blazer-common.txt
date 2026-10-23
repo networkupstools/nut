@@ -50,6 +50,11 @@ Minimum battery voltage just before the UPS automatically shuts down.
 If you want the driver to report a guesstimated *battery.charge*, you need
 to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
+Note that *battery.voltage.high* and *battery.voltage.low* without a prefix
+are reported values, not driver arguments: putting them in `ups.conf` as-is
+is rejected with a "not a valid variable name for this driver" error. Only
+the `default.` (or `override.`) forms shown above are accepted there.
+
 *default.battery.voltage.nominal =* 'value'::
 *override.battery.voltage.nominal =* 'value'::
 
