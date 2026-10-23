@@ -23,7 +23,8 @@ REM end up getting used in those cases.
 REM Time limit: see CI_DEADLINE_EPOCH in appveyor.yml
 REM The "ccache -c" runs whatever the build result: AppVeyor saves the cache of
 REM a failed (or deadline-terminated) build right after the failing step, so
-REM this enforces ccache max_size before that. Successful builds also get it in
-REM 12-on_success.ps1 (after the later steps which compile tests and bundles).
-C:\msys64\usr\bin\bash -lc 'date -u; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if [ "$R" -le 0 ] ; then exit 124 ; fi ; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes WITH_LIBNUTPRIVATE=true NUT_SSL_VARIANTS=nss timeout -k 30 "$R" ./ci_build.sh --with-docs=no ; RES=$? ; if ! PATH="/mingw64/bin:$PATH" ccache -c ; then echo "SKIP: Could not clean up ccache" ; fi ; exit "$RES" '
+REM this enforces ccache max_size before that. The later steps which compile
+REM tests and bundles (07-test_script.bat, 08-after_test.bat) do the same, and
+REM successful builds get it again in 12-on_success.ps1.
+C:\msys64\usr\bin\bash -lc 'date -u; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if [ "$R" -le 0 ] ; then exit 124 ; fi ; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true CANBUILD_WITH_LIBMODBUS_USB=yes WITH_LIBNUTPRIVATE=true NUT_SSL_VARIANTS=nss timeout -k 30 "$R" ./ci_build.sh --with-docs=no ; RES=$? ; echo "`date -u`: ci_build.sh finished ($RES), pruning ccache..."; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if ! PATH="/mingw64/bin:$PATH" ccache -c ; then echo "SKIP: Could not clean up ccache" ; fi ; exit "$RES" '
 if errorlevel 1 exit /b %ERRORLEVEL%
