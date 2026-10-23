@@ -85,6 +85,13 @@ https://github.com/networkupstools/nut/milestone/13
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
+    * NUT for Windows: `snprintf()` and `vsnprintf()` were mapped to the
+      Microsoft `_snprintf()` and `_vsnprintf()` methods, which do not
+      terminate the buffer and return -1 when the output does not fit, so
+      NUT code relying on C99 behavior could read past the end of the buffer
+      (impacts the NUT for Windows builds since v2.8.1). The mapping is now
+      only used for Visual Studio versions before 2015, which lacked C99
+      `snprintf()`, and a new test checks the C99 behavior. [#GHSA-ghqr-q65h-w9wg]
     * Refactoring of `configure.ac` for NUT v2.8.5 release led to a problem
       when explicitly specifying same `--with-user` *OR* `--with-group` name
       as would be default for current platform (so one was treated as not-set
@@ -141,7 +148,7 @@ https://github.com/networkupstools/nut/milestone/13
       the frame that carried it is now rejected instead of cached. Such
       a page redefined the length the frame parser demanded, after which
       nothing checksum-validated again and the session could not
-      recover. Affects both transports. [issue #3587]
+      recover. Affects both transports. [issue #3587, PR #3591]
     * Further updates, the driver remains experimental, but USB sessions
       should hold up better, and fall back more readily to standard HID PDC
       data when the Microlink tunnel is unstable or unavailable. [PR #3591]
@@ -216,63 +223,67 @@ https://github.com/networkupstools/nut/milestone/13
       published only after both status flags were decoded from a recent
       report. Also corrected the startup failure message shown when
       `hid_fallback = no`. [issue #3587, PR #3728]
-
- - Contributed `apcmicrolink` driver follow-ups [issue #3587]:
-    * `beeper.enable` and `beeper.disable` now change only the
-      enabled/disabled flag of the alarm-setting register, leaving the
-      alarm-delay value it also holds untouched. Writing a bare 1 or 2
-      zeroed the delay, and real hardware silently ignored that write,
-      so the commands had no effect.
-    * `shutdown.return`, `shutdown.stayoff` and `shutdown.reboot.graceful`
-      now ask the UPS to apply its turn-on delay as well as its turn-off
-      delay. Without it the shutdown still happened, but switched outlet
-      groups did not sequence back on when mains power returned. The
-      command is built in `apc_common.c`, which the `apc_modbus` driver
-      shares, so its `DRIVER_VERSION` is bumped too; that driver's
-      behavior on this path has not been checked on hardware.
-    * The calibration status in `ups.status` (see above) also follows the
-      UPS-scope register `2:4.5.13`, for devices that populate that one
-      instead of `2:13`.
-    * Instant commands such as `calibrate.start` and `bypass.start` are
-      only advertised when the device's Microlink descriptor contains the
-      register they write to. They used to be listed on every device, so
-      on a model without that register (the tested Smart-UPS 500 has no
-      runtime calibration command register) they could only ever fail.
-      With debug enabled, the driver logs which commands it left out and
-      why.
-    * The runtime calibration status register in object `A` (`A:6.13`) is
-      now read, as `experimental.microlink.ups.calibration.status`, and a
-      running calibration there raises `CAL` in `ups.status`. It is the
-      only calibration status the tested Smart-UPS 500 has, so that model
-      previously reported no calibration state at all. It is kept apart
-      from the existing `*.calibration.result` variables because it is
-      not yet known whether it carries the same value on devices that
-      have both.
-    * Serial mode: session start sends only the INIT byte again, as the
-      original serial implementation did. The STOP byte that the USB
-      transport needs before INIT had also been sent on serial, where a
-      previously working setup then failed to start.
-    * When the driver gives up at startup, the message now says whether
-      the session handshake failed or the session started but never
-      became ready, and only mentions the standard HID fallback on USB.
-    * Serial mode: the driver polls continuously again, as the original
-      serial driver did, instead of pausing for `pollinterval` between
-      passes since USB support was added. USB mode is unchanged.
-    * Serial mode: startup is complete once the authentication response
-      has been sent, as with the original serial driver, rather than
-      waiting up to 15 seconds for the device to acknowledge it, during
-      which a few missed replies aborted startup. The acknowledgement is
-      still collected by the regular polling. USB mode is unchanged.
-      If startup does fail after the handshake, the message now names
-      the step that was missing.
-    * Serial mode: one record is read per poll again, and data is
-      published after each one, as with the original serial driver.
-      Reading a full pass (about 6 seconds on a tested unit) before
-      publishing delayed status changes such as going on battery by
-      that much. USB mode is unchanged.
-    * Serial mode: the driver no longer sends a STOP byte when it exits.
-      The original serial driver never did; only the USB transport needs
-      it. USB mode is unchanged.
+    * More contributed `apcmicrolink` driver follow-ups [issue #3587, PR #3719]:
+      - `beeper.enable` and `beeper.disable` now change only the
+        enabled/disabled flag of the alarm-setting register, leaving the
+        alarm-delay value it also holds untouched. Writing a bare 1 or 2
+        zeroed the delay, and real hardware silently ignored that write,
+        so the commands had no effect.
+      - `shutdown.return`, `shutdown.stayoff` and `shutdown.reboot.graceful`
+        now ask the UPS to apply its turn-on delay as well as its turn-off
+        delay. Without it the shutdown still happened, but switched outlet
+        groups did not sequence back on when mains power returned. The
+        command is built in `apc_common.c`, which the `apc_modbus` driver
+        shares, so its `DRIVER_VERSION` is bumped too; that driver's
+        behavior on this path has not been checked on hardware.
+      - The calibration status in `ups.status` (see above) also follows the
+        UPS-scope register `2:4.5.13`, for devices that populate that one
+        instead of `2:13`.
+      - Instant commands such as `calibrate.start` and `bypass.start` are
+        only advertised when the device's Microlink descriptor contains the
+        register they write to. They used to be listed on every device, so
+        on a model without that register (the tested Smart-UPS 500 has no
+        runtime calibration command register) they could only ever fail.
+        With debug enabled, the driver logs which commands it left out and
+        why.
+      - The runtime calibration status register in object `A` (`A:6.13`) is
+        now read, as `experimental.microlink.ups.calibration.status`, and a
+        running calibration there raises `CAL` in `ups.status`. It is the
+        only calibration status the tested Smart-UPS 500 has, so that model
+        previously reported no calibration state at all. It is kept apart
+        from the existing `*.calibration.result` variables because it is
+        not yet known whether it carries the same value on devices that
+        have both.
+      - Serial mode: session start sends only the INIT byte again, as the
+        original serial implementation did. The STOP byte that the USB
+        transport needs before INIT had also been sent on serial, where
+        a previously working setup then failed to start.
+      - When the driver gives up at startup, the message now says whether
+        the session handshake failed or the session started but never
+        became ready, and only mentions the standard HID fallback on USB.
+      - Serial mode: the driver polls continuously again, as the original
+        serial driver did, instead of pausing for `pollinterval` between
+        passes since USB support was added. USB mode is unchanged.
+      - Serial mode: startup is complete once the authentication response
+        has been sent, as with the original serial driver, rather than
+        waiting up to 15 seconds for the device to acknowledge it, during
+        which a few missed replies aborted startup. The acknowledgement is
+        still collected by the regular polling. USB mode is unchanged.
+        If startup does fail after the handshake, the message now names
+        the step that was missing.
+      - Serial mode: one record is read per poll again, and data is
+        published after each one, as with the original serial driver.
+        Reading a full pass (about 6 seconds on a tested unit) before
+        publishing delayed status changes such as going on battery by
+        that much. USB mode is unchanged.
+      - Serial mode: the driver no longer sends a STOP byte when it exits.
+        The original serial driver never did; only the USB transport needs
+        it. USB mode is unchanged.
+    * USB mode: an asynchronous interrupt-IN transfer that did not confirm
+      cancellation in time is now reaped after the USB reset, before the
+      handle is closed, instead of being leaked. The listener thread is now
+      started before its transfer is submitted, so a thread-creation failure
+      no longer leaves a transfer outstanding. [issue #3751, PR #3778]
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
@@ -345,28 +356,29 @@ https://github.com/networkupstools/nut/milestone/13
       information instead of repeatedly requesting HWINFO and delaying normal
       polling. The raw packet captures and protocol analysis which made this
       correction possible were contributed by GitHub user `freechurros`.
-      [issue #3592]
+      [issue #3592, PR #3597]
     * Applied follow-up hardware-test feedback from `freechurros`: corrected
       `interpret_pkt_hwinfo()` to validate the HWINFO checksum instead of the
       DATA checksum, exposed unrecognized packets through `debug_pkt_raw`, and
       published the documented lower-case `battery.charger.status` values for
-      compatibility with Home Assistant. [issue #3592]
+      compatibility with Home Assistant. [issue #3592, PR #3597]
     * Send the long, short and compatibility hardware-discovery requests from
       `upsdrv_initinfo()`, checking the serial descriptor before every request.
       Failed or partial writes now mark data stale and invalidate the port so
       the normal update cycle reopens it before further communication.
+      [PR #3597]
     * Refresh cached model-specific data from every valid HWINFO packet and
       restart discovery after a serial reconnection, allowing a replaced UPS
-      to be identified without restarting the driver.
+      to be identified without restarting the driver. [PR #3597]
     * Added the legacy five-byte compatibility initialization request
       (`FF 05 01 06 FE`) as a third fallback. The driver first makes six
       extended initialization attempts, then selects randomly among the
       extended, normal and compatibility requests so older or otherwise
       compatibility-dependent NHS units can answer with their supported
-      protocol variant.
+      protocol variant. [PR #3597]
     * Consolidated the NHS model-code metadata into an indexed lookup table,
       preserving the existing model descriptions and nominal VA mappings while
-      making unknown-code handling explicit.
+      making unknown-code handling explicit. [PR #3597]
 
  - `nutdrv_qx` driver updates:
     * Added the `richcomm-svc` USB communication subdriver for older
@@ -461,6 +473,9 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed incorrect claim for `innovart33` subdriver -- the original device
       claiming procedure was borrowed from `innovart31` without thoroughly
       checking the code. [issue #3661, PR #3713]
+    * `nutdrv_qx`: failed SANTAK, INNOVART31 and INNOVART33 claims no longer
+      leave their probed measurements in the selected subdriver's state.
+      Configured defaults and overrides are preserved. [issue #3659, PR #3766]
 
  - Introduced a new NUT driver named `ragtech` which provides support for the
    Ragtech "Easy Pro" family of line-interactive UPS units (also sold under
@@ -557,7 +572,7 @@ https://github.com/networkupstools/nut/milestone/13
       report buffer now tracks its allocated capacity explicitly alongside the
       declared length, and that capacity is what gets requested and clamped
       against. Devices already using the tweak (some APC Back-UPS models) now
-      receive the intended full-buffer request. [issue #3712]
+      receive the intended full-buffer request. [issue #3712, PR #3729]
     * `idowell-hid` subdriver now also repairs the Usage Page of two
       `PresentStatus` flags in those GoldenMate packs: the firmware leaves the
       Battery System page selected, so the intended `Good` and
@@ -570,7 +585,7 @@ https://github.com/networkupstools/nut/milestone/13
       Eaton 5P Gen2 series (largely guessing, feedback and PRs for
       adaptation to actual string values reported by devices via USB are
       welcome), so these devices would now report `battery.voltage` and
-      `battery.voltage.nominal`. [#2380]
+      `battery.voltage.nominal`. [issue #2380, PR #3617]
     * `cps-hid` subdriver: widened under-declared Logical Maximums for
       `UPS.Input.Voltage`, `UPS.Input.ConfigVoltage`, `UPS.PowerSummary.Voltage`
       and `UPS.PowerSummary.ConfigVoltage` on CyberPower HID devices (e.g.
@@ -578,7 +593,7 @@ https://github.com/networkupstools/nut/milestone/13
       values but declare maximums below them, so NUT masked/clamped them to
       wrong readings (`input.voltage` 70, `battery.voltage` 22.4 instead of
       ~225 / ~48 V). The fixes mirror the established `cps_fix_report_desc()`
-      and `apc-hid` patterns for this device family. [issue #3089]
+      and `apc-hid` patterns for this device family. [issue #3089, PR #3575]
     * `tripplite-hid` subdriver now recovers the output power reading, which was
       published as a constant `0.0`. Two defects combined: the HID `ActivePower`
       usages were mapped to `ups.power`, which `docs/nut-names.txt` defines as
@@ -623,6 +638,12 @@ https://github.com/networkupstools/nut/milestone/13
       new subdriver is used even when `productid` is set in `ups.conf`.
       Tested against a GXT5 on mains only; on-battery status transitions
       are not yet confirmed. [issue #3613, PR #3730]
+    * `ecoflow-hid` subdriver: the `battery.runtime` minutes-to-seconds
+      conversion returned a newly allocated string on every call, which the
+      driver never freed; with this quick-polled value the driver leaked
+      128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
+      uses a static buffer like the other conversion functions. [issue #3787,
+      PR #3788]
 
  - `snmp-ups` driver updates:
     * Corrected the IETF fallback warning so it is emitted for automatic
@@ -632,14 +653,15 @@ https://github.com/networkupstools/nut/milestone/13
       of exact server-side outlet variables and commands. [issue #3360,
       PR #3610]
     * `apc` subdriver: exposed `ambient.temperature` from universal I/O
-      sensors used with APC Network Management Card 3. [issue #3250]
+      sensors used with APC Network Management Card 3. [issue #3250, PR #3605]
     * Extended the XPPC-MIB subdriver (enterprise 935) to expose
       `battery.runtime`, `battery.voltage`, `input.frequency`,
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
-      based UPS cards that already answer the rest of the subtree. [#2608]
+      based UPS cards that already answer the rest of the subtree. [issue #2608,
+      PR #3492]
     * Mapped `standby(8)` from XPPC output status to `OL` rather than `OFF`,
       because line-interactive devices use it for inverter standby while their
-      UPS output remains online on utility power. [issue #3512]
+      UPS output remains online on utility power. [issue #3512, PR #3600]
     * Introduced `voltronic` subdriver for Voltronic enterprise 43943 UPSes,
       developed and tested against a PowerShield Centurion RT 1000VA
       (PSCERT1000) with a PSSNMPV4 card running firmware 1.1.8.C. [issue #3478,
@@ -647,15 +669,19 @@ https://github.com/networkupstools/nut/milestone/13
     * `apc-ats` subdriver: added `output.current`, `ups.power` and `ups.load`
       from the APC ATS output phase table, which also provides
       `output.voltage` on models without the output bank table, such as
-      the AP4452A.
+      the AP4452A. [PR #3673]
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we
       checked if it completed the start-up during cool-down delay only when
       called to start multiple (all) drivers at once. There is no reason to
-      not do so for single-driver runs -- addressed with this release. [#3302]
+      not do so for single-driver runs -- addressed with this release.
+      [issue #3302, PR #3537]
 
  - common code:
+    * Fixed strict Clang conversion warnings. Process-name lookup now checks
+      the symlink size before allocation and retains the full signed byte
+      count returned when reading the link. [PR #3770]
     * Driver help now prints identical option names, types and descriptions
       only once, reducing repeated entries from protocol subdrivers.
       Configuration handling and the parsable `-L` list are unchanged.
@@ -730,6 +756,8 @@ https://github.com/networkupstools/nut/milestone/13
       the overflows it addressed) in normal device interactions. [#3588]
 
  - NUT client libraries:
+    * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
+      annotation warning in the C client library. [PR #3770]
     * Introduction of `nutauth.conf` support caused some rearrangement of
       codebase layout in the library, and this in turn caused some fallout.
       Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
@@ -738,6 +766,7 @@ https://github.com/networkupstools/nut/milestone/13
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.
       Command descriptions now accept the server's `CMDDESC` response.
+      [PR #3634]
     * Complete support for actions documented in `docs/net-protocol.txt`
       was implemented in C++, Python and PERL bindings in-tree, and for Java
       in link:https://github.com/networkupstools/jNut[jNut] nearby. Among
@@ -787,12 +816,13 @@ https://github.com/networkupstools/nut/milestone/13
       they should use, or pass the special values `default` (require a
       user- or system-provided `nutauth.conf` file) or `none` (skip
       authconf discovery entirely), matching the `-A` option semantics
-      of command-line NUT clients. [issue #3439]
+      of command-line NUT clients. [issue #3439, PR #3607]
 
  - Various clients:
     * Flush standard output and error buffers before handling clean exit
       rituals, to avoid losing the result of client's work in case that
-      clean-up crashes (e.g. due to third-party code involved). [#3454]
+      clean-up crashes (e.g. due to third-party code involved). [issue #3454,
+      PR #3497]
 
  - `upsimage.cgi` client updates:
     * Adjust scaling for small (single-digit) value ranges to avoid division
@@ -1044,7 +1074,7 @@ https://github.com/networkupstools/nut/milestone/13
       into a new m4 macro `NUT_CHECK_SEMAPHORES`, added support for autoconf
       caching of the results for repeated runs. [PR #3675]
     * Jenkins used as the NUT CI farm core has bumped JDK requirements for its
-      controllers and build agents, `docs/config-prereqs.txt` revised.
+      controllers and build agents, `docs/config-prereqs.txt` revised. [PR #3453]
     * `Jenkinsfile-dynamatrix` recipe revised to generate fewer RISC-V recipes
       specifically (very slow worker), focusing on the newest compiler and C/C++
       revisions available on the worker. On the other side, this CI recipe was
@@ -1053,6 +1083,21 @@ https://github.com/networkupstools/nut/milestone/13
     * Further rearrangement of AppVeyor CI builds and security hardening of
       GitHub Actions used to prepare the dist tarballs and report on progress
       there. [PRs #3753, #3754, #3756]
+    * Fixed more AppVeyor CI step scripts where `cmd.exe` interpreted `||`
+      inside the single-quoted `bash` command lines itself (it does not
+      honour such quotes). Also enforce the `ccache` size limit before the
+      build cache is saved (it could outgrow the limit for a saved cache
+      item, and get lost), do not save the build cache from pull request
+      builds (they still restore it) nor from failed builds other than of
+      `master`, run the tests in parallel, sped up compression of the
+      artifact archive, and report per-build `ccache` statistics in the
+      GitHub notification of passed builds. [PR #3790]
+    * AppVeyor CI: pull request builds (which do not save the build cache)
+      no longer stop early to leave time for saving it, and can use the
+      whole hour; for other builds that deadline moved from 51 to 57 minutes.
+      The `ccache` size limit is now also enforced right after the test and
+      bundle build steps, so a `master` build which fails there (e.g. by that
+      deadline) does not save an oversized build cache. [PR #3794]
     * CI build matrix scenarios (Jenkins autotools builds, `ci_build.sh` with
       `BUILD_TYPE=default-withdoc*`) now pass `--disable-spellcheck`, so their
       `make check` no longer runs (and fails on) the documentation spellcheck.
@@ -1060,12 +1105,19 @@ https://github.com/networkupstools/nut/milestone/13
       with both a current and an old (7.1, as on CentOS 7) version of the
       `aspell-en` dictionary. Local builds keep the default of
       `configure --enable-spellcheck=auto`. [PR #3752]
+    * The `include/config.h` file no longer carries the full Git-derived NUT
+      version (which changes with every commit), only the base semantic
+      version (e.g. `2.8.5` for a release, or `2.8.5.1` for any development
+      iteration after it), so `ccache` and similar build caches can re-use
+      compiled objects across commits and fresh CI checkouts. The full
+      version is still provided by `include/nut_version.h` and in the
+      substituted `@PACKAGE_VERSION@` values. [PR #3759, follow-up to PR #3754]
     * The `make shellcheck` (and `make check-scripts-syntax`) recipe can now
       check the POSIX shell scripts with each interpreter listed in the
       `SHELL_PROGS` environment variable (default is still the system
       `/bin/sh`), and hides warnings about the legacy command substitution
       syntax (e.g. from `ksh93`) to avoid noise that obscured other problems.
-      [issues #1058, #1059]
+      [issues #1058, #1059, PR #3773]
     * Added a "GHA-07: ShellCheck" GitHub Actions workflow which checks the
       shell scripts changed by a pull request, and fails only for findings
       of "warning" or "error" level that are new compared to the base branch
@@ -1073,16 +1125,16 @@ https://github.com/networkupstools/nut/milestone/13
       changed lines and a list in the job summary. The same check can be run
       locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
       disables the checks for deliberate portability idioms of NUT scripts
-      (backticks, `x"$var"` comparisons, `expr`).
+      (backticks, `x"$var"` comparisons, `expr`). [PR #3773]
     * The `make spellcheck` recipes now report unknown words with the file
       name, line and column where they were found (rather than byte offsets
       in the `aspell` output), and in GitHub Actions also as annotations on
       the source lines (once per unknown word, despite the retries) and in
-      the job summary.
+      the job summary. [PR #3773]
     * The `configure` script now also looks for `aspell` filter resources
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
-      [issue #2068]
+      [issue #2068, PR #3773]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
