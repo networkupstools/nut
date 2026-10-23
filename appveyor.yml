@@ -27,7 +27,8 @@ platform: x64
 
 # https://www.appveyor.com/docs/build-cache/
 environment:
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  # Note: APPVEYOR_SAVE_CACHE_ON_ERROR and APPVEYOR_CACHE_SKIP_SAVE are set
+  # in the init section below, depending on the branch and PR status.
   # Store cache entries without (re-)compression: the data is mostly already
   # compressed (ccache objects, pacman *.zst packages), and single-threaded
   # LZMA at -mx=6 took 1-2 minutes per run for the ccache entry alone.
@@ -35,10 +36,8 @@ environment:
   # ccache max_size is capped below (see install steps) to leave a margin
   # for the other entries (pacman packages ~100MB, nut-win-deps, nut-ci):
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -mx=0
-  # Keep config.h stable across PRs, so ccache can reuse -g3 objects
-  # (see ci_build.sh for details):
-  CI_AUTOGEN_STABLE_VERSION: true
   CCACHE_DIR: /home/appveyor/.ccache
+  CCACHE_MAXSIZE: 750MiB
   DO_CLEAN_NUTCI_CACHE: no
   DO_USE_NUTCI_CACHE: yes
   MSYS: "winsymlinks:nativestrict"
@@ -68,16 +67,33 @@ notifications:
 # AppVeyor console log scanner with a /^sys.*/ match (apparently)
 # AppVeyor kills the job at 60 minutes, without saving the build cache:
 # a cold-ccache build then never gets warm, and an interrupted cache save
-# can even lose the old entry. So we set a deadline at 51 minutes after
+# can even lose the old entry. So we set a deadline at 57 minutes after
 # the job start, and our build/test/bundle steps fail (via `timeout`) if
 # they would run past it. With APPVEYOR_SAVE_CACHE_ON_ERROR this leaves
-# a few minutes for the 7z step, artifact upload and saving the cache.
+# a few minutes for the 7z step, artifact upload and saving the cache
+# (about 1.5 minutes in total as of 2026-10: 7z ~45s, cache save ~40s).
+# PR builds do not save the cache (see below), so they get no deadline
+# and can use the whole hour.
 # Each bash step below computes its time left like this (no CMD special
 # characters, so it passes through CMD intact):
 #   R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS ))
 init:
   - ps: |
-        Set-AppveyorBuildVariable -Name CI_DEADLINE_EPOCH -Value ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 51 * 60)
+        if (-not $env:APPVEYOR_PULL_REQUEST_NUMBER) { Set-AppveyorBuildVariable -Name CI_DEADLINE_EPOCH -Value ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 57 * 60) }
+  # There is one build cache per project, shared by all branches and PRs,
+  # and each save replaces the previous entries. So PR builds only restore
+  # the cache (warmed up by master builds), but do not save it: otherwise
+  # each PR build pushes objects of master (and other PRs) out of the
+  # limited cache space, and spends time to upload it all again. This is
+  # only a convenience, since a PR can change this file: to really keep
+  # PR builds from altering the cache used by master builds, untick "Save
+  # build cache in Pull Request builds" in the AppVeyor project settings.
+  # Builds of master also save the cache when they fail (e.g. by the
+  # deadline above), so that a cold cache gets warm over several builds;
+  # other branch builds only save it when they succeed. Note that for PR
+  # builds APPVEYOR_REPO_BRANCH is the target branch.
+  - ps: |
+        if ($env:APPVEYOR_PULL_REQUEST_NUMBER) { $env:APPVEYOR_CACHE_SKIP_SAVE = "true" } elseif ($env:APPVEYOR_REPO_BRANCH -eq "master") { $env:APPVEYOR_SAVE_CACHE_ON_ERROR = "true" }
 
 # The steps below are kept in scripts named after each section, under
 # .github/scripts/appveyor/ (.bat for `cmd`, .ps1 for `ps` steps),
@@ -87,6 +103,12 @@ init:
 # 08-after_test, ...), see https://www.appveyor.com/docs/build-configuration/#build-pipeline
 # Note that `init` above runs before the repository is cloned, so it
 # has to stay inline.
+# NOTE for the .bat scripts: cmd.exe only treats double quotes as quoting,
+# not the single quotes around `bash -lc '...'` arguments, so any `|`, `||`,
+# `&`, `&&`, `<` or `>` outside of double quotes there is interpreted by
+# cmd itself (e.g. `a || b` runs `b` only as a cmd command if bash failed,
+# and silently drops everything after it otherwise). Use `if ! a ; then
+# b ; fi` style constructs (or double-quote such characters) instead.
 install:
   - cmd: call "%APPVEYOR_BUILD_FOLDER%\.github\scripts\appveyor\02-install.bat"
 
@@ -106,6 +128,11 @@ after_test:
   - cmd: call "%APPVEYOR_BUILD_FOLDER%\.github\scripts\appveyor\08-after_test.bat"
   - ps: '& "$env:APPVEYOR_BUILD_FOLDER\.github\scripts\appveyor\08-after_test.ps1"'
 
+# Note: AppVeyor saves the build cache after on_success scripts (and for
+# failed master builds right after the failing step, before on_failure), see
+# https://www.appveyor.com/docs/build-configuration/#build-pipeline
+on_success:
+  - ps: '& "$env:APPVEYOR_BUILD_FOLDER\.github\scripts\appveyor\12-on_success.ps1"'
 
 artifacts:
   - path: 'NUT-for-Windows*.7z'

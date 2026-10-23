@@ -19,5 +19,9 @@ REM Preserve the current working directory:
 set CHERE_INVOKING=yes
 REM Start a 64 bit Mingw environment:
 set MSYSTEM=MINGW64
+REM Zero the ccache statistics (02-install.bat printed the restored ones),
+REM so that reports of later steps (05, 08, 12) count just this build:
+C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -z ; true '
+if errorlevel 1 exit /b %ERRORLEVEL%
 C:\msys64\usr\bin\bash -lc 'date -u; R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS )) ; echo "CI deadline: $R seconds left" ; if [ "$R" -le 0 ] ; then exit 124 ; fi ; export MSYS2_PATH ; PATH="/mingw64/lib/ccache/bin:/mingw64/bin:$PATH" timeout -k 30 "$R" bash ./scripts/Windows/build-mingw-prereqs.sh'
 if errorlevel 1 exit /b %ERRORLEVEL%
