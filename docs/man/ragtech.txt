@@ -37,6 +37,14 @@ the Easy Pro "GT" series) speak the same protocol but may report a model
 id that collides with a table entry, so the driver can pick the wrong VA
 rating. Use the *va* option below to set the correct rating in that case.
 
+A second protocol, "family 14", covers the Ragtech Easy Way units (21
+models, Easy Way 500/600/700/1200/1300/1400/1600 in TI, M1 and M2
+variants). They use the same USB ids but a different, push-only
+protocol; see the *FAMILY 14 (EASY WAY)* section below. Support for
+family 14 is *read-only* and was developed from captures of the OEM
+software on one unit (an Easy Way TI 1400, sold as "Easy Way 1500 VA
+GT"); the other 20 models come from the OEM device table only.
+
 This driver is *experimental*. Polling, status decoding and the
 `shutdown.stayoff` / `shutdown.stop` instant commands have been
 verified on hardware; `shutdown.return` and `test.battery.start.deep`
@@ -49,6 +57,19 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following options in the *ups.conf*:
+
+*family*='auto|10|14';;
+Select the protocol family. The default, *auto*, first listens for a
+few seconds without writing anything to the UPS: if it receives a valid
+family 14 frame at 2400 baud, the unit is treated as family 14;
+otherwise the driver continues with the family 10 protocol, with the
+serial settings it had before the listen. Set *family=10* on an Easy Pro
+unit to skip the listen (and its start-up delay of about three seconds,
+which also applies to `-k`) and to leave the port settings exactly as
+earlier versions did. Set *family=14* to require the Easy Way protocol;
+owners of an Easy Way unit are advised to do so, because if the automatic
+listen ever misses the stream, the driver falls back to polling it with
+family 10 commands, which that protocol does not use.
 
 *iout_calib*='number';;
 Per-unit output current calibration constant. If omitted (default),
@@ -77,6 +98,49 @@ battery event. With this flag unset, `upsdrv_shutdown` logs the
 refusal and exits with failure instead of cutting the output.
 
 
+FAMILY 14 (EASY WAY)
+--------------------
+
+The Easy Way units transmit a 32-byte frame about every 1.3 seconds on
+their own, at 2400 baud 8N1, without being asked. The driver only
+reads: it never writes anything to a family 14 unit, it registers no
+instant commands, and `upsdrv_shutdown` fails (so the `FSD` handling of
+`upsmon` cannot power such a UPS off through this driver). If
+*allow_shutdown* is set it is ignored with a warning. No write command
+is known for this family: the OEM device table lists no actions for it
+and none was seen in captures of the OEM software.
+
+Unlike family 10, these units do use the line speed, so the port must be
+at 2400 baud; the driver sets that itself.
+
+Published data: `ups.mfr`, `ups.model`, `ups.firmware`,
+`ups.power.nominal`, `ups.temperature`, `ups.load`, `ups.status`,
+`ups.alarm`, `input.voltage`, `input.voltage.nominal`,
+`output.voltage`, `output.voltage.nominal`, `output.frequency`,
+`output.frequency.nominal`, `battery.voltage`, `battery.voltage.nominal`
+and `battery.charge`. There is no output current. `ups.load` is the
+load ratio reported by the firmware. `ups.power.nominal` is the number
+in the model name, with the same convention as for family 10;
+`ups.realpower.nominal` is not published because the OEM table does not
+say whether that number is VA or watts. `battery.charge` is an estimate
+computed from the battery voltage, as in the OEM software.
+
+What was observed on hardware (mains cut and restored on one TI unit):
+`OL` and `OB` follow the firmware's on-battery flag, and the voltages,
+frequency, load, battery voltage and temperature match the values shown
+by the OEM software. What is inferred from bit names in the OEM table
+and was *not* observed: `CHRG` (shown while on mains and the
+battery-full flag is clear), `LB`, `OVER`, and every `ups.alarm` entry.
+`BOOST`, `TRIM` and the beeper are not reported. The M1 and M2
+variants follow the OEM table, but the output voltage formula of the M2
+(220 V) models in that table is the 115 V one with different tap factors,
+which looks doubtful, so treat `output.voltage` on those with suspicion
+until someone confirms it.
+
+If no valid frame arrives for more than five seconds the data is marked
+stale.
+
+
 CAVEATS
 -------
 
@@ -86,9 +150,11 @@ are interpreted by the UPS as a remote shutdown signal -- never run
 this driver alongside other software that toggles those lines on the
 same device node.
 
-Replies are framed by a 0xAA start byte and have no checksum; the
-driver re-synchronizes by scanning for the start byte after any
-short read.
+On family 10, replies are framed by a 0xAA start byte and have no
+checksum; the driver re-synchronizes by scanning for the start byte
+after any short read. On family 14 the frames start with `55 55 AE` and
+end with an 8-bit sum, and the driver keeps the newest frame whose sum
+is right.
 
 
 AUTHOR
