@@ -644,6 +644,22 @@ https://github.com/networkupstools/nut/milestone/13
       128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
       uses a static buffer like the other conversion functions. [issue #3787,
       PR #3788]
+    * Added the `ugreen-hid` subdriver for the Ugreen US2000 (72 W DC UPS, USB
+      ID `2b89:ffff`). The device was previously unsupported by any subdriver
+      and no `hid2nut` mapping could reach it: its live telemetry arrives
+      unprompted as 64-byte HID Input reports with report ID `0x71`, which no
+      object in its report descriptor describes. The subdriver keeps the
+      standard PDC feature-report mappings and decodes that frame for
+      `output.current`, `ups.load`, `input.voltage`, `output.voltage`,
+      `battery.current`, `battery.charger.status` and `battery.temperature`.
+      Three feature reports of this firmware are hardcoded dummies (`ups.load`
+      and `input.voltage` always report `1`; `output.voltage` is a coarse
+      integer that reads high) and its `PresentStatus` flags are never set, so
+      `LB` can never be raised from the device; with `battery.charge` live, the
+      core `ignorelb` option plus `battery.charge.low` provides it instead.
+      The frame is decoded only for the product strings the subdriver lists;
+      sibling models on the same USB ID still claim the subdriver to get the
+      standard mappings, but publish no vendor values. [issue #3779]
 
  - `snmp-ups` driver updates:
     * Corrected the IETF fallback warning so it is emitted for automatic
