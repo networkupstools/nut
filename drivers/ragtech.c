@@ -1,4 +1,5 @@
-/* ragtech.c - driver for Ragtech UPSes (Easy Pro family -- NEP/TORO/INNERGIE/OneUP)
+/* ragtech.c - driver for Ragtech UPSes (Easy Pro family -- NEP/TORO/INNERGIE/OneUP,
+ *              and the Easy Way family 14 "NEW/QUADRI")
  *
  * Target devices: Ragtech UPSes exposing a USB CDC-ACM serial interface
  * (PIC firmware, USB VID 0x04D8, PID 0x000A). Connected as /dev/ttyACM*.
@@ -6,8 +7,8 @@
  * Protocol notes (derived from Ragtech's OEM devices.xml -- family 10 -- and
  * cross-checked against UPS_ESP32_tinySrv, https://github.com/antunesls/UPS_ESP32_tinySrv).
  *
- *   Line config: 8N1 (the CDC-ACM endpoint ignores baud, but the OEM client
- *   sets it to 2560). DTR=0 and RTS=0 MUST be asserted right after opening --
+ *   Line config: 8N1 (on family 10 the CDC-ACM endpoint ignores baud, but the
+ *   OEM client sets it to 2560; family 14 below is different). DTR=0 and RTS=0 MUST be asserted right after opening --
  *   non-zero levels are interpreted by some Ragtech families as a remote
  *   shutdown signal.
  *
@@ -86,6 +87,71 @@
  *   supsvc against /dev/ttyACM0 should reveal it.
  *
  *
+ * Family 14 (Easy Way, "NEW/QUADRI" in the OEM table) -- read only
+ * -----------------------------------------------------------------
+ *
+ *   Same USB ids (04D8:000A) as family 10 but a different, push-only
+ *   protocol: the UPS never waits for a command. Nothing is ever written to
+ *   it by this driver in this family (no bulk OUT traffic was seen from the
+ *   OEM client either, and the OEM table lists no actions for family 14).
+ *
+ *   Line config: 2400 8N1. Unlike family 10, the PIC does apply the line
+ *   coding to its UART here: read at 4800 the stream turns into byte pairs
+ *   such as 66 e6, and at 9600 or above into pulses of 4 or more bit times.
+ *   DTR=0 and RTS=0 as for family 10.
+ *
+ *   Every ~1.25 to 1.3 s the UPS sends one frame of 32 bytes:
+ *
+ *     0x55 0x55 0xAE | reg[0x00..0x1A] (27 bytes) | tail | CS
+ *
+ *   CS is the 8-bit sum of the 31 preceding bytes (sync bytes included).
+ *   The byte "tail" was seen as 0x09 on mains and 0x08 on battery (and
+ *   sporadically after mains returned), so it is NOT checked; the sync bytes
+ *   plus CS are what the driver trusts. The meaning of 0xAE is unknown.
+ *
+ *   Register map (the register index is the offset into the 27 bytes):
+ *
+ *     0x00 version (x0.1)   0x01 model id (see f14_models[])
+ *     0x02 OSC53, 0x03 OSC57 (frequency calibration)
+ *     0x04 FOUTCALIB, 0x05 VBATCALIB, 0x06 VINCALIB, 0x07 VOUTCALIB, 0x09 IOUTCALIB
+ *     0x0A bit2 F_VINSEL220
+ *     0x0C bit0 SYNCIN, bit4 SHUTDOWNTIMERON, bit7 MAXBATTERY
+ *     0x0D bit0 NOVINPUT
+ *     0x0E bit1 FENDBATTERY, bit2 FOVERLOAD, bit4 FSHORTCIRCUIT,
+ *          bit5 FABNORMALVOUT, bit6 FABNORMALVBAT, bit7 FINVERTER
+ *     0x0F bit1 LOFINPUT, bit2 HIFINPUT, bit3 NOSYNCIN, bit4 LOVINPUT,
+ *          bit5 HIVINPUT, bit6 LOBATTERY, bit7 NOISEIN
+ *     0x10 bit3 OPBATTERY, bit4 OPSTANDBY, bit5 OPWARNING, bit6 OPSTARTUP
+ *     0x11 ACTUALTAP   0x12 VINPUT   0x13 VOUTPUT   0x14 IOUTPUT (a load ratio)
+ *     0x15 VBATTERY    0x16 SHUTDOWNTIMER           0x17 FOUTPUT
+ *     0x1A TEMPER (degrees C)
+ *
+ *   Conversions (OEM table; "115" and the tap factors are model dependent,
+ *   see f14_models[]):
+ *
+ *     input.voltage    = VINPUT / VINCALIB * 115 (0 when NOVINPUT); TI models
+ *                        strapped for 220 V on mains use
+ *                        VINPUT / VINCALIB * 230 * (IOUTPUT / IOUTCALIB * 0.05 + 1)
+ *     output.voltage   = VOUTPUT / VOUTCALIB * TAP[ACTUALTAP] * 115 (0 on OPSTANDBY)
+ *     output.frequency = same OSC53/OSC57 interpolation as family 10
+ *     ups.load         = IOUTPUT / IOUTCALIB * 100
+ *     battery.voltage  = VBATTERY / VBATCALIB * 13.8
+ *     battery.charge   = (VBATTERY / VBATCALIB - 0.725) / 0.275 * 100, kept in 0..100
+ *
+ *   Status: OB = OPBATTERY (confirmed on a mains cut: NOVINPUT and LOVINPUT
+ *   agree); OL otherwise. CHRG = OL with MAXBATTERY clear (seen clear for
+ *   the whole recharge after a cut; inferred, not verified). OVER = FOVERLOAD.
+ *   LB = LOBATTERY or FENDBATTERY, and the bits of reg 0x0E (bits 4..7) go to
+ *   ups.alarm; none of these bits has been observed set yet, so they come
+ *   from the OEM bit names only. BOOST/TRIM are not reported (ACTUALTAP
+ *   stayed at 3 on mains and on battery) and the beeper bit is unknown.
+ *
+ *   Detection: with the "family" option at its default ("auto") the driver
+ *   first listens, writing nothing, for a valid frame at 2400 baud for a few
+ *   seconds. If one arrives the unit is family 14; otherwise the termios
+ *   state is put back and the family 10 poll runs as before.
+ *
+ *
  * Copyright (C) 2026  juslex
  *
  * This program is free software; you can redistribute it and/or modify
@@ -104,7 +170,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Ragtech UPS driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -434,12 +500,430 @@ static double compute_frequency(uint8_t v_fout)
 			/ ((double)osc57 - (double)osc53)) * 0.9806 + 1.46;
 }
 
+/* ------------------------------------------------------------------------
+ * Family 14 (Easy Way, "NEW/QUADRI") -- push-only, read-only.
+ * See the protocol notes in the header comment. Nothing here ever writes
+ * to the UPS.
+ * ------------------------------------------------------------------------ */
+
+#define F14_SYNC0		0x55
+#define F14_SYNC1		0x55
+#define F14_SYNC2		0xAE
+#define F14_FRAME_LEN		32	/* 3 sync + 27 registers + tail + checksum */
+#define F14_NREGS		27
+#define F14_BUF_LEN		256	/* receive window; keeps only the newest bytes */
+#define F14_DETECT_MS		3000	/* passive listen for family auto-detection */
+#define F14_FIRST_SEC		10	/* wait for the first frame when family=14 is forced */
+#define F14_STALE_SEC		5	/* no valid frame for this long: data stale */
+#define F14_DRAIN_MAX		64	/* safety bound for the drain loop */
+
+/* register indexes inside the 27-byte block */
+#define R14_VERSION		0x00
+#define R14_MODEL		0x01
+#define R14_OSC53		0x02
+#define R14_OSC57		0x03
+#define R14_VBATCALIB		0x05
+#define R14_VINCALIB		0x06
+#define R14_VOUTCALIB		0x07
+#define R14_IOUTCALIB		0x09
+#define R14_VINSEL		0x0A	/* bit2: 220 V selected */
+#define R14_MISC		0x0C	/* bit7: MAXBATTERY (battery full) */
+#define R14_INPUT		0x0D	/* bit0: NOVINPUT */
+#define R14_FAULT		0x0E
+#define R14_WARN		0x0F	/* bit6: LOBATTERY */
+#define R14_OP			0x10	/* bit3: OPBATTERY, bit4: OPSTANDBY */
+#define R14_TAP			0x11
+#define R14_VINPUT		0x12
+#define R14_VOUTPUT		0x13
+#define R14_IOUTPUT		0x14
+#define R14_VBATTERY		0x15
+#define R14_FOUTPUT		0x17
+#define R14_TEMPER		0x1A
+
+#define B14_VINSEL220		0x04
+#define B14_MAXBATTERY		0x80
+#define B14_NOVINPUT		0x01
+#define B14_FENDBATTERY		0x02
+#define B14_FOVERLOAD		0x04
+#define B14_FSHORTCIRCUIT	0x10
+#define B14_FABNORMALVOUT	0x20
+#define B14_FABNORMALVBAT	0x40
+#define B14_FINVERTER		0x80
+#define B14_LOBATTERY		0x40
+#define B14_OPBATTERY		0x08
+#define B14_OPSTANDBY		0x10
+
+#define F14_VBAT_FACTOR		13.8	/* C_VBATNOMINAL * 13.8 / 12 with 12 V nominal */
+#define F14_BAT_EMPTY		0.725	/* C_BATFACTOR */
+#define F14_VEC_FACTOR		0.05	/* C_VECFACTOR (TI, 220 V strap) */
+
+enum f14_variant { F14_TI = 0, F14_M1, F14_M2 };
+
+struct f14_model {
+	uint8_t id;
+	const char *name;
+	unsigned int pnom;	/* C_POUTNOMINAL, same unit convention as family 10 (VA) */
+	enum f14_variant variant;
+};
+
+/* OEM table, family 14 -- ids are V_MODEL */
+static const struct f14_model f14_models[] = {
+	{  0, "Easy Way 500 TI",   500, F14_TI },
+	{  1, "Easy Way 500 M1",   500, F14_M1 },
+	{  2, "Easy Way 500 M2",   500, F14_M2 },
+	{  3, "Easy Way 600 TI",   600, F14_TI },
+	{  4, "Easy Way 600 M1",   600, F14_M1 },
+	{  5, "Easy Way 600 M2",   600, F14_M2 },
+	{  6, "Easy Way 700 TI",   700, F14_TI },
+	{  7, "Easy Way 700 M1",   700, F14_M1 },
+	{  8, "Easy Way 700 M2",   700, F14_M2 },
+	{  9, "Easy Way 1200 TI", 1200, F14_TI },
+	{ 10, "Easy Way 1200 M1", 1200, F14_M1 },
+	{ 11, "Easy Way 1200 M2", 1200, F14_M2 },
+	{ 12, "Easy Way 1300 TI", 1300, F14_TI },
+	{ 13, "Easy Way 1300 M1", 1300, F14_M1 },
+	{ 14, "Easy Way 1300 M2", 1300, F14_M2 },
+	{ 15, "Easy Way 1400 TI", 1400, F14_TI },
+	{ 16, "Easy Way 1400 M1", 1400, F14_M1 },
+	{ 17, "Easy Way 1400 M2", 1400, F14_M2 },
+	{ 18, "Easy Way 1600 TI", 1600, F14_TI },
+	{ 19, "Easy Way 1600 M1", 1600, F14_M1 },
+	{ 20, "Easy Way 1600 M2", 1600, F14_M2 },
+};
+
+/* output voltage tap factors (ACTUALTAP 0..3); TI and M1 share the first row */
+static const double f14_tap_ti[4] = { 1.2898, 1.1558, 1.0172, 0.8812 };
+static const double f14_tap_m2[4] = { 1.2460, 1.1620, 1.0705, 0.9998 };
+
+/* Decoded values of one frame */
+struct f14_data {
+	double vin, vout, fout, load, vbat, cbat;
+	unsigned int temp;
+	unsigned int vin_nominal;	/* 115 or 220 */
+	int ob, chrg, lb, over;
+	unsigned int faults;		/* reg 0x0E, bits 4..7 only */
+};
+
+/* fallback profile for an id missing from the table: TI, nominal power unknown */
+static const struct f14_model f14_fallback = { 0xFF, "Unknown", 0, F14_TI };
+
+static int family_opt = 0;		/* ups.conf "family": 0 auto, 10, 14 */
+static int family = 10;			/* family in use after initups */
+static const struct f14_model *f14_model;
+static uint8_t f14_buf[F14_BUF_LEN];	/* newest received bytes */
+static size_t f14_len;
+static uint8_t f14_regs[F14_NREGS];	/* registers of the newest valid frame */
+static int f14_have;
+static time_t f14_last;			/* when that frame was taken */
+#ifndef WIN32
+static struct termios f14_tio_saved;	/* termios before the 2400 baud change */
+static int f14_tio_saved_ok;
+#endif	/* !WIN32 */
+
+static const struct f14_model *f14_find_model(uint8_t id)
+{
+	size_t i;
+	for (i = 0; i < sizeof(f14_models) / sizeof(f14_models[0]); i++)
+		if (f14_models[i].id == id)
+			return &f14_models[i];
+	return NULL;
+}
+
+/* 1 if f points at a whole valid frame: sync bytes and 8-bit sum */
+static int f14_frame_ok(const uint8_t *f)
+{
+	unsigned int sum = 0;
+	size_t i;
+
+	if (f[0] != F14_SYNC0 || f[1] != F14_SYNC1 || f[2] != F14_SYNC2)
+		return 0;
+	for (i = 0; i < F14_FRAME_LEN - 1; i++)
+		sum += f[i];
+	return (sum & 0xFF) == f[F14_FRAME_LEN - 1];
+}
+
+/* Append received bytes to the window, dropping the oldest when full. */
+static void f14_append(const uint8_t *p, size_t n)
+{
+	size_t drop;
+
+	if (n >= F14_BUF_LEN) {
+		p += n - F14_BUF_LEN;
+		n = F14_BUF_LEN;
+	}
+	if (f14_len + n > F14_BUF_LEN) {
+		drop = f14_len + n - F14_BUF_LEN;
+		memmove(f14_buf, f14_buf + drop, f14_len - drop);
+		f14_len -= drop;
+	}
+	memcpy(f14_buf + f14_len, p, n);
+	f14_len += n;
+}
+
+/* Take the NEWEST valid frame out of the window: keep its registers and
+ * discard everything up to its end. Returns 1 if there was one. */
+static int f14_take(void)
+{
+	size_t start, end;
+
+	if (f14_len < F14_FRAME_LEN)
+		return 0;
+
+	for (start = f14_len - F14_FRAME_LEN + 1; start-- > 0; ) {
+		if (!f14_frame_ok(f14_buf + start))
+			continue;
+		memcpy(f14_regs, f14_buf + start + 3, F14_NREGS);
+		f14_have = 1;
+		f14_last = time(NULL);
+		end = start + F14_FRAME_LEN;
+		memmove(f14_buf, f14_buf + end, f14_len - end);
+		f14_len -= end;
+		return 1;
+	}
+	return 0;
+}
+
+/* Read whatever is queued on the port without waiting. */
+static void f14_drain(void)
+{
+	uint8_t tmp[64];
+	ssize_t n;
+	int i;
+
+	for (i = 0; i < F14_DRAIN_MAX; i++) {
+		n = ser_get_buf(upsfd, tmp, sizeof(tmp), 0, 0);
+		if (n <= 0)
+			break;
+		upsdebug_hex(5, "RX14", tmp, (size_t)n);
+		f14_append(tmp, (size_t)n);
+	}
+}
+
+/* Listen up to `ms` milliseconds, returning as soon as a valid frame is in. */
+static int f14_listen(unsigned int ms)
+{
+	uint8_t tmp[64];
+	ssize_t n;
+	struct timeval start, now;
+	long elapsed_ms;
+
+	gettimeofday(&start, NULL);
+	for (;;) {
+		n = ser_get_buf(upsfd, tmp, sizeof(tmp), 0, 100000);
+		if (n > 0) {
+			upsdebug_hex(5, "RX14", tmp, (size_t)n);
+			f14_append(tmp, (size_t)n);
+			if (f14_take())
+				return 1;
+		}
+		gettimeofday(&now, NULL);
+		elapsed_ms = (long)(now.tv_sec - start.tv_sec) * 1000L
+			   + (long)(now.tv_usec - start.tv_usec) / 1000L;
+		if (elapsed_ms >= (long)ms)
+			return 0;
+	}
+}
+
+/* Switch the port to 2400 baud. The termios state before the change is
+ * kept so that the family 10 path can be given back exactly what it had. */
+static void f14_set_line(void)
+{
+#ifndef WIN32
+	struct termios tio;
+
+	if (tcgetattr(upsfd, &tio) != 0)
+		return;
+	f14_tio_saved = tio;
+	f14_tio_saved_ok = 1;
+	cfsetispeed(&tio, B2400);
+	cfsetospeed(&tio, B2400);
+	tcsetattr(upsfd, TCSANOW, &tio);
+#endif	/* !WIN32 */
+}
+
+static void f14_restore_line(void)
+{
+#ifndef WIN32
+	if (f14_tio_saved_ok)
+		tcsetattr(upsfd, TCSANOW, &f14_tio_saved);
+#endif	/* !WIN32 */
+}
+
+/* Convert the 27 registers of one frame. Formulas as in the OEM table. */
+static void f14_decode(const uint8_t *r, const struct f14_model *m,
+	struct f14_data *d)
+{
+	const double *tap = (m->variant == F14_M2) ? f14_tap_m2 : f14_tap_ti;
+	int novin = (r[R14_INPUT] & B14_NOVINPUT) != 0;
+	int opbat = (r[R14_OP] & B14_OPBATTERY) != 0;
+	int standby = (r[R14_OP] & B14_OPSTANDBY) != 0;
+	int sel220 = (r[R14_VINSEL] & B14_VINSEL220) != 0;
+	double ratio;
+
+	memset(d, 0, sizeof(*d));
+
+	/* input voltage */
+	if (!novin && r[R14_VINPUT] && r[R14_VINCALIB]) {
+		ratio = (double)r[R14_VINPUT] / r[R14_VINCALIB];
+		if (m->variant != F14_TI || !sel220 || opbat)
+			d->vin = ratio * 115.0;
+		else if (r[R14_IOUTCALIB])
+			d->vin = ratio * 230.0 * ((double)r[R14_IOUTPUT]
+				/ r[R14_IOUTCALIB] * F14_VEC_FACTOR + 1.0);
+	}
+	if (m->variant == F14_M2)
+		d->vin_nominal = 220;
+	else if (m->variant == F14_TI && sel220)
+		d->vin_nominal = 220;
+	else
+		d->vin_nominal = 115;
+
+	/* output voltage: tap index beyond 3 gives 0 */
+	if (r[R14_VOUTCALIB] && !standby && r[R14_TAP] < 4)
+		d->vout = (double)r[R14_VOUTPUT] / r[R14_VOUTCALIB]
+			* tap[r[R14_TAP]] * 115.0;
+
+	/* output frequency; OSC57 may be below OSC53 */
+	if (r[R14_OSC57] != r[R14_OSC53])
+		d->fout = (53.0 + 4.0 * ((double)r[R14_FOUTPUT] - r[R14_OSC53])
+			/ ((double)r[R14_OSC57] - r[R14_OSC53])) * 0.9806 + 1.46;
+
+	/* load, battery */
+	if (r[R14_IOUTCALIB])
+		d->load = (double)r[R14_IOUTPUT] / r[R14_IOUTCALIB] * 100.0;
+	if (r[R14_VBATCALIB]) {
+		ratio = (double)r[R14_VBATTERY] / r[R14_VBATCALIB];
+		d->vbat = ratio * F14_VBAT_FACTOR;
+		d->cbat = (ratio - F14_BAT_EMPTY) / (1.0 - F14_BAT_EMPTY) * 100.0;
+		if (d->cbat < 0.0)
+			d->cbat = 0.0;
+		if (d->cbat > 100.0)
+			d->cbat = 100.0;
+	}
+	d->temp = r[R14_TEMPER];
+
+	d->ob = opbat;
+	d->chrg = !opbat && !(r[R14_MISC] & B14_MAXBATTERY);
+	d->lb = (r[R14_WARN] & B14_LOBATTERY) || (r[R14_FAULT] & B14_FENDBATTERY);
+	d->over = (r[R14_FAULT] & B14_FOVERLOAD) != 0;
+	d->faults = r[R14_FAULT] & (B14_FSHORTCIRCUIT | B14_FABNORMALVOUT
+				  | B14_FABNORMALVBAT | B14_FINVERTER);
+}
+
+static void f14_publish(const struct f14_data *d)
+{
+	dstate_setinfo("input.voltage",         "%.1f", d->vin);
+	dstate_setinfo("input.voltage.nominal", "%u",   d->vin_nominal);
+	dstate_setinfo("output.voltage",        "%.1f", d->vout);
+	dstate_setinfo("output.frequency",      "%.2f", d->fout);
+	dstate_setinfo("ups.load",              "%.1f", d->load);
+	dstate_setinfo("battery.voltage",       "%.2f", d->vbat);
+	dstate_setinfo("battery.charge",        "%.1f", d->cbat);
+	dstate_setinfo("ups.temperature",       "%u",   d->temp);
+
+	alarm_init();
+	if (d->faults & B14_FSHORTCIRCUIT)
+		alarm_set("Short circuit");
+	if (d->faults & B14_FABNORMALVOUT)
+		alarm_set("Abnormal output voltage");
+	if (d->faults & B14_FABNORMALVBAT)
+		alarm_set("Abnormal battery voltage");
+	if (d->faults & B14_FINVERTER)
+		alarm_set("Inverter fault");
+	alarm_commit();
+
+	status_init();
+	status_set(d->ob ? "OB" : "OL");
+	if (d->chrg)
+		status_set("CHRG");
+	if (d->lb)
+		status_set("LB");
+	if (d->over)
+		status_set("OVER");
+	status_commit();
+}
+
+/* Static data, once, from the first frame. */
+static void f14_initinfo(void)
+{
+	struct f14_data d;
+	time_t t0 = time(NULL);
+
+	dstate_setinfo("ups.mfr", "%s", "Ragtech");
+	dstate_setinfo("ups.model", "%s", "Unknown");
+
+	if (shutdown_enabled)
+		upslogx(LOG_WARNING,
+			"allow_shutdown is ignored on family 14: no shutdown "
+			"command is known for these units, the driver is read-only");
+
+	while (!f14_have) {
+		f14_drain();
+		if (f14_take())
+			break;
+		if (time(NULL) - t0 > F14_FIRST_SEC)
+			fatalx(EXIT_FAILURE,
+				"no valid family 14 frame received in %d s -- is the UPS "
+				"connected and not held by another program (e.g. Ragtech supsvc)?",
+				F14_FIRST_SEC);
+		usleep(100000);
+	}
+
+	f14_model = f14_find_model(f14_regs[R14_MODEL]);
+	if (!f14_model) {
+		upslogx(LOG_WARNING, "unknown family 14 model id 0x%02X, using a generic profile",
+			f14_regs[R14_MODEL]);
+		f14_model = &f14_fallback;
+	}
+	dstate_setinfo("ups.model", "%s", f14_model->name);
+	dstate_setinfo("ups.firmware", "%.1f", f14_regs[R14_VERSION] * 0.1);
+	if (f14_model->pnom)
+		dstate_setinfo("ups.power.nominal", "%u", f14_model->pnom);
+	dstate_setinfo("output.voltage.nominal", "%u",
+		f14_model->variant == F14_M2 ? 220U : 115U);
+	dstate_setinfo("output.frequency.nominal", "%u", 60U);
+	dstate_setinfo("battery.voltage.nominal", "%u", 12U);
+
+	upslogx(LOG_INFO, "family 14 (Easy Way, read-only): %s, firmware %.1f",
+		f14_model->name, f14_regs[R14_VERSION] * 0.1);
+
+	/* first values, from the frame that identified the unit */
+	f14_decode(f14_regs, f14_model, &d);
+	f14_publish(&d);
+}
+
+static void f14_updateinfo(void)
+{
+	struct f14_data d;
+	int fresh;
+
+	f14_drain();
+	fresh = f14_take();
+
+	if (!fresh && (!f14_have || time(NULL) - f14_last > F14_STALE_SEC)) {
+		upsdebugx(2, "family 14: no valid frame for more than %d s", F14_STALE_SEC);
+		dstate_datastale();
+		return;
+	}
+
+	if (fresh) {
+		f14_decode(f14_regs, f14_model, &d);
+		f14_publish(&d);
+	}
+	dstate_dataok();
+}
+
 void upsdrv_initinfo(void)
 {
 	uint8_t reply[64];
 	uint8_t osc[2];
 	uint8_t calib;
 	int tries;
+
+	if (family == 14) {
+		f14_initinfo();
+		return;
+	}
 
 	dstate_setinfo("ups.mfr", "%s", "Ragtech");
 	dstate_setinfo("ups.model", "%s", "Unknown");
@@ -544,6 +1028,11 @@ void upsdrv_updateinfo(void)
 	double vout, iout, bcharge;
 	int attempt;
 
+	if (family == 14) {
+		f14_updateinfo();
+		return;
+	}
+
 	/* CDC-ACM occasionally returns a short/corrupt reply, more often when
 	 * output current is high (bus noise). Retry the transaction a couple
 	 * of times before declaring data stale, so single-poll glitches do
@@ -613,6 +1102,14 @@ void upsdrv_shutdown(void)
 {
 	int handled;
 
+	if (family == 14) {
+		upslogx(LOG_ERR,
+			"upsdrv_shutdown invoked on a family 14 (Easy Way) unit: "
+			"no shutdown command is known for it, the driver is read-only");
+		set_exit_flag(EF_EXIT_FAILURE);
+		return;
+	}
+
 	if (!shutdown_enabled) {
 		upslogx(LOG_ERR,
 			"upsdrv_shutdown invoked but 'allow_shutdown' is not set "
@@ -638,6 +1135,10 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "family",
+	       "UPS protocol family: \"auto\" (default; listen passively for the "
+	       "Easy Way push stream first, then fall back to family 10), \"10\" "
+	       "(Easy Pro, polled) or \"14\" (Easy Way, push-only, read-only)");
 	addvar(VAR_VALUE, "iout_calib",
 	       "Override per-unit output current calibration (default: read from reg 0xF3)");
 	addvar(VAR_VALUE, "va",
@@ -655,6 +1156,19 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	const char *v;
+
+	v = getval("family");
+	if (v) {
+		if (!strcasecmp(v, "auto"))
+			family_opt = 0;
+		else if (!strcmp(v, "10"))
+			family_opt = 10;
+		else if (!strcmp(v, "14"))
+			family_opt = 14;
+		else
+			fatalx(EXIT_FAILURE, "invalid 'family' value [%s]: "
+				"use auto, 10 or 14", v);
+	}
 
 	upsfd = ser_open(device_path);
 
@@ -681,6 +1195,11 @@ void upsdrv_initups(void)
 	}
 #endif	/* !WIN32 */
 
+	/* Family 14 needs the real line speed (2400); family 10 does not care,
+	 * so with family=10 the port is left exactly as before. */
+	if (family_opt != 10)
+		f14_set_line();
+
 	/* Force the modem-control lines low after the tcsetattr (in case the tty
 	 * layer pulsed them); the OEM client keeps DTR/RTS at 0 and some Ragtech
 	 * families read a non-zero level as a remote-shutdown signal. */
@@ -704,6 +1223,30 @@ void upsdrv_initups(void)
 	}
 
 	shutdown_enabled = testvar("allow_shutdown") ? 1 : 0;
+
+	if (family_opt == 14) {
+		family = 14;
+	} else if (family_opt == 0) {
+		/* Passive: nothing is written to the UPS while looking for the
+		 * family 14 stream. */
+		upsdebugx(1, "family auto: listening %u ms for a family 14 frame",
+			F14_DETECT_MS);
+		if (f14_listen(F14_DETECT_MS)) {
+			family = 14;
+		} else {
+			/* Give family 10 back the termios it had before the 2400
+			 * baud change, and re-assert DTR/RTS low after it. */
+			f14_restore_line();
+			ser_set_dtr(upsfd, 0);
+			ser_set_rts(upsfd, 0);
+			usleep(RAGTECH_POST_OPEN_MS * 1000);
+			f14_len = 0;
+			family = 10;
+		}
+	} else {
+		family = 10;
+	}
+	upsdebugx(1, "protocol family %d", family);
 }
 
 void upsdrv_cleanup(void)

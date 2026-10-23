@@ -505,6 +505,17 @@ https://github.com/networkupstools/nut/milestone/13
      firmware model id is shared between product lines, correcting
      `ups.power.nominal`, `ups.realpower.nominal` and the computed
      `ups.load`. [issue #3500]
+   * Added read-only support for the Ragtech Easy Way units ("family 14",
+     "NEW/QUADRI" in the OEM device table; 21 models), which share the USB
+     ids of the Easy Pro but push, on their own, a 32-byte frame with a
+     checksum at 2400 baud instead of answering polls. The new `family` option
+     (`auto`, `10` or `14`) selects the protocol; by default the driver first
+     listens passively and only then falls back to the Easy Pro polling,
+     which is unchanged. No write command is known for these units, so
+     nothing is sent to them and no instant commands are offered. Only
+     the on-line and on-battery states, voltages, frequency, load, battery
+     and temperature were checked against captures of the OEM software.
+     [issue #3755]
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
