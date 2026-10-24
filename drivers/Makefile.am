@@ -281,8 +281,12 @@ oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
-powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
+powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c powerp-txt-parser.c powerp-txt-parser.h
 powerpanel_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
+if WITH_LIBUSB_1_0
+powerpanel_SOURCES += powerp-usb.c powerp-usb.h
+powerpanel_LDADD += $(LIBUSB_LIBS)
+endif WITH_LIBUSB_1_0
 powervar_cx_ser_SOURCES = powervar_cx_ser.c powervar_cx.c
 powervar_cx_ser_CFLAGS = $(AM_CFLAGS) -DPVAR_SERIAL=1
 rhino_SOURCES = rhino.c
