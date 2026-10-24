@@ -766,7 +766,9 @@ https://github.com/networkupstools/nut/milestone/13
       `CERTVERIFY` and `FORCESSL` settings from `upsmon.conf` when no
       `nutauth.conf` file was found, and OpenSSL builds of `libupsclient`
       never loading a `CERTPATH` which names a PEM file with CA certificates
-      (only a directory worked). [PR #3797]
+      (only a directory worked). Also fixed `upsmon` writing into freed
+      memory when it reloaded `upsmon.conf` with such settings after a
+      `nutauth.conf` file was read. [PR #3797]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.

@@ -59,8 +59,9 @@ void upscli_free_authconf_list(void);
  * (whichever is found first); then one can follow `INCLUDE` trail if needed.
  * Ultimate error, if file was not found, is posted at specified debug_level>=0
  * or logged as LOG_WARNING if negative.
- * The current list of authentication configurations is replaced only
- * if a file was found to read; otherwise it is kept as it was.
+ * The current list of authentication configurations is replaced by the
+ * file contents. With a NULL filename, it is replaced only if a default
+ * file was found; otherwise it is kept as it was.
  * Returns -1 on error, 1 on success.
  */
 int upscli_read_authconf_file(const char *filename, int fatal_errors, int debug_level);
