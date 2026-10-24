@@ -762,6 +762,13 @@ https://github.com/networkupstools/nut/milestone/13
       codebase layout in the library, and this in turn caused some fallout.
       Fixed `libupsclient` builds with OpenSSL or NSS when Clang treats
       declarations after executable statements as errors. [issue #3761, PR #3762]
+    * Fixed `upsmon` losing the global `CERTPATH`, `CERTFILE`, `CERTIDENT`,
+      `CERTVERIFY` and `FORCESSL` settings from `upsmon.conf` when no
+      `nutauth.conf` file was found, and OpenSSL builds of `libupsclient`
+      never loading a `CERTPATH` which names a PEM file with CA certificates
+      (only a directory worked). Also fixed `upsmon` writing into freed
+      memory when it reloaded `upsmon.conf` with such settings after a
+      `nutauth.conf` file was read. [PR #3797]
     * The Perl `UPS::Nut` module now decodes quoted values and backslash
       escapes in query/list replies and `nutauth.conf` entries, and quotes
       authentication arguments. Single quotes in configuration are literal.

@@ -2829,6 +2829,16 @@ static void loadconfig(void)
 			upsdebugx(1, "Using best-effort auth config detection");
 			upscli_read_authconf_file(NULL, 0, 1);
 		}
+
+		/* A file that was read replaced the list, including the
+		 * global section which the legacy keywords had populated
+		 * (FIXME: merge the file into it instead, as documented):
+		 * point to the current one (or create it if the file had
+		 * none), so a reload does not edit a freed entry */
+		ac_default = upscli_get_authconf_item(NULL, NULL, NULL, 1);
+		if (!ac_default) {
+			fatalx(EXIT_FAILURE, "Fatal error: unable to get default authconf entry");
+		}
 	}
 
 	/* FIXME: Per legacy behavior, we silently went on.
