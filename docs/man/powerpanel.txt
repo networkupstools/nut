@@ -4,7 +4,7 @@ POWERPANEL(8)
 NAME
 ----
 
-powerpanel - Driver for serial PowerPanel Plus compatible UPS equipment
+powerpanel - Driver for PowerPanel Plus compatible UPS equipment
 
 SYNOPSIS
 --------
@@ -28,10 +28,37 @@ If your Cyber Power Systems UPS has a USB port, you may wish to use the
 linkman:usbhid-ups[8] driver. The linkman:snmp-ups[8] driver supports several
 network cards via SNMP.
 
+The OLS2000ERT2UA also supports an opt-in USB text transport, requiring a
+libusb-1.0 build. This mode provides read-only monitoring, including actual
+output current, watts and VA reported by the device. It does not provide UPS
+power-off commands or writable settings. Serial operation remains the default.
+If no explicit transport is configured, `port = auto` selects USB mode.
+Static battery topology and hardware shutdown delays are not reported in USB
+mode because their protocol interpretation has not been validated.
+
+Only one USB device with ID `0764:0601` may be connected for this initial
+implementation, and its model must identify as OLS2000ERT2UA. Other models have
+not been validated. Do not run another USB driver against the same UPS.
+
+Example linkman:ups.conf[5] section:
+
+----
+[myups]
+    driver = powerpanel
+    port = auto
+    transport = usb
+    protocol = text
+----
+
 EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in linkman:ups.conf[5]:
+
+*transport=*['serial,usb']::
+Select the connection transport. The default is serial, except that
+`port = auto` selects USB. USB currently supports
+only the text protocol and read-only monitoring of OLS2000ERT2UA.
 
 *protocol=*['text,binary']::
 Override the default autodetection of the protocol.
@@ -48,12 +75,12 @@ Like manufacturer above.
 
 *ondelay=*'value'::
 Time to wait before switching on the UPS (1 - 9999 minutes, 0=indefinite).
-Only available with the text protocol driver (see <<_support_status,Support Status>>).
+Only available with the serial text protocol driver (see <<_support_status,Support Status>>).
 
 *offdelay=*'value'::
 Time to wait before shutting down the UPS (6 - 600 seconds). Values below 60
 seconds will be truncated to 6 seconds intervals, values above 60 seconds to
-60 seconds intervals. Only available with the text protocol driver (see
+60 seconds intervals. Only available with the serial text protocol driver (see
 <<_support_status,Support Status>>).
 
 VARIABLES
@@ -62,6 +89,11 @@ VARIABLES
 Depending on the type of your UPS unit, some of the following variables may
 be changed with linkman:upsrw[8]. If the driver can't read a variable from the
 UPS, it will not be made available.
+
+USB text mode does not mark any settings writable. Where the status reply
+contains them, `output.current` is reported in amperes, `ups.realpower` in
+watts, and `ups.power` in VA. These values are read from the UPS rather than
+estimated from its load percentage.
 
 *input.transfer.high*::
 writable: high transfer voltage point in V
@@ -83,6 +115,11 @@ COMMANDS
 
 Depending on the type of your UPS unit, some of the following commands may
 be available.
+
+The commands in this section apply to serial connections. USB text mode does
+not register instant commands or issue electrical-output controls. In
+particular, a USB-mode driver shutdown request fails rather than guessing a
+power-off command.
 
  * test.battery.start.quick, test.battery.stop
 

@@ -392,6 +392,10 @@ sub find_usbdevs
 			elsif ($nameFile eq "apcmicrolink-usb.c") {
 				$driver="apcmicrolink";
 			}
+			# PowerPanel's optional USB text transport shares an existing CPS ID.
+			elsif ($nameFile eq "powerp-usb.c") {
+				$driver="powerpanel";
+			}
 			# generic matching rule *.c => *
 			elsif ($nameFile =~ /(.+)\.c$/) {
 				$driver=$1;

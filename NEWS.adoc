@@ -506,6 +506,11 @@ https://github.com/networkupstools/nut/milestone/13
      `ups.power.nominal`, `ups.realpower.nominal` and the computed
      `ups.load`. [issue #3500]
 
+ - `powerpanel` driver updates:
+    * Added an opt-in, query-only USB text transport for OLS2000ERT2UA
+      and decode reported output current, watts and VA. Serial controls
+      remain unchanged; USB electrical-output commands are not implemented.
+
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
       some problems possible when iterating devices. [issue #1768, PR #3477]
