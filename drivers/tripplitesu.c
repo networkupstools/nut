@@ -113,6 +113,7 @@
 	shutdown.stop
 	test.battery.start
 	test.battery.stop
+	ups.start
 
     "shutdown.return" and "shutdown.stayoff" accept an optional delay, in
     seconds, passed as the "value" argument of upscmd; it takes precedence
@@ -123,6 +124,8 @@
     Without a colon, only the shutdown delay is changed and the restart delay
     defaults to "startdelay"; with no value at all, the shutdown delay
     defaults to "offdelay" (60 seconds for the graceful variant) as well.
+    "ups.start" accepts an optional restart delay, in minutes, and defaults
+    to the "startdelay" setting like the "on" part of the reboot commands.
     The "load.off", "load.on", "outlet.n.load.*" and "reset.watchdog" commands
 	do not take a value.
 
@@ -130,7 +133,9 @@
     device rejects or does not answer, so a failed command is never applied
     partially: the driver logs the operation that failed and sends nothing
     more.  "load.off" and "load.on", for instance, leave the outlets they did
-    not reach untouched.
+    not reach untouched.  "ups.start" writes the restart delay only once the
+    auto-reboot setting is confirmed, so a device that cannot start the load
+    is left as it was.
 
     "shutdown.return" and "shutdown.stayoff" clear the device return delay
     (SDR 0), so the load comes back only when mains is (re)applied or not at
@@ -1424,6 +1429,47 @@ static int shutdown_command(const char *cmdname, const char *extra,
 	return STAT_INSTCMD_HANDLED;
 }
 
+/* Start the load of a device that is off, and leave a running one alone.
+ * The firmware starts its outputs when the restart delay (SDR) is written
+ * while they are off, so the value is how long it waits before doing so:
+ * 0 asks for a start as soon as the device can, and without a value the
+ * 'startdelay' setting is used, like the "on" part of the reboot commands.
+ * On a device that is already running the delay is only stored, for a
+ * restart it may do later; nothing is switched off.  The auto-reboot
+ * setting (ARB) is turned on first, so that the load is powered again when
+ * mains is (re)applied.  No shutdown action (SDA) is sent: this command
+ * does not switch the load off, and it does not cancel a shutdown that is
+ * already scheduled ("shutdown.stop" does). */
+static int start_ups(const char *cmdname, const char *extra) {
+	unsigned int delay = startdelay;
+
+	if (extra && *extra) {
+		if (!parse_uint_range(extra, MIN_STARTDELAY_MINUTES,
+			MAX_STARTDELAY_MINUTES, &delay)) {
+			upslogx(LOG_ERR, "instcmd(%s): invalid delay value "
+				"'%s' (expected %u..%u minutes)",
+				cmdname, extra, MIN_STARTDELAY_MINUTES,
+				MAX_STARTDELAY_MINUTES);
+			return STAT_INSTCMD_FAILED;
+		}
+	}
+
+	log_instcmd_powerstate(INSTCMD_POWERSTATE_MAYBE, cmdname, extra);
+	if (!auto_reboot(1)) {
+		upslogx(LOG_ERR, "%s: could not set or confirm "
+			"ups.start.auto, not setting the restart delay",
+			cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+	if (!set_start_delay(delay)) {
+		upslogx(LOG_ERR, "%s: could not set the restart delay, "
+			"the device may not start", cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	return STAT_INSTCMD_HANDLED;
+}
+
 /* Dispatch an instant command.  The command names, their frames and how they
  * affect the power state all come from the tables above, which are also used
  * to register the commands (see add_instant_commands()), so a command cannot
@@ -1487,6 +1533,12 @@ static int instcmd(const char *cmdname, const char *extra)
 		return send_set_or_fail(simple_commands[cmd_index].command,
 			simple_commands[cmd_index].parameters);
 	}
+	/* start the load of a device that is off: the restart delay (SDR)
+	 * is what makes the firmware start its outputs, so this is not a
+	 * plain SET and the frame is always sent */
+	if (!strcasecmp(cmdname, "ups.start"))
+		return start_ups(cmdname, extra);
+
 	/* kick the watchdog: this takes no value, it sends the setting the
 	 * driver has, which restarts the device timer */
 	if (!strcasecmp(cmdname, "reset.watchdog"))
@@ -1508,6 +1560,7 @@ static void add_instant_commands(void)
 		dstate_addcmd(simple_commands[cmd_index].name);
 	}
 	dstate_addcmd("reset.watchdog");
+	dstate_addcmd("ups.start");
 	for (cmd_index = 0; cmd_index < SIZEOF_ARRAY(shutdown_commands);
 		cmd_index++) {
 		dstate_addcmd(shutdown_commands[cmd_index].name);

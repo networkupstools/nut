@@ -1031,6 +1031,8 @@ Instant commands
 | load.on                  | Turn on the load immediately
 | load.off.delay           | Turn off the load possibly after a delay
 | load.on.delay            | Turn on the load possibly after a delay
+| ups.start                | Start the load of a UPS that is off,
+                             possibly after a delay
 | shutdown.default         | Run default driver-defined (device-specific)
                              routine, primarily intended for emergency
                              poweroff performed as part of FSD handling;

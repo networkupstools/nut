@@ -74,11 +74,12 @@ which in turn takes precedence over the built-in default.
 
 *startdelay*='minutes'::
 Set the restart (return) delay, in whole minutes, used by 'shutdown.reboot'
-and 'shutdown.reboot.graceful' when their value does not specify one.  The
-default value is 1 and the accepted range is 0 through 60.  The driver sends
-this value to the device unchanged: there is no conversion or rounding.  A
-value of 0 asks for no timed restart, so the load comes back only when mains
-is (re)applied.
+and 'shutdown.reboot.graceful' when their value does not specify one, and by
+'ups.start' when it is called without a value.  The default value is 1 and
+the accepted range is 0 through 60.  The driver sends this value to the
+device unchanged: there is no conversion or rounding.  A value of 0 asks for
+no timed restart, so the load comes back only when mains is (re)applied;
+for 'ups.start' it asks the device to start the load as soon as it can.
 
 
 *shutdown_mode*='continue'|'abort'::
@@ -113,6 +114,24 @@ are for.
 'load.on'::
 	Switch on every controllable outlet immediately.
 
+The following instant command starts a device that was switched off, and
+accepts an optional restart delay, in minutes:
+
+'ups.start' ['minutes']::
+	Start the load of a device that is off, without switching off a
+	device that is running.  Unlike 'load.on', which closes the outlet
+	relays, this starts the device itself: it turns the auto-reboot
+	setting on and writes the restart delay, which is what makes the
+	firmware start its outputs.  'minutes' (0 through 60) is how long
+	the device waits before starting, so 0 starts the load as soon as
+	the device can; without a value the 'startdelay' setting is used
+	(1 minute by default).  On a device that is already running the
+	delay is only stored, for a restart the device may do later:
+	nothing is switched off and a shutdown that is already scheduled
+	is not cancelled (use 'shutdown.stop' for that).  It fails when the
+	device does not confirm the auto-reboot setting, before anything
+	that could change the power state is sent.
+
 The following instant commands accept an optional value, passed as the
 'value' argument of linkman:upscmd[8]:
 
@@ -141,11 +160,12 @@ The following instant commands accept an optional value, passed as the
 	even if mains returns.  Defaults to the 'offdelay' setting.
 
 The shutdown delay ('seconds' and 'off') accepts 1 through 3600 seconds and
-the restart delay ('on') accepts 0 through 60 whole minutes.  Both fields
-must be decimal numbers.  An empty field, a ';', a '.', a ',', more than one
-colon or an out-of-range value makes the command fail before anything is
-sent to the UPS.  A bare value for 'shutdown.return' or 'shutdown.stayoff'
-is a shutdown delay only; those commands clear the restart delay.
+the restart delay ('on' and the 'ups.start' value) accepts 0 through 60 whole
+minutes.  Both fields must be decimal numbers.  An empty field, a ';', a
+'.', a ',', more than one colon or an out-of-range value makes the command
+fail before anything is sent to the UPS.  A bare value for 'shutdown.return'
+or 'shutdown.stayoff' is a shutdown delay only; those commands clear the
+restart delay.
 
 The driver shutdown handling is available as the 'shutdown.default' instant
 command, which is what linkman:upsdrvctl[8] 'shutdown' runs.  It takes no
@@ -275,7 +295,9 @@ level (see *ups.watchdog.status* below).
 	the shutdown-related instant commands set this value to what they
 	need before running: 'shutdown.return', 'shutdown.reboot' and
 	'shutdown.reboot.graceful' (and the driver shutdown handler) switch it
-	to 'yes', while 'shutdown.stayoff' switches it to 'no'.
+	to 'yes', while 'shutdown.stayoff' switches it to 'no'.  'ups.start'
+	does the same, as a load that has to start must be allowed to come
+	back.
 +
 WARNING: The device stores this setting, so such a change outlives the
 shutdown that needed it and also applies to the following sessions.  The

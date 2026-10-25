@@ -610,6 +610,13 @@ https://github.com/networkupstools/nut/milestone/13
       protocol and buffer limits, replies must arrive complete and exactly
       as announced, and semicolon-separated fields are copied with a bound
       instead of being used in place.
+    * Added the `ups.start` instant command, which starts the load of a
+      device that is off: it turns the auto-reboot setting on and writes the
+      restart delay, which is what makes the device start its outputs.  The
+      delay is passed as the command value, in minutes, and defaults to the
+      `startdelay` setting (`ups.start 0` starts as soon as the device can);
+      a device that is already running is not switched off, it only gets the
+      delay stored.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
