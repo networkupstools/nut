@@ -511,7 +511,112 @@ https://github.com/networkupstools/nut/milestone/13
       some problems possible when iterating devices. [issue #1768, PR #3477]
 
  - `riello_usb`, `riello_ser` driver updates:
-    * riello_usb, riello_ser: report NAK on RE as failure [issue #3546]
+    * riello_usb, riello_ser: report NAK on RE as failure. [issue #3546]
+
+ - `tripplitesu` driver updates [PR #3273]:
+    * The bypass (transfer) reason recorded by the device is now published
+      as the read-only `input.transfer.reason` variable, refreshed on every
+      poll, and the existing `clear.fault.record` instant command clears
+      the recorded reason on the device.
+    * Device settings (`outlet.delay.start`, `ups.start.auto`,
+      `ups.watchdog.status`, `input.eco.switchable` and
+      `ups.beeper.status`) are no longer published with assumed values when
+      the device does not report them: they appear, and become settable,
+      only once the device has reported them.  A setting that was read
+      before keeps its last known value when the device stops answering,
+      and a warning is logged instead of silently falling back to a
+      default.
+    * Added the `offdelay` and `startdelay` settings in `ups.conf` (in
+      seconds and whole minutes respectively, the units of the two device
+      commands).  The `shutdown.return` and `shutdown.stayoff` instant
+      commands accept an optional shutdown delay in seconds, while
+      `shutdown.reboot` and `shutdown.reboot.graceful` accept
+      `off[:on]` - a mandatory shutdown delay in seconds and an optional
+      restart delay in minutes - so that the timers can be chosen per
+      invocation without restarting the driver or changing its
+      configuration.  Invalid values are rejected before anything is sent.
+    * Added control of the individual outlet banks through the
+      `outlet.n.load.off` and `outlet.n.load.on` instant commands, and the
+      matching `outlet.count`, `outlet.n.status` and `outlet.n.switchable`
+      variables.
+    * Added the `shutdown.stayoff` instant command, and made the
+      shutdown-related commands keep the device return delay consistent with
+      what they mean: the two reboot commands set it to the requested
+      restart delay, while `shutdown.return` and `shutdown.stayoff` clear it,
+      so that the load comes back only when mains is (re)applied, or not at
+      all.  The driver no longer adjusts the return delay against the
+      shutdown delay or rounds it: both are sent in the units the device
+      uses and the firmware decides how they interact.
+    * Added the read/write variables `ups.beeper.status`, `ups.start.auto`,
+      `ups.watchdog.status`, `outlet.delay.start` and
+      `input.eco.switchable`, the `battery.date` variable, the `beeper.mute`
+      and `clear.fault.record` instant commands, and validation of
+      `input.transfer.low`/`.high` against the ranges reported by the device
+      (published as `input.transfer.low.min`/`.max` and
+      `input.transfer.high.min`/`.max`).
+    * Instant commands and variable writes now report a failure when the
+      device rejects or does not answer one of the operations they perform,
+      instead of always reporting success.
+    * Added the `command_delay` setting in `ups.conf` as a minimum interval
+      between two commands sent to the UPS, in milliseconds, to work around
+      units that do not answer a command sent too soon after the previous
+      one.  The interval is measured from the previous command, so an idle
+      link is not penalized, and the configured value is used unchanged:
+      there is no automatic adjustment after a timeout.  The former `-1`
+      automatic mode is no longer accepted; use `0` or an explicit interval.
+    * The watchdog is disarmed when the driver exits on purpose (a handled
+      signal, the `driver.exit` instant command or the end of a data dump),
+      so that a driver restart - for example during a package upgrade - does
+      not leave an armed watchdog that would power cycle the load.  A
+      watchdog the driver never saw enabled, or one already disabled, is left
+      untouched, and a crash or a SIGKILL does not disarm it.
+    * Added the read/write `ups.watchdog.timeout` and `ups.watchdog.alarm`
+      variables, which expose the two fields the device stores for its
+      watchdog - the timeout in seconds, 0 disabling the watchdog, and the
+      restart-alarm flag - instead of only the derived
+      `ups.watchdog.status`, and the `reset.watchdog` instant command, which
+      sends the watchdog setting the driver has again to restart its timer.
+      The watchdog is disabled by default, has to be armed explicitly, and
+      returns to disabled after it trips; `reset.watchdog` now fails when the
+      timeout is 0 instead of reporting a successful kick of a watchdog that
+      is not running.
+    * The device restarts its watchdog timer on any command it receives, not
+      only on a kick, so the driver's own polls usually keep an armed watchdog
+      quiet as well.  The documentation still tells the user to kick it
+      explicitly with `reset.watchdog`, because the polling cadence is an
+      implementation detail (`pollinterval` can be longer than the watchdog
+      timeout) and not a guarantee.
+    * The watchdog setting is re-read on every update cycle while the watchdog
+      is armed, so a watchdog that trips, power cycles the load and comes back
+      disabled shows up as `ups.watchdog.status` = `disabled`, with the
+      timeout and restart-alarm flag that come with it, even when the driver
+      keeps running across the restart, for example on a machine that is not
+      powered by the UPS.
+    * The driver shutdown handling (`shutdown.default`, which
+      `upsdrvctl shutdown` runs) always asks the device to start the load
+      again when mains is (re)applied (the auto-reboot setting is turned on),
+      so that every outlet is powered again after the outage, and the new
+      `shutdown_mode` setting decides whether it stops at the first operation
+      the device rejects or does not answer (`abort`, fail safe) or keeps
+      sending the rest (`continue`, best effort, the default).
+      It also clears the return delay (0 minutes), so that the load does not
+      come back on a timer left over from an earlier command, and schedules
+      the shutdown after `offdelay`.
+    * The multi-frame commands (`load.off` and `load.on`, which walk the
+      outlet banks) stop at the first frame the device rejects or does not
+      answer, as the shutdown commands already did, instead of sending the
+      remaining frames.
+    * Hardened protocol handling: requests are length-checked against the
+      protocol and buffer limits, replies must arrive complete and exactly
+      as announced, and semicolon-separated fields are copied with a bound
+      instead of being used in place.
+    * Added the `ups.start` instant command, which starts the load of a
+      device that is off: it turns the auto-reboot setting on and writes the
+      restart delay, which is what makes the device start its outputs.  The
+      delay is passed as the command value, in minutes, and defaults to the
+      `startdelay` setting (`ups.start 0` starts as soon as the device can);
+      a device that is already running is not switched off, it only gets the
+      delay stored.
 
  - `usbhid-ups` driver updates:
     * When reconnecting, report success more visibly (not only in debug), and
