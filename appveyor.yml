@@ -67,16 +67,19 @@ notifications:
 # AppVeyor console log scanner with a /^sys.*/ match (apparently)
 # AppVeyor kills the job at 60 minutes, without saving the build cache:
 # a cold-ccache build then never gets warm, and an interrupted cache save
-# can even lose the old entry. So we set a deadline at 51 minutes after
+# can even lose the old entry. So we set a deadline at 57 minutes after
 # the job start, and our build/test/bundle steps fail (via `timeout`) if
 # they would run past it. With APPVEYOR_SAVE_CACHE_ON_ERROR this leaves
-# a few minutes for the 7z step, artifact upload and saving the cache.
+# a few minutes for the 7z step, artifact upload and saving the cache
+# (about 1.5 minutes in total as of 2026-10: 7z ~45s, cache save ~40s).
+# PR builds do not save the cache (see below), so they get no deadline
+# and can use the whole hour.
 # Each bash step below computes its time left like this (no CMD special
 # characters, so it passes through CMD intact):
 #   R=$(( ${CI_DEADLINE_EPOCH:-EPOCHSECONDS+3600} - EPOCHSECONDS ))
 init:
   - ps: |
-        Set-AppveyorBuildVariable -Name CI_DEADLINE_EPOCH -Value ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 51 * 60)
+        if (-not $env:APPVEYOR_PULL_REQUEST_NUMBER) { Set-AppveyorBuildVariable -Name CI_DEADLINE_EPOCH -Value ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + 57 * 60) }
   # There is one build cache per project, shared by all branches and PRs,
   # and each save replaces the previous entries. So PR builds only restore
   # the cache (warmed up by master builds), but do not save it: otherwise
