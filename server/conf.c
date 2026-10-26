@@ -186,7 +186,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {
-			upslogx(LOG_INFO, "DEBUG_MIN has non numeric or negative value in upsd.conf");
+			upslogx(LOG_INFO, "DEBUG_MIN has non-numeric or negative value in upsd.conf");
 		}
 		return 1;
 	}
@@ -205,11 +205,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			maxage = u;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
-				arg[0], arg[1], errno ? strerror(errno) : "");
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* TRACKINGDELAY <seconds> */
@@ -220,11 +216,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			tracking_delay = u;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
-				arg[0], arg[1], errno ? strerror(errno) : "");
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* ALLOW_NO_DEVICE <bool> */
@@ -236,8 +228,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (parse_boolean(arg[1], &allow_no_device))
 			return 1;
 
-		upslogx(LOG_ERR, "%s has non numeric and non boolean value (%s)!", arg[0], arg[1]);
-		return 0;
+		goto invalid_notnumber_notboolean;
 	}
 
 	/* ALLOW_NOT_ALL_LISTENERS <bool> */
@@ -249,8 +240,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (parse_boolean(arg[1], &allow_not_all_listeners))
 			return 1;
 
-		upslogx(LOG_ERR, "%s has non numeric and non boolean value (%s)!", arg[0], arg[1]);
-		return 0;
+		goto invalid_notnumber_notboolean;
 	}
 
 	/* MAXCONN <connections> */
@@ -261,11 +251,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			maxconn = (nfds_t)l;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
-				arg[0], arg[1], errno ? strerror(errno) : "");
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* STATEPATH <dir> */
@@ -351,9 +337,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 				certrequest = NETSSL_CERTREQ_REQUIRE;	/* 2 */
 				return 1;
 			}
-			upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
-				arg[0], arg[1], errno ? strerror(errno) : "");
-			return 0;
+			goto invalid_number_out_of_range;
 		}
 	}
 # else	/* !WITH_CLIENT_CERTIFICATE_VALIDATION */
@@ -432,6 +416,17 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* not recognized */
 	return 0;
+
+invalid_number_out_of_range:
+	upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
+		arg[0], arg[1], errno ? strerror(errno) : "");
+	return 0;
+
+invalid_notnumber_notboolean:
+	upslogx(LOG_ERR, "%s has non numeric and non boolean value (%s)!",
+		arg[0], arg[1]);
+	return 0;
+
 }
 
 /* called for fatal errors in parseconf like malloc failures */
