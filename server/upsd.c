@@ -2287,15 +2287,7 @@ static void mainloop(void)
 		return;
 	}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-type-limits.h"
 	/* https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects */
 	if (ret >= WAIT_ABANDONED_0 && ret <= WAIT_ABANDONED_0 + (nfds < sysmaxconn ? nfds : sysmaxconn) - 1) {
 		/* One abandoned mutex object that satisfied the wait? */
@@ -2310,9 +2302,7 @@ static void mainloop(void)
 		ret = ret - WAIT_OBJECT_0 + chunk * sysmaxconn;
 		upsdebugx(5, "%s: got event on FD array item: %" PRIu64 " of %" PRIu64, __func__, ret, nfds - 1);
 	}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-type-limits-end.h"
 
 	if (ret >= nfds) {
 		/* Array indexes are [0..nfds-1] */

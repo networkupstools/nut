@@ -134,7 +134,7 @@ and
 	augtool> set /files/etc/nut/ups.conf/augtest/port auto
 	augtool> save
 
-- list the devices currently using the `usbhid-ups` driver:
+- list the devices currently using the `dummy-ups` driver:
 
 	augtool> match /files/etc/nut/ups.conf/*/driver dummy-ups
 

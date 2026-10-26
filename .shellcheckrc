@@ -1,0 +1,15 @@
+# ShellCheck (https://www.shellcheck.net/) settings for NUT scripts.
+# Found by shellcheck in the directory of a checked script or its parents.
+#
+# NUT scripts deliberately stay portable to old Bourne-style /bin/sh
+# implementations (e.g. on Solaris/illumos, AIX, HP-UX), so do not
+# suggest modern replacements for these idioms:
+
+# Use $(...) notation instead of legacy backticks `...`
+disable=SC2006
+
+# Avoid x-prefix in comparisons as it no longer serves a purpose
+disable=SC2268
+
+# expr is antiquated, consider rewriting this using $((..)), ${} or [[ ]]
+disable=SC2003

@@ -88,6 +88,10 @@ mode.
 
 *baudrate*='num'::
 Set the serial line speed. The default is `9600`. Serial mode only.
++
+In serial mode the driver polls the device continuously, as it always has,
+and the `pollinterval` setting from linkman:ups.conf[5] does not apply.
+USB mode honors `pollinterval`.
 
 *showinternals*='yes|no'::
 Publish additional internal Microlink runtime values. By default this follows
@@ -110,6 +114,9 @@ from the standard HID Power Device usages this device also exposes on the
 same interrupt pipe, instead of letting that data go stale. The default is
 `yes`. Set to `no` to get an honest data gap instead of a value sourced
 from a different (less precise) channel than the rest of the Microlink data.
+A status is only published from this source once the device has actually
+sent its status report; until then (and whenever that report is older than
+30 seconds) the data is reported as stale.
 
 include::nut_usb_addvars.txt[]
 
@@ -161,14 +168,21 @@ switchable groups, and the unswitched group has no on/off/cycle/shutdown
 commands to offer. Other models have no unswitched group at all: their
 outlet groups start numbering at 1, and `outlet.group.0` is not published.
 
-Supported instant commands currently include:
+Supported instant commands currently include the following. Each one is
+only offered once the Microlink descriptor turns out to contain the register
+it writes to, since not every model has all of them -- the tested Smart-UPS
+500, for example, has no runtime calibration command register, so it offers
+no `calibrate.*` commands:
 
 * `test.battery.start`
 * `test.battery.stop`
 * `test.panel.start`
-* `test.panel.stop`
 * `beeper.enable`
 * `beeper.disable`
+* `calibrate.start`
+* `calibrate.stop`
+* `bypass.start`
+* `bypass.stop`
 
 Driver-assisted shutdown is not yet implemented.
 
@@ -242,9 +256,11 @@ until the driver process is restarted. The driver detects this, logs a
 warning, and backs off between attempts instead of retrying at full
 speed. It cannot recover on its own.
 
-Neither this driver nor NUT's shared USB layer (`nut_libusb.c`) attempts
-to detach `usbhid` on its own. A udev rule that unbinds `usbhid` from the
-UPS's vendor/product ID avoids this. For example, for VID:PID `051d:0003`
+NUT's shared USB backends (`libusb0.c` and `libusb1.c`) attempt to detach
+a kernel driver when the relevant libusb APIs are available. This does
+not guarantee recovery if `usbhid` reclaims the interface while this
+driver is running. A udev rule that unbinds `usbhid` from the UPS's
+vendor/product ID can avoid this conflict. For example, for VID:PID `051d:0003`
 (APC Smart-UPS 500 / SCL500RMI1UC):
 
 ----

@@ -29,7 +29,7 @@ or in case `apcupsd` code base has a required UPS access mode missing from NUT.
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports the following optional settings in linkman:nut.conf[5]:
+This driver supports the following optional settings in linkman:ups.conf[5]:
 
 *port*=<hostname>[:<port>]::
 This is the name of a remote host running apcupsd (plus an optional port).

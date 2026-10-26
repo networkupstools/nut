@@ -650,7 +650,9 @@ public:
 		OPTION_DEFAULT = 0,
 		/** Colon character is considered as string character and not as specific token.
 			Useful for IPv6 addresses */
-		OPTION_IGNORE_COLON = 1
+		OPTION_IGNORE_COLON = 1,
+		/** Brackets are string characters for configurations without sections. */
+		OPTION_IGNORE_BRACKETS = 2
 	};
 
 	NutParser(const char* buffer = nullptr, unsigned int options = OPTION_DEFAULT);

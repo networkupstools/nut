@@ -27,21 +27,19 @@ iteration function to display results:
 .Scanning and reporting example
 ------
 	#include <stdlib.h>
+	#include <stdio.h>
 	#include <unistd.h>
 	#include <string.h>
 
-	/* Only enable USB scan */
-	#define HAVE_USB_H
-
 	#include "nut-scan.h"
 
-	int main()
+	int main(void)
 	{
-		nutscan_options_t * opt;
-		nutscan_device_t *device;
-		nutscan_usb_t usb_scanopts;
+		nutscan_options_t	*opt;
+		nutscan_device_t	*device;
+		nutscan_usb_t	usb_scanopts = {0};
 
-		nutscan-init();
+		nutscan_init();
 
 		if ((device = nutscan_scan_usb(&usb_scanopts)) == NULL) {
 			printf("No device found\n");
@@ -49,7 +47,7 @@ iteration function to display results:
 		}
 
 		/* Rewind the list */
-		while(device->prev != NULL) {
+		while (device->prev != NULL) {
 			device = device->prev;
 		}
 
@@ -59,21 +57,21 @@ iteration function to display results:
 				device->driver, device->port);
 
 			/* process options (serial number, bus, ...) */
-			opt = &(device->opt);
-			do {
-				if( opt->option != NULL ) {
-					printf("\t%s",opt->option);
-					if( opt->value != NULL ) {
+			opt = device->opt;
+			while (opt != NULL) {
+				if (opt->option != NULL) {
+					printf("\t%s", opt->option);
+					if (opt->value != NULL) {
 						printf(": \"%s\"", opt->value);
 					}
 					printf("\n");
 				}
 				opt = opt->next;
-			} while( opt != NULL );
+			}
 
 			device = device->next;
 		}
-		while( device != NULL );
+		while (device != NULL);
 
 		exit(EXIT_SUCCESS);
 	}

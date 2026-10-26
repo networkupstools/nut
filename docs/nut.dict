@@ -1,9 +1,10 @@
-personal_ws-1.1 en 3831 utf-8
+personal_ws-1.1 en 3917 utf-8
 AAC
 AAS
 ABI
 ACFAIL
 ACFREQ
+ACINIT
 ACK
 ACM
 ACPI
@@ -32,6 +33,7 @@ APM
 AQ
 ARB
 ARG
+ARGTYPES
 ARS
 ASN
 ATEK
@@ -76,11 +78,13 @@ Arnaud's
 Aros
 AsciiDoc
 Asium
+AtRateTimeToEmpty
 Ates
 AudibleAlarmControl
 AuthConfig
 Autobook
 Autoconfigure
+AverageTimeToEmpty
 Avocent
 Axel
 Axpert
@@ -191,6 +195,7 @@ COMLI
 COMMBAD
 COMMFAULT
 COMMOK
+CONFIGSCRIPT
 CONFILE
 CONTEXTs
 CPAN
@@ -237,6 +242,7 @@ ConnectUPS
 Corbelli
 Corbolante
 Coutadeur
+CppUnit
 Ctrl
 Cuvellard
 Cyber
@@ -447,6 +453,7 @@ GCCVER
 GDBus
 GES
 GETADDRINFO
+GETNAMEINFO
 GETPID
 GHA
 GHSA
@@ -556,12 +563,15 @@ IDEN
 IDEs
 IDentifiers
 IFBETWEEN
+IFELSE
 IFEQ
 IFF
 IFSUPP
 IGN
 IIS
+ILP
 IMG
+IMPLEM
 INADDR
 INFOSIZE
 INIGO
@@ -576,6 +586,7 @@ INVOLT
 IOPlatformPluginFamily
 IPAR
 IPC
+IPHLPAPI
 IPM
 IPP
 IPSS
@@ -666,9 +677,11 @@ LGTM
 LH
 LIBGD
 LIBGPIO
+LIBIPMI
 LIBNEON
 LIBNETSNMP
 LIBOPENSSL
+LIBOPTS
 LIBPOWERMAN
 LIBSSL
 LIBUPSCLI
@@ -714,6 +727,7 @@ Lite's
 LocalIP
 LogMax
 LogMin
+LogicalMaximum
 LowBatt
 Loyer
 Luca
@@ -788,6 +802,7 @@ MicroFerrups
 Microline
 Micropower
 Microsol
+Microtek
 Mikiewicz
 Milkov
 MinGW
@@ -818,6 +833,7 @@ NBF
 NConfigs
 NDE
 NEP
+NETLIBS
 NETVER
 NETVERSION
 NFS
@@ -908,6 +924,7 @@ OMNIVS
 OMNIVSINT
 OMRON
 OMRON's
+ONELEVEL
 ONF
 ONV
 OO
@@ -984,8 +1001,11 @@ PPD
 PPDn
 PPDnnn
 PPP
+PPPP
 PR
 PR'ed
+PREREQ
+PRG
 PRIuSIZE
 PROCNAME
 PROGRA
@@ -1022,6 +1042,7 @@ Patrik
 Pavel
 Pawe
 PbAc
+PercentLoad
 Perriault
 Petr
 Petri
@@ -1031,11 +1052,14 @@ Phasak
 PhoenixContact
 PhoenixTec
 Phoenixtec
+PhysicalMaximum
+PhysicalMinimum
 Pi
 PiJuice
 PiNUT
 Plesser
 PnP
+PoC
 Poettering
 Pohle
 PointBre
@@ -1064,6 +1088,7 @@ PowerPanel
 PowerShare
 PowerShell
 PowerShield
+PowerSummary
 PowerSure
 PowerSystemError
 PowerTech
@@ -1116,6 +1141,7 @@ QOL
 QP
 QPAR
 QPD
+QPI
 QQ
 QQQ
 QRI
@@ -1193,6 +1219,7 @@ Rozman
 Rucelf
 RunAs
 RunTimeCalibrationStatus
+RunTimeToEmpty
 RunUPSCommand
 RxD
 Ryabov
@@ -1212,6 +1239,7 @@ SECCTRL
 SELFTEST
 SELFTESTS
 SELinux
+SEMLIBS
 SENTR
 SER
 SERIALNO
@@ -1237,6 +1265,7 @@ SIGTERM
 SIGURG
 SIGUSR
 SIGWINCH
+SINGLEQUOTE
 SKP
 SKU
 SL
@@ -1251,12 +1280,16 @@ SNMPv
 SNR
 SOCK
 SOCKADDR
+SOCKETLIB
 SOCKLEN
 SOCOMECUPS
 SOFF
+SOFILE
 SOG
 SOLA
 SOMECO
+SONAME
+SOPATH
 SOURCEMODE
 SOV
 SPARC
@@ -1283,6 +1316,7 @@ STO
 STP
 STRARG
 SUBDIRS
+SUBST
 SUNWlibusbugen
 SUNWugen
 SUNWusb
@@ -1297,6 +1331,7 @@ SYSMAXCONN
 SafeNet
 Salicru
 Salvia
+Santak
 Santinoli
 Savia
 Sawatzky
@@ -1320,7 +1355,9 @@ Shambarger
 Shara
 ShareAlike
 Shaul
+ShellCheck
 ShutDown
+ShutdownImminent
 Sibbald
 Sicon
 Sidorov
@@ -1385,6 +1422,7 @@ TBD
 TBR
 TCIFLUSH
 TCIOFLUSH
+TCPIP
 TCSANOW
 TEMPC
 TEMPF
@@ -1530,6 +1568,7 @@ VSN
 VTIME
 VV
 VVV
+VVVV
 Vaclav
 Valderen
 Vdc
@@ -1549,7 +1588,9 @@ WARNFATAL
 WARNOPT
 WCH
 WELI
+WH
 WHAD
+WINSOCK
 WIP
 WIPO
 WMNut
@@ -1569,6 +1610,7 @@ WebFreak
 Werror
 Weverything
 Wextra
+Wformat
 WhizBang
 WiX
 Wikipedia
@@ -1579,7 +1621,10 @@ WinPower
 WinUSB
 Wireshark
 Wl
+Wno
 Wrede
+Wtautological
+Wtype
 Wunreachable
 XAU
 XC
@@ -1603,6 +1648,7 @@ Xlinker
 Xpert
 Xups
 YDN
+YESNO
 YQ
 YV
 YY
@@ -1674,6 +1720,7 @@ altroot
 altroots
 amd
 anded
+ansi
 antivirus
 aon
 ap
@@ -1698,6 +1745,7 @@ arg
 argc
 argp
 args
+argtypes
 argv
 armac
 armel
@@ -1761,6 +1809,7 @@ backgrounding
 backport
 backported
 backports
+backticks
 backupspro
 bart
 baseurl
@@ -1785,6 +1834,7 @@ bd
 bdf
 belkin
 belkinunv
+belkinups
 bestfcom
 bestferrups
 bestfort
@@ -1805,6 +1855,7 @@ bitmapped
 bitmask
 bitness
 bitnesses
+bitwise
 blog
 blogs
 bmake
@@ -1844,6 +1895,7 @@ bv
 byobu
 bypassOff
 bypassOn
+bypassasalarm
 cStandard
 cablepower
 cachefile
@@ -2107,6 +2159,7 @@ drvctl
 drvpath
 drwxr
 drwxrwx
+drwxrwxrwt
 ds
 dsc
 dsi
@@ -2131,7 +2184,10 @@ dummypass
 dummyups
 dumpxml
 dv
+dynacfgBase
+dynacfgPipeline
 dynamatrix
+dynamatrixPipeline
 ePDU
 ePDUs
 eaton
@@ -2147,10 +2203,12 @@ egrep
 ei
 el
 elementWidth
+elfdump
 els
 emacs
 emptor
 emptyDir
+enableGiven
 endchar
 enddate
 endian
@@ -2189,6 +2247,7 @@ executables
 executeCommand
 execve
 expandsize
+expr
 extapi
 extern
 externalConsole
@@ -2225,6 +2284,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmware's
 firmwares
 fixNSS
 fmt
@@ -2256,6 +2316,7 @@ fstab
 ftdi
 fuji
 func
+fusermount
 gamatronic
 gandi
 gc
@@ -2269,7 +2330,6 @@ gdlib
 gdwarf
 ge
 gedit
-genericsups
 genericups
 genesisII
 gentoo
@@ -2286,6 +2346,7 @@ getconf
 getent
 getenv
 gethostbyname
+getnameinfo
 getopt
 getproctag
 getrlimit
@@ -2296,6 +2357,7 @@ gettextize
 getval
 getvar
 gh
+ghqr
 gif
 gio
 gitcache
@@ -2400,6 +2462,7 @@ idowell
 ie
 ietf
 ifdef
+ifelse
 ifndef
 ignoreFailures
 ignorelb
@@ -2511,6 +2574,7 @@ kVA
 kadets
 kaminski
 kde
+kernel's
 kex
 kext
 keychain
@@ -2561,6 +2625,7 @@ libexec
 libexecdir
 libexpat
 libfreeipmi
+libfuse
 libgd
 libgio
 libglib
@@ -2861,10 +2926,12 @@ nolock
 nombattvolt
 nonascii
 noncommercially
+nonliteral
 noout
 nooutstats
 noprimarytime
 norating
+noreturn
 noro
 noscanlangid
 nosnap
@@ -2889,6 +2956,7 @@ ntopW
 ntu
 nuf
 nuget
+nullptr
 num
 numOfBytesFromUPS
 numa
@@ -2911,6 +2979,7 @@ nutvalue
 nvi
 nvo
 nwfilter
+objdump
 odette
 offdelay
 offsite
@@ -2959,8 +3028,10 @@ osc
 ostream
 other's
 otheruser
+otool
 ouGDQn
 outliers
+overridemodel
 overtemp
 ovmf
 pF
@@ -3126,11 +3197,14 @@ qx
 qx's
 qxflags
 rD
+rH
 ragtech
 raritan
 rb
+rbuf
 rc
 rcctl
+readelf
 readline
 readonly
 realpath
@@ -3169,9 +3243,11 @@ reportId
 reposurgeon
 repotec
 req
+rescales
 resetter
 resizing
 resolv
+restorecon
 restoreconf
 resync
 ret
@@ -3222,6 +3298,7 @@ rw
 réseau
 safenet
 salicru
+santak
 sbin
 sbindir
 sc
@@ -3291,6 +3368,7 @@ sgml
 sgs
 sha
 shellcheck
+shellcheckrc
 shellenv
 shm
 showinternals
@@ -3333,8 +3411,10 @@ snprintfcat
 snr
 socat
 sockdebug
+socketlib
 socketname
 sockfn
+socklen
 socomec
 soh
 solari
@@ -3346,6 +3426,7 @@ solis
 somename
 somepass
 something's
+soname
 sortable
 sortdict
 sp
@@ -3504,6 +3585,7 @@ timehead
 timername
 timespec
 timestamp
+timestamps
 timeticks
 timeval
 tios
@@ -3712,6 +3794,7 @@ verifySourceSig
 versa
 versioned
 versioning
+vertiv
 vh
 victron
 victronups
@@ -3741,6 +3824,7 @@ wc
 wdi
 webserver
 wf
+wg
 wget
 whitespace
 wiki
@@ -3751,6 +3835,8 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+withGiven
+withdoc
 wix
 wmNUT
 wmnut
@@ -3764,6 +3850,7 @@ writeinfo
 writepid
 writeups
 ws
+www
 wwwroot
 xAA
 xAAAA
@@ -3772,6 +3859,7 @@ xD
 xF
 xFE
 xFF
+xFFFF
 xXXXX
 xYYYY
 xZZZZ

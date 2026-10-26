@@ -39,16 +39,7 @@ void net_ver(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	if (PACKAGE_URL && strstr(PACKAGE_URL, "networkupstools.org")) {
 		pkgurlHasNutOrg = 1;
 	} else {
@@ -65,12 +56,7 @@ void net_ver(nut_ctype_t *client, size_t numarg, const char **arg)
 		(PACKAGE_URL && !pkgurlHasNutOrg) ? " or " : "",
 		pkgurlHasNutOrg ? "" : "https://www.networkupstools.org/"
 		);
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 }
 
 void net_netver(nut_ctype_t *client, size_t numarg, const char **arg)

@@ -29,8 +29,14 @@ The smart mode ("Multilink") cable is NOT supported by this driver.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in the
-linkman:ups.conf[5].
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+*mfr*='name'::
+String to report as the UPS manufacturer in `ups.mfr`. Default: 'Liebert'.
+
+*model*='name'::
+String to report as the UPS model in `ups.model`. Default: 'MultiLink'.
 
 BUGS
 ----

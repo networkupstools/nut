@@ -283,26 +283,19 @@ static int findeol(PCONF_CTX_t *ctx)
 	return STATE_FINDEOL;
 }
 
-/* set up the error reporting details */
+#if 0
+/* Retained for future syntax errors; quoted hashes are now valid. */
 static void pconf_seterr(PCONF_CTX_t *ctx, const char *errmsg)
 {
 	snprintf(ctx->errmsg, PCONF_ERR_LEN, "%s", errmsg);
 
 	ctx->error = 1;
 }
+#endif
 
 /* quote characters inside a word bounded by "quotes" */
 static int quotecollect(PCONF_CTX_t *ctx)
 {
-	/* user is trying to break us */
-	if (ctx->ch == '#') {
-		pconf_seterr(ctx, "Unbalanced word due to unescaped # in quotes");
-		endofword(ctx);
-
-		/* this makes us drop all the way out of the caller */
-		return STATE_PARSEERR;
-	}
-
 	/* another " means we're done with this word */
 	if (ctx->ch == '"') {
 		endofword(ctx);
@@ -336,6 +329,18 @@ static int collect(PCONF_CTX_t *ctx)
 {
 	/* comment means the word is done, and skip to the end of the line */
 	if (ctx->ch == '#') {
+		/* A hash glued to a word in a config file is often part of a
+		 * value such as a password, and the error a consumer reports
+		 * later about missing tokens does not point at it. Say where
+		 * the line was cut, by position only, so no part of a secret
+		 * reaches the logs. Protocol input stays quiet. */
+		if (ctx->f) {
+			fprintf(stderr, "parseconf: line %d, word %" PRIuSIZE ": '#' "
+				"right after a word starts a comment, the rest of the "
+				"line is ignored; write \\# or quote the value if the "
+				"hash belongs to it\n",
+				ctx->linenum, ctx->numargs + 1);
+		}
 		endofword(ctx);
 
 		return STATE_FINDEOL;

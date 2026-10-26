@@ -50,14 +50,12 @@ the `stunnel` tool can be explored.
 RETURN VALUE
 ------------
 
-The *upscli_ssl_caps*() function effectively returns '0' if SSL support is
-missing, '1' if OpenSSL can be used, or '2' if Mozilla NSS can be used,
-since currently the backends are exclusive and it matters because they
-are differently capable.
-
-In the future it may return '-1' in the event of an error, or e.g. '3' if
-both OpenSSL and Mozilla NSS could be supported simultaneously (current code
-structure does not allow for that though).
+The *upscli_ssl_caps*() function returns a bitmap of the capability flags
+listed above, or '0' if SSL support is missing. Test individual flags with
+bitwise AND, for example `caps & UPSCLI_SSL_CAPS_OPENSSL` or
+`caps & UPSCLI_SSL_CAPS_NSS`, rather than comparing the result to '1' or '2'.
+Certificate capability flags may also be set, depending on the backend
+and the APIs available when the library was built.
 
 SEE ALSO
 --------

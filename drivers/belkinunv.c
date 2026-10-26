@@ -737,22 +737,12 @@ static void updatestatus(int smode, const char *fmt, ...) {
 
 	/* read formatted argument string */
 	va_start(ap, fmt);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
+#include "nut-pragmas-format-nonliteral.h"
 	/* Note: Not converting to hardened NUT methods with dynamic
 	 * format string checking, this one is used locally with
 	 * fixed strings (and args) a few times */
 	vsnprintf(buf, sizeof(buf), fmt, ap);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-format-nonliteral-end.h"
 	buf[sizeof(buf)-1] = 0;
 	va_end(ap);
 

@@ -185,16 +185,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	int	pkgurlHasNutOrg = PACKAGE_URL ? (strstr(PACKAGE_URL, "networkupstools.org") != NULL) : 0;
 
 	if (!strcasecmp(var, "server.info")) {
@@ -212,12 +203,7 @@ static void get_var_server(nut_ctype_t *client, const char *upsname, const char 
 			);
 		return;
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 
 	if (!strcasecmp(var, "server.version")) {
 		sendback(client, "VAR %s server.version \"%s\"\n",

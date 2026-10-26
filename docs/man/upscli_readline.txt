@@ -14,12 +14,12 @@ SYNOPSIS
 	#include <upsclient.h>
 	#include <time.h> /* or <sys/time.h> on some platforms */
 
-	int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
+	ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
-	int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen,
+	ssize_t upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen,
 		const time_t timeout);
 
-	int upscli_readline_timeout_may_disconnect(UPSCONN_t *ups,
+	ssize_t upscli_readline_timeout_may_disconnect(UPSCONN_t *ups,
 		char *buf, size_t buflen, const time_t timeout,
 		int may_disconnect);
 ------
@@ -32,9 +32,10 @@ the  pointer 'ups' to a `UPSCONN_t` state structure, receive a single
 line from the server, and copy up to 'buflen' bytes of the response
 into the buffer 'buf'.
 
-Some parsing of the string occurs during reception.  In particular,
-ERR messages from linkman:upsd[8] are detected and will cause this
-function to return '-1'.
+These functions read raw lines and do not interpret ERR messages from
+linkman:upsd[8]. A successfully read ERR line returns '0'; the caller must
+check the protocol response. Higher-level functions such as
+linkman:upscli_get[3] perform this checking.
 
 The difference between the three functions is that *upscli_readline_timeout()*
 lets the caller decide the amount of time ('timeout' seconds) after which it

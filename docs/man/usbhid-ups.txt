@@ -37,7 +37,8 @@ At the present time, usbhid-ups supports:
  - some EcoFlow models,
  - some Powercom models,
  - some PowerWalker models,
- - some TrippLite models.
+ - some TrippLite models,
+ - some Vertiv models (Liebert GXT5).
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the NUT source distribution as `data/driver.list`, or on the
@@ -163,7 +164,7 @@ in conjunction with a frozen controller, where only a driver reconnection
 restored the data exchange (e.g. APC BXnnnnMI) -- in such cases you may want
 to use a reasonable non-negative value here.
 
-*onlinedischarge_battery*::
+*onlinedischarge_onbattery*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as
 offline/on-battery.
 +
@@ -172,7 +173,7 @@ however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
 
 *onlinedischarge*::
-DEPRECATED, old name for `onlinedischarge_battery` described above.
+DEPRECATED, old name for `onlinedischarge_onbattery` described above.
 
 *onlinedischarge_calibration*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as calibration.
@@ -401,6 +402,14 @@ Conversely, some hardware controllers may "fall asleep" when not contacted
 for too long; CPS devices are commonly associated with such behaviour.
 In this case, consider enabling `pollonly` flag and/or keeping `pollfreq`
 and/or `pollinterval` small.
+
+A few devices never send Interrupt In reports at all, and only answer Feature
+report requests. On these the driver matches a subdriver and enumerates the HID
+objects normally, but then logs `Got 0 HID objects` repeatedly together with
+`nut_libusb_get_interrupt: Connection timed out`, and no dynamic values are ever
+published. Setting the `pollonly` flag is required for such hardware. Phoenixtec
+based units reporting USB ID `06da:ffff`, rebranded under several brand names, are
+known to behave this way.
 
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

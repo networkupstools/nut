@@ -67,6 +67,11 @@ static double exponent(double a, int8_t b);
 /* Tweak flag for APC Back-UPS */
 size_t max_report_size = 0;
 
+/* Buffer size used for reports when max_report_size is active. A HID report
+ * carries at most 255 bytes of payload plus the report ID, and some firmwares
+ * only answer a GET_REPORT at all when asked for more than they declared. */
+#define MAX_REPORT_ALLOC	256
+
 /* Tweaks for Powercom, at least */
 int interrupt_only = 0;
 size_t interrupt_size = 0;
@@ -135,7 +140,13 @@ reportbuf_t *new_report_buffer(HIDDesc_t *arg_pDesc)
 			continue;
 		}
 
-		rbuf->data[id] = (unsigned char *)calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
+		/* When the max_report_size tweak is active we deliberately ask the
+		 * device for more than it declared, so the buffer has to be able to
+		 * hold that much. Otherwise a device answering with more bytes than
+		 * its descriptor promised writes past the allocation. */
+		rbuf->cap[id] = max_report_size
+			? (size_t)MAX_REPORT_ALLOC : rbuf->len[id];
+		rbuf->data[id] = (unsigned char *)calloc(rbuf->cap[id], sizeof(*(rbuf->data[id])));
 		if (rbuf->data[id])
 			continue;
 
@@ -171,32 +182,15 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = max_report_size ? sizeof(rbuf->data[id]) : rbuf->len[id];
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#pragma clang diagnostic ignored "-Wtautological-compare"
-#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+	/* Ask for exactly as much as was allocated: cap[] equals len[] unless the
+	 * max_report_size tweak asked new_report_buffer() for a larger buffer.
+	 * NOTE: this used to say sizeof(rbuf->data[id]), but data[] is an array
+	 * of pointers, so that yielded the size of a pointer (8 bytes on LP64,
+	 * 4 on ILP32) rather than the size of the buffer. The tweak therefore
+	 * never asked for the full buffer, and on reports shorter than a pointer
+	 * it invited the device to write past the allocation. */
+	r = rbuf->cap[id];
+#include "nut-pragmas-range-checks.h"
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
@@ -216,17 +210,9 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		}
 
 		/* Avoid overflowing known buffer size, to be sure: */
-		r = UMIN(r, sizeof(rbuf->data[id]));
-		if (!max_report_size) {
-			r = UMIN(r, rbuf->len[id]);
-		}
+		r = UMIN(r, rbuf->cap[id]);
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-range-checks-end.h"
 
 	upsdebugx(5, "%s: investigating path: %s",
 		__func__, HIDGetDataItem(pData, NULL));
@@ -288,31 +274,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 
 	SetValue(pData, rbuf->data[id], Value);
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#pragma clang diagnostic ignored "-Wtautological-compare"
-#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-range-checks.h"
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
 			"%s: suggested buffer size %" PRIuSIZE " exceeds "
@@ -331,12 +293,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 			r = (size_t)UINT8_MAX - 1;
 		}
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-range-checks-end.h"
 
 	ret = comm_driver->set_report(udev, id,
 		(usb_ctrl_charbuf)rbuf->data[id],
@@ -561,31 +518,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	usb_ctrl_strindex	idx;
 	int	ret;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#pragma clang diagnostic ignored "-Wtautological-compare"
-#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-range-checks.h"
 	if ((uintmax_t)Index > (uintmax_t)USB_CTRL_STRINDEX_MAX
 	||  (intmax_t)Index < (intmax_t)USB_CTRL_STRINDEX_MIN
 	) {
@@ -620,12 +553,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 			buflen = (size_t)UINT8_MAX - 1;
 		}
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-range-checks-end.h"
 
 	ret = comm_driver->get_string(udev, idx, buf, (usb_ctrl_charbufsize)buflen);
 	upsdebugx(6, "%s: get_string() at index %d returned %d %s",
@@ -715,31 +643,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	r = (interrupt_size > 0 && interrupt_size < sizeof(buf))
 		? interrupt_size : sizeof(buf);
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#pragma clang diagnostic ignored "-Wtautological-compare"
-#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
+#include "nut-pragmas-range-checks.h"
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		/* FIXME: Should we try here, or plain abort? */
 		upsdebugx(2,
@@ -763,12 +667,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 		/* Avoid overflowing known buffer size, to be sure: */
 		r = UMIN(r, sizeof(buf));
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-range-checks-end.h"
 
 	buflen = comm_driver->get_interrupt(
 		udev, (usb_ctrl_charbuf)buf,

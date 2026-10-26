@@ -27,8 +27,11 @@
 # or program file without further arguments (which may be passed in explicitly
 # quoted separate tokens). This is a change from NUT v2.8.5 and older releases.
 #
-# It is given a single last argument - the <timername> in your
-# AT ... START-TIMER defines.
+# The <timername> in your AT ... START-TIMER defines is passed as an
+# argument to this script. With no arguments configured after <scriptname>,
+# the timer name is the script's first and only argument. Any optional
+# arguments configured here precede the timer name, and your CMDSCRIPT
+# should be coded to handle that properly.
 #
 # *** This must be defined *before* the first AT line.  Otherwise the
 #     program will complain and exit without doing anything.
@@ -47,10 +50,10 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # normal users can't create the file, due to the possibility of symlinking
 # and other evil.
 #
-# Note: if you are running Solaris or similar, the permissions that
-# upssched sets on this file *are not enough* to keep you safe.  If
-# your OS ignores the permissions on a FIFO, then you MUST put this in
-# a protected directory!
+# Note 1: if you are running Solaris or similar, the permissions that
+# upssched sets on this file *are not enough* to keep you safe.
+# If your OS ignores the permissions on a FIFO, then you MUST put this
+# pipe file in a protected directory!
 #
 # Note 2: by default, upsmon will run upssched as whatever user you have
 # defined with RUN_AS_USER in upsmon.conf.  Make sure that user can
@@ -101,10 +104,11 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the first
-#   argument. Each invocation starts an independent timer, even if the
-#   <timername> was already registered and started (note this can mess
-#   up subsequent CANCEL-TIMER operations).
+#   seconds, calling your CMDSCRIPT with <timername> as the first argument
+#   (after those optionally listed in your `CMDSCRIPT` definition, if any).
+#   Each invocation starts an independent timer, even if the <timername>
+#   was already registered and started (note this can mess up subsequent
+#   CANCEL-TIMER operations).
 #
 #   Example:
 #   1) Start a timer that will execute when communication with any UPS (*) has
@@ -122,22 +126,22 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # - START-TIMER-SHARED <timername> <interval>
 #
 #   Start a timer called <timername> that will trigger after <interval>
-#   seconds, calling your CMDSCRIPT with <timername> as the first
-#   argument. Each invocation checks if the <timername> was already
-#   started, and if so -- appends the current event's `UPSNAME`,
-#   `NOTIFYTYPE` and `NOTIFYMSG` to the list of unique values it would
-#   report via environment variables (as a comma-separated string) when
-#   the timer does execute.
+#   seconds, calling your CMDSCRIPT with <timername> as the first argument
+#   (after those optionally listed in your `CMDSCRIPT` definition, if any).
+#   Each invocation checks if the <timername> was already started, and if
+#   so -- appends the current event's `UPSNAME`, `NOTIFYTYPE` and `NOTIFYMSG`
+#   to the list of unique values it would report via environment variables
+#   (as a comma-separated string) when the timer does execute.
 #
 #   NOTE: Currently this updates the first seen instance with the
-#   <timername> (in case you managed to start many).
+#   <timername> (in case you did manage to start many).
 #
 #   Example:
 #   1) Start or update a timer that will execute when communication
 #   with any UPS (*) has been gone for 10 seconds (since the first
 #   started and not yet elapsed timer named <upsgone>):
 #
-#   AT COMMBAD * START-TIMER upsgone 10
+#   AT COMMBAD * START-TIMER-SHARED upsgone 10
 
 #   -----------------------------------------------------------------------
 #

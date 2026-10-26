@@ -55,7 +55,7 @@ See also `-FF` option as an alternative.
 
 *-D*::
 Raise the debugging level.  upsd will run in the foreground by default,
-and will print information on stdout about the monitoring process.
+and will print information on stderr about the monitoring process.
 Use this option multiple times for more details.
 
 *-F*::
@@ -168,7 +168,7 @@ runs in foreground mode.
 *NUT_STATEPATH* is the path name of the directory in which
 *upsd* keeps state information.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/var/state/ups`.
-The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
+This variable overrides the *STATEPATH* directive in linkman:upsd.conf[5].
 
 *NUT_ALTPIDPATH* is the path name of the directory in which
 *upsd* and drivers store .pid files.  If this variable is not set,

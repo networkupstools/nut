@@ -342,10 +342,9 @@ Design notes
 Requests
 ~~~~~~~~
 
-There is no way to request just one variable.  This was done on purpose
-to limit the complexity of the drivers.  Their job is to send out
-updates and handle a few simple requests.  DUMPALL is provided to give
-the server a known foundation.
+`DUMPVALUE` requests one variable and its metadata; `DUMPSTATUS` requests
+`ups.status`.  `DUMPALL` is provided to give the server a known foundation
+with a full copy of the data.
 
 To track a limited set of variables, a server just needs to do DUMPALL,
 then only have handlers that remember values for the variables that

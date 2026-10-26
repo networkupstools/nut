@@ -20,7 +20,7 @@ IMPORTANT NOTES
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
 * This file does not contain passwords. Read-only monitoring in NUT is
-  anonymous, and the linkman:upsset[8] program asks for credentials in
+  anonymous, and the linkman:upsset.cgi[8] program asks for credentials in
   the browser session when commanding a particular UPS (web-server should
   be secured, as reported to the program by linkman:upsset.conf[5] file).
 
@@ -60,7 +60,7 @@ assume different certificate identities per connection, and helps it trust
 *CUSTOM_TEMPLATE_LIST* 'filename'::
 *CUSTOM_TEMPLATE_SINGLE* 'filename'::
 
-linkman:upsstats[8] allows to use custom HTML template files for some of
+linkman:upsstats.cgi[8] allows to use custom HTML template files for some of
 its outputs (JSON and "treemode" mark-ups are currently hard-coded in
 the binary), which you can specify in the query string part of the
 URI (in your `index.html` and/or added cells of `header.html`) as e.g.

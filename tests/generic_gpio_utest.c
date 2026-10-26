@@ -211,15 +211,7 @@ int main(int argc, char **argv) {
 	fEof = 1;
 	for (i=0; fEof!=EOF; i++) {
 		char fmt[16];
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
+#include "nut-pragmas-format-nonliteral.h"
 		/* To avoid safety warnings, must provide a limit
 		 * here (bufsize - 1), and use fixed format strings
 		 * because scanf() does not support asterisk for
@@ -233,9 +225,7 @@ int main(int argc, char **argv) {
 		fEof=fscanf(testData, fmt, testType);
 		snprintf(fmt, sizeof(fmt), "%%%" PRIuSIZE "s", sizeof(rules)-1);
 		fEof=fscanf(testData, fmt, rules);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-format-nonliteral-end.h"
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
 				struct gpioups_t *upsfdtest = (struct gpioups_t *)xcalloc(1, sizeof(*upsfdtest));
@@ -339,15 +329,7 @@ int main(int argc, char **argv) {
 				int expecting_failure, failed;
 				char subType[NUT_GPIO_SUBTYPEBUF];
 				fEof=fscanf(testData, "%d", &expecting_failure);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
+#include "nut-pragmas-format-nonliteral.h"
 				/* To avoid safety warnings, must provide a limit
 				 * here (bufsize - 1), and use fixed format strings
 				 * because scanf() does not support asterisk for
@@ -357,9 +339,7 @@ int main(int argc, char **argv) {
 				fEof=fscanf(testData, fmt, chipNameLocal);
 				snprintf(fmt, sizeof(fmt), "%%%us", (unsigned int)NUT_GPIO_SUBTYPEBUF-1);
 				fEof=fscanf(testData, fmt, subType);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-format-nonliteral-end.h"
 				jmp_result = setjmp(env_buffer);
 				failed = expecting_failure;
 				if(jmp_result) {	/* test case  exiting */

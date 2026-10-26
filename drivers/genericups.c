@@ -394,24 +394,10 @@ void upsdrv_shutdown(void)
 			sdtime);
 
 		if (sdtime > 0) {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 			/* Different platforms, different sizes, none fits all... */
 			if (sizeof(long) > sizeof(unsigned int) && sdtime < (long)UINT_MAX) {
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 				sleep((unsigned int)sdtime);
 			} else {
 				sleep(UINT_MAX);

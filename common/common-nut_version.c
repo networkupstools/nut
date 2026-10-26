@@ -128,16 +128,7 @@ const char *describe_NUT_VERSION_once(void)
 
 	memset(buf, 0, sizeof(buf));
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+#include "nut-pragmas-unreachable-code.h"
 	/* NOTE: Some compilers deduce that macro-based decisions about
 	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
 	 * a particular build. So we pragmatically handwave this away.
@@ -186,12 +177,7 @@ const char *describe_NUT_VERSION_once(void)
 		printed = UPS_VERSION;
 	}
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-unreachable-code-end.h"
 
 	return printed;
 }
@@ -344,7 +330,7 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		size_t	i;
 
 		for (i = 0; buf2[i]; i++) {
-			buf2[i] = tolower((unsigned char)(buf2[i]));
+			buf2[i] = (char)tolower((unsigned char)(buf2[i]));
 		}
 
 		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))

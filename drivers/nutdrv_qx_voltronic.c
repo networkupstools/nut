@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.14"
+#define VOLTRONIC_VERSION "Voltronic 0.15"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -2846,7 +2846,7 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* Here we exclude non numerical value and other non accepted protocols (hence the restricted comparison target) */
-	if (strspn(item->value+2, "0123489") != strlen(item->value+2)) {
+	if (strspn(item->value+2, "01234789") != strlen(item->value+2)) {
 		upslogx(LOG_ERR, "Protocol [%s] is not supported by this driver", item->value);
 		return -1;
 	}
@@ -2865,6 +2865,7 @@ static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 	case 13:
 	case 14:
 	case 31:
+	case 71:
 	case 99:
 
 		break;
@@ -3769,6 +3770,16 @@ static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "";
 
+	/* PI71: type field returns "--", status bits return "-"; treat as defaults */
+	if (!strcmp(item->value, "--") && item->from == 63) {
+		snprintf(value, valuelen, "%s", "online");
+		return 0;
+	}
+	if (!strcmp(item->value, "-")) {
+		/* single-dash status bit: treat as inactive (0) */
+		snprintf(value, valuelen, "%s", "");
+		return 0;
+	}
 	if (strspn(item->value, "01") != strlen(item->value)) {
 		upsdebugx(3, "%s: unexpected value %s@%d->%s",
 			__func__, item->value, item->from, item->value);

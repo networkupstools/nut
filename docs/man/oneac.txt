@@ -66,7 +66,7 @@ failure.
 
 *test.battery.start.quick*::
 Start a "quick" battery test.  The default time is 2 minutes.  This
-time can be set in the *ups.conf* file.  See *testime* above.
+time can be set in the *ups.conf* file.  See *testtime* above.
 
 *test.battery.stop*::
 Stops a battery test that is in progress.

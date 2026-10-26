@@ -304,22 +304,12 @@ static void error_page(const char *next, const char *title,
 	va_list	ap;
 
 	va_start(ap, fmt);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
+#include "nut-pragmas-format-nonliteral.h"
 	/* Note: Not converting to hardened NUT methods with dynamic
 	 * format string checking, this one is used locally with
 	 * fixed strings (and args) quite extensively. */
 	vsnprintf(msg, sizeof(msg), fmt, ap);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+#include "nut-pragmas-format-nonliteral-end.h"
 	va_end(ap);
 
 	do_header(title);
@@ -695,7 +685,7 @@ static const char *get_data(const char *type, const char *varname)
 	return answer[3];
 }
 
-static void do_string(const char *varname, int maxlen)
+static void do_string(const char *varname, long maxlen)
 {
 	const	char	*val;
 
@@ -712,7 +702,7 @@ static void do_string(const char *varname, int maxlen)
 	html_print_esc(varname);
 	printf("\" VALUE=\"");
 	html_print_esc(val);
-	printf("\" SIZE=\"%d\">\n", maxlen);
+	printf("\" SIZE=\"%ld\">\n", maxlen);
 }
 
 static void do_enum(const char *varname)
@@ -814,15 +804,13 @@ static void do_type(const char *varname)
 		}
 
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
-			char	*ptr, len;
-			long	l;
+			long	len;
 
 			/* split out the :<len> data */
-			ptr = strchr(answer[i], ':');
-			*ptr++ = '\0';
-			l = strtol(ptr, (char **) NULL, 10);
-			assert(l <= 127);	/* FIXME: Loophole about longer numbers? Why are we limited to char at all here? */
-			len = (char)l;
+			if (!str_to_long_strict(answer[i] + 7, &len, 10) || len <= 0) {
+				printf("Unknown type\n");
+				return;
+			}
 
 			do_string(varname, len);
 			return;
@@ -1044,7 +1032,7 @@ static void savesettings(void)
 static void savesettings(void)
 {
 	int	changed = 0;
-	char	*desc;
+	char	*desc = NULL;
 	uvtype_t	*upsvar;
 
 	if (!checkhost(monups, &desc))
