@@ -333,8 +333,12 @@ static void check_get_files(void)
 
 	/* Test 3: main file exists + .d dir with files in alphanumeric order */
 	snprintf(d_dir, sizeof(d_dir), "%s/ups.conf.d", tmpdir);
-	if (mkdir(d_dir, 0700) != 0)
-		fatal_with_errno(EXIT_FAILURE, "mkdir");
+#ifdef WIN32
+	if (mkdir(d_dir))
+#else
+	if (mkdir(d_dir, 0700))
+#endif
+		fatal_with_errno(EXIT_FAILURE, "mkdir ups.conf.d");
 
 	snprintf(file2, sizeof(file2), "%s/20-second.conf", d_dir);
 	write_test_file(file2, "[ups2]\ndriver=dummy-ups\n");
@@ -357,7 +361,11 @@ static void check_get_files(void)
 	snprintf(users_main, sizeof(users_main), "%s/upsd.users", tmpdir);
 	write_test_file(users_main, "[admin]\npassword=pass\n");
 	snprintf(users_d, sizeof(users_d), "%s/upsd.users.d", tmpdir);
-	if (mkdir(users_d, 0700) != 0)
+#ifdef WIN32
+	if (mkdir(users_d))
+#else
+	if (mkdir(users_d, 0700))
+#endif
 		fatal_with_errno(EXIT_FAILURE, "mkdir users.d");
 	snprintf(ufile1, sizeof(ufile1), "%s/01-mon.users", users_d);
 	write_test_file(ufile1, "[monuser]\npassword=secret\n");
@@ -378,7 +386,11 @@ static void check_get_files(void)
 	snprintf(nutauth_main, sizeof(nutauth_main), "%s/nutauth.conf", tmpdir);
 	write_test_file(nutauth_main, "dummy\n");
 	snprintf(nutauth_d, sizeof(nutauth_d), "%s/nutauth.conf.d", tmpdir);
-	if (mkdir(nutauth_d, 0700) != 0)
+#ifdef WIN32
+	if (mkdir(nutauth_d))
+#else
+	if (mkdir(nutauth_d, 0700))
+#endif
 		fatal_with_errno(EXIT_FAILURE, "mkdir nutauth.conf.d");
 	snprintf(na_file, sizeof(na_file), "%s/01-extra.conf", nutauth_d);
 	write_test_file(na_file, "extra\n");
