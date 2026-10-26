@@ -312,6 +312,7 @@ Ddtrace
 Defensor
 DeltaUPSv
 DesktopFileName
+DeviceAttach
 DeviceID
 DeviceKit
 DeviceLogin
@@ -487,6 +488,8 @@ Gathman
 Geerling
 Gembe
 Gert
+GetDeviceNumAttach
+GetDeviceNumLogins
 GetRWVars
 GetUPSCommands
 GetUPSList
@@ -874,6 +877,7 @@ NTFS
 NTP
 NTU
 NTU's
+NUMATTACH
 NUT's
 NUTCI
 NUTCONF
@@ -2111,7 +2115,9 @@ devctl
 devd
 devel
 devfs
+deviceAttach
 deviceGetClients
+deviceGetNumAttach
 devicename
 devscan
 dfl
@@ -2338,6 +2344,7 @@ getClients
 getDescription
 getDevice
 getDevicesVariableValues
+getNumAttach
 getTrackingResult
 getValue
 getVariable

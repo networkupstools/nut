@@ -32,7 +32,7 @@ my $_eol = "\n";
 BEGIN {
   use Exporter ();
   use vars qw ($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
-  $VERSION     = 1.63;
+  $VERSION     = 1.64;
   @ISA         = qw(Exporter IO::Socket::INET);
   @EXPORT      = qw();
   @EXPORT_OK   = qw();
@@ -301,7 +301,9 @@ sub StartTLS {
   return undef;
 }
 
-sub Login { # login to upsd, so that it won't shutdown unless we say we're
+sub Login { goto &Attach; }
+
+sub Attach { # attach to upsd, so that it won't shutdown unless we say we're
             # ok.  This should only be used if you're actually connected
             # to the ups that upsd is monitoring.
             # This assumes the upsmon SECONDARY role so we can be alerted
@@ -334,7 +336,10 @@ sub Login { # login to upsd, so that it won't shutdown unless we say we're
     }
   }
 
-  $ans = $self->_send( "LOGIN $ups" );
+  $ans = $self->_send( "ATTACH $ups" );
+  if (defined $ans && $ans eq "ERR UNKNOWN-COMMAND") {
+    $ans = $self->_send( "LOGIN $ups" );
+  }
   if (defined $ans && $ans =~ /^OK/) { # Login successful.
     $self->_debug("LOGIN successful.");
     return 1;
@@ -390,13 +395,18 @@ sub Authenticate { # Announce to the UPS who we are to set up the proper
   return undef;
 }
 
-sub Logout { # logout of upsd and close connection
+sub Logout { goto &Detach; }
+
+sub Detach { # detach from upsd and close connection
 # Author: Kit Peters
 # ### changelog: uses the new _send command
 #
   my $self = shift;
   if ($self->{srvsock}) { # are we still connected to upsd?
-    my $ans = $self->_send( "LOGOUT" );
+    my $ans = $self->_send( "DETACH" );
+    if (defined $ans && $ans eq "ERR UNKNOWN-COMMAND") {
+      $self->_send( "LOGOUT" );
+    }
     close ($self->{srvsock});
     delete ($self->{srvsock});
     $self->{authenticated} = 0;
@@ -919,6 +929,30 @@ sub ListClient {
 
   return $self->_get_list("LIST CLIENT $ups", 2, 2);
 }
+
+sub GetNumAttach {
+  my $self = shift;
+  my $ups = shift || $self->{name};
+  my $command = "NUMATTACH";
+  my $ans = $self->_send("GET $command " . _encode_arg($ups));
+  if (defined $ans && ($ans eq "ERR INVALID-ARGUMENT" || $ans eq "ERR UNKNOWN-COMMAND")) {
+    $command = "NUMLOGINS";
+    $ans = $self->_send("GET $command " . _encode_arg($ups));
+  }
+  if (defined $ans) {
+    my $fields = _tokenize($ans);
+    if (defined $fields && @$fields == 3 && $fields->[0] eq $command
+        && $fields->[1] eq $ups && $fields->[2] =~ /^\d+$/) {
+      return 0 + $fields->[2];
+    }
+    $self->_debug($self->{err} = "Error: $ans");
+  } else {
+    $self->_debug($self->{err} = "Network error: $!");
+  }
+  return undef;
+}
+
+sub GetNumLogins { goto &GetNumAttach; }
 
 sub GetUPSDesc {
   my $self = shift;
@@ -1470,16 +1504,22 @@ privilege. The program has to authenticate with one of the accounts
 defined in upsd.users. Pass literal username and password values, without
 adding protocol quotes or escapes; Authenticate() encodes both arguments.
 
-=item Login($username, $password)
+=item Attach($username, $password) or Login($username, $password)
 
 Notify upsd that client is drawing power from the given UPS.
 It is automatically done if new() is called with USERNAME, PASSWORD
 and LOGIN parameters.
 
-=item Logout()
+=item Detach() or Logout()
 
-Notify upsd that client is released UPS. (E.g. it is shutting down.)
-It is automatically done if connection closed.
+Close the connection and release its UPS attachment. The preferred Attach
+and Detach names and their legacy aliases use ATTACH and DETACH, with
+fallback only when an older server reports UNKNOWN-COMMAND.
+
+=item GetNumAttach() or GetNumLogins()
+
+Return the number of clients attached to this UPS, or undef on failure.
+Use GET NUMATTACH with fallback to GET NUMLOGINS on older servers.
 
 =item Master()
 

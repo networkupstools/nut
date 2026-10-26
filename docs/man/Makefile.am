@@ -611,13 +611,20 @@ SRC_DEV_PAGES = \
 LIBNUTCLIENT_MISC_DEPS = \
 	nutclient_authenticate.$(MAN_SECTION_API) \
 	nutclient_logout.$(MAN_SECTION_API) \
+	nutclient_detach.$(MAN_SECTION_API) \
+	nutclient_device_attach.$(MAN_SECTION_API) \
+	nutclient_get_device_num_attach.$(MAN_SECTION_API) \
 	nutclient_device_login.$(MAN_SECTION_API) \
 	nutclient_get_device_num_logins.$(MAN_SECTION_API) \
 	nutclient_device_master.$(MAN_SECTION_API) \
 	nutclient_device_forced_shutdown.$(MAN_SECTION_API)
 
 $(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.$(MAN_SECTION_API)
-	touch $@
+	@if ( [ x"`cat '$@'`" != x ] ) 2>/dev/null ; then \
+		touch '$@' ; \
+	 else \
+		printf '.so man$(MAN_SECTION_API)/libnutclient_misc.$(MAN_SECTION_API)\n' > '$@' ; \
+	 fi
 
 # Asciidoc seems to reliably support up to 8 first aliases
 LIBNUTCLIENT_TCP_DEPS_FIRST = \
