@@ -36,7 +36,7 @@ Serial devices are supported. An experimental, explicitly enabled USB
 monitoring path is available for devices using USB ID `0764:0601` and the
 observed HashX status transport, such as an nJoy Keen 2000. USB support has
 been developed against passive PowerMaster+ traffic captures and tested
-once on one nJoy Keen 2000 in AC mode. That controlled USB handoff followed
+once on one nJoy Keen 2000 in AC mode. That controlled USB hand-off followed
 an existing PowerMaster+ session; it does not establish cold-start support.
 
 The USB ID is also used by other CyberPower-compatible devices. The ID
@@ -92,12 +92,12 @@ startup support. The status-bit mapping comes from the serial driver and
 has not been verified on this USB device during battery operation.
 
 The driver claims the USB interface and must have exclusive access.
-Arrange a controlled handoff from PowerMaster+ or another driver before a
+Arrange a controlled hand-off from PowerMaster+ or another driver before a
 hardware test, preserving the existing shutdown protection. Passive
 capture tests validate framing and parsing; they do not validate USB
-ownership. The single controlled handoff tested ownership and AC-mode
+ownership. The single controlled hand-off tested ownership and AC-mode
 telemetry on an already initialized device; reconnection, battery operation
-and shutdown behaviour remain unvalidated.
+and shutdown behaviour remain not yet validated.
 
 KNOWN ISSUES AND BUGS
 ---------------------
