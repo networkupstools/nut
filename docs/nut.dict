@@ -1,9 +1,10 @@
-personal_ws-1.1 en 3923 utf-8
+personal_ws-1.1 en 3917 utf-8
 AAC
 AAS
 ABI
 ACFAIL
 ACFREQ
+ACINIT
 ACK
 ACM
 ACPI
@@ -2363,6 +2364,7 @@ gettextize
 getval
 getvar
 gh
+ghqr
 gif
 gio
 gitcache
@@ -3829,6 +3831,7 @@ wc
 wdi
 webserver
 wf
+wg
 wget
 whitespace
 wiki
