@@ -151,6 +151,8 @@ static void ups_update(const char *fn, const char *name, const char *desc)
  */
 static int parse_boolean(char *arg, int *result)
 {
+	assert(arg);
+	assert(result);
 	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
 		*result = 1;
 		return 1;
