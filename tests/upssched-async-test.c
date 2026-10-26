@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
 	command_t *child;
 	int count = 0, attempts;
-	char *script[3];
+	static char *script[3];
 
 	if (argc == 3 && !strcmp(argv[1], "--command")) {
 		if (!strcmp(argv[2], "slow")) {
