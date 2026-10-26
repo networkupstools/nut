@@ -85,6 +85,9 @@ void pconf_finish(PCONF_CTX_t *ctx);
 char *pconf_encode(const char *src, char *dest, size_t destsize);
 int pconf_char(PCONF_CTX_t *ctx, char ch);
 
+char **pconf_get_files(const char *main_file, size_t *count);
+void pconf_free_files(char **files);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

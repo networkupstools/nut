@@ -115,7 +115,8 @@ let upsd_other  =  upsd_debug_min | upsd_maxage | upsd_trackingdelay | upsd_allo
 
 let upsd_lns    = (upsd_other|comment|empty)*
 
-let upsd_filter = (incl "@CONFPATH@/upsd.conf")
+let upsd_filter = (incl "@CONFPATH@/upsd.conf" |
+		    incl "@CONFPATH@/upsd.conf.d/*.conf")
 		. Util.stdexcl
 
 let upsd_xfm    = transform upsd_lns upsd_filter

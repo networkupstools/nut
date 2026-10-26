@@ -164,7 +164,7 @@ Sections and services differed, and still do not match up
 Bad inputs, e.g. unrecognized service management framework
 
 *2*::
-Absent or unreadable `ups.conf` file
+Absent or unreadable `ups.conf` file (and `<confpath>/ups.conf.d/*.conf` files)
 
 AUTHOR
 ------

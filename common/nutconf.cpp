@@ -38,6 +38,13 @@
 #include <iostream>
 #include <utility>
 #include <cassert>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 
 namespace nut {
@@ -2138,5 +2145,92 @@ void NutAuthConfigParser::onParseEnd()
 	_config = nullptr;
 }
 
+/**
+ * Helper to parse configuration from a base file and optional
+ * drop-in directory with lexicographically ordered files.
+ */
+bool parseConfigWithDropins(Serialisable &config, const std::string &baseFile)
+{
+	bool any_parsed = false;
+
+	// 1) Parse the base file if it exists
+	{
+		NutFile file(baseFile);
+		if (file.exists()) {
+			file.openx();
+			bool ok = config.parseFrom(file);
+			file.closex();
+			if (!ok) {
+				return false; // parsing failed
+			}
+			any_parsed = true;
+		}
+	}
+
+	// 2) Parse drop-ins if directory exists
+	std::string dirPath = baseFile + ".d";
+	DIR *dir = ::opendir(dirPath.c_str());
+	if (!dir) {
+		return any_parsed; // no drop-ins directory
+	}
+
+	// Determine expected extension(s): upsd.users.d => both ".users" and ".conf", else only ".conf"
+	std::string::size_type slash = baseFile.find_last_of('/');
+	std::string baseName = (slash == std::string::npos) ? baseFile : baseFile.substr(slash + 1);
+	const bool is_users = (baseName == "upsd.users");
+
+	std::vector<std::string> files;
+	struct dirent *ent;
+	while ((ent = ::readdir(dir)) != nullptr) {
+		const char *name = ent->d_name;
+		if (name[0] == '.') {
+			continue; // skip hidden, "." and ".."
+		}
+		std::string fname(name);
+
+		// Filter by extension
+		bool match = false;
+		if (is_users) {
+			// Accept both *.users and *.conf for upsd.users.d
+			if (fname.size() >= 6 && fname.compare(fname.size() - 6, 6, ".users") == 0)
+				match = true;
+			else if (fname.size() >= 5 && fname.compare(fname.size() - 5, 5, ".conf") == 0)
+				match = true;
+		} else {
+			if (fname.size() >= 5 && fname.compare(fname.size() - 5, 5, ".conf") == 0)
+				match = true;
+		}
+		if (match) {
+			std::string full = dirPath + "/" + fname;
+			// Only add regular files
+			struct stat st;
+			if (::stat(full.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+				files.push_back(full);
+			}
+		}
+	}
+	::closedir(dir);
+
+	// Sort lexicographically (alphanumeric order)
+	std::sort(files.begin(), files.end());
+
+	for (const std::string &path : files) {
+		NutFile f(path);
+		if (!f.exists()) {
+			continue;
+		}
+
+		f.openx();
+		bool ok = config.parseFrom(f);
+		f.closex();
+
+		if (!ok) {
+			return false; // parsing failed
+		}
+		any_parsed = true;
+	}
+
+	return any_parsed;
+}
 
 } /* namespace nut */

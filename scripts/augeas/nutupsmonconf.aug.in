@@ -181,7 +181,8 @@ let upsmon_record = upsmon_num|upsmon_num_signed|upsmon_num_bool|upsmon_bool|ups
 
 let upsmon_lns    = (upsmon_record|comment|empty)*
 
-let upsmon_filter = ( incl "@CONFPATH@/upsmon.conf" )
+let upsmon_filter = ( incl "@CONFPATH@/upsmon.conf" |
+		       incl "@CONFPATH@/upsmon.conf.d/*.conf" )
 			. Util.stdexcl
 
 let upsmon_xfm    = transform upsmon_lns upsmon_filter
