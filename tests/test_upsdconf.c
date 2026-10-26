@@ -293,7 +293,9 @@ int main(void)
 		} else
 		if (!strcmp(options[i], "MAXCONN")) {
 			limit = (uintmax_t)((nfds_t)-1);
-			if (limit > (uintmax_t)LONG_MAX) limit = (uintmax_t)LONG_MAX;
+			if (limit > (uintmax_t)LONG_MAX) {
+				limit = (uintmax_t)LONG_MAX;
+			}
 		}
 		else if (!strcmp(options[i], "CERTREQUEST")) {
 			limit = (uintmax_t)(NETSSL_CERTREQ_MAX);
@@ -304,8 +306,14 @@ int main(void)
 		check_value(options[i], number, 1, limit);
 		snprintf(number, sizeof(number), "%" PRIuMAX, limit + 1);
 		check_value(options[i], number, 0, previous);
+
+		/* Platform-dependent (32/64-bit ints) - value may overflow the fixed max or not */
 		snprintf(number, sizeof(number), "%" PRIuMAX, (uintmax_t)LONG_MAX + 1);
-		check_value(options[i], number, 0, previous);
+		if ((uintmax_t)LONG_MAX < limit) {
+			check_value(options[i], number, 1, (uintmax_t)LONG_MAX + 1);
+		} else {
+			check_value(options[i], number, 0, previous);
+		}
 	}
 #if defined(WITH_SSL) && defined(WITH_CLIENT_CERTIFICATE_VALIDATION)
 	check_value("CERTREQUEST", "NO", 1, 0);
