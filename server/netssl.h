@@ -34,7 +34,7 @@ extern char	*certpasswd;
 extern char	*certpath;
 extern int	disable_weak_ssl;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-extern int	certrequest;
+extern unsigned int	certrequest;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 /* List possible values for certrequested */
