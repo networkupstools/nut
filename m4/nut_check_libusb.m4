@@ -167,8 +167,7 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
             AS_IF([test x"${nut_cv_usb_lib}" = x"(libusb-1.0)" \
                 && test x"${nut_with_usb_includes}" = xauto \
                 && test x"${nut_with_usb_libs}" = xauto \
-                && test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone -o x"${nut_cv_LIBUSB_CONFIG_VERSION}" != xnone
-            ], [
+                && test x"${nut_cv_LIBUSB_0_1_VERSION}" != xnone -o x"${nut_cv_LIBUSB_CONFIG_VERSION}" != xnone], [
                 AS_CASE(["${nut_cv_with_usb}"],
                     [auto|yes], [
                         AC_MSG_CHECKING([whether libusb-1.0 ${nut_cv_LIBUSB_1_0_VERSION} provides libusb_init() and libusb_error_name()])
