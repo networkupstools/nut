@@ -1299,6 +1299,10 @@ upscli_authconf_t *upscli_get_authconf_item(const char *user, const char *host, 
 	}
 
 found:
+	upsdebugx(7, "%s: retval=%p retval_user=%p retval_host=%p global_defaults=%p",
+		__func__, (void*)retval, (void*)retval_user,
+		(void*)retval_host, (void*)global_defaults);
+
 	if (!retval || retval == global_defaults) {
 		upsdebugx(2, "%s: best match from the list is %s",
 			__func__, global_defaults ? "global defaults" : "NULL");
