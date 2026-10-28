@@ -481,10 +481,12 @@ static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 						upsname ? upsname : "",
 						NUT_STRARG(extra));
 				} else {
+					/* Only one %s, may be NOTIFY_SUSPEND_TIMEJUMP_UNEXPECTED
+					 * or simliar message not specific to a device */
 					snprintf_dynamic(msg, sizeof(msg),
 						msgfmt,
 						"%s",
-						upsname ? upsname : "");
+						ups ? (upsname ? upsname : "" ) : NUT_STRARG(extra));
 				}
 			} else {
 				/* No "%s" in this msgfmt! e.g. NOTIFY_NOPARENT,
