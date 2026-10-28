@@ -542,8 +542,8 @@ static double compute_frequency(uint8_t v_fout)
 #define F14_FRAME_LEN		32	/* 3 sync + 27 registers + tail + checksum */
 #define F14_NREGS		27
 #define F14_BUF_LEN		256	/* receive window; keeps only the newest bytes */
-#define F14_DETECT_MS		3000	/* passive listen for family auto-detection */
-#define F14_BAUD		2560	/* line speed of the Easy Way UART */
+#define F14_DETECT_MS		3000U	/* passive listen for family auto-detection */
+#define F14_BAUD		2560U	/* line speed of the Easy Way UART */
 #define F14_FIRST_SEC		15	/* wait for the first accepted frame (needs two valid ones) */
 #define F14_NCONST		10	/* regs 0x00..0x09 are fixed in the unit */
 #define F14_REF_RETRY_SEC	30	/* mismatching this long: allow a new reference */
