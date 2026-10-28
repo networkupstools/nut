@@ -95,9 +95,18 @@
  *   it by this driver in this family (no bulk OUT traffic was seen from the
  *   OEM client either, and the OEM table lists no actions for family 14).
  *
- *   Line config: 2400 8N1. Unlike family 10, the PIC does apply the line
- *   coding to its UART here: read at 4800 the stream turns into byte pairs
- *   such as 66 e6, and at 9600 or above into pulses of 4 or more bit times.
+ *   Line config: 2560 8N1 -- NOT 2400. Unlike family 10, the PIC does apply
+ *   the line coding to its UART here. The OEM devices.xml lists 2560 as the
+ *   first serial speed of this family, and the OEM client used it (which is
+ *   why USBPcap captures made with it are clean). Read at 2400 the receiver
+ *   samples bit 6 right on the bit 6 / bit 7 boundary of the transmitter and
+ *   bit 7 inside the stop bit: bit 7 arrives set where it should be clear,
+ *   bit 6 is unreliable, and most frames fail the checksum. Read at 4800 the
+ *   stream turns into byte pairs such as 66 e6, and at 9600 or above into
+ *   pulses of 4 or more bit times.
+ *   2560 has no Bxxx constant: ragtech_speed.c sets it (termios2 + BOTHER on
+ *   Linux, a numeric speed_t on the BSDs and macOS). If that fails the driver
+ *   logs a warning and uses 2400, where it can only reject corrupted frames.
  *   DTR=0 and RTS=0 as for family 10.
  *
  *   Every ~1.25 to 1.3 s the UPS sends one frame of 32 bytes:
@@ -106,8 +115,28 @@
  *
  *   CS is the 8-bit sum of the 31 preceding bytes (sync bytes included).
  *   The byte "tail" was seen as 0x09 on mains and 0x08 on battery (and
- *   sporadically after mains returned), so it is NOT checked; the sync bytes
- *   plus CS are what the driver trusts. The meaning of 0xAE is unknown.
+ *   sporadically after mains returned), so it is NOT checked. The meaning of
+ *   0xAE is unknown.
+ *
+ *   The 8-bit sum is a weak check: two bytes that both gain bit 7 add up to
+ *   0x100 and cancel, so a corrupted frame can pass it (it did, at 2400 baud:
+ *   ups.load 385, a 180 C temperature, "Inverter fault"). A frame is
+ *   therefore only accepted if, besides sync and CS:
+ *
+ *   - registers 0x00..0x09 (version, model, calibration constants) equal the
+ *     reference. These are fixed in the unit. The reference is taken from
+ *     two consecutive checksum-valid frames with identical 0x00..0x09; until
+ *     then nothing is published. A frame whose 0x00..0x09 differ is dropped.
+ *     If that goes on for more than 30 s and two consecutive valid frames
+ *     agree on a new set, that set becomes the reference (so a wrong
+ *     reference, or a unit that was changed, cannot lock the driver out);
+ *   - ACTUALTAP <= 3, load (IOUTPUT / IOUTCALIB) <= 150 %, TEMPER <= 100,
+ *     and battery voltage (VBATTERY / VBATCALIB * 13.8) within 6..18 V;
+ *   - and the rare indications -- reg 0x0E bits 4..7 (ups.alarm), OVER and
+ *     LB -- are published only when seen in two consecutive accepted frames
+ *     (and cleared only when absent from two). OL/OB and CHRG are not
+ *     debounced: they were confirmed on real transitions, a mains cut must
+ *     not be delayed, and the corruption seen only ever touched bits 6 and 7.
  *
  *   Register map (the register index is the offset into the 27 bytes):
  *
@@ -147,8 +176,8 @@
  *   stayed at 3 on mains and on battery) and the beeper bit is unknown.
  *
  *   Detection: with the "family" option at its default ("auto") the driver
- *   first listens, writing nothing, for a valid frame at 2400 baud for a few
- *   seconds. If one arrives the unit is family 14; otherwise the termios
+ *   first listens, writing nothing, for a checksum-valid frame at 2560 baud for
+ *   a few seconds. If one arrives the unit is family 14; otherwise the termios
  *   state is put back and the family 10 poll runs as before.
  *
  *
@@ -168,6 +197,7 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_stdint.h"
+#include "ragtech_speed.h"
 
 #define DRIVER_NAME	"Ragtech UPS driver"
 #define DRIVER_VERSION	"0.11"
@@ -513,7 +543,14 @@ static double compute_frequency(uint8_t v_fout)
 #define F14_NREGS		27
 #define F14_BUF_LEN		256	/* receive window; keeps only the newest bytes */
 #define F14_DETECT_MS		3000	/* passive listen for family auto-detection */
-#define F14_FIRST_SEC		10	/* wait for the first frame when family=14 is forced */
+#define F14_BAUD		2560	/* line speed of the Easy Way UART */
+#define F14_FIRST_SEC		15	/* wait for the first accepted frame (needs two valid ones) */
+#define F14_NCONST		10	/* regs 0x00..0x09 are fixed in the unit */
+#define F14_REF_RETRY_SEC	30	/* mismatching this long: allow a new reference */
+#define F14_LOAD_MAX_PCT	150	/* plausibility limits, see header comment */
+#define F14_TEMP_MAX		100
+#define F14_VBAT_MIN		6.0
+#define F14_VBAT_MAX		18.0
 #define F14_STALE_SEC		5	/* no valid frame for this long: data stale */
 #define F14_DRAIN_MAX		64	/* safety bound for the drain loop */
 
@@ -612,13 +649,29 @@ static int family = 10;			/* family in use after initups */
 static const struct f14_model *f14_model;
 static uint8_t f14_buf[F14_BUF_LEN];	/* newest received bytes */
 static size_t f14_len;
-static uint8_t f14_regs[F14_NREGS];	/* registers of the newest valid frame */
-static int f14_have;
-static time_t f14_last;			/* when that frame was taken */
+static uint8_t f14_regs[F14_NREGS];	/* registers of the newest ACCEPTED frame */
+static int f14_have;			/* a frame was accepted at least once */
+static time_t f14_last;			/* when the newest one was accepted */
+static unsigned int f14_accepted;	/* number of frames accepted so far */
+static uint8_t f14_ref[F14_NCONST];	/* reference for regs 0x00..0x09 */
+static int f14_ref_ok;
+static time_t f14_ref_last;		/* newest frame that matched the reference */
+static uint8_t f14_cand[F14_NCONST];	/* regs 0x00..0x09 of the last odd frame */
+static int f14_cand_have;
+static unsigned int f14_rare_pub;	/* debounced rare indications (F14_RARE_*) */
+static unsigned int f14_rare_prev;	/* the same, as seen in the previous frame */
+static int f14_rare_prev_ok;
+static int f14_line_ok;			/* the line is really at F14_BAUD */
 #ifndef WIN32
-static struct termios f14_tio_saved;	/* termios before the 2400 baud change */
+static struct termios f14_tio_saved;	/* termios before the speed change */
 static int f14_tio_saved_ok;
 #endif	/* !WIN32 */
+
+/* Rare indications that are debounced: reg 0x0E bits 4..7 (kept in place)
+ * and these two. */
+#define F14_RARE_OVER		0x100
+#define F14_RARE_LB		0x200
+#define F14_RARE_ALL		(0xF0U | F14_RARE_OVER | F14_RARE_LB)
 
 static const struct f14_model *f14_find_model(uint8_t id)
 {
@@ -660,30 +713,155 @@ static void f14_append(const uint8_t *p, size_t n)
 	f14_len += n;
 }
 
-/* Take the NEWEST valid frame out of the window: keep its registers and
- * discard everything up to its end. Returns 1 if there was one. */
-static int f14_take(void)
+/* Publish the static data of the unit identified by the registers r. */
+static void f14_set_static(const uint8_t *r)
 {
-	size_t start, end;
-
-	if (f14_len < F14_FRAME_LEN)
-		return 0;
-
-	for (start = f14_len - F14_FRAME_LEN + 1; start-- > 0; ) {
-		if (!f14_frame_ok(f14_buf + start))
-			continue;
-		memcpy(f14_regs, f14_buf + start + 3, F14_NREGS);
-		f14_have = 1;
-		f14_last = time(NULL);
-		end = start + F14_FRAME_LEN;
-		memmove(f14_buf, f14_buf + end, f14_len - end);
-		f14_len -= end;
-		return 1;
+	f14_model = f14_find_model(r[R14_MODEL]);
+	if (!f14_model) {
+		upslogx(LOG_WARNING, "unknown family 14 model id 0x%02X, using a generic profile",
+			r[R14_MODEL]);
+		f14_model = &f14_fallback;
 	}
-	return 0;
+	dstate_setinfo("ups.model", "%s", f14_model->name);
+	dstate_setinfo("ups.firmware", "%.1f", r[R14_VERSION] * 0.1);
+	if (f14_model->pnom)
+		dstate_setinfo("ups.power.nominal", "%u", f14_model->pnom);
+	dstate_setinfo("output.voltage.nominal", "%u",
+		f14_model->variant == F14_M2 ? 220U : 115U);
+	dstate_setinfo("output.frequency.nominal", "%u", 60U);
+	dstate_setinfo("battery.voltage.nominal", "%u", 12U);
 }
 
-/* Read whatever is queued on the port without waiting. */
+/* NULL if the values of a frame are plausible, else what is wrong with it.
+ * The limits are generous: they only exist to throw out corrupted frames that
+ * got past the 8-bit sum, not to police the UPS. Status bits are not judged. */
+static const char *f14_implausible(const uint8_t *r)
+{
+	double v;
+
+	if (r[R14_TAP] > 3)
+		return "ACTUALTAP above 3";
+	if (r[R14_IOUTCALIB]
+	    && (unsigned int)r[R14_IOUTPUT] * 100U
+	       > (unsigned int)F14_LOAD_MAX_PCT * r[R14_IOUTCALIB])
+		return "load above 150 %";
+	if (r[R14_TEMPER] > F14_TEMP_MAX)
+		return "temperature above 100 C";
+	if (r[R14_VBATCALIB]) {
+		v = (double)r[R14_VBATTERY] / r[R14_VBATCALIB] * F14_VBAT_FACTOR;
+		if (v < F14_VBAT_MIN || v > F14_VBAT_MAX)
+			return "battery voltage outside 6..18 V";
+	}
+	return NULL;
+}
+
+/* The rare indications of a frame, as F14_RARE_* bits. */
+static unsigned int f14_rare_bits(const uint8_t *r)
+{
+	unsigned int b = r[R14_FAULT] & 0xF0U;
+
+	if (r[R14_FAULT] & B14_FOVERLOAD)
+		b |= F14_RARE_OVER;
+	if ((r[R14_WARN] & B14_LOBATTERY) || (r[R14_FAULT] & B14_FENDBATTERY))
+		b |= F14_RARE_LB;
+	return b;
+}
+
+/* One checksum-valid frame (r = its 27 registers) arrived: accept it as the
+ * new current data, or drop it. Returns 1 if accepted. */
+static int f14_accept(const uint8_t *r)
+{
+	time_t now = time(NULL);
+	const char *why;
+	unsigned int rare, agree;
+
+	if (!f14_ref_ok) {
+		/* The first frame is only remembered; a second one with the
+		 * same constants makes them the reference. */
+		if (!f14_cand_have || memcmp(f14_cand, r, F14_NCONST)) {
+			memcpy(f14_cand, r, F14_NCONST);
+			f14_cand_have = 1;
+			upsdebugx(2, "family 14: waiting for a second frame with the same constants");
+			return 0;
+		}
+		memcpy(f14_ref, r, F14_NCONST);
+		f14_ref_ok = 1;
+		f14_ref_last = now;
+		f14_cand_have = 0;
+		upsdebugx(1, "family 14: constant registers confirmed by two frames");
+	} else if (memcmp(f14_ref, r, F14_NCONST) != 0) {
+		/* Corrupted, unless the reference itself was wrong or the unit
+		 * changed: that is told by two consecutive frames agreeing on
+		 * something else for a good while. */
+		if (f14_cand_have && !memcmp(f14_cand, r, F14_NCONST)
+		    && now - f14_ref_last > F14_REF_RETRY_SEC) {
+			memcpy(f14_ref, r, F14_NCONST);
+			f14_ref_last = now;
+			f14_cand_have = 0;
+			upslogx(LOG_NOTICE, "family 14: the constant registers changed "
+				"and stayed so; taking them as the new reference");
+			f14_set_static(r);
+		} else {
+			memcpy(f14_cand, r, F14_NCONST);
+			f14_cand_have = 1;
+			upsdebugx(2, "family 14: frame dropped, registers 0x00..0x09 "
+				"differ from the reference");
+			return 0;
+		}
+	} else {
+		f14_ref_last = now;
+		f14_cand_have = 0;
+	}
+
+	why = f14_implausible(r);
+	if (why) {
+		upsdebugx(2, "family 14: frame dropped, %s", why);
+		return 0;
+	}
+
+	/* A rare indication changes only when two accepted frames in a row
+	 * agree on it. */
+	rare = f14_rare_bits(r);
+	if (f14_rare_prev_ok) {
+		agree = ~(rare ^ f14_rare_prev) & F14_RARE_ALL;
+		f14_rare_pub = (f14_rare_pub & ~agree) | (rare & agree);
+	}
+	f14_rare_prev = rare;
+	f14_rare_prev_ok = 1;
+
+	memcpy(f14_regs, r, F14_NREGS);
+	f14_have = 1;
+	f14_last = now;
+	f14_accepted++;
+	return 1;
+}
+
+/* Go through the window in order: every checksum-valid frame is offered to
+ * f14_accept() and removed; bytes that cannot start a frame any more are
+ * dropped, a partial frame at the end is kept. Returns how many
+ * checksum-valid frames there were (accepted or not; f14_accepted tells). */
+static int f14_take(void)
+{
+	size_t start = 0;
+	int seen = 0;
+
+	while (start + F14_FRAME_LEN <= f14_len) {
+		if (f14_frame_ok(f14_buf + start)) {
+			seen++;
+			(void)f14_accept(f14_buf + start + 3);
+			start += F14_FRAME_LEN;
+		} else {
+			start++;
+		}
+	}
+	if (start) {
+		memmove(f14_buf, f14_buf + start, f14_len - start);
+		f14_len -= start;
+	}
+	return seen;
+}
+
+/* Read what is pending (without waiting) into the window. */
 static void f14_drain(void)
 {
 	uint8_t tmp[64];
@@ -699,7 +877,8 @@ static void f14_drain(void)
 	}
 }
 
-/* Listen up to `ms` milliseconds, returning as soon as a valid frame is in. */
+/* Listen up to `ms` milliseconds, returning as soon as a checksum-valid
+ * frame is in (that is all the auto-detection needs). */
 static int f14_listen(unsigned int ms)
 {
 	uint8_t tmp[64];
@@ -724,8 +903,22 @@ static int f14_listen(unsigned int ms)
 	}
 }
 
-/* Switch the port to 2400 baud. The termios state before the change is
- * kept so that the family 10 path can be given back exactly what it had. */
+/* Forget everything learned from the stream (the family 10 fallback). */
+static void f14_reset(void)
+{
+	f14_len = 0;
+	f14_have = 0;
+	f14_ref_ok = 0;
+	f14_cand_have = 0;
+	f14_rare_pub = 0;
+	f14_rare_prev = 0;
+	f14_rare_prev_ok = 0;
+}
+
+/* Put the port at F14_BAUD. The termios state before the change is kept so
+ * that the family 10 path can be given back exactly what it had. If the speed
+ * cannot be applied the port goes to 2400 and f14_line_ok stays 0; the warning
+ * is logged only once the unit is known to be family 14. */
 static void f14_set_line(void)
 {
 #ifndef WIN32
@@ -735,6 +928,12 @@ static void f14_set_line(void)
 		return;
 	f14_tio_saved = tio;
 	f14_tio_saved_ok = 1;
+	if (ragtech_set_baud(upsfd, F14_BAUD) == 0) {
+		f14_line_ok = 1;
+		upsdebugx(1, "family 14: line set to %u baud", F14_BAUD);
+		return;
+	}
+	upsdebugx(1, "family 14: could not set %u baud, using 2400", F14_BAUD);
 	cfsetispeed(&tio, B2400);
 	cfsetospeed(&tio, B2400);
 	tcsetattr(upsfd, TCSANOW, &tio);
@@ -744,8 +943,11 @@ static void f14_set_line(void)
 static void f14_restore_line(void)
 {
 #ifndef WIN32
-	if (f14_tio_saved_ok)
+	if (f14_tio_saved_ok) {
 		tcsetattr(upsfd, TCSANOW, &f14_tio_saved);
+		ragtech_restore_baud(upsfd);
+	}
+	f14_line_ok = 0;
 #endif	/* !WIN32 */
 }
 
@@ -810,6 +1012,16 @@ static void f14_decode(const uint8_t *r, const struct f14_model *m,
 				  | B14_FABNORMALVBAT | B14_FINVERTER);
 }
 
+/* Values of the newest accepted frame, with the rare indications as
+ * debounced instead of as in the frame itself. */
+static void f14_current(struct f14_data *d)
+{
+	f14_decode(f14_regs, f14_model, d);
+	d->faults = f14_rare_pub & 0xF0U;
+	d->over = (f14_rare_pub & F14_RARE_OVER) != 0;
+	d->lb = (f14_rare_pub & F14_RARE_LB) != 0;
+}
+
 static void f14_publish(const struct f14_data *d)
 {
 	dstate_setinfo("input.voltage",         "%.1f", d->vin);
@@ -843,7 +1055,7 @@ static void f14_publish(const struct f14_data *d)
 	status_commit();
 }
 
-/* Static data, once, from the first frame. */
+/* Static data, once, from the first accepted frame. */
 static void f14_initinfo(void)
 {
 	struct f14_data d;
@@ -857,57 +1069,53 @@ static void f14_initinfo(void)
 			"allow_shutdown is ignored on family 14: no shutdown "
 			"command is known for these units, the driver is read-only");
 
+	if (!f14_line_ok)
+		upslogx(LOG_WARNING,
+			"could not set %u baud; falling back to 2400, expect "
+			"corrupted frames", F14_BAUD);
+
+	/* An accepted frame needs the constants confirmed by two frames. */
 	while (!f14_have) {
 		f14_drain();
-		if (f14_take())
+		f14_take();
+		if (f14_have)
 			break;
 		if (time(NULL) - t0 > F14_FIRST_SEC)
 			fatalx(EXIT_FAILURE,
-				"no valid family 14 frame received in %d s -- is the UPS "
-				"connected and not held by another program (e.g. Ragtech supsvc)?",
-				F14_FIRST_SEC);
+				"no acceptable family 14 frame received in %d s -- is the UPS "
+				"connected and not held by another program (e.g. Ragtech supsvc)? "
+				"Corrupted frames mean a wrong line speed (it must be %u baud)",
+				F14_FIRST_SEC, F14_BAUD);
 		usleep(100000);
 	}
 
-	f14_model = f14_find_model(f14_regs[R14_MODEL]);
-	if (!f14_model) {
-		upslogx(LOG_WARNING, "unknown family 14 model id 0x%02X, using a generic profile",
-			f14_regs[R14_MODEL]);
-		f14_model = &f14_fallback;
-	}
-	dstate_setinfo("ups.model", "%s", f14_model->name);
-	dstate_setinfo("ups.firmware", "%.1f", f14_regs[R14_VERSION] * 0.1);
-	if (f14_model->pnom)
-		dstate_setinfo("ups.power.nominal", "%u", f14_model->pnom);
-	dstate_setinfo("output.voltage.nominal", "%u",
-		f14_model->variant == F14_M2 ? 220U : 115U);
-	dstate_setinfo("output.frequency.nominal", "%u", 60U);
-	dstate_setinfo("battery.voltage.nominal", "%u", 12U);
+	f14_set_static(f14_regs);
 
 	upslogx(LOG_INFO, "family 14 (Easy Way, read-only): %s, firmware %.1f",
 		f14_model->name, f14_regs[R14_VERSION] * 0.1);
 
-	/* first values, from the frame that identified the unit */
-	f14_decode(f14_regs, f14_model, &d);
+	/* first values, from the frame that completed the identification */
+	f14_current(&d);
 	f14_publish(&d);
 }
 
 static void f14_updateinfo(void)
 {
 	struct f14_data d;
-	int fresh;
+	unsigned int before = f14_accepted;
 
 	f14_drain();
-	fresh = f14_take();
+	f14_take();
 
-	if (!fresh && (!f14_have || time(NULL) - f14_last > F14_STALE_SEC)) {
-		upsdebugx(2, "family 14: no valid frame for more than %d s", F14_STALE_SEC);
+	if (f14_accepted == before
+	    && (!f14_have || time(NULL) - f14_last > F14_STALE_SEC)) {
+		upsdebugx(2, "family 14: no acceptable frame for more than %d s", F14_STALE_SEC);
 		dstate_datastale();
 		return;
 	}
 
-	if (fresh) {
-		f14_decode(f14_regs, f14_model, &d);
+	if (f14_accepted != before) {
+		f14_current(&d);
 		f14_publish(&d);
 	}
 	dstate_dataok();
@@ -1195,7 +1403,7 @@ void upsdrv_initups(void)
 	}
 #endif	/* !WIN32 */
 
-	/* Family 14 needs the real line speed (2400); family 10 does not care,
+	/* Family 14 needs the real line speed (2560); family 10 does not care,
 	 * so with family=10 the port is left exactly as before. */
 	if (family_opt != 10)
 		f14_set_line();
@@ -1234,13 +1442,13 @@ void upsdrv_initups(void)
 		if (f14_listen(F14_DETECT_MS)) {
 			family = 14;
 		} else {
-			/* Give family 10 back the termios it had before the 2400
-			 * baud change, and re-assert DTR/RTS low after it. */
+			/* Give family 10 back the termios it had before the
+			 * speed change, and re-assert DTR/RTS low after it. */
 			f14_restore_line();
 			ser_set_dtr(upsfd, 0);
 			ser_set_rts(upsfd, 0);
 			usleep(RAGTECH_POST_OPEN_MS * 1000);
-			f14_len = 0;
+			f14_reset();
 			family = 10;
 		}
 	} else {

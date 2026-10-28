@@ -60,8 +60,9 @@ This driver supports the following options in the *ups.conf*:
 
 *family*='auto|10|14';;
 Select the protocol family. The default, *auto*, first listens for a
-few seconds without writing anything to the UPS: if it receives a valid
-family 14 frame at 2400 baud, the unit is treated as family 14;
+few seconds without writing anything to the UPS: if it receives a
+checksum-valid family 14 frame at 2560 baud, the unit is treated as
+family 14;
 otherwise the driver continues with the family 10 protocol, with the
 serial settings it had before the listen. Set *family=10* on an Easy Pro
 unit to skip the listen (and its start-up delay of about three seconds,
@@ -102,7 +103,7 @@ FAMILY 14 (EASY WAY)
 --------------------
 
 The Easy Way units transmit a 32-byte frame about every 1.3 seconds on
-their own, at 2400 baud 8N1, without being asked. The driver only
+their own, at 2560 baud 8N1, without being asked. The driver only
 reads: it never writes anything to a family 14 unit, it registers no
 instant commands, and `upsdrv_shutdown` fails (so the `FSD` handling of
 `upsmon` cannot power such a UPS off through this driver). If
@@ -111,7 +112,33 @@ is known for this family: the OEM device table lists no actions for it
 and none was seen in captures of the OEM software.
 
 Unlike family 10, these units do use the line speed, so the port must be
-at 2400 baud; the driver sets that itself.
+at 2560 baud (not the usual 2400: that is the first speed listed for this
+family in the OEM device table, and the OEM software uses it); the driver
+sets that itself. Read at 2400 the stream is corrupted in a systematic
+way: bit 7 of the bytes arrives set and bit 6 is unreliable, so most
+frames fail the checksum, and a few corrupted ones still pass it. A
+speed like 2560 has no standard constant, so the driver asks the system
+for it directly (the `termios2` interface on Linux, the numeric speed on
+BSD and macOS). If that fails, for instance on a platform without such
+support, the driver logs a warning ("could not set 2560 baud; falling
+back to 2400, expect corrupted frames") and uses 2400; the checks below
+then drop most frames and the data will often be marked stale.
+
+The 8-bit sum of the frame is a weak check (two bytes that both gain bit
+7 add up to zero), so a frame is only accepted if it also passes these:
+
+* Registers 0x00 to 0x09 (version, model and calibration constants) are
+fixed in the unit. They must equal a reference, which is taken from two
+consecutive checksum-valid frames having identical values there; nothing
+is published before that, so the start-up takes a few seconds longer. If
+frames keep being dropped for this reason for more than 30 seconds and
+two consecutive ones agree on other values, those become the new
+reference.
+* The tap index is at most 3, the load at most 150 %, the temperature at
+most 100 degrees C and the battery voltage between 6 and 18 V.
+* `ups.alarm` entries, `OVER` and `LB` appear, and disappear, only after
+two consecutive accepted frames agree. `OL`, `OB` and `CHRG` follow
+each accepted frame, so a mains cut is reported without that delay.
 
 Published data: `ups.mfr`, `ups.model`, `ups.firmware`,
 `ups.power.nominal`, `ups.temperature`, `ups.load`, `ups.status`,
@@ -137,7 +164,7 @@ variants follow the OEM table, but the output voltage formula of the M2
 which looks doubtful, so treat `output.voltage` on those with suspicion
 until someone confirms it.
 
-If no valid frame arrives for more than five seconds the data is marked
+If no accepted frame arrives for more than five seconds the data is marked
 stale.
 
 
@@ -153,8 +180,9 @@ same device node.
 On family 10, replies are framed by a 0xAA start byte and have no
 checksum; the driver re-synchronizes by scanning for the start byte
 after any short read. On family 14 the frames start with `55 55 AE` and
-end with an 8-bit sum, and the driver keeps the newest frame whose sum
-is right.
+end with an 8-bit sum; the driver checks every frame whose sum is right
+against the constants and ranges described above, and keeps the newest
+one that passes.
 
 
 AUTHOR
