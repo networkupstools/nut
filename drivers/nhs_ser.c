@@ -40,7 +40,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"NHS Nobreak Drivers"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 #define MANUFACTURER	"NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD	2400
@@ -397,6 +397,7 @@ static float get_pf(void);
 static unsigned int get_ah(void);
 static float get_vin_perc(char *var);
 static unsigned int get_numbat(void);
+static void parse_battery_options(void);
 
 
 /* method implementations */
@@ -1325,6 +1326,11 @@ static float get_pf(void) {
 		return DEFAULTPF;
 }
 
+/*
+ * "ah" is checked by parse_battery_options() before any packet is decoded,
+ * so the fatal branch below is only a safeguard for callers reached without
+ * that validation.
+ */
 static unsigned int get_ah(void) {
 	char	*ah = getval("ah");
 	if (ah)
@@ -1396,6 +1402,10 @@ void upsdrv_initinfo(void) {
 
 	upsdebugx(3, "%s: starting...", __func__);
 
+	/* Reject incomplete battery settings here, where bailing out is still
+	 * allowed, rather than from inside the polling loop. */
+	parse_battery_options();
+
 	/* TODO: Any instant commands? */
 	if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
 		return;
@@ -1415,13 +1425,66 @@ static float calculate_efficiency(float vacoutrms, float vacinrms) {
 	return (vacoutrms * vacinrms) / 100.0;
 }
 
+/*
+ * Battery count override from ups.conf.
+ *
+ * The option is registered in upsdrv_makevartable() as "numbatteries", but
+ * this lookup used to ask getval() for "numbat". getval() only resolves names
+ * registered with addvar(), so the override was silently ignored and the
+ * count always came from the HWINFO packet; writing "numbat" in ups.conf did
+ * not help either, since main.c rejects it as an unknown variable. The lookup
+ * now uses the registered name, so the documented option takes effect.
+ */
 static unsigned int get_numbat(void) {
-	char	*nb = getval("numbat");
+	char	*nb = getval("numbatteries");
 	unsigned int	retval = 0;
 
 	if (nb)
 		retval = atoi(nb);
 	return retval;
+}
+
+/*
+ * Validate the battery parameters supplied in ups.conf.
+ *
+ * "ah" has always been mandatory, but it used to be read for the first time
+ * inside interpret_pkt_data(), i.e. only after the port was open and the first
+ * valid DATA packet had been decoded. A missing value therefore killed the
+ * driver in the middle of the polling loop: when started through upsdrvctl the
+ * only visible symptom was "Data stale", and the actual message was seen only
+ * by running the driver in the foreground with -D. Checking here reports the
+ * problem at startup, where the message is logged, instead of after the first
+ * packet. upsdrv_shutdown() does not use these values and upsdrv_initinfo() is
+ * not called for a forced shutdown (-k), so that path keeps working without
+ * them.
+ *
+ * "numbatteries" stays optional; when present it must be a positive integer so
+ * a typo does not quietly turn into a zero battery count.
+ */
+static void parse_battery_options(void)
+{
+	const char	*value;
+	char		*endptr;
+	long		number;
+
+	value = getval("ah");
+	if (!value)
+		fatalx(EXIT_FAILURE, "Please set the ah value (battery capacity in Ampere-hour) in ups.conf.");
+
+	errno = 0;
+	endptr = NULL;
+	number = strtol(value, &endptr, 10);
+	if (errno != 0 || endptr == value || *endptr != '\0' || number <= 0)
+		fatalx(EXIT_FAILURE, "Invalid ah value '%s': expected a positive integer number of Ampere-hours", value);
+
+	value = getval("numbatteries");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number <= 0)
+			fatalx(EXIT_FAILURE, "Invalid numbatteries value '%s': expected a positive integer", value);
+	}	/* end if */
 }
 
 /*

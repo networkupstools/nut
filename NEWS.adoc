@@ -339,6 +339,15 @@ https://github.com/networkupstools/nut/milestone/13
       care to constrain permitted lengths and offsets. [#GHSA-6p5c-r2jg-r9mj]
 
  - `nhs_ser` driver updates:
+    * The mandatory `ah` setting is now validated in `upsdrv_initinfo()`,
+      before any packet is decoded. Previously it was first read inside the
+      polling loop, so a missing value killed the driver after the first valid
+      data packet and, when started through `upsdrvctl`, the only visible
+      symptom was "Data stale". A forced shutdown (`-k`) keeps working without
+      the setting. [issue #3510]
+    * Fixed the `numbatteries` override, which was registered under that name
+      but looked up as `numbat` and therefore never took effect; the value
+      must now be a positive integer when present.
     * Modernized serial communication and added validated settings for baud
       rate, data bits, parity, stop bits, flow control, per-byte read timeout,
       and transmission pacing. Also improved serial resource handling and

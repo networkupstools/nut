@@ -57,7 +57,9 @@ Set the delay between transmitted bytes, in microseconds. Values from 0 to
 999999 are accepted; 0 disables transmission pacing (default: 0).
 
 *ah*='num'::
-Battery discharge capacity in Ampere/hour.
+Battery discharge capacity in Ampere/hour. This setting is required: the
+driver refuses to start without it, or with a value that is not a positive
+integer.
 
 *va*='num'::
 Nobreak NOMINAL POWER in VA.
