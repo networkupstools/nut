@@ -2648,7 +2648,15 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			&& norm_host && norm_port && *norm_host && *norm_port
 		) {
 			ac_host = upscli_get_authconf_item(NULL, norm_host, norm_port, 1);
-			if (!ac_host || ac_host == ac_default)
+			upsdebugx(7, "%s: ac_host=%p ac_default=%p",
+				__func__, (void*)ac_host, (void*)ac_default);
+
+			/* CERTHOST for the same host name should not be repeated;
+			 * but when we reload configs, the (only) already seen
+			 * entry may be the automatically adjusted ac_default.
+			 * In other cases, we should not change the ac_default.
+			 */
+			if (!ac_host || (ac_host == ac_default && !(reload_flag && ac_host->certhost && !strcmp(ac_host->certhost, arg[2]))))
 				fatalx(EXIT_FAILURE, "Fatal error: unable to get host-specific authconf entry");
 
 			free(ac_host->certhost);
@@ -4305,6 +4313,7 @@ int main(int argc, char *argv[])
 	/* Make sure default entry is created even if we did not see any
 	 * CERT* or AUTHCONF lines yet */
 	ac_default = upscli_get_authconf_item(NULL, NULL, NULL, 1);
+	upsdebugx(7, "%s: ac_default=%p", __func__, (void*)ac_default);
 	if (!ac_default)
 		fatalx(EXIT_FAILURE, "Fatal error: unable to get default authconf entry");
 	free(ac_default->section);
