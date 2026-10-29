@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -207,6 +207,18 @@ upsdrv_info_t upsdrv_info = {
  * busy-polling). */
 #define MLINK_SESSION_RETRY_INTERVAL_SEC	1
 
+/* Ceiling for the doubling wait between failed session-start probes, so a
+ * device that keeps refusing the tunnel is not probed every second forever. */
+#define MLINK_SESSION_RETRY_MAX_SEC	60
+
+/* Minimum gap between slave-password writes across sessions: a failed
+ * handshake is suspected of locking out comms until a device reset. */
+#define MLINK_AUTH_MIN_INTERVAL_SEC	300
+
+/* Ceiling on the startup walk once a session answers, so a map that never
+ * completes falls back to standard HID data instead of looping forever. */
+#define MLINK_STARTUP_MAX_SEC	60
+
 #define MLINK_DESC_OP_USAGE_SIZE	0xFC
 #define MLINK_DESC_OP_COLLECTION	0xFD
 #define MLINK_DESC_OP_CHILD_NEXT	0xFE
@@ -293,6 +305,9 @@ static int descriptor_ready = 0;
 static int outlet_commands_registered = 0;
 static int simple_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
+static time_t microlink_session_retry_wait = MLINK_SESSION_RETRY_INTERVAL_SEC;
+/* Last slave-password write; survives session restarts, unlike authentication_sent_at. */
+static time_t authentication_last_write_at = 0;
 static time_t microlink_fallback_since = 0;
 static unsigned int microlink_fallback_retries = 0;
 /* main.c's read_upsconf() applies the user's "pollinterval" ups.conf setting
@@ -816,6 +831,25 @@ static const microlink_object_t *microlink_get_object(unsigned int id)
 static microlink_object_t *microlink_get_object_mut(unsigned int id)
 {
 	return &objects[id & 0xFFU];
+}
+
+/* Whether every page holding blob bytes [off, off+len) has actually been
+ * received; update_blob() zero-fills pages the device never sent. */
+static int microlink_blob_range_seen(size_t off, size_t len)
+{
+	size_t p;
+
+	if (page0.width == 0 || len == 0) {
+		return 0;
+	}
+
+	for (p = off / page0.width; p <= (off + len - 1U) / page0.width; p++) {
+		if (p >= page0.count || !microlink_get_object((unsigned int)p)->seen) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int microlink_is_descriptor_operator(unsigned char token)
@@ -2248,6 +2282,16 @@ static int microlink_send_descriptor_write(const char *path, const unsigned char
 		return 0;
 	}
 
+	/* One write frame addresses one page; a field running past it, or on a page
+	 * never received, would land somewhere the map cannot vouch for. */
+	if (offset + usage->size > page0.width || page >= page0.count
+	 || !microlink_blob_range_seen(usage->data_offset, usage->size)) {
+		upslogx(LOG_WARNING, "microlink: refusing write to %s: page=%zu offset=%zu size=%zu "
+			"falls outside the %u-byte page / %u-page map or on a page not received",
+			path, page, offset, usage->size, (unsigned int)page0.width, page0.count);
+		return 0;
+	}
+
 	/* Make the attempted descriptor write visible before the raw frame is sent. */
 	upsdebugx(2, "microlink: write %s page=%zu offset=%zu size=%zu",
 		path, page, offset, usage->size);
@@ -2701,6 +2745,7 @@ static int microlink_parse_descriptor(void)
 	uint16_t data_ptr;
 	size_t data_ptr_offset;
 	size_t data_offset;
+	size_t desc_end;
 
 	descriptor_ready = 0;
 	descriptor_usage_count = 0;
@@ -2721,7 +2766,15 @@ static int microlink_parse_descriptor(void)
 	}
 
 	data_offset = data_ptr_offset;
-	if (microlink_parse_descriptor_block(descriptor_blob, descriptor_blob_len, 12, &data_offset, "") == 0) {
+	desc_end = microlink_parse_descriptor_block(descriptor_blob, descriptor_blob_len, 12, &data_offset, "");
+	if (desc_end == 0) {
+		descriptor_usage_count = 0;
+		return 0;
+	}
+
+	/* The map's own bytes must all come from received pages, not update_blob()'s zero fill. */
+	if (!microlink_blob_range_seen(0, desc_end)) {
+		upsdebugx(2, "microlink: descriptor deferred, its pages (0-%zu bytes) not all seen yet", desc_end);
 		descriptor_usage_count = 0;
 		return 0;
 	}
@@ -3112,6 +3165,18 @@ static void microlink_check_auth_result(time_t now)
 	}
 }
 
+/* The serial number and master password feed the slave-password reply, so
+ * both must come from received pages rather than zero fill. */
+static int microlink_auth_inputs_seen(void)
+{
+	const microlink_descriptor_usage_t *serial = microlink_find_descriptor_usage_validated(MLINK_DESC_SERIALNUMBER);
+	const microlink_descriptor_usage_t *master = microlink_find_descriptor_usage_validated(MLINK_DESC_MASTER_PASSWORD);
+
+	return serial != NULL && master != NULL
+		&& microlink_blob_range_seen(serial->data_offset, serial->size)
+		&& microlink_blob_range_seen(master->data_offset, master->size);
+}
+
 static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 {
 	if (!microlink_checksum_valid(frame, framelen)) {
@@ -3133,13 +3198,29 @@ static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 
 		if ((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) != 0U
 		 && descriptor_ready && !authentication_sent) {
-			if (!microlink_authenticate()) {
-				ser_comm_fail("microlink: failed to authenticate");
-				return 0;
+			time_t now = microlink_now();
+
+			if (microlink_auth_data_valid()) {
+				upsdebugx(1, "microlink: AUTH_STATUS already valid, not re-sending the slave password");
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 1;
+			} else if (authentication_last_write_at != 0
+			 && difftime(now, authentication_last_write_at) < MLINK_AUTH_MIN_INTERVAL_SEC) {
+				upsdebugx(2, "microlink: slave password sent %.0f s ago, holding off",
+					difftime(now, authentication_last_write_at));
+			} else if (!microlink_auth_inputs_seen()) {
+				upsdebugx(2, "microlink: slave password inputs on pages not received yet, holding off");
+			} else {
+				if (!microlink_authenticate()) {
+					ser_comm_fail("microlink: failed to authenticate");
+					return 0;
+				}
+				authentication_last_write_at = now;
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 0;
 			}
-			authentication_sent = 1;
-			authentication_sent_at = microlink_now();
-			authentication_accepted = 0;
 		}
 	}
 
@@ -4035,12 +4116,18 @@ void upsdrv_initinfo(void)
 	poll_interval = microlink_connected_poll_interval();
 
 	if (microlink_start_session()) {
+		time_t startup_began = microlink_now();
+
 		handshake_ok = 1;
 		microlink_ready = 1;
 		while (microlink_ready && !microlink_startup_ready()) {
 			time_t now = microlink_now();
 
 			if (!microlink_poll_once(now) && consecutive_timeouts >= microlink_handshake_retries()) {
+				microlink_ready = 0;
+			} else if (difftime(now, startup_began) >= MLINK_STARTUP_MAX_SEC) {
+				upslogx(LOG_WARNING, "apcmicrolink: Microlink startup not ready after %d s (%s)",
+					MLINK_STARTUP_MAX_SEC, microlink_startup_missing());
 				microlink_ready = 0;
 			}
 		}
@@ -4169,11 +4256,18 @@ void upsdrv_updateinfo(void)
 
 		if (!session_ready) {
 			microlink_fallback_retries++;
-			microlink_session_next_retry = now + MLINK_SESSION_RETRY_INTERVAL_SEC;
+			microlink_session_next_retry = now + microlink_session_retry_wait;
+			upsdebugx(1, "microlink: STABILITY session retry in %ld s",
+				(long)microlink_session_retry_wait);
+			microlink_session_retry_wait *= 2;
+			if (microlink_session_retry_wait > MLINK_SESSION_RETRY_MAX_SEC) {
+				microlink_session_retry_wait = MLINK_SESSION_RETRY_MAX_SEC;
+			}
 			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
 			microlink_datastale_or_fallback();
 			return;
 		}
+		microlink_session_retry_wait = MLINK_SESSION_RETRY_INTERVAL_SEC;
 		microlink_fallback_since = 0;
 		microlink_fallback_retries = 0;
 		poll_interval = microlink_connected_poll_interval();

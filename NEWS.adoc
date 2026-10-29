@@ -284,6 +284,16 @@ https://github.com/networkupstools/nut/milestone/13
       handle is closed, instead of being leaked. The listener thread is now
       started before its transfer is submitted, so a thread-creation failure
       no longer leaves a transfer outstanding. [issue #3751, PR #3778]
+    * A failed Microlink session start is now retried after a doubling
+      wait of 1 up to 60 seconds instead of every second, and the slave
+      password is sent at most once per 5 minutes across sessions, or not
+      at all while `AUTH_STATUS` already reads valid. Descriptor writes
+      and the authentication response are refused when a page they depend
+      on was never received, since missing pages are zero-filled (a tested
+      SCL500RM1UC never sends one of its 103 pages). Startup now gives up
+      on the descriptor after 60 seconds once a session answers, and falls
+      back to standard HID PDC data, instead of waiting indefinitely.
+      [PR #3806]
 
  - `apc_modbus` driver updates:
     * Fixed string join not doing zero termination. [PR #3413]
