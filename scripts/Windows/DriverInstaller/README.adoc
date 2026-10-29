@@ -1,11 +1,52 @@
-To easily compile `wdi-simple.exe`, unzip a copy of `libwdi` on your disk.
+NUT USB driver installer for Windows
+====================================
 
-Then set it up to be able to build following
-http://sourceforge.net/apps/mediawiki/libwdi/index.php?title=Install
+On Windows, NUT drivers talk to USB devices through libusb-1.0, which can
+only open a device that is bound to a suitable kernel driver. Most UPS
+devices are bound to the Windows HID driver by default, so a different
+driver must be installed for them first. WinUSB is preferred: it is part
+of Windows, and libusb-1.0 supports it natively.
 
-NOTE: Modern development may be at https://github.com/pbatard/libwdi
+`wdi-simple.c` is a small console program based on an example from
+https://github.com/pbatard/libwdi[libwdi]. It looks for plugged-in USB
+devices whose vendor and product IDs are known to NUT (from the generated
+`tools/nut-scanner/nutscan-usb.h`) and installs a driver for each:
 
-Then copy `wdi-simple.c` and `nutscan-usb.h` into the "examples"
-subdirectory of libwdi directory.
+- `winusb` (default, recommended)
+- `libusbk` (needs `libusbK.dll` next to the NUT programs)
 
-Finally run `ddk_build.cmd` from the root of the `libwdi` directory.
+NUT for Windows is built with libusb-1.0 only; the libusb-win32
+`libusb0.sys` driver used by older NUT releases is no longer supported.
+
+Run `wdi-simple --help` for the options. It must be run with
+administrator rights. Note that libwdi (and Zadig) currently support
+Windows 7 and newer.
+
+The same can be done by hand with https://zadig.akeo.ie/[Zadig]: select
+the UPS (use "Options / List All Devices" if needed), choose `WinUSB`
+and click "Replace Driver". To revert, uninstall the device in Device
+Manager (with "delete the driver" checked) and re-plug it.
+
+Building
+--------
+
+1. Build libwdi, either with Visual Studio (`libwdi.sln`) or with MinGW
+   (including cross-builds with `--host=...`), following
+   https://github.com/pbatard/libwdi/wiki/Install. To embed WinUSB, it
+   needs the WDK redistributable components (`--with-wdkdir=...`).
+
+2. Configure and build NUT for Windows (e.g. with `build-mingw-nut.sh`
+   in the parent directory), so that `config.h` and
+   `tools/nut-scanner/nutscan-usb.h` are generated.
+
+3. Compile `wdi-simple.c` against both, for example with MinGW:
++
+----
+:; x86_64-w64-mingw32-gcc -o wdi-simple.exe \
+    -I"$LIBWDI_SRC/libwdi" \
+    -I"$NUT_BUILD/include" -I"$NUT_SRC/include" \
+    -I"$NUT_SRC/tools/nut-scanner" \
+    $(pkg-config --cflags libusb-1.0) \
+    wdi-simple.c \
+    -static -L"$LIBWDI_SRC/libwdi/.libs" -lwdi -lsetupapi -lole32 -lntdll
+----

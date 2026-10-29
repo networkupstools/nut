@@ -45,6 +45,13 @@ Changes from 2.8.5 to 2.8.6
   `*.pc` files, packaging recipes and tarball names are not changed.
   [PR #3754 follow-up]
 
+- Windows builds of NUT now support only libusb-1.0; libusb-0.1
+  (libusb-win32 or libusb-compat) is no longer supported there, and
+  `--with-usb=libusb-0.1` fails. Packagers should depend on libusb-1.0
+  instead. USB devices previously bound to the libusb-win32
+  `libusb0.sys` driver must be re-bound to the WinUSB driver (e.g. with
+  the updated `wdi-simple` or with Zadig). [issue #1507, PR #3791]
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials
