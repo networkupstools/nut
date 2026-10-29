@@ -13,8 +13,26 @@
 # (having only shell scripting as a prerequisite suffices for that)
 all: PyNUTClient
 
-check-local:
-	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no; then \
+check-local: check-pynut-parser check-pynut-disconnect
+
+# TOTHINK: Use our automake macros like HAVE_PYTHON_DEFAULT + WITH_PYNUT_UNITTEST_PY
+# See tests/Makefile.am for elaborate example
+check-pynut-parser:
+	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no \
+	 && $(PYTHON_DEFAULT) -c 'import unittest; import itertools; import shutil; import tempfile;' \
+	 ; then \
+		for TEST in test_upslist.py test_protocol.py ; do \
+			PYTHONPATH="$(builddir)" $(PYTHON_DEFAULT) "$(srcdir)/$$TEST" || exit $$? ; \
+		done ; \
+	else \
+		echo "SKIP: PyNUT parser tests require a configured Python interpreter"; \
+	fi
+	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
+
+check-pynut-disconnect:
+	@if test -n "$(PYTHON_DEFAULT)" && test "$(PYTHON_DEFAULT)" != no \
+	 && $(PYTHON_DEFAULT) -c 'import unittest; import itertools; import shutil; import tempfile;' \
+	 ; then \
 		$(PYTHON_DEFAULT) "$(builddir)/test_nutclient.py" --disconnect ; \
 	else \
 		echo "Skipping Python disconnect tests: no Python interpreter configured" ; \
@@ -25,7 +43,7 @@ check-local:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini MANIFEST.in
+EXTRA_DIST = tox.ini MANIFEST.in test_upslist.py test_protocol.py
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON_DEFAULT = @PYTHON_DEFAULT@
