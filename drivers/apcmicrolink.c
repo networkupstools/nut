@@ -211,6 +211,10 @@ upsdrv_info_t upsdrv_info = {
  * device that keeps refusing the tunnel is not probed every second forever. */
 #define MLINK_SESSION_RETRY_MAX_SEC	60
 
+/* Minimum gap between slave-password writes across sessions: a failed
+ * handshake is suspected of locking out comms until a device reset. */
+#define MLINK_AUTH_MIN_INTERVAL_SEC	300
+
 /* Ceiling on the startup walk once a session answers, so a map that never
  * completes falls back to standard HID data instead of looping forever. */
 #define MLINK_STARTUP_MAX_SEC	60
@@ -302,6 +306,8 @@ static int outlet_commands_registered = 0;
 static int simple_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
 static time_t microlink_session_retry_wait = MLINK_SESSION_RETRY_INTERVAL_SEC;
+/* Last slave-password write; survives session restarts, unlike authentication_sent_at. */
+static time_t authentication_last_write_at = 0;
 static time_t microlink_fallback_since = 0;
 static unsigned int microlink_fallback_retries = 0;
 /* main.c's read_upsconf() applies the user's "pollinterval" ups.conf setting
@@ -3159,6 +3165,18 @@ static void microlink_check_auth_result(time_t now)
 	}
 }
 
+/* The serial number and master password feed the slave-password reply, so
+ * both must come from received pages rather than zero fill. */
+static int microlink_auth_inputs_seen(void)
+{
+	const microlink_descriptor_usage_t *serial = microlink_find_descriptor_usage_validated(MLINK_DESC_SERIALNUMBER);
+	const microlink_descriptor_usage_t *master = microlink_find_descriptor_usage_validated(MLINK_DESC_MASTER_PASSWORD);
+
+	return serial != NULL && master != NULL
+		&& microlink_blob_range_seen(serial->data_offset, serial->size)
+		&& microlink_blob_range_seen(master->data_offset, master->size);
+}
+
 static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 {
 	if (!microlink_checksum_valid(frame, framelen)) {
@@ -3180,13 +3198,29 @@ static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 
 		if ((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) != 0U
 		 && descriptor_ready && !authentication_sent) {
-			if (!microlink_authenticate()) {
-				ser_comm_fail("microlink: failed to authenticate");
-				return 0;
+			time_t now = microlink_now();
+
+			if (microlink_auth_data_valid()) {
+				upsdebugx(1, "microlink: AUTH_STATUS already valid, not re-sending the slave password");
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 1;
+			} else if (authentication_last_write_at != 0
+			 && difftime(now, authentication_last_write_at) < MLINK_AUTH_MIN_INTERVAL_SEC) {
+				upsdebugx(2, "microlink: slave password sent %.0f s ago, holding off",
+					difftime(now, authentication_last_write_at));
+			} else if (!microlink_auth_inputs_seen()) {
+				upsdebugx(2, "microlink: slave password inputs on pages not received yet, holding off");
+			} else {
+				if (!microlink_authenticate()) {
+					ser_comm_fail("microlink: failed to authenticate");
+					return 0;
+				}
+				authentication_last_write_at = now;
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 0;
 			}
-			authentication_sent = 1;
-			authentication_sent_at = microlink_now();
-			authentication_accepted = 0;
 		}
 	}
 
