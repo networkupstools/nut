@@ -207,6 +207,10 @@ upsdrv_info_t upsdrv_info = {
  * busy-polling). */
 #define MLINK_SESSION_RETRY_INTERVAL_SEC	1
 
+/* Ceiling for the doubling wait between failed session-start probes, so a
+ * device that keeps refusing the tunnel is not probed every second forever. */
+#define MLINK_SESSION_RETRY_MAX_SEC	60
+
 #define MLINK_DESC_OP_USAGE_SIZE	0xFC
 #define MLINK_DESC_OP_COLLECTION	0xFD
 #define MLINK_DESC_OP_CHILD_NEXT	0xFE
@@ -293,6 +297,7 @@ static int descriptor_ready = 0;
 static int outlet_commands_registered = 0;
 static int simple_commands_registered = 0;
 static time_t microlink_session_next_retry = 0;
+static time_t microlink_session_retry_wait = MLINK_SESSION_RETRY_INTERVAL_SEC;
 static time_t microlink_fallback_since = 0;
 static unsigned int microlink_fallback_retries = 0;
 /* main.c's read_upsconf() applies the user's "pollinterval" ups.conf setting
@@ -4169,11 +4174,18 @@ void upsdrv_updateinfo(void)
 
 		if (!session_ready) {
 			microlink_fallback_retries++;
-			microlink_session_next_retry = now + MLINK_SESSION_RETRY_INTERVAL_SEC;
+			microlink_session_next_retry = now + microlink_session_retry_wait;
+			upsdebugx(1, "microlink: STABILITY session retry in %ld s",
+				(long)microlink_session_retry_wait);
+			microlink_session_retry_wait *= 2;
+			if (microlink_session_retry_wait > MLINK_SESSION_RETRY_MAX_SEC) {
+				microlink_session_retry_wait = MLINK_SESSION_RETRY_MAX_SEC;
+			}
 			poll_interval = MLINK_SESSION_RETRY_INTERVAL_SEC;
 			microlink_datastale_or_fallback();
 			return;
 		}
+		microlink_session_retry_wait = MLINK_SESSION_RETRY_INTERVAL_SEC;
 		microlink_fallback_since = 0;
 		microlink_fallback_retries = 0;
 		poll_interval = microlink_connected_poll_interval();
