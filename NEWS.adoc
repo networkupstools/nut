@@ -96,6 +96,13 @@ https://github.com/networkupstools/nut/milestone/13
       when explicitly specifying same `--with-user` *OR* `--with-group` name
       as would be default for current platform (so one was treated as not-set
       and failed a sanity check). [issue #3513]
+    * The rules which build the NUT-Monitor translations (`*.mo` files) in
+      `scripts/python/Makefile.am` named the same file twice in an in-tree
+      build, which OpenBSD `make` treats as a dependency cycle: it failed the
+      build, or skipped regenerating the files (impacts NUT v2.8.3 through
+      v2.8.5). Each file now has one rule, which still writes into the build
+      directory, so a read-only source tree (e.g. in `make distcheck`) keeps
+      working. [PR #3809, follow-up to issue #2529]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
