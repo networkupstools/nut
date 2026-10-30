@@ -1134,6 +1134,10 @@ https://github.com/networkupstools/nut/milestone/13
       `bmake`, and a build and driver enumerator test with FreeBSD, NetBSD,
       OpenBSD and busybox userland tools first in `PATH`. Failures show as
       annotations on the source lines and in the job summary. [PR #3809]
+    * The "GHA-07: ShellCheck" workflow now uses ShellCheck 0.11.0 from its
+      upstream release (pinned by sha256) instead of the version the runner
+      image happens to have (0.9.0 on Ubuntu 24.04), so that it agrees with
+      `tools/shellcheck-ci.pl` run locally with the same version. [PR #3809]
     * The `make spellcheck` recipes now report unknown words with the file
       name, line and column where they were found (rather than byte offsets
       in the `aspell` output), and in GitHub Actions also as annotations on
