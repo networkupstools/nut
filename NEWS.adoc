@@ -518,7 +518,10 @@ https://github.com/networkupstools/nut/milestone/13
      The line speed is 2560 baud, set directly (no standard constant); frames
      are accepted only if the constant registers match a reference confirmed
      by two frames and the values are plausible, and the rarely seen status
-     bits need two consecutive frames. [issue #3755]
+     bits need two consecutive frames. `battery.charge` is 100 on mains with
+     the battery full and a short average otherwise, so the voltage ripple
+     no longer makes the NUT core add a spurious `DISCHRG`; `DISCHRG` is
+     set on battery. [issue #3755]
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed

@@ -150,7 +150,14 @@ load ratio reported by the firmware. `ups.power.nominal` is the number
 in the model name, with the same convention as for family 10;
 `ups.realpower.nominal` is not published because the OEM table does not
 say whether that number is VA or watts. `battery.charge` is an estimate
-computed from the battery voltage, as in the OEM software.
+computed from the battery voltage, as in the OEM software, but that
+voltage wobbles from frame to frame, and the NUT core reads every change
+of `battery.charge` below 100 as charging or discharging. So the driver
+publishes 100 flat while on mains with the battery-full flag set, and
+otherwise a short exponential average of the estimate (about 5 s) that
+never falls while `CHRG` is shown and never rises while on battery.
+`battery.voltage` is the instant value. On battery the driver also sets
+`DISCHRG`.
 
 What was observed on hardware (mains cut and restored on one TI unit):
 `OL` and `OB` follow the firmware's on-battery flag, and the voltages,

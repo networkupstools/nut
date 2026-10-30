@@ -165,11 +165,29 @@
  *     output.frequency = same OSC53/OSC57 interpolation as family 10
  *     ups.load         = IOUTPUT / IOUTCALIB * 100
  *     battery.voltage  = VBATTERY / VBATCALIB * 13.8
- *     battery.charge   = (VBATTERY / VBATCALIB - 0.725) / 0.275 * 100, kept in 0..100
+ *     battery.charge   = (VBATTERY / VBATCALIB - 0.725) / 0.275 * 100, kept in 0..100,
+ *                        then post-processed (next paragraph)
+ *
+ *   The charge is only an estimate from the battery voltage, which wobbles
+ *   from frame to frame (14.04 V, 13.68 V, 14.04 V on a healthy unit on
+ *   mains: 100, 96.8, 100 %). The NUT core (status_commit() in dstate.c)
+ *   reads any change of battery.charge below 100 as charging or discharging
+ *   and adds CHRG or DISCHRG when the driver set neither, or logs a warning
+ *   when the driver set the opposite one. So, per accepted frame:
+ *   - on mains with MAXBATTERY set the charge is 100.0 flat;
+ *   - otherwise the calculated charge goes through an exponential average
+ *     (F14_CHG_ALPHA per frame, about 5 s), restarted from the calculated
+ *     value whenever the state (full / charging / on battery) changes;
+ *   - the published value never falls while CHRG is reported and never
+ *     rises while on battery (DISCHRG is reported there), so it cannot
+ *     contradict the status. On entering CHRG or on battery it starts from
+ *     the calculated value limited by the one published before.
+ *   battery.voltage is the instant value, not averaged.
  *
  *   Status: OB = OPBATTERY (confirmed on a mains cut: NOVINPUT and LOVINPUT
- *   agree); OL otherwise. CHRG = OL with MAXBATTERY clear (seen clear for
- *   the whole recharge after a cut; inferred, not verified). OVER = FOVERLOAD.
+ *   agree) and then also DISCHRG; OL otherwise. CHRG = OL with MAXBATTERY
+ *   clear (seen clear for the whole recharge after a cut; inferred, not
+ *   verified). OVER = FOVERLOAD.
  *   LB = LOBATTERY or FENDBATTERY, and the bits of reg 0x0E (bits 4..7) go to
  *   ups.alarm; none of these bits has been observed set yet, so they come
  *   from the OEM bit names only. BOOST/TRIM are not reported (ACTUALTAP
@@ -593,6 +611,7 @@ static double compute_frequency(uint8_t v_fout)
 #define F14_VBAT_FACTOR		13.8	/* C_VBATNOMINAL * 13.8 / 12 with 12 V nominal */
 #define F14_BAT_EMPTY		0.725	/* C_BATFACTOR */
 #define F14_VEC_FACTOR		0.05	/* C_VECFACTOR (TI, 220 V strap) */
+#define F14_CHG_ALPHA		0.25	/* weight of a new frame in the charge average */
 
 enum f14_variant { F14_TI = 0, F14_M1, F14_M2 };
 
@@ -632,6 +651,9 @@ static const struct f14_model f14_models[] = {
 static const double f14_tap_ti[4] = { 1.2898, 1.1558, 1.0172, 0.8812 };
 static const double f14_tap_m2[4] = { 1.2460, 1.1620, 1.0705, 0.9998 };
 
+/* What the battery is doing, for the charge estimate (see the header) */
+enum f14_chg_state { F14_CHG_NONE = 0, F14_CHG_FULL, F14_CHG_CHRG, F14_CHG_OB };
+
 /* Decoded values of one frame */
 struct f14_data {
 	double vin, vout, fout, load, vbat, cbat;
@@ -661,6 +683,9 @@ static int f14_cand_have;
 static unsigned int f14_rare_pub;	/* debounced rare indications (F14_RARE_*) */
 static unsigned int f14_rare_prev;	/* the same, as seen in the previous frame */
 static int f14_rare_prev_ok;
+static double f14_chg_avg;		/* running average of the calculated charge */
+static double f14_chg_pub;		/* battery.charge as published */
+static enum f14_chg_state f14_chg_st;	/* state the two above belong to */
 static int f14_line_ok;			/* the line is really at F14_BAUD */
 #ifndef WIN32
 static struct termios f14_tio_saved;	/* termios before the speed change */
@@ -767,6 +792,57 @@ static unsigned int f14_rare_bits(const uint8_t *r)
 	return b;
 }
 
+/* Charge calculated from the battery voltage of one frame, 0..100. */
+static double f14_raw_charge(const uint8_t *r)
+{
+	double c;
+
+	if (!r[R14_VBATCALIB])
+		return 0.0;
+	c = ((double)r[R14_VBATTERY] / r[R14_VBATCALIB] - F14_BAT_EMPTY)
+		/ (1.0 - F14_BAT_EMPTY) * 100.0;
+	if (c < 0.0)
+		c = 0.0;
+	if (c > 100.0)
+		c = 100.0;
+	return c;
+}
+
+/* Advance the battery.charge estimate by one accepted frame. */
+static void f14_charge_step(const uint8_t *r)
+{
+	double raw = f14_raw_charge(r);
+	enum f14_chg_state st;
+
+	if (r[R14_OP] & B14_OPBATTERY)
+		st = F14_CHG_OB;
+	else if (r[R14_MISC] & B14_MAXBATTERY)
+		st = F14_CHG_FULL;
+	else
+		st = F14_CHG_CHRG;
+
+	if (st != f14_chg_st) {
+		/* restart from this frame; the value shown may only move the
+		 * way the status says (nothing to limit it by the first time) */
+		f14_chg_avg = raw;
+		if (f14_chg_st == F14_CHG_NONE)
+			f14_chg_pub = raw;
+		else if (st == F14_CHG_OB && f14_chg_pub > raw)
+			f14_chg_pub = raw;
+		else if (st == F14_CHG_CHRG && f14_chg_pub < raw)
+			f14_chg_pub = raw;
+		f14_chg_st = st;
+	} else {
+		f14_chg_avg += F14_CHG_ALPHA * (raw - f14_chg_avg);
+		if (st == F14_CHG_OB && f14_chg_avg < f14_chg_pub)
+			f14_chg_pub = f14_chg_avg;
+		else if (st == F14_CHG_CHRG && f14_chg_avg > f14_chg_pub)
+			f14_chg_pub = f14_chg_avg;
+	}
+	if (st == F14_CHG_FULL)
+		f14_chg_pub = 100.0;
+}
+
 /* One checksum-valid frame (r = its 27 registers) arrived: accept it as the
  * new current data, or drop it. Returns 1 if accepted. */
 static int f14_accept(const uint8_t *r)
@@ -830,6 +906,7 @@ static int f14_accept(const uint8_t *r)
 	f14_rare_prev_ok = 1;
 
 	memcpy(f14_regs, r, F14_NREGS);
+	f14_charge_step(r);
 	f14_have = 1;
 	f14_last = now;
 	f14_accepted++;
@@ -913,6 +990,7 @@ static void f14_reset(void)
 	f14_rare_pub = 0;
 	f14_rare_prev = 0;
 	f14_rare_prev_ok = 0;
+	f14_chg_st = F14_CHG_NONE;
 }
 
 /* Put the port at F14_BAUD. The termios state before the change is kept so
@@ -996,12 +1074,8 @@ static void f14_decode(const uint8_t *r, const struct f14_model *m,
 	if (r[R14_VBATCALIB]) {
 		ratio = (double)r[R14_VBATTERY] / r[R14_VBATCALIB];
 		d->vbat = ratio * F14_VBAT_FACTOR;
-		d->cbat = (ratio - F14_BAT_EMPTY) / (1.0 - F14_BAT_EMPTY) * 100.0;
-		if (d->cbat < 0.0)
-			d->cbat = 0.0;
-		if (d->cbat > 100.0)
-			d->cbat = 100.0;
 	}
+	d->cbat = f14_raw_charge(r);
 	d->temp = r[R14_TEMPER];
 
 	d->ob = opbat;
@@ -1013,13 +1087,14 @@ static void f14_decode(const uint8_t *r, const struct f14_model *m,
 }
 
 /* Values of the newest accepted frame, with the rare indications as
- * debounced instead of as in the frame itself. */
+ * debounced instead of as in the frame itself, and the charge as smoothed. */
 static void f14_current(struct f14_data *d)
 {
 	f14_decode(f14_regs, f14_model, d);
 	d->faults = f14_rare_pub & 0xF0U;
 	d->over = (f14_rare_pub & F14_RARE_OVER) != 0;
 	d->lb = (f14_rare_pub & F14_RARE_LB) != 0;
+	d->cbat = f14_chg_pub;
 }
 
 static void f14_publish(const struct f14_data *d)
@@ -1046,6 +1121,8 @@ static void f14_publish(const struct f14_data *d)
 
 	status_init();
 	status_set(d->ob ? "OB" : "OL");
+	if (d->ob)
+		status_set("DISCHRG");
 	if (d->chrg)
 		status_set("CHRG");
 	if (d->lb)
