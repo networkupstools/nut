@@ -362,7 +362,7 @@ upslist_equals() {
     # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
     # Trivial case 2: different amount of entries
-    [ "`echo \"$1\" | wc -l`" = "`echo \"$2\" | wc -l`" ] || return $?
+    [ "`echo \"$1\" | wc -l`" = "`echo \"$2\" | wc -l`" ] || return 1
 
     _TMP_DEV_SVC=""
     for _DEV in $1 ; do

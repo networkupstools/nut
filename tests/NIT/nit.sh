@@ -3278,7 +3278,7 @@ testcase_upsd_allow_no_device() {
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            [ "$CMDRES" = 0 ] || die "[testcase_upsd_allow_no_device] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+            [ "$CMDRES" = 0 ] || die "[testcase_upsd_allow_no_device] upsd does not respond on port ${NUT_PORT} (${CMDRES}): $CMDOUT"
         fi
         if [ -n "$CMDOUT" ] ; then
             log_error "[testcase_upsd_allow_no_device] Error: got reply for upsc listing when none was expected: $CMDOUT"
@@ -3863,7 +3863,7 @@ testcase_sandbox_upsc_query_timer() {
             OUT4="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
             if [ x"$OUT3" = x"$OUT4" ]; then
                 sleep 8
-                OUT5="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+                OUT5="`execcmd upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT5"
             fi
         fi
     fi

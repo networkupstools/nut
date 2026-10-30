@@ -103,6 +103,9 @@ https://github.com/networkupstools/nut/milestone/13
       v2.8.5). Each file now has one rule, which still writes into the build
       directory, so a read-only source tree (e.g. in `make distcheck`) keeps
       working. [PR #3809, follow-up to issue #2529]
+    * `nut-recorder.sh` now prints the error message of a failed `upsc` call.
+      It captured the standard output, which went to a file, so the message
+      was always empty. [PR #3809]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
