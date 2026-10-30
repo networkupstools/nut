@@ -1,0 +1,248 @@
+# Check that the generated configure script and NUT's shell scripts work
+# the same with several autotools generations and /bin/sh implementations.
+# For each autotools set: autogen.sh, then `<shell> -n configure` and a
+# real configure run under dash, bash, ksh93, mksh, yash, posh, busybox sh
+# and zsh (as sh), with config.h and the Makefiles compared across shells.
+# In the newest set's tree also `<shell> -n` on the tracked and generated
+# scripts, tests/nut-driver-enumerator-test.sh with every shell, and
+# `make check-scripts-syntax` with GNU make and bmake. Then NUT is
+# configured, built and its driver enumerator tested under six
+# "personalities": PATH overlays with FreeBSD, NetBSD (two bmake
+# generations), OpenBSD (oksh + OpenBSD make) and busybox userland, and
+# dash with mawk.
+#
+# The Jenkins "shellcheck" quick tests check the same things with one build
+# agent per OS (Debian, Ubuntu, CentOS, OpenBSD, ...); this takes a few
+# minutes on GitHub-hosted runners. Those tests run `make shellcheck`, which
+# is currently an alias of check-scripts-syntax (shell syntax checks). The
+# ShellCheck tool is a different check, run by "GHA-07: ShellCheck".
+#
+# Failures show as error annotations, on the source line where the output
+# names one, and in the job summary; the logs of a failed job are uploaded.
+# The autotools sets are built from GNU release tarballs (signatures checked
+# against the GNU keyring), the BSD tools from sources pinned by commit or
+# sha256; see .github/scripts/shell-matrix/build-*.sh for the versions.
+#
+# Runs on pull_request (not pull_request_target), so for PRs from forks it
+# has a read-only token. The built tools are cached, and only master
+# branch pushes and scheduled runs save the cache.
+# Run .github/scripts/shell-matrix/*.sh locally for the same checks.
+
+name: "GHA-10: Shell portability"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    paths:
+      - 'configure.ac'
+      - 'autogen.sh'
+      - 'm4/**'
+      - '**/Makefile.am'
+      - '**/*.sh'
+      - '**/*.sh.in'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/scripts/shell-matrix/**'
+      - '.github/workflows/10-shell-portability.yml'
+  schedule:
+    - cron: '45 12 * * 0'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  shell-matrix:
+    name: "autotools ${{ matrix.set }}, all shells"
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # names of the sets in build-autotools.sh:
+        # c7 = autoconf 2.69 / automake 1.13 (CentOS 7),
+        # u18 = 2.69 / 1.15, u22 = 2.71 / 1.16, u26 = 2.72 / 1.18
+        set: [ c7, u18, u22, u26 ]
+
+    steps:
+    # Full history and tags: autogen.sh takes NUT's version from git
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Install shells and tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          dash bash ksh mksh yash posh busybox zsh bmake \
+          file gpgv m4 perl pkgconf
+
+    # ImageOS (e.g. ubuntu24) is in the runner's environment, not in the
+    # env context, so pass it to the cache key as a step output
+    - name: Get runner image
+      id: image
+      run: |
+        test -n "$ImageOS"
+        echo "os=$ImageOS" >> "$GITHUB_OUTPUT"
+
+    - name: Restore autotools set
+      id: cache-autotools
+      uses: actions/cache/restore@v6
+      with:
+        path: /opt/at/${{ matrix.set }}
+        key: autotools-${{ runner.os }}-${{ steps.image.outputs.os }}-${{ matrix.set }}-${{ hashFiles('.github/scripts/shell-matrix/build-autotools.sh') }}
+
+    - name: Build autotools set
+      if: ${{ steps.cache-autotools.outputs.cache-hit != 'true' }}
+      env:
+        AT_SET: ${{ matrix.set }}
+      run: |
+        AT_SRC="$RUNNER_TEMP/at-src" bash .github/scripts/shell-matrix/build-autotools.sh "$AT_SET"
+
+    - name: Save autotools set (master branch pushes and scheduled runs only)
+      if: ${{ steps.cache-autotools.outputs.cache-hit != 'true' && github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@v6
+      with:
+        path: /opt/at/${{ matrix.set }}
+        key: ${{ steps.cache-autotools.outputs.cache-primary-key }}
+
+    # The newest set also runs the checks of a configured tree, so they
+    # still run when an older autoconf breaks configure
+    - name: Run shell portability checks
+      env:
+        AT_SET: ${{ matrix.set }}
+        WORKDIR: ${{ runner.temp }}/shell-matrix
+      run: |
+        bash .github/scripts/shell-matrix/nut-sh-matrix.sh -o u26 . HEAD "$AT_SET"
+
+    - name: Upload logs
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: shell-matrix-logs-${{ matrix.set }}
+        path: |
+          ${{ runner.temp }}/shell-matrix/*/*.log
+          ${{ runner.temp }}/shell-matrix/*/*.build-*/configure.log
+          ${{ runner.temp }}/shell-matrix/*/*.build-*/config.log
+          ${{ runner.temp }}/shell-matrix/*/*.build-*/diff.*
+        if-no-files-found: ignore
+        retention-days: 7
+
+  # BSD userland and makes for the personalities below, built once per run
+  # (or restored from the cache) and passed on as an artifact
+  bsd-tools:
+    name: "Build BSD tools"
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+
+    # see "Get runner image" above
+    - name: Get runner image
+      id: image
+      run: |
+        test -n "$ImageOS"
+        echo "os=$ImageOS" >> "$GITHUB_OUTPUT"
+
+    - name: Restore BSD tools
+      id: cache-bsd-tools
+      uses: actions/cache/restore@v6
+      with:
+        path: /opt/bsd
+        key: bsd-tools-${{ runner.os }}-${{ steps.image.outputs.os }}-${{ hashFiles('.github/scripts/shell-matrix/build-bsd-tools.sh') }}
+
+    - name: Build BSD tools
+      if: ${{ steps.cache-bsd-tools.outputs.cache-hit != 'true' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          meson ninja-build flex byacc libedit-dev libbsd-dev libssl-dev \
+          libncurses-dev libacl1-dev musl-tools pkgconf
+        BSD_SRC="$RUNNER_TEMP/bsd-src" bash .github/scripts/shell-matrix/build-bsd-tools.sh
+
+    - name: Save BSD tools (master branch pushes and scheduled runs only)
+      if: ${{ steps.cache-bsd-tools.outputs.cache-hit != 'true' && github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+      uses: actions/cache/save@v6
+      with:
+        path: /opt/bsd
+        key: ${{ steps.cache-bsd-tools.outputs.cache-primary-key }}
+
+    # a tarball keeps the symlinks and modes that the artifact zip loses
+    - name: Pack BSD tools
+      run: |
+        tar -C /opt -czf "$RUNNER_TEMP/bsd-tools.tar.gz" bsd
+
+    - name: Upload BSD tools
+      uses: actions/upload-artifact@v7
+      with:
+        name: bsd-tools
+        path: ${{ runner.temp }}/bsd-tools.tar.gz
+        retention-days: 1
+
+  personalities:
+    name: "userland ${{ matrix.personality }}"
+    needs: bsd-tools
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # see .github/scripts/shell-matrix/nut-personalities.sh
+        personality: [ freebsd, netbsd9, netbsd11, openbsd, busybox, mawk ]
+
+    steps:
+    # Full history and tags: autogen.sh takes NUT's version from git
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Install tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          autoconf automake libtool pkgconf dash busybox bmake original-awk mawk \
+          libedit2 libbsd0 python3-pyqt5 gettext
+
+    - name: Download BSD tools
+      uses: actions/download-artifact@v8
+      with:
+        name: bsd-tools
+        path: ${{ runner.temp }}
+
+    - name: Unpack BSD tools
+      run: |
+        sudo tar -C /opt -xzf "$RUNNER_TEMP/bsd-tools.tar.gz"
+
+    - name: Build and test under the personality
+      env:
+        PERSONALITY: ${{ matrix.personality }}
+        WORKDIR: ${{ runner.temp }}/shell-matrix
+        NUT_MONITOR: "yes"
+      run: |
+        bash .github/scripts/shell-matrix/nut-personalities.sh . HEAD "$PERSONALITY"
+
+    - name: Upload logs
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: personality-logs-${{ matrix.personality }}
+        path: |
+          ${{ runner.temp }}/shell-matrix/*/*.log
+          ${{ runner.temp }}/shell-matrix/*/*/config.log
+        if-no-files-found: ignore
+        retention-days: 7

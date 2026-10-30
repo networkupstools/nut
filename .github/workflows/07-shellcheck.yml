@@ -5,7 +5,8 @@
 # findings are shown as annotations on the changed lines, and listed in
 # the job summary. Deliberate portability idioms of NUT scripts are
 # disabled in .shellcheckrc file.
-# Run tools/shellcheck-ci.pl locally for the same check.
+# Run tools/shellcheck-ci.pl locally for the same check, with the same
+# ShellCheck version (see the "Install ShellCheck" step).
 #
 # Runs on pull_request (not pull_request_target), so for PRs from forks
 # it has a read-only token and runs the copy of this workflow in the PR,
@@ -34,14 +35,29 @@ jobs:
         fetch-depth: 2
         persist-credentials: false
 
-    # ShellCheck is usually pre-installed in GitHub-hosted Ubuntu runners;
-    # both base and PR versions are checked with the same one, so its
-    # exact version does not matter much
+    # ShellCheck from its upstream release, pinned by version and sha256
+    # (the "digest" of the asset on the release page), rather than the
+    # runner image's own (0.9.0 on ubuntu-24.04), so that CI finds what a
+    # local `tools/shellcheck-ci.pl` with the same version finds. Versions
+    # differ both ways: newer ones add checks and drop false positives.
+    # Base and PR versions are checked with the same binary, so a bump does
+    # not make old findings look new. Update both values together; this is
+    # not tracked by Dependabot.
+    # See https://github.com/koalaman/shellcheck/releases
     - name: Install ShellCheck
+      env:
+        SHELLCHECK_VERSION: v0.11.0
+        SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
       run: |
-        command -v shellcheck >/dev/null || {
-          sudo apt-get update && sudo apt-get install -y shellcheck
-        }
+        t="shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.xz"
+        curl -fsSL --retry 5 -o "$RUNNER_TEMP/$t" \
+          "https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/$t"
+        echo "$SHELLCHECK_SHA256  $RUNNER_TEMP/$t" | sha256sum -c -
+        tar -xJf "$RUNNER_TEMP/$t" -C "$RUNNER_TEMP"
+        echo "$RUNNER_TEMP/shellcheck-$SHELLCHECK_VERSION" >> "$GITHUB_PATH"
+
+    - name: Show ShellCheck version
+      run: |
         shellcheck --version
 
     - name: Run ShellCheck for changed scripts
