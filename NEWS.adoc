@@ -1124,6 +1124,16 @@ https://github.com/networkupstools/nut/milestone/13
       locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
       disables the checks for deliberate portability idioms of NUT scripts
       (backticks, `x"$var"` comparisons, `expr`). [PR #3773]
+    * Added a "GHA-10: Shell portability" GitHub Actions workflow. It checks
+      on GitHub-hosted runners what the Jenkins "shellcheck" quick tests
+      (`make shellcheck`, an alias of `make check-scripts-syntax`) check with
+      one build agent per OS: `autogen.sh` with four autotools generations
+      (as shipped from CentOS 7 to Ubuntu 26.04), `<shell> -n configure` and
+      a real `configure` under eight `/bin/sh` implementations with the
+      results compared, `make check-scripts-syntax` with GNU make and
+      `bmake`, and a build and driver enumerator test with FreeBSD, NetBSD,
+      OpenBSD and busybox userland tools first in `PATH`. Failures show as
+      annotations on the source lines and in the job summary. [PR #3809]
     * The `make spellcheck` recipes now report unknown words with the file
       name, line and column where they were found (rather than byte offsets
       in the `aspell` output), and in GitHub Actions also as annotations on
