@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3917 utf-8
+personal_ws-1.1 en 3922 utf-8
 AAC
 AAS
 ABI
@@ -719,6 +719,7 @@ LiFePO
 LibGD
 LibLTDL
 LibUSB
+LibreSSL
 LineA
 LineB
 Lintian
@@ -1988,6 +1989,7 @@ compareprocnames
 compat
 compilation's
 compilerPath
+concat
 conf
 confargs
 confdir
@@ -2778,6 +2780,7 @@ mdutil
 meanwell
 mecer
 megatec
+memcpy
 memset
 metadata
 metasys
