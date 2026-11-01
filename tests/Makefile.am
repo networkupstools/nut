@@ -154,6 +154,12 @@ upssched_list_timers_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 upssched_list_timers_test_LDADD = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(NETLIBS)
 upssched_list_timers_test_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_srcdir)/clients/upssched.c $(top_srcdir)/clients/upssched.h
 
+TESTS += upssched-async-test
+upssched_async_test_SOURCES = upssched-async-test.c
+upssched_async_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
+upssched_async_test_LDADD = $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(NETLIBS)
+upssched_async_test_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la $(top_srcdir)/clients/upssched.c $(top_srcdir)/clients/upssched.h
+
 TESTS += statetest
 statetest_SOURCES = statetest.c
 statetest_LDADD = $(NUT_LIBCOMMON)

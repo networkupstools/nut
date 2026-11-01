@@ -18,12 +18,13 @@ IMPORTANT NOTES
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
 
-* Command execution is synchronous (with the called tool process in case
-  of `EXECUTE` directive, or with the timer process). Consider using your
-  system shell abilities like `&` to send long-duration handling to the
-  background and let `upssched` timer daemon continue. This should not
-  impact `upsmon` daemon, which handles each notification in a separate
-  sub-process (and so not a problem for immediate `EXECUTE` events).
+* Commands launched by expired timers run asynchronously and may overlap,
+  including invocations of the same timer name. Use locking in scripts
+  which require serial execution. On idle exit, the timer daemon waits until
+  its directly launched commands finish, then follows its idle grace period.
+  Immediate `EXECUTE` commands wait in the calling tool process. The optional
+  command for `CANCEL-TIMER` with no matching timer still waits in the timer
+  daemon. `upsmon` handles notifications in separate sub-processes.
 
 CONFIGURATION DIRECTIVES
 ------------------------
