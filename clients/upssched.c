@@ -191,7 +191,7 @@ static void exec_cmd(const char *cmd, int asynchronous)
 
 	if (pid > 0) {
 		if (asynchronous) {
-			child = xcalloc(1, sizeof(*child));
+			child = (command_t *)xcalloc(1, sizeof(*child));
 			child->pid = pid;
 			child->name = xstrdup(cmd);
 			child->next = commands;
@@ -246,7 +246,7 @@ static void exec_cmd(const char *cmd, int asynchronous)
 	err = _spawnvp(asynchronous ? _P_NOWAIT : _P_WAIT,
 		cmdscript_argv[0], (const char * const *)argv);
 	if (asynchronous && err != -1) {
-		child = xcalloc(1, sizeof(*child));
+		child = (command_t *)xcalloc(1, sizeof(*child));
 		child->pid = err;
 		child->name = xstrdup(cmd);
 		child->next = commands;
