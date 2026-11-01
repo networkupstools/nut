@@ -1063,7 +1063,7 @@ NIT.env:
 	        fi ; \
 	    else exit 0; fi ; \
 	 fi ; \
-	 $(RM_F) $@ ; \
+	 rm -f $@ ; \
 	 $(LN_S) $(builddir)/tests/NIT/tmp/etc/NIT.env $@ || true
 
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \

@@ -25,6 +25,9 @@
 #			NUT daemons or tools
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #	NIT_PARSECONF_TIMEOUT=60	per-query watchdog seconds for parser tests
+#	NIT_CPPNIT_TIMEOUT=300	seconds after which a hanging cppnit (C++
+#			client test) is killed and its test case fails;
+#			0 to wait for it forever
 #	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
 #			PID files, this option tells daemons to save them
 #	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
@@ -1551,11 +1554,15 @@ prompt = no
 commonName = ${TESTCERT_ROOTCA_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US
 
 [ extensions ]
+subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer
 basicConstraints=critical,CA:TRUE
 keyUsage=critical,digitalSignature,cRLSign,keyCertSign
-subjectKeyIdentifier=hash
 EOF
+                        # NOTE: subjectKeyIdentifier must come first: LibreSSL
+                        # (e.g. OpenBSD 8.0) adds the extensions in this order,
+                        # and a self-signed authorityKeyIdentifier needs the
+                        # subject key ID to exist ("unable to get issuer keyid").
                         MSYS_NO_PATHCONV=1 \
                         openssl req -x509 -new -nodes -key rootca.key \
                             -passin file:.pwfile -sha256 \
@@ -1564,8 +1571,11 @@ EOF
                             -config rootca.req.conf \
                         || {
                             log_info "Retry ROOTCA without authorityKeyIdentifier extension"
-                            # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option:
-                            sed 's,^\(authorityKeyIdentifier=\),###\1,' -i rootca.req.conf \
+                            # Older OpenSSL versions (e.g. 1.0.2 in CentOS 7) do not support this option.
+                            # Avoid "sed -i", it behaves differently on some platforms
+                            # and is completely absent on others [#1736 and earlier]
+                            sed 's,^\(authorityKeyIdentifier=\),###\1,' < rootca.req.conf > rootca.req.conf.tmp \
+                            && mv -f rootca.req.conf.tmp rootca.req.conf \
                             && openssl req -x509 -new -nodes -key rootca.key \
                                 -passin file:.pwfile -sha256 \
                                 -days "${TESTCERT_VALIDITY_DAYS}" \
@@ -1693,7 +1703,7 @@ EOF
                             --extKeyUsage "serverAuth,critical" \
                             --nsCertType sslServer,critical \
                             --keyUsage critical,dataEncipherment,keyEncipherment,digitalSignature,nonRepudiation \
-                            --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,dns:::1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
+                            --extSAN "dns:localhost,dns:localhost6,dns:nut-server-$$.localdomain,dns:127.0.0.1,ip:127.0.0.1,ip:::1,ip:127.1.2.`expr $$ % 200`" \
                         || die_or_croak "Could not create a NSS Server certificate request"
 
                         # Sign a certificate request with the CA certificate:
@@ -1814,9 +1824,15 @@ EOF
                         check_NIT_certs_NSS "Server" "${TESTCERT_PATH_SERVER}"
                         ;;
                     OpenSSL)
-                        # Create a server certificate request:
+                        # Create a server certificate request; our own
+                        # minimal config, as "openssl req" needs one and some
+                        # systems ship none (seen on NetBSD 11.0). It has no
+                        # "prompt = no": with that, LibreSSL rejects the empty
+                        # "dn" section even though "-subj" gives the name.
+                        printf '[ req ]\ndistinguished_name = dn\n\n[ dn ]\n' > server.req.conf
                         MSYS_NO_PATHCONV=1 \
                         openssl req -new -nodes -out server.req \
+                            -config server.req.conf \
                             -newkey rsa:4096 -passout file:.pwfile \
                             -keyout server.key \
                             -subj "/CN=${TESTCERT_SERVER_NAME}/OU=Test/O=NIT/ST=StateOfChaos/C=US" \
@@ -1830,9 +1846,9 @@ subjectAltName = @alt_names
 DNS.1 = localhost
 DNS.2 = localhost6
 DNS.3 = nut-server-$$.localdomain
-# Cater to older Python SSL parser that only looks for DNS:
+# Cater to older Python SSL parser that only looks for DNS (but not "::1",
+# which is no valid DNS name: LibreSSL refuses to sign or verify it):
 DNS.4 = 127.0.0.1
-DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 IP.3 = 127.1.2.`expr $$ % 200`
@@ -2088,8 +2104,11 @@ EOF
                         ;;
                     OpenSSL)
                         # Create a client certificate request:
+                        # Own minimal config, as for the server request above
+                        printf '[ req ]\ndistinguished_name = dn\n\n[ dn ]\n' > client.req.conf
                         MSYS_NO_PATHCONV=1 \
                         openssl req -new -nodes \
+                            -config client.req.conf \
                             -out client.req -newkey rsa:4096 \
                             -passout file:.pwfile \
                             -keyout client.key \
@@ -2106,9 +2125,9 @@ subjectAltName = @alt_names
 DNS.1 = localhost
 DNS.2 = localhost6
 DNS.3 = nut-client-$$.localdomain
-# Cater to older Python SSL parser that only looks for DNS:
+# Cater to older Python SSL parser that only looks for DNS (but not "::1",
+# which is no valid DNS name: LibreSSL refuses to sign or verify it):
 DNS.4 = 127.0.0.1
-DNS.5 = ::1
 IP.1 = 127.0.0.1
 IP.2 = ::1
 IP.3 = 127.1.2.`expr $$ % 200`
@@ -4514,6 +4533,39 @@ testcases_sandbox_perl() {
 
 ####################################
 
+run_with_watchdog() {
+    # Usage: run_with_watchdog SECONDS LABEL COMMAND [ARGS...]
+    # Runs COMMAND, and if it is still running after SECONDS, logs an error
+    # and kills it (TERM, then KILL 5 seconds later), so a client that hangs
+    # fails its test case instead of stalling the whole NIT run until a CI
+    # job timeout. SECONDS=0 (or empty) runs COMMAND without a watchdog.
+    _wd_secs="$1" ; _wd_label="$2" ; shift 2
+    if [ x"${_wd_secs}" = x ] || [ x"${_wd_secs}" = x0 ] ; then
+        "$@"
+        return $?
+    fi
+
+    "$@" &
+    _wd_pid=$!
+    # The sleeps get no stdout/stderr: one left over after the watchdog is
+    # killed must not keep a pipe (CI log, tee) open for its remaining time
+    ( sleep "${_wd_secs}" >/dev/null 2>&1
+      if kill -0 "${_wd_pid}" 2>/dev/null ; then
+          log_error "[${_wd_label}] still running after ${_wd_secs} seconds, killing PID ${_wd_pid}"
+          kill -TERM "${_wd_pid}" 2>/dev/null
+          sleep 5 >/dev/null 2>&1
+          kill -KILL "${_wd_pid}" 2>/dev/null
+      fi
+    ) &
+    _wd_dog=$!
+
+    wait "${_wd_pid}"
+    _wd_rc=$?
+    kill "${_wd_dog}" 2>/dev/null
+    wait "${_wd_dog}" 2>/dev/null
+    return ${_wd_rc}
+}
+
 isTestableCppNIT() {
     # We optionally make and here can run C++ client tests:
     if [ x"${TOP_BUILDDIR}" = x ] \
@@ -4540,7 +4592,7 @@ testcase_sandbox_cppnit_without_creds() {
          if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
              NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
          fi
-         "${TOP_BUILDDIR}/tests/cppnit"
+         run_with_watchdog "${NIT_CPPNIT_TIMEOUT-300}" cppnit "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -4576,7 +4628,7 @@ testcase_sandbox_cppnit_simple_admin() {
         if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
         fi
-        "${TOP_BUILDDIR}/tests/cppnit"
+        run_with_watchdog "${NIT_CPPNIT_TIMEOUT-300}" cppnit "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -4606,7 +4658,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
         if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
         fi
-        "${TOP_BUILDDIR}/tests/cppnit"
+        run_with_watchdog "${NIT_CPPNIT_TIMEOUT-300}" cppnit "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
@@ -4636,7 +4688,7 @@ testcase_sandbox_cppnit_upsmon_master() {
         if [ -n "${NUT_DEBUG_LEVEL_CPPNIT-}" ]; then
             NUT_DEBUG_LEVEL="${NUT_DEBUG_LEVEL_CPPNIT}"
         fi
-        "${TOP_BUILDDIR}/tests/cppnit"
+        run_with_watchdog "${NIT_CPPNIT_TIMEOUT-300}" cppnit "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
         log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
