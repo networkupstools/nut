@@ -188,6 +188,22 @@
 # define ERROR_OTHER          LIBUSB_ERROR_OTHER
 */
 
+ /* libusb_control_transfer() keeping usb_request_min_gap_us (inline, so
+  * that unit tests replacing libusb_control_transfer() see the call) */
+ double nut_usb_request_gap_wait(void);
+ void nut_usb_request_gap_done(int ret, double gap_us);
+ static inline  int nut_usb_control_transfer_with_gap(libusb_device_handle *dev_handle,
+	uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+	unsigned char *data, uint16_t wLength, unsigned int timeout)
+ {
+	double	gap_us = nut_usb_request_gap_wait();
+	int	ret = libusb_control_transfer(dev_handle, request_type, bRequest,
+		wValue, wIndex, data, wLength, timeout);
+
+	nut_usb_request_gap_done(ret, gap_us);
+	return ret;
+ }
+
  /* Functions, including range-checks to convert data types of the two APIs.
   * Follows an example from libusb-1.0 headers that liberally cast int args
   * of one method to uint16_t to call another; at least we do so with checks: */
@@ -223,7 +239,7 @@
 			"usb_control_msg() args out of range for libusb_control_transfer() implementation");
 	}
 
-	return libusb_control_transfer(
+	return nut_usb_control_transfer_with_gap(
 		dev,
 		(uint8_t)requesttype,
 		(uint8_t)request,
@@ -339,12 +355,16 @@
 			"usb_get_string() args out of range for libusb_get_string_descriptor() implementation");
 	}
 
-	return libusb_get_string_descriptor(
+	/* libusb_get_string_descriptor(), but with the gap */
+	return nut_usb_control_transfer_with_gap(
 		dev,
-		(uint8_t)index,
+		LIBUSB_ENDPOINT_IN,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(uint16_t)((LIBUSB_DT_STRING << 8) | (uint8_t)index),
 		(uint16_t)langid,
 		(unsigned char *)buf,
-		(int) buflen
+		(uint16_t)buflen,
+		1000
 		);
 
  }
@@ -474,6 +494,20 @@
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
 # define nut_usb_strerror(a)	usb_strerror()
+
+ /* usb_control_msg() keeping usb_request_min_gap_us (libusb0.c, usb-common.c) */
+ double nut_usb_request_gap_wait(void);
+ void nut_usb_request_gap_done(int ret, double gap_us);
+ static inline  int nut_usb_control_msg_with_gap(usb_dev_handle *dev, int requesttype, int request,
+	int value, int index, char *bytes, int size, int timeout)
+ {
+	double	gap_us = nut_usb_request_gap_wait();
+	int	ret = usb_control_msg(dev, requesttype, request,
+		value, index, bytes, size, timeout);
+
+	nut_usb_request_gap_done(ret, gap_us);
+	return ret;
+ }
 #endif  /* WITH_LIBUSB_0_1 */
 
 /* USB standard timeout [ms] */
@@ -570,5 +604,13 @@ void warn_if_bad_usb_port_filename(const char *fn);
  * applies retries on failures, and assumes en_US in case the
  * langid descriptor is invalid. */
 int nut_usb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, size_t buflen);
+
+/* usb_request_min_gap_us: minimum time from the end of one USB control
+ * request to the start of the next (0: off), for devices that refuse
+ * requests sent too soon. The ups.conf value wins over a driver's default
+ * for the device; the default setter returns -1 when ups.conf set it. */
+#define USB_REQUEST_MIN_GAP_US_MAX	10000L
+void nut_usb_set_request_min_gap(const char *val);
+long nut_usb_set_request_min_gap_default(long usec);
 
 #endif /* NUT_USB_COMMON_H */

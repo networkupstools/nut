@@ -48,7 +48,7 @@
 #include "strcasestr-static.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.54"
+#define USB_DRIVER_VERSION	"0.55"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -102,6 +102,11 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_ep_in",	"Deeper tuning of USB communications for complex devices");
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
+	addvar(VAR_VALUE, "usb_request_min_gap_us",
+		"Minimum time in microseconds from the end of one USB control request "
+		"to the start of the next, for devices that refuse requests sent too "
+		"soon (default 0: off)");
+
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
 
 	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
@@ -134,7 +139,7 @@ static inline int typesafe_control_msg(
 	usb_ctrl_charbufsize size,
 	usb_ctrl_timeout_msec timeout)
 {
-	return usb_control_msg(dev, requesttype, request, value, index,
+	return nut_usb_control_msg_with_gap(dev, requesttype, request, value, index,
 		(char *) bytes, (int) size, timeout);
 }
 
@@ -281,6 +286,10 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 			usb_subdriver.hid_ep_out = (usb_ctrl_endpoint)us;
 		}
 #include "nut-pragmas-range-checks-end.h"
+
+		if ((s = getval("usb_request_min_gap_us"))) {
+			nut_usb_set_request_min_gap(s);
+		}
 
 		usb_hid_number_opts_parsed = 1;
 	}
