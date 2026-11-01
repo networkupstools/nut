@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.74"
+#define DRIVER_VERSION	"0.75"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -975,12 +975,38 @@ found:
  */
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
+/* The subdriver's usb_request_min_gap_us for the device, unless set in
+ * ups.conf: applied as soon as a subdriver claims the device, so the
+ * descriptor reads which follow keep the gap too */
+static void set_request_min_gap_default(subdriver_t *sd, HIDDevice_t *arghd)
+{
+	static long	logged = 0;
+	long	usec = 0;
+
+	if (sd && sd->aux && sd->aux->request_min_gap_default) {
+		usec = sd->aux->request_min_gap_default(arghd);
+	}
+
+	usec = nut_usb_set_request_min_gap_default(usec);
+	if (usec > 0) {
+		dstate_setinfo("driver.parameter.usb_request_min_gap_us", "%ld", usec);
+		if (usec != logged) {
+			upslogx(LOG_INFO, "Using usb_request_min_gap_us = %ld (subdriver default)", usec);
+			logged = usec;
+		}
+	} else if (usec == 0) {
+		dstate_delinfo("driver.parameter.usb_request_min_gap_us");
+	}
+}
+
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int	i;
+	subdriver_t	*sd;
 	NUT_UNUSED_VARIABLE(privdata);
 
-	if (match_function_subdriver_name(1)) {
+	if ((sd = match_function_subdriver_name(1))) {
 		/* This driver can handle this device. Guessing so... */
+		set_request_min_gap_default(sd, d);
 		return 1;
 	}
 
@@ -988,6 +1014,7 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {
+			set_request_min_gap_default(subdriver_list[i], d);
 			return 1;
 		}
 	}
@@ -2178,6 +2205,9 @@ static int callback(
 	}
 
 	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	set_request_min_gap_default(subdriver, hd);
+#endif	/* !SHUT_MODE => USB */
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");
