@@ -749,8 +749,13 @@ static void f14_set_static(const uint8_t *r)
 	}
 	dstate_setinfo("ups.model", "%s", f14_model->name);
 	dstate_setinfo("ups.firmware", "%.1f", r[R14_VERSION] * 0.1);
-	if (f14_model->pnom)
-		dstate_setinfo("ups.power.nominal", "%u", f14_model->pnom);
+	/* The model id byte does not tell product lines apart (an Easy Way
+	 * 1500 GT reports itself as the Easy Way 1400 TI), so "va" in ups.conf
+	 * wins over the table. Only ups.power.nominal is published: the power
+	 * factor of these units is not known. */
+	effective_va = va_override ? va_override : f14_model->pnom;
+	if (effective_va)
+		dstate_setinfo("ups.power.nominal", "%u", effective_va);
 	dstate_setinfo("output.voltage.nominal", "%u",
 		f14_model->variant == F14_M2 ? 220U : 115U);
 	dstate_setinfo("output.frequency.nominal", "%u", 60U);
@@ -1427,10 +1432,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "iout_calib",
 	       "Override per-unit output current calibration (default: read from reg 0xF3)");
 	addvar(VAR_VALUE, "va",
-	       "Override the apparent-power (VA) rating used for ups.power.nominal, "
-	       "ups.realpower.nominal and the computed ups.load. Useful when the "
-	       "model id is shared between product lines (e.g. a GT unit reporting "
-	       "the same id as an Easy 2200 TI).");
+	       "Override the apparent-power (VA) rating used for ups.power.nominal "
+	       "(family 10 also: ups.realpower.nominal and the computed ups.load). "
+	       "Useful when the model id is shared between product lines (e.g. a "
+	       "GT unit reporting the same id as an Easy 2200 TI).");
 	addvar(VAR_FLAG, "allow_shutdown",
 	       "Enable the shutdown.* and test.battery.start.deep instcmds. "
 	       "WARNING: this UPS firmware does not auto-restart after a "

@@ -85,6 +85,10 @@ so the driver cannot always tell them apart and may pick the wrong VA
 rating from its model table. Setting *va* to the nameplate rating
 corrects `ups.power.nominal`, `ups.realpower.nominal` (VA times the
 0.7 power factor) and the computed `ups.load`.
+On family 14 (Easy Way) *va* only corrects `ups.power.nominal`, for
+units that report another model (for example an Easy Way 1500 GT, which
+identifies itself as the Easy Way 1400 TI); `ups.realpower.nominal` is
+not published there and `ups.load` does not depend on it.
 
 *allow_shutdown*;;
 Enable the `shutdown.return`, `shutdown.stayoff`, `shutdown.stop` and
