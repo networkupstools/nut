@@ -252,7 +252,7 @@ bestfcom_SOURCES = bestfcom.c
 bestfortress_SOURCES = bestfortress.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
-ragtech_SOURCES = ragtech.c
+ragtech_SOURCES = ragtech.c ragtech_speed.c
 ragtech_LDADD = $(LDADD_DRIVERS_SERIAL)
 blazer_ser_SOURCES = blazer.c blazer_ser.c
 blazer_ser_LDADD = $(LDADD_DRIVERS_SERIAL) -lm
@@ -557,7 +557,7 @@ dist_noinst_HEADERS = \
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h libwinhid.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h raritan-pdu-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar_cx.h ragtech_speed.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h microdowell-hid.h \
  apc_common.h apcmicrolink-maps.h apcmicrolink.h apcmicrolink-usb.h apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
