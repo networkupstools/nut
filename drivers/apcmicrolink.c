@@ -2079,9 +2079,11 @@ static int microlink_get_descriptor_map_bits(const char *path, uint32_t *bits)
 
 static int microlink_auth_data_valid(void)
 {
+	const microlink_descriptor_usage_t *usage = microlink_find_descriptor_usage(MLINK_DESC_AUTH_STATUS);
 	uint32_t bits = 0;
 
-	if (!microlink_get_descriptor_map_bits(MLINK_DESC_AUTH_STATUS, &bits)) {
+	if (usage == NULL || !microlink_blob_range_seen(usage->data_offset, usage->size)
+	 || !microlink_get_descriptor_map_bits(MLINK_DESC_AUTH_STATUS, &bits)) {
 		return 0;
 	}
 
@@ -3160,6 +3162,18 @@ static void microlink_check_auth_result(time_t now)
 	}
 }
 
+/* The serial number and master password feed the slave-password reply, so
+ * both must come from received pages rather than zero fill. */
+static int microlink_auth_inputs_seen(void)
+{
+	const microlink_descriptor_usage_t *serial = microlink_find_descriptor_usage_validated(MLINK_DESC_SERIALNUMBER);
+	const microlink_descriptor_usage_t *master = microlink_find_descriptor_usage_validated(MLINK_DESC_MASTER_PASSWORD);
+
+	return serial != NULL && master != NULL
+		&& microlink_blob_range_seen(serial->data_offset, serial->size)
+		&& microlink_blob_range_seen(master->data_offset, master->size);
+}
+
 static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 {
 	if (!microlink_checksum_valid(frame, framelen)) {
@@ -3181,13 +3195,24 @@ static int microlink_process_frame(const unsigned char *frame, size_t framelen)
 
 		if ((page0.flags & MLINK_PAGE0_FLAG_AUTH_REQUIRED) != 0U
 		 && descriptor_ready && !authentication_sent) {
-			if (!microlink_authenticate()) {
-				ser_comm_fail("microlink: failed to authenticate");
-				return 0;
+			time_t now = microlink_now();
+
+			if (microlink_auth_data_valid()) {
+				upsdebugx(1, "microlink: AUTH_STATUS already valid, not re-sending the slave password");
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 1;
+			} else if (!microlink_auth_inputs_seen()) {
+				upsdebugx(2, "microlink: slave password inputs on pages not received yet, holding off");
+			} else {
+				if (!microlink_authenticate()) {
+					ser_comm_fail("microlink: failed to authenticate");
+					return 0;
+				}
+				authentication_sent = 1;
+				authentication_sent_at = now;
+				authentication_accepted = 0;
 			}
-			authentication_sent = 1;
-			authentication_sent_at = microlink_now();
-			authentication_accepted = 0;
 		}
 	}
 
