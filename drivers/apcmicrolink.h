@@ -58,6 +58,7 @@ static inline time_t microlink_now(void)
 
 typedef struct microlink_object_s {
 	int seen;
+	int session_seen;	/* received since the current session started */
 	size_t len;
 	unsigned char data[MLINK_MAX_PAYLOAD];
 } microlink_object_t;
