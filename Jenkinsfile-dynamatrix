@@ -996,7 +996,11 @@ set | sort -n """
                 // It has a separate slowBuild filter configuration below.
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ] +
+                        ( ( env?.BRANCH_NAME ==~ /^PR-\d+$/ && env?.CHANGE_TARGET ==~ dynacfgPipeline.branchStableRegex )
+                        ? []
+                        : [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ] ) +
+                        [ ['c': 'MAX', 'cxx': 'MAX'], ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -1241,7 +1245,11 @@ set | sort -n """
 
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [32, 64],
-                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '98'], ] +
+                        ( ( env?.BRANCH_NAME ==~ /^PR-\d+$/ && env?.CHANGE_TARGET ==~ dynacfgPipeline.branchStableRegex )
+                        ? []
+                        : [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ] ) +
+                        [ ['c': 'MAX', 'cxx': 'MAX'], ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
