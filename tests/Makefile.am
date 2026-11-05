@@ -172,6 +172,10 @@ TESTS += nutsnprintftest
 nutsnprintftest_SOURCES = nutsnprintftest.c
 nutsnprintftest_LDADD = $(NUT_LIBCOMMON)
 
+TESTS += nutrandomtest
+nutrandomtest_SOURCES = nutrandomtest.c
+nutrandomtest_LDADD = $(NUT_LIBCOMMON)
+
 TESTS += test_authconf
 test_authconf_SOURCES = test_authconf.c
 test_authconf_LDADD = $(top_builddir)/clients/libupsclient.la $(NUT_LIBCOMMON)

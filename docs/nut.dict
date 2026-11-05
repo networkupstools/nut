@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3917 utf-8
+personal_ws-1.1 en 3919 utf-8
 AAC
 AAS
 ABI
@@ -2349,6 +2349,7 @@ gethostbyname
 getnameinfo
 getopt
 getproctag
+getrandom
 getrlimit
 getter
 getters
@@ -3738,6 +3739,7 @@ urb
 uri
 url
 urpmi
+urandom
 usb
 usbconfig
 usbfs
