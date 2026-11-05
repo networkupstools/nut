@@ -1344,6 +1344,26 @@ AC_CHECK_DECLS(realpath, [], [],
 #endif
 ])
 
+dnl arc4random_buf() for nut_random_bytes(): BSDs, macOS, illumos,
+dnl glibc 2.36+, musl 1.2.? and so on. Both checks, as with strict
+dnl C standard modes the function may link but not be declared.
+AC_CHECK_DECLS(arc4random_buf, [], [],
+[#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+])
+AC_CHECK_FUNCS(arc4random_buf)
+
+dnl getrandom() for nut_random_bytes() where arc4random_buf() is missing:
+dnl Linux with glibc 2.25 to 2.35 (and before that, /dev/urandom).
+AC_CHECK_HEADERS_ONCE([sys/random.h])
+AC_CHECK_DECLS(getrandom, [], [],
+[#ifdef HAVE_SYS_RANDOM_H
+# include <sys/random.h>
+#endif
+])
+AC_CHECK_FUNCS(getrandom)
+
 AC_CHECK_HEADER([signal.h],
     [AC_DEFINE([HAVE_SIGNAL_H], [1],
         [Define to 1 if you have <signal.h>.])])

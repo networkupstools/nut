@@ -497,8 +497,12 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 	buf[0] = 0;
 
 	/* Dump each byte in hex: */
-	for (i=0; i<len && (end-bufp) >= 3; i++) {
-		bufp += sprintf((char *)bufp, "%02x ", msg[i]);	/* length-checked */
+	for (i=0; i<len && (end-bufp) > 3; i++) {
+		int	n = snprintf((char *)bufp, (size_t)(end - bufp), "%02x ", msg[i]);
+
+		if (n < 0 || n >= end - bufp)
+			break;
+		bufp += n;
 	}
 
 	/* Dump single-quoted string with printable version of each byte: */

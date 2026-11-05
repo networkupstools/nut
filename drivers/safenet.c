@@ -378,6 +378,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	char	command[] = COM_POLL_STAT;
+	unsigned char	rnd[11];
 	int	i;
 	static int	retry = 0;
 
@@ -385,8 +386,9 @@ void upsdrv_updateinfo(void)
 	 * Fill the command portion with random characters from the range
 	 * [A...J].
 	 */
+	nut_random_bytes(rnd, sizeof(rnd));
 	for (i = 1; i < 12; i++) {
-		command[i] = (random() % 10) + 'A';
+		command[i] = (char)((rnd[i - 1] % 10) + 'A');
 	}
 
 	/*

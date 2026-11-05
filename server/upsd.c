@@ -1634,14 +1634,12 @@ int tracking_is_enabled(void)
  * Note: 'dest' must be at least `UUID4_LEN` long */
 int nut_uuid_v4(char *uuid_str)
 {
-	size_t		i;
 	uint8_t nut_uuid[UUID4_BYTESIZE];
 
 	if (!uuid_str)
 		return 0;
 
-	for (i = 0; i < UUID4_BYTESIZE; i++)
-		nut_uuid[i] = (uint8_t)rand() + (uint8_t)rand();
+	nut_random_bytes(nut_uuid, sizeof(nut_uuid));
 
 	/* set variant and version */
 	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
