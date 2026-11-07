@@ -289,8 +289,8 @@ The battery variables have different data sources:
   *battery.runtime* value while continuing to mark the data as good. A client
   cannot distinguish that stale reading from a fresh one.
 
-NOTE: Only the BN150T has been tested, and only over USB. Polling and all
-three direct shutdown commands were exercised with its output unloaded.
+NOTE: Only the BN150T, BW55T and BY50S have been tested, and only over USB.
+Polling and all three direct shutdown commands were exercised with its output unloaded.
 *shutdown.return* was verified on battery, including automatic output recovery
 after utility returned; *shutdown.stayoff* kept the output off with utility
 present until manual recovery; and *shutdown.stop* cancelled pending
