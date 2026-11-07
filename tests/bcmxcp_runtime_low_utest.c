@@ -144,7 +144,10 @@ int main(void)
 	const char *runtime_low;
 	int failures = 0;
 	const char *invalid_values[] = { "-60", "1", "59", "61", "1799", "1801" };
-	const char *malformed_values[] = { "", "abc", "1.5", "60s" };
+	const char *malformed_values[] = {
+		"", "abc", "1.5", "60s", "6 0", "++60",
+		"99999999999999999999999999999999999999999999999999"
+	};
 	size_t i;
 
 	bcmxcp_status.shutdowndelay = 0;
@@ -167,6 +170,8 @@ int main(void)
 
 	failures += check_setvar("0", STAT_SET_HANDLED, 0);
 	failures += check_setvar("60", STAT_SET_HANDLED, 1);
+	failures += check_setvar(" 60 ", STAT_SET_HANDLED, 1);
+	failures += check_setvar("+60", STAT_SET_HANDLED, 1);
 	failures += check_setvar("1800", STAT_SET_HANDLED, 30);
 
 	for (i = 0; i < sizeof(invalid_values) / sizeof(invalid_values[0]); i++)
@@ -174,6 +179,7 @@ int main(void)
 
 	for (i = 0; i < sizeof(malformed_values) / sizeof(malformed_values[0]); i++)
 		failures += check_setvar(malformed_values[i], STAT_SET_CONVERSION_FAILED, 0);
+	failures += check_setvar(NULL, STAT_SET_CONVERSION_FAILED, 0);
 
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
