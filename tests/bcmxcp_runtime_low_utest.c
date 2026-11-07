@@ -9,8 +9,12 @@
  */
 
 #include "config.h"
+#include "main.h"
 
 unsigned int bcmxcp_test_sleep(unsigned int seconds);
+#ifdef sleep
+#undef sleep
+#endif
 #define sleep bcmxcp_test_sleep
 #include "bcmxcp.c"
 #undef sleep
