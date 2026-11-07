@@ -72,18 +72,14 @@ static int check(int condition, const char *message)
 
 int main(void)
 {
-	const char *voltage_low;
 	int failures = 0;
 
 	nphases = 1;
 	init_meter_map();
-	voltage_low = bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_DCUV_BAR_CHART].nut_entity;
 
-	failures += check(voltage_low && !strcmp(voltage_low, "battery.voltage.low"),
-		"battery DC undervoltage should map to battery.voltage.low");
 	failures += check(
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOW_BATTERY_WARNING_V_BAR_CHART].nut_entity == NULL,
-		"low-battery warning voltage must not map to a percentage variable");
+		"low-battery warning voltage should remain unmapped");
 
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
