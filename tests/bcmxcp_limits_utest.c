@@ -70,6 +70,44 @@ void upsdrv_reconnect(void)
 {
 }
 
+static int check(int condition, const char *message)
+{
+	if (condition)
+		return 0;
+
+	fprintf(stderr, "FAIL: %s\n", message);
+	return 1;
+}
+
+static int check_response_boundaries(void)
+{
+	const unsigned char response[] = { 0x12, 0x34 };
+	uint16_t value = 0;
+	int failures = 0;
+
+	failures += check(!get_response_byte(response, -1, 0, &value),
+		"byte read should reject a negative response length");
+	failures += check(!get_response_byte(response, 0, 0, &value),
+		"byte read should reject an empty response");
+	failures += check(get_response_byte(response, 1, 0, &value) && value == 0x12,
+		"byte read should accept the final available byte");
+	failures += check(!get_response_byte(response, 1, 1, &value),
+		"byte read should reject the first absent byte");
+	failures += check(!get_response_byte(response, 2, SIZE_MAX, &value),
+		"byte read should reject an overflowing offset");
+
+	failures += check(!get_response_word(response, 1, 0, &value),
+		"word read should require two available bytes");
+	failures += check(get_response_word(response, 2, 0, &value) && value == 0x3412,
+		"word read should accept two available bytes");
+	failures += check(!get_response_word(response, 2, 1, &value),
+		"word read should reject a partial final word");
+	failures += check(!get_response_word(response, 2, SIZE_MAX, &value),
+		"word read should reject an overflowing offset");
+
+	return failures;
+}
+
 static int check_value(const char *name, const char *expected)
 {
 	const char *actual = dstate_getinfo(name);
@@ -95,7 +133,7 @@ static int check_absent(const char *name)
 
 int main(void)
 {
-	int failures = 0;
+	int failures = check_response_boundaries();
 
 	bcmxcp_status.shutdowndelay = 0;
 	init_limit();
