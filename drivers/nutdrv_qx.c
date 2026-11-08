@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.57"
+#define DRIVER_VERSION	"0.58"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2960,7 +2960,51 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(GE_VENDORID,	0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(QINHENG_VENDORID,	0x7523),	NULL,		NULL,			NULL },	/* NOTE: VID:PID may be used by non-UPS devices with CH340/341 chips! But also Ippon Innova TAE series, using QinHeng Electronics CH340 serial converter; no specific "USB subdriver" handler defined at the moment */
 	{ USB_DEVICE(STMICRO_VENDORID,	0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs */
+	{ USB_DEVICE(OMRON_VENDORID,	0x004b),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BZ50T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x004f),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BZ50LT */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0050),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BZ35T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0057),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BX50F */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0058),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BX35F */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0065),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY50FW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0066),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY75SW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x006b),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU1002SW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x006c),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU3002SW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x006e),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN50S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x006f),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN75S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0070),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN100S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0071),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN150S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0072),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN220S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0073),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN300S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0075),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU100RW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0076),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU200RW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0077),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU300RW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0080),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY35S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0081),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY50S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0083),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU75RW */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0086),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BZ35LT2 */
+	{ USB_DEVICE(OMRON_VENDORID,	0x0087),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BZ50LT2 */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00a1),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY80S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00a3),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BY120S */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00ad),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN75R */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00ae),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN150R */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00af),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN300R */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b4),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN50T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b5),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN75T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b6),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN100T */
 	{ USB_DEVICE(OMRON_VENDORID,	0x00b7),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN150T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b8),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN220T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00b9),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BN300T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00c5),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU50T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00c6),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU75T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00c7),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BU150T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00cb),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BL50T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00cc),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BL75T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00cd),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BL100T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00cf),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BW40T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00d0),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BW55T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00d1),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BW100T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00d2),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BW120T */
+	{ USB_DEVICE(OMRON_VENDORID,	0x00d3),	NULL,		NULL,			&omron_usb_subdriver },	/* OMRON BW100TW */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850, reported to also help support Powercool and some other devices; closely related to fabula with tweaks */
 	{ USB_DEVICE(NONAME0001_VENDORID,	0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
