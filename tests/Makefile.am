@@ -254,6 +254,15 @@ EXTRA_DIST += getvaluetest.c hidparser.c nutdrv_qx_cypress_utest.c
 endif !WITH_USB
 EXTRA_DIST += driver-stub-usb.c
 
+TESTS += bcmxcp_meter_map_utest
+bcmxcp_meter_map_utest_SOURCES = bcmxcp_meter_map_utest.c
+bcmxcp_meter_map_utest_LDADD = $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+bcmxcp_meter_map_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+bcmxcp_meter_map_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la -lm
+bcmxcp_meter_map_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
 if WITH_GPIO
 TESTS += gpiotest
 
