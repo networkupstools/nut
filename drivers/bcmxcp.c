@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.39"
+#define DRIVER_VERSION	"0.40"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -141,6 +141,8 @@ upsdrv_info_t upsdrv_info = {
 static uint16_t get_word(const unsigned char*);
 static uint32_t get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
+static bool_t get_response_byte(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value);
+static bool_t get_response_word(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value);
 static void init_command_map(void);
 static void init_meter_map(void);
 static void init_alarm_map(void);
@@ -354,6 +356,24 @@ float get_float(const unsigned char *data)
 	/* Never happens */
 	upslogx(LOG_ERR, "s = %d, e = %d, f = %ld", s, e, f);
 	return 0;
+}
+
+static bool_t get_response_byte(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value)
+{
+	if (response_len <= 0 || offset >= (size_t)response_len)
+		return FALSE;
+
+	*value = response[offset];
+	return TRUE;
+}
+
+static bool_t get_response_word(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value)
+{
+	if (response_len <= 0 || offset >= (size_t)response_len || (size_t)response_len - offset < 2)
+		return FALSE;
+
+	*value = get_word(response + offset);
+	return TRUE;
 }
 
 /* lightweight function to calculate the 8-bit
@@ -1231,21 +1251,17 @@ void init_limit(void)
 	}
 
 	/* Nominal input voltage */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE, &value) && value != 0) {
 		dstate_setinfo("input.voltage.nominal", "%u", value);
 	}
 
 	/* Nominal input frequency */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ, &value) && value != 0) {
 		uint16_t fnom = value;
 		dstate_setinfo("input.frequency.nominal", "%u", value);
 
 		/* Input frequency deviation */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT, &value) && value != 0) {
 			value /= 100;
 			dstate_setinfo("input.frequency.low",  "%d", fnom - value);
 			dstate_setinfo("input.frequency.high", "%d", fnom + value);
@@ -1253,83 +1269,73 @@ void init_limit(void)
 	}
 
 	/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT, &value) && value != 0) {
 		dstate_setinfo("input.transfer.boost.high", "%u", value);
 	}
 
 	/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT, &value) && value != 0) {
 		dstate_setinfo("input.transfer.trim.low", "%u", value);
 	}
 
 	/* Low battery warning */
-	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING, &value)) {
+		bcmxcp_status.lowbatt = value * 60;
 
-	/* Check if we should warn the user that her shutdown delay is too long? */
-	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
-		upslogx(LOG_WARNING,
-			"Shutdown delay longer than battery capacity when Low Battery "
-			"warning is given. (max %u seconds)", bcmxcp_status.lowbatt);
+		/* Check if we should warn the user that her shutdown delay is too long? */
+		if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
+			upslogx(LOG_WARNING,
+				"Shutdown delay longer than battery capacity when Low Battery "
+				"warning is given. (max %u seconds)", bcmxcp_status.lowbatt);
+	}
 
 	/* Horn Status: */
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
-	if (value <= 2) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS, &value) && value <= 2) {
 		dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 	}
 
 	/* Minimum Supported Input Voltage */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE, &value) && value != 0) {
 		dstate_setinfo("input.transfer.low", "%u", value);
 	}
 
 	/* Maximum Supported Input Voltage */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE, &value) && value != 0) {
 		dstate_setinfo("input.transfer.high", "%u", value);
 	}
 
 	/* Ambient Temperature Lower Alarm Limit  */
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW, &value) && value != 0) {
 		dstate_setinfo("ambient.temperature.low", "%u", value);
 	}
 
 	/* Ambient Temperature Upper Alarm Limit  */
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE, &value) && value != 0) {
 		dstate_setinfo("ambient.temperature.high", "%u", value);
 	}
 
 	/*Sleep minimum load*/
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD, &value) && value != 0) {
 		dstate_setinfo("battery.energysave.load", "%u", value);
 	}
 
 	/* Sleep delay*/
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY, &value) && value != 0) {
 		dstate_setinfo("battery.energysave.delay", "%u", value);
 	}
 
 	/* Low batt minutes warning*/
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING, &value) && value != 0) {
 		dstate_setinfo("battery.runtime.low", "%u", value);
 	}
 
 	/* Return to mains delay */
-	value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
-	if (value != 0) {
+	if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY, &value) && value != 0) {
 		dstate_setinfo("input.transfer.delay", "%u", value);
 	}
 
 	/* Minimum return capacity*/
-	value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
-	if (value != 0) {
+	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN, &value) && value != 0) {
 		dstate_setinfo("battery.charge.restart", "%u", value);
 	}
 
@@ -1819,80 +1825,61 @@ void upsdrv_updateinfo(void)
 	} else
 	{
 		/* Nominal input voltage */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE, &value) && value != 0) {
 			dstate_setinfo("input.voltage.nominal", "%u", value);
 		}
 
 		/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT, &value) && value != 0) {
 			dstate_setinfo("input.transfer.boost.high", "%u", value);
 		}
 
 		/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT, &value) && value != 0) {
 			dstate_setinfo("input.transfer.trim.low", "%u", value);
 		}
 
 		/* Minimum Supported Input Voltage */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE, &value) && value != 0) {
 			dstate_setinfo("input.transfer.low", "%u", value);
 		}
 
 		/* Maximum Supported Input Voltage */
-		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
-
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE, &value) && value != 0) {
 			dstate_setinfo("input.transfer.high", "%u", value);
 		}
 
 		/* Horn Status: */
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
-
-		if (value <= 2) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS, &value) && value <= 2) {
 			dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 		}
 		/* AAmbient Temperature Upper Alarm Limit  */
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
-
-		if (value != 0) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE, &value) && value != 0) {
 			dstate_setinfo("ambient.temperature.high", "%u", value);
 		}
 
 		/*Sleep minimum load*/
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
-		if (value != 0) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD, &value) && value != 0) {
 			dstate_setinfo("battery.energysave.load", "%u", value);
 		}
 
 		/* Sleep delay*/
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
-		if (value != 0) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY, &value) && value != 0) {
 			dstate_setinfo("battery.energysave.delay", "%u", value);
 		}
 
 		/* Low batt minutes warning*/
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
-		if (value != 0) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING, &value) && value != 0) {
 			dstate_setinfo("battery.runtime.low", "%u", value);
 		}
 
 		/* Return to mains delay */
-		value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
-		if (value != 0) {
+		if (get_response_word(answer, res, BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY, &value) && value != 0) {
 			dstate_setinfo("input.transfer.delay", "%u", value);
 		}
 
 		/* Minimum return capacity*/
-		value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
-		if (value != 0) {
+		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN, &value) && value != 0) {
 			dstate_setinfo("battery.charge.restart", "%u", value);
 		}
 	}

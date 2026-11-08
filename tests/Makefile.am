@@ -288,6 +288,15 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+TESTS += bcmxcp_limits_utest
+bcmxcp_limits_utest_SOURCES = bcmxcp_limits_utest.c
+bcmxcp_limits_utest_LDADD = $(top_builddir)/common/libcommonversion.la
+if ENABLE_SHARED_PRIVATE_LIBS
+bcmxcp_limits_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la
+endif ENABLE_SHARED_PRIVATE_LIBS
+bcmxcp_limits_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la -lm
+bcmxcp_limits_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
 if WITH_SNMP
 SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
 
