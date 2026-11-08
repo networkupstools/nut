@@ -1114,6 +1114,7 @@ void init_ext_vars(void)
 			case PW_CONF_LOW_BATT:
 				dstate_setinfo("battery.runtime.low", "%d", 0);
 				dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
+				/* Seconds: 0, or 60 through 1800 in whole-minute steps. */
 				dstate_setaux("battery.runtime.low", 4);
 				break;
 
