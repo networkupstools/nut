@@ -297,6 +297,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		}
 
 		bytes_read = (size_t)tail;
+		need_data = PW_HEADER_SIZE - (int)bytes_read;
 	}
 
 	upsdebug_hex (5, "get_answer", data, end_length);
