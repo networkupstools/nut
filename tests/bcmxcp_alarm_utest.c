@@ -73,6 +73,7 @@ static int check(int condition, const char *message)
 int main(void)
 {
 	unsigned char map[] = { 0x05 };
+	unsigned char future_map[BCMXCP_ALARM_MAP_MAX / 8] = { 0 };
 	unsigned char answer[12] = { 0 };
 	int failures = 0;
 	int i;
@@ -83,6 +84,8 @@ int main(void)
 			"alarm map entries must default to unsupported");
 
 	init_ups_alarm_map(map, sizeof(map));
+	failures += check(expected_alarm_block_len == 2,
+		"alarm block length should equal the advertised map population");
 	failures += check(bcmxcp_alarm_map[0].alarm_block_index == 0,
 		"first advertised alarm should use block index 0");
 	failures += check(bcmxcp_alarm_map[1].alarm_block_index == -1,
@@ -100,6 +103,40 @@ int main(void)
 	failures += check(alarm_is_active(
 		&bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_NEEDS_SERVICE], answer, 12),
 		"an in-range active alarm should be reported");
+
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_NEEDS_SERVICE].alarm_block_index = 1;
+	answer[1] = 1;
+	failures += check(update_alarms(answer, 2),
+		"a complete alarm response should be committed");
+	failures += check(bcmxcp_status.alarm_replace_battery == 1,
+		"a complete active alarm should update derived status");
+
+	answer[1] = 0;
+	failures += check(!update_alarms(answer, 1),
+		"a truncated alarm response should not be committed");
+	failures += check(bcmxcp_status.alarm_replace_battery == 1,
+		"a truncated response should preserve prior derived status");
+	failures += check(update_alarms(answer, 2),
+		"a later complete response should be committed");
+	failures += check(bcmxcp_status.alarm_replace_battery == 0,
+		"a complete inactive alarm should clear prior derived status");
+
+	init_alarm_map();
+	future_map[sizeof(future_map) - 1] = 0x80;
+	init_ups_alarm_map(future_map, sizeof(future_map));
+	failures += check(expected_alarm_block_len == 1,
+		"unknown future map bits should contribute to the alarm block length");
+	failures += check(update_alarms(answer, 1),
+		"an exact response for an unknown future alarm should be accepted");
+	failures += check(!update_alarms(answer, 2),
+		"an overlong alarm response should not be committed");
+
+	init_alarm_map();
+	init_ups_alarm_map(NULL, 0);
+	failures += check(expected_alarm_block_len == 0,
+		"an empty map should advertise an empty alarm block");
+	failures += check(update_alarms(NULL, 0),
+		"an empty map should commit an empty alarm set");
 
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

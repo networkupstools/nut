@@ -153,6 +153,7 @@ static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const unsigned int mapIndex, const unsigned int bitmask, const unsigned int alarmMapIndex, const unsigned int alarmBlockIndex);
 static bool_t alarm_is_active(const BCMXCP_ALARM_MAP_ENTRY_t *alarm, const unsigned char *answer, ssize_t answer_len);
+static bool_t update_alarms(const unsigned char *answer, ssize_t answer_len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static unsigned char init_outlet(unsigned char len);
 static void init_system_test_capabilities(void);
@@ -187,6 +188,7 @@ static const char *OutletStatus[9] = {
 static unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 static int nphases = 0;
 static uint16_t outlet_block_len = 0;
+static size_t expected_alarm_block_len = 0;
 static const char *cpu_name[5] = {
 	"Cont:",
 	"Inve:",
@@ -950,6 +952,16 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	unsigned int iIndex = 0;
 	unsigned int alarm = 0;
 
+	expected_alarm_block_len = 0;
+	for (iIndex = 0; iIndex < len; iIndex++) {
+		unsigned char bits = map[iIndex];
+
+		while (bits) {
+			bits &= (unsigned char)(bits - 1);
+			expected_alarm_block_len++;
+		}
+	}
+
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported");
 
@@ -1023,6 +1035,42 @@ static bool_t alarm_is_active(const BCMXCP_ALARM_MAP_ENTRY_t *alarm, const unsig
 		alarm->alarm_block_index < answer_len &&
 		alarm->alarm_desc != NULL &&
 		answer[alarm->alarm_block_index] > 0;
+}
+
+static bool_t update_alarms(const unsigned char *answer, ssize_t answer_len)
+{
+	unsigned int iIndex;
+
+	if (answer_len < 0 || (size_t)answer_len != expected_alarm_block_len) {
+		upsdebugx(1, "Alarm block length %" PRIiSIZE " does not match map population %" PRIuSIZE "; keeping previous alarm state",
+			answer_len, expected_alarm_block_len);
+		return FALSE;
+	}
+
+	bcmxcp_status.alarm_on_battery = 0;
+	bcmxcp_status.alarm_low_battery = 0;
+	bcmxcp_status.alarm_replace_battery = 0;
+	alarm_init();
+
+	for (iIndex = 0; iIndex < BCMXCP_ALARM_MAP_MAX; iIndex++) {
+		if (alarm_is_active(&bcmxcp_alarm_map[iIndex], answer, answer_len)) {
+			alarm_set(bcmxcp_alarm_map[iIndex].alarm_desc);
+
+			if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
+				bcmxcp_status.alarm_on_battery = 1;
+			}
+			else if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
+				bcmxcp_status.alarm_low_battery = 1;
+			}
+			else if (iIndex == BCMXCP_ALARM_BATTERY_TEST_FAILED ||
+				iIndex == BCMXCP_ALARM_BATTERY_NEEDS_SERVICE) {
+				bcmxcp_status.alarm_replace_battery = 1;
+			}
+		}
+	}
+
+	alarm_commit();
+	return TRUE;
 }
 
 unsigned char init_outlet(unsigned char len)
@@ -1674,43 +1722,20 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Get alarm info from UPS */
-	res = command_read_sequence(PW_CUR_ALARM_REQ, answer);
-	if (res <= 0) {
-		upslogx(LOG_ERR, "Short read from UPS");
-		dstate_datastale();
-		return;
-	}
-	else
-	{
-		bcmxcp_status.alarm_on_battery = 0;
-		bcmxcp_status.alarm_low_battery = 0;
-		bcmxcp_status.alarm_replace_battery = 0;
-
-		/* Set alarms */
-		alarm_init();
-
-		/* Loop thru alarm map, get all alarms UPS is willing to offer */
-		for (iIndex = 0; iIndex < BCMXCP_ALARM_MAP_MAX; iIndex++) {
-			if (alarm_is_active(&bcmxcp_alarm_map[iIndex], answer, res)) {
-				alarm_set(bcmxcp_alarm_map[iIndex].alarm_desc);
-
-				if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
-					bcmxcp_status.alarm_on_battery = 1;
-				}
-				else if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
-					bcmxcp_status.alarm_low_battery = 1;
-				}
-				else if (iIndex == BCMXCP_ALARM_BATTERY_TEST_FAILED) {
-					bcmxcp_status.alarm_replace_battery = 1;
-				}
-				else if (iIndex == BCMXCP_ALARM_BATTERY_NEEDS_SERVICE) {
-					bcmxcp_status.alarm_replace_battery = 1;
-				}
-			}
+	if (expected_alarm_block_len == 0) {
+		update_alarms(NULL, 0);
+	} else {
+		res = command_read_sequence(PW_CUR_ALARM_REQ, answer);
+		if (res <= 0) {
+			upslogx(LOG_ERR, "Short read from UPS");
+			dstate_datastale();
+			return;
 		}
 
-		/* Confirm alarms */
-		alarm_commit();
+		if (!update_alarms(answer, res)) {
+			dstate_datastale();
+			return;
+		}
 	}
 
 	/* Get status info from UPS */
