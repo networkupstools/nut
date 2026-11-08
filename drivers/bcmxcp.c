@@ -1733,8 +1733,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		if (!update_alarms(answer, res)) {
-			dstate_datastale();
-			return;
+			upsdebugx(1, "Continuing update with the previous complete alarm state");
 		}
 	}
 

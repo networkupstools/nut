@@ -20,11 +20,27 @@ upsdrv_info_t comm_upsdrv_info = {
 	{ NULL }
 };
 
+static ssize_t mock_alarm_len = -1;
+static unsigned char mock_alarm_answer[2];
+static unsigned char mock_status = BCMXCP_STATUS_ONLINE;
+
 ssize_t command_read_sequence(unsigned char command, unsigned char *data)
 {
-	NUT_UNUSED_VARIABLE(command);
-	NUT_UNUSED_VARIABLE(data);
-	return -1;
+	switch (command) {
+		case PW_METER_BLOCK_REQ:
+			memset(data, 0, PW_ANSWER_MAX_SIZE);
+			return PW_ANSWER_MAX_SIZE;
+		case PW_CUR_ALARM_REQ:
+			if (mock_alarm_len > 0)
+				memcpy(data, mock_alarm_answer, (size_t)mock_alarm_len);
+			return mock_alarm_len;
+		case PW_STATUS_REQ:
+			data[0] = mock_status;
+			data[1] = 0;
+			return 2;
+		default:
+			return -1;
+	}
 }
 
 ssize_t command_write_sequence(unsigned char *command, size_t command_length, unsigned char *answer)
@@ -70,11 +86,32 @@ static int check(int condition, const char *message)
 	return 1;
 }
 
+static int check_contains(const char *value, const char *expected, const char *message)
+{
+	return check(value && strstr(value, expected), message);
+}
+
 int main(void)
 {
 	unsigned char map[] = { 0x05 };
+	/* Eaton 5110i, captured 2026-11-08; ID serial/config data excluded. */
+	const unsigned char captured_alarm_map[] = {
+		0xc0, 0x01, 0x00, 0x02, 0x00, 0x00, 0x80, 0x0f,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x80
+	};
+	const unsigned char captured_online[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	const unsigned char captured_on_battery[] = {
+		0x00, 0x08, 0x08, 0x00, 0x00, 0x00,
+		0x08, 0x00, 0x08, 0x08, 0x00
+	};
 	unsigned char future_map[BCMXCP_ALARM_MAP_MAX / 8] = { 0 };
 	unsigned char answer[12] = { 0 };
+	const char *alarms;
+	const char *ups_status;
 	int failures = 0;
 	int i;
 
@@ -137,6 +174,70 @@ int main(void)
 		"an empty map should advertise an empty alarm block");
 	failures += check(update_alarms(NULL, 0),
 		"an empty map should commit an empty alarm set");
+
+	init_alarm_map();
+	init_ups_alarm_map(map, sizeof(map));
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_NEEDS_SERVICE].alarm_block_index = 1;
+	answer[1] = 1;
+	update_alarms(answer, 2);
+	status_init();
+	status_set("OL");
+	status_commit();
+
+	mock_alarm_len = 1;
+	mock_alarm_answer[0] = 0;
+	mock_status = BCMXCP_STATUS_ONBATTERY;
+	upsdrv_updateinfo();
+	ups_status = dstate_getinfo("ups.status");
+	failures += check(ups_status != NULL && strstr(ups_status, "OB") != NULL,
+		"a malformed alarm snapshot should not suppress fresh status data");
+	failures += check(ups_status != NULL && strstr(ups_status, "RB") != NULL,
+		"a malformed alarm snapshot should preserve prior derived status");
+
+	mock_alarm_len = 2;
+	mock_alarm_answer[1] = 0;
+	upsdrv_updateinfo();
+	ups_status = dstate_getinfo("ups.status");
+	failures += check(ups_status != NULL && strstr(ups_status, "OB") != NULL,
+		"status polling should continue after alarm recovery");
+	failures += check(ups_status != NULL && strstr(ups_status, "RB") == NULL,
+		"a later complete alarm snapshot should clear prior derived status");
+
+	init_alarm_map();
+	init_ups_alarm_map(captured_alarm_map, sizeof(captured_alarm_map));
+	failures += check(expected_alarm_block_len == sizeof(captured_online),
+		"captured 5110i alarm map should advertise eleven statuses");
+	failures += check(update_alarms(captured_online, sizeof(captured_online)),
+		"captured online alarm response should be accepted");
+	failures += check(dstate_getinfo("ups.alarm") == NULL,
+		"captured online response should not publish alarms");
+
+	failures += check(update_alarms(captured_on_battery, sizeof(captured_on_battery)),
+		"captured on-battery alarm response should be accepted");
+	alarms = dstate_getinfo("ups.alarm");
+	failures += check_contains(alarms, "INPUT_AC_UNDER_VOLTAGE",
+		"captured response should report input undervoltage");
+	failures += check_contains(alarms, "INPUT_UNDER_OR_OVER_FREQ",
+		"captured response should report input frequency outside limits");
+	failures += check_contains(alarms, "UTILITY_FAIL",
+		"captured response should report utility failure");
+	failures += check_contains(alarms, "UTILITY_NOT_PRESENT",
+		"captured response should report utility absence");
+	failures += check_contains(alarms, "UPS_ON_BATTERY",
+		"captured response should report operation on battery");
+	failures += check(bcmxcp_status.alarm_on_battery == 1,
+		"captured response should set derived on-battery status");
+	failures += check(bcmxcp_status.alarm_low_battery == 0,
+		"captured response should not invent low battery");
+	failures += check(bcmxcp_status.alarm_replace_battery == 0,
+		"captured response should not invent replace battery");
+
+	failures += check(update_alarms(captured_online, sizeof(captured_online)),
+		"captured return-to-line response should be accepted");
+	failures += check(dstate_getinfo("ups.alarm") == NULL,
+		"return to line should clear captured alarms");
+	failures += check(bcmxcp_status.alarm_on_battery == 0,
+		"return to line should clear derived on-battery status");
 
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
