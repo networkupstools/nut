@@ -47,7 +47,7 @@ int LIBUSB_CALL bcmxcp_test_clear_halt(
 	return LIBUSB_SUCCESS;
 }
 
-int main(void)
+static int check_frame_tail(size_t frame2_tail)
 {
 	unsigned char frame1[126] = { PW_COMMAND_START_BYTE, 0x01, 121, 0x01 };
 	unsigned char frame2[45] = { PW_COMMAND_START_BYTE, 0x01, 40, 0x82 };
@@ -70,26 +70,41 @@ int main(void)
 		checksum -= frame2[i];
 	frame2[sizeof(frame2) - 1] = checksum;
 
+	memset(usb_chunks, 0, sizeof(usb_chunks));
+	usb_chunk_index = 0;
 	memcpy(usb_chunks[0], frame1, sizeof(frame1));
-	memcpy(usb_chunks[0] + sizeof(frame1), frame2, 2);
-	usb_chunk_lengths[0] = 128;
-	memcpy(usb_chunks[1], frame2 + 2, sizeof(frame2) - 2);
-	usb_chunk_lengths[1] = (int)(sizeof(frame2) - 2);
+	memcpy(usb_chunks[0] + sizeof(frame1), frame2, frame2_tail);
+	usb_chunk_lengths[0] = (int)(sizeof(frame1) + frame2_tail);
+	memcpy(usb_chunks[1], frame2 + frame2_tail, sizeof(frame2) - frame2_tail);
+	usb_chunk_lengths[1] = (int)(sizeof(frame2) - frame2_tail);
 
 	upsdev = (usb_dev_handle *)(uintptr_t)1;
 	result = get_answer(answer, PW_ID_BLOCK_REQ);
 
 	if (result != 161) {
 		fprintf(stderr,
-			"expected 161 assembled payload bytes, got %zd after %zu USB chunks\n",
-			result, usb_chunk_index);
+			"tail %zu: expected 161 assembled payload bytes, got %zd after %zu USB chunks\n",
+			frame2_tail, result, usb_chunk_index);
 		return EXIT_FAILURE;
 	}
 
 	if (memcmp(answer, frame1 + 4, 121) != 0 ||
 		memcmp(answer + 121, frame2 + 4, 40) != 0) {
-		fprintf(stderr, "assembled payload differs from the two source frames\n");
+		fprintf(stderr, "tail %zu: assembled payload differs from the two source frames\n",
+			frame2_tail);
 		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int main(void)
+{
+	size_t frame2_tail;
+
+	for (frame2_tail = 0; frame2_tail <= 2; frame2_tail++) {
+		if (check_frame_tail(frame2_tail) != EXIT_SUCCESS)
+			return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;
