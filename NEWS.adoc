@@ -762,6 +762,11 @@ https://github.com/networkupstools/nut/milestone/13
       from the APC ATS output phase table, which also provides
       `output.voltage` on models without the output bank table, such as
       the AP4452A. [PR #3673]
+    * `eaton_pw_nm2` subdriver: `input.bypass.voltage` is now also read from
+      `xupsBypassVoltage.1`, the only instance that Eaton 9SX units with
+      network card firmware 1.7.5 and 2.1.2 answer, and `input.transfer.low`
+      and `input.transfer.high` are read from the UPS-MIB transfer points
+      that Gigabit Network Card 3 publishes. [PR #3873]
 
  - `upsdrvctl` tool updates:
     * Previously when looping to start a driver (and initially failing), we
