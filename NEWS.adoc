@@ -947,7 +947,7 @@ https://github.com/networkupstools/nut/milestone/13
       reusable Python source, and text alternatives. Updated PDF typography
       and wrapping for long inline code and URLs. Corrected grammar and repaired
       documentation links, using archived copies for historical resources
-      where needed. [issue #3750]
+      where needed. [issue #3750, PR #3833]
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and
       developer-guide protocol links and source access instructions. [PR #3745]
