@@ -520,14 +520,10 @@ Windows Drivers:
 * CH341SER.ZIP - Nanjing QinHeng Microelectronics Co., Ltd:
   https://www.wch-ic.com/downloads/CH341SER_ZIP.html
 
-If a download link expires, use a snapshot from the Internet Archive:
+An archived copy of the MaxLinear driver is also available:
 
 * XR21x_Win10_V2.7.0.0.zip:
   https://web.archive.org/web/20260310005640if_/https://www.maxlinear.com/Document/index?id=23338&languageid=1033&type=Software%3A%20Drivers&partnumber=XR21V1410
-* CH341SER.EXE:
-  https://web.archive.org/web/20260112182437if_/https://www.wch-ic.com/download/file?id=65
-* CH341SER.ZIP:
-  https://web.archive.org/web/20260217145229if_/https://www.wch-ic.com/download/file?id=5
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
@@ -537,4 +533,6 @@ Internet resources:
   https://support.huawei.com/enterprise/en/doc/EDOC1000084260
 * Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:
   https://support.huawei.com/enterprise/en/doc/EDOC1000110696
+* NUT Huawei UPS2000 Modbus register reference:
+  https://www.networkupstools.org/protocols/huawei-ups2000-modbus.html
 * libmodbus home page: http://libmodbus.org

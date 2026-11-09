@@ -108,6 +108,6 @@ Internet resources:
 ** https://github.com/networkupstools/nut/pull/730
 ** https://github.com/PiSupply/PiJuice/issues/124
 
-* Product home page: https://uk.pi-supply.com/products/pijuice-standard
+* Product documentation and software: https://github.com/PiSupply/PiJuice
 
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

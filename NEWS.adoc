@@ -7,7 +7,7 @@ This document summarizes the practical side of changes coming with each
 newer release development, as compared to the preceding release.
 
 If you're upgrading from an earlier version, or are a package maintainer,
-please see also the link:UPGRADING.adoc[] file about anticipated impacts
+please see also the link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc] file about anticipated impacts
 of ongoing development on existing deployments and third-party consumers.
 
 Please note that web and source document links, product and service names
@@ -39,7 +39,7 @@ https://github.com/networkupstools/nut/milestone/13
    documented, handled in augeas lenses, nutconf classes, etc.
 
  - (expected) CI automation for use of data points in drivers that conform
-   to patterns defined in link:docs/nut-names.txt[]
+   to patterns defined in link:https://github.com/networkupstools/nut/blob/master/docs/nut-names.txt[docs/nut-names.txt]
 
  - Second-level bullet points listed in this file will now use 4 spaces
    (not 3 like before) for easier initial indentation of new entries.
@@ -940,6 +940,14 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Added shared "Start here" reading paths for local UPS protection and
+      network clients, component and installation context, and symptom-based
+      troubleshooting links. Redrew the five architecture and deployment
+      diagrams with shared symbols and styles, SVG files generated from
+      reusable Python source, and text alternatives. Updated PDF typography
+      and wrapping for long inline code and URLs. Corrected grammar and repaired
+      documentation links, using archived copies for historical resources
+      where needed. [issue #3750]
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and
       developer-guide protocol links and source access instructions. [PR #3745]
@@ -2085,7 +2093,7 @@ https://github.com/networkupstools/nut/milestone/11
 
  - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
    * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
-     driver programs for issue #2259 in NUT v2.8.2 release misfired with
+     driver programs for issue 2259 in NUT v2.8.2 release misfired with
      regard to data-dump mode (it no longer caused foreground by default).
      [#2408]
    * The `nut-driver-enumerator.sh` improvements misfired in v2.8.2 release
@@ -2942,10 +2950,10 @@ https://github.com/networkupstools/nut/milestone/10
    * Help users of drivers that can be built to support optionally USB and
      other media (like `nutdrv_qx` built for serial-only support), and built
      in fact without USB support but used for USB devices, with some more
-     information to make troubleshooting easier. [issue #2259, PR #2260]
+     information to make troubleshooting easier. [issue 2259, PR #2260]
    * Driver programs with debug tracing support via `-D` CLI option and/or
      the `NUT_DEBUG_LEVEL` environment variable now check those earlier in
-     their life-time, so that initialization routine can be debugged. [#2259]
+     their life-time, so that initialization routine can be debugged. [issue 2259]
    * Multiple USB-capable drivers got options to customize `usb_config_index`
      `usb_hid_rep_index`, `usb_hid_desc_index`, `usb_hid_ep_in` and
      `usb_hid_ep_out` hardware connection settings via `ups.conf` options.
@@ -3233,7 +3241,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      details see https://github.com/orgs/networkupstools/projects/2/views/1
    * Cross-builds of NUT for Windows using Linux and MinGW (and many custom
      built dependency packages, as documented in the
-     link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file])
+     link:https://github.com/networkupstools/nut/blob/master/scripts/Windows/README.adoc[scripts/Windows/README.adoc file])
      are now regularly tested on NUT CI farm with moderate integration via
      custom build script `scripts/Windows/build-mingw-nut.sh` [#1489]
    * Semi-native NUT for Windows builds with MSYS2/MinGW x64 environment are
@@ -3377,7 +3385,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      codebase, and/or prefer non-default system provided implementations
      (e.g. to use the XPG4 `grep` with `-E` support on Solaris as detailed
      in https://github.com/networkupstools/nut/issues/1736 comments)
-   * Build environment configuration notes in link:docs/config-prereqs.txt[]
+   * Build environment configuration notes in link:https://github.com/networkupstools/nut/blob/master/docs/config-prereqs.txt[docs/config-prereqs.txt]
      file refreshed to cover building of current NUT codebase in CentOS 6
      [#1804] and Solaris 8 [#1736, #1738]
 
@@ -3388,7 +3396,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - `configure` script enhanced: `--with-unmapped-data-points` option allows
    to build SNMP and USB-HID subdrivers with entries discovered by the scripts
    which generated them from data walks, but developers did not rename yet
-   to NUT mappings conforming to link:docs/nut-names.txt[] standards [#1699]
+   to NUT mappings conforming to link:https://github.com/networkupstools/nut/blob/master/docs/nut-names.txt[docs/nut-names.txt] standards [#1699]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now
@@ -4075,7 +4083,7 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3
 
  - Network protocol information: default to type NUMBER for variables that are
    not flagged as STRING . This point is subject to improvements or change in
-   the next release 2.7.5.  Refer to link:docs/net-protocol.txt[] for more
+   the next release 2.7.5.  Refer to link:https://github.com/networkupstools/nut/blob/master/docs/net-protocol.txt[docs/net-protocol.txt] for more
    information
 
  - As usual, more bugfixes, cleanup and improvements, on both source code
@@ -4160,7 +4168,7 @@ Release notes for NUT 2.7.2 - what's new since 2.7.1
  - This release is the second interim release of the 2.7 testing series.
 
  - libupsclient had undefined references related to functions of libcommon.
-   This issue was reported on Debian (bug #731156) and is now fixed
+   This issue was reported on Debian (bug 731156) and is now fixed
 
  - support for new devices:
    * CABAC UPS-1700DV2
@@ -4209,7 +4217,7 @@ NOTE: There was no public NUT 2.7.0 release.
    first release after the transition from Subversion to Git.
    The last release (2.6.5) is almost a year old. A lot of work has
    been done, but a good amount remains to achieve 2.8.0 goals.
-   Please read the link:UPGRADING.adoc[] notes.
+   Please read the link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc] notes.
 
  - Added support for SSL via the Mozilla NSS library, in addition to the
    existing OpenSSL support.
@@ -4272,7 +4280,7 @@ NOTE: There was no public NUT 2.7.0 release.
    using Aspell. This includes an interactive build target (make
    spellcheck-interactive), and an automated one (make spellcheck),
    mainly for QA / Buildbot purpose. Note that a base NUT dictionary
-   is also available (link:docs/nut.dict[]), providing a glossary of
+   is also available (link:https://github.com/networkupstools/nut/blob/master/docs/nut.dict[docs/nut.dict]), providing a glossary of
    terms related to power devices and management
 
  - Improve systemd integration
@@ -4300,8 +4308,8 @@ Release notes for NUT 2.6.5 - what's new since 2.6.4
    +
    This effort is also part of a logic to stop crediting Eaton for
    contributions from others (especially Arnaud Quette, as an individual).
-   The new hosting service is located, as for Arnaud's blog
-   (http://arnaud.quette.fr) on Gandi servers, using PaaS.
+   The new hosting service is located, as for Arnaud's blog,
+   on Gandi servers, using PaaS.
    +
    +
    This will allow more flexibility and automation of the release process.
@@ -4358,7 +4366,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3
    +
    Thus, fix NUT parser, to only allow the subset of ASCII charset from
    `Space` to `~`
-   (Reported by Sebastian Pohle, Alioth bug #313636, CVE-2012-2944)
+   (Reported by Sebastian Pohle, Alioth bug 313636, CVE-2012-2944)
    +
    +
    A separate patch, which applies to any faulty version, is also available:
@@ -4671,11 +4679,11 @@ NOTE: Per original semantic versioning, there were no public NUT 2.5.x releases.
    +
    +
    Be sure to check the `--with-doc` option help of `configure` script, and
-   link:docs/configure.txt[] for more information.
+   link:https://github.com/networkupstools/nut/blob/master/docs/configure.txt[docs/configure.txt] for more information.
 
  - Add Augeas support, to provide easy NUT configuration management, through
    tools and development APIs. For more information, refer to the developer
-   guide, or link:scripts/augeas/README.adoc[] in the source directory.
+   guide, or link:https://github.com/networkupstools/nut/blob/master/scripts/augeas/README.adoc[scripts/augeas/README.adoc] in the source directory.
 
  - support for new devices:
    * APC 5G
@@ -4817,8 +4825,7 @@ NOTE: Per original semantic versioning, there were no public NUT 2.3.x releases.
    * Eaton ePDUs (Managed and Monitored),
    * some Aphel models,
    * some Raritan PDUs,
-   * and the whole list of Powerman supported devices:
-     http://powerman.sourceforge.net/supported.html
+   * and the devices supported by Powerman at the time.
 
  - support for new devices:
    * the various PDUs cited above
@@ -4848,7 +4855,7 @@ NOTE: Per original semantic versioning, there were no public NUT 2.3.x releases.
  - NUT now embeds Python client support through the PyNUTClient module and the
    NUT-Monitor application. Both are from David Goncalves, and are still
    available from http://www.lestat.st.
-   For more information, refer to link:scripts/python/README.adoc[].
+   For more information, refer to link:https://github.com/networkupstools/nut/blob/master/scripts/python/README.adoc[scripts/python/README.adoc].
 
  - the dummy-ups driver now supports a "repeater" mode. This allows it to act as
    a NUT client, and to forward data. This can be useful for supervision and
@@ -4952,12 +4959,12 @@ NOTE: Per original semantic versioning, there were no public NUT 2.1.x releases.
  - The new build infrastructure, using automake, is now used.
    This has major impact on the compilation and installation procedures,
    and thus on the NUT packaging.
-   For more information, refer to link:UPGRADING.adoc[] and packaging/debian/ for
+   For more information, refer to link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc] and packaging/debian/ for
    an example of migration.
 
  - NUT now provides support for FreeDesktop Hardware Abstraction Layer
    (HAL) which brings full Plug And Play experience to USB UPS owners.
-   For more information, refer to link:docs/nut-hal.txt[].
+   For more information, refer to link:https://github.com/networkupstools/nut/blob/dae40b8bcdb7ce2531a1d3530bd396c583f2d106/docs/nut-hal.txt[docs/nut-hal.txt].
 
  - support for new devices:
    * Ablerex 625L
@@ -5070,7 +5077,7 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3
    [David Kaufman]
 
  - The new megatec driver, which will replace a bunch of drivers by nut 2.2
-   (refer to link:docs/megatec.txt[] and link:UPGRADING.adoc[]) has been
+   (refer to link:https://github.com/networkupstools/nut/blob/c2e01f89d97754ed289d0040bba984d86246f1b3/docs/megatec.txt[docs/megatec.txt] and link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc]) has been
    backported from the trunk (Development tree). The powermust driver has
    also received some attention.
    [Carlos Rodrigues]
@@ -5350,7 +5357,7 @@ Release notes for NUT 2.0.0 - what's new since 1.4.x
    +
    If you are upgrading from a previous version of the software, you
    will have to edit your upsd.conf to use this method.  See
-   the link:UPGRADING.adoc[] file for more details.
+   the link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc] file for more details.
 
  - The build process now halts when make fails in one of the
    subdirectories.
@@ -5416,7 +5423,7 @@ Release notes for NUT 2.0.0 - what's new since 1.4.x
    [Arjen de Korte]
 
  - The genericups driver now has type 20 to monitor the Powerware 5119
-   RM.  See http://lists.exploits.org/ups/Oct2003/00052.html.
+   RM.  The original report appeared on the UPS mailing list in October 2003.
    [Daniel Thompson]
 
  - The belkinunv driver has been added to allow monitoring Belkin
@@ -5803,4 +5810,4 @@ Historic releases
 
 More ancient history is not covered in detail here.
 
-You can see link:docs/history.txt[] for more details.
+You can see link:https://github.com/networkupstools/nut/blob/master/docs/history.txt[docs/history.txt] for more details.

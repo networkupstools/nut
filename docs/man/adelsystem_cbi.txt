@@ -24,7 +24,7 @@ This is the driver for the adelsystem cb/cbi dc-ups devices.
 The driver has been tested against CBI2801224A, all in one 12/24Vdc DC-UPS.
 
 More information about this UPS can be found here: ::
-https://www.adelsystem.com/en/products/dc-ups-/
+https://adelsystem.com/en/dcups
 
 
 EXTRA ARGUMENTS

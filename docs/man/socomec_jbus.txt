@@ -162,5 +162,5 @@ Internet resources:
 
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * Socomec JBUS/Modbus Reference Guide:
-  https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
+  https://www.socomec.co.uk/sites/default/files/2021-02/JBUS-MODBUS-FOR-DELPHYS-MP-AND-DELPHYS-MX_INSTALLATION-AND-OPERATING-MANUAL_2005-08_MODBUS_EN-GB.pdf
 * libmodbus home page: http://libmodbus.org

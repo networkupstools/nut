@@ -515,9 +515,9 @@ it would follow similar semantics.
 
 Some further details about the NUT CI farm workers are available in
 linkdoc:qa-guide[Prerequisites for building NUT on
-different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] and
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt,_prerequisites_for_building_nut_on_different_oses] and
 linkdoc:qa-guide[Custom NUT CI farm build agents: LXC multi-arch
-containers,CI_LXC,docs/ci-farm-lxc-setup.txt] documentation.
+containers,CI_LXC,docs/ci-farm-lxc-setup.txt,_continuous_integration_nut_ci_farm_build_agent_preparation] documentation.
 
 AppVeyor CI
 ~~~~~~~~~~~
@@ -605,7 +605,7 @@ like WMNut.
 
 Resulting packages for several Linux platforms can be seen at:
 
-* https://build.opensuse.org/project/show/home:networkupstools:nut-releases/nut
+* https://build.opensuse.org/project/show/home:networkupstools:nut-releases
   for tagged releases
 * https://build.opensuse.org/package/show/home:networkupstools:nut-stable/nut
   for iterations of the `master` branch

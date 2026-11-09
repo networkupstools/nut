@@ -45,7 +45,7 @@ The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
 
 The linkdoc:qa-guide[Prerequisites for building NUT on
-different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt]
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt,_prerequisites_for_building_nut_on_different_oses]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
 numerous platforms, written from perspective of CI testing (if you
@@ -126,8 +126,8 @@ This toggle is currently unrelated to modbus drivers which normally use
 Serial RTU, but some can use TCP RTU and USB RTU. This might be or not be
 revised in future NUT releases.
 
-It also does not impact the build of `libnutscan` for link:nut-scanner[8],
-link:nutconf[8], and possibly other (third-party) consumers, which as a
+It also does not impact the build of `libnutscan` for linkman:nut-scanner[8],
+linkman:nutconf[8], and possibly other (third-party) consumers, which as a
 library aims to support all communications media it can.
 
 USB drivers
@@ -307,7 +307,7 @@ CGI client interface
 
 Build and install the optional CGI programs, HTML files, and sample
 CGI configuration files. This is not enabled by default, as they
-are only useful on web servers. See link:data/htmlcgi/README[] for
+are only useful on web servers. See link:https://github.com/networkupstools/nut/blob/master/data/htmlcgi/README.adoc[CGI setup instructions] for
 additional information on how to set up CGI programs.
 
 	--with-cgi-uri=/cgi-bin/nut
@@ -836,7 +836,7 @@ certificate.
 NOTE: You may have to use linkman:nutauth.conf[5] for stock and modernized
 third-party NUT clients to even have a way to present some certain certificate.
 
-Read link:docs/security.txt[] for instructions on practical setup of SSL
+Read linkdoc:user-manual[security guidance,NUT_Security,,NUT_Security] for instructions on practical setup of SSL
 support.
 
 Networking access security
@@ -938,7 +938,7 @@ beyond the one built-in value configurable here).
 If you use one of the `--with-user` and `--with-group` options, then
 you have to use the other one too.
 
-See the link:INSTALL.nut[] document and the FAQ for more on this topic.
+See the linkdoc:user-manual[installation instructions,_installation_instructions,,_installation_instructions] and the FAQ for more on this topic.
 
 Syslog facility
 ~~~~~~~~~~~~~~~
@@ -1059,7 +1059,7 @@ unprivileged users nor systems administrators, out of default
 
 You would want a location that remains mounted when most of the system
 is prepared to turn off, so some distributions package NUT drivers into
-`/lib/nut` or similar. See link:config-notes.txt[] detailing how to
+`/lib/nut` or similar. See linkdoc:user-manual[configuration notes,Configuration_notes,,Configuration_notes] detailing how to
 set up system shutdown.
 
 The `driverpath` global directive in the `ups.conf` file overrides this

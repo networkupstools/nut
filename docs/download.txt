@@ -188,8 +188,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 - link:https://repology.org/project/network-ups-tools/versions[Repology report
   on "network-ups-tools"] lists 239 entries about NUT, as of 2025-09-06
 
-    * Older listing at link:https://repology.org/project/nut/versions[Repology
-      report on "nut"] listed 745 entries about NUT, as of 2022-04-26 -- that
+    * The former Repology listing for "nut" listed 745 entries about NUT, as of 2022-04-26 -- that
       name was not tracked since 2024 probably due to ambiguity with some other
       projects that used "nut" in their name;
       see link:https://repology.org/project/nut/history[Repology history of
@@ -199,7 +198,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 
     * link:https://github.com/42ity/nut/tree/FTY/obs[42ITy.org packaging recipes for Debian-based releases]
     * link:https://salsa.debian.org/debian/nut/[Debian Salsa recipes]
-      and link:http://packages.debian.org/nut[Debian packages]
+      and link:https://packages.debian.org/nut[Debian packages]
     * link:http://packages.ubuntu.com/nut[Ubuntu packages]
     * link:https://src.fedoraproject.org/rpms/nut/tree/rawhide[Fedora Rawhide recipes]
       and link:https://src.fedoraproject.org/rpms/nut[Red Hat / Fedora packages]
@@ -208,8 +207,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
     * link:https://gitweb.gentoo.org/repo/gentoo.git/tree/sys-power/nut[Gentoo Linux recipe]
       and link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux package info]
     * link:https://build.opensuse.org/package/show/openSUSE%3AFactory/nut[Novell SUSE / openSUSE official package base recipe]
-      and link:https://build.opensuse.org/package/show/hardware/nut[Novell SUSE / openSUSE official package development recipe],
-      and link:http://software.opensuse.org/package/nut[Novell SUSE / openSUSE official package overview]
+      and link:https://build.opensuse.org/package/show/hardware/nut[Novell SUSE / openSUSE official package development recipe]
     * link:https://build.opensuse.org/search?search_text=nut[Numerous other recipes on Open Build System (not only by SUSE)]
     * link:https://github.com/openwrt/packages/tree/master/net/nut[OpenWRT recipes]
     * link:http://sotirov-bg.net/slackpack/search.cgi?q=nut[Slackware package overview]
@@ -220,8 +218,8 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
     * link:https://cgit.freebsd.org/ports/tree/sysutils/nut-devel[FreeBSD package recipe (devel)],
       link:https://cgit.freebsd.org/ports/tree/sysutils/nut[FreeBSD package recipe]
       and link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD package overview]
-    * link:http://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/ups-nut/[NetBSD recipe] and link:https://pkgsrc.se/sysutils/ups-nut[NetBSD package overview]
-    * link:http://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD recipe]
+    * link:https://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/ups-nut/[NetBSD recipe] and link:https://pkgsrc.se/sysutils/ups-nut[NetBSD package overview]
+    * link:https://cvsweb.openbsd.org/ports/sysutils/nut[OpenBSD recipe]
     * link:https://github.com/freenas/iocage-ports/tree/master/sysutils/nut[FreeNAS iocage-ports recipe],
       link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]
       and link:https://www.ixsystems.com/documentation/freenas/11.3-U5/services.html#ups[FreeNAS 11.3-U5 docs on UPS integration]
@@ -231,7 +229,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
     * link:https://formulae.brew.sh/formula/nut[Homebrew formula]
     * link:https://github.com/fink/fink-distributions/blob/master/10.9-libcxx/stable/main/finkinfo/net/nut.info[Fink recipe]
       and link:http://pdb.finkproject.org/pdb/package.php/nut[Fink package overview]
-    * link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts recipe]
+    * link:https://github.com/macports/macports-ports/blob/master/sysutils/nut/Portfile[MacPorts recipe]
 
 - illumos/Solaris:
 

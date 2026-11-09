@@ -7,8 +7,9 @@ NUT design document
 //////////////////////////////////////////////////////////////////////////////
 
 This software is designed around a layered scheme with drivers, a
-data server, and clients.   These layers communicate with text-based
-protocols for easier maintenance and diagnostics.
+data server, and clients. These layers communicate with text-based
+protocols for easier maintenance and diagnostics. Supported equipment
+includes UPSes, PDUs, solar controllers and server power supplies (via IPMI).
 
 The layering
 ------------
@@ -18,10 +19,16 @@ has some communications media connected to the power device (e.g. a
 serial or USB link, a local IPMI interface, or a network interface
 in the engineering VLAN).  While each driver program talks the device
 vendor-defined protocol over such media, it also talks the local
-NUT Socket protocol to the local data server.
+NUT Socket protocol to the local data server over Unix domain sockets
+or Windows named pipes. Device protocols include serial, USB, SNMP, IPMI
+and XML/HTTP. Drivers include `bcmxcp`, `apcsmart`, `usbhid-ups`, `snmp-ups`,
+`genericups`, `mge-shut`, `nut-ipmipsu` and `netxml-ups`.
 
 Clients connect to the data server using the common NUT Network protocol
-over TCP, whether on `localhost` or remotely.
+over TCP, whether on `localhost` or remotely. The `upsc` and `upslog` clients
+read and log data; `upsrw` and `upscmd` request changes and commands with the
+required permissions. Other clients and integrations include NUT-Monitor
+and monitoring systems such as Nagios and Zenoss.
 
 One most notable client is `upsmon`, which is responsible for shutdown
 of the system it runs on, when the power situation becomes critical.
@@ -35,7 +42,14 @@ using the common NUT Network protocol using local sockets, so clients
 running on the same machine as the data server would not have to always
 use the TCP/IP stack; however this is currently not implemented.
 
-image:images/nut_layering.png[NUT layering]
+ifdef::pdf_format[]
+:nut-diagram-width: 160mm
+endif::pdf_format[]
+ifndef::pdf_format[]
+:nut-diagram-width: 640
+endif::pdf_format[]
+
+image:images/nut_layering.png["Power devices communicate with drivers, drivers with upsd, and clients with upsd",width="{nut-diagram-width}"]
 
 
 How information gets around

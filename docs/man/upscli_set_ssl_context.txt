@@ -33,14 +33,14 @@ CONTEXT OWNERSHIP
 
 SSL context configurations are obtained from the process-wide registry via
 linkman:upscli_get_or_create_ssl_context[3] or 
-linkman:upscli_get_or_create_ssl_context_authconf[3]. The connection holds
+linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3]. The connection holds
 a reference to the registry entry but does not own it; contexts are freed
 only by linkman:upscli_cleanup[3] after all connections are disconnected.
 
 USAGE
 -----
 
-These functions are typically used together with linkman:upscli_get_or_create_ssl_context_authconf[3]
+These functions are typically used together with linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3]
 to support multiple servers with independent SSL configurations within a single
 process:
 
@@ -96,7 +96,7 @@ PARAMETERS
 `ssl_ctx`::
 	An opaque SSL context handle obtained from 
 	linkman:upscli_get_or_create_ssl_context[3] or
-	linkman:upscli_get_or_create_ssl_context_authconf[3].
+	linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3].
 	Pass NULL to clear any existing per-connection context (falls back to default).
 
 EXAMPLE
@@ -134,16 +134,16 @@ LEGACY BEHAVIOR
 
 When no per-connection SSL context is set (NULL), the connection uses the
 ambient default context created by linkman:upscli_init[3],
-linkman:upscli_init2[3], or linkman:upscli_init_authconf[3]. This provides
+linkman2:upscli_init[upscli_init2,3], or linkman2:upscli_init[upscli_init_authconf,3]. This provides
 backward compatibility with existing client code.
 
 SEE ALSO
 --------
 
 linkman:upscli_get_or_create_ssl_context[3],
-linkman:upscli_get_or_create_ssl_context_authconf[3],
+linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3],
-linkman:upscli_init[3], linkman:upscli_init2[3],
-linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
-linkman:upscli_get_authconf_item[3],
+linkman:upscli_init[3], linkman2:upscli_init[upscli_init2,3],
+linkman2:upscli_init[upscli_init_authconf,3], linkman:upscli_cleanup[3],
+linkman2:upscli_find_authconf_item[upscli_get_authconf_item,3],
 `UPSCONN_t` (see linkman:upsclient[3])

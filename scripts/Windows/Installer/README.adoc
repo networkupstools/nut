@@ -46,7 +46,7 @@ NUT for Windows uses the WiX Toolset to codify and implement the installer:
 * https://wixtoolset.org/
 * https://wixtoolset.org/docs/intro/
 * https://wixtoolset.org/docs/tools/wixexe/
-* https://wixtoolset.org/docs/tools/heat/
+* https://docs.firegiant.com/wix3/overview/heat/
 * link:https://wixtoolset.org/docs/v3/overview/candle/[candle.exe] and
   link:https://wixtoolset.org/docs/v3/overview/light/[light.exe] tools
   were used in current scripts (dating from 2013) but were obsoleted
@@ -71,9 +71,8 @@ For example, on Ubuntu the installation can be performed like this:
    sudo apt-get install -y dotnet-sdk-7.0 nuget
 ----
 
-NOTE: For installation on Ubuntu 20.04 and older, where an additional
-package repository is required, please see instructions at
-https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-2004
+NOTE: For supported Ubuntu releases and package sources, see
+https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-install
 
 Subsequent installation of the toolset on either platform would be:
 ----

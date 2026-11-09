@@ -408,7 +408,7 @@ met. Otherwise, setting status to `OB LB` should be preferred.
 
 - the `CHRG` and `DISCHRG` flags are being replaced with
 `battery.charger.status`.  See the linkdoc:user-manual[NUT command and
-variable naming scheme,nut-names] for more information.
+variable naming scheme,nut-names,,nut-names] for more information.
 ==============================================================================
 
 Similar functionality can be supported for `experimental.ups.mode.buzzwords`,

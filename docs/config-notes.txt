@@ -161,7 +161,14 @@ the device.
 This will be sufficient for PDU. But for UPS and SCD, you will also need to
 configure <<UPS_shutdown,automatic shutdowns for low battery events>>.
 
-image:images/simple.png[]
+ifdef::pdf_format[]
+:nut-diagram-width: 160mm
+endif::pdf_format[]
+ifndef::pdf_format[]
+:nut-diagram-width: 640
+endif::pdf_format[]
+
+image:images/simple.png["One UPS powers and communicates with one computer",width="{nut-diagram-width}"]
 
 On operating systems with service management frameworks (such as Linux
 systemd and Solaris/illumos SMF), the life-cycle of driver, data server
@@ -211,7 +218,7 @@ it to; a common and good practice is to set 'port' to *auto*, but you
 can put whatever you like.
 
 If you only own one USB UPS, the driver will find it automatically
-if it matches the identifiers are built into that driver.
+if it matches the identifiers built into that driver.
 
 If you own more than one, refer to the driver's manual page for more
 information on matching a specific device, or trying specific subdriver
@@ -368,10 +375,10 @@ want `upsd` to listen on for connections, optionally with a port number.
 	LISTEN ::1 3493
 
 As a special case, `LISTEN * <port>` (with an asterisk) will try to
-listen on "ANY" IP address for both and IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+listen on "ANY" IP address for both IPv6 (`::0`) and IPv4 (`0.0.0.0`),
 subject to `upsd` command-line arguments, or system configuration or support.
 Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
-and does not allow to disable this mode, then there may be one listening
+and does not allow disabling this mode, then there may be one listening
 socket to handle both address families.
 
 NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
@@ -726,7 +733,7 @@ distribution uses NUT-provided unit definitions, `systemctl reload upsd`
 may also work.
 
 NOTE: If you want to make reloading work later, see the entry in the
-link:FAQ.html[FAQ] about starting `upsd` as a different user.
+linksingledoc:FAQ[FAQ] about starting `upsd` as a different user.
 
 Power Off flag file
 ^^^^^^^^^^^^^^^^^^^
@@ -954,7 +961,7 @@ If your UPS just sits there and never resets the load, you are vulnerable
 to a power race and should add the "reboot after timeout" hack at the very
 least.
 
-Also refer to the section on power races in the link:FAQ.html[FAQ].
+Also refer to the section on power races in the linksingledoc:FAQ[FAQ].
 
 Using suspend to disk
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1064,7 +1071,7 @@ programs need to be run for monitoring:
 - B: `upsmon` (in secondary mode)
 - C: driver, `upsd`, and `upsmon` (in primary mode, as the UPS manager)
 
-image:images/advanced.png[]
+image:images/advanced.png["One UPS powers three computers; one communicates with the UPS and shares its data over the network",width="{nut-diagram-width}"]
 
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
@@ -1086,7 +1093,7 @@ By using multiple `MONITOR` statements in 'upsmon.conf', you can configure
 an environment where a large machine with redundant power monitors multiple
 separate UPSes.
 
-image:images/bigbox.png[]
+image:images/bigbox.png["Two UPS units provide separate power and communication connections to one server",width="{nut-diagram-width}"]
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1170,4 +1177,4 @@ it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
 More information can be found in the linkdoc:user-manual[NUT user manual],
-and the various link:man/index.html[user manual pages].
+and the various link:https://www.networkupstools.org/docs/man/index.html#User_man[user manual pages].

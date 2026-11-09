@@ -4,7 +4,7 @@ NUT Frequently Asked Questions
 endif::external_title[]
 
 == I just upgraded, and ...
-You have read link:UPGRADING.adoc[UPGRADING] in the base directory of the
+You have read link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING] in the base directory of the
 distribution, right?
 
 If not, go read it now, then come back to this file if your
@@ -33,6 +33,8 @@ The hardest part of any driver is decoding the protocol, and that's
 already been done in the old version.
 
 == My UPS driver program won't work.  I'm starting it as root, and root owns the device, so what's the problem?
+
+[[FAQ_driver_permissions]]
 
 *Answer 1*
 
@@ -108,6 +110,8 @@ oneself in the foot...
 
 == upsc, upsstats, and the other clients say 'access denied'.  The device communication port (serial, USB or network) permissions are fine, so what gives?
 
+[[FAQ_access_denied]]
+
 In this case, "access denied" means the access to linkman:upsd[8], not the
 device communication port.  You're being denied since the system has no
 permission to speak to `upsd` according to its access controls.
@@ -177,7 +181,7 @@ wandered off, one can be built rather easily with some connectors and
 cable -- there's no fancy wiring or resistors.
 
 See this URL for a handy diagram:
-https://www.networkupstools.org/cables/940-0024C.jpg
+https://networkupstools.org/images/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -214,7 +218,7 @@ bigger than it is now.  You'd have one less process, but the
 RAM consumption would be pretty close to what you have now -- but
 consumed on each system involved.
 
-See the "Data Room" section in link:docs/config-notes.txt[] for
+See the "Data Room" section in linkdoc:user-manual[configuration notes,Configuration_notes,,Configuration_notes] for
 more configuration ideas and explanations.
 
 *Answer 2*
@@ -279,6 +283,8 @@ available at the time the driver was first written, which often is incomplete.
 
 == What's this about 'data stale'?
 
+[[FAQ_data_stale]]
+
 It means your UPS driver hasn't updated things in a little while.
 upsd refuses to serve up data that isn't fresh, so you get the
 errors about staleness.
@@ -307,6 +313,8 @@ the value of MAXAGE to avoid these warnings; try a value like 25 or 30.
 
 == Why do the client programs say 'Driver not connected' when I try to run them?
 
+[[FAQ_driver_not_connected]]
+
 *Answer 1*
 
 This means that `upsd` can't connect to the driver for some reason.
@@ -316,8 +324,8 @@ running.  Maybe your state path is not configured properly.
 Check your syslog.  upsd will complain regularly if it can't
 connect to a driver, and it should say why it can't connect.
 
-Note: if you jumped in with both feet and didn't follow the link:INSTALL.nut[]
-document, you probably started `upsd` by itself.  You have to run
+Note: if you jumped in with both feet and didn't follow the linkdoc:user-manual[installation instructions,_installation_instructions,,_installation_instructions],
+you probably started `upsd` by itself.  You have to run
 `upsdrvctl start` (explicitly -- on legacy systems only) to start
 the drivers after configuring `ups.conf`.
 
@@ -359,6 +367,8 @@ of installed files. For instance, on Debian or Ubuntu derivatives, you
 can use `dpkg --search usbhid-ups` to see where the drivers are stored.
 
 == Everything works perfectly during the shutdown, and the UPS comes back on, but my system stays off.  What's happening?
+
+[[FAQ_power_return]]
 
 Assuming you don't have the problem in the next question, then you
 probably have an ATX motherboard, have APM or ACPI enabled in your
@@ -537,12 +547,9 @@ same effect with the following command:
 
    echo server_mode=1 > /proc/pmu/options
 
-The following pages have some slightly more kludgy answers which involve the
-use of `setpci`, and are highly model-specific:
+The following discussion describes model-specific approaches using `setpci`:
 
- - https://www.mythic-beasts.com/support/servers/colo/macminicolo_howto
- - http://superuser.com/questions/212434/reboot-after-power-failure-for-mac-running-ubuntu
- - http://ubuntuforums.org/showthread.php?t=1209576
+ - https://superuser.com/questions/212434/reboot-after-power-failure-for-mac-running-ubuntu
 
 Note: this question has been in the FAQ for several years now, and
 there's still no clean answer.  Let me guess: everyone who runs a server
@@ -617,7 +624,7 @@ update your startup scripts so it uses this procedure on your next
 boot.
 
 If you like this, you'll probably also find the linkmanext:chroot[2] process
-to be useful and interesting.  See link:security.txt[] for more details.
+to be useful and interesting.  See linkdoc:user-manual[security guidance,NUT_Security,,NUT_Security] for more details.
 
 == What's the point of that 'security domains' concept above?
 
@@ -627,7 +634,7 @@ to that one user account.  Direct access to the serial device is
 not possible, since that is owned by another user.
 
 There is also the possibility of running the drivers and `upsd` in a
-chroot jail.  See the `chroot` option in link:security.txt[], `upsd`
+chroot jail.  See the `chroot` option in linkdoc:user-manual[security guidance,NUT_Security,,NUT_Security], `upsd`
 and driver documentation.
 
 Why give would-be vandals any sort of help?
@@ -640,7 +647,7 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at link:scheduling.txt[] or the
+the next entry), then look at linkdoc:user-manual[scheduling guidance,Advanced_usage_scheduling_notes,,Advanced_usage_scheduling_notes] or the
 linkman:upssched[8] man page for some ideas.
 
 /////////////////////////////////////////////////////////////////
@@ -649,6 +656,8 @@ TODO: figure out how to link to the upssched man page above.
 
 
 == Why doesn't upsmon shut down my system?  I pulled the plug and nothing happened.
+
+[[FAQ_no_shutdown]]
 
 Wait.  The `upsmon` client doesn't consider a UPS to be critical until it's
 *both* 'on battery' and 'low battery' at the same time.  This is by design.
@@ -669,7 +678,7 @@ with no visible interruption in service.
 If you purposely shut down early, you guarantee an interruption in
 service by bringing down the box.
 
-See link:upssched.txt[] for information on how you can shutdown early if
+See linkman:upssched[8] for information on how you can shutdown early if
 this is what you really want to do.
 
 == The CGI programs report 'access to that host is not authorized' --  what's going on?
@@ -690,6 +699,8 @@ for this to work.  If you do that, make sure it's not writable by
 any of the user accounts which run inside the jail.
 
 == upsd is running, so why can't I connect to it?
+
+[[FAQ_server_connection]]
 
 Assuming you haven't changed the TCP port number on the command line or at
 compile-time, then you may have some sort of firewall blocking the connection.
@@ -844,8 +855,9 @@ including MGE/Eaton vendor ID (0x0463) based on an older device a contributor
 had issues with. Firmware in newer devices no longer had the bug which needed
 the "quirk" and misbehaved when it was enabled. While newer (and much older)
 Linux kernels should not have the problem, with the quirk removed according
-to https://lkml.org/lkml/2018/11/26/580 having the issue in the field really
-depends on the combination of Linux kernel and device firmware that meet.
+in the
+link:https://web.archive.org/web/20260311061044/https://lkml.org/lkml/2018/11/26/580[November 2018 kernel patch (archived)],
+the issue depends on the combination of Linux kernel and device firmware.
 
 Either way, it seems that problematic combinations preclude Linux from seeing
 the device as a `hid-generic` first, to hand it over to a NUT driver.

@@ -78,8 +78,7 @@ This mode lets you simulate any kind of device, even nonexistent ones.
 
 Using this method, you can either replay a real life sequence,
 <<dev-recording,recorded from an actual device>>, or directly interact
-through `upsrw` or by editing the device file, to modify the variables'
-values.
+through `upsrw` or by editing the device file, to modify the values of the variables.
 
 Here is an example of how to set up a device simulation:
 

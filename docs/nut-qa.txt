@@ -67,7 +67,7 @@ trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/n
 mailing list.
 ////////////////////////////////////////////////////////////////////////////////
 
-- OBSOLETE: link:http://buildbot.networkupstools.org/public/nut/[Buildbot]
+- OBSOLETE: Buildbot
   for older take on multi-platform builds, and the
 
 - new dedicated Jenkins incarnation of the NUT CI Farm with "legacy UI"
@@ -143,7 +143,7 @@ It installs NUT packages, configures it with the dummy-ups driver, changes
 Runtime quality
 ^^^^^^^^^^^^^^^
 
-- NUT provides many linkdoc:user-manual[security features,NUT_Security,docs/security.txt]
+- NUT provides many linkdoc:user-manual[security features,NUT_Security,docs/security.txt,NUT_Security]
   to ensure a maximum runtime security level.
 
 - Packages use several link:http://wiki.debian.org/Hardening[Hardening methods]
@@ -157,7 +157,7 @@ FIXME (POST):
 - consider using [http://forge.novell.com/modules/xfmod/project/?opensuse OpenSUSE Build Service tools]
 - provide software metrics and evolution over the time
 
-  * [http://www.flossmetrics.org/ FlossMetrics]
+  * FlossMetrics (retired project)
   * [http://en.wikipedia.org/wiki/Software_metric Wikipedia]
   * [http://cccc.sourceforge.net/ CCCC - C and C++ Code Counter]
   * [http://open.ncsu.edu/se/tutorials/metrics/ Metrics with Eclipse]

@@ -22,7 +22,7 @@ or ufw-frontends.
 
 For more information, refer to:
 
- - link:http://gufw.tuxfamily.org/[UFW homepage],
+ - link:https://costales.github.io/projects/gufw/[Gufw homepage],
  - link:https://launchpad.net/ufw[UFW project page],
  - link:https://wiki.ubuntu.com/UncomplicatedFirewall[UFW wiki],
  - UFW manual page, section APPLICATION INTEGRATION

@@ -50,6 +50,7 @@ IMAGE_FILES = \
 	images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
+	images/nut_layering.svg \
 	images/nut-logo.svg \
 	images/nut-logo-60x60.png \
 	images/nut-logo-256x256.png \
@@ -142,7 +143,8 @@ ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
- docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt asciidoc-vars.conf
+ docinfo.xml common.xsl xhtml.xsl chunked.xsl pdf.xsl nut-pdf.sty \
+ asciidoc.txt asciidoc-vars.conf
 
 # NOTE: ALL_TXT_SRC does not include sms-brazil-protocol.txt because it
 # primarily includes samples of configuration files with a lot of Spanish
@@ -151,7 +153,10 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 # FIXME: Add support for custom additional dictionaries for specific document
 # files, e.g. "something.txt.dict" if present? There is precedent and code in
 # nut-website recipes by now...
-EXTRA_DIST += sms-brazil-protocol.txt
+EXTRA_DIST += sms-brazil-protocol.txt images/README-diagrams.txt \
+ images/simple.svg images/advanced.svg images/bigbox.svg images/bizarre.svg \
+ images/diagram-source/build.py images/diagram-source/nutdiag.py \
+ images/diagram-source/template.svg
 
 ASCIIDOC_HTML_SINGLE = \
 	user-manual.html \
@@ -797,9 +802,12 @@ GENERATE_PDF = ( \
 	echo "  DOC-PDF	Generating $@"; \
 	$(DOCBUILD_BEGIN) ; RES=0; \
 	if [ -s "$${A2X_OUTDIR}/docinfo.xml" ] ; then A2X_DOCINFO_DIR="$${A2X_OUTDIR}"; fi ; \
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf \
+	    --dblatex-opts="-p \"$(abs_srcdir)/pdf.xsl\" -i \"$(abs_srcdir)\"" -a docinfo1 '$<' || RES=$$? ; \
 	$(DOCBUILD_END) ; exit $$RES ; \
 )
+
+$(ASCIIDOC_PDF): pdf.xsl nut-pdf.sty
 
 *.pdf: docinfo.xml
 # Technically only needed for PDF generation, but some other recipes still complained

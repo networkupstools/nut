@@ -140,5 +140,5 @@ transparent way.
 References:
 
 - link:http://www.gnu.org/software/libtool/[libtool]
-- link:http://sources.redhat.com/autobook/autobook/autobook.html[David MacKenzie's Autobook (RedHat)]
+- link:https://sourceware.org/autobook/autobook/autobook.html[GNU Autobook]
 - link:http://debianlinux.net/~jama/howto/gnu_build_steps.html[DebianLinux.Net, The GNU Build System]

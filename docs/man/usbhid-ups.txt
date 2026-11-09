@@ -479,7 +479,7 @@ AUTHORS
 
 Originally sponsored by MGE UPS SYSTEMS.
 
-Now sponsored by Eaton <http://opensource.eaton.com>
+Now sponsored by Eaton.
 
 * Arnaud Quette
 * Peter Selinger

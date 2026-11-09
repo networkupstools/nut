@@ -13,8 +13,13 @@ There are various ways to obtain support for NUT.
 Documentation
 -------------
 
-- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common
-problems are already addressed there.
+ifdef::website[]
+- First, be sure to read the link:docs/FAQ.html[FAQ].
+endif::website[]
+ifndef::website[]
+- First, be sure to read the linksingledoc:FAQ[FAQ].
+endif::website[]
+The most common problems are already addressed there.
 
 ifdef::website[]
 - Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
@@ -25,7 +30,7 @@ endif::website[]
 It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
 
-- Finally, link:docs/man/index.html#User_man[User manual pages] will also
+- Finally, link:https://www.networkupstools.org/docs/man/index.html#User_man[User manual pages] will also
 supplement the information in the User Manual. At a minimum, read the manual
 page related to your driver(s).
 
@@ -104,7 +109,7 @@ endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
 for more information, and the chapter on how to
-link:../developer-guide.chunked/developers.html#_submitting_patches[submit patches].
+linkdoc:developer-guide[submit patches,_submitting_patches,,developers].
 endif::website[]
 
 Note that the currently preferable way for ultimate submission of improvements
@@ -116,7 +121,8 @@ is often needed to better understand, integrate or document the patch.
 Discuss packaging and related topics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
+Discuss packaging on the
+link:https://alioth-lists.debian.net/cgi-bin/mailman/listinfo/nut-upsdev[NUT Developers]
 mailing list.
 
 Refer to the

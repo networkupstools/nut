@@ -85,7 +85,7 @@ building other (non-NUT) programs which depend on them.
 
 For more information, refer to the linkman:nutscan[3],
 manual page and the various
-link:man/index.html#devscan[nutscan_*(3)] functions documentation
+link:https://www.networkupstools.org/docs/man/index.html#devscan[nutscan_*(3)] functions documentation
 referenced in the same file.
 
 

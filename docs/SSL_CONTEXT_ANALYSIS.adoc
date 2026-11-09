@@ -407,8 +407,8 @@ int upscli_set_ssl_context_params(
 == References
 
 * OpenSSL SSL_CTX: link:https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_new.html[]
-* NSS Initialization: link:https://wiki.mozilla.org/NSS:Initialization[]
-* Mozilla NSS SSL Guide: link:https://wiki.mozilla.org/NSS:SSL_Functions[]
+* NSS initialization: link:https://nss-crypto.org/reference/security/nss/legacy/reference/nss_initialize/index.html[NSS_Initialize reference]
+* Mozilla NSS SSL Guide: link:https://nss-crypto.org/reference/security/nss/legacy/ssl_functions/index.html[]
 * NUT Authentication Config: `clients/authconf.h`
 
 == Follow-up discussion for proposed changes

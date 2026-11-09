@@ -8,6 +8,380 @@ endif::website[]
 // https://networkupstools.org/documentation.html
 //////////////////////////////////////////////////////////////////////////////
 
+[[Start_here]]
+Start here
+----------
+
+Choose a task below, or browse the full document list further down.
+
+* <<Start_here_local,Set up a UPS connected to this computer>>
+* <<Start_here_network,Protect another computer using an existing NUT server>>
+* <<Start_here_status,Read UPS status or collect monitoring data>>
+* <<Start_here_troubleshooting,Troubleshoot an existing installation>>
+* <<Start_here_development,Develop or integrate with NUT>>
+
+[[Start_here_preparation]]
+Before you start
+~~~~~~~~~~~~~~~~
+
+Use the manuals for your installed NUT version. For package installations,
+follow the package instructions for file locations and service management.
+The website also provides
+link:https://networkupstools.org/historic/[documentation for selected historic releases].
+
+Identify which computers receive power from the UPS and which computer
+communicates with it. NUT uses three components:
+
+* A *driver* communicates with a power device using its supported protocol.
+* *upsd* runs on the same host as the driver and serves its data to clients.
+* *upsmon* monitors power conditions and initiates shutdown of its own host.
+  It connects to `upsd` over TCP, even when both run on the same host.
+
+For multiple UPSes, redundant supplies or different communication and power paths,
+read the
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#DataRoom[deployment descriptions]
+endif::website[]
+ifndef::website[]
+<<DataRoom,deployment descriptions>>
+endif::website[]
+and
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#BigServers[redundant-power guidance]
+endif::website[]
+ifndef::website[]
+<<BigServers,redundant-power guidance>>
+endif::website[]
+before choosing a setup.
+
+[[Start_here_local]]
+Set up a UPS connected to this computer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This path covers one computer powered by one UPS, with a local USB or serial
+communication connection to that UPS. The computer needs a driver, `upsd`
+and `upsmon` for automatic shutdown protection.
+
+. *Choose a driver.* Check
+ifdef::website[]
+link:stable-hcl.html[hardware compatibility]
+endif::website[]
+ifndef::website[]
+<<HCL,hardware compatibility>>
+endif::website[]
+  and read the selected driver's manual for connection settings and limitations.
+. *Choose the installation and startup method.* Use your package instructions,
+  or the
+ifdef::website[]
+link:docs/user-manual.chunked/_installation_instructions.html[source installation instructions]
+endif::website[]
+ifndef::website[]
+<<_installation_instructions,source installation instructions>>
+endif::website[]
+  when building NUT yourself. Read
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_startup_integration[startup integration]
+endif::website[]
+ifndef::website[]
+<<_startup_integration,startup integration>>
+endif::website[]
+  before starting processes; do not start a second manual copy of a
+  service-managed driver or daemon.
+. *Establish device communication.* Follow
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#Driver_configuration[driver configuration]
+endif::website[]
+ifndef::website[]
+<<Driver_configuration,driver configuration>>
+endif::website[]
+  and then
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_data_server_configuration_upsd[data server configuration].
+endif::website[]
+ifndef::website[]
+<<_data_server_configuration_upsd,data server configuration>>.
+endif::website[]
+. *Check the readings.* Follow
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_check_the_ups_data[checking UPS data]
+endif::website[]
+ifndef::website[]
+<<_check_the_ups_data,checking UPS data>>
+endif::website[]
+  and compare the reported status with the device's actual condition.
+. *Configure shutdown protection.* Follow
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#UPS_shutdown[automatic shutdown configuration]
+endif::website[]
+ifndef::website[]
+<<UPS_shutdown,automatic shutdown configuration>>
+endif::website[]
+  for the monitoring account, `upsmon` configuration and shutdown integration.
+  In this simple topology, this host's `upsmon` is the primary for the UPS.
+. *Test shutdown.* Read
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_checking_upsmon[checking upsmon]
+endif::website[]
+ifndef::website[]
+<<_checking_upsmon,checking upsmon>>
+endif::website[]
+  and
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#Testing_shutdowns[testing shutdowns].
+endif::website[]
+ifndef::website[]
+<<Testing_shutdowns,testing shutdowns>>.
+endif::website[]
+  Schedule the forced shutdown test for a time when all protected systems
+  can be shut down. Check the shutdown, power-off and restart steps.
+
+[[Start_here_network]]
+Protect another computer using an existing NUT server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a computer powered by a UPS already managed by a NUT server and primary
+monitor, install `upsmon` and configure it as a secondary. It connects to
+the existing server over the network.
+
+. *Identify the power source and server.* Obtain the UPS name, server address
+  and port, and monitoring credentials from the server administrator. Confirm
+  that this is the UPS supplying the additional computer.
+. *Prepare the server side.* Review the listening addresses in
+ifdef::website[]
+link:docs/man/upsd.conf.html[upsd.conf(5)],
+endif::website[]
+ifndef::website[]
+linkman:upsd.conf[5],
+endif::website[]
+  the monitoring account and secondary permissions in
+ifdef::website[]
+link:docs/man/upsd.users.html[upsd.users(5)],
+endif::website[]
+ifndef::website[]
+linkman:upsd.users[5],
+endif::website[]
+  and the
+ifdef::website[]
+link:docs/user-manual.chunked/NUT_Security.html[security guidance].
+endif::website[]
+ifndef::website[]
+<<NUT_Security,security guidance>>.
+endif::website[]
+. *Check data access from the additional computer.* Use the status-query
+  guidance in
+ifdef::website[]
+link:docs/man/upsc.html[upsc(8)].
+endif::website[]
+ifndef::website[]
+linkman:upsc[8].
+endif::website[]
+. *Configure the additional computer's monitor.* Follow
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_create_a_monitor_directive_for_upsmon[the MONITOR configuration]
+endif::website[]
+ifndef::website[]
+<<_create_a_monitor_directive_for_upsmon,the MONITOR configuration>>
+endif::website[]
+  and
+ifdef::website[]
+link:docs/man/upsmon.conf.html[upsmon.conf(5)]
+endif::website[]
+ifndef::website[]
+linkman:upsmon.conf[5]
+endif::website[]
+  for the secondary role, local shutdown command and configuration permissions.
+  Follow the package's
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_startup_integration[startup integration].
+endif::website[]
+ifndef::website[]
+<<_startup_integration,startup integration>>.
+endif::website[]
+  For packages that use
+ifdef::website[]
+link:docs/man/nut.conf.html[nut.conf(5)],
+endif::website[]
+ifndef::website[]
+linkman:nut.conf[5],
+endif::website[]
+  set `MODE=netclient` on the additional computer. Each computer's `upsmon`
+  handles that computer's shutdown.
+. *Check monitoring and coordinated shutdown.* Use
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_checking_upsmon[monitor login checks]
+endif::website[]
+ifndef::website[]
+<<_checking_upsmon,monitor login checks>>
+endif::website[]
+  first. Coordinate
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#Testing_shutdowns[shutdown testing]
+endif::website[]
+ifndef::website[]
+<<Testing_shutdowns,shutdown testing>>
+endif::website[]
+  with the administrator of the UPS and all affected systems. These tests
+  shut down the protected computers.
+
+[[Start_here_status]]
+Read UPS status or collect monitoring data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For one-off status queries, start with
+ifdef::website[]
+link:docs/man/upsc.html[upsc(8)].
+endif::website[]
+ifndef::website[]
+linkman:upsc[8].
+endif::website[]
+For periodic logging of selected variables, use
+ifdef::website[]
+link:docs/man/upslog.html[upslog(8)].
+endif::website[]
+ifndef::website[]
+linkman:upslog[8].
+endif::website[]
+The
+ifdef::website[]
+link:docs/user-manual.chunked/nut-names.html[variable and command naming reference]
+endif::website[]
+ifndef::website[]
+<<nut-names,variable and command naming reference>>
+endif::website[]
+explains common data names. Available values depend on the device and driver;
+`ups.status` may contain more than one status token.
+
+For automatic shutdown protection, follow a setup path above. To change
+device settings or send commands, see
+ifdef::website[]
+link:docs/man/upsrw.html[upsrw(8)]
+endif::website[]
+ifndef::website[]
+linkman:upsrw[8]
+endif::website[]
+and
+ifdef::website[]
+link:docs/man/upscmd.html[upscmd(8)].
+endif::website[]
+ifndef::website[]
+linkman:upscmd[8].
+endif::website[]
+
+[[Start_here_troubleshooting]]
+Troubleshoot an existing installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Start with the component and symptom involved. A client connection, a fresh
+device reading and a successful monitor login establish different things.
+
+* *The driver cannot open the device:* read the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_driver_permissions[driver permissions FAQ]
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[driver permissions FAQ,FAQ_driver_permissions]
+endif::website[]
+  and the selected driver's manual. Drivers normally drop root privileges
+  before opening the device.
+* *A client cannot connect to upsd:* start with the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_server_connection[server connection FAQ]
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[server connection FAQ,FAQ_server_connection]
+endif::website[]
+  and the configured listening addresses. For an access-denied response,
+  follow the separate
+ifdef::website[]
+link:docs/FAQ.html#FAQ_access_denied[access-control FAQ].
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[access-control FAQ,FAQ_access_denied].
+endif::website[]
+* *A client reports "Driver not connected":* follow the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_driver_not_connected[driver connection FAQ].
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[driver connection FAQ,FAQ_driver_not_connected].
+endif::website[]
+  Check the connection between `upsd` and the driver.
+* *A client reports stale data:* follow the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_data_stale[data freshness FAQ].
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[data freshness FAQ,FAQ_data_stale].
+endif::website[]
+  Check whether the driver is receiving fresh device data.
+* *The computer does not shut down as expected:* review
+ifdef::website[]
+link:docs/user-manual.chunked/Configuration_notes.html#_checking_upsmon[upsmon checks]
+endif::website[]
+ifndef::website[]
+<<_checking_upsmon,upsmon checks>>
+endif::website[]
+  and the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_no_shutdown[shutdown conditions FAQ].
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[shutdown conditions FAQ,FAQ_no_shutdown].
+endif::website[]
+* *The computer stays off after UPS power returns:* read the
+ifdef::website[]
+link:docs/FAQ.html#FAQ_power_return[power-return FAQ].
+endif::website[]
+ifndef::website[]
+linksingledoc:FAQ[power-return FAQ,FAQ_power_return].
+endif::website[]
+
+If the problem remains, follow
+ifdef::website[]
+link:docs/user-manual.chunked/Support_Request.html[the support-request guidance].
+endif::website[]
+ifndef::website[]
+<<Support_Request,the support-request guidance>>.
+endif::website[]
+Include the NUT version, installation method, device and relevant log excerpts;
+remove passwords and other sensitive information before posting them publicly.
+
+[[Start_here_development]]
+Develop or integrate with NUT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Start with the
+ifdef::website[]
+link:docs/developer-guide.chunked/index.html[Developer Guide]
+endif::website[]
+ifndef::website[]
+linkdoc:developer-guide[Developer Guide]
+endif::website[]
+for the architecture, driver development, client development and network
+protocol. The C and C++ client-library references are
+ifdef::website[]
+link:docs/man/upsclient.html[upsclient(3)]
+endif::website[]
+ifndef::website[]
+linkman:upsclient[3]
+endif::website[]
+and
+ifdef::website[]
+link:docs/man/libnutclient.html[libnutclient(3)].
+endif::website[]
+ifndef::website[]
+linkman:libnutclient[3].
+endif::website[]
+For building and packaging NUT, consult the
+ifdef::website[]
+link:docs/qa-guide.chunked/index.html[Quality Assurance Guide] and
+link:docs/packager-guide.chunked/index.html[Packager Guide].
+endif::website[]
+ifndef::website[]
+linkdoc:qa-guide[Quality Assurance Guide] and
+linkdoc:packager-guide[Packager Guide].
+endif::website[]
+
 User Documentation
 ------------------
 
@@ -21,13 +395,13 @@ ifdef::website[]
 - link:docs/solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 ifndef::website[]
-- link:../man/nut.html[NUT Overview (manual page)]
-- link:../FAQ.html[FAQ - Frequently Asked Questions]
+- linkman2:nut[NUT Overview (manual page)]
+- linksingledoc:FAQ[FAQ - Frequently Asked Questions]
 - linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>
-- link:../man/index.html#User_man[User manual pages]
+- link:https://www.networkupstools.org/docs/man/index.html#User_man[User manual pages]
 - link:https://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported; see also link:https://www.networkupstools.org/stable-hcl.html[the HCL]
-- link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
+- linksingledoc:solaris-usb[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 - link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT Configuration Examples] book maintained by Roger Price
 - link:https://github.com/networkupstools/nut/wiki[NUT GitHub Wiki]
@@ -52,9 +426,9 @@ ifndef::website[]
 - linkdoc:packager-guide[NUT Packager Guide]
 - linkdoc:release-notes[NUT Release Notes]
 - linkdoc:ChangeLog[NUT Change Log]
-- link:ups-protocols.html[UPS protocols library]
-- link:../man/index.html#Developer_man[Developer manual pages]
-- link:nut-qa.html[NUT Quality Assurance]
+- link:https://www.networkupstools.org/ups-protocols.html[UPS protocols library]
+- link:https://www.networkupstools.org/docs/man/index.html#Developer_man[Developer manual pages]
+- linkdoc:qa-guide[NUT Quality Assurance,nut-qa,,nut-qa]
 - link:https://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 
@@ -100,7 +474,7 @@ These are general information about UPS, PDU, ATS, PSU and SCD:
 - link:https://en.wikipedia.org/wiki/Transfer_switch[Automatic Transfer Switch]
 - link:https://en.wikipedia.org/wiki/Power_supply_unit_%28computer%29[Power Supply Units]
 - link:http://en.wikipedia.org/wiki/Solar_controller[Solar controller on Wikipedia]
-- link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
+- link:https://web.archive.org/web/20190217122443fw_/http://www.pcguide.com/ref/power/ext/ups/over-c.html[UPS on The PC Guide] (archived 2019-02-17)
 
 These are writeups by users of the software.
 
@@ -110,18 +484,18 @@ These are writeups by users of the software.
   link:https://github.com/networkupstools/TLS-UPSmon[TLS-UPSmon],
   and link:https://github.com/networkupstools/TLS-Shims[TLS-Shims])
 - link:https://dan.langille.org/2020/09/10/nut-testing-the-shutdown-mechanism/[nut - testing the shutdown mechanism] '(Dan Langille)'
-- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
+- link:https://web.archive.org/web/20220117012549/http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] (archived 2022-01-17) '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
-- link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, French)'
+- link:https://web.archive.org/web/20090301063447/http://linux.developpez.com:80/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] (archived 2009-03-01) '(Olivier Van Hoof, French)'
 - link:https://github.com/networkupstools/nut/wiki/NUT-on-Mac-OS-X[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
 - link:http://www.llondel.org/ups.shtml[Interfacing a Contact-Closure UPS to Mac OS X and Linux] '(David Hough)'
 - link:http://fedoranews.org/contributors/kazutoshi_morioka/nut/[How to use UPS with nut on RedHat / Fedora Core] '(Kazutoshi Morioka)'
 - link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
 - link:http://www.usebox.net/jjm/ups-obsd/[Gestionando un SAI desde OpenBSD con NUT] '(Juan J. Martinez, spanish)'
-- link:http://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] '(nielchiano)'
-- link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
-- link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
-- link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
+- link:https://web.archive.org/web/20251209182337/https://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] (archived 2025-12-09) '(nielchiano)'
+- link:https://web.archive.org/web/20240112161206/http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] (archived 2024-01-12) '(deschis, Romanian)'
+- link:https://web.archive.org/web/20190416224618/http://buffalo.nas-central.org:80/wiki/Install_a_UPS_(nut)[Install a UPS (nut) on a Buffalo NAS] (archived 2019-04-16) '(various authors)'
+- link:https://web.archive.org/web/20110122003601/http://blog.pointbre.com:80/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] (archived 2011-01-22) '(PointBre)'
 - link:https://www.jamesridgway.co.uk/monitoring-eaton-5sc-ups-scripts-and-integration-network-tools-home-assistant/amp/[USB UPS, notifications, and Home Assistant] '(James Ridgway)'
 - link:https://www.hirschler.solutions/posts/2022/06/powerwalker-ups-on-fedora-server-36[PowerWalker UPS on Fedora Server 36] '(Michael Hirschler)'
 
@@ -136,5 +510,5 @@ Video articles are also available:
 News articles and Press releases
 --------------------------------
 
-- link:http://www.crn.com/news/channel-programs/199000818/linux-ups-without-tears.htm[Linux UPS Without Tears] '(A. Lizard)'
+- link:https://www.crn.com/recipes/blogs/199000818/linux-ups-without-tears[Linux UPS Without Tears] '(A. Lizard)'
 - link:http://www.enterprisenetworkingplanet.com/netsysm/article.php/3295841/Graceful-UPS-Shutdowns-on-Linux.htm[Graceful UPS shutdowns on Linux] '(Carla Schroder)'

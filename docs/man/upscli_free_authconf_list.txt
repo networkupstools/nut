@@ -30,5 +30,5 @@ SEE ALSO
 --------
 
 linkman:upscli_read_authconf_file[3], linkman:upscli_find_authconf_item[3],
-linkman:upscli_get_authconf_list[3], linkman:upscli_dump_authconf_list[3],
-linkman:upscli_create_authconf_item[3], linkman:upscli_free_authconf_item[3]
+linkman:upscli_get_authconf_list[3], linkman2:upscli_dump_authconf_item[upscli_dump_authconf_list,3],
+linkman:upscli_create_authconf_item[3], linkman2:upscli_create_authconf_item[upscli_free_authconf_item,3]

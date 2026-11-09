@@ -31,4 +31,4 @@ There is no return value.
 SEE ALSO
 --------
 
-linkman:upscli_ssl_caps[3], linkman:upscli_ssl_caps_descr[3]
+linkman:upscli_ssl_caps[3], linkman2:upscli_ssl_caps[upscli_ssl_caps_descr,3]
