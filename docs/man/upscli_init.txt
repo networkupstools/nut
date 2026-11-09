@@ -79,7 +79,7 @@ If using SSL, you can specify 'certname' with the subject name
 of the certificate to send to `upsd`, and 'certpasswd' with the password used
 to decrypt certificate private key.
 
-* If compiled with NSS, this allows to choose one of many certificates that
+* If compiled with NSS, this allows you to choose one of many certificates that
   may be stored in the database.
 
 * If compiled with OpenSSL, the 'certfile' is expected to hold one set of
@@ -133,10 +133,10 @@ linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3],
 linkman:upscli_fd[3],
 linkman:upscli_get_or_create_ssl_context[3],
-linkman:upscli_get_or_create_ssl_context_authconf[3],
-linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
+linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3],
+linkman:upscli_set_ssl_context[3], linkman2:upscli_set_ssl_context[upscli_get_ssl_context,3],
 linkman:upscli_init_default_connect_timeout[3],
 linkman:upscli_splitaddr[3], linkman:upscli_splitname[3],
 linkman:upscli_ssl[3], linkman:upscli_ssl_caps[3],
-linkman:upscli_ssl_caps_descr[3],
+linkman2:upscli_ssl_caps[upscli_ssl_caps_descr,3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

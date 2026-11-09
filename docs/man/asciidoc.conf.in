@@ -32,20 +32,14 @@ ifdef::backend-docbook[]
 {0#<refentrytitle>{target}</refentrytitle><manvolnum>{0}</manvolnum>}
 {0#</citerefentry>}
 [linkman2-inlinemacro]
-{2%{1={target}}}
-{2#<citerefentry>}
-{2#<refentrytitle>{1={target}}</refentrytitle><manvolnum>{2}</manvolnum>}
-{2#</citerefentry>}
+{2#<citerefentry><refentrytitle>}{1={target}}{2#</refentrytitle><manvolnum>{2}</manvolnum></citerefentry>}
 [linkmanext-inlinemacro]
 {0%{target}}
 {0#<citerefentry>}
 {0#<refentrytitle>{target}</refentrytitle><manvolnum>{0}</manvolnum>}
 {0#</citerefentry>}
 [linkmanext2-inlinemacro]
-{2%{1={target}}}
-{2#<citerefentry>}
-{2#<refentrytitle>{1={target}}</refentrytitle><manvolnum>{2}</manvolnum>}
-{2#</citerefentry>}
+{2#<citerefentry><refentrytitle>}{1={target}}{2#</refentrytitle><manvolnum>{2}</manvolnum></citerefentry>}
 endif::backend-docbook[]
 
 ifdef::backend-xhtml11[]

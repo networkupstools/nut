@@ -25,7 +25,7 @@ Multiple manufacturer and device support
 
 - Monitors many UPS, PDU, ATS, PSU and SCD models from more than 170
 manufacturers with a unified interface
-(link:stable-hcl.html[Hardware Compatibility List]).
+(link:https://www.networkupstools.org/stable-hcl.html[Hardware Compatibility List]).
 
 - Various communication types and many protocols are supported with the same
 common interface:
@@ -172,7 +172,14 @@ SNMP or any other monitoring is also possible.
 "Simple" configuration
 ~~~~~~~~~~~~~~~~~~~~~~
 
-image:images/simple.png[]
+ifdef::pdf_format[]
+:nut-diagram-width: 160mm
+endif::pdf_format[]
+ifndef::pdf_format[]
+:nut-diagram-width: 640
+endif::pdf_format[]
+
+image:images/simple.png["One UPS powers and communicates with one computer",width="{nut-diagram-width}"]
 
 One UPS, one computer. This is also known as "Standalone" configuration.
 
@@ -182,7 +189,7 @@ driver, `upsd`, and `upsmon` running.
 "Advanced" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-image:images/advanced.png[]
+image:images/advanced.png["One UPS powers three computers; one communicates with the UPS and shares its data over the network",width="{nut-diagram-width}"]
 
 One UPS, multiple computers. Only one of them can actually talk to the UPS
 directly. That's where the network comes in:
@@ -223,7 +230,7 @@ with `upsd` then, and have appropriate media connections to the power devices.
 "Big Box" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-image:images/bigbox.png[]
+image:images/bigbox.png["Two UPS units provide separate power and communication connections to one server",width="{nut-diagram-width}"]
 
 Some systems have multiple power supplies and cords. You typically find
 this on high-end servers that allow hot-swap and other fun features.
@@ -246,7 +253,7 @@ handle it properly by remaining online and not causing a shut down.
 "Bizarre" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-image:images/bizarre.png[]
+image:images/bizarre.png["UPS 1 powers Server; UPS 2 powers Clients 1 and 2; Server serves data for both UPSes",width="{nut-diagram-width}"]
 
 You can even have a UPS that has the serial port connected to a system that
 it's not feeding. Sometimes a PC will be close to a UPS that needs to be
@@ -254,10 +261,12 @@ monitored, so it's drafted to supply a serial port for the purpose.
 This PC may in fact be getting its own power from some other UPS. This is
 not a problem for the set-up.
 
-The first system ("mixed") is a Primary for UPS 1, but is only monitoring
-UPS 2. The other systems are Secondaries of UPS 2.
+In the diagram, UPS 1 powers Server, while UPS 2 powers Clients 1 and 2.
+Server runs both drivers and `upsd`, providing data for both UPSes. Its
+`upsmon` runs as primary for UPS 1 and only monitors UPS 2. Clients 1 and 2
+run `upsmon` as secondary for UPS 2, through `upsd` on Server.
 
 Image credits
 -------------
 
-Thanks to Eaton for providing shiny modern graphics.
+Thanks to Eaton for the deployment illustrations used in earlier releases.

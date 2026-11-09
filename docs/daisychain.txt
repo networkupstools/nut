@@ -13,7 +13,7 @@ endif::external_title[]
 NUT supports daisychained devices for any kind of device that proposes
 it. This chapter introduces:
 
-* for developers: how to implement such mechanism,
+* for developers: how to implement such a mechanism,
 * for users: how to manage and use daisychained devices in NUT in general,
   and how to take advantage of the provided features.
 
@@ -64,7 +64,7 @@ will only see the whole daisychain, as it would normally seem, and not
 nothing at all.
 
 Moreover, this solution is generic, and not specific to the ePDU use case
-currently considered. It thus support both the current NUT scope, along with
+currently considered. It thus supports the current NUT scope, along with
 other use cases (parallel / serial UPS setups), and potential evolution and
 technology change (hybrid chain with UPS and PDU for example).
 
@@ -80,7 +80,7 @@ Devices alarms handling
 
 Devices (master and slaves) alarms are published in `device.X.ups.alarm`,
 which may evolve into `device.X.alarm`. If any of the devices has an alarm,
-the main `ups.status` will publish an `ALARM` flag. This flag is be cleared
+the main `ups.status` will publish an `ALARM` flag. This flag is cleared
 once all devices have no alarms anymore.
 
 NOTE: `ups.alarm` behavior is not yet defined (all devices alarms vs. list of
@@ -142,7 +142,7 @@ steps have to be done:
 
 * Add a "device.count" entry in the mapping file: snmp-ups will determine
 if the daisychain support has to be enabled (if more than 1 device).
-To achieve this, use one of the following type of declarations:
+To achieve this, use one of the following types of declarations:
 +
 a) point at an OID which provides the number of devices:
 

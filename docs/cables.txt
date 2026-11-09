@@ -20,7 +20,7 @@ NOTE: The original 940-0024C diagram was contributed by Steve Draper.
 
 *Reported by Jonathan Laventhol*
 
-This cable is said to use the same wiring as 940-0024C clone.
+This cable is said to use the same wiring as the 940-0024C clone.
 
 940-0024C clone for Macs
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,7 +55,7 @@ Documents in this section are provided courtesy of Eaton.
 MGE Office Protection Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The three first cables also applies to MGE UPS SYSTEMS and Eaton.
+The first three cables also apply to MGE UPS SYSTEMS and Eaton.
 
 DB9-DB9 cable (ref 66049)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -159,8 +159,8 @@ socket with a non-standard pinout.
 
 Sources:
 
-* http://pinoutsguide.com/UPS/best_power_pinout.shtml
-* http://lit.powerware.com/ll_download.asp?file=m_patriotproii_jan99.pdf
+* link:https://web.archive.org/web/20130325004846/http://pinoutsguide.com:80/UPS/best_power_pinout.shtml[Best Power Fortress Rackmount pinout] (archived 2013-03-25)
+* link:https://web.archive.org/web/20221013232717/https://lit.powerware.com/ll_download.asp?file=m_patriotproii_jan99.pdf[Best Power Patriot Pro II user guide] (archived 2022-10-13)
 * Stan Gammons
 
 Tripp-Lite

@@ -15,14 +15,12 @@ NOTE: This file is currently not delivered in tarballs nor spellchecked.
 Mailing lists administration
 ============================
 
-NUT provides various
-link:https://alioth.debian.org/mail/?group_id=30602[mailing list], to support
-users and developers. These can administered at the following addresses:
+NUT provides https://alioth-lists.debian.net/cgi-bin/mailman/listinfo[mailing
+lists] to support users and developers. The user and developer lists can
+be administered at the following addresses:
 
-- link:http://lists.alioth.debian.org/cgi-bin/mailman/admin/nut-upsuser[Nut-upsuser]
-- link:http://lists.alioth.debian.org/cgi-bin/mailman/admin/nut-upsdev[Nut-upsdev]
-- nut-tracker
-- nut-packaging
+- link:https://alioth-lists.debian.net/cgi-bin/mailman/admin/nut-upsuser[Nut-upsuser]
+- link:https://alioth-lists.debian.net/cgi-bin/mailman/admin/nut-upsdev[Nut-upsdev]
 
 The password is the same for all administrators, and is provided to any new
 NUT admin.

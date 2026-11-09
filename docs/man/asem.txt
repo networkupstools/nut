@@ -90,6 +90,6 @@ Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
 * PB1300 specifications:
-  http://www.asem.it/en/products/industrial-automation/box-pcs/performance/pb1300/
+  link:https://web.archive.org/web/20200705182535/http://www.asem.it:80/en/products/industrial-automation/box-pcs/performance/pb1300/[ASEM PB1300 product page] (archived 2020-07-05)
 * BQ2060 datasheet: http://www.ti.com/lit/ds/symlink/bq2060.pdf
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

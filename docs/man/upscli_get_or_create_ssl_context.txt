@@ -7,6 +7,13 @@ NAME
 upscli_get_or_create_ssl_context, upscli_get_or_create_ssl_context_authconf
 - Get or create a cached per-connection SSL context configuration
 
+ifdef::backend-xhtml11[]
+:ssl-ctx-new: link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[SSL_CTX_new(3)]
+endif::backend-xhtml11[]
+ifndef::backend-xhtml11[]
+:ssl-ctx-new: linkmanext:SSL_CTX_new[3]
+endif::backend-xhtml11[]
+
 SYNOPSIS
 --------
 
@@ -43,10 +50,11 @@ SSL context with the specified configuration:
 - `certfile`: OpenSSL client certificate+key PEM file, or NULL
 
 The *upscli_get_or_create_ssl_context_authconf*() function performs the same
-operation but takes parameters from an linkman:upscli_authconf_t[3] structure,
-typically obtained via linkman:upscli_get_authconf_item[3]. This variant also
+operation but takes parameters from an `upscli_authconf_t` structure (see
+linkman:upscli_create_authconf_item[3]),
+typically obtained via linkman2:upscli_find_authconf_item[upscli_get_authconf_item,3]. This variant also
 registers any CERTHOST security policies defined in the authconf, similar to
-linkman:upscli_init_authconf[3].
+linkman2:upscli_init[upscli_init_authconf,3].
 
 CONFIGURATION LOOKUP
 --------------------
@@ -85,7 +93,7 @@ MULTI-REALM SUPPORT
 -------------------
 
 OpenSSL builds support independent
-`SSL_CTX` objects per connection (see linkmanext:SSL_CTX_new[3]),
+`SSL_CTX` objects per connection (see {ssl-ctx-new}),
 enabling simultaneous use of different certificate authorities and client
 certificates within a single process.
 
@@ -169,12 +177,12 @@ Monitor multiple UPS devices with independent SSL configurations:
 SEE ALSO
 --------
 
-linkman:upscli_init[3], linkman:upscli_init2[3], 
-linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
-linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
-linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_init[3], linkman2:upscli_init[upscli_init2,3],
+linkman2:upscli_init[upscli_init_authconf,3], linkman:upscli_cleanup[3],
+linkman:upscli_set_ssl_context[3], linkman2:upscli_set_ssl_context[upscli_get_ssl_context,3],
+linkman:upscli_connect[3], linkman2:upscli_connect[upscli_tryconnect,3],
 linkman:upscli_disconnect[3],
-linkman:upscli_authconf_t[3], linkman:upscli_get_authconf_item[3],
+linkman:upscli_create_authconf_item[3], linkman2:upscli_find_authconf_item[upscli_get_authconf_item,3],
 linkman:upscli_strerror[3],
-linkmanext:SSL_CTX_new[3],
+{ssl-ctx-new},
 link:https://docs.openssl.org/3.5/man3/SSL_CTX_new/[OpenSSL 3.5 web reference]

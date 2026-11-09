@@ -97,7 +97,7 @@ Set SNMP hostname, or IP address, and port number of the peer SNMP agent.
 There is no default for the hostname, but the default port is 161.
 
 *mibs*='--list'::
-A special option which allows to list the currently known MIB-to-NUT mappings
+A special option which allows you to list the currently known MIB-to-NUT mappings
 and exit the driver binary, intended for command-line usage like this:
 +
 ----

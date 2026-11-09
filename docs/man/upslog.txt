@@ -256,8 +256,8 @@ Client libraries and utilities:
 
 linkman:upsclient[3], linkman:upscli_init[3], linkman:upscli_cleanup[3],
 linkman:upscli_get_or_create_ssl_context[3],
-linkman:upscli_get_or_create_ssl_context_authconf[3],
-linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
+linkman2:upscli_get_or_create_ssl_context[upscli_get_or_create_ssl_context_authconf,3],
+linkman:upscli_set_ssl_context[3], linkman2:upscli_set_ssl_context[upscli_get_ssl_context,3],
 linkman:nutauth.conf[5]
 
 Internet resources:

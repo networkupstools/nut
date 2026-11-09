@@ -6,6 +6,13 @@ NAME
 
 macosx-ups - Monitor for Mac OS X built-in UPS and battery driver
 
+ifdef::backend-xhtml11[]
+:pmset-manual: link:https://github.com/apple-oss-distributions/PowerManagement/blob/main/pmset/pmset.1[pmset(1)]
+endif::backend-xhtml11[]
+ifndef::backend-xhtml11[]
+:pmset-manual: linkmanext:pmset[1]
+endif::backend-xhtml11[]
+
 SYNOPSIS
 --------
 
@@ -55,7 +62,7 @@ This driver is a monitoring-only driver, and cannot shut down an UPS on its
 own. However, this should not be a problem in practice: it is monitoring the
 built-in Mac OS X UPS driver, which has configuration options for several
 shutdown scenarios. Consult the Energy Saver control panel or
-linkmanext:pmset[8] for more information.
+{pmset-manual} for more information.
 
 The default distribution of *apcupsd* installs a kernel extension which
 prevents Mac OS X from attaching to the UPS. In order to use this driver after
@@ -77,7 +84,7 @@ SEE ALSO
 --------
 
 linkman:usbhid-ups[8],
-linkmanext:pmset[8],
+{pmset-manual},
 linkmanext:regex[3]
 
 The core driver:

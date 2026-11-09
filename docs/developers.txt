@@ -33,7 +33,7 @@ table or constructed during run-time.  This is generally not safe (due
 to references into the stack when handling the variable argument list),
 and modern compilers warn against doing so.  While it is possible to
 quiesce the warnings with pragmas, it is better to play safe with the
-"dynamic" versions of methods provided by NUT -- they allow to combine
+"dynamic" versions of methods provided by NUT -- they allow you to combine
 both compile-time checks of expected formatting string vs. types of data
 in the method arguments, and run-time equivalence of the actual dynamic
 formatting string to those expectations.  Such hardened methods include
@@ -311,7 +311,7 @@ We try to cover a few distributions from early 2000's for this, either
 in regular CI builds or one-off local builds for community members with
 a zoo of old systems.
 
-If somebody in the community actually requires to build and run NUT on
+If somebody in the community actually needs to build and run NUT on
 systems that old, where newer compilers are not available, pull requests
 to fix the offending coding issues in some way that does not break other
 use-cases are welcome.
@@ -326,12 +326,12 @@ were introduced over time.
 For more information, and perhaps inspiration for building a similar
 solution, please see the *NUT Quality Assurance and Build Automation Guide*,
 and specifically its chapters on
-linkdoc:qa-guide[Static analysis by compilers,CI_compiler_warnings],
+linkdoc:qa-guide[Static analysis by compilers,CI_compiler_warnings,,_code_and_recipe_analysis],
 linkdoc:qa-guide[ci_build.sh script,CI_BUILD_SH,ci_build.adoc,_test_automation],
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
-technologies,NUTCI_farm_technologies] and
+technologies,NUTCI_farm_technologies,,_continuous_integration_nut_ci_farm_technologies] and
 linkdoc:qa-guide[Continuous Integration (NUT CI farm)
-build agent preparation,NUTCI_farm_agents].
+build agent preparation,NUTCI_farm_agents,,_continuous_integration_nut_ci_farm_build_agent_preparation].
 
 See also "Repetitive build/test optimizations" in `INSTALL.nut.adoc` file
 for suggestions specific to this area.
@@ -410,7 +410,7 @@ are using the "MinGW X64" profile for GCC builds (nuances may differ for
 Also keep in mind that not all dependencies and tools involved in a
 fully-fledged NUT build are easily available or usable on Windows (e.g.
 the spell checker). See linkdoc:qa-guide[Prerequisites for building NUT on
-different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
+different OSes,NUT_Config_Prereqs,docs/config-prereqs.txt,_prerequisites_for_building_nut_on_different_oses] for better detailed
 package lists for different operating systems including Windows, and feel
 welcome to post pull requests with suggestions about new tool-chains that
 might fare better than those already tried and documented.
@@ -1126,15 +1126,15 @@ pragmas.
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-While C standards allow to write `switch` statements to "fall through"
+While C standards allow you to write `switch` statements to "fall through"
 from handling one case into another, modern compilers frown upon that
 practice and spew warnings which complicate detecting real bugs in the
 code (and also looking back at some of the cases written decades ago,
 it is not trivial to state whether the fall-through was intentional or
 really is a bug).
 
-Compilers which detect such problem usually offer ways to decorate the
-code with comments or attributes to keep it quiet it in cases where the
+Compilers which detect such a problem usually offer ways to decorate the
+code with comments or attributes to suppress these warnings in cases where the
 jump is intentional; also C++17 introduces special keywords for that in
 the standard. NUT aiming to be portable and independent of compilers as
 much as possible, prefers the arguably clearer and standards-based way
@@ -1198,7 +1198,7 @@ For NUT, there are prepared integrations like `configure --with-valgrind`.
 See also `scripts/valgrind` in NUT sources for a helper tool and resource
 files to suppress common third-party problems.
 
-For more information, refer to the link:http://valgrind.kde.org[Valgrind]
+For more information, refer to the link:https://valgrind.org/[Valgrind]
 project.
 
 Conclusion
@@ -1260,19 +1260,19 @@ the driver and hardware.
 
 The same remark goes for device entries: if you add support for new models,
 please remember to also complete the hardware compatibility list, present
-in link:data/driver.list.in[]. This will be used to generate both textual,
+in link:https://github.com/networkupstools/nut/blob/master/data/driver.list.in[data/driver.list.in]. This will be used to generate both textual,
 static HTML and dynamic searchable HTML for the website.
 
 Finally, don't forget about fame and glory: if you added or substantially
 updated a driver, your copyright belongs in the heading comment (along
 with existing ones). For vendor backed (or sponsored) contributions we
-welcome an entry in the link:docs/acknowledgements.txt[] file as well,
+welcome an entry in the link:https://github.com/networkupstools/nut/blob/master/docs/acknowledgements.txt[docs/acknowledgements.txt] file as well,
 to track and know the industry players who help make NUT better and more
 useful.
 
-It is nice to update the link:NEWS.adoc[] file for significant development
+It is nice to update the link:https://github.com/networkupstools/nut/blob/master/NEWS.adoc[NEWS.adoc] file for significant development
 to be seen as part of next release, as well as to update the
-link:UPGRADING.adoc[] file for potentially breaking changes and similar
+link:https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc[UPGRADING.adoc] file for potentially breaking changes and similar
 heads-up notes for third-party teams (distribution packagers, clients
 and bindings, etc.)
 
@@ -1340,7 +1340,7 @@ you can limit the depth of the clone:
 
 OPTIONALLY you can then fetch known git tags, so semantic versions look
 better (based off a recent release, see
-linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc]
+linkdoc:developer-guide[NUT Semantic Versioning,versioning,docs/nut-versioning.adoc,versioning]
 for more details):
 
 	:; cd nut
@@ -1352,7 +1352,7 @@ Mercurial (hg) access
 There are those who prefer the simplicity and self-consistency of the
 Mercurial SCM client over the hodgepodge of unique commands which make
 up Git. Rather than debate the merits of each system, we will gently
-guide you towards the link:http://hg-git.github.com/[hg-git project]
+guide you towards the link:https://hg-git.github.io/[hg-git project]
 which would theoretically be a transparent bridge between the central
 Git repository, and your local Mercurial working copy.
 
@@ -1541,7 +1541,7 @@ ensure that after you change a `Makefile.am`, nearby `Makefile.in` and
 [NOTE]
 ======
 See linkdoc:qa-guide[Prerequisites for building NUT on different
-OSes,NUT_Config_Prereqs,docs/config-prereqs.txt] for better detailed
+OSes,NUT_Config_Prereqs,docs/config-prereqs.txt,_prerequisites_for_building_nut_on_different_oses] for better detailed
 package lists for different operating systems.
 
 See `ci_build.sh` for automating many practical scenarios, for easier

@@ -33,7 +33,7 @@ This driver doesn't support any optional settings.
 INSTALLATION
 ------------
 
-This driver may be not built by default.  You can build it by installing
+This driver may not be built by default.  You can build it by installing
 prerequisites and using `configure --with-powerman=yes`.
 
 UPS COMMANDS

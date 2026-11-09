@@ -69,7 +69,7 @@ that fixed `USER=...` directive will be assumed and injected into the output.
 
 If `add_to_list` is '0', this function would return a new instance of the
 `upscli_authconf_t` structure, which owns a separate copy of any strings
-involved, and can be safely discarded with linkman:upscli_free_authconf_item[3]
+involved, and can be safely discarded with linkman2:upscli_create_authconf_item[upscli_free_authconf_item,3]
 (and MUST be discarded by caller, it is not added into the list). Each call
 with same arguments returns a new instance, even with same data (or different,
 if e.g. global defaults were changed for fields not populated in the original
@@ -117,6 +117,6 @@ SEE ALSO
 linkman:upscli_read_authconf_file[3],
 linkman:upscli_get_authconf_list[3],
 linkman:upscli_free_authconf_list[3],
-linkman:upscli_clone_authconf_item[3],
-linkman:upscli_merge_authconf_item[3],
-linkman:upscli_free_authconf_item[3]
+linkman2:upscli_create_authconf_item[upscli_clone_authconf_item,3],
+linkman2:upscli_create_authconf_item[upscli_merge_authconf_item,3],
+linkman2:upscli_create_authconf_item[upscli_free_authconf_item,3]

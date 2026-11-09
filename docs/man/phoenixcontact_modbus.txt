@@ -75,7 +75,7 @@ This driver doesn't support any optional settings.
 INSTALLATION
 ------------
 
-This driver may be not built by default.  You can build it by installing
+This driver may not be built by default.  You can build it by installing
 libmodbus and running `configure --with-modbus=yes`.
 
 You also need to give proper permissions on the local serial device file
@@ -148,4 +148,4 @@ Internet resources:
 * libmodbus home page: http://libmodbus.org
 * More information about PhoenixContact QUINT-UPS industrial DC UPS,
   model 2320461 UPS series can be found here:
-  https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
+  https://www.phoenixcontact.com/en-us/products/uninterruptible-power-supply-quint-ups-24dc12dc524dc10-2320461

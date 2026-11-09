@@ -20,7 +20,7 @@ linkman:nutupsdrv[8].
 DESCRIPTION
 -----------
 
-This driver allows to access the IVT SCD-series devices.
+This driver allows you to access the IVT SCD-series devices.
 
 EXTRA ARGUMENTS
 ---------------

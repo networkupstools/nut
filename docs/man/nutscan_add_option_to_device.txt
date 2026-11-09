@@ -43,7 +43,7 @@ The `nutscan_device_t` contains the following variables:
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 
-This is a double linked list of devices. Each 'device' is described by
+This is a doubly linked list of devices. Each 'device' is described by
 its `type`, its `driver` name, its `port` and any number of optional data.
 
 The *nutscan_add_option_to_device()* adds an optional data in the

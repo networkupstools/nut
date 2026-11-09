@@ -52,4 +52,4 @@ Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
 * The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
-* The gd home page: http://libgd.bitbucket.org
+* The gd home page: https://libgd.github.io/

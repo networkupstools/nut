@@ -40,7 +40,7 @@ definition described below.
 If your 940-0024C cable is broken or missing, use this diagram to build
 a clone:
 
-https://www.networkupstools.org/cables/940-0024C.jpg
+https://networkupstools.org/images/cables/940-0024C.jpg
 
 EXTRA ARGUMENTS
 ---------------

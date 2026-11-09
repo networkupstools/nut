@@ -30,7 +30,7 @@ The `nutscan_device_t` contains the following variables:
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 
-This is a double linked list of device. Each device is described by its
+This is a doubly linked list of devices. Each device is described by its
 `type`, its `driver` name, its `port` and any number of optional data.
 
 The *nutscan_add_device_to_device()* concatenates 'first' and 'second'
@@ -41,7 +41,7 @@ are likely to be modified by this function.
 RETURN VALUE
 ------------
 
-The *nutscan_add_device_to_device()* functions returns a pointer to a
+The *nutscan_add_device_to_device()* function returns a pointer to a
 device containing both passed devices. Note that it's not a new device,
 so it is either 'first' or 'second' which is returned.
 

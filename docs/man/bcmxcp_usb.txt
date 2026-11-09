@@ -92,7 +92,7 @@ new driver.
 INSTALLATION
 ------------
 
-This driver may be not built by default.  You can require building it
+This driver may not be built by default.  You can require building it
 by using `./configure --with-usb=yes` (note that it will also install
 other USB drivers), or `./configure --with-drivers=bcmxcp_usb`. Either
 way, you would need libusb-dev (libraries and headers package) or

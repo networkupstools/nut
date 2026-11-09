@@ -42,7 +42,7 @@ Design trade-offs
 Note that some design choices were made because equivalent machines existed
 earlier on Fosshost.org hosting, and filesystem content copies or ZFS snapshot
 transfers were the least disruptive approach (using ZFS wherever possible also
-allows to keep the history of system changes as snapshots, easily replicated
+allows you to keep the history of system changes as snapshots, easily replicated
 to offline storage).
 
 It is further important to note that DigitalOcean VMs in recovery mode
@@ -166,7 +166,7 @@ this routine but select "Boot from Hard Drive" instead.
 NOTE: Sometimes you might be able to change the boot device in advance
 (it takes time to apply the setting change) and power-cycle the VM later.
 
-The recovery live image allows to install APT packages, such as `mc` (file
+The recovery live image allows you to install APT packages, such as `mc` (file
 manager and editor) and `mbuffer` (to optimize `zfs-send`/`zfs-recv` traffic).
 When the image boots, it offers a menu which walks through adding SSH public
 keys (can import ones from e.g. GitHub by username).
@@ -501,10 +501,11 @@ OmniOS
 Helpful links for this part of the quest:
 
 * https://omnios.org/download => see
-  link:https://downloads.omnios.org/media/lts/omnios-r151046.cloud.vmdk[] (LTS)
-  or link:https://downloads.omnios.org/media/stable/omnios-r151048.cloud.vmdk[] (recent stable)
-  or daily "bloody" images like
-  link:https://downloads.omnios.org/media/bloody/omnios-bloody-20231209.cloud.vmdk[]
+  link:https://downloads.omnios.org/media/r151046/omnios-r151046.cloud.vmdk[] (LTS at the time)
+  or link:https://downloads.omnios.org/media/r151048/omnios-r151048.cloud.vmdk[] (stable at the time)
+
+The daily "bloody" image used here, `omnios-bloody-20231209.cloud.vmdk`,
+is no longer available from the download site.
 
 DO-NUT-CI-OO VM preparation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

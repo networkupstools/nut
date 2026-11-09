@@ -41,7 +41,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-These functions allow to manage instant commands of devices.
+These functions allow you to manage instant commands of devices.
 
 * The *nutclient_get_device_commands()* function retrieves
   the list of command names for a device.

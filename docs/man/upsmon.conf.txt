@@ -439,7 +439,7 @@ or refer to the online version.
 
 NUT supports an "administrative OFF" for power devices which can be managed to
 turn off their application workload, while the UPS or ePDU remains accessible
-for monitoring and management. This toggle allows to delay propagation of such
+for monitoring and management. This toggle allows you to delay propagation of such
 state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
 which `MONITOR` the device and are in fact still alive -- e.g. with multiple
 power sources or because they as the load are not really turned off), because
@@ -576,7 +576,7 @@ then you should have put it in quotes to keep it together, i.e.:
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 ------
 +
-Now unlike some others, this directive still allows to pass both the command
+Now unlike some others, this directive still allows you to pass both the command
 and its arguments as a single quoted token, but it also supports a multi-token
 syntax to pass each argument as a separate token.
 These lines should be equivalent with NUT v2.8.6 or newer:
@@ -630,7 +630,7 @@ Special values:
 If 'AUTHCONF' is not specified at all, best-effort (non-fatal) detection
 of a default file is attempted.
 +
-When compiled with SSL support, this file allows to flexibly customize
+When compiled with SSL support, this file allows you to flexibly customize
 values historically covered by 'CERTPATH', 'CERTFILE', 'CERTIDENT',
 'CERTHOST', 'CERTVERIFY' and 'FORCESSL' options listed below (taking
 them, if specified, as the preferred global default settings).

@@ -38,7 +38,7 @@ devices may be better supported by linkman:microsol-apc[8] driver instead.
 EXTRA ARGUMENTS
 ---------------
 
-This driver support the following extra optional settings in the
+This driver supports the following extra optional settings in the
 linkman:ups.conf[5].
 
 *battext=*'n'::

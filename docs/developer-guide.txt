@@ -73,15 +73,14 @@ NUT provides several tools for clients and core developers, and QA people.
 Device simulation
 -----------------
 
-The dummy-ups driver propose a simulation mode, also known as 'Dummy Mode'.
-This mode allows to simulate any kind of devices, even non existing ones.
+The dummy-ups driver provides a simulation mode, also known as 'Dummy Mode'.
+This mode lets you simulate any kind of device, even nonexistent ones.
 
 Using this method, you can either replay a real life sequence,
 <<dev-recording,recorded from an actual device>>, or directly interact
-through `upsrw` or by editing the device file, to modify the variables'
-values.
+through `upsrw` or by editing the device file, to modify the values of the variables.
 
-Here is an example to setup a device simulation:
+Here is an example of how to set up a device simulation:
 
 - install NUT as usual, if not already done
 - get a simulation file (`.dev`) or sequence (`.seq`), or generate one using

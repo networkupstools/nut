@@ -146,7 +146,7 @@ As a special case, a single `LISTEN * <port>` directive (with an asterisk) will
 try to listen on both IPv6 (`::0`) and IPv4 (`0.0.0.0`) wild-card IP addresses,
 subject to `upsd` command-line arguments or system configuration.
 Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
-and does not allow to disable this mode, then there may be one listening
+and does not allow you to disable this mode, then there may be one listening
 socket to handle both address families.
 +
 	LISTEN 127.0.0.1

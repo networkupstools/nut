@@ -40,7 +40,7 @@ Low-level library: libupsclient
 It is a wrapper around the NUT network protocol.
 
 For more information, refer to the linkman:upsclient[3],
-manual page and the various link:../man/index.html#devclient[upscli_*(3)]
+manual page and the various link:https://www.networkupstools.org/docs/man/index.html#devclient[upscli_*(3)]
 functions documentation referenced in the same file.
 
 Clients like upsc are provided as examples of how to retrieve data using the

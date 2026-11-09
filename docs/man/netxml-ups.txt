@@ -52,8 +52,8 @@ linkman:upsd.conf[5], otherwise you run the risk that linkman:upsd[8] declares
 the driver stale while it is waiting for a connection to timeout.
 
 *subscribe*::
-Connect to the NMC in subscribed mode. This allows to receive notifications
-and alarms more quickly, beside from the standard polling requests.
+Connect to the NMC in subscribed mode. This allows you to receive notifications
+and alarms more quickly, in addition to the standard polling requests.
 
 *login*='value'::
 Set the login value for authenticated mode. This feature also needs the

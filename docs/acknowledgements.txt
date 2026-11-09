@@ -76,7 +76,7 @@ UPS manufacturers
 ~~~~~~~~~~~~~~~~~
 
 [[Eaton]]
-* link:http://powerquality.eaton.com[Eaton], has been the main NUT supporter in
+* Eaton has been the main NUT supporter in
 the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts. In 2022,
 the Eaton NUT-based companion software bundle sources developed (pre-?)2013-2018
 were contributed and re-licensed to become part of NUT.
@@ -99,25 +99,24 @@ provide you with official support from Eaton, or a better level of device
 support in NUT.*
 ================================================================================
 
-* link:https://www.powervar.com/products/single-phase-ups [AMETEK Powervar],
+* link:https://www.powervar.com/products/single-phase-ups[AMETEK Powervar],
 through Andrew McCartney, has added support for all AMETEK Powervar
 UPM models as usb-hid UPS. Through Bill Elliot, has added support for AMETEK
 Powervar's UPM and GTS models using their CUSPP protocol over USB or serial.
 
-* link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
+* Gamatronic, through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
 
 * link:https://ever.eu/[EVER Power Systems] added a USB HID subdriver for
 EVER UPSes (Sinline RT Series, Sinline RT XL Series, ECO PRO AVR CDS Series).
 
-* link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
+* Microdowell, through Elio Corbolante, has
 created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial
-devices. The company also proposes NUT as an alternative to its software for
-link:http://www.microdowell.com/fra/download.html[Linux / Unix].
+devices. The company also offered NUT as an alternative to its Linux / Unix software.
 
-* link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
-link:ups-protocols.html[extensive information] on its USB/HID devices, along
+* link:https://www.upspowercom.com/Support-NUT.jsp[Powercom], through Alexey Morozov, has provided
+link:https://www.networkupstools.org/ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
 +
 They also have a link:https://www.upspowercom.com/Support-NUT.jsp[page
@@ -125,15 +124,14 @@ suggesting NUT] as the software to support a wide range of their USB HID
 capable models.
 
 * link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
-provided link:ups-protocols.html[all protocols information]. Elio Parisi has
+provided link:https://www.networkupstools.org/ups-protocols.html[all protocols information]. Elio Parisi has
 also created riello_ser and riello_usb to support these protocols.
 
-* link:http://www.tripplite.com[Tripp Lite], through Eric Cobb, has provided
+* link:https://www.eaton.com/us/en-us/products/backup-power-ups-surge-it-power-distribution/eaton-acquires-tripp-lite.html[Tripp Lite], through Eric Cobb, has provided
 test results from connecting their HID-compliant UPS hardware to NUT. Some of
 this information has been incorporated into the NUT hardware compatibility
-list, and the rest of the information is available via the
-link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
-archives].
+list. Further details were posted to the NUT Users mailing list
+(former Gmane article 8173).
 
 * link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov,
 has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
@@ -180,7 +178,7 @@ Systems), which was temporarily the new NUT sponsor.
 - Fenton Technologies contributed a PowerPal 660 to the project.  Their open
 stance and quick responses to technical inquiries were appreciated for
 making the development of the fentonups driver possible.
-Fenton has since been acquired by link:http://www.metapo.com[Metapo].
+Fenton has since been acquired by Metapo.
 
 - Bo Kersey of link:http://www.vircio.com[VirCIO] provided a Best Power
 Fortress 750 to facilitate the bestups driver.
@@ -190,13 +188,13 @@ document. SOLA has since been acquired by Eaton.
 
 - PowerKinetics technical support provided documentation on their MiniCOL
 protocol, which is archived in the NUT protocol library.
-PowerKinetics was acquired by the link:http://www.jst.cc[JST Group]
+PowerKinetics was acquired by the JST Group
 in June 2003.
 
 - link:http://www.cyberpowersystems.com[Cyber Power Systems] contributed a
 700AVR model for testing and development of the cyberpower driver.
 
-- link:http://www.liebert.com[Liebert Corporation] supplied serial test boxes
+- Liebert Corporation supplied serial test boxes
 and a UPStation GXT2 with the Web/SNMP card for development of the liebert
 driver and expansion of the existing snmp-ups driver.
 Liebert has since been acquired by link:http://www.emerson.com[Emerson].

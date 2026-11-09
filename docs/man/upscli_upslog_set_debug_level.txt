@@ -45,7 +45,7 @@ hence the cookies: direct NUT-common code consumers like NUT in-tree clients
 can use their `nut_common_cookie()` value to pass into methods here.
 Third-party clients may safely pass 'NULL'.
 
-These methods allow to set or retrieve the value of `nut_debug_level`
+These methods allow you to set or retrieve the value of `nut_debug_level`
 setting known by the 'libupsclient' library, regardless of build mode.
 
 The most likely use (at least in NUT programs) is to call

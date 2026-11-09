@@ -166,7 +166,7 @@ by Rickard E. (Rik) Faith and Nicholas Kain.
 Please do not email the authors directly -- use the nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
-Feldman (http://www.bradleyloritheo.com)
+Feldman.
 
 SEE ALSO
 --------

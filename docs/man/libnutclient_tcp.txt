@@ -168,31 +168,31 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-These functions allow to manage connections to linkman:upsd[8]
-using NUT TCP protocol.
+These functions allow you to manage connections to linkman:upsd[8]
+using the NUT TCP protocol.
 
-* The *nutclient_tcp_create_client()* function create the 'NUTCLIENT_TCP_t'
-  context and intend to connect to upsd at 'host' and 'port'.
+* The *nutclient_tcp_create_client()* function creates the 'NUTCLIENT_TCP_t'
+  context and intends to connect to upsd at 'host' and 'port'.
 +
 The context must be freed by 'nutclient_destroy()'.
 
-  - 'host' can be a sever name or a valid IPv4 or IPv6 address like
+  - 'host' can be a server name or a valid IPv4 or IPv6 address like
     "localhost", "127.0.0.1" or "::1".
 
   - 'port' is a valid TCP port, generally '3493'.
 
-* The *nutclient_tcp_is_connected()* function test if the connection is valid.
+* The *nutclient_tcp_is_connected()* function tests if the connection is valid.
 
-* The *nutclient_tcp_disconnect()* function force to disconnect the specified
-  connection.
+* The *nutclient_tcp_disconnect()* function forces the specified connection
+  to disconnect.
 
-* The *nutclient_tcp_reconnect()* function force to reconnect a connection,
+* The *nutclient_tcp_reconnect()* function forces a connection to reconnect,
   disconnecting it if needed.
 
-* The *nutclient_tcp_set_timeout()* function set the timeout duration
+* The *nutclient_tcp_set_timeout()* function sets the timeout duration
   for I/O operations.
 
-* The *nutclient_tcp_get_timeout()* function retrieve the timeout duration
+* The *nutclient_tcp_get_timeout()* function retrieves the timeout duration
   for I/O operations.
 +
 'timeout' values are specified in seconds, use negative values for blocking.

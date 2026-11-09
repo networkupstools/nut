@@ -1,0 +1,76 @@
+% NUT PDF presentation, loaded after the existing AsciiDoc/dblatex style.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{nut-pdf}[2026/11/09 NUT PDF style]
+\definecolor{NUTink}{rgb}{0.10,0.17,0.24}
+\definecolor{NUTblue}{rgb}{0.09,0.24,0.40}
+\definecolor{NUTmuted}{rgb}{0.34,0.39,0.45}
+\definecolor{NUTcode}{rgb}{0.96,0.97,0.98}
+\renewcommand{\familydefault}{\sfdefault}
+\linespread{1.05}
+% Older dblatex styles may omit these presentation helpers.
+\@ifundefined{titleformat}{}{%
+  \titleformat{\section}{\Large\sffamily\bfseries\color{NUTblue}}{\thesection}{0.8em}{}
+  \titleformat{\subsection}{\large\sffamily\bfseries\color{NUTblue}}{\thesubsection}{0.8em}{}
+  \titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{NUTink}}{\thesubsubsection}{0.8em}{}
+}
+\@ifundefined{titlespacing}{}{%
+  \titlespacing*{\section}{0pt}{2.0ex plus 1ex minus .2ex}{1.1ex plus .2ex}
+  \titlespacing*{\subsection}{0pt}{1.7ex plus .6ex minus .2ex}{.8ex plus .2ex}
+  \titlespacing*{\subsubsection}{0pt}{1.5ex plus .5ex minus .2ex}{.6ex plus .2ex}
+}
+\setlength{\headheight}{14pt}
+\@ifundefined{headrulewidth}{}{\renewcommand{\headrulewidth}{0.2pt}}
+\@ifundefined{footrulewidth}{}{\renewcommand{\footrulewidth}{0pt}}
+\@ifundefined{plainheadrulewidth}{}{\renewcommand{\plainheadrulewidth}{0.2pt}}
+\@ifundefined{plainfootrulewidth}{}{\renewcommand{\plainfootrulewidth}{0pt}}
+\AtBeginDocument{%
+  \color{NUTink}%
+  \hypersetup{colorlinks=true,linkcolor=NUTblue,urlcolor=NUTblue,citecolor=NUTblue,filecolor=NUTblue}%
+  \setlength{\parskip}{5pt plus 1pt minus 1pt}%
+  \setlength{\emergencystretch}{2em}%
+  \@ifundefined{setdescription}{}{\setdescription{style=unboxed}}%
+  \@ifundefined{setitemize}{}{\setitemize{itemsep=3pt,parsep=2pt,topsep=5pt}}%
+  \@ifundefined{setenumerate}{}{\setenumerate{itemsep=3pt,parsep=2pt,topsep=5pt}}%
+  \@ifundefined{lstset}{}{\lstset{backgroundcolor=\color{NUTcode},rulecolor=\color{NUTmuted},
+    framerule=0.2pt,frame=single,framesep=5pt,prebreak={},columns=fullflexible}}%
+}
+
+% Copy the original literal once; close marked content at visual line breaks
+% so it never crosses a PDF page boundary. Other engines use visible text.
+\newif\ifNUTpdftext
+\@ifundefined{pdfliteral}{}{%
+  \@ifundefined{pdfoutput}{}{\ifnum\pdfoutput>0 \NUTpdftexttrue\fi}%
+}
+\DeclareRobustCommand{\NUTliteral}[2]{%
+  \leavevmode
+  \begingroup
+  \ifNUTpdftext
+    \pdfstringdef\NUTliteraltext{#1}%
+    \pdfliteral direct{/Span << /ActualText (\NUTliteraltext) >> BDC}%
+    #2%
+    \pdfliteral direct{EMC}%
+  \else #2\fi
+  \endgroup
+}
+% A small hooked rule marks a continued token without adding a text glyph.
+% It remains absent from copied text even when ActualText is unavailable.
+\DeclareRobustCommand{\NUTcontinuation}{%
+  \kern1pt\raisebox{.2ex}{\vbox{\offinterlineskip
+    \hrule width4pt height.3pt
+    \hbox{\kern3.7pt\vrule width.3pt height2pt}}}%
+}
+\DeclareRobustCommand{\NUTliteralbreak}{%
+  \ifNUTpdftext
+    \discretionary{\hbox{\NUTcontinuation\pdfliteral direct{EMC}}}%
+      {\hbox{\pdfliteral direct{/Span << /ActualText () >> BDC}}}{}%
+  \else \discretionary{\hbox{\NUTcontinuation}}{\hbox{}}{}\fi
+}
+\DeclareRobustCommand{\NUTliteralspace}{%
+  \ifNUTpdftext
+    \discretionary{\hbox{\pdfliteral direct{EMC}}}%
+      {\hbox{\pdfliteral direct{/Span << /ActualText () >> BDC}}}{\hbox{\ }}%
+  \else \discretionary{\hbox{}}{\hbox{}}{\hbox{\ }}\fi
+}
+
+% Headings and captions use the literal text in bookmarks and moving arguments.
+\pdfstringdefDisableCommands{\def\NUTliteral#1#2{#1}}

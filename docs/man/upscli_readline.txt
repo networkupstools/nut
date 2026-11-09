@@ -42,7 +42,7 @@ lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_readline()* does not offer this
 freedom, and uses NUT default network timeout (5 seconds). Both of these
 disconnect upon errors. The *upscli_readline_timeout_may_disconnect()*
-further allows to enable or disable such disconnections.
+further allows you to enable or disable such disconnections.
 
 RETURN VALUE
 ------------

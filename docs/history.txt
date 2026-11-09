@@ -443,7 +443,7 @@ This marked a new era for NUT...
 
 First, Arnaud aimed at opening up the development by creating a project on the
 http://www.debian.org/[Debian]
-http://alioth.debian.org/projects/nut/[Alioth Forge].
+https://web.archive.org/web/20170630202752/https://alioth.debian.org/projects/nut/[Alioth Forge (archived 2017-06-30)].
 This allowed to build the team of hackers that Russell dreamed about.
 It also allows to ensure NUT's continuation, whatever happens to
 the leader. And that would most of all boost the projects contributions.
