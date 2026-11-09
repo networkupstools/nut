@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.56"
+#define IETF_MIB_VERSION	"1.57"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -290,19 +290,23 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("ups.start.auto", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.5.0", "", 0, ietf_yes_no_info), /* upsAutoRestart */
 
 	/* Configuration Group */
-	snmp_info_default("input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigInputVoltage */
-	snmp_info_default("input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigInputFreq */
-	snmp_info_default("output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", 0, NULL), /* upsConfigOutputVoltage */
-	snmp_info_default("output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", 0, NULL), /* upsConfigOutputFreq */
-	snmp_info_default("output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigOutputVA */
-	snmp_info_default("output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigOutputPower */
+	/* A rating or a voltage transfer point of 0 is an object the agent
+	 * does not implement (RTCS 03.02.00 cards return 0 for all but
+	 * upsConfigOutputVA). A 0-minute upsConfigLowBattTime can be a real
+	 * setting, so that one keeps its zero. */
+	snmp_info_default("input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigInputVoltage */
+	snmp_info_default("input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigInputFreq */
+	snmp_info_default("output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputVoltage */
+	snmp_info_default("output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputFreq */
+	snmp_info_default("output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputVA */
+	snmp_info_default("output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputPower */
 	snmp_info_default("battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL), /* upsConfigLowBattTime */
 	snmp_info_default("ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info), /* upsConfigAudibleStatus */
 	snmp_info_default("beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "1", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.enable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "2", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.mute", 0, 1, IETF_OID_UPS_MIB "9.8.0", "3", SU_TYPE_CMD, NULL),
-	snmp_info_default("input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", 0, NULL), /* upsConfigLowVoltageTransferPoint */
-	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", 0, NULL), /* upsConfigHighVoltageTransferPoint */
+	snmp_info_default("input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigLowVoltageTransferPoint */
+	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigHighVoltageTransferPoint */
 
 	/* end of structure. */
 	snmp_info_sentinel
