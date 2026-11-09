@@ -45,6 +45,9 @@ https://github.com/networkupstools/nut/milestone/13
    (not 3 like before) for easier initial indentation of new entries.
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * `upsdrvctl shutdown` without a device name now also shuts down devices
+      with `sdorder` above 0. The list was walked once for the first order
+      only, so later orders were skipped. [issue #3793]
     * `libnutconf`: character reads from a TCP socket now use the Windows
       socket API, matching string reads. Previously they failed with a bad
       file descriptor error on Windows. [issue #2293]
