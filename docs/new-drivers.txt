@@ -196,7 +196,7 @@ Some options are common to all drivers and are handled in `drivers/main.c`
 (which also defines and implements most of the methods in this area), while
 others may be specific to individual drivers or even their sub-drivers.
 
-The `addvar()` method allows to specify a certain option name, with its
+The `addvar()` method allows you to specify a certain option name, with its
 type and a help message string:
 
 	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-6)");
@@ -206,9 +206,9 @@ type and a help message string:
 In driver code, these calls should comprise the `upsdrv_makevartable()`
 method.
 
-The `getval()` method allows to get the user-provided string value (or
+The `getval()` method allows you to get the user-provided string value (or
 `NULL` -- but it is hard to tell apart if the option was not specified
-or no value was assigned).  The `testvar()` method allows to check if
+or no value was assigned).  The `testvar()` method allows you to check if
 the option name was specified (even if without a value), so is better
 suited for flags.  Internally there is no difference between "values"
 and "flags", so historically some flags were "promoted" to values with
@@ -299,7 +299,7 @@ table or constructed during run-time.  This is generally not safe (due
 to references into the stack when handling the variable argument list),
 and modern compilers warn against doing so.  While it is possible to
 quiesce the warnings with pragmas, it is better to play safe with the
-"dynamic" versions of methods provided by NUT -- they allow to combine
+"dynamic" versions of methods provided by NUT -- they allow you to combine
 both compile-time checks of expected formatting string vs. types of data
 in the method arguments, and run-time equivalence of the actual dynamic
 formatting string to those expectations.  In this case, you would use
@@ -722,7 +722,7 @@ You should use the usb_device_id_t structure, and the USB_DEVICE macro to
 declare the supported devices. This allows the automatic extraction of
 USB information, to generate the Hotplug, udev and UPower support files.
 
-The structure allows to convey `uint16_t` values of VendorID and ProductID,
+The structure allows you to convey `uint16_t` values of VendorID and ProductID,
 and an optional matching-function callback to interrogate the device in
 more detail (constrain known supported firmware versions, OEM brands, etc.)
 
@@ -758,7 +758,7 @@ Serial strings, possibly also Bus, bcdDevice (device release number) and Device
 name on the bus strings, in the USBDevice_t fields describing the specific piece
 of hardware you are inspecting.
 +
-This function returns one of the following value:
+This function returns one of the following values:
 +
 --
 		* NOT_SUPPORTED (0),

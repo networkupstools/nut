@@ -114,8 +114,8 @@ following script in the directory you just checked out:
 
 	:; ./autogen.sh
 
-NOTE: It is optionally recommended to have Python 2.x or 3.x, and Perl, to
-generate some files included into the `configure` script, presence is checked
+NOTE: It is optional, but recommended, to have Python 2.x or 3.x, and Perl, to
+generate some files included in the `configure` script whose presence is checked
 by autotools when it is generated. Neutered files can be just "touched" to
 pass the `autogen.sh` if these interpreters are not available, and effectively
 skip those parts of the build later on -- `autogen.sh` will then advise which
@@ -174,7 +174,7 @@ Binary packages
 [NOTE]
 ======
 The only official releases from this project are source code "tarballs",
-prepared by `make dist-files` from the tagged release commits on main trunk of
+prepared by `make dist-files` from the tagged release commits on the main trunk of
 the development code base (for more details see NUT Maintainer Guide in source).
 
 Best-effort packages or archives of installation prototype workspaces, prepared
@@ -288,12 +288,12 @@ VMware
 See link:https://github.com/networkupstools/nut/wiki/NUT-and-VMware-(ESXi)[NUT
   and VMware (ESXi) page on NUT Wiki] for more community-contributed details.
 +
-Note that the VIB package versioning is independent of NUT or VMware versions,
-  they are however mentioned in downloadable file names. As of this writing,
+Note that the VIB package versioning is independent of NUT or VMware versions;
+  they are, however, mentioned in downloadable file names. As of this writing,
   there are builds spanning VMware ESXi 5.0-8.0 and NUT 2.7.4-2.8.0.
 +
 WARNING: This module is provided "as is" and is not approved by VMware,
-you may lose VMware support if you install it. Use it at your own risks.
+you may lose VMware support if you install it. Use it at your own risk.
 
   * link:https://github.com/rgc2000/NutClient-ESXi[GitHub repository with build recipes],
     including link:https://github.com/rgc2000/NutClient-ESXi/releases[binary releases]

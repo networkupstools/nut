@@ -55,19 +55,19 @@ Creating a subdriver
 
 In order to develop a new subdriver for a specific UPS you have to know the "idiom" (dialect of the protocol) spoken by that device.
 
-This kind of devices speaks idioms that can be summed up as follows:
+Devices of this kind speak idioms that can be summed up as follows:
 
-- We send the UPS a query for one or more information
+- We send the UPS a query for one or more pieces of information
 
- * If the query is supported by the device, we'll get a reply that is mostly of a fixed length, therefore, in most cases, each information starts and ends always at the same indexes
+ * If the query is supported by the device, we'll get a reply that is mostly of a fixed length, therefore, in most cases, each piece of information always starts and ends at the same indexes
 
 - We send the UPS a command
 
- * If the command is supported by the device, the UPS will either take action without any reply or reply us with a device-specific answer signaling that the command has been accepted (e.g. +ACK+)
+ * If the command is supported by the device, the UPS will either take action without any reply or reply to us with a device-specific answer signaling that the command has been accepted (e.g. +ACK+)
 
 - If the query/command isn't supported by the device we'll get either the query/command echoed back or a device-specific reply signaling that it has been rejected (e.g. +NAK+)
 
-To be supported by this driver the idiom spoken by the UPS must comply to these conditions.
+To be supported by this driver the idiom spoken by the UPS must comply with these conditions.
 
 
 Writing a subdriver
@@ -116,7 +116,7 @@ Make sure not to collide with other subdrivers' vars and flags.
 
 *+accepted+* (optional)::
 String to match if the driver is expecting a reply from the UPS on instcmd/setvar in case of success.
-This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching, so you don't have to include the trailing carriage return (+\r+) and you can decide at which index of the answer the value should start or end setting the appropriate +from+ and +to+ in the +item_t+ (see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>).
+This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching for, so you don't have to include the trailing carriage return (+\r+) and you can decide at which index of the answer the value should start or end by setting the appropriate +from+ and +to+ in the +item_t+ (see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>).
 
 *+rejected+* (optional)::
 String to match if the driver is expecting a reply from the UPS in case of error.

@@ -165,7 +165,7 @@ Note that you need to install libsnmp development package or files.
 
 	--with-net-snmp-config
 
-In addition to the `--with-snmp` option above, this one allows to provide
+In addition to the `--with-snmp` option above, this one allows you to provide
 a custom program name (in `PATH`) or complete pathname to `net-snmp-config`
 (may have copies named per architecture, e.g. `net-snmp-config-32` and
 `net-snmp-config-64`).
@@ -191,7 +191,7 @@ LLNC CHAOS Powerman driver
 
 Build and install Powerman PDU client driver (default: auto-detect)
 
-This allows to interact with the Powerman daemon, and the numerous
+This allows you to interact with the Powerman daemon, and the numerous
 Power Distribution Units (PDU) supported by the
 https://github.com/chaos/powerman[powerman] project.
 
@@ -205,7 +205,7 @@ IPMI drivers
 
 Build and install IPMI PSU driver (default: auto-detect)
 
-This allows to monitor numerous Power Supply Units (PSU) found on servers.
+This allows you to monitor numerous Power Supply Units (PSU) found on servers.
 
 Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner;
 and 1.0.1 or higher, for nut-ipmipsu) development package or files.
@@ -217,7 +217,7 @@ UPower/D-Bus drivers
 
 Build and install the `nut-upower` driver.
 
-This allows to monitor UPS and battery devices managed by the UPower daemon
+This allows you to monitor UPS and battery devices managed by the UPower daemon
 via D-Bus. This introduces a new category of drivers that talk to operating
 system services to obtain power state information.
 
@@ -340,7 +340,7 @@ scans, and scans of different media types.
 
 Some older systems' implementation of threading may be broken, so while we
 can detect support, builds using it can fail in practice -- so this toggle
-allows to keep building sequential-only code.
+allows you to keep building sequential-only code.
 
 NUT Configuration tool
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -387,14 +387,14 @@ Other values understood for this option are listed below:
   scenarios to re-use man page files built and distributed by the main
   build and not waste time on re-generation of those.
 
-* A `--with-doc=dist-auto` allows to use pre-distributed MAN pages if present
+* A `--with-doc=dist-auto` allows you to use pre-distributed MAN pages if present
   (should be in "tarball" release archives; should not be among Git-tracked
   sources; may be left over from earlier builds in same workspace), or build
   those if we can (the `auto` part). Practically this is implemented in detail
   only for `--with-doc=man=dist-auto`, as we do not dist HTML and PDF products;
   it is a placeholder for those to simplify the generic configuration calls.
 
-Multiple documentation format values can be specified, separated with comma.
+Multiple documentation format values can be specified, separated by commas.
 Each such value can be suffixed with `=yes` to require building of this one
 documentation format (abort configuration if tools are missing), `=auto` to
 detect and enable if we can build it on this system (and not abort if we
@@ -865,7 +865,7 @@ LibLTDL
 Enable libltdl (Libtool dlopen abstraction) support.
 
 This is required to build `nut-scanner` which loads third-party libraries
-dynamically, based on requested scanning options. This allows to build and
+dynamically, based on requested scanning options. This allows you to build and
 package the tool without requiring all possible dependencies to be installed
 in each run-time environment.
 
@@ -929,7 +929,7 @@ account "coincidentally" has the group specified here as its primary.
 The specified `<groupname>` is used for the permissions of some files,
 particularly the hotplugging rules for USB. The idea is that the
 device files for any UPS devices should be readable and writable by
-members of that group. It also allows to run the drivers and the data
+members of that group. It also allows you to run the drivers and the data
 server as different user accounts, which have some group in common
 (it should be the primary group for the user linkman:upsd[8] runs as,
 and such deployment would be using explicit user/group account settings
@@ -1278,7 +1278,7 @@ if a separate location is not specified by `--with-altpidpath` option.
 Sample configuration examples for `upssched.conf` (and default systemd-tmpfiles
 configuration generated with a NUT build) suggest using a sub-directory like
 `${STATEPATH}/upssched` for the tool's lock file and client-daemon communication
-pipe.  This allows to potentially run that tool and daemon under a dedicated
+pipe.  This allows you to potentially run that tool and daemon under a dedicated
 user account, without overlapping with permissions needed by other NUT programs.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
@@ -1303,7 +1303,7 @@ pkg-config tooling
 
 	--with-pkg-config
 
-This option allows to provide a custom program name (in `PATH`) or a
+This option allows you to provide a custom program name (in `PATH`) or a
 complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
 possibly other build-time options in `*.pc` files, to use third-party
 libraries. On build systems which support multiple architectures you
@@ -1328,7 +1328,7 @@ manifest will be detected and used by default in that situation.
 
 	--with-gdlib-config
 
-This option allows to provide a custom program name (in `PATH`) or
+This option allows you to provide a custom program name (in `PATH`) or
 a complete pathname to `gdlib-config`. This may be needed on build
 systems which support multiple architectures, or in cases where your
 distribution names this program differently.
@@ -1338,7 +1338,7 @@ LibUSB
 
 	--with-libusb-config
 
-This option allows to provide a custom program name (in `PATH`) or
+This option allows you to provide a custom program name (in `PATH`) or
 a complete pathname to `libusb-config` (usually delivered only for
 libusb-0.1 version, but not for libusb-1.0). This may be needed on
 build systems which support multiple architectures or provide several

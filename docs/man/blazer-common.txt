@@ -245,7 +245,7 @@ reliably measure this between 0 and 100% full charge.
 This is better than nothing (but not by much). If any of the above
 calculations are giving you incorrect readings, remember that you are
 the one who put in the values in linkman:ups.conf[5], so don't complain
-to the author. If you need something better, consider buy an UPS that
+to the author. If you need something better, consider buying a UPS that
 reports *battery.charge* and *battery.runtime* all by itself without
 the help of a NUT driver.
 

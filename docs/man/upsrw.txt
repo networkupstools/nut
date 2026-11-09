@@ -159,8 +159,8 @@ them.
 VALUE FORMAT
 ------------
 
-When using *upsrw* to modify a numeric float value, that values must be given
-using decimal (base 10) english-based representation, so using a dot, in
+When using *upsrw* to modify a numeric float value, that value must be given
+using decimal (base 10) English-based representation, so using a dot, in
 non-scientific notation.  So hexadecimal, exponents, and comma for thousands
 separator are forbidden.
 

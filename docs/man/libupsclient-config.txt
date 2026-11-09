@@ -20,7 +20,7 @@ linker flags that should be used to compile and link programs that use the
 *libupsclient* from the Network UPS Tools project (also known as the "upscli"
 API).
 
-It allows to simplify build automation for systems without a `pkg-config`
+It simplifies build automation for systems without a `pkg-config`
 implementation which would instead use the `libupsclient.pc` file installed
 with the NUT development files.
 

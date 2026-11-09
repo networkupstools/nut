@@ -147,7 +147,7 @@ The 'upsmon primary' system waits for 'secondary' systems to disconnect as
   Most client integrations also stall the ultimate reboot/power-off of their
   machine, if its shut down was triggered by `upsmon`, and reboot after a
   long delay (if the machine is still alive).
-  This combined approach allows to avoid the "power race condition", when
+  This combined approach allows you to avoid the "power race condition", when
   systems would otherwise remain shut down indefinitely (until someone comes
   and reboots them) just because external power returned when the shut down
   spree had already started.

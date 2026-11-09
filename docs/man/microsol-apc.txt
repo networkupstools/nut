@@ -33,7 +33,7 @@ these newer, APC-branded models. Older equipment should use linkman:solis[8].
 EXTRA ARGUMENTS
 ---------------
 
-This driver support the following extra optional settings in the
+This driver supports the following extra optional settings in the
 linkman:ups.conf[5].
 
 *battext=*'n'::

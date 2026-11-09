@@ -129,7 +129,7 @@ NETWORK OPTIONS
 
 [NOTE]
 ======
-The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow to
+The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow you to
 specify several IP (IPv4 or IPv6) address ranges, down to individual single
 IP addresses.
 

@@ -10,11 +10,11 @@ upsmon can call out to a helper script or program when the device changes
 state.  The example upsmon.conf has a full list of which state changes
 are available -- ONLINE, ONBATT, LOWBATT, and more.
 
-There are two options, that will be presented in details:
+There are two options, described in detail below:
 
 - the simple approach: create your own helper, and manage all events and actions
 yourself,
-- the advanced approach: use the NUT provided helper, called 'upssched'.
+- the advanced approach: use the NUT-provided helper, called 'upssched'.
 
 
 The simple approach, using your own script
@@ -163,7 +163,7 @@ Establishing timers
 ^^^^^^^^^^^^^^^^^^^
 
 Let's say that you want to receive a notification when any UPS has been running
-on battery for 30 seconds.  Create a handler that starts a 30 second timer
+on battery for 30 seconds.  Create a handler that starts a 30-second timer
 for an ONBATT condition.
 
 	AT ONBATT * START-TIMER onbattwarn 30
@@ -177,8 +177,8 @@ So, let's tell upssched that.
 
 	AT ONLINE * CANCEL-TIMER onbattwarn
 
-NOTE: Timers are pure in-memory mechanisms, specific to upssched.  Conversely
-to other mechanisms found in NUT, such as upsmon->POWERDOWNFLAG, there is no
+NOTE: Timers are pure in-memory mechanisms, specific to upssched.  Unlike
+other mechanisms found in NUT, such as upsmon->POWERDOWNFLAG, there is no
 file created on the filesystem.
 
 Executing commands immediately
@@ -189,7 +189,7 @@ However, the users are not informed until 30 seconds later -- using a timer as
 described above. Whilst this may let the *logged in* users know that the UPS
 is on battery power, it does not inform any users subsequently logging in. To
 enable this we could, at the same time, create a file which is read and
-displayed to any user trying to login whilst the UPS is on battery power. If
+displayed to any user trying to log in while the UPS is on battery power. If
 the UPS comes back onto utility power within 30 seconds, then we can cancel
 the timer and remove the file, as described above. However, if the UPS comes
 back onto utility power say 5 minutes later then we do not want to use any
@@ -200,7 +200,7 @@ timers but we still want to remove the file. To do this we could use:
 This means that when upsmon detects that the UPS is back on utility power it
 will signal upssched. Upssched will see the above command and simply pass
 'ups-back-on-power' as an argument directly to CMDSCRIPT. This occurs
-immediately, there are no timers involved.
+immediately; there are no timers involved.
 
 Writing the command script handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -241,7 +241,7 @@ to your desires.
 
 NOTE: You can invoke just about anything from inside the CMDSCRIPT.  It doesn't
 need to be a shell script, either -- that's just an example.  If you want to
-write a program that will parse argv[1] and deal with the  possibilities, that
+write a program that will parse argv[1] and deal with the possibilities, that
 will work too.
 
 
@@ -262,7 +262,7 @@ in your CMDSCRIPT:
 
 NOTE: The path to `upsmon` must be provided. The default for an installation
 built from sources is `/usr/local/ups` (so `/usr/local/ups/sbin/upsmon`),
-while packaged installations will generally comply to
+while packaged installations will generally comply with
 link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy Standard]
 (so `/sbin/upsmon`).
 

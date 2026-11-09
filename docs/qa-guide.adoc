@@ -57,7 +57,7 @@ needed to build and install that project on a minimally capable end-user
 system (should have a compiler, `make`, and dependency libraries/headers,
 but is not required to have autotools, manual page generation tools, etc.)
 
-The `make distcheck` goal allows to validate that the constructed archive
+The `make distcheck` goal allows you to validate that the constructed archive
 is in fact sufficient for such a build (includes all required files), and
 also that the code structure and its recipes properly support out-of-tree
 builds (as used on multi-platform and cross-build environments) without
@@ -65,7 +65,7 @@ contaminating the source code directory structure.
 
 NUT's root `Makefile.am` defines the `DISTCHECK_FLAGS` eventually passed
 to the `configure` script executed as part of `distcheck` validation, and
-the default set of the flags requires to build everything.  This in turn
+the default set of flags requires everything to be built.  This in turn
 constrains the set of systems where this validation can be performed to
 build environments that have all dependency projects installed, have the
 documentation generation tools, etc. in order to make sure that for all

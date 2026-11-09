@@ -7,7 +7,7 @@ NUT outlets management and PDU notes
 // https://networkupstools.org/docs/user-manual.chunked/outlet_management.html
 //////////////////////////////////////////////////////////////////////////////
 
-NUT supports advanced outlets management for any kind of device that proposes
+NUT supports advanced outlet management for any kind of device that provides
 it. This chapter introduces how to manage outlets in general, and how to take
 advantage of the provided features.
 
@@ -31,22 +31,22 @@ NUT allows you to control all these devices!
 NUT outlet data collection
 --------------------------
 
-NUT provides a complete and uniform integration of outlets related data,
+NUT provides complete and uniform integration of outlet-related data
 through the 'outlet' collection.
 
-First, there is a special outlet, called 'main outlet'.
+First, there is a special outlet, called the 'main outlet'.
 You can access it through 'outlet.{id, desc, ...}' without any index.
 
 Any modification through the 'main outlet' will affect *all* outlets.
 For example, calling the command 'outlet.load.cycle' will cycle all outlets.
 
-Next, outlets index starts from *1*. Index '0' is implicitly reserved to
+Next, outlet indexing starts at *1*. Index '0' is implicitly reserved for
 the 'main outlet'. So the first outlet is 'outlet.1.*'.
 
 For a complete list of outlet data and commands, refer to the
 <<nut-names,NUT command and variable naming scheme>>.
 
-An example upsc output (data/epdu-managed.dev) is available in the source
+Example upsc output (data/epdu-managed.dev) is available in the source
 archive.
 
 NOTE: The variables supported depend on the exact device type.
@@ -66,13 +66,13 @@ Outlets on UPS
 
 Some advanced Uninterruptible Power Supplies provide smart outlet management.
 
-This allows to program a limited backup time to non-critical loads in order
-to keep the maximum of the battery reserve for critical equipment.
+This allows you to program a limited backup time for non-critical loads
+to preserve as much battery capacity as possible for critical equipment.
 
 This also allows the same remote electrical management of devices provided
 by PDUs, which can be very interesting in Data Centers.
 
-For example, on small setup, you can plug printers, USB devices, hubs, (...)
+For example, in a small setup, you can plug printers, USB devices, hubs, (...)
 into managed outlets. Depending on your UPS's capabilities, you will be able
 to turn off those loads:
 
@@ -102,7 +102,7 @@ As mentioned in the introduction, some other devices can be considered and
 managed like PDUs. This is the case in most blade systems, where the blade
 chassis offers power management services.
 
-This way, you can control remotely each blade server as if it were a PDU
+This way, you can remotely control each blade server as if it were a PDU
 outlet.
 
 This category of devices is generally called Remote Power Controls --

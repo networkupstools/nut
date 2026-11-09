@@ -40,7 +40,7 @@ file to load server-wide defaults), if desired.
 If 'filename' is `NULL` and the file is not found in a default location, the
 method posts an `upslogx(LOG_WARNING, ...)` about this if `debug_level < 0`
 or logs an `upsdebugx(debug_level, ...)` message (note that level zero usually
-goes to `stderr` right away). This allows to reduce console noise during
+goes to `stderr` right away). This allows you to reduce console noise during
 "best-effort" attempts to use the file if present.
 
 The file structure is similar to *ups.conf*, with global defaults and

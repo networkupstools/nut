@@ -80,7 +80,7 @@ RETURN VALUE
 ------------
 
 The *upscli_create_authconf_item()* and *upscli_clone_authconf_item()*
-functions returns a pointer to the new structure, or `NULL` if an error
+functions return a pointer to the new structure, or `NULL` if an error
 occurred.
 
 The *upscli_merge_authconf_item()* function returns a pointer to the merged

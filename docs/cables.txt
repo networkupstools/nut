@@ -20,7 +20,7 @@ NOTE: The original 940-0024C diagram was contributed by Steve Draper.
 
 *Reported by Jonathan Laventhol*
 
-This cable is said to use the same wiring as 940-0024C clone.
+This cable is said to use the same wiring as the 940-0024C clone.
 
 940-0024C clone for Macs
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,7 +55,7 @@ Documents in this section are provided courtesy of Eaton.
 MGE Office Protection Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The three first cables also applies to MGE UPS SYSTEMS and Eaton.
+The first three cables also apply to MGE UPS SYSTEMS and Eaton.
 
 DB9-DB9 cable (ref 66049)
 ^^^^^^^^^^^^^^^^^^^^^^^^^

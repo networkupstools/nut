@@ -79,7 +79,7 @@ If using SSL, you can specify 'certname' with the subject name
 of the certificate to send to `upsd`, and 'certpasswd' with the password used
 to decrypt certificate private key.
 
-* If compiled with NSS, this allows to choose one of many certificates that
+* If compiled with NSS, this allows you to choose one of many certificates that
   may be stored in the database.
 
 * If compiled with OpenSSL, the 'certfile' is expected to hold one set of

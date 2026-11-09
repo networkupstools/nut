@@ -138,7 +138,7 @@ APC hardware supports a lot of shutdown methods, that themselves can
 differ in behaviour quite a bit, depending on the model.
 
 *S* (soft hibernate)::
-    This is most basic command present in probably all APC models. It will
+    This is the most basic command present in probably all APC models. It will
     hibernate the UPS, and subsequently wake it up when the mains supply
     returns. *The command doesn't work if the UPS is running on mains.*
 +
@@ -158,7 +158,7 @@ differ in behaviour quite a bit, depending on the model.
 --
 +
 *CS* (aka "force OB hack")::
-    This is a trick to make UPS power down even if it's running on mains.
+    This is a trick to make the UPS power down even if it's running on mains.
     Immediately before issuing *S*, "simulate power failure" is issued.
 	The remaining behaviour is as in *S* case.
 +
@@ -171,8 +171,8 @@ UPSes in consistent fashion using only *S*. It's better to use *@nnn*
 command if your UPS supports it (and is not too old, see below).
 
 *@nnn* (hard hibernate)::
-    This is basic command used to hibernate UPS regardless if it's
-    running on batteries or on mains. The option takes 3 digits argument
+    This is a basic command used to hibernate the UPS regardless of whether it's
+    running on batteries or on mains. The option takes a 3-digit argument
 	which can be used to specify additional wake-up delay (in 6 minute
 	units).
 +
@@ -221,7 +221,7 @@ There are three options used to control the shutdown behaviour.
     details.
 
 *advorder*=no|[0-4]+::
-    This option takes string of digits as an argument. Methods listed
+    This option takes a string of digits as an argument. Methods listed
 	are tried in turn until one of them succeeds. Note that the meaning
 	of digits is different from *sdtype*. See below for details.
 
@@ -332,8 +332,8 @@ underestimate the remaining runtime (especially right after going into
 OB state). *ignorelb* option and *$$override.*$$* let you remain in
 control of the UPS, not UPS in control of you.
 
-Furthermore, this allows to specify conditions similarly to how it's done
-in apcupsd daemon, so it should be welcome by people used to that software.
+Furthermore, this allows you to specify conditions similarly to how it's done
+in the apcupsd daemon, so it should be welcomed by people used to that software.
 
 
 SUPPORTED INSTANT COMMANDS

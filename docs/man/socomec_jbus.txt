@@ -60,7 +60,7 @@ avoid using gender changers.
 
 RS-232 is supported on all operating systems, either via a built-in serial
 port on your computer, or by using an external USB-to-RS-232 converter. If
-you plan to use an USB-to-RS-232 converter, make sure it's supported by your
+you plan to use a USB-to-RS-232 converter, make sure it's supported by your
 operating system.
 
 

@@ -29,7 +29,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-These functions allow to manage devices.
+These functions allow you to manage devices.
 
 * The *nutclient_get_devices()* function retrieves the list of devices
   monitored by a client.

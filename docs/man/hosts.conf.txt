@@ -60,7 +60,7 @@ assume different certificate identities per connection, and helps it trust
 *CUSTOM_TEMPLATE_LIST* 'filename'::
 *CUSTOM_TEMPLATE_SINGLE* 'filename'::
 
-linkman:upsstats.cgi[8] allows to use custom HTML template files for some of
+linkman:upsstats.cgi[8] allows you to use custom HTML template files for some of
 its outputs (JSON and "treemode" mark-ups are currently hard-coded in
 the binary), which you can specify in the query string part of the
 URI (in your `index.html` and/or added cells of `header.html`) as e.g.

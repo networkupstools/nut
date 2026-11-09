@@ -384,7 +384,7 @@ Reset capability options and their voltage and frequency limits to safe default 
 +
 Note that setting this option will reset also *ups.start.auto*, *battery.protection*, *battery.energysave*, *ups.start.battery*, *outlet.0.switchable*, *input.transfer.high*, *input.transfer.low*, *input.frequency.high* and *input.frequency.low*.
 
-These UPSes can be fine-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup: the settable ones will be reported either are 'enabled' or 'disabled' in the logs):
+These UPSes can be fine-tuned to suit your needs by enabling or disabling the following options (the driver should tell you which ones the UPS is capable of on startup: the settable ones will be reported as either 'enabled' or 'disabled' in the logs):
 
 *alarm_control =* 'string'::
 Enable or disable alarm (BEEP!) [+enabled+/+disabled+].
@@ -516,8 +516,8 @@ USB ID `0665:5161`, were seen to retain stale bytes in their USB buffer, returni
 old "garbage" as response to new queries and so corrupting discovery attempts.
 The `nutdrv_qx` driver can drain the USB buffer and use longer timeouts to communicate
 with such devices, but such a change may potentially misfire on other devices with
-same USB ID (Belkin, Voltronic).  This option allows to explicitly enable or disable
-this behavior; by default it is chosen according to device self-identification.
+the same USB ID (Belkin, Voltronic).  This option allows you to explicitly enable
+or disable this behavior; by default it is chosen according to device self-identification.
 This also applies when the `cypress` subdriver is selected explicitly.
 +
 With this behavior enabled, the driver also keeps replies in step with commands

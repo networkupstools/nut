@@ -26,7 +26,7 @@ It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
 
 - Finally, link:docs/man/index.html#User_man[User manual pages] will also
-complete the User Manual provided information. At least, read the manual
+supplement the information in the User Manual. At a minimum, read the manual
 page related to your driver(s).
 
 Mailing lists

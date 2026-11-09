@@ -33,7 +33,7 @@ table or constructed during run-time.  This is generally not safe (due
 to references into the stack when handling the variable argument list),
 and modern compilers warn against doing so.  While it is possible to
 quiesce the warnings with pragmas, it is better to play safe with the
-"dynamic" versions of methods provided by NUT -- they allow to combine
+"dynamic" versions of methods provided by NUT -- they allow you to combine
 both compile-time checks of expected formatting string vs. types of data
 in the method arguments, and run-time equivalence of the actual dynamic
 formatting string to those expectations.  Such hardened methods include
@@ -311,7 +311,7 @@ We try to cover a few distributions from early 2000's for this, either
 in regular CI builds or one-off local builds for community members with
 a zoo of old systems.
 
-If somebody in the community actually requires to build and run NUT on
+If somebody in the community actually needs to build and run NUT on
 systems that old, where newer compilers are not available, pull requests
 to fix the offending coding issues in some way that does not break other
 use-cases are welcome.
@@ -1126,15 +1126,15 @@ pragmas.
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-While C standards allow to write `switch` statements to "fall through"
+While C standards allow you to write `switch` statements to "fall through"
 from handling one case into another, modern compilers frown upon that
 practice and spew warnings which complicate detecting real bugs in the
 code (and also looking back at some of the cases written decades ago,
 it is not trivial to state whether the fall-through was intentional or
 really is a bug).
 
-Compilers which detect such problem usually offer ways to decorate the
-code with comments or attributes to keep it quiet it in cases where the
+Compilers which detect such a problem usually offer ways to decorate the
+code with comments or attributes to suppress these warnings in cases where the
 jump is intentional; also C++17 introduces special keywords for that in
 the standard. NUT aiming to be portable and independent of compilers as
 much as possible, prefers the arguably clearer and standards-based way

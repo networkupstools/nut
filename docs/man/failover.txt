@@ -137,19 +137,19 @@ the hard-coded default logic is also considered when no status filters match
 
 *status_have_any*='OL,CHRG,...'::
 Optional. If any of these comma-separated tokens are present in a UPS driver's
-`ups.status`, it passes this status filtering criteria. Defaults to unset.
+`ups.status`, it passes these status filtering criteria. Defaults to unset.
 
 *status_have_all*='OL,CHRG,...'::
 Optional. All listed comma-separated tokens must be present in `ups.status` for
-the UPS driver to pass this status filtering criteria. Defaults to unset.
+the UPS driver to pass these status filtering criteria. Defaults to unset.
 
 *status_nothave_any*='OB,OFF,...'::
 Optional. If any of these comma-separated tokens are present in `ups.status`,
-the UPS driver does not pass this status filtering criteria. Defaults to unset.
+the UPS driver does not pass these status filtering criteria. Defaults to unset.
 
 *status_nothave_all*='OB,LB,...'::
 Optional. If all of these comma-separated tokens are present in `ups.status`,
-the UPS driver does not pass this status filtering criteria. Defaults to unset.
+the UPS driver does not pass these status filtering criteria. Defaults to unset.
 
 NOTE: The `status_*` arguments are primarily intended to adjust the weighting of
 UPS drivers, allowing some to be prioritized over others based on their status.

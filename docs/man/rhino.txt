@@ -32,7 +32,7 @@ All Rhino models are sinusoidal on-line.
 EXTRA ARGUMENTS
 ---------------
 
-This driver support the following extra optional settings in
+This driver supports the following extra optional settings in
 linkman:ups.conf[5]:
 
 *battext=*'n'::

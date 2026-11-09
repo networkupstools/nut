@@ -40,7 +40,7 @@ Currently, it has only been tested on the following model:
 
 * Energy Smart.2 600W
 
-Generally, these device do not serve any identification data, so
+Generally, these devices do not serve any identification data, so
 autodetection is not possible. Only one documented piece of info is
 "software version" with unknown meaning.
 
