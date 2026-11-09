@@ -940,6 +940,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected SSL context connection-setup and concurrency guidance,
+      marked the SSL architecture analysis as historical, and clarified
+      continued support for both OpenSSL and NSS. [issue #3747]
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and
       developer-guide protocol links and source access instructions. [PR #3745]

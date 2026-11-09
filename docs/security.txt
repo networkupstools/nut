@@ -309,7 +309,7 @@ passwords.
 Several things must happen before this will work, however. This chapter will
 present these steps.
 
-SSL is available via two back-end libraries : NSS and OpenSSL (historically).
+SSL is available via two back-end libraries: OpenSSL and NSS.
 You can choose to use one of them by specifying it with a build option
 (`--with-nss` or `--with-openssl`). If neither is specified, the configure
 script will try to detect one of them, with a precedence for OpenSSL.
@@ -753,8 +753,9 @@ combined effort of many people, and all of them would have to agree to a
 license change.  This is actually a feature, since it means nobody can
 unilaterally run off with the source -- not even the NUT team.
 
-Note that the replacement of OpenSSL by Mozilla Network Security Services
-(NSS) should avoid the above licensing issues.
+NUT supports both OpenSSL and Mozilla Network Security Services (NSS).
+There is no plan to deprecate either backend; users and packagers can choose
+which backend to use when building NUT.
 
 
 chrooting and other forms of paranoia

@@ -1,5 +1,19 @@
 = SSL Context Architecture Analysis for Multi-Server Per-Connection Support
 
+[NOTE]
+====
+This document records analysis and proposals last updated on
+link:https://github.com/networkupstools/nut/commit/cb14b9c2daaf2bb85c2a2a1e37587b8c6a98a0e8[August 31, 2026].
+It is a historical snapshot, not an approved
+design specification or a commitment to future behavior. Its code examples,
+line references and statements marked as verified describe that analysis;
+they are not current API guarantees or supported usage examples.
+
+For current client API guidance, see link:man/upsclient.txt[upsclient(3)],
+link:man/upscli_get_or_create_ssl_context.txt[upscli_get_or_create_ssl_context(3)]
+and link:man/upscli_set_ssl_context.txt[upscli_set_ssl_context(3)].
+====
+
 == Overview
 
 This document addresses architectural questions about per-connection SSL context support, examining OpenSSL vs NSS capabilities, current implementation gaps, and proposing a context registry/caching system.
