@@ -2093,7 +2093,7 @@ https://github.com/networkupstools/nut/milestone/11
 
  - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
    * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
-     driver programs for issue 2259 in NUT v2.8.2 release misfired with
+     driver programs for issue #2259 in NUT v2.8.2 release misfired with
      regard to data-dump mode (it no longer caused foreground by default).
      [#2408]
    * The `nut-driver-enumerator.sh` improvements misfired in v2.8.2 release
@@ -2950,10 +2950,10 @@ https://github.com/networkupstools/nut/milestone/10
    * Help users of drivers that can be built to support optionally USB and
      other media (like `nutdrv_qx` built for serial-only support), and built
      in fact without USB support but used for USB devices, with some more
-     information to make troubleshooting easier. [issue 2259, PR #2260]
+     information to make troubleshooting easier. [issue #2259, PR #2260]
    * Driver programs with debug tracing support via `-D` CLI option and/or
      the `NUT_DEBUG_LEVEL` environment variable now check those earlier in
-     their life-time, so that initialization routine can be debugged. [issue 2259]
+     their life-time, so that initialization routine can be debugged. [#2259]
    * Multiple USB-capable drivers got options to customize `usb_config_index`
      `usb_hid_rep_index`, `usb_hid_desc_index`, `usb_hid_ep_in` and
      `usb_hid_ep_out` hardware connection settings via `ups.conf` options.
@@ -4168,7 +4168,7 @@ Release notes for NUT 2.7.2 - what's new since 2.7.1
  - This release is the second interim release of the 2.7 testing series.
 
  - libupsclient had undefined references related to functions of libcommon.
-   This issue was reported on Debian (bug 731156) and is now fixed
+   This issue was reported on Debian (bug &#35;731156) and is now fixed
 
  - support for new devices:
    * CABAC UPS-1700DV2
@@ -4366,7 +4366,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3
    +
    Thus, fix NUT parser, to only allow the subset of ASCII charset from
    `Space` to `~`
-   (Reported by Sebastian Pohle, Alioth bug 313636, CVE-2012-2944)
+   (Reported by Sebastian Pohle, Alioth bug &#35;313636, CVE-2012-2944)
    +
    +
    A separate patch, which applies to any faulty version, is also available:
