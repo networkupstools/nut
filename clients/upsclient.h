@@ -195,7 +195,8 @@ void *upscli_get_ssl_context(UPSCONN_t *ups);
  * identity, verify mode) from the process-wide registry. Takes parameters
  * identical to upscli_init2(). Returns an opaque handle for use with
  * upscli_set_ssl_context(), or NULL on hard failure. Cheap on repeat calls
- * with identical arguments (cached hit). See design notes in SSL_CONTEXT_ANALYSIS.* */
+ * with identical arguments (cached hit). See upscli_get_or_create_ssl_context(3)
+ * and upscli_set_ssl_context(3) for connection setup and concurrency limits. */
 void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 	const char *certname, const char *certpasswd, const char *certfile);
 

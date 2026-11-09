@@ -56,30 +56,15 @@ The registry uses exact parameter matching to determine cache hits:
 - Identical parameters return a cached entry (efficient on repeat calls)
 - Different parameters create new registry entries (allows multi-realm connections)
 
-USAGE PATTERN
--------------
+CONNECTION SETUP
+----------------
 
-For applications connecting to multiple servers with independent SSL configurations:
-
-------
-	upscli_authconf_t *ac = upscli_get_authconf_item(
-		NULL, hostname, port_str, 1);
-	
-	void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
-	
-	/* NOTE: this clause is just an example of what happens
-	 * under the hood; actually the upscli_tryconnect() method
-	 * clears "conn" and finds or creates the suitable cached
-	 * context by itself, anew every time. */
-	if (ssl_ctx) {
-		upscli_set_ssl_context(conn, ssl_ctx);
-	}
-	
-	upscli_connect(conn, hostname, port, flags);
-------
-
-This pattern ensures each connection uses its server-specific SSL configuration,
-even when multiple servers are accessed from the same process.
+linkman:upscli_connect[3] and linkman2:upscli_connect[upscli_tryconnect,3] clear the
+`UPSCONN_t` structure, including any previously attached SSL context.
+Attaching a context before either call does not select the context for that
+connection. During SSL setup, the library looks up the server's authconf
+and obtains a context internally; see
+linkman2:upscli_find_authconf_item[upscli_get_authconf_item,3].
 
 MULTI-REALM SUPPORT
 -------------------
@@ -131,40 +116,11 @@ Call linkman:upscli_strerror[3] for error details.
 THREAD SAFETY
 -------------
 
-The registry itself is protected by internal synchronization in threaded builds.
-However, individual connection operations are not thread-safe; each thread
-should maintain its own `UPSCONN_t` (see linkman:upsclient[3]) instance.
-
-EXAMPLES
---------
-
-Monitor multiple UPS devices with independent SSL configurations:
-
-------
-	for (each_ups_in_config) {
-		UPSCONN_t *conn = malloc(sizeof(*conn));
-		
-		// Get per-UPS authconf from config files
-		upscli_authconf_t *ac = upscli_get_authconf_item(
-			NULL, ups->hostname, ups->port_str, 1);
-		
-		// Create/fetch SSL context from registry
-		/* NOTE: this clause is just an example of what happens
-		 * under the hood; actually the upscli_tryconnect() method
-		 * clears "conn" and finds or creates the suitable cached
-		 * context by itself, anew every time. */
-		void *ctx = upscli_get_or_create_ssl_context_authconf(ac);
-		if (ctx) {
-			upscli_set_ssl_context(conn, ctx);
-		}
-		
-		// Connect with per-UPS SSL settings
-		upscli_connect(conn, ups->hostname, ups->port, flags);
-	}
-	
-	// Registry is freed when done:
-	upscli_cleanup();
-------
+Registry lookup, insertion and cleanup are not protected by an internal lock,
+even in threaded builds. Separate `UPSCONN_t` structures do not isolate this
+process-wide state. Applications must not access or clean up the registry
+concurrently, including through connection setup. This restriction is not a
+general thread-safety guarantee for the library.
 
 SEE ALSO
 --------
@@ -172,7 +128,7 @@ SEE ALSO
 linkman:upscli_init[3], linkman:upscli_init2[3], 
 linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
 linkman:upscli_set_ssl_context[3], linkman:upscli_get_ssl_context[3],
-linkman:upscli_connect[3], linkman:upscli_tryconnect[3],
+linkman:upscli_connect[3], linkman2:upscli_connect[upscli_tryconnect,3],
 linkman:upscli_disconnect[3],
 linkman:upscli_authconf_t[3], linkman:upscli_get_authconf_item[3],
 linkman:upscli_strerror[3],
