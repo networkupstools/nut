@@ -360,7 +360,7 @@ https://github.com/networkupstools/nut/milestone/13
       "unknown device", which is the answer for a code without a `case` and
       the only holder of the driver's defaults (power factor, battery
       voltage, input threshold margin). The helper functions no longer carry
-      fallbacks of their own. As a consequence, a model the driver does not
+      defaults of their own. As a consequence, a model the driver does not
       know no longer stops the driver when `va` is not set: that fatal error
       was raised from inside the polling loop, so the driver started and
       then died with only "Data stale" visible through `upsdrvctl`. A rating
