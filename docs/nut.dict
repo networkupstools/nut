@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3918 utf-8
+personal_ws-1.1 en 3923 utf-8
 AAC
 AAS
 ABI
@@ -1047,6 +1047,8 @@ Perriault
 Petr
 Petri
 Petter
+Peukert
+Peukert's
 Pezzini
 Phasak
 PhoenixContact
@@ -2002,6 +2004,7 @@ conn
 connectable
 const
 contrib
+conv
 cooldown
 coolofftime
 copyrightable
@@ -2924,6 +2927,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nominaltension
 nonascii
 noncommercially
 nonliteral
@@ -3583,6 +3587,7 @@ th
 thead
 timeframe
 timehead
+timeremain
 timername
 timespec
 timestamp
