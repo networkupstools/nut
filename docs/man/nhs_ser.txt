@@ -196,6 +196,41 @@ wired differently from the factory set. It is used for
 `battery.current.total`: in series the bank carries the current of one
 battery, in parallel that current times the number of batteries.
 
+*overload_perc*='num'::
+Load, in percent of the nominal power, above which the driver reports the
+UPS as overloaded (`OVER` in `ups.status`). The UPS has no flag of its own
+for this, only the load reading. The default is 105, the limit used by the
+manufacturer's monitoring software; 0 turns the check off.
+
+The next six settings choose how each two-byte reading sent by the UPS is
+decoded, one setting for each reading. With 0, the default, the two bytes
+are taken as an integer part and a fraction, which is what the
+manufacturer's protocol document describes and what the driver has always
+done. With 1 they are taken as one 16-bit number (first byte plus 256
+times the second), which is what the manufacturer's own monitoring
+software does. Both give the same value up to 255 (25.5V for the battery
+voltage) and differ above that, so these settings only matter for a unit
+that reports larger values: for example an input voltage of 260V, or a
+battery reading of more than 25.5V.
+
+*read16_vin*='0|1'::
+Input voltage.
+
+*read16_vin_min*='0|1'::
+Minimum input voltage.
+
+*read16_vin_max*='0|1'::
+Maximum input voltage.
+
+*read16_vout*='0|1'::
+Output voltage.
+
+*read16_temp*='0|1'::
+Temperature.
+
+*read16_vbat*='0|1'::
+Battery voltage, which the UPS sends in tenths of a volt.
+
 *vbat*='num'::
 Nominal voltage of ONE battery, in V (default: 12.00). Every NHS model
 uses 12V batteries, so this should hardly ever be set; in particular, do

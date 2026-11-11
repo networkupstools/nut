@@ -422,6 +422,18 @@ https://github.com/networkupstools/nut/milestone/13
       removed and the driver starts over for the new unit, logging a notice.
       Units that answer exactly alike cannot be told apart and still need a
       driver restart.
+    * The two-byte readings of the data packet (input voltage, its minimum
+      and maximum, output voltage, temperature and battery voltage) can now
+      be decoded in two ways, chosen for each reading by the new `read16_vin`,
+      `read16_vin_min`, `read16_vin_max`, `read16_vout`, `read16_temp` and
+      `read16_vbat` settings. 0, the default, keeps the driver's decoding
+      as an integer part and a fraction, as the manufacturer's protocol
+      document describes; 1 takes the two bytes as one 16-bit number, as
+      the manufacturer's own monitoring software does. The two only differ
+      above 255 (25.5V for the battery).
+    * The `OVER` status is now set when the load goes above the new
+      `overload_perc` setting, 105 by default, which is the limit used by
+      the manufacturer's monitoring software; 0 turns the check off.
     * Packet diagnostics (the `debug_pkt_data` flag):
       `experimental.nhs.data.battery_tension` and
       `experimental.nhs.data.nominaltension`, the measured and the nominal

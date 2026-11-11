@@ -57,6 +57,8 @@
 #define DEFAULTPERC     2.0     /* margin for the input voltage thresholds, % */
 #define DEFAULTBATV     12.0    /* nominal voltage of each battery, V */
 #define DEFAULTBATSER   1       /* batteries wired in series (0: in parallel) */
+#define DEFAULTREAD16   0       /* two-byte fields read as "first.second" (1: as 16 bits) */
+#define DEFAULTOVERLOAD 105     /* load, in %, above which the UPS is overloaded */
 
 /*
  * Resting voltage of a fully charged lead-acid battery, as a ratio of its
@@ -466,6 +468,34 @@ typedef struct {
  *                116 of the 118 products whose sheet gives the bank
  *                voltage are built.
  *
+ * r16_vin        How one two-byte field of the data packet is read. There
+ * r16_vin_min    is a flag for each field: input voltage, its minimum and
+ * r16_vin_max    its maximum, output voltage, temperature and battery
+ * r16_vout       voltage.
+ * r16_temp       0 reads the bytes as "first.second", an integer part and
+ * r16_vbat       a fraction. That is what the manufacturer's protocol
+ *                document describes ("PARTE ALTA", "PARTE BAIXA -
+ *                FRACIONARIO") and what the driver has always done; the
+ *                battery is also divided by 10 when the second byte is 0.
+ *                1 reads them as one 16-bit number, first byte + 256 *
+ *                second byte, times 0.1 for the battery. That is what the
+ *                manufacturer's own monitoring software does: I found it
+ *                in its Linux server, nhsupsserver 3.1.36, in the routines
+ *                PacoteDados20::get_evento and Pacote::Reader::read_int.
+ *                Both readings give the same value while the second byte
+ *                is 0, that is, up to 255 (25.5V for the battery). Above
+ *                that they differ: 260V is 4.1 for the first and 260 for
+ *                the second. ups.conf: read16_vin, read16_vin_min,
+ *                read16_vin_max, read16_vout, read16_temp and read16_vbat.
+ *                UNKNOWN device: DEFAULTREAD16, the driver's own reading.
+ *
+ * overload_perc  Load, in percent of the nominal power, above which the UPS
+ *                is reported as overloaded (OVER in ups.status). 0 turns
+ *                the check off. ups.conf: overload_perc.
+ *                UNKNOWN device: DEFAULTOVERLOAD, the limit at which the
+ *                manufacturer's monitoring software flags "Potencia
+ *                excessiva" (same server, PacoteDados20::get_evento).
+ *
  * vin_perc       Margin, in percent, applied to the input voltage transfer
  *                points to derive the input.voltage.*.warning and
  *                input.voltage.*.critical thresholds. No model sets it.
@@ -487,6 +517,13 @@ typedef struct {
 	unsigned int  battery_ah;     /* Ah of each battery */
 	float         battery_v;      /* nominal V of each battery */
 	unsigned int  bat_series;     /* 1: batteries in series, 0: in parallel */
+	unsigned int  r16_vin;        /* 1: input V read as 16 bits */
+	unsigned int  r16_vin_min;    /* 1: minimum input V read as 16 bits */
+	unsigned int  r16_vin_max;    /* 1: maximum input V read as 16 bits */
+	unsigned int  r16_vout;       /* 1: output V read as 16 bits */
+	unsigned int  r16_temp;       /* 1: temperature read as 16 bits */
+	unsigned int  r16_vbat;       /* 1: battery V read as 16 bits */
+	unsigned int  overload_perc;  /* load % above which OVER is set */
 	float         vin_perc;       /* % margin for the input thresholds */
 } upsinfo;
 
@@ -627,6 +664,8 @@ static pkt_data lastpktdata = {
 /* internal methods */
 static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder);
 static float createfloat(int integer, int decimal);
+static float read_pair(int first, int second, unsigned int as16);
+static float battery_volts(int first, int second, unsigned int as16);
 #if 0
 static char * strtolow(char* s);
 #endif
@@ -651,6 +690,7 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size);
 static upsinfo getupsinfo(unsigned int upscode);
 
 static float get_float_option(const char *name);
+static unsigned int get_flag_option(const char *name, unsigned int current);
 static unsigned int get_va(int equipment);
 static float get_vbat(int equipment);
 static float get_pf(int equipment);
@@ -1084,9 +1124,35 @@ static float createfloat(int integer, int decimal) {
 	return atof(flt);
 }
 
+/*
+ * One two-byte field of the data packet, read in one of the two ways
+ * described at r16_* in upsinfo: as "first.second" (as16 = 0, the driver's
+ * own reading) or as the 16-bit number first + 256 * second (as16 = 1, the
+ * reading of the manufacturer's software).
+ */
+static float read_pair(int first, int second, unsigned int as16) {
+	if (as16)
+		return (float)(first + 256 * second);
+	return createfloat(first, second);
+}
+
+/*
+ * Battery voltage, in V, from its two bytes. The UPS sends it in tenths of
+ * a volt. In the driver's own reading that is told from the second byte
+ * being 0; in the 16-bit reading it always holds.
+ */
+static float battery_volts(int first, int second, unsigned int as16) {
+	float  raw = read_pair(first, second, as16);
+
+	if (as16 || second == 0)
+		return raw / 10;
+	return raw;
+}
+
 static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tempodecorrido)  {
 	size_t         i = 0;
 	unsigned char  checksum = 0x00;
+	upsinfo        ups;
 	pkt_data pktdata = {
 		0xFF,                      /* header */
 		0x21,                      /* length */
@@ -1132,11 +1198,14 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 
 	NUT_UNUSED_VARIABLE(tempodecorrido);
 
+	/* How each two-byte field is to be read: the r16_* flags of upsinfo. */
+	ups = getupsinfo(lastpkthwinfo.model);
+
 	pktdata.length = (int)datapkt[1];
 	pktdata.packet_type = datapkt[2];
 	pktdata.vacinrms_high = (int)datapkt[3];
 	pktdata.vacinrms_low = (int)datapkt[4];
-	pktdata.vacinrms = createfloat(pktdata.vacinrms_high, pktdata.vacinrms_low);
+	pktdata.vacinrms = read_pair(pktdata.vacinrms_high, pktdata.vacinrms_low, ups.r16_vin);
 	/*
 	 * Battery voltage, bytes [5] and [6].
 	 *
@@ -1169,36 +1238,31 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 	 *  - The manufacturer's own example. The sample data packet printed
 	 *    in the protocol document has 7F 00 here: 127, for 12.7V.
 	 *
-	 * What is NOT verified is the other branch. When byte [6] is not 0 the
-	 * value is taken as it comes, byte [5] as volts and byte [6] as the
-	 * fraction. Not one packet I have, real or emulated, carries anything
-	 * but 0 in byte [6], so I do not know whether any model fills it, nor
-	 * how the manufacturer's software reads it when one does. That branch
-	 * stays as it was until such a packet is captured: changing it now
-	 * would only trade one guess for another. The raw bytes and both
-	 * values are in the packet diagnostics (debug_pkt_data), which is
-	 * what to look at if a unit ever shows a battery voltage ten times
-	 * too high.
+	 * When byte [6] is not 0 this reading takes the value as it comes,
+	 * byte [5] as volts and byte [6] as the fraction. The manufacturer's
+	 * software does not: it reads the two bytes as one 16-bit number in
+	 * tenths of a volt (see r16_* in upsinfo). The two agree up to 25.5V.
+	 * The driver's own reading stays the default; read16_vbat = 1 in
+	 * ups.conf selects the other one, which is the one to try on a unit
+	 * that reports more than 25.5V in this field.
 	 */
 	pktdata.vdcmed_high = (int)datapkt[5];
 	pktdata.vdcmed_low = (int)datapkt[6];
-	pktdata.vdcmed = createfloat(pktdata.vdcmed_high, pktdata.vdcmed_low);
-	pktdata.vdcmed_real = pktdata.vdcmed;
-	if (pktdata.vdcmed_low == 0)
-		pktdata.vdcmed_real = pktdata.vdcmed / 10;
+	pktdata.vdcmed = read_pair(pktdata.vdcmed_high, pktdata.vdcmed_low, ups.r16_vbat);
+	pktdata.vdcmed_real = battery_volts(pktdata.vdcmed_high, pktdata.vdcmed_low, ups.r16_vbat);
 	pktdata.potrms = (int)datapkt[7];
 	pktdata.vacinrmsmin_high = (int)datapkt[8];
 	pktdata.vacinrmsmin_low = (int)datapkt[9];
-	pktdata.vacinrmsmin = createfloat(pktdata.vacinrmsmin_high, pktdata.vacinrmsmin_low);
+	pktdata.vacinrmsmin = read_pair(pktdata.vacinrmsmin_high, pktdata.vacinrmsmin_low, ups.r16_vin_min);
 	pktdata.vacinrmsmax_high = (int)datapkt[10];
 	pktdata.vacinrmsmax_low = (int)datapkt[11];
-	pktdata.vacinrmsmax = createfloat(pktdata.vacinrmsmax_high, pktdata.vacinrmsmax_low);
+	pktdata.vacinrmsmax = read_pair(pktdata.vacinrmsmax_high, pktdata.vacinrmsmax_low, ups.r16_vin_max);
 	pktdata.vacoutrms_high = (int)datapkt[12];
 	pktdata.vacoutrms_low = (int)datapkt[13];
-	pktdata.vacoutrms = createfloat(pktdata.vacoutrms_high, pktdata.vacoutrms_low);
+	pktdata.vacoutrms = read_pair(pktdata.vacoutrms_high, pktdata.vacoutrms_low, ups.r16_vout);
 	pktdata.tempmed_high = (int)datapkt[14];
 	pktdata.tempmed_low = (int)datapkt[15];
-	pktdata.tempmed = createfloat(pktdata.tempmed_high, pktdata.tempmed_low);
+	pktdata.tempmed = read_pair(pktdata.tempmed_high, pktdata.tempmed_low, ups.r16_temp);
 	pktdata.tempmed_real = pktdata.tempmed;
 	pktdata.icarregrms = (int)datapkt[16];
 	/* 25 units = 750mA, then 1 unit = 30mA */
@@ -1470,6 +1534,13 @@ static const upsinfo  ups_unknown_device = {
 	.battery_ah    = 0,
 	.battery_v     = (float)DEFAULTBATV,
 	.bat_series    = DEFAULTBATSER,
+	.r16_vin       = DEFAULTREAD16,
+	.r16_vin_min   = DEFAULTREAD16,
+	.r16_vin_max   = DEFAULTREAD16,
+	.r16_vout      = DEFAULTREAD16,
+	.r16_temp      = DEFAULTREAD16,
+	.r16_vbat      = DEFAULTREAD16,
+	.overload_perc = DEFAULTOVERLOAD,
 	.vin_perc      = (float)DEFAULTPERC
 };
 
@@ -1515,6 +1586,7 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	char     *ah = getval("ah");
 	char     *vbat = getval("vbat");
 	char     *series = getval("battery_series");
+	char     *overload = getval("overload_perc");
 	float    value = 0;
 
 	/*
@@ -2443,6 +2515,16 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	/* 0 is a value here (in parallel), so it is taken as given */
 	if (series)
 		data.bat_series = (unsigned int)atoi(series);
+	/* Reading mode of each two-byte field of the data packet, 0 or 1 */
+	data.r16_vin = get_flag_option("read16_vin", data.r16_vin);
+	data.r16_vin_min = get_flag_option("read16_vin_min", data.r16_vin_min);
+	data.r16_vin_max = get_flag_option("read16_vin_max", data.r16_vin_max);
+	data.r16_vout = get_flag_option("read16_vout", data.r16_vout);
+	data.r16_temp = get_flag_option("read16_temp", data.r16_temp);
+	data.r16_vbat = get_flag_option("read16_vbat", data.r16_vbat);
+	/* 0 is a value here too: it turns the overload check off */
+	if (overload)
+		data.overload_perc = (unsigned int)atoi(overload);
 	value = get_float_option("efficiency_line");
 	if (value > 0)
 		data.eff_line = value;
@@ -2457,6 +2539,16 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	data.watts = (unsigned int)lrint((double)data.VA * (double)data.pf);
 
 	return data;
+}
+
+/*
+ * A 0/1 setting of ups.conf, or the value given when ups.conf does not have
+ * it. The format was checked at startup by parse_model_options().
+ */
+static unsigned int get_flag_option(const char *name, unsigned int current) {
+	const char  *value = getval(name);
+
+	return value ? (unsigned int)atoi(value) : current;
 }
 
 /* Numeric ups.conf setting, or 0 when it is absent. */
@@ -2692,6 +2784,16 @@ static void parse_model_options(void)
 		{ "efficiency_line",      1,    100,     "a percentage from 1 to 100" },
 		{ "efficiency_line_conv", 1,    100,     "a percentage from 1 to 100" },
 		{ "efficiency_inverter",  1,    100,     "a percentage from 1 to 100" },
+		{ "overload_perc",        0,    255,     "a load percentage from 0 to 255 (0 turns the check off)" },
+	};
+	/* Settings that take only 0 or 1: the reading mode of each two-byte field. */
+	static const char  *flags[] = {
+		"read16_vin",
+		"read16_vin_min",
+		"read16_vin_max",
+		"read16_vout",
+		"read16_temp",
+		"read16_vbat",
 	};
 	const char  *value;
 	char        *endptr;
@@ -2707,6 +2809,12 @@ static void parse_model_options(void)
 		number = strtod(value, &endptr);
 		if (errno != 0 || endptr == value || *endptr != '\0' || number < checks[i].min || number > checks[i].max)
 			fatalx(EXIT_FAILURE, "Invalid %s value '%s': expected %s", checks[i].name, value, checks[i].expected);
+	}  /* end for */
+
+	for (i = 0; i < sizeof(flags) / sizeof(flags[0]); i++) {
+		value = getval(flags[i]);
+		if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
+			fatalx(EXIT_FAILURE, "Invalid %s value '%s': expected 0 (read as \"first.second\") or 1 (read as a 16-bit number)", flags[i], value);
 	}  /* end for */
 }
 
@@ -3255,6 +3363,17 @@ static void interpret_pkt_data(void) {
 	 * back: on no model is working at 220V a fault. The two bits are
 	 * still shown by the packet diagnostics (the debug_pkt_data flag).
 	 */
+
+	/*
+	 * Overload. The UPS has no bit for it; it only reports the load as a
+	 * percentage of its nominal power. The manufacturer's monitoring
+	 * software flags "Potencia excessiva" when that goes above 105%, and
+	 * the driver had nothing for it. OVER is the NUT status for the
+	 * condition. The limit is overload_perc in upsinfo: 105 unless
+	 * ups.conf says otherwise, and 0 turns the check off.
+	 */
+	if (ups.overload_perc > 0 && lastpktdata.potrms > ups.overload_perc)
+		status_set("OVER");
 
 	/* Commit alarm and status information */
 	alarm_commit(); /* alarm first */
@@ -4251,6 +4370,16 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "numbatteries", help);
 
 	addvar(VAR_VALUE, "battery_series", "How the batteries are wired: 1 in series, 0 in parallel (replaces the built-in model value)");
+
+	addvar(VAR_VALUE, "read16_vin", "Input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
+	addvar(VAR_VALUE, "read16_vin_min", "Minimum input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
+	addvar(VAR_VALUE, "read16_vin_max", "Maximum input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
+	addvar(VAR_VALUE, "read16_vout", "Output voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
+	addvar(VAR_VALUE, "read16_temp", "Temperature bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
+	addvar(VAR_VALUE, "read16_vbat", "Battery voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number in tenths of a volt");
+
+	snprintf(help, sizeof(help), "Load, in percent, above which the UPS is reported as overloaded (OVER); 0 turns the check off. Default is %d", DEFAULTOVERLOAD);
+	addvar(VAR_VALUE, "overload_perc", help);
 
 	snprintf(help, sizeof(help), "Nominal voltage of ONE battery, not of the bank; decimals are accepted. Default is %0.2f, which fits every NHS model", DEFAULTBATV);
 	addvar(VAR_VALUE, "vbat", help);
