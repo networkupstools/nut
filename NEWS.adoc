@@ -339,6 +339,162 @@ https://github.com/networkupstools/nut/milestone/13
       care to constrain permitted lengths and offsets. [#GHSA-6p5c-r2jg-r9mj]
 
  - `nhs_ser` driver updates:
+    * The built-in model data now carries, for the models whose manufacturer
+      product sheet could be matched by name, the nominal power in W, the
+      full-load efficiency (on mains at the same voltage, on mains converting
+      between 120V and 220V, and on battery) and the capacity of the factory
+      batteries. The power factor is derived from that data (most NHS
+      line-interactive models are rated 0.5 or 0.6) instead of always
+      assuming 0.9, which overstated real power and runtime. Values in
+      `ups.conf` take precedence over the built-in data: `va` (previously
+      ignored for models the driver already knew), `pf`, `ah` and the new
+      `efficiency_line`, `efficiency_line_conv` and `efficiency_inverter`
+      settings; malformed or out-of-range values are rejected at startup.
+    * The model data is a `switch` with one `case` per model code again, as
+      in the first versions of the driver, instead of a table indexed by the
+      code and filled through a macro. Each value is assigned to a named
+      field, which makes the data of a model easier to maintain and easier
+      to read for whoever maintains the driver.
+    * Every model value is now resolved in one place and in one order: the
+      `ups.conf` setting, then the `case` of the reported model, then the
+      "unknown device", which is the answer for a code without a `case` and
+      the only holder of the driver's defaults (power factor, battery
+      voltage, input threshold margin). The helper functions no longer carry
+      defaults of their own. As a consequence, a model the driver does not
+      know no longer stops the driver when `va` is not set: that fatal error
+      was raised from inside the polling loop, so the driver started and
+      then died with only "Data stale" visible through `upsdrvctl`. A rating
+      that stays unknown just leaves out the variables that depend on it.
+      The `vbat` setting is now range-checked at startup.
+    * Reworked the `battery.runtime` estimate. The previous one divided the
+      capacity by the current of the load over a single 12V battery: it
+      ignored the other batteries, the inverter losses and the fact that a
+      lead-acid battery emptied in minutes delivers a fraction of its
+      nominal capacity. Compared with the runtimes the manufacturer declares
+      for 110 products at full and half load, it was within one third of the
+      declared figure in 11% of the cases, ranging from 9 times too low to
+      4.3 times too high. The new estimate shares the load, corrected by the
+      inverter efficiency, among all the batteries and applies Peukert's law
+      to each one; it is within one third in 88% of the same cases. The
+      estimate still does not count down during a discharge. While the UPS
+      reports no load the variable is now removed, instead of staying at
+      the last value calculated.
+    * `vbat` now means only the nominal voltage of one battery (12V in every
+      NHS model), and the driver works out from the voltage reading itself
+      how many batteries it covers. Before, the charge treated `vbat` as one
+      battery while `battery.voltage.nominal` treated it as the bank, so no
+      value suited both: a two-battery unit reporting 13.6V showed 57% of
+      charge with `vbat = 24`. `battery.charge` and
+      `battery.voltage.nominal` are now right with no setting, whether the
+      UPS reports one battery or a pair. Installations that set `vbat` to
+      the bank voltage should remove that line. `vbat` also accepts
+      decimals now (for example 12.8), for units whose batteries were
+      replaced by another kind; it used to be truncated to an integer, and
+      `battery.voltage.nominal` is published with two decimals accordingly.
+    * `battery.charge` is now a scale from 0% at 10.5V for each 12V battery
+      to 100% at 12.6V, following `vbat` in proportion. The previous value
+      was the reading as a percentage of the nominal voltage, which only
+      went from 100% down to 87% over a complete discharge: in a discharge
+      logged from a real unit it stayed at 100% until 38% of the time was
+      left and showed 91% when the UPS raised its low battery flag. With the
+      new scale that flag falls at 19%. It remains an estimate from the
+      voltage alone, as the UPS does not report a charge.
+    * Fixed `battery.current` and `battery.current.total`. They are now
+      calculated only while the UPS runs on battery, from the load in W
+      divided by the inverter efficiency, and are 0 on mains, where the
+      batteries do not supply the load; they used to show the on-battery
+      figure at all times and without the inverter losses. The total was
+      always the current of one battery times the number of batteries,
+      which overstated the current of a bank wired in series by as many
+      times as it has batteries. It now follows the wiring: the model data
+      records, from the manufacturer's product sheets, whether the factory
+      batteries are in series (assumed when unknown), and the new
+      `battery_series` setting (1 in series, 0 in parallel) replaces it for
+      units wired differently.
+    * Data from one UPS is no longer carried over to another. The driver
+      already asked for the hardware information again after reopening the
+      port, so that a replaced UPS would be recognized, but the nominal
+      power, power factor, battery capacity and number of batteries resolved
+      for the previous unit, and its minimum and maximum power statistics,
+      stayed in use. When the answer now shows a different unit (model code,
+      hardware or firmware version, number of batteries or serial number),
+      all of that is discarded, the variables that depended on it are
+      removed and the driver starts over for the new unit, logging a notice.
+      Units that answer exactly alike cannot be told apart and still need a
+      driver restart.
+    * The two-byte readings of the data packet (input voltage, its minimum
+      and maximum, output voltage, temperature and battery voltage) can now
+      be decoded in two ways, chosen for each reading by the new `read16_vin`,
+      `read16_vin_min`, `read16_vin_max`, `read16_vout`, `read16_temp` and
+      `read16_vbat` settings. 0, the default, keeps the driver's decoding
+      as an integer part and a fraction, as the manufacturer's protocol
+      document describes; 1 takes the two bytes as one 16-bit number, as
+      the manufacturer's own monitoring software does. The two only differ
+      above 255 (25.5V for the battery).
+    * The `OVER` status is now set when the load goes above the new
+      `overload_perc` setting, 105 by default, which is the limit used by
+      the manufacturer's monitoring software; 0 turns the check off.
+    * Packet diagnostics (the `debug_pkt_data` flag):
+      `experimental.nhs.data.battery_tension` and
+      `experimental.nhs.data.nominaltension`, the measured and the nominal
+      voltage of the whole bank, now follow the `numbatteries` and
+      `battery_series` settings and the number of batteries the reading
+      covers. `experimental.nhs.data.perc_output` (the old charge formula)
+      and `experimental.nhs.data.timeremain` (never calculated, always 0)
+      were removed.
+    * Fixed the power readings. `ups.power` and `output.power` now carry the
+      apparent power in VA, and `output.realpower` the real power in W:
+      `ups.power` used to repeat the real power, and the two `output.*`
+      values were exchanged. `output.power.maximum` and
+      `output.power.minimum` now track the apparent power, and the minimum
+      (also `output.power.minimum.percent`) starts from the first reading
+      instead of staying at 0 forever. Graphs and alerts based on these
+      variables will show a step after the upgrade.
+    * Fixed `input.voltage.high.warning` and `input.voltage.high.critical`,
+      which added their margin to the high transfer point instead of
+      subtracting it. Both thresholds ended up above the point where the UPS
+      already goes to battery, with the warning above the critical (for a
+      transfer point of 156V: 162.24V and 159.12V, now 149.76V and 152.88V).
+      The doubling of the warning margin is now decided separately for the
+      low and the high pair of `vin_*_perc` settings.
+    * The `serial_flow_control` setting now defaults to `none` instead of
+      `hardware`. The manufacturer's protocol document specifies no
+      handshaking, and with hardware flow control a port that never raises
+      its "clear to send" line (some USB CDC-ACM bridges, 3-wire serial
+      cables) blocked the request that starts the communication, leaving the
+      UPS silent and the data stale. Installations that relied on the
+      previous default can set `serial_flow_control = hardware`. [issue #3510]
+    * The `bypassasalarm` setting now defaults to 0. The "bypass active" status
+      bit had been read as a fault indication, which the manufacturer's
+      protocol document and monitoring software manual do not say. The event
+      log of that monitoring software shows the bit set in every event logged
+      on mains and clear in every event logged on inverter: it marks that the
+      load is fed from mains, so the previous default reported a healthy UPS
+      as `ALARM OL`. Some models keep the bit clear on mains, so the setting
+      remains for units where it marks a real bypass condition. [issue #3510]
+    * The `[220V IN]` and `[220V OUT]` alarms are no longer raised. The two
+      status bits behind them only tell that the input or the output is at
+      220V, which the manufacturer's protocol document lists among the
+      operating states and its monitoring software stores as nominal
+      voltages. As alarms, they left every unit fed from 220V mains with a
+      permanent `ALARM` status. The same information is in
+      `input.voltage.nominal` and `output.voltage.nominal`.
+    * `ups.efficiency` now reports the manufacturer's full-load rating for the
+      current operating mode and is not published when no rating is known.
+      The previous formula multiplied the input voltage by the output voltage
+      and reported values such as 155%; the protocol has no input power or
+      current from which efficiency could be measured. [issue #3510]
+    * The `ah` setting is no longer mandatory: the model data may supply the
+      capacity, and when neither does, the driver omits `battery.capacity`
+      and `battery.runtime` instead of exiting. Its format
+      is validated in `upsdrv_initinfo()`, before any packet is decoded.
+      Previously it was first read inside the polling loop, so a missing
+      value killed the driver after the first valid data packet and, when
+      started through `upsdrvctl`, the only visible symptom was "Data stale".
+      [issue #3510]
+    * Fixed the `numbatteries` override, which was registered under that name
+      but looked up as `numbat` and therefore never took effect; the value
+      must now be a positive integer when present.
     * Modernized serial communication and added validated settings for baud
       rate, data bits, parity, stop bits, flow control, per-byte read timeout,
       and transmission pacing. Also improved serial resource handling and
