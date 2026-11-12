@@ -277,8 +277,15 @@ import org.nut.dynamatrix.*;
     ]
 
     dynacfgPipeline.branchStableRegex = ~/^(master|main|stable)$/
+    // We currently struggle to build with at least draft C23/C++23
+    //  due to `clang` support of the language specification vs.
+    //  GCC-ish system headers on some platforms, and use of `bool`
+    //  which became a keyword in C23.
+    def AUTO_CSTDVERSION_MAX = 'MAX17' // 'MAX23'
     if ( env?.BRANCH_NAME ==~ /^fightwarn.*$/ && (!env?.CHANGE_TARGET) ) {
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
+	// Try to cater to whatever the platform's compiler supports
+	AUTO_CSTDVERSION_MAX = 'MAX'
     }
 
     if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
@@ -1000,7 +1007,7 @@ set | sort -n """
                         ( ( env?.BRANCH_NAME ==~ /^PR-\d+$/ && env?.CHANGE_TARGET ==~ dynacfgPipeline.branchStableRegex )
                         ? []
                         : [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ] ) +
-                        [ ['c': 'MAX', 'cxx': 'MAX'], ],
+                        [ ['c': AUTO_CSTDVERSION_MAX, 'cxx': AUTO_CSTDVERSION_MAX], ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
@@ -1249,7 +1256,7 @@ set | sort -n """
                         ( ( env?.BRANCH_NAME ==~ /^PR-\d+$/ && env?.CHANGE_TARGET ==~ dynacfgPipeline.branchStableRegex )
                         ? []
                         : [ ['c': '99', 'cxx': '11'], ['c': '11', 'cxx': '11'], ['c': '17', 'cxx': '17'] ] ) +
-                        [ ['c': 'MAX', 'cxx': 'MAX'], ],
+                        [ ['c': AUTO_CSTDVERSION_MAX, 'cxx': AUTO_CSTDVERSION_MAX], ],
                     'CSTDVARIANT': ['gnu'],
                     ],
                 dynamatrixAxesCommonEnv: [
