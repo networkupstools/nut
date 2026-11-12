@@ -157,6 +157,10 @@ UPS definitions are found in linkman:ups.conf[5] (shared with actual drivers).
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_UPSCONF* selects an explicit `ups.conf` file without changing the location
+of other configuration files. Use the same value for the server, drivers,
+controller and enumerator. A missing explicitly selected file is an error.
+
 *NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
 were provided on command line, but does not request that the daemon
 runs in foreground mode.

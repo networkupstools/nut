@@ -11,6 +11,11 @@ endif
 endif
 
 EXTRA_DIST += nut-driver-enumerator.sh.in upsdrvsvcctl.in
+EXTRA_DIST += nut-vida-discover.py.in
+
+if WITH_VIDA_DISCOVERY
+libexec_SCRIPTS = nut-vida-discover.py
+endif WITH_VIDA_DISCOVERY
 
 SPELLCHECK_SRC = README.adoc
 

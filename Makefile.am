@@ -1899,6 +1899,13 @@ check-recursive: check-files-quick
 # (e.g. in CI vs. developer iterations):
 CHECK_PARALLEL_BUILDS_REGEN = true
 
+if WITH_VIDA_DISCOVERY
+# Supported by ci_build.sh's existing BUILD_TYPE=default-tgt: interface.
+# The full configure matrix is separate from the fast unit/replay checks.
+check-vida-integration: check @dotMAKE@
+	+cd '$(top_builddir)/tests' && $(MAKE) $(AM_MAKEFLAGS) vida-configure-test
+endif WITH_VIDA_DISCOVERY
+
 # Not pulled in directly so far, can be used by developers to verify that build
 # rules (inlcuding dependencies pulled from other directories) make sense and
 # do not cause conflict by writing into same file names. Something that builds

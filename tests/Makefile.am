@@ -19,6 +19,11 @@ EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
 EXTRA_DIST += upsset-string-test.py
+EXTRA_DIST += vida_discovery_test.py upsconf_override_test.py
+EXTRA_DIST += vida_cli_test.py vida-recordings.h
+EXTRA_DIST += vida_service_test.py vida_configure_test.py
+EXTRA_DIST += README.vida-driver.txt README.vida-discovery.txt
+
 
 TESTS =
 noinst_LTLIBRARIES =
@@ -36,6 +41,7 @@ CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
 check_PROGRAMS = $(TESTS)
 check_SCRIPTS =
 
+
 # NUT Integration Testing suite
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
 check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
@@ -47,6 +53,8 @@ check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel: @dotMAKE@
 $(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommonversion.la \
 $(top_builddir)/drivers/libdummy_mockdrv.la \
+$(top_builddir)/drivers/libdummy_main.la \
+$(top_builddir)/drivers/libdummy_upsdrvquery.la \
 $(top_builddir)/drivers/libdummy_libusb.la \
 $(top_builddir)/drivers/libdummy_serial.la \
 $(top_builddir)/drivers/libdummy_nutdrv_qx_subdrivers.la \
@@ -72,11 +80,14 @@ $(top_builddir)/clients/libnutclientstub.la: $(top_builddir)/clients/libnutclien
 if ENABLE_SHARED_PRIVATE_LIBS
 
 $(top_builddir)/common/libcommonversion-private.la \
+$(top_builddir)/drivers/libdummy_main_stub.la \
+$(top_builddir)/drivers/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la \
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: dummy @dotMAKE@
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 $(top_builddir)/common/libcommonversion-private.la: $(top_builddir)/include/nut_version.h
+$(top_builddir)/drivers/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la: $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la $(top_builddir)/common/libcommonversion.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-all.la: $(top_builddir)/common/libcommon.la $(top_builddir)/common/libcommonversion-private.la
 $(top_builddir)/common/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-common-client.la: $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libcommonversion-private.la
 
@@ -104,6 +115,8 @@ NUT_LIBCOMMON = $(top_builddir)/common/libcommon.la
 
 endif !ENABLE_SHARED_PRIVATE_LIBS
 
+$(top_builddir)/drivers/libdummy_main.la: $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la
+
 TESTS += test_cgilib
 test_cgilib_SOURCES = test_cgilib.c
 nodist_test_cgilib_SOURCES = cgilib.c
@@ -113,6 +126,10 @@ test_cgilib_LDADD = $(NUT_LIBCOMMON)
 TESTS += parseconf-test
 parseconf_test_SOURCES = parseconf-test.c
 parseconf_test_LDADD = $(NUT_LIBCOMMON)
+
+TESTS += upsconf_maxpath_utest
+upsconf_maxpath_utest_SOURCES = upsconf_maxpath_utest.c
+upsconf_maxpath_utest_LDADD = $(NUT_LIBCOMMON)
 
 TESTS += test_upsdconf
 test_upsdconf_SOURCES = test_upsdconf.c
@@ -229,6 +246,24 @@ getvaluetest_LDADD = $(NUT_LIBCOMMON)
 # subdrivers are linked from a library here. The simulation replaces calls
 # of the libusb-1.0 API.
 if WITH_LIBUSB_1_0
+if WITH_VIDA_USB
+TESTS += vida_utest
+vida_utest_SOURCES = vida_utest.c vida-recordings.h $(top_srcdir)/drivers/vida-protocol.c
+vida_utest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+vida_utest_LDADD = $(NUT_LIBCOMMON) $(LIBUSB_LIBS) -lm
+vida_utest_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/drivers/nutdrv_vida.c $(top_srcdir)/drivers/vida-report-desc.h
+check_PROGRAMS += vida-no-usb-driver
+vida_no_usb_driver_SOURCES = vida_no_usb_driver.c $(top_srcdir)/drivers/vida-protocol.c
+vida_no_usb_driver_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+if ENABLE_SHARED_PRIVATE_LIBS
+VIDA_CLI_CORE = $(top_builddir)/drivers/libdummy_main_stub.la $(top_builddir)/drivers/libnutprivate-@NUT_SOURCE_GITREV_SEMVER_UNDERSCORES@-drivers-common.la
+else !ENABLE_SHARED_PRIVATE_LIBS
+VIDA_CLI_CORE = $(top_builddir)/drivers/libdummy_main.la $(top_builddir)/drivers/libdummy_upsdrvquery.la
+endif !ENABLE_SHARED_PRIVATE_LIBS
+vida_no_usb_driver_LDADD = $(VIDA_CLI_CORE) $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(LIBUSB_LIBS)
+vida_no_usb_driver_DEPENDENCIES = $(VIDA_CLI_CORE) $(top_builddir)/common/libcommonversion.la $(NUT_LIBCOMMON) $(top_srcdir)/drivers/nutdrv_vida.c $(top_srcdir)/drivers/vida-report-desc.h
+endif WITH_VIDA_USB
+
 TESTS += nutdrv_qx_cypress_utest
 nutdrv_qx_cypress_utest.c: $(top_srcdir)/drivers/nutdrv_qx.c
 nutdrv_qx_cypress_utest_SOURCES = nutdrv_qx_cypress_utest.c
@@ -287,6 +322,11 @@ driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_G
 endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
+TESTS += driver_shutdown_utest
+driver_shutdown_utest_SOURCES = driver_shutdown_utest.c
+driver_shutdown_utest_LDADD = $(driver_methods_utest_LDADD)
+driver_shutdown_utest_CFLAGS = $(driver_methods_utest_CFLAGS)
 
 if WITH_SNMP
 SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
@@ -412,6 +452,33 @@ endif !HAVE_VALGRIND
 
 CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test
 CHECK_LOCAL_TARGETS_PYNUT =
+
+if WITH_VIDA_DISCOVERY
+CHECK_LOCAL_TARGETS += vida-discovery-test vida-service-test
+vida-discovery-test:
+	$(AM_V_at)NUT_TOP_SRCDIR='$(abs_top_srcdir)' @PYTHON3@ $(srcdir)/vida_discovery_test.py
+vida-service-test:
+	$(AM_V_at)@PYTHON3@ $(srcdir)/vida_service_test.py '$(abs_top_builddir)'
+vida-configure-test:
+	$(AM_V_at)@PYTHON3@ $(srcdir)/vida_configure_test.py '$(abs_top_srcdir)' '$(abs_top_builddir)' '$(MAKE)'
+endif WITH_VIDA_DISCOVERY
+
+if HAVE_PYTHON3
+if !HAVE_WINDOWS
+CHECK_LOCAL_TARGETS += upsconf-override-test
+$(top_builddir)/drivers/upsdrvctl$(EXEEXT): $(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+upsconf-override-test: $(top_builddir)/drivers/upsdrvctl$(EXEEXT)
+	$(AM_V_at)@PYTHON3@ $(srcdir)/upsconf_override_test.py '$(abs_top_builddir)'
+
+if WITH_VIDA_USB
+CHECK_LOCAL_TARGETS += vida-cli-test
+vida-cli-test: vida-no-usb-driver$(EXEEXT)
+	$(AM_V_at)@PYTHON3@ $(srcdir)/vida_cli_test.py '$(abs_builddir)/vida-no-usb-driver$(EXEEXT)'
+endif WITH_VIDA_USB
+endif !HAVE_WINDOWS
+endif HAVE_PYTHON3
 
 if WITH_CGI
 if HAVE_PYTHON3

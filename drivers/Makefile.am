@@ -163,6 +163,9 @@ USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb powervar_cx_usb \
  nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
+if WITH_VIDA_USB
+USB_LIBUSB_DRIVERLIST += nutdrv_vida
+endif WITH_VIDA_USB
 SERIAL_USB_DRIVERLIST = \
 	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
@@ -380,6 +383,9 @@ blazer_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c
 nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)
+
+nutdrv_vida_SOURCES = nutdrv_vida.c vida-protocol.c vida-protocol.h vida-report-desc.h
+nutdrv_vida_LDADD = $(LDADD_DRIVERS_LIBUSB)
 
 richcomm_usb_SOURCES = richcomm_usb.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS_LIBUSB)

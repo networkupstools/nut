@@ -195,7 +195,7 @@ SVCNAME_SMF="svc:/system/power/nut-driver"
     . "${NUT_DRIVER_ENUMERATOR_CONF}" >&2
 
 [ -z "${UPSCONF-}" ] && \
-    UPSCONF="${NUT_CONFPATH}/ups.conf"
+    UPSCONF="${NUT_UPSCONF:-${NUT_CONFPATH}/ups.conf}"
 
 # Start a freshly-registered unit?
 [ -z "${AUTO_START-}" ] && AUTO_START=yes

@@ -1,0 +1,25 @@
+# Network UPS Tools: optional Linux VIDA USB attachment discovery.
+# Copyright (C) 2026 NUT contributors. GPL version 2 or later.
+[Unit]
+Description=Network UPS Tools - discover VIDA USB attachments
+After=systemd-udev-trigger.service
+Before=nut-driver-enumerator-daemon.service nut-driver-enumerator.service nut-server.service
+PartOf=nut.target
+
+[Service]
+Type=oneshot
+User=root
+Group=@RUN_AS_GROUP@
+RuntimeDirectory=nut-vida-discovery
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/run/nut-vida-discovery
+ExecStart=@PYTHON3@ @NUT_LIBEXECDIR@/nut-vida-discover.py
+TimeoutStartSec=15s
+
+[Install]
+WantedBy=nut.target

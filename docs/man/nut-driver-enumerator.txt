@@ -136,6 +136,11 @@ this default part of the action.
 
 Also see below for environment variable `REPORT_RESTART_42=no` value.
 
+*NUT_UPSCONF* selects an explicit `ups.conf` path, shared with the server,
+drivers and controller. A missing explicitly selected file is an error.
+The enumerator's older *UPSCONF* override takes precedence if also set.
+Other configuration files continue to use *NUT_CONFPATH*.
+
 DIAGNOSTICS
 -----------
 

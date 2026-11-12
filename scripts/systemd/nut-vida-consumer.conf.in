@@ -1,0 +1,8 @@
+# Optional VIDA discovery: ordered startup and a single explicit inventory.
+# No dependency activation: normal NUT installations have no opt-in configuration file.
+# Copyright (C) 2026 NUT contributors. GPLv2+.
+[Unit]
+After=nut-vida-discovery.service
+
+[Service]
+EnvironmentFile=-@CONFPATH@/nut-vida-discovery.conf

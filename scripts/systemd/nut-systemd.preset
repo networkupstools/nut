@@ -67,3 +67,7 @@ disable nut-sleep.service
 # systemd journal); needs an "upslog.conf" file defining tuples like
 #   UPSLOG_ARGS="-m ups,file -m ups,file..."
 disable nut-logger.service
+
+# Automatic USB inventory management is an explicit administrator choice.
+disable nut-vida-discovery.service
+disable nut-vida-discovery.timer
