@@ -15,7 +15,9 @@ int vida_query_value(vida_query_t query, uint16_t *value)
 	if (!value) {
 		return 0;
 	}
-	switch (query) {
+	/* Reject out-of-enum tags too; dispatch integers so Clang's exhaustive-enum
+	 * and required-default diagnostics agree about that explicit error path. */
+	switch ((int)query) {
 	case VIDA_STATUS:
 		*value = 0x0303;
 		return 1;
@@ -29,6 +31,7 @@ int vida_query_value(vida_query_t query, uint16_t *value)
 		*value = 0x030c;
 		return 1;
 	case VIDA_QUERY_COUNT:
+	default:
 		break;
 	}
 	return 0;
@@ -112,7 +115,7 @@ int vida_parse_record(vida_query_t query, const char *text, vida_sample_t *sampl
 	if (!text || !sample) {
 		return 0;
 	}
-	switch (query) {
+	switch ((int)query) {
 	case VIDA_STATUS:
 		if (!vida_fields(text, '(', 8, fields)
 		|| strlen(fields[7]) != 8 || strspn(fields[7], "01") != 8
@@ -152,6 +155,7 @@ int vida_parse_record(vida_query_t query, const char *text, vida_sample_t *sampl
 		memcpy(sample->firmware, fields[0], i + 1);
 		return 1;
 	case VIDA_QUERY_COUNT:
+	default:
 		break;
 	}
 	return 0;
