@@ -873,6 +873,33 @@ void addvar(int vartype, const char *name, const char *desc)
 	do_addvar(vartype, name, desc, 0);
 }
 
+/* Legacy shutdown callbacks return void and report failure via set_exit_flag().
+ * Capture that result in a scoped context, independently of process termination.
+ * Nesting is required when a callback invokes an sdcommands sequence. Signals
+ * still set exit_flag normally, so a command cannot swallow pending SIGTERM.
+ */
+typedef struct shutdown_result_context_s {
+	int result;
+	struct shutdown_result_context_s *previous;
+} shutdown_result_context_t;
+
+static shutdown_result_context_t *shutdown_result_context;
+
+static int call_shutdown_default(void)
+{
+	shutdown_result_context_t context;
+	int previous_handling = handling_upsdrv_shutdown;
+
+	context.result = STAT_INSTCMD_HANDLED;
+	context.previous = shutdown_result_context;
+	shutdown_result_context = &context;
+	handling_upsdrv_shutdown = 1;
+	upsdrv_callbacks.upsdrv_shutdown();
+	handling_upsdrv_shutdown = previous_handling;
+	shutdown_result_context = context.previous;
+	return context.result;
+}
+
 /* Try each instant command in the comma-separated list of
  * sdcmds, until the first one that reports it was handled.
  * Returns STAT_INSTCMD_HANDLED if one of those was accepted
@@ -935,10 +962,9 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 					sdcmds);
 				/* TOTHINK : These logs are handled in driver codes */
 				/* upslog_INSTCMD_POWERSTATE_CHANGE("shutdown.default", NULL); */
-				upsdrv_callbacks.upsdrv_shutdown();
-				cmdret = STAT_INSTCMD_HANDLED;
+				cmdret = call_shutdown_default();
 				/* commented below */
-				if (cmdused && !(*cmdused))
+				if (cmdret == STAT_INSTCMD_HANDLED && cmdused && !(*cmdused))
 					*cmdused = xstrdup("shutdown.default");
 			}
 		}
@@ -954,8 +980,7 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			/* TOTHINK : These logs are handled in driver codes */
 			/* We are trying (if at all implemented), so "maybe"... */
 			/* upslog_INSTCMD_POWERSTATE_MAYBE(s, NULL); */
-			upsdrv_callbacks.upsdrv_shutdown();
-			cmdret = STAT_INSTCMD_HANDLED;
+			cmdret = call_shutdown_default();
 		} else {
 			/* TOTHINK : These logs are handled in driver codes */
 			/* upslog_INSTCMD_POWERSTATE_CHECKED(s, NULL); */
@@ -1106,8 +1131,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * called by default if none were passed (or this one
 		 * was passed explicitly).
 		 */
-		upsdrv_callbacks.upsdrv_shutdown();
-		return STAT_INSTCMD_HANDLED;
+		return call_shutdown_default();
 	}
 
 	if (!strcmp(cmdname, "driver.killpower")) {
@@ -1118,15 +1142,16 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		 * flag involved.
 		 */
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
+			int result;
 			upslogx(LOG_CRIT, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
 				"due to socket protocol request", NUT_STRARG(upsname));
 			if (handling_upsdrv_shutdown == 0)
 				handling_upsdrv_shutdown = 1;
 			dstate_setinfo("driver.state", "fsd.killpower");
-			upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
+			result = upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
 			dstate_setinfo("driver.state", "quiet");
-			return STAT_INSTCMD_HANDLED;
+			return result;
 		} else {
 			upslogx(LOG_CRIT, "Got socket protocol request for UPS [%s] "
 				"to power off, but driver.flag.allow_killpower does not"
@@ -2102,6 +2127,11 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
+	if ((sig == EF_EXIT_SUCCESS || sig == EF_EXIT_FAILURE) && shutdown_result_context) {
+		shutdown_result_context->result = sig == EF_EXIT_SUCCESS
+			? STAT_INSTCMD_HANDLED : STAT_INSTCMD_INVALID;
+		return;
+	}
 	switch (sig) {
 		case EF_EXIT_SUCCESS:
 			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);

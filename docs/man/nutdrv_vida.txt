@@ -1,0 +1,101 @@
+NUTDRV_VIDA(8)
+==============
+
+NAME
+----
+
+nutdrv_vida - Read-only USB driver for VIDA Armour ARM3000 UPS equipment
+
+SYNOPSIS
+--------
+
+*nutdrv_vida* -h
+
+*nutdrv_vida* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: See linkman:nutupsdrv[8] for common driver options.
+
+SUPPORTED HARDWARE
+------------------
+
+VIDA Armour ARM3000, tested with firmware V4.20. Requires libusb-1.0.
+The generic USB identifier +0001:0000+ is also used by unrelated devices.
+This driver requires explicit physical port selectors and validates the
+complete, known HID report descriptor before reading telemetry.
+
+The firmware uses selected USB string descriptors as a command transport.
+Ordinary HID monitoring does not provide these readings. This driver avoids
+string discovery and sends only the four validated telemetry queries.
+It claims the HID interface and restores the previous kernel binding when
+closing it. Do not run another USB monitoring program against the same device.
+
+MANUAL CONFIGURATION
+--------------------
+
+Both *bus* and *busport* are required regular expressions. The bus is three
+decimal digits. The complete physical port chain uses three digits for each
+level, separated by dots. For example, Linux USB port +1-10+ is bus +001+
+and busport +010+; +1-2.3+ is bus +001+ and busport +002.003+.
+Port chains identify the wiring even after the USB device address changes.
+Recheck the bus selector if controller enumeration changes.
+
+Two UPS units can be configured independently in linkman:ups.conf[5]:
+
+----
+[armour_a]
+    driver = nutdrv_vida
+    port = auto
+    bus = "^001$"
+    busport = "^010$"
+
+[armour_b]
+    driver = nutdrv_vida
+    port = auto
+    bus = "^001$"
+    busport = "^002$"
+----
+
+Selectors matching multiple devices are rejected. An absent device or invalid
+telemetry marks the data stale. The driver checks its configured port again
+on subsequent polls and authenticates the descriptor on every reconnect.
+
+DATA AND LIMITATIONS
+--------------------
+
+The driver publishes load percentage, battery charge and pack voltage,
+input and output voltages, input frequency, temperature, firmware and
+electrical ratings. It decodes the observed Q1 status bits into standard
+NUT status and alarms. Physical outage transitions require separate testing.
+
+Actual watts and remaining runtime are not supplied by the validated queries
+and are not estimated. Load percentage must not be treated as measured watts.
+The driver implements no instant commands or writable hardware variables.
+NUT's common driver reload and shutdown commands may still be listed by
+linkman:upscmd[8]. The shutdown entry point reports unsupported without
+sending a power command.
+
+PROTOCOL EVIDENCE
+-----------------
+
+link:https://github.com/networkupstools/nut/issues/3040[NUT issue 3040]
+documents Windows captures and initial telemetry requests. Static analysis of
+the UPSmart 2.1 Windows program confirms the same descriptor dispatch. The
+driver and tests use the exact observed descriptor and telemetry framing.
+
+Although the status payload resembles Q1, this is not a general Qx command
+transport. Different string descriptor indices can trigger hardware actions.
+The separate driver confines all USB requests to descriptor authentication
+and the four observed telemetry indices; it does not probe strings or expose
+the command, write-variable and shutdown paths of a general Qx backend.
+
+AUTHOR
+------
+
+NUT contributors, with OpenAI Codex assistance.
+
+SEE ALSO
+--------
+
+linkman:ups.conf[5], linkman:upsd[8], linkman:upsdrvsvcctl[8]
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

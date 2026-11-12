@@ -22,6 +22,13 @@ PLANNED: Release notes for NUT 2.8.6 - what's new since 2.8.5
 
 https://github.com/networkupstools/nut/milestone/13
 
+ - New `nutdrv_vida` driver provides read-only USB monitoring for VIDA
+   Armour ARM3000 units with V4.20 firmware. It authenticates the HID report
+   descriptor, requires explicit physical bus/port selection, and supports
+   multiple identical units without relying on USB device addresses.
+   Native regressions cover all status combinations, complete telemetry,
+   transport failures and unsupported shutdown, with GCC and Clang builds.
+
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly (porting from 42ITy project)
@@ -45,6 +52,10 @@ https://github.com/networkupstools/nut/milestone/13
    (not 3 like before) for easier initial indentation of new entries.
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
+    * Driver shutdown callbacks which explicitly report failure now retain
+      that result through the common shutdown command wrappers, including
+      forced shutdown and socket commands. Legacy callbacks that do not
+      report a result retain their existing success behavior.
     * `libnutconf`: character reads from a TCP socket now use the Windows
       socket API, matching string reads. Previously they failed with a bad
       file descriptor error on Windows. [issue #2293]
