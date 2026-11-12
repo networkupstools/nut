@@ -3104,6 +3104,21 @@ dnl checks related to --with-usb are in its m4 file and NUT_CHECK_LIBUSB() calle
 
 dnl Note: there is no libusb-config script (and variable) for libusb-1.0
 AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+nut_have_vida_usb=no
+AS_IF([test "${nut_usb_lib}" = "(libusb-1.0)"], [
+	nut_vida_save_CPPFLAGS="$CPPFLAGS"
+	nut_vida_save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $LIBUSB_CFLAGS"
+	LIBS="$LIBUSB_LIBS $LIBS"
+	AC_CHECK_FUNCS([libusb_get_port_numbers], [nut_have_vida_usb=yes])
+	CPPFLAGS="$nut_vida_save_CPPFLAGS"
+	LIBS="$nut_vida_save_LIBS"
+])
+AM_CONDITIONAL(WITH_VIDA_USB, test "$nut_have_vida_usb" = yes)
+AS_CASE([" $DRIVER_BUILD_LIST "], [*" nutdrv_vida "*], [
+	AS_IF([test "$nut_have_vida_usb" != yes],
+		[AC_MSG_ERROR([nutdrv_vida requires libusb-1.0 with libusb_get_port_numbers])])
+])
 AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
 NUT_REPORT_DRIVER([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],

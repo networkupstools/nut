@@ -1320,6 +1320,7 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer-common.txt	\
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
+	nutdrv_vida.txt \
 	nut_usb_addvars.txt \
 	powervar_cx_usb.txt	\
 	richcomm_usb.txt \
@@ -1331,6 +1332,7 @@ INST_MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
+	nutdrv_vida.$(MAN_SECTION_CMD_SYS) \
 	powervar_cx_usb.$(MAN_SECTION_CMD_SYS)	\
 	richcomm_usb.$(MAN_SECTION_CMD_SYS) \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
@@ -1354,6 +1356,7 @@ INST_HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
+	nutdrv_vida.html \
 	powervar_cx_usb.html	\
 	richcomm_usb.html \
 	riello_usb.html	\

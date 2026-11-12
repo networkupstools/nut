@@ -20,6 +20,7 @@ EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
 EXTRA_DIST += upsset-string-test.py
 
+
 TESTS =
 noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
@@ -35,6 +36,7 @@ CPPUNIT_NUT_CXXFLAGS = @CPPUNIT_NUT_CXXFLAGS@
 
 check_PROGRAMS = $(TESTS)
 check_SCRIPTS =
+
 
 # NUT Integration Testing suite
 memcheck-NIT memcheck-NIT-devel memcheck-NIT-sandbox memcheck-NIT-sandbox-devel \
@@ -229,6 +231,14 @@ getvaluetest_LDADD = $(NUT_LIBCOMMON)
 # subdrivers are linked from a library here. The simulation replaces calls
 # of the libusb-1.0 API.
 if WITH_LIBUSB_1_0
+if WITH_VIDA_USB
+TESTS += vida_utest
+vida_utest_SOURCES = vida_utest.c $(top_srcdir)/drivers/vida-protocol.c
+vida_utest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+vida_utest_LDADD = $(NUT_LIBCOMMON) $(LIBUSB_LIBS)
+vida_utest_DEPENDENCIES = $(NUT_LIBCOMMON) $(top_srcdir)/drivers/nutdrv_vida.c $(top_srcdir)/drivers/vida-report-desc.h
+endif WITH_VIDA_USB
+
 TESTS += nutdrv_qx_cypress_utest
 nutdrv_qx_cypress_utest.c: $(top_srcdir)/drivers/nutdrv_qx.c
 nutdrv_qx_cypress_utest_SOURCES = nutdrv_qx_cypress_utest.c
@@ -287,6 +297,11 @@ driver_methods_utest_LDADD += $(top_builddir)/common/libnutprivate-@NUT_SOURCE_G
 endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
+TESTS += driver_shutdown_utest
+driver_shutdown_utest_SOURCES = driver_shutdown_utest.c
+driver_shutdown_utest_LDADD = $(driver_methods_utest_LDADD)
+driver_shutdown_utest_CFLAGS = $(driver_methods_utest_CFLAGS)
 
 if WITH_SNMP
 SNMP_UPS_TEST_DRIVER_SOURCES = snmp-ups.c snmp-ups-helpers.c
