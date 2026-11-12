@@ -1,0 +1,177 @@
+#!@PYTHON3@
+"""Reconcile authenticated Linux USB attachments into a generated NUT configuration.
+
+No USB is opened and no telemetry is polled here. Kernel-cached report bytes
+authenticate new attachments. A boot-scoped record retains that admission
+while the native driver owns the HID interface. NUT's enumerator alone manages
+driver instances and the server. Copyright 2026 NUT contributors; GPLv2+.
+"""
+import argparse
+import fcntl
+import grp
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+import tempfile
+
+REPORT_SHA256 = 'f4a26967ac7119371338eaddf1dd0778f2d5b06a26bf7a16d674f13ca9b6e733'
+BEGIN = '# BEGIN NUT VIDA USB AUTO-DISCOVERY'
+END = '# END NUT VIDA USB AUTO-DISCOVERY'
+
+
+def connection_identity(path):
+    """Identify this kernel object's lifetime, not a persistent physical UPS."""
+    info = path.stat()
+    return {'path': str(path.resolve()), 'inode': info.st_ino,
+            'created_ns': info.st_ctime_ns,
+            'bus': int((path / 'busnum').read_text()),
+            'address': int((path / 'devnum').read_text())}
+
+
+def discover(usb_root, hid_root, boot_id, previous):
+    """Admit exact HID layouts; reuse admission only for the same live object."""
+    if not isinstance(previous.get('connections', {}), dict):
+        raise ValueError('Invalid cached VIDA connections')
+    old = previous.get('connections', {}) if previous.get('boot_id') == boot_id else {}
+    devices, connections, pending = [], {}, []
+    # Inventory access failure must not masquerade as every UPS disappearing.
+    for path in sorted(usb_root.iterdir()):
+        if re.fullmatch(r'[0-9]+-[0-9]+(?:\.[0-9]+)*', path.name) is None:
+            continue
+        try:
+            if ((path / 'idVendor').read_text().strip(), (path / 'idProduct').read_text().strip()) != ('0001', '0000'):
+                continue
+            if (path / 'authorized').read_text().strip() != '1':
+                continue
+            identity = connection_identity(path)
+            port = '.'.join('{:03d}'.format(int(part)) for part in path.name.split('-', 1)[1].split('.'))
+            bus = '{:03d}'.format(identity['bus'])
+            name = 'armour_usb_' + bus + '_' + port.replace('.', '_')
+            admitted = old.get(name) == identity
+            if not admitted:
+                descriptors = []
+                for hid in hid_root.glob('0003:0001:0000.*'):
+                    if path.resolve() in hid.resolve().parents:
+                        descriptors.append((hid / 'report_descriptor').read_bytes())
+                admitted = len(descriptors) == 1 and hashlib.sha256(descriptors[0]).hexdigest() == REPORT_SHA256
+            if not admitted:
+                pending.append(path.name)
+                continue
+            if connection_identity(path) != identity:
+                pending.append(path.name)
+                continue
+            devices.append({'name': name, 'bus': bus, 'busport': port, 'usb_path': path.name})
+            connections[name] = identity
+        except FileNotFoundError:
+            # A remove event raced this scan; the timer observes its final state.
+            continue
+    return {'boot_id': boot_id, 'connections': connections, 'devices': devices, 'pending': pending}
+
+
+def render_config(original, devices):
+    """Compose a derived inventory; the input remains administrator-owned."""
+    if BEGIN in original or END in original:
+        raise ValueError('Remove the legacy VIDA managed block from the administrator file before enabling discovery')
+    before = original + ('\n' if original and not original.endswith('\n') else '')
+    after = '\n'
+    manual_names = set(re.findall(r'^\s*\[([^]\r\n]+)\]', before + after, flags=re.MULTILINE))
+    block = [BEGIN, '# Generated names follow USB attachments, not physical UPS identities.']
+    for device in devices:
+        if device['name'] in manual_names:
+            raise ValueError('Generated UPS name conflicts with a manual section: ' + device['name'])
+        block.extend(['[' + device['name'] + ']', '    driver = nutdrv_vida',
+                      '    port = auto', '    bus = "^' + device['bus'] + '$"',
+                      '    busport = "^' + device['busport'].replace('.', '[.]') + '$"',
+                      '    desc = "VIDA Armour on USB ' + device['usb_path'] + '"', ''])
+    block.append(END)
+    return before + '\n'.join(block) + after
+
+
+def atomic_write(path, text, default_mode=0o640, default_gid=None):
+    """Publish complete files, preserving ownership, mode and existing symlinks."""
+    path = path.resolve()
+    if path.exists():
+        info = path.stat()
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError('Expected a regular file: ' + str(path))
+        if path.read_text() == text:
+            return False
+        mode, uid, gid = stat.S_IMODE(info.st_mode), info.st_uid, info.st_gid
+    else:
+        mode, uid, gid = default_mode, os.geteuid(), os.getegid() if default_gid is None else default_gid
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix='.' + path.name + '.', dir=str(path.parent))
+    try:
+        with os.fdopen(descriptor, 'w') as stream:
+            os.fchmod(stream.fileno(), mode)
+            os.fchown(stream.fileno(), uid, gid)
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        directory = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    return True
+
+
+def reconcile(usb_root, hid_root, boot_id, state_path, config_path, output_path, gid=None):
+    """Validate a generation; admission must precede driver configuration."""
+    if output_path.resolve() == config_path.resolve():
+        raise ValueError('Generated configuration must differ from administrator input')
+    previous = json.loads(state_path.read_text()) if state_path.exists() else {}
+    if not isinstance(previous, dict):
+        raise ValueError('Invalid VIDA discovery state')
+    result = discover(usb_root, hid_root, boot_id, previous)
+    original = config_path.read_text()
+    generated = render_config(original, result['devices'])
+    pending_changed = result['pending'] != previous.get('pending', [])
+    # NDE may start a driver immediately after config publication; preserve its
+    # proven connection identity before its claim removes the kernel HID node.
+    atomic_write(state_path, json.dumps(result, sort_keys=True, indent=2) + '\n', 0o600)
+    result['configuration_changed'] = atomic_write(output_path, generated, default_gid=gid)
+    result['pending_changed'] = pending_changed
+    return result
+
+
+def main(argv=None):
+    """Run one serialized reconciliation; systemd supplies periodic scheduling."""
+    parser = argparse.ArgumentParser(description='Discover VIDA attachments into ups.conf; no USB commands.')
+    parser.add_argument('--config', type=Path, default=Path('@CONFPATH@/ups.conf'))
+    parser.add_argument('--output', type=Path, default=Path('/run/nut-vida-discovery/ups.conf'))
+    parser.add_argument('--state', type=Path, default=Path('/run/nut-vida-discovery/state.json'))
+    parser.add_argument('--usb-root', type=Path, default=Path('/sys/bus/usb/devices'))
+    parser.add_argument('--hid-root', type=Path, default=Path('/sys/bus/hid/devices'))
+    parser.add_argument('--boot-id', type=Path, default=Path('/proc/sys/kernel/random/boot_id'))
+    args = parser.parse_args(argv)
+    try:
+        gid = grp.getgrnam('@RUN_AS_GROUP@').gr_gid
+        args.state.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        permissions = args.state.parent.stat()
+        if permissions.st_uid != os.geteuid() or permissions.st_mode & 0o022 or args.state.is_symlink():
+            raise ValueError('Discovery state requires a private, owned directory and no symlink')
+        with args.state.with_suffix('.lock').open('a') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return 0
+            result = reconcile(args.usb_root, args.hid_root, args.boot_id.read_text().strip(), args.state, args.config, args.output, gid)
+        if result['configuration_changed'] or result['pending_changed']:
+            print(json.dumps({key: result[key] for key in ['devices', 'pending', 'configuration_changed']}))
+        return 0
+    except (OSError, ValueError, KeyError) as error:
+        print('VIDA discovery: ' + str(error), file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

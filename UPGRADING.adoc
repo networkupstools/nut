@@ -33,6 +33,12 @@ Changes from 2.8.5 to 2.8.6
 
 - PLANNED: Keep track of any further API clean-up?
 
+- Optional VIDA USB discovery requires Linux, systemd, Python 3.8 or newer
+  and the selected `nutdrv_vida` driver. It does not modify administrator
+  configuration: `NUT_UPSCONF` selects its generated inventory for the
+  server, drivers and enumerator. Activation and migration from the earlier
+  experimental discovery script are described in linkman:nutdrv_vida[8].
+
 - The `PACKAGE_VERSION` and `PACKAGE_STRING` macros in the generated
   `include/config.h` now only carry the base semantic version (e.g. `2.8.5`
   for a release, or `2.8.5.1` for any development iteration after it) rather

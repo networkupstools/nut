@@ -1,0 +1,14 @@
+# Network UPS Tools: re-evaluate USB inventory without issuing USB commands.
+# Copyright (C) 2026 NUT contributors. GPL version 2 or later.
+[Unit]
+Description=Network UPS Tools - periodically discover VIDA USB attachments
+PartOf=nut.target
+
+[Timer]
+OnBootSec=2s
+OnUnitInactiveSec=3s
+AccuracySec=500ms
+Unit=nut-vida-discovery.service
+
+[Install]
+WantedBy=nut.target

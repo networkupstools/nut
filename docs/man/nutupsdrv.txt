@@ -262,6 +262,12 @@ runs in foreground mode.
 `ups.conf` and other configuration files.  If this variable is not set,
 drivers use a built-in default, which is often `/usr/local/ups/etc`.
 
+*NUT_UPSCONF* selects an explicit `ups.conf` file, overriding only that file's
+location. Other configuration files still use *NUT_CONFPATH*. An empty value
+uses the normal location; a missing explicitly selected file is an error.
+Use the same value for the server, drivers, controller and enumerator when
+sharing a generated inventory. See linkman:nutdrv_vida[8] for an example.
+
 *NUT_STATEPATH* is the path name of the directory in which
 *upsd* and drivers keep shared state information.  If this variable
 is not set, *upsd* and drivers use a built-in default, which is often

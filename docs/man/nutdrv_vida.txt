@@ -29,6 +29,63 @@ string discovery and sends only the four validated telemetry queries.
 It claims the HID interface and restores the previous kernel binding when
 closing it. Do not run another USB monitoring program against the same device.
 
+AUTOMATIC LINUX DISCOVERY
+------------------------
+
+For changing USB connections, enable +nut-vida-discovery.service+ and
++nut-vida-discovery.timer+ along with the standard NUT driver enumerator
+daemon. The discovery service scans the kernel USB inventory every three
+seconds without issuing USB requests. It authenticates new devices using
+the known report descriptor and writes a derived configuration to
++/run/nut-vida-discovery/ups.conf+. It reads the administrator's +ups.conf+
+without modifying it, so concurrent administrator edits cannot be lost.
+The next scan incorporates those edits into the derived configuration.
+
+Opt in by creating +nut-vida-discovery.conf+ in NUT's configuration directory
+with the following environment assignment:
+
+----
+NUT_UPSCONF=/run/nut-vida-discovery/ups.conf
+----
+
+Make that file readable by root and the NUT group, and writable only by root.
+Packaged service drop-ins apply this override to the server, drivers and
+enumerator. Other NUT configuration files continue to use their normal
+locations. For manual administration with +upsdrvctl+, export +NUT_UPSCONF+
+with the same value. A missing explicitly selected file is an error.
+
+Adding a third unit, moving cables, removing some or all units, and later
+reconnecting them requires no configuration edit. The NUT driver enumerator
+creates and removes the corresponding driver instances and reloads the
+server. Configure its daemon interval as appropriate for the desired response
+time; for example, its +--daemon-after=3+ option checks every three seconds.
+Keep the server running with zero devices using +ALLOW_NO_DEVICE true+.
+
+Names such as +armour_usb_001_010+ identify current physical USB attachments,
+not permanent physical UPS identities. These controllers provide no usable
+serial number, so a unit moved to another port receives the name for its new
+attachment. A previously admitted kernel connection remains recognized while
+the native driver owns its HID interface. Cached admission is invalid after
+removal, address or object replacement, or reboot.
+
+Packaged drop-ins order existing driver instances after discovery, so the
+initial inventory is authenticated before drivers claim the HID interfaces.
+After creating the opt-in file and configuring the enumerator, enable the
+services and restart the stack:
+
+----
+systemctl enable nut-vida-discovery.service nut-vida-discovery.timer
+systemctl enable nut-driver-enumerator-daemon.service nut-server.service
+systemctl restart nut.target
+----
+
+An experimental earlier version wrote a marked discovery block directly to
+the administrator's +ups.conf+. Stop the NUT stack, back up that file and
+remove that block before using this version; discovery rejects such input.
+To return to manual configuration, stop the stack and discovery timer,
+disable discovery, remove +nut-vida-discovery.conf+, configure the desired
+manual device sections, and restart the stack.
+
 MANUAL CONFIGURATION
 --------------------
 
@@ -58,6 +115,36 @@ Two UPS units can be configured independently in linkman:ups.conf[5]:
 Selectors matching multiple devices are rejected. An absent device or invalid
 telemetry marks the data stale. The driver checks its configured port again
 on subsequent polls and authenticates the descriptor on every reconnect.
+
+LINUX MONITORING SERVICES
+------------------------
+
+Build with USB and systemd support and install the normal NUT USB permission
+rules, system user definitions and temporary directory definitions. Use the
+dedicated NUT account. Set +MODE=netserver+ in +nut.conf+, select automatic
+discovery or configure manual device sections, and bind +upsd.conf+ to loopback:
+
+----
+LISTEN 127.0.0.1 3493
+LISTEN ::1 3493
+----
+
+For automatic discovery, use +nut-driver-enumerator-daemon.service+,
++nut-driver.target+ and +nut-server.service+. Keep +nut-monitor.service+
+disabled for a monitoring-only installation. List and inspect current units:
+
+----
+upsc -l localhost
+upsc armour_usb_001_010@localhost
+----
+
+The discovery timer updates standard configuration; only native NUT drivers
+read UPS telemetry. No extra kernel module is needed. Automatic discovery
+requires Linux sysfs, systemd and Python 3.8 or later; the native driver can
+also be configured manually. Configure enables discovery only when these
+dependencies and +nutdrv_vida+ are selected. Use +--disable-vida-discovery+
+to omit it, or +--enable-vida-discovery+ to require its dependencies.
+Shutdown policy and physical power-event qualification are separate tasks.
 
 DATA AND LIMITATIONS
 --------------------

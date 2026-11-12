@@ -5278,6 +5278,25 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+dnl VIDA discovery is Linux-only and requires the native driver and Python 3.8+.
+NUT_ARG_ENABLE([vida-discovery], [Build Linux VIDA USB discovery services], [auto])
+nut_have_vida_discovery=no
+nut_build_vida_driver=no
+AS_CASE([" $DRIVER_BUILD_LIST "], [" all "|*" nutdrv_vida "*], [nut_build_vida_driver=yes])
+AS_CASE([$host_os], [linux*], [
+    AS_IF([test "$nut_have_vida_usb" = yes && test "$nut_build_vida_driver" = yes && test -n "$systemdsystemunitdir" && test -n "$PYTHON3"], [
+        AS_IF([$PYTHON3 -c 'import sys, fcntl, grp, pathlib; sys.exit(sys.version_info < (3, 8))' >/dev/null 2>&1],
+            [nut_have_vida_discovery=yes])
+    ])
+])
+AS_CASE([$nut_enable_vida_discovery],
+    [no], [nut_have_vida_discovery=no],
+    [yes], [AS_IF([test "$nut_have_vida_discovery" != yes],
+        [AC_MSG_ERROR([VIDA discovery requires Linux, systemd units, nutdrv_vida and Python 3.8 or newer])])],
+    [auto], [],
+    [AC_MSG_ERROR([Invalid --enable-vida-discovery value])])
+AM_CONDITIONAL(WITH_VIDA_DISCOVERY, test "$nut_have_vida_discovery" = yes)
+
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
 NUT_ARG_WITH([systemdsystempresetdir], [(DIRPATH|yes|no|auto)], [Directory for systemd preset files], [auto])
@@ -7489,6 +7508,10 @@ AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt5:scripts/python/app/NUT-Mo
 AC_CONFIG_FILES([scripts/python/app/NUT-Monitor-py3qt6:scripts/python/app/NUT-Monitor-py3qt.in],
     [chmod +x scripts/python/app/NUT-Monitor-py3qt6])
 
+m4_foreach_w([VIDA_CONSUMER], [nut-driver@.service nut-server.service nut-driver-enumerator.service nut-driver-enumerator-daemon.service], [
+ AC_CONFIG_FILES([scripts/systemd/]VIDA_CONSUMER[.d/nut-vida-discovery.conf:scripts/systemd/nut-vida-consumer.conf.in])
+])
+
 AC_MSG_NOTICE([Generating templated script files that should be marked executable])
 m4_foreach_w([SCRIPTFILE], [
  docs/docinfo.xml.sh
@@ -7503,6 +7526,9 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
+ scripts/upsdrvsvcctl/nut-vida-discover.py
+ scripts/systemd/nut-vida-discovery.service
+ scripts/systemd/nut-vida-discovery.timer
  scripts/systemd/nutshutdown
  scripts/Solaris/svc-nut-server
  scripts/Solaris/svc-nut-logger

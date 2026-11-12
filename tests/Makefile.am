@@ -19,6 +19,7 @@ EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
 EXTRA_DIST += upsset-string-test.py
+EXTRA_DIST += vida_discovery_test.py upsconf_override_test.py
 
 
 TESTS =
@@ -427,6 +428,18 @@ endif !HAVE_VALGRIND
 
 CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test
 CHECK_LOCAL_TARGETS_PYNUT =
+
+if WITH_VIDA_DISCOVERY
+CHECK_LOCAL_TARGETS += vida-discovery-test upsconf-override-test
+vida-discovery-test:
+	$(AM_V_at)NUT_TOP_SRCDIR='$(abs_top_srcdir)' @PYTHON3@ $(srcdir)/vida_discovery_test.py
+
+$(top_builddir)/drivers/upsdrvctl$(EXEEXT): dummy @dotMAKE@
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
+upsconf-override-test: $(top_builddir)/drivers/upsdrvctl$(EXEEXT)
+	$(AM_V_at)@PYTHON3@ $(srcdir)/upsconf_override_test.py '$(abs_top_builddir)'
+endif WITH_VIDA_DISCOVERY
 
 if WITH_CGI
 if HAVE_PYTHON3

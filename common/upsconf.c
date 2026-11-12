@@ -90,9 +90,23 @@ int read_upsconf(int fatal_errors)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	const char	*override = getenv("NUT_UPSCONF");
 
 	ups_section = NULL;
-	snprintf(fn, sizeof(fn), "%s/ups.conf", confpath());
+	/* A generated UPS inventory may have a different owner/lifetime from
+	 * upsd.conf and upsd.users. Select only ups.conf explicitly; a missing
+	 * override is an error, never a reason to read a different inventory. */
+	if (override && *override) {
+		if (strlen(override) >= sizeof(fn)) {
+			if (fatal_errors)
+				fatalx(EXIT_FAILURE, "NUT_UPSCONF path is too long");
+			upslogx(LOG_ERR, "NUT_UPSCONF path is too long");
+			return -1;
+		}
+		snprintf(fn, sizeof(fn), "%s", override);
+	} else {
+		snprintf(fn, sizeof(fn), "%s/ups.conf", confpath());
+	}
 
 	pconf_init(&ctx, upsconf_err);
 
