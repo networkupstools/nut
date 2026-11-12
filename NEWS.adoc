@@ -26,6 +26,8 @@ https://github.com/networkupstools/nut/milestone/13
    Armour ARM3000 units with V4.20 firmware. It authenticates the HID report
    descriptor, requires explicit physical bus/port selection, and supports
    multiple identical units without relying on USB device addresses.
+   Native regressions cover all status combinations, complete telemetry,
+   transport failures and unsupported shutdown, with GCC and Clang builds.
    Optional Linux discovery services maintain those selectors automatically
    as units are added, removed or moved to other physical ports, including
    an empty inventory. Attachment names do not imply permanent UPS identity.

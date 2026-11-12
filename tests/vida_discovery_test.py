@@ -6,6 +6,9 @@ HID bindings and real atomic files exercise discovery through its actual API.
 Copyright (C) 2026 NUT contributors. GPL version 2 or later.
 """
 import hashlib
+import contextlib
+import fcntl
+import io
 import importlib.machinery
 import importlib.util
 import json
@@ -15,6 +18,7 @@ import re
 import shutil
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 SOURCE = Path(os.environ.get('NUT_TOP_SRCDIR', Path(__file__).resolve().parents[1]))
@@ -259,6 +263,67 @@ class DiscoveryTests(unittest.TestCase):
     def test_native_and_discovery_identity_contracts_match(self):
         self.assertEqual(len(REPORT), 624)
         self.assertEqual(hashlib.sha256(REPORT).hexdigest(), discovery.REPORT_SHA256)
+
+    def run_cli(self):
+        """Exercise argument parsing, owner checks and the real lock acquisition."""
+        boot = self.root / 'boot-id'
+        boot.write_text('boot-1\n')
+        args = ['--config', str(self.config), '--output', str(self.output),
+                '--state', str(self.state), '--usb-root', str(self.usb),
+                '--hid-root', str(self.hid), '--boot-id', str(boot)]
+        with patch.object(discovery.grp, 'getgrnam', return_value=SimpleNamespace(gr_gid=os.getgid())), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return discovery.main(args)
+
+    def test_cli_permissions_and_lock_contention(self):
+        self.add('1-10')
+        with self.state.with_suffix('.lock').open('w') as holder:
+            fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.assertEqual(self.run_cli(), 0)
+            self.assertFalse(self.output.exists())
+            self.assertFalse(self.state.exists())
+        self.assertEqual(self.run_cli(), 0)
+        self.assertEqual(self.output.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(self.output.stat().st_gid, os.getgid())
+        self.assertEqual(self.state.stat().st_mode & 0o777, 0o600)
+
+    def test_cli_rejects_writable_state_directory_and_state_symlink(self):
+        self.root.chmod(0o770)
+        self.assertEqual(self.run_cli(), 1)
+        self.assertFalse(self.output.exists())
+        self.root.chmod(0o700)
+        self.state.symlink_to(self.config)
+        self.assertEqual(self.run_cli(), 1)
+        self.assertFalse(self.output.exists())
+        self.assertEqual(self.config.read_text(), '')
+
+    def test_failed_publication_preserves_generation_and_can_retry(self):
+        self.add('1-10')
+        self.run_scan()
+        old = self.output.read_bytes()
+        self.add('1-2')
+        replace = discovery.os.replace
+
+        def fail_output(source, destination):
+            if Path(destination) == self.output:
+                raise OSError('simulated publication failure')
+            return replace(source, destination)
+
+        with patch.object(discovery.os, 'replace', side_effect=fail_output):
+            self.assertEqual(self.run_cli(), 1)
+        self.assertEqual(self.output.read_bytes(), old)
+        self.assertEqual(list(self.root.glob('.ups.conf.*')), [])
+        self.assertEqual(self.run_cli(), 0)
+        self.assertIn('armour_usb_001_002', self.output.read_text())
+
+    def test_failed_state_sync_never_publishes_driver_configuration(self):
+        self.add('1-10')
+        with patch.object(discovery.os, 'fsync', side_effect=OSError('simulated sync failure')):
+            self.assertEqual(self.run_cli(), 1)
+        self.assertFalse(self.output.exists())
+        self.assertFalse(self.state.exists())
+        self.assertEqual(list(self.root.glob('.state.json.*')), [])
+        self.assertEqual(self.run_cli(), 0)
 
 
 if __name__ == '__main__':

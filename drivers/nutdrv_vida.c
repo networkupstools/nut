@@ -18,7 +18,7 @@
 #endif
 
 #define DRIVER_NAME "VIDA Armour USB telemetry driver"
-#define DRIVER_VERSION "0.02"
+#define DRIVER_VERSION "0.03"
 #define VIDA_VENDORID 0x0001
 #define VIDA_TIMEOUT 2000
 
