@@ -909,6 +909,10 @@ https://github.com/networkupstools/nut/milestone/13
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
 
  - `upsd` data server updates:
+    * Discard buffered plaintext and parser state when `upsd` upgrades a
+      client connection to TLS. Accepted upgrades that do not complete now
+      close the connection, while refused or unsupported upgrades retain
+      normal plaintext behavior. [PR #3840]
     * Validate complete numeric values and conversion ranges for `MAXAGE`,
       `TRACKINGDELAY`, `MAXCONN` and `CERTREQUEST` in `upsd.conf`, retaining
       the previous setting when conversion fails. Preserve public types

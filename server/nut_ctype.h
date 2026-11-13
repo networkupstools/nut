@@ -80,6 +80,8 @@ typedef struct nut_ctype_s {
 	void	*ssl;
 #endif
 	int	ssl_connected;
+	/* STARTTLS was accepted, but its handshake has not completed. */
+	int	starttls_pending;
 
 	PCONF_CTX_t	ctx;
 
