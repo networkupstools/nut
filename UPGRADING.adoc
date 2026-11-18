@@ -135,12 +135,12 @@ NOTE: In a future NUT release, the default `configure` script handling for the
 - On systemd and SMF, installations using `clone`, `clone-outlet` or
   `failover` can run `upsdrvsvcctl reconfigure` to generate the corrected
   dependencies for existing driver instances. This command recreates all
-  driver service instances, so allow for a monitoring interruption.
+  driver service instances, so allow for a monitoring interruption. [PR #3852]
 
 - When a running driver cannot reload a changed configuration, the driver
   enumerator now recreates its service instance in quiet mode as well.
   With automatic startup enabled, the affected driver restarts. Allow for
-  a monitoring interruption when changing settings that require a restart.
+  a monitoring interruption when changing settings that require a restart. [PR #3852]
 
 - `nut-driver-enumerator` now preserves quotes and backslashes in normalized
   configuration output and decodes values once using NUT token syntax.

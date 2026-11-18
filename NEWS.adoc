@@ -937,10 +937,10 @@ https://github.com/networkupstools/nut/milestone/13
       Update these dependencies when backing services are added or removed.
       Local `dummy-ups` proxies keep separate network and driver requirements.
       On systemd, use the existing hashed instance name for section names
-      that the enumerator cannot use literally in its service mapping.
+      that the enumerator cannot use literally in its service mapping. [PR #3852]
     * When a driver cannot reload a changed configuration, recreate its
       service instance and apply the new settings. Previously the default
-      quiet mode could record the change without applying it.
+      quiet mode could record the change without applying it. [PR #3852]
     * The shell/`awk` based parser now decodes `ups.conf` values using NUT token
       syntax, preserving quoted hashes and escaped characters and ignoring
       trailing comments. For example, `port = "auto" # comment` now properly
