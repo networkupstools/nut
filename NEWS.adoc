@@ -1071,6 +1071,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Further rearrangement of AppVeyor CI builds and security hardening of
       GitHub Actions used to prepare the dist tarballs and report on progress
       there. [PRs #3753, #3754, #3756]
+    * The CodeQL workflow skips its analysis matrix for pull requests that
+      change only recognized documentation files. [issue #3746, PR #3846]
     * Fixed more AppVeyor CI step scripts where `cmd.exe` interpreted `||`
       inside the single-quoted `bash` command lines itself (it does not
       honour such quotes). Also enforce the `ccache` size limit before the
