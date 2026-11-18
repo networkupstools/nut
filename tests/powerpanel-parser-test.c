@@ -3,7 +3,10 @@
  * This program is distributed under the GNU GPL version 2 or later.
  */
 #include "common.h"
-#include "powerp-txt-parser.h"
+/* Keep test objects and dependency files local to tests, so recursive
+ * builds and distclean do not share generated files with the driver.
+ */
+#include "../drivers/powerp-txt-parser.c"
 #include <math.h>
 
 static int failed;

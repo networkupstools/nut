@@ -484,7 +484,7 @@ all-libs-local: $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES) $(EXTRA_LTLIBRARIES)
 
 # Pure PowerPanel text parser, including USB-observed numeric fields.
 TESTS += powerpanel-parser-test
-powerpanel_parser_test_SOURCES = powerpanel-parser-test.c ../drivers/powerp-txt-parser.c
+powerpanel_parser_test_SOURCES = powerpanel-parser-test.c
 powerpanel_parser_test_LDADD = $(NUT_LIBCOMMON) -lm
 
 if WITH_LIBUSB_1_0
