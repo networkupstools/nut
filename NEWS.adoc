@@ -46,7 +46,7 @@ https://github.com/networkupstools/nut/milestone/13
 
  - Fix fallout of development in NUT v2.8.0 through v2.8.5:
     * Editing listeners with `nutconf` preserves the configured values of
-      `DISABLE_WEAK_SSL` and `ALLOW_NOT_ALL_LISTENERS` in `upsd.conf`.
+      `DISABLE_WEAK_SSL` and `ALLOW_NOT_ALL_LISTENERS` in `upsd.conf`. [PR #3849]
     * `libnutconf`: character reads from a TCP socket now use the Windows
       socket API, matching string reads. Previously they failed with a bad
       file descriptor error on Windows. [issue #2293]
