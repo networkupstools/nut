@@ -181,6 +181,11 @@ NOTE: In a future NUT release, the default `configure` script handling for the
   of the two filenames for same contents (to pick the backend at run-time) may
   also be optimized with symbolic or hard links in packaging. [PR #3596]
 
+- If a saved NUT-Monitor favorite still fails to authenticate after upgrading,
+  re-enter the password and recreate the favorite. Earlier versions could
+  write a previously loaded password back to the favorites file as plain
+  text when another favorite was added or removed. [issue #3732]
+
 - Manual page name for `generic_gpio_libgpiod` driver was fixed to match its
   name (previously the document base file name could have been `generic_gpio`).
   This can impact packaging recipes. [PR #3693]
