@@ -31,7 +31,7 @@
 #endif /* WITH_USB */
 
 #define DRIVER_NAME	"APC Microlink protocol driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -211,9 +211,9 @@ upsdrv_info_t upsdrv_info = {
 #define MLINK_DESC_OP_COLLECTION	0xFD
 #define MLINK_DESC_OP_CHILD_NEXT	0xFE
 #define MLINK_DESC_OP_BLOCK_END		0xFF
-#define MLINK_DESC_OP_SKIP_USAGE	0xFB
-#define MLINK_DESC_OP_DOUBLE_SKIP	0xFA
-#define MLINK_DESC_OP_SKIP_USAGE_ALT	0xF9
+#define MLINK_DESC_OP_BITMASK		0xFB
+#define MLINK_DESC_OP_MINMAX		0xFA
+#define MLINK_DESC_OP_DEFAULT		0xF9
 #define MLINK_DESC_OP_ENTER_BLOCK	0xF8
 #define MLINK_DESC_OP_NOOP		0xF7
 #define MLINK_DESC_OP_EXIT_BLOCK	0xF6
@@ -888,13 +888,13 @@ static int microlink_build_collection_path(char *buf, size_t buflen, const char 
 		&& microlink_path_append(buf, buflen, &pos, "%X[%u].", collection_id, index);
 }
 
-static void microlink_record_descriptor_usage(const char *path, size_t data_offset,
-	size_t size, int skipped)
+static microlink_descriptor_usage_t *microlink_record_descriptor_usage(const char *path,
+	size_t data_offset, size_t size, int skipped)
 {
 	microlink_descriptor_usage_t *usage;
 
 	if (descriptor_usage_count >= MLINK_DESCRIPTOR_MAX_USAGES) {
-		return;
+		return NULL;
 	}
 
 	usage = &descriptor_usages[descriptor_usage_count++];
@@ -904,6 +904,7 @@ static void microlink_record_descriptor_usage(const char *path, size_t data_offs
 	usage->data_offset = data_offset;
 	usage->size = size;
 	snprintf(usage->path, sizeof(usage->path), "%s", path);
+	return usage;
 }
 
 static int microlink_match_path_template(const char *templ, const char *path,
@@ -1597,6 +1598,51 @@ static uint64_t microlink_max_unsigned_for_size(size_t size)
 	}
 
 	return ((uint64_t)1 << (size * 8U)) - 1U;
+}
+
+static uint64_t microlink_read_descriptor_uint(const unsigned char *data, size_t size)
+{
+	uint64_t raw = 0;
+	size_t i;
+
+	for (i = 0; i < size; i++) {
+		raw = (raw << 8) | data[i];
+	}
+	return raw;
+}
+
+static int microlink_descriptor_bound(uint64_t raw, size_t size,
+	microlink_desc_numeric_sign_t sign, int *bound)
+{
+	uint64_t max = microlink_max_unsigned_for_size(size);
+	int64_t value;
+
+	if (sign == MLINK_DESC_SIGNED && raw > max / 2U) {
+		value = -1 - (int64_t)(max - raw);
+	} else {
+		if (raw > INT_MAX) {
+			return 0;
+		}
+		value = (int64_t)raw;
+	}
+
+	if (value < INT_MIN) {
+		return 0;
+	}
+	*bound = (int)value;
+	return 1;
+}
+
+static int microlink_get_descriptor_range(const microlink_descriptor_usage_t *usage,
+	const microlink_desc_value_map_t *entry, int *min, int *max)
+{
+	/* NUT ranges have integer endpoints. A map with numeric bounds may
+	 * still give special values symbolic names, as countdowns do. */
+	return usage->has_range && entry->bin_point == 0
+		&& (entry->type == MLINK_DESC_FIXED_POINT || entry->type == MLINK_DESC_ENUM_MAP)
+		&& microlink_descriptor_bound(usage->range_min, usage->size, entry->sign, min)
+		&& microlink_descriptor_bound(usage->range_max, usage->size, entry->sign, max)
+		&& *min <= *max;
 }
 
 static int microlink_value_fits_descriptor(int64_t raw, microlink_desc_numeric_sign_t sign,
@@ -2330,6 +2376,7 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 	const microlink_descriptor_usage_t *usage;
 	unsigned char payload[MLINK_MAX_PAYLOAD];
 	size_t size = 0;
+	int min, max, numeric;
 
 	if (entry == NULL || path == NULL || val == NULL) {
 		return 0;
@@ -2412,6 +2459,14 @@ static int microlink_send_descriptor_typed_value(const microlink_desc_value_map_
 # pragma GCC diagnostic pop
 #endif
 
+	/* Check the packed value because upsd checks the input text as a
+	 * decimal number, even for symbolic aliases and non-decimal numbers. */
+	if (microlink_get_descriptor_range(usage, entry, &min, &max)
+	 && (!microlink_descriptor_bound(microlink_read_descriptor_uint(payload, size),
+		size, entry->sign, &numeric) || numeric < min || numeric > max)) {
+		return 0;
+	}
+
 	return microlink_send_descriptor_write(path, payload, size);
 }
 
@@ -2430,6 +2485,73 @@ static int microlink_descriptor_value_is_printable(const unsigned char *buf, siz
 	}
 
 	return 1;
+}
+
+static size_t microlink_publish_descriptor_enum(const char *name,
+	const microlink_desc_value_map_t *entry, const microlink_descriptor_usage_t *usage)
+{
+	const microlink_value_map_t *choice;
+	uint64_t known_mask = 0;
+	size_t max_len = 0;
+
+	if (entry->type != MLINK_DESC_ENUM_MAP || usage->bitmask == 0 || entry->map == NULL) {
+		return 0;
+	}
+
+	/* Publish a complete list of supported one-bit choices. A partial list
+	 * would cause upsd to reject writes to valid values we cannot name. */
+	for (choice = entry->map; choice->text != NULL; choice++) {
+		uint64_t bit = (uint64_t)choice->value;
+
+		if ((usage->bitmask & bit) != 0 && (bit & (bit - 1U)) == 0
+		 && microlink_value_fits_descriptor(choice->value, entry->sign, usage->size)) {
+			size_t len = strlen(choice->text);
+
+			known_mask |= bit;
+			if (len > max_len) {
+				max_len = len;
+			}
+		}
+	}
+	if (known_mask != usage->bitmask) {
+		return 0;
+	}
+
+	for (choice = entry->map; choice->text != NULL; choice++) {
+		uint64_t bit = (uint64_t)choice->value;
+
+		if ((known_mask & bit) != 0 && (bit & (bit - 1U)) == 0) {
+			dstate_addenum(name, "%s", choice->text);
+		}
+	}
+	return max_len;
+}
+
+static void microlink_publish_descriptor_write_metadata(const char *name,
+	const microlink_desc_value_map_t *entry, const microlink_descriptor_usage_t *usage)
+{
+	const st_tree_t *node = dstate_tree_find(name);
+	int flags = ST_FLAG_RW;
+	int min, max;
+	size_t string_len;
+
+	if (node == NULL || (node->flags & ST_FLAG_IMMUTABLE) != 0) {
+		return;
+	}
+
+	if (microlink_get_descriptor_range(usage, entry, &min, &max)) {
+		dstate_setflags(name, flags | ST_FLAG_NUMBER);
+		dstate_addrange(name, min, max);
+		return;
+	}
+
+	string_len = entry->type == MLINK_DESC_STRING ? usage->size
+		: microlink_publish_descriptor_enum(name, entry, usage);
+	if (string_len > 0 && string_len < INT_MAX) {
+		flags |= ST_FLAG_STRING;
+		dstate_setaux(name, (long)string_len);
+	}
+	dstate_setflags(name, flags);
 }
 
 static void microlink_publish_descriptor_exports(void)
@@ -2482,17 +2604,9 @@ static void microlink_publish_descriptor_exports(void)
 				name, sizeof(name));
 			microlink_publish_descriptor_entry(name, usage->path, entry);
 
+			/* The descriptor can give limits for read-only usages too. */
 			if (entry->access & MLINK_DESC_RW) {
-				int flags = ST_FLAG_RW;
-
-				if (entry->type == MLINK_DESC_STRING) {
-					flags |= ST_FLAG_STRING;
-				}
-
-				dstate_setflags(name, flags);
-				if (entry->type == MLINK_DESC_STRING && usage->size > 0 && usage->size < INT_MAX) {
-					dstate_setaux(name, (int)usage->size);
-				}
+				microlink_publish_descriptor_write_metadata(name, entry, usage);
 			}
 		}
 
@@ -2524,8 +2638,11 @@ static void microlink_publish_descriptor_exports(void)
 static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t blob_len,
 	size_t pos, size_t *data_offset, const char *path, unsigned char usage_id, int skipped)
 {
+	microlink_descriptor_usage_t *usage;
 	char usage_path[64];
 	size_t usage_size = 2;
+	size_t mask_width = 0, range_width = 0;
+	uint64_t mask = 0, max = 0, min = 0;
 
 	if (!microlink_build_usage_path(usage_path, sizeof(usage_path), path, usage_id)) {
 		return 0;
@@ -2543,19 +2660,29 @@ static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t
 			continue;
 		}
 
-		if (token == MLINK_DESC_OP_SKIP_USAGE || token == MLINK_DESC_OP_SKIP_USAGE_ALT) {
+		if (token == MLINK_DESC_OP_BITMASK || token == MLINK_DESC_OP_DEFAULT) {
 			pos++;
 			if (pos + usage_size > blob_len) {
 				return 0;
+			}
+			if (token == MLINK_DESC_OP_BITMASK && usage_size <= sizeof(mask)) {
+				mask = microlink_read_descriptor_uint(blob + pos, usage_size);
+				mask_width = usage_size;
 			}
 			pos += usage_size;
 			continue;
 		}
 
-		if (token == MLINK_DESC_OP_DOUBLE_SKIP) {
+		if (token == MLINK_DESC_OP_MINMAX) {
 			pos++;
 			if (pos + (usage_size * 2U) > blob_len) {
 				return 0;
+			}
+			if (usage_size <= sizeof(max)) {
+				/* Captures in NUT issue #3587 show the upper bound first. */
+				max = microlink_read_descriptor_uint(blob + pos, usage_size);
+				min = microlink_read_descriptor_uint(blob + pos + usage_size, usage_size);
+				range_width = usage_size;
 			}
 			pos += usage_size * 2U;
 			continue;
@@ -2564,7 +2691,17 @@ static size_t microlink_parse_descriptor_usage(const unsigned char *blob, size_t
 		break;
 	}
 
-	microlink_record_descriptor_usage(usage_path, *data_offset, usage_size, skipped);
+	usage = microlink_record_descriptor_usage(usage_path, *data_offset, usage_size, skipped);
+	if (usage != NULL && usage_size > 0) {
+		if (mask_width == usage_size) {
+			usage->bitmask = mask;
+		}
+		if (range_width == usage_size) {
+			usage->has_range = 1;
+			usage->range_min = min;
+			usage->range_max = max;
+		}
+	}
 	*data_offset += usage_size;
 	return pos;
 }
