@@ -32,6 +32,8 @@
 #define SER_WAIT_SEC	0
 #define SER_WAIT_USEC	250000
 
+extern int powerpanel_usb_mode;
+
 typedef struct {
 	const char	*version; /* TODO: Rename: this is a subdriver type: "text" or "binary" */
 	const char	*versionString; /* TODO: Rename: this is the actual subdriver version */

@@ -278,6 +278,7 @@
 
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
+"Cyber Power Systems"	"ups"	"1"	"OLS2000ERT2UA"	"USB, query-only"	"powerpanel transport=usb"
 "Cyber Power Systems"	"ups"	"1"	"CPS1100AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"CPS1200AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"CPS1250AVR"	""	"powerpanel"

@@ -26,8 +26,12 @@
 
 #include "powerp-bin.h"
 #include "powerp-txt.h"
+#include "powerp-usb.h"
+
+int powerpanel_usb_mode = 0;
 
 static int	mode = 0;
+static int reconnecting = 0;
 
 static subdriver_t *subdriver[] = {
 	&powpan_binary,
@@ -36,7 +40,7 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.32"
+#define DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -55,8 +59,15 @@ static int reconnect_ups(void)
 	reconnect_trying(RECONNECT_TRYING);
 
 	upsdrv_cleanup();
+	reconnecting = 1;
 	upsdrv_initups();
-	if (INVALID_FD_SER(upsfd))
+	reconnecting = 0;
+#if WITH_LIBUSB_1_0
+	if (powerpanel_usb_mode && !powerpanel_usb_connected()) {
+		return 0;
+	}
+#endif
+	if (!powerpanel_usb_mode && INVALID_FD_SER(upsfd))
 		return 0;
 
 	reconnect_trying(RECONNECT_UPDATEINFO);
@@ -89,8 +100,10 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("ups.serial", "%s", s);
 	}
 
-	upsh.instcmd = subdriver[mode]->instcmd;
-	upsh.setvar = subdriver[mode]->setvar;
+	if (!powerpanel_usb_mode) {
+		upsh.instcmd = subdriver[mode]->instcmd;
+		upsh.setvar = subdriver[mode]->setvar;
+	}
 }
 
 void upsdrv_updateinfo(void)
@@ -128,6 +141,12 @@ void upsdrv_shutdown(void)
 	 * general handling of other `sdcommands` here */
 
 	int	i, ret = -1;
+
+	if (powerpanel_usb_mode) {
+		upslogx(LOG_ERR, "USB text transport is read-only; UPS power-off is unsupported");
+		set_exit_flag(EF_EXIT_FAILURE);
+		return;
+	}
 
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power
@@ -176,6 +195,31 @@ void upsdrv_initups(void)
 	char	*version;
 
 	version = getval("protocol");
+	if (getval("transport") && strcasecmp(getval("transport"), "serial")
+	&& strcasecmp(getval("transport"), "usb")) {
+		fatalx(EXIT_FAILURE, "Unknown transport: expected serial or usb");
+	}
+	if ((getval("transport") && !strcasecmp(getval("transport"), "usb"))
+	|| (!getval("transport") && !strcmp(device_path, "auto"))) {
+#if WITH_LIBUSB_1_0
+		if (version && strcasecmp(version, "text")) {
+			fatalx(EXIT_FAILURE, "USB transport supports only the text protocol");
+		}
+		powerpanel_usb_mode = 1;
+		mode = 1; /* Text subdriver. */
+		if (powerpanel_usb_init() == 0 && subdriver[mode]->initups() > 0) {
+			upslogx(LOG_INFO, "CyberPower USB text protocol detected (query-only)");
+			return;
+		}
+		powerpanel_usb_cleanup();
+		if (reconnecting) {
+			return;
+		}
+		fatalx(EXIT_FAILURE, "CyberPower USB text protocol not found");
+#else
+		fatalx(EXIT_FAILURE, "USB text transport requires a libusb-1.0 build");
+#endif
+	}
 	upsfd = ser_open(device_path);
 
 	if (INVALID_FD_SER(upsfd)) {
@@ -221,6 +265,7 @@ void upsdrv_tweak_prognames(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "transport", "Connection transport [serial|usb] (default: serial)");
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown");
 
@@ -233,6 +278,12 @@ void upsdrv_makevartable(void)
 void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "%s: begin", __func__);
+#if WITH_LIBUSB_1_0
+	if (powerpanel_usb_mode) {
+		powerpanel_usb_cleanup();
+		return;
+	}
+#endif
 	if (VALID_FD_SER(upsfd)) {
 		ser_set_dtr(upsfd, 0);
 		ser_close(upsfd, device_path);

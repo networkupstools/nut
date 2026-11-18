@@ -33,27 +33,14 @@
 #include "nut_stdint.h"
 
 #include "powerp-txt.h"
+#include "powerp-usb.h"
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.65"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.66"
 
-typedef struct {
-	float          i_volt;
-	float          o_volt;
-	int            o_load;
-	int            b_chrg;
-	unsigned char  has_u_temp;
-	int            u_temp;
-	float          i_freq;
-	unsigned char  flags[2];
-	unsigned char  has_b_volt;
-	float          b_volt;
-	unsigned char  has_o_freq;
-	float          o_freq;
-	unsigned char  has_runtime;
-	int            runtime;
-} status_t;
+#include "powerp-txt-parser.h"
+
 
 static long	ondelay = 1;	/* minutes */
 static long	offdelay = 60;	/* seconds */
@@ -89,6 +76,12 @@ static struct {
 static ssize_t powpan_command(const char *command)
 {
 	ssize_t	ret;
+
+#if WITH_LIBUSB_1_0
+	if (powerpanel_usb_mode) {
+		return powerpanel_usb_command(command, powpan_answer, sizeof(powpan_answer));
+	}
+#endif
 
 	ser_flush_io(upsfd);
 
@@ -237,8 +230,10 @@ static void powpan_initinfo(void)
 	int	i;
 	char	*s;
 
-	dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
-	dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
+	if (!powerpanel_usb_mode) {
+		dstate_setinfo("ups.delay.start", "%ld", 60 * ondelay);
+		dstate_setinfo("ups.delay.shutdown", "%ld", offdelay);
+	}
 
 	/*
 	 * NOTE: The reply is already in the buffer, since the P4\r command
@@ -262,7 +257,8 @@ static void powpan_initinfo(void)
 	 * READ #12.0,002,008.0,00\r
 	 *      #12,2x1,12,0,1,8\r		(CST135XLU)
 	 */
-	if (powpan_command("P3\r") > 0) {
+	/* USB battery topology has not been validated; retain serial semantics. */
+	if (!powerpanel_usb_mode && powpan_command("P3\r") > 0) {
 
 		if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
 			dstate_setinfo("battery.voltage.nominal", "%f", strtod(s, NULL));
@@ -318,6 +314,11 @@ static void powpan_initinfo(void)
 		if ((s = strtok(NULL, ",")) != NULL) {
 			dstate_setinfo("battery.charge.low", "%li", strtol(s, NULL, 10));
 		}
+	}
+
+	/* USB text support publishes data only; serial controls remain unchanged. */
+	if (powerpanel_usb_mode) {
+		return;
 	}
 
 	for (i = 0; cmdtab[i].cmd != NULL; i++) {
@@ -384,110 +385,19 @@ static void powpan_initinfo(void)
 	upsh.setvar = powpan_setvar;
 }
 
-static ssize_t powpan_status(status_t *status)
+static ssize_t powpan_status(powpan_status_t *status)
 {
-	ssize_t	ret;
-	ssize_t i;
-	ssize_t valid = 0;
-	int code = -1;
-	char value[32];
-	ssize_t ofs = 0;
-	char seen_i_freq = 0;
-
-	memset(status, 0, sizeof(status_t));
-
-	/*
-	 * WRITE D\r
-	 * READ #I119.0O119.0L000B100T027F060.0S..\r
-	 *      #I118.0O118.0L029B100F060.0R0218S..\r
-	 *      #I118.1O118.1L13B100V27.5F60.0HF60.0R65Q1.4S\x80\x84\xc0\x88\x80W\r		(CST135XLU)
-	 *      01234567890123456789012345678901234567890123
-	 *      0         1         2         3         4
-	 */
-	ret = powpan_command("D\r");
-	if (ret <= 0)
-		return -1;
-
-	if (powpan_answer[0] != '#') {
-		upsdebugx(2, "Expected start character '#', but got '%c'", powpan_answer[0]);
-		return -1;
-	}
-
-	for (i = 1; i <= ret; i++) {
-		if (i == ret || isalpha((unsigned char)(powpan_answer[i]))) {
-			value[ofs++] = '\0';
-			valid++;
-
-			switch (code) {
-				case 'I':
-					status->i_volt = strtof(value, NULL);
-					break;
-				case 'O':
-					status->o_volt = strtof(value, NULL);
-					break;
-				case 'L':
-					status->o_load = strtol(value, NULL, 10);
-					break;
-				case 'B':
-					status->b_chrg = strtol(value, NULL, 10);
-					break;
-				case 'V':
-					status->b_volt = strtof(value, NULL);
-					status->has_b_volt = 1;
-					break;
-				case 'T':
-					status->u_temp = strtol(value, NULL, 10);
-					status->has_u_temp = 1;
-					break;
-				case 'F':
-					status->i_freq = strtof(value, NULL);
-					seen_i_freq = 1;
-					break;
-				case 'H':
-					status->o_freq = strtof(value, NULL);
-					status->has_o_freq = 1;
-					break;
-				case 'R':
-					status->runtime = strtol(value, NULL, 10);
-					status->has_runtime = 1;
-					break;
-				case 'S':
-					memcpy(&status->flags, value, 2);
-					break;
-				default:
-					/* We didn't really find valid data */
-					valid--;
-					break;
-			}
-
-			code = powpan_answer[i];
-			ofs = 0;
-
-			/*
-				* Depending on device/firmware, the output frequency is coded as
-				* either an H, HF, or a second F (seen once transfered to battery)
-				*/
-			if (seen_i_freq && code == 'F')
-				code = 'H';
-
-			continue;
-		}
-
-		value[ofs++] = powpan_answer[i];
-	}
-
-	/* if we didn't get at least 3 values consider it a failure */
-	if (valid < 3) {
+	ssize_t ret = powpan_command("D\r");
+	if (ret <= 0 || powpan_parse_status(powpan_answer, (size_t)ret, status) < 0) {
 		upsdebugx(4, "Parsing status string failed");
 		return -1;
 	}
-
 	return 0;
 }
 
 static int powpan_updateinfo(void)
 {
-	status_t	status;
+	powpan_status_t	status;
 
 	if (powpan_status(&status)) {
 		return -1;
@@ -512,6 +422,15 @@ static int powpan_updateinfo(void)
 	}
 	if (status.has_runtime) {
 		dstate_setinfo("battery.runtime", "%d", status.runtime*60);
+	}
+	if (status.has_o_current) {
+		dstate_setinfo("output.current", "%.1f", status.o_current);
+	}
+	if (status.has_realpower) {
+		dstate_setinfo("ups.realpower", "%d", status.realpower);
+	}
+	if (status.has_power) {
+		dstate_setinfo("ups.power", "%d", status.power);
 	}
 
 	status_init();
@@ -562,7 +481,9 @@ static ssize_t powpan_initups(void)
 
 	upsdebugx(1, "Trying text protocol...");
 
-	ser_set_speed(upsfd, device_path, B2400);
+	if (!powerpanel_usb_mode) {
+		ser_set_speed(upsfd, device_path, B2400);
+	}
 
 	/* This fails for many devices, so don't bother to complain */
 	powpan_command("\r\r");
